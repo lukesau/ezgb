@@ -13,12 +13,7 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 ```
 .
 ├── decomp/
-│   ├── 1.05e-instability.md   # investigation into 1.05e instability reports
-│   ├── PROGRESS.md            # matching decompilation progress tracker
-│   ├── src/
-│   │   └── misc.c             # decompiled C, one file per group of functions
-│   └── tools/
-│       └── verify.py          # compiles + diffs a C file against the real ROM
+├── docs/
 ├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
 ├── juniorkernel-1.04e-FW4/    # NOT TRACKED, official firmware package (see below)
 │   ├── Changelog.txt
@@ -28,7 +23,6 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 ├── juniorkernel-1.05e-FW5/    # NOT TRACKED, same idea, newer firmware
 │   ├── ezgb.dat
 │   └── Update_FW5_7-31.gb
-├── LICENSE
 ├── re/
 │   ├── 1.04e/
 │   │   ├── disassembly/
@@ -40,9 +34,6 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 │   │   │   └── Makefile
 │   │   └── kernel.gb          # NOT TRACKED, copy of the firmware package's ezgb.dat
 │   ├── 1.05e/                 # same layout as 1.04e
-│   ├── DIFF_1.04e_vs_1.05e.md
-│   └── REGISTERS.md
-├── README.md
 └── tools/                     # NOT TRACKED, cloned reference repos (see Tools below)
     ├── mgbdis/
     └── omega-de-kernel/
@@ -57,18 +48,18 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
 ## Status
 
 - Disassembly of both kernel versions reassembles byte-identical to the originals (only the 3
-  cosmetic ROM-header bytes differ, see `re/REGISTERS.md` for why).
+  cosmetic ROM-header bytes differ, see `docs/REGISTERS.md` for why).
 - Diffed 1.04e vs 1.05e at the instruction level. Real logic changes are isolated to bank 0
   and bank 1; every other bank just has shifted call targets.
 - Identified the FPGA unlock/command/commit register pattern and catalogued the distinct
   command ports in use (SD sector I/O, bank switching, peripheral enable/disable, see
-  `re/REGISTERS.md`).
+  `docs/REGISTERS.md`).
 - Traced the "load ROM and launch" call path as far as static analysis allows. It terminates
   in an indirect (jump-table) call that needs a debugger to resolve. Next step is dynamic
   tracing in SameBoy to identify the actual loader function and how a selected file is passed
   into it.
 - Matching decompilation started in `decomp/`: one function matched so far (see
-  `decomp/PROGRESS.md`), toolchain and workflow established.
+  `docs/PROGRESS.md`), toolchain and workflow established.
 
 ## Rebuilding a disassembly
 
@@ -106,7 +97,7 @@ Workflow:
 3. Run `decomp/tools/verify.py <file.c> <version> <bank> <address_hex>`. It compiles with SDCC,
    links, extracts the raw bytes, and diffs them against the real ROM at that address.
 4. Iterate on the C (and, if needed, on codegen flags) until it matches. Record the result in
-   `decomp/PROGRESS.md`.
+   `docs/PROGRESS.md`.
 
 Known limitation: `decomp/tools/verify.py` currently only handles leaf functions, ones that
 don't call anything else, or whose callees don't need address-accurate `call` instructions for

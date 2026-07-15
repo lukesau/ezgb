@@ -50,7 +50,7 @@ relative to its neighbors should be checked for this before being treated as a r
 | `0xe89` region | +16B | Real | See "New cached field" below |
 | `0x15d3` region | +13B | Not yet decoded | Small insert, not analyzed in detail yet |
 | `0x1847`-`0x18b3` cluster | net 0 | Shift-noise, not real | Battery-dry-notice function (`Call_000_1835`/`Call_000_181c`), confirmed identical logic; string-pointer operands shifted by the 25 bytes from the two changes above |
-| `0x1a61` | +928B | Real, largest bank-0 change | Confirmed to start exactly at `Call_000_1a7a` (1.05e address), a register-write helper targeting `$7fc0` (bank-select family, see `re/REGISTERS.md`) that does not exist anywhere in bank 0 of 1.04e (`grep` for `7f00` in `1.04e/disassembly/bank_000.asm` returns zero hits, vs one in 1.05e). `Call_000_1a77` immediately before it (a trivial 3-byte `return 0`-shaped function, confirmed identical in both versions via `decomp/` matching, see `decomp/PROGRESS.md`) is unaffected, confirming the insertion boundary. The other ~925 bytes of this insert haven't been read through yet; likely where most of the RTC rewrite and/or turbo-loading logic lives. Priority for follow-up. |
+| `0x1a61` | +928B | Real, largest bank-0 change | Confirmed to start exactly at `Call_000_1a7a` (1.05e address), a register-write helper targeting `$7fc0` (bank-select family, see `docs/REGISTERS.md`) that does not exist anywhere in bank 0 of 1.04e (`grep` for `7f00` in `1.04e/disassembly/bank_000.asm` returns zero hits, vs one in 1.05e). `Call_000_1a77` immediately before it (a trivial 3-byte `return 0`-shaped function, confirmed identical in both versions via `decomp/` matching, see `docs/PROGRESS.md`) is unaffected, confirming the insertion boundary. The other ~925 bytes of this insert haven't been read through yet; likely where most of the RTC rewrite and/or turbo-loading logic lives. Priority for follow-up. |
 | `0x1f0e`-`0x1fa8` cluster | net ~0 | Likely shift-noise | Same shape as the battery-notice cluster (short alternating replace pairs); not individually confirmed but pattern matches the 928-byte shift cascading through subsequent string/address literals |
 | `0x246e`-`0x2479` cluster | net ~0 | Likely shift-noise | Same reasoning as above |
 | `0x379c`-`0x37a0` | -2B | Not yet decoded | Small, near end of bank, not analyzed |
@@ -102,7 +102,7 @@ In 1.04e, this address is a bare, already-unlocked single write: `$7ff0 = $e4` (
 commit-only tail of some register operation started elsewhere), then `ret`. In 1.05e, a whole
 new function is inserted directly after that `ret`: a full unlock (`$7f00=e1, $7f10=e2,
 $7f20=e3`), a write of a dynamic (stack-supplied) value to `$7fd4`, then commit (`$7ff0=e4`).
-`$7fd4` is in the same port cluster as `$7fd0`/`$7fd2` already catalogued in `re/REGISTERS.md`
+`$7fd4` is in the same port cluster as `$7fd0`/`$7fd2` already catalogued in `docs/REGISTERS.md`
 as an enable/disable-shaped register family. This register write capability did not exist in
 1.04e, and correlates with the "RTC codes are rewritten" changelog line.
 
@@ -115,7 +115,7 @@ leading byte in at least one case (`$AA` is the first byte of a JEDEC NOR flash 
 command). Bank 17 select plus `$A000`-window writes shaped like flash commands, appearing only
 in the version whose changelog claims "RTC codes are rewritten," is a case (not dynamically
 confirmed) that RTC state is persisted to onboard NOR flash rather than a battery-backed RTC
-chip register. See `decomp/1.05e-instability.md` for how this bears on the instability
+chip register. See `docs/1.05e-instability.md` for how this bears on the instability
 investigation.
 
 ## Confirmed vs hypothesis, summary
