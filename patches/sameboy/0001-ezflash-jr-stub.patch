@@ -1,0 +1,300 @@
+diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
+new file mode 100644
+index 0000000..dab6711
+--- /dev/null
++++ b/Core/ezflash_jr.c
+@@ -0,0 +1,164 @@
++#include "gb.h"
++#include "ezflash_jr.h"
++#include <stdlib.h>
++#include <string.h>
++
++/* Observed battery-status window: write $11 to $4000, then read $A201 expect $88.
++ * See Call_000_1835 in re/1.05e/disassembly/bank_000.asm. */
++enum {
++    EZJR_STATUS_BANK = 0x11,
++    EZJR_STATUS_MAGIC = 0x88,
++    EZJR_STATUS_ADDR = 0xA201,
++};
++
++static bool title_is_ezgb(GB_gameboy_t *gb)
++{
++    return gb->rom &&
++           gb->rom[0x134] == 'E' &&
++           gb->rom[0x135] == 'Z' &&
++           gb->rom[0x136] == 'G' &&
++           gb->rom[0x137] == 'B';
++}
++
++static bool stub_disabled_by_env(void)
++{
++    const char *v = getenv("SAMEBOY_EZFLASH_JR");
++    return v && (v[0] == '0') && (v[1] == '\0');
++}
++
++static void soft_patch_sd_init_hang(GB_gameboy_t *gb)
++{
++    /* Micro SD init fail path in both 1.04e and 1.05e looks like:
++     *   or a / jp z, $0eXX / ld hl, $cc2f
++     * Soft-patch to always take the success branch so we can explore past the hang.
++     * Real SD spoof comes later. */
++    for (uint32_t i = 0; i + 7 <= gb->rom_size; i++) {
++        if (gb->rom[i] != 0xB7 || gb->rom[i + 1] != 0xCA || gb->rom[i + 3] != 0x0E) {
++            continue;
++        }
++        if (gb->rom[i + 4] != 0x21 || gb->rom[i + 5] != 0x2F || gb->rom[i + 6] != 0xCC) {
++            continue;
++        }
++        uint8_t target_lo = gb->rom[i + 2];
++        gb->rom[i + 0] = 0xC3; /* jp nn */
++        gb->rom[i + 1] = target_lo;
++        gb->rom[i + 2] = 0x0E;
++        gb->rom[i + 3] = 0x00; /* nop */
++        GB_log(gb, "EZ Jr stub: soft-patched SD init hang at $%04x -> always success\n", i);
++        return;
++    }
++    GB_log(gb, "EZ Jr stub: SD init hang pattern not found, no soft-patch applied\n");
++}
++
++void GB_ezflash_jr_configure(GB_gameboy_t *gb)
++{
++    memset(&gb->ezflash_jr, 0, sizeof(gb->ezflash_jr));
++
++    if (!title_is_ezgb(gb) || stub_disabled_by_env()) {
++        return;
++    }
++
++    gb->ezflash_jr.enabled = true;
++    gb->ezflash_jr.log = true;
++    GB_log(gb, "EZ Jr stub: enabled (title EZGB). Set SAMEBOY_EZFLASH_JR=0 to disable.\n");
++    soft_patch_sd_init_hang(gb);
++}
++
++static void fpga_write(GB_gameboy_t *gb, uint16_t addr, uint8_t value)
++{
++    GB_ezflash_jr_t *ez = &gb->ezflash_jr;
++
++    /* Unlock / commit handshake from docs/REGISTERS.md */
++    if (addr == 0x7F00 && value == 0xE1) {
++        ez->unlock_step = 1;
++        if (ez->log) GB_log(gb, "EZ Jr FPGA: unlock1 $7F00=$E1\n");
++        return;
++    }
++    if (addr == 0x7F10 && value == 0xE2 && ez->unlock_step == 1) {
++        ez->unlock_step = 2;
++        if (ez->log) GB_log(gb, "EZ Jr FPGA: unlock2 $7F10=$E2\n");
++        return;
++    }
++    if (addr == 0x7F20 && value == 0xE3 && ez->unlock_step == 2) {
++        ez->unlock_step = 3;
++        if (ez->log) GB_log(gb, "EZ Jr FPGA: unlock3 $7F20=$E3\n");
++        return;
++    }
++    if (addr == 0x7FF0 && value == 0xE4) {
++        if (ez->log) {
++            GB_log(gb, "EZ Jr FPGA: commit $7FF0=$E4 (last cmd $%04x=$%02x)\n",
++                   ez->last_cmd_addr, ez->last_cmd_value);
++        }
++        ez->unlock_step = 0;
++        return;
++    }
++
++    if (ez->unlock_step == 3) {
++        ez->last_cmd_addr = addr;
++        ez->last_cmd_value = value;
++        /* Snapshot the ports we already care about from static analysis. */
++        if (addr >= 0x7FB0 && addr <= 0x7FB4) {
++            ez->sd_regs[addr - 0x7FB0] = value;
++        }
++        else if (addr >= 0x7FC0 && addr <= 0x7FC4) {
++            ez->bank_regs[addr - 0x7FC0] = value;
++        }
++        if (ez->log) {
++            GB_log(gb, "EZ Jr FPGA: cmd $%04x=$%02x\n", addr, value);
++        }
++        return;
++    }
++
++    if (ez->log) {
++        GB_log(gb, "EZ Jr FPGA: stray write $%04x=$%02x (unlock_step=%u)\n",
++               addr, value, ez->unlock_step);
++    }
++}
++
++bool GB_ezflash_jr_write(GB_gameboy_t *gb, uint16_t addr, uint8_t value)
++{
++    if (!gb->ezflash_jr.enabled) {
++        return false;
++    }
++
++    /* Track FPGA status-window banking; still let MBC see $4000 writes. */
++    if (addr == 0x4000) {
++        gb->ezflash_jr.rom_latch = value;
++        gb->ezflash_jr.status_window = (value == EZJR_STATUS_BANK);
++        if (gb->ezflash_jr.log) {
++            GB_log(gb, "EZ Jr FPGA: $4000 latch=$%02x status_window=%d\n",
++                   value, gb->ezflash_jr.status_window);
++        }
++        return false;
++    }
++
++    if (addr >= 0x7F00 && addr <= 0x7FFF) {
++        fpga_write(gb, addr, value);
++        return true; /* do not let MBC1 treat this as mode register */
++    }
++
++    /* Kernel dismisses BATTERY DRY by writing $88 here; keep our window consistent. */
++    if (addr == EZJR_STATUS_ADDR) {
++        gb->ezflash_jr.status_byte = value;
++        return true;
++    }
++
++    return false;
++}
++
++bool GB_ezflash_jr_read(GB_gameboy_t *gb, uint16_t addr, uint8_t *out)
++{
++    if (!gb->ezflash_jr.enabled) {
++        return false;
++    }
++
++    if (addr == EZJR_STATUS_ADDR && gb->ezflash_jr.status_window) {
++        *out = gb->ezflash_jr.status_byte ? gb->ezflash_jr.status_byte : EZJR_STATUS_MAGIC;
++        if (gb->ezflash_jr.log) {
++            GB_log(gb, "EZ Jr FPGA: read $A201 -> $%02x\n", *out);
++        }
++        return true;
++    }
++
++    return false;
++}
+diff --git a/Core/ezflash_jr.h b/Core/ezflash_jr.h
+new file mode 100644
+index 0000000..3030331
+--- /dev/null
++++ b/Core/ezflash_jr.h
+@@ -0,0 +1,36 @@
++#pragma once
++#include "defs.h"
++#include <stdbool.h>
++#include <stdint.h>
++
++/* Minimal EZ Flash Jr FPGA stub for reverse-engineering the kernel in-emulator.
++ *
++ * Stage 0 goals:
++ *  - Detect title "EZGB"
++ *  - Log writes to the $7F00-$7FFF unlock/command/commit window
++ *  - Spoof the battery-status magic byte at $A201 after bank latch $11
++ *  - Soft-patch the Micro SD init fail hang so boot can continue
++ *
++ * SD sector I/O is intentionally not implemented yet.
++ */
++
++typedef struct {
++    bool enabled;
++    bool log;
++    bool status_window;
++    uint8_t unlock_step;
++    uint8_t rom_latch;
++    uint8_t status_byte;
++    uint16_t last_cmd_addr;
++    uint8_t last_cmd_value;
++    uint8_t sd_regs[5];   /* $7FB0-$7FB4 */
++    uint8_t bank_regs[5]; /* $7FC0-$7FC4 */
++} GB_ezflash_jr_t;
++
++#ifdef GB_INTERNAL
++internal void GB_ezflash_jr_configure(GB_gameboy_t *gb);
++/* Returns true if the write was consumed by the FPGA stub (do not pass to MBC). */
++internal bool GB_ezflash_jr_write(GB_gameboy_t *gb, uint16_t addr, uint8_t value);
++/* Returns true if *out was filled by the stub. */
++internal bool GB_ezflash_jr_read(GB_gameboy_t *gb, uint16_t addr, uint8_t *out);
++#endif
+diff --git a/Core/gb.h b/Core/gb.h
+index da163c7..04507d8 100644
+--- a/Core/gb.h
++++ b/Core/gb.h
+@@ -27,6 +27,7 @@ extern "C" {
+ #include "camera.h"
+ #include "debugger.h"
+ #include "display.h"
++#include "ezflash_jr.h"
+ #include "joypad.h"
+ #include "mbc.h"
+ #include "memory.h"
+@@ -662,6 +663,7 @@ struct GB_gameboy_internal_s {
+             GB_MBC1M_WIRING,
+         } mbc1_wiring;
+         bool is_mbc30;
++        GB_ezflash_jr_t ezflash_jr;
+ 
+         unsigned pending_cycles;
+                
+diff --git a/Core/mbc.c b/Core/mbc.c
+index 0e7f1ba..1462398 100644
+--- a/Core/mbc.c
++++ b/Core/mbc.c
+@@ -2,6 +2,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include "gb.h"
++#include "ezflash_jr.h"
+ 
+ const GB_cartridge_t GB_cart_defs[256] = {
+     // From http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header#0147_-_Cartridge_Type
+@@ -264,6 +265,7 @@ void GB_configure_cart(GB_gameboy_t *gb)
+         }
+     }
+     
++    GB_ezflash_jr_configure(gb);
+     GB_reset_mbc(gb);
+ }
+ 
+diff --git a/Core/memory.c b/Core/memory.c
+index 79503de..7c8d5a4 100644
+--- a/Core/memory.c
++++ b/Core/memory.c
+@@ -2,6 +2,7 @@
+ #include <stdbool.h>
+ #include <string.h>
+ #include "gb.h"
++#include "ezflash_jr.h"
+ 
+ typedef uint8_t read_function_t(GB_gameboy_t *gb, uint16_t addr);
+ typedef void write_function_t(GB_gameboy_t *gb, uint16_t addr, uint8_t value);
+@@ -354,6 +355,11 @@ static uint8_t read_mbc7_ram(GB_gameboy_t *gb, uint16_t addr)
+ 
+ static uint8_t read_mbc_ram(GB_gameboy_t *gb, uint16_t addr)
+ {
++    uint8_t ezjr_value;
++    if (GB_ezflash_jr_read(gb, addr, &ezjr_value)) {
++        return ezjr_value;
++    }
++
+     if (gb->cartridge_type->mbc_type == GB_MBC7) {
+         return read_mbc7_ram(gb, addr);
+     }
+@@ -839,6 +845,12 @@ uint8_t GB_safe_read_memory(GB_gameboy_t *gb, uint16_t addr)
+ 
+ static void write_mbc(GB_gameboy_t *gb, uint16_t addr, uint8_t value)
+ {
++    /* EZ Jr FPGA watches the cart bus independently of the MBC. $7Fxx writes must
++     * not fall through as MBC1 mode-register updates. */
++    if (GB_ezflash_jr_write(gb, addr, value)) {
++        return;
++    }
++
+     switch (gb->cartridge_type->mbc_type) {
+         case GB_NO_MBC: return;
+         case GB_MBC1:
+@@ -1236,6 +1248,10 @@ static void write_mbc7_ram(GB_gameboy_t *gb, uint16_t addr, uint8_t value)
+ 
+ static void write_mbc_ram(GB_gameboy_t *gb, uint16_t addr, uint8_t value)
+ {
++    if (GB_ezflash_jr_write(gb, addr, value)) {
++        return;
++    }
++
+     if (gb->cartridge_type->mbc_type == GB_MBC7) {
+         write_mbc7_ram(gb, addr, value);
+         return;

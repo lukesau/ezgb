@@ -14,6 +14,11 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 .
 ├── decomp/
 ├── docs/
+├── patches/
+│   └── sameboy/               # diffs applied on top of upstream SameBoy
+├── scripts/
+│   ├── setup-sameboy.sh       # clone pinned SameBoy + apply patches
+│   └── refresh-sameboy-patch.sh
 ├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
 ├── juniorkernel-1.04e-FW4/    # NOT TRACKED, official firmware package (see below)
 │   ├── Changelog.txt
@@ -36,6 +41,7 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 │   ├── 1.05e/                 # same layout as 1.04e
 └── tools/                     # NOT TRACKED, cloned reference repos (see Tools below)
     ├── mgbdis/
+    ├── SameBoy/               # from scripts/setup-sameboy.sh
     └── omega-de-kernel/
 ```
 
@@ -113,7 +119,17 @@ and should be solved before picking the next, less trivial target.
 - [mgbdis](https://github.com/mattcurrie/mgbdis): the disassembler itself (cloned into
   `tools/`, gitignored, re-clone if needed)
 - [SameBoy](https://sameboy.github.io): Game Boy emulator with a debugger, used for dynamic
-  tracing
+  tracing. Upstream stays out of git (`tools/SameBoy`, gitignored); our EZ Jr FPGA stub is
+  tracked as patches against a pinned upstream commit:
+
+  ```sh
+  ./scripts/setup-sameboy.sh              # clone @ patches/sameboy/BASE_COMMIT + apply patches
+  cd tools/SameBoy && make CONF=debug sdl
+  ./scripts/refresh-sameboy-patch.sh      # after editing the stub, rewrite the patch file
+  ```
+
+  To move to a newer SameBoy: update `patches/sameboy/BASE_COMMIT`, rebase your local stub
+  onto that commit, then re-run `refresh-sameboy-patch.sh`.
 - [omega-de-kernel](https://github.com/ez-flash/omega-de-kernel): EZ Flash's own published
   Omega (GBA) kernel source, used as a reference for hardware-abstraction naming conventions
   (cloned into `tools/`, gitignored)
