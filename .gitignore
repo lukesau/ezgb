@@ -1,0 +1,17 @@
+.DS_Store
+
+# EZ Flash's copyrighted firmware binaries — not our work, keep local-only
+/ezgb.dat
+/juniorkernel-1.04e-FW4/
+/juniorkernel-1.05e-FW5/
+re/*/kernel.gb
+
+# cloned reference tools (mgbdis, omega-de-kernel) — not our code, re-clone instead of vendoring
+tools/
+
+# build artifacts from `make` inside re/*/disassembly
+re/*/disassembly/game.gb
+re/*/disassembly/game_trunc.gb
+re/*/disassembly/game.o
+re/*/disassembly/game.map
+re/*/disassembly/game.sym
