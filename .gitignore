@@ -6,7 +6,7 @@
 /juniorkernel-1.05e-FW5/
 re/*/kernel.gb
 
-# cloned reference tools (mgbdis, omega-de-kernel), not our code, re-clone instead of vendoring
+# cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code
 tools/
 
 # build artifacts from `make` inside re/*/disassembly
@@ -15,3 +15,9 @@ re/*/disassembly/game_trunc.gb
 re/*/disassembly/game.o
 re/*/disassembly/game.map
 re/*/disassembly/game.sym
+
+# Local microSD for the SameBoy EZ Jr FPGA stub.
+# ROMs, saves, and raw card images are copyrighted / personal — stay out of git.
+/sd/**
+!/sd/README.md
+

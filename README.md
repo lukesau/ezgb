@@ -17,8 +17,12 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 ├── patches/
 │   └── sameboy/               # diffs applied on top of upstream SameBoy
 ├── scripts/
-│   ├── setup-sameboy.sh       # clone pinned SameBoy + apply patches
-│   └── refresh-sameboy-patch.sh
+│   ├── setup-sameboy.sh
+│   ├── refresh-sameboy-patch.sh
+│   ├── make-sd-image.sh
+│   └── mount-sd-image.sh
+├── sd/                        # local microSD image for the stub (see sd/README.md)
+│   └── README.md
 ├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
 ├── juniorkernel-1.04e-FW4/    # NOT TRACKED, official firmware package (see below)
 │   ├── Changelog.txt
@@ -100,8 +104,10 @@ Workflow:
    bank and address.
 2. Write equivalent C in `decomp/src/`. Keep it to one function (or a few closely related ones)
    per attempt for easier isolation of mismatches.
-3. Run `decomp/tools/verify.py <file.c> <version> <bank> <address_hex>`. It compiles with SDCC,
-   links, extracts the raw bytes, and diffs them against the real ROM at that address.
+3. Run `decomp/tools/verify.py <file.c> <version> <bank> <address_hex> [peep_file]`. It
+   compiles with SDCC, links, extracts the raw bytes, and diffs them against the real ROM at
+   that address. Optional peep files live under `decomp/tools/peeps/` when modern SDCC's
+   codegen is equivalent but not byte-identical to the historical kernel compiler.
 4. Iterate on the C (and, if needed, on codegen flags) until it matches. Record the result in
    `docs/PROGRESS.md`.
 

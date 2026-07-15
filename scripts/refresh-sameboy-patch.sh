@@ -26,9 +26,11 @@ fi
 git -C "$DEST" add \
   Core/ezflash_jr.c \
   Core/ezflash_jr.h \
+  Core/gb.c \
   Core/gb.h \
   Core/mbc.c \
-  Core/memory.c
+  Core/memory.c \
+  Makefile
 
 git -C "$DEST" diff --cached > "$OUT"
 git -C "$DEST" reset HEAD >/dev/null
