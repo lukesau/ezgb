@@ -10,22 +10,49 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 
 ## What's here
 
-- `re/1.04e/`, `re/1.05e/`: full disassemblies (`disassembly/`) of each firmware version,
-  generated with [mgbdis](https://github.com/mattcurrie/mgbdis). Tracked and public.
-- `re/REGISTERS.md`: notes on the cart's custom FPGA control registers (`$7f00-$7fff` I/O
-  window), derived from the unlock/command/commit write pattern seen in the disassembly,
-  cross-referenced against the Omega's public source for naming hypotheses.
-- `re/DIFF_1.04e_vs_1.05e.md`: instruction-level diff between the two kernel versions.
-- `decomp/`: matching decompilation project, rewriting the kernel function-by-function in C,
-  verified byte-identical against the original.
-- `decomp/1.05e-instability.md`: investigation into user reports of instability after
-  updating to kernel 1.05e.
+```
+.
+├── decomp/
+│   ├── 1.05e-instability.md   # investigation into 1.05e instability reports
+│   ├── PROGRESS.md            # matching decompilation progress tracker
+│   ├── src/
+│   │   └── misc.c             # decompiled C, one file per group of functions
+│   └── tools/
+│       └── verify.py          # compiles + diffs a C file against the real ROM
+├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
+├── juniorkernel-1.04e-FW4/    # NOT TRACKED, official firmware package (see below)
+│   ├── Changelog.txt
+│   ├── ezgb.dat
+│   ├── readme.txt
+│   └── Update_FW4.gb
+├── juniorkernel-1.05e-FW5/    # NOT TRACKED, same idea, newer firmware
+│   ├── ezgb.dat
+│   └── Update_FW5_7-31.gb
+├── LICENSE
+├── re/
+│   ├── 1.04e/
+│   │   ├── disassembly/
+│   │   │   ├── bank_000.asm
+│   │   │   ├── ...
+│   │   │   ├── bank_009.asm
+│   │   │   ├── game.asm
+│   │   │   ├── hardware.inc
+│   │   │   └── Makefile
+│   │   └── kernel.gb          # NOT TRACKED, copy of the firmware package's ezgb.dat
+│   ├── 1.05e/                 # same layout as 1.04e
+│   ├── DIFF_1.04e_vs_1.05e.md
+│   └── REGISTERS.md
+├── README.md
+└── tools/                     # NOT TRACKED, cloned reference repos (see Tools below)
+    ├── mgbdis/
+    └── omega-de-kernel/
+```
 
-Not tracked (gitignored, local-only): EZ Flash's official firmware update packages
-(`ezgb.dat`, `juniorkernel-1.04e-FW4/`, `juniorkernel-1.05e-FW5/`) and the `kernel.gb` working
-copies under `re/*/`. These are EZ Flash's copyrighted binaries, not this project's work. The
-disassembly is generated from them locally but the binaries themselves aren't redistributed
-here. A fresh checkout needs its own dump of the kernel to regenerate or rebuild against.
+Paths marked NOT TRACKED are gitignored. They're either EZ Flash's copyrighted binaries
+(the firmware packages and the `kernel.gb` copies derived from them) or cloned third-party
+reference repos, not this project's own work. A fresh checkout needs its own dump of the
+kernel (`ezgb.dat`, or a full firmware package folder) placed at the paths above to
+regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools section below.
 
 ## Status
 
