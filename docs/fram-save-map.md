@@ -25,6 +25,70 @@ SameBoy stub mirrors this: `mbc_ram` aliases `cart_sram` after `$7FE0` soft-rese
 
 Details for the emulator workflow: [sd/README.md](../sd/README.md).
 
+## BACKUPSAVE flag lifecycle
+
+The whole feature turns on one byte in battery FRAM, page `$11` (bank 17), address **`$A000`**,
+reachable only from the kernel via `SetFpgaPage_B1`/`_B0` with `$7FC0=$03`. The prompt shown
+on boot (`BACKUPSAVE` / `Saving..` / `[B]NO` `[A]OK`) is `BackupSavePrompt` at `01:6747`.
+
+### What sets the flag (arm)
+
+On **every ROM launch**, just before handing off to the game, the loader stamps page `$11`
+(`bank_001.asm`, `Jump_001_55c2` region):
+
+| FRAM addr | Written | Meaning |
+|---|---|---|
+| `$A000` | `$AA` | Backup pending |
+| `$A001` | auto-save flag | `1` = dump without prompting; else prompt |
+| `$A00F` | bank count | Size of the save region to dump |
+| `$A010`+ | basename | Used to build the `SAVER/<name>.SAV` filename |
+
+Key consequence: the flag is armed **per launch, not per save-write**. Launching a game arms
+it whether or not you actually create a new in-game save. That's why:
+
+- Saving in a game and rebooting **always** shows BACKUPSAVE (launch already armed it — you
+  never "miss" the chance to dump). Consistent, as observed.
+- You can also get the prompt after a session where you **didn't** make a new save — the flag
+  reflects "a game was launched," not "the save changed." Harmless (it just re-dumps whatever
+  is in FRAM), but it's the source of the "false positive" prompts.
+
+### What triggers the prompt on boot
+
+`SdMenuMain` (`00:0de4`), after `Micro SD initial OK!`, maps page `$11` and reads `$A000`:
+
+- `[$A000] == $AA` → take the backup branch.
+- anything else → jump straight to the file browser (`Jump_000_0e73` → `$0f5b`).
+
+`$A001` is then read and passed to `BackupSavePrompt` as the auto-save selector: `1` skips the
+`[B]NO`/`[A]OK` prompt and goes straight to `Saving..`; otherwise the prompt waits (A = dump,
+B = skip). It also caches `$A202`→`$d3f6` (RTC) and reads the `$A00F`/`$A010`+ metadata.
+
+### What resets the flag
+
+The reset is `[$A000] = $00`, written **on entry to the backup branch** (`jr_000_0e76`),
+*before* the prompt is drawn. So the flag is cleared as soon as a pending backup is detected —
+**regardless of whether you pick `[A]OK` or `[B]NO`**. Choosing NO still clears it; you get the
+prompt once per launch, then it's gone until the next launch re-arms it.
+
+Practical caveat (matches the "seems inconsistent" observation): the clear is a single FRAM
+write with the FPGA page mapped. If that write doesn't commit (interrupted boot, marginal
+power, a card/FPGA hiccup), `$A000` can stay `$AA` and you'll be prompted again next boot. The
+arm side (`$A000=$AA` at launch) is a normal part of the launch path and fires reliably, which
+is why arming feels far more consistent than clearing.
+
+### Auto-save
+
+The SET-menu "AUTO SAVE:" toggle drives the `$A001` value stamped at launch. Because it's
+captured **at launch time**, a given boot's auto-save behavior reflects the setting that was
+active when that game was last launched. (The SET-menu global that feeds this stamp is not yet
+pinned to a specific address.)
+
+### Version parity
+
+The mechanism, FRAM addresses, and `BackupSavePrompt` exist identically in 1.04e (addresses
+shifted; see `docs/DIFF_1.04e_vs_1.05e.md`). The 1.05e-only `$d3f6` cache of `$A202` is RTC
+state, adjacent to this path but not part of the save-dump flag itself.
+
 ## Key symbols (1.05e)
 
 Human names live in [re/1.05e/kernel.sym](../re/1.05e/kernel.sym). Block comments live in
@@ -36,6 +100,7 @@ Human names live in [re/1.05e/kernel.sym](../re/1.05e/kernel.sym). Block comment
 | `KernelEntry` | `00:0150` | C runtime start |
 | `BatteryCheck` | `00:1835` | Page `$11` / `$A201` dry-battery gate |
 | `SdMenuMain` | `00:0de4` | SD init, BACKUPSAVE, file browser |
+| `BackupSavePrompt` | `01:6747` | BACKUPSAVE box; `$A001==1` auto-dumps, else `[B]NO`/`[A]OK` |
 | `SetFpgaPage_B0` | `00:1a7a` | `$7FC0` page select (bank 0) |
 | `SetFpgaPage_B1` | `01:47a7` | `$7FC0` page select (bank 1) |
 | `RomLoad_InitiatePoll` | `04:4000` | `$7F36=$03` ROM load path |

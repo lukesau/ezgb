@@ -3133,7 +3133,9 @@ Jump_000_0ddd:
 ; [ezgb]
 ; SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
 ; Launched games never enter here — they write FRAM via normal MBC $A000 only.
-; Early in path: page $11:$A000==$AA and :$A001==$00 → BACKUPSAVE.
+; Backup branch when page $11 $A000==$AA; then clears $A000=$00 on entry (before
+; the prompt, so [B]NO still clears it). $A001 read as auto-save selector; caches
+; $A202->$d3f6 (RTC), reads $A00F/$A010+ meta, calls BackupSavePrompt (01:6747).
 
 Call_000_0de4:
 jr_000_0de4:

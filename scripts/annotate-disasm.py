@@ -31,13 +31,50 @@ def load_notes(version):
     return path, data["blocks"]
 
 
-def label_pattern(bank, addr):
+def load_sym_names(version):
+    """Map (bank, addr_hex) -> human label from kernel.sym, if present.
+
+    mgbdis renames labels it finds in kernel.sym (e.g. Call_000_0de4 ->
+    SdMenuMain), so notes must be matched by that human name once assigned.
+    """
+    names = {}
+    path = ROOT / "re" / version / "kernel.sym"
+    if not path.is_file():
+        return names
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.split(";", 1)[0].strip()
+        parts = line.split()
+        if len(parts) >= 2 and ":" in parts[0]:
+            bank, addr = parts[0].split(":")
+            names[(int(bank, 16), addr.lower())] = parts[1]
+    return names
+
+
+# Matches any label definition line: "Name:" or "Name::" (exported).
+LABEL_DEF_RE = re.compile(r"^([A-Za-z_][\w]*)::?$")
+
+
+def make_label_matcher(bank, addr, sym_name):
+    """Return a predicate matching the label def for (bank, addr).
+
+    Accepts either the human name assigned in kernel.sym (mgbdis emits it as
+    Name:: after a regen) or the raw mgbdis form *_bbb_aaaa: for still-unnamed
+    addresses.
+    """
     bank = int(bank)
     addr = int(addr, 16) if isinstance(addr, str) else int(addr)
-    return re.compile(
-        rf"^([A-Za-z_][\w]*_{bank:03d}_{addr:04x}):$",
-        re.IGNORECASE,
-    )
+    suffix = f"_{bank:03d}_{addr:04x}"
+
+    def matches(line):
+        m = LABEL_DEF_RE.match(line.rstrip())
+        if not m:
+            return False
+        label = m.group(1)
+        if sym_name and label == sym_name:
+            return True
+        return label.lower().endswith(suffix)
+
+    return matches
 
 
 def strip_injected(lines):
@@ -57,9 +94,9 @@ def strip_injected(lines):
     return out
 
 
-def inject_before_label(lines, pattern, comment_lines):
+def inject_before_label(lines, matches, comment_lines):
     for i, line in enumerate(lines):
-        if pattern.match(line.rstrip()):
+        if matches(line):
             block = [MARKER + "\n"]
             for text in comment_lines:
                 block.append(f"; {text}\n")
@@ -79,7 +116,7 @@ def inject_after_section(lines, comment_lines):
     return None
 
 
-def annotate_bank(path, blocks_for_bank):
+def annotate_bank(path, blocks_for_bank, sym_names):
     text = path.read_text()
     lines = text.splitlines(keepends=True)
     lines = strip_injected(lines)
@@ -93,17 +130,19 @@ def annotate_bank(path, blocks_for_bank):
         if not comment_lines:
             continue
 
+        addr_str = addr if isinstance(addr, str) else f"{addr:04x}"
         if at == "section":
             new_lines = inject_after_section(lines, comment_lines)
             if new_lines is None:
-                missing.append(f"bank {bank} section (addr {addr:#06x})")
+                missing.append(f"bank {bank} section (addr ${addr_str})")
             else:
                 lines = new_lines
         else:
-            pat = label_pattern(bank, addr)
-            new_lines = inject_before_label(lines, pat, comment_lines)
+            sym_name = sym_names.get((int(bank), addr_str.lower()))
+            matcher = make_label_matcher(bank, addr, sym_name)
+            new_lines = inject_before_label(lines, matcher, comment_lines)
             if new_lines is None:
-                missing.append(f"bank {bank} addr {addr:#06x} (no label)")
+                missing.append(f"bank {bank} addr ${addr_str} (no label)")
             else:
                 lines = new_lines
 
@@ -119,6 +158,7 @@ def main():
 
     version = sys.argv[1]
     notes_path, blocks = load_notes(version)
+    sym_names = load_sym_names(version)
     disasm = ROOT / "re" / version / "disassembly"
     if not disasm.is_dir():
         print(f"error: missing {disasm}", file=sys.stderr)
@@ -134,7 +174,7 @@ def main():
         if not bank_file.is_file():
             all_missing.append(f"bank {bank} (no {bank_file.name})")
             continue
-        missing = annotate_bank(bank_file, by_bank[bank])
+        missing = annotate_bank(bank_file, by_bank[bank], sym_names)
         all_missing.extend(missing)
         print(f"annotated {bank_file.relative_to(ROOT)}")
 

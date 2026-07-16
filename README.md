@@ -20,7 +20,10 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 │   ├── setup-sameboy.sh
 │   ├── refresh-sameboy-patch.sh
 │   ├── make-sd-image.sh
-│   └── mount-sd-image.sh
+│   ├── mount-sd-image.sh
+│   ├── gbdiff.sh              # symbol-annotated ROM diff (wraps gb-asm-tools)
+│   ├── naming-progress.sh     # disassembly labeling progress (wraps gb-asm-tools)
+│   └── doc-symbol-coverage.py # docs vs kernel.sym vs fan-in: what to name next
 ├── sd/                        # local microSD image for the stub (see sd/README.md)
 │   └── README.md
 ├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
@@ -46,6 +49,7 @@ file that tells the kernel to boot straight into a specific ROM, skipping the fi
 └── tools/                     # NOT TRACKED, cloned reference repos (see Tools below)
     ├── mgbdis/
     ├── SameBoy/               # from scripts/setup-sameboy.sh
+    ├── gb-asm-tools/          # pret disassembly helpers (gbdiff, unnamed, ...)
     └── omega-de-kernel/
 ```
 
@@ -87,6 +91,19 @@ make            # requires rgbasm/rgblink/rgbfix (rgbds)
 
 Persistent annotations: [re/1.05e/kernel.sym](re/1.05e/kernel.sym) (names),
 [re/1.05e/notes.json](re/1.05e/notes.json) (comment blocks). See [docs/fram-save-map.md](docs/fram-save-map.md).
+`mgbdis` applies the `kernel.sym` names to the labels (`Call_000_0de4` → `SdMenuMain`);
+`annotate-disasm.py` then injects the `notes.json` blocks, matching either the assigned
+name or the raw `*_bbb_aaaa` label for still-unnamed addresses.
+
+To decide what to name next, `scripts/doc-symbol-coverage.py` cross-references the docs,
+`kernel.sym`, and call fan-in and lists documented-but-unnamed functions (highest-leverage
+first):
+
+```sh
+./scripts/doc-symbol-coverage.py            # 1.05e unnamed worklist by fan-in
+./scripts/doc-symbol-coverage.py --top 15   # just the top rows
+./scripts/doc-symbol-coverage.py 1.04e --all
+```
 
 ## Matching decompilation (`decomp/`)
 
@@ -157,6 +174,26 @@ C file under test (pinned symbols contribute address fixups only).
 
   To move to a newer SameBoy: update `patches/sameboy/BASE_COMMIT`, rebase your local stub
   onto that commit, then re-run `refresh-sameboy-patch.sh`.
+- [gb-asm-tools](https://github.com/pret/gb-asm-tools): pret's Game Boy disassembly helpers
+  (cloned into `tools/`, gitignored, re-clone if needed):
+
+  ```sh
+  git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools
+  ```
+
+  Two of them are wired into `scripts/` (override the clone location with `GBASM_TOOLS=`):
+
+  ```sh
+  ./scripts/gbdiff.sh                    # symbol-annotated byte diff of the two kernel dumps
+  ./scripts/gbdiff.sh old.gb new.gb      # ...or any two ROMs
+  ./scripts/naming-progress.sh           # % of 1.05e symbols still auto-named by mgbdis
+  ./scripts/naming-progress.sh 1.05e all # ...plus the full list of unnamed symbols
+  ```
+
+  `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM; we ship
+  `re/1.05e/kernel.sym`, so add a `re/1.04e/kernel.sym` (e.g. a built `disassembly/game.sym`)
+  to annotate the older side too. `naming-progress.sh` reads a built `disassembly/game.sym`,
+  so `make` the disassembly first.
 - [omega-de-kernel](https://github.com/ez-flash/omega-de-kernel): EZ Flash's own published
   Omega (GBA) kernel source, used as a reference for hardware-abstraction naming conventions
   (cloned into `tools/`, gitignored)

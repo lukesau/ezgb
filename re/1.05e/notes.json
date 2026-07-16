@@ -35,9 +35,163 @@
     },
     {
       "bank": 1,
+      "addr": "482b",
+      "lines": [
+        "LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569",
+        "launch chain ($482b → $4048 → $4000 → $5e14). See docs/launch-trace.md."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "4856",
+      "lines": [
+        "LastRomPersist: copy the assembled launch path ($c2a6, 255 bytes) into cart",
+        "NVRAM $A300 (select bank 17, FPGA rompage $03). Read back by LastRomOverlay",
+        "on START. See docs/last-rom.md."
+      ]
+    },
+    {
+      "bank": 1,
       "addr": "55c2",
       "lines": [
-        "Pre-launch FRAM meta on page $11: $AA=pending SD backup, savename/banks follow."
+        "Pre-launch FRAM stamp on page $11 (SetFpgaPage_B1 $03), written on every launch:",
+        "$A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,",
+        "$A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "5e14",
+      "lines": [
+        "RomLoaderMain: main ROM loader (bank 1). SD stream → FPGA ROM buffer, MBC/size",
+        "config ($7FC*), then installs the WRAM boot stub. See docs/launch-trace.md."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "6747",
+      "lines": [
+        "BackupSavePrompt: draw BACKUPSAVE box. Arg (page $11 $A001) ==1 -> auto 'Saving..'",
+        "and dump; else prompt [B]NO=skip / [A]OK=dump FRAM to SAVER/*.SAV."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "062e",
+      "lines": [
+        "RegisterVBlankCallback: HL = callback-list base, jp InstallCallbackSlot with",
+        "BC = VBlankCallback ($0677). Sibling RegisterSerialCallback ($0640) installs",
+        "SerialCallback ($06c0). See decomp/src/register_callback_slots.c."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "066c",
+      "lines": [
+        "InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.",
+        "RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0688",
+      "lines": [
+        "WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "069f",
+      "lines": [
+        "LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "08b7",
+      "lines": [
+        "DrawString (ptr, len, screen pos). Highest fan-in text primitive (~86 callers).",
+        "Cursor set by SetTextCursor ($2765), advanced by AdvanceTextCursor ($20f4)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0a43",
+      "lines": [
+        "DirList: file-browser directory enumerator; hides ezgb.dat via helper $09af."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0de4",
+      "lines": [
+        "SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.",
+        "Launched games never enter here — they write FRAM via normal MBC $A000 only.",
+        "Backup branch when page $11 $A000==$AA; then clears $A000=$00 on entry (before",
+        "the prompt, so [B]NO still clears it). $A001 read as auto-save selector; caches",
+        "$A202->$d3f6 (RTC), reads $A00F/$A010+ meta, calls BackupSavePrompt (01:6747)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0150",
+      "lines": [
+        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1294",
+      "lines": [
+        "MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.",
+        "Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "129e",
+      "lines": [
+        "LastRomOverlay: draw chrome (bank8 DrawLastRomButtons) and copy the 255-byte",
+        "path record $A300 -> $c4a4. Shows basename only; relaunch (A) uses the full",
+        "path via LastRomRelaunch. See docs/last-rom.md."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2765",
+      "lines": [
+        "SetTextCursor: set text cursor col/row ($D732/$D733); feeds DrawString."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2791",
+      "lines": [
+        "StoreDrawParams: store draw params $D734/$D735/$D723; called widely (~73 callers)",
+        "before tile/string helpers."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2c42",
+      "lines": [
+        "Strrchr(ptr, char): walk to the NUL then scan back for char. Used with '/' to",
+        "find the basename of a launch path."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2cba",
+      "lines": [
+        "Memcpy(dest, src, len)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3a4a",
+      "lines": [
+        "ReadJoypad: returns the menu key byte (post-swap: A=$10, B=$20, START=$80).",
+        "ReadJoypadRaw ($3a16) is the lower-level read that ends with the swap."
       ]
     },
     {
@@ -55,19 +209,13 @@
       ]
     },
     {
-      "bank": 0,
-      "addr": "0de4",
+      "bank": 8,
+      "addr": "737f",
       "lines": [
-        "SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.",
-        "Launched games never enter here — they write FRAM via normal MBC $A000 only.",
-        "Early in path: page $11:$A000==$AA and :$A001==$00 → BACKUPSAVE."
-      ]
-    },
-    {
-      "bank": 0,
-      "addr": "0150",
-      "lines": [
-        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md."
+        "Status-box draw family (bank 8), each reached via FarCallTrampoline:",
+        "DrawReadingBox $7344 'Reading....', DrawLoadingBox $737f 'Loading....',",
+        "DrawErrorFileBox $73ba 'Error file', DrawLastRomButtons $73f5 '[B]return'/'[A]start'.",
+        "See docs/last-rom.md."
       ]
     }
   ]

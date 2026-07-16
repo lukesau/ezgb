@@ -4271,7 +4271,9 @@ Jump_001_559a:
     add sp, $01
 
 ; [ezgb]
-; Pre-launch FRAM meta on page $11: $AA=pending SD backup, savename/banks follow.
+; Pre-launch FRAM stamp on page $11 (SetFpgaPage_B1 $03), written on every launch:
+; $A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,
+; $A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write.
 
 Jump_001_55c2:
     ld a, $0d
