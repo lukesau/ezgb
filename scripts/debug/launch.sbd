@@ -1,0 +1,14 @@
+# Launch-path breakpoints for 1.05e (see docs/launch-trace.md).
+# Comments and blank lines are stripped by the launcher.
+#
+# After the file browser appears: A on a .GB to open/launch.
+# Do NOT enable $078d here — it fires constantly during SD I/O.
+# Add it after $1569 with: breakpoint $078d
+
+breakpoint $145f
+breakpoint $1569
+breakpoint $5e14
+watch $7f36
+watch $7fe0
+watch $7fc0 $7fc4
+continue

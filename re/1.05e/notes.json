@@ -1,0 +1,74 @@
+{
+  "blocks": [
+    {
+      "bank": 4,
+      "addr": "4000",
+      "at": "section",
+      "lines": [
+        "ROM load + soft-boot (kernel FPGA path only — not used by launched games).",
+        "$7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.",
+        "$7FE0=$80: reset into loaded ROM; same battery FRAM, FPGA emulates game MBC.",
+        "See docs/fram-save-map.md and sd/README.md."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "4140",
+      "lines": [
+        "SetRomLoadCtrl: $7F36 load mode ($00=off, $01=map cmd buf, $03=initiate)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "40ab",
+      "lines": [
+        "ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "47a7",
+      "lines": [
+        "SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart SRAM) → commit.",
+        "With $7FC0=$03, $4000 latches SRAM bank; $A000-$BFFF is battery FRAM."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "55c2",
+      "lines": [
+        "Pre-launch FRAM meta on page $11: $AA=pending SD backup, savename/banks follow."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1a7a",
+      "lines": [
+        "SetFpgaPage ($7FC0). Bank-0 leaf; used before RTC reads at $A008+."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1835",
+      "lines": [
+        "Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0de4",
+      "lines": [
+        "SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.",
+        "Launched games never enter here — they write FRAM via normal MBC $A000 only.",
+        "Early in path: page $11:$A000==$AA and :$A001==$00 → BACKUPSAVE."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0150",
+      "lines": [
+        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md."
+      ]
+    }
+  ]
+}

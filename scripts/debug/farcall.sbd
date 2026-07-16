@@ -1,0 +1,9 @@
+# Noisy far-call trampoline — enable only AFTER $1569 has hit once.
+# Prefer loading this mid-session rather than at boot:
+#   ./scripts/run-sameboy-debug.sh
+#   … Right on a ROM, hit $1569 …
+#   then Ctrl+C and: breakpoint $078d
+#
+# Or start with launch.sbd, stop at $1569, then feed this file's lines.
+
+breakpoint $078d

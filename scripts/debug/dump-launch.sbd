@@ -1,0 +1,11 @@
+# Run at each stop while tracing the launch path.
+# Used by: ./scripts/run-sameboy-debug.sh --trace
+
+registers
+print hl
+print [$2000]
+print [$d6cf]
+examine/48 $c4a4
+examine/64 $c2a0
+examine/16 $c3a5
+backtrace
