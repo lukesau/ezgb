@@ -64,12 +64,11 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
 - Identified the FPGA unlock/command/commit register pattern and catalogued the distinct
   command ports in use (SD sector I/O, bank switching, peripheral enable/disable, see
   `docs/REGISTERS.md`).
-- Traced the "load ROM and launch" call path as far as static analysis allows. It terminates
-  in an indirect (jump-table) call that needs a debugger to resolve. Next step is dynamic
-  tracing in SameBoy to identify the actual loader function and how a selected file is passed
-  into it.
-- Matching decompilation started in `decomp/`: one function matched so far (see
-  `docs/PROGRESS.md`), toolchain and workflow established.
+- Traced the "load ROM and launch" call path through the `$1569` far-call chain to
+  bank4 `$448f` / `$7fe0=$80`. See `docs/launch-trace.md`.
+- Fast-launch still the goal; a first binary-hook experiment was tried and
+  withdrawn — notes in `docs/fast-launch-notes.md`.
+- Matching decompilation in `decomp/` (see `docs/PROGRESS.md`).
 
 ## Rebuilding a disassembly
 
@@ -104,20 +103,31 @@ Workflow:
    bank and address.
 2. Write equivalent C in `decomp/src/`. Keep it to one function (or a few closely related ones)
    per attempt for easier isolation of mismatches.
-3. Run `decomp/tools/verify.py <file.c> <version> <bank> <address_hex> [peep_file]`. It
-   compiles with SDCC, links, extracts the raw bytes, and diffs them against the real ROM at
-   that address. Optional peep files live under `decomp/tools/peeps/` when modern SDCC's
-   codegen is equivalent but not byte-identical to the historical kernel compiler.
+3. Run `decomp/tools/verify.py <file.c> <version> <bank> <address_hex> [--peep peep_file]
+   [--pin SYM=ADDR ...] [--pins pins_file]`. It compiles with SDCC, links, extracts the raw
+   bytes, and diffs them against the real ROM at that address. Optional peep files live under
+   `decomp/tools/peeps/` when modern SDCC's codegen is equivalent but not byte-identical to
+   the historical kernel compiler.
 4. Iterate on the C (and, if needed, on codegen flags) until it matches. Record the result in
    `docs/PROGRESS.md`.
 
-Known limitation: `decomp/tools/verify.py` currently only handles leaf functions, ones that
-don't call anything else, or whose callees don't need address-accurate `call` instructions for
-the byte comparison to work. A function that calls another not-yet-decompiled routine needs
-that routine's address pinned via an `extern` declaration and a linker directive (SDCC/sdld
-support fixing a symbol to an absolute address), so the compiled `call` instruction encodes the
-correct target. Not set up yet. Needed before this scales past trivial standalone functions,
-and should be solved before picking the next, less trivial target.
+Callee pins: when the function under test `call`s/`jp`s another routine that is not in the
+same C file, declare it `extern` and pin its kernel address so sdld encodes the right
+absolute target (no stub bytes emitted):
+
+```sh
+# single pin
+./tools/verify.py src/register_callback_slots.c 1.05e 0 062e \
+    --pin install_callback_slot=066c
+
+# or a pins file (matched bank-0 symbols for 1.05e)
+./tools/verify.py src/register_callback_slots.c 1.05e 0 062e \
+    --pins tools/pins/1.05e.bank0
+```
+
+Pins are still needed for not-yet-decompiled callees, and for matched ones you choose not to
+compile into the same translation unit. verify only compares the bytes SDCC emitted for the
+C file under test (pinned symbols contribute address fixups only).
 
 ## Tools
 

@@ -64,9 +64,9 @@ Foreground boot **enters `Call_000_0de4` and stays there** for the browser. The 
 - **Good for mapping / notes** (this file): done enough to navigate.
 - **Bad as one verify target:** `$0150` and `Call_000_0de4` call many unknowns; need
   callee pins or more matched leaves before byte-identical `main`.
-- **Next matchable bites on this path:** leaves *inside* `0de4` once listed, or the
-  `$0677`/`$06c0` interrupt handlers (frame counter + OAM DMA + `$D6CE` flag).
-  Boot helpers `$062e`–`$069f` (callback lists, wait-vblank, LCD off) are matched.
+- **Next matchable bites on this path:** leaves *inside* `0de4` once listed (callee
+  pins via `verify.py --pin` / `--pins` are available now).
+  Boot IRQ/setup helpers `$062e`–`$06c0` are fully matched.
 
 ## Open questions
 
