@@ -9,9 +9,18 @@ virgin `re/1.05e/kernel.gb`. Confirmed load plumbing stays in
 
 ### Open → load chain
 
-- File open in the browser is **Right**, not A (`$145f` → … → `$1569`).
+- File open in the browser is **A** (`$145f` → … → `$1569`). Kernel joypad
+  byte is post-`swap` (see `docs/launch-trace.md`); bit `$10` means A, not Right.
 - `$1569` far-call chain (bank 1): `$482b` → `$4048` → `$4000` → **`$5e14`**
   (main loader), then FPGA / WRAM stub handoff culminating in **`$7fe0=$80`**.
+
+### Persisted last-ROM path (cart NVRAM `$A300`)
+
+The kernel already saves the **full launch path** of the last-run ROM to cart NVRAM at
+`$A300` (bank 17 + rompage `$03`), and the START overlay reads it back and relaunches it.
+This is a persisted, directory-qualified path in the exact `$c2a6` format the loader consumes
+— a strong candidate hook for fast-launch (read `$A300`, drive the `jr_000_1344`
+split-and-load path, skip the browser). Full trace in [`last-rom.md`](last-rom.md).
 
 ### WRAM the loader already understands
 
@@ -86,7 +95,7 @@ enum succeeds. Those are the next checks if this is revived.
 1. A/B virgin vs any patch on the **same** `sd/card.img`.
 2. Break `$102f` / `$0a43` / `$1569` before inventing more cave logic.
 3. Prefer calling the same prep that `$145f` uses so `$c2a0`/`$c2a6`/`$c3a5`
-   match a normal Right-open, instead of jumping straight to `$1569` with a
+   match a normal A-open, instead of jumping straight to `$1569` with a
    hand-built basename.
 4. Or skip markers entirely: small config file read through existing FatFs
    open helpers once those are identified — more work, clearer semantics.

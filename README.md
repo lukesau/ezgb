@@ -66,6 +66,10 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
   `docs/REGISTERS.md`).
 - Traced the "load ROM and launch" call path through the `$1569` far-call chain to
   bank4 `$448f` / `$7fe0=$80`. See `docs/launch-trace.md`.
+- Fully traced the **last-ROM / START overlay** feature: the last-launched ROM's full path
+  is persisted to cart NVRAM `$A300` (bank 17 + rompage `$03`) on every launch and read back
+  on START; the prompt shows the basename but relaunch uses the full path. See
+  `docs/last-rom.md`.
 - Fast-launch still the goal; a first binary-hook experiment was tried and
   withdrawn — notes in `docs/fast-launch-notes.md`.
 - Matching decompilation in `decomp/` (see `docs/PROGRESS.md`).
@@ -73,9 +77,16 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
 ## Rebuilding a disassembly
 
 ```sh
-cd re/1.05e/disassembly
+cd re/1.05e
+mgbdis kernel.gb                         # uses kernel.sym for human symbol names
+../../scripts/annotate-disasm.py 1.05e   # inject notes from notes.json
+
+cd disassembly
 make            # requires rgbasm/rgblink/rgbfix (rgbds)
 ```
+
+Persistent annotations: [re/1.05e/kernel.sym](re/1.05e/kernel.sym) (names),
+[re/1.05e/notes.json](re/1.05e/notes.json) (comment blocks). See [docs/fram-save-map.md](docs/fram-save-map.md).
 
 ## Matching decompilation (`decomp/`)
 

@@ -1561,6 +1561,10 @@ Jump_001_479b:
     ret
 
 
+; [ezgb]
+; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart SRAM) → commit.
+; With $7FC0=$03, $4000 latches SRAM bank; $A000-$BFFF is battery FRAM.
+
 Call_001_47a7:
     ld bc, $7f00
     ld a, $e1
@@ -4265,6 +4269,9 @@ Jump_001_559a:
     inc sp
     call Call_001_47a7
     add sp, $01
+
+; [ezgb]
+; Pre-launch FRAM meta on page $11: $AA=pending SD backup, savename/banks follow.
 
 Jump_001_55c2:
     ld a, $0d

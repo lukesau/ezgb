@@ -9,7 +9,7 @@ already in good shape; this is live confirmation + argument plumbing.
 
 | Step | Evidence |
 |---|---|
-| File open | Break at `$145f` after Right on `PKMRED.GB` |
+| File open | Break at `$145f` after A on `PKMRED.GB` |
 | Ext match → load | Break at `$1569` (`CALL $078d`); UI shows `Loading...` |
 | SD stream | Many `EZ Jr SD: READ LBA=…` (file LBAs then a long contiguous run) |
 | FPGA config | Commits `$7f37=$03`, `$7fd4=$00`, `$7fc4=$03`, `$7fc1=$3f`, `$7fc2=$00`, `$7fc3=$20` |
@@ -58,6 +58,16 @@ patch attempt are in [`fast-launch-notes.md`](fast-launch-notes.md).
 
 ## Run
 
+Preferred (preloads breakpoints from `scripts/debug/launch.sbd`, links
+`kernel.sym` so SameBoy can resolve labels):
+
+```sh
+./scripts/run-sameboy-debug.sh              # interactive; BPs already set
+./scripts/run-sameboy-debug.sh --trace      # dump WRAM/regs on each stop → scripts/debug/launch-trace.log
+```
+
+Manual equivalent:
+
 ```sh
 export SAMEBOY_EZFLASH_JR_IMG="$PWD/sd/card.img"   # optional if cwd walk finds it
 cd tools/SameBoy
@@ -68,16 +78,25 @@ cd tools/SameBoy
 reachable with Ctrl+C while running. Commands: type `help` in the console
 ([SameBoy debugger docs](https://sameboy.github.io/debugger/)).
 
-In the file browser, **Right** opens (not A). Use an 8.3 name on the SD image
-(e.g. `TETRIS.GB`).
+In the file browser, **A** opens/launches. Use an 8.3 name on the SD image
+(e.g. `TETRIS.GB`). At a stop, paste lines from `scripts/debug/dump-launch.sbd`
+instead of inventing a stack dump each time.
+
+Joypad note: `Call_000_3a16` ends with an extra `swap a`, so the menu byte is
+**not** `hardware.inc` `PADF_*` order. Bit `$10` is **A** (confirm/open), `$20` is
+**B**, `$80` is **START** (opens the last-ROM overlay, see `docs/last-rom.md`),
+`$01`/`$02` are d-pad Right/Left. Older notes that said “Right opens” were
+misreading `$10` as `PADF_RIGHT`.
 
 ## Breakpoints (set first)
 
+Preloaded by `scripts/debug/launch.sbd`. Manual reference:
+
 | Priority | Command | Why |
 |---|---|---|
-| 1 | `breakpoint $145f` | Non-dir file open (after Right) |
+| 1 | `breakpoint $145f` | Non-dir file open (after A) |
 | 2 | `breakpoint $1569` | `.GB`/`.GBC` matched — load sequence starts |
-| 3 | `breakpoint $078d` | Banked far-call trampoline; **log HL and `$2000`/`$d6cf`** before `jp hl` — noisy during SD I/O; add only after `$1569` |
+| 3 | `breakpoint $078d` | Banked far-call trampoline; **log HL and `$2000`/`$d6cf`** before `jp hl` — noisy during SD I/O; add only after `$1569` (`scripts/debug/farcall.sbd`) |
 | 4 | `breakpoint $5e14` | Main loader (bank 1) — only hits after bank switch |
 | 5 | `watch $7f36` / `watch $7fe0` | Prefer these over `$448f` for handoff (WRAM stub) |
 
@@ -128,7 +147,7 @@ trigger (see SameBoy EZ Jr patch).
 
 ```text
 menu idle ($0f8d/$1062)
-  Right → $1392
+  A → $1392
     file → $145f → ext check → $1569
       Call_000_078d × N  (banked helpers + SD READ)
       FPGA config ($7f37/$7fd4/$7fc*)

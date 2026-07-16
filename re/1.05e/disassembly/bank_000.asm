@@ -321,6 +321,9 @@ HeaderComplementCheck::
 HeaderGlobalChecksum::
     db $7b, $57
 
+; [ezgb]
+; Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.
+
 Jump_000_0150:
     di
     ld d, a
@@ -3127,6 +3130,11 @@ Jump_000_0ddd:
 
     jr nz, jr_000_0de4
 
+; [ezgb]
+; SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
+; Launched games never enter here — they write FRAM via normal MBC $A000 only.
+; Early in path: page $11:$A000==$AA and :$A001==$00 → BACKUPSAVE.
+
 Call_000_0de4:
 jr_000_0de4:
     add sp, -$17
@@ -5105,6 +5113,9 @@ Jump_000_182a:
     ret
 
 
+; [ezgb]
+; Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry).
+
 Call_000_1835:
     ld hl, $cc2f
     ld [hl], $00
@@ -5564,6 +5575,9 @@ Call_000_1a77:
     ld e, $00
     ret
 
+
+; [ezgb]
+; SetFpgaPage ($7FC0). Bank-0 leaf; used before RTC reads at $A008+.
 
 Call_000_1a7a:
     ld bc, $7f00

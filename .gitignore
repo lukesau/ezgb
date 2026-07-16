@@ -15,6 +15,11 @@ re/*/disassembly/game_trunc.gb
 re/*/disassembly/game.o
 re/*/disassembly/game.map
 re/*/disassembly/game.sym
+# Symlink created by scripts/run-sameboy-debug.sh (points at game.sym)
+re/*/kernel.sym
+
+# Debugger auto-trace output
+scripts/debug/*.log
 
 # Local microSD for the SameBoy EZ Jr FPGA stub.
 # ROMs, saves, and raw card images are copyrighted / personal — stay out of git.

@@ -50,6 +50,7 @@ Foreground boot **enters `Call_000_0de4` and stays there** for the browser. The 
 | SD + saver + FS | `Call_000_0de4` | Large; not a verify leaf yet (many callees) |
 | Dir list | `Call_000_0a43` | Hides `ezgb.dat` via `$09af` |
 | Idle / menu | inside `Call_000_0de4` (`$0F8D` / `$1062` area) | Browser loop — **does not return** to `$01DF` |
+| START overlay (last ROM) | `Jump_000_1294` → `$129e` | Last-launched ROM persisted at cart `$A300`; see `docs/last-rom.md` |
 | `$01DF` halt | after `call $1835` | Present in ROM but **not hit** on normal boot→menu |
 
 ## Emulator vs cart

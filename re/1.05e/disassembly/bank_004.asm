@@ -5,6 +5,13 @@
 
 SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
 
+; [ezgb]
+; ROM load + soft-boot (kernel FPGA path only — not used by launched games).
+; $7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.
+; $7FE0=$80: reset into loaded ROM; same battery FRAM, FPGA emulates game MBC.
+; See docs/fram-save-map.md and sd/README.md.
+
+
     push af
     ld bc, $7f00
     ld a, $e1
@@ -99,6 +106,9 @@ SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
     add sp, $02
     ret
 
+
+; [ezgb]
+; ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window.
 
 Call_004_40ab:
     push af
@@ -219,6 +229,9 @@ Call_004_40e7:
     add sp, $02
     ret
 
+
+; [ezgb]
+; SetRomLoadCtrl: $7F36 load mode ($00=off, $01=map cmd buf, $03=initiate).
 
 Call_004_4140:
     ld bc, $7f00
