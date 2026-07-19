@@ -21,6 +21,9 @@ re/*/kernel.sym
 # Debugger auto-trace output
 scripts/debug/*.log
 
+# Ephemeral propose-labels / packet output
+re/*/label-proposals.txt
+
 # Local microSD for the SameBoy EZ Jr FPGA stub.
 # ROMs, saves, and raw card images are copyrighted / personal — stay out of git.
 /sd/**

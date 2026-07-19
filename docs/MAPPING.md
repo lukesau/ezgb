@@ -54,10 +54,8 @@ them. Persist through:
 Regen loop (after adding sym names):
 
 ```sh
-cd re/1.05e
-python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../scripts/annotate-disasm.py 1.05e
-cd disassembly && make
+./scripts/regen-disasm.sh 1.05e    # mgbdis → annotate → make → progress → worklist
+# quiet by default; pass -v for full logs
 ```
 
 `make` must stay green (byte-identical aside from known header cosmetics).
@@ -66,29 +64,49 @@ refuses to rewrite the bank files. `annotate-disasm.py` also emits `wram.inc`
 for any `kernel.sym` entries with CPU addr ≥ `$C000` (mgbdis rewrites
 `[wGfxMode]` but does not define those labels itself).
 
+## Agent vs cron (token-cheap)
+
+| Pass | Who | What |
+|---|---|---|
+| Deterministic | `label-cron.sh` (timer, no LLM) | `stamp-bank-clones` → `propose-labels --apply` → `regen-disasm` → `label-packet` |
+| Judgment | Agent (only on cron exit 2 / `needs_judgment: 1`) | Ambiguous WRAM, UI/control flow; apply or reject proposals — **do not re-explore** |
+
+```sh
+./scripts/label-cron.sh 1.05e          # exit 2 = wake agent
+./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+./scripts/propose-labels.py 1.05e      # dry-run; --apply to stamp
+./scripts/regen-disasm.sh 1.05e
+```
+
+Mechanical proposals: IRQ callback wrappers (`ld hl,$Dxxx` / `jp Install|RemoveCallbackSlot`),
+`FarCallTrampoline` 4-byte thunks, `SetFpga*` unlock shapes, bank clones.
+
 ## Daily / session loop
 
 ```text
-┌─ worklist ──► pick target ──► understand ──► name ──► note ──► verify ──┐
-│                                                                         │
-└──────────── scripts/naming-progress.sh  ←── make / SameBoy ─────────────┘
+┌─ packet / proposals ──► apply|reject|judge ──► regen ──┐
+│                                                         │
+└──────────── naming-progress / SameBoy if needed ────────┘
 ```
 
 ### 1. Build a worklist
 
 ```sh
-./scripts/naming-progress.sh 1.05e          # % still unnamed
-./scripts/doc-symbol-coverage.py --top 25   # high fan-in + doc gaps
+./scripts/naming-progress.sh 1.05e
+./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
+# full ranking (includes lib banks):  ./scripts/doc-symbol-coverage.py --top 25
 ```
 
 Good next targets, in order:
 
-1. Rows from `doc-symbol-coverage.py` with high `callsites`
+1. Packet / `doc-symbol-coverage.py --app --frontier-only` (`F` = callee of a named fn)
 2. Callees of something you already named (grow the frontier)
 3. Code next to a unique string you can trigger in the UI
 4. Omega analogue you just watched on hardware ([`omega-jr-compare.md`](omega-jr-compare.md))
 
-Avoid: random mid-bank label with fan-in 1 and no string/UI hook.
+Avoid: random mid-bank label with fan-in 1 and no string/UI hook; re-grepping
+what `label-packet.py` already printed.
 
 ### 2. Understand before renaming
 
@@ -182,7 +200,7 @@ tables for searchability.
 ```sh
 cd re/1.05e/disassembly && make
 ./scripts/naming-progress.sh 1.05e
-./scripts/doc-symbol-coverage.py --top 10
+./scripts/doc-symbol-coverage.py --app --top 10
 ```
 
 Optional: SameBoy break on the new label and confirm the UX path you claimed.
@@ -228,14 +246,15 @@ conservative for the same reason.
 ## Quick reference
 
 ```sh
-# progress
+# progress / packet
 ./scripts/naming-progress.sh 1.05e
-./scripts/doc-symbol-coverage.py --top 25
+./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
 
-# after kernel.sym / notes.json edits
-cd re/1.05e && python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../scripts/annotate-disasm.py 1.05e
-cd disassembly && make
+# mechanical + regen
+./scripts/label-cron.sh 1.05e
+./scripts/propose-labels.py 1.05e --apply
+./scripts/regen-disasm.sh 1.05e
 
 # live
 ./scripts/run-sameboy-debug.sh

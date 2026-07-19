@@ -85,50 +85,55 @@ RST_38::
 
 VBlankInterrupt::
     push hl
-    ld hl, $d6d3
-    jp Jump_000_0067
+    ld hl, wVBlankCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 LCDCInterrupt::
     push hl
-    ld hl, $d6e3
-    jp Jump_000_0067
+    ld hl, wLcdCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 TimerOverflowInterrupt::
     push hl
-    ld hl, $d6f3
-    jp Jump_000_0067
+    ld hl, wTimerCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 SerialTransferCompleteInterrupt::
     push hl
-    ld hl, $d703
-    jp Jump_000_0067
+    ld hl, wSerialCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 JoypadTransitionInterrupt::
     push hl
-    ld hl, $d713
-    jp Jump_000_0067
+    ld hl, wJoypadCallbacks
+    jp RunCallbackList
 
 
-Jump_000_0067:
+; [ezgb]
+; RunCallbackList: shared IRQ dispatcher. HL = list base (uint16 fn ptrs,
+; 0-terminated). Nest via wIntNest; CallHL each slot. Vectors: VBlank→wVBlankCallbacks
+; ($d6d3), LCD→$d6e3, Timer→$d6f3, Serial→$d703, Joypad→$d713.
+
+RunCallbackList::
     push af
 
     push bc
     push de
-    ld a, [$d6d0]
+    ld a, [wIntNest]
     inc a
-    ld [$d6d0], a
+    ld [wIntNest], a
 
 jr_000_0071:
     ld a, [hl+]
@@ -139,15 +144,15 @@ jr_000_0071:
     ld a, [hl-]
     ld l, [hl]
     ld h, a
-    call Call_000_0093
+    call CallHL
     pop hl
     inc hl
     jr jr_000_0071
 
 jr_000_0080:
-    ld a, [$d6d0]
+    ld a, [wIntNest]
     dec a
-    ld [$d6d0], a
+    ld [wIntNest], a
     jr z, jr_000_008e
 
     pop de
@@ -165,7 +170,7 @@ jr_000_008e:
     reti
 
 
-Call_000_0093:
+CallHL::
     jp hl
 
 
@@ -360,10 +365,10 @@ jr_000_0172:
     ld a, d
     ld [$d6c9], a
     ld a, $01
-    ld [$d6cf], a
+    ld [wRomBank], a
     ld [$2000], a
     xor a
-    ld [$d6d0], a
+    ld [wIntNest], a
     call LcdOff
     xor a
     ldh [rSCY], a
@@ -1401,7 +1406,7 @@ Call_000_0376:
     rst RST_38
     rst RST_38
     rst RST_38
-    jp Jump_000_3d21
+    jp EnterGfxMode2
 
 
     rst RST_38
@@ -1476,7 +1481,11 @@ Call_000_0376:
     rst RST_38
     rst RST_38
 
-Call_000_0600:
+; [ezgb]
+; SetGfxMode: wGfxMode=L; jp 4-byte table at $01e2 (mode&3). Wrappers:
+; SetGfxModeStack ($06ef), GetGfxMode ($06f8) returns E=wGfxMode.
+
+SetGfxMode::
     ld a, l
     ld [wGfxMode], a
     and $03
@@ -1488,58 +1497,63 @@ Call_000_0600:
     jp hl
 
 
-Call_000_0610:
-    ld hl, $d6d3
+RemoveVBlankCallback::
+    ld hl, wVBlankCallbacks
     jp RemoveCallbackSlot
 
 
-Call_000_0616:
-    ld hl, $d6e3
+RemoveLcdCallback::
+    ld hl, wLcdCallbacks
     jp RemoveCallbackSlot
 
 
-Call_000_061c:
-    ld hl, $d6f3
+RemoveTimerCallback::
+    ld hl, wTimerCallbacks
     jp RemoveCallbackSlot
 
 
-Call_000_0622:
-    ld hl, $d703
+RemoveSerialCallback::
+    ld hl, wSerialCallbacks
     jp RemoveCallbackSlot
 
 
-Call_000_0628:
-    ld hl, $d713
+RemoveJoypadCallback::
+    ld hl, wJoypadCallbacks
     jp RemoveCallbackSlot
 
 
 ; [ezgb]
-; RegisterVBlankCallback: HL = callback-list base, jp InstallCallbackSlot with
-; BC = VBlankCallback ($0677). Sibling RegisterSerialCallback ($0640) installs
-; SerialCallback ($06c0). See decomp/src/register_callback_slots.c.
+; RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).
+; Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,
+; RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*
+; wrappers at $0610–$0628. See decomp/src/register_callback_slots.c.
 
 RegisterVBlankCallback::
-    ld hl, $d6d3
+    ld hl, wVBlankCallbacks
     jp InstallCallbackSlot
 
 
-Call_000_0634:
-    ld hl, $d6e3
+; [ezgb]
+; RegisterLcdCallback: install BC into wLcdCallbacks ($d6e3). EnterGfxMode1
+; registers $2a6a here and enables STAT LYC after RegisterVBlankCallback.
+
+RegisterLcdCallback::
+    ld hl, wLcdCallbacks
     jp InstallCallbackSlot
 
 
-Call_000_063a:
-    ld hl, $d6f3
+RegisterTimerCallback::
+    ld hl, wTimerCallbacks
     jp InstallCallbackSlot
 
 
 RegisterSerialCallback::
-    ld hl, $d703
+    ld hl, wSerialCallbacks
     jp InstallCallbackSlot
 
 
-Call_000_0646:
-    ld hl, $d713
+RegisterJoypadCallback::
+    ld hl, wJoypadCallbacks
     jp InstallCallbackSlot
 
 
@@ -1712,43 +1726,52 @@ jr_000_06ea:
     ret
 
 
+SetGfxModeStack::
     ld hl, sp+$02
     ld l, [hl]
     ld h, $00
-    call Call_000_0600
+    call SetGfxMode
     ret
 
 
+GetGfxMode::
     ld hl, wGfxMode
     ld e, [hl]
     ret
 
 
-Call_000_06fd:
+; [ezgb]
+; DiNest: di; ++wIntNest ($d6d0). Pair EiNest ($0706) decs and ei when nest hits 0.
+; FarCallTrampoline and critical sections use this nest counter.
+
+DiNest::
     di
-    ld a, [$d6d0]
+    ld a, [wIntNest]
     inc a
-    ld [$d6d0], a
+    ld [wIntNest], a
     ret
 
 
-Call_000_0706:
-    ld a, [$d6d0]
+; [ezgb]
+; EiNest: --wIntNest; ei only when counter reaches 0 (nested DI safe).
+
+EiNest::
+    ld a, [wIntNest]
     dec a
-    ld [$d6d0], a
+    ld [wIntNest], a
     ret nz
 
     ei
     ret
 
 
-    call Call_000_06fd
+    call DiNest
     ld hl, sp+$02
     xor a
     ldh [rIF], a
     ld a, [hl]
     ldh [rIE], a
-    call Call_000_0706
+    call EiNest
     ret
 
 
@@ -1757,7 +1780,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0610
+    call RemoveVBlankCallback
     pop bc
     ret
 
@@ -1767,7 +1790,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0616
+    call RemoveLcdCallback
     pop bc
     ret
 
@@ -1777,7 +1800,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_061c
+    call RemoveTimerCallback
     pop bc
     ret
 
@@ -1787,7 +1810,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0622
+    call RemoveSerialCallback
     pop bc
     ret
 
@@ -1797,7 +1820,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0628
+    call RemoveJoypadCallback
     pop bc
     ret
 
@@ -1817,7 +1840,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0634
+    call RegisterLcdCallback
     pop bc
     ret
 
@@ -1827,7 +1850,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_063a
+    call RegisterTimerCallback
     pop bc
     ret
 
@@ -1847,13 +1870,13 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0646
+    call RegisterJoypadCallback
     pop bc
     ret
 
 
 FarCallTrampoline::
-    call Call_000_06fd
+    call DiNest
     pop hl
     ld e, [hl]
     inc hl
@@ -1863,12 +1886,12 @@ FarCallTrampoline::
     inc hl
     push hl
     ld b, a
-    ld a, [$d6cf]
+    ld a, [wRomBank]
     push af
     ld a, b
-    ld [$d6cf], a
+    ld [wRomBank], a
     ld [$2000], a
-    call Call_000_0706
+    call EiNest
     ld hl, $07ae
     push hl
     ld l, e
@@ -1876,16 +1899,19 @@ FarCallTrampoline::
     jp hl
 
 
-    call Call_000_06fd
+    call DiNest
     pop af
     ld [$2000], a
-    ld [$d6cf], a
-    call Call_000_0706
+    ld [wRomBank], a
+    call EiNest
     ret
 
 
-Call_000_07bc:
-Jump_000_07bc:
+; [ezgb]
+; WaitJoypadSelect: spin ReadJoypad until E==$40 (Select; A=$10 B=$20 START=$80),
+; then Delay($00c8). Gate before FileBrowserEntry.
+
+WaitJoypadSelect::
     call ReadJoypad
     ld c, e
     ld b, $00
@@ -1899,13 +1925,13 @@ Jump_000_07bc:
     jr jr_000_07d1
 
 Jump_000_07ce:
-    jp Jump_000_07bc
+    jp WaitJoypadSelect
 
 
 jr_000_07d1:
     ld hl, $00c8
     push hl
-    call Call_000_3a93
+    call Delay
     add sp, $02
     ret
 
@@ -1930,7 +1956,7 @@ jr_000_07e5:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_07f7:
@@ -1956,7 +1982,7 @@ Call_000_0803:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_0813:
@@ -1980,7 +2006,7 @@ jr_000_081d:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_082f:
@@ -2006,7 +2032,7 @@ jr_000_0839:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_084c:
@@ -2031,7 +2057,7 @@ jr_000_0856:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_0868:
@@ -2055,7 +2081,7 @@ jr_000_0872:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_0883:
@@ -2078,7 +2104,7 @@ jr_000_088d:
     ld a, c
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_089d:
@@ -2099,7 +2125,7 @@ jr_000_08a7:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_000_08b5:
@@ -2178,7 +2204,7 @@ jr_000_08fd:
     push bc
     push bc
     inc sp
-    call Call_000_2770
+    call DrawGlyphAdvance
     add sp, $01
     pop bc
     jp Jump_000_0923
@@ -2198,7 +2224,7 @@ Jump_000_0909:
     ld a, $20
     push af
     inc sp
-    call Call_000_2770
+    call DrawGlyphAdvance
     add sp, $01
     pop bc
 
@@ -2230,13 +2256,13 @@ Jump_000_0927:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$01
     ld c, l
     ld b, h
     push bc
-    call Call_000_2d95
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -2410,7 +2436,7 @@ jr_000_0a15:
     ret
 
 
-Call_000_0a19:
+MemSet8_B0::
     push af
     ld hl, sp+$04
     ld c, [hl]
@@ -2767,7 +2793,11 @@ jr_000_0bc5:
     ld [hl], h
     nop
 
-Call_000_0bd1:
+; [ezgb]
+; DrawDirEntryLabel: browser row label. If size u32>$14, map bank via $4000, measure
+; name at $c2a0+ofs, format into $c4a4 (farcall), DrawString. Skips tiny entries.
+
+DrawDirEntryLabel::
     add sp, -$10
     ld a, $14
     ld hl, sp+$12
@@ -2867,7 +2897,7 @@ jr_000_0c0a:
     ld c, l
     ld b, h
     push bc
-    call Call_000_2d95
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -2996,7 +3026,7 @@ Jump_000_0c8f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282c
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3060,7 +3090,7 @@ Jump_000_0d2c:
     push bc
     ld hl, $c4a4
     push hl
-    call Call_000_2cd3
+    call Strncpy
     add sp, $06
     ld hl, $0de0
     push hl
@@ -3073,7 +3103,7 @@ Jump_000_0d2c:
     inc b
     ld hl, $c4a4
     push hl
-    call Call_000_2d95
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -3103,7 +3133,7 @@ Jump_000_0d2c:
     ld [hl], d
     ld hl, $c4a4
     push hl
-    call Call_000_2d95
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -3122,7 +3152,7 @@ Jump_000_0d2c:
     ld l, a
     push hl
     push bc
-    call Call_000_2cd3
+    call Strncpy
     add sp, $06
     ld hl, sp+$18
     ld c, [hl]
@@ -3409,7 +3439,7 @@ Jump_000_0f08:
     push bc
     ld hl, $16e2
     push hl
-    call Call_000_19b1
+    call FarCall_09_77ff
     add sp, $02
     pop bc
     ld hl, sp+$11
@@ -3467,7 +3497,7 @@ Jump_000_0f5b:
     inc sp
     ld hl, $c2a6
     push hl
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     ld de, $c2a6
     ld a, $2f
@@ -3544,7 +3574,7 @@ Jump_000_0ff4:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     ld c, $db
     ld b, $c9
@@ -3554,7 +3584,7 @@ Jump_000_0ff4:
     push af
     inc sp
     push bc
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     ld bc, $c9f1
     ld e, c
@@ -3730,7 +3760,7 @@ Jump_000_10df:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_0bd1
+    call DrawDirEntryLabel
     add sp, $08
 
 Jump_000_1107:
@@ -3738,7 +3768,7 @@ Jump_000_1107:
     ld [hl], $00
     ld hl, $002d
     push hl
-    call Call_000_3a93
+    call Delay
     add sp, $02
     call ReadJoypad
     ld b, e
@@ -4035,7 +4065,7 @@ jr_000_1274:
     ld [hl-], a
     nop
     push hl
-    call Call_000_3a93
+    call Delay
     add sp, $02
     jp FileBrowserEntry
 
@@ -4405,7 +4435,7 @@ Jump_000_145f:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_0a19
+    call MemSet8_B0
     add sp, $05
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4604,7 +4634,7 @@ Jump_000_1588:
 
 
 jr_000_158b:
-    call Call_000_07bc
+    call WaitJoypadSelect
     jp FileBrowserEntry
 
 
@@ -4694,7 +4724,7 @@ Jump_000_1591:
     inc b
     nop
     call LcdOff
-    call Call_000_06fd
+    call DiNest
     ld hl, sp+$16
     ld a, [hl]
     push af
@@ -4762,7 +4792,7 @@ jr_000_1639:
     inc sp
     ld hl, $c2a6
     push hl
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     pop bc
     ld a, c
@@ -4857,7 +4887,11 @@ Jump_000_16ab:
     ld b, d
     nop
 
-Call_000_16f4:
+; [ezgb]
+; U32ToAscii_B0: bank0 near-call copy of U32ToAscii (04:44f7). Same stack ABI;
+; used from bank0/1/8 UI chrome.
+
+U32ToAscii_B0::
     add sp, -$33
     ld hl, sp+$12
     ld a, l
@@ -4956,7 +4990,7 @@ jr_000_1739:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282c
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$10
@@ -4988,7 +5022,7 @@ jr_000_1739:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2832
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -5301,7 +5335,12 @@ jr_000_1911:
     ld c, e
     nop
 
-Call_000_1926:
+; [ezgb]
+; FarCall_06_7309: stack thunk → bank6:$7309 via FarCallTrampoline (embedded
+; addr/bank after call). Siblings: FarCall_06_779a ($1941), FarCall_03_76cc
+; ($1985), FarCall_03_768f ($19a1), FarCall_09_77ff ($19b1).
+
+FarCall_06_7309::
     ld hl, sp+$06
     ld a, [hl]
     push af
@@ -5325,7 +5364,7 @@ Call_000_1926:
     ret
 
 
-Call_000_1941:
+FarCall_06_779a::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
@@ -5354,7 +5393,7 @@ Call_000_1941:
     ret
 
 
-Call_000_1963:
+FarCall_07_7739::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
@@ -5384,7 +5423,11 @@ Call_000_1963:
     ret
 
 
-Call_000_1985:
+; [ezgb]
+; FarCall_03_76cc: 3-arg farcall to bank3:$76cc. Callers in bank1 push $ca0f
+; (DIR/path object) plus two more words — FatFs-shaped API still TBD.
+
+FarCall_03_76cc::
     ld hl, sp+$06
     ld a, [hl+]
     ld h, [hl]
@@ -5407,7 +5450,7 @@ Call_000_1985:
     ret
 
 
-Call_000_19a1:
+FarCall_03_768f::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
@@ -5422,7 +5465,7 @@ Call_000_19a1:
     ret
 
 
-Call_000_19b1:
+FarCall_09_77ff::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
@@ -5437,7 +5480,7 @@ Call_000_19b1:
     ret
 
 
-Call_000_19c1:
+FarCall_05_4279::
     push af
     push af
     ld hl, sp+$0a
@@ -5483,7 +5526,11 @@ Call_000_19c1:
     ret
 
 
-Call_000_19f5:
+; [ezgb]
+; FarCall_05_4378: stack thunk via FarCallTrampoline to 05:4378.
+; Auto-proposed by scripts/propose-labels.py.
+
+FarCall_05_4378::
     push af
     push af
     ld hl, sp+$0a
@@ -5529,17 +5576,31 @@ Call_000_19f5:
     ret
 
 
-Call_000_1a29:
+; [ezgb]
+; DiskStatus(pdrv): FatFs disk_status stub — ld e,0 / ret (always ready).
+; Callers test E bits STA_NOINIT ($01) / STA_PROTECT ($04) and map to FR_
+; codes ($0c FR_NOT_ENABLED, $0a FR_WRITE_PROTECTED). Sibling DiskInitialize
+; ($1a2c) is the same body; ReturnZero ($1a77) is the no-arg FR_OK stub.
+
+DiskStatus::
     ld e, $00
     ret
 
 
-Call_000_1a2c:
+; [ezgb]
+; DiskInitialize(pdrv): FatFs disk_initialize stub — same ld e,0 / ret as
+; DiskStatus. Mount path maps STA_NOINIT -> FR_NOT_READY ($03).
+
+DiskInitialize::
     ld e, $00
     ret
 
 
-Call_000_1a2f:
+; [ezgb]
+; FarCall stub: repack stack args, FarCallTrampoline to Far_02_4027 (SD sector
+; read), return E. Sibling FarCall_02_41d5 ($1a53) is the write path.
+
+FarCall_02_4027::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -5571,7 +5632,11 @@ Call_000_1a2f:
     ret
 
 
-Call_000_1a53:
+; [ezgb]
+; FarCall stub: repack stack args, FarCallTrampoline to Far_02_41d5 (SD sector
+; write), return E. Sibling FarCall_02_4027 ($1a2f) is the read path.
+
+FarCall_02_41d5::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -6325,7 +6390,13 @@ RtcReadPage::
     ret
 
 
-Call_000_1e1a:
+; [ezgb]
+; MapCp437(code, dir): CP437 <-> Unicode for codes $80-$FF. Stack: uint16 code,
+; uint16 dir. dir!=0: CP437->Unicode via Cp437UnicodeTable ($1ed5); dir==0:
+; linear search Unicode->CP437. codes < $80 pass through. Returns DE (=BC).
+; Table is exact IBM CP437 high-half (128 LE uint16s). ~12 callers in banks 3/5/6/7/9.
+
+MapCp437::
     push af
     push af
     dec sp
@@ -6384,7 +6455,7 @@ Jump_000_1e5a:
     ld b, $00
     sla c
     rl b
-    ld hl, $1ed5
+    ld hl, Cp437UnicodeTable
     add hl, bc
     ld c, l
     ld b, h
@@ -6426,7 +6497,7 @@ Jump_000_1e85:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $1ed5
+    ld hl, Cp437UnicodeTable
     add hl, bc
     ld c, l
     ld b, h
@@ -6484,6 +6555,11 @@ Jump_000_1ed0:
     ret
 
 
+; [ezgb]
+; Cp437UnicodeTable: 128 LE uint16s, CP437 $80+$i -> Unicode. Perfect match to
+; IBM code page 437 (e.g. $80->U+00C7, $B0->U+2591, $FF->U+00A0).
+
+Cp437UnicodeTable::
     rst RST_00
     nop
     db $fc
@@ -6725,7 +6801,13 @@ jr_000_1f82:
     and b
     nop
 
-Call_000_1fd5:
+; [ezgb]
+; WToUpper(code): FatFs-shaped WCHAR toupper. Stack uint16; returns DE.
+; ASCII: 'a'-'z' -= $20. Else binary-search sorted keys at $CC33 (~$1EE entries)
+; and replace from parallel table at $D00F (both filled via RleUnpack). Used for
+; case-insensitive path/name compare in banks 3/5/6/7/9.
+
+WToUpper::
     push af
     push af
     push af
@@ -6920,7 +7002,12 @@ Jump_000_20b3:
     ret
 
 
-Call_000_20bb:
+; [ezgb]
+; RleUnpack: inline RLE decompress. HL=dest on entry; stream follows the call
+; (pop return addr as src). Bit7 run vs literal; 0 terminates; ret past stream.
+; Bank1 uses it to pack WToUpper tables into $CC33/$D00F and other WRAM blobs.
+
+RleUnpack::
     ld c, l
     ld b, h
     pop hl
@@ -6986,7 +7073,7 @@ jr_000_20ec:
 
 AdvanceTextCursor::
     push hl
-    ld hl, $d732
+    ld hl, wTextCursorX
     ld a, $13
     cp [hl]
     jr z, jr_000_2100
@@ -6996,7 +7083,7 @@ AdvanceTextCursor::
 
 jr_000_2100:
     ld [hl], $00
-    ld hl, $d733
+    ld hl, wTextCursorY
     ld a, $11
     cp [hl]
     jr z, jr_000_210d
@@ -7012,15 +7099,20 @@ jr_000_210f:
     ret
 
 
-Call_000_2111:
+; [ezgb]
+; DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline
+; (CirclePlot8) vs filled chords (CircleFillH/CircleFillV). Error in wCircleErr
+; ($d72c). Stack wrapper DrawCircleXY ($27a0).
+
+DrawCircle::
     ld a, b
-    ld [$d725], a
+    ld [wDrawX0], a
     ld a, c
-    ld [$d727], a
+    ld [wDrawY0], a
     xor a
-    ld [$d726], a
+    ld [wDrawX1], a
     ld a, d
-    ld [$d728], a
+    ld [wDrawY1], a
     cpl
     ld l, a
     ld h, $ff
@@ -7030,35 +7122,35 @@ Call_000_2111:
     ld a, l
     ld [$d72d], a
     ld a, h
-    ld [$d72c], a
+    ld [wCircleErr], a
 
 Jump_000_2132:
 jr_000_2132:
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld b, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     sub b
     ret c
 
-    ld a, [$d724]
+    ld a, [wDrawRectFill]
     or a
-    call z, Call_000_2248
-    ld a, [$d72c]
+    call z, CirclePlot8
+    ld a, [wCircleErr]
     bit 7, a
     jr z, jr_000_2176
 
-    ld a, [$d724]
+    ld a, [wDrawRectFill]
     or a
-    call nz, Call_000_21b4
-    ld a, [$d726]
+    call nz, CircleFillH
+    ld a, [wDrawX1]
     inc a
-    ld [$d726], a
-    ld a, [$d72c]
+    ld [wDrawX1], a
+    ld a, [wCircleErr]
     ld b, a
     ld a, [$d72d]
     ld c, a
     ld h, $00
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld l, a
     add hl, hl
     add hl, hl
@@ -7066,28 +7158,28 @@ jr_000_2132:
     ld bc, $0006
     add hl, bc
     ld a, h
-    ld [$d72c], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d72d], a
     jr jr_000_2132
 
 jr_000_2176:
-    ld a, [$d724]
+    ld a, [wDrawRectFill]
     or a
-    call nz, Call_000_21ec
-    ld a, [$d726]
+    call nz, CircleFillV
+    ld a, [wDrawX1]
     inc a
-    ld [$d726], a
+    ld [wDrawX1], a
     ld b, $00
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld c, a
     ld h, $ff
-    ld a, [$d728]
+    ld a, [wDrawY1]
     cpl
     ld l, a
     inc hl
     add hl, bc
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     ld b, a
     ld a, [$d72d]
     ld c, a
@@ -7097,23 +7189,23 @@ jr_000_2176:
     ld bc, $000a
     add hl, bc
     ld a, h
-    ld [$d72c], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d72d], a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     dec a
-    ld [$d728], a
+    ld [wDrawY1], a
     jp Jump_000_2132
 
 
-Call_000_21b4:
-    ld a, [$d725]
+CircleFillH::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -7128,7 +7220,7 @@ Call_000_21b4:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     ld a, d
@@ -7148,20 +7240,20 @@ Call_000_21b4:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     ret
 
 
-Call_000_21ec:
-    ld a, [$d725]
+CircleFillV::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -7176,7 +7268,7 @@ Call_000_21ec:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     push bc
@@ -7192,7 +7284,7 @@ Call_000_21ec:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     ld a, d
@@ -7212,7 +7304,7 @@ Call_000_21ec:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     push bc
@@ -7228,20 +7320,23 @@ Call_000_21ec:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_239c
+    call DrawLine
     pop de
     pop bc
     ret
 
 
-Call_000_2248:
-    ld a, [$d725]
+; [ezgb]
+; CirclePlot8: plot the 8 symmetric pixels for current (x,y) on the circle.
+
+CirclePlot8::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -7251,7 +7346,7 @@ Call_000_2248:
     ld a, c
     sub e
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7262,7 +7357,7 @@ Call_000_2248:
     ld a, c
     sub d
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7273,7 +7368,7 @@ Call_000_2248:
     ld a, c
     add e
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7284,7 +7379,7 @@ Call_000_2248:
     ld a, c
     add d
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     ld a, d
@@ -7302,7 +7397,7 @@ Call_000_2248:
     ld a, c
     sub e
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7313,7 +7408,7 @@ Call_000_2248:
     ld a, c
     add d
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7324,7 +7419,7 @@ Call_000_2248:
     ld a, c
     add e
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -7335,136 +7430,144 @@ Call_000_2248:
     ld a, c
     sub d
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop de
     pop bc
     ret
 
 
-Call_000_22c6:
-    ld a, [$d725]
+; [ezgb]
+; DrawRectImpl: normalize wDrawX0/X1 and wDrawY0/Y1, outline via four DrawLine
+; calls, optional fill when wDrawRectFill ($d724) nonzero. Called by DrawRect.
+
+DrawRectImpl::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld c, a
     sub b
     jr nc, jr_000_22d9
 
     ld a, c
-    ld [$d725], a
+    ld [wDrawX0], a
     ld a, b
-    ld [$d726], a
+    ld [wDrawX1], a
 
 jr_000_22d9:
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld b, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld c, a
     sub b
     jr nc, jr_000_22ec
 
     ld a, c
-    ld [$d727], a
+    ld [wDrawY0], a
     ld a, b
-    ld [$d728], a
+    ld [wDrawY1], a
 
 jr_000_22ec:
-    ld a, [$d725]
+    ld a, [wDrawX0]
     ld b, a
     ld d, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld e, a
-    call Call_000_239c
-    ld a, [$d726]
+    call DrawLine
+    ld a, [wDrawX1]
     ld b, a
     ld d, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld e, a
-    call Call_000_239c
-    ld a, [$d725]
+    call DrawLine
+    ld a, [wDrawX0]
     inc a
-    ld [$d725], a
-    ld a, [$d726]
+    ld [wDrawX0], a
+    ld a, [wDrawX1]
     dec a
-    ld [$d726], a
-    ld a, [$d725]
+    ld [wDrawX1], a
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
     ld e, a
-    call Call_000_239c
-    ld a, [$d725]
+    call DrawLine
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     ld c, a
     ld e, a
-    call Call_000_239c
-    ld a, [$d724]
+    call DrawLine
+    ld a, [wDrawRectFill]
     or a
     ret z
 
-    ld a, [$d725]
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     sub b
     ret c
 
-    ld a, [$d727]
+    ld a, [wDrawY0]
     inc a
-    ld [$d727], a
-    ld a, [$d728]
+    ld [wDrawY0], a
+    ld a, [wDrawY1]
     dec a
-    ld [$d728], a
-    ld a, [$d727]
+    ld [wDrawY1], a
+    ld a, [wDrawY0]
     ld b, a
-    ld a, [$d728]
+    ld a, [wDrawY1]
     sub b
     ret c
 
-    ld a, [$d734]
+    ld a, [wDrawColor]
     ld c, a
-    ld a, [$d735]
-    ld [$d734], a
+    ld a, [wDrawColorB]
+    ld [wDrawColor], a
     ld a, c
-    ld [$d735], a
+    ld [wDrawColorB], a
 
 jr_000_236d:
-    ld a, [$d725]
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d726]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     ld c, a
     ld e, a
-    call Call_000_239c
-    ld a, [$d728]
+    call DrawLine
+    ld a, [wDrawY1]
     ld b, a
-    ld a, [$d727]
+    ld a, [wDrawY0]
     cp b
     jr z, jr_000_238d
 
     inc a
-    ld [$d727], a
+    ld [wDrawY0], a
     jr jr_000_236d
 
 jr_000_238d:
-    ld a, [$d734]
+    ld a, [wDrawColor]
     ld c, a
-    ld a, [$d735]
-    ld [$d734], a
+    ld a, [wDrawColorB]
+    ld [wDrawColor], a
     ld a, c
-    ld [$d735], a
+    ld [wDrawColorB], a
     ret
 
 
-Call_000_239c:
+; [ezgb]
+; DrawLine: Bresenham line in mode-1 framebuffer. Register ABI: BC=(x0,y0), DE=(x1,y1).
+; Uses GfxRowTable + ApplyPixel; also called from DrawRect edge walks and circle chords.
+
+DrawLine::
     ld a, c
     sub e
     jr nc, jr_000_23a2
@@ -7517,7 +7620,7 @@ jr_000_23ce:
 
 jr_000_23d0:
     ld [$d72b], a
-    ld hl, $2fbb
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7551,7 +7654,7 @@ jr_000_23d0:
     inc hl
     add hl, de
     ld a, h
-    ld [$d72c], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d72d], a
     ld a, [$d729]
@@ -7582,7 +7685,7 @@ jr_000_23d0:
 
 Jump_000_2433:
     rrc c
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     bit 7, a
     jr z, jr_000_2464
 
@@ -7593,7 +7696,7 @@ Jump_000_2433:
     ld a, b
     cpl
     ld c, a
-    call Call_000_264a
+    call ApplyPixel
     dec hl
     ld c, $80
     ld b, c
@@ -7604,11 +7707,11 @@ jr_000_244b:
     ld a, [$d72f]
     add d
     ld [$d72d], a
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d72e]
     adc d
-    ld [$d72c], a
+    ld [wCircleErr], a
     pop de
     jr jr_000_24a5
 
@@ -7618,7 +7721,7 @@ jr_000_2464:
     ld a, b
     cpl
     ld c, a
-    call Call_000_264a
+    call ApplyPixel
     ld a, [$d72b]
     or a
     jr z, jr_000_247e
@@ -7650,11 +7753,11 @@ jr_000_248c:
     ld a, [$d731]
     add d
     ld [$d72d], a
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d730]
     adc d
-    ld [$d72c], a
+    ld [wCircleErr], a
     pop bc
     ld b, c
     pop de
@@ -7679,7 +7782,7 @@ jr_000_24b0:
     ld a, b
     cpl
     ld c, a
-    jp Jump_000_264a
+    jp ApplyPixel
 
 
 Jump_000_24bd:
@@ -7722,7 +7825,7 @@ jr_000_24e3:
     cpl
     ld c, a
     push de
-    call Call_000_264a
+    call ApplyPixel
     ld de, $000f
     add hl, de
     pop de
@@ -7740,7 +7843,7 @@ jr_000_24ef:
     cpl
     ld b, a
     push de
-    call Call_000_264a
+    call ApplyPixel
     ld de, $000f
     add hl, de
     pop de
@@ -7765,7 +7868,7 @@ jr_000_2513:
     ld b, a
     cpl
     ld c, a
-    jp Jump_000_264a
+    jp ApplyPixel
 
 
 Jump_000_2519:
@@ -7799,7 +7902,7 @@ jr_000_2534:
 
 jr_000_2536:
     ld [$d72b], a
-    ld hl, $2fbb
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7836,7 +7939,7 @@ jr_000_2536:
     inc hl
     add hl, de
     ld a, h
-    ld [$d72c], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d72d], a
     ld a, [$d72a]
@@ -7871,7 +7974,7 @@ jr_000_259e:
     ld a, b
     cpl
     ld c, a
-    call Call_000_264a
+    call ApplyPixel
     inc hl
     ld a, l
     and $0f
@@ -7882,7 +7985,7 @@ jr_000_259e:
 
 jr_000_25b0:
     pop bc
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     bit 7, a
     jr z, jr_000_25d0
 
@@ -7891,11 +7994,11 @@ jr_000_25b0:
     ld a, [$d72f]
     add d
     ld [$d72d], a
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d72e]
     adc d
-    ld [$d72c], a
+    ld [wCircleErr], a
     jr jr_000_2602
 
 jr_000_25d0:
@@ -7925,11 +8028,11 @@ jr_000_25ec:
     ld a, [$d731]
     add d
     ld [$d72d], a
-    ld a, [$d72c]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d730]
     adc d
-    ld [$d72c], a
+    ld [wCircleErr], a
 
 jr_000_2602:
     pop de
@@ -7939,7 +8042,7 @@ jr_000_2602:
     ld a, b
     cpl
     ld c, a
-    jp Jump_000_264a
+    jp ApplyPixel
 
 
 Jump_000_260c:
@@ -7957,7 +8060,7 @@ Jump_000_260c:
 
 jr_000_261a:
     push de
-    call Call_000_264a
+    call ApplyPixel
     inc hl
     ld a, l
     and $0f
@@ -7973,8 +8076,13 @@ jr_000_2628:
 
     jr jr_000_261a
 
-Call_000_262d:
-    ld hl, $2fbb
+; [ezgb]
+; PlotPixel: set one pixel in the mode-1 framebuffer. Register ABI: B=x, C=y.
+; Uses GfxRowTable ($2fbb) for scanline->VRAM; x bit from ROM $0010 masks.
+; Falls into ApplyPixel ($264a). Sibling GetPixel ($26cc) reads the same address.
+
+PlotPixel::
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7997,11 +8105,15 @@ Call_000_262d:
     cpl
     ld c, a
 
-Call_000_264a:
-Jump_000_264a:
-    ld a, [$d734]
+; [ezgb]
+; ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW.
+; wDrawOp ($D723): 0=replace, 1=OR, 2=XOR, 3=AND-clear.
+; wDrawColor ($D734) bits 0/1 select which 2bpp planes to touch (color 0-3).
+
+ApplyPixel::
+    ld a, [wDrawColor]
     ld d, a
-    ld a, [$d723]
+    ld a, [wDrawOp]
     cp $01
     jr z, jr_000_267e
 
@@ -8126,8 +8238,11 @@ jr_000_26bf:
     ret
 
 
-Call_000_26cc:
-    ld hl, $2fbb
+; [ezgb]
+; GetPixel: same x/y address math as PlotPixel; returns plane bits in E (0-3).
+
+GetPixel::
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -8176,10 +8291,15 @@ jr_000_26ff:
     ret
 
 
-Call_000_2701:
-    ld hl, $2fbb
+; [ezgb]
+; DrawGlyph(C=tile): blit 8×8 from font sheet $3206 into framebuffer at
+; wTextCursorX/Y via GfxRowTable. DrawGlyphAdvance ($2770) wraps this +
+; AdvanceTextCursor.
+
+DrawGlyph::
+    ld hl, GfxRowTable
     ld d, $00
-    ld a, [$d733]
+    ld a, [wTextCursorY]
     rlca
     rlca
     rlca
@@ -8190,7 +8310,7 @@ Call_000_2701:
     inc hl
     ld h, [hl]
     ld l, b
-    ld a, [$d732]
+    ld a, [wTextCursorX]
     rlca
     rlca
     rlca
@@ -8211,7 +8331,7 @@ Call_000_2701:
     ld e, l
     ld h, b
     ld l, c
-    ld a, [$d734]
+    ld a, [wDrawColor]
     ld c, a
 
 jr_000_2730:
@@ -8219,7 +8339,7 @@ jr_000_2730:
     inc de
     push de
     push hl
-    ld hl, $d735
+    ld hl, wDrawColorB
     ld l, [hl]
     ld b, a
     xor a
@@ -8272,18 +8392,18 @@ jr_000_2754:
 
 
 ; [ezgb]
-; SetTextCursor: set text cursor col/row ($D732/$D733); feeds DrawString.
+; SetTextCursor: store stack col/row into wTextCursorX/Y ($d732/$d733).
 
 SetTextCursor::
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d732], a
+    ld [wTextCursorX], a
     ld a, [hl+]
-    ld [$d733], a
+    ld [wTextCursorY], a
     ret
 
 
-Call_000_2770:
+DrawGlyphAdvance::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -8291,7 +8411,7 @@ Call_000_2770:
     ld hl, sp+$04
     ld a, [hl]
     ld c, a
-    call Call_000_2701
+    call DrawGlyph
     call AdvanceTextCursor
     pop bc
     ret
@@ -8303,26 +8423,30 @@ Call_000_2770:
     ld b, a
     ld a, [hl+]
     ld c, a
-    call Call_000_26cc
+    call GetPixel
     pop bc
     ret
 
 
 ; [ezgb]
-; StoreDrawParams: store draw params $D734/$D735/$D723; called widely (~73 callers)
-; before tile/string helpers.
+; StoreDrawParams: store wDrawColor/wDrawColorB/wDrawOp ($D734/$D735/$D723);
+; called widely (~73 callers) before tile/string/pixel helpers.
 
 StoreDrawParams::
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d734], a
+    ld [wDrawColor], a
     ld a, [hl+]
-    ld [$d735], a
+    ld [wDrawColorB], a
     ld a, [hl]
-    ld [$d723], a
+    ld [wDrawOp], a
     ret
 
 
+; [ezgb]
+; DrawCircleXY: stack (x, y, r, fill); ensure EnterGfxMode1 then DrawCircle.
+
+DrawCircleXY::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -8335,16 +8459,16 @@ StoreDrawParams::
     ld a, [hl+]
     ld d, a
     ld a, [hl]
-    ld [$d724], a
-    call Call_000_2111
+    ld [wDrawRectFill], a
+    call DrawCircle
     pop bc
     ret
 
 
 ; [ezgb]
-; DrawRect: if wGfxMode!=1 call EnterGfxMode1; copy 5 stack args into $D725/$D727/
-; $D726/$D728/$D724 (two axis pairs + byte); call $22c6 to draw the rect.
-; C-shape ~ (u8, u16, u16). Used e.g. from BatteryCheck chrome; generic (many callers).
+; DrawRect: if wGfxMode!=1 call EnterGfxMode1; copy 5 stack args into wDrawX0/Y0/
+; X1/Y1/wDrawRectFill; call DrawRectImpl. C-shape ~ (u8 fill, u16, u16).
+; Used e.g. from BatteryCheck chrome; generic (many callers).
 
 DrawRect::
     push bc
@@ -8353,21 +8477,25 @@ DrawRect::
     call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
-    ld [$d725], a
+    ld [wDrawX0], a
     ld a, [hl+]
-    ld [$d727], a
+    ld [wDrawY0], a
     ld a, [hl+]
-    ld [$d726], a
+    ld [wDrawX1], a
     ld a, [hl+]
-    ld [$d728], a
+    ld [wDrawY1], a
     ld a, [hl]
-    ld [$d724], a
-    call Call_000_22c6
+    ld [wDrawRectFill], a
+    call DrawRectImpl
     pop bc
     ret
 
 
-Call_000_27de:
+; [ezgb]
+; DrawLineXY: stack ABI (x0,y0,x1,y1); ensure EnterGfxMode1 then DrawLine (BC/DE).
+; Thin C wrapper; e.g. bank8 chrome draws horizontal rules via this.
+
+DrawLineXY::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -8381,12 +8509,16 @@ Call_000_27de:
     ld d, a
     ld a, [hl+]
     ld e, a
-    call Call_000_239c
+    call DrawLine
     pop bc
     ret
 
 
-Call_000_27f6:
+; [ezgb]
+; PlotPixelXY: stack ABI (x, y); ensure EnterGfxMode1 then PlotPixel (B/C).
+; Thin C wrapper over PlotPixel; used by bit-pattern glyph drawers.
+
+PlotPixelXY::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -8396,11 +8528,16 @@ Call_000_27f6:
     ld b, a
     ld a, [hl+]
     ld c, a
-    call Call_000_262d
+    call PlotPixel
     pop bc
     ret
 
 
+; [ezgb]
+; PlotPixelEx: stack (x, y, wDrawColor, wDrawOp); set params then PlotPixel.
+; Like PlotPixelXY but also writes draw color/op before the blit.
+
+PlotPixelEx::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -8411,31 +8548,51 @@ Call_000_27f6:
     ld a, [hl+]
     ld c, a
     ld a, [hl+]
-    ld [$d734], a
+    ld [wDrawColor], a
     ld a, [hl+]
-    ld [$d723], a
-    call Call_000_262d
+    ld [wDrawOp], a
+    call PlotPixel
     pop bc
     ret
 
 
-Call_000_2826:
+; [ezgb]
+; U32Mul: SDCC runtime __mullong. Stub jp $2dc1; multiplies two stack u32s,
+; returns product in HL:DE. Body zeros a 4-byte acc then Call_000_2e40 (B=4)
+; which uses Call_000_2bb6 (8x8->16 shift-add mul) per byte. Callers e.g. bank1
+; scale time fields by 24/60. Sibling stubs: S32Div/U32Div/S32Mod/U32Mod.
+
+U32Mul::
     jp Jump_000_2dc1
 
 
-Call_000_2829:
+; [ezgb]
+; S32Div: SDCC __divslong stub jp $29e6. Signed long ÷; quotient in HL:DE.
+; Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine.
+
+S32Div::
     jp Jump_000_29e6
 
 
-Call_000_282c:
+; [ezgb]
+; U32Div: SDCC __divulong stub jp $2a77. Unsigned long ÷ via Call_000_2de0;
+; returns quotient from scratch. U32ToAscii uses this with radix.
+
+U32Div::
     jp Jump_000_2a77
 
 
-Call_000_282f:
+; [ezgb]
+; S32Mod: SDCC __modslong stub jp $2b28. Signed long %; remainder in HL:DE.
+
+S32Mod::
     jp Jump_000_2b28
 
 
-Call_000_2832:
+; [ezgb]
+; U32Mod: SDCC __modulong stub jp $2bfc. Unsigned long %; U32ToAscii digit path.
+
+U32Mod::
     jp Jump_000_2bfc
 
 
@@ -8446,12 +8603,12 @@ Call_000_2832:
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28a9
+    jp S16Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28e9
+    jp U16Div
 
 
     ld a, $05
@@ -8461,7 +8618,7 @@ Call_000_2832:
 
     ld a, $05
     rst RST_08
-    jp Jump_000_288f
+    jp S8Div
 
 
     ld a, $05
@@ -8471,27 +8628,27 @@ Call_000_2832:
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28cf
+    jp U8Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_289d
+    jp S8Mod
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28dd
+    jp U8Mod
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28bd
+    jp S16Mod
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28fd
+    jp U16Mod
 
 
     ld a, $05
@@ -8514,31 +8671,35 @@ Call_000_2832:
     jp U32Shl
 
 
-Jump_000_288f:
+; [ezgb]
+; S8Div: SDCC __divschar. Stack two s8; sex via S16DivSex8; quotient in DE.
+; Siblings: S8Mod $289d, S16Div $28a9, S16Mod $28bd.
+
+S8Div::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_290f
+    call S16DivSex8
     ld e, c
     ld d, b
     ret
 
 
-Jump_000_289d:
+S8Mod::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_290f
+    call S16DivSex8
     ret
 
 
-Jump_000_28a9:
+S16Div::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -8551,13 +8712,13 @@ Jump_000_28a9:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_2917
+    call S16DivMod
     ld e, c
     ld d, b
     ret
 
 
-Jump_000_28bd:
+S16Mod::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -8570,38 +8731,45 @@ Jump_000_28bd:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_2917
+    call S16DivMod
     ret
 
 
-Call_000_28cf:
-Jump_000_28cf:
+; [ezgb]
+; U8Div: SDCC __divuchar. Stack two u8; zero-extends via U16DivZext8; returns
+; quotient in DE. Bank4 decimal digit path: push 10 / n then call (n/10).
+
+U8Div::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2949
+    call U16DivZext8
     ld e, c
     ld d, b
     ret
 
 
-Call_000_28dd:
-Jump_000_28dd:
+; [ezgb]
+; U8Mod: SDCC __moduchar. Same stack as U8Div; returns remainder in DE (n%10).
+
+U8Mod::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2949
+    call U16DivZext8
     ret
 
 
-Call_000_28e9:
-Jump_000_28e9:
+; [ezgb]
+; U16Div: SDCC __divuint. Stack two u16; U16DivMod engine; quotient in DE.
+
+U16Div::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -8614,14 +8782,16 @@ Jump_000_28e9:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_294c
+    call U16DivMod
     ld e, c
     ld d, b
     ret
 
 
-Call_000_28fd:
-Jump_000_28fd:
+; [ezgb]
+; U16Mod: SDCC __moduint. Stack two u16; remainder in DE.
+
+U16Mod::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -8634,11 +8804,11 @@ Jump_000_28fd:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_294c
+    call U16DivMod
     ret
 
 
-Call_000_290f:
+S16DivSex8::
     ld a, c
     rlca
     sbc a
@@ -8648,7 +8818,7 @@ Call_000_290f:
     sbc a
     ld d, a
 
-Call_000_2917:
+S16DivMod::
     ld a, b
     push af
     xor d
@@ -8675,7 +8845,7 @@ jr_000_2925:
     ld b, a
 
 jr_000_292f:
-    call Call_000_294c
+    call U16DivMod
     ret c
 
     pop af
@@ -8703,11 +8873,16 @@ jr_000_293e:
     ret
 
 
-Call_000_2949:
+U16DivZext8::
     ld b, $00
     ld d, b
 
-Call_000_294c:
+; [ezgb]
+; U16DivMod: unsigned 16-bit restoring divide. BC/DE in → BC=quot, DE=rem.
+; U16DivZext8 ($2949) zeros high bytes then falls in. S16DivMod ($2917) abs,
+; calls this, re-applies signs.
+
+U16DivMod::
     ld a, e
     or d
     jr nz, jr_000_2957
@@ -8872,7 +9047,7 @@ Jump_000_29e6:
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_29f9
 
     xor a
@@ -8885,7 +9060,7 @@ Jump_000_29e6:
 
 jr_000_29f9:
     ld hl, sp+$0f
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2a0f
 
     ld a, $21
@@ -8908,7 +9083,7 @@ jr_000_2a0f:
     jr z, jr_000_2a23
 
     ld hl, sp+$0f
-    call Call_000_2d4c
+    call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
@@ -8919,7 +9094,7 @@ jr_000_2a23:
     jr z, jr_000_2a35
 
     ld hl, sp+$0b
-    call Call_000_2d4c
+    call NegateBytes
     ld hl, sp+$00
     ld a, $01
     xor [hl]
@@ -8934,7 +9109,7 @@ jr_000_2a35:
     push hl
     ld hl, sp+$07
     push hl
-    call Call_000_2de0
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     rr [hl]
@@ -8942,7 +9117,7 @@ jr_000_2a35:
 
     ld b, $04
     ld hl, sp+$01
-    call Call_000_2d4c
+    call NegateBytes
 
 jr_000_2a53:
     ld hl, sp+$01
@@ -8982,7 +9157,7 @@ Jump_000_2a77:
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2a8a
 
     xor a
@@ -8995,7 +9170,7 @@ Jump_000_2a77:
 
 jr_000_2a8a:
     ld hl, sp+$0e
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2aa0
 
     ld a, $21
@@ -9017,7 +9192,7 @@ jr_000_2aa0:
     push hl
     ld hl, sp+$06
     push hl
-    call Call_000_2de0
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     ld a, [hl+]
@@ -9033,7 +9208,11 @@ Jump_000_2aba:
     ret
 
 
-Call_000_2abd:
+; [ezgb]
+; MemIsZero: scan B bytes at HL; Z if all zero else NZ. Used by U32/S32 div/mod
+; stubs to reject zero dividend/divisor before Call_000_2de0.
+
+MemIsZero::
     xor a
     ld c, b
 
@@ -9061,7 +9240,11 @@ jr_000_2abf:
     ret
 
 
-Call_000_2ad2:
+; [ezgb]
+; ClearNegZero32: HL→MSB of 4-byte LE value; if value is 0 or $80000000,
+; clear sign bit (force -0 → +0). Used by S32Cmp.
+
+ClearNegZero32::
     xor a
     bit 7, [hl]
     jr z, jr_000_2ad9
@@ -9092,7 +9275,11 @@ jr_000_2ad9:
     ret
 
 
-jr_000_2aeb:
+; [ezgb]
+; MemCmp3Down: compare 3 bytes at DE vs HL walking downward; NZ on first diff.
+; Local helper for S32Cmp MSB-side compare.
+
+MemCmp3Down::
     ld c, $03
 
 jr_000_2aed:
@@ -9107,10 +9294,16 @@ jr_000_2aed:
 
     jr jr_000_2aed
 
+; [ezgb]
+; S32Cmp: signed long compare of stack args at sp+7 and sp+b (MSB at high addr).
+; Canon ±0 via ClearNegZero32, then sign-dispatch + MemCmp3Down. No external
+; callers in this build (only self-refs); kept as SDCC runtime residue.
+
+S32Cmp::
     ld hl, sp+$07
-    call Call_000_2ad2
+    call ClearNegZero32
     ld hl, sp+$0b
-    call Call_000_2ad2
+    call ClearNegZero32
     ld hl, sp+$07
     bit 7, [hl]
     jr z, jr_000_2b17
@@ -9123,7 +9316,7 @@ jr_000_2aed:
     ld d, h
     ld e, l
     ld hl, sp+$07
-    jr jr_000_2aeb
+    jr MemCmp3Down
 
 jr_000_2b14:
     xor a
@@ -9146,13 +9339,13 @@ jr_000_2b20:
     ld d, h
     ld e, l
     ld hl, sp+$0b
-    jr jr_000_2aeb
+    jr MemCmp3Down
 
 Jump_000_2b28:
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2b3b
 
     xor a
@@ -9165,7 +9358,7 @@ Jump_000_2b28:
 
 jr_000_2b3b:
     ld hl, sp+$0f
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2b51
 
     ld a, $21
@@ -9188,7 +9381,7 @@ jr_000_2b51:
     jr z, jr_000_2b65
 
     ld hl, sp+$0f
-    call Call_000_2d4c
+    call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
@@ -9199,7 +9392,7 @@ jr_000_2b65:
     jr z, jr_000_2b77
 
     ld hl, sp+$0b
-    call Call_000_2d4c
+    call NegateBytes
     ld hl, sp+$00
     ld a, $01
     xor [hl]
@@ -9214,7 +9407,7 @@ jr_000_2b77:
     push hl
     ld hl, sp+$07
     push hl
-    call Call_000_2de0
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     rr [hl]
@@ -9223,7 +9416,7 @@ jr_000_2b77:
     ld b, $04
     xor a
     ld hl, sp+$05
-    call Call_000_2d4c
+    call NegateBytes
 
 jr_000_2b96:
     ld hl, sp+$05
@@ -9261,7 +9454,10 @@ Jump_000_2bb1:
     ld c, a
     ld e, [hl]
 
-Call_000_2bb6:
+; [ezgb]
+; MulU8xU8: C×E → DE (HL scratch); shift-add 8×8→16. Used by U32MulEngine.
+
+MulU8xU8::
     xor a
     ld h, a
     ld l, a
@@ -9344,7 +9540,7 @@ Jump_000_2bfc:
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2c0f
 
     xor a
@@ -9357,7 +9553,7 @@ Jump_000_2bfc:
 
 jr_000_2c0f:
     ld hl, sp+$0e
-    call Call_000_2abd
+    call MemIsZero
     jr nz, jr_000_2c25
 
     ld a, $21
@@ -9379,7 +9575,7 @@ jr_000_2c25:
     push hl
     ld hl, sp+$06
     push hl
-    call Call_000_2de0
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$04
     ld a, [hl+]
@@ -9497,7 +9693,10 @@ Jump_000_2ca2:
     ret
 
 
-Call_000_2ca5:
+; [ezgb]
+; Memset(dest, byte, len): fill dest with byte. Sibling of Memcpy.
+
+Memset::
     ld hl, sp+$05
     ld a, [hl+]
     ld c, a
@@ -9548,7 +9747,10 @@ jr_000_2cc9:
     inc hl
     jr jr_000_2cc9
 
-Call_000_2cd3:
+; [ezgb]
+; Strncpy(dest, src, n): copy until NUL or n bytes, then zero-pad remainder.
+
+Strncpy::
     add sp, -$07
     ld hl, sp+$09
     ld a, [hl+]
@@ -9664,7 +9866,11 @@ Jump_000_2d44:
     ret
 
 
-Call_000_2d4c:
+; [ezgb]
+; NegateBytes: two's-complement negate of B bytes at HL (0-sbc loop).
+; S32Div/S32Mod use this to abs signed long operands.
+
+NegateBytes::
     ld c, b
     xor a
     ld d, a
@@ -9682,7 +9888,7 @@ jr_000_2d4f:
     push bc
     ld hl, sp+$04
     ld a, [hl]
-    call Call_000_3bc4
+    call PrintChar
     pop bc
     ret
 
@@ -9690,16 +9896,16 @@ jr_000_2d4f:
     push bc
     ld hl, sp+$04
     ld a, [hl]
-    call Call_000_3bed
+    call PutBgTile
     pop bc
     ret
 
 
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d74c], a
+    ld [wTileCursorX], a
     ld a, [hl]
-    ld [$d74d], a
+    ld [wTileCursorY], a
     ret
 
 
@@ -9708,11 +9914,11 @@ jr_000_2d4f:
     jr nz, jr_000_2d7f
 
     push bc
-    call Call_000_3d21
+    call EnterGfxMode2
     pop bc
 
 jr_000_2d7f:
-    ld a, [$d74c]
+    ld a, [wTileCursorX]
     ld e, a
     ret
 
@@ -9722,16 +9928,19 @@ jr_000_2d7f:
     jr nz, jr_000_2d90
 
     push bc
-    call Call_000_3d21
+    call EnterGfxMode2
     pop bc
 
 jr_000_2d90:
-    ld a, [$d74d]
+    ld a, [wTileCursorY]
     ld e, a
     ret
 
 
-Call_000_2d95:
+; [ezgb]
+; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)
+
+CStrLen::
     push af
     ld hl, sp+$00
     ld [hl], $00
@@ -9768,7 +9977,10 @@ Jump_000_2db2:
     ret
 
 
-Call_000_2dba:
+; [ezgb]
+; MemZero: write 0 to B bytes at HL. U32DivEngine clears quot/rem scratch with this.
+
+MemZero::
     ld c, b
     xor a
 
@@ -9789,7 +10001,7 @@ Jump_000_2dc1:
     ld hl, sp+$04
     push hl
     ld b, $04
-    call Call_000_2e40
+    call U32MulEngine
     add sp, $06
     ld hl, sp+$00
     ld a, [hl+]
@@ -9806,7 +10018,11 @@ Jump_000_2dc1:
     ret
 
 
-Call_000_2de0:
+; [ezgb]
+; U32DivEngine: multi-byte restoring divide used by U32Div/U32Mod. Helpers:
+; MemZero, MemRol ($2ee2), MemSubCmp ($2ed8), MemSub ($2e30), IncWord ($2ecb).
+
+U32DivEngine::
     ld a, b
     sla a
     sla a
@@ -9817,12 +10033,12 @@ Call_000_2de0:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2dba
+    call MemZero
     ld hl, sp+$04
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2dba
+    call MemZero
 
 jr_000_2df9:
     ld hl, sp+$08
@@ -9830,7 +10046,7 @@ jr_000_2df9:
     ld h, [hl]
     ld l, a
     xor a
-    call Call_000_2ee2
+    call MemRol
     push af
     ld hl, sp+$06
     ld a, [hl+]
@@ -9838,7 +10054,7 @@ jr_000_2df9:
     ld l, a
     pop af
     push hl
-    call Call_000_2ee2
+    call MemRol
     pop de
     ld hl, sp+$0a
     ld a, [hl+]
@@ -9846,12 +10062,12 @@ jr_000_2df9:
     ld l, a
     push de
     push hl
-    call Call_000_2ed8
+    call MemSubCmp
     pop hl
     pop de
     jr c, jr_000_2e1f
 
-    call Call_000_2e30
+    call MemSub
 
 jr_000_2e1f:
     ccf
@@ -9861,7 +10077,7 @@ jr_000_2e1f:
     ld h, [hl]
     ld l, a
     pop af
-    call Call_000_2ee2
+    call MemRol
     pop bc
     dec c
     ret z
@@ -9869,7 +10085,7 @@ jr_000_2e1f:
     push bc
     jr jr_000_2df9
 
-Call_000_2e30:
+MemSub::
     ld c, b
 
 jr_000_2e31:
@@ -9894,7 +10110,11 @@ jr_000_2e3b:
     ret
 
 
-Call_000_2e40:
+; [ezgb]
+; U32MulEngine: multi-byte unsigned mul (B digit pairs). Zeros dest via MemZero,
+; per-byte MulU8xU8 + PropagateCarry. U32Mul stub drives this with B=4.
+
+U32MulEngine::
     add sp, -$06
     ld hl, sp+$0c
     ld e, [hl]
@@ -9914,7 +10134,7 @@ Call_000_2e40:
     ld [hl], d
     ld h, d
     ld l, e
-    call Call_000_2dba
+    call MemZero
     ld hl, sp+$04
     ld [hl], b
 
@@ -9935,7 +10155,7 @@ jr_000_2e64:
     ld h, [hl]
     ld l, a
     ld e, [hl]
-    call Call_000_2bb6
+    call MulU8xU8
     ld hl, sp+$05
     ld c, [hl]
     ld hl, sp+$08
@@ -9951,15 +10171,15 @@ jr_000_2e64:
     ld a, [hl]
     adc d
     ld [hl+], a
-    call Call_000_2ec3
+    call PropagateCarry
     ld hl, sp+$05
     dec [hl]
     jr z, jr_000_2e98
 
     ld hl, sp+$0c
-    call Call_000_2ecb
+    call IncWord
     ld hl, sp+$08
-    call Call_000_2ecb
+    call IncWord
     jr jr_000_2e64
 
 jr_000_2e98:
@@ -9968,21 +10188,21 @@ jr_000_2e98:
     jr z, jr_000_2ec0
 
     ld hl, sp+$00
-    call Call_000_2ecb
+    call IncWord
     ld hl, sp+$0a
-    call Call_000_2ecb
+    call IncWord
     push bc
     ld b, $02
     ld hl, sp+$02
     ld d, h
     ld e, l
     ld hl, sp+$0a
-    call Call_000_2ed0
+    call CopyBytes
     ld hl, sp+$04
     ld d, h
     ld e, l
     ld hl, sp+$0e
-    call Call_000_2ed0
+    call CopyBytes
     pop bc
     jp Jump_000_2e5e
 
@@ -9992,17 +10212,22 @@ jr_000_2ec0:
     ret
 
 
-Call_000_2ec3:
-jr_000_2ec3:
+; [ezgb]
+; PropagateCarry: walk C bytes at HL adding 0+carry (adc). After multi-byte add in mul.
+
+PropagateCarry::
     dec c
     ret z
 
     ld a, $00
     adc [hl]
     ld [hl+], a
-    jr jr_000_2ec3
+    jr PropagateCarry
 
-Call_000_2ecb:
+; [ezgb]
+; IncWord: ++*(u16*)HL (inc low, carry into high).
+
+IncWord::
     inc [hl]
     ret nz
 
@@ -10011,7 +10236,10 @@ Call_000_2ecb:
     ret
 
 
-Call_000_2ed0:
+; [ezgb]
+; CopyBytes: copy B bytes DE→HL (register ABI).
+
+CopyBytes::
     ld c, b
 
 jr_000_2ed1:
@@ -10024,7 +10252,7 @@ jr_000_2ed1:
     ret
 
 
-Call_000_2ed8:
+MemSubCmp::
     ld c, b
     xor a
 
@@ -10039,7 +10267,7 @@ jr_000_2eda:
     ret
 
 
-Call_000_2ee2:
+MemRol::
     ld c, b
 
 jr_000_2ee3:
@@ -10053,8 +10281,9 @@ jr_000_2ee3:
 
 ; [ezgb]
 ; EnterGfxMode1: LCD off, prep VRAM/tilemap/callbacks, turn LCD on, set wGfxMode=1.
-; Draw helpers (DrawRect, etc.) call this when wGfxMode!=1. Mode $02 set elsewhere
-; ($3d4a); full mode table still TODO.
+; Defaults: wDrawOp=0 (replace), wDrawColor=3, wDrawColorB=0.
+; Draw helpers (DrawRect/PlotPixelXY/…) call this when wGfxMode!=1. Mode $02 set
+; elsewhere ($3d4a); full mode table still TODO.
 
 EnterGfxMode1::
     di
@@ -10068,11 +10297,11 @@ jr_000_2ef4:
     ld hl, $8100
     ld de, $1680
     ld b, $00
-    call Call_000_3d5a
+    call VramFill
     ld bc, $2a5f
     call RegisterVBlankCallback
     ld bc, $2a6a
-    call Call_000_0634
+    call RegisterLcdCallback
     ld a, $48
     ldh [rLYC], a
     ld a, $44
@@ -10105,23 +10334,31 @@ jr_000_2f25:
     ld a, $01
     ld [wGfxMode], a
     ld a, $00
-    ld [$d723], a
+    ld [wDrawOp], a
     ld a, $03
-    ld [$d734], a
+    ld [wDrawColor], a
     ld a, $00
-    ld [$d735], a
+    ld [wDrawColorB], a
     ei
     ret
 
 
-Call_000_2f4c:
+; [ezgb]
+; VramLoadTiles8100: VramCopy BC→$8100 for $1680 bytes (tile $10+ framebuffer pool).
+; Stack wrapper ensures EnterGfxMode1 first.
+
+VramLoadTiles8100::
     ld hl, $8100
     ld de, $1680
-    call Call_000_30db
+    call VramCopy
     ret
 
 
-Call_000_2f56:
+; [ezgb]
+; BlitTile: B/C tile row/col via GfxRowTable; VramCopy $10 bytes (2bpp tile) to FB.
+; Optional second plane from saved DE. Stack wrapper ensures EnterGfxMode1.
+
+BlitTile::
     push de
     push hl
     ld l, b
@@ -10132,7 +10369,7 @@ Call_000_2f56:
     add hl, hl
     ld d, h
     ld e, l
-    ld hl, $2fbb
+    ld hl, GfxRowTable
     sla c
     sla c
     sla c
@@ -10153,13 +10390,13 @@ Call_000_2f56:
     jr z, jr_000_2f84
 
     ld de, $0010
-    call Call_000_30db
+    call VramCopy
 
 jr_000_2f84:
     pop hl
     pop bc
     ld de, $0010
-    call Call_000_30db
+    call VramCopy
     ret
 
 
@@ -10179,7 +10416,7 @@ jr_000_2f84:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2f56
+    call BlitTile
     pop bc
     ret
 
@@ -10192,11 +10429,16 @@ jr_000_2f84:
     ld a, [hl+]
     ld c, a
     ld b, [hl]
-    call Call_000_2f4c
+    call VramLoadTiles8100
     pop bc
     ret
 
 
+; [ezgb]
+; GfxRowTable: 144 words, scanline y -> VRAM address for mode-1 framebuffer.
+; Starts at $8100 (tile $10), 20 tiles wide (160px). Used by PlotPixel/GetPixel.
+
+GfxRowTable::
     nop
     add c
     ld [bc], a
@@ -10458,11 +10700,14 @@ jr_000_2f84:
     ld c, [hl]
     sub [hl]
 
-Call_000_30db:
-jr_000_30db:
+; [ezgb]
+; VramCopy: copy DE bytes BC→HL waiting for STAT mode≠2 (VRAM-safe).
+; VramCopyStack ($30ea) is the stack-ABI wrapper (dest, src, len).
+
+VramCopy::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_30db
+    jr nz, VramCopy
 
     ld a, [bc]
     ld [hl+], a
@@ -10470,12 +10715,12 @@ jr_000_30db:
     dec de
     ld a, d
     or e
-    jr nz, jr_000_30db
+    jr nz, VramCopy
 
     ret
 
 
-Call_000_30ea:
+VramCopyStack::
     push bc
     ld hl, sp+$09
     ld d, [hl]
@@ -10489,13 +10734,13 @@ Call_000_30ea:
     ld a, [hl-]
     ld l, [hl]
     ld h, a
-    call Call_000_30db
+    call VramCopy
     pop bc
     ret
 
 
     ld hl, $3104
-    call Call_000_3b27
+    call RegisterFont
     ret
 
 
@@ -12893,11 +13138,13 @@ jr_000_3a22:
     ret
 
 
-Call_000_3a43:
-jr_000_3a43:
+; [ezgb]
+; WaitJoypadMask: spin on ReadJoypadRaw until (A & B) nonzero. B = mask.
+
+WaitJoypadMask::
     call ReadJoypadRaw
     and b
-    jr z, jr_000_3a43
+    jr z, WaitJoypadMask
 
     ret
 
@@ -12915,15 +13162,15 @@ ReadJoypad::
     push bc
     ld hl, sp+$04
     ld b, [hl]
-    call Call_000_3a43
+    call WaitJoypadMask
     ld e, a
     pop bc
     ret
 
 
-Call_000_3a59:
+DelayDE::
     push bc
-    call Call_000_3a76
+    call DelayInner
     ld b, $32
 
 Jump_000_3a5f:
@@ -12959,8 +13206,7 @@ jr_000_3a75:
     ret
 
 
-Call_000_3a76:
-jr_000_3a76:
+DelayInner::
     dec de
     ld a, e
     or d
@@ -12997,18 +13243,22 @@ jr_000_3a8f:
     jr jr_000_3a91
 
 jr_000_3a91:
-    jr jr_000_3a76
+    jr DelayInner
 
-Call_000_3a93:
+; [ezgb]
+; Delay(count): stack u16 → DelayDE. Busy-wait; callers pass e.g. $00c8/$002d.
+; DelayDE ($3a59) + DelayInner ($3a76) are the register/nested loops.
+
+Delay::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
     ld d, [hl]
-    call Call_000_3a59
+    call DelayDE
     ret
 
 
-Jump_000_3a9c:
+CopyTilesVram::
     ld a, d
     or e
     ret z
@@ -13065,7 +13315,7 @@ jr_000_3ac9:
     ret
 
 
-Jump_000_3ad2:
+CopyTilesColor::
     ld a, d
     or e
     ret z
@@ -13084,7 +13334,7 @@ jr_000_3add:
     inc bc
     push bc
     ld bc, $0000
-    ld a, [$d735]
+    ld a, [wDrawColorB]
     bit 0, a
     jr z, jr_000_3aee
 
@@ -13098,7 +13348,7 @@ jr_000_3aee:
 
 jr_000_3af4:
     ld d, a
-    ld a, [$d734]
+    ld a, [wDrawColor]
     xor d
     ld d, a
     bit 0, d
@@ -13148,7 +13398,12 @@ jr_000_3b1f:
     ret
 
 
-Call_000_3b27:
+; [ezgb]
+; RegisterFont(HL=font desc): LCD off; find free 3-byte slot in wFontSlots ($d73a,
+; 6 entries); store next-tile id + font ptr; SelectFont; if wGfxMode bit1 set,
+; UploadFontTiles; bump wFontNextTile by glyph count; LCD on. Returns HL=slot or 0.
+
+RegisterFont::
     call LcdOff
     push hl
     ld hl, $d73b
@@ -13175,22 +13430,22 @@ jr_000_3b42:
     ld [hl], d
     dec hl
     ld [hl], e
-    ld a, [$d739]
+    ld a, [wFontNextTile]
     dec hl
     ld [hl], a
     push hl
-    call Call_000_3bb7
+    call SelectFont
     ld a, [wGfxMode]
     and $02
-    call nz, Call_000_3b6f
-    ld hl, $d737
+    call nz, UploadFontTiles
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     inc hl
-    ld a, [$d739]
+    ld a, [wFontNextTile]
     add [hl]
-    ld [$d739], a
+    ld [wFontNextTile], a
     pop hl
 
 jr_000_3b66:
@@ -13201,8 +13456,12 @@ jr_000_3b66:
     ret
 
 
-Call_000_3b6f:
-    ld hl, $d737
+; [ezgb]
+; UploadFontTiles: blit current font glyphs into VRAM near $9000+wFontBaseTile.
+; Uses CopyTilesVram ($3a9c) or CopyTilesColor ($3ad2) per font header flags.
+
+UploadFontTiles::
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
@@ -13235,7 +13494,7 @@ jr_000_3b9b:
     add hl, bc
     ld c, l
     ld b, h
-    ld a, [$d736]
+    ld a, [wFontBaseTile]
     ld l, a
     ld h, $00
     add hl, hl
@@ -13247,22 +13506,29 @@ jr_000_3b9b:
     ld h, a
     pop af
     bit 2, a
-    jp z, Jump_000_3a9c
+    jp z, CopyTilesVram
 
-    jp Jump_000_3ad2
+    jp CopyTilesColor
 
 
-Call_000_3bb7:
+; [ezgb]
+; SelectFont: copy slot triple → wFontBaseTile / wFontPtr / wFontFarFlag.
+
+SelectFont::
     ld a, [hl+]
-    ld [$d736], a
+    ld [wFontBaseTile], a
     ld a, [hl+]
-    ld [$d737], a
+    ld [wFontPtr], a
     ld a, [hl+]
-    ld [$d738], a
+    ld [wFontFarFlag], a
     ret
 
 
-Call_000_3bc4:
+; [ezgb]
+; PrintChar(A): if A==$0a TileNewline (unless wGfxMode bit3); else PutBgTile
+; then AdvanceTileCursor. Tilemap text path (cursor wTileCursorX/Y).
+
+PrintChar::
     cp $0a
     jr nz, jr_000_3bd6
 
@@ -13271,7 +13537,7 @@ Call_000_3bc4:
     and $08
     jr nz, jr_000_3bd5
 
-    call Call_000_3cb0
+    call TileNewline
     pop af
     ret
 
@@ -13280,31 +13546,36 @@ jr_000_3bd5:
     pop af
 
 jr_000_3bd6:
-    call Call_000_3bed
-    call Call_000_3cc5
+    call PutBgTile
+    call AdvanceTileCursor
     ret
 
 
-    call Call_000_3bed
-    call Call_000_3cc5
+    call PutBgTile
+    call AdvanceTileCursor
     ret
 
 
-    call Call_000_3c99
+    call RetreatTileCursor
     ld a, $00
-    call Call_000_3bed
+    call PutBgTile
     ret
 
 
-Call_000_3bed:
+; [ezgb]
+; PutBgTile(A): map char through font at wFontPtr, write tile id to BG map
+; $9800 + y*32 + x (wTileCursorY/X). STAT-safe. Optional farcall when
+; wFontFarFlag==0 (via ResetTileText first).
+
+PutBgTile::
     push af
-    ld a, [$d738]
+    ld a, [wFontFarFlag]
     or a
     jr nz, jr_000_3c02
 
-    call Call_000_3c5c
+    call ResetTileText
     xor a
-    ld [$d739], a
+    ld [wFontNextTile], a
     call FarCallTrampoline
     db $fd
     jr nc, jr_000_3c01
@@ -13318,7 +13589,7 @@ jr_000_3c02:
     push de
     push hl
     ld e, a
-    ld hl, $d737
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
@@ -13333,10 +13604,10 @@ jr_000_3c02:
     ld e, [hl]
 
 jr_000_3c19:
-    ld a, [$d736]
+    ld a, [wFontBaseTile]
     add e
     ld e, a
-    ld a, [$d74d]
+    ld a, [wTileCursorY]
     ld l, a
     ld h, $00
     add hl, hl
@@ -13344,7 +13615,7 @@ jr_000_3c19:
     add hl, hl
     add hl, hl
     add hl, hl
-    ld a, [$d74c]
+    ld a, [wTileCursorX]
     ld c, a
     ld b, $00
     add hl, bc
@@ -13369,7 +13640,7 @@ jr_000_3c34:
     inc hl
     ld h, [hl]
     ld l, a
-    call Call_000_3b27
+    call RegisterFont
     push hl
     pop de
     pop bc
@@ -13382,19 +13653,23 @@ jr_000_3c34:
     inc hl
     ld h, [hl]
     ld l, a
-    call Call_000_3bb7
+    call SelectFont
     pop bc
     ld de, $0000
     ret
 
 
-Call_000_3c5c:
+; [ezgb]
+; ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,
+; clear wFontSlots, default draw colors, ClearBgMap.
+
+ResetTileText::
     push bc
-    call Call_000_3d21
+    call EnterGfxMode2
     ld a, $01
-    ld [$d739], a
+    ld [wFontNextTile], a
     xor a
-    ld hl, $d73a
+    ld hl, wFontSlots
     ld b, $12
 
 jr_000_3c6b:
@@ -13403,15 +13678,18 @@ jr_000_3c6b:
     jr nz, jr_000_3c6b
 
     ld a, $03
-    ld [$d734], a
+    ld [wDrawColor], a
     ld a, $00
-    ld [$d735], a
-    call Call_000_3c7e
+    ld [wDrawColorB], a
+    call ClearBgMap
     pop bc
     ret
 
 
-Call_000_3c7e:
+; [ezgb]
+; ClearBgMap: fill BG map $9800 with tile 0 (32×32), STAT-safe.
+
+ClearBgMap::
     push de
     push hl
     ld hl, $9800
@@ -13438,9 +13716,9 @@ jr_000_3c87:
     ret
 
 
-Call_000_3c99:
+RetreatTileCursor::
     push hl
-    ld hl, $d74c
+    ld hl, wTileCursorX
     xor a
     cp [hl]
     jr z, jr_000_3ca4
@@ -13450,7 +13728,7 @@ Call_000_3c99:
 
 jr_000_3ca4:
     ld [hl], $13
-    ld hl, $d74d
+    ld hl, wTileCursorY
     xor a
     cp [hl]
     jr z, jr_000_3cae
@@ -13462,11 +13740,14 @@ jr_000_3cae:
     ret
 
 
-Call_000_3cb0:
+; [ezgb]
+; TileNewline: wTileCursorX=0; ++Y or ScrollBgUp at bottom row ($11).
+
+TileNewline::
     push hl
     xor a
-    ld [$d74c], a
-    ld hl, $d74d
+    ld [wTileCursorX], a
+    ld hl, wTileCursorY
     ld a, $11
     cp [hl]
     jr z, jr_000_3cc0
@@ -13475,16 +13756,19 @@ Call_000_3cb0:
     jr jr_000_3cc3
 
 jr_000_3cc0:
-    call Call_000_3cf3
+    call ScrollBgUp
 
 jr_000_3cc3:
     pop hl
     ret
 
 
-Call_000_3cc5:
+; [ezgb]
+; AdvanceTileCursor: ++wTileCursorX; wrap at $13 and bump Y (tilemap text).
+
+AdvanceTileCursor::
     push hl
-    ld hl, $d74c
+    ld hl, wTileCursorX
     ld a, $13
     cp [hl]
     jr z, jr_000_3cd1
@@ -13494,7 +13778,7 @@ Call_000_3cc5:
 
 jr_000_3cd1:
     ld [hl], $00
-    ld hl, $d74d
+    ld hl, wTileCursorY
     ld a, $11
     cp [hl]
     jr z, jr_000_3cde
@@ -13508,19 +13792,19 @@ jr_000_3cde:
     jr z, jr_000_3cee
 
     xor a
-    ld [$d74d], a
-    ld [$d74c], a
+    ld [wTileCursorY], a
+    ld [wTileCursorX], a
     jr jr_000_3cf1
 
 jr_000_3cee:
-    call Call_000_3cf3
+    call ScrollBgUp
 
 jr_000_3cf1:
     pop hl
     ret
 
 
-Call_000_3cf3:
+ScrollBgUp::
     push bc
     push de
     push hl
@@ -13563,8 +13847,11 @@ jr_000_3d11:
     ret
 
 
-Call_000_3d21:
-Jump_000_3d21:
+; [ezgb]
+; EnterGfxMode2: tear down mode-1 VBlank/LCD callbacks if LCD on, InitGfxMode2
+; (clear cursors + BG, wGfxMode=2), restore LCDC. Tilemap text mode.
+
+EnterGfxMode2::
     di
     ldh a, [rLCDC]
     bit 7, a
@@ -13572,14 +13859,14 @@ Jump_000_3d21:
 
     call LcdOff
     ld bc, $2a5f
-    ld hl, $d6d3
+    ld hl, wVBlankCallbacks
     call RemoveCallbackSlot
     ld bc, $2a6a
-    ld hl, $d6e3
+    ld hl, wLcdCallbacks
     call RemoveCallbackSlot
 
 jr_000_3d3d:
-    call Call_000_3d4a
+    call InitGfxMode2
     ldh a, [rLCDC]
     or $81
     and $e7
@@ -13588,29 +13875,31 @@ jr_000_3d3d:
     ret
 
 
-Call_000_3d4a:
+InitGfxMode2::
     xor a
-    ld [$d74c], a
-    ld [$d74d], a
-    call Call_000_3c7e
+    ld [wTileCursorX], a
+    ld [wTileCursorY], a
+    call ClearBgMap
     ld a, $02
     ld [wGfxMode], a
     ret
 
 
-Call_000_3d5a:
-Jump_000_3d5a:
-jr_000_3d5a:
+; [ezgb]
+; VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
+; zeros $8100.. with this; also clears $9800/$9c00 tilemaps ($0400).
+
+VramFill::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_3d5a
+    jr nz, VramFill
 
     ld [hl], b
     inc hl
     dec de
     ld a, d
     or e
-    jr nz, jr_000_3d5a
+    jr nz, VramFill
 
     ret
 
@@ -13638,7 +13927,7 @@ jr_000_3d83:
 
 jr_000_3d86:
     ld de, $0400
-    jp Jump_000_3d5a
+    jp VramFill
 
 
     rst RST_38

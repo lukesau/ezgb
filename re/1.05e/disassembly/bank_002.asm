@@ -5,7 +5,12 @@
 
 SECTION "ROM Bank $002", ROMX[$4000], BANK[$2]
 
-Call_002_4000:
+; [ezgb]
+; SetFpga7F30_B2: unlock $7F00/10/20, write stack u8 to $7F30, commit $7FF0.
+; Same shape as SetFpgaPage but targets $7F30. SD read/write prologue uses
+; $01 then $03. Sibling SdWindowPeek ($4020) reads $A000 (wait-for-ready).
+
+SetFpga7F30_B2::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -25,7 +30,10 @@ Call_002_4000:
     ret
 
 
-Call_002_4020:
+; [ezgb]
+; SdWindowPeek: ld a,[$a000] → E. SD paths poll until E==$e1 after SetFpga7F30.
+
+SdWindowPeek::
     ld de, $a000
     ld a, [de]
     ld c, a
@@ -33,11 +41,18 @@ Call_002_4020:
     ret
 
 
+; [ezgb]
+; SD sector read (disk_read). Program LBA via $7FB0-$7FB4, wait, then copy
+; from $A000 into caller buffer via VramCopyStack. Called as FarCall_02_4027.
+; Sibling Far_02_41d5 is the write path (buffer -> $A000, then trigger).
+; Prologue: SetFpga7F30_B2.
+
+Far_02_4027::
     add sp, -$13
     ld a, $01
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld hl, sp+$12
     ld [hl], $00
@@ -283,11 +298,11 @@ Jump_002_4071:
     ld a, $03
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
 
 Jump_002_418d:
-    call Call_002_4020
+    call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
@@ -301,7 +316,7 @@ Jump_002_419d:
     ld a, $01
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld hl, sp+$0f
     ld b, [hl]
@@ -317,7 +332,7 @@ Jump_002_419d:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld hl, sp+$12
     inc [hl]
@@ -331,23 +346,29 @@ Jump_002_41c7:
     ld a, $00
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld e, $00
     add sp, $13
     ret
 
 
+; [ezgb]
+; SD sector write (disk_write). Copy buffer to $A000 via VramCopyStack, then
+; program $7FB0/$7FB1/$7FB2 and trigger. Prologue: SetFpga7F30_B2 $01 then $03.
+; Called as FarCall_02_41d5. Sibling Far_02_4027 is the read path.
+
+Far_02_41d5::
     add sp, -$10
     ld a, $01
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld a, $03
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld hl, sp+$0f
     ld [hl], $00
@@ -414,7 +435,7 @@ Jump_002_4223:
     push hl
     ld hl, $a000
     push hl
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld bc, $7f00
     ld a, $e1
@@ -609,7 +630,7 @@ Jump_002_4223:
     ld [bc], a
 
 Jump_002_4350:
-    call Call_002_4020
+    call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
@@ -631,12 +652,12 @@ Jump_002_4360:
 Jump_002_4369:
     ld hl, $000a
     push hl
-    call Call_000_3a93
+    call Delay
     add sp, $02
     ld a, $00
     push af
     inc sp
-    call Call_002_4000
+    call SetFpga7F30_B2
     add sp, $01
     ld e, $00
     add sp, $10

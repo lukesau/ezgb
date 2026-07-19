@@ -129,7 +129,7 @@ Add rows here as each is confirmed or rejected.
 
 ## Mapping workflow suggestion
 
-1. Pick a high-fan-in unnamed Jr symbol (`./scripts/doc-symbol-coverage.py`).
+1. Pick an app-focused unnamed Jr symbol (`./scripts/doc-symbol-coverage.py --app`).
 2. If it sits on a UI or SD path, reproduce the same action on Omega and skim the matching
    `.c` function.
 3. Name the Jr label in `re/1.05e/kernel.sym`, add a short note in `notes.json` if the Omega

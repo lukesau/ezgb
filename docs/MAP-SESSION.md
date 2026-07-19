@@ -112,6 +112,32 @@ Wrong place (a caller — go find the definition instead):
 
 ---
 
+## Agent loop (lean — prefer this)
+
+Deterministic scripts do the hunt and mechanical names. The agent only
+**applies/rejects proposals** and deep-reads when judgment is required.
+
+```sh
+# Cron / no-LLM pass (clones → propose --apply → regen → packet)
+./scripts/label-cron.sh 1.05e
+# exit 2 ⇒ WAKE: packet needs judgment
+
+# Or agent tick:
+./scripts/propose-labels.py 1.05e          # review; --apply when ok
+./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+# then: name/edit only if needs_judgment: 1 (or reject a bad proposal)
+./scripts/regen-disasm.sh 1.05e
+```
+
+**Do not** re-grep body/callers/WRAM each tick — the packet already has them.
+**Do not** open lib banks `03/05/06/07/09` unless a named app callee leads there.
+Prefer `--app --frontier-only --top 5` once `F` rows exist.
+Avoid RGBDS reserved names (`Strlen` → `CStrLen`, etc.).
+
+Hand loop below is still valid when you are not using the scripts.
+
+---
+
 ## The loop (8 steps)
 
 ```text
@@ -128,10 +154,12 @@ You finish **one function** (sometimes a tight cluster of siblings) per pass.
 ### 1. PICK
 
 ```sh
-./scripts/doc-symbol-coverage.py --top 15
+./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+# fallback worklist:
+./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
 ```
 
-Take the **top unnamed** row. Write down `bank:addr` (e.g. `00:27ba`).
+Take the **top unnamed** row (`F` preferred). Write down `bank:addr`.
 
 If the top rows are all tiny math helpers you already understand, skip down the
 list until something stores to WRAM / calls something else / touches `$7Fxx`.
@@ -140,15 +168,10 @@ list until something stores to WRAM / calls something else / touches `$7Fxx`.
 
 ### 2. OPEN
 
-Use **Step 0** above. Concrete recipe for `00:27ba`:
+Prefer the packet body/callers sections. Manual recipe for `00:27ba`:
 
 ```sh
 rg -n -A 40 "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e/disassembly/bank_000.asm
-```
-
-Also grab **one** caller for later (do not deep-dive yet):
-
-```sh
 rg -n "call Call_000_27ba|jp Jump_000_27ba" re/1.05e/disassembly/
 ```
 
@@ -269,12 +292,8 @@ note should point at that doc.
 ### 7. REGEN (persist + check)
 
 ```sh
-cd re/1.05e
-python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../scripts/annotate-disasm.py 1.05e
-cd disassembly && make
-cd ../../..
-./scripts/naming-progress.sh 1.05e
+./scripts/regen-disasm.sh 1.05e          # quiet; -v for full logs
+# equivalent: mgbdis → annotate → make → naming-progress → app worklist
 ```
 
 `make` must succeed. Spot-check the label in `bank_*.asm`: human name + `; [ezgb]`
@@ -317,11 +336,11 @@ OPEN body
 
 ## Practice drill (do this once without asking anyone)
 
-1. Run `doc-symbol-coverage.py --top 10`.
-2. Open the #1 unnamed label.
+1. Run `./scripts/label-packet.py 1.05e --app --frontier-only --top 5`.
+2. Read TARGET + BODY + ABS TOUCHES (do not re-grep).
 3. Say out loud: **runtime / util / app helper / FPGA / control**.
-4. If runtime: name it, regen, stop after one.
-5. If app helper: list every `$Dxxx`/`$Cxxx`/`$7Fxx` it touches on paper.
+4. If runtime or mechanical: name it (or `propose-labels.py --apply`), regen, stop.
+5. If app helper: use the packet’s WRAM/`$7Fxx` list; name only what that allows.
 6. Do **not** open SameBoy on the first drill unless the body has no clear shape.
 
 When `$27ba` is next: it stores stack fields into `$D724`–`$D728` and calls

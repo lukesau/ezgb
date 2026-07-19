@@ -557,7 +557,7 @@ Jump_001_4266:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$07
     ld c, l
@@ -1115,7 +1115,7 @@ Jump_001_4552:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$0a
     ld c, l
@@ -1772,7 +1772,10 @@ LastRomPersistDone::
     cpl
     nop
 
-Call_001_48c6:
+; [ezgb]
+; IsLeapYear: stack u16 year → E=1 if leap else 0. Gregorian: %4, then %100/%400.
+
+IsLeapYear::
     push af
     ld c, $00
     ld hl, sp+$04
@@ -1795,7 +1798,7 @@ Jump_001_48d6:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28fd
+    call U16Mod
     add sp, $04
     ld hl, sp+$01
     ld [hl], d
@@ -1813,7 +1816,7 @@ Jump_001_48d6:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28fd
+    call U16Mod
     add sp, $04
     ld hl, sp+$01
     ld [hl], d
@@ -1837,7 +1840,11 @@ Jump_001_4913:
     ret
 
 
-Call_001_4917:
+; [ezgb]
+; DateToDaysSince1970: date struct ptr on stack; accumulate 365/366 from 1970
+; via IsLeapYear, then month/day. Returns day count in HL:DE.
+
+DateToDaysSince1970::
     add sp, -$18
     xor a
     ld hl, sp+$14
@@ -1879,7 +1886,7 @@ Jump_001_492f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_001_48c6
+    call IsLeapYear
     add sp, $02
     ld c, e
     xor a
@@ -1997,7 +2004,7 @@ Jump_001_49b2:
     ld a, [de]
     ld b, a
     push bc
-    call Call_001_48c6
+    call IsLeapYear
     add sp, $02
     ld c, e
     xor a
@@ -2186,7 +2193,7 @@ Jump_001_4a63:
     push hl
     ld hl, $0018
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$12
@@ -2212,7 +2219,7 @@ Jump_001_4a63:
     push hl
     ld hl, $003c
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -2253,7 +2260,7 @@ Jump_001_4a63:
     push hl
     ld hl, $003c
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -2327,7 +2334,7 @@ Jump_001_4a63:
     push hl
     ld hl, $003c
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -2538,7 +2545,11 @@ Jump_001_4a63:
     ret
 
 
-Call_001_4c5e:
+; [ezgb]
+; RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
+; (year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count.
+
+RtcToDayCount::
     add sp, -$11
     ld a, $06
     push af
@@ -2807,7 +2818,7 @@ Call_001_4c5e:
     ld c, l
     ld b, h
     push bc
-    call Call_001_4917
+    call DateToDaysSince1970
     add sp, $02
     push hl
     ld hl, sp+$02
@@ -2831,9 +2842,14 @@ Call_001_4c5e:
     ret
 
 
-Call_001_4df1:
+; [ezgb]
+; RtcWriteTimeFromDayDelta: RtcToDayCount − stack day count ($d3f2/$d3f4); S32Div/Mod
+; by 60/24 into HMS; write $A018–$A01C (page $06) and $A220–$A224 (page $03/$11).
+; Inverse of RtcReadDaysClearRegs clear path.
+
+RtcWriteTimeFromDayDelta::
     add sp, -$16
-    call Call_001_4c5e
+    call RtcToDayCount
     push hl
     ld hl, sp+$14
     ld [hl], e
@@ -2984,7 +3000,7 @@ Jump_001_4ea9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2829
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3026,7 +3042,7 @@ Jump_001_4ee0:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282f
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3067,7 +3083,7 @@ Jump_001_4ee0:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2829
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3109,7 +3125,7 @@ Jump_001_4f4c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282f
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3150,7 +3166,7 @@ Jump_001_4f4c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2829
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3206,7 +3222,7 @@ jr_001_4fc6:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282f
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3396,10 +3412,14 @@ Jump_001_5063:
     ret
 
 
-Call_001_50e4:
+; [ezgb]
+; RtcReadDaysClearRegs: RtcToDayCount → HL:DE; then zero $A018–$A01C (FPGA page $06)
+; and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/FRAM.
+
+RtcReadDaysClearRegs::
     push af
     push af
-    call Call_001_4c5e
+    call RtcToDayCount
     push hl
     ld hl, sp+$02
     ld [hl], e
@@ -3496,7 +3516,7 @@ Call_001_50e4:
     inc b
     ld hl, $c3a5
     push hl
-    call Call_000_2d95
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -3571,7 +3591,7 @@ Jump_001_51b2:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1926
+    call FarCall_06_7309
     add sp, $05
     ld c, e
     ld hl, $d3ed
@@ -3694,7 +3714,7 @@ Jump_001_5298:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1926
+    call FarCall_06_7309
     add sp, $05
     ld bc, $ca19
     ld e, c
@@ -3732,7 +3752,7 @@ Jump_001_5298:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$14
     ld a, [hl]
@@ -3826,7 +3846,7 @@ Jump_001_5327:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1941
+    call FarCall_06_779a
     add sp, $08
     ld bc, $4000
     push bc
@@ -3909,7 +3929,7 @@ Jump_001_5327:
     ld hl, $c0a0
     push hl
     push bc
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld hl, sp+$1a
     ld e, [hl]
@@ -3985,7 +4005,7 @@ Jump_001_53ee:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$18
     ld c, l
@@ -3997,7 +4017,7 @@ Jump_001_53ee:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1941
+    call FarCall_06_779a
     add sp, $08
     ld hl, sp+$16
     ld a, [hl+]
@@ -4011,7 +4031,7 @@ Jump_001_53ee:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$18
     ld c, l
@@ -4023,7 +4043,7 @@ Jump_001_53ee:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1941
+    call FarCall_06_779a
     add sp, $08
     ld hl, $d3f4
     ld a, [hl+]
@@ -4035,7 +4055,7 @@ Jump_001_53ee:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_001_4df1
+    call RtcWriteTimeFromDayDelta
     add sp, $04
     push hl
     ld hl, sp+$0e
@@ -4056,7 +4076,7 @@ Jump_001_5495:
     or [hl]
     jp z, Jump_001_54bc
 
-    call Call_001_50e4
+    call RtcReadDaysClearRegs
     push hl
     ld hl, sp+$02
     ld [hl], e
@@ -4091,7 +4111,7 @@ Jump_001_54bc:
     add sp, $01
     ld hl, $ca0f
     push hl
-    call Call_000_19a1
+    call FarCall_03_768f
     add sp, $02
     jp PreLaunchFramStamp
 
@@ -4104,7 +4124,7 @@ Jump_001_54d1:
     inc sp
     ld hl, $c0a0
     push hl
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     xor a
     ld hl, sp+$1a
@@ -4220,7 +4240,7 @@ Jump_001_54e9:
     ld hl, $c0a0
     push hl
     push bc
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld hl, sp+$1a
     ld e, [hl]
@@ -4249,7 +4269,7 @@ Jump_001_54e9:
 
 
 Jump_001_559a:
-    call Call_001_50e4
+    call RtcReadDaysClearRegs
     push hl
     ld hl, sp+$02
     ld [hl], e
@@ -4865,7 +4885,7 @@ Jump_001_58ad:
     ld l, a
     push hl
     push bc
-    call Call_000_1926
+    call FarCall_06_7309
     add sp, $05
     ld c, e
     ld hl, $0240
@@ -5020,7 +5040,7 @@ Jump_001_5925:
     push hl
     ld hl, $c7a9
     push hl
-    call Call_000_19c1
+    call FarCall_05_4279
     add sp, $06
     push hl
     ld hl, sp+$06
@@ -5106,7 +5126,7 @@ Jump_001_59e4:
     ld l, a
     push hl
     push bc
-    call Call_000_19f5
+    call FarCall_05_4378
     add sp, $06
     push hl
     ld hl, sp+$06
@@ -5231,7 +5251,7 @@ Jump_001_5a72:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$06
@@ -5285,7 +5305,7 @@ Jump_001_5a72:
     push hl
     ld hl, $c7a9
     push hl
-    call Call_000_19c1
+    call FarCall_05_4279
     add sp, $06
     push hl
     ld hl, sp+$06
@@ -5422,7 +5442,7 @@ Jump_001_5b12:
     ld c, l
     ld b, h
     push bc
-    call Call_000_19a1
+    call FarCall_03_768f
     add sp, $02
     ld hl, sp+$1e
     ld [hl], $a0
@@ -5525,7 +5545,11 @@ Jump_001_5c02:
     ret
 
 
-Call_001_5c08:
+; [ezgb]
+; MapCartTypeToUi: map cart/MBC type byte → $d3eb index for DrawCardTypeScreen
+; (0/1/2/3/4/6 buckets).
+
+MapCartTypeToUi::
     ld hl, sp+$02
     ld a, [hl]
     or a
@@ -5917,7 +5941,7 @@ RomLoaderMain::
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1926
+    call FarCall_06_7309
     add sp, $05
     ld c, e
     ld hl, sp+$11
@@ -5996,7 +6020,7 @@ Jump_001_5e56:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$0f
     ld c, l
@@ -6008,7 +6032,7 @@ Jump_001_5e56:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1941
+    call FarCall_06_779a
     add sp, $08
     ld hl, $c5a3
     ld [hl], $00
@@ -6076,7 +6100,7 @@ Jump_001_5ef5:
     ld a, [hl]
     push af
     inc sp
-    call Call_001_5c08
+    call MapCartTypeToUi
     add sp, $01
     ld hl, $d3eb
     ld a, [hl]
@@ -6104,7 +6128,7 @@ jr_001_5f2d:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$0f
     ld c, l
@@ -6116,7 +6140,7 @@ jr_001_5f2d:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1941
+    call FarCall_06_779a
     add sp, $08
     ld hl, sp+$0d
     ld [hl], $04
@@ -6256,7 +6280,7 @@ jr_001_600a:
 Jump_001_600f:
     ld hl, $ca0f
     push hl
-    call Call_000_19a1
+    call FarCall_03_768f
     add sp, $02
     ld hl, sp+$11
     ld e, [hl]
@@ -6266,9 +6290,13 @@ Jump_001_601b:
     ret
 
 
-Call_001_601e:
+; [ezgb]
+; DrawCardTypeScreen: DrawInfoPanelRect then DrawString 'Cardtype:' and MBC name
+; (NoMBC/MBC1/… via $d3eb index jump table).
+
+DrawCardTypeScreen::
     add sp, -$1e
-    call Call_001_62b1
+    call DrawInfoPanelRect
     ld hl, $0000
     push hl
     ld a, $03
@@ -6474,7 +6502,7 @@ jr_001_611b:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$0a
     ld c, l
@@ -6581,7 +6609,7 @@ Jump_001_61af:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$0a
     ld c, l
@@ -6754,7 +6782,11 @@ jr_001_6258:
     ld l, a
     nop
 
-Call_001_62b1:
+; [ezgb]
+; DrawInfoPanelRect: StoreDrawParams($0002,$03) then DrawRect fill=$23 corners $7d25/$016c.
+; Shared chrome behind Cardtype/BOOT/ROM-info style screens.
+
+DrawInfoPanelRect::
     ld hl, $0002
     push hl
     ld a, $03
@@ -6782,7 +6814,7 @@ Call_001_62b1:
     ld [hl], $00
 
 Jump_001_62d9:
-    call Call_001_62b1
+    call DrawInfoPanelRect
 
 Jump_001_62dc:
     xor a
@@ -6942,7 +6974,7 @@ Jump_001_63b7:
 
 
 jr_001_63ba:
-    call Call_001_601e
+    call DrawCardTypeScreen
     ld hl, sp+$03
     ld [hl], $01
     dec hl
@@ -6967,7 +6999,7 @@ jr_001_63d1:
 Jump_001_63d6:
     ld hl, $0064
     push hl
-    call Call_000_3a93
+    call Delay
     add sp, $02
     jp Jump_001_62dc
 
@@ -7036,7 +7068,12 @@ Jump_001_6421:
     ld h, a
     nop
 
-Call_001_643a:
+; [ezgb]
+; BackupSaveDump: FRAM→SAVER dump used by BackupSavePrompt. Opens via FarCall_06_7309
+; ($ca0f path obj, $c3a5, mode $12), writes chunks (FarCall_07_7739), spinner . / .. / ...,
+; touches page $11 RTC/meta. Args: two size words + path ptr (often empty $68a9).
+
+BackupSaveDump::
     add sp, -$0b
     call WaitVBlankFlag
     ld a, $00
@@ -7051,7 +7088,7 @@ Call_001_643a:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1926
+    call FarCall_06_7309
     add sp, $05
     ld c, e
     ld a, c
@@ -7064,7 +7101,7 @@ Call_001_643a:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$04
     ld [hl], $00
@@ -7177,7 +7214,7 @@ Jump_001_647b:
     push bc
     ld hl, $c0a0
     push hl
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld a, $00
     push af
@@ -7194,7 +7231,7 @@ Jump_001_647b:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1963
+    call FarCall_07_7739
     add sp, $08
     ld hl, sp+$04
     inc [hl]
@@ -7313,7 +7350,7 @@ jr_001_65af:
     inc sp
     ld hl, $c0a0
     push hl
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     ld bc, $4000
     ld a, $11
@@ -7542,7 +7579,7 @@ jr_001_65af:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1985
+    call FarCall_03_76cc
     add sp, $06
     ld hl, sp+$05
     ld c, l
@@ -7554,13 +7591,13 @@ jr_001_65af:
     push hl
     ld hl, $ca0f
     push hl
-    call Call_000_1963
+    call FarCall_07_7739
     add sp, $08
 
 Jump_001_672f:
     ld hl, $ca0f
     push hl
-    call Call_000_19a1
+    call FarCall_03_768f
     add sp, $02
 
 Jump_001_6738:
@@ -7671,7 +7708,7 @@ jr_001_6787:
     push hl
     ld hl, $68a9
     push hl
-    call Call_001_643a
+    call BackupSaveDump
     add sp, $06
     jp Jump_001_6891
 
@@ -7794,7 +7831,7 @@ jr_001_682f:
     push hl
     ld hl, $68a9
     push hl
-    call Call_001_643a
+    call BackupSaveDump
     add sp, $06
     jp Jump_001_6891
 
@@ -7850,7 +7887,7 @@ jr_001_6891:
     ld hl, $cc32
     ld [hl], $ee
     ld hl, $cc33
-    call Call_000_20bb
+    call RleUnpack
     ld a, a
     ldh [rP1], a
     pop hl
@@ -8595,7 +8632,7 @@ jr_001_6a47:
     rst RST_38
     nop
     ld hl, $d00f
-    call Call_000_20bb
+    call RleUnpack
     ld a, a
     ret nz
 
@@ -9315,7 +9352,7 @@ jr_001_6f0d:
     rst RST_38
     nop
     ld hl, $d3f9
-    call Call_000_20bb
+    call RleUnpack
     ld a, a
     ld h, c
     nop
@@ -9676,7 +9713,7 @@ jr_001_7275:
     nop
     nop
     ld hl, $d5eb
-    call Call_000_20bb
+    call RleUnpack
     ld a, a
     ld a, l
     dec e
@@ -9817,7 +9854,7 @@ jr_001_7275:
     nop
     nop
     ld hl, $d6a7
-    call Call_000_20bb
+    call RleUnpack
     inc c
     rra
     inc e
@@ -9831,7 +9868,7 @@ jr_001_7367:
     ld e, $1f
     nop
     ld hl, $d6b3
-    call Call_000_20bb
+    call RleUnpack
     inc c
     rra
     dec e
@@ -9843,7 +9880,7 @@ jr_001_7367:
     ld e, $1f
     nop
     ld hl, $d6bf
-    call Call_000_20bb
+    call RleUnpack
     ld [$016d], sp
     ld l, l
     ld bc, $016d

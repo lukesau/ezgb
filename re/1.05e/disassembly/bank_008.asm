@@ -101,7 +101,7 @@ jr_008_4076:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -123,7 +123,7 @@ jr_008_408f:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -145,7 +145,7 @@ jr_008_40a7:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -167,7 +167,7 @@ jr_008_40c0:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -189,7 +189,7 @@ jr_008_40d9:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -212,7 +212,7 @@ jr_008_40f2:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -234,7 +234,7 @@ jr_008_410b:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
     pop bc
 
@@ -255,7 +255,7 @@ jr_008_4123:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_27f6
+    call PlotPixelXY
     add sp, $02
 
 Jump_008_4132:
@@ -11758,7 +11758,7 @@ Call_008_6848:
     ld [bc], a
     nop
 
-Call_008_6dd9:
+RomLoad_Build_B8::
     push af
     push af
     ld hl, sp+$08
@@ -11819,7 +11819,11 @@ Jump_008_6e12:
     ret
 
 
-Call_008_6e15:
+; [ezgb]
+; SdWindowPeek_B8: ld a,[$a000] → E. Bank-8 sibling of SdWindowPeek; used after
+; FPGA page switches (ready poll). Was briefly mislabeled SetFpga7FD2_B8.
+
+SdWindowPeek_B8::
     ld bc, $a000
     ld a, [bc]
     ld c, a
@@ -11827,6 +11831,10 @@ Call_008_6e15:
     ret
 
 
+; [ezgb]
+; SetFpga7FD2On_B8: unlock $7F00/10/20, write $01 to $7FD2, commit $7FF0.
+
+SetFpga7FD2On_B8::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -11845,7 +11853,10 @@ Call_008_6e15:
     ret
 
 
-Call_008_6e3b:
+; [ezgb]
+; SetFpga7FD2Off_B8: unlock $7F00/10/20, write $00 to $7FD2, commit $7FF0.
+
+SetFpga7FD2Off_B8::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -11864,7 +11875,11 @@ Call_008_6e3b:
     ret
 
 
-Call_008_6e5a:
+; [ezgb]
+; SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 — unlock, $7F36=stack u8,
+; commit. SetFpgaPage_B8 ($6e7a) is the $7FC0 sibling beside it.
+
+SetRomLoadCtrl_B8::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -11884,7 +11899,10 @@ Call_008_6e5a:
     ret
 
 
-Call_008_6e7a:
+; [ezgb]
+; SetFpgaPage_B8: bank-8 copy of SetFpgaPage (unlock, $7FC0=page, commit).
+
+SetFpgaPage_B8::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -11908,12 +11926,12 @@ Call_008_6e9a:
     ld a, $02
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
     ld a, $01
     push af
     inc sp
-    call Call_008_6e5a
+    call SetRomLoadCtrl_B8
     add sp, $01
     ld hl, $0200
     push hl
@@ -11924,29 +11942,29 @@ Call_008_6e9a:
     push hl
     ld hl, $a000
     push hl
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     ld a, $00
     push af
     inc sp
-    call Call_008_6e5a
+    call SetRomLoadCtrl_B8
     add sp, $01
     ld a, $00
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
     ret
 
 
-    ld bc, $6e15
+    ld bc, SdWindowPeek_B8
     ld a, $ff
     push af
     inc sp
     push bc
     ld hl, $d000
     push hl
-    call Call_008_6dd9
+    call RomLoad_Build_B8
     add sp, $05
     call $d000
     ret
@@ -11960,7 +11978,7 @@ Call_008_6ee7:
     push bc
     ld hl, $d000
     push hl
-    call Call_008_6dd9
+    call RomLoad_Build_B8
     add sp, $05
     call $d000
     ret
@@ -11970,7 +11988,7 @@ Call_008_6ee7:
     push af
     push af
     push af
-    call Call_008_6e3b
+    call SetFpga7FD2Off_B8
     xor a
     ld hl, sp+$04
     ld [hl+], a
@@ -12095,15 +12113,15 @@ Jump_008_6f44:
     ld a, $05
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
-    call Call_000_06fd
+    call DiNest
     call Call_008_6ee7
-    call Call_000_0706
+    call EiNest
     ld a, $00
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
     ld hl, sp+$04
     ld e, [hl]
@@ -12273,15 +12291,15 @@ Jump_008_6fcd:
     ld a, $04
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
-    call Call_008_6e15
+    call SdWindowPeek_B8
     ld c, e
     push bc
     ld a, $00
     push af
     inc sp
-    call Call_008_6e7a
+    call SetFpgaPage_B8
     add sp, $01
     pop bc
     ld hl, sp+$20
@@ -12316,7 +12334,7 @@ Jump_008_6fcd:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16f4
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$20
     ld c, l
@@ -12441,13 +12459,13 @@ jr_008_7152:
     push hl
     ld l, $00
     push hl
-    call Call_000_27de
+    call DrawLineXY
     add sp, $04
     ld hl, $089f
     push hl
     ld l, $00
     push hl
-    call Call_000_27de
+    call DrawLineXY
     add sp, $04
     xor a
     ld hl, sp+$06

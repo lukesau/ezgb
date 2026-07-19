@@ -110,8 +110,8 @@ Human names live in [re/1.05e/kernel.sym](../re/1.05e/kernel.sym). Block comment
 | `SetFpgaPage_B0` | `00:1a7a` | `$7FC0` page select (bank 0) |
 | `SetFpgaPage_B1` | `01:47a7` | `$7FC0` page select (bank 1) |
 | `RomLoad_InitiatePoll` | `04:4000` | `$7F36=$03` ROM load path |
-| `SetRomLoadCtrl` | `04:4140` | `$7F36` load mode |
-| `RomLoad_Build` | `04:40ab` | Build ROM image from SD into FPGA buffer |
+| `SetRomLoadCtrl_B4` | `04:4140` | `$7F36` load mode |
+| `RomLoad_Build_B4` | `04:40ab` | Build ROM image from SD into FPGA buffer |
 
 | `RomLoad_SoftReset` | `04:409c` | `$7FE0=$80` boot into loaded ROM |
 

@@ -5,7 +5,7 @@
 
 SECTION "ROM Bank $007", ROMX[$4000], BANK[$7]
 
-Call_007_4000:
+MemCpy16_B7::
     push af
     push af
     dec sp
@@ -242,7 +242,7 @@ Jump_007_407e:
     db $fd
     cp $ff
 
-Call_007_4101:
+MemSet8_B7::
     push af
     ld hl, sp+$04
     ld c, [hl]
@@ -285,7 +285,7 @@ Jump_007_4128:
     ret
 
 
-Call_007_412b:
+Clone_09413e_B7::
     add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
@@ -380,7 +380,7 @@ Jump_007_418d:
     ret
 
 
-Call_007_4195:
+Clone_0941a8_B7::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -440,7 +440,10 @@ Jump_007_41c4:
     ret
 
 
-Call_007_41d2:
+; [ezgb]
+; SyncWindow_B7: same as SyncWindow_B9 (09:41e5). Byte-identical to SyncWindow_B3.
+
+SyncWindow_B7::
     add sp, -$15
     ld hl, sp+$10
     ld [hl], $00
@@ -533,7 +536,7 @@ Call_007_41d2:
     ld a, c
     push af
     inc sp
-    call Call_000_1a53
+    call FarCall_02_41d5
     add sp, $09
     ld c, e
     xor a
@@ -754,7 +757,7 @@ Jump_007_42e2:
     ld a, c
     push af
     inc sp
-    call Call_000_1a53
+    call FarCall_02_41d5
     add sp, $09
     ld hl, sp+$00
     ld e, [hl]
@@ -775,7 +778,10 @@ Jump_007_4365:
     ret
 
 
-Call_007_436b:
+; [ezgb]
+; MoveWindow_B7: same as MoveWindow_B9 (09:437e). Byte-identical to MoveWindow_B3.
+
+MoveWindow_B7::
     add sp, -$09
     ld hl, sp+$08
     ld [hl], $00
@@ -839,7 +845,7 @@ Jump_007_43b9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_41d2
+    call SyncWindow_B7
     add sp, $02
     ld c, e
     ld hl, sp+$08
@@ -886,7 +892,7 @@ Jump_007_43b9:
     ld a, c
     push af
     inc sp
-    call Call_000_1a2f
+    call FarCall_02_4027
     add sp, $09
     ld c, e
     xor a
@@ -938,7 +944,7 @@ Jump_007_442e:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_41d2
+    call SyncWindow_B7
     add sp, $02
     ld c, e
     ld hl, sp+$10
@@ -1007,7 +1013,7 @@ jr_007_447e:
     ld l, $00
     push hl
     push bc
-    call Call_007_4101
+    call MemSet8_B7
     add sp, $05
     ld hl, sp+$0e
     ld e, [hl]
@@ -1272,7 +1278,7 @@ jr_007_459d:
     ld a, c
     push af
     inc sp
-    call Call_000_1a53
+    call FarCall_02_41d5
     add sp, $09
     ld hl, sp+$0c
     ld e, [hl]
@@ -1314,7 +1320,7 @@ Jump_007_4602:
     ret
 
 
-Call_007_4608:
+Clust2Sect_B7::
     add sp, -$0a
     ld hl, sp+$0e
     ld e, [hl]
@@ -1456,7 +1462,7 @@ Jump_007_4687:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2826
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$06
@@ -1532,7 +1538,7 @@ Jump_007_4704:
     ret
 
 
-Call_007_4707:
+GetFat_B7::
     add sp, -$14
     ld hl, sp+$18
     ld a, [hl]
@@ -1750,7 +1756,7 @@ Jump_007_4793:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     xor a
@@ -1877,7 +1883,7 @@ jr_007_4833:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     xor a
@@ -2057,7 +2063,7 @@ Jump_007_4913:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     xor a
@@ -2231,7 +2237,7 @@ Jump_007_49e9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     xor a
@@ -2350,7 +2356,7 @@ Jump_007_4adf:
     ret
 
 
-Call_007_4aeb:
+Clone_094af7_B7::
     add sp, -$19
     ld hl, sp+$1d
     ld a, [hl]
@@ -2555,7 +2561,7 @@ Jump_007_4b66:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld b, e
     ld hl, sp+$14
@@ -2748,7 +2754,7 @@ Jump_007_4c5a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld b, e
     ld hl, sp+$14
@@ -2976,7 +2982,7 @@ Jump_007_4d76:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     ld hl, sp+$14
@@ -3159,7 +3165,7 @@ Jump_007_4e58:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     ld hl, sp+$14
@@ -3313,7 +3319,7 @@ Jump_007_4f82:
     ret
 
 
-Call_007_4f88:
+Clone_095139_B7::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -3430,7 +3436,7 @@ Jump_007_4ffe:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4707
+    call GetFat_B7
     add sp, $06
     push hl
     ld hl, sp+$19
@@ -3703,7 +3709,7 @@ Jump_007_513d:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4707
+    call GetFat_B7
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -3857,7 +3863,7 @@ Jump_007_51f3:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4aeb
+    call Clone_094af7_B7
     add sp, $0a
     ld c, e
     xor a
@@ -3898,7 +3904,7 @@ Jump_007_51f3:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4aeb
+    call Clone_094af7_B7
     add sp, $0a
     ld b, e
     ld c, b
@@ -4106,7 +4112,7 @@ Jump_007_5327:
     ret
 
 
-Call_007_532a:
+Clone_0954db_B7::
     add sp, -$16
     ld hl, sp+$18
     ld a, [hl+]
@@ -4427,7 +4433,7 @@ Jump_007_5474:
     ld l, a
     push hl
     push bc
-    call Call_007_4707
+    call GetFat_B7
     add sp, $06
     push hl
     ld hl, sp+$06
@@ -4593,7 +4599,7 @@ Jump_007_5543:
     ld l, a
     push hl
     push bc
-    call Call_007_4608
+    call Clust2Sect_B7
     add sp, $06
     push hl
     ld hl, sp+$06
@@ -4805,7 +4811,7 @@ Jump_007_5658:
     ret
 
 
-Call_007_565b:
+Clone_09580c_B7::
     add sp, -$22
     ld hl, sp+$24
     ld a, [hl+]
@@ -5056,7 +5062,7 @@ jr_007_5743:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4707
+    call GetFat_B7
     add sp, $06
     push hl
     ld hl, sp+$20
@@ -5210,7 +5216,7 @@ Jump_007_5815:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4f88
+    call Clone_095139_B7
     add sp, $06
     push hl
     ld hl, sp+$14
@@ -5325,7 +5331,7 @@ Jump_007_58af:
     ld a, [de]
     ld b, a
     push bc
-    call Call_007_41d2
+    call SyncWindow_B7
     add sp, $02
     ld c, e
     xor a
@@ -5356,7 +5362,7 @@ Jump_007_58ca:
     ld hl, $0000
     push hl
     push bc
-    call Call_007_4101
+    call MemSet8_B7
     add sp, $05
     ld hl, sp+$16
     ld e, [hl]
@@ -5385,7 +5391,7 @@ Jump_007_58ca:
     ld l, a
     push hl
     push bc
-    call Call_007_4608
+    call Clust2Sect_B7
     add sp, $06
     push hl
     ld hl, sp+$14
@@ -5467,7 +5473,7 @@ Jump_007_593c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_41d2
+    call SyncWindow_B7
     add sp, $02
     ld c, e
     xor a
@@ -5677,7 +5683,7 @@ Jump_007_5a2e:
     ld l, a
     push hl
     push bc
-    call Call_007_4608
+    call Clust2Sect_B7
     add sp, $06
     push hl
     ld hl, sp+$02
@@ -5785,7 +5791,7 @@ Jump_007_5adc:
     ret
 
 
-Call_007_5adf:
+Clone_095c8f_B7::
     add sp, -$0b
     ld hl, $0000
     push hl
@@ -5794,7 +5800,7 @@ Call_007_5adf:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_532a
+    call Clone_0954db_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5863,7 +5869,7 @@ Jump_007_5b16:
     ld l, a
     push hl
     push bc
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld b, e
     ld hl, sp+$0a
@@ -5941,7 +5947,7 @@ Jump_007_5b93:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_565b
+    call Clone_09580c_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5973,7 +5979,7 @@ Jump_007_5bbc:
     ret
 
 
-Call_007_5bc2:
+Clone_095d72_B7::
     push af
     push af
     push af
@@ -6180,7 +6186,7 @@ Jump_007_5c4e:
     ret
 
 
-Call_007_5cbc:
+Clone_095e6c_B7::
     add sp, -$0e
     ld hl, sp+$12
     ld e, [hl]
@@ -6306,7 +6312,7 @@ Jump_007_5d12:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_1fd5
+    call WToUpper
     add sp, $02
     ld hl, sp+$01
     ld [hl], d
@@ -6347,7 +6353,7 @@ jr_007_5d6e:
     ld a, [de]
     ld b, a
     push bc
-    call Call_000_1fd5
+    call WToUpper
     add sp, $02
     ld b, d
     ld c, e
@@ -6719,7 +6725,7 @@ Jump_007_5f3d:
     ret
 
 
-Call_007_5f40:
+Clone_0960f0_B7::
     push af
     push af
     push af
@@ -6965,7 +6971,7 @@ Call_007_6051:
     ld l, a
     push hl
     push bc
-    call Call_007_4000
+    call MemCpy16_B7
     add sp, $05
     ld a, $05
     ld hl, sp+$25
@@ -7385,7 +7391,7 @@ Jump_007_623c:
     ret
 
 
-Call_007_6252:
+Clone_096402_B7::
     push af
     push af
     dec sp
@@ -7452,7 +7458,7 @@ jr_007_6280:
     ret
 
 
-Call_007_629b:
+Clone_09644b_B7::
     add sp, -$1a
     ld hl, $0000
     push hl
@@ -7461,7 +7467,7 @@ Call_007_629b:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_532a
+    call Clone_0954db_B7
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -7598,7 +7604,7 @@ Jump_007_632b:
     ld l, a
     push hl
     push bc
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld b, e
     ld hl, sp+$19
@@ -7808,7 +7814,7 @@ Jump_007_6434:
     ld l, a
     push hl
     push bc
-    call Call_007_5cbc
+    call Clone_095e6c_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -7856,7 +7862,7 @@ Jump_007_6472:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_6252
+    call Clone_096402_B7
     add sp, $02
     ld c, e
     ld hl, sp+$14
@@ -7908,7 +7914,7 @@ Jump_007_64ac:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_412b
+    call Clone_09413e_B7
     add sp, $05
     ld b, d
     ld c, e
@@ -7937,7 +7943,7 @@ Jump_007_64d8:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_565b
+    call Clone_09580c_B7
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -8026,7 +8032,7 @@ Jump_007_6519:
     ld l, a
     push hl
     push bc
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     ld hl, sp+$0e
@@ -8316,7 +8322,7 @@ Jump_007_6697:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_6252
+    call Clone_096402_B7
     add sp, $02
     ld c, e
     ld hl, sp+$08
@@ -8351,7 +8357,7 @@ Jump_007_66c7:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_565b
+    call Clone_09580c_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -8450,7 +8456,7 @@ Jump_007_66fa:
     ld l, a
     push hl
     push bc
-    call Call_007_4000
+    call MemCpy16_B7
     add sp, $05
     ld hl, sp+$15
     ld a, l
@@ -8552,7 +8558,7 @@ Jump_007_679f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_629b
+    call Clone_09644b_B7
     add sp, $02
     ld c, e
     ld hl, sp+$25
@@ -8699,7 +8705,7 @@ Jump_007_6865:
     ld l, $0d
     push hl
     push bc
-    call Call_000_28e9
+    call U16Div
     add sp, $04
     ld b, d
     ld c, e
@@ -8727,7 +8733,7 @@ Jump_007_688a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_5adf
+    call Clone_095c8f_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8782,7 +8788,7 @@ Jump_007_688a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_532a
+    call Clone_0954db_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8801,7 +8807,7 @@ Jump_007_688a:
     ld a, [de]
     ld b, a
     push bc
-    call Call_007_6252
+    call Clone_096402_B7
     add sp, $02
     ld c, e
     ld hl, sp+$12
@@ -8861,7 +8867,7 @@ Jump_007_6912:
     ld l, a
     push hl
     push bc
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     ld hl, sp+$25
@@ -8914,7 +8920,7 @@ Jump_007_6912:
     ld l, a
     push hl
     push bc
-    call Call_007_5f40
+    call Clone_0960f0_B7
     add sp, $06
     ld hl, sp+$0a
     ld e, [hl]
@@ -8938,7 +8944,7 @@ Jump_007_6912:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_565b
+    call Clone_09580c_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -9009,7 +9015,7 @@ Jump_007_69bc:
     ld l, a
     push hl
     push bc
-    call Call_007_436b
+    call MoveWindow_B7
     add sp, $06
     ld c, e
     ld hl, sp+$25
@@ -9041,7 +9047,7 @@ Jump_007_69bc:
     ld hl, $0000
     push hl
     push bc
-    call Call_007_4101
+    call MemSet8_B7
     add sp, $05
     ld hl, sp+$0e
     ld e, [hl]
@@ -9071,7 +9077,7 @@ Jump_007_69bc:
     ld l, a
     push hl
     push bc
-    call Call_007_4000
+    call MemCpy16_B7
     add sp, $05
     ld hl, sp+$00
     ld e, [hl]
@@ -9633,7 +9639,7 @@ Jump_007_6caf:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_1e1a
+    call MapCp437
     add sp, $04
     ld b, d
     ld c, e
@@ -9731,7 +9737,7 @@ Jump_007_6d48:
     ret
 
 
-Call_007_6d4b:
+Clone_096c3e_B7::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -9914,7 +9920,7 @@ Jump_007_6e17:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_1e1a
+    call MapCp437
     add sp, $04
     ld b, d
     ld c, e
@@ -9947,7 +9953,7 @@ Jump_007_6e3c:
     push hl
     ld hl, $73c3
     push hl
-    call Call_007_4195
+    call Clone_0941a8_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -10441,7 +10447,7 @@ Jump_007_705c:
     ld hl, $0020
     push hl
     push bc
-    call Call_007_4101
+    call MemSet8_B7
     add sp, $05
     ld hl, sp+$0f
     ld [hl], $00
@@ -10818,7 +10824,7 @@ Jump_007_7240:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_1e1a
+    call MapCp437
     add sp, $04
     ld b, d
     ld c, e
@@ -10865,7 +10871,7 @@ Jump_007_7281:
     push hl
     ld hl, $73cc
     push hl
-    call Call_007_4195
+    call Clone_0941a8_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -11283,7 +11289,7 @@ Jump_007_7457:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_532a
+    call Clone_0954db_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -11316,7 +11322,7 @@ Jump_007_7494:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_6d4b
+    call Clone_096c3e_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -11330,7 +11336,7 @@ Jump_007_7494:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_629b
+    call Clone_09644b_B7
     add sp, $02
     ld c, e
     ld hl, sp+$0a
@@ -11544,7 +11550,7 @@ Jump_007_7591:
     ld l, a
     push hl
     push bc
-    call Call_007_5bc2
+    call Clone_095d72_B7
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -11778,7 +11784,7 @@ Jump_007_76b3:
     ret
 
 
-Call_007_76b6:
+Clone_056d96_B7::
     push af
     push af
     ld hl, sp+$06
@@ -11875,7 +11881,7 @@ jr_007_7717:
     ld c, a
     push af
     inc sp
-    call Call_000_1a29
+    call DiskStatus
     add sp, $01
     ld c, e
     ld a, c
@@ -11928,7 +11934,7 @@ Jump_007_7736:
     inc hl
     ld b, [hl]
     push bc
-    call Call_007_76b6
+    call Clone_056d96_B7
     add sp, $02
     ld c, e
     xor a
@@ -12306,7 +12312,7 @@ Jump_007_7890:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4f88
+    call Clone_095139_B7
     add sp, $06
     push hl
     ld hl, sp+$02
@@ -12367,7 +12373,7 @@ Jump_007_7952:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_4f88
+    call Clone_095139_B7
     add sp, $06
     push hl
     ld hl, sp+$02
@@ -12618,7 +12624,7 @@ jr_007_7a4c:
     ld a, c
     push af
     inc sp
-    call Call_000_1a53
+    call FarCall_02_41d5
     add sp, $09
     ld c, e
     xor a
@@ -12686,7 +12692,7 @@ Jump_007_7ab9:
     ld l, a
     push hl
     push bc
-    call Call_007_4608
+    call Clust2Sect_B7
     add sp, $06
     push hl
     ld hl, sp+$2f
@@ -12869,7 +12875,7 @@ Jump_007_7b97:
     ld a, c
     push af
     inc sp
-    call Call_000_1a53
+    call FarCall_02_41d5
     add sp, $09
     ld c, e
     xor a
@@ -13026,7 +13032,7 @@ Jump_007_7bd7:
     ld l, a
     push hl
     push bc
-    call Call_007_4000
+    call MemCpy16_B7
     add sp, $05
     ld hl, sp+$20
     ld e, [hl]
@@ -13198,7 +13204,7 @@ jr_007_7d36:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_1a2f
+    call FarCall_02_4027
     add sp, $09
     ld c, e
     xor a
@@ -13335,7 +13341,7 @@ Jump_007_7dbe:
     ld l, a
     push hl
     push bc
-    call Call_007_4000
+    call MemCpy16_B7
     add sp, $05
     ld hl, sp+$20
     ld e, [hl]

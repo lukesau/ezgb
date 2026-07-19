@@ -113,7 +113,7 @@ RomLoad_SoftReset::
 ; [ezgb]
 ; ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window.
 
-RomLoad_Build::
+RomLoad_Build_B4::
     push af
     push af
     ld hl, sp+$08
@@ -182,7 +182,7 @@ Call_004_40e7:
     push bc
     ld hl, $d100
     push hl
-    call RomLoad_Build
+    call RomLoad_Build_B4
     add sp, $05
     call $d100
     ret
@@ -234,9 +234,9 @@ Call_004_40e7:
 
 
 ; [ezgb]
-; SetRomLoadCtrl: $7F36 load mode ($00=off, $01=map cmd buf, $03=initiate).
+; SetRomLoadCtrl_B4: $7F36 load mode ($00=off, $01=map cmd buf, $03=initiate).
 
-SetRomLoadCtrl::
+SetRomLoadCtrl_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -329,7 +329,7 @@ Jump_004_41ce:
     push bc
     ld hl, $d000
     push hl
-    call RomLoad_Build
+    call RomLoad_Build_B4
     add sp, $05
     call $d000
     ret
@@ -835,7 +835,7 @@ Jump_004_444c:
     ld a, $01
     push af
     inc sp
-    call SetRomLoadCtrl
+    call SetRomLoadCtrl_B4
     add sp, $01
     ld hl, $0200
     push hl
@@ -846,7 +846,7 @@ Jump_004_444c:
     push hl
     ld hl, $a000
     push hl
-    call Call_000_30ea
+    call VramCopyStack
     add sp, $06
     call Call_004_40e7
     ret
@@ -927,7 +927,13 @@ Jump_004_44ec:
     ret
 
 
-Call_004_44f7:
+; [ezgb]
+; U32ToAscii(val, buf, radix): write unsigned long as ASCII into buf (NUL-term).
+; Stack RTL: val u32, char* buf, u8 radix. Digits via U32Div/U32Mod,
+; then reverse into buf; 0-9 -> '0'+n, 10+ -> 'a'+(n-10) (+$57). Callers pass
+; radix $0a (decimal). Local $34-byte digit scratch. Bank0 copy: U32ToAscii_B0 ($16f4).
+
+U32ToAscii::
     add sp, -$34
     ld hl, sp+$13
     ld a, l
@@ -1018,7 +1024,7 @@ jr_004_453c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_282c
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$11
@@ -1050,7 +1056,7 @@ jr_004_453c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2832
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -1254,7 +1260,11 @@ Jump_004_466b:
     ret
 
 
-Call_004_466e:
+; [ezgb]
+; SetFpgaPage_B4: bank-4 copy of SetFpgaPage (unlock $7F00/10/20, $7FC0=page,
+; commit $7FF0). Byte-identical to SetFpgaPage_B0/B1; near-call only within bank.
+
+SetFpgaPage_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -1274,7 +1284,11 @@ Call_004_466e:
     ret
 
 
-Call_004_468e:
+; [ezgb]
+; SetFpga7FD0_B4: same unlock/commit as SetFpgaPage but writes stack u8 to $7FD0.
+; See docs/REGISTERS.md ($7fd0/$7fd2/$7fd4 peripheral enable candidates).
+
+SetFpga7FD0_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -1297,7 +1311,7 @@ Call_004_468e:
     ld a, $06
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld bc, $a008
     ld a, $33
@@ -1323,12 +1337,12 @@ Call_004_468e:
     ld a, $01
     push af
     inc sp
-    call Call_004_468e
+    call SetFpga7FD0_B4
     add sp, $01
     ld a, $00
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ret
 
@@ -1348,7 +1362,7 @@ Call_004_468e:
     ld a, $03
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld bc, $a200
     ld a, [bc]
@@ -1361,7 +1375,7 @@ Call_004_468e:
     ld a, $00
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld hl, $0000
     push hl
@@ -1484,7 +1498,7 @@ Jump_004_47ef:
     push af
     inc sp
     push bc
-    call Call_000_2ca5
+    call Memset
     add sp, $05
     ld hl, sp+$5c
     ld a, l
@@ -1842,7 +1856,7 @@ Jump_004_49ee:
     ld a, $06
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld hl, sp+$24
     ld a, [hl+]
@@ -1943,7 +1957,7 @@ Jump_004_49ee:
     ld a, $00
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld hl, $0000
     push hl
@@ -2055,7 +2069,7 @@ Jump_004_4aad:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2177,7 +2191,7 @@ Jump_004_4b4d:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2300,7 +2314,7 @@ Jump_004_4beb:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2414,7 +2428,7 @@ Jump_004_4c79:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2537,7 +2551,7 @@ Jump_004_4d18:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2660,7 +2674,7 @@ Jump_004_4db7:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$41
     ld c, l
@@ -2770,7 +2784,7 @@ Jump_004_4e42:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     xor a
     ld hl, sp+$3f
@@ -2852,7 +2866,7 @@ Jump_004_4ec6:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$3f
     ld a, [hl]
@@ -2941,7 +2955,7 @@ Jump_004_4f48:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$3f
     ld a, [hl]
@@ -3021,7 +3035,7 @@ Jump_004_4fca:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$3f
     ld a, [hl]
@@ -3110,7 +3124,7 @@ Jump_004_503b:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$3f
     ld a, [hl]
@@ -3199,7 +3213,7 @@ Jump_004_50bd:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_004_44f7
+    call U32ToAscii
     add sp, $07
     ld hl, sp+$3f
     ld a, [hl]
@@ -3622,7 +3636,7 @@ Jump_004_52f2:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     xor a
@@ -4145,7 +4159,7 @@ jr_004_552b:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     xor a
@@ -4590,7 +4604,7 @@ Jump_004_5747:
     ld a, $06
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld hl, sp+$00
     ld [hl], $08
@@ -4609,7 +4623,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4627,7 +4641,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4655,7 +4669,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4673,7 +4687,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4701,7 +4715,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4719,7 +4733,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4747,7 +4761,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4765,7 +4779,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4796,7 +4810,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4814,7 +4828,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4842,7 +4856,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28cf
+    call U8Div
     add sp, $02
     ld a, e
     pop bc
@@ -4860,7 +4874,7 @@ Jump_004_5747:
     ld a, c
     push af
     inc sp
-    call Call_000_28dd
+    call U8Mod
     add sp, $02
     ld c, e
     pop af
@@ -4874,12 +4888,12 @@ Jump_004_5747:
     ld a, $01
     push af
     inc sp
-    call Call_004_468e
+    call SetFpga7FD0_B4
     add sp, $01
     ld a, $00
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     jp Jump_004_48f5
 
@@ -4907,7 +4921,7 @@ Jump_004_58e6:
     ld a, $03
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     ld bc, $a200
     ld hl, sp+$3c
@@ -4919,7 +4933,7 @@ Jump_004_58e6:
     ld a, $00
     push af
     inc sp
-    call Call_004_466e
+    call SetFpgaPage_B4
     add sp, $01
     jp Jump_004_48f5
 
