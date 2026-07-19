@@ -19,6 +19,9 @@ actually understood, not just the literal behavior.
 
 Total matched: 15 functions (counting 5 wrappers separately), 220 bytes.
 
+Secondary to naming the live disassembly; see `docs/omega-jr-compare.md` for current project
+priorities.
+
 ## Notes
 
 - `Call_000_2765` / `Call_000_2791` need abs-pair / abs-triple peepholes: modern SDCC emits

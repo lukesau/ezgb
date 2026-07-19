@@ -1,11 +1,15 @@
-# Fast-launch notes (experiment paused)
+# Fast-launch notes (deferred)
 
-Goal remains: boot a chosen ROM without the file browser (on-disk config or
-marker). A binary patch was tried against 1.05e and **withdrawn**; keep using
-virgin `re/1.05e/kernel.gb`. Confirmed load plumbing stays in
+**Status:** deferred. Priority is full ASM naming/mapping; see
+[`omega-jr-compare.md`](omega-jr-compare.md). The longer-term product goal is an Omega-style
+**Mode B** experience implemented as a **separate B-mode kernel**, not an in-place patch of
+the stock browser OS.
+
+These notes preserve what a withdrawn binary-hook experiment learned about WRAM, dir enum,
+and hook sites. Keep using virgin `re/1.05e/kernel.gb`. Confirmed load plumbing stays in
 [`launch-trace.md`](launch-trace.md) / [`boot-map.md`](boot-map.md).
 
-## What is solid (reuse later)
+## What is solid (reuse later for a B-mode kernel)
 
 ### Open → load chain
 
@@ -19,7 +23,7 @@ virgin `re/1.05e/kernel.gb`. Confirmed load plumbing stays in
 The kernel already saves the **full launch path** of the last-run ROM to cart NVRAM at
 `$A300` (bank 17 + rompage `$03`), and the START overlay reads it back and relaunches it.
 This is a persisted, directory-qualified path in the exact `$c2a6` format the loader consumes
-— a strong candidate hook for fast-launch (read `$A300`, drive the `jr_000_1344`
+— a strong candidate input for a later B-mode kernel (read `$A300`, drive the `jr_000_1344`
 split-and-load path, skip the browser). Full trace in [`last-rom.md`](last-rom.md).
 
 ### WRAM the loader already understands
@@ -90,7 +94,10 @@ We did **not** prove whether virgin `kernel.gb` also dies on the same card
 image, or whether `$1569` with only `$c4a4` + `$c2a6="/"` is sufficient once
 enum succeeds. Those are the next checks if this is revived.
 
-## Suggested next attempt (when resumed)
+## Suggested next attempt (when a B-mode kernel is in scope)
+
+Prefer a dedicated kernel image over patching the stock browser (see
+[`omega-jr-compare.md`](omega-jr-compare.md)). If revisiting the stock-kernel hook path first:
 
 1. A/B virgin vs any patch on the **same** `sd/card.img`.
 2. Break `$102f` / `$0a43` / `$1569` before inventing more cave logic.

@@ -12346,7 +12346,7 @@ Jump_008_70e1:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0107
     push hl
@@ -12355,14 +12355,14 @@ Jump_008_70e1:
     ld a, $78
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0305
     push hl
@@ -12374,7 +12374,7 @@ Jump_008_70e1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0300
     push hl
@@ -12383,7 +12383,7 @@ Jump_008_70e1:
     inc sp
     ld hl, $7155
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0500
     push hl
@@ -12392,12 +12392,12 @@ Jump_008_70e1:
     inc sp
     ld hl, $715a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_008_7141:
-    call Call_000_0688
-    call Call_000_3a4a
+    call WaitVBlankFlag
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -12435,7 +12435,7 @@ jr_008_7152:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $099f
     push hl
@@ -12459,7 +12459,7 @@ jr_008_7152:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $010e
     push hl
@@ -12468,14 +12468,14 @@ jr_008_7152:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0000
     push hl
@@ -12484,14 +12484,14 @@ jr_008_7152:
     inc sp
     ld hl, $7332
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0004
     push hl
@@ -12500,7 +12500,7 @@ jr_008_7152:
     inc sp
     ld hl, $7337
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0009
     push hl
@@ -12509,7 +12509,7 @@ jr_008_7152:
     inc sp
     ld hl, $733d
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_008_7331
 
@@ -12532,7 +12532,7 @@ jr_008_7210:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $018f
     push hl
@@ -12541,14 +12541,14 @@ jr_008_7210:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0004
     push hl
@@ -12557,14 +12557,14 @@ jr_008_7210:
     inc sp
     ld hl, $7337
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0000
     push hl
@@ -12573,7 +12573,7 @@ jr_008_7210:
     inc sp
     ld hl, $7332
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0009
     push hl
@@ -12582,7 +12582,7 @@ jr_008_7210:
     inc sp
     ld hl, $733d
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_008_7331
 
@@ -12605,7 +12605,7 @@ jr_008_728b:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $018f
     push hl
@@ -12614,14 +12614,14 @@ jr_008_728b:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0009
     push hl
@@ -12630,14 +12630,14 @@ jr_008_728b:
     inc sp
     ld hl, $733d
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0000
     push hl
@@ -12646,7 +12646,7 @@ jr_008_728b:
     inc sp
     ld hl, $7332
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0004
     push hl
@@ -12655,7 +12655,7 @@ jr_008_728b:
     inc sp
     ld hl, $7337
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_008_7331
 
@@ -12678,7 +12678,7 @@ jr_008_7306:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $018f
     push hl
@@ -12687,14 +12687,14 @@ jr_008_7306:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_008_7331:
@@ -12719,15 +12719,15 @@ jr_008_733d:
     ld b, l
     ld c, h
     ld d, b
-    jr nz, jr_008_7344
+    jr nz, DrawReadingBox
 
-jr_008_7344:
+DrawReadingBox::
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -12736,7 +12736,7 @@ jr_008_7344:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0805
     push hl
@@ -12745,7 +12745,7 @@ jr_008_7344:
     inc sp
     ld hl, $7374
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ret
 
@@ -12759,6 +12759,14 @@ jr_008_7344:
     ld h, a
     ld l, $2e
     ld l, $00
+
+; [ezgb]
+; Status-box draw family (bank 8), each reached via FarCallTrampoline:
+; DrawReadingBox $7344 'Reading....', DrawLoadingBox $737f 'Loading....',
+; DrawErrorFileBox $73ba 'Error file', DrawLastRomButtons $73f5 '[B]return'/'[A]start'.
+; See docs/last-rom.md.
+
+DrawLoadingBox::
     ld hl, $0002
     push hl
     ld a, $03
@@ -12766,7 +12774,7 @@ jr_008_7344:
     inc sp
 
 jr_008_7387:
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 jr_008_738c:
@@ -12777,7 +12785,7 @@ jr_008_738c:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0805
     push hl
@@ -12786,7 +12794,7 @@ jr_008_738c:
     inc sp
     ld hl, $73af
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ret
 
@@ -12800,12 +12808,14 @@ jr_008_738c:
     ld h, a
     ld l, $2e
     ld l, $00
+
+DrawErrorFileBox::
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -12814,7 +12824,7 @@ jr_008_738c:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0805
     push hl
@@ -12823,7 +12833,7 @@ jr_008_738c:
     inc sp
     ld hl, $73ea
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ret
 
@@ -12839,12 +12849,14 @@ jr_008_738c:
     ld l, h
     ld h, l
     nop
+
+DrawLastRomButtons::
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $018f
     push hl
@@ -12853,7 +12865,7 @@ jr_008_738c:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $018e
     push hl
@@ -12862,7 +12874,7 @@ jr_008_738c:
     ld a, $05
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $018e
     push hl
@@ -12871,7 +12883,7 @@ jr_008_738c:
     ld a, $55
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $1101
     push hl
@@ -12880,7 +12892,7 @@ jr_008_738c:
     inc sp
     ld hl, $7458
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $110b
     push hl
@@ -12889,7 +12901,7 @@ jr_008_738c:
     inc sp
     ld hl, $7462
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 jr_008_7457:

@@ -26,8 +26,10 @@ HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]r
 | Contents | Full launch path as a C string, same format as `$c2a6` (e.g. `/pokemon/Pokemon Blue.gb`, long-filename form) |
 | WRAM mirror | Read back into `$c4a4`; written from `$c2a6` |
 
-`$A300` (bank 17 + rompage `$03`) is the same NOR/NVRAM window flagged for the 1.05e RTC
-persistence in `docs/DIFF_1.04e_vs_1.05e.md` / `docs/1.05e-instability.md`.
+`$A300` (bank 17 + rompage `$03`) sits in the same cart FRAM window as save meta (see
+`docs/fram-save-map.md`). FRAM needs no battery; the cart’s battery is for the RTC only.
+Older notes that lumped this window with “NOR/NVRAM for RTC” should be read with that
+split in mind (`docs/DIFF_1.04e_vs_1.05e.md` / `docs/1.05e-instability.md`).
 
 ## Write side (persist on launch) — bank 1
 
@@ -189,12 +191,13 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 | `$40` | SELECT (SET/HELP tabs) | Not yet confirmed |
 | `$04` / `$08` | Up / Down | Not yet confirmed |
 
-## Fast-launch implication
+## B-mode / direct-boot implication
 
 `$A300` already holds a full, directory-qualified path in the exact format the loader consumes
-(`$c2a6` = `/dir/NAME.GB`). A fast-launch that reads `$A300` and drives the `jr_000_1344`
-split-and-load sequence would handle nested ROMs without touching the file browser. See
-`docs/fast-launch-notes.md`.
+(`$c2a6` = `/dir/NAME.GB`). A later B-mode kernel (or a deferred stock-kernel hook) that reads
+`$A300` and drives the `jr_000_1344` split-and-load sequence would handle nested ROMs without
+the file browser. Mapping the ASM comes first; see [`omega-jr-compare.md`](omega-jr-compare.md)
+and [`fast-launch-notes.md`](fast-launch-notes.md).
 
 ## Open questions / verification TODO
 

@@ -30,6 +30,11 @@ The final `$7f36` / `$7fe0` sequence runs from a **WRAM-copied stub** (`$d1xx`),
 not from live bank4 `$448f` at the moment of the writes — so a `$448f` breakpoint
 can miss even though that routine is what installed the stub.
 
+Product note: this SD → FPGA program → `$7fe0=$80` handoff is already the Jr’s
+“authentic cart” launch. A future B-mode kernel reuses it and only skips the
+browser OS; Omega needs NOR + a Mode B switch for the same idea. See
+[`omega-jr-compare.md`](omega-jr-compare.md).
+
 ### WRAM at `$1569` → bank1 `$5e14` (PKMRED.GB)
 
 Far-call hops confirmed at `$07ad`:
@@ -53,8 +58,9 @@ Far-call hops confirmed at `$07ad`:
 
 Far-call prefix matched Pokemon: `$482b` → `$4048` → `$4000` → `$5e14` (bank 1), then SD helpers (e.g. bank5 `$4378` in a loop — delete `$07ad` once past `$5e14`).
 
-Fast-launch: still open. WRAM / dir-list / hook-site notes from a withdrawn
-patch attempt are in [`fast-launch-notes.md`](fast-launch-notes.md).
+B-mode / direct-boot work is deferred behind full ASM mapping; WRAM / dir-list /
+hook-site notes from a withdrawn patch attempt are in [`fast-launch-notes.md`](fast-launch-notes.md).
+Product framing (Omega Mode B → Jr B-mode kernel): [`omega-jr-compare.md`](omega-jr-compare.md).
 
 ## Run
 

@@ -910,7 +910,7 @@ index 0000000..60e2bb7
 +    /* After $7FE0: ROM runs but cart_sram/img stay alive (mbc_ram aliases cart_sram). */
 +    bool game_mode;
 +    bool mbc_ram_is_cart_sram;
-+    bool fram_dirty; /* host-side FRAM image needs flush (battery-backed SRAM) */
++    bool fram_dirty; /* host-side FRAM image needs flush (non-volatile FRAM) */
 +    char fram_path[1024];
 +    uint8_t unlock_step;
 +    uint8_t rom_latch; /* $4000: SRAM page while $7FC0=$03 */

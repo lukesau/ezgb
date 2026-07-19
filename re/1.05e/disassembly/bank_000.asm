@@ -280,7 +280,7 @@ Call_000_0093:
 
 Boot::
     nop
-    jp Jump_000_0150
+    jp KernelEntry
 
 
 HeaderLogo::
@@ -324,7 +324,7 @@ HeaderGlobalChecksum::
 ; [ezgb]
 ; Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.
 
-Jump_000_0150:
+KernelEntry::
     di
     ld d, a
     xor a
@@ -364,7 +364,7 @@ jr_000_0172:
     ld [$2000], a
     xor a
     ld [$d6d0], a
-    call Call_000_069f
+    call LcdOff
     xor a
     ldh [rSCY], a
     ldh [rSCX], a
@@ -373,7 +373,7 @@ jr_000_0172:
     ld a, $07
     ldh [rWX], a
     ld bc, $ff80
-    ld hl, $06b6
+    ld hl, OamDmaStub
     ld b, $0a
 
 jr_000_019e:
@@ -383,10 +383,10 @@ jr_000_019e:
     dec b
     jr nz, jr_000_019e
 
-    ld bc, $0677
-    call Call_000_062e
-    ld bc, $06c0
-    call Call_000_0640
+    ld bc, VBlankCallback
+    call RegisterVBlankCallback
+    ld bc, SerialCallback
+    call RegisterSerialCallback
     ld a, $e4
     ldh [rBGP], a
     ldh [rOBP0], a
@@ -409,11 +409,11 @@ jr_000_019e:
     ld [$d6d1], a
     ld [$d6d2], a
     call $68b6
-    call Call_000_1835
+    call BatteryCheck
 
-jr_000_01df:
+HaltLoop::
     halt
-    jr jr_000_01df
+    jr HaltLoop
 
     ret
 
@@ -908,7 +908,7 @@ Call_000_0376:
     rst RST_38
     rst RST_38
     rst RST_38
-    jp Jump_000_2eea
+    jp EnterGfxMode1
 
 
     rst RST_38
@@ -1478,7 +1478,7 @@ Call_000_0376:
 
 Call_000_0600:
     ld a, l
-    ld [$d6ca], a
+    ld [wGfxMode], a
     and $03
     ld l, a
     ld bc, $01e2
@@ -1490,57 +1490,60 @@ Call_000_0600:
 
 Call_000_0610:
     ld hl, $d6d3
-    jp Jump_000_064c
+    jp RemoveCallbackSlot
 
 
 Call_000_0616:
     ld hl, $d6e3
-    jp Jump_000_064c
+    jp RemoveCallbackSlot
 
 
 Call_000_061c:
     ld hl, $d6f3
-    jp Jump_000_064c
+    jp RemoveCallbackSlot
 
 
 Call_000_0622:
     ld hl, $d703
-    jp Jump_000_064c
+    jp RemoveCallbackSlot
 
 
 Call_000_0628:
     ld hl, $d713
-    jp Jump_000_064c
+    jp RemoveCallbackSlot
 
 
-Call_000_062e:
+; [ezgb]
+; RegisterVBlankCallback: HL = callback-list base, jp InstallCallbackSlot with
+; BC = VBlankCallback ($0677). Sibling RegisterSerialCallback ($0640) installs
+; SerialCallback ($06c0). See decomp/src/register_callback_slots.c.
+
+RegisterVBlankCallback::
     ld hl, $d6d3
-    jp Jump_000_066c
+    jp InstallCallbackSlot
 
 
 Call_000_0634:
     ld hl, $d6e3
-    jp Jump_000_066c
+    jp InstallCallbackSlot
 
 
 Call_000_063a:
     ld hl, $d6f3
-    jp Jump_000_066c
+    jp InstallCallbackSlot
 
 
-Call_000_0640:
+RegisterSerialCallback::
     ld hl, $d703
-    jp Jump_000_066c
+    jp InstallCallbackSlot
 
 
 Call_000_0646:
     ld hl, $d713
-    jp Jump_000_066c
+    jp InstallCallbackSlot
 
 
-Call_000_064c:
-Jump_000_064c:
-jr_000_064c:
+RemoveCallbackSlot::
     ld a, [hl+]
     ld e, a
     ld d, [hl]
@@ -1549,11 +1552,11 @@ jr_000_064c:
 
     ld a, e
     cp c
-    jr nz, jr_000_064c
+    jr nz, RemoveCallbackSlot
 
     ld a, d
     cp b
-    jr nz, jr_000_064c
+    jr nz, RemoveCallbackSlot
 
     xor a
     ld [hl-], a
@@ -1577,14 +1580,17 @@ jr_000_0661:
 
     jr jr_000_0661
 
-Jump_000_066c:
-jr_000_066c:
+; [ezgb]
+; InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.
+; RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI.
+
+InstallCallbackSlot::
     ld a, [hl+]
     or [hl]
     jr z, jr_000_0673
 
     inc hl
-    jr jr_000_066c
+    jr InstallCallbackSlot
 
 jr_000_0673:
     ld [hl], b
@@ -1593,6 +1599,7 @@ jr_000_0673:
     ret
 
 
+VBlankCallback::
     ld hl, $d6d1
     inc [hl]
     jr nz, jr_000_067f
@@ -1607,7 +1614,10 @@ jr_000_067f:
     ret
 
 
-Call_000_0688:
+; [ezgb]
+; WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off.
+
+WaitVBlankFlag::
     ldh a, [rLCDC]
     add a
     ret nc
@@ -1629,7 +1639,10 @@ jr_000_0692:
     ret
 
 
-Call_000_069f:
+; [ezgb]
+; LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off.
+
+LcdOff::
     ldh a, [rLCDC]
     add a
     ret nc
@@ -1650,6 +1663,7 @@ jr_000_06a9:
     ret
 
 
+OamDmaStub::
     ld a, $c0
     ldh [rDMA], a
     ld a, $28
@@ -1661,6 +1675,7 @@ jr_000_06bc:
     ret
 
 
+SerialCallback::
     ld a, [$d6cd]
     cp $02
     jr nz, jr_000_06d0
@@ -1704,7 +1719,7 @@ jr_000_06ea:
     ret
 
 
-    ld hl, $d6ca
+    ld hl, wGfxMode
     ld e, [hl]
     ret
 
@@ -1792,7 +1807,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_062e
+    call RegisterVBlankCallback
     pop bc
     ret
 
@@ -1822,7 +1837,7 @@ Call_000_0706:
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0640
+    call RegisterSerialCallback
     pop bc
     ret
 
@@ -1837,7 +1852,7 @@ Call_000_0706:
     ret
 
 
-Call_000_078d:
+FarCallTrampoline::
     call Call_000_06fd
     pop hl
     ld e, [hl]
@@ -1871,7 +1886,7 @@ Call_000_078d:
 
 Call_000_07bc:
 Jump_000_07bc:
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -2094,7 +2109,11 @@ Jump_000_08b5:
     ret
 
 
-Call_000_08b7:
+; [ezgb]
+; DrawString (ptr, len, screen pos). Highest fan-in text primitive (~86 callers).
+; Cursor set by SetTextCursor ($2765), advanced by AdvanceTextCursor ($20f4).
+
+DrawString::
     push af
     dec sp
     ld hl, sp+$09
@@ -2105,7 +2124,7 @@ Call_000_08b7:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_2765
+    call SetTextCursor
     add sp, $02
     xor a
     ld hl, sp+$07
@@ -2172,7 +2191,7 @@ Jump_000_0909:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     pop bc
     push bc
@@ -2239,7 +2258,7 @@ Jump_000_0927:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $cc2f
     inc [hl]
@@ -2256,7 +2275,7 @@ Jump_000_0982:
     ret
 
 
-Call_000_0985:
+SdReadRetryCount::
     ld hl, $cc2f
     ld a, [hl]
     push af
@@ -2265,7 +2284,7 @@ Call_000_0985:
     push hl
     ld hl, $099c
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_000_0998:
@@ -2434,7 +2453,10 @@ Jump_000_0a40:
     ret
 
 
-Call_000_0a43:
+; [ezgb]
+; DirList: file-browser directory enumerator; hides ezgb.dat via helper $09af.
+
+DirList::
     add sp, -$09
     ld hl, sp+$04
     ld [hl], $00
@@ -2451,7 +2473,7 @@ Jump_000_0a56:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -2461,7 +2483,7 @@ Jump_000_0a56:
     push hl
     ld hl, $c9f5
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     halt
     ld [hl], l
     dec b
@@ -2511,7 +2533,7 @@ Jump_000_0aa3:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -2608,7 +2630,7 @@ jr_000_0aee:
     ld l, a
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     ld hl, sp+$04
     inc [hl]
@@ -2706,7 +2728,7 @@ jr_000_0b4f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     ld hl, sp+$04
     inc [hl]
@@ -2766,7 +2788,7 @@ Call_000_0bd1:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$16
     ld e, [hl]
@@ -2933,7 +2955,7 @@ Jump_000_0c8f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -3044,7 +3066,7 @@ Jump_000_0d2c:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -3118,7 +3140,7 @@ Jump_000_0d2c:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_000_0ddd:
@@ -3128,7 +3150,7 @@ Jump_000_0ddd:
 
     jr nz, jr_000_0e02
 
-    jr nz, jr_000_0de4
+    jr nz, SdMenuMain
 
 ; [ezgb]
 ; SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
@@ -3137,8 +3159,7 @@ Jump_000_0ddd:
 ; the prompt, so [B]NO still clears it). $A001 read as auto-save selector; caches
 ; $A202->$d3f6 (RTC), reads $A00F/$A010+ meta, calls BackupSavePrompt (01:6747).
 
-Call_000_0de4:
-jr_000_0de4:
+SdMenuMain::
     add sp, -$17
     ld hl, $c2a0
     ld [hl], $00
@@ -3151,7 +3172,7 @@ jr_000_0de4:
     push hl
     ld hl, $c7a9
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, de
     ld l, [hl]
     dec b
@@ -3174,7 +3195,7 @@ jr_000_0e02:
     push hl
     ld hl, $16b5
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_000_0e21:
@@ -3190,7 +3211,7 @@ Jump_000_0e24:
     push hl
     ld hl, $16cd
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$06
     ld [hl], $00
@@ -3205,7 +3226,7 @@ Jump_000_0e24:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3228,20 +3249,20 @@ Jump_000_0e24:
     dec hl
     ld a, [hl]
     sub $aa
-    jp nz, Jump_000_0e73
+    jp nz, GotoFileBrowser
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_000_0e73
+    jp nz, GotoFileBrowser
 
-    jr jr_000_0e76
+    jr BackupBranchEntry
 
-Jump_000_0e73:
+GotoFileBrowser::
     jp Jump_000_0f5b
 
 
-jr_000_0e76:
+BackupBranchEntry::
     ld hl, sp+$06
     ld [hl], $00
     inc hl
@@ -3378,7 +3399,7 @@ Jump_000_0f08:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3413,7 +3434,7 @@ Jump_000_0f08:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld b, a
     ld h, a
     ld bc, $e800
@@ -3433,7 +3454,7 @@ Jump_000_0f5b:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3452,7 +3473,7 @@ Jump_000_0f5b:
     ld a, $2f
     ld [de], a
 
-Jump_000_0f8d:
+FileBrowserEntry::
     ld hl, $cc2f
     ld [hl], $00
     ld hl, $cc30
@@ -3461,14 +3482,14 @@ Jump_000_0f8d:
     ld [hl], $00
     ld hl, $c5a4
     ld [hl], $00
-    call Call_000_078d
+    call FarCallTrampoline
     ld b, h
     ld [hl], e
     ld [$3e00], sp
     nop
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3476,7 +3497,7 @@ Jump_000_0f8d:
     add sp, $01
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     and h
     ld l, [hl]
     dec b
@@ -3489,7 +3510,7 @@ Jump_000_0f8d:
     or a
     jp z, Jump_000_0fcd
 
-    call Call_000_0985
+    call SdReadRetryCount
 
 Jump_000_0fcd:
     ld hl, $c2a2
@@ -3500,7 +3521,7 @@ Jump_000_0fcd:
     push hl
     ld hl, $c9f5
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     db $dd
     ld [hl], e
     dec b
@@ -3513,7 +3534,7 @@ Jump_000_0fcd:
     or a
     jp z, Jump_000_0ff4
 
-    call Call_000_0985
+    call SdReadRetryCount
 
 Jump_000_0ff4:
     ld hl, $00ff
@@ -3551,7 +3572,7 @@ Jump_000_0ff4:
     inc de
     ld a, $00
     ld [de], a
-    call Call_000_0a43
+    call DirList
     ld hl, sp+$15
     ld [hl], $00
     dec hl
@@ -3571,14 +3592,14 @@ Jump_000_0ff4:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
     ld bc, $033e
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
@@ -3624,7 +3645,7 @@ jr_000_108c:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3640,7 +3661,7 @@ jr_000_108c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     db $e3
     ld b, b
     ld bc, $e800
@@ -3657,7 +3678,7 @@ Jump_000_10b1:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3676,7 +3697,7 @@ Jump_000_10b1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     cp d
     ld b, d
     ld bc, $e800
@@ -3719,7 +3740,7 @@ Jump_000_1107:
     push hl
     call Call_000_3a93
     add sp, $02
-    call Call_000_3a4a
+    call ReadJoypad
     ld b, e
     ld c, b
     ld hl, sp+$00
@@ -3803,7 +3824,7 @@ jr_000_1175:
     or [hl]
     jp nz, Jump_000_1180
 
-    call Call_000_0a43
+    call DirList
 
 Jump_000_1180:
     ld hl, sp+$13
@@ -3934,7 +3955,7 @@ Jump_000_1223:
     and $40
     jr nz, jr_000_122d
 
-    jp Jump_000_1294
+    jp MenuKeyDispatch
 
 
 jr_000_122d:
@@ -3972,7 +3993,7 @@ jr_000_124f:
     ld a, $01
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
@@ -4001,7 +4022,7 @@ jr_000_1274:
     ld a, $02
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
@@ -4016,20 +4037,29 @@ jr_000_1274:
     push hl
     call Call_000_3a93
     add sp, $02
-    jp Jump_000_0f8d
+    jp FileBrowserEntry
 
 
-Jump_000_1294:
+; [ezgb]
+; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.
+; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md).
+
+MenuKeyDispatch::
     ld hl, sp+$00
     ld a, [hl]
     and $80
-    jr nz, jr_000_129e
+    jr nz, LastRomOverlay
 
-    jp Jump_000_1392
+    jp MenuDispatchAB
 
 
-jr_000_129e:
-    call Call_000_078d
+; [ezgb]
+; LastRomOverlay: draw chrome (bank8 DrawLastRomButtons) and copy the 255-byte
+; path record $A300 -> $c4a4. Shows basename only; relaunch (A) uses the full
+; path via LastRomRelaunch. See docs/last-rom.md.
+
+LastRomOverlay::
+    call FarCallTrampoline
     push af
     ld [hl], e
     ld [$0100], sp
@@ -4040,7 +4070,7 @@ jr_000_129e:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4051,14 +4081,14 @@ jr_000_129e:
     inc hl
     ld [hl], $00
 
-Jump_000_12bf:
+LastRomLoadRecord::
     ld hl, sp+$0f
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_12f1
+    jp nc, LastRomDrawBasename
 
     ld de, $c4a4
     dec hl
@@ -4090,17 +4120,17 @@ Jump_000_12bf:
     inc [hl]
 
 jr_000_12ee:
-    jp Jump_000_12bf
+    jp LastRomLoadRecord
 
 
-Jump_000_12f1:
+LastRomDrawBasename::
     ld bc, $4000
     ld a, $00
     ld [bc], a
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4111,7 +4141,7 @@ Jump_000_12f1:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_2c42
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4132,11 +4162,11 @@ Jump_000_12f1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_1330:
-    call Call_000_3a4a
+LastRomInputLoop::
+    call ReadJoypad
     ld b, e
     ld c, b
     ld hl, sp+$04
@@ -4146,12 +4176,12 @@ Jump_000_1330:
     dec hl
     ld a, [hl]
     and $10
-    jr nz, jr_000_1344
+    jr nz, LastRomRelaunch
 
-    jp Jump_000_1385
+    jp LastRomCheckReturn
 
 
-jr_000_1344:
+LastRomRelaunch::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -4169,11 +4199,11 @@ jr_000_1344:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     and h
     ld l, [hl]
     dec b
@@ -4186,29 +4216,29 @@ jr_000_1344:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, a
     ld [hl], e
     ld [$c300], sp
     ld [hl], b
     dec d
 
-Jump_000_1385:
+LastRomCheckReturn::
     ld hl, sp+$04
     ld a, [hl]
     and $20
-    jr nz, jr_000_138f
+    jr nz, LastRomReturn
 
-    jp Jump_000_1330
-
-
-jr_000_138f:
-    jp Jump_000_0f8d
+    jp LastRomInputLoop
 
 
-Jump_000_1392:
+LastRomReturn::
+    jp FileBrowserEntry
+
+
+MenuDispatchAB::
     ld hl, sp+$00
     ld a, [hl]
     and $10
@@ -4316,7 +4346,7 @@ jr_000_140f:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -4333,7 +4363,7 @@ jr_000_140f:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -4355,16 +4385,16 @@ Jump_000_143b:
     push bc
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
     inc b
-    jp Jump_000_0f8d
+    jp FileBrowserEntry
 
 
 Jump_000_145f:
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, a
     ld [hl], e
     ld [$3e00], sp
@@ -4392,14 +4422,14 @@ Jump_000_145f:
     push bc
     ld hl, $c4a4
     push hl
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     ld a, $2e
     push af
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_2c42
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4408,7 +4438,7 @@ Jump_000_145f:
     push bc
     ld hl, $c3a5
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld de, $c3a5
     ld hl, $0001
@@ -4527,7 +4557,7 @@ Jump_000_1520:
     or b
     jp z, Jump_000_1569
 
-    call Call_000_078d
+    call FarCallTrampoline
     cp d
     ld [hl], e
     ld [$cd00], sp
@@ -4544,11 +4574,11 @@ Jump_000_1520:
 
 
 jr_000_1566:
-    jp Jump_000_0f8d
+    jp FileBrowserEntry
 
 
 Jump_000_1569:
-    call Call_000_078d
+    call FarCallTrampoline
     dec hl
     ld c, b
     ld bc, $2100
@@ -4575,7 +4605,7 @@ Jump_000_1588:
 
 jr_000_158b:
     call Call_000_07bc
-    jp Jump_000_0f8d
+    jp FileBrowserEntry
 
 
 Jump_000_1591:
@@ -4590,7 +4620,7 @@ Jump_000_1591:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld h, e
     ld d, c
     ld bc, $e800
@@ -4606,7 +4636,7 @@ Jump_000_1591:
     ld a, $02
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4624,7 +4654,7 @@ Jump_000_1591:
     ld b, a
     push bc
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld h, b
     ld b, c
     inc b
@@ -4633,7 +4663,7 @@ Jump_000_1591:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     dec bc
     ld c, b
     ld bc, $e800
@@ -4642,7 +4672,7 @@ Jump_000_1591:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     db $ec
     ld b, e
     inc b
@@ -4652,18 +4682,18 @@ Jump_000_1591:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rlca
     ld b, d
     inc b
     nop
     add sp, $01
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, [hl]
     ld b, h
     inc b
     nop
-    call Call_000_069f
+    call LcdOff
     call Call_000_06fd
     ld hl, sp+$16
     ld a, [hl]
@@ -4671,7 +4701,7 @@ Jump_000_1591:
     inc sp
     ld hl, $c0a0
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     adc a
     ld b, h
     inc b
@@ -4696,7 +4726,7 @@ jr_000_1639:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -4713,14 +4743,14 @@ jr_000_1639:
     push hl
     ld hl, $c3a5
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld a, $2f
     push af
     inc sp
     ld hl, $c3a5
     push hl
-    call Call_000_2c42
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4746,21 +4776,21 @@ jr_000_1639:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld de, $c2a6
     ld a, [de]
     or a
-    jp nz, Jump_000_0f8d
+    jp nz, FileBrowserEntry
 
     ld de, $c2a6
     ld a, $2f
     ld [de], a
-    jp Jump_000_0f8d
+    jp FileBrowserEntry
 
 
 Jump_000_16ab:
-    call Call_000_0688
+    call WaitVBlankFlag
     jp $1062
 
 
@@ -5118,7 +5148,7 @@ Jump_000_182a:
 ; [ezgb]
 ; Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry).
 
-Call_000_1835:
+BatteryCheck::
     ld hl, $cc2f
     ld [hl], $00
     ld bc, $4000
@@ -5127,7 +5157,7 @@ Call_000_1835:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -5146,14 +5176,14 @@ Call_000_1835:
     inc sp
     ld hl, $190f
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -5162,7 +5192,7 @@ Call_000_1835:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0705
     push hl
@@ -5171,7 +5201,7 @@ Call_000_1835:
     inc sp
     ld hl, $1911
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0805
     push hl
@@ -5180,14 +5210,14 @@ Call_000_1835:
     inc sp
     ld hl, $1919
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016a
     push hl
@@ -5196,7 +5226,7 @@ Call_000_1835:
     ld a, $4e
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0c0a
     push hl
@@ -5205,11 +5235,11 @@ Call_000_1835:
     inc sp
     ld hl, $1920
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_000_18d7:
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -5230,7 +5260,7 @@ Jump_000_18eb:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld bc, $4000
     ld a, $00
@@ -5238,13 +5268,13 @@ Jump_000_18eb:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
     nop
     add sp, $01
-    call Call_000_0de4
+    call SdMenuMain
     ret
 
 
@@ -5287,7 +5317,7 @@ Call_000_1926:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, bc
     ld [hl], e
     ld b, $00
@@ -5316,7 +5346,7 @@ Call_000_1941:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     sbc d
     ld [hl], a
     ld b, $00
@@ -5345,7 +5375,7 @@ Call_000_1963:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, sp
     ld [hl], a
     rlca
@@ -5370,7 +5400,7 @@ Call_000_1985:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     call z, Call_000_0376
     nop
     add sp, $06
@@ -5383,7 +5413,7 @@ Call_000_19a1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     adc a
     halt
     inc bc
@@ -5398,7 +5428,7 @@ Call_000_19b1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_38
     ld [hl], a
     add hl, bc
@@ -5425,7 +5455,7 @@ Call_000_19c1:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, c
     ld b, d
     dec b
@@ -5471,7 +5501,7 @@ Call_000_19f5:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, b
     ld b, e
     dec b
@@ -5530,7 +5560,7 @@ Call_000_1a2f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     daa
     ld b, b
     ld [bc], a
@@ -5562,7 +5592,7 @@ Call_000_1a53:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     push de
     ld b, c
     ld [bc], a
@@ -5573,7 +5603,7 @@ Call_000_1a53:
     ret
 
 
-Call_000_1a77:
+ReturnZero::
     ld e, $00
     ret
 
@@ -5581,7 +5611,7 @@ Call_000_1a77:
 ; [ezgb]
 ; SetFpgaPage ($7FC0). Bank-0 leaf; used before RTC reads at $A008+.
 
-Call_000_1a7a:
+SetFpgaPage_B0::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -5601,12 +5631,12 @@ Call_000_1a7a:
     ret
 
 
-Call_000_1a9a:
+RtcReadPage::
     add sp, -$1d
     ld a, $06
     push af
     inc sp
-    call Call_000_1a7a
+    call SetFpgaPage_B0
     add sp, $01
     ld hl, sp+$16
     ld a, l
@@ -5732,7 +5762,7 @@ Call_000_1a9a:
     ld a, $00
     push af
     inc sp
-    call Call_000_1a7a
+    call SetFpgaPage_B0
     add sp, $01
     ld hl, sp+$0a
     ld e, [hl]
@@ -5799,7 +5829,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -5872,7 +5902,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -5967,7 +5997,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6062,7 +6092,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6156,7 +6186,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6250,7 +6280,7 @@ Call_000_1a9a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6934,7 +6964,7 @@ Jump_000_20e0:
     ret
 
 
-Call_000_20e2:
+ApplyBasename::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6954,7 +6984,7 @@ jr_000_20ec:
     inc hl
     jr jr_000_20ec
 
-Call_000_20f4:
+AdvanceTextCursor::
     push hl
     ld hl, $d732
     ld a, $13
@@ -8241,7 +8271,10 @@ jr_000_2754:
     ret
 
 
-Call_000_2765:
+; [ezgb]
+; SetTextCursor: set text cursor col/row ($D732/$D733); feeds DrawString.
+
+SetTextCursor::
     ld hl, sp+$02
     ld a, [hl+]
     ld [$d732], a
@@ -8252,14 +8285,14 @@ Call_000_2765:
 
 Call_000_2770:
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl]
     ld c, a
     call Call_000_2701
-    call Call_000_20f4
+    call AdvanceTextCursor
     pop bc
     ret
 
@@ -8275,7 +8308,11 @@ Call_000_2770:
     ret
 
 
-Call_000_2791:
+; [ezgb]
+; StoreDrawParams: store draw params $D734/$D735/$D723; called widely (~73 callers)
+; before tile/string helpers.
+
+StoreDrawParams::
     ld hl, sp+$02
     ld a, [hl+]
     ld [$d734], a
@@ -8287,9 +8324,9 @@ Call_000_2791:
 
 
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -8304,11 +8341,16 @@ Call_000_2791:
     ret
 
 
-Call_000_27ba:
+; [ezgb]
+; DrawRect: if wGfxMode!=1 call EnterGfxMode1; copy 5 stack args into $D725/$D727/
+; $D726/$D728/$D724 (two axis pairs + byte); call $22c6 to draw the rect.
+; C-shape ~ (u8, u16, u16). Used e.g. from BatteryCheck chrome; generic (many callers).
+
+DrawRect::
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld [$d725], a
@@ -8327,9 +8369,9 @@ Call_000_27ba:
 
 Call_000_27de:
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -8346,9 +8388,9 @@ Call_000_27de:
 
 Call_000_27f6:
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -8360,9 +8402,9 @@ Call_000_27f6:
 
 
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -8454,22 +8496,22 @@ Call_000_2832:
 
     ld a, $05
     rst RST_08
-    jp Jump_000_298f
+    jp U32Shr
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_29ac
+    jp S32Sar
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_29c9
+    jp U32Shl
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_29c9
+    jp U32Shl
 
 
 Jump_000_288f:
@@ -8734,8 +8776,12 @@ jr_000_2985:
     ret
 
 
-Call_000_298f:
-Jump_000_298f:
+; [ezgb]
+; U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;
+; returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.
+; High fan-in is every C << >> on longs — name from the loop, no emulator needed.
+
+U32Shr::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8762,7 +8808,10 @@ Jump_000_299e:
     jp Jump_000_299e
 
 
-Jump_000_29ac:
+; [ezgb]
+; S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte).
+
+S32Sar::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8789,8 +8838,10 @@ Jump_000_29bb:
     jp Jump_000_29bb
 
 
-Call_000_29c9:
-Jump_000_29c9:
+; [ezgb]
+; U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count.
+
+U32Shl::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -9344,7 +9395,11 @@ Jump_000_2c3f:
     ret
 
 
-Call_000_2c42:
+; [ezgb]
+; Strrchr(ptr, char): walk to the NUL then scan back for char. Used with '/' to
+; find the basename of a launch path.
+
+Strrchr::
     push af
     push af
     ld hl, sp+$06
@@ -9464,7 +9519,10 @@ jr_000_2cb2:
     inc hl
     jr jr_000_2cb2
 
-Call_000_2cba:
+; [ezgb]
+; Memcpy(dest, src, len).
+
+Memcpy::
     ld hl, sp+$06
     ld a, [hl+]
     ld c, a
@@ -9645,7 +9703,7 @@ jr_000_2d4f:
     ret
 
 
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     and $02
     jr nz, jr_000_2d7f
 
@@ -9659,7 +9717,7 @@ jr_000_2d7f:
     ret
 
 
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     and $02
     jr nz, jr_000_2d90
 
@@ -9993,14 +10051,18 @@ jr_000_2ee3:
     ret
 
 
-Call_000_2eea:
-Jump_000_2eea:
+; [ezgb]
+; EnterGfxMode1: LCD off, prep VRAM/tilemap/callbacks, turn LCD on, set wGfxMode=1.
+; Draw helpers (DrawRect, etc.) call this when wGfxMode!=1. Mode $02 set elsewhere
+; ($3d4a); full mode table still TODO.
+
+EnterGfxMode1::
     di
     ldh a, [rLCDC]
     bit 7, a
     jr z, jr_000_2ef4
 
-    call Call_000_069f
+    call LcdOff
 
 jr_000_2ef4:
     ld hl, $8100
@@ -10008,7 +10070,7 @@ jr_000_2ef4:
     ld b, $00
     call Call_000_3d5a
     ld bc, $2a5f
-    call Call_000_062e
+    call RegisterVBlankCallback
     ld bc, $2a6a
     call Call_000_0634
     ld a, $48
@@ -10041,7 +10103,7 @@ jr_000_2f25:
     and $f7
     ldh [rLCDC], a
     ld a, $01
-    ld [$d6ca], a
+    ld [wGfxMode], a
     ld a, $00
     ld [$d723], a
     ld a, $03
@@ -10102,9 +10164,9 @@ jr_000_2f84:
 
 
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -10123,9 +10185,9 @@ jr_000_2f84:
 
 
     push bc
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     cp $01
-    call nz, Call_000_2eea
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld c, a
@@ -12787,7 +12849,7 @@ jr_000_3a08:
     ld b, $ff
 
 jr_000_3a0a:
-    call Call_000_3a16
+    call ReadJoypadRaw
     or a
     jr nz, jr_000_3a08
 
@@ -12799,7 +12861,7 @@ jr_000_3a0a:
     ret
 
 
-Call_000_3a16:
+ReadJoypadRaw::
     push bc
     ld a, $20
     ldh [rP1], a
@@ -12833,15 +12895,19 @@ jr_000_3a22:
 
 Call_000_3a43:
 jr_000_3a43:
-    call Call_000_3a16
+    call ReadJoypadRaw
     and b
     jr z, jr_000_3a43
 
     ret
 
 
-Call_000_3a4a:
-    call Call_000_3a16
+; [ezgb]
+; ReadJoypad: returns the menu key byte (post-swap: A=$10, B=$20, START=$80).
+; ReadJoypadRaw ($3a16) is the lower-level read that ends with the swap.
+
+ReadJoypad::
+    call ReadJoypadRaw
     ld e, a
     ret
 
@@ -13083,7 +13149,7 @@ jr_000_3b1f:
 
 
 Call_000_3b27:
-    call Call_000_069f
+    call LcdOff
     push hl
     ld hl, $d73b
     ld b, $06
@@ -13114,7 +13180,7 @@ jr_000_3b42:
     ld [hl], a
     push hl
     call Call_000_3bb7
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     and $02
     call nz, Call_000_3b6f
     ld hl, $d737
@@ -13201,7 +13267,7 @@ Call_000_3bc4:
     jr nz, jr_000_3bd6
 
     push af
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     and $08
     jr nz, jr_000_3bd5
 
@@ -13239,7 +13305,7 @@ Call_000_3bed:
     call Call_000_3c5c
     xor a
     ld [$d739], a
-    call Call_000_078d
+    call FarCallTrampoline
     db $fd
     jr nc, jr_000_3c01
 
@@ -13437,7 +13503,7 @@ jr_000_3cd1:
     jr jr_000_3cf1
 
 jr_000_3cde:
-    ld a, [$d6ca]
+    ld a, [wGfxMode]
     and $04
     jr z, jr_000_3cee
 
@@ -13504,13 +13570,13 @@ Jump_000_3d21:
     bit 7, a
     jr z, jr_000_3d3d
 
-    call Call_000_069f
+    call LcdOff
     ld bc, $2a5f
     ld hl, $d6d3
-    call Call_000_064c
+    call RemoveCallbackSlot
     ld bc, $2a6a
     ld hl, $d6e3
-    call Call_000_064c
+    call RemoveCallbackSlot
 
 jr_000_3d3d:
     call Call_000_3d4a
@@ -13528,7 +13594,7 @@ Call_000_3d4a:
     ld [$d74d], a
     call Call_000_3c7e
     ld a, $02
-    ld [$d6ca], a
+    ld [wGfxMode], a
     ret
 
 

@@ -55,8 +55,8 @@ looking for `sd/card.img`.
 
 Matches the physical cart:
 
-1. **In-game save** → battery FRAM only (`cart_sram`). Mirrored to `sd/fram.bin`
-   next to `card.img` so quitting SameBoy is a power-down.
+1. **In-game save** → FRAM only (`cart_sram`; non-volatile, no cart battery). Mirrored to
+   `sd/fram.bin` next to `card.img` so quitting SameBoy is a power-down.
 2. **Power up** (load `kernel.gb` again) → kernel sees page `$11` flag `$AA`,
    shows **BACKUPSAVE** / `[A]OK`, and on confirm copies FRAM into `SAVER/*.SAV`
    on `card.img`.

@@ -1,7 +1,13 @@
 # Cart SRAM / FRAM and saves (1.05e)
 
-How battery-backed save RAM works on the EZ Flash Jr kernel, and where it shows up in
-the disassembly. Annotations are kept in tracked files and reinjected into `bank_*.asm`.
+How cart save RAM works on the EZ Flash Jr kernel, and where it shows up in the disassembly.
+Annotations are kept in tracked files and reinjected into `bank_*.asm`.
+
+**Hardware note:** on-cart save storage is **FRAM** — non-volatile by itself, no battery
+required. The only battery-backed part of the Jr is the **RTC**. Games still *see* “battery
+RAM” because the FPGA emulates a normal MBC `$A000` window; physically those writes land in
+FRAM. (The kernel’s `BATTERY` / `DRY!!!` notice is about the **console** AA cells, not the
+cart.)
 
 ## Two bus personalities, one FRAM chip
 
@@ -19,7 +25,7 @@ SameBoy stub mirrors this: `mbc_ram` aliases `cart_sram` after `$7FE0` soft-rese
 
 ## Save lifecycle
 
-1. **In-game** — MBC battery RAM writes land in FRAM only.
+1. **In-game** — MBC “battery RAM” writes land in FRAM only (no host power needed to retain).
 2. **Before launch** — kernel stamps page `$11` (`$AA` = pending backup, savename, bank count).
 3. **After power-up** — if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies FRAM to `SAVER/*.SAV` on the SD image.
 
@@ -27,7 +33,7 @@ Details for the emulator workflow: [sd/README.md](../sd/README.md).
 
 ## BACKUPSAVE flag lifecycle
 
-The whole feature turns on one byte in battery FRAM, page `$11` (bank 17), address **`$A000`**,
+The whole feature turns on one byte in FRAM, page `$11` (bank 17), address **`$A000`**,
 reachable only from the kernel via `SetFpgaPage_B1`/`_B0` with `$7FC0=$03`. The prompt shown
 on boot (`BACKUPSAVE` / `Saving..` / `[B]NO` `[A]OK`) is `BackupSavePrompt` at `01:6747`.
 

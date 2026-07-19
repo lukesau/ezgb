@@ -178,7 +178,7 @@ Jump_002_4071:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -217,7 +217,7 @@ Jump_002_4071:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$04
@@ -257,7 +257,7 @@ Jump_002_4071:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -504,7 +504,7 @@ Jump_002_4223:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -543,7 +543,7 @@ Jump_002_4223:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$04
@@ -583,7 +583,7 @@ Jump_002_4223:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08

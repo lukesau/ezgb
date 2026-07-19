@@ -1,8 +1,8 @@
 # Kernel diff: 1.04e vs 1.05e (K1.05RC)
 
-Accounting of every place the two kernel binaries differ in behavior, compiled before
-attempting to build a modified kernel. The goal is to understand both versions well enough
-that a patch can be built against either without colliding with version-specific changes.
+Accounting of every place the two kernel binaries differ in behavior. Useful before any
+modified or alternate kernel (including a future B-mode image): understand both versions well
+enough that work against either does not collide with version-specific changes.
 
 Source: `re/1.04e/kernel.gb` (SHA1 `43c76dc...`) vs `re/1.05e/kernel.gb` (SHA1 `ce1d531...`),
 both hash-verified against EZ Flash's own distribution. Disassemblies in
@@ -114,9 +114,10 @@ immediately followed by writes into the `$A0xx`/`$A2xx` cartridge-RAM window usi
 leading byte in at least one case (`$AA` is the first byte of a JEDEC NOR flash unlock/write
 command). Bank 17 select plus `$A000`-window writes shaped like flash commands, appearing only
 in the version whose changelog claims "RTC codes are rewritten," is a case (not dynamically
-confirmed) that RTC state is persisted to onboard NOR flash rather than a battery-backed RTC
-chip register. See `docs/1.05e-instability.md` for how this bears on the instability
-investigation.
+confirmed) that those writes touch RTC-related persistence. **Caveat:** the Jr’s cart battery
+backs the **RTC only**; **FRAM** needs no battery, and `$A000=$AA` is also the documented
+BACKUPSAVE pending stamp in FRAM (`docs/fram-save-map.md`). Do not treat `$AA` alone as proof
+of JEDEC NOR. See `docs/1.05e-instability.md`.
 
 ## Confirmed vs hypothesis, summary
 

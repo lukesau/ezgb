@@ -1297,7 +1297,7 @@ Jump_007_45e0:
     ld a, c
     push af
     inc sp
-    call Call_000_1a77
+    call ReturnZero
     add sp, $04
     ld c, e
     xor a
@@ -2000,7 +2000,7 @@ Jump_007_4913:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -2086,7 +2086,7 @@ Jump_007_4913:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -2174,7 +2174,7 @@ Jump_007_49e9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -2260,7 +2260,7 @@ Jump_007_49e9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -2802,7 +2802,7 @@ Jump_007_4c5a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -2842,7 +2842,7 @@ Jump_007_4d27:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$0a
@@ -2919,7 +2919,7 @@ Jump_007_4d76:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -3008,7 +3008,7 @@ Jump_007_4d76:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -3102,7 +3102,7 @@ Jump_007_4e58:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -3191,7 +3191,7 @@ Jump_007_4e58:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -6053,7 +6053,7 @@ jr_007_5bf4:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -6151,7 +6151,7 @@ Jump_007_5c4e:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -7040,7 +7040,7 @@ Jump_007_60b3:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -12197,7 +12197,7 @@ Jump_007_7890:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -12978,7 +12978,7 @@ Jump_007_7bd7:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02

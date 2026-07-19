@@ -5,8 +5,21 @@ Game Boy Color flash cartridge. Its sibling, the [EZ Flash Omega](https://github
 (GBA, ARM7), has published source. The Jr's kernel runs on the stock Game Boy CPU (SM83) and
 has no published source, only the compiled firmware.
 
-Goal: understand the kernel well enough to add a fast-launch path, a small on-disk config
-file that tells the kernel to boot straight into a specific ROM, skipping the file-browser menu.
+**Primary goal:** map and name the Jr disassembly — turn `Call_`/`Jump_` noise into understood
+functions, using live UX on a real Omega (and its published kernel source) as a comparison aid
+wherever the two products share features. Session checklist:
+[`docs/MAP-SESSION.md`](docs/MAP-SESSION.md). Broader pret-style notes:
+[`docs/MAPPING.md`](docs/MAPPING.md). Omega:
+[`docs/omega-jr-compare.md`](docs/omega-jr-compare.md).
+
+**Longer-term product goal:** an Omega DE–style **Mode B** experience for the Jr — boot straight
+into one chosen ROM without the file-browser OS. Omega DE needs onboard NOR + a physical A/B
+switch for authenticity; the Jr already gets close by programming the ROM into the FPGA and
+soft-resetting into it (link cable etc. work like a real cart). So Mode B here is mostly
+“skip the OS and run that existing load path,” via a separate **B-mode kernel** (no cart
+switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-place
+"fast-launch" patch experiments are deferred; notes in
+[`docs/fast-launch-notes.md`](docs/fast-launch-notes.md).
 
 ## What's here
 
@@ -63,31 +76,40 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
 
 - Disassembly of both kernel versions reassembles byte-identical to the originals (only the 3
   cosmetic ROM-header bytes differ, see `docs/REGISTERS.md` for why).
+- Naming is still early: `./scripts/naming-progress.sh` reports ~2% of 1.05e symbols
+  human-named (~56 entries in `re/1.05e/kernel.sym`, thousands of `Call_`/`Jump_` left).
+  Mapping the rest is the active priority; see [`docs/MAPPING.md`](docs/MAPPING.md).
 - Diffed 1.04e vs 1.05e at the instruction level. Real logic changes are isolated to bank 0
   and bank 1; every other bank just has shifted call targets.
 - Identified the FPGA unlock/command/commit register pattern and catalogued the distinct
   command ports in use (SD sector I/O, bank switching, peripheral enable/disable, see
-  `docs/REGISTERS.md`).
+  `docs/REGISTERS.md`). Same shape as Omega's FPGA handshake at different addresses.
 - Traced the "load ROM and launch" call path through the `$1569` far-call chain to
   bank4 `$448f` / `$7fe0=$80`. See `docs/launch-trace.md`.
 - Fully traced the **last-ROM / START overlay** feature: the last-launched ROM's full path
   is persisted to cart NVRAM `$A300` (bank 17 + rompage `$03`) on every launch and read back
   on START; the prompt shows the basename but relaunch uses the full path. See
-  `docs/last-rom.md`.
-- Fast-launch still the goal; a first binary-hook experiment was tried and
-  withdrawn — notes in `docs/fast-launch-notes.md`.
-- Matching decompilation in `decomp/` (see `docs/PROGRESS.md`).
+  `docs/last-rom.md`. Useful later for a B-mode kernel; not the current focus.
+- Omega DE on hand for UX comparison; cross-product notes started in
+  [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md).
+- Matching decompilation in `decomp/` is a longer-term rewrite track (see `docs/PROGRESS.md`),
+  secondary to naming the ASM.
 
 ## Rebuilding a disassembly
 
 ```sh
 cd re/1.05e
-mgbdis kernel.gb                         # uses kernel.sym for human symbol names
-../../scripts/annotate-disasm.py 1.05e   # inject notes from notes.json
+python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # kernel.sym names
+../../scripts/annotate-disasm.py 1.05e           # notes.json + wram.inc
 
 cd disassembly
 make            # requires rgbasm/rgblink/rgbfix (rgbds)
 ```
+
+`mgbdis` must actually run with `--overwrite` when `disassembly/` already exists,
+or bank files keep old `Call_` names. `annotate-disasm.py` also emits `wram.inc`
+for `kernel.sym` entries at CPU addr ≥ `$C000` (mgbdis rewrites `[wGfxMode]` but
+does not define those labels).
 
 Persistent annotations: [re/1.05e/kernel.sym](re/1.05e/kernel.sym) (names),
 [re/1.05e/notes.json](re/1.05e/notes.json) (comment blocks). See [docs/fram-save-map.md](docs/fram-save-map.md).
@@ -97,7 +119,7 @@ name or the raw `*_bbb_aaaa` label for still-unnamed addresses.
 
 To decide what to name next, `scripts/doc-symbol-coverage.py` cross-references the docs,
 `kernel.sym`, and call fan-in and lists documented-but-unnamed functions (highest-leverage
-first):
+first). Full pret-style session loop: [`docs/MAPPING.md`](docs/MAPPING.md).
 
 ```sh
 ./scripts/doc-symbol-coverage.py            # 1.05e unnamed worklist by fan-in
@@ -195,7 +217,8 @@ C file under test (pinned symbols contribute address fixups only).
   to annotate the older side too. `naming-progress.sh` reads a built `disassembly/game.sym`,
   so `make` the disassembly first.
 - [omega-de-kernel](https://github.com/ez-flash/omega-de-kernel): EZ Flash's own published
-  Omega (GBA) kernel source, used as a reference for hardware-abstraction naming conventions
+  Omega DE (GBA) kernel source — FPGA register naming, FatFs/UI structure, NOR / Mode B boot
+  path. Pair with a real Omega cart for UX side-by-side; see `docs/omega-jr-compare.md`
   (cloned into `tools/`, gitignored)
 - [SDCC](https://sdcc.sourceforge.net/): C compiler used for the matching decompilation in
   `decomp/`

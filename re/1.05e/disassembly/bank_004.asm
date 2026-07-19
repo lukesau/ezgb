@@ -8,10 +8,11 @@ SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
 ; [ezgb]
 ; ROM load + soft-boot (kernel FPGA path only — not used by launched games).
 ; $7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.
-; $7FE0=$80: reset into loaded ROM; same battery FRAM, FPGA emulates game MBC.
+; $7FE0=$80: reset into loaded ROM; same FRAM chip, FPGA emulates game MBC.
 ; See docs/fram-save-map.md and sd/README.md.
 
 
+RomLoad_InitiatePoll::
     push af
     ld bc, $7f00
     ld a, $e1
@@ -97,6 +98,8 @@ SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
     ld bc, $7f20
     ld a, $e3
     ld [bc], a
+
+RomLoad_SoftReset::
     ld bc, $7fe0
     ld a, $80
     ld [bc], a
@@ -110,7 +113,7 @@ SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
 ; [ezgb]
 ; ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window.
 
-Call_004_40ab:
+RomLoad_Build::
     push af
     push af
     ld hl, sp+$08
@@ -172,14 +175,14 @@ Jump_004_40e4:
 
 
 Call_004_40e7:
-    ld bc, $4000
+    ld bc, RomLoad_InitiatePoll
     ld a, $ff
     push af
     inc sp
     push bc
     ld hl, $d100
     push hl
-    call Call_004_40ab
+    call RomLoad_Build
     add sp, $05
     call $d100
     ret
@@ -233,7 +236,7 @@ Call_004_40e7:
 ; [ezgb]
 ; SetRomLoadCtrl: $7F36 load mode ($00=off, $01=map cmd buf, $03=initiate).
 
-Call_004_4140:
+SetRomLoadCtrl::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -326,7 +329,7 @@ Jump_004_41ce:
     push bc
     ld hl, $d000
     push hl
-    call Call_004_40ab
+    call RomLoad_Build
     add sp, $05
     call $d000
     ret
@@ -832,7 +835,7 @@ Jump_004_444c:
     ld a, $01
     push af
     inc sp
-    call Call_004_4140
+    call SetRomLoadCtrl
     add sp, $01
     ld hl, $0200
     push hl
@@ -1339,7 +1342,7 @@ Call_004_468e:
     ld [hl], $00
     dec hl
     ld [hl], $00
-    ld bc, $4000
+    ld bc, RomLoad_InitiatePoll
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -1352,7 +1355,7 @@ Call_004_468e:
     ld c, a
     ld hl, sp+$3c
     ld [hl], c
-    ld bc, $4000
+    ld bc, RomLoad_InitiatePoll
     ld a, $00
     ld [bc], a
     ld a, $00
@@ -1365,7 +1368,7 @@ Call_004_468e:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0107
     push hl
@@ -1374,14 +1377,14 @@ Call_004_468e:
     ld a, $78
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0300
     push hl
@@ -1390,14 +1393,14 @@ Call_004_468e:
     inc sp
     ld hl, $5915
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0121
     push hl
@@ -1406,7 +1409,7 @@ Call_004_468e:
     ld a, $7b
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0310
     push hl
@@ -1415,14 +1418,14 @@ Call_004_468e:
     inc sp
     ld hl, $591b
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0700
     push hl
@@ -1431,7 +1434,7 @@ Call_004_468e:
     inc sp
     ld hl, $591f
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0040
     push hl
@@ -1440,7 +1443,7 @@ Call_004_468e:
     ld a, $82
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, sp+$3c
     ld a, [hl]
@@ -1459,7 +1462,7 @@ jr_004_47d1:
     ld a, $02
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $013e
     push hl
@@ -1468,7 +1471,7 @@ jr_004_47d1:
     ld a, $84
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
 
 Jump_004_47ef:
@@ -1696,7 +1699,7 @@ jr_004_4909:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     jp Jump_004_492d
 
@@ -1707,7 +1710,7 @@ Jump_004_4920:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_492d:
@@ -1718,7 +1721,7 @@ Jump_004_492d:
     ld a, $7b
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     xor a
     ld hl, sp+$40
@@ -1732,7 +1735,7 @@ Jump_004_492d:
     inc sp
     ld hl, $591b
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_004_496a
 
@@ -1745,7 +1748,7 @@ Jump_004_4959:
     inc sp
     ld hl, $592a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_496a:
@@ -1754,7 +1757,7 @@ Jump_004_496a:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0140
     push hl
@@ -1763,7 +1766,7 @@ Jump_004_496a:
     ld a, $82
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, sp+$3d
     ld a, [hl]
@@ -1782,7 +1785,7 @@ jr_004_4995:
     ld a, $02
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     jp Jump_004_49b2
 
@@ -1793,7 +1796,7 @@ Jump_004_49a5:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_49b2:
@@ -1804,7 +1807,7 @@ Jump_004_49b2:
     ld a, $82
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, sp+$3c
     ld a, [hl]
@@ -1823,7 +1826,7 @@ jr_004_49d0:
     ld a, $02
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $013e
     push hl
@@ -1832,7 +1835,7 @@ jr_004_49d0:
     ld a, $84
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
 
 Jump_004_49ee:
@@ -1947,7 +1950,7 @@ Jump_004_49ee:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$22
     ld e, [hl]
@@ -2071,7 +2074,7 @@ Jump_004_4aad:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4b2e:
@@ -2185,7 +2188,7 @@ Jump_004_4b4d:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0507
     push hl
@@ -2194,7 +2197,7 @@ Jump_004_4b4d:
     inc sp
     ld hl, $592e
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4bcc:
@@ -2308,7 +2311,7 @@ Jump_004_4beb:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4c5a:
@@ -2422,7 +2425,7 @@ Jump_004_4c79:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $050d
     push hl
@@ -2431,7 +2434,7 @@ Jump_004_4c79:
     inc sp
     ld hl, $5930
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4cf9:
@@ -2545,7 +2548,7 @@ Jump_004_4d18:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0510
     push hl
@@ -2554,7 +2557,7 @@ Jump_004_4d18:
     inc sp
     ld hl, $5930
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4d98:
@@ -2668,7 +2671,7 @@ Jump_004_4db7:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_004_4e26:
@@ -2686,7 +2689,7 @@ Jump_004_4e26:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     jp Jump_004_5162
 
@@ -2702,7 +2705,7 @@ Jump_004_4e42:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0310
     push hl
@@ -2711,14 +2714,14 @@ Jump_004_4e42:
     inc sp
     ld hl, $592a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$41
     ld a, l
@@ -2779,7 +2782,7 @@ Jump_004_4e42:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_4ec6:
@@ -2792,14 +2795,14 @@ Jump_004_4ec6:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0504
     push hl
@@ -2808,7 +2811,7 @@ Jump_004_4ec6:
     inc sp
     ld hl, $592e
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$41
     ld a, l
@@ -2868,7 +2871,7 @@ jr_004_4f3b:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_4f48:
@@ -2881,14 +2884,14 @@ Jump_004_4f48:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0507
     push hl
@@ -2897,7 +2900,7 @@ Jump_004_4f48:
     inc sp
     ld hl, $592e
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$41
     ld a, l
@@ -2957,7 +2960,7 @@ jr_004_4fbd:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_4fca:
@@ -2970,14 +2973,14 @@ Jump_004_4fca:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$41
     ld a, l
@@ -3037,7 +3040,7 @@ jr_004_502e:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_503b:
@@ -3050,14 +3053,14 @@ Jump_004_503b:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $050d
     push hl
@@ -3066,7 +3069,7 @@ Jump_004_503b:
     inc sp
     ld hl, $5930
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$41
     ld a, l
@@ -3126,7 +3129,7 @@ jr_004_50b0:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_50bd:
@@ -3139,14 +3142,14 @@ Jump_004_50bd:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0510
     push hl
@@ -3155,7 +3158,7 @@ Jump_004_50bd:
     inc sp
     ld hl, $5930
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$41
     ld a, l
@@ -3215,7 +3218,7 @@ jr_004_5132:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_004_513f:
@@ -3228,20 +3231,20 @@ Jump_004_513f:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$3e
     ld [hl], $00
 
 Jump_004_5162:
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -4381,7 +4384,7 @@ jr_004_562e:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $0121
     push hl
@@ -4390,14 +4393,14 @@ jr_004_562e:
     ld a, $7b
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     xor a
     ld hl, sp+$40
@@ -4898,7 +4901,7 @@ Jump_004_58e2:
 Jump_004_58e6:
     ld hl, sp+$3e
     ld [hl], $01
-    ld bc, $4000
+    ld bc, RomLoad_InitiatePoll
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -4910,7 +4913,7 @@ Jump_004_58e6:
     ld hl, sp+$3c
     ld a, [hl]
     ld [bc], a
-    ld bc, $4000
+    ld bc, RomLoad_InitiatePoll
     ld a, $00
     ld [bc], a
     ld a, $00

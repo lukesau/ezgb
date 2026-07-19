@@ -68,6 +68,8 @@ Foreground boot **enters `Call_000_0de4` and stays there** for the browser. The 
 - **Next matchable bites on this path:** leaves *inside* `0de4` once listed (callee
   pins via `verify.py --pin` / `--pins` are available now).
   Boot IRQ/setup helpers `$062e`–`$06c0` are fully matched.
+- Naming/mapping the wider ASM (and Omega comparisons) outranks growing `decomp/` for now;
+  see [`omega-jr-compare.md`](omega-jr-compare.md).
 
 ## Open questions
 

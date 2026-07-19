@@ -7,7 +7,7 @@
       "lines": [
         "ROM load + soft-boot (kernel FPGA path only — not used by launched games).",
         "$7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.",
-        "$7FE0=$80: reset into loaded ROM; same battery FRAM, FPGA emulates game MBC.",
+        "$7FE0=$80: reset into loaded ROM; same FRAM chip, FPGA emulates game MBC.",
         "See docs/fram-save-map.md and sd/README.md."
       ]
     },
@@ -29,8 +29,9 @@
       "bank": 1,
       "addr": "47a7",
       "lines": [
-        "SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart SRAM) → commit.",
-        "With $7FC0=$03, $4000 latches SRAM bank; $A000-$BFFF is battery FRAM."
+        "SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart FRAM window) → commit.",
+        "With $7FC0=$03, $4000 latches FRAM bank; $A000-$BFFF is non-volatile FRAM",
+        "(no battery; cart battery is RTC-only). See docs/fram-save-map.md."
       ]
     },
     {
@@ -169,6 +170,47 @@
       "lines": [
         "StoreDrawParams: store draw params $D734/$D735/$D723; called widely (~73 callers)",
         "before tile/string helpers."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "27ba",
+      "lines": [
+        "DrawRect: if wGfxMode!=1 call EnterGfxMode1; copy 5 stack args into $D725/$D727/",
+        "$D726/$D728/$D724 (two axis pairs + byte); call $22c6 to draw the rect.",
+        "C-shape ~ (u8, u16, u16). Used e.g. from BatteryCheck chrome; generic (many callers)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "298f",
+      "lines": [
+        "U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;",
+        "returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.",
+        "High fan-in is every C << >> on longs — name from the loop, no emulator needed."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "29ac",
+      "lines": [
+        "S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "29c9",
+      "lines": [
+        "U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2eea",
+      "lines": [
+        "EnterGfxMode1: LCD off, prep VRAM/tilemap/callbacks, turn LCD on, set wGfxMode=1.",
+        "Draw helpers (DrawRect, etc.) call this when wGfxMode!=1. Mode $02 set elsewhere",
+        "($3d4a); full mode table still TODO."
       ]
     },
     {

@@ -290,7 +290,7 @@ Jump_001_412c:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$1d
     ld [hl], $00
@@ -329,7 +329,7 @@ jr_001_415d:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_001_416a:
@@ -448,14 +448,14 @@ jr_001_41dd:
     ld hl, $0000
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0003
     push hl
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]
@@ -465,7 +465,7 @@ jr_001_41dd:
     push hl
     ld hl, $42b6
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_4253
 
@@ -495,7 +495,7 @@ Jump_001_4229:
     ld hl, $0014
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_4253:
@@ -504,7 +504,7 @@ Jump_001_4253:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$1d
     inc [hl]
@@ -568,7 +568,7 @@ Jump_001_4266:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     add sp, $20
     ret
@@ -724,7 +724,7 @@ jr_001_4365:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     jp Jump_001_4390
 
@@ -740,7 +740,7 @@ Jump_001_437c:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_001_4390:
@@ -819,14 +819,14 @@ jr_001_43d0:
     ld hl, $0000
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0003
     push hl
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]
@@ -836,7 +836,7 @@ jr_001_43d0:
     push hl
     ld hl, $45af
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_4442
 
@@ -865,7 +865,7 @@ Jump_001_441a:
     ld hl, $0014
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_4442:
@@ -879,7 +879,7 @@ Jump_001_4442:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     jp Jump_001_446d
 
@@ -895,7 +895,7 @@ Jump_001_4459:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
 
 Jump_001_446d:
@@ -1013,14 +1013,14 @@ jr_001_44e0:
     ld hl, $0000
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0003
     push hl
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]
@@ -1030,7 +1030,7 @@ jr_001_44e0:
     push hl
     ld hl, $45af
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_4552
 
@@ -1059,7 +1059,7 @@ Jump_001_452a:
     ld hl, $0014
     push hl
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_4552:
@@ -1068,7 +1068,7 @@ Jump_001_4552:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$0a
     ld a, l
@@ -1126,7 +1126,7 @@ Jump_001_4552:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     add sp, $24
     ret
@@ -1562,10 +1562,11 @@ Jump_001_479b:
 
 
 ; [ezgb]
-; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart SRAM) → commit.
-; With $7FC0=$03, $4000 latches SRAM bank; $A000-$BFFF is battery FRAM.
+; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart FRAM window) → commit.
+; With $7FC0=$03, $4000 latches FRAM bank; $A000-$BFFF is non-volatile FRAM
+; (no battery; cart battery is RTC-only). See docs/fram-save-map.md.
 
-Call_001_47a7:
+SetFpgaPage_B1::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -1649,13 +1650,18 @@ Call_001_47a7:
     ret
 
 
+; [ezgb]
+; LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569
+; launch chain ($482b → $4048 → $4000 → $5e14). See docs/launch-trace.md.
+
+LoaderPrepPath::
     push af
     push af
     ld hl, $48c4
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -1664,24 +1670,29 @@ Call_001_47a7:
     ld c, e
     ld a, c
     or a
-    jp z, Jump_001_4856
+    jp z, LastRomPersist
 
     ld hl, $48c4
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
     inc b
 
-Jump_001_4856:
+; [ezgb]
+; LastRomPersist: copy the assembled launch path ($c2a6, 255 bytes) into cart
+; NVRAM $A300 (select bank 17, FPGA rompage $03). Read back by LastRomOverlay
+; on START. See docs/last-rom.md.
+
+LastRomPersist::
     ld hl, $c4a4
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -1692,21 +1703,21 @@ Jump_001_4856:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$02
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_001_487d:
+LastRomPersistLoop::
     ld hl, sp+$02
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_001_48b2
+    jp nc, LastRomPersistDone
 
     dec hl
     ld e, [hl]
@@ -1742,17 +1753,17 @@ Jump_001_487d:
     inc [hl]
 
 jr_001_48af:
-    jp Jump_001_487d
+    jp LastRomPersistLoop
 
 
-Jump_001_48b2:
+LastRomPersistDone::
     ld bc, $4000
     ld a, $00
     ld [bc], a
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     add sp, $04
     ret
@@ -2532,7 +2543,7 @@ Call_001_4c5e:
     ld a, $06
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$09
     ld a, l
@@ -2790,7 +2801,7 @@ Call_001_4c5e:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$09
     ld c, l
@@ -3307,7 +3318,7 @@ Jump_001_5063:
     ld a, $06
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a018
     ld hl, sp+$08
@@ -3337,7 +3348,7 @@ Jump_001_5063:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a220
     ld hl, sp+$08
@@ -3366,12 +3377,12 @@ Jump_001_5063:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$12
     ld e, [hl]
@@ -3402,7 +3413,7 @@ Call_001_50e4:
     ld a, $06
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a018
     ld a, $00
@@ -3425,7 +3436,7 @@ Call_001_50e4:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a220
     ld a, $00
@@ -3448,7 +3459,7 @@ Call_001_50e4:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$00
     ld e, [hl]
@@ -3469,7 +3480,7 @@ Call_001_50e4:
     push hl
     ld hl, $c3a5
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld hl, sp+$24
     ld a, [hl+]
@@ -3478,7 +3489,7 @@ Call_001_50e4:
     push hl
     ld hl, $c3a5
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -3551,7 +3562,7 @@ Jump_001_51b2:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld a, $00
     push af
@@ -3803,7 +3814,7 @@ Jump_001_5327:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$18
     ld c, l
@@ -3832,7 +3843,7 @@ Jump_001_5327:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$04
@@ -3851,7 +3862,7 @@ Jump_001_5327:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$1a
     ld a, [hl]
@@ -3935,7 +3946,7 @@ Jump_001_53ee:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$14
     ld e, [hl]
@@ -4076,13 +4087,13 @@ Jump_001_54bc:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, $ca0f
     push hl
     call Call_000_19a1
     add sp, $02
-    jp Jump_001_55c2
+    jp PreLaunchFramStamp
 
 
 Jump_001_54d1:
@@ -4126,7 +4137,7 @@ Jump_001_54e9:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $4000
     push bc
@@ -4143,7 +4154,7 @@ Jump_001_54e9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -4162,7 +4173,7 @@ Jump_001_54e9:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$1a
     ld a, [hl]
@@ -4267,7 +4278,7 @@ Jump_001_559a:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
 
 ; [ezgb]
@@ -4275,7 +4286,7 @@ Jump_001_559a:
 ; $A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,
 ; $A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write.
 
-Jump_001_55c2:
+PreLaunchFramStamp::
     ld a, $0d
     push af
     inc sp
@@ -4289,7 +4300,7 @@ Jump_001_55c2:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -4322,7 +4333,7 @@ Jump_001_55c2:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a000
     ld a, $aa
@@ -4428,7 +4439,7 @@ Jump_001_5657:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -4465,7 +4476,7 @@ Jump_001_5657:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -4502,7 +4513,7 @@ Jump_001_5657:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$08
@@ -4539,7 +4550,7 @@ Jump_001_571c:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     add sp, $1e
     ret
@@ -4703,7 +4714,7 @@ Jump_001_579b:
     ld l, a
     push hl
     push bc
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -4734,7 +4745,7 @@ Jump_001_579b:
     push bc
     ld hl, $c0a0
     push hl
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4771,7 +4782,7 @@ Jump_001_579b:
     ld l, a
     push hl
     push bc
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4790,7 +4801,7 @@ Jump_001_579b:
     ld hl, $c0a0
     push hl
     push bc
-    call Call_000_2cba
+    call Memcpy
     add sp, $06
 
 Jump_001_588a:
@@ -4839,7 +4850,7 @@ Jump_001_58ad:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$20
     ld c, l
@@ -5879,6 +5890,11 @@ Jump_001_5e13:
     ret
 
 
+; [ezgb]
+; RomLoaderMain: main ROM loader (bank 1). SD stream → FPGA ROM buffer, MBC/size
+; config ($7FC*), then installs the WRAM boot stub. See docs/launch-trace.md.
+
+RomLoaderMain::
     add sp, -$15
     xor a
     ld hl, sp+$08
@@ -5889,7 +5905,7 @@ Jump_001_5e13:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld a, $01
     push af
@@ -5954,7 +5970,7 @@ Jump_001_5e56:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6129,7 +6145,7 @@ Jump_001_5f6a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -6258,7 +6274,7 @@ Call_001_601e:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $2a25
     push hl
@@ -6267,7 +6283,7 @@ Call_001_601e:
     inc sp
     ld hl, $625b
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld a, $06
     ld hl, $d3eb
@@ -6312,7 +6328,7 @@ Jump_001_606c:
     ld hl, $6265
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6324,7 +6340,7 @@ Jump_001_607d:
     ld hl, $626b
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6336,7 +6352,7 @@ Jump_001_608e:
     ld hl, $6270
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6348,7 +6364,7 @@ Jump_001_609f:
     ld hl, $6275
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6360,7 +6376,7 @@ Jump_001_60b0:
     ld hl, $627a
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6372,7 +6388,7 @@ Jump_001_60c1:
     ld hl, $627f
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
     jp Jump_001_60e0
 
@@ -6384,7 +6400,7 @@ Jump_001_60d2:
     ld hl, $6285
     push hl
     push bc
-    call Call_000_20e2
+    call ApplyBasename
     add sp, $04
 
 Jump_001_60e0:
@@ -6397,7 +6413,7 @@ Jump_001_60e0:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $3625
     push hl
@@ -6406,7 +6422,7 @@ Jump_001_60e0:
     inc sp
     ld hl, $6289
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$0a
     ld a, l
@@ -6466,7 +6482,7 @@ jr_001_611b:
     ld hl, $6293
     push hl
     push bc
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -6480,7 +6496,7 @@ jr_001_611b:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $4225
     push hl
@@ -6489,7 +6505,7 @@ jr_001_611b:
     inc sp
     ld hl, $6296
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $d3ed
     ld a, [hl]
@@ -6573,7 +6589,7 @@ Jump_001_61af:
     ld hl, $6293
     push hl
     push bc
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
@@ -6587,7 +6603,7 @@ Jump_001_61af:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $4e25
     push hl
@@ -6596,7 +6612,7 @@ Jump_001_61af:
     inc sp
     ld hl, $62a0
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     xor a
     ld hl, $d3ef
@@ -6610,7 +6626,7 @@ Jump_001_61af:
     inc sp
     ld hl, $62aa
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_623f
 
@@ -6623,11 +6639,11 @@ Jump_001_622e:
     inc sp
     ld hl, $62ae
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_623f:
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -6744,7 +6760,7 @@ Call_001_62b1:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -6753,7 +6769,7 @@ Call_001_62b1:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ret
 
@@ -6785,7 +6801,7 @@ jr_001_62e3:
     ld a, $01
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $2a25
     push hl
@@ -6796,7 +6812,7 @@ jr_001_62e3:
 
 jr_001_6301:
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0000
     push hl
@@ -6805,7 +6821,7 @@ jr_001_6301:
 
 jr_001_630e:
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $3a25
     push hl
@@ -6814,7 +6830,7 @@ jr_001_630e:
     inc sp
     ld hl, $6429
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_6364
 
@@ -6825,7 +6841,7 @@ Jump_001_6328:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $2a25
     push hl
@@ -6834,14 +6850,14 @@ Jump_001_6328:
     inc sp
     ld hl, $6424
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0002
     push hl
     ld a, $01
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $3a25
     push hl
@@ -6850,13 +6866,13 @@ Jump_001_6328:
     inc sp
     ld hl, $6429
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_6364:
     ld hl, sp+$03
     ld [hl], $00
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld hl, sp+$00
     ld [hl], c
@@ -6962,7 +6978,7 @@ Jump_001_63e2:
     ld a, $00
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $018f
     push hl
@@ -6971,14 +6987,14 @@ Jump_001_63e2:
     ld a, $00
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $4133
     push hl
@@ -6987,7 +7003,7 @@ Jump_001_63e2:
     inc sp
     ld hl, $6432
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$02
     ld e, [hl]
@@ -7022,11 +7038,11 @@ Jump_001_6421:
 
 Call_001_643a:
     add sp, -$0b
-    call Call_000_0688
+    call WaitVBlankFlag
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld a, $12
     push af
@@ -7095,7 +7111,7 @@ Jump_001_647b:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_298f
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$04
@@ -7114,7 +7130,7 @@ Jump_001_647b:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$07
     ld a, [hl]
@@ -7166,7 +7182,7 @@ Jump_001_647b:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$05
     ld c, l
@@ -7209,7 +7225,7 @@ Jump_001_6536:
     inc sp
     ld hl, $673b
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_6583
 
@@ -7234,7 +7250,7 @@ jr_001_655e:
     inc sp
     ld hl, $673f
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     jp Jump_001_6583
 
@@ -7247,7 +7263,7 @@ Jump_001_6572:
     inc sp
     ld hl, $6743
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_6583:
@@ -7305,7 +7321,7 @@ jr_001_65af:
     ld a, $03
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld bc, $a220
     ld a, [bc]
@@ -7512,7 +7528,7 @@ jr_001_65af:
     ld a, $00
     push af
     inc sp
-    call Call_001_47a7
+    call SetFpgaPage_B1
     add sp, $01
     ld hl, sp+$11
     ld a, [hl+]
@@ -7562,6 +7578,12 @@ jr_001_673f:
 jr_001_6743:
     ld l, $2e
     ld l, $00
+
+; [ezgb]
+; BackupSavePrompt: draw BACKUPSAVE box. Arg (page $11 $A001) ==1 -> auto 'Saving..'
+; and dump; else prompt [B]NO=skip / [A]OK=dump FRAM to SAVER/*.SAV.
+
+BackupSavePrompt::
     push af
     push af
     push af
@@ -7571,7 +7593,7 @@ jr_001_6743:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -7580,7 +7602,7 @@ jr_001_6743:
     ld a, $23
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0505
     push hl
@@ -7589,7 +7611,7 @@ jr_001_6743:
     inc sp
     ld hl, $6894
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$12
     ld a, [hl]
@@ -7610,7 +7632,7 @@ jr_001_6787:
     inc sp
     ld hl, $689f
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld a, $0d
     push af
@@ -7625,7 +7647,7 @@ jr_001_6787:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -7660,7 +7682,7 @@ Jump_001_67d0:
     ld a, $03
     push af
     inc sp
-    call Call_000_2791
+    call StoreDrawParams
     add sp, $03
     ld hl, $016a
     push hl
@@ -7669,7 +7691,7 @@ Jump_001_67d0:
     ld a, $27
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $016a
     push hl
@@ -7678,7 +7700,7 @@ Jump_001_67d0:
     ld a, $52
     push af
     inc sp
-    call Call_000_27ba
+    call DrawRect
     add sp, $05
     ld hl, $0c05
     push hl
@@ -7687,7 +7709,7 @@ Jump_001_67d0:
     inc sp
     ld hl, $68aa
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0c0a
     push hl
@@ -7696,11 +7718,11 @@ Jump_001_67d0:
     inc sp
     ld hl, $68b0
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
 Jump_001_6821:
-    call Call_000_3a4a
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -7718,7 +7740,7 @@ jr_001_682f:
     inc sp
     ld hl, $689f
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld a, $0d
     push af
@@ -7733,7 +7755,7 @@ jr_001_682f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_29c9
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -8679,7 +8701,7 @@ jr_001_6d23:
     ld c, d
     ld bc, HeaderMaskROMVersion
     ld c, [hl]
-    ld bc, $0150
+    ld bc, KernelEntry
     ld d, d
     ld bc, $0154
     ld d, [hl]
