@@ -1,5 +1,9 @@
 .DS_Store
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+
 # EZ Flash's copyrighted firmware binaries, not our work, keep local-only
 /ezgb.dat
 /juniorkernel-1.04e-FW4/
