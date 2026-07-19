@@ -174,7 +174,11 @@ Jump_004_40e4:
     ret
 
 
-Call_004_40e7:
+; [ezgb]
+; RomLoad_BuildAndRunPoll: build InitiatePoll trampoline at $D100
+; (arg $ff) via RomLoad_Build_B4, then call $D100.
+
+RomLoad_BuildAndRunPoll::
     ld bc, RomLoad_InitiatePoll
     ld a, $ff
     push af
@@ -188,6 +192,11 @@ Call_004_40e7:
     ret
 
 
+; [ezgb]
+; SetFpga7F34_35_B4: unlock $7F00/10/20; write stack u8s to $7F34 then
+; $7F35; commit $7FF0. Scratch via push af / add sp,$02.
+
+SetFpga7F34_35_B4::
     push af
     ld bc, $7f00
     ld a, $e1
@@ -848,11 +857,16 @@ Jump_004_444c:
     push hl
     call VramCopyStack
     add sp, $06
-    call Call_004_40e7
+    call RomLoad_BuildAndRunPoll
     ret
 
 
-Call_004_44af:
+; [ezgb]
+; CStrCat(dest, src): append NUL-term src onto dest. Walk dest to NUL,
+; then copy src incl. terminator. Stack RTL: char* dest, char* src.
+; Named CStrCat (not StrCat) to avoid RGBDS STRCAT.
+
+CStrCat::
     push af
     push af
     ld hl, sp+$06
@@ -2077,7 +2091,7 @@ Jump_004_4aad:
     ld hl, $592e
     push hl
     push bc
-    call Call_004_44af
+    call CStrCat
     add sp, $04
     ld hl, sp+$41
     ld c, l

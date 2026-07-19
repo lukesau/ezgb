@@ -1150,6 +1150,31 @@
         "DrawDirEntryLabel: browser row label. If size u32>$14, map bank via $4000, measure",
         "name at $c2a0+ofs, format into $c4a4 (farcall), DrawString. Skips tiny entries."
       ]
+    },
+    {
+      "bank": 4,
+      "addr": "40e7",
+      "lines": [
+        "RomLoad_BuildAndRunPoll: build InitiatePoll trampoline at $D100",
+        "(arg $ff) via RomLoad_Build_B4, then call $D100."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "40fc",
+      "lines": [
+        "SetFpga7F34_35_B4: unlock $7F00/10/20; write stack u8s to $7F34 then",
+        "$7F35; commit $7FF0. Scratch via push af / add sp,$02."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "44af",
+      "lines": [
+        "CStrCat(dest, src): append NUL-term src onto dest. Walk dest to NUL,",
+        "then copy src incl. terminator. Stack RTL: char* dest, char* src.",
+        "Named CStrCat (not StrCat) to avoid RGBDS STRCAT."
+      ]
     }
   ]
 }
