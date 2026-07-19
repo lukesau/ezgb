@@ -30,13 +30,18 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 ├── patches/
 │   └── sameboy/               # diffs applied on top of upstream SameBoy
 ├── scripts/
+│   ├── map-next.sh            # human lean surface (progress + proposals + packet)
+│   ├── label-packet.py        # body/callers/WRAM packet for top worklist target
+│   ├── propose-labels.py      # mechanical IRQ/farcall/FPGA/clone proposals
+│   ├── label-cron.sh          # stamp → propose → regen → packet (no LLM)
+│   ├── regen-disasm.sh        # mgbdis → annotate → make → progress
 │   ├── setup-sameboy.sh
 │   ├── refresh-sameboy-patch.sh
 │   ├── make-sd-image.sh
 │   ├── mount-sd-image.sh
 │   ├── gbdiff.sh              # symbol-annotated ROM diff (wraps gb-asm-tools)
 │   ├── naming-progress.sh     # disassembly labeling progress (wraps gb-asm-tools)
-│   └── doc-symbol-coverage.py # docs vs kernel.sym vs fan-in: what to name next
+│   └── doc-symbol-coverage.py # rank table only (fan-in); prefer map-next/packet
 ├── sd/                        # local microSD image for the stub (see sd/README.md)
 │   └── README.md
 ├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
@@ -76,9 +81,9 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
 
 - Disassembly of both kernel versions reassembles byte-identical to the originals (only the 3
   cosmetic ROM-header bytes differ, see `docs/REGISTERS.md` for why).
-- Naming is still early: `./scripts/naming-progress.sh` reports ~2% of 1.05e symbols
-  human-named (~56 entries in `re/1.05e/kernel.sym`, thousands of `Call_`/`Jump_` left).
-  Mapping the rest is the active priority; see [`docs/MAPPING.md`](docs/MAPPING.md).
+- Naming in progress: run `./scripts/map-next.sh` (or `./scripts/naming-progress.sh`) for
+  current %. App-bank call-reachable work is largely named; FatFs lib banks and Jump_
+  seams remain. Session loop: [`docs/MAP-SESSION.md`](docs/MAP-SESSION.md).
 - Diffed 1.04e vs 1.05e at the instruction level. Real logic changes are isolated to bank 0
   and bank 1; every other bank just has shifted call targets.
 - Identified the FPGA unlock/command/commit register pattern and catalogued the distinct
@@ -117,15 +122,23 @@ Persistent annotations: [re/1.05e/kernel.sym](re/1.05e/kernel.sym) (names),
 `annotate-disasm.py` then injects the `notes.json` blocks, matching either the assigned
 name or the raw `*_bbb_aaaa` label for still-unnamed addresses.
 
-To decide what to name next, `scripts/doc-symbol-coverage.py` cross-references the docs,
-`kernel.sym`, and call fan-in and lists documented-but-unnamed functions (highest-leverage
-first). Full pret-style session loop: [`docs/MAPPING.md`](docs/MAPPING.md).
+**Name the next function** (same context humans and agents use):
 
 ```sh
-./scripts/doc-symbol-coverage.py            # 1.05e unnamed worklist by fan-in
-./scripts/doc-symbol-coverage.py --top 15   # just the top rows
-./scripts/doc-symbol-coverage.py 1.04e --all
+./scripts/map-next.sh                 # progress + proposals + app worklist + full packet
+./scripts/map-next.sh --top 10        # wider picker
+./scripts/regen-disasm.sh 1.05e       # after editing kernel.sym / notes.json
 ```
+
+`map-next` prints body, callers, WRAM/`$7Fxx` touches, and `needs_judgment` — do not
+re-grep what it already showed. Rank table only (no body context):
+
+```sh
+./scripts/doc-symbol-coverage.py --app --top 10   # app banks; F = frontier
+./scripts/doc-symbol-coverage.py --top 25         # full dump incl. lib banks
+```
+
+Full pret-style notes: [`docs/MAPPING.md`](docs/MAPPING.md).
 
 ## Matching decompilation (`decomp/`)
 

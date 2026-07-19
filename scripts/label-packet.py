@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 """Print a compact labeling packet for the top app worklist target.
 
-One shot of context so an agent need not re-grep the tree each tick:
+One shot of context so a human or agent need not re-grep the tree each tick:
 
-  - worklist row (prefers frontier)
-  - function body
+  - ranked worklist rows (when --top N; prefers frontier)
+  - function body for row 1 (or --addr)
   - caller sites (with -B context)
   - unnamed Call_ callees in the body
   - WRAM / $7Fxx absolute touches
 
 Usage:
   scripts/label-packet.py [version] [--addr BANK:ADDR] [--lines N]
-  scripts/label-packet.py --frontier-only --top 5
+  scripts/label-packet.py [version] --app --frontier-only --top 5
+    # prints up to N ranked candidates, then full packet for #1
+  scripts/label-packet.py [version] --app --include-lib --top 5
+  scripts/label-packet.py [version] --app --banks 09 --top 5
+
+  --include-lib   do not skip FatFs banks 03/05/06/07/09
+  --banks LIST    only these banks (comma hex)
+  --skip-banks LIST  extra banks to drop
+
+Prefer scripts/map-next.sh for the full human lean surface (progress + proposals
++ this packet).
 """
 
 import re
@@ -99,39 +109,118 @@ def find_callers(version, bank, addr, named, context=6):
     return hits
 
 
-def pick_target(version, args):
+def rank_rows(version, frontier_only=False, include_lib=False, only_banks=None, skip_banks=None):
+    """Return ranked unnamed rows: (key, docs, fanin, is_frontier)."""
+    named = cov.load_named(version)
+    docs = cov.scan_docs()
+    fanin = cov.scan_call_fanin(version)
+    bodies, frontier = cov.scan_bodies_and_frontier(version, named)
+    skip = set(skip_banks or ())
+    if not include_lib and only_banks is None:
+        skip |= set(cov.LIB_BANKS)
+    rows = []
+    for key in set(docs) | set(fanin):
+        bank, addr = key
+        if key in named:
+            continue
+        if only_banks is not None and bank not in only_banks:
+            continue
+        if bank in skip:
+            continue
+        if key not in bodies and fanin.get(key, 0) == 0:
+            continue
+        if frontier_only and key not in frontier and not (key in docs and key in bodies):
+            continue
+        if key in bodies and cov.is_sdcc_runtime(bodies[key]) and key not in docs:
+            continue
+        rows.append((key, docs.get(key, 0), fanin.get(key, 0), key in frontier))
+    rows.sort(key=lambda r: (-r[3], -r[2], -r[1], r[0]))
+    return rows
+
+
+def pick_filters(args):
+    """Parse --include-lib / --banks / --skip-banks; return (include_lib, only, skip)."""
+    include_lib = "--include-lib" in args
+    only_banks = None
+    skip_banks = set()
+    if "--banks" in args:
+        i = args.index("--banks")
+        only_banks = cov.parse_bank_list(args[i + 1])
+    if "--skip-banks" in args:
+        i = args.index("--skip-banks")
+        skip_banks = cov.parse_bank_list(args[i + 1])
+    return include_lib, only_banks, skip_banks
+
+
+def pick_target(version, args, include_lib=False, only_banks=None, skip_banks=None):
     if "--addr" in args:
         i = args.index("--addr")
         raw = args[i + 1]
         bank, addr = raw.split(":")
         return f"{int(bank, 16):02x}", addr.lower(), "cli"
 
-    # Prefer frontier-only worklist; fall back to plain --app.
+    # Prefer frontier-only worklist; fall back to plain ranking.
     for frontier_only in (True, False):
-        named = cov.load_named(version)
-        docs = cov.scan_docs()
-        fanin = cov.scan_call_fanin(version)
-        bodies, frontier = cov.scan_bodies_and_frontier(version, named)
-        skip_banks = set(cov.LIB_BANKS)
-        rows = []
-        for key in set(docs) | set(fanin):
-            bank, addr = key
-            if key in named:
-                continue
-            if bank in skip_banks:
-                continue
-            if key not in bodies and fanin.get(key, 0) == 0:
-                continue
-            if frontier_only and key not in frontier and not (key in docs and key in bodies):
-                continue
-            if key in bodies and cov.is_sdcc_runtime(bodies[key]) and key not in docs:
-                continue
-            rows.append((key, docs.get(key, 0), fanin.get(key, 0), key in frontier))
-        rows.sort(key=lambda r: (-r[3], -r[2], -r[1], r[0]))
+        rows = rank_rows(
+            version,
+            frontier_only=frontier_only,
+            include_lib=include_lib,
+            only_banks=only_banks,
+            skip_banks=skip_banks,
+        )
         if rows:
-            (bank, addr), dref, fin, fr = rows[0]
+            (bank, addr), _dref, _fin, fr = rows[0]
             return bank, addr, "F" if fr else "."
     return None, None, None
+
+
+def print_picker(version, top, frontier_prefer=True, include_lib=False, only_banks=None, skip_banks=None):
+    """Print compact ranked candidates. Returns rows used (may be empty)."""
+    mode = "app"
+    if include_lib:
+        mode = "app+lib"
+    if only_banks is not None:
+        mode = f"banks={','.join(sorted(only_banks))}"
+
+    if frontier_prefer:
+        rows = rank_rows(
+            version,
+            frontier_only=True,
+            include_lib=include_lib,
+            only_banks=only_banks,
+            skip_banks=skip_banks,
+        )
+        if rows:
+            mode = f"frontier/{mode}"
+        else:
+            rows = rank_rows(
+                version,
+                frontier_only=False,
+                include_lib=include_lib,
+                only_banks=only_banks,
+                skip_banks=skip_banks,
+            )
+    else:
+        rows = rank_rows(
+            version,
+            frontier_only=False,
+            include_lib=include_lib,
+            only_banks=only_banks,
+            skip_banks=skip_banks,
+        )
+
+    show = rows[:top] if top else rows
+    print(f"=== WORKLIST ({mode}, show {len(show)}/{len(rows)}) ===")
+    if not show:
+        print("  (empty)")
+        print()
+        return rows
+    print("addr      c  d  fr")
+    for (bank, addr), dref, fin, fr in show:
+        mark = "F" if fr else "."
+        print(f"{bank}:{addr}  {fin:3d}  {dref:2d}  {mark}")
+    print()
+    return rows
 
 
 def main():
@@ -141,16 +230,30 @@ def main():
         i = args.index("--lines")
         body_lines = int(args[i + 1])
         del args[i:i + 2]
-    # swallow coverage-style flags we accept for docs
-    for flag in ("--frontier-only", "--app"):
-        if flag in args:
-            args = [a for a in args if a != flag]
     top = None
     if "--top" in args:
         i = args.index("--top")
-        top = int(args[i + 1])  # unused; pick always uses row 1
+        top = int(args[i + 1])
         del args[i:i + 2]
-        _ = top
+
+    include_lib, only_banks, skip_banks = pick_filters(args)
+
+    # swallow coverage-style flags (values already parsed)
+    strip = {"--frontier-only", "--app", "--include-lib"}
+    cleaned = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in strip:
+            i += 1
+            continue
+        if a in ("--banks", "--skip-banks"):
+            i += 2
+            continue
+        cleaned.append(a)
+        i += 1
+    args = cleaned
+
     version = "1.05e"
     skip_next = False
     for i, a in enumerate(args):
@@ -166,7 +269,25 @@ def main():
             version = a
 
     named = cov.load_named(version)
-    bank, addr, mark = pick_target(version, args)
+    addr_mode = "--addr" in args
+
+    if top is not None and not addr_mode:
+        print_picker(
+            version,
+            top,
+            frontier_prefer=True,
+            include_lib=include_lib,
+            only_banks=only_banks,
+            skip_banks=skip_banks,
+        )
+
+    bank, addr, mark = pick_target(
+        version,
+        args,
+        include_lib=include_lib,
+        only_banks=only_banks,
+        skip_banks=skip_banks,
+    )
     if not bank:
         print("NO_TARGET")
         print("needs_judgment: 0")

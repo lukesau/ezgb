@@ -289,7 +289,7 @@ Jump_005_4129:
     ret
 
 
-Clone_09413e_B5::
+MemCmp_B5::
     add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
@@ -384,7 +384,7 @@ Jump_005_418e:
     ret
 
 
-Clone_0941a8_B5::
+MemChr_B5::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -444,7 +444,12 @@ Jump_005_41c5:
     ret
 
 
-Call_005_41d3:
+; [ezgb]
+; MoveWindow_B5(fs, sector): FatFs move_window without SyncWindow (bank 5 has no
+; dirty-window path). If sector!=winsect(+0x2e), disk_read into win(+0x32) via
+; Far_02_4027; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9.
+
+MoveWindow_B5::
     push af
     push af
     push af
@@ -1010,7 +1015,7 @@ Jump_005_4404:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     xor a
@@ -1137,7 +1142,7 @@ jr_005_44a4:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     xor a
@@ -1317,7 +1322,7 @@ Jump_005_4584:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     xor a
@@ -1491,7 +1496,7 @@ Jump_005_465a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     xor a
@@ -1610,7 +1615,7 @@ Jump_005_4750:
     ret
 
 
-Clone_0954db_B5::
+DirSdi_B5::
     add sp, -$16
     ld hl, sp+$18
     ld a, [hl+]
@@ -2317,7 +2322,13 @@ Jump_005_4a92:
     ret
 
 
-Call_005_4a95:
+; [ezgb]
+; DirNext_B5(dp, stretch): FatFs dir_next. ++index(+4); if (index&15)==0 advance
+; sector/cluster (stretch may grow chain via far get/put_fat); else dir ptr +=32
+; into win(+0x32). Returns E=FRESULT (0 OK, 4 FR_NO_FILE). Same role as DirNext_B9
+; (09:580c); bank5 body differs (FarCallTrampoline, no near SyncWindow).
+
+DirNext_B5::
     add sp, -$18
     ld hl, sp+$1a
     ld a, [hl+]
@@ -2847,7 +2858,7 @@ Jump_005_4d03:
     ret
 
 
-Clone_095d72_B5::
+LdClust_B5::
     push af
     push af
     push af
@@ -2974,7 +2985,7 @@ Jump_005_4d92:
     ret
 
 
-Clone_095e6c_B5::
+CmpLfn_B5::
     add sp, -$0e
     ld hl, sp+$12
     ld e, [hl]
@@ -3947,7 +3958,7 @@ Jump_005_520d:
     ret
 
 
-Clone_096402_B5::
+SumSfn_B5::
     push af
     push af
     dec sp
@@ -4014,7 +4025,7 @@ jr_005_5251:
     ret
 
 
-Clone_09644b_B5::
+DirFind_B5::
     add sp, -$1a
     ld hl, $0000
     push hl
@@ -4023,7 +4034,7 @@ Clone_09644b_B5::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -4160,7 +4171,7 @@ Jump_005_52fc:
     ld l, a
     push hl
     push bc
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld b, e
     ld hl, sp+$19
@@ -4370,7 +4381,7 @@ Jump_005_5405:
     ld l, a
     push hl
     push bc
-    call Clone_095e6c_B5
+    call CmpLfn_B5
     add sp, $04
     ld b, d
     ld c, e
@@ -4418,7 +4429,7 @@ Jump_005_5443:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B5
+    call SumSfn_B5
     add sp, $02
     ld c, e
     ld hl, sp+$14
@@ -4470,7 +4481,7 @@ Jump_005_547d:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09413e_B5
+    call MemCmp_B5
     add sp, $05
     ld b, d
     ld c, e
@@ -4499,7 +4510,7 @@ Jump_005_54a9:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_4a95
+    call DirNext_B5
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -4517,7 +4528,12 @@ Jump_005_54c4:
     ret
 
 
-Call_005_54c7:
+; [ezgb]
+; DirRead_B5(dp, vol): FatFs dir_read. Scan entries via MoveWindow_B5 + DirNext_B5;
+; skip DDEM ($E5), match AM_VOL vs vol arg, handle LFN ($0F). Returns E=FRESULT
+; (4=FR_NO_FILE at end). Bank9 folds similar scan into DirFind_B9.
+
+DirRead_B5::
     add sp, -$0f
     ld hl, sp+$09
     ld [hl], $ff
@@ -4589,7 +4605,7 @@ Jump_005_54ea:
     ld l, a
     push hl
     push bc
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     ld hl, sp+$0e
@@ -4879,7 +4895,7 @@ Jump_005_5668:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B5
+    call SumSfn_B5
     add sp, $02
     ld c, e
     ld hl, sp+$08
@@ -4914,7 +4930,7 @@ Jump_005_5698:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_4a95
+    call DirNext_B5
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -4952,7 +4968,11 @@ Jump_005_56cb:
     ret
 
 
-Call_005_56d1:
+; [ezgb]
+; GetFileInfo_B5(fno, dp): FatFs get_fileinfo. Build dotted SFN into fno(+9) from
+; dir entry; apply NT case bits; copy LFN via MapCp437 when present.
+
+GetFileInfo_B5::
     add sp, -$16
     ld hl, sp+$1a
     ld a, [hl+]
@@ -5549,7 +5569,7 @@ Jump_005_598a:
     ret
 
 
-Clone_096c3e_B5::
+CreateName_B5::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -5765,7 +5785,7 @@ Jump_005_5a7e:
     push hl
     ld hl, $6005
     push hl
-    call Clone_0941a8_B5
+    call MemChr_B5
     add sp, $04
     ld b, d
     ld c, e
@@ -6683,7 +6703,7 @@ Jump_005_5ec3:
     push hl
     ld hl, $600e
     push hl
-    call Clone_0941a8_B5
+    call MemChr_B5
     add sp, $04
     ld b, d
     ld c, e
@@ -6968,7 +6988,7 @@ Jump_005_6002:
     ld e, l
     nop
 
-Clone_0972c5_B5::
+FollowPath_B5::
     add sp, -$0f
     ld hl, sp+$13
     ld c, [hl]
@@ -7103,7 +7123,7 @@ Jump_005_6099:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -7136,7 +7156,7 @@ Jump_005_60d6:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096c3e_B5
+    call CreateName_B5
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -7150,7 +7170,7 @@ Jump_005_60d6:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B5
+    call DirFind_B5
     add sp, $02
     ld c, e
     ld hl, sp+$0e
@@ -7407,7 +7427,7 @@ Jump_005_6212:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B5
+    call LdClust_B5
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -7448,7 +7468,7 @@ Jump_005_625a:
     ret
 
 
-Clone_097510_B5::
+GetLdNumber_B5::
     add sp, -$0b
     ld hl, sp+$07
     ld [hl], $ff
@@ -7642,7 +7662,12 @@ Jump_005_6334:
     ret
 
 
-Call_005_6337:
+; [ezgb]
+; CheckFs_B5(fs, sect): FatFs check_fs. Clear wflag(+4), winsect(+0x2e)=FFFFFFFF,
+; MoveWindow_B5(sect); classify boot sector (return 0=FAT VBR, 1/2/3=other/err).
+; Called from FindVolume_B5.
+
+CheckFs_B5::
     push af
     push af
     push af
@@ -7698,7 +7723,7 @@ Call_005_6337:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_41d3
+    call MoveWindow_B5
     add sp, $06
     ld c, e
     xor a
@@ -7867,7 +7892,12 @@ Jump_005_6444:
     ret
 
 
-Call_005_6447:
+; [ezgb]
+; FindVolume_B5(rfs, path, mode): FatFs find_volume. Clears *rfs; GetLdNumber_B5
+; (neg→FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null→FR_NOT_ENABLED);
+; DiskStatus/DiskInitialize; CheckFs_B5 on candidate sectors. Returns E=FRESULT.
+
+FindVolume_B5::
     add sp, -$4f
     ld hl, sp+$51
     ld a, [hl+]
@@ -7889,7 +7919,7 @@ Call_005_6447:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_097510_B5
+    call GetLdNumber_B5
     add sp, $02
     ld b, d
     ld c, e
@@ -8080,7 +8110,7 @@ Jump_005_6532:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_6337
+    call CheckFs_B5
     add sp, $06
     ld c, e
     ld hl, sp+$4e
@@ -8332,7 +8362,7 @@ Jump_005_6627:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_6337
+    call CheckFs_B5
     add sp, $06
     ld b, e
     jp Jump_005_6683
@@ -9862,7 +9892,7 @@ Jump_005_6d93:
     ret
 
 
-Clone_056d96_B5::
+Validate_B5::
     push af
     push af
     ld hl, sp+$06
@@ -9995,7 +10025,7 @@ Jump_005_6e16:
     ld c, l
     ld b, h
     push bc
-    call Clone_097510_B5
+    call GetLdNumber_B5
     add sp, $02
     ld b, d
     ld c, e
@@ -10088,7 +10118,7 @@ Jump_005_6e83:
     ld l, a
     push hl
     push bc
-    call Call_005_6447
+    call FindVolume_B5
     add sp, $05
     ld c, e
     ld e, c
@@ -10117,7 +10147,7 @@ Jump_005_6ea1:
     ld l, a
     push hl
     push bc
-    call Call_005_6447
+    call FindVolume_B5
     add sp, $05
     ld c, e
     ld hl, sp+$34
@@ -10175,7 +10205,7 @@ Jump_005_6ea1:
     ld l, a
     push hl
     push bc
-    call Clone_0972c5_B5
+    call FollowPath_B5
     add sp, $04
     ld b, e
     ld hl, sp+$34
@@ -10333,7 +10363,7 @@ jr_005_6f85:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B5
+    call LdClust_B5
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -10419,7 +10449,7 @@ Jump_005_7002:
     ld l, a
     push hl
     push bc
-    call Call_005_6447
+    call FindVolume_B5
     add sp, $05
     ld c, e
     ld hl, sp+$5a
@@ -10599,7 +10629,7 @@ Jump_005_70cc:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld c, e
     ld hl, sp+$5a
@@ -10614,7 +10644,7 @@ Jump_005_70cc:
     ld hl, $0000
     push hl
     push bc
-    call Call_005_54c7
+    call DirRead_B5
     add sp, $04
     ld c, e
     ld hl, sp+$5a
@@ -10670,7 +10700,7 @@ Jump_005_70cc:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B5
+    call LdClust_B5
     add sp, $04
     push hl
     ld hl, sp+$04
@@ -10707,7 +10737,7 @@ Jump_005_70cc:
     ld hl, $0000
     push hl
     push bc
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld c, e
     ld hl, sp+$5a
@@ -10723,7 +10753,7 @@ Jump_005_719e:
     ld hl, $0000
     push hl
     push bc
-    call Call_005_54c7
+    call DirRead_B5
     add sp, $04
     ld c, e
     ld hl, sp+$5a
@@ -10769,7 +10799,7 @@ Jump_005_719e:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B5
+    call LdClust_B5
     add sp, $04
     push hl
     ld hl, sp+$04
@@ -10812,7 +10842,7 @@ Jump_005_7214:
     ld hl, $0000
     push hl
     push bc
-    call Call_005_4a95
+    call DirNext_B5
     add sp, $04
     ld c, e
     ld hl, sp+$5a
@@ -10892,7 +10922,7 @@ Jump_005_723c:
     ld l, a
     push hl
     push bc
-    call Call_005_56d1
+    call GetFileInfo_B5
     add sp, $04
     ld hl, sp+$06
     ld a, [hl+]
@@ -11231,7 +11261,7 @@ Jump_005_73eb:
     ld l, a
     push hl
     push bc
-    call Call_005_6447
+    call FindVolume_B5
     add sp, $05
     ld c, e
     ld hl, sp+$18
@@ -11299,7 +11329,7 @@ Jump_005_73eb:
     ld l, a
     push hl
     push bc
-    call Clone_0972c5_B5
+    call FollowPath_B5
     add sp, $04
     ld b, e
     ld hl, sp+$18
@@ -11370,7 +11400,7 @@ jr_005_749a:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095d72_B5
+    call LdClust_B5
     add sp, $04
     push hl
     ld hl, sp+$04
@@ -11455,7 +11485,7 @@ Jump_005_74dc:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld c, e
     ld hl, sp+$18
@@ -11510,7 +11540,7 @@ Jump_005_754a:
     inc hl
     ld b, [hl]
     push bc
-    call Clone_056d96_B5
+    call Validate_B5
     add sp, $02
     ld c, e
     ld hl, sp+$00
@@ -11544,7 +11574,7 @@ Jump_005_7570:
     inc hl
     ld b, [hl]
     push bc
-    call Clone_056d96_B5
+    call Validate_B5
     add sp, $02
     ld c, e
     xor a
@@ -11563,7 +11593,7 @@ Jump_005_7570:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B5
+    call DirSdi_B5
     add sp, $04
     ld b, e
     ld c, b
@@ -11618,7 +11648,7 @@ Jump_005_75a4:
     ld hl, $0000
     push hl
     push bc
-    call Call_005_54c7
+    call DirRead_B5
     add sp, $04
     ld b, e
     ld c, b
@@ -11682,7 +11712,7 @@ Jump_005_761e:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_56d1
+    call GetFileInfo_B5
     add sp, $04
     ld hl, $0000
     push hl
@@ -11691,7 +11721,7 @@ Jump_005_761e:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_4a95
+    call DirNext_B5
     add sp, $04
     ld b, e
     ld c, b

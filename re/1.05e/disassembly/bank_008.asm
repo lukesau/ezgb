@@ -1902,6 +1902,12 @@ jr_008_4737:
 
 jr_008_473e:
     nop
+
+; [ezgb]
+; Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.
+; Entry is $473f (after nop pad at $473e).
+
+Fpga7FD2WaitClear_B8::
     dec sp
     ld bc, $7f00
     ld a, $e1
@@ -11922,7 +11928,11 @@ SetFpgaPage_B8::
     ret
 
 
-Call_008_6e9a:
+; [ezgb]
+; RomLoad_WriteCmdWindow_B8(buf): page=$02, $7F36=$01, copy $0200 bytes
+; from buf to $A000 (load cmd window), then ctrl/page off.
+
+RomLoad_WriteCmdWindow_B8::
     ld a, $02
     push af
     inc sp
@@ -11957,6 +11967,11 @@ Call_008_6e9a:
     ret
 
 
+; [ezgb]
+; RomLoad_BuildAndRunPeek_B8: build SdWindowPeek_B8 trampoline at $D000
+; (arg $ff) via RomLoad_Build_B8, then call $D000.
+
+RomLoad_BuildAndRunPeek_B8::
     ld bc, SdWindowPeek_B8
     ld a, $ff
     push af
@@ -11970,8 +11985,12 @@ Call_008_6e9a:
     ret
 
 
-Call_008_6ee7:
-    ld bc, $473f
+; [ezgb]
+; RomLoad_BuildAndRun7FD2Wait_B8: build Fpga7FD2WaitClear_B8 trampoline at
+; $D000 (arg $ff), then call it. Caller wraps with DiNest/EiNest.
+
+RomLoad_BuildAndRun7FD2Wait_B8::
+    ld bc, Fpga7FD2WaitClear_B8
     ld a, $ff
     push af
     inc sp
@@ -12108,7 +12127,7 @@ Jump_008_6f44:
     ld [de], a
     ld hl, $c0a0
     push hl
-    call Call_008_6e9a
+    call RomLoad_WriteCmdWindow_B8
     add sp, $02
     ld a, $05
     push af
@@ -12116,7 +12135,7 @@ Jump_008_6f44:
     call SetFpgaPage_B8
     add sp, $01
     call DiNest
-    call Call_008_6ee7
+    call RomLoad_BuildAndRun7FD2Wait_B8
     call EiNest
     ld a, $00
     push af

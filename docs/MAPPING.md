@@ -68,11 +68,13 @@ for any `kernel.sym` entries with CPU addr ≥ `$C000` (mgbdis rewrites
 
 | Pass | Who | What |
 |---|---|---|
+| Session | Human or agent | `map-next.sh` — progress + proposals + worklist + packet |
 | Deterministic | `label-cron.sh` (timer, no LLM) | `stamp-bank-clones` → `propose-labels --apply` → `regen-disasm` → `label-packet` |
-| Judgment | Agent (only on cron exit 2 / `needs_judgment: 1`) | Ambiguous WRAM, UI/control flow; apply or reject proposals — **do not re-explore** |
+| Judgment | Human or agent (cron / packet exit 2 / `needs_judgment: 1`) | Ambiguous WRAM, UI/control flow; apply or reject proposals — **do not re-explore** |
 
 ```sh
-./scripts/label-cron.sh 1.05e          # exit 2 = wake agent
+./scripts/map-next.sh                  # human default: progress + proposals + packet
+./scripts/label-cron.sh 1.05e          # exit 2 = needs judgment
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
 ./scripts/propose-labels.py 1.05e      # dry-run; --apply to stamp
 ./scripts/regen-disasm.sh 1.05e
@@ -92,21 +94,24 @@ Mechanical proposals: IRQ callback wrappers (`ld hl,$Dxxx` / `jp Install|RemoveC
 ### 1. Build a worklist
 
 ```sh
+./scripts/map-next.sh                  # preferred: progress + proposals + packet
 ./scripts/naming-progress.sh 1.05e
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
 ./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
-# full ranking (includes lib banks):  ./scripts/doc-symbol-coverage.py --top 25
+# full ranking dump (lib banks, no body context):
+./scripts/doc-symbol-coverage.py --top 25
 ```
 
 Good next targets, in order:
 
-1. Packet / `doc-symbol-coverage.py --app --frontier-only` (`F` = callee of a named fn)
+1. `map-next` / packet (`F` = callee of a named fn — the frontier)
 2. Callees of something you already named (grow the frontier)
 3. Code next to a unique string you can trigger in the UI
 4. Omega analogue you just watched on hardware ([`omega-jr-compare.md`](omega-jr-compare.md))
 
 Avoid: random mid-bank label with fan-in 1 and no string/UI hook; re-grepping
-what `label-packet.py` already printed.
+what `map-next` / `label-packet.py` already printed. `--top 25` alone is a rank
+dump — it does not include body, callers, or WRAM context.
 
 ### 2. Understand before renaming
 
@@ -198,9 +203,8 @@ tables for searchability.
 ### 6. Verify
 
 ```sh
-cd re/1.05e/disassembly && make
-./scripts/naming-progress.sh 1.05e
-./scripts/doc-symbol-coverage.py --app --top 10
+./scripts/regen-disasm.sh 1.05e
+./scripts/map-next.sh
 ```
 
 Optional: SameBoy break on the new label and confirm the UX path you claimed.
@@ -246,10 +250,16 @@ conservative for the same reason.
 ## Quick reference
 
 ```sh
-# progress / packet
+# human default (progress + proposals + worklist + packet)
+./scripts/map-next.sh
+./scripts/map-next.sh --top 10
+
+# pieces
 ./scripts/naming-progress.sh 1.05e
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
 ./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
+# rank dump only (incl. lib banks, no body):
+./scripts/doc-symbol-coverage.py --top 25
 
 # mechanical + regen
 ./scripts/label-cron.sh 1.05e

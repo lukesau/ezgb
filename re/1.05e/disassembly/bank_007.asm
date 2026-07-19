@@ -285,7 +285,7 @@ Jump_007_4128:
     ret
 
 
-Clone_09413e_B7::
+MemCmp_B7::
     add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
@@ -380,7 +380,7 @@ Jump_007_418d:
     ret
 
 
-Clone_0941a8_B7::
+MemChr_B7::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -938,6 +938,10 @@ Jump_007_442e:
     ret
 
 
+; [ezgb]
+; SyncFs_B7(fs): same as SyncFs_B9 (09:4447). Unlabeled mgbdis entry after MoveWindow_B7.
+
+SyncFs_B7::
     add sp, -$11
     ld hl, sp+$13
     ld a, [hl+]
@@ -2356,7 +2360,7 @@ Jump_007_4adf:
     ret
 
 
-Clone_094af7_B7::
+PutFat_B7::
     add sp, -$19
     ld hl, sp+$1d
     ld a, [hl]
@@ -3319,7 +3323,7 @@ Jump_007_4f82:
     ret
 
 
-Clone_095139_B7::
+CreateChain_B7::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -3863,7 +3867,7 @@ Jump_007_51f3:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B7
+    call PutFat_B7
     add sp, $0a
     ld c, e
     xor a
@@ -3904,7 +3908,7 @@ Jump_007_51f3:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B7
+    call PutFat_B7
     add sp, $0a
     ld b, e
     ld c, b
@@ -4112,7 +4116,7 @@ Jump_007_5327:
     ret
 
 
-Clone_0954db_B7::
+DirSdi_B7::
     add sp, -$16
     ld hl, sp+$18
     ld a, [hl+]
@@ -4811,7 +4815,7 @@ Jump_007_5658:
     ret
 
 
-Clone_09580c_B7::
+DirNext_B7::
     add sp, -$22
     ld hl, sp+$24
     ld a, [hl+]
@@ -5216,7 +5220,7 @@ Jump_007_5815:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095139_B7
+    call CreateChain_B7
     add sp, $06
     push hl
     ld hl, sp+$14
@@ -5791,7 +5795,7 @@ Jump_007_5adc:
     ret
 
 
-Clone_095c8f_B7::
+DirAlloc_B7::
     add sp, -$0b
     ld hl, $0000
     push hl
@@ -5800,7 +5804,7 @@ Clone_095c8f_B7::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B7
+    call DirSdi_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5947,7 +5951,7 @@ Jump_007_5b93:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B7
+    call DirNext_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5979,7 +5983,7 @@ Jump_007_5bbc:
     ret
 
 
-Clone_095d72_B7::
+LdClust_B7::
     push af
     push af
     push af
@@ -6186,7 +6190,7 @@ Jump_007_5c4e:
     ret
 
 
-Clone_095e6c_B7::
+CmpLfn_B7::
     add sp, -$0e
     ld hl, sp+$12
     ld e, [hl]
@@ -6725,7 +6729,7 @@ Jump_007_5f3d:
     ret
 
 
-Clone_0960f0_B7::
+PutLfn_B7::
     push af
     push af
     push af
@@ -6956,7 +6960,10 @@ Jump_007_6046:
     ret
 
 
-Call_007_6051:
+; [ezgb]
+; GenNumName_B7: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy.
+
+GenNumName_B7::
     add sp, -$1d
     ld hl, sp+$1f
     ld c, [hl]
@@ -7391,7 +7398,7 @@ Jump_007_623c:
     ret
 
 
-Clone_096402_B7::
+SumSfn_B7::
     push af
     push af
     dec sp
@@ -7458,7 +7465,7 @@ jr_007_6280:
     ret
 
 
-Clone_09644b_B7::
+DirFind_B7::
     add sp, -$1a
     ld hl, $0000
     push hl
@@ -7467,7 +7474,7 @@ Clone_09644b_B7::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B7
+    call DirSdi_B7
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -7814,7 +7821,7 @@ Jump_007_6434:
     ld l, a
     push hl
     push bc
-    call Clone_095e6c_B7
+    call CmpLfn_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -7862,7 +7869,7 @@ Jump_007_6472:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B7
+    call SumSfn_B7
     add sp, $02
     ld c, e
     ld hl, sp+$14
@@ -7914,7 +7921,7 @@ Jump_007_64ac:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09413e_B7
+    call MemCmp_B7
     add sp, $05
     ld b, d
     ld c, e
@@ -7943,7 +7950,7 @@ Jump_007_64d8:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B7
+    call DirNext_B7
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -8322,7 +8329,7 @@ Jump_007_6697:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B7
+    call SumSfn_B7
     add sp, $02
     ld c, e
     ld hl, sp+$08
@@ -8357,7 +8364,7 @@ Jump_007_66c7:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B7
+    call DirNext_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -8395,6 +8402,10 @@ Jump_007_66fa:
     ret
 
 
+; [ezgb]
+; DirRegister_B7: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry.
+
+DirRegister_B7::
     add sp, -$26
     ld hl, sp+$28
     ld a, [hl+]
@@ -8551,14 +8562,14 @@ Jump_007_679f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_007_6051
+    call GenNumName_B7
     add sp, $08
     ld hl, sp+$0a
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B7
+    call DirFind_B7
     add sp, $02
     ld c, e
     ld hl, sp+$25
@@ -8733,7 +8744,7 @@ Jump_007_688a:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095c8f_B7
+    call DirAlloc_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8788,7 +8799,7 @@ Jump_007_688a:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B7
+    call DirSdi_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8807,7 +8818,7 @@ Jump_007_688a:
     ld a, [de]
     ld b, a
     push bc
-    call Clone_096402_B7
+    call SumSfn_B7
     add sp, $02
     ld c, e
     ld hl, sp+$12
@@ -8920,7 +8931,7 @@ Jump_007_6912:
     ld l, a
     push hl
     push bc
-    call Clone_0960f0_B7
+    call PutLfn_B7
     add sp, $06
     ld hl, sp+$0a
     ld e, [hl]
@@ -8944,7 +8955,7 @@ Jump_007_6912:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B7
+    call DirNext_B7
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -9737,7 +9748,7 @@ Jump_007_6d48:
     ret
 
 
-Clone_096c3e_B7::
+CreateName_B7::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -9953,7 +9964,7 @@ Jump_007_6e3c:
     push hl
     ld hl, $73c3
     push hl
-    call Clone_0941a8_B7
+    call MemChr_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -10871,7 +10882,7 @@ Jump_007_7281:
     push hl
     ld hl, $73cc
     push hl
-    call Clone_0941a8_B7
+    call MemChr_B7
     add sp, $04
     ld b, d
     ld c, e
@@ -11289,7 +11300,7 @@ Jump_007_7457:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B7
+    call DirSdi_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -11322,7 +11333,7 @@ Jump_007_7494:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096c3e_B7
+    call CreateName_B7
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -11336,7 +11347,7 @@ Jump_007_7494:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B7
+    call DirFind_B7
     add sp, $02
     ld c, e
     ld hl, sp+$0a
@@ -11550,7 +11561,7 @@ Jump_007_7591:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B7
+    call LdClust_B7
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -11784,7 +11795,7 @@ Jump_007_76b3:
     ret
 
 
-Clone_056d96_B7::
+Validate_B7::
     push af
     push af
     ld hl, sp+$06
@@ -11934,7 +11945,7 @@ Jump_007_7736:
     inc hl
     ld b, [hl]
     push bc
-    call Clone_056d96_B7
+    call Validate_B7
     add sp, $02
     ld c, e
     xor a
@@ -12312,7 +12323,7 @@ Jump_007_7890:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095139_B7
+    call CreateChain_B7
     add sp, $06
     push hl
     ld hl, sp+$02
@@ -12373,7 +12384,7 @@ Jump_007_7952:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095139_B7
+    call CreateChain_B7
     add sp, $06
     push hl
     ld hl, sp+$02

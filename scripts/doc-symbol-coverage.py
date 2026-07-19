@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Report which functions the docs describe by role but the disassembly hasn't named yet.
+"""Rank table: docs / kernel.sym / call fan-in — what to label next.
+
+This prints a **rank table only** (addr, fan-in, docs, frontier mark). It does
+not include body, callers, or WRAM context. For the full lean surface humans
+and agents share, use:
+
+  scripts/map-next.sh
+  scripts/label-packet.py --app --frontier-only --top 5
 
 Cross-references three things for a kernel version:
   1. kernel.sym          - human names already assigned (bank:addr -> name)
@@ -14,7 +21,7 @@ name Jump_ only when docs or a farcall entry point make them a real seam.
 
 The output ranks the gap: functions that are documented (or heavily called) but
 still carry an auto-generated name. Naming a high-fan-in helper annotates every
-call site at once, so this is a worklist for "what to label next".
+call site at once.
 
 Usage:
   scripts/doc-symbol-coverage.py [version] [flags]
@@ -32,7 +39,9 @@ Usage:
   --skip-banks LIST  drop these banks (comma hex)
   --verbose       full table even under --app
 
-Loop tip:  scripts/doc-symbol-coverage.py --app --top 10
+Loop tip:  scripts/map-next.sh
+  Rank dump (no body):  scripts/doc-symbol-coverage.py --app --top 10
+  Full dump + lib banks:  scripts/doc-symbol-coverage.py --top 25
 """
 
 import re

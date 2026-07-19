@@ -289,7 +289,7 @@ Jump_006_4129:
     ret
 
 
-Clone_09413e_B6::
+MemCmp_B6::
     add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
@@ -384,7 +384,7 @@ Jump_006_418e:
     ret
 
 
-Clone_0941a8_B6::
+MemChr_B6::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -1980,7 +1980,7 @@ Jump_006_490c:
     ret
 
 
-Clone_094af7_B6::
+PutFat_B6::
     add sp, -$19
     ld hl, sp+$1d
     ld a, [hl]
@@ -2943,7 +2943,7 @@ Jump_006_4daf:
     ret
 
 
-Clone_094f94_B6::
+RemoveChain_B6::
     add sp, -$0e
     ld hl, sp+$12
     ld a, [hl]
@@ -3175,7 +3175,7 @@ Jump_006_4eac:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B6
+    call PutFat_B6
     add sp, $0a
     ld c, e
     ld b, c
@@ -3309,7 +3309,7 @@ Jump_006_4f56:
     ret
 
 
-Clone_095139_B6::
+CreateChain_B6::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -3853,7 +3853,7 @@ Jump_006_51c5:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B6
+    call PutFat_B6
     add sp, $0a
     ld c, e
     xor a
@@ -3894,7 +3894,7 @@ Jump_006_51c5:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B6
+    call PutFat_B6
     add sp, $0a
     ld b, e
     ld c, b
@@ -4102,7 +4102,7 @@ Jump_006_52f9:
     ret
 
 
-Clone_0954db_B6::
+DirSdi_B6::
     add sp, -$16
     ld hl, sp+$18
     ld a, [hl+]
@@ -4801,7 +4801,7 @@ Jump_006_562a:
     ret
 
 
-Clone_09580c_B6::
+DirNext_B6::
     add sp, -$22
     ld hl, sp+$24
     ld a, [hl+]
@@ -5206,7 +5206,7 @@ Jump_006_57e7:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095139_B6
+    call CreateChain_B6
     add sp, $06
     push hl
     ld hl, sp+$14
@@ -5781,7 +5781,7 @@ Jump_006_5aae:
     ret
 
 
-Clone_095c8f_B6::
+DirAlloc_B6::
     add sp, -$0b
     ld hl, $0000
     push hl
@@ -5790,7 +5790,7 @@ Clone_095c8f_B6::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B6
+    call DirSdi_B6
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5937,7 +5937,7 @@ Jump_006_5b65:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B6
+    call DirNext_B6
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -5969,7 +5969,7 @@ Jump_006_5b8e:
     ret
 
 
-Clone_095d72_B6::
+LdClust_B6::
     push af
     push af
     push af
@@ -6096,7 +6096,7 @@ Jump_006_5c20:
     ret
 
 
-Clone_095e0a_B6::
+StClust_B6::
     push af
     push af
     push af
@@ -6177,7 +6177,7 @@ Clone_095e0a_B6::
     ret
 
 
-Clone_095e6c_B6::
+CmpLfn_B6::
     add sp, -$0e
     ld hl, sp+$12
     ld e, [hl]
@@ -6716,7 +6716,7 @@ Jump_006_5f0f:
     ret
 
 
-Clone_0960f0_B6::
+PutLfn_B6::
     push af
     push af
     push af
@@ -6947,7 +6947,10 @@ Jump_006_6018:
     ret
 
 
-Call_006_6023:
+; [ezgb]
+; GenNumName_B6: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy.
+
+GenNumName_B6::
     add sp, -$1d
     ld hl, sp+$1f
     ld c, [hl]
@@ -7382,7 +7385,7 @@ Jump_006_620e:
     ret
 
 
-Clone_096402_B6::
+SumSfn_B6::
     push af
     push af
     dec sp
@@ -7449,7 +7452,7 @@ jr_006_6252:
     ret
 
 
-Clone_09644b_B6::
+DirFind_B6::
     add sp, -$1a
     ld hl, $0000
     push hl
@@ -7458,7 +7461,7 @@ Clone_09644b_B6::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B6
+    call DirSdi_B6
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -7805,7 +7808,7 @@ Jump_006_6406:
     ld l, a
     push hl
     push bc
-    call Clone_095e6c_B6
+    call CmpLfn_B6
     add sp, $04
     ld b, d
     ld c, e
@@ -7853,7 +7856,7 @@ Jump_006_6444:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B6
+    call SumSfn_B6
     add sp, $02
     ld c, e
     ld hl, sp+$14
@@ -7905,7 +7908,7 @@ Jump_006_647e:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09413e_B6
+    call MemCmp_B6
     add sp, $05
     ld b, d
     ld c, e
@@ -7934,7 +7937,7 @@ Jump_006_64aa:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B6
+    call DirNext_B6
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -7952,7 +7955,10 @@ Jump_006_64c5:
     ret
 
 
-Call_006_64c8:
+; [ezgb]
+; DirRegister_B6: same as DirRegister_B9 (09:68b0). Bank-local FatFs dir_register copy.
+
+DirRegister_B6::
     add sp, -$26
     ld hl, sp+$28
     ld a, [hl+]
@@ -8109,14 +8115,14 @@ Jump_006_6567:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_006_6023
+    call GenNumName_B6
     add sp, $08
     ld hl, sp+$0a
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B6
+    call DirFind_B6
     add sp, $02
     ld c, e
     ld hl, sp+$25
@@ -8291,7 +8297,7 @@ Jump_006_6652:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095c8f_B6
+    call DirAlloc_B6
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8346,7 +8352,7 @@ Jump_006_6652:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B6
+    call DirSdi_B6
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8365,7 +8371,7 @@ Jump_006_6652:
     ld a, [de]
     ld b, a
     push bc
-    call Clone_096402_B6
+    call SumSfn_B6
     add sp, $02
     ld c, e
     ld hl, sp+$12
@@ -8478,7 +8484,7 @@ Jump_006_66da:
     ld l, a
     push hl
     push bc
-    call Clone_0960f0_B6
+    call PutLfn_B6
     add sp, $06
     ld hl, sp+$0a
     ld e, [hl]
@@ -8502,7 +8508,7 @@ Jump_006_66da:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B6
+    call DirNext_B6
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -8699,7 +8705,7 @@ Jump_006_6854:
     ret
 
 
-Clone_096c3e_B6::
+CreateName_B6::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -8915,7 +8921,7 @@ Jump_006_6948:
     push hl
     ld hl, $6ecf
     push hl
-    call Clone_0941a8_B6
+    call MemChr_B6
     add sp, $04
     ld b, d
     ld c, e
@@ -9833,7 +9839,7 @@ Jump_006_6d8d:
     push hl
     ld hl, $6ed8
     push hl
-    call Clone_0941a8_B6
+    call MemChr_B6
     add sp, $04
     ld b, d
     ld c, e
@@ -10118,7 +10124,7 @@ Jump_006_6ecc:
     ld e, l
     nop
 
-Clone_0972c5_B6::
+FollowPath_B6::
     add sp, -$0f
     ld hl, sp+$13
     ld c, [hl]
@@ -10253,7 +10259,7 @@ Jump_006_6f63:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B6
+    call DirSdi_B6
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -10286,7 +10292,7 @@ Jump_006_6fa0:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096c3e_B6
+    call CreateName_B6
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -10300,7 +10306,7 @@ Jump_006_6fa0:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B6
+    call DirFind_B6
     add sp, $02
     ld c, e
     ld hl, sp+$0e
@@ -10557,7 +10563,7 @@ Jump_006_70dc:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B6
+    call LdClust_B6
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -10598,7 +10604,7 @@ Jump_006_7124:
     ret
 
 
-Clone_097510_B6::
+GetLdNumber_B6::
     add sp, -$0b
     ld hl, sp+$07
     ld [hl], $ff
@@ -10792,7 +10798,7 @@ Jump_006_71fe:
     ret
 
 
-Clone_0976f7_B6::
+FindVolume_B6::
     add sp, -$12
     ld hl, sp+$14
     ld a, [hl+]
@@ -10814,7 +10820,7 @@ Clone_0976f7_B6::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_097510_B6
+    call GetLdNumber_B6
     add sp, $02
     ld b, d
     ld c, e
@@ -10906,7 +10912,7 @@ Jump_006_7283:
     ret
 
 
-Clone_056d96_B6::
+Validate_B6::
     push af
     push af
     ld hl, sp+$06
@@ -11081,7 +11087,7 @@ Jump_006_7317:
     ld l, a
     push hl
     push bc
-    call Clone_0976f7_B6
+    call FindVolume_B6
     add sp, $05
     ld c, e
     ld hl, sp+$41
@@ -11139,7 +11145,7 @@ Jump_006_7317:
     ld l, a
     push hl
     push bc
-    call Clone_0972c5_B6
+    call FollowPath_B6
     add sp, $04
     ld b, e
     ld hl, sp+$41
@@ -11213,7 +11219,7 @@ jr_006_73ef:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_006_64c8
+    call DirRegister_B6
     add sp, $02
     ld c, e
     ld hl, sp+$41
@@ -11404,7 +11410,7 @@ jr_006_7457:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B6
+    call LdClust_B6
     add sp, $04
     push hl
     ld hl, sp+$13
@@ -11425,7 +11431,7 @@ jr_006_7457:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095e0a_B6
+    call StClust_B6
     add sp, $06
     ld hl, sp+$27
     ld c, l
@@ -11508,7 +11514,7 @@ jr_006_7457:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094f94_B6
+    call RemoveChain_B6
     add sp, $06
     ld c, e
     ld hl, sp+$41
@@ -11798,7 +11804,7 @@ Jump_006_767a:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B6
+    call LdClust_B6
     add sp, $04
     push hl
     ld hl, sp+$06
@@ -12012,7 +12018,7 @@ Jump_006_7797:
     inc hl
     ld b, [hl]
     push bc
-    call Clone_056d96_B6
+    call Validate_B6
     add sp, $02
     ld c, e
     xor a

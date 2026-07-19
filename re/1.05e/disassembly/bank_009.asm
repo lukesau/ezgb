@@ -312,7 +312,7 @@ Jump_009_413b:
     ret
 
 
-Clone_09413e_B9::
+MemCmp_B9::
     add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
@@ -407,7 +407,7 @@ Jump_009_41a0:
     ret
 
 
-Clone_0941a8_B9::
+MemChr_B9::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -973,7 +973,13 @@ Jump_009_4441:
     ret
 
 
-Call_009_4447:
+; [ezgb]
+; SyncFs_B9(fs): FatFs sync_fs. SyncWindow_B9; if fs_type(+0)==FAT32(3) and
+; fsi_flag(+5)==1, build FSInfo in win(+0x32): 0x55AA, LeadSig RRaA, StrucSig rrAa,
+; copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via Far_02_41d5, clear fsi_flag.
+; Ends with ReturnZero stand-in for disk_ioctl(CTRL_SYNC). Bank copies: 03:4434, 07.
+
+SyncFs_B9::
     add sp, -$10
     ld hl, sp+$12
     ld a, [hl+]
@@ -2392,7 +2398,13 @@ Jump_009_4aeb:
     ret
 
 
-Clone_094af7_B9::
+; [ezgb]
+; PutFat_B9 / RemoveChain_B9 / CreateChain_B9 / DirSdi_B9 / DirAlloc_B9 /
+; LdClust_B9 / StClust_B9 / CmpLfn_B9 / PutLfn_B9 / SumSfn_B9 / FollowPath_B9 /
+; MemCmp_B9 / MemChr_B9: FatFs internals renamed from Clone_09* families;
+; bank copies keep matching _B3/_B5/_B6/_B7 suffixes where present.
+
+PutFat_B9::
     add sp, -$19
     ld hl, sp+$1d
     ld a, [hl]
@@ -3355,7 +3367,7 @@ Jump_009_4f8e:
     ret
 
 
-Clone_094f94_B9::
+RemoveChain_B9::
     add sp, -$0e
     ld hl, sp+$12
     ld a, [hl]
@@ -3587,7 +3599,7 @@ Jump_009_508b:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B9
+    call PutFat_B9
     add sp, $0a
     ld c, e
     ld b, c
@@ -3721,7 +3733,7 @@ Jump_009_5135:
     ret
 
 
-Clone_095139_B9::
+CreateChain_B9::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -4265,7 +4277,7 @@ Jump_009_53a4:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B9
+    call PutFat_B9
     add sp, $0a
     ld c, e
     xor a
@@ -4306,7 +4318,7 @@ Jump_009_53a4:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_094af7_B9
+    call PutFat_B9
     add sp, $0a
     ld b, e
     ld c, b
@@ -4514,7 +4526,7 @@ Jump_009_54d8:
     ret
 
 
-Clone_0954db_B9::
+DirSdi_B9::
     add sp, -$16
     ld hl, sp+$18
     ld a, [hl+]
@@ -5213,7 +5225,11 @@ Jump_009_5809:
     ret
 
 
-Clone_09580c_B9::
+; [ezgb]
+; DirNext_B9(dp, stretch): FatFs dir_next. Bank copies: DirNext_B3/B6/B7; B5 at
+; 05:4a95 is a divergent body with the same control-flow shape.
+
+DirNext_B9::
     add sp, -$22
     ld hl, sp+$24
     ld a, [hl+]
@@ -5618,7 +5634,7 @@ Jump_009_59c6:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095139_B9
+    call CreateChain_B9
     add sp, $06
     push hl
     ld hl, sp+$14
@@ -6192,7 +6208,7 @@ Jump_009_5c8c:
     ret
 
 
-Clone_095c8f_B9::
+DirAlloc_B9::
     add sp, -$0b
     ld hl, $0000
     push hl
@@ -6201,7 +6217,7 @@ Clone_095c8f_B9::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B9
+    call DirSdi_B9
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -6348,7 +6364,7 @@ Jump_009_5d43:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B9
+    call DirNext_B9
     add sp, $04
     ld c, e
     ld hl, sp+$0a
@@ -6380,7 +6396,7 @@ Jump_009_5d6c:
     ret
 
 
-Clone_095d72_B9::
+LdClust_B9::
     push af
     push af
     push af
@@ -6507,7 +6523,7 @@ Jump_009_5dfe:
     ret
 
 
-Clone_095e0a_B9::
+StClust_B9::
     push af
     push af
     push af
@@ -6588,7 +6604,7 @@ Clone_095e0a_B9::
     ret
 
 
-Clone_095e6c_B9::
+CmpLfn_B9::
     add sp, -$0e
     ld hl, sp+$12
     ld e, [hl]
@@ -7127,7 +7143,7 @@ Jump_009_60ed:
     ret
 
 
-Clone_0960f0_B9::
+PutLfn_B9::
     push af
     push af
     push af
@@ -7358,7 +7374,12 @@ Jump_009_61f6:
     ret
 
 
-Call_009_6201:
+; [ezgb]
+; GenNumName_B9(dst, src, lfn, seq): FatFs gen_numname. MemCpy16 11-byte SFN;
+; if seq>5, CRC over LFN bits with poly 0x11021; write '~'+hex into name field.
+; Static match to ChaN FatFs gen_numname. Likely copies: 03:61f6, 06:6023, 07:6051.
+
+GenNumName_B9::
     add sp, -$1d
     ld hl, sp+$1f
     ld c, [hl]
@@ -7793,7 +7814,7 @@ Jump_009_63ec:
     ret
 
 
-Clone_096402_B9::
+SumSfn_B9::
     push af
     push af
     dec sp
@@ -7860,7 +7881,11 @@ jr_009_6430:
     ret
 
 
-Clone_09644b_B9::
+; [ezgb]
+; DirFind_B9(dp): FatFs dir_find. Match SFN/LFN pattern against directory entries
+; (DirNext_B9). Copies: DirFind_B3/B5/B6/B7.
+
+DirFind_B9::
     add sp, -$1a
     ld hl, $0000
     push hl
@@ -7869,7 +7894,7 @@ Clone_09644b_B9::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B9
+    call DirSdi_B9
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -8216,7 +8241,7 @@ Jump_009_65e4:
     ld l, a
     push hl
     push bc
-    call Clone_095e6c_B9
+    call CmpLfn_B9
     add sp, $04
     ld b, d
     ld c, e
@@ -8264,7 +8289,7 @@ Jump_009_6622:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B9
+    call SumSfn_B9
     add sp, $02
     ld c, e
     ld hl, sp+$14
@@ -8316,7 +8341,7 @@ Jump_009_665c:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09413e_B9
+    call MemCmp_B9
     add sp, $05
     ld b, d
     ld c, e
@@ -8345,7 +8370,7 @@ Jump_009_6688:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B9
+    call DirNext_B9
     add sp, $04
     ld c, e
     ld hl, sp+$19
@@ -8724,7 +8749,7 @@ Jump_009_6847:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096402_B9
+    call SumSfn_B9
     add sp, $02
     ld c, e
     ld hl, sp+$08
@@ -8759,7 +8784,7 @@ Jump_009_6877:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B9
+    call DirNext_B9
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -8797,7 +8822,13 @@ Jump_009_68aa:
     ret
 
 
-Call_009_68b0:
+; [ezgb]
+; DirRegister_B9(dp): FatFs dir_register. Rejects AM_VOL (+0xb & $20) as FR_INVALID_NAME;
+; on NS_LOSS, GenNumName_B9 + Clone_09644b (dir_find) loop seq 1..100 (FR_DENIED at 100);
+; allocates entries (Clone_095c8f), MoveWindow_B9, LFN/SFN fill. Returns E=FRESULT.
+; Static match to ChaN FatFs dir_register. Likely copy: 06:64c8.
+
+DirRegister_B9::
     add sp, -$26
     ld hl, sp+$28
     ld a, [hl+]
@@ -8954,14 +8985,14 @@ Jump_009_694f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_6201
+    call GenNumName_B9
     add sp, $08
     ld hl, sp+$0a
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B9
+    call DirFind_B9
     add sp, $02
     ld c, e
     ld hl, sp+$25
@@ -9136,7 +9167,7 @@ Jump_009_6a3a:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095c8f_B9
+    call DirAlloc_B9
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -9191,7 +9222,7 @@ Jump_009_6a3a:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B9
+    call DirSdi_B9
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -9210,7 +9241,7 @@ Jump_009_6a3a:
     ld a, [de]
     ld b, a
     push bc
-    call Clone_096402_B9
+    call SumSfn_B9
     add sp, $02
     ld c, e
     ld hl, sp+$12
@@ -9323,7 +9354,7 @@ Jump_009_6ac2:
     ld l, a
     push hl
     push bc
-    call Clone_0960f0_B9
+    call PutLfn_B9
     add sp, $06
     ld hl, sp+$0a
     ld e, [hl]
@@ -9347,7 +9378,7 @@ Jump_009_6ac2:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09580c_B9
+    call DirNext_B9
     add sp, $04
     ld c, e
     ld hl, sp+$25
@@ -9543,7 +9574,11 @@ Jump_009_6c3b:
     ret
 
 
-Clone_096c3e_B9::
+; [ezgb]
+; CreateName_B9(dp, path): FatFs create_name. Parse next path segment (stop on / or \);
+; build SFN/LFN + NSFLAG. Copies: CreateName_B3/B5/B6/B7.
+
+CreateName_B9::
     add sp, -$1b
     ld hl, sp+$1f
     ld a, [hl+]
@@ -9759,7 +9794,7 @@ Jump_009_6d2f:
     push hl
     ld hl, $72b5
     push hl
-    call Clone_0941a8_B9
+    call MemChr_B9
     add sp, $04
     ld b, d
     ld c, e
@@ -10676,7 +10711,7 @@ Jump_009_7173:
     push hl
     ld hl, $72be
     push hl
-    call Clone_0941a8_B9
+    call MemChr_B9
     add sp, $04
     ld b, d
     ld c, e
@@ -10961,7 +10996,7 @@ Jump_009_72b2:
     ld e, l
     nop
 
-Clone_0972c5_B9::
+FollowPath_B9::
     add sp, -$0f
     ld hl, sp+$13
     ld c, [hl]
@@ -11096,7 +11131,7 @@ Jump_009_7349:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_0954db_B9
+    call DirSdi_B9
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -11129,7 +11164,7 @@ Jump_009_7386:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_096c3e_B9
+    call CreateName_B9
     add sp, $04
     ld c, e
     ld hl, sp+$0e
@@ -11143,7 +11178,7 @@ Jump_009_7386:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_09644b_B9
+    call DirFind_B9
     add sp, $02
     ld c, e
     ld hl, sp+$0e
@@ -11400,7 +11435,7 @@ Jump_009_74c2:
     ld l, a
     push hl
     push bc
-    call Clone_095d72_B9
+    call LdClust_B9
     add sp, $04
     push hl
     ld hl, sp+$02
@@ -11441,7 +11476,7 @@ Jump_009_750a:
     ret
 
 
-Clone_097510_B9::
+GetLdNumber_B9::
     add sp, -$0b
     ld hl, sp+$07
     ld [hl], $ff
@@ -11859,7 +11894,11 @@ Jump_009_76f4:
     ret
 
 
-Clone_0976f7_B9::
+; [ezgb]
+; FindVolume_B9(rfs, path, mode): FatFs find_volume (was Clone_0976f7).
+; Same role as FindVolume_B5/B6.
+
+FindVolume_B9::
     add sp, -$12
     ld hl, sp+$14
     ld a, [hl+]
@@ -11881,7 +11920,7 @@ Clone_0976f7_B9::
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_097510_B9
+    call GetLdNumber_B9
     add sp, $02
     ld b, d
     ld c, e
@@ -12123,7 +12162,7 @@ Jump_009_77fc:
     ld l, a
     push hl
     push bc
-    call Clone_0976f7_B9
+    call FindVolume_B9
     add sp, $05
     ld c, e
     ld hl, sp+$46
@@ -12181,7 +12220,7 @@ Jump_009_77fc:
     ld l, a
     push hl
     push bc
-    call Clone_0972c5_B9
+    call FollowPath_B9
     add sp, $04
     ld b, e
     ld hl, sp+$46
@@ -12263,7 +12302,7 @@ jr_009_78c0:
     ld hl, $0000
     push hl
     push bc
-    call Clone_095139_B9
+    call CreateChain_B9
     add sp, $06
     push hl
     ld hl, sp+$24
@@ -12526,7 +12565,7 @@ Jump_009_7976:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095e0a_B9
+    call StClust_B9
     add sp, $06
     ld hl, sp+$2a
     ld e, [hl]
@@ -12692,7 +12731,7 @@ Jump_009_7ad7:
     ld l, a
     push hl
     push bc
-    call Clone_095e0a_B9
+    call StClust_B9
     add sp, $06
     ld hl, sp+$2c
     ld c, l
@@ -12848,7 +12887,7 @@ Jump_009_7ba0:
     ld c, l
     ld b, h
     push bc
-    call Call_009_68b0
+    call DirRegister_B9
     add sp, $02
     ld c, e
     ld hl, sp+$46
@@ -12908,7 +12947,7 @@ Jump_009_7bb5:
     ld l, a
     push hl
     push bc
-    call Clone_094f94_B9
+    call RemoveChain_B9
     add sp, $06
     jp Jump_009_7cb1
 
@@ -12982,7 +13021,7 @@ Jump_009_7c07:
     ld h, [hl]
     ld l, a
     push hl
-    call Clone_095e0a_B9
+    call StClust_B9
     add sp, $06
     ld hl, sp+$2c
     ld c, l
@@ -13009,7 +13048,7 @@ Jump_009_7c07:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_4447
+    call SyncFs_B9
     add sp, $02
     ld c, e
     ld hl, sp+$46

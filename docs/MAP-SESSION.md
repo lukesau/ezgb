@@ -112,29 +112,38 @@ Wrong place (a caller — go find the definition instead):
 
 ---
 
-## Agent loop (lean — prefer this)
+## Lean loop (human or agent — prefer this)
 
-Deterministic scripts do the hunt and mechanical names. The agent only
-**applies/rejects proposals** and deep-reads when judgment is required.
+Deterministic scripts do the hunt and mechanical names. You (or an agent) only
+**apply/reject proposals** and deep-read when judgment is required.
 
 ```sh
+# One shot — same surface for humans and agents:
+./scripts/map-next.sh                  # progress + proposals + worklist + packet
+./scripts/map-next.sh --top 10
+./scripts/map-next.sh --apply          # stamp mechanical proposals, then packet
+./scripts/map-next.sh --banks 09       # FatFs canonical bank (prefer for lib work)
+./scripts/map-next.sh --include-lib    # all lib banks + app
+
 # Cron / no-LLM pass (clones → propose --apply → regen → packet)
 ./scripts/label-cron.sh 1.05e
-# exit 2 ⇒ WAKE: packet needs judgment
+# exit 2 ⇒ packet needs judgment
 
-# Or agent tick:
+# Pieces (if you prefer not to use map-next):
 ./scripts/propose-labels.py 1.05e          # review; --apply when ok
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
-# then: name/edit only if needs_judgment: 1 (or reject a bad proposal)
+./scripts/label-packet.py 1.05e --app --banks 09 --top 5
 ./scripts/regen-disasm.sh 1.05e
 ```
 
 **Do not** re-grep body/callers/WRAM each tick — the packet already has them.
-**Do not** open lib banks `03/05/06/07/09` unless a named app callee leads there.
-Prefer `--app --frontier-only --top 5` once `F` rows exist.
+Default `--app` skips lib banks `03/05/06/07/09`; use `--banks 09` (canonical FatFs)
+or `--include-lib` when intentionally mapping them. Prefer bank 09; let clones cover
+the copies. Prefer `--frontier-only` once `F` rows exist.
 Avoid RGBDS reserved names (`Strlen` → `CStrLen`, etc.).
 
-Hand loop below is still valid when you are not using the scripts.
+Hand loop below is still valid as a fallback when the packet is empty or you are
+off the app worklist.
 
 ---
 
@@ -154,8 +163,10 @@ You finish **one function** (sometimes a tight cluster of siblings) per pass.
 ### 1. PICK
 
 ```sh
+./scripts/map-next.sh
+# or just the packet:
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
-# fallback worklist:
+# rank table only (no body):
 ./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
 ```
 
@@ -336,7 +347,7 @@ OPEN body
 
 ## Practice drill (do this once without asking anyone)
 
-1. Run `./scripts/label-packet.py 1.05e --app --frontier-only --top 5`.
+1. Run `./scripts/map-next.sh` (or `./scripts/label-packet.py 1.05e --app --top 5`).
 2. Read TARGET + BODY + ABS TOUCHES (do not re-grep).
 3. Say out loud: **runtime / util / app helper / FPGA / control**.
 4. If runtime or mechanical: name it (or `propose-labels.py --apply`), regen, stop.

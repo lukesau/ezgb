@@ -938,6 +938,205 @@
       ]
     },
     {
+      "bank": 9,
+      "addr": "4447",
+      "lines": [
+        "SyncFs_B9(fs): FatFs sync_fs. SyncWindow_B9; if fs_type(+0)==FAT32(3) and",
+        "fsi_flag(+5)==1, build FSInfo in win(+0x32): 0x55AA, LeadSig RRaA, StrucSig rrAa,",
+        "copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via Far_02_41d5, clear fsi_flag.",
+        "Ends with ReturnZero stand-in for disk_ioctl(CTRL_SYNC). Bank copies: 03:4434, 07."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "6201",
+      "lines": [
+        "GenNumName_B9(dst, src, lfn, seq): FatFs gen_numname. MemCpy16 11-byte SFN;",
+        "if seq>5, CRC over LFN bits with poly 0x11021; write '~'+hex into name field.",
+        "Static match to ChaN FatFs gen_numname. Likely copies: 03:61f6, 06:6023, 07:6051."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "68b0",
+      "lines": [
+        "DirRegister_B9(dp): FatFs dir_register. Rejects AM_VOL (+0xb & $20) as FR_INVALID_NAME;",
+        "on NS_LOSS, GenNumName_B9 + Clone_09644b (dir_find) loop seq 1..100 (FR_DENIED at 100);",
+        "allocates entries (Clone_095c8f), MoveWindow_B9, LFN/SFN fill. Returns E=FRESULT.",
+        "Static match to ChaN FatFs dir_register. Likely copy: 06:64c8."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "41d3",
+      "lines": [
+        "MoveWindow_B5(fs, sector): FatFs move_window without SyncWindow (bank 5 has no",
+        "dirty-window path). If sector!=winsect(+0x2e), disk_read into win(+0x32) via",
+        "Far_02_4027; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "4a95",
+      "lines": [
+        "DirNext_B5(dp, stretch): FatFs dir_next. ++index(+4); if (index&15)==0 advance",
+        "sector/cluster (stretch may grow chain via far get/put_fat); else dir ptr +=32",
+        "into win(+0x32). Returns E=FRESULT (0 OK, 4 FR_NO_FILE). Same role as DirNext_B9",
+        "(09:580c); bank5 body differs (FarCallTrampoline, no near SyncWindow)."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6337",
+      "lines": [
+        "CheckFs_B5(fs, sect): FatFs check_fs. Clear wflag(+4), winsect(+0x2e)=FFFFFFFF,",
+        "MoveWindow_B5(sect); classify boot sector (return 0=FAT VBR, 1/2/3=other/err).",
+        "Called from FindVolume_B5."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6447",
+      "lines": [
+        "FindVolume_B5(rfs, path, mode): FatFs find_volume. Clears *rfs; GetLdNumber_B5",
+        "(neg→FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null→FR_NOT_ENABLED);",
+        "DiskStatus/DiskInitialize; CheckFs_B5 on candidate sectors. Returns E=FRESULT."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "54c7",
+      "lines": [
+        "DirRead_B5(dp, vol): FatFs dir_read. Scan entries via MoveWindow_B5 + DirNext_B5;",
+        "skip DDEM ($E5), match AM_VOL vs vol arg, handle LFN ($0F). Returns E=FRESULT",
+        "(4=FR_NO_FILE at end). Bank9 folds similar scan into DirFind_B9."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "56d1",
+      "lines": [
+        "GetFileInfo_B5(fno, dp): FatFs get_fileinfo. Build dotted SFN into fno(+9) from",
+        "dir entry; apply NT case bits; copy LFN via MapCp437 when present."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "6c3e",
+      "lines": [
+        "CreateName_B9(dp, path): FatFs create_name. Parse next path segment (stop on / or \\);",
+        "build SFN/LFN + NSFLAG. Copies: CreateName_B3/B5/B6/B7."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "6023",
+      "lines": [
+        "GenNumName_B6: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "64c8",
+      "lines": [
+        "DirRegister_B6: same as DirRegister_B9 (09:68b0). Bank-local FatFs dir_register copy."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "6051",
+      "lines": [
+        "GenNumName_B7: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "644b",
+      "lines": [
+        "DirFind_B9(dp): FatFs dir_find. Match SFN/LFN pattern against directory entries",
+        "(DirNext_B9). Copies: DirFind_B3/B5/B6/B7."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "4434",
+      "lines": [
+        "SyncFs_B3(fs): same as SyncFs_B9 (09:4447). Bank-local FatFs sync_fs copy."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "61f6",
+      "lines": [
+        "GenNumName_B3: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "741a",
+      "lines": [
+        "Validate_B3(obj): FatFs validate. Reject null obj/fs, fs_type==0, or id mismatch",
+        "(obj+2 vs fs+6). Returns E=0 OK else FR_INVALID_OBJECT. Copies: Validate_B5/B6/B7."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "749d",
+      "lines": [
+        "Fsync_B3(fp): FatFs f_sync. Validate_B3; if FA_WRITTEN(+4 bit5), flush dirty",
+        "sector (bit6) via Far_02_41d5, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),",
+        "SyncFs_B3. Returns E=FRESULT."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "76f7",
+      "lines": [
+        "FindVolume_B9(rfs, path, mode): FatFs find_volume (was Clone_0976f7).",
+        "Same role as FindVolume_B5/B6."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "4af7",
+      "lines": [
+        "PutFat_B9 / RemoveChain_B9 / CreateChain_B9 / DirSdi_B9 / DirAlloc_B9 /",
+        "LdClust_B9 / StClust_B9 / CmpLfn_B9 / PutLfn_B9 / SumSfn_B9 / FollowPath_B9 /",
+        "MemCmp_B9 / MemChr_B9: FatFs internals renamed from Clone_09* families;",
+        "bank copies keep matching _B3/_B5/_B6/_B7 suffixes where present."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "4434",
+      "lines": [
+        "SyncFs_B7(fs): same as SyncFs_B9 (09:4447). Unlabeled mgbdis entry after MoveWindow_B7."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "669b",
+      "lines": [
+        "DirRegister_B3: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "6700",
+      "lines": [
+        "DirRegister_B7: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry."
+      ]
+    },
+
+    {
+      "bank": 9,
+      "addr": "580c",
+      "lines": [
+        "DirNext_B9(dp, stretch): FatFs dir_next. Bank copies: DirNext_B3/B6/B7; B5 at",
+        "05:4a95 is a divergent body with the same control-flow shape."
+      ]
+    },
+    {
       "bank": 0,
       "addr": "1a7a",
       "lines": [
@@ -1174,6 +1373,38 @@
         "CStrCat(dest, src): append NUL-term src onto dest. Walk dest to NUL,",
         "then copy src incl. terminator. Stack RTL: char* dest, char* src.",
         "Named CStrCat (not StrCat) to avoid RGBDS STRCAT."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "6e9a",
+      "lines": [
+        "RomLoad_WriteCmdWindow_B8(buf): page=$02, $7F36=$01, copy $0200 bytes",
+        "from buf to $A000 (load cmd window), then ctrl/page off."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "6ed2",
+      "lines": [
+        "RomLoad_BuildAndRunPeek_B8: build SdWindowPeek_B8 trampoline at $D000",
+        "(arg $ff) via RomLoad_Build_B8, then call $D000."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "6ee7",
+      "lines": [
+        "RomLoad_BuildAndRun7FD2Wait_B8: build Fpga7FD2WaitClear_B8 trampoline at",
+        "$D000 (arg $ff), then call it. Caller wraps with DiNest/EiNest."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "473f",
+      "lines": [
+        "Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.",
+        "Entry is $473f (after nop pad at $473e)."
       ]
     }
   ]
