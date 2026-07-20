@@ -12003,6 +12003,11 @@ RomLoad_BuildAndRun7FD2Wait_B8::
     ret
 
 
+; [ezgb]
+; RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; zero $A0C0..+$200; then 0x2000x
+; RomLoad_WriteCmdWindow + page $05 BuildAndRun wait (clear cart window). Before DrawFwVersionScreen.
+
+RomLoad_ClearCartWindow_B8::
     push af
     push af
     push af
@@ -12173,6 +12178,11 @@ Jump_008_6fcd:
     ret
 
 
+; [ezgb]
+; DrawFwVersionScreen: build "FWx " prefix on stack, SdWindowPeek_B8, U32ToAscii_B0
+; version, then DrawRect/DrawString. Orphan after Jump_008_6fcd; -$34 frame.
+
+DrawFwVersionScreen::
     add sp, -$34
     ld hl, sp+$0c
     ld a, l

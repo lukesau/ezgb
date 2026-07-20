@@ -43,11 +43,11 @@ SdWindowPeek::
 
 ; [ezgb]
 ; SD sector read (disk_read). Program LBA via $7FB0-$7FB4, wait, then copy
-; from $A000 into caller buffer via VramCopyStack. Called as FarCall_02_4027.
-; Sibling Far_02_41d5 is the write path (buffer -> $A000, then trigger).
+; from $A000 into caller buffer via VramCopyStack. Called as FarCallDiskRead.
+; Sibling DiskWrite_B2 is the write path (buffer -> $A000, then trigger).
 ; Prologue: SetFpga7F30_B2.
 
-Far_02_4027::
+DiskRead_B2::
     add sp, -$13
     ld a, $01
     push af
@@ -356,9 +356,9 @@ Jump_002_41c7:
 ; [ezgb]
 ; SD sector write (disk_write). Copy buffer to $A000 via VramCopyStack, then
 ; program $7FB0/$7FB1/$7FB2 and trigger. Prologue: SetFpga7F30_B2 $01 then $03.
-; Called as FarCall_02_41d5. Sibling Far_02_4027 is the read path.
+; Called as FarCallDiskWrite. Sibling DiskRead_B2 is the read path.
 
-Far_02_41d5::
+DiskWrite_B2::
     add sp, -$10
     ld a, $01
     push af

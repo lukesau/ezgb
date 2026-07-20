@@ -544,7 +544,7 @@ SyncWindow_B3::
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -765,7 +765,7 @@ Jump_003_42e2:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$00
     ld e, [hl]
@@ -901,7 +901,7 @@ Jump_003_43b9:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -1291,7 +1291,7 @@ jr_003_459d:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$0c
     ld e, [hl]
@@ -3341,6 +3341,11 @@ Jump_003_4f82:
     ret
 
 
+; [ezgb]
+; RemoveChain_B3: bank-3 near-call copy of RemoveChain_B9 (FatFs remove_chain).
+; GetFat_B3 + PutFat_B3; same shape as RemoveChain_B6/B9. Orphan before CreateChain_B3.
+
+RemoveChain_B3::
     add sp, -$0e
     ld hl, sp+$12
     ld a, [hl]
@@ -11150,6 +11155,12 @@ Jump_003_7392:
     ret
 
 
+; [ezgb]
+; FindVolume_B3: bank-3 near-call copy of FindVolume_B6/B9 (FatFs find_volume front).
+; GetLdNumber_B3; FatFs table $C5A5; DiskStatus; FR $0b/$0c/$0a. -$12 frame.
+; Orphan after Jump_003_7392; sits just before Validate_B3.
+
+FindVolume_B3::
     add sp, -$12
     ld hl, sp+$14
     ld a, [hl+]
@@ -11390,7 +11401,7 @@ Jump_003_749a:
 
 ; [ezgb]
 ; Fsync_B3(fp): FatFs f_sync. Validate_B3; if FA_WRITTEN(+4 bit5), flush dirty
-; sector (bit6) via Far_02_41d5, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),
+; sector (bit6) via DiskWrite_B2, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),
 ; SyncFs_B3. Returns E=FRESULT.
 
 Fsync_B3::
@@ -11507,7 +11518,7 @@ jr_003_74d9:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -11811,6 +11822,11 @@ Jump_003_768c:
     ret
 
 
+; [ezgb]
+; Close_B3(fp): FatFs f_close. Fsync_B3 then Validate_B3; clears FIL fs ptr.
+; Target of FarCall_03_768f; orphan after Fsync path epilogue Jump_003_768c.
+
+Close_B3::
     dec sp
     ld hl, sp+$07
     ld a, [hl+]
@@ -11859,6 +11875,12 @@ Jump_003_76c6:
     ret
 
 
+; [ezgb]
+; Lseek_B3(fp, ofs): FatFs f_lseek. Validate_B3; U32Shl/Mod; CreateChain_B3 to
+; extend; GetFat_B3 + Clust2Sect_B3. FarCall disk R/W helpers. -$29 frame.
+; Target of FarCall_03_76cc; orphan after Jump_003_76c6.
+
+Lseek_B3::
     add sp, -$29
     ld hl, sp+$2f
     ld c, [hl]
@@ -13345,7 +13367,7 @@ jr_003_7d71:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -13420,7 +13442,7 @@ Jump_003_7dcc:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a

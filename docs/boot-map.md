@@ -26,7 +26,7 @@ Jump_000_0150
   Call_000_062e($0677)   ; install interrupt callback slot
   Call_000_0640($06C0)   ; install another slot
   palettes, LCDC=$C0, IE=$09 (VBlank+…), sound off
-  call $68B6             ; bank 1: clear some WRAM / setup (near Jump_001_6891)
+  call $68B6             ; bank 1: BootUnpackWramTables (RLE → WToUpper + WRAM tables)
   Call_000_1835          ; battery, then SD/menu
     …
     Call_000_0de4          ; SD init + BACKUPSAVE + **file browser (does not return)**

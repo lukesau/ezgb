@@ -265,6 +265,11 @@ SetRomLoadCtrl_B4::
     ret
 
 
+; [ezgb]
+; SetFpga7F37_B4: unlock; write stack u8 to $7F37; commit. Sibling of
+; SetRomLoadCtrl_B4 ($7F36). Orphan after SetRomLoadCtrl_B4.
+
+SetFpga7F37_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -284,6 +289,11 @@ SetRomLoadCtrl_B4::
     ret
 
 
+; [ezgb]
+; RomLoad_ResetIntoRom_B4: clear $7F31/$7F32; MBC writes $2000=$01/$3000=$00;
+; then $7FE0=$80 soft-boot into loaded ROM (hangs via jp self if still here).
+
+RomLoad_ResetIntoRom_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -331,7 +341,12 @@ Jump_004_41ce:
     ret
 
 
-    ld bc, $4180
+; [ezgb]
+; RomLoad_BuildAndRunReset_B4: RomLoad_Build_B4 trampoline for
+; RomLoad_ResetIntoRom_B4 at $D000 (arg $ff), then call it.
+
+RomLoad_BuildAndRunReset_B4::
+    ld bc, RomLoad_ResetIntoRom_B4
     ld a, $ff
     push af
     inc sp
@@ -344,6 +359,11 @@ Jump_004_41ce:
     ret
 
 
+; [ezgb]
+; SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) — unlock,
+; $7FC0=stack u8, commit. Earlier copy sitting just before SetFpgaRomSize_B4.
+
+SetFpgaPageAlt_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -363,6 +383,11 @@ Jump_004_41ce:
     ret
 
 
+; [ezgb]
+; SetFpgaRomSize_B4: map cart ROM-size code (0..8, $52..$54) → bank mask; clamp vs
+; $c2a4/$c2a5; unlock and write $7FC1/$7FC2. Launch farcall from $1604 (docs/launch-trace).
+
+SetFpgaRomSize_B4::
     push af
     push af
     ld hl, sp+$0a
@@ -726,6 +751,11 @@ Jump_004_439f:
     ret
 
 
+; [ezgb]
+; SetFpga7FC4_B4(mode): map stack u8 → $7FC4 (0/0/$0f/$07/$03) via unlock/commit.
+; Mode 0 also peeks wCartTypeUi ($d3eb). Orphan after SetFpgaRomSize_B4.
+
+SetFpga7FC4_B4::
     dec sp
     ld hl, sp+$07
     ld a, [hl]
@@ -822,6 +852,11 @@ Jump_004_444c:
     ret
 
 
+; [ezgb]
+; SetFpga7FC3_B4: unlock; write [$c5a3] to $7FC3; commit. Sibling of SetFpgaPage
+; ($7FC0) / SetFpga7FC4_B4.
+
+SetFpga7FC3_B4::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -841,6 +876,11 @@ Jump_004_444c:
     ret
 
 
+; [ezgb]
+; RomLoad_CopyCmdWindowPoll_B4: SetRomLoadCtrl_B4($01) map cmd window; copy $200
+; bytes stack→$A000 via VramCopyStack; RomLoad_BuildAndRunPoll. Before CStrCat.
+
+RomLoad_CopyCmdWindowPoll_B4::
     ld a, $01
     push af
     inc sp
@@ -1322,6 +1362,11 @@ SetFpga7FD0_B4::
     ret
 
 
+; [ezgb]
+; InitTimeAutosaveFpga_B4: SetFpgaPage $06; write key bytes $33..$19 to $A008–$A00E;
+; SetFpga7FD0_B4($01); page $00. Orphan immediately before DrawTimeAutosaveScreen.
+
+InitTimeAutosaveFpga_B4::
     ld a, $06
     push af
     inc sp
@@ -1361,6 +1406,12 @@ SetFpga7FD0_B4::
     ret
 
 
+; [ezgb]
+; DrawTimeAutosaveScreen: settings chrome. FPGA page $03 read $A200; draws
+; TIME:/SET/AUTO SAVE: via DrawRect/DrawString. Touches RomLoad_InitiatePoll
+; stash byte. Orphan after SetFpga7FD0_B4; -$6a frame.
+
+DrawTimeAutosaveScreen::
     add sp, -$6a
     ld hl, sp+$3d
     ld [hl], $00

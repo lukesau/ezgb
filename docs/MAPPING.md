@@ -104,7 +104,8 @@ Mechanical proposals: IRQ callback wrappers (`ld hl,$Dxxx` / `jp Install|RemoveC
 
 Good next targets, in order:
 
-1. `map-next` / packet (`F` = callee of a named fn — the frontier)
+1. `map-next` / packet (`F` = callee of a named fn; `O` = unlabeled
+   prologue after `ret`; `J` = entry-like `Jump_`)
 2. Callees of something you already named (grow the frontier)
 3. Code next to a unique string you can trigger in the UI
 4. Omega analogue you just watched on hardware ([`omega-jr-compare.md`](omega-jr-compare.md))

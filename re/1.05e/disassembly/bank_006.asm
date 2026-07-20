@@ -5,7 +5,10 @@
 
 SECTION "ROM Bank $006", ROMX[$4000], BANK[$6]
 
-Call_006_4000:
+; [ezgb]
+; RetStub_B6: Lone ret at bank start (before MemCpy16_B6). Same RetStub_B9 pattern.
+
+RetStub_B6::
     ret
 
 
@@ -541,7 +544,7 @@ SyncWindow_B6::
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -762,7 +765,7 @@ Jump_006_42e3:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$00
     ld e, [hl]
@@ -898,7 +901,7 @@ Jump_006_43ba:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -10441,7 +10444,7 @@ Jump_006_7060:
     push hl
     ld hl, $0077
     push hl
-    call Call_006_4000
+    call RetStub_B6
     add sp, $04
     ld hl, sp+$04
     ld e, [hl]
@@ -10476,7 +10479,7 @@ Jump_006_7060:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_006_4000
+    call RetStub_B6
     add sp, $04
     ld hl, sp+$0b
     ld a, [hl]
@@ -11033,6 +11036,12 @@ Jump_006_7306:
     ret
 
 
+; [ezgb]
+; Open_B6(fp, path, mode): FatFs f_open (bank-6). FindVolume_B6 + FollowPath_B6 +
+; DirRegister_B6 path; same role as Open_B9. Target of FarCall_06_7309
+; (BackupSaveDump). Orphan after prior epilogue; -$42 frame.
+
+Open_B6::
     add sp, -$42
     ld hl, sp+$48
     ld a, [hl+]
@@ -11989,6 +11998,11 @@ Jump_006_7797:
     ret
 
 
+; [ezgb]
+; Read_B6(fp, buff, btr): FatFs f_read. Validate_B6; cluster walk via GetFat_B6 +
+; Clust2Sect_B6; MemCpy16_B6; disk via FarCall_02_*. Target of FarCall_06_779a.
+
+Read_B6::
     add sp, -$37
     ld hl, sp+$3f
     ld c, [hl]
@@ -12761,7 +12775,7 @@ Jump_006_7b10:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -13046,7 +13060,7 @@ jr_006_7c5f:
     ld a, [hl]
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -13127,7 +13141,7 @@ jr_006_7cdf:
     ld a, [hl]
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a

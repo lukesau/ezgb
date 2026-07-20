@@ -5,7 +5,10 @@
 
 SECTION "ROM Bank $005", ROMX[$4000], BANK[$5]
 
-Call_005_4000:
+; [ezgb]
+; RetStub_B5: Lone ret at bank start (before MemCpy16_B5). Callers push args then call; compiled-out stub (often debug/print).
+
+RetStub_B5::
     ret
 
 
@@ -447,7 +450,7 @@ Jump_005_41c5:
 ; [ezgb]
 ; MoveWindow_B5(fs, sector): FatFs move_window without SyncWindow (bank 5 has no
 ; dirty-window path). If sector!=winsect(+0x2e), disk_read into win(+0x32) via
-; Far_02_4027; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9.
+; DiskRead_B2; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9.
 
 MoveWindow_B5::
     push af
@@ -535,7 +538,7 @@ Jump_005_421c:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -581,6 +584,11 @@ Jump_005_4273:
     ret
 
 
+; [ezgb]
+; Clust2Sect_B5(fs, clst): FatFs clust2sect. Same shape as Clust2Sect_B3/B6/B7/B9;
+; U32Mul by csize. Bank-5 was missing from the earlier clone stamp pass.
+
+Clust2Sect_B5::
     add sp, -$0a
     ld hl, sp+$12
     ld e, [hl]
@@ -798,6 +806,11 @@ Jump_005_4375:
     ret
 
 
+; [ezgb]
+; GetFat_B5(fs, clst): FatFs get_fat. MoveWindow_B5 + U32Shr/Shl FAT entry path;
+; byte-identical call shape to GetFat_B9 (563 ops). Bank-5 was missing from stamp.
+
+GetFat_B5::
     add sp, -$14
     ld hl, sp+$1c
     ld a, [hl]
@@ -3524,6 +3537,11 @@ Jump_005_501f:
     ret
 
 
+; [ezgb]
+; GenNumName_B5: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy.
+; Orphan between CmpLfn_B5 and SumSfn_B5 (no PutLfn in this bank).
+
+GenNumName_B5::
     add sp, -$1d
     ld hl, sp+$1f
     ld c, [hl]
@@ -4531,7 +4549,7 @@ Jump_005_54c4:
 ; [ezgb]
 ; DirRead_B5(dp, vol): FatFs dir_read. Scan entries via MoveWindow_B5 + DirNext_B5;
 ; skip DDEM ($E5), match AM_VOL vs vol arg, handle LFN ($0F). Returns E=FRESULT
-; (4=FR_NO_FILE at end). Bank9 folds similar scan into DirFind_B9.
+; (4=FR_NO_FILE at end). Copies: DirRead_B7 ($64f6), DirRead_B9 ($66a6).
 
 DirRead_B5::
     add sp, -$0f
@@ -7305,7 +7323,7 @@ Jump_005_6196:
     push hl
     ld hl, $0077
     push hl
-    call Call_005_4000
+    call RetStub_B5
     add sp, $04
     ld hl, sp+$04
     ld e, [hl]
@@ -7340,7 +7358,7 @@ Jump_005_6196:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_005_4000
+    call RetStub_B5
     add sp, $04
     ld hl, sp+$0b
     ld a, [hl]
@@ -10013,6 +10031,11 @@ Jump_005_6e16:
     ret
 
 
+; [ezgb]
+; Mount_B5(fs, path, opt): FatFs f_mount. GetLdNumber_B5 (neg→FR_INVALID_DRIVE);
+; bind/clear FatFs[vol] at wFatFsTable ($C5A5); opt==1 → FindVolume_B5.
+
+Mount_B5::
     push af
     push af
     ld hl, sp+$0c
@@ -10128,6 +10151,11 @@ Jump_005_6ea1:
     ret
 
 
+; [ezgb]
+; Chdir_B5(path): FatFs f_chdir. FindVolume_B5 + FollowPath_B5 + LdClust_B5;
+; no DirSdi (contrast Opendir_B5). -$35 frame.
+
+Chdir_B5::
     add sp, -$35
     ld hl, sp+$3b
     ld a, l
@@ -10424,6 +10452,12 @@ Jump_005_7002:
     ret
 
 
+; [ezgb]
+; Getcwd_B5(buff, len): FatFs f_getcwd. Clears buff; FindVolume_B5 (mode 0);
+; walks via DirSdi_B5/DirRead_B5/DirNext_B5 + GetFileInfo_B5 (no FollowPath).
+; -$5b frame; between Chdir_B5 and Opendir_B5.
+
+Getcwd_B5::
     add sp, -$5b
     ld hl, sp+$61
     ld c, [hl]
@@ -11232,6 +11266,12 @@ Jump_005_73d7:
     ret
 
 
+; [ezgb]
+; Opendir_B5(dp, path): FatFs f_opendir. Null dp→FR_INVALID_OBJECT ($09);
+; FindVolume_B5 + FollowPath_B5 + LdClust_B5 + DirSdi_B5. -$19 frame;
+; sits just before Readdir_B5.
+
+Opendir_B5::
     add sp, -$19
     ld hl, sp+$1f
     ld a, [hl+]
@@ -11534,6 +11574,11 @@ Jump_005_754a:
     ret
 
 
+; [ezgb]
+; Closedir_B5(dp): FatFs f_closedir. Validate_B5; on OK clear DIR fs ptr (2 bytes).
+; No Fsync (contrast Close_B3). Orphan immediately before Readdir_B5.
+
+Closedir_B5::
     dec sp
     ld hl, sp+$07
     ld c, [hl]
@@ -11568,6 +11613,11 @@ Jump_005_7570:
     ret
 
 
+; [ezgb]
+; Readdir_B5(dp, fno): FatFs f_readdir. Validate_B5; DirSdi_B5 rewind on null fno;
+; DirRead_B5 + GetFileInfo_B5 + DirNext_B5. Distinct from DirRead_B5 (dir_read).
+
+Readdir_B5::
     add sp, -$10
     ld hl, sp+$16
     ld c, [hl]

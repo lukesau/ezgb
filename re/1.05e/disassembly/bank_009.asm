@@ -5,13 +5,16 @@
 
 SECTION "ROM Bank $009", ROMX[$4000], BANK[$9]
 
-Call_009_4000:
+; [ezgb]
+; RetStub_B9: Lone ret at bank start (before MemCpy16_B9). FatFs bank callers push 2 words then call; no-op.
+
+RetStub_B9::
     ret
 
 
 ; [ezgb]
 ; MemCpy16_B9: copy words dest←src while byte-count≥2 (FatFs-shaped mem_cpy).
-; 09:4000 is a lone ret stub in front; other banks start the copy at $4000/$4001.
+; RetStub_B9 (09:4000) is the lone ret in front; B5/B6 siblings match.
 
 MemCpy16_B9::
     push af
@@ -469,7 +472,7 @@ Jump_009_41d7:
 
 ; [ezgb]
 ; SyncWindow_B9(fs): FatFs-shaped. If fs->wflag (+4) set, disk_write winsect
-; (+0x2e) from win[] (+0x32) via Far_02_41d5; clear dirty; mirror to other
+; (+0x2e) from win[] (+0x32) via DiskWrite_B2; clear dirty; mirror to other
 ; FAT copies when winsect is in the FAT region. Returns 0=OK, nonzero=err.
 ; Static match to ChaN FatFs sync_window. Bank copies: SyncWindow_B3/B6/B7.
 
@@ -566,7 +569,7 @@ SyncWindow_B9::
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -787,7 +790,7 @@ Jump_009_42f5:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$00
     ld e, [hl]
@@ -810,7 +813,7 @@ Jump_009_4378:
 
 ; [ezgb]
 ; MoveWindow_B9(fs, sector): FatFs-shaped sector cache. If sector==winsect (+0x2e)
-; return 0; else SyncWindow_B9, disk_read into win[] (+0x32) via Far_02_4027,
+; return 0; else SyncWindow_B9, disk_read into win[] (+0x32) via DiskRead_B2,
 ; on failure set winsect=0xFFFFFFFF. Args: ptr, u32 sector. Returns E (0=OK).
 ; Static match to ChaN FatFs move_window (R0.10+). Bank copies: MoveWindow_B3/B6/B7.
 ; Why copies: only one switchable bank is mapped at $4000; each FS consumer bank
@@ -927,7 +930,7 @@ Jump_009_43cc:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -976,7 +979,7 @@ Jump_009_4441:
 ; [ezgb]
 ; SyncFs_B9(fs): FatFs sync_fs. SyncWindow_B9; if fs_type(+0)==FAT32(3) and
 ; fsi_flag(+5)==1, build FSInfo in win(+0x32): 0x55AA, LeadSig RRaA, StrucSig rrAa,
-; copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via Far_02_41d5, clear fsi_flag.
+; copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via DiskWrite_B2, clear fsi_flag.
 ; Ends with ReturnZero stand-in for disk_ioctl(CTRL_SYNC). Bank copies: 03:4434, 07.
 
 SyncFs_B9::
@@ -1309,7 +1312,7 @@ jr_009_45a7:
     push hl
     push bc
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$0c
     ld e, [hl]
@@ -8388,6 +8391,11 @@ Jump_009_66a3:
     ret
 
 
+; [ezgb]
+; DirRead_B9: bank-9 near-call copy of DirRead_B5 (FatFs dir_read).
+; Orphan after Jump_009_66a3; sits just before DirRegister_B9.
+
+DirRead_B9::
     add sp, -$0f
     ld hl, sp+$09
     ld [hl], $ff
@@ -11313,7 +11321,7 @@ Jump_009_7446:
     push hl
     ld hl, $0077
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$04
     ld e, [hl]
@@ -11348,7 +11356,7 @@ Jump_009_7446:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$0b
     ld a, [hl]
@@ -11670,6 +11678,11 @@ Jump_009_75e4:
     ret
 
 
+; [ezgb]
+; CheckFs_B9: same as CheckFs_B5 (05:6337). Bank-local FatFs check_fs copy.
+; Orphan between GetLdNumber_B9 and FindVolume_B9.
+
+CheckFs_B9::
     push af
     push af
     push af
@@ -12012,6 +12025,11 @@ Jump_009_7779:
     ret
 
 
+; [ezgb]
+; Validate_B9(obj): FatFs validate (bank-9). Same shape as Validate_B3/B5/B6/B7.
+; Orphan between FindVolume_B9 epilogue and Open_B9.
+
+Validate_B9::
     push af
     push af
     ld hl, sp+$06
@@ -12132,6 +12150,12 @@ Jump_009_77fc:
     ret
 
 
+; [ezgb]
+; Open_B9(fp, path, mode): FatFs f_open. RtcReadPage; FindVolume_B9; FollowPath_B9;
+; create path uses CreateChain_B9 / DirRegister_B9 / RemoveChain_B9 / SyncFs_B9.
+; Large -$47 frame; bank-9 only in this link (no B3/B5/B6/B7 twin at same shape).
+
+Open_B9::
     add sp, -$47
     call RtcReadPage
     push hl
@@ -12320,7 +12344,7 @@ jr_009_78c0:
     push hl
     ld hl, $4413
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$24
     ld a, [hl+]
@@ -12332,7 +12356,7 @@ jr_009_78c0:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$22
     ld a, [hl+]
@@ -12898,7 +12922,7 @@ Jump_009_7bb5:
     push hl
     ld hl, $3333
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$46
     ld a, [hl]
@@ -12919,7 +12943,7 @@ Jump_009_7bb5:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     xor a
     ld hl, sp+$46
@@ -13057,7 +13081,7 @@ Jump_009_7c07:
     push hl
     ld hl, $2222
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
     ld hl, sp+$46
     ld a, [hl]
@@ -13078,7 +13102,7 @@ Jump_009_7c07:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_009_4000
+    call RetStub_B9
     add sp, $04
 
 Jump_009_7cb1:

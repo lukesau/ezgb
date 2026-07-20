@@ -328,6 +328,7 @@ HeaderGlobalChecksum::
 
 ; [ezgb]
 ; Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.
+; After bank1 switch, calls BootUnpackWramTables ($68b6) then BatteryCheck.
 
 KernelEntry::
     di
@@ -711,8 +712,6 @@ HaltLoop::
     rst RST_38
     rst RST_38
     rst RST_38
-
-Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1535,7 +1534,7 @@ RegisterVBlankCallback::
 
 ; [ezgb]
 ; RegisterLcdCallback: install BC into wLcdCallbacks ($d6e3). EnterGfxMode1
-; registers $2a6a here and enables STAT LYC after RegisterVBlankCallback.
+; registers LycCb_Bg8800 ($2a6a) here and enables STAT LYC after RegisterVBlankCallback.
 
 RegisterLcdCallback::
     ld hl, wLcdCallbacks
@@ -1765,6 +1764,10 @@ EiNest::
     ret
 
 
+; [ezgb]
+; SetIeReg: DiNest; clear rIF; load rIE from stack u8; EiNest. Safe IE write.
+
+SetIeReg::
     call DiNest
     ld hl, sp+$02
     xor a
@@ -1775,6 +1778,12 @@ EiNest::
     ret
 
 
+; [ezgb]
+; RemoveVBlankCallbackArg / RemoveLcdCallbackArg / RemoveTimerCallbackArg /
+; RemoveSerialCallbackArg / RemoveJoypadCallbackArg: stack ptr → BC then Remove*.
+; Register*CallbackArg siblings at $0756..$0782 likewise wrap Register*.
+
+RemoveVBlankCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1785,6 +1794,7 @@ EiNest::
     ret
 
 
+RemoveLcdCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1795,6 +1805,7 @@ EiNest::
     ret
 
 
+RemoveTimerCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1805,6 +1816,7 @@ EiNest::
     ret
 
 
+RemoveSerialCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1815,6 +1827,7 @@ EiNest::
     ret
 
 
+RemoveJoypadCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1825,6 +1838,7 @@ EiNest::
     ret
 
 
+RegisterVBlankCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1835,6 +1849,7 @@ EiNest::
     ret
 
 
+RegisterLcdCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1845,6 +1860,7 @@ EiNest::
     ret
 
 
+RegisterTimerCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1855,6 +1871,7 @@ EiNest::
     ret
 
 
+RegisterSerialCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1865,6 +1882,7 @@ EiNest::
     ret
 
 
+RegisterJoypadCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
@@ -1907,10 +1925,6 @@ FarCallTrampoline::
     ret
 
 
-; [ezgb]
-; WaitJoypadSelect: spin ReadJoypad until E==$40 (Select; A=$10 B=$20 START=$80),
-; then Delay($00c8). Gate before FileBrowserEntry.
-
 WaitJoypadSelect::
     call ReadJoypad
     ld c, e
@@ -1936,6 +1950,12 @@ jr_000_07d1:
     ret
 
 
+; [ezgb]
+; PlotBitRowXY(flags, x, y): plot up to 8 pixels from a bit row via PlotPixelXY.
+; bit0→x+7 … bit7→x (MSB left). Used by bit-pattern glyph drawers.
+; Orphan after WaitJoypadSelect; Call_000_0803 is a mid-body fallthrough label.
+
+PlotBitRowXY::
     ld hl, sp+$02
     ld a, [hl]
     and $01
@@ -1970,8 +1990,6 @@ Jump_000_07f7:
 
 jr_000_0801:
     ld hl, sp+$03
-
-Call_000_0803:
     ld a, [hl]
     add $06
     ld c, a
@@ -2238,6 +2256,12 @@ Jump_000_0927:
     ret
 
 
+; [ezgb]
+; DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
+; Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
+; See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).
+
+DrawU32Decimal::
     add sp, -$15
     ld hl, sp+$01
     ld c, l
@@ -2308,7 +2332,7 @@ SdReadRetryCount::
     inc sp
     ld hl, $0100
     push hl
-    ld hl, $099c
+    ld hl, FileSystemErrorStr
     push hl
     call DrawString
     add sp, $05
@@ -2320,25 +2344,15 @@ Jump_000_0998:
     ret
 
 
-    ld b, [hl]
-    ld l, c
-    ld l, h
-    ld h, l
-    jr nz, jr_000_0a15
+FileSystemErrorStr::
+    db "File system error!", $00
 
-    ld a, c
-    ld [hl], e
-    ld [hl], h
-    ld h, l
-    ld l, l
-    jr nz, jr_000_0a0e
+; [ezgb]
+; MemCmp_B0(s1, s2, n): byte-identical to MemCmp_B5/B9 (FatFs mem_cmp). -$09 frame.
+; DirList hides ezgb.dat via this.
 
-    ld [hl], d
-    ld [hl], d
-    ld l, a
-    ld [hl], d
-    ld hl, $e800
-    rst RST_30
+MemCmp_B0::
+    add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
     inc hl
@@ -2421,16 +2435,12 @@ jr_000_09f9:
     ld [hl], b
     ld a, c
     or b
-
-jr_000_0a0e:
     jp z, Jump_000_09d0
 
 Jump_000_0a11:
     ld hl, sp+$03
     ld e, [hl]
     inc hl
-
-jr_000_0a15:
     ld d, [hl]
     add sp, $09
     ret
@@ -2480,7 +2490,7 @@ Jump_000_0a40:
 
 
 ; [ezgb]
-; DirList: file-browser directory enumerator; hides ezgb.dat via helper $09af.
+; DirList: file-browser directory enumerator; hides ezgb.dat via MemCmp_B0.
 
 DirList::
     add sp, -$09
@@ -2688,14 +2698,14 @@ jr_000_0b4f:
     ld a, $08
     push af
     inc sp
-    ld hl, $0bc8
+    ld hl, EzgbDatStr
     push hl
     ld hl, sp+$0a
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call $09af
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
@@ -2784,14 +2794,8 @@ jr_000_0bc5:
     ret
 
 
-    ld h, l
-    ld a, d
-    ld h, a
-    ld h, d
-    ld l, $64
-    ld h, c
-    ld [hl], h
-    nop
+EzgbDatStr::
+    db "ezgb.dat", $00
 
 ; [ezgb]
 ; DrawDirEntryLabel: browser row label. If size u32>$14, map bank via $4000, measure
@@ -3223,7 +3227,7 @@ jr_000_0e02:
     inc sp
     ld hl, $0014
     push hl
-    ld hl, $16b5
+    ld hl, MicroSdInitErrorStr
     push hl
     call DrawString
     add sp, $05
@@ -3239,7 +3243,7 @@ Jump_000_0e24:
     inc sp
     ld hl, $0014
     push hl
-    ld hl, $16cd
+    ld hl, MicroSdInitOkStr
     push hl
     call DrawString
     add sp, $05
@@ -3437,7 +3441,7 @@ Jump_000_0f08:
     add sp, $01
     pop bc
     push bc
-    ld hl, $16e2
+    ld hl, SaverDirStr
     push hl
     call FarCall_09_77ff
     add sp, $02
@@ -4372,7 +4376,7 @@ Jump_000_140c:
 
 
 jr_000_140f:
-    ld hl, $16e9
+    ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
     push hl
@@ -4389,7 +4393,7 @@ jr_000_140f:
     or [hl]
     jp z, Jump_000_143b
 
-    ld hl, $16e9
+    ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
     push hl
@@ -4560,11 +4564,11 @@ Jump_000_1520:
     ld a, $05
     push af
     inc sp
-    ld hl, $16eb
+    ld hl, ExtGbcStr
     push hl
     ld hl, $c3a5
     push hl
-    call $09af
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
@@ -4575,11 +4579,11 @@ Jump_000_1520:
     ld a, $04
     push af
     inc sp
-    ld hl, $16f0
+    ld hl, ExtGbStr
     push hl
     ld hl, $c3a5
     push hl
-    call $09af
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
@@ -4752,7 +4756,7 @@ Jump_000_162f:
 
 
 jr_000_1639:
-    ld hl, $16e9
+    ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
     push hl
@@ -4829,63 +4833,39 @@ Jump_000_16ab:
 
 
     nop
-    ld c, l
-    ld l, c
-    ld h, e
-    ld [hl], d
-    ld l, a
-    jr nz, jr_000_170f
 
-    ld b, h
-    jr nz, jr_000_1728
+MicroSdInitErrorStr::
+    db "Micro SD initial error!", $00
 
-    ld l, [hl]
-    ld l, c
-    ld [hl], h
-    ld l, c
-    ld h, c
-    ld l, h
-    jr nz, @+$67
+; [ezgb]
+; MicroSdInitOkStr: NUL-term "Micro SD initial OK!" for SdMenuMain.
 
-    ld [hl], d
-    ld [hl], d
-    ld l, a
-    ld [hl], d
-    ld hl, $4d00
-    ld l, c
-    ld h, e
-    ld [hl], d
-    ld l, a
-    jr nz, jr_000_1727
+MicroSdInitOkStr::
+    db "Micro SD initial OK!", $00
 
-    ld b, h
-    jr nz, @+$6b
+; [ezgb]
+; SaverDirStr: NUL-term "/SAVER"; BackupBranchEntry Open_B9 path.
 
-    ld l, [hl]
-    ld l, c
-    ld [hl], h
-    ld l, c
-    ld h, c
-    ld l, h
-    jr nz, jr_000_172e
+SaverDirStr::
+    db "/SAVER", $00
 
-    ld c, e
-    ld hl, $2f00
-    ld d, e
-    ld b, c
-    ld d, [hl]
-    ld b, l
-    ld d, d
-    nop
-    cpl
-    nop
-    ld l, $47
-    ld b, d
-    ld b, e
-    nop
-    ld l, $47
-    ld b, d
-    nop
+; [ezgb]
+; PathSlashStr: NUL-term "/"; path join in browser/backup helpers.
+
+PathSlashStr::
+    db "/", $00
+
+; [ezgb]
+; ExtGbcStr: NUL-term ".GBC" extension compare/append.
+
+ExtGbcStr::
+    db ".GBC", $00
+
+; [ezgb]
+; ExtGbStr: NUL-term ".GB" extension compare/append.
+
+ExtGbStr::
+    db ".GB", $00
 
 ; [ezgb]
 ; U32ToAscii_B0: bank0 near-call copy of U32ToAscii (04:44f7). Same stack ABI;
@@ -4913,8 +4893,6 @@ U32ToAscii_B0::
     ld hl, sp+$06
     ld a, [de]
     ld [hl+], a
-
-jr_000_170f:
     inc de
     ld a, [de]
     ld [hl+], a
@@ -4938,17 +4916,11 @@ Jump_000_1718:
     inc hl
     ld a, [hl]
     ld hl, sp+$04
-
-jr_000_1727:
     sub [hl]
-
-jr_000_1728:
     jp nz, Jump_000_1736
 
     ld hl, sp+$0b
     ld a, [hl]
-
-jr_000_172e:
     ld hl, sp+$05
     sub [hl]
     jp nz, Jump_000_1736
@@ -5208,7 +5180,7 @@ BatteryCheck::
     ld a, $01
     push af
     inc sp
-    ld hl, $190f
+    ld hl, BatteryDryPadStr
     push hl
     call DrawString
     add sp, $05
@@ -5233,7 +5205,7 @@ BatteryCheck::
     ld a, $07
     push af
     inc sp
-    ld hl, $1911
+    ld hl, BatteryDryTitleStr
     push hl
     call DrawString
     add sp, $05
@@ -5242,7 +5214,7 @@ BatteryCheck::
     ld a, $06
     push af
     inc sp
-    ld hl, $1919
+    ld hl, BatteryDryMsgStr
     push hl
     call DrawString
     add sp, $05
@@ -5267,7 +5239,7 @@ BatteryCheck::
     ld a, $05
     push af
     inc sp
-    ld hl, $1920
+    ld hl, BatteryDryOkStr
     push hl
     call DrawString
     add sp, $05
@@ -5312,28 +5284,26 @@ Jump_000_18eb:
     ret
 
 
-    jr nz, jr_000_1911
+BatteryDryPadStr::
+    db " ", $00
 
-jr_000_1911:
-    ld b, d
-    ld b, c
-    ld d, h
-    ld d, h
-    ld b, l
-    ld d, d
-    ld e, c
-    nop
-    ld b, h
-    ld d, d
-    ld e, c
-    ld hl, $2121
-    nop
-    ld e, e
-    ld b, c
-    ld e, l
-    ld c, a
-    ld c, e
-    nop
+; [ezgb]
+; BatteryDryTitleStr: NUL-term "BATTERY" for BatteryCheck dry notice.
+
+BatteryDryTitleStr::
+    db "BATTERY", $00
+
+; [ezgb]
+; BatteryDryMsgStr: NUL-term "DRY!!!" for BatteryCheck dry notice.
+
+BatteryDryMsgStr::
+    db "DRY!!!", $00
+
+; [ezgb]
+; BatteryDryOkStr: NUL-term "[A]OK" dismiss prompt for BatteryCheck.
+
+BatteryDryOkStr::
+    db "[A]OK", $00
 
 ; [ezgb]
 ; FarCall_06_7309: stack thunk → bank6:$7309 via FarCallTrampoline (embedded
@@ -5424,8 +5394,8 @@ FarCall_07_7739::
 
 
 ; [ezgb]
-; FarCall_03_76cc: 3-arg farcall to bank3:$76cc. Callers in bank1 push $ca0f
-; (DIR/path object) plus two more words — FatFs-shaped API still TBD.
+; FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f
+; (FIL/fp) plus ofs words — FatFs f_lseek.
 
 FarCall_03_76cc::
     ld hl, sp+$06
@@ -5597,10 +5567,10 @@ DiskInitialize::
 
 
 ; [ezgb]
-; FarCall stub: repack stack args, FarCallTrampoline to Far_02_4027 (SD sector
-; read), return E. Sibling FarCall_02_41d5 ($1a53) is the write path.
+; FarCall stub: repack stack args, FarCallTrampoline to DiskRead_B2 (SD sector
+; read), return E. Sibling FarCallDiskWrite ($1a53) is the write path.
 
-FarCall_02_4027::
+FarCallDiskRead::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -5633,10 +5603,10 @@ FarCall_02_4027::
 
 
 ; [ezgb]
-; FarCall stub: repack stack args, FarCallTrampoline to Far_02_41d5 (SD sector
-; write), return E. Sibling FarCall_02_4027 ($1a2f) is the read path.
+; FarCall stub: repack stack args, FarCallTrampoline to DiskWrite_B2 (SD sector
+; write), return E. Sibling FarCallDiskRead ($1a2f) is the read path.
 
-FarCall_02_41d5::
+FarCallDiskWrite::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -6803,9 +6773,8 @@ jr_000_1f82:
 
 ; [ezgb]
 ; WToUpper(code): FatFs-shaped WCHAR toupper. Stack uint16; returns DE.
-; ASCII: 'a'-'z' -= $20. Else binary-search sorted keys at $CC33 (~$1EE entries)
-; and replace from parallel table at $D00F (both filled via RleUnpack). Used for
-; case-insensitive path/name compare in banks 3/5/6/7/9.
+; ASCII: 'a'-'z' -= $20. Else binary-search wWToUpperKeys ($CC33) and replace
+; from wWToUpperVals ($D00F). Used for case-insensitive path compare.
 
 WToUpper::
     push af
@@ -6903,7 +6872,7 @@ Jump_000_2021:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $cc33
+    ld hl, wWToUpperKeys
     add hl, bc
     ld c, l
     ld b, h
@@ -6977,7 +6946,7 @@ Jump_000_2092:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $d00f
+    ld hl, wWToUpperVals
     add hl, bc
     ld c, l
     ld b, h
@@ -8417,6 +8386,10 @@ DrawGlyphAdvance::
     ret
 
 
+; [ezgb]
+; GetPixelXY: stack ABI (x, y) → GetPixel (B/C). Sibling of PlotPixelXY.
+
+GetPixelXY::
     push bc
     ld hl, sp+$04
     ld a, [hl+]
@@ -8557,48 +8530,48 @@ PlotPixelEx::
 
 
 ; [ezgb]
-; U32Mul: SDCC runtime __mullong. Stub jp $2dc1; multiplies two stack u32s,
-; returns product in HL:DE. Body zeros a 4-byte acc then Call_000_2e40 (B=4)
-; which uses Call_000_2bb6 (8x8->16 shift-add mul) per byte. Callers e.g. bank1
+; U32Mul: SDCC runtime __mullong. Stub jp U32MulImpl ($2dc1); multiplies two stack u32s,
+; returns product in HL:DE. Body zeros a 4-byte acc then U32MulEngine (B=4)
+; which uses MulU8xU8 (8x8->16 shift-add mul) per byte. Callers e.g. bank1
 ; scale time fields by 24/60. Sibling stubs: S32Div/U32Div/S32Mod/U32Mod.
 
 U32Mul::
-    jp Jump_000_2dc1
+    jp U32MulImpl
 
 
 ; [ezgb]
-; S32Div: SDCC __divslong stub jp $29e6. Signed long ÷; quotient in HL:DE.
+; S32Div: SDCC __divslong stub jp S32DivImpl ($29e6). Signed long ÷; quotient in HL:DE.
 ; Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine.
 
 S32Div::
-    jp Jump_000_29e6
+    jp S32DivImpl
 
 
 ; [ezgb]
-; U32Div: SDCC __divulong stub jp $2a77. Unsigned long ÷ via Call_000_2de0;
+; U32Div: SDCC __divulong stub jp U32DivImpl ($2a77). Unsigned long ÷ via U32DivEngine;
 ; returns quotient from scratch. U32ToAscii uses this with radix.
 
 U32Div::
-    jp Jump_000_2a77
+    jp U32DivImpl
 
 
 ; [ezgb]
-; S32Mod: SDCC __modslong stub jp $2b28. Signed long %; remainder in HL:DE.
+; S32Mod: SDCC __modslong stub jp S32ModImpl ($2b28). Signed long %; remainder in HL:DE.
 
 S32Mod::
-    jp Jump_000_2b28
+    jp S32ModImpl
 
 
 ; [ezgb]
-; U32Mod: SDCC __modulong stub jp $2bfc. Unsigned long %; U32ToAscii digit path.
+; U32Mod: SDCC __modulong stub jp U32ModImpl ($2bfc). Unsigned long %; U32ToAscii digit path.
 
 U32Mod::
-    jp Jump_000_2bfc
+    jp U32ModImpl
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2bcf
+    jp U16Mul
 
 
     ld a, $05
@@ -8613,7 +8586,7 @@ U32Mod::
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2ba2
+    jp S8Mul
 
 
     ld a, $05
@@ -8623,7 +8596,7 @@ U32Mod::
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2bb1
+    jp MulU8xU8Arg
 
 
     ld a, $05
@@ -9043,7 +9016,10 @@ Jump_000_29d8:
     jp Jump_000_29d8
 
 
-Jump_000_29e6:
+; [ezgb]
+; S32DivImpl: body of S32Div stub. MemIsZero early-out; signed abs then U32DivEngine.
+
+S32DivImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
@@ -9134,6 +9110,11 @@ Jump_000_2a5c:
     ret
 
 
+; [ezgb]
+; VBlankCb_Bg8000: VBlank callback registered by EnterGfxMode1. Sets LCDC bit4
+; (BG tile data $8000) and LYC=$48. Pair with LycCb_Bg8800 STAT LYC ISR.
+
+VBlankCb_Bg8000::
     ldh a, [rLCDC]
     or $10
     ldh [rLCDC], a
@@ -9142,10 +9123,14 @@ Jump_000_2a5c:
     ret
 
 
-jr_000_2a6a:
+; [ezgb]
+; LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 → RegisterLcdCallback). Wait
+; STAT mode≠2, clear LCDC bit4 (BG tile data back to $8800). Was jr_000_2a6a.
+
+LycCb_Bg8800::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_2a6a
+    jr nz, LycCb_Bg8800
 
     ldh a, [rLCDC]
     and $ef
@@ -9153,7 +9138,7 @@ jr_000_2a6a:
     ret
 
 
-Jump_000_2a77:
+U32DivImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
@@ -9341,7 +9326,10 @@ jr_000_2b20:
     ld hl, sp+$0b
     jr MemCmp3Down
 
-Jump_000_2b28:
+; [ezgb]
+; S32ModImpl: body of S32Mod stub. MemIsZero early-out; signed abs then remainder path.
+
+S32ModImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
@@ -9433,7 +9421,10 @@ Jump_000_2b9f:
     ret
 
 
-Jump_000_2ba2:
+; [ezgb]
+; S8Mul: sex two stack s8 → s16, then U16Mul. Bank-5 RST stub jp target.
+
+S8Mul::
     ld hl, sp+$02
     ld a, [hl+]
     ld c, a
@@ -9448,14 +9439,14 @@ Jump_000_2ba2:
     ld d, a
     jr jr_000_2bd8
 
-Jump_000_2bb1:
+; [ezgb]
+; MulU8xU8Arg: stack two u8 → C/E then MulU8xU8. Entry just above register ABI body.
+
+MulU8xU8Arg::
     ld hl, sp+$02
     ld a, [hl+]
     ld c, a
     ld e, [hl]
-
-; [ezgb]
-; MulU8xU8: C×E → DE (HL scratch); shift-add 8×8→16. Used by U32MulEngine.
 
 MulU8xU8::
     xor a
@@ -9486,7 +9477,7 @@ jr_000_2bc8:
     ret
 
 
-Jump_000_2bcf:
+U16Mul::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -9536,7 +9527,10 @@ jr_000_2bf9:
     ret
 
 
-Jump_000_2bfc:
+; [ezgb]
+; U32ModImpl: body of U32Mod stub. MemIsZero early-out; else U32DivEngine remainder path.
+
+U32ModImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
@@ -9885,6 +9879,10 @@ jr_000_2d4f:
     ret
 
 
+; [ezgb]
+; PrintCharArg: stack u8 → PrintChar (A). Thin C ABI wrapper.
+
+PrintCharArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -9893,6 +9891,10 @@ jr_000_2d4f:
     ret
 
 
+; [ezgb]
+; PutBgTileArg: stack u8 → PutBgTile (A). Thin C ABI wrapper.
+
+PutBgTileArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -9901,6 +9903,10 @@ jr_000_2d4f:
     ret
 
 
+; [ezgb]
+; SetTileCursor: stack (x, y) → wTileCursorX/Y. Tile-text cursor (vs SetTextCursor).
+
+SetTileCursor::
     ld hl, sp+$02
     ld a, [hl+]
     ld [wTileCursorX], a
@@ -9909,6 +9915,10 @@ jr_000_2d4f:
     ret
 
 
+; [ezgb]
+; GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E.
+
+GetTileCursorX::
     ld a, [wGfxMode]
     and $02
     jr nz, jr_000_2d7f
@@ -9923,6 +9933,10 @@ jr_000_2d7f:
     ret
 
 
+; [ezgb]
+; GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.
+
+GetTileCursorY::
     ld a, [wGfxMode]
     and $02
     jr nz, jr_000_2d90
@@ -9992,7 +10006,10 @@ jr_000_2dbc:
     ret
 
 
-Jump_000_2dc1:
+; [ezgb]
+; U32MulImpl: body of U32Mul stub. Thin frame around U32MulEngine with B=4.
+
+U32MulImpl::
     add sp, -$04
     ld hl, sp+$0a
     push hl
@@ -10100,6 +10117,10 @@ jr_000_2e31:
     ret
 
 
+; [ezgb]
+; MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine.
+
+MemFill::
     ld c, b
 
 jr_000_2e3b:
@@ -10298,9 +10319,9 @@ jr_000_2ef4:
     ld de, $1680
     ld b, $00
     call VramFill
-    ld bc, $2a5f
+    ld bc, VBlankCb_Bg8000
     call RegisterVBlankCallback
-    ld bc, $2a6a
+    ld bc, LycCb_Bg8800
     call RegisterLcdCallback
     ld a, $48
     ldh [rLYC], a
@@ -10400,6 +10421,10 @@ jr_000_2f84:
     ret
 
 
+; [ezgb]
+; BlitTileXY: ensure mode-1; stack args → BlitTile (B/C/DE/HL).
+
+BlitTileXY::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -10421,6 +10446,10 @@ jr_000_2f84:
     ret
 
 
+; [ezgb]
+; VramLoadTiles8100Arg: ensure mode-1; stack BC → VramLoadTiles8100.
+
+VramLoadTiles8100Arg::
     push bc
     ld a, [wGfxMode]
     cp $01
@@ -13159,6 +13188,10 @@ ReadJoypad::
     ret
 
 
+; [ezgb]
+; WaitJoypadMaskArg: stack mask → WaitJoypadMask (B); return pressed in E.
+
+WaitJoypadMaskArg::
     push bc
     ld hl, sp+$04
     ld b, [hl]
@@ -13634,6 +13667,10 @@ jr_000_3c34:
     ret
 
 
+; [ezgb]
+; RegisterFontArg: stack font-desc ptr → RegisterFont (HL); return slot in DE.
+
+RegisterFontArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -13647,6 +13684,10 @@ jr_000_3c34:
     ret
 
 
+; [ezgb]
+; SelectFontArg: stack font-desc ptr → SelectFont (HL); returns DE=0.
+
+SelectFontArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -13858,10 +13899,10 @@ EnterGfxMode2::
     jr z, jr_000_3d3d
 
     call LcdOff
-    ld bc, $2a5f
+    ld bc, VBlankCb_Bg8000
     ld hl, wVBlankCallbacks
     call RemoveCallbackSlot
-    ld bc, $2a6a
+    ld bc, LycCb_Bg8800
     ld hl, wLcdCallbacks
     call RemoveCallbackSlot
 
@@ -13887,7 +13928,7 @@ InitGfxMode2::
 
 ; [ezgb]
 ; VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
-; zeros $8100.. with this; also clears $9800/$9c00 tilemaps ($0400).
+; zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400).
 
 VramFill::
     ldh a, [rSTAT]
@@ -13904,6 +13945,11 @@ VramFill::
     ret
 
 
+; [ezgb]
+; VramFillActiveWinMap: pick window tilemap base from LCDC bit6 ($9800/$9C00),
+; then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3.
+
+VramFillActiveWinMap::
     ldh a, [rLCDC]
     bit 6, a
     jr nz, jr_000_3d73
@@ -13915,6 +13961,11 @@ jr_000_3d73:
     ld hl, $9c00
     jr jr_000_3d86
 
+; [ezgb]
+; VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then
+; VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap.
+
+VramFillActiveBgMap::
     ldh a, [rLCDC]
     bit 3, a
     jr nz, jr_000_3d83

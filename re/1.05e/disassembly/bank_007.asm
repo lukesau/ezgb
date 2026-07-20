@@ -536,7 +536,7 @@ SyncWindow_B7::
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -757,7 +757,7 @@ Jump_007_42e2:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$00
     ld e, [hl]
@@ -892,7 +892,7 @@ Jump_007_43b9:
     ld a, c
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a
@@ -1282,7 +1282,7 @@ jr_007_459d:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld hl, sp+$0c
     ld e, [hl]
@@ -6110,6 +6110,11 @@ Jump_007_5c4e:
     ret
 
 
+; [ezgb]
+; StClust_B7: same as StClust_B9 (09:5e0a). Bank-local FatFs st_clust copy.
+; Orphan between LdClust_B7 and CmpLfn_B7.
+
+StClust_B7::
     push af
     push af
     push af
@@ -7968,6 +7973,10 @@ Jump_007_64f3:
     ret
 
 
+; [ezgb]
+; DirRead_B7: bank-7 near-call copy of DirRead_B5/B9 (FatFs dir_read).
+
+DirRead_B7::
     add sp, -$0f
     ld hl, sp+$09
     ld [hl], $ff
@@ -9152,6 +9161,11 @@ Jump_007_6a8c:
     ret
 
 
+; [ezgb]
+; GetFileInfo_B7: same as GetFileInfo_B5 (05:56d1). Bank-local FatFs get_fileinfo copy.
+; Orphan between DirRegister_B7 and CreateName_B7.
+
+GetFileInfo_B7::
     add sp, -$16
     ld hl, sp+$1a
     ld a, [hl+]
@@ -11602,6 +11616,11 @@ Jump_007_75d9:
     ret
 
 
+; [ezgb]
+; GetLdNumber_B7: same as GetLdNumber_B9 (09:7510). Bank-local FatFs get_ldnumber copy.
+; Orphan immediately before Validate_B7; size matches B5/B6 (0xd7).
+
+GetLdNumber_B7::
     add sp, -$0b
     ld hl, sp+$07
     ld [hl], $ff
@@ -11916,6 +11935,11 @@ Jump_007_7736:
     ret
 
 
+; [ezgb]
+; Write_B7(fp, buff, btw): FatFs f_write. Validate_B7; CreateChain_B7 to grow;
+; Clust2Sect_B7 + MemCpy16_B7; disk FarCall_02_*. Orphan after Jump_007_7736.
+
+Write_B7::
     add sp, -$35
     ld hl, sp+$3d
     ld c, [hl]
@@ -12635,7 +12659,7 @@ jr_007_7a4c:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -12886,7 +12910,7 @@ Jump_007_7b97:
     ld a, c
     push af
     inc sp
-    call FarCall_02_41d5
+    call FarCallDiskWrite
     add sp, $09
     ld c, e
     xor a
@@ -13215,7 +13239,7 @@ jr_007_7d36:
     ld a, [hl]
     push af
     inc sp
-    call FarCall_02_4027
+    call FarCallDiskRead
     add sp, $09
     ld c, e
     xor a

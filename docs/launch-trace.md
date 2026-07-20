@@ -120,7 +120,7 @@ Expected `$1569` chain (from static decode of inline far-call blobs):
 | `$1569` | `$482b` | 1 | Path/file prep |
 | `$1574` | `$5e14` | 1 | Main loader |
 | `$15a5` | `$5163` | 1 | Post-load |
-| `$15b2` | `$58b0` | 1 | Setup |
+| `$15b2` | `$58b0` | 1 | `LaunchSetup` (FAT open/clust walk) |
 | `$15bf` | `$41e7` | 4 | `$7fc0` rompage |
 | `$15d9` | `$4160` | 4 | `$7f37` MBC type |
 | `$15e6` | `$480b` | 1 | `$7fd4` |

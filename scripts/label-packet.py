@@ -70,9 +70,8 @@ def find_body(version, bank, addr):
         if m and m.group(1).lower() == want[0] and m.group(2).lower() == want[1]:
             start = i
             break
-        # Already-named label at this addr is rare in asm; search "; = $ADDR" no.
     if start is None:
-        # Try human name from sym
+        # Already-named label at this addr
         named = cov.load_named(version)
         key = (f"{int(bank, 16):02x}", addr.lower())
         human = named.get(key)
@@ -82,19 +81,40 @@ def find_body(version, bank, addr):
                     start = i
                     break
     if start is None:
+        # Orphan (no Call_/Jump_/human label): address walked from prior label.
+        named = cov.load_named(version)
+        key = (f"{int(bank, 16):02x}", addr.lower())
+        _orphans, orphan_meta = cov.scan_orphans(version, named)
+        meta = orphan_meta.get(key)
+        if meta:
+            opath, ostart, oend = meta
+            olines = opath.read_text(encoding="utf-8", errors="ignore").splitlines()
+            return opath, (ostart, oend), olines
         return path, None, lines
     j = start + 1
-    while j < len(lines) and not ANY_LABEL_RX.match(lines[j]) and not CALL_DEF_RX.match(lines[j]):
+    while j < len(lines):
+        if ANY_LABEL_RX.match(lines[j]) or CALL_DEF_RX.match(lines[j]):
+            break
+        # Match coverage body_until: stop before unlabeled orphan prologue.
+        if re.match(r"^\s+reti?\s*$", lines[j], re.I):
+            k = j + 1
+            while k < len(lines) and (not lines[k].strip() or lines[k].strip().startswith(";")):
+                k += 1
+            if k < len(lines) and re.match(r"^\s+add\s+sp,\s*-\$", lines[k], re.I):
+                j += 1
+                break
         j += 1
     return path, (start, j), lines
 
 
 def find_callers(version, bank, addr, named, context=6):
     label = f"Call_{int(bank, 16):03x}_{addr.lower()}"
+    jump = f"Jump_{int(bank, 16):03x}_{addr.lower()}"
     human = named.get((f"{int(bank, 16):02x}", addr.lower()), "")
-    patterns = [f"call {label}"]
+    patterns = [f"call {label}", f"jp {jump}", f"jp z, {jump}", f"jp nz, {jump}"]
     if human:
         patterns.append(f"call {human}")
+        patterns.append(f"jp {human}")
     hits = []
     for f in sorted(glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm"))):
         lines = Path(f).read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -111,31 +131,20 @@ def find_callers(version, bank, addr, named, context=6):
 
 def rank_rows(version, frontier_only=False, include_lib=False, only_banks=None, skip_banks=None):
     """Return ranked unnamed rows: (key, docs, fanin, is_frontier)."""
-    named = cov.load_named(version)
-    docs = cov.scan_docs()
-    fanin = cov.scan_call_fanin(version)
-    bodies, frontier = cov.scan_bodies_and_frontier(version, named)
-    skip = set(skip_banks or ())
-    if not include_lib and only_banks is None:
-        skip |= set(cov.LIB_BANKS)
-    rows = []
-    for key in set(docs) | set(fanin):
-        bank, addr = key
-        if key in named:
-            continue
-        if only_banks is not None and bank not in only_banks:
-            continue
-        if bank in skip:
-            continue
-        if key not in bodies and fanin.get(key, 0) == 0:
-            continue
-        if frontier_only and key not in frontier and not (key in docs and key in bodies):
-            continue
-        if key in bodies and cov.is_sdcc_runtime(bodies[key]) and key not in docs:
-            continue
-        rows.append((key, docs.get(key, 0), fanin.get(key, 0), key in frontier))
-    rows.sort(key=lambda r: (-r[3], -r[2], -r[1], r[0]))
-    return rows
+    rows, _skips, _extras = cov.rank_candidates(
+        version,
+        frontier_only=frontier_only,
+        include_lib=include_lib,
+        only_banks=only_banks,
+        skip_banks=skip_banks,
+        show_all=False,
+        skip_runtime=True,
+        app_mode=True,
+    )
+    out = []
+    for key, _name, dref, fin, fr, orphan, kind, _abs in rows:
+        out.append((key, dref, fin, fr, orphan, kind))
+    return out
 
 
 def pick_filters(args):
@@ -169,8 +178,16 @@ def pick_target(version, args, include_lib=False, only_banks=None, skip_banks=No
             skip_banks=skip_banks,
         )
         if rows:
-            (bank, addr), _dref, _fin, fr = rows[0]
-            return bank, addr, "F" if fr else "."
+            (bank, addr), _dref, _fin, fr, orphan, kind = rows[0]
+            if fr:
+                mark = "F"
+            elif orphan:
+                mark = "O"
+            elif kind == "jump":
+                mark = "J"
+            else:
+                mark = "."
+            return bank, addr, mark
     return None, None, None
 
 
@@ -216,8 +233,15 @@ def print_picker(version, top, frontier_prefer=True, include_lib=False, only_ban
         print()
         return rows
     print("addr      c  d  fr")
-    for (bank, addr), dref, fin, fr in show:
-        mark = "F" if fr else "."
+    for (bank, addr), dref, fin, fr, orphan, kind in show:
+        if fr:
+            mark = "F"
+        elif orphan:
+            mark = "O"
+        elif kind == "jump":
+            mark = "J"
+        else:
+            mark = "."
         print(f"{bank}:{addr}  {fin:3d}  {dref:2d}  {mark}")
     print()
     return rows

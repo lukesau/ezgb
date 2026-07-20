@@ -131,6 +131,8 @@ echo "     (surgical edits only — no broad replaces)."
 echo "  3. Prefer bank 09 for FatFs; stamp clones cover 03/05/06/07 when bodies match."
 echo "  4. ./scripts/regen-disasm.sh $VER"
 echo "  glossary: frontier/F = unnamed callee of a named fn;"
+echo "            O = unlabeled function after ret (add sp, -\$ prologue);"
+echo "            J = Jump_ that looks like a real entry (after ret);"
 echo "            needs_judgment=1 = deep-read before naming;"
 if [[ "$INCLUDE_LIB" -eq 1 || -n "$BANKS" ]]; then
   echo "            lib banks included (scope=$SCOPE)."

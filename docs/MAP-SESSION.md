@@ -142,6 +142,16 @@ or `--include-lib` when intentionally mapping them. Prefer bank 09; let clones c
 the copies. Prefer `--frontier-only` once `F` rows exist.
 Avoid RGBDS reserved names (`Strlen` → `CStrLen`, etc.).
 
+Worklist marks: `F` = frontier (unnamed callee of a named fn), `O` = orphan
+(unlabeled `add sp, -$…` body after a `ret` — address estimated), `J` = `Jump_`
+that sits after a `ret` with a prologue (real entry, not a loop head). Doc-cited
+`Jump_` seams also stay on the list even when call fan-in is exhausted.
+Unreferenced orphans (0 call sites, no doc/frontier/abs) are dropped so the
+loop is not stuck on dead helpers (e.g. `00:2ac6`).
+
+FatFs bank-start `ret` stubs: `RetStub_B5` / `RetStub_B6` / `RetStub_B9`
+(`xx:4000` before `MemCpy16_B*`).
+
 Hand loop below is still valid as a fallback when the packet is empty or you are
 off the app worklist.
 

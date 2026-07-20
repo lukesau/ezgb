@@ -99,7 +99,8 @@
       "lines": [
         "Pre-launch FRAM stamp on page $11 (SetFpgaPage_B1 $03), written on every launch:",
         "$A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,",
-        "$A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write."
+        "$A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write.",
+        "Ends at Jump_001_58ad; LaunchSetup (01:58b0) is the next launch-trace step."
       ]
     },
     {
@@ -142,7 +143,7 @@
       "addr": "0634",
       "lines": [
         "RegisterLcdCallback: install BC into wLcdCallbacks ($d6e3). EnterGfxMode1",
-        "registers $2a6a here and enables STAT LYC after RegisterVBlankCallback."
+        "registers LycCb_Bg8800 ($2a6a) here and enables STAT LYC after RegisterVBlankCallback."
       ]
     },
     {
@@ -233,9 +234,18 @@
     },
     {
       "bank": 0,
+      "addr": "092a",
+      "lines": [
+        "DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).",
+        "Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.",
+        "See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters)."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "0a43",
       "lines": [
-        "DirList: file-browser directory enumerator; hides ezgb.dat via helper $09af."
+        "DirList: file-browser directory enumerator; hides ezgb.dat via MemCmp_B0."
       ]
     },
     {
@@ -253,7 +263,8 @@
       "bank": 0,
       "addr": "0150",
       "lines": [
-        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md."
+        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.",
+        "After bank1 switch, calls BootUnpackWramTables ($68b6) then BatteryCheck."
       ]
     },
     {
@@ -369,18 +380,17 @@
       "addr": "1fd5",
       "lines": [
         "WToUpper(code): FatFs-shaped WCHAR toupper. Stack uint16; returns DE.",
-        "ASCII: 'a'-'z' -= $20. Else binary-search sorted keys at $CC33 (~$1EE entries)",
-        "and replace from parallel table at $D00F (both filled via RleUnpack). Used for",
-        "case-insensitive path/name compare in banks 3/5/6/7/9."
+        "ASCII: 'a'-'z' -= $20. Else binary-search wWToUpperKeys ($CC33) and replace",
+        "from wWToUpperVals ($D00F). Used for case-insensitive path compare."
       ]
     },
     {
       "bank": 0,
       "addr": "2826",
       "lines": [
-        "U32Mul: SDCC runtime __mullong. Stub jp $2dc1; multiplies two stack u32s,",
-        "returns product in HL:DE. Body zeros a 4-byte acc then Call_000_2e40 (B=4)",
-        "which uses Call_000_2bb6 (8x8->16 shift-add mul) per byte. Callers e.g. bank1",
+        "U32Mul: SDCC runtime __mullong. Stub jp U32MulImpl ($2dc1); multiplies two stack u32s,",
+        "returns product in HL:DE. Body zeros a 4-byte acc then U32MulEngine (B=4)",
+        "which uses MulU8xU8 (8x8->16 shift-add mul) per byte. Callers e.g. bank1",
         "scale time fields by 24/60. Sibling stubs: S32Div/U32Div/S32Mod/U32Mod."
       ]
     },
@@ -388,7 +398,7 @@
       "bank": 0,
       "addr": "2829",
       "lines": [
-        "S32Div: SDCC __divslong stub jp $29e6. Signed long \u00f7; quotient in HL:DE.",
+        "S32Div: SDCC __divslong stub jp S32DivImpl ($29e6). Signed long \u00f7; quotient in HL:DE.",
         "Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine."
       ]
     },
@@ -396,7 +406,7 @@
       "bank": 0,
       "addr": "282c",
       "lines": [
-        "U32Div: SDCC __divulong stub jp $2a77. Unsigned long \u00f7 via Call_000_2de0;",
+        "U32Div: SDCC __divulong stub jp U32DivImpl ($2a77). Unsigned long \u00f7 via U32DivEngine;",
         "returns quotient from scratch. U32ToAscii uses this with radix."
       ]
     },
@@ -404,14 +414,14 @@
       "bank": 0,
       "addr": "282f",
       "lines": [
-        "S32Mod: SDCC __modslong stub jp $2b28. Signed long %; remainder in HL:DE."
+        "S32Mod: SDCC __modslong stub jp S32ModImpl ($2b28). Signed long %; remainder in HL:DE."
       ]
     },
     {
       "bank": 0,
       "addr": "2832",
       "lines": [
-        "U32Mod: SDCC __modulong stub jp $2bfc. Unsigned long %; U32ToAscii digit path."
+        "U32Mod: SDCC __modulong stub jp U32ModImpl ($2bfc). Unsigned long %; U32ToAscii digit path."
       ]
     },
     {
@@ -745,8 +755,8 @@
       "bank": 0,
       "addr": "1985",
       "lines": [
-        "FarCall_03_76cc: 3-arg farcall to bank3:$76cc. Callers in bank1 push $ca0f",
-        "(DIR/path object) plus two more words \u2014 FatFs-shaped API still TBD."
+        "FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f",
+        "(FIL/fp) plus ofs words \u2014 FatFs f_lseek."
       ]
     },
     {
@@ -761,16 +771,16 @@
       "bank": 0,
       "addr": "1a2f",
       "lines": [
-        "FarCall stub: repack stack args, FarCallTrampoline to Far_02_4027 (SD sector",
-        "read), return E. Sibling FarCall_02_41d5 ($1a53) is the write path."
+        "FarCall stub: repack stack args, FarCallTrampoline to DiskRead_B2 (SD sector",
+        "read), return E. Sibling FarCallDiskWrite ($1a53) is the write path."
       ]
     },
     {
       "bank": 0,
       "addr": "1a53",
       "lines": [
-        "FarCall stub: repack stack args, FarCallTrampoline to Far_02_41d5 (SD sector",
-        "write), return E. Sibling FarCall_02_4027 ($1a2f) is the read path."
+        "FarCall stub: repack stack args, FarCallTrampoline to DiskWrite_B2 (SD sector",
+        "write), return E. Sibling FarCallDiskRead ($1a2f) is the read path."
       ]
     },
     {
@@ -794,8 +804,8 @@
       "addr": "4027",
       "lines": [
         "SD sector read (disk_read). Program LBA via $7FB0-$7FB4, wait, then copy",
-        "from $A000 into caller buffer via VramCopyStack. Called as FarCall_02_4027.",
-        "Sibling Far_02_41d5 is the write path (buffer -> $A000, then trigger).",
+        "from $A000 into caller buffer via VramCopyStack. Called as FarCallDiskRead.",
+        "Sibling DiskWrite_B2 is the write path (buffer -> $A000, then trigger).",
         "Prologue: SetFpga7F30_B2."
       ]
     },
@@ -805,7 +815,7 @@
       "lines": [
         "SD sector write (disk_write). Copy buffer to $A000 via VramCopyStack, then",
         "program $7FB0/$7FB1/$7FB2 and trigger. Prologue: SetFpga7F30_B2 $01 then $03.",
-        "Called as FarCall_02_41d5. Sibling Far_02_4027 is the read path."
+        "Called as FarCallDiskWrite. Sibling DiskRead_B2 is the read path."
       ]
     },
     {
@@ -874,7 +884,7 @@
       "addr": "4001",
       "lines": [
         "MemCpy16_B9: copy words dest\u2190src while byte-count\u22652 (FatFs-shaped mem_cpy).",
-        "09:4000 is a lone ret stub in front; other banks start the copy at $4000/$4001."
+        "RetStub_B9 (09:4000) is the lone ret in front; B5/B6 siblings match."
       ]
     },
     {
@@ -920,7 +930,7 @@
       "addr": "41e5",
       "lines": [
         "SyncWindow_B9(fs): FatFs-shaped. If fs->wflag (+4) set, disk_write winsect",
-        "(+0x2e) from win[] (+0x32) via Far_02_41d5; clear dirty; mirror to other",
+        "(+0x2e) from win[] (+0x32) via DiskWrite_B2; clear dirty; mirror to other",
         "FAT copies when winsect is in the FAT region. Returns 0=OK, nonzero=err.",
         "Static match to ChaN FatFs sync_window. Bank copies: SyncWindow_B3/B6/B7."
       ]
@@ -930,7 +940,7 @@
       "addr": "437e",
       "lines": [
         "MoveWindow_B9(fs, sector): FatFs-shaped sector cache. If sector==winsect (+0x2e)",
-        "return 0; else SyncWindow_B9, disk_read into win[] (+0x32) via Far_02_4027,",
+        "return 0; else SyncWindow_B9, disk_read into win[] (+0x32) via DiskRead_B2,",
         "on failure set winsect=0xFFFFFFFF. Args: ptr, u32 sector. Returns E (0=OK).",
         "Static match to ChaN FatFs move_window (R0.10+). Bank copies: MoveWindow_B3/B6/B7.",
         "Why copies: only one switchable bank is mapped at $4000; each FS consumer bank",
@@ -943,7 +953,7 @@
       "lines": [
         "SyncFs_B9(fs): FatFs sync_fs. SyncWindow_B9; if fs_type(+0)==FAT32(3) and",
         "fsi_flag(+5)==1, build FSInfo in win(+0x32): 0x55AA, LeadSig RRaA, StrucSig rrAa,",
-        "copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via Far_02_41d5, clear fsi_flag.",
+        "copy free_clst(+0x0e)/last_clst(+0x0a), disk_write via DiskWrite_B2, clear fsi_flag.",
         "Ends with ReturnZero stand-in for disk_ioctl(CTRL_SYNC). Bank copies: 03:4434, 07."
       ]
     },
@@ -972,7 +982,7 @@
       "lines": [
         "MoveWindow_B5(fs, sector): FatFs move_window without SyncWindow (bank 5 has no",
         "dirty-window path). If sector!=winsect(+0x2e), disk_read into win(+0x32) via",
-        "Far_02_4027; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9."
+        "DiskRead_B2; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9."
       ]
     },
     {
@@ -995,11 +1005,19 @@
       ]
     },
     {
+      "bank": 9,
+      "addr": "75e7",
+      "lines": [
+        "CheckFs_B9: same as CheckFs_B5 (05:6337). Bank-local FatFs check_fs copy.",
+        "Orphan between GetLdNumber_B9 and FindVolume_B9."
+      ]
+    },
+    {
       "bank": 5,
       "addr": "6447",
       "lines": [
         "FindVolume_B5(rfs, path, mode): FatFs find_volume. Clears *rfs; GetLdNumber_B5",
-        "(neg→FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null→FR_NOT_ENABLED);",
+        "(neg\u2192FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null\u2192FR_NOT_ENABLED);",
         "DiskStatus/DiskInitialize; CheckFs_B5 on candidate sectors. Returns E=FRESULT."
       ]
     },
@@ -1009,7 +1027,320 @@
       "lines": [
         "DirRead_B5(dp, vol): FatFs dir_read. Scan entries via MoveWindow_B5 + DirNext_B5;",
         "skip DDEM ($E5), match AM_VOL vs vol arg, handle LFN ($0F). Returns E=FRESULT",
-        "(4=FR_NO_FILE at end). Bank9 folds similar scan into DirFind_B9."
+        "(4=FR_NO_FILE at end). Copies: DirRead_B7 ($64f6), DirRead_B9 ($66a6)."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "64f6",
+      "lines": [
+        "DirRead_B7: bank-7 near-call copy of DirRead_B5/B9 (FatFs dir_read)."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "66a6",
+      "lines": [
+        "DirRead_B9: bank-9 near-call copy of DirRead_B5 (FatFs dir_read).",
+        "Orphan after Jump_009_66a3; sits just before DirRegister_B9."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "77ff",
+      "lines": [
+        "Open_B9(fp, path, mode): FatFs f_open. RtcReadPage; FindVolume_B9; FollowPath_B9;",
+        "create path uses CreateChain_B9 / DirRegister_B9 / RemoveChain_B9 / SyncFs_B9.",
+        "Large -$47 frame; bank-9 only in this link (no B3/B5/B6/B7 twin at same shape)."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "4f88",
+      "lines": [
+        "RemoveChain_B3: bank-3 near-call copy of RemoveChain_B9 (FatFs remove_chain).",
+        "GetFat_B3 + PutFat_B3; same shape as RemoveChain_B6/B9. Orphan before CreateChain_B3."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "7395",
+      "lines": [
+        "FindVolume_B3: bank-3 near-call copy of FindVolume_B6/B9 (FatFs find_volume front).",
+        "GetLdNumber_B3; FatFs table $C5A5; DiskStatus; FR $0b/$0c/$0a. -$12 frame.",
+        "Orphan after Jump_003_7392; sits just before Validate_B3."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "76cc",
+      "lines": [
+        "Lseek_B3(fp, ofs): FatFs f_lseek. Validate_B3; U32Shl/Mod; CreateChain_B3 to",
+        "extend; GetFat_B3 + Clust2Sect_B3. FarCall disk R/W helpers. -$29 frame.",
+        "Target of FarCall_03_76cc; orphan after Jump_003_76c6."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "7309",
+      "lines": [
+        "Open_B6(fp, path, mode): FatFs f_open (bank-6). FindVolume_B6 + FollowPath_B6 +",
+        "DirRegister_B6 path; same role as Open_B9. Target of FarCall_06_7309",
+        "(BackupSaveDump). Orphan after prior epilogue; -$42 frame."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "7576",
+      "lines": [
+        "Readdir_B5(dp, fno): FatFs f_readdir. Validate_B5; DirSdi_B5 rewind on null fno;",
+        "DirRead_B5 + GetFileInfo_B5 + DirNext_B5. Distinct from DirRead_B5 (dir_read)."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "779a",
+      "lines": [
+        "Read_B6(fp, buff, btr): FatFs f_read. Validate_B6; cluster walk via GetFat_B6 +",
+        "Clust2Sect_B6; MemCpy16_B6; disk via FarCall_02_*. Target of FarCall_06_779a."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "7739",
+      "lines": [
+        "Write_B7(fp, buff, btw): FatFs f_write. Validate_B7; CreateChain_B7 to grow;",
+        "Clust2Sect_B7 + MemCpy16_B7; disk FarCall_02_*. Orphan after Jump_007_7736."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "777c",
+      "lines": [
+        "Validate_B9(obj): FatFs validate (bank-9). Same shape as Validate_B3/B5/B6/B7.",
+        "Orphan between FindVolume_B9 epilogue and Open_B9."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6ea4",
+      "lines": [
+        "Chdir_B5(path): FatFs f_chdir. FindVolume_B5 + FollowPath_B5 + LdClust_B5;",
+        "no DirSdi (contrast Opendir_B5). -$35 frame."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "73dd",
+      "lines": [
+        "Opendir_B5(dp, path): FatFs f_opendir. Null dp\u2192FR_INVALID_OBJECT ($09);",
+        "FindVolume_B5 + FollowPath_B5 + LdClust_B5 + DirSdi_B5. -$19 frame;",
+        "sits just before Readdir_B5."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "7008",
+      "lines": [
+        "Getcwd_B5(buff, len): FatFs f_getcwd. Clears buff; FindVolume_B5 (mode 0);",
+        "walks via DirSdi_B5/DirRead_B5/DirNext_B5 + GetFileInfo_B5 (no FollowPath).",
+        "-$5b frame; between Chdir_B5 and Opendir_B5."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "768f",
+      "lines": [
+        "Close_B3(fp): FatFs f_close. Fsync_B3 then Validate_B3; clears FIL fs ptr.",
+        "Target of FarCall_03_768f; orphan after Fsync path epilogue Jump_003_768c."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "4279",
+      "lines": [
+        "Clust2Sect_B5(fs, clst): FatFs clust2sect. Same shape as Clust2Sect_B3/B6/B7/B9;",
+        "U32Mul by csize. Bank-5 was missing from the earlier clone stamp pass."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "4378",
+      "lines": [
+        "GetFat_B5(fs, clst): FatFs get_fat. MoveWindow_B5 + U32Shr/Shl FAT entry path;",
+        "byte-identical call shape to GetFat_B9 (563 ops). Bank-5 was missing from stamp."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "46f4",
+      "lines": [
+        "DrawTimeAutosaveScreen: settings chrome. FPGA page $03 read $A200; draws",
+        "TIME:/SET/AUTO SAVE: via DrawRect/DrawString. Touches RomLoad_InitiatePoll",
+        "stash byte. Orphan after SetFpga7FD0_B4; -$6a frame."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "6fd0",
+      "lines": [
+        "DrawFwVersionScreen: build \"FWx \" prefix on stack, SdWindowPeek_B8, U32ToAscii_B0",
+        "version, then DrawRect/DrawString. Orphan after Jump_008_6fcd; -$34 frame."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "5163",
+      "lines": [
+        "BackupOpenSaverPath: memcpy \"/SAVER/\" to $c3a5; farcall-append name; force",
+        "\".sav\" suffix; SetFpgaPage_B1 $00; Open_B6 via FarCall_06_7309 into $ca0f FIL.",
+        "Used by BackupSaveDump path. Orphan after RtcReadDaysClearRegs epilogue."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "40e3",
+      "lines": [
+        "DrawBrowserEntries: file-browser rows from path buf at $c2a0. Clamp count vs $c2a2;",
+        "per row DrawString name; if attr at +$fe == $10 (AM_DIR) draw \"DIR\" ($42b6), else",
+        "U32ToAscii_B0 size. Orphan after prior ret at Jump_001_40e0."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "4048",
+      "lines": [
+        "CStrCmp(a, b): signed char strcmp. Walk [bc] vs [de]; return DE = *a - *b (sex)."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "40a3",
+      "lines": [
+        "CStrChr(s, c): find first c in NUL-terminated s; return pointer in DE (0 if none)."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "47c7",
+      "lines": [
+        "SetFpga7F34_35_B1: same as SetFpga7F34_35_B4 (04:40fc). Unlock; write stack u8s",
+        "to $7F34 then $7F35; commit $7FF0. Orphan after SetFpgaPage_B1."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2785",
+      "lines": [
+        "GetPixelXY: stack ABI (x, y) \u2192 GetPixel (B/C). Sibling of PlotPixelXY."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2d56",
+      "lines": [
+        "PrintCharArg: stack u8 \u2192 PrintChar (A). Thin C ABI wrapper."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2d5f",
+      "lines": [
+        "PutBgTileArg: stack u8 \u2192 PutBgTile (A). Thin C ABI wrapper."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2d68",
+      "lines": [
+        "SetTileCursor: stack (x, y) \u2192 wTileCursorX/Y. Tile-text cursor (vs SetTextCursor)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2d73",
+      "lines": [
+        "GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2d84",
+      "lines": [
+        "GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2f8d",
+      "lines": [
+        "BlitTileXY: ensure mode-1; stack args \u2192 BlitTile (B/C/DE/HL)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2fa8",
+      "lines": [
+        "VramLoadTiles8100Arg: ensure mode-1; stack BC \u2192 VramLoadTiles8100."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3a4f",
+      "lines": [
+        "WaitJoypadMaskArg: stack mask \u2192 WaitJoypadMask (B); return pressed in E."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3c3f",
+      "lines": [
+        "RegisterFontArg: stack font-desc ptr \u2192 RegisterFont (HL); return slot in DE."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3c4d",
+      "lines": [
+        "SelectFontArg: stack font-desc ptr \u2192 SelectFont (HL); returns DE=0."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6e19",
+      "lines": [
+        "Mount_B5(fs, path, opt): FatFs f_mount. GetLdNumber_B5 (neg\u2192FR_INVALID_DRIVE);",
+        "bind/clear FatFs[vol] at wFatFsTable ($C5A5); opt==1 \u2192 FindVolume_B5."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "5c5a",
+      "lines": [
+        "StClust_B7: same as StClust_B9 (09:5e0a). Bank-local FatFs st_clust copy.",
+        "Orphan between LdClust_B7 and CmpLfn_B7."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2bfc",
+      "lines": [
+        "U32ModImpl: body of U32Mod stub. MemIsZero early-out; else U32DivEngine remainder path."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2dc1",
+      "lines": [
+        "U32MulImpl: body of U32Mul stub. Thin frame around U32MulEngine with B=4."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "5022",
+      "lines": [
+        "GenNumName_B5: same as GenNumName_B9 (09:6201). Bank-local FatFs gen_numname copy.",
+        "Orphan between CmpLfn_B5 and SumSfn_B5 (no PutLfn in this bank)."
       ]
     },
     {
@@ -1018,6 +1349,22 @@
       "lines": [
         "GetFileInfo_B5(fno, dp): FatFs get_fileinfo. Build dotted SFN into fno(+9) from",
         "dir entry; apply NT case bits; copy LFN via MapCp437 when present."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "6a8f",
+      "lines": [
+        "GetFileInfo_B7: same as GetFileInfo_B5 (05:56d1). Bank-local FatFs get_fileinfo copy.",
+        "Orphan between DirRegister_B7 and CreateName_B7."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "75df",
+      "lines": [
+        "GetLdNumber_B7: same as GetLdNumber_B9 (09:7510). Bank-local FatFs get_ldnumber copy.",
+        "Orphan immediately before Validate_B7; size matches B5/B6 (0xd7)."
       ]
     },
     {
@@ -1084,7 +1431,7 @@
       "addr": "749d",
       "lines": [
         "Fsync_B3(fp): FatFs f_sync. Validate_B3; if FA_WRITTEN(+4 bit5), flush dirty",
-        "sector (bit6) via Far_02_41d5, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),",
+        "sector (bit6) via DiskWrite_B2, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),",
         "SyncFs_B3. Returns E=FRESULT."
       ]
     },
@@ -1127,7 +1474,6 @@
         "DirRegister_B7: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry."
       ]
     },
-
     {
       "bank": 9,
       "addr": "580c",
@@ -1244,7 +1590,8 @@
       "addr": "4917",
       "lines": [
         "DateToDaysSince1970: date struct ptr on stack; accumulate 365/366 from 1970",
-        "via IsLeapYear, then month/day. Returns day count in HL:DE."
+        "via IsLeapYear, then month/day. Returns day count in HL:DE.",
+        "Month lengths from wDaysInMonth / wDaysInMonthLeap."
       ]
     },
     {
@@ -1290,17 +1637,80 @@
     },
     {
       "bank": 0,
-      "addr": "07bc",
+      "addr": "0710",
       "lines": [
-        "WaitJoypadSelect: spin ReadJoypad until E==$40 (Select; A=$10 B=$20 START=$80),",
-        "then Delay($00c8). Gate before FileBrowserEntry."
+        "SetIeReg: DiNest; clear rIF; load rIE from stack u8; EiNest. Safe IE write."
       ]
     },
     {
       "bank": 0,
-      "addr": "2bb6",
+      "addr": "071f",
       "lines": [
-        "MulU8xU8: C\u00d7E \u2192 DE (HL scratch); shift-add 8\u00d78\u219216. Used by U32MulEngine."
+        "RemoveVBlankCallbackArg / RemoveLcdCallbackArg / RemoveTimerCallbackArg /",
+        "RemoveSerialCallbackArg / RemoveJoypadCallbackArg: stack ptr \u2192 BC then Remove*.",
+        "Register*CallbackArg siblings at $0756..$0782 likewise wrap Register*."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "07db",
+      "lines": [
+        "PlotBitRowXY(flags, x, y): plot up to 8 pixels from a bit row via PlotPixelXY.",
+        "bit0\u2192x+7 \u2026 bit7\u2192x (MSB left). Used by bit-pattern glyph drawers.",
+        "Orphan after WaitJoypadSelect; Call_000_0803 is a mid-body fallthrough label."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "29e6",
+      "lines": [
+        "S32DivImpl: body of S32Div stub. MemIsZero early-out; signed abs then U32DivEngine."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2b28",
+      "lines": [
+        "S32ModImpl: body of S32Mod stub. MemIsZero early-out; signed abs then remainder path."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "62d0",
+      "lines": [
+        "BootRomInfoMenu: two-item menu \"BOOT\" / \"ROM info\" ($6424/$6429) over DrawInfoPanelRect.",
+        "Up/Down move; A on ROM info \u2192 DrawCardTypeScreen; A on BOOT draws \"Loading\" and",
+        "returns selection in E; B returns E=$ff. Orphan before BackupSaveDump."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2ba2",
+      "lines": [
+        "S8Mul: sex two stack s8 \u2192 s16, then U16Mul. Bank-5 RST stub jp target."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2bb1",
+      "lines": [
+        "MulU8xU8Arg: stack two u8 \u2192 C/E then MulU8xU8. Entry just above register ABI body."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "4207",
+      "lines": [
+        "SetFpgaRomSize_B4: map cart ROM-size code (0..8, $52..$54) \u2192 bank mask; clamp vs",
+        "$c2a4/$c2a5; unlock and write $7FC1/$7FC2. Launch farcall from $1604 (docs/launch-trace)."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "6efc",
+      "lines": [
+        "RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; zero $A0C0..+$200; then 0x2000x",
+        "RomLoad_WriteCmdWindow + page $05 BuildAndRun wait (clear cart window). Before DrawFwVersionScreen."
       ]
     },
     {
@@ -1339,7 +1749,7 @@
       "addr": "3d5a",
       "lines": [
         "VramFill: STAT-safe fill \u2014 wait mode\u22602, write B to [HL++) DE times. EnterGfxMode1",
-        "zeros $8100.. with this; also clears $9800/$9c00 tilemaps ($0400)."
+        "zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400)."
       ]
     },
     {
@@ -1405,6 +1815,340 @@
       "lines": [
         "Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.",
         "Entry is $473f (after nop pad at $473e)."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "4000",
+      "lines": [
+        "RetStub_B5: Lone ret at bank start (before MemCpy16_B5). Callers push args then call; compiled-out stub (often debug/print)."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "4000",
+      "lines": [
+        "RetStub_B6: Lone ret at bank start (before MemCpy16_B6). Same RetStub_B9 pattern."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "4000",
+      "lines": [
+        "RetStub_B9: Lone ret at bank start (before MemCpy16_B9). FatFs bank callers push 2 words then call; no-op."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2a5f",
+      "lines": [
+        "VBlankCb_Bg8000: VBlank callback registered by EnterGfxMode1. Sets LCDC bit4",
+        "(BG tile data $8000) and LYC=$48. Pair with LycCb_Bg8800 STAT LYC ISR."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2a6a",
+      "lines": [
+        "LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 \u2192 RegisterLcdCallback). Wait",
+        "STAT mode\u22602, clear LCDC bit4 (BG tile data back to $8800). Was jr_000_2a6a."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "480b",
+      "lines": [
+        "SetFpga7FD4_B1: unlock $7F00/10/20; write stack u8 to $7FD4; commit $7FF0.",
+        "Same shape as SetFpga7FD0_B4. Orphan before LoaderPrepPath."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "43ec",
+      "lines": [
+        "SetFpga7FC4_B4(mode): map stack u8 \u2192 $7FC4 (0/0/$0f/$07/$03) via unlock/commit.",
+        "Mode 0 also peeks wCartTypeUi ($d3eb). Orphan after SetFpgaRomSize_B4."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "446e",
+      "lines": [
+        "SetFpga7FC3_B4: unlock; write [$c5a3] to $7FC3; commit. Sibling of SetFpgaPage",
+        "($7FC0) / SetFpga7FC4_B4."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "448f",
+      "lines": [
+        "RomLoad_CopyCmdWindowPoll_B4: SetRomLoadCtrl_B4($01) map cmd window; copy $200",
+        "bytes stack\u2192$A000 via VramCopyStack; RomLoad_BuildAndRunPoll. Before CStrCat."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "46ae",
+      "lines": [
+        "InitTimeAutosaveFpga_B4: SetFpgaPage $06; write key bytes $33..$19 to $A008\u2013$A00E;",
+        "SetFpga7FD0_B4($01); page $00. Orphan immediately before DrawTimeAutosaveScreen."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "4160",
+      "lines": [
+        "SetFpga7F37_B4: unlock; write stack u8 to $7F37; commit. Sibling of",
+        "SetRomLoadCtrl_B4 ($7F36). Orphan after SetRomLoadCtrl_B4."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "4180",
+      "lines": [
+        "RomLoad_ResetIntoRom_B4: clear $7F31/$7F32; MBC writes $2000=$01/$3000=$00;",
+        "then $7FE0=$80 soft-boot into loaded ROM (hangs via jp self if still here)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "41d2",
+      "lines": [
+        "RomLoad_BuildAndRunReset_B4: RomLoad_Build_B4 trampoline for",
+        "RomLoad_ResetIntoRom_B4 at $D000 (arg $ff), then call it."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "41e7",
+      "lines": [
+        "SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) \u2014 unlock,",
+        "$7FC0=stack u8, commit. Earlier copy sitting just before SetFpgaRomSize_B4."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3d68",
+      "lines": [
+        "VramFillActiveWinMap: pick window tilemap base from LCDC bit6 ($9800/$9C00),",
+        "then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3d78",
+      "lines": [
+        "VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then",
+        "VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "754d",
+      "lines": [
+        "Closedir_B5(dp): FatFs f_closedir. Validate_B5; on OK clear DIR fs ptr (2 bytes).",
+        "No Fsync (contrast Close_B3). Orphan immediately before Readdir_B5."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "58b0",
+      "lines": [
+        "LaunchSetup: launch-trace step after BackupOpenSaverPath ($15b2\u2192$58b0). Big frame;",
+        "Open_B6 path; Clust2Sect/GetFat_B5 walk; Close_B3. Feeds later FPGA 7FCx config.",
+        "See docs/launch-trace.md."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2e3a",
+      "lines": [
+        "MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "099c",
+      "lines": [
+        "FileSystemErrorStr: NUL-term \"File system error!\" for SdReadRetryCount.",
+        "Marked .text:13 in kernel.sym so MemCmp_B0 at $09af stays instruction-aligned."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "09af",
+      "lines": [
+        "MemCmp_B0(s1, s2, n): byte-identical to MemCmp_B5/B9 (FatFs mem_cmp). -$09 frame.",
+        "DirList hides ezgb.dat via this."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "68b6",
+      "lines": [
+        "BootUnpackWramTables: KernelEntry bank-1 call before BatteryCheck. Sets $CC31/$CC32=$EE,",
+        "RleUnpack \u2192 $CC33 then $D00F (WToUpper tables), then $D3F9/$D5EB/$D6A7/$D6B3/$D6BF; ret $7390."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "6894",
+      "lines": [
+        "BackupUiStrings: NUL strings after BackupSavePrompt (BACKUPSAVE/Saving../[B]NO/[A]OK).",
+        ".text:22 through $68b5 so BootUnpackWramTables stays aligned."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "cc33",
+      "lines": [
+        "wWToUpperKeys: u16 key table for WToUpper binary search (~$EE entries).",
+        "Filled by BootUnpackWramTables via RleUnpack; parallel vals at wWToUpperVals."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d00f",
+      "lines": [
+        "wWToUpperVals: u16 replacement table parallel to wWToUpperKeys. RleUnpack dest."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "42ba",
+      "lines": [
+        "DrawBrowserDetail: farcall from FileBrowserEntry ($10d9 blob \u2192 01:42ba). -$24 frame;",
+        "StoreDrawParams/DrawString/U32ToAscii_B0 panel for the selected browser row."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "45b3",
+      "lines": [
+        "FormatFileSize: format u32 size using wFileSizeFmtLo ($D3F9) or wFileSizeFmtHi ($D5EB)",
+        "when size\u2265$1000 within the <$10000 path. -$0a frame; after BrowserDirStr2."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "42b6",
+      "lines": [
+        "BrowserDirStr: \"DIR\" drawn by DrawBrowserEntries for AM_DIR rows."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d6a7",
+      "lines": [
+        "wDaysInMonth: 12-byte non-leap month lengths (31,28,\u2026). BootUnpackWramTables RLE."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d6b3",
+      "lines": [
+        "wDaysInMonthLeap: 12-byte leap month lengths (31,29,\u2026). Used by DateToDaysSince1970."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d6bf",
+      "lines": [
+        "wDaysInYearTab: u16s 365/365/365/366 from BootUnpack (year-length variants)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d3f9",
+      "lines": [
+        "wFileSizeFmtLo: threshold/scale pairs for FormatFileSize (sizes <$1000 in low path)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d5eb",
+      "lines": [
+        "wFileSizeFmtHi: threshold/scale pairs for FormatFileSize (sizes \u2265$1000, <$10000)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0bc8",
+      "lines": [
+        "EzgbDatStr: NUL-term \"ezgb.dat\"; DirList hides this name via MemCmp_B0.",
+        "Marked .text:9 so DrawDirEntryLabel at $0bd1 stays instruction-aligned."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16b5",
+      "lines": [
+        "MicroSdInitErrorStr: NUL-term \"Micro SD initial error!\" for SdMenuMain.",
+        "Marked .text:3f covering OK/SAVER/slash/.GBC/.GB through U32ToAscii_B0."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16cd",
+      "lines": [
+        "MicroSdInitOkStr: NUL-term \"Micro SD initial OK!\" for SdMenuMain."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16e2",
+      "lines": [
+        "SaverDirStr: NUL-term \"/SAVER\"; BackupBranchEntry Open_B9 path."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16e9",
+      "lines": [
+        "PathSlashStr: NUL-term \"/\"; path join in browser/backup helpers."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16eb",
+      "lines": [
+        "ExtGbcStr: NUL-term \".GBC\" extension compare/append."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "16f0",
+      "lines": [
+        "ExtGbStr: NUL-term \".GB\" extension compare/append."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "190f",
+      "lines": [
+        "BatteryDryPadStr: NUL-term \" \" spacer drawn before BATTERY/DRY!!! chrome.",
+        "Marked .text:17 so FarCall_06_7309 at $1926 stays instruction-aligned."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1911",
+      "lines": [
+        "BatteryDryTitleStr: NUL-term \"BATTERY\" for BatteryCheck dry notice."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1919",
+      "lines": [
+        "BatteryDryMsgStr: NUL-term \"DRY!!!\" for BatteryCheck dry notice."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1920",
+      "lines": [
+        "BatteryDryOkStr: NUL-term \"[A]OK\" dismiss prompt for BatteryCheck."
       ]
     }
   ]
