@@ -3535,7 +3535,7 @@ BackupOpenSaverPath::
     add sp, -$1e
     ld hl, $001e
     push hl
-    ld hl, $572e
+    ld hl, SaverDirSlashStr
     push hl
     ld hl, $c3a5
     push hl
@@ -4616,14 +4616,9 @@ Jump_001_571c:
     ret
 
 
-    cpl
-    ld d, e
-    ld b, c
-    ld d, [hl]
-    ld b, l
-    ld d, d
-    cpl
-    nop
+SaverDirSlashStr::
+    db "/SAVER/", $00
+
     add sp, -$0e
     ld a, $01
     ld hl, sp+$14
@@ -6337,8 +6332,8 @@ Jump_001_601b:
 
 
 ; [ezgb]
-; DrawCardTypeScreen: DrawInfoPanelRect then DrawString 'Cardtype:' and MBC name
-; (NoMBC/MBC1/… via $d3eb index jump table).
+; DrawCardTypeScreen: DrawInfoPanelRect then DrawString CardtypeStr and MBC name
+; (MbcNoneStr/MBC1/… via $d3eb index jump table).
 
 DrawCardTypeScreen::
     add sp, -$1e
@@ -6355,7 +6350,7 @@ DrawCardTypeScreen::
     ld a, $00
     push af
     inc sp
-    ld hl, $625b
+    ld hl, CardtypeStr
     push hl
     call DrawString
     add sp, $05
@@ -6399,7 +6394,7 @@ Jump_001_606c:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6265
+    ld hl, MbcNoneStr
     push hl
     push bc
     call ApplyBasename
@@ -6411,7 +6406,7 @@ Jump_001_607d:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $626b
+    ld hl, Mbc1Str
     push hl
     push bc
     call ApplyBasename
@@ -6423,7 +6418,7 @@ Jump_001_608e:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6270
+    ld hl, Mbc2Str
     push hl
     push bc
     call ApplyBasename
@@ -6435,7 +6430,7 @@ Jump_001_609f:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6275
+    ld hl, Mbc3Str
     push hl
     push bc
     call ApplyBasename
@@ -6447,7 +6442,7 @@ Jump_001_60b0:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $627a
+    ld hl, Mbc5Str
     push hl
     push bc
     call ApplyBasename
@@ -6459,7 +6454,7 @@ Jump_001_60c1:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $627f
+    ld hl, Mbc1mStr
     push hl
     push bc
     call ApplyBasename
@@ -6471,7 +6466,7 @@ Jump_001_60d2:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6285
+    ld hl, MbcNotStr
     push hl
     push bc
     call ApplyBasename
@@ -6494,7 +6489,7 @@ Jump_001_60e0:
     ld a, $00
     push af
     inc sp
-    ld hl, $6289
+    ld hl, RomSizeLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -6553,7 +6548,7 @@ jr_001_611b:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6293
+    ld hl, SizeKbStr
     push hl
     push bc
     call FarCallTrampoline
@@ -6577,7 +6572,7 @@ jr_001_611b:
     ld a, $00
     push af
     inc sp
-    ld hl, $6296
+    ld hl, RamSizeLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -6660,7 +6655,7 @@ Jump_001_61af:
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $6293
+    ld hl, SizeKbStr
     push hl
     push bc
     call FarCallTrampoline
@@ -6684,7 +6679,7 @@ Jump_001_61af:
     ld a, $00
     push af
     inc sp
-    ld hl, $62a0
+    ld hl, BatteryLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -6698,7 +6693,7 @@ Jump_001_61af:
     ld a, $00
     push af
     inc sp
-    ld hl, $62aa
+    ld hl, BatteryYesStr
     push hl
     call DrawString
     add sp, $05
@@ -6711,7 +6706,7 @@ Jump_001_622e:
     ld a, $00
     push af
     inc sp
-    ld hl, $62ae
+    ld hl, BatteryNoStr
     push hl
     call DrawString
     add sp, $05
@@ -6745,88 +6740,47 @@ jr_001_6258:
     ret
 
 
-    ld b, e
-    ld h, c
-    ld [hl], d
-    ld h, h
-    ld [hl], h
-    ld a, c
-    ld [hl], b
-    ld h, l
-    ld a, [hl-]
-    nop
-    ld c, [hl]
-    ld l, a
-    ld c, l
-    ld b, d
-    ld b, e
-    nop
-    ld c, l
-    ld b, d
-    ld b, e
-    ld sp, $4d00
-    ld b, d
-    ld b, e
-    ld [hl-], a
-    nop
-    ld c, l
-    ld b, d
-    ld b, e
-    inc sp
-    nop
-    ld c, l
-    ld b, d
-    ld b, e
-    dec [hl]
-    nop
-    ld c, l
-    ld b, d
-    ld b, e
-    ld sp, $004d
-    ld c, [hl]
-    ld l, a
-    ld [hl], h
-    nop
-    ld d, d
-    ld c, a
-    ld c, l
-    jr nz, jr_001_6301
+CardtypeStr::
+    db "Cardtype:", $00
 
-    ld l, c
-    ld a, d
-    ld h, l
-    ld a, [hl-]
-    nop
-    ld c, e
-    ld b, d
-    nop
-    ld d, d
-    ld b, c
-    ld c, l
-    jr nz, jr_001_630e
+MbcNoneStr::
+    db "NoMBC", $00
 
-    ld l, c
-    ld a, d
-    ld h, l
-    ld a, [hl-]
-    nop
-    ld b, d
-    ld h, c
-    ld [hl], h
-    ld [hl], h
-    ld h, l
-    ld [hl], d
-    ld a, c
-    jr nz, jr_001_62e3
+Mbc1Str::
+    db "MBC1", $00
 
-    nop
-    ld e, c
-    ld h, l
-    ld [hl], e
-    nop
-    ld c, [hl]
-    ld l, a
-    nop
+Mbc2Str::
+    db "MBC2", $00
+
+Mbc3Str::
+    db "MBC3", $00
+
+Mbc5Str::
+    db "MBC5", $00
+
+Mbc1mStr::
+    db "MBC1M", $00
+
+MbcNotStr::
+    db "Not", $00
+
+RomSizeLabelStr::
+    db "ROM size:", $00
+
+SizeKbStr::
+    db "KB", $00
+
+RamSizeLabelStr::
+    db "RAM size:", $00
+
+BatteryLabelStr::
+    db "Battery :", $00
+
+BatteryYesStr::
+    db "Yes", $00
+
+BatteryNoStr::
+    db "No", $00
 
 ; [ezgb]
 ; DrawInfoPanelRect: StoreDrawParams($0002,$03) then DrawRect fill=$23 corners $7d25/$016c.
@@ -6853,8 +6807,8 @@ DrawInfoPanelRect::
 
 
 ; [ezgb]
-; BootRomInfoMenu: two-item menu "BOOT" / "ROM info" ($6424/$6429) over DrawInfoPanelRect.
-; Up/Down move; A on ROM info → DrawCardTypeScreen; A on BOOT draws "Loading" and
+; BootRomInfoMenu: two-item menu BootMenuBootStr / BootMenuRomInfoStr over DrawInfoPanelRect.
+; Up/Down move; A on ROM info → DrawCardTypeScreen; A on BOOT draws BootMenuLoadingStr and
 ; returns selection in E; B returns E=$ff. Orphan before BackupSaveDump.
 
 BootRomInfoMenu::
@@ -6874,7 +6828,6 @@ Jump_001_62dc:
     or [hl]
     jp z, Jump_001_6364
 
-jr_001_62e3:
     xor a
     dec hl
     or [hl]
@@ -6892,9 +6845,7 @@ jr_001_62e3:
     ld a, $00
     push af
     inc sp
-    ld hl, $6424
-
-jr_001_6301:
+    ld hl, BootMenuBootStr
     push hl
     call DrawString
     add sp, $05
@@ -6902,8 +6853,6 @@ jr_001_6301:
     push hl
     ld a, $03
     push af
-
-jr_001_630e:
     inc sp
     call StoreDrawParams
     add sp, $03
@@ -6912,7 +6861,7 @@ jr_001_630e:
     ld a, $00
     push af
     inc sp
-    ld hl, $6429
+    ld hl, BootMenuRomInfoStr
     push hl
     call DrawString
     add sp, $05
@@ -6932,7 +6881,7 @@ Jump_001_6328:
     ld a, $00
     push af
     inc sp
-    ld hl, $6424
+    ld hl, BootMenuBootStr
     push hl
     call DrawString
     add sp, $05
@@ -6948,7 +6897,7 @@ Jump_001_6328:
     ld a, $00
     push af
     inc sp
-    ld hl, $6429
+    ld hl, BootMenuRomInfoStr
     push hl
     call DrawString
     add sp, $05
@@ -7085,7 +7034,7 @@ Jump_001_63e2:
     ld a, $00
     push af
     inc sp
-    ld hl, $6432
+    ld hl, BootMenuLoadingStr
     push hl
     call DrawString
     add sp, $05
@@ -7097,28 +7046,14 @@ Jump_001_6421:
     ret
 
 
-    ld b, d
-    ld c, a
-    ld c, a
-    ld d, h
-    nop
-    ld d, d
-    ld c, a
-    ld c, l
-    jr nz, @+$6b
+BootMenuBootStr::
+    db "BOOT", $00
 
-    ld l, [hl]
-    ld h, [hl]
-    ld l, a
-    nop
-    ld c, h
-    ld l, a
-    ld h, c
-    ld h, h
-    ld l, c
-    ld l, [hl]
-    ld h, a
-    nop
+BootMenuRomInfoStr::
+    db "ROM info", $00
+
+BootMenuLoadingStr::
+    db "Loading", $00
 
 ; [ezgb]
 ; BackupSaveDump: FRAM→SAVER dump used by BackupSavePrompt. Opens via FarCall_06_7309

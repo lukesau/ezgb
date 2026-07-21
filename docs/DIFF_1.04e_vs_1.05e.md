@@ -58,20 +58,22 @@ relative to its neighbors should be checked for this before being treated as a r
 
 ### Retry-counter change (`0x982`, confirmed)
 
-Function at `Jump_000_0927`+ (1.04e) tracks two paired counters in WRAM: `$cc30` (an inner
-retry/attempt count) and `$cc2f` (an outer failure count). Logic in 1.04e: increment `$cc30`
-each call; if it reaches 20, reset `$cc30` to 0 and increment `$cc2f`. In 1.05e, the reset of
-`$cc30` is kept but the increment of `$cc2f` is removed, confirmed by direct byte comparison
-(the deleted 4 bytes are exactly `ld hl,$cc2f` / `inc [hl]`, opcodes `21 2f cc 34`).
+`DrawU32Decimal` (`00:092a`; 1.04e notes pointed at the preceding `DrawString`
+epilogue as a locator) tracks two paired counters in WRAM: `$cc30` (an inner
+retry/attempt count) and `$cc2f` (an outer failure count). Logic in 1.04e: increment
+`$cc30` each call; if it reaches 20, reset `$cc30` to 0 and increment `$cc2f`. In
+1.05e, the reset of `$cc30` is kept but the increment of `$cc2f` is removed,
+confirmed by direct byte comparison (the deleted 4 bytes are exactly `ld hl,$cc2f` /
+`inc [hl]`, opcodes `21 2f cc 34`).
 
-`$cc2f` is read elsewhere: the battery-dry notice clears it to 0, and a bank-0 function unique
-to 1.05e (`Call_000_0985`, right after the retry function) reads `$cc2f` and passes it to the
-UI-draw call, i.e. it's a user-visible counter, plausibly the "Micro SD Initial Error!" retry
-count shown to the user. Removing the "bump the visible counter" step while keeping the inner
-reset is consistent with the changelog's "Supported CGB without CPU suffix (Micro SD Initial
-Error issue)." This is the strongest candidate so far for that specific fix, not yet confirmed
-by tracing what actually calls into this counter function or what consumes `$cc2f`'s displayed
-value.
+`$cc2f` is read elsewhere: the battery-dry notice clears it to 0, and
+`SdReadRetryCount` (right after the retry function) reads `$cc2f` and passes it to
+the UI-draw call, i.e. it's a user-visible counter, plausibly the "Micro SD Initial
+Error!" retry count shown to the user. Removing the "bump the visible counter" step
+while keeping the inner reset is consistent with the changelog's "Supported CGB
+without CPU suffix (Micro SD Initial Error issue)." This is the strongest candidate
+so far for that specific fix, not yet confirmed by tracing what actually calls into
+this counter function or what consumes `$cc2f`'s displayed value.
 
 ### New cached field (`0xe89`, confirmed)
 
@@ -91,7 +93,7 @@ where the RTC rewrite lives.
 |---|---|---|---|
 | `0x80b`/`0x8a6` cluster | +32B, +29B (confirmed new function) | Real | See "New register-write helper" below |
 | `0xa25` | +62B | Not yet decoded | |
-| `0xaf1`-`0xc2a` cluster | +206B, +31B | Not yet decoded in detail | Falls in `Jump_001_4a63` region; likely more RTC-related register plumbing given proximity to the confirmed changes around it, not confirmed |
+| `0xaf1`-`0xc2a` cluster | +206B, +31B | Not yet decoded in detail | Falls in `DateToDaysSince1970` (`01:4xxx`); likely more RTC-related register plumbing given proximity to the confirmed changes around it, not confirmed |
 | `0xc6c` | +197B | Partially confirmed | The block containing the NOR-flash write sequence (`ld bc,$4000/ld a,$11/ld[bc],a` then `ld bc,$a000/ld a,$aa/ld[bc],a`), see "RTC NOR-flash persistence" below |
 | `0x1a88`-`0x1b06` cluster | -13B, +28B, +339B, +31B | Confirmed real, large | Contains the `TIME:`/`SET`/`AUTO SAVE:` menu-string-adjacent code and further NOR-flash-style writes (`$A000`/`$A001`/`$A00F`/`$A010`/`$A202`/`$A210`/`$A211`, a family of `$A0xx`-`$A2xx` addresses, consistent with a small in-cart RTC/NVRAM register block, not just a one-off flash unlock byte) |
 | `0x2728` | +56B | Not yet decoded | |

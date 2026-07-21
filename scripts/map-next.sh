@@ -133,6 +133,7 @@ echo "  4. ./scripts/regen-disasm.sh $VER"
 echo "  glossary: frontier/F = unnamed callee of a named fn;"
 echo "            O = unlabeled function after ret (add sp, -\$ prologue);"
 echo "            J = Jump_ that looks like a real entry (after ret);"
+echo "            D = interior debt (named fn still has auto Jump_/jr_);"
 echo "            needs_judgment=1 = deep-read before naming;"
 if [[ "$INCLUDE_LIB" -eq 1 || -n "$BANKS" ]]; then
   echo "            lib banks included (scope=$SCOPE)."

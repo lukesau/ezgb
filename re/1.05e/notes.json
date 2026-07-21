@@ -261,6 +261,16 @@
     },
     {
       "bank": 0,
+      "addr": "0f8d",
+      "lines": [
+        "FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list setup; on fail SdReadRetryCount.",
+        "Jump_000_0fcd/0ff4: zero $c2a2/$c2a3 count; memset $c4a4+$c9db; wire $c9f1->$c4a4, $c9f3=$00fe; DirList.",
+        "Jump_000_10df: if count nonzero DrawDirEntryLabel; then Delay+$002d, ReadJoypad loop.",
+        "Pad $02/$01: page cursor sp+$13 by $10 vs $c2a2 count (sp+$12 dirty); $40 cycles sp+$0e UI mode; else MenuKeyDispatch."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "0150",
       "lines": [
         "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.",
@@ -288,8 +298,10 @@
       "bank": 0,
       "addr": "239c",
       "lines": [
-        "DrawLine: Bresenham line in mode-1 framebuffer. Register ABI: BC=(x0,y0), DE=(x1,y1).",
-        "Uses GfxRowTable + ApplyPixel; also called from DrawRect edge walks and circle chords."
+        "DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|->$d72a, |dx|->$d729; err in wCircleErr/$d72d..$d731.",
+        "If |dx|<|dy| -> Jump_000_2519 (y-major); else x-major. Jump_000_23c4 may swap ends; $d72b = ±y step ($00/$ff).",
+        "Jump_000_2433: x-major pixel loop (ApplyPixel + row wrap $0130/$fed0); Jump_000_24bd: dy==0 horizontal run.",
+        "Jump_000_2519/jr_000_259e: y-major twin; Jump_000_260c: dx==0 vertical. Callers: DrawRect edges + circle chords."
       ]
     },
     {
@@ -1175,9 +1187,46 @@
       "bank": 4,
       "addr": "46f4",
       "lines": [
-        "DrawTimeAutosaveScreen: settings chrome. FPGA page $03 read $A200; draws",
-        "TIME:/SET/AUTO SAVE: via DrawRect/DrawString. Touches RomLoad_InitiatePoll",
-        "stash byte. Orphan after SetFpga7FD0_B4; -$6a frame."
+        "DrawTimeAutosaveScreen: sp+$3c=$A200; sp+$3d hilite; sp+$3e dirty; sp+$3f field 0..5; sp+$40 SET/SAV.",
+        "Redraw Jump_004_48f5; FPGA $A008..$A00C load @49ee; SAV date draw @4e42; input @5162 ReadJoypad.",
+        "Pad $02/$01: step field; $04: inc value (yr wrap $63 @sp+$2e, mon wrap $0c @sp+$2c, …); $08: dec mirror @5407.",
+        "Jump_004_5211+: sp+$3f dispatches bump/wrap; Jump_004_524a field2 uses $5276 month-len jp table; all converge Jump_004_53f2 (sp+$3e=$01)->48f5.",
+        "Jump_004_58d6 toggles $A200; Jump_004_5912 ret. Residual Jump_: clone bump arms + SET-mode pad twins."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "5915",
+      "lines": [
+        "TimeLabelStr: NUL-term \"TIME:\" column title for DrawTimeAutosaveScreen (.text blocked)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "591b",
+      "lines": [
+        "TimeSetLabelStr: NUL-term \"SET\" when auto-save flag (sp+$40) is clear (.text blocked)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "591f",
+      "lines": [
+        "AutoSaveLabelStr: NUL-term \"AUTO SAVE:\" column title (.text blocked)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "592a",
+      "lines": [
+        "AutoSaveSavLabelStr: NUL-term \"SAV\" shown when auto-save flag is set (.text blocked)."
+      ]
+    },
+    {
+      "bank": 4,
+      "addr": "592e",
+      "lines": [
+        "PathSlashStr_B4: NUL-term \"/\" for CStrCat date path fragments in time UI (.text blocked)."
       ]
     },
     {
@@ -1192,9 +1241,10 @@
       "bank": 1,
       "addr": "5163",
       "lines": [
-        "BackupOpenSaverPath: memcpy \"/SAVER/\" to $c3a5; farcall-append name; force",
-        "\".sav\" suffix; SetFpgaPage_B1 $00; Open_B6 via FarCall_06_7309 into $ca0f FIL.",
-        "Used by BackupSaveDump path. Orphan after RtcReadDaysClearRegs epilogue."
+        "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; Jump_001_51b2 force \".sav\"; Open_B6 FarCall_06_7309 \u2192 $ca0f.",
+        "Jump_001_5233..528b: $d3ed cart-type \u2192 byte size @sp+$14 ($0/$2000/$10000/$20000/$8000; $d3eb==2 special).",
+        "Jump_001_5298: open ok \u2192 re-open FA_READ, copy fsize, Jump_001_5327 read $200 + VramCopyStack into cart window.",
+        "Jump_001_53ee RTC/meta restore if sp+$08; Jump_001_54d1 open-fail blanks $FF then same write loop; both \u2192 PreLaunchFramStamp."
       ]
     },
     {
@@ -1501,8 +1551,8 @@
       "addr": "737f",
       "lines": [
         "Status-box draw family (bank 8), each reached via FarCallTrampoline:",
-        "DrawReadingBox $7344 'Reading....', DrawLoadingBox $737f 'Loading....',",
-        "DrawErrorFileBox $73ba 'Error file', DrawLastRomButtons $73f5 '[B]return'/'[A]start'.",
+        "DrawReadingBox + ReadingBoxStr, DrawLoadingBox + LoadingBoxStr,",
+        "DrawErrorFileBox + ErrorFileBoxStr, DrawLastRomButtons + LastRomReturnStr/StartStr.",
         "See docs/last-rom.md."
       ]
     },
@@ -1549,8 +1599,10 @@
       "bank": 1,
       "addr": "5c08",
       "lines": [
-        "MapCartTypeToUi: map cart/MBC type byte \u2192 $d3eb index for DrawCardTypeScreen",
-        "(0/1/2/3/4/6 buckets)."
+        "MapCartTypeToUi(type@sp+$02): Jump_001_5d11..5d41 map cart byte \u2192 $d3eb UI bucket 0/1/2/3/4/6 (default 6).",
+        "Jump_001_5d46: battery types ($03/$06/$09/$0d/$0f/$10/$13/$17/$1b/$1e/$22/$fd/$ff) set $d3ef=1 else 0.",
+        "Jump_001_5dbf: types $0f/$10 set $d3f0=1 (timer); Jump_001_5de1: $1c..$1e via $5dfd jp-table set $d3f1=1.",
+        "Outputs feed DrawCardTypeScreen / launch path. Falls into RomLoaderMain."
       ]
     },
     {
@@ -1622,8 +1674,8 @@
       "bank": 1,
       "addr": "601e",
       "lines": [
-        "DrawCardTypeScreen: DrawInfoPanelRect then DrawString 'Cardtype:' and MBC name",
-        "(NoMBC/MBC1/\u2026 via $d3eb index jump table)."
+        "DrawCardTypeScreen: DrawInfoPanelRect then DrawString CardtypeStr and MBC name",
+        "(MbcNoneStr/MBC1/\u2026 via $d3eb index jump table)."
       ]
     },
     {
@@ -1678,9 +1730,91 @@
       "bank": 1,
       "addr": "62d0",
       "lines": [
-        "BootRomInfoMenu: two-item menu \"BOOT\" / \"ROM info\" ($6424/$6429) over DrawInfoPanelRect.",
-        "Up/Down move; A on ROM info \u2192 DrawCardTypeScreen; A on BOOT draws \"Loading\" and",
+        "BootRomInfoMenu: two-item menu BootMenuBootStr / BootMenuRomInfoStr over DrawInfoPanelRect.",
+        "Up/Down move; A on ROM info \u2192 DrawCardTypeScreen; A on BOOT draws BootMenuLoadingStr and",
         "returns selection in E; B returns E=$ff. Orphan before BackupSaveDump."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "625b",
+      "lines": [
+        "CardtypeStr: NUL-term \"Cardtype:\" title for DrawCardTypeScreen (.text blocked).",
+        "MBC name table follows: MbcNoneStr..MbcNotStr, then RomSizeLabelStr/SizeKbStr/",
+        "RamSizeLabelStr/BatteryLabelStr/BatteryYesStr/BatteryNoStr."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "572e",
+      "lines": [
+        "SaverDirSlashStr: NUL-term \"/SAVER/\" memcpy src for BackupOpenSaverPath (.text blocked).",
+        "Sibling SaverDirStr (00:16e2) is \"/SAVER\" without trailing slash."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "6424",
+      "lines": [
+        "BootMenuBootStr: NUL-term \"BOOT\" row label for BootRomInfoMenu (.text blocked)."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "6429",
+      "lines": [
+        "BootMenuRomInfoStr: NUL-term \"ROM info\" row label for BootRomInfoMenu (.text blocked)."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "6432",
+      "lines": [
+        "BootMenuLoadingStr: NUL-term \"Loading\" drawn when user picks BOOT (.text blocked)."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "7332",
+      "lines": [
+        "MenuTabSdStr / MenuTabSetStr / MenuTabHelpStr: \" SD \" / \" SET \" / \" HELP \" tab labels",
+        "(.text blocked). Was misdisassembled as jr noise before DrawReadingBox."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "7374",
+      "lines": [
+        "ReadingBoxStr: NUL-term \"Reading...\" for DrawReadingBox (.text blocked)."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "73af",
+      "lines": [
+        "LoadingBoxStr: NUL-term \"Loading...\" for DrawLoadingBox (.text blocked)."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "73ea",
+      "lines": [
+        "ErrorFileBoxStr: NUL-term \"Error file\" for DrawErrorFileBox (.text blocked)."
+      ]
+    },
+    {
+      "bank": 8,
+      "addr": "7458",
+      "lines": [
+        "LastRomReturnStr / LastRomStartStr: \"[B]return\" / \"[A]start\" for DrawLastRomButtons."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0985",
+      "lines": [
+        "SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);",
+        "then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards."
       ]
     },
     {
@@ -1701,8 +1835,10 @@
       "bank": 4,
       "addr": "4207",
       "lines": [
-        "SetFpgaRomSize_B4: map cart ROM-size code (0..8, $52..$54) \u2192 bank mask; clamp vs",
-        "$c2a4/$c2a5; unlock and write $7FC1/$7FC2. Launch farcall from $1604 (docs/launch-trace)."
+        "SetFpgaRomSize_B4(arg@sp+$0a): switch \u2192 16-bit bank mask @sp+$02, then clamp vs $c2a4/$c2a5 caps.",
+        "Jump_004_426b..42bb: codes 0..8 \u2192 masks 0,$03,$07,$0f,$1f,$3f,$7f,$00ff,$01ff; $52..$54 \u2192 $47/$4f/$5f.",
+        "Jump_004_42e3 default 0; Jump_004_42ea: if mask > (caps-1), lower via $c2a4 bit ladder ($01\u21921 \u2026 $80\u2192$ff) + $c2a5:$01\u2192$01ff.",
+        "Jump_004_439f: FPGA unlock $7F00/$10/$20=$e1/$e2/$e3; write mask lo\u2192$7FC1, hi\u2192$7FC2; commit $7FF0=$e4. Launch @$1604."
       ]
     },
     {

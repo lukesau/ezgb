@@ -11,18 +11,22 @@ and agents share, use:
 Cross-references for a kernel version:
   1. kernel.sym          - human names already assigned (bank:addr -> name)
   2. docs/*.md           - Call_/Jump_/jr_/Data_/Unknown_ citations
-  3. disassembly/*.asm   - `call Call_BBB_AAAA` fan-in
+  3. disassembly/*.asm   - `call` fan-in (`Call_BBB_AAAA` or human name → sym)
   4. Call_ bodies        - still-auto entry points (even with 0 call sites)
-  5. Jump_ seams         - only when docs cite them, or they sit after a `ret`
-                           with a function prologue (real entry, not a loop head)
+  5. Jump_ seams         - real entries after a `ret` with a function prologue
+                           (not loop heads / epilogues / mid-function labels)
   6. Orphans             - unlabeled code after `ret` with a stack prologue
                            (`add sp, -$…`, `ldhl sp`, or `push`); address estimated
                            by walking from the prior label
+  7. Interior debt       - named functions that still contain auto Jump_/jr_
+                           labels (annotation queue once Call_/frontier work is done)
 
 Internal `jp Jump_…` loops are still excluded from fan-in (they inflate scores).
-After high-fan-in Call_ targets are named, the worklist must keep feeding from
-(5)/(6) and doc-cited Jump_ — otherwise map-next returns NO_TARGET while
-thousands of Jump_/orphan symbols remain.
+After Call_ labels are renamed, fan-in still counts `call HumanName` via kernel.sym.
+Docs may boost ranking via cite count, but cannot resurrect interior or epilogue
+Jump_ labels (including stale Call_/Jump_ mentions). Interior checks use ROM
+code symbols only (not WRAM / `.text:` magics). When the primary unnamed queue is
+exhausted, app mode appends interior-debt rows (mark D: c=Jump_ count, d=jr_ count).
 
 Usage:
   scripts/doc-symbol-coverage.py [version] [flags]
@@ -62,8 +66,11 @@ LIB_BANKS = frozenset({"03", "05", "06", "07", "09"})
 SYMREF_RX = re.compile(r"\b(?:Call|Jump|jr|Data|Unknown)_([0-9a-fA-F]{3})_([0-9a-fA-F]{4})\b")
 # Fan-in: real call sites only (not jp/jr to Jump_ loop heads).
 CALLSITE_RX = re.compile(r"\bcall\s+Call_([0-9a-fA-F]{3})_([0-9a-fA-F]{4})\b", re.IGNORECASE)
-CALL_LABEL_RX = re.compile(r"^Call_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$")
+CALL_TARGET_RX = re.compile(r"\bcall\s+([A-Za-z_][\w]*)\b", re.IGNORECASE)
+CALL_AUTO_NAME_RX = re.compile(r"^Call_([0-9a-fA-F]{3})_([0-9a-fA-F]{4})$", re.IGNORECASE)
 JUMP_LABEL_RX = re.compile(r"^Jump_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$")
+JR_LABEL_RX = re.compile(r"^jr_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$")
+CALL_LABEL_RX = re.compile(r"^Call_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$")
 AUTO_LABEL_RX = re.compile(
     r"^(?:Call|Jump|jr|Data|Unknown)_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$"
 )
@@ -105,6 +112,36 @@ def load_named(version):
     return named
 
 
+def is_rom_code_symbol(name, addr_s):
+    """True for callable ROM labels; false for WRAM / mgbdis magics (.text:N)."""
+    if not name or name.startswith("."):
+        return False
+    try:
+        addr = int(addr_s, 16)
+    except ValueError:
+        return False
+    return addr < 0x8000
+
+
+def name_to_key_map(named):
+    """Human label -> (bank, addr); first ROM-code binding wins."""
+    out = {}
+    for key, name in named.items():
+        if not is_rom_code_symbol(name, key[1]):
+            continue
+        if name not in out:
+            out[name] = key
+    return out
+
+
+def resolve_call_target(target, name_to_key):
+    """Map a `call X` operand to (bank, addr), or None."""
+    m = CALL_AUTO_NAME_RX.match(target)
+    if m:
+        return (f"{int(m.group(1), 16):02x}", m.group(2).lower())
+    return name_to_key.get(target)
+
+
 def scan_docs():
     counts = collections.Counter()
     for f in glob.glob(str(ROOT / "docs" / "*.md")):
@@ -114,12 +151,16 @@ def scan_docs():
     return counts
 
 
-def scan_call_fanin(version):
+def scan_call_fanin(version, named=None):
+    """Count `call` sites to Call_* or human names (via kernel.sym)."""
+    name_to_key = name_to_key_map(named or {})
     counts = collections.Counter()
     for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
         text = Path(f).read_text(encoding="utf-8", errors="ignore")
-        for bank, addr in CALLSITE_RX.findall(text):
-            counts[(f"{int(bank, 16):02x}", addr.lower())] += 1
+        for target in CALL_TARGET_RX.findall(text):
+            key = resolve_call_target(target, name_to_key)
+            if key:
+                counts[key] += 1
     return counts
 
 
@@ -285,12 +326,17 @@ def body_until(lines, start):
 
 
 def scan_bodies_and_frontier(version, named):
-    """Map Call_/Jump_ addr -> body; Call_ targets invoked from named fns."""
+    """Map Call_/Jump_ addr -> body; unnamed callees invoked from named fns."""
     bodies = {}
     call_keys = set()
     jump_keys = set()
     frontier = set()
-    name_to_key = {name: key for key, name in named.items()}
+    name_to_key = name_to_key_map(named)
+    # Detect named function entries (any non-magic label in kernel.sym).
+    all_name_to_key = {}
+    for key, name in named.items():
+        if name and not name.startswith("."):
+            all_name_to_key.setdefault(name, key)
 
     for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
         lines = Path(f).read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -320,12 +366,14 @@ def scan_bodies_and_frontier(version, named):
             in_named = False
             if auto_key and auto_key in named:
                 in_named = True
-            elif label_name and label_name in name_to_key:
+            elif label_name and label_name in all_name_to_key:
                 in_named = True
 
             if in_named:
-                for bank, addr in CALLSITE_RX.findall(body):
-                    frontier.add((f"{int(bank, 16):02x}", addr.lower()))
+                for target in CALL_TARGET_RX.findall(body):
+                    dest = resolve_call_target(target, name_to_key)
+                    if dest and dest not in named:
+                        frontier.add(dest)
 
             i = j
 
@@ -456,6 +504,136 @@ def scan_orphans(version, named):
     return orphans, orphan_meta
 
 
+def named_rom_spans(named):
+    """Per bank: sorted list of (addr_int, key, name) for ROM code symbols."""
+    by_bank = collections.defaultdict(list)
+    for key, name in named.items():
+        bank, addr_s = key
+        if not is_rom_code_symbol(name, addr_s):
+            continue
+        try:
+            by_bank[bank].append((int(addr_s, 16), key, name))
+        except ValueError:
+            continue
+    for bank in by_bank:
+        by_bank[bank].sort()
+    return by_bank
+
+
+def scan_interior_debt(version, named, skip_banks=None, only_banks=None):
+    """Named functions that still contain auto Jump_/jr_ labels.
+
+    Returns list of (key, name, jump_count, jr_count, has_abs).
+    Span starts at the named label and ends before the next named ROM symbol,
+    or at a function-ending `ret` (ret followed by a new entry / unlabeled code),
+    so gaps of unnamed code are not charged to the previous named fn.
+    """
+    skip = set(skip_banks or ())
+    spans = named_rom_spans(named)
+    debt = []
+
+    for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
+        path = Path(f)
+        m_bank = re.search(r"bank_([0-9a-fA-F]{3})\.asm$", path.name, re.I)
+        if not m_bank:
+            continue
+        bank = f"{int(m_bank.group(1), 16):02x}"
+        if only_banks is not None and bank not in only_banks:
+            continue
+        if bank in skip:
+            continue
+        bank_spans = spans.get(bank)
+        if not bank_spans:
+            continue
+
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        name_to_line = {}
+        for i, ln in enumerate(lines):
+            m = ANY_LABEL_RX.match(ln)
+            if m:
+                name_to_line.setdefault(m.group(1), i)
+
+        named_names = {name for _addr, _key, name in bank_spans}
+
+        for _addr, key, name in bank_spans:
+            start_i = name_to_line.get(name)
+            if start_i is None:
+                continue
+
+            jumps = 0
+            jrs = 0
+            end_i = start_i + 1
+            i = start_i + 1
+            while i < len(lines):
+                ln = lines[i]
+                m_named = ANY_LABEL_RX.match(ln)
+                if m_named and m_named.group(1) in named_names and m_named.group(1) != name:
+                    break
+                if JUMP_LABEL_RX.match(ln):
+                    jumps += 1
+                    i += 1
+                    end_i = i
+                    continue
+                if JR_LABEL_RX.match(ln):
+                    jrs += 1
+                    i += 1
+                    end_i = i
+                    continue
+                if RET_RX.match(ln):
+                    end_i = i + 1
+                    k = i + 1
+                    while k < len(lines) and (
+                        not lines[k].strip() or lines[k].strip().startswith(";")
+                    ):
+                        k += 1
+                    if k >= len(lines):
+                        break
+                    if JUMP_LABEL_RX.match(lines[k]):
+                        # Jump_ after ret: new entry if it has a prologue, else
+                        # same-function path label (SDCC early-ret shape).
+                        code_i = k + 1
+                        while code_i < len(lines) and (
+                            not lines[code_i].strip()
+                            or lines[code_i].strip().startswith(";")
+                            or ANY_LABEL_RX.match(lines[code_i])
+                            or AUTO_LABEL_RX.match(lines[code_i])
+                        ):
+                            if JUMP_LABEL_RX.match(lines[code_i]) or JR_LABEL_RX.match(
+                                lines[code_i]
+                            ):
+                                break
+                            if ANY_LABEL_RX.match(lines[code_i]) or AUTO_LABEL_RX.match(
+                                lines[code_i]
+                            ):
+                                code_i += 1
+                                continue
+                            if not lines[code_i].strip() or lines[code_i].strip().startswith(
+                                ";"
+                            ):
+                                code_i += 1
+                                continue
+                            break
+                        if code_i < len(lines) and ENTRY_PROLOGUE_RX.match(lines[code_i]):
+                            break
+                        i = k
+                        continue
+                    # ret then jr_ / unlabeled / other → function ended
+                    break
+                if CODE_LINE_RX.match(ln):
+                    end_i = i + 1
+                i += 1
+
+            if jumps == 0 and jrs == 0:
+                continue
+            chunk = "\n".join(lines[start_i:end_i])
+            debt.append(
+                (key, name, jumps, jrs, bool(ABS_APP_RX.search(chunk)))
+            )
+
+    debt.sort(key=lambda r: (-(r[2] + r[3]), -int(r[4]), r[0]))
+    return debt
+
+
 def rank_candidates(
     version,
     frontier_only=False,
@@ -468,10 +646,11 @@ def rank_candidates(
 ):
     """Return (rows, skips, extras).
 
-    rows: list of (key, name, docs, fanin, is_frontier, is_orphan, kind)
-      kind in {"call", "jump", "orphan", "doc"}
+    rows: list of (key, name, docs, fanin, is_frontier, is_orphan, kind, has_abs)
+      kind in {"call", "jump", "orphan", "doc", "debt"}
+      For kind=="debt": fanin=Jump_ count, docs=jr_ count (compact c/d columns).
     skips: dict of filter counts
-    extras: {bodies, frontier, orphans, orphan_meta, docs, fanin, named}
+    extras: {bodies, frontier, orphans, orphan_meta, docs, fanin, named, ...}
     """
     skip = set(skip_banks or ())
     if not include_lib and only_banks is None:
@@ -479,7 +658,7 @@ def rank_candidates(
 
     named = load_named(version)
     docs = scan_docs()
-    fanin = scan_call_fanin(version)
+    fanin = scan_call_fanin(version, named)
     bodies, frontier, call_keys, jump_keys = scan_bodies_and_frontier(version, named)
     entry_jumps = scan_entry_jumps(version, bodies, jump_keys, named)
     orphans, orphan_meta = scan_orphans(version, named)
@@ -490,10 +669,13 @@ def rank_candidates(
 
     keys = set(docs) | set(fanin) | set(call_keys) | set(entry_jumps) | set(orphans)
 
-    # Per-bank sorted named ROM addrs — Jump_ strictly between two named symbols
-    # is an interior branch (e.g. Jump_001_4a63 inside DateToDaysSince1970).
+    # Per-bank sorted named ROM *code* addrs — Jump_ strictly between two named
+    # symbols is an interior branch. Exclude WRAM and mgbdis magics (.text:N)
+    # so bank-0 WRAM does not become the "last named" symbol.
     named_by_bank = collections.defaultdict(list)
-    for (b, a), _n in named.items():
+    for (b, a), n in named.items():
+        if not is_rom_code_symbol(n, a):
+            continue
         try:
             named_by_bank[b].append(int(a, 16))
         except ValueError:
@@ -548,7 +730,8 @@ def rank_candidates(
             continue
 
         body = bodies.get(key, orphans.get(key, ""))
-        if skip_runtime and key not in docs:
+        doc_cited = key in docs
+        if skip_runtime and not doc_cited:
             if key in bodies and is_sdcc_runtime(body):
                 skips["runtime"] += 1
                 continue
@@ -556,17 +739,21 @@ def rank_candidates(
                 skips["padding"] += 1
                 continue
 
-        # Skip Jump_ epilogues (tiny/empty ret bodies), including doc-cited ones —
-        # docs often name the label just before an orphan (e.g. Jump_000_0927).
-        # Empty body happens when a jr_* alias sits on the next line.
+        # Skip Jump_ epilogues (tiny/empty ret bodies), even when doc-cited.
+        # Orphan inheritance below still credits a following real function.
         if key in jump_keys:
             code = code_lines(body)
             if not code or is_sdcc_runtime(body):
                 skips["epilogue"] += 1
                 continue
 
-        # Mid-function Jump_ labels (not real entries after ret).
-        if key in jump_keys and key not in entry_jumps and is_interior_jump(bank, addr):
+        # Mid-function Jump_ labels (not real entries after ret). Docs cannot
+        # resurrect these — cite the human name or bank:addr once known.
+        if (
+            key in jump_keys
+            and key not in entry_jumps
+            and is_interior_jump(bank, addr)
+        ):
             skips["interior"] += 1
             continue
 
@@ -630,9 +817,29 @@ def rank_candidates(
             )
         )
 
+    # Interior debt: named fns still holding auto Jump_/jr_. Appended after
+    # primary unnamed work so Call_/frontier stay first; skipped under
+    # --frontier-only (map-next falls back to plain --app when F is empty).
+    debt_rows = []
+    if app_mode and not frontier_only:
+        for key, name, jumps, jrs, has_abs in scan_interior_debt(
+            version, named, skip_banks=skip, only_banks=only_banks
+        ):
+            debt_rows.append(
+                (
+                    key,
+                    name,
+                    jrs,       # d column
+                    jumps,     # c column
+                    False,
+                    False,
+                    "debt",
+                    has_abs,
+                )
+            )
+
     # Prefer: docs (known seams), frontier, orphans with WRAM/FPGA, other orphans,
-    # entry jumps, fan-in, then addr. Tiny doc-cited epilogues sort below orphans
-    # that inherited their docrefs.
+    # entry jumps, fan-in, then addr. Debt tier sorts after all primary rows.
     if app_mode or frontier_only:
         rows.sort(
             key=lambda r: (
@@ -647,6 +854,10 @@ def rank_candidates(
                 r[0],
             )
         )
+        debt_rows.sort(
+            key=lambda r: (-(r[3] + r[2]), -int(r[7]), r[0])
+        )
+        rows.extend(debt_rows)
     else:
         rows.sort(key=lambda r: (r[1] != "", -r[3], -r[2], r[0]))
 
@@ -661,6 +872,7 @@ def rank_candidates(
         "call_keys": call_keys,
         "jump_keys": jump_keys,
         "entry_jumps": entry_jumps,
+        "debt_count": len(debt_rows),
     }
     return rows, skips, extras
 
@@ -705,7 +917,7 @@ def main():
         # Legacy full dump: docs + fan-in only (no body filters).
         named = load_named(version)
         docs = scan_docs()
-        fanin = scan_call_fanin(version)
+        fanin = scan_call_fanin(version, named)
         rows = []
         for key in set(docs) | set(fanin):
             name = named.get(key, "")
@@ -754,13 +966,19 @@ def main():
             skip_parts.append(f"{skips['nonfrontier']} non-frontier")
         if skips.get("unref_orphan"):
             skip_parts.append(f"{skips['unref_orphan']} unref-orphan")
+        debt_n = extras.get("debt_count", 0)
+        primary_n = total - debt_n
+        if debt_n:
+            parts.append(f"{primary_n} primary + {debt_n} interior-debt")
         if skip_parts:
             parts.append(f"skipped {', '.join(skip_parts)}")
         parts.append(f"show {len(rows)}")
         print("; ".join(parts))
         print(f"{'addr':7} {'c':>3} {'d':>2}  fr")
         for (bank, addr), name, dref, fin, fr, orphan, kind, _abs in rows:
-            if fr:
+            if kind == "debt":
+                mark = "D"
+            elif fr:
                 mark = "F"
             elif orphan:
                 mark = "O"
@@ -769,6 +987,8 @@ def main():
             else:
                 mark = "."
             print(f"{bank}:{addr}  {fin:>3} {dref:>2}  {mark}")
+        if any(r[6] == "debt" for r in rows):
+            print("# D = interior debt on named fn (c=Jump_ count, d=jr_ count)")
     else:
         print(f"version {version}: {len(documented)} functions referenced in docs, "
               f"{doc_named} named, {len(documented) - doc_named} still unnamed")
@@ -781,6 +1001,11 @@ def main():
             print(f"{'addr':7} {'name':24} {'docrefs':>7} {'callsites':>9} {'fr':>3}")
             print("-" * 55)
             for (bank, addr), name, dref, fin, fr, orphan, kind, _abs in rows:
+                if kind == "debt":
+                    mark = "D"
+                    # Show jump/jr in callsites/docrefs slots for verbose debt rows.
+                    print(f"{bank}:{addr}  {name or '(UNNAMED)':24} {dref:>7} {fin:>9} {mark:>3}")
+                    continue
                 if fr:
                     mark = "F"
                 elif orphan:

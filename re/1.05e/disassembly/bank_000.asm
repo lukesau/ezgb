@@ -2325,6 +2325,10 @@ Jump_000_0982:
     ret
 
 
+; [ezgb]
+; SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);
+; then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.
+
 SdReadRetryCount::
     ld hl, $cc2f
     ld a, [hl]

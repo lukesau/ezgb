@@ -1408,8 +1408,8 @@ InitTimeAutosaveFpga_B4::
 
 ; [ezgb]
 ; DrawTimeAutosaveScreen: settings chrome. FPGA page $03 read $A200; draws
-; TIME:/SET/AUTO SAVE: via DrawRect/DrawString. Touches RomLoad_InitiatePoll
-; stash byte. Orphan after SetFpga7FD0_B4; -$6a frame.
+; TimeLabelStr / TimeSetLabelStr / AutoSaveLabelStr / AutoSaveSavLabelStr via DrawString.
+; Toggles SET vs SAV at ($0310,$03) from sp+$40. Orphan after InitTimeAutosaveFpga_B4.
 
 DrawTimeAutosaveScreen::
     add sp, -$6a
@@ -1470,7 +1470,7 @@ DrawTimeAutosaveScreen::
     ld a, $05
     push af
     inc sp
-    ld hl, $5915
+    ld hl, TimeLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -1495,7 +1495,7 @@ DrawTimeAutosaveScreen::
     ld a, $03
     push af
     inc sp
-    ld hl, $591b
+    ld hl, TimeSetLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -1511,7 +1511,7 @@ DrawTimeAutosaveScreen::
     ld a, $0a
     push af
     inc sp
-    ld hl, $591f
+    ld hl, AutoSaveLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -1812,7 +1812,7 @@ Jump_004_492d:
     ld a, $03
     push af
     inc sp
-    ld hl, $591b
+    ld hl, TimeSetLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -1825,7 +1825,7 @@ Jump_004_4959:
     ld a, $03
     push af
     inc sp
-    ld hl, $592a
+    ld hl, AutoSaveSavLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -2139,7 +2139,7 @@ Jump_004_4aad:
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $592e
+    ld hl, PathSlashStr_B4
     push hl
     push bc
     call CStrCat
@@ -2274,7 +2274,7 @@ Jump_004_4b4d:
     ld a, $01
     push af
     inc sp
-    ld hl, $592e
+    ld hl, PathSlashStr_B4
     push hl
     call DrawString
     add sp, $05
@@ -2791,7 +2791,7 @@ Jump_004_4e42:
     ld a, $03
     push af
     inc sp
-    ld hl, $592a
+    ld hl, AutoSaveSavLabelStr
     push hl
     call DrawString
     add sp, $05
@@ -2888,7 +2888,7 @@ Jump_004_4ec6:
     ld a, $01
     push af
     inc sp
-    ld hl, $592e
+    ld hl, PathSlashStr_B4
     push hl
     call DrawString
     add sp, $05
@@ -2977,7 +2977,7 @@ Jump_004_4f48:
     ld a, $01
     push af
     inc sp
-    ld hl, $592e
+    ld hl, PathSlashStr_B4
     push hl
     call DrawString
     add sp, $05
@@ -5008,107 +5008,93 @@ Jump_004_5912:
     ret
 
 
-    ld d, h
-    ld c, c
-    ld c, l
-    ld b, l
-    ld a, [hl-]
-    nop
-    ld d, e
-    ld b, l
-    ld d, h
-    nop
-    ld b, c
-    ld d, l
-    ld d, h
-    ld c, a
-    jr nz, jr_004_5978
+TimeLabelStr::
+    db "TIME:", $00
 
-    ld b, c
-    ld d, [hl]
-    ld b, l
-    ld a, [hl-]
-    nop
-    ld d, e
-    ld b, c
-    ld d, [hl]
-    nop
-    cpl
-    nop
-    ld a, [hl-]
-    nop
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+TimeSetLabelStr::
+    db "SET", $00
 
-jr_004_5978:
+AutoSaveLabelStr::
+    db "AUTO SAVE:", $00
+
+AutoSaveSavLabelStr::
+    db "SAV", $00
+
+PathSlashStr_B4::
+    db "/", $00
+
+    ld a, [hl-]
+    nop
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

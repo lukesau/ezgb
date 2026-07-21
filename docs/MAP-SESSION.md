@@ -52,10 +52,10 @@ Examples:
 
 | Worklist | Search for any of |
 |---|---|
-| `00:27ba` | `Call_000_27ba` or `Jump_000_27ba` |
-| `00:298f` | `Call_000_298f` (already renamed to `U32Shr` if you regen’d) |
-| `01:5db2` | `Call_001_5db2` |
-| `04:48f5` | `Call_004_48f5` |
+| `00:27ba` | `Call_000_27ba` or `Jump_000_27ba` (unnamed auto-label) |
+| `00:298f` | `U32Shr` (already named — search the human label) |
+| `01:55c2` | `PreLaunchFramStamp` |
+| `04:46f4` | `DrawTimeAutosaveScreen` |
 
 After you name something in `kernel.sym` and regen, the label becomes the human
 name (`U32Shr:`) instead of `Call_000_298f:`. Searching the **address** still works:
@@ -144,10 +144,17 @@ Avoid RGBDS reserved names (`Strlen` → `CStrLen`, etc.).
 
 Worklist marks: `F` = frontier (unnamed callee of a named fn), `O` = orphan
 (unlabeled `add sp, -$…` body after a `ret` — address estimated), `J` = `Jump_`
-that sits after a `ret` with a prologue (real entry, not a loop head). Doc-cited
-`Jump_` seams also stay on the list even when call fan-in is exhausted.
-Unreferenced orphans (0 call sites, no doc/frontier/abs) are dropped so the
-loop is not stuck on dead helpers (e.g. `00:2ac6`).
+that sits after a `ret` with a prologue (real entry, not a loop head), `D` =
+interior debt (named function that still contains auto `Jump_`/`jr_` — annotate
+control flow, do not name those labels as top-level APIs). Primary unnamed
+work (`F`/`O`/`J`/`Call_`) always ranks above `D`. Interior and epilogue
+`Jump_` labels are always dropped from the naming queue (docs cannot resurrect
+them) — cite the human name or `bank:addr` once known; tutorial examples must
+use already-named symbols, not live `Call_*`/`Jump_*`. Fan-in counts
+`call HumanName` via `kernel.sym`, not only remaining `call Call_*`. Interior
+checks ignore WRAM / `.text:` magics. Unreferenced orphans (0 call sites, no
+doc/frontier/abs) are dropped so the loop is not stuck on dead helpers
+(e.g. `00:2ac6`).
 
 FatFs bank-start `ret` stubs: `RetStub_B5` / `RetStub_B6` / `RetStub_B9`
 (`xx:4000` before `MemCpy16_B*`).

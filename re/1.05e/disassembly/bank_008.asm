@@ -12529,7 +12529,7 @@ jr_008_7152:
     ld a, $04
     push af
     inc sp
-    ld hl, $7332
+    ld hl, MenuTabSdStr
     push hl
     call DrawString
     add sp, $05
@@ -12545,7 +12545,7 @@ jr_008_7152:
     ld a, $05
     push af
     inc sp
-    ld hl, $7337
+    ld hl, MenuTabSetStr
     push hl
     call DrawString
     add sp, $05
@@ -12554,7 +12554,7 @@ jr_008_7152:
     ld a, $06
     push af
     inc sp
-    ld hl, $733d
+    ld hl, MenuTabHelpStr
     push hl
     call DrawString
     add sp, $05
@@ -12602,7 +12602,7 @@ jr_008_7210:
     ld a, $05
     push af
     inc sp
-    ld hl, $7337
+    ld hl, MenuTabSetStr
     push hl
     call DrawString
     add sp, $05
@@ -12618,7 +12618,7 @@ jr_008_7210:
     ld a, $04
     push af
     inc sp
-    ld hl, $7332
+    ld hl, MenuTabSdStr
     push hl
     call DrawString
     add sp, $05
@@ -12627,7 +12627,7 @@ jr_008_7210:
     ld a, $06
     push af
     inc sp
-    ld hl, $733d
+    ld hl, MenuTabHelpStr
     push hl
     call DrawString
     add sp, $05
@@ -12675,7 +12675,7 @@ jr_008_728b:
     ld a, $06
     push af
     inc sp
-    ld hl, $733d
+    ld hl, MenuTabHelpStr
     push hl
     call DrawString
     add sp, $05
@@ -12691,7 +12691,7 @@ jr_008_728b:
     ld a, $04
     push af
     inc sp
-    ld hl, $7332
+    ld hl, MenuTabSdStr
     push hl
     call DrawString
     add sp, $05
@@ -12700,7 +12700,7 @@ jr_008_728b:
     ld a, $05
     push af
     inc sp
-    ld hl, $7337
+    ld hl, MenuTabSetStr
     push hl
     call DrawString
     add sp, $05
@@ -12748,25 +12748,14 @@ Jump_008_7331:
     ret
 
 
-    jr nz, jr_008_7387
+MenuTabSdStr::
+    db " SD ", $00
 
-    ld b, h
-    jr nz, jr_008_7337
+MenuTabSetStr::
+    db " SET ", $00
 
-jr_008_7337:
-    jr nz, jr_008_738c
-
-    ld b, l
-    ld d, h
-    jr nz, jr_008_733d
-
-jr_008_733d:
-    jr nz, jr_008_7387
-
-    ld b, l
-    ld c, h
-    ld d, b
-    jr nz, DrawReadingBox
+MenuTabHelpStr::
+    db " HELP ", $00
 
 DrawReadingBox::
     ld hl, $0002
@@ -12790,27 +12779,20 @@ DrawReadingBox::
     ld a, $0a
     push af
     inc sp
-    ld hl, $7374
+    ld hl, ReadingBoxStr
     push hl
     call DrawString
     add sp, $05
     ret
 
 
-    ld d, d
-    ld h, l
-    ld h, c
-    ld h, h
-    ld l, c
-    ld l, [hl]
-    ld h, a
-    ld l, $2e
-    ld l, $00
+ReadingBoxStr::
+    db "Reading...", $00
 
 ; [ezgb]
 ; Status-box draw family (bank 8), each reached via FarCallTrampoline:
-; DrawReadingBox $7344 'Reading....', DrawLoadingBox $737f 'Loading....',
-; DrawErrorFileBox $73ba 'Error file', DrawLastRomButtons $73f5 '[B]return'/'[A]start'.
+; DrawReadingBox + ReadingBoxStr, DrawLoadingBox + LoadingBoxStr,
+; DrawErrorFileBox + ErrorFileBoxStr, DrawLastRomButtons + LastRomReturnStr/StartStr.
 ; See docs/last-rom.md.
 
 DrawLoadingBox::
@@ -12819,12 +12801,8 @@ DrawLoadingBox::
     ld a, $03
     push af
     inc sp
-
-jr_008_7387:
     call StoreDrawParams
     add sp, $03
-
-jr_008_738c:
     ld hl, $016c
     push hl
     ld hl, $7d25
@@ -12839,22 +12817,15 @@ jr_008_738c:
     ld a, $0a
     push af
     inc sp
-    ld hl, $73af
+    ld hl, LoadingBoxStr
     push hl
     call DrawString
     add sp, $05
     ret
 
 
-    ld c, h
-    ld l, a
-    ld h, c
-    ld h, h
-    ld l, c
-    ld l, [hl]
-    ld h, a
-    ld l, $2e
-    ld l, $00
+LoadingBoxStr::
+    db "Loading...", $00
 
 DrawErrorFileBox::
     ld hl, $0002
@@ -12878,24 +12849,15 @@ DrawErrorFileBox::
     ld a, $0a
     push af
     inc sp
-    ld hl, $73ea
+    ld hl, ErrorFileBoxStr
     push hl
     call DrawString
     add sp, $05
     ret
 
 
-    ld b, l
-    ld [hl], d
-    ld [hl], d
-    ld l, a
-    ld [hl], d
-    jr nz, jr_008_7457
-
-    ld l, c
-    ld l, h
-    ld h, l
-    nop
+ErrorFileBoxStr::
+    db "Error file", $00
 
 DrawLastRomButtons::
     ld hl, $0000
@@ -12937,7 +12899,7 @@ DrawLastRomButtons::
     ld a, $09
     push af
     inc sp
-    ld hl, $7458
+    ld hl, LastRomReturnStr
     push hl
     call DrawString
     add sp, $05
@@ -12946,34 +12908,19 @@ DrawLastRomButtons::
     ld a, $08
     push af
     inc sp
-    ld hl, $7462
+    ld hl, LastRomStartStr
     push hl
     call DrawString
     add sp, $05
-
-jr_008_7457:
     ret
 
 
-    ld e, e
-    ld b, d
-    ld e, l
-    ld [hl], d
-    ld h, l
-    ld [hl], h
-    ld [hl], l
-    ld [hl], d
-    ld l, [hl]
-    nop
-    ld e, e
-    ld b, c
-    ld e, l
-    ld [hl], e
-    ld [hl], h
-    ld h, c
-    ld [hl], d
-    ld [hl], h
-    nop
+LastRomReturnStr::
+    db "[B]return", $00
+
+LastRomStartStr::
+    db "[A]start", $00
+
     rst RST_38
     rst RST_38
     rst RST_38
