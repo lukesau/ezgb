@@ -5,7 +5,7 @@
       "addr": "4000",
       "at": "section",
       "lines": [
-        "ROM load + soft-boot (kernel FPGA path only \u2014 not used by launched games).",
+        "ROM load + soft-boot (kernel FPGA path only — not used by launched games).",
         "$7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.",
         "$7FE0=$80: reset into loaded ROM; same FRAM chip, FPGA emulates game MBC.",
         "See docs/fram-save-map.md and sd/README.md."
@@ -22,25 +22,29 @@
       "bank": 4,
       "addr": "40ab",
       "lines": [
-        "ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window."
+        "RomLoad_Build_B4(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst (build helper).",
+        "Jump_004_40c2: while n--: *src++ (jr_004_40d5 carry) → *dst++ (jr_004_40e1 carry); Jump_004_40e4 add sp,$04 ret.",
+        "Used to plant trampolines (e.g. RomLoad_BuildAndRunPoll → $D100). Bank8 twin RomLoad_Build_B8."
       ]
     },
     {
       "bank": 4,
       "addr": "44f7",
       "lines": [
-        "U32ToAscii(val, buf, radix): write unsigned long as ASCII into buf (NUL-term).",
-        "Stack RTL: val u32, char* buf, u8 radix. Digits via U32Div/U32Mod,",
-        "then reverse into buf; 0-9 -> '0'+n, 10+ -> 'a'+(n-10) (+$57). Callers pass",
-        "radix $0a (decimal). Local $34-byte digit scratch. Bank0 copy: U32ToAscii_B0 ($16f4)."
+        "U32ToAscii(val@sp+$36, buf@sp+$3a, radix@sp+$3c): frame -$34; digit scratch@sp+$13. Bank0 twin U32ToAscii_B0.",
+        "Jump_004_451b: if val!=0 → Jump_004_453c; elif scratch advanced → Jump_004_4539 → Jump_004_45e8; else jr_004_453c fall into emit.",
+        "Jump_004_453c/jr_004_453c: U32Div+U32Mod by radix; rem<$0a → '0'+n (jr_004_45d0) else Jump_004_45d3 +$57 (jr_004_45e5) → Jump_004_451b.",
+        "Jump_004_45e8: setup reverse; Jump_004_4605: copy scratch→buf (jr_004_462a) until done → Jump_004_462d NUL; empty → plant \"0\"; Jump_004_466b epilogue."
       ]
     },
     {
       "bank": 0,
       "addr": "16f4",
       "lines": [
-        "U32ToAscii_B0: bank0 near-call copy of U32ToAscii (04:44f7). Same stack ABI;",
-        "used from bank0/1/8 UI chrome."
+        "U32ToAscii_B0: bank0 twin of U32ToAscii (04:44f7); same ABI val/buf/radix. Used from bank0/1/8 UI chrome.",
+        "Jump_000_1718: if val!=0 → Jump_000_1739; elif digits → Jump_000_1736 → Jump_000_17e5; else jr_000_1739 fall emit.",
+        "Jump_000_1739/jr_000_1739: U32Div+U32Mod; rem<$0a → '0'+n (jr_000_17cd) else Jump_000_17d0 +$57 (jr_000_17e2) → Jump_000_1718.",
+        "Jump_000_17e5: setup reverse; Jump_000_1802 copy (jr_000_1827) → Jump_000_182a NUL / plant \"0\"."
       ]
     },
     {
@@ -71,7 +75,7 @@
       "bank": 1,
       "addr": "47a7",
       "lines": [
-        "SetFpgaPage: unlock \u2192 $7FC0=page (arg on stack; $03=cart FRAM window) \u2192 commit.",
+        "SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart FRAM window) → commit.",
         "With $7FC0=$03, $4000 latches FRAM bank; $A000-$BFFF is non-volatile FRAM",
         "(no battery; cart battery is RTC-only). See docs/fram-save-map.md."
       ]
@@ -81,7 +85,7 @@
       "addr": "482b",
       "lines": [
         "LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569",
-        "launch chain ($482b \u2192 $4048 \u2192 $4000 \u2192 $5e14). See docs/launch-trace.md."
+        "launch chain ($482b → $4048 → $4000 → $5e14). See docs/launch-trace.md."
       ]
     },
     {
@@ -95,28 +99,40 @@
     },
     {
       "bank": 1,
+      "addr": "487d",
+      "lines": [
+        "LastRomPersistLoop: copy $c2a6..+$00ff → $A300 (idx@sp+$02); then LastRomPersistDone.",
+        "jr_001_48af → self until idx≥$00ff. Twin of LastRomLoadRecord (00:12bf) write path."
+      ]
+    },
+    {
+      "bank": 1,
       "addr": "55c2",
       "lines": [
-        "Pre-launch FRAM stamp on page $11 (SetFpgaPage_B1 $03), written on every launch:",
-        "$A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,",
-        "$A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write.",
-        "Ends at Jump_001_58ad; LaunchSetup (01:58b0) is the next launch-trace step."
+        "PreLaunchFramStamp: page $11 (SetFpgaPage_B1 $03) per-launch FRAM stamp for SAVER/*.SAV.",
+        "$A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.",
+        "Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done → Jump_001_5657.",
+        "Jump_001_5657: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup."
       ]
     },
     {
       "bank": 1,
       "addr": "5e14",
       "lines": [
-        "RomLoaderMain: main ROM loader (bank 1). SD stream \u2192 FPGA ROM buffer, MBC/size",
-        "config ($7FC*), then installs the WRAM boot stub. See docs/launch-trace.md."
+        "RomLoaderMain(path@sp+$1c): Open_B6 → $ca0f; fail E=$ff Jump_001_601b. See launch-trace.",
+        "Jump_001_5e56: fsize→$c2a4/$c2a5; seek0; read $200 hdr@$c0a0; Jump_001_5ec8 checksum $134..$14c → $c5a3 (jr_001_5ef2).",
+        "Jump_001_5ef5: hdr cart/ROM/RAM → $d3ec/$d3ed/$d3ee + MapCartTypeToUi; if $d3eb!=1 Jump_001_5f2a → Jump_001_600f else jr_001_5f2d size gate.",
+        "Jump_001_5f6a: XOR-fold bytes (jr_001_5fe5); Jump_001_5fe8 cmp LE $e06c8834; hit jr_001_600a $d3eb=$05 (MBC1m) else Jump_001_6007; Jump_001_600f close ret E=status."
       ]
     },
     {
       "bank": 1,
       "addr": "6747",
       "lines": [
-        "BackupSavePrompt: draw BACKUPSAVE box. Arg (page $11 $A001) ==1 -> auto 'Saving..'",
-        "and dump; else prompt [B]NO=skip / [A]OK=dump FRAM to SAVER/*.SAV."
+        "BackupSavePrompt(auto@sp+$12, size@sp+$10): draw BACKUPSAVE box + BackupUiStrings.",
+        "auto!=1 → Jump_001_6784 → Jump_001_67d0 prompt; else jr_001_6787: Saving str, U32Shl size<<$0d, BackupSaveDump → Jump_001_6891.",
+        "Jump_001_67d0: draw [B]NO/[A]OK; Jump_001_6821 joy loop: A($10) jr_001_682f dump twin → Jump_001_6891; B($20) Jump_001_6889 skip → Jump_001_6891; else spin.",
+        "Jump_001_6891/jr_001_6891: epilogue ret."
       ]
     },
     {
@@ -124,8 +140,9 @@
       "addr": "0067",
       "lines": [
         "RunCallbackList: shared IRQ dispatcher. HL = list base (uint16 fn ptrs,",
-        "0-terminated). Nest via wIntNest; CallHL each slot. Vectors: VBlank\u2192wVBlankCallbacks",
-        "($d6d3), LCD\u2192$d6e3, Timer\u2192$d6f3, Serial\u2192$d703, Joypad\u2192$d713."
+        "0-terminated). Nest via wIntNest; CallHL each slot. Vectors: VBlank→wVBlankCallbacks",
+        "($d6d3), LCD→$d6e3, Timer→$d6f3, Serial→$d703, Joypad→$d713.",
+        "jr_000_0071: walk until NUL ptr; jr_000_0080: --wIntNest; nest≠0 → ret else jr_000_008e reti."
       ]
     },
     {
@@ -135,7 +152,7 @@
         "RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).",
         "Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,",
         "RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*",
-        "wrappers at $0610\u2013$0628. See decomp/src/register_callback_slots.c."
+        "wrappers at $0610–$0628. See decomp/src/register_callback_slots.c."
       ]
     },
     {
@@ -148,11 +165,29 @@
     },
     {
       "bank": 0,
+      "addr": "20e2",
+      "lines": [
+        "ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (jr_000_20ec).",
+        "DirList uses this to copy entry names into the browser table."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "20f4",
+      "lines": [
+        "AdvanceTextCursor: ++wTextCursorX; wrap at $13 → X=0, ++Y; at Y=$11 → Y=0 (no scroll).",
+        "jr_000_2100: X wrap + maybe ++Y; jr_000_210d: Y wrap to 0; jr_000_210f: pop HL ret.",
+        "Mode-1 framebuffer text sibling of AdvanceTileCursor. Used by DrawGlyphAdvance."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "2111",
       "lines": [
-        "DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline",
-        "(CirclePlot8) vs filled chords (CircleFillH/CircleFillV). Error in wCircleErr",
-        "($d72c). Stack wrapper DrawCircleXY ($27a0)."
+        "DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline (CirclePlot8) vs filled chords.",
+        "Error in wCircleErr/$d72d. Stack wrapper DrawCircleXY ($27a0).",
+        "Jump_000_2132/jr_000_2132: while X1≤Y1; outline if fill==0; err≥0 → jr_000_2176 else CircleFillH + ++X1 +err+$06 loop.",
+        "jr_000_2176: CircleFillV + ++X1 --Y1 +err+$0a → Jump_000_2132."
       ]
     },
     {
@@ -173,9 +208,11 @@
       "bank": 0,
       "addr": "2701",
       "lines": [
-        "DrawGlyph(C=tile): blit 8\u00d78 from font sheet $3206 into framebuffer at",
-        "wTextCursorX/Y via GfxRowTable. DrawGlyphAdvance ($2770) wraps this +",
-        "AdvanceTextCursor."
+        "DrawGlyph(C=tile): blit 8×8 from font sheet $3206 into framebuffer at wTextCursorX/Y via GfxRowTable.",
+        "Setup: row ptr from GfxRowTable[Y<<3]; +X<<3; glyph base $3206+C*8; C=wDrawColor.",
+        "jr_000_2730: A=*src++; B=src bits. colorB.0 → A=$ff else jr_000_273f; A|=B; color.0 clear → A^=B; jr_000_2745 D=A.",
+        "jr_000_2745: colorB.1 → A=$ff else jr_000_274c; A|=B; color.1 clear → A^=B; jr_000_2752 E=A; pop HL.",
+        "jr_000_2754: STAT-wait; [HL++]=D,E; pop DE; if L&$0f → jr_000_2730 else ret. DrawGlyphAdvance wraps + AdvanceTextCursor."
       ]
     },
     {
@@ -189,8 +226,10 @@
       "bank": 0,
       "addr": "22c6",
       "lines": [
-        "DrawRectImpl: normalize wDrawX0/X1 and wDrawY0/Y1, outline via four DrawLine",
-        "calls, optional fill when wDrawRectFill ($d724) nonzero. Called by DrawRect."
+        "DrawRectImpl: normalize corners; outline via four DrawLine; optional fill if wDrawRectFill ($d724). Called by DrawRect.",
+        "jr_000_22d9: if X1<X0 swap; fall. jr_000_22ec: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.",
+        "If fill==0 or empty inset ret; else swap wDrawColor/wDrawColorB; jr_000_236d: horiz DrawLine at Y0; if Y0!=Y1 ++Y0 loop.",
+        "jr_000_238d: restore colors (swap again) ret."
       ]
     },
     {
@@ -204,32 +243,70 @@
     },
     {
       "bank": 0,
+      "addr": "064c",
+      "lines": [
+        "RemoveCallbackSlot: find BC in uint16 list at HL; zero slot; compact tail (jr_000_0661).",
+        "Empty head → ret; mismatch → recurse/self walk; match → clear + slide remaining ptrs until NUL."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "066c",
       "lines": [
         "InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.",
-        "RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI."
+        "RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI.",
+        "Occupied → skip+self; jr_000_0673: write BC at free NUL slot (hi then lo) ret."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0677",
+      "lines": [
+        "VBlankCallback: ++frame counter $d6d1/$d6d2 (jr_000_067f carry); call OAM DMA $FF80; set $d6ce=1.",
+        "Registered by KernelEntry via RegisterVBlankCallback. WaitVBlankFlag polls $d6ce."
       ]
     },
     {
       "bank": 0,
       "addr": "0688",
       "lines": [
-        "WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off."
+        "WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off.",
+        "LCDC bit7 clear → ret. Clear $d6ce under di/ei; jr_000_0692: halt until $d6ce≠0; clear + ret."
       ]
     },
     {
       "bank": 0,
       "addr": "069f",
       "lines": [
-        "LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off."
+        "LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off.",
+        "LCDC bit7 clear (add a → NC) → ret. jr_000_06a3: spin while LY≥$92; jr_000_06a9: spin while LY<$91; then LCDC&=$7f."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "06b6",
+      "lines": [
+        "OamDmaStub: source for HRAM OAM DMA at $FF80 (KernelEntry copies 10 bytes).",
+        "ldh [rDMA],$c0; jr_000_06bc: delay loop A=$28 then ret. Called from VBlankCallback."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "06c0",
+      "lines": [
+        "SerialCallback: ISR for serial xfer; state in $d6cd, payload $d6cc.",
+        "jr_000_06d0: state≠2 → if state==1 expect rSB=$55 else $d6cd=$04 (jr_000_06e0); state2: store rSB→$d6cc.",
+        "jr_000_06de/06e0: clear/set $d6cd, SC=0, SB=$66; jr_000_06ea: re-arm SC=$80 ret. Orphan before SetGfxModeStack."
       ]
     },
     {
       "bank": 0,
       "addr": "08b7",
       "lines": [
-        "DrawString (ptr, len, screen pos). Highest fan-in text primitive (~86 callers).",
-        "Cursor set by SetTextCursor ($2765), advanced by AdvanceTextCursor ($20f4)."
+        "DrawString(ptr, len, screen pos): highest fan-in text primitive (~86 callers). SetTextCursor then glyph loop.",
+        "len==0 → max=$11 else Jump_000_08d5 copy len; both meet Jump_000_08db stash ptr@sp+$00, C=0.",
+        "Jump_000_08e5: if C≥max → Jump_000_0927 ret; *ptr==0 → Jump_000_0909 StoreDrawParams + DrawGlyphAdvance $20; else ++ptr (jr_000_08fd) DrawGlyphAdvance(char).",
+        "Jump_000_0923: ++C → Jump_000_08e5; Jump_000_0927 ret."
       ]
     },
     {
@@ -238,43 +315,68 @@
       "lines": [
         "DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).",
         "Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.",
-        "See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters)."
+        "See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).",
+        "Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; ≥$14 → 0; Jump_000_0982 ret."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0a19",
+      "lines": [
+        "MemSet8_B0(dest@sp+$04, byte@sp+$06, n@sp+$08): fill n bytes (u8 count) with byte.",
+        "Jump_000_0a27: while n--: *dest++=byte (jr_000_0a3d); Jump_000_0a40 ret. Sibling of Memset; used near DirList."
       ]
     },
     {
       "bank": 0,
       "addr": "0a43",
       "lines": [
-        "DirList: file-browser directory enumerator; hides ezgb.dat via MemCmp_B0."
+        "DirList: enumerate into $c2a0; count $c2a2/$c2a3; cap 16 (sp+$04).",
+        "Jump_000_0a56: farcall readdir; fail/empty → Jump_000_0a83 → Jump_000_0bc5 ($c5a4=1); Jump_000_0a8b skip \".\".",
+        "Jump_000_0aa3/jr_000_0abf: bank slot; Jump_000_0aeb: if not dir → Jump_000_0b41; else jr_000_0aee attr $10 + ApplyBasename → jr_000_0b3e → Jump_000_0bb8.",
+        "Jump_000_0b41: need AM_ARC else Jump_000_0b4c → Jump_000_0bb8; jr_000_0b4f MemCmp EzgbDatStr → skip Jump_000_0a56; else store $20+basename.",
+        "Jump_000_0bb8/jr_000_0bb8: if count<$10 Jump_000_0bc2 → Jump_000_0a56 else Jump_000_0bc5/jr_000_0bc5 ret."
       ]
     },
     {
       "bank": 0,
       "addr": "0de4",
       "lines": [
-        "SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.",
-        "Launched games never enter here \u2014 they write FRAM via normal MBC $A000 only.",
-        "Backup branch when page $11 $A000==$AA; then clears $A000=$00 on entry (before",
-        "the prompt, so [B]NO still clears it). $A001 read as auto-save selector; caches",
-        "$A202->$d3f6 (RTC), reads $A00F/$A010+ meta, calls BackupSavePrompt (01:6747)."
+        "SdMenuMain: SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.",
+        "FarCall SD mount (inline after call); jr_000_0e02: check status@sp+$16; NZ → DrawString MicroSdInitErrorStr; Jump_000_0e21 hang.",
+        "Jump_000_0e24: OK string; page $11 via $4000; if $A000≠$AA → GotoFileBrowser else jr BackupBranchEntry.",
+        "Launched games never enter here. BackupBranchEntry clears $A000 (see 00:0e76 / 01:6747)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0e76",
+      "lines": [
+        "BackupBranchEntry: FRAM stamp → SAVER basename, then fall into FileBrowserEntry.",
+        "Read $A202→$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.",
+        "Jump_000_0ec4: copy $A010.. → $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.",
+        "Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d)."
       ]
     },
     {
       "bank": 0,
       "addr": "0f8d",
       "lines": [
-        "FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list setup; on fail SdReadRetryCount.",
-        "Jump_000_0fcd/0ff4: zero $c2a2/$c2a3 count; memset $c4a4+$c9db; wire $c9f1->$c4a4, $c9f3=$00fe; DirList.",
-        "Jump_000_10df: if count nonzero DrawDirEntryLabel; then Delay+$002d, ReadJoypad loop.",
-        "Pad $02/$01: page cursor sp+$13 by $10 vs $c2a2 count (sp+$12 dirty); $40 cycles sp+$0e UI mode; else MenuKeyDispatch."
+        "FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail SdReadRetryCount. Main browser loop.",
+        "Jump_000_0fcd/Jump_000_0ff4: zero $c2a2/$c2a3; memset $c4a4+$c9db; wire $c9f1→$c4a4, $c9f3=$00fe; DirList.",
+        "jr_000_1071 redraw: dirty → Jump_000_1089/jr_000_108c (code3 farcall+label) or Jump_000_10b1 (code≥2); Jump_000_10df DrawDirEntryLabel if count≠0 → Jump_000_1107.",
+        "Jump_000_1107 Delay+ReadJoypad: $02 jr_000_1128 page-- (Jump_000_114d/Jump_000_1154/Jump_000_115b/Jump_000_116b); $01 jr_000_1175 DirList + Jump_000_1180 page++ (Jump_000_11bf/Jump_000_11d6/Jump_000_11dd).",
+        "$04/$08 jr_000_11e7/Jump_000_11f6 / jr_000_1200/Jump_000_1223 row; $40 jr_000_122d mode (Jump_000_1238/jr_000_123b/Jump_000_1242/Jump_000_124c/jr_000_124f farcall) → Jump_000_1267/Jump_000_1271/jr_000_1274 or MenuKeyDispatch."
       ]
     },
     {
       "bank": 0,
       "addr": "0150",
       "lines": [
-        "Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.",
-        "After bank1 switch, calls BootUnpackWramTables ($68b6) then BatteryCheck."
+        "KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.",
+        "jr_000_015d: zero WRAM $DFFF down $2000 (B/C nested); jr_000_0169: OAM $FEFF..$100; jr_000_0172: HRAM $FFFF..$80.",
+        "Save boot A@$d6c9; bank1; LcdOff; scroll/STAT/WY/WX init; jr_000_019e: copy OamDmaStub → $FF80.",
+        "Register VBlank/Serial; BGP/OBP/LCDC/IE; serial SB=$66 SC=$80; BootUnpackWramTables ($68b6); BatteryCheck; fall HaltLoop."
       ]
     },
     {
@@ -283,6 +385,17 @@
       "lines": [
         "MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.",
         "Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "1392",
+      "lines": [
+        "MenuDispatchAB: A($10) open selection; B($20) parent dir; else Jump_000_16ab WaitVBlankFlag → browser loop $1062.",
+        "jr_000_139c/jr_000_13b3: bank entry >>5+$12@$4000; Jump_000_140c: file → Jump_000_145f else jr_000_140f/Jump_000_143b dir append → FileBrowserEntry.",
+        "Jump_000_145f: ApplyBasename+$c4a4; Jump_000_14d6/Jump_000_14fb toupper ext@$c3a5; Jump_000_1520 MemCmp .gbc/.gb.",
+        "Match jr_000_1566 → Jump_000_1569 launch farcalls; fail Jump_000_1588/jr_000_158b WaitJoypadSelect; Jump_000_1591..Jump_000_162c hang.",
+        "Jump_000_162f: B → jr_000_1639 strip last /$c2a6 (Strrchr); empty \"/\"; jp FileBrowserEntry; else Jump_000_16ab."
       ]
     },
     {
@@ -296,12 +409,22 @@
     },
     {
       "bank": 0,
+      "addr": "12bf",
+      "lines": [
+        "LastRomLoadRecord: copy $A300..+$00ff → $c4a4 (idx@sp+$0f); then LastRomDrawBasename.",
+        "Loop via jr_000_12ee → self until idx≥$00ff; fallthrough jp LastRomDrawBasename when done."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "239c",
       "lines": [
-        "DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|->$d72a, |dx|->$d729; err in wCircleErr/$d72d..$d731.",
-        "If |dx|<|dy| -> Jump_000_2519 (y-major); else x-major. Jump_000_23c4 may swap ends; $d72b = ±y step ($00/$ff).",
-        "Jump_000_2433: x-major pixel loop (ApplyPixel + row wrap $0130/$fed0); Jump_000_24bd: dy==0 horizontal run.",
-        "Jump_000_2519/jr_000_259e: y-major twin; Jump_000_260c: dx==0 vertical. Callers: DrawRect edges + circle chords."
+        "DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|@$d72a, |dx|@$d729; err wCircleErr/$d72d..$d731.",
+        "Setup: jr_000_23a2/jr_000_23ac abs dy/dx; |dx|<|dy| → Jump_000_2519 y-major; else Jump_000_23c4 maybe swap ends; jr_000_23ce/jr_000_23d0 set $d72b ±ystep + GfxRowTable/err.",
+        "X-major Jump_000_2433: err≥0 jr_000_2464 plot+ystep (jr_000_247e/jr_000_248c row wrap $0130/$fed0); else jr_000_244b err+=2dy; jr_000_24a5/jr_000_24b0 byte advance; --E loop.",
+        "Horiz Jump_000_24bd: jr_000_24d0/jr_000_24db/jr_000_24e3/jr_000_24ef/jr_000_250a/jr_000_250c/jr_000_2513 mask runs.",
+        "Y-major Jump_000_2519: Jump_000_252a/jr_000_2534/jr_000_2536 swap+$d72b; dx==0 → Jump_000_260c; else jr_000_259e plot (jr_000_25b0), err jr_000_25d0/jr_000_25e2/jr_000_25ec xstep → jr_000_2602.",
+        "Vert Jump_000_260c: jr_000_261a/jr_000_2628 ApplyPixel down. Callers: DrawRect edges + circle chords."
       ]
     },
     {
@@ -325,16 +448,19 @@
       "bank": 0,
       "addr": "264a",
       "lines": [
-        "ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW.",
-        "wDrawOp ($D723): 0=replace, 1=OR, 2=XOR, 3=AND-clear.",
-        "wDrawColor ($D734) bits 0/1 select which 2bpp planes to touch (color 0-3)."
+        "ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW. wDrawColor@$D734 planes; wDrawOp@$D723.",
+        "Dispatch: op1 → jr_000_267e OR; op2 → jr_000_2698 XOR; op3 → jr_000_26b2 AND-clear; else replace.",
+        "Replace: plane0 clear → B=0 then jr_000_2665; plane1 clear → E=0; jr_000_266b STAT-wait and/or write lo/hi; maybe pop BC.",
+        "OR jr_000_267e: jr_000_2685/jr_000_268b plane gates + STAT or-write. XOR jr_000_2698: jr_000_269f/jr_000_26a5. AND jr_000_26b2: jr_000_26b9/jr_000_26bf."
       ]
     },
     {
       "bank": 0,
       "addr": "26cc",
       "lines": [
-        "GetPixel: same x/y address math as PlotPixel; returns plane bits in E (0-3)."
+        "GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).",
+        "jr_000_26e7: STAT-wait read 2bpp pair; mask from $10+(x&7).",
+        "jr_000_26f9: if plane0 bit clear skip; set0 B. jr_000_26ff: plane1 bit → set1 B; E=B ret."
       ]
     },
     {
@@ -373,10 +499,10 @@
       "bank": 0,
       "addr": "1e1a",
       "lines": [
-        "MapCp437(code, dir): CP437 <-> Unicode for codes $80-$FF. Stack: uint16 code,",
-        "uint16 dir. dir!=0: CP437->Unicode via Cp437UnicodeTable ($1ed5); dir==0:",
-        "linear search Unicode->CP437. codes < $80 pass through. Returns DE (=BC).",
-        "Table is exact IBM CP437 high-half (128 LE uint16s). ~12 callers in banks 3/5/6/7/9."
+        "MapCp437(code@sp+$07, dir@sp+$09) → DE. codes <$80 pass-through Jump_000_1ed0. Table IBM CP437 high-half @1ed5.",
+        "Jump_000_1e30 dir!=0: if code≥$100 plant 0 → Jump_000_1e76; else Jump_000_1e5a table[(code-$80)*2] → Jump_000_1e76 → Jump_000_1ed0.",
+        "Jump_000_1e7e dir==0: idx=0; Jump_000_1e85 while idx<$80: cmp word (jr_000_1ea6); miss Jump_000_1eb3 ++idx (jr_000_1eba) → Jump_000_1e85.",
+        "Hit/exhaust Jump_000_1ebd: idx+$80 → Jump_000_1ed0 ret."
       ]
     },
     {
@@ -391,9 +517,11 @@
       "bank": 0,
       "addr": "1fd5",
       "lines": [
-        "WToUpper(code): FatFs-shaped WCHAR toupper. Stack uint16; returns DE.",
-        "ASCII: 'a'-'z' -= $20. Else binary-search wWToUpperKeys ($CC33) and replace",
-        "from wWToUpperVals ($D00F). Used for case-insensitive path compare."
+        "WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.",
+        "jr_000_1fe2: if code≥$80 → Jump_000_200e; else if not in 'a'..'z' → Jump_000_20b3; else code-=$20 → Jump_000_20b3.",
+        "Jump_000_200e: init lo/hi/count; Jump_000_2021: mid key from wWToUpperKeys; eq → Jump_000_2092; else Jump_000_2065.",
+        "Jump_000_2065: key<code → raise lo else Jump_000_207a lower hi; Jump_000_2082 --count; NZ → Jump_000_2021 else fall Jump_000_2092.",
+        "Jump_000_2092: if count==0 miss → Jump_000_20b3; else replace from wWToUpperVals; Jump_000_20b3: DE=code ret."
       ]
     },
     {
@@ -410,7 +538,7 @@
       "bank": 0,
       "addr": "2829",
       "lines": [
-        "S32Div: SDCC __divslong stub jp S32DivImpl ($29e6). Signed long \u00f7; quotient in HL:DE.",
+        "S32Div: SDCC __divslong stub jp S32DivImpl ($29e6). Signed long ÷; quotient in HL:DE.",
         "Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine."
       ]
     },
@@ -418,7 +546,7 @@
       "bank": 0,
       "addr": "282c",
       "lines": [
-        "U32Div: SDCC __divulong stub jp U32DivImpl ($2a77). Unsigned long \u00f7 via U32DivEngine;",
+        "U32Div: SDCC __divulong stub jp U32DivImpl ($2a77). Unsigned long ÷ via U32DivEngine;",
         "returns quotient from scratch. U32ToAscii uses this with radix."
       ]
     },
@@ -477,7 +605,7 @@
       "bank": 0,
       "addr": "294c",
       "lines": [
-        "U16DivMod: unsigned 16-bit restoring divide. BC/DE in \u2192 BC=quot, DE=rem.",
+        "U16DivMod: unsigned 16-bit restoring divide. BC/DE in → BC=quot, DE=rem.",
         "U16DivZext8 ($2949) zeros high bytes then falls in. S16DivMod ($2917) abs,",
         "calls this, re-applies signs."
       ]
@@ -487,7 +615,8 @@
       "addr": "2abd",
       "lines": [
         "MemIsZero: scan B bytes at HL; Z if all zero else NZ. Used by U32/S32 div/mod",
-        "stubs to reject zero dividend/divisor before Call_000_2de0."
+        "stubs to reject zero dividend/divisor before U32DivEngine.",
+        "jr_000_2abf: while C--: *HL++==0 else NZ ret; fallthrough Z ret."
       ]
     },
     {
@@ -496,60 +625,88 @@
       "lines": [
         "U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;",
         "returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.",
-        "High fan-in is every C << >> on longs \u2014 name from the loop, no emulator needed."
+        "High fan-in is every C << >> on longs — name from the loop, no emulator needed.",
+        "Jump_000_299e: while count--: rr HL:DE (logical); count==0 ret."
       ]
     },
     {
       "bank": 0,
       "addr": "29ac",
       "lines": [
-        "S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte)."
+        "S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte).",
+        "Stack: s32 + shift count → HL:DE. Jump_000_29bb: while count--: sra H, rr L/D/E; twin of U32Shr."
       ]
     },
     {
       "bank": 0,
       "addr": "29c9",
       "lines": [
-        "U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count."
+        "U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count → HL:DE.",
+        "Jump_000_29d8: while count--: rl E/D/L/H; twin of U32Shr/S32Sar."
       ]
     },
     {
       "bank": 0,
       "addr": "2eea",
       "lines": [
-        "EnterGfxMode1: LCD off, prep VRAM/tilemap/callbacks, turn LCD on, set wGfxMode=1.",
-        "Defaults: wDrawOp=0 (replace), wDrawColor=3, wDrawColorB=0.",
-        "Draw helpers (DrawRect/PlotPixelXY/\u2026) call this when wGfxMode!=1. Mode $02 set",
-        "elsewhere ($3d4a); full mode table still TODO."
+        "EnterGfxMode1: LCD off if on; prep VRAM/tilemap/callbacks; LCD on; wGfxMode=1.",
+        "Defaults: wDrawOp=0, wDrawColor=3, wDrawColorB=0. Draw helpers call this when wGfxMode!=1.",
+        "jr_000_2ef4: VramFill $8100×$1680; VBlankCb_Bg8000 + LycCb_Bg8800; LYC=$48 STAT=$44; IE bit1.",
+        "jr_000_2f23: E=$12 rows; jr_000_2f25: fill 20 tiles/row ids $10+ (skip 12); LCDC on; ei ret."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2bb6",
+      "lines": [
+        "MulU8xU8(C×E) → DE: 8×8→16 shift-add. HL=0; jr_000_2bba: rr C, C-set → add hl,de.",
+        "jr_000_2bc0: sla e / rl d; jr_000_2bc8 finish when DE shifted out. Used by U32MulEngine."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2bcf",
+      "lines": [
+        "U16Mul(a@sp+$02, b@sp+$04) → DE: shift-add (Russian peasant). Load DE=a, BC=b.",
+        "jr_000_2bd8: HL=0; fall jr_000_2bdb. jr_000_2bdb: sra B; NZ → jr_000_2be8 else rr C; C-set add HL,DE; jr_000_2be4.",
+        "jr_000_2be4: Z after rr → jr_000_2bf9 else jr_000_2bed. jr_000_2be8: rr C; NC → jr_000_2bed else add HL,DE; fall jr_000_2bed.",
+        "jr_000_2bed: sla E; Z → jr_000_2bf5 else rl D → jr_000_2bdb. jr_000_2bf5: rl D; NZ → jr_000_2bdb; fall jr_000_2bf9 DE=HL ret."
       ]
     },
     {
       "bank": 0,
       "addr": "2c42",
       "lines": [
-        "Strrchr(ptr, char): walk to the NUL then scan back for char. Used with '/' to",
-        "find the basename of a launch path."
+        "Strrchr(ptr@sp+$06, ch@sp+$08): last char in string → DE (0 if none). Used for '/' basename.",
+        "Jump_000_2c50: ++BC until NUL; stash end@sp+$00. Jump_000_2c5b: --ptr; if at start → Jump_000_2c85 else Jump_000_2c73.",
+        "Jump_000_2c73: *ptr!=ch → Jump_000_2c82 → Jump_000_2c5b; else jr_000_2c85. Jump_000_2c85/jr_000_2c85: recheck match.",
+        "Hit jr_000_2c97 DE=ptr → Jump_000_2ca2; miss Jump_000_2c94 → Jump_000_2c9f DE=0 → Jump_000_2ca2 ret."
       ]
     },
     {
       "bank": 0,
       "addr": "2cba",
       "lines": [
-        "Memcpy(dest, src, len)."
+        "Memcpy(dest, src, len).",
+        "jr_000_2cc9: while BC≠0: *HL++=*DE++, --BC. Stack: dest@sp+$02, src@+$04, len@+$06."
       ]
     },
     {
       "bank": 0,
       "addr": "2ca5",
       "lines": [
-        "Memset(dest, byte, len): fill dest with byte. Sibling of Memcpy."
+        "Memset(dest, byte, len): fill dest with byte. Sibling of Memcpy.",
+        "jr_000_2cb2: while BC≠0: *HL++=D, --BC. Stack: dest@sp+$02, byte@+$04, len@+$05."
       ]
     },
     {
       "bank": 0,
       "addr": "2cd3",
       "lines": [
-        "Strncpy(dest, src, n): copy until NUL or n bytes, then zero-pad remainder."
+        "Strncpy(dest, src, n): frame -$07; stash dest@sp+$01, src@sp+$03, n=BC, ret-dest@sp+$05.",
+        "Jump_000_2cf1: if BC==0 or *src==0 → Jump_000_2d1b; else --BC, ++src (jr_000_2d0c carry), *dest++=A (jr_000_2d18 carry) → Jump_000_2cf1.",
+        "Jump_000_2d1b: stash rem n@sp+$03; Jump_000_2d20: --n; if 0 → Jump_000_2d44 else *dest++=0 (jr_000_2d41 carry) → Jump_000_2d20.",
+        "Jump_000_2d44: DE=orig dest; add sp,$07 ret."
       ]
     },
     {
@@ -557,21 +714,24 @@
       "addr": "2d4c",
       "lines": [
         "NegateBytes: two's-complement negate of B bytes at HL (0-sbc loop).",
-        "S32Div/S32Mod use this to abs signed long operands."
+        "S32Div/S32Mod use this to abs signed long operands.",
+        "jr_000_2d4f: D=0; for C=B: *HL++ = D-sbc-*HL (borrow chain); ret."
       ]
     },
     {
       "bank": 0,
       "addr": "2d95",
       "lines": [
-        "CStrLen(s): count bytes until NUL; length in DE. (Not Strlen \u2014 RGBDS STRLEN.)"
+        "CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)",
+        "Jump_000_2da2: while *s++: ++len@sp+$00 (jr_000_2daf); Jump_000_2db2 DE=len ret."
       ]
     },
     {
       "bank": 0,
       "addr": "2dba",
       "lines": [
-        "MemZero: write 0 to B bytes at HL. U32DivEngine clears quot/rem scratch with this."
+        "MemZero: write 0 to B bytes at HL. U32DivEngine clears quot/rem scratch with this.",
+        "jr_000_2dbc: C=B; store A=0 via [HL+], dec C until zero."
       ]
     },
     {
@@ -579,7 +739,9 @@
       "addr": "2de0",
       "lines": [
         "U32DivEngine: multi-byte restoring divide used by U32Div/U32Mod. Helpers:",
-        "MemZero, MemRol ($2ee2), MemSubCmp ($2ed8), MemSub ($2e30), IncWord ($2ecb)."
+        "MemZero, MemRol ($2ee2), MemSubCmp ($2ed8), MemSub ($2e30), IncWord ($2ecb).",
+        "B=digit width; C=B*8 bit count. Zero quot+rem scratch; jr_000_2df9: rol rem←dividend,",
+        "MemSubCmp divisor; NC → MemSub; jr_000_2e1f: rol quot bit; --C loop. Orphan before MemSub."
       ]
     },
     {
@@ -593,15 +755,50 @@
       "bank": 0,
       "addr": "2ed0",
       "lines": [
-        "CopyBytes: copy B bytes DE\u2192HL (register ABI)."
+        "CopyBytes: copy B bytes DE→HL (register ABI).",
+        "jr_000_2ed1: C=B; A=[DE++] → [HL+]; until C=0."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2ed8",
+      "lines": [
+        "MemSubCmp: multi-byte SBC compare [DE] vs [HL] for B bytes (no store). Flags = last SBC; U32DivEngine trial rem>=divisor.",
+        "jr_000_2eda: C=B; A=[DE] SBC [HL]; ++HL/DE; until C=0 (result discarded, carry retained)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2ee2",
+      "lines": [
+        "MemRol: rotate-left B bytes at HL through carry (RL [HL]). U32DivEngine shifts rem←dividend bit.",
+        "jr_000_2ee3: C=B; RL [HL]; ++HL; until C=0."
       ]
     },
     {
       "bank": 0,
       "addr": "3a93",
       "lines": [
-        "Delay(count): stack u16 \u2192 DelayDE. Busy-wait; callers pass e.g. $00c8/$002d.",
+        "Delay(count): stack u16 → DelayDE. Busy-wait; callers pass e.g. $00c8/$002d.",
         "DelayDE ($3a59) + DelayInner ($3a76) are the register/nested loops."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3a59",
+      "lines": [
+        "DelayDE: push BC; DelayInner(DE); B=$32; Jump_000_3a5f pad loop; nop; pop BC; trail; ret. Used by Delay($3a93).",
+        "Jump_000_3a5f → jr_000_3a61 → jr_000_3a63 → jr_000_3a65 → jr_000_3a67 → jr_000_3a69: five jr pads then --B; NZ → Jump_000_3a5f.",
+        "After pad: nop; pop BC; jr_000_3a71 → jr_000_3a73 → jr_000_3a75 → ret (three more jr pads)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3a76",
+      "lines": [
+        "DelayInner: --DE; if DE==0 ret; else B=$33; Jump_000_3a7c pad; nop; trail; jr DelayInner. Nested core for DelayDE.",
+        "Jump_000_3a7c → jr_000_3a7e → jr_000_3a80 → jr_000_3a82 → jr_000_3a84 → jr_000_3a86: five jr pads then --B; NZ → Jump_000_3a7c.",
+        "After pad: nop; jr_000_3a8d → jr_000_3a8f → jr_000_3a91 → DelayInner (three jr pads then outer loop)."
       ]
     },
     {
@@ -613,18 +810,47 @@
     },
     {
       "bank": 0,
+      "addr": "3a16",
+      "lines": [
+        "ReadJoypadRaw: hardware P1 read → packed buttons in A (then swapped for menu ABI).",
+        "jr_000_3a22: after d-pad nibble ($20 select), swap into B; read face buttons ($10); OR; final swap; P1=$30 idle."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3a9c",
+      "lines": [
+        "CopyTilesVram(HL=dst VRAM, BC=src, DE=count): plain 2bpp byte-pair blit (no color remap). Sibling CopyTilesColor.",
+        "DE==0 early ret; H≥$98 → H-=$10. jr_000_3aa7: if E==0 --D; jr_000_3aac STAT-wait [HL++]=[BC++]; jr_000_3ab5 STAT-wait second byte.",
+        "jr_000_3ac9: --E; NZ → jr_000_3aac; --D; if D signed clear → jr_000_3aac else ret. H wrap $98→$88 after lo-byte wrap."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3ad2",
+      "lines": [
+        "CopyTilesColor(HL=dst VRAM, BC=src, DE=count): 2bpp byte-pair blit with wDrawColor/wDrawColorB remap. DE==0 early ret; H≥$98 → H-=$10.",
+        "jr_000_3add: load *src++; colorB.0 → B=$ff else jr_000_3aee; colorB.1 → C=$ff else jr_000_3af4.",
+        "jr_000_3af4: D=color^colorB; bit0 → B^=src (else jr_000_3b01); bit1 → C^=src (else jr_000_3b08).",
+        "jr_000_3b08: STAT-wait [HL++]=B; jr_000_3b10: STAT-wait [HL++]=C; H==$98 → $88; jr_000_3b1f: --DE; NZ → jr_000_3add else ret. Used by UploadFontTiles."
+      ]
+    },
+    {
+      "bank": 0,
       "addr": "3b27",
       "lines": [
         "RegisterFont(HL=font desc): LCD off; find free 3-byte slot in wFontSlots ($d73a,",
         "6 entries); store next-tile id + font ptr; SelectFont; if wGfxMode bit1 set,",
-        "UploadFontTiles; bump wFontNextTile by glyph count; LCD on. Returns HL=slot or 0."
+        "UploadFontTiles; bump wFontNextTile by glyph count; LCD on. Returns HL=slot or 0.",
+        "jr_000_3b30: scan slots; free → jr_000_3b42 store+SelectFont+maybe Upload; full → HL=0.",
+        "jr_000_3b66: LCDC on ($81 & ~$18) ret. Orphan before UploadFontTiles."
       ]
     },
     {
       "bank": 0,
       "addr": "3bb7",
       "lines": [
-        "SelectFont: copy slot triple \u2192 wFontBaseTile / wFontPtr / wFontFarFlag."
+        "SelectFont: copy slot triple → wFontBaseTile / wFontPtr / wFontFarFlag."
       ]
     },
     {
@@ -632,29 +858,41 @@
       "addr": "3b6f",
       "lines": [
         "UploadFontTiles: blit current font glyphs into VRAM near $9000+wFontBaseTile.",
-        "Uses CopyTilesVram ($3a9c) or CopyTilesColor ($3ad2) per font header flags."
+        "Uses CopyTilesVram ($3a9c) or CopyTilesColor ($3ad2) per font header flags.",
+        "jr_000_3b9b: glyph src offset BC from header lo2 ($01→$80, $02→$0, else $100); dest=$9000+base*16; bit2→Color else Vram."
       ]
     },
     {
       "bank": 0,
       "addr": "3c5c",
       "lines": [
-        "ResetTileText: EnterGfxMode2 path prep \u2014 InitGfxMode2 via $3d21, wFontNextTile=1,",
-        "clear wFontSlots, default draw colors, ClearBgMap."
+        "ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,",
+        "clear wFontSlots, default draw colors, ClearBgMap.",
+        "jr_000_3c6b: zero $12 bytes at wFontSlots; then wDrawColor=3 / wDrawColorB=0; ClearBgMap."
       ]
     },
     {
       "bank": 0,
       "addr": "3c7e",
       "lines": [
-        "ClearBgMap: fill BG map $9800 with tile 0 (32\u00d732), STAT-safe."
+        "ClearBgMap: fill BG map $9800 with tile 0 (32×32), STAT-safe.",
+        "jr_000_3c85: 32 rows; jr_000_3c87: STAT-wait write 0, 32 cols/row. Orphan before RetreatTileCursor."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3c99",
+      "lines": [
+        "RetreatTileCursor: --wTileCursorX; at X=0 wrap to $13 and --Y (clamp at Y=0).",
+        "jr_000_3ca4: X wrap + maybe --Y; jr_000_3cae: pop HL ret. Inverse of AdvanceTileCursor."
       ]
     },
     {
       "bank": 0,
       "addr": "3cb0",
       "lines": [
-        "TileNewline: wTileCursorX=0; ++Y or ScrollBgUp at bottom row ($11)."
+        "TileNewline: wTileCursorX=0; ++Y or ScrollBgUp at bottom row ($11).",
+        "jr_000_3cc0: Y==$11 → ScrollBgUp; else ++Y; jr_000_3cc3 ret. Used by PrintChar on $0a."
       ]
     },
     {
@@ -662,7 +900,8 @@
       "addr": "3d21",
       "lines": [
         "EnterGfxMode2: tear down mode-1 VBlank/LCD callbacks if LCD on, InitGfxMode2",
-        "(clear cursors + BG, wGfxMode=2), restore LCDC. Tilemap text mode."
+        "(clear cursors + BG, wGfxMode=2), restore LCDC. Tilemap text mode.",
+        "jr_000_3d3d: if LCD already off skip LcdOff+RemoveCallbackSlot; then InitGfxMode2, LCDC|=$81 &=$E7, ei."
       ]
     },
     {
@@ -677,16 +916,27 @@
       "bank": 0,
       "addr": "3bed",
       "lines": [
-        "PutBgTile(A): map char through font at wFontPtr, write tile id to BG map",
-        "$9800 + y*32 + x (wTileCursorY/X). STAT-safe. Optional farcall when",
-        "wFontFarFlag==0 (via ResetTileText first)."
+        "PutBgTile(A): map char through font at wFontPtr → tile id at BG $9800+y*32+x (wTileCursorY/X). STAT-safe.",
+        "If wFontFarFlag==0: ResetTileText + FarCallTrampoline; jr_000_3c01 nop fallthrough.",
+        "jr_000_3c02: if font hdr&3!=2 index glyph table else keep A; jr_000_3c19 +wFontBaseTile; map ptr; jr_000_3c34 STAT-wait store E."
       ]
     },
     {
       "bank": 0,
       "addr": "3cc5",
       "lines": [
-        "AdvanceTileCursor: ++wTileCursorX; wrap at $13 and bump Y (tilemap text)."
+        "AdvanceTileCursor: ++wTileCursorX; wrap at $13 and bump Y (tilemap text).",
+        "jr_000_3cd1: X wrap → Y++; at Y=$11 → jr_000_3cde: if wGfxMode bit2 set reset cursors else jr_000_3cee ScrollBgUp.",
+        "jr_000_3cf1: pop HL ret. Sibling of AdvanceTextCursor."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3cf3",
+      "lines": [
+        "ScrollBgUp: shift BG map $9800 up one row (31 row copies $9820→$9800). Called by AdvanceTileCursor.",
+        "jr_000_3cfe: D=$20 tiles/row; jr_000_3d00: STAT-wait copy [BC]→[HL++]; --E rows.",
+        "jr_000_3d11: STAT-wait clear bottom row to 0; pop HL/DE/BC ret."
       ]
     },
     {
@@ -710,14 +960,16 @@
       "lines": [
         "RleUnpack: inline RLE decompress. HL=dest on entry; stream follows the call",
         "(pop return addr as src). Bit7 run vs literal; 0 terminates; ret past stream.",
-        "Bank1 uses it to pack WToUpper tables into $CC33/$D00F and other WRAM blobs."
+        "Bank1 uses it to pack WToUpper tables into $CC33/$D00F and other WRAM blobs.",
+        "Jump_000_20be: fetch len E; bit7 → run: load byte, Jump_000_20c7 store+inc E until wrap → loop.",
+        "Jump_000_20d0: E==0 → Jump_000_20e0 push HL ret; else Jump_000_20d5 copy E literals → 20be."
       ]
     },
     {
       "bank": 0,
       "addr": "30db",
       "lines": [
-        "VramCopy: copy DE bytes BC\u2192HL waiting for STAT mode\u22602 (VRAM-safe).",
+        "VramCopy: copy DE bytes BC→HL waiting for STAT mode≠2 (VRAM-safe).",
         "VramCopyStack ($30ea) is the stack-ABI wrapper (dest, src, len)."
       ]
     },
@@ -733,7 +985,7 @@
       "bank": 0,
       "addr": "1a29",
       "lines": [
-        "DiskStatus(pdrv): FatFs disk_status stub \u2014 ld e,0 / ret (always ready).",
+        "DiskStatus(pdrv): FatFs disk_status stub — ld e,0 / ret (always ready).",
         "Callers test E bits STA_NOINIT ($01) / STA_PROTECT ($04) and map to FR_",
         "codes ($0c FR_NOT_ENABLED, $0a FR_WRITE_PROTECTED). Sibling DiskInitialize",
         "($1a2c) is the same body; ReturnZero ($1a77) is the no-arg FR_OK stub."
@@ -758,7 +1010,7 @@
       "bank": 0,
       "addr": "1926",
       "lines": [
-        "FarCall_06_7309: stack thunk \u2192 bank6:$7309 via FarCallTrampoline (embedded",
+        "FarCall_06_7309: stack thunk → bank6:$7309 via FarCallTrampoline (embedded",
         "addr/bank after call). Siblings: FarCall_06_779a ($1941), FarCall_03_76cc",
         "($1985), FarCall_03_768f ($19a1), FarCall_09_77ff ($19b1)."
       ]
@@ -768,14 +1020,14 @@
       "addr": "1985",
       "lines": [
         "FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f",
-        "(FIL/fp) plus ofs words \u2014 FatFs f_lseek."
+        "(FIL/fp) plus ofs words — FatFs f_lseek."
       ]
     },
     {
       "bank": 0,
       "addr": "1a2c",
       "lines": [
-        "DiskInitialize(pdrv): FatFs disk_initialize stub \u2014 same ld e,0 / ret as",
+        "DiskInitialize(pdrv): FatFs disk_initialize stub — same ld e,0 / ret as",
         "DiskStatus. Mount path maps STA_NOINIT -> FR_NOT_READY ($03)."
       ]
     },
@@ -808,33 +1060,36 @@
       "bank": 2,
       "addr": "4020",
       "lines": [
-        "SdWindowPeek: ld a,[$a000] \u2192 E. SD paths poll until E==$e1 after SetFpga7F30."
+        "SdWindowPeek: ld a,[$a000] → E. SD paths poll until E==$e1 after SetFpga7F30."
       ]
     },
     {
       "bank": 2,
       "addr": "4027",
       "lines": [
-        "SD sector read (disk_read). Program LBA via $7FB0-$7FB4, wait, then copy",
-        "from $A000 into caller buffer via VramCopyStack. Called as FarCallDiskRead.",
-        "Sibling DiskWrite_B2 is the write path (buffer -> $A000, then trigger).",
-        "Prologue: SetFpga7F30_B2."
+        "DiskRead_B2: SD sector read (FarCallDiskRead). Prologue SetFpga7F30_B2 $01; sibling DiskWrite_B2.",
+        "Jump_002_4036: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 Jump_002_4071 else Jump_002_4065 rem then Jump_002_4071.",
+        "Jump_002_4071: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.",
+        "Jump_002_418d: SdWindowPeek until !=$e1; Jump_002_419d: mode $01 + VramCopyStack $A000→buf, idx+=4 → Jump_002_4036.",
+        "Jump_002_41c7: mode $00; E=0; add sp,$13 ret."
       ]
     },
     {
       "bank": 2,
       "addr": "41d5",
       "lines": [
-        "SD sector write (disk_write). Copy buffer to $A000 via VramCopyStack, then",
-        "program $7FB0/$7FB1/$7FB2 and trigger. Prologue: SetFpga7F30_B2 $01 then $03.",
-        "Called as FarCallDiskWrite. Sibling DiskRead_B2 is the read path."
+        "DiskWrite_B2: SD sector write (FarCallDiskWrite). Prologue SetFpga7F30_B2 $01 then $03; sibling DiskRead_B2.",
+        "Jump_002_41ed: chunk loop vs count@sp+$1a; rem>4 → clamp Jump_002_4223 else Jump_002_421c rem then Jump_002_4223.",
+        "Jump_002_4223: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.",
+        "Jump_002_4350: SdWindowPeek until !=$e1; Jump_002_4360: idx+=4 → Jump_002_41ed.",
+        "Jump_002_4369: Delay+$000a; mode $00; E=0 ret."
       ]
     },
     {
       "bank": 3,
       "addr": "4000",
       "lines": [
-        "MemCpy16_B3: copy (count/2) little-endian words dest\u2190src while count\u22652.",
+        "MemCpy16_B3: copy (count/2) little-endian words dest←src while count≥2.",
         "Bank-local FatFs mem helper. Canonical MemCpy16_B9 at 09:4001; B6/B7 siblings."
       ]
     },
@@ -873,14 +1128,14 @@
       "bank": 9,
       "addr": "4713",
       "lines": [
-        "GetFat_B9: FatFs get_fat(fs, clst) \u2014 next cluster from FAT. See GetFat_B3 note."
+        "GetFat_B9: FatFs get_fat(fs, clst) — next cluster from FAT. See GetFat_B3 note."
       ]
     },
     {
       "bank": 8,
       "addr": "6e5a",
       "lines": [
-        "SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 \u2014 unlock, $7F36=stack u8,",
+        "SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 — unlock, $7F36=stack u8,",
         "commit. SetFpgaPage_B8 ($6e7a) is the $7FC0 sibling beside it."
       ]
     },
@@ -895,7 +1150,7 @@
       "bank": 9,
       "addr": "4001",
       "lines": [
-        "MemCpy16_B9: copy words dest\u2190src while byte-count\u22652 (FatFs-shaped mem_cpy).",
+        "MemCpy16_B9: copy words dest←src while byte-count≥2 (FatFs-shaped mem_cpy).",
         "RetStub_B9 (09:4000) is the lone ret in front; B5/B6 siblings match."
       ]
     },
@@ -1029,59 +1284,114 @@
       "addr": "6447",
       "lines": [
         "FindVolume_B5(rfs, path, mode): FatFs find_volume. Clears *rfs; GetLdNumber_B5",
-        "(neg\u2192FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null\u2192FR_NOT_ENABLED);",
-        "DiskStatus/DiskInitialize; CheckFs_B5 on candidate sectors. Returns E=FRESULT."
-      ]
+        "(neg→FR_INVALID_DRIVE); FatFs[vol] at wFatFsTable ($C5A5) (null→FR_NOT_ENABLED);",
+        "DiskStatus/DiskInitialize; CheckFs_B5 on candidate sectors. Returns E=FRESULT.",
+        "GetLdNumber_B5: bit7→E=$0b Jump_005_6d93 else Jump_005_6479; FatFs[vol] @$C5A5 null→E=$0c else Jump_005_649f bind *rfs.",
+        "Mounted? Jump_005_649f: fs->fs_type set → DiskStatus; STA_NOINIT jr_005_64cc→Jump_005_64e8 reinit; else Jump_005_64cf mode0→Jump_005_64e3 E=0 / write-protect jr_005_64de E=$0a.",
+        "Jump_005_64e8: DiskInitialize; fail jr_005_6519 E=$03; Jump_005_651e protect jr_005_652d E=$0a else Jump_005_6532 CheckFs_B5(0); fmt==1 jr_005_655b else Jump_005_6558→Jump_005_669e.",
+        "MBR PTE scan Jump_005_657f (jr_005_65b7/jr_005_65be); LBA Jump_005_65fa/Jump_005_6601/jr_005_661d; done Jump_005_6620; try partitions Jump_005_6627 CheckFs_B5 (Jump_005_6681 empty / Jump_005_6683).",
+        "Jump_005_6683: CheckFs result; nonzero→next PTE jr_005_6692→Jump_005_6627; else Jump_005_669e: fmt==3 jr_005_66ab E=$01; Jump_005_66a8/Jump_005_66b0 fmt!=0 E=$0d else Jump_005_66bc.",
+        "Jump_005_66bc BPB: BytsPerSec==512 (Jump_005_66e7 fail E=$0d / Jump_005_66ec); FATSz16 else FATSz32 → Jump_005_673f; NumFATs 1|2 else E=$0d Jump_005_679c.",
+        "Jump_005_679c: U32Mul fat size; SecPerClus power-of-2 (Jump_005_682c fail / Jump_005_6831); RootEntCnt&$0f jr_005_6864 E=$0d else Jump_005_6869 TotSec16 else TotSec32 → Jump_005_68bc.",
+        "Jump_005_68bc: RsvdSecCnt nonzero else E=$0d; Jump_005_68d7 fatbase/data bounds (jr_005_6912 SecPerClus shift); vol size check Jump_005_6963 else E=$0d; U32Mod nonzero → Jump_005_69d1 else E=$0d.",
+        "Jump_005_69d1/Jump_005_69ed/Jump_005_6a05: classify fs_type 1/2/3 from vol size; fill volbase/fatbase/dirbase/database/csize fields.",
+        "fmt==3 Jump_005_6af7→Jump_005_6b90 (FAT32 RootClus Jump_005_6ba3; fmt==2 jr_005_6c02 U32Shl else Jump_005_6bff→Jump_005_6c47 U32Mul/U32Shr) else jr_005_6afa→Jump_005_6b0d FAT12/16 root (U32Shl→Jump_005_6cdc); merge Jump_005_6ccb/Jump_005_6cdc.",
+        "U32Shr cluster sanity → Jump_005_6d4a: store fs_type, bump mount ctr @$C5A7 (jr_005_6d68), clear win; E=0 → Jump_005_6d93 (add sp,$4f / ret)."
+      ],
+      "name": "FindVolume_B5"
     },
     {
       "bank": 5,
       "addr": "54c7",
       "lines": [
-        "DirRead_B5(dp, vol): FatFs dir_read. Scan entries via MoveWindow_B5 + DirNext_B5;",
-        "skip DDEM ($E5), match AM_VOL vs vol arg, handle LFN ($0F). Returns E=FRESULT",
-        "(4=FR_NO_FILE at end). Copies: DirRead_B7 ($64f6), DirRead_B9 ($66a6)."
-      ]
+        "DirRead_B5(dp, vol@sp+$13): FatFs dir_read. Frame -$0f; sp+$0e default E=$04; sp+$09 LFN ord/$ff.",
+        "Jump_005_54ea: load dir ptr@dp+$0e — cluster zero → Jump_005_56b0; MoveWindow_B5 err → Jump_005_56b0.",
+        "NTRES@dp+$1c≠0 → Jump_005_5557; else set mode $04 → Jump_005_56b0.",
+        "Jump_005_5557: SFN[0] DDEM $E5 → Jump_005_5597; AM_VOL vs vol arg (Jump_005_5585/jr_005_5586) mismatch → Jump_005_5597.",
+        "Jump_005_559e: ord $0F → jr_005_55ab else Jump_005_55a8→Jump_005_5668 SFN path.",
+        "jr_005_55ab: AM_VOL → jr_005_55b5 stash checksum + dptr else Jump_005_55f9 attr filter.",
+        "Jump_005_55f9: attr≠sp+$09 → Jump_005_5604→Jump_005_561b; jr_005_5607 checksum match → Jump_005_5620 else Jump_005_561b.",
+        "Jump_005_5622: LFN ord ok → call $4ef7; fail Jump_005_564c else Jump_005_5651; Jump_005_5653 dec ord or Jump_005_5660→$ff → Jump_005_5662→Jump_005_5698.",
+        "Jump_005_5668: sp+$09≠0 → Jump_005_5681 clear lfn ptr; else SumSfn_B5 match → Jump_005_56b0.",
+        "Jump_005_5698: DirNext_B5(0); E=0 → Jump_005_54ea; Jump_005_56b0: E=0 Jump_005_56cb else zero dir ptr → Jump_005_56cb ret E."
+      ],
+      "name": "DirRead_B5"
     },
     {
       "bank": 7,
       "addr": "64f6",
       "lines": [
-        "DirRead_B7: bank-7 near-call copy of DirRead_B5/B9 (FatFs dir_read)."
-      ]
+        "DirRead_B7(dp, vol@sp+$13): FatFs dir_read. Frame -$0f; sp+$0e default E=$04; sp+$09 LFN ord/$ff.",
+        "Jump_007_6519: load dir ptr@dp+$0e — cluster zero → Jump_007_66df; MoveWindow_B7 err → Jump_007_66df.",
+        "NTRES@dp+$1c≠0 → Jump_007_6586; else set mode $04 → Jump_007_66df.",
+        "Jump_007_6586: SFN[0] DDEM $E5 → Jump_007_65c6; AM_VOL vs vol arg (Jump_007_65b4/jr_007_65b5) mismatch → Jump_007_65c6.",
+        "Jump_007_65cd: ord $0F → jr_007_65da else Jump_007_65d7→Jump_007_6697 SFN path.",
+        "jr_007_65da: AM_VOL → jr_007_65e4 stash checksum + dptr else Jump_007_6628 attr filter.",
+        "Jump_007_6628: attr≠sp+$09 → Jump_007_6633→Jump_007_664a; jr_007_6636 checksum match → Jump_007_664f else Jump_007_664a.",
+        "Jump_007_6651: LFN ord ok → call $4ef7; fail Jump_007_667b else Jump_007_6680; Jump_007_6682 dec ord or Jump_007_668f→$ff → Jump_007_6691→Jump_007_66c7.",
+        "Jump_007_6697: sp+$09≠0 → Jump_007_66b0 clear lfn ptr; else SumSfn_B7 match → Jump_007_66df.",
+        "Jump_007_66c7: DirNext_B7(0); E=0 → Jump_007_6519; Jump_007_66df: E=0 Jump_007_66fa else zero dir ptr → Jump_007_66fa ret E."
+      ],
+      "name": "DirRead_B7"
     },
     {
       "bank": 9,
       "addr": "66a6",
       "lines": [
-        "DirRead_B9: bank-9 near-call copy of DirRead_B5 (FatFs dir_read).",
-        "Orphan after Jump_009_66a3; sits just before DirRegister_B9."
-      ]
+        "DirRead_B9(dp, vol@sp+$13): FatFs dir_read. Frame -$0f; sp+$0e default E=$04; sp+$09 LFN ord/$ff.",
+        "Jump_009_66c9: load dir ptr@dp+$0e — cluster zero → Jump_009_688f; MoveWindow_B9 err → Jump_009_688f.",
+        "NTRES@dp+$1c≠0 → Jump_009_6736; else set mode $04 → Jump_009_688f.",
+        "Jump_009_6736: SFN[0] DDEM $E5 → Jump_009_6776; AM_VOL vs vol arg (Jump_009_6764/jr_009_6765) mismatch → Jump_009_6776.",
+        "Jump_009_677d: ord $0F → jr_009_678a else Jump_009_6787→Jump_009_6847 SFN path.",
+        "jr_009_678a: AM_VOL → jr_009_6794 stash checksum + dptr else Jump_009_67d8 attr filter.",
+        "Jump_009_67d8: attr≠sp+$09 → Jump_009_67e3→Jump_009_67fa; jr_009_67e6 checksum match → Jump_009_67ff else Jump_009_67fa.",
+        "Jump_009_6801: LFN ord ok → call $4ef7; fail Jump_009_682b else Jump_009_6830; Jump_009_6832 dec ord or Jump_009_683f→$ff → Jump_009_6841→Jump_009_6877.",
+        "Jump_009_6847: sp+$09≠0 → Jump_009_6860 clear lfn ptr; else SumSfn_B9 match → Jump_009_688f.",
+        "Jump_009_6877: DirNext_B9(0); E=0 → Jump_009_66c9; Jump_009_688f: E=0 Jump_009_68aa else zero dir ptr → Jump_009_68aa ret E."
+      ],
+      "name": "DirRead_B9"
     },
     {
       "bank": 9,
       "addr": "77ff",
       "lines": [
-        "Open_B9(fp, path, mode): FatFs f_open. RtcReadPage; FindVolume_B9; FollowPath_B9;",
-        "create path uses CreateChain_B9 / DirRegister_B9 / RemoveChain_B9 / SyncFs_B9.",
-        "Large -$47 frame; bank-9 only in this link (no B3/B5/B6/B7 twin at same shape)."
-      ]
+        "Open_B9(fp, path, mode): FatFs f_open. Frame -$47; RtcReadPage stash; sp+$46 holds E.",
+        "FindVolume_B9(mode=1); err → Jump_009_7cb1. Init fp/dp; stamp $A9C5; FollowPath_B9.",
+        "Follow err → Jump_009_7882; found → E=$08 (exist) → Jump_009_7882.",
+        "Jump_009_7882: E==$04 (NO_FILE) → jr_009_788f else Jump_009_788c→Jump_009_78b3.",
+        "jr_009_788f: ATTR_DIR → jr_009_78af E=$06 else Jump_009_78b3; Jump_009_78b3: E==$04 → jr_009_78c0 create else Jump_009_78bd→Jump_009_7cb1.",
+        "jr_009_78c0: CreateChain_B9; cluster zero → Jump_009_7915 E=$07; cluster−1 zero → jr_009_7934 E=$02 else Jump_009_7931→Jump_009_7938.",
+        "Jump_009_7938: cluster+1 wrap → jr_009_7956 E=$01 else Jump_009_7953→Jump_009_795a; ok SyncWindow_B9 Jump_009_7976.",
+        "Jump_009_7976: err → Jump_009_7ba0 else Clust2Sect + MemSet16 dir buf + StClust + timestamp/attr copy.",
+        "Attr==$03 → jr_009_7a87 else Jump_009_7a84→Jump_009_7ad7; size match → jr_009_7ad0 zero fsize else Jump_009_7acd→Jump_009_7ad7.",
+        "Jump_009_7ad7: StClust + store cluster; Jump_009_7b17: LFN ord loop (jr_009_7b54) SyncWindow → Jump_009_7ba0.",
+        "Jump_009_7ba0: E=0 DirRegister_B9; Jump_009_7bb5 RetStub; err RemoveChain_B9 → Jump_009_7cb1.",
+        "Jump_009_7c07: ok path FA|$10, StClust, SyncFs_B9, RetStub → Jump_009_7cb1 add sp,$47 ret E."
+      ],
+      "name": "Open_B9"
     },
     {
       "bank": 3,
       "addr": "4f88",
       "lines": [
-        "RemoveChain_B3: bank-3 near-call copy of RemoveChain_B9 (FatFs remove_chain).",
-        "GetFat_B3 + PutFat_B3; same shape as RemoveChain_B6/B9. Orphan before CreateChain_B3."
-      ]
+        "RemoveChain_B3(fs, clst, pclst): FatFs remove_chain. Frame -$0e; walk FAT from fs+clst toward clst.",
+        "clst<2 → Jump_003_4fd9 B=$02; start cluster > clst → Jump_003_4fde B=$00 else Jump_003_4fd9.",
+        "Jump_003_4fe0 loop: walker≥clst → Jump_003_5129 ret B; GetFat_B3; FAT zero → Jump_003_5129.",
+        "FAT==1 → jr_003_5057 B=$02 else Jump_003_5054→Jump_003_505c; inc FAT wraps → jr_003_507a B=$01 else Jump_003_5077→Jump_003_507f.",
+        "Jump_003_507f: PutFat_B3 free slot; err → Jump_003_5129; advance walker — inc hits 0 → Jump_003_5115 else Jump_003_50da (jr_003_50e9) + FA_DIRTY → Jump_003_4fe0.",
+        "Jump_003_5115: stash final cluster@sp+$12 → Jump_003_4fe0; Jump_003_5129: ld e,B / add sp,$0e / ret."
+      ],
+      "name": "RemoveChain_B3"
     },
     {
       "bank": 3,
       "addr": "7395",
       "lines": [
-        "FindVolume_B3: bank-3 near-call copy of FindVolume_B6/B9 (FatFs find_volume front).",
-        "GetLdNumber_B3; FatFs table $C5A5; DiskStatus; FR $0b/$0c/$0a. -$12 frame.",
-        "Orphan after Jump_003_7392; sits just before Validate_B3."
-      ]
+        "FindVolume stub (bank-3 near-call): FatFs find_volume front only; full mount in FindVolume_B5.",
+        "Clear *rfs; GetLdNumber_B3: bit7→E=$0b Jump_003_7417; else Jump_003_73c2: FatFs[vol] @$C5A5 null→E=$0c else Jump_003_73dc.",
+        "Jump_003_73dc: bind *rfs; fs_type==0→Jump_003_7415; DiskStatus STA_NOINIT jr_003_73fe→Jump_003_7415 else Jump_003_7401; mode0 Jump_003_7415 else WP jr_003_7410 E=$0a; Jump_003_7415 E=0 → Jump_003_7417 (add sp,$12 / ret)."
+      ],
+      "name": "FindVolume_B3"
     },
     {
       "bank": 3,
@@ -1089,17 +1399,34 @@
       "lines": [
         "Lseek_B3(fp, ofs): FatFs f_lseek. Validate_B3; U32Shl/Mod; CreateChain_B3 to",
         "extend; GetFat_B3 + Clust2Sect_B3. FarCall disk R/W helpers. -$29 frame.",
-        "Target of FarCall_03_76cc; orphan after Jump_003_76c6."
-      ]
+        "Target of FarCall_03_76cc; orphan after Jump_003_76c6.",
+        "Validate_B3 fail → Jump_003_7eac; else Jump_003_76e6: fp->err nonzero → Jump_003_7eac else Jump_003_7707.",
+        "Jump_003_7707: if ofs > fsize and not FA_WRITE (jr_003_774f/Jump_003_7752 clamp ofs=fsize); join Jump_003_7763 clear fptr.",
+        "Jump_003_7763: ofs==0 → Jump_003_7cf6; else U32Shl csize; if fptr==0 Jump_003_793c (from sclust) else U32Mod cluster align — same-cluster Jump_003_7a29 else Jump_003_793c restart from sclust.",
+        "Jump_003_793c: start from sclust; empty → CreateChain_B3 (clust==1 Jump_003_79bf/jr_003_79c2 E=$02; else Jump_003_79cf: clust==-1 jr_003_79ed E=$01; Jump_003_79ea/Jump_003_79fa write sclust); join Jump_003_7a0c set clust.",
+        "Jump_003_7a29: clust==0 → Jump_003_7cf6; else Jump_003_7a43: while bc < ofs — FA_WRITE jr_003_7a68 CreateChain_B3 else Jump_003_7abf GetFat_B3; fail jr_003_7b15 E=$01 / Jump_003_7b6c E=$02; ok Jump_003_7af7/Jump_003_7b12/Jump_003_7b22; past EOF Jump_003_7b79 → Jump_003_7a43 else Jump_003_7c08.",
+        "Jump_003_7c08: set fptr; zero ofs→Jump_003_7cf6 else jr_003_7c62 Clust2Sect_B3; sect ok Jump_003_7cb2 U32Shr sector offset else E=$02 → Jump_003_7eac.",
+        "Jump_003_7cf6: same-sector jr_003_7d17 else Jump_003_7e2e; winsect mismatch Jump_003_7d58: dirty FA_DIRTY jr_003_7d71 FarCallDiskWrite else Jump_003_7dcc FarCallDiskRead; disk err E=$01 → Jump_003_7eac; Jump_003_7dbe clear FA_DIRTY; Jump_003_7e19 store winsect.",
+        "Jump_003_7e2e: clamp fptr to fsize (Jump_003_7ea9); set FA_DIRTY if past; E from stack → Jump_003_7eac (add sp,$29 / ret)."
+      ],
+      "name": "Lseek_B3"
     },
     {
       "bank": 6,
       "addr": "7309",
       "lines": [
-        "Open_B6(fp, path, mode): FatFs f_open (bank-6). FindVolume_B6 + FollowPath_B6 +",
-        "DirRegister_B6 path; same role as Open_B9. Target of FarCall_06_7309",
-        "(BackupSaveDump). Orphan after prior epilogue; -$42 frame."
-      ]
+        "Open_B6(fp, path, mode): FatFs f_open (bank-6). Frame -$42; sp+$41=E; sp+$4c=mode.",
+        "fp null → E=$09 Jump_006_7797; Jump_006_7317 init fp; FindVolume_B6 err → Jump_006_7794.",
+        "FollowPath_B6; err or cluster==0 → Jump_006_73d3 (empty path → E=$06).",
+        "Jump_006_73d3: mode create bits → jr_006_73dd else Jump_006_75d2 open-existing checks.",
+        "jr_006_73dd: E==$04 → jr_006_73ef DirRegister_B6 else Jump_006_73ec→Jump_006_73fe; mode|$08 + cluster copy → Jump_006_7446.",
+        "Jump_006_741d: found — attr DIR/RDO → jr_006_7431 E=$07 else Jump_006_7438; FA_OPEN_EXISTING → jr_006_7442 E=$08 → Jump_006_7446.",
+        "Jump_006_7446: err → Jump_006_760a; FA_CREATE → jr_006_7457 RtcReadPage + StClust create/truncate (RemoveChain/MoveWindow) → Jump_006_760a.",
+        "Jump_006_75d2: attr volume → jr_006_75ed E=$04 else Jump_006_75f4; need FA_WRITE → jr_006_75fe; RDO w/o FA_WRITE → jr_006_7606 E=$07 → Jump_006_760a.",
+        "Jump_006_760a: err → Jump_006_767a; ok — FA_CREATE → jr_006_761b FA_MODIFIED; Jump_006_7621 stash winsect/fptr/cluster into fp.",
+        "Jump_006_767a: err → Jump_006_7794 else LdClust + fill fp→obj; Jump_006_7794/Jump_006_7797 add sp,$42 ret E."
+      ],
+      "name": "Open_B6"
     },
     {
       "bank": 5,
@@ -1113,17 +1440,31 @@
       "bank": 6,
       "addr": "779a",
       "lines": [
-        "Read_B6(fp, buff, btr): FatFs f_read. Validate_B6; cluster walk via GetFat_B6 +",
-        "Clust2Sect_B6; MemCpy16_B6; disk via FarCall_02_*. Target of FarCall_06_779a."
-      ]
+        "Read_B6(fp, buff, btr): FatFs f_read (bank-6). Target of FarCall_06_779a.",
+        "Validate_B6 fail → Jump_006_7e49; else Jump_006_77ce: fp->err → Jump_006_7e49.",
+        "Jump_006_77ef: FA_READ (jr_006_7808/Jump_006_7810) else Jump_006_780b E=$07; init remain/btr/fptr/fsize; Jump_006_789f setup ptrs.",
+        "Jump_006_78db: btr==0 → Jump_006_7e47 else win dirty jr_006_7903 → Jump_006_7d2a else Jump_006_7906 sector loop.",
+        "Jump_006_7906: U32Shr cluster/sect; GetFat_B6 walk (Jump_006_798e/Jump_006_79d1 EOF E=$02; Jump_006_79f2/Jump_006_7a0d/jr_006_7a10 E=$01); store clust Jump_006_7a1d/Jump_006_7a32.",
+        "Jump_006_7a32 Clust2Sect_B6; partial Jump_006_7a83/Jump_006_7b10 FarCallDiskRead; full Jump_006_7b50 jr_006_7b5e U32Shl+MemCpy16_B6; Jump_006_7c09/Jump_006_7c1b same-sect Jump_006_7c51/jr_006_7c5f.",
+        "Jump_006_7cb5 flush dirty FarCallDiskWrite; Jump_006_7cc3/jr_006_7cdf FarCallDiskRead; Jump_006_7d15 winsect store; Jump_006_7d2a/Jump_006_7d67 MemCpy16_B6 from win.",
+        "Jump_006_7da8 advance buff/fptr; loop Jump_006_78db; Jump_006_7e47 E=0 → Jump_006_7e49 (add sp,$37 / ret)."
+      ],
+      "name": "Read_B6"
     },
     {
       "bank": 7,
       "addr": "7739",
       "lines": [
-        "Write_B7(fp, buff, btw): FatFs f_write. Validate_B7; CreateChain_B7 to grow;",
-        "Clust2Sect_B7 + MemCpy16_B7; disk FarCall_02_*. Orphan after Jump_007_7736."
-      ]
+        "Write_B7(fp, buff, btw): FatFs f_write (bank-7). Target of FarCall_07_7739.",
+        "Validate_B7 fail → Jump_007_7f0c; else Jump_007_776d: fp->err → Jump_007_7f0c.",
+        "Jump_007_778e: FA_WRITE (jr_007_77a7/Jump_007_77af) else Jump_007_77aa E=$07; init remain/btw/fptr/fsize.",
+        "Jump_007_781a setup win/buff ptrs; Jump_007_7865: btw==0 → Jump_007_7eac else win dirty jr_007_788d → Jump_007_7d81 else Jump_007_7890.",
+        "Jump_007_7890: U32Shr cluster/sect; clust==0 CreateChain_B7 (Jump_007_7952 extend else Jump_007_7995); clust err Jump_007_79bc/jr_007_79bf E=$02 or Jump_007_79cc/Jump_007_79e7/jr_007_79ea E=$01; store clust Jump_007_79f7/Jump_007_7a3e.",
+        "Jump_007_7a3e: FA_DIRTY jr_007_7a4c FarCallDiskWrite flush else Jump_007_7aab clear FA_DIRTY → Jump_007_7ab9 Clust2Sect_B7 (fail E=$02); Jump_007_7b0a partial sector Jump_007_7b97 FarCallDiskWrite else Jump_007_7ca9 same-sect Jump_007_7cdf/Jump_007_7d6c.",
+        "Jump_007_7bd7: U32Shl + MemCpy16_B7 into win; Jump_007_7c97 → Jump_007_7e0d; Jump_007_7cdf winsect mismatch jr_007_7d36 FarCallDiskRead else Jump_007_7d6c; Jump_007_7d81 win copy path Jump_007_7dbe MemCpy16_B7 set FA_DIRTY.",
+        "Jump_007_7e0d advance buff/fptr; loop Jump_007_7865; Jump_007_7eac grow fsize (Jump_007_7efc FA_MODIFIED); Jump_007_7f0c epilogue (add sp,$35 / ret)."
+      ],
+      "name": "Write_B7"
     },
     {
       "bank": 9,
@@ -1145,7 +1486,7 @@
       "bank": 5,
       "addr": "73dd",
       "lines": [
-        "Opendir_B5(dp, path): FatFs f_opendir. Null dp\u2192FR_INVALID_OBJECT ($09);",
+        "Opendir_B5(dp, path): FatFs f_opendir. Null dp→FR_INVALID_OBJECT ($09);",
         "FindVolume_B5 + FollowPath_B5 + LdClust_B5 + DirSdi_B5. -$19 frame;",
         "sits just before Readdir_B5."
       ]
@@ -1188,10 +1529,23 @@
       "addr": "46f4",
       "lines": [
         "DrawTimeAutosaveScreen: sp+$3c=$A200; sp+$3d hilite; sp+$3e dirty; sp+$3f field 0..5; sp+$40 SET/SAV.",
-        "Redraw Jump_004_48f5; FPGA $A008..$A00C load @49ee; SAV date draw @4e42; input @5162 ReadJoypad.",
-        "Pad $02/$01: step field; $04: inc value (yr wrap $63 @sp+$2e, mon wrap $0c @sp+$2c, …); $08: dec mirror @5407.",
-        "Jump_004_5211+: sp+$3f dispatches bump/wrap; Jump_004_524a field2 uses $5276 month-len jp table; all converge Jump_004_53f2 (sp+$3e=$01)->48f5.",
-        "Jump_004_58d6 toggles $A200; Jump_004_5912 ret. Residual Jump_: clone bump arms + SET-mode pad twins."
+        "Setup: sp+$3c!=1 → Jump_004_47ce; jr_004_47d1 DrawRect; Jump_004_47ef field slot ptrs → Jump_004_48f5.",
+        "SET redraw Jump_004_48f5: sp+$40≠0 → SAV Jump_004_4e42; sp+$3e!=1 → Jump_004_4906/Jump_004_49ee; else jr_004_4909 hilite.",
+        "Hilite: Jump_004_4920/Jump_004_492d StoreDrawParams; Jump_004_4959/Jump_004_496a/Jump_004_4992/jr_004_4995/Jump_004_49a5/Jump_004_49b2 SET strings; Jump_004_49cd/jr_004_49d0 → Jump_004_49ee.",
+        "FPGA Jump_004_49ee: page6 $A008..$A00E → slots; Jump_004_4aa3/jr_004_4aa6 gate.",
+        "Field clones: Jump_004_4aad (+Jump_004_4b2e/Jump_004_4b43/jr_004_4b46); Jump_004_4b4d (+Jump_004_4bcc/Jump_004_4be1/jr_004_4be4); Jump_004_4beb (+Jump_004_4c5a/Jump_004_4c6f/jr_004_4c72);",
+        "Jump_004_4c79 (+Jump_004_4cf9/Jump_004_4d0e/jr_004_4d11); Jump_004_4d18 (+Jump_004_4d98/Jump_004_4dad/jr_004_4db0); Jump_004_4db7; Jump_004_4e26 Memcpy → Jump_004_5162.",
+        "SAV date clones (Jump_004_4e42 dirty): yr Jump_004_4ec6; mon Jump_004_4f38/jr_004_4f3b/Jump_004_4f48; day Jump_004_4fba/jr_004_4fbd/Jump_004_4fca;",
+        "hr Jump_004_502b/jr_004_502e/Jump_004_503b; min Jump_004_50ad/jr_004_50b0/Jump_004_50bd; sec Jump_004_512f/jr_004_5132/Jump_004_513f → Jump_004_5162.",
+        "Input Jump_004_5162: $02 jr_004_5170 field-- (Jump_004_5189/Jump_004_5192/Jump_004_5199 wrap); $01 jr_004_51a1 field++ (Jump_004_51ba/jr_004_51bd/Jump_004_51c1/Jump_004_51c8).",
+        "$04 bump jr_004_51d0 field0 yr (Jump_004_51f3/jr_004_51f6 wrap $63/Jump_004_5201); Jump_004_5211 field1 mon (Jump_004_521b/jr_004_521e/Jump_004_522c/jr_004_522f/Jump_004_523a).",
+        "Jump_004_524a field2 day (Jump_004_5254/jr_004_5257; Jump_004_529a/Jump_004_52a8/jr_004_52ab/Jump_004_52b6; Jump_004_52c6/Jump_004_52d4/jr_004_52d7/Jump_004_52e2; Jump_004_52f2 U8Mod; Jump_004_5317/Jump_004_532c/Jump_004_532f/jr_004_532f/Jump_004_533a) → Jump_004_53f2.",
+        "$04 fields 3..5: Jump_004_534a hr (Jump_004_5354/jr_004_5357/Jump_004_5365/jr_004_5368/Jump_004_5373); Jump_004_5383 min (Jump_004_538d/jr_004_5390/Jump_004_539e/jr_004_53a1/Jump_004_53ac);",
+        "Jump_004_53bc sec (Jump_004_53c6/jr_004_53c9/Jump_004_53d7/jr_004_53da/Jump_004_53e5); join Jump_004_53f2 dirty; Jump_004_53f9 SET hilite-- twin → Jump_004_48f5.",
+        "$08 dec Jump_004_5407/jr_004_540f: field0 yr Jump_004_5438/Jump_004_5448/Jump_004_5452/jr_004_5455/Jump_004_546c; field1 mon Jump_004_547c/Jump_004_5486/jr_004_5489;",
+        "field2 day Jump_004_54cc/Jump_004_54e3/Jump_004_54f3/Jump_004_550a/Jump_004_551a/Jump_004_5528/jr_004_552b/Jump_004_554f/Jump_004_555a; field3 hr Jump_004_556a/Jump_004_5574/jr_004_5577/Jump_004_558b;",
+        "field4 min Jump_004_559b/Jump_004_55a5/jr_004_55a8/Jump_004_55bc; field5 sec Jump_004_55cc/Jump_004_55d6/jr_004_55d9/Jump_004_55ed; Jump_004_55fa dirty; Jump_004_5601 SET hilite++.",
+        "Exit: Jump_004_5610/jr_004_5618/Jump_004_561b/jr_004_5623/Jump_004_5626; $10 jr_004_562e confirm Jump_004_5747 BCD→$A008+$7FD0; $40 Jump_004_58d6/Jump_004_58e2/Jump_004_58e6 toggle $A200 → Jump_004_5912 ret."
       ]
     },
     {
@@ -1233,41 +1587,52 @@
       "bank": 8,
       "addr": "6fd0",
       "lines": [
-        "DrawFwVersionScreen: build \"FWx \" prefix on stack, SdWindowPeek_B8, U32ToAscii_B0",
-        "version, then DrawRect/DrawString. Orphan after Jump_008_6fcd; -$34 frame."
+        "DrawFwVersionScreen: -$34 frame; \"FW…\" + SdWindowPeek_B8 page $04; U32ToAscii_B0 radix $0a.",
+        "Jump_008_70e1: DrawRect/DrawString chrome; Jump_008_7141 WaitVBlank+ReadJoypad until SELECT ($40); jr_008_7152 add sp,$34 ret.",
+        "Post-ret orphans (no new ::): tab chrome by sp+$06. Jump_008_7203/Jump_008_720d/jr_008_7210 tab0; Jump_008_727e/Jump_008_7288/jr_008_728b tab1;",
+        "Jump_008_72f9/Jump_008_7303/jr_008_7306 tab2/3; Jump_008_7331 ret. Before MenuTabSdStr."
       ]
     },
     {
       "bank": 1,
       "addr": "5163",
       "lines": [
-        "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; Jump_001_51b2 force \".sav\"; Open_B6 FarCall_06_7309 \u2192 $ca0f.",
-        "Jump_001_5233..528b: $d3ed cart-type \u2192 byte size @sp+$14 ($0/$2000/$10000/$20000/$8000; $d3eb==2 special).",
-        "Jump_001_5298: open ok \u2192 re-open FA_READ, copy fsize, Jump_001_5327 read $200 + VramCopyStack into cart window.",
-        "Jump_001_53ee RTC/meta restore if sp+$08; Jump_001_54d1 open-fail blanks $FF then same write loop; both \u2192 PreLaunchFramStamp."
+        "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; Jump_001_51b2 force \".sav\"; Open_B6 FarCall_06_7309 → $ca0f.",
+        "Size from $d3ed: Jump_001_5233 ($d3eb==2 → Jump_001_523e/jr_001_5241 $2000 else Jump_001_5251 0); 1/2 Jump_001_525b $2000; 4 Jump_001_526b $20000; 5 Jump_001_527b $10000; else Jump_001_528b $8000.",
+        "Jump_001_5298: open ok else Jump_001_54d1; and $30==$30 → Jump_001_530e/jr_001_5311 RTC flag else Jump_001_531c; Jump_001_5320/Jump_001_5327 read+$200 VramCopyStack loop.",
+        "Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close → PreLaunchFramStamp.",
+        "Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs → PreLaunchFramStamp."
       ]
     },
     {
       "bank": 1,
       "addr": "40e3",
       "lines": [
-        "DrawBrowserEntries: file-browser rows from path buf at $c2a0. Clamp count vs $c2a2;",
-        "per row DrawString name; if attr at +$fe == $10 (AM_DIR) draw \"DIR\" ($42b6), else",
-        "U32ToAscii_B0 size. Orphan after prior ret at Jump_001_40e0."
+        "DrawBrowserEntries(start@sp+$26, sel@sp+$28): clamp visible rows vs $c2a2 (max $10) at Jump_001_40ff.",
+        "Jump_001_412c: clear ink StoreDrawParams; Jump_001_413d row loop → done Jump_001_4266.",
+        "jr_001_415d hilite $0002 else Jump_001_415a → Jump_001_416a; jr_001_4181 >>5 bank+$12@$4000.",
+        "Jump_001_41da/jr_001_41dd: attr+$fe==$10 dir (+BrowserDirStr) else Jump_001_4229 file DrawString $14; Jump_001_4253 reset ink → Jump_001_413d.",
+        "Jump_001_4266: U32ToAscii selected size + DrawString ret."
       ]
     },
     {
       "bank": 1,
       "addr": "4048",
       "lines": [
-        "CStrCmp(a, b): signed char strcmp. Walk [bc] vs [de]; return DE = *a - *b (sex)."
+        "CStrCmp(a@sp+$0a, b@sp+$0c): signed char strcmp → DE=*a-*b (sex). Frame -$04; BC=a, DE=b.",
+        "Jump_001_4056: load *a/*b; mismatch → Jump_001_4069 → Jump_001_4084 sex-sub; else jr_001_406c.",
+        "jr_001_406c: *a==0 → DE=0 Jump_001_40a0; else Jump_001_4079 ++BC / ++b-ptr (jr_001_4081 carry) → Jump_001_4056.",
+        "Jump_001_4084: sex(*a)-sex(*b) into DE; Jump_001_40a0: add sp,$04 ret."
       ]
     },
     {
       "bank": 1,
       "addr": "40a3",
       "lines": [
-        "CStrChr(s, c): find first c in NUL-terminated s; return pointer in DE (0 if none)."
+        "CStrChr(s@sp+$09, c@sp+$0b): walk NUL-term s; DE=last match ptr (0 if none). Frame -$03; last-wins not first.",
+        "Null s → DE=0 Jump_001_40e0; else Jump_001_40b9 BC=s; Jump_001_40be: *BC==0 → Jump_001_40db load saved.",
+        "*BC==c → jr_001_40d2 store BC@sp+$01; else Jump_001_40cf → Jump_001_40d7; Jump_001_40d7 ++BC → Jump_001_40be.",
+        "Jump_001_40db: DE=saved; Jump_001_40e0: add sp,$03 ret."
       ]
     },
     {
@@ -1282,85 +1647,87 @@
       "bank": 0,
       "addr": "2785",
       "lines": [
-        "GetPixelXY: stack ABI (x, y) \u2192 GetPixel (B/C). Sibling of PlotPixelXY."
+        "GetPixelXY: stack ABI (x, y) → GetPixel (B/C). Sibling of PlotPixelXY."
       ]
     },
     {
       "bank": 0,
       "addr": "2d56",
       "lines": [
-        "PrintCharArg: stack u8 \u2192 PrintChar (A). Thin C ABI wrapper."
+        "PrintCharArg: stack u8 → PrintChar (A). Thin C ABI wrapper."
       ]
     },
     {
       "bank": 0,
       "addr": "2d5f",
       "lines": [
-        "PutBgTileArg: stack u8 \u2192 PutBgTile (A). Thin C ABI wrapper."
+        "PutBgTileArg: stack u8 → PutBgTile (A). Thin C ABI wrapper."
       ]
     },
     {
       "bank": 0,
       "addr": "2d68",
       "lines": [
-        "SetTileCursor: stack (x, y) \u2192 wTileCursorX/Y. Tile-text cursor (vs SetTextCursor)."
+        "SetTileCursor: stack (x, y) → wTileCursorX/Y. Tile-text cursor (vs SetTextCursor)."
       ]
     },
     {
       "bank": 0,
       "addr": "2d73",
       "lines": [
-        "GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E."
+        "GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E.",
+        "jr_000_2d7f: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorX."
       ]
     },
     {
       "bank": 0,
       "addr": "2d84",
       "lines": [
-        "GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E."
+        "GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.",
+        "jr_000_2d90: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY."
       ]
     },
     {
       "bank": 0,
       "addr": "2f8d",
       "lines": [
-        "BlitTileXY: ensure mode-1; stack args \u2192 BlitTile (B/C/DE/HL)."
+        "BlitTileXY: ensure mode-1; stack args → BlitTile (B/C/DE/HL)."
       ]
     },
     {
       "bank": 0,
       "addr": "2fa8",
       "lines": [
-        "VramLoadTiles8100Arg: ensure mode-1; stack BC \u2192 VramLoadTiles8100."
+        "VramLoadTiles8100Arg: ensure mode-1; stack BC → VramLoadTiles8100."
       ]
     },
     {
       "bank": 0,
       "addr": "3a4f",
       "lines": [
-        "WaitJoypadMaskArg: stack mask \u2192 WaitJoypadMask (B); return pressed in E."
+        "WaitJoypadMaskArg: stack mask → WaitJoypadMask (B); return pressed in E."
       ]
     },
     {
       "bank": 0,
       "addr": "3c3f",
       "lines": [
-        "RegisterFontArg: stack font-desc ptr \u2192 RegisterFont (HL); return slot in DE."
+        "RegisterFontArg: stack font-desc ptr → RegisterFont (HL); return slot in DE."
       ]
     },
     {
       "bank": 0,
       "addr": "3c4d",
       "lines": [
-        "SelectFontArg: stack font-desc ptr \u2192 SelectFont (HL); returns DE=0."
+        "SelectFontArg: stack font-desc ptr → SelectFont (HL); returns DE=0."
       ]
     },
     {
       "bank": 5,
       "addr": "6e19",
       "lines": [
-        "Mount_B5(fs, path, opt): FatFs f_mount. GetLdNumber_B5 (neg\u2192FR_INVALID_DRIVE);",
-        "bind/clear FatFs[vol] at wFatFsTable ($C5A5); opt==1 \u2192 FindVolume_B5."
+        "Mount_B5(fs, path, opt): FatFs f_mount. GetLdNumber_B5 (neg→FR_INVALID_DRIVE);",
+        "bind/clear FatFs[vol] at wFatFsTable ($C5A5); opt==1 → FindVolume_B5."
       ]
     },
     {
@@ -1375,7 +1742,10 @@
       "bank": 0,
       "addr": "2bfc",
       "lines": [
-        "U32ModImpl: body of U32Mod stub. MemIsZero early-out; else U32DivEngine remainder path."
+        "U32ModImpl: body of U32Mod stub. Twin of U32DivImpl; frame -$08; rem@sp+$04 → DEHL.",
+        "MemIsZero dividend → DEHL=0 Jump_000_2c3f; else jr_000_2c0f.",
+        "jr_000_2c0f: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2c3f; else jr_000_2c25.",
+        "jr_000_2c25: U32DivEngine → load rem@sp+$04 into DEHL; Jump_000_2c3f epilogue."
       ]
     },
     {
@@ -1397,17 +1767,33 @@
       "bank": 5,
       "addr": "56d1",
       "lines": [
-        "GetFileInfo_B5(fno, dp): FatFs get_fileinfo. Build dotted SFN into fno(+9) from",
-        "dir entry; apply NT case bits; copy LFN via MapCp437 when present."
-      ]
+        "GetFileInfo_B5(fno, dp): FatFs get_fileinfo. Frame -$16; copy dir cluster/fsize from dp+$0e.",
+        "Cluster zero → Jump_005_5869; else build SFN@fno+$09 via Jump_005_5740 loop (11 chars).",
+        "Jump_005_5740: space → continue (jr_005_5756 ++idx); $05 → jr_005_5770 $E5→Jump_005_5772 else Jump_005_576d; idx==9 → jr_005_5785 insert '.' else Jump_005_5782→Jump_005_5793.",
+        "Jump_005_5793/jr_005_5793: A-Z/a-z case; NTRES.3 → jr_005_57af lowercase; Jump_005_57b3 store → jr_005_57c0 → Jump_005_5740.",
+        "Jump_005_57c3: copy attr/fsize/date/cluster/time into fno fields from dir entry.",
+        "Jump_005_5869: NUL-term SFN; lfnbuf@dp+$16 zero → Jump_005_598a else LFN walk.",
+        "lfn_ptr/dp lfn refs zero → Jump_005_597a; ord==$ff → Jump_005_58d3 else Jump_005_597a.",
+        "Jump_005_58f1: next wchar; zero → Jump_005_597a; MapCp437 fail → Jump_005_597a; ok Jump_005_5939 append.",
+        "Jump_005_5958/jr_005_5963: advance fno LFN write idx → Jump_005_58f1; Jump_005_597a NUL-term LFN; Jump_005_598a add sp,$16 ret."
+      ],
+      "name": "GetFileInfo_B5"
     },
     {
       "bank": 7,
       "addr": "6a8f",
       "lines": [
-        "GetFileInfo_B7: same as GetFileInfo_B5 (05:56d1). Bank-local FatFs get_fileinfo copy.",
-        "Orphan between DirRegister_B7 and CreateName_B7."
-      ]
+        "GetFileInfo_B7(fno, dp): FatFs get_fileinfo. Frame -$16; copy dir cluster/fsize from dp+$0e.",
+        "Cluster zero → Jump_007_6c27; else build SFN@fno+$09 via Jump_007_6afe loop (11 chars).",
+        "Jump_007_6afe: space → continue (jr_007_6b14 ++idx); $05 → jr_007_6b2e $E5→Jump_007_6b30 else Jump_007_6b2b; idx==9 → jr_007_6b43 insert '.' else Jump_007_6b40→Jump_007_6b51.",
+        "Jump_007_6b51/jr_007_6b51: A-Z/a-z case; NTRES.3 → jr_007_6b6d lowercase; Jump_007_6b71 store → jr_007_6b7e → Jump_007_6afe.",
+        "Jump_007_6b81: copy attr/fsize/date/cluster/time into fno fields from dir entry.",
+        "Jump_007_6c27: NUL-term SFN; lfnbuf@dp+$16 zero → Jump_007_6d48 else LFN walk.",
+        "lfn_ptr/dp lfn refs zero → Jump_007_6d38; ord==$ff → Jump_007_6c91 else Jump_007_6d38.",
+        "Jump_007_6caf: next wchar; zero → Jump_007_6d38; MapCp437 fail → Jump_007_6d38; ok Jump_007_6cf7 append.",
+        "Jump_007_6d16/jr_007_6d21: advance fno LFN write idx → Jump_007_6caf; Jump_007_6d38 NUL-term LFN; Jump_007_6d48 add sp,$16 ret."
+      ],
+      "name": "GetFileInfo_B7"
     },
     {
       "bank": 7,
@@ -1421,9 +1807,27 @@
       "bank": 9,
       "addr": "6c3e",
       "lines": [
-        "CreateName_B9(dp, path): FatFs create_name. Parse next path segment (stop on / or \\);",
-        "build SFN/LFN + NSFLAG. Copies: CreateName_B3/B5/B6/B7."
-      ]
+        "FatFs create_name (bank-9 canonical). Twin CF notes mirrored from CreateName_B3.",
+        "CreateName_B9(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.",
+        "Jump_009_6c59: skip leading '/' ($2f) or '\\\\' ($5c): Jump_009_6c6f/jr_009_6c6f ++BC loop; else Jump_009_6c6c → Jump_009_6c78 start segment.",
+        "Jump_009_6c78: stash path; lfnbuf@dp+$16; clear counters. Jump_009_6caf: ++idx (jr_009_6cba); load char; <' ' or '/' or '\\\\' → Jump_009_6d81 end segment.",
+        "Jump_009_6ceb/Jump_009_6cf9: not terminator; Jump_009_6d0a: if lfn idx≥$ff → E=$06 Jump_009_72b2; else MapCp437; fail → Jump_009_72b2.",
+        "Jump_009_6d2f: if <*$80 MemChr illegal set; hit → Jump_009_72b2; Jump_009_6d55/jr_009_6d60 store wchar to lfnbuf → Jump_009_6caf.",
+        "Jump_009_6d81: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_009_6da9 C=0; Jump_009_6dab store NSFLAG@sp+$19.",
+        "If lfnlen!=1 Jump_009_6dbe → Jump_009_6de4; else jr_009_6dc1: last wchar=='.' → Jump_009_6e48/jr_009_6e48 else Jump_009_6de4.",
+        "Jump_009_6de4: len!=2 → Jump_009_6df4 → Jump_009_6edb; else jr_009_6df7: '..' check (Jump_009_6e1c/jr_009_6e1f/Jump_009_6e45) → Jump_009_6e48 or Jump_009_6edb.",
+        "Jump_009_6e48/jr_009_6e48: NUL-term LFN; Jump_009_6e78 fill SFN 11 slots (Jump_009_6eac/Jump_009_6eb0); done Jump_009_6ebe.",
+        "SFN pad loop: Jump_009_6e78; insert '.' Jump_009_6eac else space Jump_009_6eb0; jr_009_6ebb → Jump_009_6e78; done Jump_009_6ebe OR NSFLAG|$20 → Jump_009_72b2 (dot-only names).",
+        "Jump_009_6edb: normal path; Jump_009_6ee3 strip trailing ' '/' .' (Jump_009_6f14 / Jump_009_6f24 / Jump_009_6f27 / jr_009_6f27); Jump_009_6f3b empty → E=$06 Jump_009_72b2 else Jump_009_6f4f NUL-term + MemSet8_B9 spaces into SFN.",
+        "Jump_009_6f99: skip leading ' '/' .' (Jump_009_6fbb / Jump_009_6fc7 / Jump_009_6fca / jr_009_6fca / jr_009_6fd1); non-lead Jump_009_6fdc; if skipped NSFLAG|$03 then Jump_009_6ff1.",
+        "Jump_009_6ff1: walk for last '.' (Jump_009_7028 → Jump_009_6ff1); none/done Jump_009_7035 init body len=8 then Jump_009_7047.",
+        "Jump_009_7047 SFN fill: next wchar (jr_009_7052); NUL→Jump_009_7211; space Jump_009_70a2; '.' Jump_009_707d/Jump_009_708d/jr_009_7090; else Jump_009_70ab; slot full Jump_009_70d1/jr_009_70d1/Jump_009_70e1/jr_009_70e4; body\toext Jump_009_70ed/Jump_009_70ff/Jump_009_7105; else Jump_009_70ce → Jump_009_7132 MapCp437.",
+        "Jump_009_7132: wchar>=$80 MapCp437 (fail Jump_009_716d NSFLAG|$02); then Jump_009_7173 MemChr_B9 illegal set → '_' Jump_009_718f NSFLAG|$03 else Jump_009_719e.",
+        "Case: A-Z Jump_009_71be skip else NSFLAG|$02 → Jump_009_71ec; a-z Jump_009_71be NSFLAG|$01 + toupper; store via jr_009_7202 → Jump_009_7047.",
+        "Jump_009_7211: SFN[0]==$E5 → $05 (jr_009_722b) else Jump_009_7228/Jump_009_7233; body-only Jump_009_7243/jr_009_7246 NT<<2; case mix Jump_009_724c/Jump_009_7264/Jump_009_7267/jr_009_7267 → NSFLAG|$02; Jump_009_726d/jr_009_7277/Jump_009_727a/Jump_009_7287/jr_009_728a/Jump_009_7290/Jump_009_7298/jr_009_729b/Jump_009_72a1 store NSFLAG; E=0 → Jump_009_72b2.",
+        "CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B9 @ 09:72c5 (already named) — not CreateName interior."
+      ],
+      "name": "CreateName_B9"
     },
     {
       "bank": 6,
@@ -1450,9 +1854,14 @@
       "bank": 9,
       "addr": "644b",
       "lines": [
-        "DirFind_B9(dp): FatFs dir_find. Match SFN/LFN pattern against directory entries",
-        "(DirNext_B9). Copies: DirFind_B3/B5/B6/B7."
-      ]
+        "DirFind_B9(dp): FatFs dir_find. DirSdi_B9(0); fail Jump_009_6469 init else err Jump_009_66a3.",
+        "Jump_009_6469: clear ord/hash ptrs; Jump_009_64db read entry + MoveWindow_B9; fail Jump_009_66a0; LFN chain Jump_009_6534 else ord=4 Jump_009_66a0.",
+        "Jump_009_6534: attr — deleted $E5 Jump_009_6559; volume jr_009_6553; LFN ord $0F Jump_009_6574 else Jump_009_656c/Jump_009_6574 SFN path.",
+        "jr_009_6577: empty LFN chk Jump_009_6688; AM_LFN jr_009_658f store ord/chksum else Jump_009_65bb ord compare (Jump_009_65c6/jr_009_65c9/Jump_009_65dd/Jump_009_65e2/Jump_009_65e4 CmpLfn_B9).",
+        "Jump_009_6606/Jump_009_660b/Jump_009_660d/Jump_009_661a/Jump_009_661c: LFN ord update Jump_009_6688; Jump_009_6622 SumSfn_B9 match Jump_009_66a0.",
+        "Jump_009_663b NTRES jr_009_6659 skip; Jump_009_665c MemCmp_B9 SFN match Jump_009_66a0 else Jump_009_6678 invalidate; Jump_009_6688 DirNext_B9 loop Jump_009_64db; Jump_009_66a0/Jump_009_66a3 epilogue."
+      ],
+      "name": "DirFind_B9"
     },
     {
       "bank": 3,
@@ -1489,9 +1898,11 @@
       "bank": 9,
       "addr": "76f7",
       "lines": [
-        "FindVolume_B9(rfs, path, mode): FatFs find_volume (was Clone_0976f7).",
-        "Same role as FindVolume_B5/B6."
-      ]
+        "FindVolume stub (bank-9 near-call): FatFs find_volume front only; full mount in FindVolume_B5.",
+        "Clear *rfs; GetLdNumber_B9: bit7→E=$0b Jump_009_7779; else Jump_009_7724: FatFs[vol] @$C5A5 null→E=$0c else Jump_009_773e.",
+        "Jump_009_773e: bind *rfs; fs_type==0→Jump_009_7777; DiskStatus STA_NOINIT jr_009_7760→Jump_009_7777 else Jump_009_7763; mode0 Jump_009_7777 else WP jr_009_7772 E=$0a; Jump_009_7777 E=0 → Jump_009_7779 (add sp,$12 / ret)."
+      ],
+      "name": "FindVolume_B9"
     },
     {
       "bank": 9,
@@ -1528,9 +1939,21 @@
       "bank": 9,
       "addr": "580c",
       "lines": [
-        "DirNext_B9(dp, stretch): FatFs dir_next. Bank copies: DirNext_B3/B6/B7; B5 at",
-        "05:4a95 is a divergent body with the same control-flow shape."
-      ]
+        "DirNext_B9(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.",
+        "Index+1==0 → Jump_009_5862 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_009_5862.",
+        "Jump_009_5867: index&$0f≠0 → Jump_009_5c2f in-sector advance; else inc sector (jr_009_5885 carry chain) + copy 32-byte slot.",
+        "Next cluster from dp chain zero → Jump_009_58e6 stretch path; volsize compare fail → Jump_009_5c2f else E=$04 → Jump_009_5c8c.",
+        "Jump_009_58e6: sector→cluster via jr_009_58f4 ÷16; fs-type mask vs cluster → nz Jump_009_5c2f; GetFat_B9.",
+        "Cluster−1 underflow → Jump_009_595c: inc cluster words — all zero jr_009_597a E=$01 else Jump_009_5977→Jump_009_597f.",
+        "Jump_009_597f: cluster<saved → Jump_009_5bde; stretch==0 → E=$04 Jump_009_5c8c else Jump_009_59c6 CreateChain_B9.",
+        "CreateChain result zero → E=$07 Jump_009_5c8c; else Jump_009_5a19 cluster−1 all zero → jr_009_5a38 E=$02 else Jump_009_5a35→Jump_009_5a3d.",
+        "Jump_009_5a3d: inc cluster words — all wrap jr_009_5a5b E=$01 else Jump_009_5a58→Jump_009_5a60 SyncWindow_B9.",
+        "Jump_009_5a60: SyncWindow_B9 err→E=$01 Jump_009_5c8c else Jump_009_5a7b MemSet8 dir buf + Clust2Sect → Jump_009_5aec sector loop.",
+        "Jump_009_5aec: offset≥ssize → Jump_009_5b81 else dirty+SyncWindow; err E=$01; Jump_009_5b2f stamp template (jr_009_5b5d/jr_009_5b76) → Jump_009_5aec.",
+        "Jump_009_5b81: partial tail copy + sector base for index; Jump_009_5bde store cluster + Clust2Sect → window sector.",
+        "Jump_009_5c2f: write index@dp+$04, ptr@dp+$12+idx*32, E=0; Jump_009_5c8c add sp,$22 ret E."
+      ],
+      "name": "DirNext_B9"
     },
     {
       "bank": 0,
@@ -1543,7 +1966,9 @@
       "bank": 0,
       "addr": "1835",
       "lines": [
-        "Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry)."
+        "Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry).",
+        "≠$88: draw BatteryDry* UI; Jump_000_18d7 wait A ($10); jr_000_18e5 write $A201=$88.",
+        "Jump_000_18eb: teardown page0, call SdMenuMain. Orphan before BatteryDryPadStr."
       ]
     },
     {
@@ -1566,9 +1991,18 @@
     },
     {
       "bank": 8,
+      "addr": "6dd9",
+      "lines": [
+        "RomLoad_Build_B8(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst. Twin of RomLoad_Build_B4.",
+        "Jump_008_6df0: while n--: *src++ (jr_008_6e03 carry) → *dst++ (jr_008_6e0f carry); Jump_008_6e12 add sp,$04 ret.",
+        "Used by RomLoad_BuildAndRunPeek_B8 / 7FD2Wait to plant $D000 trampolines."
+      ]
+    },
+    {
+      "bank": 8,
       "addr": "6e15",
       "lines": [
-        "SdWindowPeek_B8: ld a,[$a000] \u2192 E. Bank-8 sibling of SdWindowPeek; used after",
+        "SdWindowPeek_B8: ld a,[$a000] → E. Bank-8 sibling of SdWindowPeek; used after",
         "FPGA page switches (ready poll). Was briefly mislabeled SetFpga7FD2_B8."
       ]
     },
@@ -1590,27 +2024,30 @@
       "bank": 1,
       "addr": "4df1",
       "lines": [
-        "RtcWriteTimeFromDayDelta: RtcToDayCount \u2212 stack day count ($d3f2/$d3f4); S32Div/Mod",
-        "by 60/24 into HMS; write $A018\u2013$A01C (page $06) and $A220\u2013$A224 (page $03/$11).",
-        "Inverse of RtcReadDaysClearRegs clear path."
+        "RtcWriteTimeFromDayDelta(delta@sp+$18): RtcToDayCount − delta; if delta==0 or result<0 → Jump_001_4e38 zero HMS.",
+        "Jump_001_4e50: seed from $c0a0..$c0b0; overflow → Jump_001_4e94 zero then Jump_001_4ea9 else fall Jump_001_4ea9.",
+        "Cascade: Jump_001_4ea9 S32Div/60; Jump_001_4ee0 S32Mod/60 (sec) + Div/60; Jump_001_4f4c S32Mod/60 (min) + Div/24;",
+        "Jump_001_4fc6/jr_001_4fc6: S32Mod/24 (hr); Jump_001_5063: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11)."
       ]
     },
     {
       "bank": 1,
       "addr": "5c08",
       "lines": [
-        "MapCartTypeToUi(type@sp+$02): Jump_001_5d11..5d41 map cart byte \u2192 $d3eb UI bucket 0/1/2/3/4/6 (default 6).",
-        "Jump_001_5d46: battery types ($03/$06/$09/$0d/$0f/$10/$13/$17/$1b/$1e/$22/$fd/$ff) set $d3ef=1 else 0.",
-        "Jump_001_5dbf: types $0f/$10 set $d3f0=1 (timer); Jump_001_5de1: $1c..$1e via $5dfd jp-table set $d3f1=1.",
-        "Outputs feed DrawCardTypeScreen / launch path. Falls into RomLoaderMain."
+        "MapCartTypeToUi(type@sp+$02): cart byte → $d3eb UI bucket + battery/timer/rumble flags. Feeds DrawCardTypeScreen / launch.",
+        "Buckets → $d3eb: Jump_001_5d11=$0; Jump_001_5d19=$1; Jump_001_5d21=$2; Jump_001_5d29=$3; Jump_001_5d31=$4; Jump_001_5d39/Jump_001_5d41=$6; join Jump_001_5d46.",
+        "Jump_001_5d46: battery types → Jump_001_5db2/jr_001_5db2 $d3ef=1 else Jump_001_5daf → Jump_001_5dba=0; then Jump_001_5dbf.",
+        "Jump_001_5dbf: $0f/$10 → Jump_001_5dd4/jr_001_5dd4 $d3f0=1 else Jump_001_5dd1 → Jump_001_5ddc=0; Jump_001_5de1.",
+        "Jump_001_5de1: $1c..$1e jp-table → Jump_001_5e06 $d3f1=1 else Jump_001_5e0e=0; Jump_001_5e13 ret. Falls into RomLoaderMain."
       ]
     },
     {
       "bank": 0,
       "addr": "2ad2",
       "lines": [
-        "ClearNegZero32: HL\u2192MSB of 4-byte LE value; if value is 0 or $80000000,",
-        "clear sign bit (force -0 \u2192 +0). Used by S32Cmp."
+        "ClearNegZero32: HL→MSB of 4-byte LE value; if value is 0 or $80000000,",
+        "clear sign bit (force -0 → +0). Used by S32Cmp.",
+        "jr_000_2ad9: if bit7 clear A=0 else A=$80; match MSB then scan 3 lower bytes==0 → res 7."
       ]
     },
     {
@@ -1618,39 +2055,45 @@
       "addr": "2aeb",
       "lines": [
         "MemCmp3Down: compare 3 bytes at DE vs HL walking downward; NZ on first diff.",
-        "Local helper for S32Cmp MSB-side compare."
+        "Local helper for S32Cmp MSB-side compare.",
+        "jr_000_2aed: C=3; *DE-*HL; NZ ret; dec both; --C; Z after 3 → equal ret."
       ]
     },
     {
       "bank": 0,
       "addr": "2af6",
       "lines": [
-        "S32Cmp: signed long compare of stack args at sp+7 and sp+b (MSB at high addr).",
-        "Canon \u00b10 via ClearNegZero32, then sign-dispatch + MemCmp3Down. No external",
-        "callers in this build (only self-refs); kept as SDCC runtime residue."
+        "S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.",
+        "a MSB set: if b also neg → MemCmp3Down swapped; else jr_000_2b14 C-set (a<b) ret.",
+        "jr_000_2b17: a pos; if b neg → A=$ff ret; else jr_000_2b20 MemCmp3Down a vs b.",
+        "No external callers in this build (SDCC runtime residue)."
       ]
     },
     {
       "bank": 1,
       "addr": "48c6",
       "lines": [
-        "IsLeapYear: stack u16 year \u2192 E=1 if leap else 0. Gregorian: %4, then %100/%400."
+        "IsLeapYear(year@sp+$04) → E=1 if leap else 0. Gregorian: %4, then %100/%400.",
+        "year&3\neq0 → jr_001_48d3 → Jump_001_4913 E=0; else Jump_001_48d6 U16Mod 100.",
+        "rem\neq0 → Jump_001_4911 leap; else U16Mod 400: rem==0 → Jump_001_4911 else C=0 Jump_001_4913.",
+        "Jump_001_4911: C=1; Jump_001_4913: E=C; add sp,$02 ret."
       ]
     },
     {
       "bank": 1,
       "addr": "4917",
       "lines": [
-        "DateToDaysSince1970: date struct ptr on stack; accumulate 365/366 from 1970",
-        "via IsLeapYear, then month/day. Returns day count in HL:DE.",
-        "Month lengths from wDaysInMonth / wDaysInMonthLeap."
+        "DateToDaysSince1970(date*): returns seconds since 1970-01-01 (HL:DE), despite name. Feeds RtcToDayCount.",
+        "Jump_001_492f: years from $07b2/1970; IsLeapYear → +$016e else Jump_001_4974 +$016d; Jump_001_4992 ++y (jr_001_4999) → Jump_001_492f; done Jump_001_499c.",
+        "Jump_001_49b2: months via IsLeapYear → wDaysInMonthLeap else Jump_001_4a1c wDaysInMonth; Jump_001_4a59 ++m (jr_001_4a60) → Jump_001_49b2.",
+        "Jump_001_4a63: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE."
       ]
     },
     {
       "bank": 1,
       "addr": "4c5e",
       "lines": [
-        "RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B\u2026",
+        "RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…",
         "(year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count."
       ]
     },
@@ -1658,8 +2101,8 @@
       "bank": 1,
       "addr": "50e4",
       "lines": [
-        "RtcReadDaysClearRegs: RtcToDayCount \u2192 HL:DE; then zero $A018\u2013$A01C (FPGA page $06)",
-        "and $A220\u2013$A224 (page $03, $4000=$11 window). Callers stash days before launch/FRAM."
+        "RtcReadDaysClearRegs: RtcToDayCount → HL:DE; then zero $A018–$A01C (FPGA page $06)",
+        "and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/FRAM."
       ]
     },
     {
@@ -1674,17 +2117,20 @@
       "bank": 1,
       "addr": "601e",
       "lines": [
-        "DrawCardTypeScreen: DrawInfoPanelRect then DrawString CardtypeStr and MBC name",
-        "(MbcNoneStr/MBC1/\u2026 via $d3eb index jump table)."
+        "DrawCardTypeScreen: panel + CardtypeStr; $d3eb jp-table → MBC name ApplyBasename into sp+$0a then DrawString.",
+        "MBC arms: Jump_001_606c, Jump_001_607d, Jump_001_608e, Jump_001_609f, Jump_001_60b0, Jump_001_60c1, Jump_001_60d2 → join Jump_001_60e0.",
+        "Jump_001_60e0: ROM 32<<n KB (jr_001_6117/jr_001_611b) U32ToAscii+SizeKbStr; RAM Jump_001_619e=0, Jump_001_61a3=8, Jump_001_61a8=$80, Jump_001_61ad=$20 → Jump_001_61af.",
+        "Jump_001_622e: $d3ef NoStr else YesStr; Jump_001_623f ReadJoypad; jr_001_624d/Jump_001_6250 until A/B; Jump_001_6258/jr_001_6258 ret."
       ]
     },
     {
       "bank": 1,
       "addr": "643a",
       "lines": [
-        "BackupSaveDump: FRAM\u2192SAVER dump used by BackupSavePrompt. Opens via FarCall_06_7309",
-        "($ca0f path obj, $c3a5, mode $12), writes chunks (FarCall_07_7739), spinner . / .. / ...,",
-        "touches page $11 RTC/meta. Args: two size words + path ptr (often empty $68a9)."
+        "BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_6738 ret.",
+        "Jump_001_647b: while offset < size@sp+$0f: bank FRAM, VramCopyStack $200, FarCall_07_7739 write.",
+        "Spinner ++sp+$04: Jump_001_652f; ==3 jr_001_6532 reset0; Jump_001_6536 \".\"; Jump_001_6551 → Jump_001_655b/jr_001_655e \"..\"; Jump_001_6572 \"...\"; Jump_001_6583 +=$200 → Jump_001_647b.",
+        "Jump_001_65a1: $d3f6==$77 → jr_001_65af Memset+$A220 pack+write else Jump_001_65ac → Jump_001_672f close 768f; Jump_001_6738 fail (jr_001_673f/jr_001_6743 strs)."
       ]
     },
     {
@@ -1699,40 +2145,79 @@
       "addr": "071f",
       "lines": [
         "RemoveVBlankCallbackArg / RemoveLcdCallbackArg / RemoveTimerCallbackArg /",
-        "RemoveSerialCallbackArg / RemoveJoypadCallbackArg: stack ptr \u2192 BC then Remove*.",
+        "RemoveSerialCallbackArg / RemoveJoypadCallbackArg: stack ptr → BC then Remove*.",
         "Register*CallbackArg siblings at $0756..$0782 likewise wrap Register*."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "07bc",
+      "lines": [
+        "WaitJoypadSelect: spin ReadJoypad until pad==$40 (SELECT); then Delay+$00c8.",
+        "Jump_000_07ce: retry; jr_000_07d1: delay ret. Orphan before PlotBitRowXY."
       ]
     },
     {
       "bank": 0,
       "addr": "07db",
       "lines": [
-        "PlotBitRowXY(flags, x, y): plot up to 8 pixels from a bit row via PlotPixelXY.",
-        "bit0\u2192x+7 \u2026 bit7\u2192x (MSB left). Used by bit-pattern glyph drawers.",
-        "Orphan after WaitJoypadSelect; Call_000_0803 is a mid-body fallthrough label."
+        "PlotBitRowXY(flags@sp+$02, x@sp+$03, y@sp+$04): plot up to 8 pixels via PlotPixelXY. bit0→x+7 … bit7→x (MSB left).",
+        "Per bit: test flag; set → jr_ plot PlotPixelXY(x+offset,y); clear → Jump_ skip. Chain:",
+        "bit0 jr_000_07e5 / Jump_000_07f7; bit1 jr_000_0801 / Jump_000_0813; bit2 jr_000_081d / Jump_000_082f; bit3 jr_000_0839 / Jump_000_084c;",
+        "bit4 jr_000_0856 / Jump_000_0868; bit5 jr_000_0872 / Jump_000_0883; bit6 jr_000_088d / Jump_000_089d; bit7 jr_000_08a7 / Jump_000_08b5 ret."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2917",
+      "lines": [
+        "S16DivMod(BC=dividend, DE=divisor): signed wrapper around U16DivMod.",
+        "Abs DE if neg; jr_000_2925: abs BC if neg; jr_000_292f: U16DivMod (C set → early ret).",
+        "jr_000_293e: restore quot sign (B^D) on BC; rem sign (dividend) on DE."
       ]
     },
     {
       "bank": 0,
       "addr": "29e6",
       "lines": [
-        "S32DivImpl: body of S32Div stub. MemIsZero early-out; signed abs then U32DivEngine."
+        "S32DivImpl: body of S32Div stub. Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL quotient.",
+        "div0: MemIsZero dividend → DEHL=0 Jump_000_2a5c; else jr_000_29f9.",
+        "jr_000_29f9: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2a5c; else jr_000_2a0f.",
+        "jr_000_2a0f: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2a23.",
+        "jr_000_2a23: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2a35.",
+        "jr_000_2a35: U32DivEngine → quot@sp+$01; rr sign → if set NegateBytes quot; jr_000_2a53 load DEHL; Jump_000_2a5c epilogue."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2a77",
+      "lines": [
+        "U32DivImpl: body of U32Div stub. Frame -$08; dividend@sp+$0a, divisor@sp+$0e → DEHL quotient.",
+        "MemIsZero dividend → DEHL=0 Jump_000_2aba; else jr_000_2a8a.",
+        "jr_000_2a8a: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2aba; else jr_000_2aa0.",
+        "jr_000_2aa0: U32DivEngine → load quot@sp+$00 into DEHL; Jump_000_2aba epilogue. Unsigned twin of S32DivImpl."
       ]
     },
     {
       "bank": 0,
       "addr": "2b28",
       "lines": [
-        "S32ModImpl: body of S32Mod stub. MemIsZero early-out; signed abs then remainder path."
+        "S32ModImpl: body of S32Mod stub (twin of S32DivImpl). Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL rem.",
+        "div0: MemIsZero dividend → DEHL=0 Jump_000_2b9f; else jr_000_2b3b.",
+        "jr_000_2b3b: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2b9f; else jr_000_2b51.",
+        "jr_000_2b51: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2b65.",
+        "jr_000_2b65: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2b77.",
+        "jr_000_2b77: U32DivEngine → rem@sp+$05; rr sign → if set NegateBytes rem; jr_000_2b96 load DEHL; Jump_000_2b9f epilogue."
       ]
     },
     {
       "bank": 1,
       "addr": "62d0",
       "lines": [
-        "BootRomInfoMenu: two-item menu BootMenuBootStr / BootMenuRomInfoStr over DrawInfoPanelRect.",
-        "Up/Down move; A on ROM info \u2192 DrawCardTypeScreen; A on BOOT draws BootMenuLoadingStr and",
-        "returns selection in E; B returns E=$ff. Orphan before BackupSaveDump."
+        "BootRomInfoMenu: locals sel@sp+$02 (0=BOOT/1=ROM INFO), redraw@sp+$03. Jump_001_62d9 DrawInfoPanelRect; Jump_001_62dc hilite BOOT strings.",
+        "Jump_001_6328: ROM INFO ink twin. Jump_001_6364 ReadJoypad: $04 jr_001_637b sel-- → Jump_001_6386; $08 jr_001_6390 sel++ → Jump_001_63a3.",
+        "$10 jr_001_63ad: sel==1 jr_001_63ba DrawCardTypeScreen → Jump_001_62d9; else Jump_001_63b7 → Jump_001_63e2 LoadingStr.",
+        "$20 Jump_001_63c7/jr_001_63d1 E=$ff → Jump_001_6421; else Jump_001_63d6 Delay → Jump_001_62dc. Jump_001_63e2 Loading then Jump_001_6421 ret E=sel."
       ]
     },
     {
@@ -1814,39 +2299,43 @@
       "addr": "0985",
       "lines": [
         "SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);",
-        "then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards."
+        "then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.",
+        "Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr."
       ]
     },
     {
       "bank": 0,
       "addr": "2ba2",
       "lines": [
-        "S8Mul: sex two stack s8 \u2192 s16, then U16Mul. Bank-5 RST stub jp target."
+        "S8Mul: sex two stack s8 → s16, then U16Mul. Bank-5 RST stub jp target."
       ]
     },
     {
       "bank": 0,
       "addr": "2bb1",
       "lines": [
-        "MulU8xU8Arg: stack two u8 \u2192 C/E then MulU8xU8. Entry just above register ABI body."
+        "MulU8xU8Arg: stack two u8 → C/E then MulU8xU8. Entry just above register ABI body."
       ]
     },
     {
       "bank": 4,
       "addr": "4207",
       "lines": [
-        "SetFpgaRomSize_B4(arg@sp+$0a): switch \u2192 16-bit bank mask @sp+$02, then clamp vs $c2a4/$c2a5 caps.",
-        "Jump_004_426b..42bb: codes 0..8 \u2192 masks 0,$03,$07,$0f,$1f,$3f,$7f,$00ff,$01ff; $52..$54 \u2192 $47/$4f/$5f.",
-        "Jump_004_42e3 default 0; Jump_004_42ea: if mask > (caps-1), lower via $c2a4 bit ladder ($01\u21921 \u2026 $80\u2192$ff) + $c2a5:$01\u2192$01ff.",
-        "Jump_004_439f: FPGA unlock $7F00/$10/$20=$e1/$e2/$e3; write mask lo\u2192$7FC1, hi\u2192$7FC2; commit $7FF0=$e4. Launch @$1604."
+        "SetFpgaRomSize_B4(arg@sp+$0a): switch → 16-bit bank mask@sp+$02; clamp vs $c2a4/$c2a5; write FPGA $7FC1/$7FC2. Launch @$1604.",
+        "Codes 0..8: Jump_004_426b=0, Jump_004_4275=$03, Jump_004_427f=$07, Jump_004_4289=$0f, Jump_004_4293=$1f, Jump_004_429d=$3f, Jump_004_42a7=$7f, Jump_004_42b1=$00ff, Jump_004_42bb=$01ff.",
+        "$52..$54: Jump_004_42c5=$47, Jump_004_42cf=$4f, Jump_004_42d9=$5f; Jump_004_42e3 default 0; join Jump_004_42ea clamp if mask>(caps-1).",
+        "Clamp $c2a4 bits: jr_004_4308=$01 / Jump_004_430f; jr_004_431a=$03 / Jump_004_4321; jr_004_432c=$07 / Jump_004_4333; jr_004_433e=$0f / Jump_004_4345;",
+        "jr_004_4350=$1f / Jump_004_4357; jr_004_4362=$3f / Jump_004_4369; jr_004_4374=$7f / Jump_004_437b; jr_004_4386=$ff / Jump_004_438d; jr_004_4398 $c2a5.0→$01ff; Jump_004_439f unlock+write+commit."
       ]
     },
     {
       "bank": 8,
       "addr": "6efc",
       "lines": [
-        "RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; zero $A0C0..+$200; then 0x2000x",
-        "RomLoad_WriteCmdWindow + page $05 BuildAndRun wait (clear cart window). Before DrawFwVersionScreen."
+        "RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; then clear cart cmd window before DrawFwVersionScreen.",
+        "Jump_008_6f0a: fill $C0A0..+$200 with idx.lo (jr_008_6f3a); Jump_008_6f3d reset counter.",
+        "Jump_008_6f44: 0x2000× pack addr=$40000+i → $C0A0, RomLoad_WriteCmdWindow, page $05 BuildAndRun wait, page0.",
+        "Jump_008_6fcd: ret. Orphan before DrawFwVersionScreen."
       ]
     },
     {
@@ -1854,7 +2343,9 @@
       "addr": "2e40",
       "lines": [
         "U32MulEngine: multi-byte unsigned mul (B digit pairs). Zeros dest via MemZero,",
-        "per-byte MulU8xU8 + PropagateCarry. U32Mul stub drives this with B=4."
+        "per-byte MulU8xU8 + PropagateCarry. U32Mul stub drives this with B=4.",
+        "Jump_000_2e5e/jr_000_2e64: inner digit cross-products; add to dest + PropagateCarry; IncWord ptrs.",
+        "jr_000_2e98: next outer digit (CopyBytes reset ptrs) → 2e5e; jr_000_2ec0 ret when B exhausted."
       ]
     },
     {
@@ -1868,7 +2359,7 @@
       "bank": 0,
       "addr": "2f4c",
       "lines": [
-        "VramLoadTiles8100: VramCopy BC\u2192$8100 for $1680 bytes (tile $10+ framebuffer pool).",
+        "VramLoadTiles8100: VramCopy BC→$8100 for $1680 bytes (tile $10+ framebuffer pool).",
         "Stack wrapper ensures EnterGfxMode1 first."
       ]
     },
@@ -1877,14 +2368,15 @@
       "addr": "2f56",
       "lines": [
         "BlitTile: B/C tile row/col via GfxRowTable; VramCopy $10 bytes (2bpp tile) to FB.",
-        "Optional second plane from saved DE. Stack wrapper ensures EnterGfxMode1."
+        "Optional second plane from saved DE. Stack wrapper ensures EnterGfxMode1.",
+        "jr_000_2f84: dest=GfxRowTable[col]+row*16 on stack; if HL==0 skip first VramCopy $10; then pop dest + DE and VramCopy $10 (2nd plane)."
       ]
     },
     {
       "bank": 0,
       "addr": "3d5a",
       "lines": [
-        "VramFill: STAT-safe fill \u2014 wait mode\u22602, write B to [HL++) DE times. EnterGfxMode1",
+        "VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1",
         "zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400)."
       ]
     },
@@ -1892,8 +2384,10 @@
       "bank": 0,
       "addr": "0bd1",
       "lines": [
-        "DrawDirEntryLabel: browser row label. If size u32>$14, map bank via $4000, measure",
-        "name at $c2a0+ofs, format into $c4a4 (farcall), DrawString. Skips tiny entries."
+        "DrawDirEntryLabel(size@sp+$12, ofs@sp+$16, y@sp+$18): frame -$10. size≤$14 → Jump_000_0ddd skip.",
+        "jr_000_0c0a: >>5 bank from ofs; attr+$fe==$10 → jr_000_0c84 width $11 else Jump_000_0c81 → Jump_000_0c8b width $14.",
+        "Jump_000_0c8f: if namelen≥width → Jump_000_0ddd; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → Jump_000_0ddd.",
+        "Jump_000_0d2c: update $cc31/32; Strncpy name+$fe ellipsis into $c4a4; DrawString at y+2; Jump_000_0ddd epilogue."
       ]
     },
     {
@@ -1916,9 +2410,10 @@
       "bank": 4,
       "addr": "44af",
       "lines": [
-        "CStrCat(dest, src): append NUL-term src onto dest. Walk dest to NUL,",
-        "then copy src incl. terminator. Stack RTL: char* dest, char* src.",
-        "Named CStrCat (not StrCat) to avoid RGBDS STRCAT."
+        "CStrCat(dest, src): append NUL-term src onto dest. Frame -$04; stack RTL dest@sp+$06, src@sp+$08.",
+        "Jump_004_44b6: walk BC=dest until [BC]==0 → Jump_004_44bf stash src@sp+$00 + dest-end@sp+$02.",
+        "Jump_004_44cb: load *src; if 0 → Jump_004_44ec write NUL; else inc src (jr_004_44dd carry), store to *dest, inc dest (jr_004_44e9 carry), loop.",
+        "jr_004_44dd / jr_004_44e9: 16-bit pointer ++ after lo-byte wrap; Jump_004_44ec: [dest]=0 + add sp,$04 ret."
       ]
     },
     {
@@ -1950,7 +2445,8 @@
       "addr": "473f",
       "lines": [
         "Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.",
-        "Entry is $473f (after nop pad at $473e)."
+        "Entry is $473f (after nop pad at $473e).",
+        "Unlock e1/e2/e3 + $7FF0=$e4; Jump_008_475e: spin while [$A000]≠0; clear $7FD2 + commit; E=0 ret."
       ]
     },
     {
@@ -1986,8 +2482,8 @@
       "bank": 0,
       "addr": "2a6a",
       "lines": [
-        "LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 \u2192 RegisterLcdCallback). Wait",
-        "STAT mode\u22602, clear LCDC bit4 (BG tile data back to $8800). Was jr_000_2a6a."
+        "LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 → RegisterLcdCallback). Wait",
+        "STAT mode≠2, clear LCDC bit4 (BG tile data back to $8800). Was jr_000_2a6a."
       ]
     },
     {
@@ -2002,8 +2498,10 @@
       "bank": 4,
       "addr": "43ec",
       "lines": [
-        "SetFpga7FC4_B4(mode): map stack u8 \u2192 $7FC4 (0/0/$0f/$07/$03) via unlock/commit.",
-        "Mode 0 also peeks wCartTypeUi ($d3eb). Orphan after SetFpgaRomSize_B4."
+        "SetFpga7FC4_B4(mode@sp+$07): map mode → lo nibble@sp+$00; unlock+write $7FC4; commit $7FF0=$e4.",
+        "Dispatch: mode0 → Jump_004_4417; 1 or 2 → Jump_004_4433; 4 → Jump_004_443a; 5 → Jump_004_4441; else Jump_004_4448.",
+        "Jump_004_4417: if $d3eb!=2 → Jump_004_4422 → Jump_004_442c store $00; else jr_004_4425 store $00; both → Jump_004_444c.",
+        "Jump_004_4433:$00; Jump_004_443a:$0f; Jump_004_4441:$07; Jump_004_4448:$03; fall Jump_004_444c: $7F00/10/20=$e1/e2/e3; [$7FC4]=nibble; $7FF0=$e4; ret."
       ]
     },
     {
@@ -2019,14 +2517,14 @@
       "addr": "448f",
       "lines": [
         "RomLoad_CopyCmdWindowPoll_B4: SetRomLoadCtrl_B4($01) map cmd window; copy $200",
-        "bytes stack\u2192$A000 via VramCopyStack; RomLoad_BuildAndRunPoll. Before CStrCat."
+        "bytes stack→$A000 via VramCopyStack; RomLoad_BuildAndRunPoll. Before CStrCat."
       ]
     },
     {
       "bank": 4,
       "addr": "46ae",
       "lines": [
-        "InitTimeAutosaveFpga_B4: SetFpgaPage $06; write key bytes $33..$19 to $A008\u2013$A00E;",
+        "InitTimeAutosaveFpga_B4: SetFpgaPage $06; write key bytes $33..$19 to $A008–$A00E;",
         "SetFpga7FD0_B4($01); page $00. Orphan immediately before DrawTimeAutosaveScreen."
       ]
     },
@@ -2043,7 +2541,8 @@
       "addr": "4180",
       "lines": [
         "RomLoad_ResetIntoRom_B4: clear $7F31/$7F32; MBC writes $2000=$01/$3000=$00;",
-        "then $7FE0=$80 soft-boot into loaded ROM (hangs via jp self if still here)."
+        "then $7FE0=$80 soft-boot into loaded ROM (hangs via jp self if still here).",
+        "Unlock $7F00/10/20=$e1/e2/e3 twice around setup; $7FF0=$e4 commit; Jump_004_41ce hang."
       ]
     },
     {
@@ -2058,7 +2557,7 @@
       "bank": 4,
       "addr": "41e7",
       "lines": [
-        "SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) \u2014 unlock,",
+        "SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) — unlock,",
         "$7FC0=stack u8, commit. Earlier copy sitting just before SetFpgaRomSize_B4."
       ]
     },
@@ -2067,7 +2566,8 @@
       "addr": "3d68",
       "lines": [
         "VramFillActiveWinMap: pick window tilemap base from LCDC bit6 ($9800/$9C00),",
-        "then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3."
+        "then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3.",
+        "jr_000_3d73: bit6 set → HL=$9C00; else $9800; both jr to shared $3d86 VramFill tail."
       ]
     },
     {
@@ -2075,7 +2575,8 @@
       "addr": "3d78",
       "lines": [
         "VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then",
-        "VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap."
+        "VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap.",
+        "jr_000_3d83: bit3 set → HL=$9C00; else $9800; jr_000_3d86: DE=$0400 jp VramFill."
       ]
     },
     {
@@ -2090,16 +2591,26 @@
       "bank": 1,
       "addr": "58b0",
       "lines": [
-        "LaunchSetup: launch-trace step after BackupOpenSaverPath ($15b2\u2192$58b0). Big frame;",
-        "Open_B6 path; Clust2Sect/GetFat_B5 walk; Close_B3. Feeds later FPGA 7FCx config.",
-        "See docs/launch-trace.md."
+        "LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see launch-trace.",
+        "Jump_001_58f9: $c7a9==2 → Jump_001_5905/jr_001_5908 FAT12 limit $0000ffff else Jump_001_5918 $0ffffff7; join Jump_001_5925 seed FarCall_05_4279 @$c0a0.",
+        "Jump_001_59e4: walk clusters FarCall_05_4378 (jr_001_5a2c); EOF → Jump_001_5b12 else Jump_001_5a72 U32Mul*$c7ab + 4279 append.",
+        "Jump_001_5b12: if sum<limit → Jump_001_59e4 else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → Jump_001_5c02 ret 0."
       ]
     },
     {
       "bank": 0,
       "addr": "2e3a",
       "lines": [
-        "MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine."
+        "MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine.",
+        "jr_000_2e3b: C=B; store A via [HL+], dec C until zero."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2e30",
+      "lines": [
+        "MemSub: multi-byte SBC: [DE] -= [HL] for B bytes (carry chain). U32DivEngine rem -= divisor.",
+        "jr_000_2e31: C=B; A=[DE] SBC [HL] → [DE]; ++HL/DE; until C=0."
       ]
     },
     {
@@ -2114,8 +2625,10 @@
       "bank": 0,
       "addr": "09af",
       "lines": [
-        "MemCmp_B0(s1, s2, n): byte-identical to MemCmp_B5/B9 (FatFs mem_cmp). -$09 frame.",
-        "DirList hides ezgb.dat via this."
+        "MemCmp_B0(s1@sp+$0b, s2@sp+$0d, n@sp+$0f): FatFs mem_cmp twin of MemCmp_B5/B9. Frame -$09; Diff@sp+$03=0.",
+        "Jump_000_09d0: --n; if was0 → Jump_000_0a11; else *s1++ (jr_000_09e6 carry), *s2++ (jr_000_09f9 carry).",
+        "jr_000_09f9: sex(*s1)-*s2 → diff@sp+$03; if 0 → Jump_000_09d0 else fall Jump_000_0a11.",
+        "Jump_000_0a11: DE=diff ret. DirList hides ezgb.dat via this."
       ]
     },
     {
@@ -2123,7 +2636,7 @@
       "addr": "68b6",
       "lines": [
         "BootUnpackWramTables: KernelEntry bank-1 call before BatteryCheck. Sets $CC31/$CC32=$EE,",
-        "RleUnpack \u2192 $CC33 then $D00F (WToUpper tables), then $D3F9/$D5EB/$D6A7/$D6B3/$D6BF; ret $7390."
+        "RleUnpack → $CC33 then $D00F (WToUpper tables), then $D3F9/$D5EB/$D6A7/$D6B3/$D6BF; ret $7390."
       ]
     },
     {
@@ -2153,16 +2666,20 @@
       "bank": 1,
       "addr": "42ba",
       "lines": [
-        "DrawBrowserDetail: farcall from FileBrowserEntry ($10d9 blob \u2192 01:42ba). -$24 frame;",
-        "StoreDrawParams/DrawString/U32ToAscii_B0 panel for the selected browser row."
+        "DrawBrowserDetail(base@sp+$2a, row@sp+$2c, mode@sp+$2e): draw two adjacent browser rows.",
+        "Jump_001_42c8/jr_001_42c9: mode==2 → rows (n-1,n); else Jump_001_42fb (n,n+1). Jump_001_4324: jr_001_433b >>5 bank+$12@$4000.",
+        "Jump_001_4364/jr_001_4365 vs Jump_001_437c: mode3 hilite StoreDrawParams; Jump_001_4390 entry0; Jump_001_43cd/jr_001_43d0 dir else Jump_001_441a file.",
+        "Jump_001_4442 vs Jump_001_4459: focus ink; Jump_001_446d/jr_001_4484 row1 bank; Jump_001_44dd/jr_001_44e0 dir else Jump_001_452a file; Jump_001_4552 size U32ToAscii+DrawString."
       ]
     },
     {
       "bank": 1,
       "addr": "45b3",
       "lines": [
-        "FormatFileSize: format u32 size using wFileSizeFmtLo ($D3F9) or wFileSizeFmtHi ($D5EB)",
-        "when size\u2265$1000 within the <$10000 path. -$0a frame; after BrowserDirStr2."
+        "FormatFileSize(u32@sp+$10): if size≥$10000 Jump_001_479b passthrough; else Jump_001_45e7 pick fmt table.",
+        "Jump_001_45e7: size≥$1000 → wFileSizeFmtHi else Jump_001_45ec wFileSizeFmtLo; Jump_001_45f1 walks {thr,op} pairs via $4676 jp-table.",
+        "Ops: Jump_001_4691/Jump_001_46bd scale-sub thr; Jump_001_46e2 -$10; Jump_001_46f6 -$20; Jump_001_470a -$30; Jump_001_471e -$1a; Jump_001_4732 +8; Jump_001_4744 -$50; Jump_001_4758 -$1c60 → Jump_001_476c.",
+        "Jump_001_476c: more entries → Jump_001_45f1 else advance; Jump_001_478a rewrite lo16@sp+$10; Jump_001_479b ret DE:HL."
       ]
     },
     {
@@ -2176,14 +2693,14 @@
       "bank": 0,
       "addr": "d6a7",
       "lines": [
-        "wDaysInMonth: 12-byte non-leap month lengths (31,28,\u2026). BootUnpackWramTables RLE."
+        "wDaysInMonth: 12-byte non-leap month lengths (31,28,…). BootUnpackWramTables RLE."
       ]
     },
     {
       "bank": 0,
       "addr": "d6b3",
       "lines": [
-        "wDaysInMonthLeap: 12-byte leap month lengths (31,29,\u2026). Used by DateToDaysSince1970."
+        "wDaysInMonthLeap: 12-byte leap month lengths (31,29,…). Used by DateToDaysSince1970."
       ]
     },
     {
@@ -2204,7 +2721,7 @@
       "bank": 0,
       "addr": "d5eb",
       "lines": [
-        "wFileSizeFmtHi: threshold/scale pairs for FormatFileSize (sizes \u2265$1000, <$10000)."
+        "wFileSizeFmtHi: threshold/scale pairs for FormatFileSize (sizes ≥$1000, <$10000)."
       ]
     },
     {
@@ -2285,6 +2802,375 @@
       "addr": "1920",
       "lines": [
         "BatteryDryOkStr: NUL-term \"[A]OK\" dismiss prompt for BatteryCheck."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "6a2a",
+      "lines": [
+        "CreateName_B3(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.",
+        "Jump_003_6a45: skip leading '/' ($2f) or '\\\\' ($5c): Jump_003_6a5b/jr_003_6a5b ++BC loop; else Jump_003_6a58 → Jump_003_6a64 start segment.",
+        "Jump_003_6a64: stash path; lfnbuf@dp+$16; clear counters. Jump_003_6a9b: ++idx (jr_003_6aa6); load char; <' ' or '/' or '\\\\' → Jump_003_6b6d end segment.",
+        "Jump_003_6ad7/Jump_003_6ae5: not terminator; Jump_003_6af6: if lfn idx≥$ff → E=$06 Jump_003_709f; else MapCp437; fail → Jump_003_709f.",
+        "Jump_003_6b1b: if <*$80 MemChr illegal set; hit → Jump_003_709f; Jump_003_6b41/jr_003_6b4c store wchar to lfnbuf → Jump_003_6a9b.",
+        "Jump_003_6b6d: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_003_6b95 C=0; Jump_003_6b97 store NSFLAG@sp+$19.",
+        "If lfnlen!=1 Jump_003_6baa → Jump_003_6bd0; else jr_003_6bad: last wchar=='.' → Jump_003_6c34/jr_003_6c34 else Jump_003_6bd0.",
+        "Jump_003_6bd0: len!=2 → Jump_003_6be0 → Jump_003_6cc7; else jr_003_6be3: '..' check (Jump_003_6c08/jr_003_6c0b/Jump_003_6c31) → Jump_003_6c34 or Jump_003_6cc7.",
+        "Jump_003_6c34/jr_003_6c34: NUL-term LFN; Jump_003_6c64 fill SFN 11 slots (Jump_003_6c98/Jump_003_6c9c); done Jump_003_6caa.",
+        "SFN pad loop: Jump_003_6c64; insert '.' Jump_003_6c98 else space Jump_003_6c9c; jr_003_6ca7 → Jump_003_6c64; done Jump_003_6caa OR NSFLAG|$20 → Jump_003_709f (dot-only names).",
+        "Jump_003_6cc7: normal path; Jump_003_6ccf strip trailing ' '/' .' (Jump_003_6d00 / Jump_003_6d10 / Jump_003_6d13 / jr_003_6d13); Jump_003_6d27 empty → E=$06 Jump_003_709f else Jump_003_6d3b NUL-term + MemSet8_B3 spaces into SFN.",
+        "Jump_003_6d86: skip leading ' '/' .' (Jump_003_6da8 / Jump_003_6db4 / Jump_003_6db7 / jr_003_6db7 / jr_003_6dbe); non-lead Jump_003_6dc9; if skipped NSFLAG|$03 then Jump_003_6dde.",
+        "Jump_003_6dde: walk for last '.' (Jump_003_6e15 → Jump_003_6dde); none/done Jump_003_6e22 init body len=8 then Jump_003_6e34.",
+        "Jump_003_6e34 SFN fill: next wchar (jr_003_6e3f); NUL→Jump_003_6ffe; space Jump_003_6e8f; '.' Jump_003_6e6a/Jump_003_6e7a/jr_003_6e7d; else Jump_003_6e98; slot full Jump_003_6ebe/jr_003_6ebe/Jump_003_6ece/jr_003_6ed1; body\toext Jump_003_6eda/Jump_003_6eec/Jump_003_6ef2; else Jump_003_6ebb → Jump_003_6f1f MapCp437.",
+        "Jump_003_6f1f: wchar>=$80 MapCp437 (fail Jump_003_6f5a NSFLAG|$02); then Jump_003_6f60 MemChr_B3 illegal set → '_' Jump_003_6f7c NSFLAG|$03 else Jump_003_6f8b.",
+        "Case: A-Z Jump_003_6fab skip else NSFLAG|$02 → Jump_003_6fd9; a-z Jump_003_6fab NSFLAG|$01 + toupper; store via jr_003_6fef → Jump_003_6e34.",
+        "Jump_003_6ffe: SFN[0]==$E5 → $05 (jr_003_7018) else Jump_003_7015/Jump_003_7020; body-only Jump_003_7030/jr_003_7033 NT<<2; case mix Jump_003_7039/Jump_003_7051/Jump_003_7054/jr_003_7054 → NSFLAG|$02; Jump_003_705a/jr_003_7064/Jump_003_7067/Jump_003_7074/jr_003_7077/Jump_003_707d/Jump_003_7085/jr_003_7088/Jump_003_708e store NSFLAG; E=0 → Jump_003_709f.",
+        "CreateName CF ends Jump_003_709f (add sp,$1b / ret). Post-ret: illegal-char table then unnamed-until-sym FollowPath_B3 @ 03:70b2 (Jump_003_70cc…Jump_003_72b8) — not CreateName interior; twin of FollowPath_B5/B6/B9."
+      ],
+      "name": "CreateName_B3"
+    },
+    {
+      "bank": 3,
+      "addr": "70b2",
+      "name": "FollowPath_B3",
+      "lines": [
+        "FatFs follow_path (bank-3). Twin of FollowPath_B5/B6/B9; was mis-spanned under CreateName_B3 after illegal-char table.",
+        "Entry: skip leading '/' '\\' (Jump_003_70cc → Jump_003_70f8 else Jump_003_70cf / jr_003_70cf clear sclust → Jump_003_7136).",
+        "Jump_003_70f8: copy fs->cdir into dp->sclust; Join Jump_003_7136.",
+        "Jump_003_7136: path[0]<' ' → DirSdi_B3(0) + clear fn → Jump_003_72b8 else Jump_003_7173 segment loop (CreateName_B3 / DirFind_B3).",
+        "Jump_003_7173 segment loop: CreateName_B3; err→Jump_003_72b8; DirFind_B3; FR_NOFILE+$04 last-seg (jr_003_71d0) else Jump_003_71cd→Jump_003_72b8; NSFLAG|$20 (jr_003_71da) clear sclust/fn + more path→Jump_003_7173 else last (jr_003_7214 E=0); non-last NSFLAG Jump_003_721b/jr_003_7225/Jump_003_7228 E=$05.",
+        "Found (Jump_003_722f): last-seg jr_003_7239→Jump_003_72b8; else Jump_003_723c ATTR_DIR? jr_003_7266→Jump_003_7270 LdClust_B3 into sclust → Jump_003_7173 else Jump_003_7269 E=$05; Jump_003_72b8 epilogue ret E."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "598d",
+      "name": "CreateName_B5",
+      "lines": [
+        "CreateName_B5(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.",
+        "Jump_005_59a8: skip leading '/' ($2f) or '\\\\' ($5c): Jump_005_59be/jr_005_59be ++BC loop; else Jump_005_59bb → Jump_005_59c7 start segment.",
+        "Jump_005_59c7: stash path; lfnbuf@dp+$16; clear counters. Jump_005_59fe: ++idx (jr_005_5a09); load char; <' ' or '/' or '\\\\' → Jump_005_5ad0 end segment.",
+        "Jump_005_5a3a/Jump_005_5a48: not terminator; Jump_005_5a59: if lfn idx≥$ff → E=$06 Jump_005_6002; else MapCp437; fail → Jump_005_6002.",
+        "Jump_005_5a7e: if <*$80 MemChr illegal set; hit → Jump_005_6002; Jump_005_5aa4/jr_005_5aaf store wchar to lfnbuf → Jump_005_59fe.",
+        "Jump_005_5ad0: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_005_5af8 C=0; Jump_005_5afa store NSFLAG@sp+$19.",
+        "If lfnlen!=1 Jump_005_5b0d → Jump_005_5b33; else jr_005_5b10: last wchar=='.' → Jump_005_5b97/jr_005_5b97 else Jump_005_5b33.",
+        "Jump_005_5b33: len!=2 → Jump_005_5b43 → Jump_005_5c2a; else jr_005_5b46: '..' check (Jump_005_5b6b/jr_005_5b6e/Jump_005_5b94) → Jump_005_5b97 or Jump_005_5c2a.",
+        "Jump_005_5b97/jr_005_5b97: NUL-term LFN; Jump_005_5bc7 fill SFN 11 slots (Jump_005_5bfb/Jump_005_5bff); done Jump_005_5c0d.",
+        "SFN pad loop: Jump_005_5bc7; insert '.' Jump_005_5bfb else space Jump_005_5bff; jr_005_5c0a → Jump_005_5bc7; done Jump_005_5c0d OR NSFLAG|$20 → Jump_005_6002 (dot-only names).",
+        "Jump_005_5c2a: normal path; Jump_005_5c32 strip trailing ' '/' .' (Jump_005_5c63 / Jump_005_5c73 / Jump_005_5c76 / jr_005_5c76); Jump_005_5c8a empty → E=$06 Jump_005_6002 else Jump_005_5c9e NUL-term + MemSet8_B5 spaces into SFN.",
+        "Jump_005_5ce9: skip leading ' '/' .' (Jump_005_5d0b / Jump_005_5d17 / Jump_005_5d1a / jr_005_5d1a / jr_005_5d21); non-lead Jump_005_5d2c; if skipped NSFLAG|$03 then Jump_005_5d41.",
+        "Jump_005_5d41: walk for last '.' (Jump_005_5d78 → Jump_005_5d41); none/done Jump_005_5d85 init body len=8 then Jump_005_5d97.",
+        "Jump_005_5d97 SFN fill: next wchar (jr_005_5da2); NUL→Jump_005_5f61; space Jump_005_5df2; '.' Jump_005_5dcd/Jump_005_5ddd/jr_005_5de0; else Jump_005_5dfb; slot full Jump_005_5e21/jr_005_5e21/Jump_005_5e31/jr_005_5e34; body\toext Jump_005_5e3d/Jump_005_5e4f/Jump_005_5e55; else Jump_005_5e1e → Jump_005_5e82 MapCp437.",
+        "Jump_005_5e82: wchar>=$80 MapCp437 (fail Jump_005_5ebd NSFLAG|$02); then Jump_005_5ec3 MemChr_B5 illegal set → '_' Jump_005_5edf NSFLAG|$03 else Jump_005_5eee.",
+        "Case: A-Z Jump_005_5f0e skip else NSFLAG|$02 → Jump_005_5f3c; a-z Jump_005_5f0e NSFLAG|$01 + toupper; store via jr_005_5f52 → Jump_005_5d97.",
+        "Jump_005_5f61: SFN[0]==$E5 → $05 (jr_005_5f7b) else Jump_005_5f78/Jump_005_5f83; body-only Jump_005_5f93/jr_005_5f96 NT<<2; case mix Jump_005_5f9c/Jump_005_5fb4/Jump_005_5fb7/jr_005_5fb7 → NSFLAG|$02; Jump_005_5fbd/jr_005_5fc7/Jump_005_5fca/Jump_005_5fd7/jr_005_5fda/Jump_005_5fe0/Jump_005_5fe8/jr_005_5feb/Jump_005_5ff1 store NSFLAG; E=0 → Jump_005_6002.",
+        "CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B5 @ 05:6015 (already named) — not CreateName interior."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "6857",
+      "name": "CreateName_B6",
+      "lines": [
+        "CreateName_B6(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.",
+        "Jump_006_6872: skip leading '/' ($2f) or '\\\\' ($5c): Jump_006_6888/jr_006_6888 ++BC loop; else Jump_006_6885 → Jump_006_6891 start segment.",
+        "Jump_006_6891: stash path; lfnbuf@dp+$16; clear counters. Jump_006_68c8: ++idx (jr_006_68d3); load char; <' ' or '/' or '\\\\' → Jump_006_699a end segment.",
+        "Jump_006_6904/Jump_006_6912: not terminator; Jump_006_6923: if lfn idx≥$ff → E=$06 Jump_006_6ecc; else MapCp437; fail → Jump_006_6ecc.",
+        "Jump_006_6948: if <*$80 MemChr illegal set; hit → Jump_006_6ecc; Jump_006_696e/jr_006_6979 store wchar to lfnbuf → Jump_006_68c8.",
+        "Jump_006_699a: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_006_69c2 C=0; Jump_006_69c4 store NSFLAG@sp+$19.",
+        "If lfnlen!=1 Jump_006_69d7 → Jump_006_69fd; else jr_006_69da: last wchar=='.' → Jump_006_6a61/jr_006_6a61 else Jump_006_69fd.",
+        "Jump_006_69fd: len!=2 → Jump_006_6a0d → Jump_006_6af4; else jr_006_6a10: '..' check (Jump_006_6a35/jr_006_6a38/Jump_006_6a5e) → Jump_006_6a61 or Jump_006_6af4.",
+        "Jump_006_6a61/jr_006_6a61: NUL-term LFN; Jump_006_6a91 fill SFN 11 slots (Jump_006_6ac5/Jump_006_6ac9); done Jump_006_6ad7.",
+        "SFN pad loop: Jump_006_6a91; insert '.' Jump_006_6ac5 else space Jump_006_6ac9; jr_006_6ad4 → Jump_006_6a91; done Jump_006_6ad7 OR NSFLAG|$20 → Jump_006_6ecc (dot-only names).",
+        "Jump_006_6af4: normal path; Jump_006_6afc strip trailing ' '/' .' (Jump_006_6b2d / Jump_006_6b3d / Jump_006_6b40 / jr_006_6b40); Jump_006_6b54 empty → E=$06 Jump_006_6ecc else Jump_006_6b68 NUL-term + MemSet8_B6 spaces into SFN.",
+        "Jump_006_6bb3: skip leading ' '/' .' (Jump_006_6bd5 / Jump_006_6be1 / Jump_006_6be4 / jr_006_6be4 / jr_006_6beb); non-lead Jump_006_6bf6; if skipped NSFLAG|$03 then Jump_006_6c0b.",
+        "Jump_006_6c0b: walk for last '.' (Jump_006_6c42 → Jump_006_6c0b); none/done Jump_006_6c4f init body len=8 then Jump_006_6c61.",
+        "Jump_006_6c61 SFN fill: next wchar (jr_006_6c6c); NUL→Jump_006_6e2b; space Jump_006_6cbc; '.' Jump_006_6c97/Jump_006_6ca7/jr_006_6caa; else Jump_006_6cc5; slot full Jump_006_6ceb/jr_006_6ceb/Jump_006_6cfb/jr_006_6cfe; body\toext Jump_006_6d07/Jump_006_6d19/Jump_006_6d1f; else Jump_006_6ce8 → Jump_006_6d4c MapCp437.",
+        "Jump_006_6d4c: wchar>=$80 MapCp437 (fail Jump_006_6d87 NSFLAG|$02); then Jump_006_6d8d MemChr_B6 illegal set → '_' Jump_006_6da9 NSFLAG|$03 else Jump_006_6db8.",
+        "Case: A-Z Jump_006_6dd8 skip else NSFLAG|$02 → Jump_006_6e06; a-z Jump_006_6dd8 NSFLAG|$01 + toupper; store via jr_006_6e1c → Jump_006_6c61.",
+        "Jump_006_6e2b: SFN[0]==$E5 → $05 (jr_006_6e45) else Jump_006_6e42/Jump_006_6e4d; body-only Jump_006_6e5d/jr_006_6e60 NT<<2; case mix Jump_006_6e66/Jump_006_6e7e/Jump_006_6e81/jr_006_6e81 → NSFLAG|$02; Jump_006_6e87/jr_006_6e91/Jump_006_6e94/Jump_006_6ea1/jr_006_6ea4/Jump_006_6eaa/Jump_006_6eb2/jr_006_6eb5/Jump_006_6ebb store NSFLAG; E=0 → Jump_006_6ecc.",
+        "CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B6 @ 06:6edf (already named) — not CreateName interior."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "6d4b",
+      "name": "CreateName_B7",
+      "lines": [
+        "CreateName_B7(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.",
+        "Jump_007_6d66: skip leading '/' ($2f) or '\\\\' ($5c): Jump_007_6d7c/jr_007_6d7c ++BC loop; else Jump_007_6d79 → Jump_007_6d85 start segment.",
+        "Jump_007_6d85: stash path; lfnbuf@dp+$16; clear counters. Jump_007_6dbc: ++idx (jr_007_6dc7); load char; <' ' or '/' or '\\\\' → Jump_007_6e8e end segment.",
+        "Jump_007_6df8/Jump_007_6e06: not terminator; Jump_007_6e17: if lfn idx≥$ff → E=$06 Jump_007_73c0; else MapCp437; fail → Jump_007_73c0.",
+        "Jump_007_6e3c: if <*$80 MemChr illegal set; hit → Jump_007_73c0; Jump_007_6e62/jr_007_6e6d store wchar to lfnbuf → Jump_007_6dbc.",
+        "Jump_007_6e8e: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_007_6eb6 C=0; Jump_007_6eb8 store NSFLAG@sp+$19.",
+        "If lfnlen!=1 Jump_007_6ecb → Jump_007_6ef1; else jr_007_6ece: last wchar=='.' → Jump_007_6f55/jr_007_6f55 else Jump_007_6ef1.",
+        "Jump_007_6ef1: len!=2 → Jump_007_6f01 → Jump_007_6fe8; else jr_007_6f04: '..' check (Jump_007_6f29/jr_007_6f2c/Jump_007_6f52) → Jump_007_6f55 or Jump_007_6fe8.",
+        "Jump_007_6f55/jr_007_6f55: NUL-term LFN; Jump_007_6f85 fill SFN 11 slots (Jump_007_6fb9/Jump_007_6fbd); done Jump_007_6fcb.",
+        "SFN pad loop: Jump_007_6f85; insert '.' Jump_007_6fb9 else space Jump_007_6fbd; jr_007_6fc8 → Jump_007_6f85; done Jump_007_6fcb OR NSFLAG|$20 → Jump_007_73c0 (dot-only names).",
+        "Jump_007_6fe8: normal path; Jump_007_6ff0 strip trailing ' '/' .' (Jump_007_7021 / Jump_007_7031 / Jump_007_7034 / jr_007_7034); Jump_007_7048 empty → E=$06 Jump_007_73c0 else Jump_007_705c NUL-term + MemSet8_B7 spaces into SFN.",
+        "Jump_007_70a7: skip leading ' '/' .' (Jump_007_70c9 / Jump_007_70d5 / Jump_007_70d8 / jr_007_70d8 / jr_007_70df); non-lead Jump_007_70ea; if skipped NSFLAG|$03 then Jump_007_70ff.",
+        "Jump_007_70ff: walk for last '.' (Jump_007_7136 → Jump_007_70ff); none/done Jump_007_7143 init body len=8 then Jump_007_7155.",
+        "Jump_007_7155 SFN fill: next wchar (jr_007_7160); NUL→Jump_007_731f; space Jump_007_71b0; '.' Jump_007_718b/Jump_007_719b/jr_007_719e; else Jump_007_71b9; slot full Jump_007_71df/jr_007_71df/Jump_007_71ef/jr_007_71f2; body\toext Jump_007_71fb/Jump_007_720d/Jump_007_7213; else Jump_007_71dc → Jump_007_7240 MapCp437.",
+        "Jump_007_7240: wchar>=$80 MapCp437 (fail Jump_007_727b NSFLAG|$02); then Jump_007_7281 MemChr_B7 illegal set → '_' Jump_007_729d NSFLAG|$03 else Jump_007_72ac.",
+        "Case: A-Z Jump_007_72cc skip else NSFLAG|$02 → Jump_007_72fa; a-z Jump_007_72cc NSFLAG|$01 + toupper; store via jr_007_7310 → Jump_007_7155.",
+        "Jump_007_731f: SFN[0]==$E5 → $05 (jr_007_7339) else Jump_007_7336/Jump_007_7341; body-only Jump_007_7351/jr_007_7354 NT<<2; case mix Jump_007_735a/Jump_007_7372/Jump_007_7375/jr_007_7375 → NSFLAG|$02; Jump_007_737b/jr_007_7385/Jump_007_7388/Jump_007_7395/jr_007_7398/Jump_007_739e/Jump_007_73a6/jr_007_73a9/Jump_007_73af store NSFLAG; E=0 → Jump_007_73c0.",
+        "CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B7 @ 07:73d3 (sym; twin of B5/B6/B9) — not CreateName interior."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6015",
+      "name": "FollowPath_B5",
+      "lines": [
+        "FatFs follow_path (bank-5). Twin of FollowPath_B3/B6/B9; CreateName_B5 sibling.",
+        "Entry: skip leading '/' '\\' (Jump_005_602f → Jump_005_605b else Jump_005_6032 / jr_005_6032 clear sclust → Jump_005_6099).",
+        "Jump_005_605b: copy fs->cdir into dp->sclust; Join Jump_005_6099.",
+        "Jump_005_6099: path[0]<' ' → DirSdi_B5(0) + clear fn → Jump_005_625a else Jump_005_60d6 segment loop (CreateName_B5 / DirFind_B5).",
+        "Jump_005_60d6 segment loop: CreateName_B5; err→Jump_005_625a; DirFind_B5; FR_NOFILE+$04 last-seg (jr_005_6137) else Jump_005_6134→Jump_005_625a; NSFLAG|$20 (jr_005_6141) clear sclust/fn + more path→Jump_005_60d6 else last (jr_005_617b E=0); non-last NSFLAG Jump_005_6182/jr_005_618c/Jump_005_618f E=$05.",
+        "Found (Jump_005_6196): last-seg jr_005_61db→Jump_005_625a; else Jump_005_61de ATTR_DIR? jr_005_6208→Jump_005_6212 LdClust_B5 into sclust → Jump_005_60d6 else Jump_005_620b E=$05; Jump_005_625a epilogue ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "6edf",
+      "name": "FollowPath_B6",
+      "lines": [
+        "FatFs follow_path (bank-6). Twin of FollowPath_B3/B5/B9; CreateName_B6 sibling.",
+        "Entry: skip leading '/' '\\' (Jump_006_6ef9 → Jump_006_6f25 else Jump_006_6efc / jr_006_6efc clear sclust → Jump_006_6f63).",
+        "Jump_006_6f25: copy fs->cdir into dp->sclust; Join Jump_006_6f63.",
+        "Jump_006_6f63: path[0]<' ' → DirSdi_B6(0) + clear fn → Jump_006_7124 else Jump_006_6fa0 segment loop (CreateName_B6 / DirFind_B6).",
+        "Jump_006_6fa0 segment loop: CreateName_B6; err→Jump_006_7124; DirFind_B6; FR_NOFILE+$04 last-seg (jr_006_7001) else Jump_006_6ffe→Jump_006_7124; NSFLAG|$20 (jr_006_700b) clear sclust/fn + more path→Jump_006_6fa0 else last (jr_006_7045 E=0); non-last NSFLAG Jump_006_704c/jr_006_7056/Jump_006_7059 E=$05.",
+        "Found (Jump_006_7060): last-seg jr_006_70a5→Jump_006_7124; else Jump_006_70a8 ATTR_DIR? jr_006_70d2→Jump_006_70dc LdClust_B6 into sclust → Jump_006_6fa0 else Jump_006_70d5 E=$05; Jump_006_7124 epilogue ret E."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "72c5",
+      "name": "FollowPath_B9",
+      "lines": [
+        "FatFs follow_path (bank-9 canonical). Twin of FollowPath_B3/B5/B6; CreateName_B9 sibling.",
+        "Entry: skip leading '/' '\\' (Jump_009_72df → Jump_009_730b else Jump_009_72e2 / jr_009_72e2 clear sclust → Jump_009_7349).",
+        "Jump_009_730b: copy fs->cdir into dp->sclust; Join Jump_009_7349.",
+        "Jump_009_7349: path[0]<' ' → DirSdi_B9(0) + clear fn → Jump_009_750a else Jump_009_7386 segment loop (CreateName_B9 / DirFind_B9).",
+        "Jump_009_7386 segment loop: CreateName_B9; err→Jump_009_750a; DirFind_B9; FR_NOFILE+$04 last-seg (jr_009_73e7) else Jump_009_73e4→Jump_009_750a; NSFLAG|$20 (jr_009_73f1) clear sclust/fn + more path→Jump_009_7386 else last (jr_009_742b E=0); non-last NSFLAG Jump_009_7432/jr_009_743c/Jump_009_743f E=$05.",
+        "Found (Jump_009_7446): last-seg jr_009_748b→Jump_009_750a; else Jump_009_748e ATTR_DIR? jr_009_74b8→Jump_009_74c2 LdClust_B9 into sclust → Jump_009_7386 else Jump_009_74bb E=$05; Jump_009_750a epilogue ret E."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "73d3",
+      "name": "FollowPath_B7",
+      "lines": [
+        "FatFs follow_path (bank-7). Twin of FollowPath_B3/B5/B6/B9; CreateName_B7 sibling. Sym 07:73d3 (regen for asm label).",
+        "Entry: skip leading '/' '\\' (Jump_007_73ed → Jump_007_7419 else Jump_007_73f0 / jr_007_73f0 clear sclust → Jump_007_7457).",
+        "Jump_007_7419: copy fs->cdir into dp->sclust; Join Jump_007_7457.",
+        "Jump_007_7457: path[0]<' ' → DirSdi_B7(0) + clear fn → Jump_007_75d9 else Jump_007_7494 segment loop (CreateName_B7 / DirFind_B7).",
+        "Jump_007_7494 segment loop: CreateName_B7; err→Jump_007_75d9; DirFind_B7; FR_NOFILE+$04 last-seg (jr_007_74f1) else Jump_007_74ee→Jump_007_75d9; NSFLAG|$20 (jr_007_74fb) clear sclust/fn + more path→Jump_007_7494 else last (jr_007_7535 E=0); non-last NSFLAG Jump_007_753c/jr_007_7546/Jump_007_7549 E=$05.",
+        "Found (Jump_007_7550): last-seg jr_007_755a→Jump_007_75d9; else Jump_007_755d ATTR_DIR? jr_007_7587→Jump_007_7591 LdClust_B7 into sclust → Jump_007_7494 else Jump_007_758a E=$05; Jump_007_75d9 epilogue ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "7201",
+      "name": "FindVolume_B6",
+      "lines": [
+        "FindVolume stub (bank-6 near-call): FatFs find_volume front only; full mount in FindVolume_B5.",
+        "Clear *rfs; GetLdNumber_B6: bit7→E=$0b Jump_006_7283; else Jump_006_722e: FatFs[vol] @$C5A5 null→E=$0c else Jump_006_7248.",
+        "Jump_006_7248: bind *rfs; fs_type==0→Jump_006_7281; DiskStatus STA_NOINIT jr_006_726a→Jump_006_7281 else Jump_006_726d; mode0 Jump_006_7281 else WP jr_006_727c E=$0a; Jump_006_7281 E=0 → Jump_006_7283 (add sp,$12 / ret)."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "512d",
+      "name": "CreateChain_B3",
+      "lines": [
+        "CreateChain_B3(fs, clst, target): FatFs create_chain / cluster extend.",
+        "clst!=0 Jump_003_51a3 GetFat_B3: clst<2 → Jump_003_54cc (1,0); Jump_003_51e2: clst==-1 jr_003_5200 else Jump_003_51fd/Jump_003_520c compare n_fatent (past Jump_003_5249 else Jump_003_54cc).",
+        "clst==0: free_clst vs n_fatent; empty Jump_003_5197 clst=1; join Jump_003_525a copy state.",
+        "Jump_003_525a alloc scan Jump_003_5294 (jr_003_52a3): hit end Jump_003_52e2 GetFat_B3; no free + scan done → Jump_003_54cc (0,0).",
+        "Jump_003_533b/Jump_003_5357/Jump_003_535a/jr_003_535a EOF checks; Jump_003_5366 match jr_003_538f (0,0) else Jump_003_538c → Jump_003_5294.",
+        "Jump_003_52e2 free slot Jump_003_5398 PutFat_B3 link; fail Jump_003_548e/Jump_003_5496/jr_003_5499/Jump_003_54a9 set FR_NO_FILESYSTEM.",
+        "Jump_003_53ed: update fs free_clst/fatbase; Jump_003_5442 link + FA_DIRTY or Jump_003_54c3; Jump_003_54b2 store; Jump_003_54cc epilogue (add sp,$1b / ret)."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "4f5a",
+      "name": "CreateChain_B6",
+      "lines": [
+        "CreateChain_B6(fs, clst, target): FatFs create_chain / cluster extend.",
+        "clst!=0 Jump_006_4fd0 GetFat_B6: clst<2 → Jump_006_52f9 (1,0); Jump_006_500f: clst==-1 jr_006_502d else Jump_006_502a/Jump_006_5039 compare n_fatent (past Jump_006_5076 else Jump_006_52f9).",
+        "clst==0: free_clst vs n_fatent; empty Jump_006_4fc4 clst=1; join Jump_006_5087 copy state.",
+        "Jump_006_5087 alloc scan Jump_006_50c1 (jr_006_50d0): hit end Jump_006_510f GetFat_B6; no free + scan done → Jump_006_52f9 (0,0).",
+        "Jump_006_5168/Jump_006_5184/Jump_006_5187/jr_006_5187 EOF checks; Jump_006_5193 match jr_006_51bc (0,0) else Jump_006_51b9 → Jump_006_50c1.",
+        "Jump_006_510f free slot Jump_006_51c5 PutFat_B6 link; fail Jump_006_52bb/Jump_006_52c3/jr_006_52c6/Jump_006_52d6 set FR_NO_FILESYSTEM.",
+        "Jump_006_521a: update fs free_clst/fatbase; Jump_006_526f link + FA_DIRTY or Jump_006_52f0; Jump_006_52df store; Jump_006_52f9 epilogue (add sp,$1b / ret)."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "4f88",
+      "name": "CreateChain_B7",
+      "lines": [
+        "CreateChain_B7(fs, clst, target): FatFs create_chain / cluster extend.",
+        "clst!=0 Jump_007_4ffe GetFat_B7: clst<2 → Jump_007_5327 (1,0); Jump_007_503d: clst==-1 jr_007_505b else Jump_007_5058/Jump_007_5067 compare n_fatent (past Jump_007_50a4 else Jump_007_5327).",
+        "clst==0: free_clst vs n_fatent; empty Jump_007_4ff2 clst=1; join Jump_007_50b5 copy state.",
+        "Jump_007_50b5 alloc scan Jump_007_50ef (jr_007_50fe): hit end Jump_007_513d GetFat_B7; no free + scan done → Jump_007_5327 (0,0).",
+        "Jump_007_5196/Jump_007_51b2/Jump_007_51b5/jr_007_51b5 EOF checks; Jump_007_51c1 match jr_007_51ea (0,0) else Jump_007_51e7 → Jump_007_50ef.",
+        "Jump_007_513d free slot Jump_007_51f3 PutFat_B7 link; fail Jump_007_52e9/Jump_007_52f1/jr_007_52f4/Jump_007_5304 set FR_NO_FILESYSTEM.",
+        "Jump_007_5248: update fs free_clst/fatbase; Jump_007_529d link + FA_DIRTY or Jump_007_531e; Jump_007_530d store; Jump_007_5327 epilogue (add sp,$1b / ret)."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "5139",
+      "name": "CreateChain_B9",
+      "lines": [
+        "CreateChain_B9(fs, clst, target): FatFs create_chain / cluster extend.",
+        "clst!=0 Jump_009_51af GetFat_B9: clst<2 → Jump_009_54d8 (1,0); Jump_009_51ee: clst==-1 jr_009_520c else Jump_009_5209/Jump_009_5218 compare n_fatent (past Jump_009_5255 else Jump_009_54d8).",
+        "clst==0: free_clst vs n_fatent; empty Jump_009_51a3 clst=1; join Jump_009_5266 copy state.",
+        "Jump_009_5266 alloc scan Jump_009_52a0 (jr_009_52af): hit end Jump_009_52ee GetFat_B9; no free + scan done → Jump_009_54d8 (0,0).",
+        "Jump_009_5347/Jump_009_5363/Jump_009_5366/jr_009_5366 EOF checks; Jump_009_5372 match jr_009_539b (0,0) else Jump_009_5398 → Jump_009_52a0.",
+        "Jump_009_52ee free slot Jump_009_53a4 PutFat_B9 link; fail Jump_009_549a/Jump_009_54a2/jr_009_54a5/Jump_009_54b5 set FR_NO_FILESYSTEM.",
+        "Jump_009_53f9: update fs free_clst/fatbase; Jump_009_544e link + FA_DIRTY or Jump_009_54cf; Jump_009_54be store; Jump_009_54d8 epilogue (add sp,$1b / ret)."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "6440",
+      "name": "DirFind_B3",
+      "lines": [
+        "DirFind_B3(dp): FatFs dir_find. DirSdi_B3(0); fail Jump_003_645e init else err Jump_003_6698.",
+        "Jump_003_645e: clear ord/hash ptrs; Jump_003_64d0 read entry + MoveWindow_B3; fail Jump_003_6695; LFN chain Jump_003_6529 else ord=4 Jump_003_6695.",
+        "Jump_003_6529: attr — deleted $E5 Jump_003_654e; volume jr_003_6548; LFN ord $0F Jump_003_6569 else Jump_003_6561/Jump_003_6569 SFN path.",
+        "jr_003_656c: empty LFN chk Jump_003_667d; AM_LFN jr_003_6584 store ord/chksum else Jump_003_65b0 ord compare (Jump_003_65bb/jr_003_65be/Jump_003_65d2/Jump_003_65d7/Jump_003_65d9 CmpLfn_B3).",
+        "Jump_003_65fb/Jump_003_6600/Jump_003_6602/Jump_003_660f/Jump_003_6611: LFN ord update Jump_003_667d; Jump_003_6617 SumSfn_B3 match Jump_003_6695.",
+        "Jump_003_6630 NTRES jr_003_664e skip; Jump_003_6651 MemCmp_B3 SFN match Jump_003_6695 else Jump_003_666d invalidate; Jump_003_667d DirNext_B3 loop Jump_003_64d0; Jump_003_6695/Jump_003_6698 epilogue."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "626d",
+      "name": "DirFind_B6",
+      "lines": [
+        "DirFind_B6(dp): FatFs dir_find. DirSdi_B6(0); fail Jump_006_628b init else err Jump_006_64c5.",
+        "Jump_006_628b: clear ord/hash ptrs; Jump_006_62fd read entry + MoveWindow_B6; fail Jump_006_64c2; LFN chain Jump_006_6356 else ord=4 Jump_006_64c2.",
+        "Jump_006_6356: attr — deleted $E5 Jump_006_637b; volume jr_006_6375; LFN ord $0F Jump_006_6396 else Jump_006_638e/Jump_006_6396 SFN path.",
+        "jr_006_6399: empty LFN chk Jump_006_64aa; AM_LFN jr_006_63b1 store ord/chksum else Jump_006_63dd ord compare (Jump_006_63e8/jr_006_63eb/Jump_006_63ff/Jump_006_6404/Jump_006_6406 CmpLfn_B6).",
+        "Jump_006_6428/Jump_006_642d/Jump_006_642f/Jump_006_643c/Jump_006_643e: LFN ord update Jump_006_64aa; Jump_006_6444 SumSfn_B6 match Jump_006_64c2.",
+        "Jump_006_645d NTRES jr_006_647b skip; Jump_006_647e MemCmp_B6 SFN match Jump_006_64c2 else Jump_006_649a invalidate; Jump_006_64aa DirNext_B6 loop Jump_006_62fd; Jump_006_64c2/Jump_006_64c5 epilogue."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "629b",
+      "name": "DirFind_B7",
+      "lines": [
+        "DirFind_B7(dp): FatFs dir_find. DirSdi_B7(0); fail Jump_007_62b9 init else err Jump_007_64f3.",
+        "Jump_007_62b9: clear ord/hash ptrs; Jump_007_632b read entry + MoveWindow_B7; fail Jump_007_64f0; LFN chain Jump_007_6384 else ord=4 Jump_007_64f0.",
+        "Jump_007_6384: attr — deleted $E5 Jump_007_63a9; volume jr_007_63a3; LFN ord $0F Jump_007_63c4 else Jump_007_63bc/Jump_007_63c4 SFN path.",
+        "jr_007_63c7: empty LFN chk Jump_007_64d8; AM_LFN jr_007_63df store ord/chksum else Jump_007_640b ord compare (Jump_007_6416/jr_007_6419/Jump_007_642d/Jump_007_6432/Jump_007_6434 CmpLfn_B7).",
+        "Jump_007_6456/Jump_007_645b/Jump_007_645d/Jump_007_646a/Jump_007_646c: LFN ord update Jump_007_64d8; Jump_007_6472 SumSfn_B7 match Jump_007_64f0.",
+        "Jump_007_648b NTRES jr_007_64a9 skip; Jump_007_64ac MemCmp_B7 SFN match Jump_007_64f0 else Jump_007_64c8 invalidate; Jump_007_64d8 DirNext_B7 loop Jump_007_632b; Jump_007_64f0/Jump_007_64f3 epilogue."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "526c",
+      "name": "DirFind_B5",
+      "lines": [
+        "DirFind_B5(dp): FatFs dir_find. DirSdi_B5(0); fail Jump_005_528a init else err Jump_005_54c4.",
+        "Jump_005_528a: clear ord/hash ptrs; Jump_005_52fc read entry + MoveWindow_B5; fail Jump_005_54c1; LFN chain Jump_005_5355 else ord=4 Jump_005_54c1.",
+        "Jump_005_5355: attr — deleted $E5 Jump_005_537a; volume jr_005_5374; LFN ord $0F Jump_005_5395 else Jump_005_538d/Jump_005_5395 SFN path.",
+        "jr_005_5398: empty LFN chk Jump_005_54a9; AM_LFN jr_005_53b0 store ord/chksum else Jump_005_53dc ord compare (Jump_005_53e7/jr_005_53ea/Jump_005_53fe/Jump_005_5403/Jump_005_5405 CmpLfn_B5).",
+        "Jump_005_5427/Jump_005_542c/Jump_005_542e/Jump_005_543b/Jump_005_543d: LFN ord update Jump_005_54a9; Jump_005_5443 SumSfn_B5 match Jump_005_54c1.",
+        "Jump_005_545c NTRES jr_005_547a skip; Jump_005_547d MemCmp_B5 SFN match Jump_005_54c1 else Jump_005_5499 invalidate; Jump_005_54a9 DirNext_B5 loop Jump_005_52fc; Jump_005_54c1/Jump_005_54c4 epilogue."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "5800",
+      "name": "DirNext_B3",
+      "lines": [
+        "DirNext_B3(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.",
+        "Index+1==0 → Jump_003_5856 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_003_5856.",
+        "Jump_003_585b: index&$0f≠0 → Jump_003_5c24 in-sector advance; else inc sector (jr_003_5879 carry chain) + copy 32-byte slot.",
+        "Next cluster from dp chain zero → Jump_003_58da stretch path; volsize compare fail → Jump_003_5c24 else E=$04 → Jump_003_5c81.",
+        "Jump_003_58da: sector→cluster via jr_003_58e8 ÷16; fs-type mask vs cluster → nz Jump_003_5c24; GetFat_B3.",
+        "Cluster−1 underflow → Jump_003_5950: inc cluster words — all zero jr_003_596e E=$01 else Jump_003_596b→Jump_003_5973.",
+        "Jump_003_5973: cluster<saved → Jump_003_5bd3; stretch==0 → E=$04 Jump_003_5c81 else Jump_003_59ba CreateChain_B3.",
+        "CreateChain result zero → E=$07 Jump_003_5c81; else Jump_003_5a0d cluster−1 all zero → jr_003_5a2c E=$02 else Jump_003_5a29→Jump_003_5a31.",
+        "Jump_003_5a31: inc cluster words — all wrap jr_003_5a4f E=$01 else Jump_003_5a4c→Jump_003_5a54 SyncWindow_B3.",
+        "Jump_003_5a54: SyncWindow_B3 err→E=$01 Jump_003_5c81 else Jump_003_5a6f MemSet8 dir buf + Clust2Sect → Jump_003_5ae1 sector loop.",
+        "Jump_003_5ae1: offset≥ssize → Jump_003_5b76 else dirty+SyncWindow; err E=$01; Jump_003_5b24 stamp template (jr_003_5b52/jr_003_5b6b) → Jump_003_5ae1.",
+        "Jump_003_5b76: partial tail copy + sector base for index; Jump_003_5bd3 store cluster + Clust2Sect → window sector.",
+        "Jump_003_5c24: write index@dp+$04, ptr@dp+$12+idx*32, E=0; Jump_003_5c81 add sp,$22 ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "562d",
+      "name": "DirNext_B6",
+      "lines": [
+        "DirNext_B6(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.",
+        "Index+1==0 → Jump_006_5683 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_006_5683.",
+        "Jump_006_5688: index&$0f≠0 → Jump_006_5a51 in-sector advance; else inc sector (jr_006_56a6 carry chain) + copy 32-byte slot.",
+        "Next cluster from dp chain zero → Jump_006_5707 stretch path; volsize compare fail → Jump_006_5a51 else E=$04 → Jump_006_5aae.",
+        "Jump_006_5707: sector→cluster via jr_006_5715 ÷16; fs-type mask vs cluster → nz Jump_006_5a51; GetFat_B6.",
+        "Cluster−1 underflow → Jump_006_577d: inc cluster words — all zero jr_006_579b E=$01 else Jump_006_5798→Jump_006_57a0.",
+        "Jump_006_57a0: cluster<saved → Jump_006_5a00; stretch==0 → E=$04 Jump_006_5aae else Jump_006_57e7 CreateChain_B6.",
+        "CreateChain result zero → E=$07 Jump_006_5aae; else Jump_006_583a cluster−1 all zero → jr_006_5859 E=$02 else Jump_006_5856→Jump_006_585e.",
+        "Jump_006_585e: inc cluster words — all wrap jr_006_587c E=$01 else Jump_006_5879→Jump_006_5881 SyncWindow_B6.",
+        "Jump_006_5881: SyncWindow_B6 err→E=$01 Jump_006_5aae else Jump_006_589c MemSet8 dir buf + Clust2Sect → Jump_006_590e sector loop.",
+        "Jump_006_590e: offset≥ssize → Jump_006_59a3 else dirty+SyncWindow; err E=$01; Jump_006_5951 stamp template (jr_006_597f/jr_006_5998) → Jump_006_590e.",
+        "Jump_006_59a3: partial tail copy + sector base for index; Jump_006_5a00 store cluster + Clust2Sect → window sector.",
+        "Jump_006_5a51: write index@dp+$04, ptr@dp+$12+idx*32, E=0; Jump_006_5aae add sp,$22 ret E."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "565b",
+      "name": "DirNext_B7",
+      "lines": [
+        "DirNext_B7(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.",
+        "Index+1==0 → Jump_007_56b1 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_007_56b1.",
+        "Jump_007_56b6: index&$0f≠0 → Jump_007_5a7f in-sector advance; else inc sector (jr_007_56d4 carry chain) + copy 32-byte slot.",
+        "Next cluster from dp chain zero → Jump_007_5735 stretch path; volsize compare fail → Jump_007_5a7f else E=$04 → Jump_007_5adc.",
+        "Jump_007_5735: sector→cluster via jr_007_5743 ÷16; fs-type mask vs cluster → nz Jump_007_5a7f; GetFat_B7.",
+        "Cluster−1 underflow → Jump_007_57ab: inc cluster words — all zero jr_007_57c9 E=$01 else Jump_007_57c6→Jump_007_57ce.",
+        "Jump_007_57ce: cluster<saved → Jump_007_5a2e; stretch==0 → E=$04 Jump_007_5adc else Jump_007_5815 CreateChain_B7.",
+        "CreateChain result zero → E=$07 Jump_007_5adc; else Jump_007_5868 cluster−1 all zero → jr_007_5887 E=$02 else Jump_007_5884→Jump_007_588c.",
+        "Jump_007_588c: inc cluster words — all wrap jr_007_58aa E=$01 else Jump_007_58a7→Jump_007_58af SyncWindow_B7.",
+        "Jump_007_58af: SyncWindow_B7 err→E=$01 Jump_007_5adc else Jump_007_58ca MemSet8 dir buf + Clust2Sect → Jump_007_593c sector loop.",
+        "Jump_007_593c: offset≥ssize → Jump_007_59d1 else dirty+SyncWindow; err E=$01; Jump_007_597f stamp template (jr_007_59ad/jr_007_59c6) → Jump_007_593c.",
+        "Jump_007_59d1: partial tail copy + sector base for index; Jump_007_5a2e store cluster + Clust2Sect → window sector.",
+        "Jump_007_5a7f: write index@dp+$04, ptr@dp+$12+idx*32, E=0; Jump_007_5adc add sp,$22 ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "4db5",
+      "name": "RemoveChain_B6",
+      "lines": [
+        "RemoveChain_B6(fs, clst, pclst): FatFs remove_chain. Frame -$0e; walk FAT from fs+clst toward clst.",
+        "clst<2 → Jump_006_4e06 B=$02; start cluster > clst → Jump_006_4e0b B=$00 else Jump_006_4e06.",
+        "Jump_006_4e0d loop: walker≥clst → Jump_006_4f56 ret B; GetFat_B6; FAT zero → Jump_006_4f56.",
+        "FAT==1 → jr_006_4e84 B=$02 else Jump_006_4e81→Jump_006_4e89; inc FAT wraps → jr_006_4ea7 B=$01 else Jump_006_4ea4→Jump_006_4eac.",
+        "Jump_006_4eac: PutFat_B6 free slot; err → Jump_006_4f56; advance walker — inc hits 0 → Jump_006_4f42 else Jump_006_4f07 (jr_006_4f16) + FA_DIRTY → Jump_006_4e0d.",
+        "Jump_006_4f42: stash final cluster@sp+$12 → Jump_006_4e0d; Jump_006_4f56: ld e,B / add sp,$0e / ret."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "4f94",
+      "name": "RemoveChain_B9",
+      "lines": [
+        "RemoveChain_B9(fs, clst, pclst): FatFs remove_chain. Frame -$0e; walk FAT from fs+clst toward clst.",
+        "clst<2 → Jump_009_4fe5 B=$02; start cluster > clst → Jump_009_4fea B=$00 else Jump_009_4fe5.",
+        "Jump_009_4fec loop: walker≥clst → Jump_009_5135 ret B; GetFat_B9; FAT zero → Jump_009_5135.",
+        "FAT==1 → jr_009_5063 B=$02 else Jump_009_5060→Jump_009_5068; inc FAT wraps → jr_009_5086 B=$01 else Jump_009_5083→Jump_009_508b.",
+        "Jump_009_508b: PutFat_B9 free slot; err → Jump_009_5135; advance walker — inc hits 0 → Jump_009_5121 else Jump_009_50e6 (jr_009_50f5) + FA_DIRTY → Jump_009_4fec.",
+        "Jump_009_5121: stash final cluster@sp+$12 → Jump_009_4fec; Jump_009_5135: ld e,B / add sp,$0e / ret."
       ]
     }
   ]

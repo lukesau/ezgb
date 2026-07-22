@@ -154,7 +154,8 @@ use already-named symbols, not live `Call_*`/`Jump_*`. Fan-in counts
 `call HumanName` via `kernel.sym`, not only remaining `call Call_*`. Interior
 checks ignore WRAM / `.text:` magics. Unreferenced orphans (0 call sites, no
 doc/frontier/abs) are dropped so the loop is not stuck on dead helpers
-(e.g. `00:2ac6`).
+(e.g. `00:2ac6`). `naming-progress.sh` is notes-adjusted: `Jump_`/`jr_` cited in
+`notes.json` count as named (raw mgbdis count still shown in brackets).
 
 FatFs bank-start `ret` stubs: `RetStub_B5` / `RetStub_B6` / `RetStub_B9`
 (`xx:4000` before `MemCpy16_B*`).
