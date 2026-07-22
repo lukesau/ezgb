@@ -99,7 +99,7 @@ CStrCmp::
     ld [hl+], a
     ld [hl], e
 
-Jump_001_4056:
+CStrCmp_loop::
     ld a, [bc]
     ld hl, sp+$01
     ld [hl+], a
@@ -112,38 +112,38 @@ Jump_001_4056:
     ld a, [hl]
     dec hl
     sub [hl]
-    jp nz, Jump_001_4069
+    jp nz, CStrCmp_mismatch
 
-    jr jr_001_406c
+    jr CStrCmp_matchGate
 
-Jump_001_4069:
-    jp Jump_001_4084
+CStrCmp_mismatch::
+    jp CStrCmp_sexSub
 
 
-jr_001_406c:
+CStrCmp_matchGate::
     xor a
     ld hl, sp+$01
     or [hl]
-    jp nz, Jump_001_4079
+    jp nz, CStrCmp_advance
 
     ld de, $0000
-    jp Jump_001_40a0
+    jp CStrCmp_epilogueRet
 
 
-Jump_001_4079:
+CStrCmp_advance::
     inc bc
     ld hl, sp+$02
     inc [hl]
-    jr nz, jr_001_4081
+    jr nz, CStrCmp_advanceCont
 
     inc hl
     inc [hl]
 
-jr_001_4081:
-    jp Jump_001_4056
+CStrCmp_advanceCont::
+    jp CStrCmp_loop
 
 
-Jump_001_4084:
+CStrCmp_sexSub::
     ld hl, sp+$01
     ld a, [hl+]
     ld [hl-], a
@@ -171,7 +171,7 @@ Jump_001_4084:
     sbc b
     ld d, a
 
-Jump_001_40a0:
+CStrCmp_epilogueRet::
     add sp, $04
     ret
 
@@ -192,54 +192,54 @@ CStrChr::
     ld hl, sp+$09
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_001_40b9
+    jp nz, CStrChr_initBc
 
     ld de, $0000
-    jp Jump_001_40e0
+    jp CStrChr_epilogueRet
 
 
-Jump_001_40b9:
+CStrChr_initBc::
     ld hl, sp+$09
     ld c, [hl]
     inc hl
     ld b, [hl]
 
-Jump_001_40be:
+CStrChr_loop::
     ld a, [bc]
     ld hl, sp+$00
     ld [hl], a
     or a
-    jp z, Jump_001_40db
+    jp z, CStrChr_loadSaved
 
     ld a, [hl]
     ld hl, sp+$0b
     sub [hl]
-    jp nz, Jump_001_40cf
+    jp nz, CStrChr_skipStore
 
-    jr jr_001_40d2
+    jr CStrChr_storeMatch
 
-Jump_001_40cf:
-    jp Jump_001_40d7
+CStrChr_skipStore::
+    jp CStrChr_advance
 
 
-jr_001_40d2:
+CStrChr_storeMatch::
     ld hl, sp+$01
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_001_40d7:
+CStrChr_advance::
     inc bc
-    jp Jump_001_40be
+    jp CStrChr_loop
 
 
-Jump_001_40db:
+CStrChr_loadSaved::
     ld hl, sp+$01
     ld e, [hl]
     inc hl
     ld d, [hl]
 
-Jump_001_40e0:
+CStrChr_epilogueRet::
     add sp, $03
     ret
 
@@ -4434,7 +4434,7 @@ PreLaunchFramStamp::
     inc hl
     ld [hl], $00
 
-Jump_001_561d:
+PreLaunchFramStamp_copyBasename::
     ld hl, sp+$0b
     ld c, [hl]
     ld b, $00
@@ -4445,7 +4445,7 @@ Jump_001_561d:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_001_5657
+    jp nc, PreLaunchFramStamp_checkRtc
 
     dec hl
     ld e, [hl]
@@ -4475,20 +4475,20 @@ Jump_001_561d:
     ld [de], a
     ld hl, sp+$09
     inc [hl]
-    jr nz, jr_001_5654
+    jr nz, PreLaunchFramStamp_copyCont
 
     inc hl
     inc [hl]
 
-jr_001_5654:
-    jp Jump_001_561d
+PreLaunchFramStamp_copyCont::
+    jp PreLaunchFramStamp_copyBasename
 
 
-Jump_001_5657:
+PreLaunchFramStamp_checkRtc::
     xor a
     ld hl, $d3f0
     or [hl]
-    jp z, Jump_001_5716
+    jp z, PreLaunchFramStamp_clearRtcFlag
 
     ld bc, $a202
     ld a, $77
@@ -4617,15 +4617,15 @@ Jump_001_5657:
     ld hl, sp+$04
     ld a, [hl]
     ld [bc], a
-    jp Jump_001_571c
+    jp PreLaunchFramStamp_epilogue
 
 
-Jump_001_5716:
+PreLaunchFramStamp_clearRtcFlag::
     ld bc, $a202
     ld a, $00
     ld [bc], a
 
-Jump_001_571c:
+PreLaunchFramStamp_epilogue::
     ld bc, $4000
     ld a, $00
     ld [bc], a
@@ -6504,7 +6504,7 @@ DrawCardTypeScreen_afterMbc::
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, $2a5c
+    ld hl, S32DivImpl_epilogueRet
     push hl
     ld a, $00
     push af

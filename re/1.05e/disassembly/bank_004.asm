@@ -923,16 +923,16 @@ CStrCat::
     inc hl
     ld b, [hl]
 
-Jump_004_44b6:
+CStrCat_findNul::
     ld a, [bc]
     or a
-    jp z, Jump_004_44bf
+    jp z, CStrCat_stashPtrs
 
     inc bc
-    jp Jump_004_44b6
+    jp CStrCat_findNul
 
 
-Jump_004_44bf:
+CStrCat_stashPtrs::
     ld hl, sp+$08
     ld a, [hl+]
     ld e, [hl]
@@ -944,7 +944,7 @@ Jump_004_44bf:
     inc hl
     ld [hl], b
 
-Jump_004_44cb:
+CStrCat_copyLoop::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -952,17 +952,17 @@ Jump_004_44cb:
     ld a, [de]
     ld c, a
     or a
-    jp z, Jump_004_44ec
+    jp z, CStrCat_writeNul
 
     ld a, c
     dec hl
     inc [hl]
-    jr nz, jr_004_44dd
+    jr nz, CStrCat_incSrc
 
     inc hl
     inc [hl]
 
-jr_004_44dd:
+CStrCat_incSrc::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -970,16 +970,16 @@ jr_004_44dd:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_004_44e9
+    jr nz, CStrCat_afterStore
 
     inc hl
     inc [hl]
 
-jr_004_44e9:
-    jp Jump_004_44cb
+CStrCat_afterStore::
+    jp CStrCat_copyLoop
 
 
-Jump_004_44ec:
+CStrCat_writeNul::
     ld hl, sp+$02
     ld e, [hl]
     inc hl

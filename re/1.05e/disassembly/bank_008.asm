@@ -12028,7 +12028,7 @@ RomLoad_ClearCartWindow_B8::
     ld [hl+], a
     ld [hl], a
 
-Jump_008_6f0a:
+RomLoad_ClearCartWindow_B8_fillBuf::
     ld hl, sp+$04
     ld a, [hl]
     sub $00
@@ -12042,7 +12042,7 @@ Jump_008_6f0a:
     ld a, [hl]
     sbc $00
     rlca
-    jp nc, Jump_008_6f3d
+    jp nc, RomLoad_ClearCartWindow_B8_resetCounter
 
     ld a, $a0
     ld hl, sp+$04
@@ -12056,24 +12056,24 @@ Jump_008_6f0a:
     ld a, [hl]
     ld [bc], a
     inc [hl]
-    jr nz, jr_008_6f3a
+    jr nz, RomLoad_ClearCartWindow_B8_fillCont
 
     inc hl
     inc [hl]
-    jr nz, jr_008_6f3a
+    jr nz, RomLoad_ClearCartWindow_B8_fillCont
 
     inc hl
     inc [hl]
-    jr nz, jr_008_6f3a
+    jr nz, RomLoad_ClearCartWindow_B8_fillCont
 
     inc hl
     inc [hl]
 
-jr_008_6f3a:
-    jp Jump_008_6f0a
+RomLoad_ClearCartWindow_B8_fillCont::
+    jp RomLoad_ClearCartWindow_B8_fillBuf
 
 
-Jump_008_6f3d:
+RomLoad_ClearCartWindow_B8_resetCounter::
     xor a
     ld hl, sp+$04
     ld [hl+], a
@@ -12081,7 +12081,7 @@ Jump_008_6f3d:
     ld [hl+], a
     ld [hl], a
 
-Jump_008_6f44:
+RomLoad_ClearCartWindow_B8_cmdLoop::
     ld hl, sp+$04
     ld a, [hl]
     sub $00
@@ -12095,7 +12095,7 @@ Jump_008_6f44:
     ld a, [hl]
     sbc $00
     rlca
-    jp nc, Jump_008_6fcd
+    jp nc, RomLoad_ClearCartWindow_B8_epilogueRet
 
     ld hl, sp+$04
     ld e, [hl]
@@ -12178,10 +12178,10 @@ Jump_008_6f44:
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp Jump_008_6f44
+    jp RomLoad_ClearCartWindow_B8_cmdLoop
 
 
-Jump_008_6fcd:
+RomLoad_ClearCartWindow_B8_epilogueRet::
     add sp, $08
     ret
 

@@ -342,29 +342,29 @@ KernelEntry::
     ld c, $20
     ld b, $00
 
-jr_000_015d:
+KernelEntry_clearWram::
     ld [hl-], a
     dec b
-    jr nz, jr_000_015d
+    jr nz, KernelEntry_clearWram
 
     dec c
-    jr nz, jr_000_015d
+    jr nz, KernelEntry_clearWram
 
     ld hl, $feff
     ld b, $00
 
-jr_000_0169:
+KernelEntry_clearOam::
     ld [hl-], a
     dec b
-    jr nz, jr_000_0169
+    jr nz, KernelEntry_clearOam
 
     ld hl, $ffff
     ld b, $80
 
-jr_000_0172:
+KernelEntry_clearHram::
     ld [hl-], a
     dec b
-    jr nz, jr_000_0172
+    jr nz, KernelEntry_clearHram
 
     ld a, d
     ld [$d6c9], a
@@ -385,12 +385,12 @@ jr_000_0172:
     ld hl, OamDmaStub
     ld b, $0a
 
-jr_000_019e:
+KernelEntry_copyOamDmaStub::
     ld a, [hl+]
     ldh [c], a
     inc c
     dec b
-    jr nz, jr_000_019e
+    jr nz, KernelEntry_copyOamDmaStub
 
     ld bc, VBlankCallback
     call RegisterVBlankCallback
@@ -1714,35 +1714,35 @@ jr_000_06bc:
 SerialCallback::
     ld a, [$d6cd]
     cp $02
-    jr nz, jr_000_06d0
+    jr nz, SerialCallback_ifState1
 
     ldh a, [rSB]
     ld [$d6cc], a
     ld a, $00
-    jr jr_000_06de
+    jr SerialCallback_clearState
 
-jr_000_06d0:
+SerialCallback_ifState1::
     cp $01
-    jr nz, jr_000_06ea
+    jr nz, SerialCallback_rearmSc
 
     ldh a, [rSB]
     cp $55
-    jr z, jr_000_06de
+    jr z, SerialCallback_clearState
 
     ld a, $04
-    jr jr_000_06e0
+    jr SerialCallback_storeState
 
-jr_000_06de:
+SerialCallback_clearState::
     ld a, $00
 
-jr_000_06e0:
+SerialCallback_storeState::
     ld [$d6cd], a
     xor a
     ldh [rSC], a
     ld a, $66
     ldh [rSB], a
 
-jr_000_06ea:
+SerialCallback_rearmSc::
     ld a, $80
     ldh [rSC], a
     ret
@@ -2414,13 +2414,13 @@ MemCmp_B0::
     ld hl, sp+$02
     ld [hl], a
 
-Jump_000_09d0:
+MemCmp_B0_decN::
     ld hl, sp+$02
     ld b, [hl]
     dec [hl]
     xor a
     or b
-    jp z, Jump_000_0a11
+    jp z, MemCmp_B0_retDiff
 
     ld hl, sp+$07
     ld e, [hl]
@@ -2430,12 +2430,12 @@ Jump_000_09d0:
     ld b, a
     dec hl
     inc [hl]
-    jr nz, jr_000_09e6
+    jr nz, MemCmp_B0_incS1
 
     inc hl
     inc [hl]
 
-jr_000_09e6:
+MemCmp_B0_incS1::
     ld hl, sp+$00
     ld [hl], b
     inc hl
@@ -2448,12 +2448,12 @@ jr_000_09e6:
     ld c, a
     dec hl
     inc [hl]
-    jr nz, jr_000_09f9
+    jr nz, MemCmp_B0_cmpBytes
 
     inc hl
     inc [hl]
 
-jr_000_09f9:
+MemCmp_B0_cmpBytes::
     ld b, $00
     ld hl, sp+$00
     ld e, [hl]
@@ -2473,9 +2473,9 @@ jr_000_09f9:
     ld [hl], b
     ld a, c
     or b
-    jp z, Jump_000_09d0
+    jp z, MemCmp_B0_decN
 
-Jump_000_0a11:
+MemCmp_B0_retDiff::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
@@ -3338,7 +3338,7 @@ Jump_000_0e24:
     jr BackupBranchEntry
 
 GotoFileBrowser::
-    jp Jump_000_0f5b
+    jp BackupBranchEntry_seedSlashPath
 
 
 ; [ezgb]
@@ -3407,7 +3407,7 @@ BackupBranchEntry::
     inc hl
     ld [hl], $00
 
-Jump_000_0ec4:
+BackupBranchEntry_copyBasename::
     ld hl, sp+$06
     ld [hl], b
     inc hl
@@ -3422,7 +3422,7 @@ Jump_000_0ec4:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_000_0f08
+    jp nc, BackupBranchEntry_openSaverDir
 
     ld de, $c3a5
     ld hl, sp+$0f
@@ -3455,16 +3455,16 @@ Jump_000_0ec4:
     ld [de], a
     ld hl, sp+$0f
     inc [hl]
-    jr nz, jr_000_0f05
+    jr nz, BackupBranchEntry_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_0f05:
-    jp Jump_000_0ec4
+BackupBranchEntry_copyCont::
+    jp BackupBranchEntry_copyBasename
 
 
-Jump_000_0f08:
+BackupBranchEntry_openSaverDir::
     ld de, $c3a5
     ld l, b
     ld h, $00
@@ -3525,7 +3525,7 @@ Jump_000_0f08:
     ld bc, $e800
     dec b
 
-Jump_000_0f5b:
+BackupBranchEntry_seedSlashPath::
     ld hl, sp+$00
     ld [hl], $00
     inc hl
@@ -7057,41 +7057,41 @@ RleUnpack::
     ld b, h
     pop hl
 
-Jump_000_20be:
+RleUnpack_fetchLen::
     ld e, [hl]
     inc hl
     bit 7, e
-    jp z, Jump_000_20d0
+    jp z, RleUnpack_literalOrDone
 
     ld a, [hl]
     inc hl
 
-Jump_000_20c7:
+RleUnpack_runStore::
     ld [bc], a
     inc bc
     inc e
-    jp nz, Jump_000_20c7
+    jp nz, RleUnpack_runStore
 
-    jp Jump_000_20be
+    jp RleUnpack_fetchLen
 
 
-Jump_000_20d0:
+RleUnpack_literalOrDone::
     xor a
     or e
-    jp z, Jump_000_20e0
+    jp z, RleUnpack_retPastStream
 
-Jump_000_20d5:
+RleUnpack_copyLiteral::
     ld a, [hl]
     inc hl
     ld [bc], a
     inc bc
     dec e
-    jp nz, Jump_000_20d5
+    jp nz, RleUnpack_copyLiteral
 
-    jp Jump_000_20be
+    jp RleUnpack_fetchLen
 
 
-Jump_000_20e0:
+RleUnpack_retPastStream::
     push hl
     ret
 
@@ -8400,7 +8400,7 @@ DrawGlyph::
     ld a, [wDrawColor]
     ld c, a
 
-jr_000_2730:
+DrawGlyph_rowLoop::
     ld a, [de]
     inc de
     push de
@@ -8410,40 +8410,40 @@ jr_000_2730:
     ld b, a
     xor a
     bit 0, l
-    jr z, jr_000_273f
+    jr z, DrawGlyph_afterColorB0
 
     cpl
 
-jr_000_273f:
+DrawGlyph_afterColorB0::
     or b
     bit 0, c
-    jr nz, jr_000_2745
+    jr nz, DrawGlyph_plane0Done
 
     xor b
 
-jr_000_2745:
+DrawGlyph_plane0Done::
     ld d, a
     xor a
     bit 1, l
-    jr z, jr_000_274c
+    jr z, DrawGlyph_afterColorB1
 
     cpl
 
-jr_000_274c:
+DrawGlyph_afterColorB1::
     or b
     bit 1, c
-    jr nz, jr_000_2752
+    jr nz, DrawGlyph_plane1Done
 
     xor b
 
-jr_000_2752:
+DrawGlyph_plane1Done::
     ld e, a
     pop hl
 
-jr_000_2754:
+DrawGlyph_statWait::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_2754
+    jr nz, DrawGlyph_statWait
 
     ld a, d
     ld [hl+], a
@@ -8452,7 +8452,7 @@ jr_000_2754:
     pop de
     ld a, l
     and $0f
-    jr nz, jr_000_2730
+    jr nz, DrawGlyph_rowLoop
 
     ret
 
@@ -9134,20 +9134,20 @@ S32DivImpl::
     ld b, $04
     ld hl, sp+$0b
     call MemIsZero
-    jr nz, jr_000_29f9
+    jr nz, S32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2a5c
+    jp S32DivImpl_epilogueRet
 
 
-jr_000_29f9:
+S32DivImpl_checkDivisor::
     ld hl, sp+$0f
     call MemIsZero
-    jr nz, jr_000_2a0f
+    jr nz, S32DivImpl_clearSign
 
     ld a, $21
     ld [$d6c7], a
@@ -9156,28 +9156,28 @@ jr_000_29f9:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2a5c
+    jp S32DivImpl_epilogueRet
 
 
-jr_000_2a0f:
+S32DivImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_2a23
+    jr z, S32DivImpl_checkDividendSign
 
     ld hl, sp+$0f
     call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-jr_000_2a23:
+S32DivImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_2a35
+    jr z, S32DivImpl_u32DivEngine
 
     ld hl, sp+$0b
     call NegateBytes
@@ -9186,7 +9186,7 @@ jr_000_2a23:
     xor [hl]
     ld [hl], a
 
-jr_000_2a35:
+S32DivImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -9199,13 +9199,13 @@ jr_000_2a35:
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, jr_000_2a53
+    jr nc, S32DivImpl_loadQuot
 
     ld b, $04
     ld hl, sp+$01
     call NegateBytes
 
-jr_000_2a53:
+S32DivImpl_loadQuot::
     ld hl, sp+$01
     ld a, [hl+]
     ld e, a
@@ -9215,7 +9215,7 @@ jr_000_2a53:
     ld h, [hl]
     ld l, a
 
-Jump_000_2a5c:
+S32DivImpl_epilogueRet::
     add sp, $09
     ret
 
@@ -9459,20 +9459,20 @@ S32ModImpl::
     ld b, $04
     ld hl, sp+$0b
     call MemIsZero
-    jr nz, jr_000_2b3b
+    jr nz, S32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2b9f
+    jp S32ModImpl_epilogueRet
 
 
-jr_000_2b3b:
+S32ModImpl_checkDivisor::
     ld hl, sp+$0f
     call MemIsZero
-    jr nz, jr_000_2b51
+    jr nz, S32ModImpl_clearSign
 
     ld a, $21
     ld [$d6c7], a
@@ -9481,28 +9481,28 @@ jr_000_2b3b:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2b9f
+    jp S32ModImpl_epilogueRet
 
 
-jr_000_2b51:
+S32ModImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_2b65
+    jr z, S32ModImpl_checkDividendSign
 
     ld hl, sp+$0f
     call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-jr_000_2b65:
+S32ModImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_2b77
+    jr z, S32ModImpl_u32DivEngine
 
     ld hl, sp+$0b
     call NegateBytes
@@ -9511,7 +9511,7 @@ jr_000_2b65:
     xor [hl]
     ld [hl], a
 
-jr_000_2b77:
+S32ModImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -9524,14 +9524,14 @@ jr_000_2b77:
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, jr_000_2b96
+    jr nc, S32ModImpl_loadRem
 
     ld b, $04
     xor a
     ld hl, sp+$05
     call NegateBytes
 
-jr_000_2b96:
+S32ModImpl_loadRem::
     ld hl, sp+$05
     ld a, [hl+]
     ld e, a
@@ -9541,7 +9541,7 @@ jr_000_2b96:
     ld h, [hl]
     ld l, a
 
-Jump_000_2b9f:
+S32ModImpl_epilogueRet::
     add sp, $09
     ret
 
@@ -9562,7 +9562,7 @@ S8Mul::
     rla
     sbc a
     ld d, a
-    jr jr_000_2bd8
+    jr U16Mul_initHl0
 
 ; [ezgb]
 ; MulU8xU8Arg: stack two u8 → C/E then MulU8xU8. Entry just above register ABI body.
@@ -9622,41 +9622,41 @@ U16Mul::
     inc hl
     ld b, [hl]
 
-jr_000_2bd8:
+U16Mul_initHl0::
     ld hl, $0000
 
-jr_000_2bdb:
+U16Mul_loop::
     sra b
-    jr nz, jr_000_2be8
+    jr nz, U16Mul_rrCPath
 
     rr c
-    jr nc, jr_000_2be4
+    jr nc, U16Mul_afterAddLo
 
     add hl, de
 
-jr_000_2be4:
-    jr z, jr_000_2bf9
+U16Mul_afterAddLo::
+    jr z, U16Mul_retDe
 
-    jr jr_000_2bed
+    jr U16Mul_slaE
 
-jr_000_2be8:
+U16Mul_rrCPath::
     rr c
-    jr nc, jr_000_2bed
+    jr nc, U16Mul_slaE
 
     add hl, de
 
-jr_000_2bed:
+U16Mul_slaE::
     sla e
-    jr z, jr_000_2bf5
+    jr z, U16Mul_rlDOnly
 
     rl d
-    jr jr_000_2bdb
+    jr U16Mul_loop
 
-jr_000_2bf5:
+U16Mul_rlDOnly::
     rl d
-    jr nz, jr_000_2bdb
+    jr nz, U16Mul_loop
 
-jr_000_2bf9:
+U16Mul_retDe::
     ld e, l
     ld d, h
     ret
@@ -9913,10 +9913,10 @@ Strncpy::
     ld [hl+], a
     ld [hl], e
 
-Jump_000_2cf1:
+Strncpy_copyLoop::
     ld a, c
     or b
-    jp z, Jump_000_2d1b
+    jp z, Strncpy_stashRem
 
     ld hl, sp+$03
     ld e, [hl]
@@ -9926,18 +9926,18 @@ Jump_000_2cf1:
     ld hl, sp+$00
     ld [hl], a
     or a
-    jp z, Jump_000_2d1b
+    jp z, Strncpy_stashRem
 
     dec bc
     ld a, [hl]
     ld hl, sp+$03
     inc [hl]
-    jr nz, jr_000_2d0c
+    jr nz, Strncpy_incSrc
 
     inc hl
     inc [hl]
 
-jr_000_2d0c:
+Strncpy_incSrc::
     ld hl, sp+$01
     ld e, [hl]
     inc hl
@@ -9945,22 +9945,22 @@ jr_000_2d0c:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_2d18
+    jr nz, Strncpy_afterStore
 
     inc hl
     inc [hl]
 
-jr_000_2d18:
-    jp Jump_000_2cf1
+Strncpy_afterStore::
+    jp Strncpy_copyLoop
 
 
-Jump_000_2d1b:
+Strncpy_stashRem::
     ld hl, sp+$03
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_000_2d20:
+Strncpy_padLoop::
     ld hl, sp+$03
     ld c, [hl]
     inc hl
@@ -9976,7 +9976,7 @@ Jump_000_2d20:
     ld [hl], d
     ld a, c
     or b
-    jp z, Jump_000_2d44
+    jp z, Strncpy_retDest
 
     ld hl, sp+$01
     ld e, [hl]
@@ -9986,16 +9986,16 @@ Jump_000_2d20:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_2d41
+    jr nz, Strncpy_padCont
 
     inc hl
     inc [hl]
 
-jr_000_2d41:
-    jp Jump_000_2d20
+Strncpy_padCont::
+    jp Strncpy_padLoop
 
 
-Jump_000_2d44:
+Strncpy_retDest::
     ld hl, sp+$05
     ld e, [hl]
     inc hl
@@ -13548,12 +13548,12 @@ CopyTilesColor::
 
     ld a, h
     cp $98
-    jr c, jr_000_3add
+    jr c, CopyTilesColor_loop
 
     sub $10
     ld h, a
 
-jr_000_3add:
+CopyTilesColor_loop::
     push de
     ld a, [bc]
     ld e, a
@@ -13562,64 +13562,64 @@ jr_000_3add:
     ld bc, $0000
     ld a, [wDrawColorB]
     bit 0, a
-    jr z, jr_000_3aee
+    jr z, CopyTilesColor_afterColorB0
 
     ld b, $ff
 
-jr_000_3aee:
+CopyTilesColor_afterColorB0::
     bit 1, a
-    jr z, jr_000_3af4
+    jr z, CopyTilesColor_xorMask
 
     ld c, $ff
 
-jr_000_3af4:
+CopyTilesColor_xorMask::
     ld d, a
     ld a, [wDrawColor]
     xor d
     ld d, a
     bit 0, d
-    jr z, jr_000_3b01
+    jr z, CopyTilesColor_afterBit0
 
     ld a, e
     xor b
     ld b, a
 
-jr_000_3b01:
+CopyTilesColor_afterBit0::
     bit 1, d
-    jr z, jr_000_3b08
+    jr z, CopyTilesColor_statWaitB
 
     ld a, e
     xor c
     ld c, a
 
-jr_000_3b08:
+CopyTilesColor_statWaitB::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3b08
+    jr nz, CopyTilesColor_statWaitB
 
     ld [hl], b
     inc hl
 
-jr_000_3b10:
+CopyTilesColor_statWaitC::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3b10
+    jr nz, CopyTilesColor_statWaitC
 
     ld [hl], c
     inc hl
     ld a, h
     cp $98
-    jr nz, jr_000_3b1f
+    jr nz, CopyTilesColor_decCount
 
     ld h, $88
 
-jr_000_3b1f:
+CopyTilesColor_decCount::
     pop bc
     pop de
     dec de
     ld a, d
     or e
-    jr nz, jr_000_3add
+    jr nz, CopyTilesColor_loop
 
     ret
 

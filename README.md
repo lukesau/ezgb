@@ -31,7 +31,9 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 │   └── sameboy/               # diffs applied on top of upstream SameBoy
 ├── scripts/
 │   ├── map-next.sh            # human lean surface (progress + proposals + packet)
+│   ├── map-interior.sh        # interior Jump_/jr_ naming loop (kernel.sym + regen)
 │   ├── label-packet.py        # body/callers/WRAM packet for top worklist target
+│   ├── interior-packet.py     # unnamed interior labels + --apply batch sym writes
 │   ├── propose-labels.py      # mechanical IRQ/farcall/FPGA/clone proposals
 │   ├── label-cron.sh          # stamp → propose → regen → packet (no LLM)
 │   ├── regen-disasm.sh        # mgbdis → annotate → make → progress

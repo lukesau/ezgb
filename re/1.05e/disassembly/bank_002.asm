@@ -58,12 +58,12 @@ DiskRead_B2::
     ld hl, sp+$12
     ld [hl], $00
 
-Jump_002_4036:
+DiskRead_B2_chunkLoop::
     ld hl, sp+$12
     ld a, [hl]
     ld hl, sp+$1d
     sub [hl]
-    jp nc, Jump_002_41c7
+    jp nc, DiskRead_B2_epilogueRet
 
     ld a, [hl]
     ld hl, sp+$0f
@@ -88,13 +88,13 @@ Jump_002_4036:
     sub c
     ld a, $00
     sbc b
-    jp nc, Jump_002_4065
+    jp nc, DiskRead_B2_remChunk
 
     ld bc, $0004
-    jp Jump_002_4071
+    jp DiskRead_B2_issueLba
 
 
-Jump_002_4065:
+DiskRead_B2_remChunk::
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$12
@@ -104,7 +104,7 @@ Jump_002_4065:
     ld c, a
     ld b, $00
 
-Jump_002_4071:
+DiskRead_B2_issueLba::
     ld hl, sp+$11
     ld [hl], c
     ld bc, $7f00
@@ -302,18 +302,18 @@ Jump_002_4071:
     call SetFpga7F30_B2
     add sp, $01
 
-Jump_002_418d:
+DiskRead_B2_waitPeek::
     call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
     sub $e1
-    jp nz, Jump_002_419d
+    jp nz, DiskRead_B2_copyWindow
 
     or b
-    jp z, Jump_002_418d
+    jp z, DiskRead_B2_waitPeek
 
-Jump_002_419d:
+DiskRead_B2_copyWindow::
     ld a, $01
     push af
     inc sp
@@ -340,10 +340,10 @@ Jump_002_419d:
     inc [hl]
     inc [hl]
     inc [hl]
-    jp Jump_002_4036
+    jp DiskRead_B2_chunkLoop
 
 
-Jump_002_41c7:
+DiskRead_B2_epilogueRet::
     ld a, $00
     push af
     inc sp
@@ -376,12 +376,12 @@ DiskWrite_B2::
     ld hl, sp+$0f
     ld [hl], $00
 
-Jump_002_41ed:
+DiskWrite_B2_chunkLoop::
     ld hl, sp+$0f
     ld a, [hl]
     ld hl, sp+$1a
     sub [hl]
-    jp nc, Jump_002_4369
+    jp nc, DiskWrite_B2_epilogueRet
 
     ld a, [hl]
     ld hl, sp+$0c
@@ -407,20 +407,20 @@ Jump_002_41ed:
     ld a, $00
     sbc b
     rlca
-    jp nc, Jump_002_421c
+    jp nc, DiskWrite_B2_remChunk
 
     ld c, $04
-    jp Jump_002_4223
+    jp DiskWrite_B2_issueLba
 
 
-Jump_002_421c:
+DiskWrite_B2_remChunk::
     ld hl, sp+$1a
     ld a, [hl]
     ld hl, sp+$0f
     sub [hl]
     ld c, a
 
-Jump_002_4223:
+DiskWrite_B2_issueLba::
     ld hl, sp+$0e
     ld [hl], c
     dec hl
@@ -632,27 +632,27 @@ Jump_002_4223:
     ld a, $e4
     ld [bc], a
 
-Jump_002_4350:
+DiskWrite_B2_waitPeek::
     call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
     sub $e1
-    jp nz, Jump_002_4360
+    jp nz, DiskWrite_B2_advanceIdx
 
     or b
-    jp z, Jump_002_4350
+    jp z, DiskWrite_B2_waitPeek
 
-Jump_002_4360:
+DiskWrite_B2_advanceIdx::
     ld hl, sp+$0f
     inc [hl]
     inc [hl]
     inc [hl]
     inc [hl]
-    jp Jump_002_41ed
+    jp DiskWrite_B2_chunkLoop
 
 
-Jump_002_4369:
+DiskWrite_B2_epilogueRet::
     ld hl, $000a
     push hl
     call Delay
