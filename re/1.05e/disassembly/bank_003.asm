@@ -3342,8 +3342,12 @@ Jump_003_4f82:
 
 
 ; [ezgb]
-; RemoveChain_B3: bank-3 near-call copy of RemoveChain_B9 (FatFs remove_chain).
-; GetFat_B3 + PutFat_B3; same shape as RemoveChain_B6/B9. Orphan before CreateChain_B3.
+; RemoveChain_B3(fs, clst, pclst): FatFs remove_chain. Frame -$0e; walk FAT from fs+clst toward clst.
+; clst<2 → Jump_003_4fd9 B=$02; start cluster > clst → Jump_003_4fde B=$00 else Jump_003_4fd9.
+; Jump_003_4fe0 loop: walker≥clst → Jump_003_5129 ret B; GetFat_B3; FAT zero → Jump_003_5129.
+; FAT==1 → jr_003_5057 B=$02 else Jump_003_5054→Jump_003_505c; inc FAT wraps → jr_003_507a B=$01 else Jump_003_5077→Jump_003_507f.
+; Jump_003_507f: PutFat_B3 free slot; err → Jump_003_5129; advance walker — inc hits 0 → Jump_003_5115 else Jump_003_50da (jr_003_50e9) + FA_DIRTY → Jump_003_4fe0.
+; Jump_003_5115: stash final cluster@sp+$12 → Jump_003_4fe0; Jump_003_5129: ld e,B / add sp,$0e / ret.
 
 RemoveChain_B3::
     add sp, -$0e
@@ -3710,6 +3714,15 @@ Jump_003_5129:
     add sp, $0e
     ret
 
+
+; [ezgb]
+; CreateChain_B3(fs, clst, target): FatFs create_chain / cluster extend.
+; clst!=0 Jump_003_51a3 GetFat_B3: clst<2 → Jump_003_54cc (1,0); Jump_003_51e2: clst==-1 jr_003_5200 else Jump_003_51fd/Jump_003_520c compare n_fatent (past Jump_003_5249 else Jump_003_54cc).
+; clst==0: free_clst vs n_fatent; empty Jump_003_5197 clst=1; join Jump_003_525a copy state.
+; Jump_003_525a alloc scan Jump_003_5294 (jr_003_52a3): hit end Jump_003_52e2 GetFat_B3; no free + scan done → Jump_003_54cc (0,0).
+; Jump_003_533b/Jump_003_5357/Jump_003_535a/jr_003_535a EOF checks; Jump_003_5366 match jr_003_538f (0,0) else Jump_003_538c → Jump_003_5294.
+; Jump_003_52e2 free slot Jump_003_5398 PutFat_B3 link; fail Jump_003_548e/Jump_003_5496/jr_003_5499/Jump_003_54a9 set FR_NO_FILESYSTEM.
+; Jump_003_53ed: update fs free_clst/fatbase; Jump_003_5442 link + FA_DIRTY or Jump_003_54c3; Jump_003_54b2 store; Jump_003_54cc epilogue (add sp,$1b / ret).
 
 CreateChain_B3::
     add sp, -$1b
@@ -5203,6 +5216,21 @@ Jump_003_57fd:
     ret
 
 
+; [ezgb]
+; DirNext_B3(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.
+; Index+1==0 → Jump_003_5856 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_003_5856.
+; Jump_003_585b: index&$0f≠0 → Jump_003_5c24 in-sector advance; else inc sector (jr_003_5879 carry chain) + copy 32-byte slot.
+; Next cluster from dp chain zero → Jump_003_58da stretch path; volsize compare fail → Jump_003_5c24 else E=$04 → Jump_003_5c81.
+; Jump_003_58da: sector→cluster via jr_003_58e8 ÷16; fs-type mask vs cluster → nz Jump_003_5c24; GetFat_B3.
+; Cluster−1 underflow → Jump_003_5950: inc cluster words — all zero jr_003_596e E=$01 else Jump_003_596b→Jump_003_5973.
+; Jump_003_5973: cluster<saved → Jump_003_5bd3; stretch==0 → E=$04 Jump_003_5c81 else Jump_003_59ba CreateChain_B3.
+; CreateChain result zero → E=$07 Jump_003_5c81; else Jump_003_5a0d cluster−1 all zero → jr_003_5a2c E=$02 else Jump_003_5a29→Jump_003_5a31.
+; Jump_003_5a31: inc cluster words — all wrap jr_003_5a4f E=$01 else Jump_003_5a4c→Jump_003_5a54 SyncWindow_B3.
+; Jump_003_5a54: SyncWindow_B3 err→E=$01 Jump_003_5c81 else Jump_003_5a6f MemSet8 dir buf + Clust2Sect → Jump_003_5ae1 sector loop.
+; Jump_003_5ae1: offset≥ssize → Jump_003_5b76 else dirty+SyncWindow; err E=$01; Jump_003_5b24 stamp template (jr_003_5b52/jr_003_5b6b) → Jump_003_5ae1.
+; Jump_003_5b76: partial tail copy + sector base for index; Jump_003_5bd3 store cluster + Clust2Sect → window sector.
+; Jump_003_5c24: write index@dp+$04, ptr@dp+$12+idx*32, E=0; Jump_003_5c81 add sp,$22 ret E.
+
 DirNext_B3::
     add sp, -$22
     ld hl, sp+$24
@@ -6182,6 +6210,13 @@ Jump_003_5c81:
     add sp, $22
     ret
 
+
+; [ezgb]
+; DirAlloc_B3(dp): FatFs dir_alloc. Frame -$0b; scan for free dir slot via DirSdi_B3(0) + DirNext_B3(1).
+; DirSdi err → Jump_003_5d50; Jump_003_5cbb: load cluster@dp+$0e, MoveWindow_B3 err → Jump_003_5d50.
+; SFN[0] DDEM $E5 or empty → Jump_003_5d10 else Jump_003_5d31 reset run counter → Jump_003_5d38 DirNext_B3(1).
+; Jump_003_5d10: ++free-run (jr_003_5d17); run==n_dir → jr_003_5d2e→Jump_003_5d50 else Jump_003_5d2b→Jump_003_5d38.
+; DirNext ok → Jump_003_5cbb; Jump_003_5d50: E==$04 → jr_003_5d5d E=$07 else Jump_003_5d5a→Jump_003_5d61 ret E.
 
 DirAlloc_B3::
     add sp, -$0b
@@ -7854,6 +7889,14 @@ jr_003_6425:
     ret
 
 
+; [ezgb]
+; DirFind_B3(dp): FatFs dir_find. DirSdi_B3(0); fail Jump_003_645e init else err Jump_003_6698.
+; Jump_003_645e: clear ord/hash ptrs; Jump_003_64d0 read entry + MoveWindow_B3; fail Jump_003_6695; LFN chain Jump_003_6529 else ord=4 Jump_003_6695.
+; Jump_003_6529: attr — deleted $E5 Jump_003_654e; volume jr_003_6548; LFN ord $0F Jump_003_6569 else Jump_003_6561/Jump_003_6569 SFN path.
+; jr_003_656c: empty LFN chk Jump_003_667d; AM_LFN jr_003_6584 store ord/chksum else Jump_003_65b0 ord compare (Jump_003_65bb/jr_003_65be/Jump_003_65d2/Jump_003_65d7/Jump_003_65d9 CmpLfn_B3).
+; Jump_003_65fb/Jump_003_6600/Jump_003_6602/Jump_003_660f/Jump_003_6611: LFN ord update Jump_003_667d; Jump_003_6617 SumSfn_B3 match Jump_003_6695.
+; Jump_003_6630 NTRES jr_003_664e skip; Jump_003_6651 MemCmp_B3 SFN match Jump_003_6695 else Jump_003_666d invalidate; Jump_003_667d DirNext_B3 loop Jump_003_64d0; Jump_003_6695/Jump_003_6698 epilogue.
+
 DirFind_B3::
     add sp, -$1a
     ld hl, $0000
@@ -8358,7 +8401,14 @@ Jump_003_6698:
 
 
 ; [ezgb]
-; DirRegister_B3: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry.
+; DirRegister_B3(dp): FatFs dir_register. Frame -$26; copy SFN/LFN from dp; sp+$25=E.
+; NSFLAG directory → jr_003_670c E=$06 Jump_003_6a27; Jump_003_6711: AM_DIR → jr_003_6719 GenNumName loop Jump_003_673a.
+; Jump_003_673a: idx<100 GenNumName_B3+DirFind_B3; taken → jr_003_677d ++idx; miss → Jump_003_6780.
+; Jump_003_6780: idx==100 → jr_003_6793 E=$07 else Jump_003_6790→Jump_003_6798; E==$04 → Jump_003_67a6 patch attr/size.
+; Jump_003_67c5: LFN (attr&$02) → jr_003_67d3 count slots Jump_003_67da/jr_003_67fd; Jump_003_6800 U16Div → Jump_003_6825 else Jump_003_681e n=1.
+; Jump_003_6825: DirAlloc_B3; err → Jump_003_6957; LFN slots Jump_003_68ad (DirSdi, SumSfn, MoveWindow, PutLfn_B3, DirNext) loop.
+; Jump_003_6957: err → Jump_003_6a24 else finalize SFN (MoveWindow, MemSet8, MemCpy16, attr mask) + FA_DIRTY.
+; Jump_003_6a24/Jump_003_6a27 add sp,$26 ret E.
 
 DirRegister_B3::
     add sp, -$26
@@ -9106,6 +9156,26 @@ Jump_003_6a27:
     add sp, $26
     ret
 
+
+; [ezgb]
+; CreateName_B3(dp, path): FatFs create_name twin of CreateName_B9 (09:6c3e). Frame -$1b; parse next path segment; build SFN/LFN+NSFLAG.
+; Jump_003_6a45: skip leading '/' ($2f) or '\\' ($5c): Jump_003_6a5b/jr_003_6a5b ++BC loop; else Jump_003_6a58 → Jump_003_6a64 start segment.
+; Jump_003_6a64: stash path; lfnbuf@dp+$16; clear counters. Jump_003_6a9b: ++idx (jr_003_6aa6); load char; <' ' or '/' or '\\' → Jump_003_6b6d end segment.
+; Jump_003_6ad7/Jump_003_6ae5: not terminator; Jump_003_6af6: if lfn idx≥$ff → E=$06 Jump_003_709f; else MapCp437; fail → Jump_003_709f.
+; Jump_003_6b1b: if <*$80 MemChr illegal set; hit → Jump_003_709f; Jump_003_6b41/jr_003_6b4c store wchar to lfnbuf → Jump_003_6a9b.
+; Jump_003_6b6d: write advanced path ptr; last char <' ' → C=$04 (NSFLAG) else Jump_003_6b95 C=0; Jump_003_6b97 store NSFLAG@sp+$19.
+; If lfnlen!=1 Jump_003_6baa → Jump_003_6bd0; else jr_003_6bad: last wchar=='.' → Jump_003_6c34/jr_003_6c34 else Jump_003_6bd0.
+; Jump_003_6bd0: len!=2 → Jump_003_6be0 → Jump_003_6cc7; else jr_003_6be3: '..' check (Jump_003_6c08/jr_003_6c0b/Jump_003_6c31) → Jump_003_6c34 or Jump_003_6cc7.
+; Jump_003_6c34/jr_003_6c34: NUL-term LFN; Jump_003_6c64 fill SFN 11 slots (Jump_003_6c98/Jump_003_6c9c); done Jump_003_6caa.
+; SFN pad loop: Jump_003_6c64; insert '.' Jump_003_6c98 else space Jump_003_6c9c; jr_003_6ca7 → Jump_003_6c64; done Jump_003_6caa OR NSFLAG|$20 → Jump_003_709f (dot-only names).
+; Jump_003_6cc7: normal path; Jump_003_6ccf strip trailing ' '/' .' (Jump_003_6d00 / Jump_003_6d10 / Jump_003_6d13 / jr_003_6d13); Jump_003_6d27 empty → E=$06 Jump_003_709f else Jump_003_6d3b NUL-term + MemSet8_B3 spaces into SFN.
+; Jump_003_6d86: skip leading ' '/' .' (Jump_003_6da8 / Jump_003_6db4 / Jump_003_6db7 / jr_003_6db7 / jr_003_6dbe); non-lead Jump_003_6dc9; if skipped NSFLAG|$03 then Jump_003_6dde.
+; Jump_003_6dde: walk for last '.' (Jump_003_6e15 → Jump_003_6dde); none/done Jump_003_6e22 init body len=8 then Jump_003_6e34.
+; Jump_003_6e34 SFN fill: next wchar (jr_003_6e3f); NUL→Jump_003_6ffe; space Jump_003_6e8f; '.' Jump_003_6e6a/Jump_003_6e7a/jr_003_6e7d; else Jump_003_6e98; slot full Jump_003_6ebe/jr_003_6ebe/Jump_003_6ece/jr_003_6ed1; body	oext Jump_003_6eda/Jump_003_6eec/Jump_003_6ef2; else Jump_003_6ebb → Jump_003_6f1f MapCp437.
+; Jump_003_6f1f: wchar>=$80 MapCp437 (fail Jump_003_6f5a NSFLAG|$02); then Jump_003_6f60 MemChr_B3 illegal set → '_' Jump_003_6f7c NSFLAG|$03 else Jump_003_6f8b.
+; Case: A-Z Jump_003_6fab skip else NSFLAG|$02 → Jump_003_6fd9; a-z Jump_003_6fab NSFLAG|$01 + toupper; store via jr_003_6fef → Jump_003_6e34.
+; Jump_003_6ffe: SFN[0]==$E5 → $05 (jr_003_7018) else Jump_003_7015/Jump_003_7020; body-only Jump_003_7030/jr_003_7033 NT<<2; case mix Jump_003_7039/Jump_003_7051/Jump_003_7054/jr_003_7054 → NSFLAG|$02; Jump_003_705a/jr_003_7064/Jump_003_7067/Jump_003_7074/jr_003_7077/Jump_003_707d/Jump_003_7085/jr_003_7088/Jump_003_708e store NSFLAG; E=0 → Jump_003_709f.
+; CreateName CF ends Jump_003_709f (add sp,$1b / ret). Post-ret: illegal-char table then unnamed-until-sym FollowPath_B3 @ 03:70b2 (Jump_003_70cc…Jump_003_72b8) — not CreateName interior; twin of FollowPath_B5/B6/B9.
 
 CreateName_B3::
     add sp, -$1b
@@ -10525,6 +10595,16 @@ Jump_003_709f:
     ld e, e
     ld e, l
     nop
+
+; [ezgb]
+; FatFs follow_path (bank-3). Twin of FollowPath_B5/B6/B9; was mis-spanned under CreateName_B3 after illegal-char table.
+; Entry: skip leading '/' '\' (Jump_003_70cc → Jump_003_70f8 else Jump_003_70cf / jr_003_70cf clear sclust → Jump_003_7136).
+; Jump_003_70f8: copy fs->cdir into dp->sclust; Join Jump_003_7136.
+; Jump_003_7136: path[0]<' ' → DirSdi_B3(0) + clear fn → Jump_003_72b8 else Jump_003_7173 segment loop (CreateName_B3 / DirFind_B3).
+; Jump_003_7173 segment loop: CreateName_B3; err→Jump_003_72b8; DirFind_B3; FR_NOFILE+$04 last-seg (jr_003_71d0) else Jump_003_71cd→Jump_003_72b8; NSFLAG|$20 (jr_003_71da) clear sclust/fn + more path→Jump_003_7173 else last (jr_003_7214 E=0); non-last NSFLAG Jump_003_721b/jr_003_7225/Jump_003_7228 E=$05.
+; Found (Jump_003_722f): last-seg jr_003_7239→Jump_003_72b8; else Jump_003_723c ATTR_DIR? jr_003_7266→Jump_003_7270 LdClust_B3 into sclust → Jump_003_7173 else Jump_003_7269 E=$05; Jump_003_72b8 epilogue ret E.
+
+FollowPath_B3::
     add sp, -$0b
     ld hl, sp+$0f
     ld c, [hl]
@@ -11156,9 +11236,9 @@ Jump_003_7392:
 
 
 ; [ezgb]
-; FindVolume_B3: bank-3 near-call copy of FindVolume_B6/B9 (FatFs find_volume front).
-; GetLdNumber_B3; FatFs table $C5A5; DiskStatus; FR $0b/$0c/$0a. -$12 frame.
-; Orphan after Jump_003_7392; sits just before Validate_B3.
+; FindVolume stub (bank-3 near-call): FatFs find_volume front only; full mount in FindVolume_B5.
+; Clear *rfs; GetLdNumber_B3: bit7→E=$0b Jump_003_7417; else Jump_003_73c2: FatFs[vol] @$C5A5 null→E=$0c else Jump_003_73dc.
+; Jump_003_73dc: bind *rfs; fs_type==0→Jump_003_7415; DiskStatus STA_NOINIT jr_003_73fe→Jump_003_7415 else Jump_003_7401; mode0 Jump_003_7415 else WP jr_003_7410 E=$0a; Jump_003_7415 E=0 → Jump_003_7417 (add sp,$12 / ret).
 
 FindVolume_B3::
     add sp, -$12
@@ -11275,8 +11355,9 @@ Jump_003_7417:
 
 
 ; [ezgb]
-; Validate_B3(obj): FatFs validate. Reject null obj/fs, fs_type==0, or id mismatch
-; (obj+2 vs fs+6). Returns E=0 OK else FR_INVALID_OBJECT. Copies: Validate_B5/B6/B7.
+; Validate_B3(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_003_7493 E=$09.
+; obj->id vs fs->id mismatch → Jump_003_7478→Jump_003_7493; jr_003_747b DiskStatus&$01 set → jr_003_7493 else Jump_003_7498 E=0.
+; Jump_003_749a add sp,$04 ret E.
 
 Validate_B3::
     push af
@@ -11400,9 +11481,11 @@ Jump_003_749a:
 
 
 ; [ezgb]
-; Fsync_B3(fp): FatFs f_sync. Validate_B3; if FA_WRITTEN(+4 bit5), flush dirty
-; sector (bit6) via DiskWrite_B2, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),
-; SyncFs_B3. Returns E=FRESULT.
+; Fsync_B3(fp): FatFs f_sync. Frame -$10; Validate_B3 fail → Jump_003_768b.
+; fp->flag FA_DIRTY ($20) → jr_003_74d1 else Jump_003_768b E=0.
+; jr_003_74d1: FA_DIRTY winsect ($40) → jr_003_74d9 FarCallDiskWrite; ok Jump_003_7536 clear dirty bit else E=$01 Jump_003_768c.
+; Jump_003_7544: MoveWindow_B3 update dir fsize/attr; StClust_B3 + RtcReadPage timestamp; clear FA_WRITTEN; SyncFs_B3 → Jump_003_768b.
+; Jump_003_768b/Jump_003_768c add sp,$10 ret E.
 
 Fsync_B3::
     add sp, -$10
@@ -11879,6 +11962,14 @@ Jump_003_76c6:
 ; Lseek_B3(fp, ofs): FatFs f_lseek. Validate_B3; U32Shl/Mod; CreateChain_B3 to
 ; extend; GetFat_B3 + Clust2Sect_B3. FarCall disk R/W helpers. -$29 frame.
 ; Target of FarCall_03_76cc; orphan after Jump_003_76c6.
+; Validate_B3 fail → Jump_003_7eac; else Jump_003_76e6: fp->err nonzero → Jump_003_7eac else Jump_003_7707.
+; Jump_003_7707: if ofs > fsize and not FA_WRITE (jr_003_774f/Jump_003_7752 clamp ofs=fsize); join Jump_003_7763 clear fptr.
+; Jump_003_7763: ofs==0 → Jump_003_7cf6; else U32Shl csize; if fptr==0 Jump_003_793c (from sclust) else U32Mod cluster align — same-cluster Jump_003_7a29 else Jump_003_793c restart from sclust.
+; Jump_003_793c: start from sclust; empty → CreateChain_B3 (clust==1 Jump_003_79bf/jr_003_79c2 E=$02; else Jump_003_79cf: clust==-1 jr_003_79ed E=$01; Jump_003_79ea/Jump_003_79fa write sclust); join Jump_003_7a0c set clust.
+; Jump_003_7a29: clust==0 → Jump_003_7cf6; else Jump_003_7a43: while bc < ofs — FA_WRITE jr_003_7a68 CreateChain_B3 else Jump_003_7abf GetFat_B3; fail jr_003_7b15 E=$01 / Jump_003_7b6c E=$02; ok Jump_003_7af7/Jump_003_7b12/Jump_003_7b22; past EOF Jump_003_7b79 → Jump_003_7a43 else Jump_003_7c08.
+; Jump_003_7c08: set fptr; zero ofs→Jump_003_7cf6 else jr_003_7c62 Clust2Sect_B3; sect ok Jump_003_7cb2 U32Shr sector offset else E=$02 → Jump_003_7eac.
+; Jump_003_7cf6: same-sector jr_003_7d17 else Jump_003_7e2e; winsect mismatch Jump_003_7d58: dirty FA_DIRTY jr_003_7d71 FarCallDiskWrite else Jump_003_7dcc FarCallDiskRead; disk err E=$01 → Jump_003_7eac; Jump_003_7dbe clear FA_DIRTY; Jump_003_7e19 store winsect.
+; Jump_003_7e2e: clamp fptr to fsize (Jump_003_7ea9); set FA_DIRTY if past; E from stack → Jump_003_7eac (add sp,$29 / ret).
 
 Lseek_B3::
     add sp, -$29

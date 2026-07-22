@@ -1237,11 +1237,16 @@
       "bank": 9,
       "addr": "68b0",
       "lines": [
-        "DirRegister_B9(dp): FatFs dir_register. Rejects AM_VOL (+0xb & $20) as FR_INVALID_NAME;",
-        "on NS_LOSS, GenNumName_B9 + Clone_09644b (dir_find) loop seq 1..100 (FR_DENIED at 100);",
-        "allocates entries (Clone_095c8f), MoveWindow_B9, LFN/SFN fill. Returns E=FRESULT.",
-        "Static match to ChaN FatFs dir_register. Likely copy: 06:64c8."
-      ]
+        "DirRegister_B9(dp): FatFs dir_register. Frame -$26; copy SFN/LFN from dp; sp+$25=E.",
+        "NSFLAG directory → jr_009_6921 E=$06 Jump_009_6c3b; Jump_009_6926: AM_DIR → jr_009_692e GenNumName loop Jump_009_694f.",
+        "Jump_009_694f: idx<100 GenNumName_B9+DirFind_B9; taken → jr_009_6992 ++idx; miss → Jump_009_6995.",
+        "Jump_009_6995: idx==100 → jr_009_69a8 E=$07 else Jump_009_69a5→Jump_009_69ad; E==$04 → Jump_009_69bb patch attr/size.",
+        "Jump_009_69da: LFN (attr&$02) → jr_009_69e8 count slots Jump_009_69ef/jr_009_6a12; Jump_009_6a15 U16Div → Jump_009_6a3a else Jump_009_6a33 n=1.",
+        "Jump_009_6a3a: DirAlloc_B9; err → Jump_009_6b6c; LFN slots Jump_009_6ac2 (DirSdi, SumSfn, MoveWindow, PutLfn_B9, DirNext) loop.",
+        "Jump_009_6b6c: err → Jump_009_6c38 else finalize SFN (MoveWindow, MemSet8, MemCpy16, attr mask) + FA_DIRTY.",
+        "Jump_009_6c38/Jump_009_6c3b add sp,$26 ret E."
+      ],
+      "name": "DirRegister_B9"
     },
     {
       "bank": 5,
@@ -1432,9 +1437,13 @@
       "bank": 5,
       "addr": "7576",
       "lines": [
-        "Readdir_B5(dp, fno): FatFs f_readdir. Validate_B5; DirSdi_B5 rewind on null fno;",
-        "DirRead_B5 + GetFileInfo_B5 + DirNext_B5. Distinct from DirRead_B5 (dir_read)."
-      ]
+        "Readdir_B5(dp, fno): FatFs f_readdir. Frame -$10; Validate_B5 fail → Jump_005_767b.",
+        "fno null → DirSdi_B5(0) rewind → Jump_005_767b; Jump_005_75a4: stamp dp, DirRead_B5.",
+        "DirRead E==$04 (NO_FILE) → jr_005_75f3 zero cluster else Jump_005_75f0→Jump_005_761e with E.",
+        "Jump_005_761e: E=0 → GetFileInfo_B5 + DirNext_B5(0); E==$04 → jr_005_7650 zero cluster else Jump_005_764d→Jump_005_767b.",
+        "Jump_005_767b add sp,$10 ret E."
+      ],
+      "name": "Readdir_B5"
     },
     {
       "bank": 6,
@@ -1470,26 +1479,36 @@
       "bank": 9,
       "addr": "777c",
       "lines": [
-        "Validate_B9(obj): FatFs validate (bank-9). Same shape as Validate_B3/B5/B6/B7.",
-        "Orphan between FindVolume_B9 epilogue and Open_B9."
-      ]
+        "Validate_B9(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_009_77f5 E=$09.",
+        "obj->id vs fs->id mismatch → Jump_009_77da→Jump_009_77f5; jr_009_77dd DiskStatus&$01 set → jr_009_77f5 else Jump_009_77fa E=0.",
+        "Jump_009_77fc add sp,$04 ret E."
+      ],
+      "name": "Validate_B9"
     },
     {
       "bank": 5,
       "addr": "6ea4",
       "lines": [
-        "Chdir_B5(path): FatFs f_chdir. FindVolume_B5 + FollowPath_B5 + LdClust_B5;",
-        "no DirSdi (contrast Opendir_B5). -$35 frame."
-      ]
+        "Chdir_B5(path): FatFs f_chdir. Frame -$35; sp+$34 holds E.",
+        "FindVolume_B5 err → Jump_005_7002; init + FollowPath_B5 err → Jump_005_6ff1.",
+        "Found cluster nonzero → Jump_005_6f76; root (cluster==0) copy fs->cdir → fs->cwd → Jump_005_6ff1.",
+        "Jump_005_6f76: ATTR_DIR → jr_005_6f85 LdClust_B5 into fs->cdir → Jump_005_6ff1 else Jump_005_6fed E=$05.",
+        "Jump_005_6ff1: E==$04 → jr_005_6ffe E=$05 else Jump_005_6ffb→Jump_005_7002 add sp,$35 ret E."
+      ],
+      "name": "Chdir_B5"
     },
     {
       "bank": 5,
       "addr": "73dd",
       "lines": [
-        "Opendir_B5(dp, path): FatFs f_opendir. Null dp→FR_INVALID_OBJECT ($09);",
-        "FindVolume_B5 + FollowPath_B5 + LdClust_B5 + DirSdi_B5. -$19 frame;",
-        "sits just before Readdir_B5."
-      ]
+        "Opendir_B5(dp, path): FatFs f_opendir. Frame -$19; sp+$18 holds E.",
+        "dp null → E=$09 Jump_005_754a; Jump_005_73eb FindVolume_B5 err → Jump_005_7532.",
+        "Init dp; FollowPath_B5 err → Jump_005_7521; cluster zero → Jump_005_74dc.",
+        "ATTR_DIR → jr_005_749a LdClust_B5 into dp+$06 → Jump_005_74dc else Jump_005_74d8 E=$05.",
+        "Jump_005_74dc: err → Jump_005_7521 else DirSdi_B5(0); E==$04 → jr_005_752e E=$05 else Jump_005_752b→Jump_005_7532.",
+        "Jump_005_7532: err clear dp fs ptr; Jump_005_7547/Jump_005_754a add sp,$19 ret E."
+      ],
+      "name": "Opendir_B5"
     },
     {
       "bank": 5,
@@ -1840,8 +1859,16 @@
       "bank": 6,
       "addr": "64c8",
       "lines": [
-        "DirRegister_B6: same as DirRegister_B9 (09:68b0). Bank-local FatFs dir_register copy."
-      ]
+        "DirRegister_B6(dp): FatFs dir_register. Frame -$26; copy SFN/LFN from dp; sp+$25=E.",
+        "NSFLAG directory → jr_006_6539 E=$06 Jump_006_6854; Jump_006_653e: AM_DIR → jr_006_6546 GenNumName loop Jump_006_6567.",
+        "Jump_006_6567: idx<100 GenNumName_B6+DirFind_B6; taken → jr_006_65aa ++idx; miss → Jump_006_65ad.",
+        "Jump_006_65ad: idx==100 → jr_006_65c0 E=$07 else Jump_006_65bd→Jump_006_65c5; E==$04 → Jump_006_65d3 patch attr/size.",
+        "Jump_006_65f2: LFN (attr&$02) → jr_006_6600 count slots Jump_006_6607/jr_006_662a; Jump_006_662d U16Div → Jump_006_6652 else Jump_006_664b n=1.",
+        "Jump_006_6652: DirAlloc_B6; err → Jump_006_6784; LFN slots Jump_006_66da (DirSdi, SumSfn, MoveWindow, PutLfn_B6, DirNext) loop.",
+        "Jump_006_6784: err → Jump_006_6851 else finalize SFN (MoveWindow, MemSet8, MemCpy16, attr mask) + FA_DIRTY.",
+        "Jump_006_6851/Jump_006_6854 add sp,$26 ret E."
+      ],
+      "name": "DirRegister_B6"
     },
     {
       "bank": 7,
@@ -1881,18 +1908,23 @@
       "bank": 3,
       "addr": "741a",
       "lines": [
-        "Validate_B3(obj): FatFs validate. Reject null obj/fs, fs_type==0, or id mismatch",
-        "(obj+2 vs fs+6). Returns E=0 OK else FR_INVALID_OBJECT. Copies: Validate_B5/B6/B7."
-      ]
+        "Validate_B3(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_003_7493 E=$09.",
+        "obj->id vs fs->id mismatch → Jump_003_7478→Jump_003_7493; jr_003_747b DiskStatus&$01 set → jr_003_7493 else Jump_003_7498 E=0.",
+        "Jump_003_749a add sp,$04 ret E."
+      ],
+      "name": "Validate_B3"
     },
     {
       "bank": 3,
       "addr": "749d",
       "lines": [
-        "Fsync_B3(fp): FatFs f_sync. Validate_B3; if FA_WRITTEN(+4 bit5), flush dirty",
-        "sector (bit6) via DiskWrite_B2, update dir entry (MoveWindow/Clone_095e0a/RtcReadPage),",
-        "SyncFs_B3. Returns E=FRESULT."
-      ]
+        "Fsync_B3(fp): FatFs f_sync. Frame -$10; Validate_B3 fail → Jump_003_768b.",
+        "fp->flag FA_DIRTY ($20) → jr_003_74d1 else Jump_003_768b E=0.",
+        "jr_003_74d1: FA_DIRTY winsect ($40) → jr_003_74d9 FarCallDiskWrite; ok Jump_003_7536 clear dirty bit else E=$01 Jump_003_768c.",
+        "Jump_003_7544: MoveWindow_B3 update dir fsize/attr; StClust_B3 + RtcReadPage timestamp; clear FA_WRITTEN; SyncFs_B3 → Jump_003_768b.",
+        "Jump_003_768b/Jump_003_768c add sp,$10 ret E."
+      ],
+      "name": "Fsync_B3"
     },
     {
       "bank": 9,
@@ -1925,15 +1957,31 @@
       "bank": 3,
       "addr": "669b",
       "lines": [
-        "DirRegister_B3: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry."
-      ]
+        "DirRegister_B3(dp): FatFs dir_register. Frame -$26; copy SFN/LFN from dp; sp+$25=E.",
+        "NSFLAG directory → jr_003_670c E=$06 Jump_003_6a27; Jump_003_6711: AM_DIR → jr_003_6719 GenNumName loop Jump_003_673a.",
+        "Jump_003_673a: idx<100 GenNumName_B3+DirFind_B3; taken → jr_003_677d ++idx; miss → Jump_003_6780.",
+        "Jump_003_6780: idx==100 → jr_003_6793 E=$07 else Jump_003_6790→Jump_003_6798; E==$04 → Jump_003_67a6 patch attr/size.",
+        "Jump_003_67c5: LFN (attr&$02) → jr_003_67d3 count slots Jump_003_67da/jr_003_67fd; Jump_003_6800 U16Div → Jump_003_6825 else Jump_003_681e n=1.",
+        "Jump_003_6825: DirAlloc_B3; err → Jump_003_6957; LFN slots Jump_003_68ad (DirSdi, SumSfn, MoveWindow, PutLfn_B3, DirNext) loop.",
+        "Jump_003_6957: err → Jump_003_6a24 else finalize SFN (MoveWindow, MemSet8, MemCpy16, attr mask) + FA_DIRTY.",
+        "Jump_003_6a24/Jump_003_6a27 add sp,$26 ret E."
+      ],
+      "name": "DirRegister_B3"
     },
     {
       "bank": 7,
       "addr": "6700",
       "lines": [
-        "DirRegister_B7: same as DirRegister_B9 (09:68b0). Unlabeled mgbdis entry."
-      ]
+        "DirRegister_B7(dp): FatFs dir_register. Frame -$26; copy SFN/LFN from dp; sp+$25=E.",
+        "NSFLAG directory → jr_007_6771 E=$06 Jump_007_6a8c; Jump_007_6776: AM_DIR → jr_007_677e GenNumName loop Jump_007_679f.",
+        "Jump_007_679f: idx<100 GenNumName_B7+DirFind_B7; taken → jr_007_67e2 ++idx; miss → Jump_007_67e5.",
+        "Jump_007_67e5: idx==100 → jr_007_67f8 E=$07 else Jump_007_67f5→Jump_007_67fd; E==$04 → Jump_007_680b patch attr/size.",
+        "Jump_007_682a: LFN (attr&$02) → jr_007_6838 count slots Jump_007_683f/jr_007_6862; Jump_007_6865 U16Div → Jump_007_688a else Jump_007_6883 n=1.",
+        "Jump_007_688a: DirAlloc_B7; err → Jump_007_69bc; LFN slots Jump_007_6912 (DirSdi, SumSfn, MoveWindow, PutLfn_B7, DirNext) loop.",
+        "Jump_007_69bc: err → Jump_007_6a89 else finalize SFN (MoveWindow, MemSet8, MemCpy16, attr mask) + FA_DIRTY.",
+        "Jump_007_6a89/Jump_007_6a8c add sp,$26 ret E."
+      ],
+      "name": "DirRegister_B7"
     },
     {
       "bank": 9,
@@ -2074,8 +2122,8 @@
       "addr": "48c6",
       "lines": [
         "IsLeapYear(year@sp+$04) → E=1 if leap else 0. Gregorian: %4, then %100/%400.",
-        "year&3\neq0 → jr_001_48d3 → Jump_001_4913 E=0; else Jump_001_48d6 U16Mod 100.",
-        "rem\neq0 → Jump_001_4911 leap; else U16Mod 400: rem==0 → Jump_001_4911 else C=0 Jump_001_4913.",
+        "year&3≠0 → jr_001_48d3 → Jump_001_4913 E=0; else Jump_001_48d6 U16Mod 100.",
+        "rem≠0 → Jump_001_4911 leap; else U16Mod 400: rem==0 → Jump_001_4911 else C=0 Jump_001_4913.",
         "Jump_001_4911: C=1; Jump_001_4913: E=C; add sp,$02 ret."
       ]
     },
@@ -2583,9 +2631,9 @@
       "bank": 5,
       "addr": "754d",
       "lines": [
-        "Closedir_B5(dp): FatFs f_closedir. Validate_B5; on OK clear DIR fs ptr (2 bytes).",
-        "No Fsync (contrast Close_B3). Orphan immediately before Readdir_B5."
-      ]
+        "Closedir_B5(dp): FatFs f_closedir. Validate_B5; ok clear dp fs ptr (2 bytes); Jump_005_7570 ret E."
+      ],
+      "name": "Closedir_B5"
     },
     {
       "bank": 1,
@@ -3171,6 +3219,84 @@
         "FAT==1 → jr_009_5063 B=$02 else Jump_009_5060→Jump_009_5068; inc FAT wraps → jr_009_5086 B=$01 else Jump_009_5083→Jump_009_508b.",
         "Jump_009_508b: PutFat_B9 free slot; err → Jump_009_5135; advance walker — inc hits 0 → Jump_009_5121 else Jump_009_50e6 (jr_009_50f5) + FA_DIRTY → Jump_009_4fec.",
         "Jump_009_5121: stash final cluster@sp+$12 → Jump_009_4fec; Jump_009_5135: ld e,B / add sp,$0e / ret."
+      ]
+    },
+    {
+      "bank": 3,
+      "addr": "5c84",
+      "name": "DirAlloc_B3",
+      "lines": [
+        "DirAlloc_B3(dp): FatFs dir_alloc. Frame -$0b; scan for free dir slot via DirSdi_B3(0) + DirNext_B3(1).",
+        "DirSdi err → Jump_003_5d50; Jump_003_5cbb: load cluster@dp+$0e, MoveWindow_B3 err → Jump_003_5d50.",
+        "SFN[0] DDEM $E5 or empty → Jump_003_5d10 else Jump_003_5d31 reset run counter → Jump_003_5d38 DirNext_B3(1).",
+        "Jump_003_5d10: ++free-run (jr_003_5d17); run==n_dir → jr_003_5d2e→Jump_003_5d50 else Jump_003_5d2b→Jump_003_5d38.",
+        "DirNext ok → Jump_003_5cbb; Jump_003_5d50: E==$04 → jr_003_5d5d E=$07 else Jump_003_5d5a→Jump_003_5d61 ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "5ab1",
+      "name": "DirAlloc_B6",
+      "lines": [
+        "DirAlloc_B6(dp): FatFs dir_alloc. Frame -$0b; scan for free dir slot via DirSdi_B6(0) + DirNext_B6(1).",
+        "DirSdi err → Jump_006_5b7d; Jump_006_5ae8: load cluster@dp+$0e, MoveWindow_B6 err → Jump_006_5b7d.",
+        "SFN[0] DDEM $E5 or empty → Jump_006_5b3d else Jump_006_5b5e reset run counter → Jump_006_5b65 DirNext_B6(1).",
+        "Jump_006_5b3d: ++free-run (jr_006_5b44); run==n_dir → jr_006_5b5b→Jump_006_5b7d else Jump_006_5b58→Jump_006_5b65.",
+        "DirNext ok → Jump_006_5ae8; Jump_006_5b7d: E==$04 → jr_006_5b8a E=$07 else Jump_006_5b87→Jump_006_5b8e ret E."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "5adf",
+      "name": "DirAlloc_B7",
+      "lines": [
+        "DirAlloc_B7(dp): FatFs dir_alloc. Frame -$0b; scan for free dir slot via DirSdi_B7(0) + DirNext_B7(1).",
+        "DirSdi err → Jump_007_5bab; Jump_007_5b16: load cluster@dp+$0e, MoveWindow_B7 err → Jump_007_5bab.",
+        "SFN[0] DDEM $E5 or empty → Jump_007_5b6b else Jump_007_5b8c reset run counter → Jump_007_5b93 DirNext_B7(1).",
+        "Jump_007_5b6b: ++free-run (jr_007_5b72); run==n_dir → jr_007_5b89→Jump_007_5bab else Jump_007_5b86→Jump_007_5b93.",
+        "DirNext ok → Jump_007_5b16; Jump_007_5bab: E==$04 → jr_007_5bb8 E=$07 else Jump_007_5bb5→Jump_007_5bbc ret E."
+      ]
+    },
+    {
+      "bank": 9,
+      "addr": "5c8f",
+      "name": "DirAlloc_B9",
+      "lines": [
+        "DirAlloc_B9(dp): FatFs dir_alloc. Frame -$0b; scan for free dir slot via DirSdi_B9(0) + DirNext_B9(1).",
+        "DirSdi err → Jump_009_5d5b; Jump_009_5cc6: load cluster@dp+$0e, MoveWindow_B9 err → Jump_009_5d5b.",
+        "SFN[0] DDEM $E5 or empty → Jump_009_5d1b else Jump_009_5d3c reset run counter → Jump_009_5d43 DirNext_B9(1).",
+        "Jump_009_5d1b: ++free-run (jr_009_5d22); run==n_dir → jr_009_5d39→Jump_009_5d5b else Jump_009_5d36→Jump_009_5d43.",
+        "DirNext ok → Jump_009_5cc6; Jump_009_5d5b: E==$04 → jr_009_5d68 E=$07 else Jump_009_5d65→Jump_009_5d6c ret E."
+      ]
+    },
+    {
+      "bank": 5,
+      "addr": "6d96",
+      "name": "Validate_B5",
+      "lines": [
+        "Validate_B5(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_005_6e0f E=$09.",
+        "obj->id vs fs->id mismatch → Jump_005_6df4→Jump_005_6e0f; jr_005_6df7 DiskStatus&$01 set → jr_005_6e0f else Jump_005_6e14 E=0.",
+        "Jump_005_6e16 add sp,$04 ret E."
+      ]
+    },
+    {
+      "bank": 6,
+      "addr": "7286",
+      "name": "Validate_B6",
+      "lines": [
+        "Validate_B6(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_006_72ff E=$09.",
+        "obj->id vs fs->id mismatch → Jump_006_72e4→Jump_006_72ff; jr_006_72e7 DiskStatus&$01 set → jr_006_72ff else Jump_006_7304 E=0.",
+        "Jump_006_7306 add sp,$04 ret E."
+      ]
+    },
+    {
+      "bank": 7,
+      "addr": "76b6",
+      "name": "Validate_B7",
+      "lines": [
+        "Validate_B7(obj): FatFs validate. Push frame; reject null obj/fs, fs_type==0, or id mismatch → Jump_007_772f E=$09.",
+        "obj->id vs fs->id mismatch → Jump_007_7714→Jump_007_772f; jr_007_7717 DiskStatus&$01 set → jr_007_772f else Jump_007_7734 E=0.",
+        "Jump_007_7736 add sp,$04 ret E."
       ]
     }
   ]

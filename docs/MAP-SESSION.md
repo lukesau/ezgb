@@ -163,6 +163,10 @@ FatFs bank-start `ret` stubs: `RetStub_B5` / `RetStub_B6` / `RetStub_B9`
 Hand loop below is still valid as a fallback when the packet is empty or you are
 off the app worklist.
 
+**Interior naming (phase 2):** after `notes.json` CF is complete, rename interior
+`Jump_`/`jr_` via `kernel.sym` + regen. See [`INTERIOR-NAMING.md`](INTERIOR-NAMING.md)
+and `./scripts/map-interior.sh`.
+
 ---
 
 ## The loop (8 steps)

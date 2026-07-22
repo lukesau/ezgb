@@ -399,8 +399,8 @@ def main():
                 print("  (none)")
             print()
             print(
-                "Annotate control flow / notes inside this named function; "
-                "do not invent top-level names for interior Jump_/jr_."
+                "Interior debt: CF notes should exist in notes.json. "
+                "Name labels via kernel.sym — see ./scripts/map-interior.sh"
             )
             print()
 

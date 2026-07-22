@@ -111,7 +111,9 @@ RomLoad_SoftReset::
 
 
 ; [ezgb]
-; ROMLOAD build: copy SD sectors into FPGA ROM buffer via load cmd window.
+; RomLoad_Build_B4(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst (build helper).
+; Jump_004_40c2: while n--: *src++ (jr_004_40d5 carry) → *dst++ (jr_004_40e1 carry); Jump_004_40e4 add sp,$04 ret.
+; Used to plant trampolines (e.g. RomLoad_BuildAndRunPoll → $D100). Bank8 twin RomLoad_Build_B8.
 
 RomLoad_Build_B4::
     push af
@@ -292,6 +294,7 @@ SetFpga7F37_B4::
 ; [ezgb]
 ; RomLoad_ResetIntoRom_B4: clear $7F31/$7F32; MBC writes $2000=$01/$3000=$00;
 ; then $7FE0=$80 soft-boot into loaded ROM (hangs via jp self if still here).
+; Unlock $7F00/10/20=$e1/e2/e3 twice around setup; $7FF0=$e4 commit; Jump_004_41ce hang.
 
 RomLoad_ResetIntoRom_B4::
     ld bc, $7f00
@@ -384,8 +387,11 @@ SetFpgaPageAlt_B4::
 
 
 ; [ezgb]
-; SetFpgaRomSize_B4: map cart ROM-size code (0..8, $52..$54) → bank mask; clamp vs
-; $c2a4/$c2a5; unlock and write $7FC1/$7FC2. Launch farcall from $1604 (docs/launch-trace).
+; SetFpgaRomSize_B4(arg@sp+$0a): switch → 16-bit bank mask@sp+$02; clamp vs $c2a4/$c2a5; write FPGA $7FC1/$7FC2. Launch @$1604.
+; Codes 0..8: Jump_004_426b=0, Jump_004_4275=$03, Jump_004_427f=$07, Jump_004_4289=$0f, Jump_004_4293=$1f, Jump_004_429d=$3f, Jump_004_42a7=$7f, Jump_004_42b1=$00ff, Jump_004_42bb=$01ff.
+; $52..$54: Jump_004_42c5=$47, Jump_004_42cf=$4f, Jump_004_42d9=$5f; Jump_004_42e3 default 0; join Jump_004_42ea clamp if mask>(caps-1).
+; Clamp $c2a4 bits: jr_004_4308=$01 / Jump_004_430f; jr_004_431a=$03 / Jump_004_4321; jr_004_432c=$07 / Jump_004_4333; jr_004_433e=$0f / Jump_004_4345;
+; jr_004_4350=$1f / Jump_004_4357; jr_004_4362=$3f / Jump_004_4369; jr_004_4374=$7f / Jump_004_437b; jr_004_4386=$ff / Jump_004_438d; jr_004_4398 $c2a5.0→$01ff; Jump_004_439f unlock+write+commit.
 
 SetFpgaRomSize_B4::
     push af
@@ -393,169 +399,169 @@ SetFpgaRomSize_B4::
     ld hl, sp+$0a
     ld a, [hl]
     or a
-    jp z, Jump_004_426b
+    jp z, SetFpgaRomSize_B4_mask0
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $01
-    jp z, Jump_004_4275
+    jp z, SetFpgaRomSize_B4_mask03
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $02
-    jp z, Jump_004_427f
+    jp z, SetFpgaRomSize_B4_mask07
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $03
-    jp z, Jump_004_4289
+    jp z, SetFpgaRomSize_B4_mask0f
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $04
-    jp z, Jump_004_4293
+    jp z, SetFpgaRomSize_B4_mask1f
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $05
-    jp z, Jump_004_429d
+    jp z, SetFpgaRomSize_B4_mask3f
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $06
-    jp z, Jump_004_42a7
+    jp z, SetFpgaRomSize_B4_mask7f
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $07
-    jp z, Jump_004_42b1
+    jp z, SetFpgaRomSize_B4_mask00ff
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $08
-    jp z, Jump_004_42bb
+    jp z, SetFpgaRomSize_B4_mask01ff
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $52
-    jp z, Jump_004_42c5
+    jp z, SetFpgaRomSize_B4_mask47
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $53
-    jp z, Jump_004_42cf
+    jp z, SetFpgaRomSize_B4_mask4f
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $54
-    jp z, Jump_004_42d9
+    jp z, SetFpgaRomSize_B4_mask5f
 
-    jp Jump_004_42e3
+    jp SetFpgaRomSize_B4_maskDefault0
 
 
-Jump_004_426b:
+SetFpgaRomSize_B4_mask0::
     ld hl, sp+$02
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_4275:
+SetFpgaRomSize_B4_mask03::
     ld hl, sp+$02
     ld [hl], $03
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_427f:
+SetFpgaRomSize_B4_mask07::
     ld hl, sp+$02
     ld [hl], $07
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_4289:
+SetFpgaRomSize_B4_mask0f::
     ld hl, sp+$02
     ld [hl], $0f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_4293:
+SetFpgaRomSize_B4_mask1f::
     ld hl, sp+$02
     ld [hl], $1f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_429d:
+SetFpgaRomSize_B4_mask3f::
     ld hl, sp+$02
     ld [hl], $3f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42a7:
+SetFpgaRomSize_B4_mask7f::
     ld hl, sp+$02
     ld [hl], $7f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42b1:
+SetFpgaRomSize_B4_mask00ff::
     ld hl, sp+$02
     ld [hl], $ff
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42bb:
+SetFpgaRomSize_B4_mask01ff::
     ld hl, sp+$02
     ld [hl], $ff
     inc hl
     ld [hl], $01
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42c5:
+SetFpgaRomSize_B4_mask47::
     ld hl, sp+$02
     ld [hl], $47
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42cf:
+SetFpgaRomSize_B4_mask4f::
     ld hl, sp+$02
     ld [hl], $4f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42d9:
+SetFpgaRomSize_B4_mask5f::
     ld hl, sp+$02
     ld [hl], $5f
     inc hl
     ld [hl], $00
-    jp Jump_004_42ea
+    jp SetFpgaRomSize_B4_clampCaps
 
 
-Jump_004_42e3:
+SetFpgaRomSize_B4_maskDefault0::
     ld hl, sp+$02
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_004_42ea:
+SetFpgaRomSize_B4_clampCaps::
     ld hl, $c2a4
     ld c, [hl]
     ld hl, $c2a5
@@ -567,143 +573,143 @@ Jump_004_42ea:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_004_439f
+    jp nc, SetFpgaRomSize_B4_unlockWriteCommit
 
     ld hl, $c2a4
     ld a, [hl]
     and $01
-    jr nz, jr_004_4308
+    jr nz, SetFpgaRomSize_B4_clamp01
 
-    jp Jump_004_430f
+    jp SetFpgaRomSize_B4_afterClamp01
 
 
-jr_004_4308:
+SetFpgaRomSize_B4_clamp01::
     ld hl, sp+$02
     ld [hl], $01
     inc hl
     ld [hl], $00
 
-Jump_004_430f:
+SetFpgaRomSize_B4_afterClamp01::
     ld hl, $c2a4
     ld a, [hl]
     and $02
-    jr nz, jr_004_431a
+    jr nz, SetFpgaRomSize_B4_clamp03
 
-    jp Jump_004_4321
+    jp SetFpgaRomSize_B4_afterClamp03
 
 
-jr_004_431a:
+SetFpgaRomSize_B4_clamp03::
     ld hl, sp+$02
     ld [hl], $03
     inc hl
     ld [hl], $00
 
-Jump_004_4321:
+SetFpgaRomSize_B4_afterClamp03::
     ld hl, $c2a4
     ld a, [hl]
     and $04
-    jr nz, jr_004_432c
+    jr nz, SetFpgaRomSize_B4_clamp07
 
-    jp Jump_004_4333
+    jp SetFpgaRomSize_B4_afterClamp07
 
 
-jr_004_432c:
+SetFpgaRomSize_B4_clamp07::
     ld hl, sp+$02
     ld [hl], $07
     inc hl
     ld [hl], $00
 
-Jump_004_4333:
+SetFpgaRomSize_B4_afterClamp07::
     ld hl, $c2a4
     ld a, [hl]
     and $08
-    jr nz, jr_004_433e
+    jr nz, SetFpgaRomSize_B4_clamp0f
 
-    jp Jump_004_4345
+    jp SetFpgaRomSize_B4_afterClamp0f
 
 
-jr_004_433e:
+SetFpgaRomSize_B4_clamp0f::
     ld hl, sp+$02
     ld [hl], $0f
     inc hl
     ld [hl], $00
 
-Jump_004_4345:
+SetFpgaRomSize_B4_afterClamp0f::
     ld hl, $c2a4
     ld a, [hl]
     and $10
-    jr nz, jr_004_4350
+    jr nz, SetFpgaRomSize_B4_clamp1f
 
-    jp Jump_004_4357
+    jp SetFpgaRomSize_B4_afterClamp1f
 
 
-jr_004_4350:
+SetFpgaRomSize_B4_clamp1f::
     ld hl, sp+$02
     ld [hl], $1f
     inc hl
     ld [hl], $00
 
-Jump_004_4357:
+SetFpgaRomSize_B4_afterClamp1f::
     ld hl, $c2a4
     ld a, [hl]
     and $20
-    jr nz, jr_004_4362
+    jr nz, SetFpgaRomSize_B4_clamp3f
 
-    jp Jump_004_4369
+    jp SetFpgaRomSize_B4_afterClamp3f
 
 
-jr_004_4362:
+SetFpgaRomSize_B4_clamp3f::
     ld hl, sp+$02
     ld [hl], $3f
     inc hl
     ld [hl], $00
 
-Jump_004_4369:
+SetFpgaRomSize_B4_afterClamp3f::
     ld hl, $c2a4
     ld a, [hl]
     and $40
-    jr nz, jr_004_4374
+    jr nz, SetFpgaRomSize_B4_clamp7f
 
-    jp Jump_004_437b
+    jp SetFpgaRomSize_B4_afterClamp7f
 
 
-jr_004_4374:
+SetFpgaRomSize_B4_clamp7f::
     ld hl, sp+$02
     ld [hl], $7f
     inc hl
     ld [hl], $00
 
-Jump_004_437b:
+SetFpgaRomSize_B4_afterClamp7f::
     ld hl, $c2a4
     ld a, [hl]
     and $80
-    jr nz, jr_004_4386
+    jr nz, SetFpgaRomSize_B4_clampFf
 
-    jp Jump_004_438d
+    jp SetFpgaRomSize_B4_afterClampFf
 
 
-jr_004_4386:
+SetFpgaRomSize_B4_clampFf::
     ld hl, sp+$02
     ld [hl], $ff
     inc hl
     ld [hl], $00
 
-Jump_004_438d:
+SetFpgaRomSize_B4_afterClampFf::
     ld hl, $c2a5
     ld a, [hl]
     and $01
-    jr nz, jr_004_4398
+    jr nz, SetFpgaRomSize_B4_clamp01ff
 
-    jp Jump_004_439f
+    jp SetFpgaRomSize_B4_unlockWriteCommit
 
 
-jr_004_4398:
+SetFpgaRomSize_B4_clamp01ff::
     ld hl, sp+$02
     ld [hl], $ff
     inc hl
     ld [hl], $01
 
-Jump_004_439f:
+SetFpgaRomSize_B4_unlockWriteCommit::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -752,86 +758,88 @@ Jump_004_439f:
 
 
 ; [ezgb]
-; SetFpga7FC4_B4(mode): map stack u8 → $7FC4 (0/0/$0f/$07/$03) via unlock/commit.
-; Mode 0 also peeks wCartTypeUi ($d3eb). Orphan after SetFpgaRomSize_B4.
+; SetFpga7FC4_B4(mode@sp+$07): map mode → lo nibble@sp+$00; unlock+write $7FC4; commit $7FF0=$e4.
+; Dispatch: mode0 → Jump_004_4417; 1 or 2 → Jump_004_4433; 4 → Jump_004_443a; 5 → Jump_004_4441; else Jump_004_4448.
+; Jump_004_4417: if $d3eb!=2 → Jump_004_4422 → Jump_004_442c store $00; else jr_004_4425 store $00; both → Jump_004_444c.
+; Jump_004_4433:$00; Jump_004_443a:$0f; Jump_004_4441:$07; Jump_004_4448:$03; fall Jump_004_444c: $7F00/10/20=$e1/e2/e3; [$7FC4]=nibble; $7FF0=$e4; ret.
 
 SetFpga7FC4_B4::
     dec sp
     ld hl, sp+$07
     ld a, [hl]
     or a
-    jp z, Jump_004_4417
+    jp z, SetFpga7FC4_B4_mode0
 
     ld hl, sp+$07
     ld a, [hl]
     sub $01
-    jp z, Jump_004_4433
+    jp z, SetFpga7FC4_B4_store00b
 
     ld hl, sp+$07
     ld a, [hl]
     sub $02
-    jp z, Jump_004_4433
+    jp z, SetFpga7FC4_B4_store00b
 
     ld hl, sp+$07
     ld a, [hl]
     sub $04
-    jp z, Jump_004_443a
+    jp z, SetFpga7FC4_B4_store0f
 
     ld hl, sp+$07
     ld a, [hl]
     sub $05
-    jp z, Jump_004_4441
+    jp z, SetFpga7FC4_B4_store07
 
-    jp Jump_004_4448
+    jp SetFpga7FC4_B4_store03
 
 
-Jump_004_4417:
+SetFpga7FC4_B4_mode0::
     ld hl, $d3eb
     ld a, [hl]
     sub $02
-    jp nz, Jump_004_4422
+    jp nz, SetFpga7FC4_B4_mode0SkipRtc
 
-    jr jr_004_4425
+    jr SetFpga7FC4_B4_mode0Rtc
 
-Jump_004_4422:
-    jp Jump_004_442c
+SetFpga7FC4_B4_mode0SkipRtc::
+    jp SetFpga7FC4_B4_store00a
 
 
-jr_004_4425:
+SetFpga7FC4_B4_mode0Rtc::
     ld hl, sp+$00
     ld [hl], $00
-    jp Jump_004_444c
+    jp SetFpga7FC4_B4_unlockWriteCommit
 
 
-Jump_004_442c:
+SetFpga7FC4_B4_store00a::
     ld hl, sp+$00
     ld [hl], $00
-    jp Jump_004_444c
+    jp SetFpga7FC4_B4_unlockWriteCommit
 
 
-Jump_004_4433:
+SetFpga7FC4_B4_store00b::
     ld hl, sp+$00
     ld [hl], $00
-    jp Jump_004_444c
+    jp SetFpga7FC4_B4_unlockWriteCommit
 
 
-Jump_004_443a:
+SetFpga7FC4_B4_store0f::
     ld hl, sp+$00
     ld [hl], $0f
-    jp Jump_004_444c
+    jp SetFpga7FC4_B4_unlockWriteCommit
 
 
-Jump_004_4441:
+SetFpga7FC4_B4_store07::
     ld hl, sp+$00
     ld [hl], $07
-    jp Jump_004_444c
+    jp SetFpga7FC4_B4_unlockWriteCommit
 
 
-Jump_004_4448:
+SetFpga7FC4_B4_store03::
     ld hl, sp+$00
     ld [hl], $03
 
-Jump_004_444c:
+SetFpga7FC4_B4_unlockWriteCommit::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -902,9 +910,10 @@ RomLoad_CopyCmdWindowPoll_B4::
 
 
 ; [ezgb]
-; CStrCat(dest, src): append NUL-term src onto dest. Walk dest to NUL,
-; then copy src incl. terminator. Stack RTL: char* dest, char* src.
-; Named CStrCat (not StrCat) to avoid RGBDS STRCAT.
+; CStrCat(dest, src): append NUL-term src onto dest. Frame -$04; stack RTL dest@sp+$06, src@sp+$08.
+; Jump_004_44b6: walk BC=dest until [BC]==0 → Jump_004_44bf stash src@sp+$00 + dest-end@sp+$02.
+; Jump_004_44cb: load *src; if 0 → Jump_004_44ec write NUL; else inc src (jr_004_44dd carry), store to *dest, inc dest (jr_004_44e9 carry), loop.
+; jr_004_44dd / jr_004_44e9: 16-bit pointer ++ after lo-byte wrap; Jump_004_44ec: [dest]=0 + add sp,$04 ret.
 
 CStrCat::
     push af
@@ -982,10 +991,10 @@ Jump_004_44ec:
 
 
 ; [ezgb]
-; U32ToAscii(val, buf, radix): write unsigned long as ASCII into buf (NUL-term).
-; Stack RTL: val u32, char* buf, u8 radix. Digits via U32Div/U32Mod,
-; then reverse into buf; 0-9 -> '0'+n, 10+ -> 'a'+(n-10) (+$57). Callers pass
-; radix $0a (decimal). Local $34-byte digit scratch. Bank0 copy: U32ToAscii_B0 ($16f4).
+; U32ToAscii(val@sp+$36, buf@sp+$3a, radix@sp+$3c): frame -$34; digit scratch@sp+$13. Bank0 twin U32ToAscii_B0.
+; Jump_004_451b: if val!=0 → Jump_004_453c; elif scratch advanced → Jump_004_4539 → Jump_004_45e8; else jr_004_453c fall into emit.
+; Jump_004_453c/jr_004_453c: U32Div+U32Mod by radix; rem<$0a → '0'+n (jr_004_45d0) else Jump_004_45d3 +$57 (jr_004_45e5) → Jump_004_451b.
+; Jump_004_45e8: setup reverse; Jump_004_4605: copy scratch→buf (jr_004_462a) until done → Jump_004_462d NUL; empty → plant "0"; Jump_004_466b epilogue.
 
 U32ToAscii::
     add sp, -$34
@@ -1019,7 +1028,7 @@ U32ToAscii::
     ld a, [de]
     ld [hl], a
 
-Jump_004_451b:
+U32ToAscii_digitLoop::
     ld hl, sp+$07
     ld a, [hl+]
     or [hl]
@@ -1027,28 +1036,27 @@ Jump_004_451b:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_004_453c
+    jp nz, U32ToAscii_emitDigit
 
     inc hl
     ld a, [hl]
     ld hl, sp+$04
     sub [hl]
-    jp nz, Jump_004_4539
+    jp nz, U32ToAscii_skipEmit
 
     ld hl, sp+$0c
     ld a, [hl]
     ld hl, sp+$05
     sub [hl]
-    jp nz, Jump_004_4539
+    jp nz, U32ToAscii_skipEmit
 
-    jr jr_004_453c
+    jr U32ToAscii_emitDigit
 
-Jump_004_4539:
-    jp Jump_004_45e8
+U32ToAscii_skipEmit::
+    jp U32ToAscii_setupReverse
 
 
-Jump_004_453c:
-jr_004_453c:
+U32ToAscii_emitDigit::
     ld hl, sp+$3c
     ld a, [hl]
     ld hl, sp+$00
@@ -1149,7 +1157,7 @@ jr_004_453c:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_004_45d3
+    jp nc, U32ToAscii_digitAtoF
 
     ld hl, sp+$0f
     ld c, [hl]
@@ -1162,16 +1170,16 @@ jr_004_453c:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_004_45d0
+    jr nz, U32ToAscii_digit0to9
 
     inc hl
     inc [hl]
 
-jr_004_45d0:
-    jp Jump_004_451b
+U32ToAscii_digit0to9::
+    jp U32ToAscii_digitLoop
 
 
-Jump_004_45d3:
+U32ToAscii_digitAtoF::
     ld hl, sp+$0f
     ld c, [hl]
     ld a, c
@@ -1183,16 +1191,16 @@ Jump_004_45d3:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_004_45e5
+    jr nz, U32ToAscii_afterAlpha
 
     inc hl
     inc [hl]
 
-jr_004_45e5:
-    jp Jump_004_451b
+U32ToAscii_afterAlpha::
+    jp U32ToAscii_digitLoop
 
 
-Jump_004_45e8:
+U32ToAscii_setupReverse::
     ld hl, sp+$3a
     ld a, [hl+]
     ld e, [hl]
@@ -1216,7 +1224,7 @@ Jump_004_45e8:
     ld [hl+], a
     ld [hl], e
 
-Jump_004_4605:
+U32ToAscii_copyLoop::
     ld a, c
     ld hl, sp+$00
     sub [hl]
@@ -1224,7 +1232,7 @@ Jump_004_4605:
     inc hl
     sbc [hl]
     rlca
-    jp nc, Jump_004_462d
+    jp nc, U32ToAscii_writeNul
 
     dec hl
     ld e, [hl]
@@ -1247,16 +1255,16 @@ Jump_004_4605:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_004_462a
+    jr nz, U32ToAscii_copyCont
 
     inc hl
     inc [hl]
 
-jr_004_462a:
-    jp Jump_004_4605
+U32ToAscii_copyCont::
+    jp U32ToAscii_copyLoop
 
 
-Jump_004_462d:
+U32ToAscii_writeNul::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -1270,7 +1278,7 @@ Jump_004_462d:
     inc bc
     ld a, [bc]
     or a
-    jp nz, Jump_004_466b
+    jp nz, U32ToAscii_epilogueRet
 
     dec hl
     ld a, [hl+]
@@ -1309,7 +1317,7 @@ Jump_004_462d:
     ld a, $00
     ld [bc], a
 
-Jump_004_466b:
+U32ToAscii_epilogueRet::
     add sp, $34
     ret
 
@@ -1407,9 +1415,24 @@ InitTimeAutosaveFpga_B4::
 
 
 ; [ezgb]
-; DrawTimeAutosaveScreen: settings chrome. FPGA page $03 read $A200; draws
-; TimeLabelStr / TimeSetLabelStr / AutoSaveLabelStr / AutoSaveSavLabelStr via DrawString.
-; Toggles SET vs SAV at ($0310,$03) from sp+$40. Orphan after InitTimeAutosaveFpga_B4.
+; DrawTimeAutosaveScreen: sp+$3c=$A200; sp+$3d hilite; sp+$3e dirty; sp+$3f field 0..5; sp+$40 SET/SAV.
+; Setup: sp+$3c!=1 → Jump_004_47ce; jr_004_47d1 DrawRect; Jump_004_47ef field slot ptrs → Jump_004_48f5.
+; SET redraw Jump_004_48f5: sp+$40≠0 → SAV Jump_004_4e42; sp+$3e!=1 → Jump_004_4906/Jump_004_49ee; else jr_004_4909 hilite.
+; Hilite: Jump_004_4920/Jump_004_492d StoreDrawParams; Jump_004_4959/Jump_004_496a/Jump_004_4992/jr_004_4995/Jump_004_49a5/Jump_004_49b2 SET strings; Jump_004_49cd/jr_004_49d0 → Jump_004_49ee.
+; FPGA Jump_004_49ee: page6 $A008..$A00E → slots; Jump_004_4aa3/jr_004_4aa6 gate.
+; Field clones: Jump_004_4aad (+Jump_004_4b2e/Jump_004_4b43/jr_004_4b46); Jump_004_4b4d (+Jump_004_4bcc/Jump_004_4be1/jr_004_4be4); Jump_004_4beb (+Jump_004_4c5a/Jump_004_4c6f/jr_004_4c72);
+; Jump_004_4c79 (+Jump_004_4cf9/Jump_004_4d0e/jr_004_4d11); Jump_004_4d18 (+Jump_004_4d98/Jump_004_4dad/jr_004_4db0); Jump_004_4db7; Jump_004_4e26 Memcpy → Jump_004_5162.
+; SAV date clones (Jump_004_4e42 dirty): yr Jump_004_4ec6; mon Jump_004_4f38/jr_004_4f3b/Jump_004_4f48; day Jump_004_4fba/jr_004_4fbd/Jump_004_4fca;
+; hr Jump_004_502b/jr_004_502e/Jump_004_503b; min Jump_004_50ad/jr_004_50b0/Jump_004_50bd; sec Jump_004_512f/jr_004_5132/Jump_004_513f → Jump_004_5162.
+; Input Jump_004_5162: $02 jr_004_5170 field-- (Jump_004_5189/Jump_004_5192/Jump_004_5199 wrap); $01 jr_004_51a1 field++ (Jump_004_51ba/jr_004_51bd/Jump_004_51c1/Jump_004_51c8).
+; $04 bump jr_004_51d0 field0 yr (Jump_004_51f3/jr_004_51f6 wrap $63/Jump_004_5201); Jump_004_5211 field1 mon (Jump_004_521b/jr_004_521e/Jump_004_522c/jr_004_522f/Jump_004_523a).
+; Jump_004_524a field2 day (Jump_004_5254/jr_004_5257; Jump_004_529a/Jump_004_52a8/jr_004_52ab/Jump_004_52b6; Jump_004_52c6/Jump_004_52d4/jr_004_52d7/Jump_004_52e2; Jump_004_52f2 U8Mod; Jump_004_5317/Jump_004_532c/Jump_004_532f/jr_004_532f/Jump_004_533a) → Jump_004_53f2.
+; $04 fields 3..5: Jump_004_534a hr (Jump_004_5354/jr_004_5357/Jump_004_5365/jr_004_5368/Jump_004_5373); Jump_004_5383 min (Jump_004_538d/jr_004_5390/Jump_004_539e/jr_004_53a1/Jump_004_53ac);
+; Jump_004_53bc sec (Jump_004_53c6/jr_004_53c9/Jump_004_53d7/jr_004_53da/Jump_004_53e5); join Jump_004_53f2 dirty; Jump_004_53f9 SET hilite-- twin → Jump_004_48f5.
+; $08 dec Jump_004_5407/jr_004_540f: field0 yr Jump_004_5438/Jump_004_5448/Jump_004_5452/jr_004_5455/Jump_004_546c; field1 mon Jump_004_547c/Jump_004_5486/jr_004_5489;
+; field2 day Jump_004_54cc/Jump_004_54e3/Jump_004_54f3/Jump_004_550a/Jump_004_551a/Jump_004_5528/jr_004_552b/Jump_004_554f/Jump_004_555a; field3 hr Jump_004_556a/Jump_004_5574/jr_004_5577/Jump_004_558b;
+; field4 min Jump_004_559b/Jump_004_55a5/jr_004_55a8/Jump_004_55bc; field5 sec Jump_004_55cc/Jump_004_55d6/jr_004_55d9/Jump_004_55ed; Jump_004_55fa dirty; Jump_004_5601 SET hilite++.
+; Exit: Jump_004_5610/jr_004_5618/Jump_004_561b/jr_004_5623/Jump_004_5626; $10 jr_004_562e confirm Jump_004_5747 BCD→$A008+$7FD0; $40 Jump_004_58d6/Jump_004_58e2/Jump_004_58e6 toggle $A200 → Jump_004_5912 ret.
 
 DrawTimeAutosaveScreen::
     add sp, -$6a
@@ -1527,12 +1550,12 @@ DrawTimeAutosaveScreen::
     ld hl, sp+$3c
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_47ce
+    jp nz, DrawTimeAutosaveScreen_setupSkipDrawRect
 
     jr jr_004_47d1
 
-Jump_004_47ce:
-    jp Jump_004_47ef
+DrawTimeAutosaveScreen_setupSkipDrawRect::
+    jp DrawTimeAutosaveScreen_fieldSlotPtrs
 
 
 jr_004_47d1:
@@ -1553,7 +1576,7 @@ jr_004_47d1:
     call DrawRect
     add sp, $05
 
-Jump_004_47ef:
+DrawTimeAutosaveScreen_fieldSlotPtrs::
     ld hl, sp+$5c
     ld c, l
     ld b, h
@@ -1749,29 +1772,29 @@ Jump_004_47ef:
     ld [hl+], a
     ld [hl], d
 
-Jump_004_48f5:
+DrawTimeAutosaveScreen_redraw::
     xor a
     ld hl, sp+$40
     or [hl]
-    jp nz, Jump_004_4e42
+    jp nz, DrawTimeAutosaveScreen_savRedraw
 
     dec hl
     dec hl
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_4906
+    jp nz, DrawTimeAutosaveScreen_hiliteGate
 
     jr jr_004_4909
 
-Jump_004_4906:
-    jp Jump_004_49ee
+DrawTimeAutosaveScreen_hiliteGate::
+    jp DrawTimeAutosaveScreen_fpgaPage6
 
 
 jr_004_4909:
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_4920
+    jp nz, DrawTimeAutosaveScreen_hiliteStoreDrawParamsA
 
     ld hl, $0002
     push hl
@@ -1780,10 +1803,10 @@ jr_004_4909:
     inc sp
     call StoreDrawParams
     add sp, $03
-    jp Jump_004_492d
+    jp DrawTimeAutosaveScreen_hiliteStoreDrawParamsB
 
 
-Jump_004_4920:
+DrawTimeAutosaveScreen_hiliteStoreDrawParamsA::
     ld hl, $0000
     push hl
     ld a, $03
@@ -1792,7 +1815,7 @@ Jump_004_4920:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_492d:
+DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
     ld hl, $0121
     push hl
     ld hl, $9b15
@@ -1805,7 +1828,7 @@ Jump_004_492d:
     xor a
     ld hl, sp+$40
     or [hl]
-    jp nz, Jump_004_4959
+    jp nz, DrawTimeAutosaveScreen_setStringA
 
     ld hl, $0310
     push hl
@@ -1816,10 +1839,10 @@ Jump_004_492d:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_004_496a
+    jp DrawTimeAutosaveScreen_setStringB
 
 
-Jump_004_4959:
+DrawTimeAutosaveScreen_setStringA::
     ld hl, $0310
     push hl
     ld a, $03
@@ -1830,7 +1853,7 @@ Jump_004_4959:
     call DrawString
     add sp, $05
 
-Jump_004_496a:
+DrawTimeAutosaveScreen_setStringB::
     ld hl, $0000
     push hl
     ld a, $00
@@ -1850,12 +1873,12 @@ Jump_004_496a:
     ld hl, sp+$3d
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_4992
+    jp nz, DrawTimeAutosaveScreen_setStringC
 
     jr jr_004_4995
 
-Jump_004_4992:
-    jp Jump_004_49a5
+DrawTimeAutosaveScreen_setStringC::
+    jp DrawTimeAutosaveScreen_setStringD
 
 
 jr_004_4995:
@@ -1866,10 +1889,10 @@ jr_004_4995:
     inc sp
     call StoreDrawParams
     add sp, $03
-    jp Jump_004_49b2
+    jp DrawTimeAutosaveScreen_setStringE
 
 
-Jump_004_49a5:
+DrawTimeAutosaveScreen_setStringD::
     ld hl, $0000
     push hl
     ld a, $03
@@ -1878,7 +1901,7 @@ Jump_004_49a5:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_49b2:
+DrawTimeAutosaveScreen_setStringE::
     ld hl, $0040
     push hl
     ld hl, $8a38
@@ -1891,12 +1914,12 @@ Jump_004_49b2:
     ld hl, sp+$3c
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_49cd
+    jp nz, DrawTimeAutosaveScreen_setStringsDone
 
     jr jr_004_49d0
 
-Jump_004_49cd:
-    jp Jump_004_49ee
+DrawTimeAutosaveScreen_setStringsDone::
+    jp DrawTimeAutosaveScreen_fpgaPage6
 
 
 jr_004_49d0:
@@ -1917,7 +1940,7 @@ jr_004_49d0:
     call DrawRect
     add sp, $05
 
-Jump_004_49ee:
+DrawTimeAutosaveScreen_fpgaPage6::
     ld a, $06
     push af
     inc sp
@@ -2045,21 +2068,21 @@ Jump_004_49ee:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4aa3
+    jp nz, DrawTimeAutosaveScreen_fpgaSlotGate
 
     jr jr_004_4aa6
 
-Jump_004_4aa3:
-    jp Jump_004_4aad
+DrawTimeAutosaveScreen_fpgaSlotGate::
+    jp DrawTimeAutosaveScreen_field0Clone
 
 
 jr_004_4aa6:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4b2e
+    jp z, DrawTimeAutosaveScreen_field0LoadVal
 
-Jump_004_4aad:
+DrawTimeAutosaveScreen_field0Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2156,7 +2179,7 @@ Jump_004_4aad:
     call DrawString
     add sp, $05
 
-Jump_004_4b2e:
+DrawTimeAutosaveScreen_field0LoadVal::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -2171,21 +2194,21 @@ Jump_004_4b2e:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4b43
+    jp nz, DrawTimeAutosaveScreen_field0Next
 
     jr jr_004_4b46
 
-Jump_004_4b43:
-    jp Jump_004_4b4d
+DrawTimeAutosaveScreen_field0Next::
+    jp DrawTimeAutosaveScreen_field1Clone
 
 
 jr_004_4b46:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4bcc
+    jp z, DrawTimeAutosaveScreen_field1LoadVal
 
-Jump_004_4b4d:
+DrawTimeAutosaveScreen_field1Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2279,7 +2302,7 @@ Jump_004_4b4d:
     call DrawString
     add sp, $05
 
-Jump_004_4bcc:
+DrawTimeAutosaveScreen_field1LoadVal::
     ld hl, sp+$10
     ld e, [hl]
     inc hl
@@ -2294,21 +2317,21 @@ Jump_004_4bcc:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4be1
+    jp nz, DrawTimeAutosaveScreen_field1Next
 
     jr jr_004_4be4
 
-Jump_004_4be1:
-    jp Jump_004_4beb
+DrawTimeAutosaveScreen_field1Next::
+    jp DrawTimeAutosaveScreen_field2Clone
 
 
 jr_004_4be4:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4c5a
+    jp z, DrawTimeAutosaveScreen_field2LoadVal
 
-Jump_004_4beb:
+DrawTimeAutosaveScreen_field2Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2393,7 +2416,7 @@ Jump_004_4beb:
     call DrawString
     add sp, $05
 
-Jump_004_4c5a:
+DrawTimeAutosaveScreen_field2LoadVal::
     ld hl, sp+$12
     ld e, [hl]
     inc hl
@@ -2408,21 +2431,21 @@ Jump_004_4c5a:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4c6f
+    jp nz, DrawTimeAutosaveScreen_field2Next
 
     jr jr_004_4c72
 
-Jump_004_4c6f:
-    jp Jump_004_4c79
+DrawTimeAutosaveScreen_field2Next::
+    jp DrawTimeAutosaveScreen_field3Clone
 
 
 jr_004_4c72:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4cf9
+    jp z, DrawTimeAutosaveScreen_field3LoadVal
 
-Jump_004_4c79:
+DrawTimeAutosaveScreen_field3Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2516,7 +2539,7 @@ Jump_004_4c79:
     call DrawString
     add sp, $05
 
-Jump_004_4cf9:
+DrawTimeAutosaveScreen_field3LoadVal::
     ld hl, sp+$14
     ld e, [hl]
     inc hl
@@ -2531,21 +2554,21 @@ Jump_004_4cf9:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4d0e
+    jp nz, DrawTimeAutosaveScreen_field3Next
 
     jr jr_004_4d11
 
-Jump_004_4d0e:
-    jp Jump_004_4d18
+DrawTimeAutosaveScreen_field3Next::
+    jp DrawTimeAutosaveScreen_field4Clone
 
 
 jr_004_4d11:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4d98
+    jp z, DrawTimeAutosaveScreen_field4LoadVal
 
-Jump_004_4d18:
+DrawTimeAutosaveScreen_field4Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2639,7 +2662,7 @@ Jump_004_4d18:
     call DrawString
     add sp, $05
 
-Jump_004_4d98:
+DrawTimeAutosaveScreen_field4LoadVal::
     ld hl, sp+$18
     ld e, [hl]
     inc hl
@@ -2654,21 +2677,21 @@ Jump_004_4d98:
     ld b, a
     ld a, c
     sub b
-    jp nz, Jump_004_4dad
+    jp nz, DrawTimeAutosaveScreen_field4Next
 
     jr jr_004_4db0
 
-Jump_004_4dad:
-    jp Jump_004_4db7
+DrawTimeAutosaveScreen_field4Next::
+    jp DrawTimeAutosaveScreen_field5Clone
 
 
 jr_004_4db0:
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_4e26
+    jp z, DrawTimeAutosaveScreen_clearDirtyMemcpy
 
-Jump_004_4db7:
+DrawTimeAutosaveScreen_field5Clone::
     ld hl, sp+$41
     ld a, l
     ld d, h
@@ -2753,7 +2776,7 @@ Jump_004_4db7:
     call DrawString
     add sp, $05
 
-Jump_004_4e26:
+DrawTimeAutosaveScreen_clearDirtyMemcpy::
     ld hl, sp+$3e
     ld [hl], $00
     ld hl, $0007
@@ -2770,14 +2793,14 @@ Jump_004_4e26:
     push hl
     call Memcpy
     add sp, $06
-    jp Jump_004_5162
+    jp DrawTimeAutosaveScreen_inputLoop
 
 
-Jump_004_4e42:
+DrawTimeAutosaveScreen_savRedraw::
     xor a
     ld hl, sp+$3e
     or [hl]
-    jp z, Jump_004_5162
+    jp z, DrawTimeAutosaveScreen_inputLoop
 
     ld hl, $0002
     push hl
@@ -2854,7 +2877,7 @@ Jump_004_4e42:
     xor a
     ld hl, sp+$3f
     or [hl]
-    jp nz, Jump_004_4ec6
+    jp nz, DrawTimeAutosaveScreen_savYearClone
 
     ld hl, $0002
     push hl
@@ -2864,7 +2887,7 @@ Jump_004_4e42:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_4ec6:
+DrawTimeAutosaveScreen_savYearClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -2936,12 +2959,12 @@ Jump_004_4ec6:
     ld hl, sp+$3f
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_4f38
+    jp nz, DrawTimeAutosaveScreen_savMonGate
 
     jr jr_004_4f3b
 
-Jump_004_4f38:
-    jp Jump_004_4f48
+DrawTimeAutosaveScreen_savMonGate::
+    jp DrawTimeAutosaveScreen_savMonClone
 
 
 jr_004_4f3b:
@@ -2953,7 +2976,7 @@ jr_004_4f3b:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_4f48:
+DrawTimeAutosaveScreen_savMonClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -3025,12 +3048,12 @@ Jump_004_4f48:
     ld hl, sp+$3f
     ld a, [hl]
     sub $02
-    jp nz, Jump_004_4fba
+    jp nz, DrawTimeAutosaveScreen_savDayGate
 
     jr jr_004_4fbd
 
-Jump_004_4fba:
-    jp Jump_004_4fca
+DrawTimeAutosaveScreen_savDayGate::
+    jp DrawTimeAutosaveScreen_savDayClone
 
 
 jr_004_4fbd:
@@ -3042,7 +3065,7 @@ jr_004_4fbd:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_4fca:
+DrawTimeAutosaveScreen_savDayClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -3105,12 +3128,12 @@ Jump_004_4fca:
     ld hl, sp+$3f
     ld a, [hl]
     sub $03
-    jp nz, Jump_004_502b
+    jp nz, DrawTimeAutosaveScreen_savHrGate
 
     jr jr_004_502e
 
-Jump_004_502b:
-    jp Jump_004_503b
+DrawTimeAutosaveScreen_savHrGate::
+    jp DrawTimeAutosaveScreen_savHrClone
 
 
 jr_004_502e:
@@ -3122,7 +3145,7 @@ jr_004_502e:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_503b:
+DrawTimeAutosaveScreen_savHrClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -3194,12 +3217,12 @@ Jump_004_503b:
     ld hl, sp+$3f
     ld a, [hl]
     sub $04
-    jp nz, Jump_004_50ad
+    jp nz, DrawTimeAutosaveScreen_savMinGate
 
     jr jr_004_50b0
 
-Jump_004_50ad:
-    jp Jump_004_50bd
+DrawTimeAutosaveScreen_savMinGate::
+    jp DrawTimeAutosaveScreen_savMinClone
 
 
 jr_004_50b0:
@@ -3211,7 +3234,7 @@ jr_004_50b0:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_50bd:
+DrawTimeAutosaveScreen_savMinClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -3283,12 +3306,12 @@ Jump_004_50bd:
     ld hl, sp+$3f
     ld a, [hl]
     sub $05
-    jp nz, Jump_004_512f
+    jp nz, DrawTimeAutosaveScreen_savSecGate
 
     jr jr_004_5132
 
-Jump_004_512f:
-    jp Jump_004_513f
+DrawTimeAutosaveScreen_savSecGate::
+    jp DrawTimeAutosaveScreen_savSecClone
 
 
 jr_004_5132:
@@ -3300,7 +3323,7 @@ jr_004_5132:
     call StoreDrawParams
     add sp, $03
 
-Jump_004_513f:
+DrawTimeAutosaveScreen_savSecClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
@@ -3322,7 +3345,7 @@ Jump_004_513f:
     ld hl, sp+$3e
     ld [hl], $00
 
-Jump_004_5162:
+DrawTimeAutosaveScreen_inputLoop::
     call ReadJoypad
     ld c, e
     ld b, $00
@@ -3330,110 +3353,110 @@ Jump_004_5162:
     and $02
     jr nz, jr_004_5170
 
-    jp Jump_004_5199
+    jp DrawTimeAutosaveScreen_fieldDecWrap
 
 
 jr_004_5170:
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, Jump_004_48f5
+    jp z, DrawTimeAutosaveScreen_redraw
 
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_48f5
+    jp nz, DrawTimeAutosaveScreen_redraw
 
     xor a
     inc hl
     inc hl
     or [hl]
-    jp z, Jump_004_5189
+    jp z, DrawTimeAutosaveScreen_fieldDecCheck
 
     dec [hl]
-    jp Jump_004_5192
+    jp DrawTimeAutosaveScreen_fieldDecDirty
 
 
-Jump_004_5189:
+DrawTimeAutosaveScreen_fieldDecCheck::
     xor a
     ld hl, sp+$3f
     or [hl]
-    jp nz, Jump_004_5192
+    jp nz, DrawTimeAutosaveScreen_fieldDecDirty
 
     ld [hl], $05
 
-Jump_004_5192:
+DrawTimeAutosaveScreen_fieldDecDirty::
     ld hl, sp+$3e
     ld [hl], $02
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5199:
+DrawTimeAutosaveScreen_fieldDecWrap::
     ld a, c
     and $01
     jr nz, jr_004_51a1
 
-    jp Jump_004_51c8
+    jp DrawTimeAutosaveScreen_fieldIncWrap
 
 
 jr_004_51a1:
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, Jump_004_48f5
+    jp z, DrawTimeAutosaveScreen_redraw
 
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_48f5
+    jp nz, DrawTimeAutosaveScreen_redraw
 
     inc hl
     inc hl
     inc [hl]
     ld a, [hl]
     sub $06
-    jp nz, Jump_004_51ba
+    jp nz, DrawTimeAutosaveScreen_fieldIncGate
 
     jr jr_004_51bd
 
-Jump_004_51ba:
-    jp Jump_004_51c1
+DrawTimeAutosaveScreen_fieldIncGate::
+    jp DrawTimeAutosaveScreen_fieldIncDirty
 
 
 jr_004_51bd:
     ld hl, sp+$3f
     ld [hl], $00
 
-Jump_004_51c1:
+DrawTimeAutosaveScreen_fieldIncDirty::
     ld hl, sp+$3e
     ld [hl], $03
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_51c8:
+DrawTimeAutosaveScreen_fieldIncWrap::
     ld a, c
     and $04
     jr nz, jr_004_51d0
 
-    jp Jump_004_5407
+    jp DrawTimeAutosaveScreen_fieldDecBtn
 
 
 jr_004_51d0:
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, Jump_004_53f9
+    jp z, DrawTimeAutosaveScreen_hiliteDec
 
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_48f5
+    jp nz, DrawTimeAutosaveScreen_redraw
 
     xor a
     inc hl
     inc hl
     or [hl]
-    jp nz, Jump_004_5211
+    jp nz, DrawTimeAutosaveScreen_field1MonCheck
 
     ld hl, sp+$2e
     ld e, [hl]
@@ -3442,12 +3465,12 @@ jr_004_51d0:
     ld a, [de]
     ld c, a
     sub $63
-    jp nz, Jump_004_51f3
+    jp nz, DrawTimeAutosaveScreen_field0YrGate
 
     jr jr_004_51f6
 
-Jump_004_51f3:
-    jp Jump_004_5201
+DrawTimeAutosaveScreen_field0YrGate::
+    jp DrawTimeAutosaveScreen_field0YrWrap
 
 
 jr_004_51f6:
@@ -3457,10 +3480,10 @@ jr_004_51f6:
     ld d, [hl]
     ld a, $00
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_5201:
+DrawTimeAutosaveScreen_field0YrWrap::
     ld hl, sp+$2e
     ld e, [hl]
     inc hl
@@ -3473,19 +3496,19 @@ Jump_004_5201:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_5211:
+DrawTimeAutosaveScreen_field1MonCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_521b
+    jp nz, DrawTimeAutosaveScreen_field1MonGate
 
     jr jr_004_521e
 
-Jump_004_521b:
-    jp Jump_004_524a
+DrawTimeAutosaveScreen_field1MonGate::
+    jp DrawTimeAutosaveScreen_field2DayCheck
 
 
 jr_004_521e:
@@ -3496,12 +3519,12 @@ jr_004_521e:
     ld a, [de]
     ld c, a
     sub $0c
-    jp nz, Jump_004_522c
+    jp nz, DrawTimeAutosaveScreen_field1MonPath
 
     jr jr_004_522f
 
-Jump_004_522c:
-    jp Jump_004_523a
+DrawTimeAutosaveScreen_field1MonPath::
+    jp DrawTimeAutosaveScreen_field1MonLoad
 
 
 jr_004_522f:
@@ -3511,10 +3534,10 @@ jr_004_522f:
     ld d, [hl]
     ld a, $01
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_523a:
+DrawTimeAutosaveScreen_field1MonLoad::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -3527,19 +3550,19 @@ Jump_004_523a:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_524a:
+DrawTimeAutosaveScreen_field2DayCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $02
-    jp nz, Jump_004_5254
+    jp nz, DrawTimeAutosaveScreen_field2DayGate
 
     jr jr_004_5257
 
-Jump_004_5254:
-    jp Jump_004_534a
+DrawTimeAutosaveScreen_field2DayGate::
+    jp DrawTimeAutosaveScreen_field3HrCheck
 
 
 jr_004_5257:
@@ -3551,12 +3574,12 @@ jr_004_5257:
     ld c, a
     sub $01
     rlca
-    jp c, Jump_004_53f2
+    jp c, DrawTimeAutosaveScreen_fieldBumpDirty
 
     ld a, $0c
     sub c
     rlca
-    jp c, Jump_004_53f2
+    jp c, DrawTimeAutosaveScreen_fieldBumpDirty
 
     dec c
     ld e, c
@@ -3568,43 +3591,43 @@ jr_004_5257:
     jp hl
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_52f2
+    jp DrawTimeAutosaveScreen_field2DayU8Mod
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_52c6
+    jp DrawTimeAutosaveScreen_field2DayLoadC
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_52c6
+    jp DrawTimeAutosaveScreen_field2DayLoadC
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_52c6
+    jp DrawTimeAutosaveScreen_field2DayLoadC
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-    jp Jump_004_52c6
+    jp DrawTimeAutosaveScreen_field2DayLoadC
 
 
-    jp Jump_004_529a
+    jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-Jump_004_529a:
+DrawTimeAutosaveScreen_field2DayLoadA::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3612,12 +3635,12 @@ Jump_004_529a:
     ld a, [de]
     ld c, a
     sub $1f
-    jp nz, Jump_004_52a8
+    jp nz, DrawTimeAutosaveScreen_field2DayPath
 
     jr jr_004_52ab
 
-Jump_004_52a8:
-    jp Jump_004_52b6
+DrawTimeAutosaveScreen_field2DayPath::
+    jp DrawTimeAutosaveScreen_field2DayLoadB
 
 
 jr_004_52ab:
@@ -3627,10 +3650,10 @@ jr_004_52ab:
     ld d, [hl]
     ld a, $01
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_52b6:
+DrawTimeAutosaveScreen_field2DayLoadB::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3643,10 +3666,10 @@ Jump_004_52b6:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_52c6:
+DrawTimeAutosaveScreen_field2DayLoadC::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3654,12 +3677,12 @@ Jump_004_52c6:
     ld a, [de]
     ld c, a
     sub $1e
-    jp nz, Jump_004_52d4
+    jp nz, DrawTimeAutosaveScreen_field2DayPath2
 
     jr jr_004_52d7
 
-Jump_004_52d4:
-    jp Jump_004_52e2
+DrawTimeAutosaveScreen_field2DayPath2::
+    jp DrawTimeAutosaveScreen_field2DayLoadD
 
 
 jr_004_52d7:
@@ -3669,10 +3692,10 @@ jr_004_52d7:
     ld d, [hl]
     ld a, $01
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_52e2:
+DrawTimeAutosaveScreen_field2DayLoadD::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3685,10 +3708,10 @@ Jump_004_52e2:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_52f2:
+DrawTimeAutosaveScreen_field2DayU8Mod::
     ld hl, sp+$2e
     ld e, [hl]
     inc hl
@@ -3706,7 +3729,7 @@ Jump_004_52f2:
     ld c, e
     xor a
     or c
-    jp nz, Jump_004_5317
+    jp nz, DrawTimeAutosaveScreen_field2DayModCheck
 
     ld hl, sp+$2a
     ld e, [hl]
@@ -3715,13 +3738,13 @@ Jump_004_52f2:
     ld a, [de]
     ld b, a
     sub $1d
-    jp z, Jump_004_532f
+    jp z, DrawTimeAutosaveScreen_field2DayModPath
 
-Jump_004_5317:
+DrawTimeAutosaveScreen_field2DayModCheck::
     ld a, $00
     sub c
     rlca
-    jp nc, Jump_004_533a
+    jp nc, DrawTimeAutosaveScreen_field2DayModLoad
 
     ld hl, sp+$2a
     ld e, [hl]
@@ -3730,26 +3753,25 @@ Jump_004_5317:
     ld a, [de]
     ld c, a
     sub $1c
-    jp nz, Jump_004_532c
+    jp nz, DrawTimeAutosaveScreen_field2DayModGate
 
-    jr jr_004_532f
+    jr DrawTimeAutosaveScreen_field2DayModPath
 
-Jump_004_532c:
-    jp Jump_004_533a
+DrawTimeAutosaveScreen_field2DayModGate::
+    jp DrawTimeAutosaveScreen_field2DayModLoad
 
 
-Jump_004_532f:
-jr_004_532f:
+DrawTimeAutosaveScreen_field2DayModPath::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
     ld d, [hl]
     ld a, $01
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_533a:
+DrawTimeAutosaveScreen_field2DayModLoad::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3762,19 +3784,19 @@ Jump_004_533a:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_534a:
+DrawTimeAutosaveScreen_field3HrCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $03
-    jp nz, Jump_004_5354
+    jp nz, DrawTimeAutosaveScreen_field3HrGate
 
     jr jr_004_5357
 
-Jump_004_5354:
-    jp Jump_004_5383
+DrawTimeAutosaveScreen_field3HrGate::
+    jp DrawTimeAutosaveScreen_field4MinCheck
 
 
 jr_004_5357:
@@ -3785,12 +3807,12 @@ jr_004_5357:
     ld a, [de]
     ld c, a
     sub $17
-    jp nz, Jump_004_5365
+    jp nz, DrawTimeAutosaveScreen_field3HrPath
 
     jr jr_004_5368
 
-Jump_004_5365:
-    jp Jump_004_5373
+DrawTimeAutosaveScreen_field3HrPath::
+    jp DrawTimeAutosaveScreen_field3HrLoad
 
 
 jr_004_5368:
@@ -3800,10 +3822,10 @@ jr_004_5368:
     ld d, [hl]
     ld a, $00
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_5373:
+DrawTimeAutosaveScreen_field3HrLoad::
     ld hl, sp+$28
     ld e, [hl]
     inc hl
@@ -3816,19 +3838,19 @@ Jump_004_5373:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_5383:
+DrawTimeAutosaveScreen_field4MinCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $04
-    jp nz, Jump_004_538d
+    jp nz, DrawTimeAutosaveScreen_field4MinGate
 
     jr jr_004_5390
 
-Jump_004_538d:
-    jp Jump_004_53bc
+DrawTimeAutosaveScreen_field4MinGate::
+    jp DrawTimeAutosaveScreen_field5SecCheck
 
 
 jr_004_5390:
@@ -3839,12 +3861,12 @@ jr_004_5390:
     ld a, [de]
     ld c, a
     sub $3b
-    jp nz, Jump_004_539e
+    jp nz, DrawTimeAutosaveScreen_field4MinPath
 
     jr jr_004_53a1
 
-Jump_004_539e:
-    jp Jump_004_53ac
+DrawTimeAutosaveScreen_field4MinPath::
+    jp DrawTimeAutosaveScreen_field4MinLoad
 
 
 jr_004_53a1:
@@ -3854,10 +3876,10 @@ jr_004_53a1:
     ld d, [hl]
     ld a, $00
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_53ac:
+DrawTimeAutosaveScreen_field4MinLoad::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -3870,19 +3892,19 @@ Jump_004_53ac:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_53bc:
+DrawTimeAutosaveScreen_field5SecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $05
-    jp nz, Jump_004_53c6
+    jp nz, DrawTimeAutosaveScreen_field5SecGate
 
     jr jr_004_53c9
 
-Jump_004_53c6:
-    jp Jump_004_53f2
+DrawTimeAutosaveScreen_field5SecGate::
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
 jr_004_53c9:
@@ -3893,25 +3915,25 @@ jr_004_53c9:
     ld a, [de]
     ld c, a
     sub $3b
-    jp nz, Jump_004_53d7
+    jp nz, DrawTimeAutosaveScreen_field5SecPath
 
-    jr jr_004_53da
+    jr DrawTimeAutosaveScreen_field5SecJr
 
-Jump_004_53d7:
-    jp Jump_004_53e5
+DrawTimeAutosaveScreen_field5SecPath::
+    jp DrawTimeAutosaveScreen_field5SecLoad
 
 
-jr_004_53da:
+DrawTimeAutosaveScreen_field5SecJr::
     ld hl, sp+$30
     ld e, [hl]
     inc hl
     ld d, [hl]
     ld a, $00
     ld [de], a
-    jp Jump_004_53f2
+    jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-Jump_004_53e5:
+DrawTimeAutosaveScreen_field5SecLoad::
     ld hl, sp+$30
     ld e, [hl]
     inc hl
@@ -3925,48 +3947,48 @@ Jump_004_53e5:
     ld d, [hl]
     ld [de], a
 
-Jump_004_53f2:
+DrawTimeAutosaveScreen_fieldBumpDirty::
     ld hl, sp+$3e
     ld [hl], $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_53f9:
+DrawTimeAutosaveScreen_hiliteDec::
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp z, Jump_004_48f5
+    jp z, DrawTimeAutosaveScreen_redraw
 
     dec [hl]
     inc hl
     ld [hl], $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5407:
+DrawTimeAutosaveScreen_fieldDecBtn::
     ld a, c
     and $08
-    jr nz, jr_004_540f
+    jr nz, DrawTimeAutosaveScreen_fieldDecBtnJr
 
-    jp Jump_004_5610
+    jp DrawTimeAutosaveScreen_exitCheck40
 
 
-jr_004_540f:
+DrawTimeAutosaveScreen_fieldDecBtnJr::
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, Jump_004_5601
+    jp z, DrawTimeAutosaveScreen_hiliteInc
 
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_48f5
+    jp nz, DrawTimeAutosaveScreen_redraw
 
     xor a
     inc hl
     inc hl
     or [hl]
-    jp nz, Jump_004_5448
+    jp nz, DrawTimeAutosaveScreen_field0YrDecCheck
 
     ld hl, sp+$2e
     ld e, [hl]
@@ -3974,7 +3996,7 @@ jr_004_540f:
     ld d, [hl]
     ld a, [de]
     or a
-    jp nz, Jump_004_5438
+    jp nz, DrawTimeAutosaveScreen_field0YrDecLoad
 
     dec hl
     ld e, [hl]
@@ -3982,10 +4004,10 @@ jr_004_540f:
     ld d, [hl]
     ld a, $63
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_5438:
+DrawTimeAutosaveScreen_field0YrDecLoad::
     ld hl, sp+$2e
     ld e, [hl]
     inc hl
@@ -3998,22 +4020,22 @@ Jump_004_5438:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_5448:
+DrawTimeAutosaveScreen_field0YrDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $01
-    jp nz, Jump_004_5452
+    jp nz, DrawTimeAutosaveScreen_field0YrDecSkip
 
-    jr jr_004_5455
+    jr DrawTimeAutosaveScreen_field0YrDecJr
 
-Jump_004_5452:
-    jp Jump_004_547c
+DrawTimeAutosaveScreen_field0YrDecSkip::
+    jp DrawTimeAutosaveScreen_field1MonDecCheck
 
 
-jr_004_5455:
+DrawTimeAutosaveScreen_field0YrDecJr::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -4022,7 +4044,7 @@ jr_004_5455:
     ld c, a
     sub $01
     rlca
-    jp nc, Jump_004_546c
+    jp nc, DrawTimeAutosaveScreen_field0YrDecPath
 
     dec hl
     ld e, [hl]
@@ -4030,10 +4052,10 @@ jr_004_5455:
     ld d, [hl]
     ld a, $0c
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_546c:
+DrawTimeAutosaveScreen_field0YrDecPath::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -4046,19 +4068,19 @@ Jump_004_546c:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_547c:
+DrawTimeAutosaveScreen_field1MonDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $02
-    jp nz, Jump_004_5486
+    jp nz, DrawTimeAutosaveScreen_field1MonDecSkip
 
     jr jr_004_5489
 
-Jump_004_5486:
-    jp Jump_004_556a
+DrawTimeAutosaveScreen_field1MonDecSkip::
+    jp DrawTimeAutosaveScreen_field3HrDecCheck
 
 
 jr_004_5489:
@@ -4070,12 +4092,12 @@ jr_004_5489:
     ld c, a
     sub $01
     rlca
-    jp c, Jump_004_55fa
+    jp c, DrawTimeAutosaveScreen_fieldDecJoinDirty
 
     ld a, $0c
     sub c
     rlca
-    jp c, Jump_004_55fa
+    jp c, DrawTimeAutosaveScreen_fieldDecJoinDirty
 
     dec c
     ld e, c
@@ -4087,43 +4109,43 @@ jr_004_5489:
     jp hl
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_551a
+    jp DrawTimeAutosaveScreen_field2DayDecLoadE
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_54f3
+    jp DrawTimeAutosaveScreen_field2DayDecLoadC
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_54f3
+    jp DrawTimeAutosaveScreen_field2DayDecLoadC
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_54f3
+    jp DrawTimeAutosaveScreen_field2DayDecLoadC
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-    jp Jump_004_54f3
+    jp DrawTimeAutosaveScreen_field2DayDecLoadC
 
 
-    jp Jump_004_54cc
+    jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-Jump_004_54cc:
+DrawTimeAutosaveScreen_field2DayDecLoadA::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4132,7 +4154,7 @@ Jump_004_54cc:
     ld c, a
     sub $01
     rlca
-    jp nc, Jump_004_54e3
+    jp nc, DrawTimeAutosaveScreen_field2DayDecLoadB
 
     dec hl
     ld e, [hl]
@@ -4140,10 +4162,10 @@ Jump_004_54cc:
     ld d, [hl]
     ld a, $1f
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_54e3:
+DrawTimeAutosaveScreen_field2DayDecLoadB::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4156,10 +4178,10 @@ Jump_004_54e3:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_54f3:
+DrawTimeAutosaveScreen_field2DayDecLoadC::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4168,7 +4190,7 @@ Jump_004_54f3:
     ld c, a
     sub $01
     rlca
-    jp nc, Jump_004_550a
+    jp nc, DrawTimeAutosaveScreen_field2DayDecLoadD
 
     dec hl
     ld e, [hl]
@@ -4176,10 +4198,10 @@ Jump_004_54f3:
     ld d, [hl]
     ld a, $1e
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_550a:
+DrawTimeAutosaveScreen_field2DayDecLoadD::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4192,10 +4214,10 @@ Jump_004_550a:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_551a:
+DrawTimeAutosaveScreen_field2DayDecLoadE::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4203,12 +4225,12 @@ Jump_004_551a:
     ld a, [de]
     ld c, a
     sub $01
-    jp nz, Jump_004_5528
+    jp nz, DrawTimeAutosaveScreen_field2DayDecSkip
 
     jr jr_004_552b
 
-Jump_004_5528:
-    jp Jump_004_555a
+DrawTimeAutosaveScreen_field2DayDecSkip::
+    jp DrawTimeAutosaveScreen_field2DayDecLoadG
 
 
 jr_004_552b:
@@ -4229,7 +4251,7 @@ jr_004_552b:
     ld c, e
     xor a
     or c
-    jp nz, Jump_004_554f
+    jp nz, DrawTimeAutosaveScreen_field2DayDecLoadF
 
     ld hl, sp+$2a
     ld e, [hl]
@@ -4237,20 +4259,20 @@ jr_004_552b:
     ld d, [hl]
     ld a, $1d
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_554f:
+DrawTimeAutosaveScreen_field2DayDecLoadF::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
     ld d, [hl]
     ld a, $1c
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_555a:
+DrawTimeAutosaveScreen_field2DayDecLoadG::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -4263,19 +4285,19 @@ Jump_004_555a:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_556a:
+DrawTimeAutosaveScreen_field3HrDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $03
-    jp nz, Jump_004_5574
+    jp nz, DrawTimeAutosaveScreen_field3HrDecSkip
 
     jr jr_004_5577
 
-Jump_004_5574:
-    jp Jump_004_559b
+DrawTimeAutosaveScreen_field3HrDecSkip::
+    jp DrawTimeAutosaveScreen_field4MinDecCheck
 
 
 jr_004_5577:
@@ -4285,7 +4307,7 @@ jr_004_5577:
     ld d, [hl]
     ld a, [de]
     or a
-    jp nz, Jump_004_558b
+    jp nz, DrawTimeAutosaveScreen_field3HrDecLoad
 
     dec hl
     ld e, [hl]
@@ -4293,10 +4315,10 @@ jr_004_5577:
     ld d, [hl]
     ld a, $17
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_558b:
+DrawTimeAutosaveScreen_field3HrDecLoad::
     ld hl, sp+$28
     ld e, [hl]
     inc hl
@@ -4309,19 +4331,19 @@ Jump_004_558b:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_559b:
+DrawTimeAutosaveScreen_field4MinDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $04
-    jp nz, Jump_004_55a5
+    jp nz, DrawTimeAutosaveScreen_field4MinDecSkip
 
     jr jr_004_55a8
 
-Jump_004_55a5:
-    jp Jump_004_55cc
+DrawTimeAutosaveScreen_field4MinDecSkip::
+    jp DrawTimeAutosaveScreen_field5SecDecCheck
 
 
 jr_004_55a8:
@@ -4331,7 +4353,7 @@ jr_004_55a8:
     ld d, [hl]
     ld a, [de]
     or a
-    jp nz, Jump_004_55bc
+    jp nz, DrawTimeAutosaveScreen_field4MinDecLoad
 
     dec hl
     ld e, [hl]
@@ -4339,10 +4361,10 @@ jr_004_55a8:
     ld d, [hl]
     ld a, $3b
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_55bc:
+DrawTimeAutosaveScreen_field4MinDecLoad::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -4355,19 +4377,19 @@ Jump_004_55bc:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_55cc:
+DrawTimeAutosaveScreen_field5SecDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
     sub $05
-    jp nz, Jump_004_55d6
+    jp nz, DrawTimeAutosaveScreen_field5SecDecSkip
 
     jr jr_004_55d9
 
-Jump_004_55d6:
-    jp Jump_004_55fa
+DrawTimeAutosaveScreen_field5SecDecSkip::
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
 jr_004_55d9:
@@ -4377,7 +4399,7 @@ jr_004_55d9:
     ld d, [hl]
     ld a, [de]
     or a
-    jp nz, Jump_004_55ed
+    jp nz, DrawTimeAutosaveScreen_field5SecDecLoad
 
     dec hl
     ld e, [hl]
@@ -4385,10 +4407,10 @@ jr_004_55d9:
     ld d, [hl]
     ld a, $3b
     ld [de], a
-    jp Jump_004_55fa
+    jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-Jump_004_55ed:
+DrawTimeAutosaveScreen_field5SecDecLoad::
     ld hl, sp+$30
     ld e, [hl]
     inc hl
@@ -4402,61 +4424,61 @@ Jump_004_55ed:
     ld d, [hl]
     ld [de], a
 
-Jump_004_55fa:
+DrawTimeAutosaveScreen_fieldDecJoinDirty::
     ld hl, sp+$3e
     ld [hl], $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5601:
+DrawTimeAutosaveScreen_hiliteInc::
     ld hl, sp+$3d
     ld a, [hl]
     sub $01
-    jp nc, Jump_004_48f5
+    jp nc, DrawTimeAutosaveScreen_redraw
 
     inc [hl]
     inc hl
     ld [hl], $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5610:
+DrawTimeAutosaveScreen_exitCheck40::
     ld a, c
     and $40
     jr nz, jr_004_5618
 
-    jp Jump_004_561b
+    jp DrawTimeAutosaveScreen_exitCheck20
 
 
 jr_004_5618:
-    jp Jump_004_5912
+    jp DrawTimeAutosaveScreen_epilogueRet
 
 
-Jump_004_561b:
+DrawTimeAutosaveScreen_exitCheck20::
     ld a, c
     and $20
     jr nz, jr_004_5623
 
-    jp Jump_004_5626
+    jp DrawTimeAutosaveScreen_exitCheck10
 
 
 jr_004_5623:
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5626:
+DrawTimeAutosaveScreen_exitCheck10::
     ld a, c
     and $10
     jr nz, jr_004_562e
 
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
 jr_004_562e:
     xor a
     ld hl, sp+$3d
     or [hl]
-    jp nz, Jump_004_58d6
+    jp nz, DrawTimeAutosaveScreen_toggleA200Check
 
     ld hl, $0002
     push hl
@@ -4484,7 +4506,7 @@ jr_004_562e:
     xor a
     ld hl, sp+$40
     or [hl]
-    jp nz, Jump_004_5747
+    jp nz, DrawTimeAutosaveScreen_confirmBcdWrite
 
     ld [hl], $01
     dec hl
@@ -4657,10 +4679,10 @@ jr_004_562e:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5747:
+DrawTimeAutosaveScreen_confirmBcdWrite::
     ld hl, sp+$40
     ld [hl], $00
     dec hl
@@ -4960,24 +4982,24 @@ Jump_004_5747:
     inc sp
     call SetFpgaPage_B4
     add sp, $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_58d6:
+DrawTimeAutosaveScreen_toggleA200Check::
     xor a
     ld hl, sp+$3c
     or [hl]
-    jp nz, Jump_004_58e2
+    jp nz, DrawTimeAutosaveScreen_toggleA200Clear
 
     ld [hl], $01
-    jp Jump_004_58e6
+    jp DrawTimeAutosaveScreen_toggleA200Apply
 
 
-Jump_004_58e2:
+DrawTimeAutosaveScreen_toggleA200Clear::
     ld hl, sp+$3c
     ld [hl], $00
 
-Jump_004_58e6:
+DrawTimeAutosaveScreen_toggleA200Apply::
     ld hl, sp+$3e
     ld [hl], $01
     ld bc, RomLoad_InitiatePoll
@@ -5000,10 +5022,10 @@ Jump_004_58e6:
     inc sp
     call SetFpgaPage_B4
     add sp, $01
-    jp Jump_004_48f5
+    jp DrawTimeAutosaveScreen_redraw
 
 
-Jump_004_5912:
+DrawTimeAutosaveScreen_epilogueRet::
     add sp, $6a
     ret
 

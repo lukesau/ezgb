@@ -1906,6 +1906,7 @@ jr_008_473e:
 ; [ezgb]
 ; Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.
 ; Entry is $473f (after nop pad at $473e).
+; Unlock e1/e2/e3 + $7FF0=$e4; Jump_008_475e: spin while [$A000]≠0; clear $7FD2 + commit; E=0 ret.
 
 Fpga7FD2WaitClear_B8::
     dec sp
@@ -11764,6 +11765,11 @@ Call_008_6848:
     ld [bc], a
     nop
 
+; [ezgb]
+; RomLoad_Build_B8(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst. Twin of RomLoad_Build_B4.
+; Jump_008_6df0: while n--: *src++ (jr_008_6e03 carry) → *dst++ (jr_008_6e0f carry); Jump_008_6e12 add sp,$04 ret.
+; Used by RomLoad_BuildAndRunPeek_B8 / 7FD2Wait to plant $D000 trampolines.
+
 RomLoad_Build_B8::
     push af
     push af
@@ -12004,8 +12010,10 @@ RomLoad_BuildAndRun7FD2Wait_B8::
 
 
 ; [ezgb]
-; RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; zero $A0C0..+$200; then 0x2000x
-; RomLoad_WriteCmdWindow + page $05 BuildAndRun wait (clear cart window). Before DrawFwVersionScreen.
+; RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; then clear cart cmd window before DrawFwVersionScreen.
+; Jump_008_6f0a: fill $C0A0..+$200 with idx.lo (jr_008_6f3a); Jump_008_6f3d reset counter.
+; Jump_008_6f44: 0x2000× pack addr=$40000+i → $C0A0, RomLoad_WriteCmdWindow, page $05 BuildAndRun wait, page0.
+; Jump_008_6fcd: ret. Orphan before DrawFwVersionScreen.
 
 RomLoad_ClearCartWindow_B8::
     push af
@@ -12179,8 +12187,10 @@ Jump_008_6fcd:
 
 
 ; [ezgb]
-; DrawFwVersionScreen: build "FWx " prefix on stack, SdWindowPeek_B8, U32ToAscii_B0
-; version, then DrawRect/DrawString. Orphan after Jump_008_6fcd; -$34 frame.
+; DrawFwVersionScreen: -$34 frame; "FW…" + SdWindowPeek_B8 page $04; U32ToAscii_B0 radix $0a.
+; Jump_008_70e1: DrawRect/DrawString chrome; Jump_008_7141 WaitVBlank+ReadJoypad until SELECT ($40); jr_008_7152 add sp,$34 ret.
+; Post-ret orphans (no new ::): tab chrome by sp+$06. Jump_008_7203/Jump_008_720d/jr_008_7210 tab0; Jump_008_727e/Jump_008_7288/jr_008_728b tab1;
+; Jump_008_72f9/Jump_008_7303/jr_008_7306 tab2/3; Jump_008_7331 ret. Before MenuTabSdStr.
 
 DrawFwVersionScreen::
     add sp, -$34

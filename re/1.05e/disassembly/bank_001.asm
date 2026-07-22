@@ -80,7 +80,10 @@ Jump_001_403d:
 
 
 ; [ezgb]
-; CStrCmp(a, b): signed char strcmp. Walk [bc] vs [de]; return DE = *a - *b (sex).
+; CStrCmp(a@sp+$0a, b@sp+$0c): signed char strcmp → DE=*a-*b (sex). Frame -$04; BC=a, DE=b.
+; Jump_001_4056: load *a/*b; mismatch → Jump_001_4069 → Jump_001_4084 sex-sub; else jr_001_406c.
+; jr_001_406c: *a==0 → DE=0 Jump_001_40a0; else Jump_001_4079 ++BC / ++b-ptr (jr_001_4081 carry) → Jump_001_4056.
+; Jump_001_4084: sex(*a)-sex(*b) into DE; Jump_001_40a0: add sp,$04 ret.
 
 CStrCmp::
     push af
@@ -174,7 +177,10 @@ Jump_001_40a0:
 
 
 ; [ezgb]
-; CStrChr(s, c): find first c in NUL-terminated s; return pointer in DE (0 if none).
+; CStrChr(s@sp+$09, c@sp+$0b): walk NUL-term s; DE=last match ptr (0 if none). Frame -$03; last-wins not first.
+; Null s → DE=0 Jump_001_40e0; else Jump_001_40b9 BC=s; Jump_001_40be: *BC==0 → Jump_001_40db load saved.
+; *BC==c → jr_001_40d2 store BC@sp+$01; else Jump_001_40cf → Jump_001_40d7; Jump_001_40d7 ++BC → Jump_001_40be.
+; Jump_001_40db: DE=saved; Jump_001_40e0: add sp,$03 ret.
 
 CStrChr::
     push af
@@ -239,9 +245,11 @@ Jump_001_40e0:
 
 
 ; [ezgb]
-; DrawBrowserEntries: file-browser rows from path buf at $c2a0. Clamp count vs $c2a2;
-; per row DrawString name; if attr at +$fe == $10 (AM_DIR) draw "DIR" ($42b6), else
-; U32ToAscii_B0 size. Orphan after prior ret at Jump_001_40e0.
+; DrawBrowserEntries(start@sp+$26, sel@sp+$28): clamp visible rows vs $c2a2 (max $10) at Jump_001_40ff.
+; Jump_001_412c: clear ink StoreDrawParams; Jump_001_413d row loop → done Jump_001_4266.
+; jr_001_415d hilite $0002 else Jump_001_415a → Jump_001_416a; jr_001_4181 >>5 bank+$12@$4000.
+; Jump_001_41da/jr_001_41dd: attr+$fe==$10 dir (+BrowserDirStr) else Jump_001_4229 file DrawString $14; Jump_001_4253 reset ink → Jump_001_413d.
+; Jump_001_4266: U32ToAscii selected size + DrawString ret.
 
 DrawBrowserEntries::
     add sp, -$20
@@ -255,16 +263,16 @@ DrawBrowserEntries::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_001_40ff
+    jp c, DrawBrowserEntries_clampRows
 
     ld hl, sp+$1e
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_001_412c
+    jp DrawBrowserEntries_clearInk
 
 
-Jump_001_40ff:
+DrawBrowserEntries_clampRows::
     ld hl, $c2a2
     ld hl, $c2a2
     ld e, [hl]
@@ -291,14 +299,14 @@ Jump_001_40ff:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_001_412c
+    jp nc, DrawBrowserEntries_clearInk
 
     dec hl
     ld [hl], $10
     inc hl
     ld [hl], $00
 
-Jump_001_412c:
+DrawBrowserEntries_clearInk::
     ld hl, $0000
     push hl
     ld a, $03
@@ -309,7 +317,7 @@ Jump_001_412c:
     ld hl, sp+$1d
     ld [hl], $00
 
-Jump_001_413d:
+DrawBrowserEntries_rowLoop::
     ld hl, sp+$1d
     ld c, [hl]
     ld b, $00
@@ -319,25 +327,25 @@ Jump_001_413d:
     ld a, b
     inc hl
     sbc [hl]
-    jp nc, Jump_001_4266
+    jp nc, DrawBrowserEntries_drawSelSize
 
     ld a, c
     ld hl, sp+$28
     sub [hl]
-    jp nz, Jump_001_415a
+    jp nz, DrawBrowserEntries_skipHilite
 
     ld a, b
     inc hl
     sub [hl]
-    jp nz, Jump_001_415a
+    jp nz, DrawBrowserEntries_skipHilite
 
-    jr jr_001_415d
+    jr DrawBrowserEntries_hilite
 
-Jump_001_415a:
-    jp Jump_001_416a
+DrawBrowserEntries_skipHilite::
+    jp DrawBrowserEntries_rowBank
 
 
-jr_001_415d:
+DrawBrowserEntries_hilite::
     ld hl, $0002
     push hl
     ld a, $03
@@ -346,7 +354,7 @@ jr_001_415d:
     call StoreDrawParams
     add sp, $03
 
-Jump_001_416a:
+DrawBrowserEntries_rowBank::
     ld hl, sp+$1d
     ld c, [hl]
     ld b, $00
@@ -366,11 +374,11 @@ Jump_001_416a:
     ld b, [hl]
     ld a, $05
 
-jr_001_4181:
+DrawBrowserEntries_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_001_4181
+    jr nz, DrawBrowserEntries_bankShift
 
     ld hl, sp+$1b
     ld [hl], c
@@ -429,15 +437,15 @@ jr_001_4181:
     ld a, [bc]
     ld c, a
     sub $10
-    jp nz, Jump_001_41da
+    jp nz, DrawBrowserEntries_skipDir
 
-    jr jr_001_41dd
+    jr DrawBrowserEntries_dirEntry
 
-Jump_001_41da:
-    jp Jump_001_4229
+DrawBrowserEntries_skipDir::
+    jp DrawBrowserEntries_fileEntry
 
 
-jr_001_41dd:
+DrawBrowserEntries_dirEntry::
     ld hl, sp+$1d
     ld a, [hl]
     add $02
@@ -481,10 +489,10 @@ jr_001_41dd:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_4253
+    jp DrawBrowserEntries_resetInk
 
 
-Jump_001_4229:
+DrawBrowserEntries_fileEntry::
     ld hl, sp+$1d
     ld a, [hl]
     add $02
@@ -512,7 +520,7 @@ Jump_001_4229:
     call DrawString
     add sp, $05
 
-Jump_001_4253:
+DrawBrowserEntries_resetInk::
     ld hl, $0000
     push hl
     ld a, $03
@@ -522,10 +530,10 @@ Jump_001_4253:
     add sp, $03
     ld hl, sp+$1d
     inc [hl]
-    jp Jump_001_413d
+    jp DrawBrowserEntries_rowLoop
 
 
-Jump_001_4266:
+DrawBrowserEntries_drawSelSize::
     ld hl, sp+$07
     ld a, l
     ld d, h
@@ -592,27 +600,29 @@ BrowserDirStr::
     db "DIR", $00
 
 ; [ezgb]
-; DrawBrowserDetail: farcall from FileBrowserEntry ($10d9 blob → 01:42ba). -$24 frame;
-; StoreDrawParams/DrawString/U32ToAscii_B0 panel for the selected browser row.
+; DrawBrowserDetail(base@sp+$2a, row@sp+$2c, mode@sp+$2e): draw two adjacent browser rows.
+; Jump_001_42c8/jr_001_42c9: mode==2 → rows (n-1,n); else Jump_001_42fb (n,n+1). Jump_001_4324: jr_001_433b >>5 bank+$12@$4000.
+; Jump_001_4364/jr_001_4365 vs Jump_001_437c: mode3 hilite StoreDrawParams; Jump_001_4390 entry0; Jump_001_43cd/jr_001_43d0 dir else Jump_001_441a file.
+; Jump_001_4442 vs Jump_001_4459: focus ink; Jump_001_446d/jr_001_4484 row1 bank; Jump_001_44dd/jr_001_44e0 dir else Jump_001_452a file; Jump_001_4552 size U32ToAscii+DrawString.
 
 DrawBrowserDetail::
     add sp, -$24
     ld hl, sp+$2e
     ld a, [hl]
     sub $02
-    jp nz, Jump_001_42c8
+    jp nz, DrawBrowserDetail_mode2Prep
 
     ld a, $01
-    jr jr_001_42c9
+    jr DrawBrowserDetail_mode2Rows
 
-Jump_001_42c8:
+DrawBrowserDetail_mode2Prep::
     xor a
 
-jr_001_42c9:
+DrawBrowserDetail_mode2Rows::
     ld hl, sp+$07
     ld [hl], a
     or a
-    jp z, Jump_001_42fb
+    jp z, DrawBrowserDetail_modeNormalRows
 
     ld hl, sp+$2c
     ld b, [hl]
@@ -644,10 +654,10 @@ jr_001_42c9:
     ld hl, sp+$20
     ld [hl+], a
     ld [hl], d
-    jp Jump_001_4324
+    jp DrawBrowserDetail_row0Bank
 
 
-Jump_001_42fb:
+DrawBrowserDetail_modeNormalRows::
     ld hl, sp+$2c
     ld c, [hl]
     ld hl, sp+$09
@@ -680,7 +690,7 @@ Jump_001_42fb:
     ld [hl+], a
     ld [hl], d
 
-Jump_001_4324:
+DrawBrowserDetail_row0Bank::
     ld hl, sp+$09
     ld c, [hl]
     ld b, $00
@@ -700,11 +710,11 @@ Jump_001_4324:
     ld b, [hl]
     ld a, $05
 
-jr_001_433b:
+DrawBrowserDetail_row0BankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_001_433b
+    jr nz, DrawBrowserDetail_row0BankShift
 
     ld hl, sp+$1e
     ld [hl], c
@@ -723,19 +733,19 @@ jr_001_433b:
     ld hl, sp+$2e
     ld a, [hl]
     sub $03
-    jp nz, Jump_001_4364
+    jp nz, DrawBrowserDetail_mode3Prep
 
     ld a, $01
-    jr jr_001_4365
+    jr DrawBrowserDetail_mode3Hilite
 
-Jump_001_4364:
+DrawBrowserDetail_mode3Prep::
     xor a
 
-jr_001_4365:
+DrawBrowserDetail_mode3Hilite::
     ld hl, sp+$09
     ld [hl], a
     or a
-    jp z, Jump_001_437c
+    jp z, DrawBrowserDetail_afterHilite
 
     ld hl, $0002
     push hl
@@ -744,14 +754,14 @@ jr_001_4365:
     inc sp
     call StoreDrawParams
     add sp, $03
-    jp Jump_001_4390
+    jp DrawBrowserDetail_entry0
 
 
-Jump_001_437c:
+DrawBrowserDetail_afterHilite::
     xor a
     ld hl, sp+$07
     or [hl]
-    jp z, Jump_001_4390
+    jp z, DrawBrowserDetail_entry0
 
     ld hl, $0000
     push hl
@@ -761,7 +771,7 @@ Jump_001_437c:
     call StoreDrawParams
     add sp, $03
 
-Jump_001_4390:
+DrawBrowserDetail_entry0::
     ld hl, sp+$1f
     ld e, [hl]
     ld d, $00
@@ -805,15 +815,15 @@ Jump_001_4390:
     ld a, [bc]
     ld c, a
     sub $10
-    jp nz, Jump_001_43cd
+    jp nz, DrawBrowserDetail_entry0SkipDir
 
-    jr jr_001_43d0
+    jr DrawBrowserDetail_entry0Dir
 
-Jump_001_43cd:
-    jp Jump_001_441a
+DrawBrowserDetail_entry0SkipDir::
+    jp DrawBrowserDetail_entry0File
 
 
-jr_001_43d0:
+DrawBrowserDetail_entry0Dir::
     ld hl, sp+$22
     ld a, [hl]
     ld hl, sp+$04
@@ -856,10 +866,10 @@ jr_001_43d0:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_4442
+    jp DrawBrowserDetail_focusInk
 
 
-Jump_001_441a:
+DrawBrowserDetail_entry0File::
     ld hl, sp+$22
     ld a, [hl]
     ld hl, sp+$04
@@ -886,11 +896,11 @@ Jump_001_441a:
     call DrawString
     add sp, $05
 
-Jump_001_4442:
+DrawBrowserDetail_focusInk::
     xor a
     ld hl, sp+$09
     or [hl]
-    jp z, Jump_001_4459
+    jp z, DrawBrowserDetail_afterFocusInk
 
     ld hl, $0000
     push hl
@@ -899,14 +909,14 @@ Jump_001_4442:
     inc sp
     call StoreDrawParams
     add sp, $03
-    jp Jump_001_446d
+    jp DrawBrowserDetail_row1Bank
 
 
-Jump_001_4459:
+DrawBrowserDetail_afterFocusInk::
     xor a
     ld hl, sp+$07
     or [hl]
-    jp z, Jump_001_446d
+    jp z, DrawBrowserDetail_row1Bank
 
     ld hl, $0002
     push hl
@@ -916,7 +926,7 @@ Jump_001_4459:
     call StoreDrawParams
     add sp, $03
 
-Jump_001_446d:
+DrawBrowserDetail_row1Bank::
     ld hl, sp+$08
     ld c, [hl]
     ld b, $00
@@ -936,11 +946,11 @@ Jump_001_446d:
     ld b, [hl]
     ld a, $05
 
-jr_001_4484:
+DrawBrowserDetail_row1BankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_001_4484
+    jr nz, DrawBrowserDetail_row1BankShift
 
     ld hl, sp+$1e
     ld [hl], c
@@ -999,15 +1009,15 @@ jr_001_4484:
     ld a, [bc]
     ld c, a
     sub $10
-    jp nz, Jump_001_44dd
+    jp nz, DrawBrowserDetail_entry1SkipDir
 
-    jr jr_001_44e0
+    jr DrawBrowserDetail_entry1Dir
 
-Jump_001_44dd:
-    jp Jump_001_452a
+DrawBrowserDetail_entry1SkipDir::
+    jp DrawBrowserDetail_entry1File
 
 
-jr_001_44e0:
+DrawBrowserDetail_entry1Dir::
     ld hl, sp+$20
     ld a, [hl]
     ld hl, sp+$04
@@ -1050,10 +1060,10 @@ jr_001_44e0:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_4552
+    jp DrawBrowserDetail_drawSize
 
 
-Jump_001_452a:
+DrawBrowserDetail_entry1File::
     ld hl, sp+$20
     ld a, [hl]
     ld hl, sp+$04
@@ -1080,7 +1090,7 @@ Jump_001_452a:
     call DrawString
     add sp, $05
 
-Jump_001_4552:
+DrawBrowserDetail_drawSize::
     ld hl, $0000
     push hl
     ld a, $03
@@ -1154,8 +1164,10 @@ BrowserDirStr2::
     db "DIR", $00
 
 ; [ezgb]
-; FormatFileSize: format u32 size using wFileSizeFmtLo ($D3F9) or wFileSizeFmtHi ($D5EB)
-; when size≥$1000 within the <$10000 path. -$0a frame; after BrowserDirStr2.
+; FormatFileSize(u32@sp+$10): if size≥$10000 Jump_001_479b passthrough; else Jump_001_45e7 pick fmt table.
+; Jump_001_45e7: size≥$1000 → wFileSizeFmtHi else Jump_001_45ec wFileSizeFmtLo; Jump_001_45f1 walks {thr,op} pairs via $4676 jp-table.
+; Ops: Jump_001_4691/Jump_001_46bd scale-sub thr; Jump_001_46e2 -$10; Jump_001_46f6 -$20; Jump_001_470a -$30; Jump_001_471e -$1a; Jump_001_4732 +8; Jump_001_4744 -$50; Jump_001_4758 -$1c60 → Jump_001_476c.
+; Jump_001_476c: more entries → Jump_001_45f1 else advance; Jump_001_478a rewrite lo16@sp+$10; Jump_001_479b ret DE:HL.
 
 FormatFileSize::
     add sp, -$0a
@@ -1171,7 +1183,7 @@ FormatFileSize::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_001_479b
+    jp nc, FormatFileSize_retDeHl
 
     ld hl, sp+$10
     ld a, [hl]
@@ -1186,26 +1198,26 @@ FormatFileSize::
     inc hl
     ld a, [hl]
     sbc $10
-    jp nc, Jump_001_45e7
+    jp nc, FormatFileSize_pickFmtHi
 
     ld de, wFileSizeFmtLo
     ld c, e
     ld b, d
-    jp Jump_001_45ec
+    jp FormatFileSize_pickFmtLo
 
 
-Jump_001_45e7:
+FormatFileSize_pickFmtHi::
     ld de, wFileSizeFmtHi
     ld c, e
     ld b, d
 
-Jump_001_45ec:
+FormatFileSize_pickFmtLo::
     ld hl, sp+$08
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_001_45f1:
+FormatFileSize_walkTable::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -1233,7 +1245,7 @@ Jump_001_45f1:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_001_478a
+    jp z, FormatFileSize_rewriteLo16
 
     inc hl
     ld d, h
@@ -1246,7 +1258,7 @@ Jump_001_45f1:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_001_478a
+    jp c, FormatFileSize_rewriteLo16
 
     ld hl, sp+$08
     ld e, [hl]
@@ -1296,7 +1308,7 @@ Jump_001_45f1:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_001_476c
+    jp nc, FormatFileSize_afterOp
 
     ld a, $08
     ld hl, sp+$00
@@ -1304,7 +1316,7 @@ Jump_001_45f1:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_001_478a
+    jp c, FormatFileSize_rewriteLo16
 
     dec hl
     ld e, [hl]
@@ -1316,34 +1328,34 @@ Jump_001_45f1:
     jp hl
 
 
-    jp Jump_001_4691
+    jp FormatFileSize_opScaleSubA
 
 
-    jp Jump_001_46bd
+    jp FormatFileSize_opScaleSubB
 
 
-    jp Jump_001_46e2
+    jp FormatFileSize_opSub10
 
 
-    jp Jump_001_46f6
+    jp FormatFileSize_opSub20
 
 
-    jp Jump_001_470a
+    jp FormatFileSize_opSub30
 
 
-    jp Jump_001_471e
+    jp FormatFileSize_opSub1a
 
 
-    jp Jump_001_4732
+    jp FormatFileSize_opAdd8
 
 
-    jp Jump_001_4744
+    jp FormatFileSize_opSub50
 
 
-    jp Jump_001_4758
+    jp FormatFileSize_opSub1c60
 
 
-Jump_001_4691:
+FormatFileSize_opScaleSubA::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1379,10 +1391,10 @@ Jump_001_4691:
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_46bd:
+FormatFileSize_opScaleSubB::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1412,10 +1424,10 @@ Jump_001_46bd:
     sbc b
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_46e2:
+FormatFileSize_opSub10::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1429,10 +1441,10 @@ Jump_001_46e2:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_46f6:
+FormatFileSize_opSub20::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1446,10 +1458,10 @@ Jump_001_46f6:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_470a:
+FormatFileSize_opSub30::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1463,10 +1475,10 @@ Jump_001_470a:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_471e:
+FormatFileSize_opSub1a::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1480,10 +1492,10 @@ Jump_001_471e:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_4732:
+FormatFileSize_opAdd8::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1495,10 +1507,10 @@ Jump_001_4732:
     ld hl, sp+$06
     ld [hl+], a
     ld [hl], d
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_4744:
+FormatFileSize_opSub50::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1512,10 +1524,10 @@ Jump_001_4744:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_4758:
+FormatFileSize_opSub1c60::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1529,14 +1541,14 @@ Jump_001_4758:
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_478a
+    jp FormatFileSize_rewriteLo16
 
 
-Jump_001_476c:
+FormatFileSize_afterOp::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_001_45f1
+    jp nz, FormatFileSize_walkTable
 
     inc hl
     ld c, [hl]
@@ -1554,10 +1566,10 @@ Jump_001_476c:
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], d
-    jp Jump_001_45f1
+    jp FormatFileSize_walkTable
 
 
-Jump_001_478a:
+FormatFileSize_rewriteLo16::
     ld hl, sp+$06
     ld a, [hl]
     ld hl, sp+$10
@@ -1570,7 +1582,7 @@ Jump_001_478a:
     inc hl
     ld [hl], $00
 
-Jump_001_479b:
+FormatFileSize_retDeHl::
     ld hl, sp+$10
     ld e, [hl]
     inc hl
@@ -1742,6 +1754,10 @@ LastRomPersist::
     inc hl
     ld [hl], $00
 
+; [ezgb]
+; LastRomPersistLoop: copy $c2a6..+$00ff → $A300 (idx@sp+$02); then LastRomPersistDone.
+; jr_001_48af → self until idx≥$00ff. Twin of LastRomLoadRecord (00:12bf) write path.
+
 LastRomPersistLoop::
     ld hl, sp+$02
     ld a, [hl]
@@ -1805,7 +1821,10 @@ LastRomPersistDone::
     nop
 
 ; [ezgb]
-; IsLeapYear: stack u16 year → E=1 if leap else 0. Gregorian: %4, then %100/%400.
+; IsLeapYear(year@sp+$04) → E=1 if leap else 0. Gregorian: %4, then %100/%400.
+; year&3≠0 → jr_001_48d3 → Jump_001_4913 E=0; else Jump_001_48d6 U16Mod 100.
+; rem≠0 → Jump_001_4911 leap; else U16Mod 400: rem==0 → Jump_001_4911 else C=0 Jump_001_4913.
+; Jump_001_4911: C=1; Jump_001_4913: E=C; add sp,$02 ret.
 
 IsLeapYear::
     push af
@@ -1873,9 +1892,10 @@ Jump_001_4913:
 
 
 ; [ezgb]
-; DateToDaysSince1970: date struct ptr on stack; accumulate 365/366 from 1970
-; via IsLeapYear, then month/day. Returns day count in HL:DE.
-; Month lengths from wDaysInMonth / wDaysInMonthLeap.
+; DateToDaysSince1970(date*): returns seconds since 1970-01-01 (HL:DE), despite name. Feeds RtcToDayCount.
+; Jump_001_492f: years from $07b2/1970; IsLeapYear → +$016e else Jump_001_4974 +$016d; Jump_001_4992 ++y (jr_001_4999) → Jump_001_492f; done Jump_001_499c.
+; Jump_001_49b2: months via IsLeapYear → wDaysInMonthLeap else Jump_001_4a1c wDaysInMonth; Jump_001_4a59 ++m (jr_001_4a60) → Jump_001_49b2.
+; Jump_001_4a63: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE.
 
 DateToDaysSince1970::
     add sp, -$18
@@ -1896,7 +1916,7 @@ DateToDaysSince1970::
     inc hl
     ld [hl], $07
 
-Jump_001_492f:
+DateToDaysSince1970_yearLoop::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1912,7 +1932,7 @@ Jump_001_492f:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_001_499c
+    jp nc, DateToDaysSince1970_afterYears
 
     dec hl
     ld a, [hl+]
@@ -1924,7 +1944,7 @@ Jump_001_492f:
     ld c, e
     xor a
     or c
-    jp z, Jump_001_4974
+    jp z, DateToDaysSince1970_nonLeapYear
 
     ld hl, sp+$14
     ld e, [hl]
@@ -1951,10 +1971,10 @@ Jump_001_492f:
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_4992
+    jp DateToDaysSince1970_incYear
 
 
-Jump_001_4974:
+DateToDaysSince1970_nonLeapYear::
     ld hl, sp+$14
     ld e, [hl]
     inc hl
@@ -1981,19 +2001,19 @@ Jump_001_4974:
     ld [hl-], a
     ld [hl], e
 
-Jump_001_4992:
+DateToDaysSince1970_incYear::
     ld hl, sp+$0e
     inc [hl]
-    jr nz, jr_001_4999
+    jr nz, DateToDaysSince1970_yearCont
 
     inc hl
     inc [hl]
 
-jr_001_4999:
-    jp Jump_001_492f
+DateToDaysSince1970_yearCont::
+    jp DateToDaysSince1970_yearLoop
 
 
-Jump_001_499c:
+DateToDaysSince1970_afterYears::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -2010,7 +2030,7 @@ Jump_001_499c:
     inc hl
     ld [hl], $00
 
-Jump_001_49b2:
+DateToDaysSince1970_monthLoop::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -2025,7 +2045,7 @@ Jump_001_49b2:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_001_4a63
+    jp nc, DateToDaysSince1970_addHms
 
     ld hl, sp+$06
     ld e, [hl]
@@ -2042,7 +2062,7 @@ Jump_001_49b2:
     ld c, e
     xor a
     or c
-    jp z, Jump_001_4a1c
+    jp z, DateToDaysSince1970_nonLeapMonths
 
     ld de, wDaysInMonthLeap
     ld hl, sp+$0c
@@ -2093,10 +2113,10 @@ Jump_001_49b2:
     ld hl, sp+$17
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_4a59
+    jp DateToDaysSince1970_incMonth
 
 
-Jump_001_4a1c:
+DateToDaysSince1970_nonLeapMonths::
     ld de, wDaysInMonth
     ld hl, sp+$0c
     ld a, [hl+]
@@ -2147,19 +2167,19 @@ Jump_001_4a1c:
     ld [hl-], a
     ld [hl], e
 
-Jump_001_4a59:
+DateToDaysSince1970_incMonth::
     ld hl, sp+$0c
     inc [hl]
-    jr nz, jr_001_4a60
+    jr nz, DateToDaysSince1970_monthCont
 
     inc hl
     inc [hl]
 
-jr_001_4a60:
-    jp Jump_001_49b2
+DateToDaysSince1970_monthCont::
+    jp DateToDaysSince1970_monthLoop
 
 
-Jump_001_4a63:
+DateToDaysSince1970_addHms::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -2876,9 +2896,10 @@ RtcToDayCount::
 
 
 ; [ezgb]
-; RtcWriteTimeFromDayDelta: RtcToDayCount − stack day count ($d3f2/$d3f4); S32Div/Mod
-; by 60/24 into HMS; write $A018–$A01C (page $06) and $A220–$A224 (page $03/$11).
-; Inverse of RtcReadDaysClearRegs clear path.
+; RtcWriteTimeFromDayDelta(delta@sp+$18): RtcToDayCount − delta; if delta==0 or result<0 → Jump_001_4e38 zero HMS.
+; Jump_001_4e50: seed from $c0a0..$c0b0; overflow → Jump_001_4e94 zero then Jump_001_4ea9 else fall Jump_001_4ea9.
+; Cascade: Jump_001_4ea9 S32Div/60; Jump_001_4ee0 S32Mod/60 (sec) + Div/60; Jump_001_4f4c S32Mod/60 (min) + Div/24;
+; Jump_001_4fc6/jr_001_4fc6: S32Mod/24 (hr); Jump_001_5063: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).
 
 RtcWriteTimeFromDayDelta::
     add sp, -$16
@@ -2930,14 +2951,14 @@ RtcWriteTimeFromDayDelta::
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_001_4e38
+    jp z, RtcWriteTimeFromDayDelta_zeroHms
 
     ld hl, sp+$11
     ld a, [hl]
     bit 7, a
-    jp z, Jump_001_4e50
+    jp z, RtcWriteTimeFromDayDelta_seedC0a0
 
-Jump_001_4e38:
+RtcWriteTimeFromDayDelta_zeroHms::
     ld hl, sp+$08
     ld [hl], $00
     dec hl
@@ -2952,10 +2973,10 @@ Jump_001_4e38:
     ld [hl], a
     ld hl, sp+$09
     ld [hl], $00
-    jp Jump_001_5063
+    jp RtcWriteTimeFromDayDelta_writeFpga
 
 
-Jump_001_4e50:
+RtcWriteTimeFromDayDelta_seedC0a0::
     ld de, $c0a0
     ld a, [de]
     ld c, a
@@ -2990,19 +3011,19 @@ Jump_001_4e50:
     ld a, $3b
     dec hl
     sub [hl]
-    jp c, Jump_001_4e94
+    jp c, RtcWriteTimeFromDayDelta_overflowZero
 
     ld a, $3b
     dec hl
     sub [hl]
-    jp c, Jump_001_4e94
+    jp c, RtcWriteTimeFromDayDelta_overflowZero
 
     ld a, $17
     dec hl
     sub [hl]
-    jp nc, Jump_001_4ea9
+    jp nc, RtcWriteTimeFromDayDelta_div60a
 
-Jump_001_4e94:
+RtcWriteTimeFromDayDelta_overflowZero::
     ld hl, sp+$08
     ld [hl], $00
     dec hl
@@ -3018,7 +3039,7 @@ Jump_001_4e94:
     ld hl, sp+$09
     ld [hl], $00
 
-Jump_001_4ea9:
+RtcWriteTimeFromDayDelta_div60a::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3053,14 +3074,14 @@ Jump_001_4ea9:
     ld [hl], a
     ld a, $3b
     sub [hl]
-    jp nc, Jump_001_4ee0
+    jp nc, RtcWriteTimeFromDayDelta_modSec
 
     ld a, [hl]
     add $c4
     ld [hl-], a
     inc [hl]
 
-Jump_001_4ee0:
+RtcWriteTimeFromDayDelta_modSec::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3136,14 +3157,14 @@ Jump_001_4ee0:
     ld [hl], a
     ld a, $3b
     sub [hl]
-    jp nc, Jump_001_4f4c
+    jp nc, RtcWriteTimeFromDayDelta_modMin
 
     ld a, [hl]
     add $c4
     ld [hl-], a
     inc [hl]
 
-Jump_001_4f4c:
+RtcWriteTimeFromDayDelta_modMin::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3219,28 +3240,27 @@ Jump_001_4f4c:
     ld [hl], a
     ld a, $17
     sub [hl]
-    jp nc, Jump_001_4fc6
+    jp nc, RtcWriteTimeFromDayDelta_modHr
 
     ld a, [hl]
     add $e8
     ld [hl], a
     ld hl, sp+$0a
     inc [hl]
-    jr nz, jr_001_4fc6
+    jr nz, RtcWriteTimeFromDayDelta_modHr
 
     inc hl
     inc [hl]
-    jr nz, jr_001_4fc6
+    jr nz, RtcWriteTimeFromDayDelta_modHr
 
     inc hl
     inc [hl]
-    jr nz, jr_001_4fc6
+    jr nz, RtcWriteTimeFromDayDelta_modHr
 
     inc hl
     inc [hl]
 
-Jump_001_4fc6:
-jr_001_4fc6:
+RtcWriteTimeFromDayDelta_modHr::
     ld hl, $0000
     push hl
     ld hl, $0018
@@ -3326,7 +3346,7 @@ jr_001_4fc6:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_001_5063
+    jp nc, RtcWriteTimeFromDayDelta_writeFpga
 
     ld hl, sp+$09
     ld a, [hl]
@@ -3346,7 +3366,7 @@ jr_001_4fc6:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_001_5063
+    jp nc, RtcWriteTimeFromDayDelta_writeFpga
 
     dec hl
     dec hl
@@ -3363,7 +3383,7 @@ jr_001_4fc6:
     and $c0
     ld [hl], a
 
-Jump_001_5063:
+RtcWriteTimeFromDayDelta_writeFpga::
     ld a, $06
     push af
     inc sp
@@ -3527,9 +3547,11 @@ RtcReadDaysClearRegs::
 
 
 ; [ezgb]
-; BackupOpenSaverPath: memcpy "/SAVER/" to $c3a5; farcall-append name; force
-; ".sav" suffix; SetFpgaPage_B1 $00; Open_B6 via FarCall_06_7309 into $ca0f FIL.
-; Used by BackupSaveDump path. Orphan after RtcReadDaysClearRegs epilogue.
+; BackupOpenSaverPath: build $c3a5="/SAVER/"+name; Jump_001_51b2 force ".sav"; Open_B6 FarCall_06_7309 → $ca0f.
+; Size from $d3ed: Jump_001_5233 ($d3eb==2 → Jump_001_523e/jr_001_5241 $2000 else Jump_001_5251 0); 1/2 Jump_001_525b $2000; 4 Jump_001_526b $20000; 5 Jump_001_527b $10000; else Jump_001_528b $8000.
+; Jump_001_5298: open ok else Jump_001_54d1; and $30==$30 → Jump_001_530e/jr_001_5311 RTC flag else Jump_001_531c; Jump_001_5320/Jump_001_5327 read+$200 VramCopyStack loop.
+; Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close → PreLaunchFramStamp.
+; Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs → PreLaunchFramStamp.
 
 BackupOpenSaverPath::
     add sp, -$1e
@@ -3572,16 +3594,16 @@ BackupOpenSaverPath::
     ld a, [bc]
     ld c, a
     sub $63
-    jp z, Jump_001_51b2
+    jp z, BackupOpenSaverPath_forceSavExt
 
     ld a, c
     sub $43
-    jp z, Jump_001_51b2
+    jp z, BackupOpenSaverPath_forceSavExt
 
     ld hl, sp+$0b
     inc [hl]
 
-Jump_001_51b2:
+BackupOpenSaverPath_forceSavExt::
     ld hl, sp+$0b
     ld a, [hl]
     add $fd
@@ -3636,44 +3658,44 @@ Jump_001_51b2:
     ld hl, $d3ed
     ld a, [hl]
     or a
-    jp z, Jump_001_5233
+    jp z, BackupOpenSaverPath_sizeFromD3eb
 
     ld hl, $d3ed
     ld a, [hl]
     sub $01
-    jp z, Jump_001_525b
+    jp z, BackupOpenSaverPath_size2k
 
     ld hl, $d3ed
     ld a, [hl]
     sub $02
-    jp z, Jump_001_525b
+    jp z, BackupOpenSaverPath_size2k
 
     ld hl, $d3ed
     ld a, [hl]
     sub $04
-    jp z, Jump_001_526b
+    jp z, BackupOpenSaverPath_size20000
 
     ld hl, $d3ed
     ld a, [hl]
     sub $05
-    jp z, Jump_001_527b
+    jp z, BackupOpenSaverPath_size10000
 
-    jp Jump_001_528b
+    jp BackupOpenSaverPath_size8000
 
 
-Jump_001_5233:
+BackupOpenSaverPath_sizeFromD3eb::
     ld hl, $d3eb
     ld a, [hl]
     sub $02
-    jp nz, Jump_001_523e
+    jp nz, BackupOpenSaverPath_sizeSkip2k
 
-    jr jr_001_5241
+    jr BackupOpenSaverPath_size2kRtc
 
-Jump_001_523e:
-    jp Jump_001_5251
+BackupOpenSaverPath_sizeSkip2k::
+    jp BackupOpenSaverPath_size0
 
 
-jr_001_5241:
+BackupOpenSaverPath_size2kRtc::
     ld hl, sp+$14
     ld [hl], $00
     inc hl
@@ -3682,20 +3704,20 @@ jr_001_5241:
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_001_5298
+    jp BackupOpenSaverPath_openOk
 
 
-Jump_001_5251:
+BackupOpenSaverPath_size0::
     xor a
     ld hl, sp+$14
     ld [hl+], a
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-    jp Jump_001_5298
+    jp BackupOpenSaverPath_openOk
 
 
-Jump_001_525b:
+BackupOpenSaverPath_size2k::
     ld hl, sp+$14
     ld [hl], $00
     inc hl
@@ -3704,10 +3726,10 @@ Jump_001_525b:
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_001_5298
+    jp BackupOpenSaverPath_openOk
 
 
-Jump_001_526b:
+BackupOpenSaverPath_size20000::
     ld hl, sp+$14
     ld [hl], $00
     inc hl
@@ -3716,10 +3738,10 @@ Jump_001_526b:
     ld [hl], $02
     inc hl
     ld [hl], $00
-    jp Jump_001_5298
+    jp BackupOpenSaverPath_openOk
 
 
-Jump_001_527b:
+BackupOpenSaverPath_size10000::
     ld hl, sp+$14
     ld [hl], $00
     inc hl
@@ -3728,10 +3750,10 @@ Jump_001_527b:
     ld [hl], $01
     inc hl
     ld [hl], $00
-    jp Jump_001_5298
+    jp BackupOpenSaverPath_openOk
 
 
-Jump_001_528b:
+BackupOpenSaverPath_size8000::
     ld hl, sp+$14
     ld [hl], $00
     inc hl
@@ -3741,10 +3763,10 @@ Jump_001_528b:
     inc hl
     ld [hl], $00
 
-Jump_001_5298:
+BackupOpenSaverPath_openOk::
     xor a
     or c
-    jp nz, Jump_001_54d1
+    jp nz, BackupOpenSaverPath_failMemsetFf
 
     ld a, $03
     push af
@@ -3806,42 +3828,42 @@ Jump_001_5298:
     ld hl, sp+$04
     ld a, [hl]
     sub $30
-    jp nz, Jump_001_530e
+    jp nz, BackupOpenSaverPath_rtcFlagSkip
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_001_530e
+    jp nz, BackupOpenSaverPath_rtcFlagSkip
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_001_530e
+    jp nz, BackupOpenSaverPath_rtcFlagSkip
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_001_530e
+    jp nz, BackupOpenSaverPath_rtcFlagSkip
 
-    jr jr_001_5311
+    jr BackupOpenSaverPath_rtcFlagSet
 
-Jump_001_530e:
-    jp Jump_001_531c
+BackupOpenSaverPath_rtcFlagSkip::
+    jp BackupOpenSaverPath_afterRtcFlag
 
 
-jr_001_5311:
+BackupOpenSaverPath_rtcFlagSet::
     ld hl, sp+$08
     ld [hl], $01
     ld hl, sp+$14
     ld [hl], $00
-    jp Jump_001_5320
+    jp BackupOpenSaverPath_readInit
 
 
-Jump_001_531c:
+BackupOpenSaverPath_afterRtcFlag::
     ld hl, sp+$08
     ld [hl], $00
 
-Jump_001_5320:
+BackupOpenSaverPath_readInit::
     xor a
     ld hl, sp+$1a
     ld [hl+], a
@@ -3849,7 +3871,7 @@ Jump_001_5320:
     ld [hl+], a
     ld [hl], a
 
-Jump_001_5327:
+BackupOpenSaverPath_readLoop::
     ld hl, sp+$1a
     ld d, h
     ld e, l
@@ -3868,7 +3890,7 @@ Jump_001_5327:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_001_53ee
+    jp nc, BackupOpenSaverPath_rtcMetaRestore
 
     ld a, $00
     push af
@@ -3993,14 +4015,14 @@ Jump_001_5327:
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_5327
+    jp BackupOpenSaverPath_readLoop
 
 
-Jump_001_53ee:
+BackupOpenSaverPath_rtcMetaRestore::
     xor a
     ld hl, sp+$08
     or [hl]
-    jp z, Jump_001_5495
+    jp z, BackupOpenSaverPath_rtcReadDaysClear
 
     ld a, $00
     push af
@@ -4106,14 +4128,14 @@ Jump_001_53ee:
     ld [hl], e
     inc hl
     ld [hl], d
-    jp Jump_001_54bc
+    jp BackupOpenSaverPath_closePreLaunch
 
 
-Jump_001_5495:
+BackupOpenSaverPath_rtcReadDaysClear::
     xor a
     ld hl, $d3f0
     or [hl]
-    jp z, Jump_001_54bc
+    jp z, BackupOpenSaverPath_closePreLaunch
 
     call RtcReadDaysClearRegs
     push hl
@@ -4142,7 +4164,7 @@ Jump_001_5495:
     ld a, [de]
     ld [hl], a
 
-Jump_001_54bc:
+BackupOpenSaverPath_closePreLaunch::
     ld a, $00
     push af
     inc sp
@@ -4155,7 +4177,7 @@ Jump_001_54bc:
     jp PreLaunchFramStamp
 
 
-Jump_001_54d1:
+BackupOpenSaverPath_failMemsetFf::
     ld hl, $0200
     push hl
     ld a, $ff
@@ -4172,7 +4194,7 @@ Jump_001_54d1:
     ld [hl+], a
     ld [hl], a
 
-Jump_001_54e9:
+BackupOpenSaverPath_failBlankWrite::
     ld hl, sp+$1a
     ld d, h
     ld e, l
@@ -4191,7 +4213,7 @@ Jump_001_54e9:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_001_559a
+    jp nc, BackupOpenSaverPath_failRtcPreLaunch
 
     ld a, $00
     push af
@@ -4304,10 +4326,10 @@ Jump_001_54e9:
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_54e9
+    jp BackupOpenSaverPath_failBlankWrite
 
 
-Jump_001_559a:
+BackupOpenSaverPath_failRtcPreLaunch::
     call RtcReadDaysClearRegs
     push hl
     ld hl, sp+$02
@@ -4341,10 +4363,10 @@ Jump_001_559a:
     add sp, $01
 
 ; [ezgb]
-; Pre-launch FRAM stamp on page $11 (SetFpgaPage_B1 $03), written on every launch:
-; $A000=$AA (backup pending), $A001=auto-save flag, $A00F=save bank count,
-; $A010+=save basename for SAVER/*.SAV. Armed per-launch, not per save-write.
-; Ends at Jump_001_58ad; LaunchSetup (01:58b0) is the next launch-trace step.
+; PreLaunchFramStamp: page $11 (SetFpgaPage_B1 $03) per-launch FRAM stamp for SAVER/*.SAV.
+; $A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.
+; Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done → Jump_001_5657.
+; Jump_001_5657: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup.
 
 PreLaunchFramStamp::
     ld a, $0d
@@ -4900,9 +4922,10 @@ Jump_001_58ad:
 
 
 ; [ezgb]
-; LaunchSetup: launch-trace step after BackupOpenSaverPath ($15b2→$58b0). Big frame;
-; Open_B6 path; Clust2Sect/GetFat_B5 walk; Close_B3. Feeds later FPGA 7FCx config.
-; See docs/launch-trace.md.
+; LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see launch-trace.
+; Jump_001_58f9: $c7a9==2 → Jump_001_5905/jr_001_5908 FAT12 limit $0000ffff else Jump_001_5918 $0ffffff7; join Jump_001_5925 seed FarCall_05_4279 @$c0a0.
+; Jump_001_59e4: walk clusters FarCall_05_4378 (jr_001_5a2c); EOF → Jump_001_5b12 else Jump_001_5a72 U32Mul*$c7ab + 4279 append.
+; Jump_001_5b12: if sum<limit → Jump_001_59e4 else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → Jump_001_5c02 ret 0.
 
 LaunchSetup::
     ld hl, $fdbc
@@ -4946,27 +4969,27 @@ LaunchSetup::
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_001_58f9
+    jp z, LaunchSetup_fatTypeCheck
 
     ld de, $ffff
     ld hl, $ffff
-    jp Jump_001_5c02
+    jp LaunchSetup_epilogueRet
 
 
-Jump_001_58f9:
+LaunchSetup_fatTypeCheck::
     ld de, $c7a9
     ld a, [de]
     ld c, a
     sub $02
-    jp nz, Jump_001_5905
+    jp nz, LaunchSetup_skipFat12
 
-    jr jr_001_5908
+    jr LaunchSetup_fat12Limit
 
-Jump_001_5905:
-    jp Jump_001_5918
+LaunchSetup_skipFat12::
+    jp LaunchSetup_fatOtherLimit
 
 
-jr_001_5908:
+LaunchSetup_fat12Limit::
     ld hl, sp+$0e
     ld [hl], $ff
     inc hl
@@ -4975,10 +4998,10 @@ jr_001_5908:
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_001_5925
+    jp LaunchSetup_seedClust2Sect
 
 
-Jump_001_5918:
+LaunchSetup_fatOtherLimit::
     ld hl, sp+$0e
     ld [hl], $f7
     inc hl
@@ -4988,7 +5011,7 @@ Jump_001_5918:
     inc hl
     ld [hl], $0f
 
-Jump_001_5925:
+LaunchSetup_seedClust2Sect::
     ld hl, sp+$20
     ld a, l
     ld d, h
@@ -5145,7 +5168,7 @@ Jump_001_5925:
     ld [hl+], a
     ld [hl], a
 
-Jump_001_59e4:
+LaunchSetup_walkClusters::
     ld hl, sp+$20
     ld c, l
     ld b, h
@@ -5196,20 +5219,20 @@ Jump_001_59e4:
     ld [hl], a
     ld hl, sp+$12
     inc [hl]
-    jr nz, jr_001_5a2c
+    jr nz, LaunchSetup_walkCont
 
     inc hl
     inc [hl]
-    jr nz, jr_001_5a2c
+    jr nz, LaunchSetup_walkCont
 
     inc hl
     inc [hl]
-    jr nz, jr_001_5a2c
+    jr nz, LaunchSetup_walkCont
 
     inc hl
     inc [hl]
 
-jr_001_5a2c:
+LaunchSetup_walkCont::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5240,27 +5263,27 @@ jr_001_5a2c:
     ld a, [hl]
     ld hl, sp+$04
     sub [hl]
-    jp nz, Jump_001_5a72
+    jp nz, LaunchSetup_appendCluster
 
     ld hl, sp+$1b
     ld a, [hl]
     ld hl, sp+$05
     sub [hl]
-    jp nz, Jump_001_5a72
+    jp nz, LaunchSetup_appendCluster
 
     ld hl, sp+$1c
     ld a, [hl]
     ld hl, sp+$06
     sub [hl]
-    jp nz, Jump_001_5a72
+    jp nz, LaunchSetup_appendCluster
 
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$07
     sub [hl]
-    jp z, Jump_001_5b12
+    jp z, LaunchSetup_eofCheck
 
-Jump_001_5a72:
+LaunchSetup_appendCluster::
     ld bc, $c7ab
     ld a, [bc]
     ld c, a
@@ -5389,7 +5412,7 @@ Jump_001_5a72:
     ld [hl+], a
     ld [hl], d
 
-Jump_001_5b12:
+LaunchSetup_eofCheck::
     ld hl, sp+$1a
     ld d, h
     ld e, l
@@ -5423,7 +5446,7 @@ Jump_001_5b12:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_001_59e4
+    jp c, LaunchSetup_walkClusters
 
     ld hl, sp+$1e
     ld e, [hl]
@@ -5579,7 +5602,7 @@ Jump_001_5b12:
     ld de, $0000
     ld hl, $0000
 
-Jump_001_5c02:
+LaunchSetup_epilogueRet::
     ld hl, $0244
     add hl, sp
     ld sp, hl
@@ -5587,338 +5610,339 @@ Jump_001_5c02:
 
 
 ; [ezgb]
-; MapCartTypeToUi: map cart/MBC type byte → $d3eb index for DrawCardTypeScreen
-; (0/1/2/3/4/6 buckets).
+; MapCartTypeToUi(type@sp+$02): cart byte → $d3eb UI bucket + battery/timer/rumble flags. Feeds DrawCardTypeScreen / launch.
+; Buckets → $d3eb: Jump_001_5d11=$0; Jump_001_5d19=$1; Jump_001_5d21=$2; Jump_001_5d29=$3; Jump_001_5d31=$4; Jump_001_5d39/Jump_001_5d41=$6; join Jump_001_5d46.
+; Jump_001_5d46: battery types → Jump_001_5db2/jr_001_5db2 $d3ef=1 else Jump_001_5daf → Jump_001_5dba=0; then Jump_001_5dbf.
+; Jump_001_5dbf: $0f/$10 → Jump_001_5dd4/jr_001_5dd4 $d3f0=1 else Jump_001_5dd1 → Jump_001_5ddc=0; Jump_001_5de1.
+; Jump_001_5de1: $1c..$1e jp-table → Jump_001_5e06 $d3f1=1 else Jump_001_5e0e=0; Jump_001_5e13 ret. Falls into RomLoaderMain.
 
 MapCartTypeToUi::
     ld hl, sp+$02
     ld a, [hl]
     or a
-    jp z, Jump_001_5d11
+    jp z, MapCartTypeToUi_bucket0
 
     ld hl, sp+$02
     ld a, [hl]
     sub $01
-    jp z, Jump_001_5d19
+    jp z, MapCartTypeToUi_bucket1
 
     ld hl, sp+$02
     ld a, [hl]
     sub $02
-    jp z, Jump_001_5d19
+    jp z, MapCartTypeToUi_bucket1
 
     ld hl, sp+$02
     ld a, [hl]
     sub $03
-    jp z, Jump_001_5d19
+    jp z, MapCartTypeToUi_bucket1
 
     ld hl, sp+$02
     ld a, [hl]
     sub $05
-    jp z, Jump_001_5d21
+    jp z, MapCartTypeToUi_bucket2
 
     ld hl, sp+$02
     ld a, [hl]
     sub $06
-    jp z, Jump_001_5d21
+    jp z, MapCartTypeToUi_bucket2
 
     ld hl, sp+$02
     ld a, [hl]
     sub $08
-    jp z, Jump_001_5d11
+    jp z, MapCartTypeToUi_bucket0
 
     ld hl, sp+$02
     ld a, [hl]
     sub $09
-    jp z, Jump_001_5d11
+    jp z, MapCartTypeToUi_bucket0
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0b
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0c
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0d
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0f
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $10
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $11
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $12
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $13
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $15
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $16
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $17
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $19
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1a
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1b
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1c
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1d
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1e
-    jp z, Jump_001_5d31
+    jp z, MapCartTypeToUi_bucket4
 
     ld hl, sp+$02
     ld a, [hl]
     sub $22
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $55
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $56
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $ea
-    jp z, Jump_001_5d19
+    jp z, MapCartTypeToUi_bucket1
 
     ld hl, sp+$02
     ld a, [hl]
     sub $fc
-    jp z, Jump_001_5d29
+    jp z, MapCartTypeToUi_bucket3
 
     ld hl, sp+$02
     ld a, [hl]
     sub $fd
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     sub $fe
-    jp z, Jump_001_5d39
+    jp z, MapCartTypeToUi_bucket6a
 
     ld hl, sp+$02
     ld a, [hl]
     inc a
-    jp z, Jump_001_5d19
+    jp z, MapCartTypeToUi_bucket1
 
-    jp Jump_001_5d41
+    jp MapCartTypeToUi_bucket6b
 
 
-Jump_001_5d11:
+MapCartTypeToUi_bucket0::
     ld hl, $d3eb
     ld [hl], $00
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d19:
+MapCartTypeToUi_bucket1::
     ld hl, $d3eb
     ld [hl], $01
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d21:
+MapCartTypeToUi_bucket2::
     ld hl, $d3eb
     ld [hl], $02
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d29:
+MapCartTypeToUi_bucket3::
     ld hl, $d3eb
     ld [hl], $03
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d31:
+MapCartTypeToUi_bucket4::
     ld hl, $d3eb
     ld [hl], $04
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d39:
+MapCartTypeToUi_bucket6a::
     ld hl, $d3eb
     ld [hl], $06
-    jp Jump_001_5d46
+    jp MapCartTypeToUi_batteryCheck
 
 
-Jump_001_5d41:
+MapCartTypeToUi_bucket6b::
     ld hl, $d3eb
     ld [hl], $06
 
-Jump_001_5d46:
+MapCartTypeToUi_batteryCheck::
     ld hl, sp+$02
     ld a, [hl]
     sub $03
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $06
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $09
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0d
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $0f
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $10
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $13
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $17
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1b
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $1e
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $22
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $fd
-    jp z, Jump_001_5db2
+    jp z, MapCartTypeToUi_batterySet
 
     ld hl, sp+$02
     ld a, [hl]
     inc a
-    jp nz, Jump_001_5daf
+    jp nz, MapCartTypeToUi_batterySkip
 
-    jr jr_001_5db2
+    jr MapCartTypeToUi_batterySet
 
-Jump_001_5daf:
-    jp Jump_001_5dba
+MapCartTypeToUi_batterySkip::
+    jp MapCartTypeToUi_batteryClear
 
 
-Jump_001_5db2:
-jr_001_5db2:
+MapCartTypeToUi_batterySet::
     ld hl, $d3ef
     ld [hl], $01
-    jp Jump_001_5dbf
+    jp MapCartTypeToUi_timerCheck
 
 
-Jump_001_5dba:
+MapCartTypeToUi_batteryClear::
     ld hl, $d3ef
     ld [hl], $00
 
-Jump_001_5dbf:
+MapCartTypeToUi_timerCheck::
     ld hl, sp+$02
     ld a, [hl]
     sub $0f
-    jp z, Jump_001_5dd4
+    jp z, MapCartTypeToUi_timerSet
 
     ld hl, sp+$02
     ld a, [hl]
     sub $10
-    jp nz, Jump_001_5dd1
+    jp nz, MapCartTypeToUi_timerSkip
 
-    jr jr_001_5dd4
+    jr MapCartTypeToUi_timerSet
 
-Jump_001_5dd1:
-    jp Jump_001_5ddc
+MapCartTypeToUi_timerSkip::
+    jp MapCartTypeToUi_timerClear
 
 
-Jump_001_5dd4:
-jr_001_5dd4:
+MapCartTypeToUi_timerSet::
     ld hl, $d3f0
     ld [hl], $01
-    jp Jump_001_5de1
+    jp MapCartTypeToUi_rumbleCheck
 
 
-Jump_001_5ddc:
+MapCartTypeToUi_timerClear::
     ld hl, $d3f0
     ld [hl], $00
 
-Jump_001_5de1:
+MapCartTypeToUi_rumbleCheck::
     ld hl, sp+$02
     ld a, [hl]
     sub $1c
-    jp c, Jump_001_5e0e
+    jp c, MapCartTypeToUi_rumbleClear
 
     ld a, $1e
     sub [hl]
-    jp c, Jump_001_5e0e
+    jp c, MapCartTypeToUi_rumbleClear
 
     ld a, [hl]
     add $e4
@@ -5932,32 +5956,34 @@ Jump_001_5de1:
     jp hl
 
 
-    jp Jump_001_5e06
+    jp MapCartTypeToUi_rumbleSet
 
 
-    jp Jump_001_5e06
+    jp MapCartTypeToUi_rumbleSet
 
 
-    jp Jump_001_5e06
+    jp MapCartTypeToUi_rumbleSet
 
 
-Jump_001_5e06:
+MapCartTypeToUi_rumbleSet::
     ld hl, $d3f1
     ld [hl], $01
-    jp Jump_001_5e13
+    jp MapCartTypeToUi_ret
 
 
-Jump_001_5e0e:
+MapCartTypeToUi_rumbleClear::
     ld hl, $d3f1
     ld [hl], $00
 
-Jump_001_5e13:
+MapCartTypeToUi_ret::
     ret
 
 
 ; [ezgb]
-; RomLoaderMain: main ROM loader (bank 1). SD stream → FPGA ROM buffer, MBC/size
-; config ($7FC*), then installs the WRAM boot stub. See docs/launch-trace.md.
+; RomLoaderMain(path@sp+$1c): Open_B6 → $ca0f; fail E=$ff Jump_001_601b. See launch-trace.
+; Jump_001_5e56: fsize→$c2a4/$c2a5; seek0; read $200 hdr@$c0a0; Jump_001_5ec8 checksum $134..$14c → $c5a3 (jr_001_5ef2).
+; Jump_001_5ef5: hdr cart/ROM/RAM → $d3ec/$d3ed/$d3ee + MapCartTypeToUi; if $d3eb!=1 Jump_001_5f2a → Jump_001_600f else jr_001_5f2d size gate.
+; Jump_001_5f6a: XOR-fold bytes (jr_001_5fe5); Jump_001_5fe8 cmp LE $e06c8834; hit jr_001_600a $d3eb=$05 (MBC1m) else Jump_001_6007; Jump_001_600f close ret E=status.
 
 RomLoaderMain::
     add sp, -$15
@@ -6000,13 +6026,13 @@ RomLoaderMain::
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_001_5e56
+    jp z, RomLoaderMain_readHdr
 
     ld e, $ff
-    jp Jump_001_601b
+    jp RomLoaderMain_failRetFf
 
 
-Jump_001_5e56:
+RomLoaderMain_readHdr::
     ld bc, $ca19
     ld e, c
     ld d, b
@@ -6082,14 +6108,14 @@ Jump_001_5e56:
     inc hl
     ld [hl], $01
 
-Jump_001_5ec8:
+RomLoaderMain_checksumLoop::
     ld a, $4c
     ld hl, sp+$0d
     sub [hl]
     ld a, $01
     inc hl
     sbc [hl]
-    jp c, Jump_001_5ef5
+    jp c, RomLoaderMain_mapCartType
 
     ld de, $c0a0
     dec hl
@@ -6110,16 +6136,16 @@ Jump_001_5ec8:
     ld [hl], a
     ld hl, sp+$0d
     inc [hl]
-    jr nz, jr_001_5ef2
+    jr nz, RomLoaderMain_checksumCont
 
     inc hl
     inc [hl]
 
-jr_001_5ef2:
-    jp Jump_001_5ec8
+RomLoaderMain_checksumCont::
+    jp RomLoaderMain_checksumLoop
 
 
-Jump_001_5ef5:
+RomLoaderMain_mapCartType::
     ld bc, $c1e7
     ld a, [bc]
     ld c, a
@@ -6146,22 +6172,22 @@ Jump_001_5ef5:
     ld hl, $d3eb
     ld a, [hl]
     sub $01
-    jp nz, Jump_001_5f2a
+    jp nz, RomLoaderMain_skipSizeGate
 
-    jr jr_001_5f2d
+    jr RomLoaderMain_sizeGate
 
-Jump_001_5f2a:
-    jp Jump_001_600f
+RomLoaderMain_skipSizeGate::
+    jp RomLoaderMain_closeRet
 
 
-jr_001_5f2d:
+RomLoaderMain_sizeGate::
     ld a, $20
     ld hl, $c2a4
     sub [hl]
     ld a, $00
     ld hl, $c2a5
     sbc [hl]
-    jp nc, Jump_001_600f
+    jp nc, RomLoaderMain_closeRet
 
     ld hl, $0004
     push hl
@@ -6188,14 +6214,14 @@ jr_001_5f2d:
     inc hl
     ld [hl], $01
 
-Jump_001_5f6a:
+RomLoaderMain_xorFold::
     ld a, $33
     ld hl, sp+$0d
     sub [hl]
     ld a, $01
     inc hl
     sbc [hl]
-    jp c, Jump_001_5fe8
+    jp c, RomLoaderMain_cmpMagic
 
     ld a, $01
     push af
@@ -6278,47 +6304,47 @@ Jump_001_5f6a:
     ld [hl], a
     ld hl, sp+$0d
     inc [hl]
-    jr nz, jr_001_5fe5
+    jr nz, RomLoaderMain_xorFoldCont
 
     inc hl
     inc [hl]
 
-jr_001_5fe5:
-    jp Jump_001_5f6a
+RomLoaderMain_xorFoldCont::
+    jp RomLoaderMain_xorFold
 
 
-Jump_001_5fe8:
+RomLoaderMain_cmpMagic::
     ld hl, sp+$08
     ld a, [hl]
     sub $34
-    jp nz, Jump_001_6007
+    jp nz, RomLoaderMain_skipMbc1m
 
     inc hl
     ld a, [hl]
     sub $88
-    jp nz, Jump_001_6007
+    jp nz, RomLoaderMain_skipMbc1m
 
     inc hl
     ld a, [hl]
     sub $6c
-    jp nz, Jump_001_6007
+    jp nz, RomLoaderMain_skipMbc1m
 
     inc hl
     ld a, [hl]
     sub $e0
-    jp nz, Jump_001_6007
+    jp nz, RomLoaderMain_skipMbc1m
 
-    jr jr_001_600a
+    jr RomLoaderMain_setMbc1m
 
-Jump_001_6007:
-    jp Jump_001_600f
+RomLoaderMain_skipMbc1m::
+    jp RomLoaderMain_closeRet
 
 
-jr_001_600a:
+RomLoaderMain_setMbc1m::
     ld hl, $d3eb
     ld [hl], $05
 
-Jump_001_600f:
+RomLoaderMain_closeRet::
     ld hl, $ca0f
     push hl
     call FarCall_03_768f
@@ -6326,14 +6352,16 @@ Jump_001_600f:
     ld hl, sp+$11
     ld e, [hl]
 
-Jump_001_601b:
+RomLoaderMain_failRetFf::
     add sp, $15
     ret
 
 
 ; [ezgb]
-; DrawCardTypeScreen: DrawInfoPanelRect then DrawString CardtypeStr and MBC name
-; (MbcNoneStr/MBC1/… via $d3eb index jump table).
+; DrawCardTypeScreen: panel + CardtypeStr; $d3eb jp-table → MBC name ApplyBasename into sp+$0a then DrawString.
+; MBC arms: Jump_001_606c, Jump_001_607d, Jump_001_608e, Jump_001_609f, Jump_001_60b0, Jump_001_60c1, Jump_001_60d2 → join Jump_001_60e0.
+; Jump_001_60e0: ROM 32<<n KB (jr_001_6117/jr_001_611b) U32ToAscii+SizeKbStr; RAM Jump_001_619e=0, Jump_001_61a3=8, Jump_001_61a8=$80, Jump_001_61ad=$20 → Jump_001_61af.
+; Jump_001_622e: $d3ef NoStr else YesStr; Jump_001_623f ReadJoypad; jr_001_624d/Jump_001_6250 until A/B; Jump_001_6258/jr_001_6258 ret.
 
 DrawCardTypeScreen::
     add sp, -$1e
@@ -6357,7 +6385,7 @@ DrawCardTypeScreen::
     ld a, $06
     ld hl, $d3eb
     sub [hl]
-    jp c, Jump_001_60e0
+    jp c, DrawCardTypeScreen_afterMbc
 
     ld hl, $d3eb
     ld e, [hl]
@@ -6369,28 +6397,28 @@ DrawCardTypeScreen::
     jp hl
 
 
-    jp Jump_001_606c
+    jp DrawCardTypeScreen_mbcNone
 
 
-    jp Jump_001_607d
+    jp DrawCardTypeScreen_mbc1
 
 
-    jp Jump_001_608e
+    jp DrawCardTypeScreen_mbc2
 
 
-    jp Jump_001_609f
+    jp DrawCardTypeScreen_mbc3
 
 
-    jp Jump_001_60b0
+    jp DrawCardTypeScreen_mbc5
 
 
-    jp Jump_001_60c1
+    jp DrawCardTypeScreen_mbc1m
 
 
-    jp Jump_001_60d2
+    jp DrawCardTypeScreen_mbcNot
 
 
-Jump_001_606c:
+DrawCardTypeScreen_mbcNone::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6399,10 +6427,10 @@ Jump_001_606c:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_607d:
+DrawCardTypeScreen_mbc1::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6411,10 +6439,10 @@ Jump_001_607d:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_608e:
+DrawCardTypeScreen_mbc2::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6423,10 +6451,10 @@ Jump_001_608e:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_609f:
+DrawCardTypeScreen_mbc3::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6435,10 +6463,10 @@ Jump_001_609f:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_60b0:
+DrawCardTypeScreen_mbc5::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6447,10 +6475,10 @@ Jump_001_60b0:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_60c1:
+DrawCardTypeScreen_mbc1m::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6459,10 +6487,10 @@ Jump_001_60c1:
     push bc
     call ApplyBasename
     add sp, $04
-    jp Jump_001_60e0
+    jp DrawCardTypeScreen_afterMbc
 
 
-Jump_001_60d2:
+DrawCardTypeScreen_mbcNot::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6472,7 +6500,7 @@ Jump_001_60d2:
     call ApplyBasename
     add sp, $04
 
-Jump_001_60e0:
+DrawCardTypeScreen_afterMbc::
     ld hl, sp+$0a
     ld c, l
     ld b, h
@@ -6505,15 +6533,15 @@ Jump_001_60e0:
     push af
     ld bc, $0020
     pop af
-    jr jr_001_611b
+    jr DrawCardTypeScreen_romShiftDone
 
-jr_001_6117:
+DrawCardTypeScreen_romShiftLoop::
     sla c
     rl b
 
-jr_001_611b:
+DrawCardTypeScreen_romShiftDone::
     dec a
-    jr nz, jr_001_6117
+    jr nz, DrawCardTypeScreen_romShiftLoop
 
     ld hl, sp+$04
     ld [hl], c
@@ -6579,45 +6607,45 @@ jr_001_611b:
     ld hl, $d3ed
     ld a, [hl]
     or a
-    jp z, Jump_001_619e
+    jp z, DrawCardTypeScreen_ram0
 
     ld hl, $d3ed
     ld a, [hl]
     sub $01
-    jp z, Jump_001_61a3
+    jp z, DrawCardTypeScreen_ram8
 
     ld hl, $d3ed
     ld a, [hl]
     sub $02
-    jp z, Jump_001_61a3
+    jp z, DrawCardTypeScreen_ram8
 
     ld hl, $d3ed
     ld a, [hl]
     sub $04
-    jp z, Jump_001_61a8
+    jp z, DrawCardTypeScreen_ram80
 
-    jp Jump_001_61ad
+    jp DrawCardTypeScreen_ram20
 
 
-Jump_001_619e:
+DrawCardTypeScreen_ram0::
     ld c, $00
-    jp Jump_001_61af
+    jp DrawCardTypeScreen_afterRam
 
 
-Jump_001_61a3:
+DrawCardTypeScreen_ram8::
     ld c, $08
-    jp Jump_001_61af
+    jp DrawCardTypeScreen_afterRam
 
 
-Jump_001_61a8:
+DrawCardTypeScreen_ram80::
     ld c, $80
-    jp Jump_001_61af
+    jp DrawCardTypeScreen_afterRam
 
 
-Jump_001_61ad:
+DrawCardTypeScreen_ram20::
     ld c, $20
 
-Jump_001_61af:
+DrawCardTypeScreen_afterRam::
     ld hl, sp+$0a
     ld a, l
     ld d, h
@@ -6686,7 +6714,7 @@ Jump_001_61af:
     xor a
     ld hl, $d3ef
     or [hl]
-    jp z, Jump_001_622e
+    jp z, DrawCardTypeScreen_batteryNo
 
     ld hl, $4e5c
     push hl
@@ -6697,10 +6725,10 @@ Jump_001_61af:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_623f
+    jp DrawCardTypeScreen_waitJoypad
 
 
-Jump_001_622e:
+DrawCardTypeScreen_batteryNo::
     ld hl, $4e5c
     push hl
     ld a, $00
@@ -6711,31 +6739,30 @@ Jump_001_622e:
     call DrawString
     add sp, $05
 
-Jump_001_623f:
+DrawCardTypeScreen_waitJoypad::
     call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     and $10
-    jr nz, jr_001_624d
+    jr nz, DrawCardTypeScreen_waitA
 
-    jp Jump_001_6250
-
-
-jr_001_624d:
-    jp Jump_001_6258
+    jp DrawCardTypeScreen_waitB
 
 
-Jump_001_6250:
+DrawCardTypeScreen_waitA::
+    jp DrawCardTypeScreen_epilogueRet
+
+
+DrawCardTypeScreen_waitB::
     ld a, c
     and $20
-    jr nz, jr_001_6258
+    jr nz, DrawCardTypeScreen_epilogueRet
 
-    jp Jump_001_623f
+    jp DrawCardTypeScreen_waitJoypad
 
 
-Jump_001_6258:
-jr_001_6258:
+DrawCardTypeScreen_epilogueRet::
     add sp, $1e
     ret
 
@@ -6807,9 +6834,10 @@ DrawInfoPanelRect::
 
 
 ; [ezgb]
-; BootRomInfoMenu: two-item menu BootMenuBootStr / BootMenuRomInfoStr over DrawInfoPanelRect.
-; Up/Down move; A on ROM info → DrawCardTypeScreen; A on BOOT draws BootMenuLoadingStr and
-; returns selection in E; B returns E=$ff. Orphan before BackupSaveDump.
+; BootRomInfoMenu: locals sel@sp+$02 (0=BOOT/1=ROM INFO), redraw@sp+$03. Jump_001_62d9 DrawInfoPanelRect; Jump_001_62dc hilite BOOT strings.
+; Jump_001_6328: ROM INFO ink twin. Jump_001_6364 ReadJoypad: $04 jr_001_637b sel-- → Jump_001_6386; $08 jr_001_6390 sel++ → Jump_001_63a3.
+; $10 jr_001_63ad: sel==1 jr_001_63ba DrawCardTypeScreen → Jump_001_62d9; else Jump_001_63b7 → Jump_001_63e2 LoadingStr.
+; $20 Jump_001_63c7/jr_001_63d1 E=$ff → Jump_001_6421; else Jump_001_63d6 Delay → Jump_001_62dc. Jump_001_63e2 Loading then Jump_001_6421 ret E=sel.
 
 BootRomInfoMenu::
     push af
@@ -6819,19 +6847,19 @@ BootRomInfoMenu::
     dec hl
     ld [hl], $00
 
-Jump_001_62d9:
+BootRomInfoMenu_drawPanel::
     call DrawInfoPanelRect
 
-Jump_001_62dc:
+BootRomInfoMenu_hiliteBoot::
     xor a
     ld hl, sp+$03
     or [hl]
-    jp z, Jump_001_6364
+    jp z, BootRomInfoMenu_inputLoop
 
     xor a
     dec hl
     or [hl]
-    jp nz, Jump_001_6328
+    jp nz, BootRomInfoMenu_romInfoInk
 
     ld hl, $0002
     push hl
@@ -6865,10 +6893,10 @@ Jump_001_62dc:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_6364
+    jp BootRomInfoMenu_inputLoop
 
 
-Jump_001_6328:
+BootRomInfoMenu_romInfoInk::
     ld hl, $0000
     push hl
     ld a, $03
@@ -6902,7 +6930,7 @@ Jump_001_6328:
     call DrawString
     add sp, $05
 
-Jump_001_6364:
+BootRomInfoMenu_inputLoop::
     ld hl, sp+$03
     ld [hl], $00
     call ReadJoypad
@@ -6914,31 +6942,31 @@ Jump_001_6364:
     dec hl
     ld a, [hl]
     and $04
-    jr nz, jr_001_637b
+    jr nz, BootRomInfoMenu_selDec
 
-    jp Jump_001_6386
+    jp BootRomInfoMenu_afterSelDec
 
 
-jr_001_637b:
+BootRomInfoMenu_selDec::
     xor a
     ld hl, sp+$02
     or [hl]
-    jp z, Jump_001_6386
+    jp z, BootRomInfoMenu_afterSelDec
 
     dec [hl]
     inc hl
     ld [hl], $01
 
-Jump_001_6386:
+BootRomInfoMenu_afterSelDec::
     ld hl, sp+$00
     ld a, [hl]
     and $08
-    jr nz, jr_001_6390
+    jr nz, BootRomInfoMenu_selInc
 
-    jp Jump_001_63a3
+    jp BootRomInfoMenu_afterSelInc
 
 
-jr_001_6390:
+BootRomInfoMenu_selInc::
     ld hl, sp+$02
     ld c, [hl]
     ld b, $00
@@ -6947,65 +6975,65 @@ jr_001_6390:
     ld a, b
     sbc $00
     rlca
-    jp nc, Jump_001_63a3
+    jp nc, BootRomInfoMenu_afterSelInc
 
     inc [hl]
     inc hl
     ld [hl], $01
 
-Jump_001_63a3:
+BootRomInfoMenu_afterSelInc::
     ld hl, sp+$00
     ld a, [hl]
     and $10
-    jr nz, jr_001_63ad
+    jr nz, BootRomInfoMenu_confirmA
 
-    jp Jump_001_63c7
+    jp BootRomInfoMenu_checkB
 
 
-jr_001_63ad:
+BootRomInfoMenu_confirmA::
     ld hl, sp+$02
     ld a, [hl]
     sub $01
-    jp nz, Jump_001_63b7
+    jp nz, BootRomInfoMenu_bootLoading
 
-    jr jr_001_63ba
+    jr BootRomInfoMenu_romInfoScreen
 
-Jump_001_63b7:
-    jp Jump_001_63e2
+BootRomInfoMenu_bootLoading::
+    jp BootRomInfoMenu_loadingStr
 
 
-jr_001_63ba:
+BootRomInfoMenu_romInfoScreen::
     call DrawCardTypeScreen
     ld hl, sp+$03
     ld [hl], $01
     dec hl
     ld [hl], $00
-    jp Jump_001_62d9
+    jp BootRomInfoMenu_drawPanel
 
 
-Jump_001_63c7:
+BootRomInfoMenu_checkB::
     ld hl, sp+$00
     ld a, [hl]
     and $20
-    jr nz, jr_001_63d1
+    jr nz, BootRomInfoMenu_cancelRetFf
 
-    jp Jump_001_63d6
+    jp BootRomInfoMenu_delayRedraw
 
 
-jr_001_63d1:
+BootRomInfoMenu_cancelRetFf::
     ld e, $ff
-    jp Jump_001_6421
+    jp BootRomInfoMenu_epilogueRet
 
 
-Jump_001_63d6:
+BootRomInfoMenu_delayRedraw::
     ld hl, $0064
     push hl
     call Delay
     add sp, $02
-    jp Jump_001_62dc
+    jp BootRomInfoMenu_hiliteBoot
 
 
-Jump_001_63e2:
+BootRomInfoMenu_loadingStr::
     ld hl, $0000
     push hl
     ld a, $00
@@ -7041,7 +7069,7 @@ Jump_001_63e2:
     ld hl, sp+$02
     ld e, [hl]
 
-Jump_001_6421:
+BootRomInfoMenu_epilogueRet::
     add sp, $04
     ret
 
@@ -7056,9 +7084,10 @@ BootMenuLoadingStr::
     db "Loading", $00
 
 ; [ezgb]
-; BackupSaveDump: FRAM→SAVER dump used by BackupSavePrompt. Opens via FarCall_06_7309
-; ($ca0f path obj, $c3a5, mode $12), writes chunks (FarCall_07_7739), spinner . / .. / ...,
-; touches page $11 RTC/meta. Args: two size words + path ptr (often empty $68a9).
+; BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_6738 ret.
+; Jump_001_647b: while offset < size@sp+$0f: bank FRAM, VramCopyStack $200, FarCall_07_7739 write.
+; Spinner ++sp+$04: Jump_001_652f; ==3 jr_001_6532 reset0; Jump_001_6536 "."; Jump_001_6551 → Jump_001_655b/jr_001_655e ".."; Jump_001_6572 "..."; Jump_001_6583 +=$200 → Jump_001_647b.
+; Jump_001_65a1: $d3f6==$77 → jr_001_65af Memset+$A220 pack+write else Jump_001_65ac → Jump_001_672f close 768f; Jump_001_6738 fail (jr_001_673f/jr_001_6743 strs).
 
 BackupSaveDump::
     add sp, -$0b
@@ -7080,7 +7109,7 @@ BackupSaveDump::
     ld c, e
     ld a, c
     or a
-    jp nz, Jump_001_6738
+    jp nz, BackupSaveDump_epilogueRet
 
     ld hl, $0000
     push hl
@@ -7099,7 +7128,7 @@ BackupSaveDump::
     ld [hl+], a
     ld [hl], a
 
-Jump_001_647b:
+BackupSaveDump_writeLoop::
     ld hl, sp+$07
     ld d, h
     ld e, l
@@ -7118,7 +7147,7 @@ Jump_001_647b:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_001_65a1
+    jp nc, BackupSaveDump_checkRtcMagic
 
     ld bc, $4000
     push bc
@@ -7224,23 +7253,23 @@ Jump_001_647b:
     inc [hl]
     ld a, [hl]
     sub $03
-    jp nz, Jump_001_652f
+    jp nz, BackupSaveDump_spinnerSkipReset
 
-    jr jr_001_6532
+    jr BackupSaveDump_spinnerReset0
 
-Jump_001_652f:
-    jp Jump_001_6536
+BackupSaveDump_spinnerSkipReset::
+    jp BackupSaveDump_spinnerDot
 
 
-jr_001_6532:
+BackupSaveDump_spinnerReset0::
     ld hl, sp+$04
     ld [hl], $00
 
-Jump_001_6536:
+BackupSaveDump_spinnerDot::
     xor a
     ld hl, sp+$04
     or [hl]
-    jp nz, Jump_001_6551
+    jp nz, BackupSaveDump_afterDot
 
     ld hl, $0a0b
     push hl
@@ -7251,22 +7280,22 @@ Jump_001_6536:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_6583
+    jp BackupSaveDump_advance200
 
 
-Jump_001_6551:
+BackupSaveDump_afterDot::
     ld hl, sp+$04
     ld a, [hl]
     sub $01
-    jp nz, Jump_001_655b
+    jp nz, BackupSaveDump_spinnerSkipDots
 
-    jr jr_001_655e
+    jr BackupSaveDump_spinnerDots
 
-Jump_001_655b:
-    jp Jump_001_6572
+BackupSaveDump_spinnerSkipDots::
+    jp BackupSaveDump_spinnerEllipsis
 
 
-jr_001_655e:
+BackupSaveDump_spinnerDots::
     ld hl, $0a0b
     push hl
     ld a, $03
@@ -7276,10 +7305,10 @@ jr_001_655e:
     push hl
     call DrawString
     add sp, $05
-    jp Jump_001_6583
+    jp BackupSaveDump_advance200
 
 
-Jump_001_6572:
+BackupSaveDump_spinnerEllipsis::
     ld hl, $0a0b
     push hl
     ld a, $03
@@ -7290,7 +7319,7 @@ Jump_001_6572:
     call DrawString
     add sp, $05
 
-Jump_001_6583:
+BackupSaveDump_advance200::
     ld hl, sp+$07
     ld e, [hl]
     inc hl
@@ -7314,22 +7343,22 @@ Jump_001_6583:
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp Jump_001_647b
+    jp BackupSaveDump_writeLoop
 
 
-Jump_001_65a1:
+BackupSaveDump_checkRtcMagic::
     ld hl, $d3f6
     ld a, [hl]
     sub $77
-    jp nz, Jump_001_65ac
+    jp nz, BackupSaveDump_skipRtcPack
 
-    jr jr_001_65af
+    jr BackupSaveDump_rtcPackWrite
 
-Jump_001_65ac:
-    jp Jump_001_672f
+BackupSaveDump_skipRtcPack::
+    jp BackupSaveDump_close
 
 
-jr_001_65af:
+BackupSaveDump_rtcPackWrite::
     ld hl, $0030
     push hl
     ld a, $00
@@ -7581,13 +7610,13 @@ jr_001_65af:
     call FarCall_07_7739
     add sp, $08
 
-Jump_001_672f:
+BackupSaveDump_close::
     ld hl, $ca0f
     push hl
     call FarCall_03_768f
     add sp, $02
 
-Jump_001_6738:
+BackupSaveDump_epilogueRet::
     add sp, $0b
     ret
 
@@ -7604,8 +7633,10 @@ jr_001_6743:
     ld l, $00
 
 ; [ezgb]
-; BackupSavePrompt: draw BACKUPSAVE box. Arg (page $11 $A001) ==1 -> auto 'Saving..'
-; and dump; else prompt [B]NO=skip / [A]OK=dump FRAM to SAVER/*.SAV.
+; BackupSavePrompt(auto@sp+$12, size@sp+$10): draw BACKUPSAVE box + BackupUiStrings.
+; auto!=1 → Jump_001_6784 → Jump_001_67d0 prompt; else jr_001_6787: Saving str, U32Shl size<<$0d, BackupSaveDump → Jump_001_6891.
+; Jump_001_67d0: draw [B]NO/[A]OK; Jump_001_6821 joy loop: A($10) jr_001_682f dump twin → Jump_001_6891; B($20) Jump_001_6889 skip → Jump_001_6891; else spin.
+; Jump_001_6891/jr_001_6891: epilogue ret.
 
 BackupSavePrompt::
     push af
@@ -7640,15 +7671,15 @@ BackupSavePrompt::
     ld hl, sp+$12
     ld a, [hl]
     sub $01
-    jp nz, Jump_001_6784
+    jp nz, BackupSavePrompt_skipAuto
 
-    jr jr_001_6787
+    jr BackupSavePrompt_autoDump
 
-Jump_001_6784:
-    jp Jump_001_67d0
+BackupSavePrompt_skipAuto::
+    jp BackupSavePrompt_drawConfirm
 
 
-jr_001_6787:
+BackupSavePrompt_autoDump::
     ld hl, $0a05
     push hl
     ld a, $09
@@ -7697,10 +7728,10 @@ jr_001_6787:
     push hl
     call BackupSaveDump
     add sp, $06
-    jp Jump_001_6891
+    jp BackupSavePrompt_epilogueRet
 
 
-Jump_001_67d0:
+BackupSavePrompt_drawConfirm::
     ld hl, $0002
     push hl
     ld a, $03
@@ -7735,7 +7766,7 @@ Jump_001_67d0:
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0c0a
+    ld hl, DrawDirEntryLabel_bankShift
     push hl
     ld a, $05
     push af
@@ -7745,18 +7776,18 @@ Jump_001_67d0:
     call DrawString
     add sp, $05
 
-Jump_001_6821:
+BackupSavePrompt_joyLoop::
     call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     and $10
-    jr nz, jr_001_682f
+    jr nz, BackupSavePrompt_confirmDump
 
-    jp Jump_001_6889
+    jp BackupSavePrompt_checkB
 
 
-jr_001_682f:
+BackupSavePrompt_confirmDump::
     ld hl, $0a05
     push hl
     ld a, $09
@@ -7820,19 +7851,18 @@ jr_001_682f:
     push hl
     call BackupSaveDump
     add sp, $06
-    jp Jump_001_6891
+    jp BackupSavePrompt_epilogueRet
 
 
-Jump_001_6889:
+BackupSavePrompt_checkB::
     ld a, c
     and $20
-    jr nz, jr_001_6891
+    jr nz, BackupSavePrompt_epilogueRet
 
-    jp Jump_001_6821
+    jp BackupSavePrompt_joyLoop
 
 
-Jump_001_6891:
-jr_001_6891:
+BackupSavePrompt_epilogueRet::
     add sp, $08
     ret
 

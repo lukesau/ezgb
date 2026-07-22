@@ -125,6 +125,7 @@ JoypadTransitionInterrupt::
 ; RunCallbackList: shared IRQ dispatcher. HL = list base (uint16 fn ptrs,
 ; 0-terminated). Nest via wIntNest; CallHL each slot. Vectors: VBlank→wVBlankCallbacks
 ; ($d6d3), LCD→$d6e3, Timer→$d6f3, Serial→$d703, Joypad→$d713.
+; jr_000_0071: walk until NUL ptr; jr_000_0080: --wIntNest; nest≠0 → ret else jr_000_008e reti.
 
 RunCallbackList::
     push af
@@ -327,8 +328,10 @@ HeaderGlobalChecksum::
     db $7b, $57
 
 ; [ezgb]
-; Kernel entry after boot ROM (title EZGB). See docs/boot-map.md.
-; After bank1 switch, calls BootUnpackWramTables ($68b6) then BatteryCheck.
+; KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.
+; jr_000_015d: zero WRAM $DFFF down $2000 (B/C nested); jr_000_0169: OAM $FEFF..$100; jr_000_0172: HRAM $FFFF..$80.
+; Save boot A@$d6c9; bank1; LcdOff; scroll/STAT/WY/WX init; jr_000_019e: copy OamDmaStub → $FF80.
+; Register VBlank/Serial; BGP/OBP/LCDC/IE; serial SB=$66 SC=$80; BootUnpackWramTables ($68b6); BatteryCheck; fall HaltLoop.
 
 KernelEntry::
     di
@@ -1556,6 +1559,10 @@ RegisterJoypadCallback::
     jp InstallCallbackSlot
 
 
+; [ezgb]
+; RemoveCallbackSlot: find BC in uint16 list at HL; zero slot; compact tail (jr_000_0661).
+; Empty head → ret; mismatch → recurse/self walk; match → clear + slide remaining ptrs until NUL.
+
 RemoveCallbackSlot::
     ld a, [hl+]
     ld e, a
@@ -1596,6 +1603,7 @@ jr_000_0661:
 ; [ezgb]
 ; InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.
 ; RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI.
+; Occupied → skip+self; jr_000_0673: write BC at free NUL slot (hi then lo) ret.
 
 InstallCallbackSlot::
     ld a, [hl+]
@@ -1611,6 +1619,10 @@ jr_000_0673:
     ld [hl], c
     ret
 
+
+; [ezgb]
+; VBlankCallback: ++frame counter $d6d1/$d6d2 (jr_000_067f carry); call OAM DMA $FF80; set $d6ce=1.
+; Registered by KernelEntry via RegisterVBlankCallback. WaitVBlankFlag polls $d6ce.
 
 VBlankCallback::
     ld hl, $d6d1
@@ -1629,6 +1641,7 @@ jr_000_067f:
 
 ; [ezgb]
 ; WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off.
+; LCDC bit7 clear → ret. Clear $d6ce under di/ei; jr_000_0692: halt until $d6ce≠0; clear + ret.
 
 WaitVBlankFlag::
     ldh a, [rLCDC]
@@ -1654,27 +1667,32 @@ jr_000_0692:
 
 ; [ezgb]
 ; LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off.
+; LCDC bit7 clear (add a → NC) → ret. jr_000_06a3: spin while LY≥$92; jr_000_06a9: spin while LY<$91; then LCDC&=$7f.
 
 LcdOff::
     ldh a, [rLCDC]
     add a
     ret nc
 
-jr_000_06a3:
+LcdOff_waitLyHigh::
     ldh a, [rLY]
     cp $92
-    jr nc, jr_000_06a3
+    jr nc, LcdOff_waitLyHigh
 
-jr_000_06a9:
+LcdOff_waitLyLow::
     ldh a, [rLY]
     cp $91
-    jr c, jr_000_06a9
+    jr c, LcdOff_waitLyLow
 
     ldh a, [rLCDC]
     and $7f
     ldh [rLCDC], a
     ret
 
+
+; [ezgb]
+; OamDmaStub: source for HRAM OAM DMA at $FF80 (KernelEntry copies 10 bytes).
+; ldh [rDMA],$c0; jr_000_06bc: delay loop A=$28 then ret. Called from VBlankCallback.
 
 OamDmaStub::
     ld a, $c0
@@ -1687,6 +1705,11 @@ jr_000_06bc:
 
     ret
 
+
+; [ezgb]
+; SerialCallback: ISR for serial xfer; state in $d6cd, payload $d6cc.
+; jr_000_06d0: state≠2 → if state==1 expect rSB=$55 else $d6cd=$04 (jr_000_06e0); state2: store rSB→$d6cc.
+; jr_000_06de/06e0: clear/set $d6cd, SC=0, SB=$66; jr_000_06ea: re-arm SC=$80 ret. Orphan before SetGfxModeStack.
 
 SerialCallback::
     ld a, [$d6cd]
@@ -1925,6 +1948,10 @@ FarCallTrampoline::
     ret
 
 
+; [ezgb]
+; WaitJoypadSelect: spin ReadJoypad until pad==$40 (SELECT); then Delay+$00c8.
+; Jump_000_07ce: retry; jr_000_07d1: delay ret. Orphan before PlotBitRowXY.
+
 WaitJoypadSelect::
     call ReadJoypad
     ld c, e
@@ -1951,20 +1978,21 @@ jr_000_07d1:
 
 
 ; [ezgb]
-; PlotBitRowXY(flags, x, y): plot up to 8 pixels from a bit row via PlotPixelXY.
-; bit0→x+7 … bit7→x (MSB left). Used by bit-pattern glyph drawers.
-; Orphan after WaitJoypadSelect; Call_000_0803 is a mid-body fallthrough label.
+; PlotBitRowXY(flags@sp+$02, x@sp+$03, y@sp+$04): plot up to 8 pixels via PlotPixelXY. bit0→x+7 … bit7→x (MSB left).
+; Per bit: test flag; set → jr_ plot PlotPixelXY(x+offset,y); clear → Jump_ skip. Chain:
+; bit0 jr_000_07e5 / Jump_000_07f7; bit1 jr_000_0801 / Jump_000_0813; bit2 jr_000_081d / Jump_000_082f; bit3 jr_000_0839 / Jump_000_084c;
+; bit4 jr_000_0856 / Jump_000_0868; bit5 jr_000_0872 / Jump_000_0883; bit6 jr_000_088d / Jump_000_089d; bit7 jr_000_08a7 / Jump_000_08b5 ret.
 
 PlotBitRowXY::
     ld hl, sp+$02
     ld a, [hl]
     and $01
-    jr nz, jr_000_07e5
+    jr nz, PlotBitRowXY_bit0Plot
 
-    jp Jump_000_07f7
+    jp PlotBitRowXY_bit0Skip
 
 
-jr_000_07e5:
+PlotBitRowXY_bit0Plot::
     ld hl, sp+$03
     ld a, [hl]
     add $07
@@ -1979,16 +2007,16 @@ jr_000_07e5:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_07f7:
+PlotBitRowXY_bit0Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $02
-    jr nz, jr_000_0801
+    jr nz, PlotBitRowXY_bit1Plot
 
-    jp Jump_000_0813
+    jp PlotBitRowXY_bit1Skip
 
 
-jr_000_0801:
+PlotBitRowXY_bit1Plot::
     ld hl, sp+$03
     ld a, [hl]
     add $06
@@ -2003,16 +2031,16 @@ jr_000_0801:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_0813:
+PlotBitRowXY_bit1Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $04
-    jr nz, jr_000_081d
+    jr nz, PlotBitRowXY_bit2Plot
 
-    jp Jump_000_082f
+    jp PlotBitRowXY_bit2Skip
 
 
-jr_000_081d:
+PlotBitRowXY_bit2Plot::
     ld hl, sp+$03
     ld a, [hl]
     add $05
@@ -2027,16 +2055,16 @@ jr_000_081d:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_082f:
+PlotBitRowXY_bit2Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $08
-    jr nz, jr_000_0839
+    jr nz, PlotBitRowXY_bit3Plot
 
-    jp Jump_000_084c
+    jp PlotBitRowXY_bit3Skip
 
 
-jr_000_0839:
+PlotBitRowXY_bit3Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2053,16 +2081,16 @@ jr_000_0839:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_084c:
+PlotBitRowXY_bit3Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $10
-    jr nz, jr_000_0856
+    jr nz, PlotBitRowXY_bit4Plot
 
-    jp Jump_000_0868
+    jp PlotBitRowXY_bit4Skip
 
 
-jr_000_0856:
+PlotBitRowXY_bit4Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2078,16 +2106,16 @@ jr_000_0856:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_0868:
+PlotBitRowXY_bit4Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $20
-    jr nz, jr_000_0872
+    jr nz, PlotBitRowXY_bit5Plot
 
-    jp Jump_000_0883
+    jp PlotBitRowXY_bit5Skip
 
 
-jr_000_0872:
+PlotBitRowXY_bit5Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2102,16 +2130,16 @@ jr_000_0872:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_0883:
+PlotBitRowXY_bit5Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $40
-    jr nz, jr_000_088d
+    jr nz, PlotBitRowXY_bit6Plot
 
-    jp Jump_000_089d
+    jp PlotBitRowXY_bit6Skip
 
 
-jr_000_088d:
+PlotBitRowXY_bit6Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2125,16 +2153,16 @@ jr_000_088d:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_089d:
+PlotBitRowXY_bit6Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $80
-    jr nz, jr_000_08a7
+    jr nz, PlotBitRowXY_bit7Plot
 
-    jp Jump_000_08b5
+    jp PlotBitRowXY_ret
 
 
-jr_000_08a7:
+PlotBitRowXY_bit7Plot::
     ld hl, sp+$04
     ld a, [hl]
     push af
@@ -2146,7 +2174,7 @@ jr_000_08a7:
     call PlotPixelXY
     add sp, $02
 
-Jump_000_08b5:
+PlotBitRowXY_ret::
     ret
 
 
@@ -2154,8 +2182,10 @@ Jump_000_08b5:
 
 
 ; [ezgb]
-; DrawString (ptr, len, screen pos). Highest fan-in text primitive (~86 callers).
-; Cursor set by SetTextCursor ($2765), advanced by AdvanceTextCursor ($20f4).
+; DrawString(ptr, len, screen pos): highest fan-in text primitive (~86 callers). SetTextCursor then glyph loop.
+; len==0 → max=$11 else Jump_000_08d5 copy len; both meet Jump_000_08db stash ptr@sp+$00, C=0.
+; Jump_000_08e5: if C≥max → Jump_000_0927 ret; *ptr==0 → Jump_000_0909 StoreDrawParams + DrawGlyphAdvance $20; else ++ptr (jr_000_08fd) DrawGlyphAdvance(char).
+; Jump_000_0923: ++C → Jump_000_08e5; Jump_000_0927 ret.
 
 DrawString::
     push af
@@ -2173,20 +2203,20 @@ DrawString::
     xor a
     ld hl, sp+$07
     or [hl]
-    jp nz, Jump_000_08d5
+    jp nz, DrawString_copyLen
 
     ld hl, sp+$02
     ld [hl], $11
-    jp Jump_000_08db
+    jp DrawString_stashPtr
 
 
-Jump_000_08d5:
+DrawString_copyLen::
     ld hl, sp+$07
     ld a, [hl]
     ld hl, sp+$02
     ld [hl], a
 
-Jump_000_08db:
+DrawString_stashPtr::
     ld hl, sp+$05
     ld a, [hl+]
     ld e, [hl]
@@ -2195,11 +2225,11 @@ Jump_000_08db:
     ld [hl], e
     ld c, $00
 
-Jump_000_08e5:
+DrawString_glyphLoop::
     ld a, c
     ld hl, sp+$02
     sub [hl]
-    jp nc, Jump_000_0927
+    jp nc, DrawString_epilogueRet
 
     dec hl
     dec hl
@@ -2209,26 +2239,26 @@ Jump_000_08e5:
     ld a, [de]
     ld b, a
     or a
-    jp z, Jump_000_0909
+    jp z, DrawString_drawSpace
 
     dec hl
     inc [hl]
-    jr nz, jr_000_08fd
+    jr nz, DrawString_drawChar
 
     inc hl
     inc [hl]
 
-jr_000_08fd:
+DrawString_drawChar::
     push bc
     push bc
     inc sp
     call DrawGlyphAdvance
     add sp, $01
     pop bc
-    jp Jump_000_0923
+    jp DrawString_incC
 
 
-Jump_000_0909:
+DrawString_drawSpace::
     push bc
     ld hl, $0000
     push hl
@@ -2246,12 +2276,12 @@ Jump_000_0909:
     add sp, $01
     pop bc
 
-Jump_000_0923:
+DrawString_incC::
     inc c
-    jp Jump_000_08e5
+    jp DrawString_glyphLoop
 
 
-Jump_000_0927:
+DrawString_epilogueRet::
     add sp, $03
     ret
 
@@ -2260,6 +2290,7 @@ Jump_000_0927:
 ; DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
 ; Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
 ; See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).
+; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; ≥$14 → 0; Jump_000_0982 ret.
 
 DrawU32Decimal::
     add sp, -$15
@@ -2328,6 +2359,7 @@ Jump_000_0982:
 ; [ezgb]
 ; SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);
 ; then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.
+; Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr.
 
 SdReadRetryCount::
     ld hl, $cc2f
@@ -2352,8 +2384,10 @@ FileSystemErrorStr::
     db "File system error!", $00
 
 ; [ezgb]
-; MemCmp_B0(s1, s2, n): byte-identical to MemCmp_B5/B9 (FatFs mem_cmp). -$09 frame.
-; DirList hides ezgb.dat via this.
+; MemCmp_B0(s1@sp+$0b, s2@sp+$0d, n@sp+$0f): FatFs mem_cmp twin of MemCmp_B5/B9. Frame -$09; Diff@sp+$03=0.
+; Jump_000_09d0: --n; if was0 → Jump_000_0a11; else *s1++ (jr_000_09e6 carry), *s2++ (jr_000_09f9 carry).
+; jr_000_09f9: sex(*s1)-*s2 → diff@sp+$03; if 0 → Jump_000_09d0 else fall Jump_000_0a11.
+; Jump_000_0a11: DE=diff ret. DirList hides ezgb.dat via this.
 
 MemCmp_B0::
     add sp, -$09
@@ -2450,6 +2484,10 @@ Jump_000_0a11:
     ret
 
 
+; [ezgb]
+; MemSet8_B0(dest@sp+$04, byte@sp+$06, n@sp+$08): fill n bytes (u8 count) with byte.
+; Jump_000_0a27: while n--: *dest++=byte (jr_000_0a3d); Jump_000_0a40 ret. Sibling of Memset; used near DirList.
+
 MemSet8_B0::
     push af
     ld hl, sp+$04
@@ -2494,7 +2532,11 @@ Jump_000_0a40:
 
 
 ; [ezgb]
-; DirList: file-browser directory enumerator; hides ezgb.dat via MemCmp_B0.
+; DirList: enumerate into $c2a0; count $c2a2/$c2a3; cap 16 (sp+$04).
+; Jump_000_0a56: farcall readdir; fail/empty → Jump_000_0a83 → Jump_000_0bc5 ($c5a4=1); Jump_000_0a8b skip ".".
+; Jump_000_0aa3/jr_000_0abf: bank slot; Jump_000_0aeb: if not dir → Jump_000_0b41; else jr_000_0aee attr $10 + ApplyBasename → jr_000_0b3e → Jump_000_0bb8.
+; Jump_000_0b41: need AM_ARC else Jump_000_0b4c → Jump_000_0bb8; jr_000_0b4f MemCmp EzgbDatStr → skip Jump_000_0a56; else store $20+basename.
+; Jump_000_0bb8/jr_000_0bb8: if count<$10 Jump_000_0bc2 → Jump_000_0a56 else Jump_000_0bc5/jr_000_0bc5 ret.
 
 DirList::
     add sp, -$09
@@ -2509,7 +2551,7 @@ DirList::
     ld [hl+], a
     ld [hl], d
 
-Jump_000_0a56:
+DirList_readdir::
     ld a, $00
     push af
     inc sp
@@ -2532,24 +2574,24 @@ Jump_000_0a56:
     ld c, e
     ld a, c
     or a
-    jp nz, Jump_000_0a83
+    jp nz, DirList_failEmpty
 
     ld bc, $c9e4
     ld a, [bc]
     ld c, a
     or a
-    jp nz, Jump_000_0a8b
+    jp nz, DirList_skipDot
 
-Jump_000_0a83:
+DirList_failEmpty::
     ld hl, $c5a4
     ld [hl], $01
-    jp Jump_000_0bc5
+    jp DirList_epilogueRet
 
 
-Jump_000_0a8b:
+DirList_skipDot::
     ld a, c
     sub $2e
-    jp z, Jump_000_0a56
+    jp z, DirList_readdir
 
     ld bc, $c9f1
     ld e, c
@@ -2561,11 +2603,11 @@ Jump_000_0a8b:
     ld b, a
     ld a, [bc]
     or a
-    jp nz, Jump_000_0aa3
+    jp nz, DirList_bankSlot
 
     ld bc, $c9e4
 
-Jump_000_0aa3:
+DirList_bankSlot::
     ld hl, sp+$07
     ld [hl], c
     inc hl
@@ -2585,11 +2627,11 @@ Jump_000_0aa3:
     ld b, [hl]
     ld a, $05
 
-jr_000_0abf:
+DirList_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_0abf
+    jr nz, DirList_bankShift
 
     ld hl, sp+$05
     ld [hl], c
@@ -2612,15 +2654,15 @@ jr_000_0abf:
     ld a, [de]
     ld c, a
     sub $10
-    jp nz, Jump_000_0aeb
+    jp nz, DirList_notDir
 
-    jr jr_000_0aee
+    jr DirList_dirAttr
 
-Jump_000_0aeb:
-    jp Jump_000_0b41
+DirList_notDir::
+    jp DirList_needAmArc
 
 
-jr_000_0aee:
+DirList_dirAttr::
     ld hl, sp+$06
     ld e, [hl]
     ld d, $00
@@ -2676,29 +2718,29 @@ jr_000_0aee:
     inc [hl]
     ld hl, $c2a2
     inc [hl]
-    jr nz, jr_000_0b3e
+    jr nz, DirList_afterDirStore
 
     ld hl, $c2a3
     inc [hl]
 
-jr_000_0b3e:
-    jp Jump_000_0bb8
+DirList_afterDirStore::
+    jp DirList_countCheck
 
 
-Jump_000_0b41:
+DirList_needAmArc::
     ld a, c
     and $20
     ld c, a
     sub $20
-    jp nz, Jump_000_0b4c
+    jp nz, DirList_skipNoArc
 
-    jr jr_000_0b4f
+    jr DirList_memcmpEzgbDat
 
-Jump_000_0b4c:
-    jp Jump_000_0bb8
+DirList_skipNoArc::
+    jp DirList_countCheck
 
 
-jr_000_0b4f:
+DirList_memcmpEzgbDat::
     ld a, $08
     push af
     inc sp
@@ -2715,7 +2757,7 @@ jr_000_0b4f:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_0a56
+    jp z, DirList_readdir
 
     ld hl, sp+$06
     ld e, [hl]
@@ -2774,26 +2816,24 @@ jr_000_0b4f:
     inc [hl]
     ld hl, $c2a2
     inc [hl]
-    jr nz, jr_000_0bb8
+    jr nz, DirList_countCheck
 
     ld hl, $c2a3
     inc [hl]
 
-Jump_000_0bb8:
-jr_000_0bb8:
+DirList_countCheck::
     ld hl, sp+$04
     ld a, [hl]
     sub $10
-    jp nz, Jump_000_0bc2
+    jp nz, DirList_moreEntries
 
-    jr jr_000_0bc5
+    jr DirList_epilogueRet
 
-Jump_000_0bc2:
-    jp Jump_000_0a56
+DirList_moreEntries::
+    jp DirList_readdir
 
 
-Jump_000_0bc5:
-jr_000_0bc5:
+DirList_epilogueRet::
     add sp, $09
     ret
 
@@ -2802,8 +2842,10 @@ EzgbDatStr::
     db "ezgb.dat", $00
 
 ; [ezgb]
-; DrawDirEntryLabel: browser row label. If size u32>$14, map bank via $4000, measure
-; name at $c2a0+ofs, format into $c4a4 (farcall), DrawString. Skips tiny entries.
+; DrawDirEntryLabel(size@sp+$12, ofs@sp+$16, y@sp+$18): frame -$10. size≤$14 → Jump_000_0ddd skip.
+; jr_000_0c0a: >>5 bank from ofs; attr+$fe==$10 → jr_000_0c84 width $11 else Jump_000_0c81 → Jump_000_0c8b width $14.
+; Jump_000_0c8f: if namelen≥width → Jump_000_0ddd; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → Jump_000_0ddd.
+; Jump_000_0d2c: update $cc31/32; Strncpy name+$fe ellipsis into $c4a4; DrawString at y+2; Jump_000_0ddd epilogue.
 
 DrawDirEntryLabel::
     add sp, -$10
@@ -2819,7 +2861,7 @@ DrawDirEntryLabel::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_000_0ddd
+    jp nc, DrawDirEntryLabel_epilogueRet
 
     ld hl, $0002
     push hl
@@ -2848,11 +2890,11 @@ DrawDirEntryLabel::
     ld b, [hl]
     ld a, $05
 
-jr_000_0c0a:
+DrawDirEntryLabel_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_0c0a
+    jr nz, DrawDirEntryLabel_bankShift
 
     ld hl, sp+$0c
     ld [hl], c
@@ -2930,30 +2972,30 @@ jr_000_0c0a:
     ld a, [bc]
     ld c, a
     sub $10
-    jp nz, Jump_000_0c81
+    jp nz, DrawDirEntryLabel_skipDirWidth
 
-    jr jr_000_0c84
+    jr DrawDirEntryLabel_dirWidth11
 
-Jump_000_0c81:
-    jp Jump_000_0c8b
+DrawDirEntryLabel_skipDirWidth::
+    jp DrawDirEntryLabel_fileWidth14
 
 
-jr_000_0c84:
+DrawDirEntryLabel_dirWidth11::
     ld hl, sp+$0f
     ld [hl], $11
-    jp Jump_000_0c8f
+    jp DrawDirEntryLabel_scrollCheck
 
 
-Jump_000_0c8b:
+DrawDirEntryLabel_fileWidth14::
     ld hl, sp+$0f
     ld [hl], $14
 
-Jump_000_0c8f:
+DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     sub [hl]
-    jp nc, Jump_000_0ddd
+    jp nc, DrawDirEntryLabel_epilogueRet
 
     ld hl, sp+$12
     ld e, [hl]
@@ -3058,15 +3100,15 @@ Jump_000_0c8f:
     ld a, [hl]
     ld hl, sp+$0a
     sub [hl]
-    jp nz, Jump_000_0d2c
+    jp nz, DrawDirEntryLabel_drawEllipsis
 
     ld hl, $cc32
     ld a, [hl]
     ld hl, sp+$0b
     sub [hl]
-    jp z, Jump_000_0ddd
+    jp z, DrawDirEntryLabel_epilogueRet
 
-Jump_000_0d2c:
+DrawDirEntryLabel_drawEllipsis::
     ld hl, sp+$0a
     ld a, [hl+]
     ld e, [hl]
@@ -3181,7 +3223,7 @@ Jump_000_0d2c:
     call DrawString
     add sp, $05
 
-Jump_000_0ddd:
+DrawDirEntryLabel_epilogueRet::
     add sp, $10
     ret
 
@@ -3191,11 +3233,10 @@ Jump_000_0ddd:
     jr nz, SdMenuMain
 
 ; [ezgb]
-; SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
-; Launched games never enter here — they write FRAM via normal MBC $A000 only.
-; Backup branch when page $11 $A000==$AA; then clears $A000=$00 on entry (before
-; the prompt, so [B]NO still clears it). $A001 read as auto-save selector; caches
-; $A202->$d3f6 (RTC), reads $A00F/$A010+ meta, calls BackupSavePrompt (01:6747).
+; SdMenuMain: SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
+; FarCall SD mount (inline after call); jr_000_0e02: check status@sp+$16; NZ → DrawString MicroSdInitErrorStr; Jump_000_0e21 hang.
+; Jump_000_0e24: OK string; page $11 via $4000; if $A000≠$AA → GotoFileBrowser else jr BackupBranchEntry.
+; Launched games never enter here. BackupBranchEntry clears $A000 (see 00:0e76 / 01:6747).
 
 SdMenuMain::
     add sp, -$17
@@ -3299,6 +3340,12 @@ Jump_000_0e24:
 GotoFileBrowser::
     jp Jump_000_0f5b
 
+
+; [ezgb]
+; BackupBranchEntry: FRAM stamp → SAVER basename, then fall into FileBrowserEntry.
+; Read $A202→$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.
+; Jump_000_0ec4: copy $A010.. → $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.
+; Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d).
 
 BackupBranchEntry::
     ld hl, sp+$06
@@ -3511,6 +3558,13 @@ Jump_000_0f5b:
     ld a, $2f
     ld [de], a
 
+; [ezgb]
+; FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail SdReadRetryCount. Main browser loop.
+; Jump_000_0fcd/Jump_000_0ff4: zero $c2a2/$c2a3; memset $c4a4+$c9db; wire $c9f1→$c4a4, $c9f3=$00fe; DirList.
+; jr_000_1071 redraw: dirty → Jump_000_1089/jr_000_108c (code3 farcall+label) or Jump_000_10b1 (code≥2); Jump_000_10df DrawDirEntryLabel if count≠0 → Jump_000_1107.
+; Jump_000_1107 Delay+ReadJoypad: $02 jr_000_1128 page-- (Jump_000_114d/Jump_000_1154/Jump_000_115b/Jump_000_116b); $01 jr_000_1175 DirList + Jump_000_1180 page++ (Jump_000_11bf/Jump_000_11d6/Jump_000_11dd).
+; $04/$08 jr_000_11e7/Jump_000_11f6 / jr_000_1200/Jump_000_1223 row; $40 jr_000_122d mode (Jump_000_1238/jr_000_123b/Jump_000_1242/Jump_000_124c/jr_000_124f farcall) → Jump_000_1267/Jump_000_1271/jr_000_1274 or MenuKeyDispatch.
+
 FileBrowserEntry::
     ld hl, $cc2f
     ld [hl], $00
@@ -3546,11 +3600,11 @@ FileBrowserEntry::
     ld [hl], b
     ld a, [hl]
     or a
-    jp z, Jump_000_0fcd
+    jp z, FileBrowserEntry_clearPageIdx
 
     call SdReadRetryCount
 
-Jump_000_0fcd:
+FileBrowserEntry_clearPageIdx::
     ld hl, $c2a2
     ld [hl], $00
     ld hl, $c2a3
@@ -3570,11 +3624,11 @@ Jump_000_0fcd:
     ld [hl], b
     ld a, [hl]
     or a
-    jp z, Jump_000_0ff4
+    jp z, FileBrowserEntry_memsetWireDirList
 
     call SdReadRetryCount
 
-Jump_000_0ff4:
+FileBrowserEntry_memsetWireDirList::
     ld hl, $00ff
     push hl
     ld a, $00
@@ -3643,24 +3697,24 @@ Jump_000_0ff4:
     ld [$e800], sp
     ld bc, $0af8
     inc [hl]
-    jr nz, jr_000_1071
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
-    jr nz, jr_000_1071
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
-    jr nz, jr_000_1071
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
 
-jr_000_1071:
+FileBrowserEntry_redraw::
     xor a
     ld hl, sp+$12
     or [hl]
-    jp z, Jump_000_10df
+    jp z, FileBrowserEntry_drawDirEntryLabel
 
     xor a
     ld hl, sp+$0a
@@ -3671,15 +3725,15 @@ jr_000_1071:
     ld hl, sp+$12
     ld a, [hl]
     sub $01
-    jp nz, Jump_000_1089
+    jp nz, FileBrowserEntry_redrawSkipCode3
 
-    jr jr_000_108c
+    jr FileBrowserEntry_redrawCode3Farcall
 
-Jump_000_1089:
-    jp Jump_000_10b1
+FileBrowserEntry_redrawSkipCode3::
+    jp FileBrowserEntry_redrawCodeGe2
 
 
-jr_000_108c:
+FileBrowserEntry_redrawCode3Farcall::
     ld a, $03
     push af
     inc sp
@@ -3704,14 +3758,14 @@ jr_000_108c:
     ld b, b
     ld bc, $e800
     inc b
-    jp Jump_000_10df
+    jp FileBrowserEntry_drawDirEntryLabel
 
 
-Jump_000_10b1:
+FileBrowserEntry_redrawCodeGe2::
     ld a, $01
     ld hl, sp+$12
     sub [hl]
-    jp nc, Jump_000_10df
+    jp nc, FileBrowserEntry_drawDirEntryLabel
 
     ld a, $03
     push af
@@ -3741,12 +3795,12 @@ Jump_000_10b1:
     ld bc, $e800
     dec b
 
-Jump_000_10df:
+FileBrowserEntry_drawDirEntryLabel::
     ld hl, $c2a2
     ld a, [hl]
     ld hl, $c2a3
     or [hl]
-    jp z, Jump_000_1107
+    jp z, FileBrowserEntry_inputLoop
 
     ld hl, sp+$15
     ld c, [hl]
@@ -3771,7 +3825,7 @@ Jump_000_10df:
     call DrawDirEntryLabel
     add sp, $08
 
-Jump_000_1107:
+FileBrowserEntry_inputLoop::
     ld hl, sp+$12
     ld [hl], $00
     ld hl, $002d
@@ -3788,16 +3842,16 @@ Jump_000_1107:
     dec hl
     ld a, [hl]
     and $02
-    jr nz, jr_000_1128
+    jr nz, FileBrowserEntry_pageDec
 
-    jp Jump_000_116b
+    jp FileBrowserEntry_afterPageDec
 
 
-jr_000_1128:
+FileBrowserEntry_pageDec::
     ld hl, sp+$13
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_115b
+    jp z, FileBrowserEntry_pageDecGate
 
     ld a, $0f
     dec hl
@@ -3805,7 +3859,7 @@ jr_000_1128:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_000_114d
+    jp nc, FileBrowserEntry_pageDecZero
 
     dec hl
     ld e, [hl]
@@ -3820,51 +3874,51 @@ jr_000_1128:
     ld hl, sp+$14
     ld [hl-], a
     ld [hl], e
-    jp Jump_000_1154
+    jp FileBrowserEntry_pageDecDirty
 
 
-Jump_000_114d:
+FileBrowserEntry_pageDecZero::
     ld hl, sp+$13
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_000_1154:
+FileBrowserEntry_pageDecDirty::
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_115b:
+FileBrowserEntry_pageDecGate::
     xor a
     ld hl, sp+$15
     or [hl]
-    jp z, Jump_000_16ab
+    jp z, MenuDispatchAB_waitVBlankLoop
 
     ld [hl], $00
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_116b:
+FileBrowserEntry_afterPageDec::
     ld hl, sp+$00
     ld a, [hl]
     and $01
-    jr nz, jr_000_1175
+    jr nz, FileBrowserEntry_dirListBtn
 
-    jp Jump_000_11dd
+    jp FileBrowserEntry_afterPageInc
 
 
-jr_000_1175:
+FileBrowserEntry_dirListBtn::
     xor a
     ld hl, $c5a4
     or [hl]
-    jp nz, Jump_000_1180
+    jp nz, FileBrowserEntry_pageInc
 
     call DirList
 
-Jump_000_1180:
+FileBrowserEntry_pageInc::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -3879,7 +3933,7 @@ Jump_000_1180:
     ld a, b
     ld hl, $c2a3
     sbc [hl]
-    jp nc, Jump_000_16ab
+    jp nc, MenuDispatchAB_waitVBlankLoop
 
     ld hl, sp+$13
     ld e, [hl]
@@ -3902,16 +3956,16 @@ Jump_000_1180:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_000_11bf
+    jp c, FileBrowserEntry_pageIncClamp
 
     ld hl, sp+$13
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_000_11d6
+    jp FileBrowserEntry_pageIncDirty
 
 
-Jump_000_11bf:
+FileBrowserEntry_pageIncClamp::
     ld hl, $c2a2
     ld hl, $c2a2
     ld e, [hl]
@@ -3927,43 +3981,43 @@ Jump_000_11bf:
     ld [hl-], a
     ld [hl], e
 
-Jump_000_11d6:
+FileBrowserEntry_pageIncDirty::
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_11dd:
+FileBrowserEntry_afterPageInc::
     ld hl, sp+$00
     ld a, [hl]
     and $04
-    jr nz, jr_000_11e7
+    jr nz, FileBrowserEntry_rowDec
 
-    jp Jump_000_11f6
+    jp FileBrowserEntry_afterRowDec
 
 
-jr_000_11e7:
+FileBrowserEntry_rowDec::
     xor a
     ld hl, sp+$15
     or [hl]
-    jp z, Jump_000_16ab
+    jp z, MenuDispatchAB_waitVBlankLoop
 
     dec [hl]
     ld hl, sp+$12
     ld [hl], $03
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_11f6:
+FileBrowserEntry_afterRowDec::
     ld hl, sp+$00
     ld a, [hl]
     and $08
-    jr nz, jr_000_1200
+    jr nz, FileBrowserEntry_rowInc
 
-    jp Jump_000_1223
+    jp FileBrowserEntry_afterRow
 
 
-jr_000_1200:
+FileBrowserEntry_rowInc::
     ld hl, sp+$15
     ld c, [hl]
     ld b, $00
@@ -3974,60 +4028,60 @@ jr_000_1200:
     ld a, b
     ld hl, $c2a3
     sbc [hl]
-    jp nc, Jump_000_16ab
+    jp nc, MenuDispatchAB_waitVBlankLoop
 
     ld hl, sp+$15
     ld a, [hl]
     sub $0f
-    jp nc, Jump_000_16ab
+    jp nc, MenuDispatchAB_waitVBlankLoop
 
     inc [hl]
     ld hl, sp+$12
     ld [hl], $02
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_1223:
+FileBrowserEntry_afterRow::
     ld hl, sp+$00
     ld a, [hl]
     and $40
-    jr nz, jr_000_122d
+    jr nz, FileBrowserEntry_modeBtn
 
     jp MenuKeyDispatch
 
 
-jr_000_122d:
+FileBrowserEntry_modeBtn::
     ld hl, sp+$0e
     inc [hl]
     ld a, [hl]
     sub $02
-    jp nz, Jump_000_1238
+    jp nz, FileBrowserEntry_modeSkipWrap
 
-    jr jr_000_123b
+    jr FileBrowserEntry_modeWrapZero
 
-Jump_000_1238:
-    jp Jump_000_1242
+FileBrowserEntry_modeSkipWrap::
+    jp FileBrowserEntry_modeCheck1
 
 
-jr_000_123b:
+FileBrowserEntry_modeWrapZero::
     ld hl, sp+$0e
     ld [hl], $00
-    jp Jump_000_1267
+    jp FileBrowserEntry_modeCheck2
 
 
-Jump_000_1242:
+FileBrowserEntry_modeCheck1::
     ld hl, sp+$0e
     ld a, [hl]
     sub $01
-    jp nz, Jump_000_124c
+    jp nz, FileBrowserEntry_modeSkipFarcall1
 
-    jr jr_000_124f
+    jr FileBrowserEntry_modeFarcall1
 
-Jump_000_124c:
-    jp Jump_000_1267
+FileBrowserEntry_modeSkipFarcall1::
+    jp FileBrowserEntry_modeCheck2
 
 
-jr_000_124f:
+FileBrowserEntry_modeFarcall1::
     ld a, $01
     push af
     inc sp
@@ -4044,19 +4098,19 @@ jr_000_124f:
     ld hl, sp+$0e
     ld [hl], $02
 
-Jump_000_1267:
+FileBrowserEntry_modeCheck2::
     ld hl, sp+$0e
     ld a, [hl]
     sub $02
-    jp nz, Jump_000_1271
+    jp nz, FileBrowserEntry_modeSkipFarcall2
 
-    jr jr_000_1274
+    jr FileBrowserEntry_modeFarcall2
 
-Jump_000_1271:
-    jp Jump_000_16ab
+FileBrowserEntry_modeSkipFarcall2::
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-jr_000_1274:
+FileBrowserEntry_modeFarcall2::
     ld a, $02
     push af
     inc sp
@@ -4118,6 +4172,10 @@ LastRomOverlay::
     ld [hl], $00
     inc hl
     ld [hl], $00
+
+; [ezgb]
+; LastRomLoadRecord: copy $A300..+$00ff → $c4a4 (idx@sp+$0f); then LastRomDrawBasename.
+; Loop via jr_000_12ee → self until idx≥$00ff; fallthrough jp LastRomDrawBasename when done.
 
 LastRomLoadRecord::
     ld hl, sp+$0f
@@ -4276,16 +4334,23 @@ LastRomReturn::
     jp FileBrowserEntry
 
 
+; [ezgb]
+; MenuDispatchAB: A($10) open selection; B($20) parent dir; else Jump_000_16ab WaitVBlankFlag → browser loop $1062.
+; jr_000_139c/jr_000_13b3: bank entry >>5+$12@$4000; Jump_000_140c: file → Jump_000_145f else jr_000_140f/Jump_000_143b dir append → FileBrowserEntry.
+; Jump_000_145f: ApplyBasename+$c4a4; Jump_000_14d6/Jump_000_14fb toupper ext@$c3a5; Jump_000_1520 MemCmp .gbc/.gb.
+; Match jr_000_1566 → Jump_000_1569 launch farcalls; fail Jump_000_1588/jr_000_158b WaitJoypadSelect; Jump_000_1591..Jump_000_162c hang.
+; Jump_000_162f: B → jr_000_1639 strip last /$c2a6 (Strrchr); empty "/"; jp FileBrowserEntry; else Jump_000_16ab.
+
 MenuDispatchAB::
     ld hl, sp+$00
     ld a, [hl]
     and $10
-    jr nz, jr_000_139c
+    jr nz, MenuDispatchAB_bankEntry
 
-    jp Jump_000_162f
+    jp MenuDispatchAB_checkB
 
 
-jr_000_139c:
+MenuDispatchAB_bankEntry::
     ld hl, sp+$15
     ld c, [hl]
     ld b, $00
@@ -4306,11 +4371,11 @@ jr_000_139c:
     ld b, [hl]
     ld a, $05
 
-jr_000_13b3:
+MenuDispatchAB_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_13b3
+    jr nz, MenuDispatchAB_bankShift
 
     ld hl, sp+$04
     ld a, [hl]
@@ -4371,15 +4436,15 @@ jr_000_13b3:
     ld a, [bc]
     ld b, a
     sub $10
-    jp nz, Jump_000_140c
+    jp nz, MenuDispatchAB_fileSkipDir
 
-    jr jr_000_140f
+    jr MenuDispatchAB_dirAppend
 
-Jump_000_140c:
-    jp Jump_000_145f
+MenuDispatchAB_fileSkipDir::
+    jp MenuDispatchAB_fileOpen
 
 
-jr_000_140f:
+MenuDispatchAB_dirAppend::
     ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
@@ -4395,7 +4460,7 @@ jr_000_140f:
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_000_143b
+    jp z, MenuDispatchAB_dirToBrowser
 
     ld hl, PathSlashStr
     push hl
@@ -4407,7 +4472,7 @@ jr_000_140f:
     ld bc, $e800
     inc b
 
-Jump_000_143b:
+MenuDispatchAB_dirToBrowser::
     ld hl, $c2a0
     ld hl, $c2a0
     ld e, [hl]
@@ -4431,7 +4496,7 @@ Jump_000_143b:
     jp FileBrowserEntry
 
 
-Jump_000_145f:
+MenuDispatchAB_fileOpen::
     call FarCallTrampoline
     ld a, a
     ld [hl], e
@@ -4491,12 +4556,12 @@ Jump_000_145f:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_14d6
+    jp c, MenuDispatchAB_toupperExtA
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_14d6
+    jp c, MenuDispatchAB_toupperExtA
 
     ld a, b
     add $e0
@@ -4506,7 +4571,7 @@ Jump_000_145f:
     ld d, [hl]
     ld [de], a
 
-Jump_000_14d6:
+MenuDispatchAB_toupperExtA::
     ld de, $c3a5
     ld hl, $0002
     add hl, de
@@ -4520,12 +4585,12 @@ Jump_000_14d6:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_14fb
+    jp c, MenuDispatchAB_toupperExtB
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_14fb
+    jp c, MenuDispatchAB_toupperExtB
 
     ld a, b
     add $e0
@@ -4535,7 +4600,7 @@ Jump_000_14d6:
     ld d, [hl]
     ld [de], a
 
-Jump_000_14fb:
+MenuDispatchAB_toupperExtB::
     ld de, $c3a5
     ld hl, $0003
     add hl, de
@@ -4549,12 +4614,12 @@ Jump_000_14fb:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_1520
+    jp c, MenuDispatchAB_memcmpExt
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_1520
+    jp c, MenuDispatchAB_memcmpExt
 
     ld a, b
     add $e0
@@ -4564,7 +4629,7 @@ Jump_000_14fb:
     ld d, [hl]
     ld [de], a
 
-Jump_000_1520:
+MenuDispatchAB_memcmpExt::
     ld a, $05
     push af
     inc sp
@@ -4578,7 +4643,7 @@ Jump_000_1520:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_1569
+    jp z, MenuDispatchAB_launchFarcalls
 
     ld a, $04
     push af
@@ -4593,7 +4658,7 @@ Jump_000_1520:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_1569
+    jp z, MenuDispatchAB_launchFarcalls
 
     call FarCallTrampoline
     cp d
@@ -4606,16 +4671,16 @@ Jump_000_1520:
     ld b, $00
     ld a, c
     and $20
-    jr nz, jr_000_1566
+    jr nz, MenuDispatchAB_extMatch
 
     jp $1557
 
 
-jr_000_1566:
+MenuDispatchAB_extMatch::
     jp FileBrowserEntry
 
 
-Jump_000_1569:
+MenuDispatchAB_launchFarcalls::
     call FarCallTrampoline
     dec hl
     ld c, b
@@ -4633,20 +4698,20 @@ Jump_000_1569:
     ld [hl], b
     ld a, [hl]
     inc a
-    jp nz, Jump_000_1588
+    jp nz, MenuDispatchAB_failSkipWait
 
-    jr jr_000_158b
+    jr MenuDispatchAB_failWaitSelect
 
-Jump_000_1588:
-    jp Jump_000_1591
+MenuDispatchAB_failSkipWait::
+    jp MenuDispatchAB_failHang
 
 
-jr_000_158b:
+MenuDispatchAB_failWaitSelect::
     call WaitJoypadSelect
     jp FileBrowserEntry
 
 
-Jump_000_1591:
+MenuDispatchAB_failHang::
     xor a
     ld hl, $d3ef
     or [hl]
@@ -4746,20 +4811,20 @@ Jump_000_1591:
     nop
     add sp, $03
 
-Jump_000_162c:
-    jp Jump_000_162c
+MenuDispatchAB_failHangLoop::
+    jp MenuDispatchAB_failHangLoop
 
 
-Jump_000_162f:
+MenuDispatchAB_checkB::
     ld hl, sp+$00
     ld a, [hl]
     and $20
-    jr nz, jr_000_1639
+    jr nz, MenuDispatchAB_parentDir
 
-    jp Jump_000_16ab
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-jr_000_1639:
+MenuDispatchAB_parentDir::
     ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
@@ -4773,7 +4838,7 @@ jr_000_1639:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_16ab
+    jp z, MenuDispatchAB_waitVBlankLoop
 
     ld hl, $00ff
     push hl
@@ -4827,7 +4892,7 @@ jr_000_1639:
     jp FileBrowserEntry
 
 
-Jump_000_16ab:
+MenuDispatchAB_waitVBlankLoop::
     call WaitVBlankFlag
     jp $1062
 
@@ -4872,8 +4937,10 @@ ExtGbStr::
     db ".GB", $00
 
 ; [ezgb]
-; U32ToAscii_B0: bank0 near-call copy of U32ToAscii (04:44f7). Same stack ABI;
-; used from bank0/1/8 UI chrome.
+; U32ToAscii_B0: bank0 twin of U32ToAscii (04:44f7); same ABI val/buf/radix. Used from bank0/1/8 UI chrome.
+; Jump_000_1718: if val!=0 → Jump_000_1739; elif digits → Jump_000_1736 → Jump_000_17e5; else jr_000_1739 fall emit.
+; Jump_000_1739/jr_000_1739: U32Div+U32Mod; rem<$0a → '0'+n (jr_000_17cd) else Jump_000_17d0 +$57 (jr_000_17e2) → Jump_000_1718.
+; Jump_000_17e5: setup reverse; Jump_000_1802 copy (jr_000_1827) → Jump_000_182a NUL / plant "0".
 
 U32ToAscii_B0::
     add sp, -$33
@@ -4907,7 +4974,7 @@ U32ToAscii_B0::
     ld a, [de]
     ld [hl], a
 
-Jump_000_1718:
+U32ToAscii_B0_digitLoop::
     ld hl, sp+$06
     ld a, [hl+]
     or [hl]
@@ -4915,28 +4982,27 @@ Jump_000_1718:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_000_1739
+    jp nz, U32ToAscii_B0_emitDigit
 
     inc hl
     ld a, [hl]
     ld hl, sp+$04
     sub [hl]
-    jp nz, Jump_000_1736
+    jp nz, U32ToAscii_B0_skipEmit
 
     ld hl, sp+$0b
     ld a, [hl]
     ld hl, sp+$05
     sub [hl]
-    jp nz, Jump_000_1736
+    jp nz, U32ToAscii_B0_skipEmit
 
-    jr jr_000_1739
+    jr U32ToAscii_B0_emitDigit
 
-Jump_000_1736:
-    jp Jump_000_17e5
+U32ToAscii_B0_skipEmit::
+    jp U32ToAscii_B0_setupReverse
 
 
-Jump_000_1739:
-jr_000_1739:
+U32ToAscii_B0_emitDigit::
     ld hl, sp+$3b
     ld a, [hl]
     ld hl, sp+$00
@@ -5037,7 +5103,7 @@ jr_000_1739:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_17d0
+    jp nc, U32ToAscii_B0_digitAtoF
 
     ld hl, sp+$0e
     ld c, [hl]
@@ -5050,16 +5116,16 @@ jr_000_1739:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_17cd
+    jr nz, U32ToAscii_B0_digit0to9
 
     inc hl
     inc [hl]
 
-jr_000_17cd:
-    jp Jump_000_1718
+U32ToAscii_B0_digit0to9::
+    jp U32ToAscii_B0_digitLoop
 
 
-Jump_000_17d0:
+U32ToAscii_B0_digitAtoF::
     ld hl, sp+$0e
     ld c, [hl]
     ld a, c
@@ -5071,16 +5137,16 @@ Jump_000_17d0:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_17e2
+    jr nz, U32ToAscii_B0_afterAlpha
 
     inc hl
     inc [hl]
 
-jr_000_17e2:
-    jp Jump_000_1718
+U32ToAscii_B0_afterAlpha::
+    jp U32ToAscii_B0_digitLoop
 
 
-Jump_000_17e5:
+U32ToAscii_B0_setupReverse::
     ld hl, sp+$39
     ld a, [hl+]
     ld e, [hl]
@@ -5104,7 +5170,7 @@ Jump_000_17e5:
     ld [hl+], a
     ld [hl], e
 
-Jump_000_1802:
+U32ToAscii_B0_copyLoop::
     ld a, c
     ld hl, sp+$00
     sub [hl]
@@ -5112,7 +5178,7 @@ Jump_000_1802:
     inc hl
     sbc [hl]
     rlca
-    jp nc, Jump_000_182a
+    jp nc, U32ToAscii_B0_writeNul
 
     dec hl
     ld e, [hl]
@@ -5135,16 +5201,16 @@ Jump_000_1802:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_1827
+    jr nz, U32ToAscii_B0_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_1827:
-    jp Jump_000_1802
+U32ToAscii_B0_copyCont::
+    jp U32ToAscii_B0_copyLoop
 
 
-Jump_000_182a:
+U32ToAscii_B0_writeNul::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -5157,6 +5223,8 @@ Jump_000_182a:
 
 ; [ezgb]
 ; Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry).
+; ≠$88: draw BatteryDry* UI; Jump_000_18d7 wait A ($10); jr_000_18e5 write $A201=$88.
+; Jump_000_18eb: teardown page0, call SdMenuMain. Orphan before BatteryDryPadStr.
 
 BatteryCheck::
     ld hl, $cc2f
@@ -5238,7 +5306,7 @@ BatteryCheck::
     inc sp
     call DrawRect
     add sp, $05
-    ld hl, $0c0a
+    ld hl, DrawDirEntryLabel_bankShift
     push hl
     ld a, $05
     push af
@@ -6365,10 +6433,10 @@ RtcReadPage::
 
 
 ; [ezgb]
-; MapCp437(code, dir): CP437 <-> Unicode for codes $80-$FF. Stack: uint16 code,
-; uint16 dir. dir!=0: CP437->Unicode via Cp437UnicodeTable ($1ed5); dir==0:
-; linear search Unicode->CP437. codes < $80 pass through. Returns DE (=BC).
-; Table is exact IBM CP437 high-half (128 LE uint16s). ~12 callers in banks 3/5/6/7/9.
+; MapCp437(code@sp+$07, dir@sp+$09) → DE. codes <$80 pass-through Jump_000_1ed0. Table IBM CP437 high-half @1ed5.
+; Jump_000_1e30 dir!=0: if code≥$100 plant 0 → Jump_000_1e76; else Jump_000_1e5a table[(code-$80)*2] → Jump_000_1e76 → Jump_000_1ed0.
+; Jump_000_1e7e dir==0: idx=0; Jump_000_1e85 while idx<$80: cmp word (jr_000_1ea6); miss Jump_000_1eb3 ++idx (jr_000_1eba) → Jump_000_1e85.
+; Hit/exhaust Jump_000_1ebd: idx+$80 → Jump_000_1ed0 ret.
 
 MapCp437::
     push af
@@ -6380,20 +6448,20 @@ MapCp437::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_1e30
+    jp nc, MapCp437_dirEncode
 
     dec hl
     ld c, [hl]
     inc hl
     ld b, [hl]
-    jp Jump_000_1ed0
+    jp MapCp437_retDe
 
 
-Jump_000_1e30:
+MapCp437_dirEncode::
     ld hl, sp+$09
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_1e7e
+    jp z, MapCp437_dirDecode
 
     ld hl, sp+$07
     ld a, [hl]
@@ -6411,16 +6479,16 @@ Jump_000_1e30:
     rla
     ld [hl], a
     or a
-    jp z, Jump_000_1e5a
+    jp z, MapCp437_tableLookup
 
     inc hl
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_000_1e76
+    jp MapCp437_afterEncode
 
 
-Jump_000_1e5a:
+MapCp437_tableLookup::
     ld hl, sp+$07
     ld c, [hl]
     ld a, c
@@ -6442,28 +6510,28 @@ Jump_000_1e5a:
     ld a, [de]
     ld [hl], a
 
-Jump_000_1e76:
+MapCp437_afterEncode::
     ld hl, sp+$03
     ld c, [hl]
     inc hl
     ld b, [hl]
-    jp Jump_000_1ed0
+    jp MapCp437_retDe
 
 
-Jump_000_1e7e:
+MapCp437_dirDecode::
     ld hl, sp+$03
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_000_1e85:
+MapCp437_decodeScan::
     ld hl, sp+$03
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_1ebd
+    jp nc, MapCp437_decodeHit
 
     dec hl
     ld c, [hl]
@@ -6483,30 +6551,30 @@ Jump_000_1e85:
     ld a, [de]
     ld b, a
 
-jr_000_1ea6:
+MapCp437_decodeCmp::
     ld hl, sp+$07
     ld a, [hl]
     sub c
-    jp nz, Jump_000_1eb3
+    jp nz, MapCp437_decodeMiss
 
     inc hl
     ld a, [hl]
     sub b
-    jp z, Jump_000_1ebd
+    jp z, MapCp437_decodeHit
 
-Jump_000_1eb3:
+MapCp437_decodeMiss::
     ld hl, sp+$03
     inc [hl]
-    jr nz, jr_000_1eba
+    jr nz, MapCp437_decodeCont
 
     inc hl
     inc [hl]
 
-jr_000_1eba:
-    jp Jump_000_1e85
+MapCp437_decodeCont::
+    jp MapCp437_decodeScan
 
 
-Jump_000_1ebd:
+MapCp437_decodeHit::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
@@ -6522,7 +6590,7 @@ Jump_000_1ebd:
     ld c, [hl]
     ld b, $00
 
-Jump_000_1ed0:
+MapCp437_retDe::
     ld e, c
     ld d, b
     add sp, $05
@@ -6586,7 +6654,7 @@ Cp437UnicodeTable::
     and l
     nop
     and a
-    jr nz, jr_000_1ea6
+    jr nz, MapCp437_decodeCmp
 
     ld bc, $00e1
     db $ed
@@ -6752,7 +6820,7 @@ jr_000_1f82:
     ld [hl+], a
     ld h, h
     ld [hl+], a
-    jr nz, jr_000_1fe2
+    jr nz, WToUpper_asciiGate
 
     ld hl, $f723
     nop
@@ -6776,9 +6844,11 @@ jr_000_1f82:
     nop
 
 ; [ezgb]
-; WToUpper(code): FatFs-shaped WCHAR toupper. Stack uint16; returns DE.
-; ASCII: 'a'-'z' -= $20. Else binary-search wWToUpperKeys ($CC33) and replace
-; from wWToUpperVals ($D00F). Used for case-insensitive path compare.
+; WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.
+; jr_000_1fe2: if code≥$80 → Jump_000_200e; else if not in 'a'..'z' → Jump_000_20b3; else code-=$20 → Jump_000_20b3.
+; Jump_000_200e: init lo/hi/count; Jump_000_2021: mid key from wWToUpperKeys; eq → Jump_000_2092; else Jump_000_2065.
+; Jump_000_2065: key<code → raise lo else Jump_000_207a lower hi; Jump_000_2082 --count; NZ → Jump_000_2021 else fall Jump_000_2092.
+; Jump_000_2092: if count==0 miss → Jump_000_20b3; else replace from wWToUpperVals; Jump_000_20b3: DE=code ret.
 
 WToUpper::
     push af
@@ -6792,8 +6862,8 @@ WToUpper::
     ld a, [hl]
     sbc $00
 
-jr_000_1fe2:
-    jp nc, Jump_000_200e
+WToUpper_asciiGate::
+    jp nc, WToUpper_initSearch
 
     dec hl
     ld a, [hl]
@@ -6801,7 +6871,7 @@ jr_000_1fe2:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_000_20b3
+    jp c, WToUpper_retDe
 
     ld a, $7a
     dec hl
@@ -6809,7 +6879,7 @@ jr_000_1fe2:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_000_20b3
+    jp c, WToUpper_retDe
 
     dec hl
     ld e, [hl]
@@ -6824,10 +6894,10 @@ jr_000_1fe2:
     ld hl, sp+$0b
     ld [hl-], a
     ld [hl], e
-    jp Jump_000_20b3
+    jp WToUpper_retDe
 
 
-Jump_000_200e:
+WToUpper_initSearch::
     ld hl, sp+$00
     ld [hl], $00
     inc hl
@@ -6841,7 +6911,7 @@ Jump_000_200e:
     inc hl
     ld [hl], $00
 
-Jump_000_2021:
+WToUpper_midKey::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -6890,21 +6960,21 @@ Jump_000_2021:
     ld hl, sp+$0a
     ld a, [hl]
     sub c
-    jp nz, Jump_000_2065
+    jp nz, WToUpper_cmpKey
 
     inc hl
     ld a, [hl]
     sub b
-    jp z, Jump_000_2092
+    jp z, WToUpper_hitOrMiss
 
-Jump_000_2065:
+WToUpper_cmpKey::
     ld a, c
     ld hl, sp+$0a
     sub [hl]
     ld a, b
     inc hl
     sbc [hl]
-    jp nc, Jump_000_207a
+    jp nc, WToUpper_lowerHi
 
     ld hl, sp+$06
     ld a, [hl+]
@@ -6912,10 +6982,10 @@ Jump_000_2065:
     ld hl, sp+$00
     ld [hl+], a
     ld [hl], e
-    jp Jump_000_2082
+    jp WToUpper_decCount
 
 
-Jump_000_207a:
+WToUpper_lowerHi::
     ld hl, sp+$06
     ld a, [hl+]
     ld e, [hl]
@@ -6923,7 +6993,7 @@ Jump_000_207a:
     ld [hl+], a
     ld [hl], e
 
-Jump_000_2082:
+WToUpper_decCount::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6936,13 +7006,13 @@ Jump_000_2082:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_000_2021
+    jp nz, WToUpper_midKey
 
-Jump_000_2092:
+WToUpper_hitOrMiss::
     ld hl, sp+$04
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_20b3
+    jp z, WToUpper_retDe
 
     inc hl
     ld c, [hl]
@@ -6966,7 +7036,7 @@ Jump_000_2092:
     inc hl
     ld [hl], b
 
-Jump_000_20b3:
+WToUpper_retDe::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -6979,6 +7049,8 @@ Jump_000_20b3:
 ; RleUnpack: inline RLE decompress. HL=dest on entry; stream follows the call
 ; (pop return addr as src). Bit7 run vs literal; 0 terminates; ret past stream.
 ; Bank1 uses it to pack WToUpper tables into $CC33/$D00F and other WRAM blobs.
+; Jump_000_20be: fetch len E; bit7 → run: load byte, Jump_000_20c7 store+inc E until wrap → loop.
+; Jump_000_20d0: E==0 → Jump_000_20e0 push HL ret; else Jump_000_20d5 copy E literals → 20be.
 
 RleUnpack::
     ld c, l
@@ -7024,6 +7096,10 @@ Jump_000_20e0:
     ret
 
 
+; [ezgb]
+; ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (jr_000_20ec).
+; DirList uses this to copy entry names into the browser table.
+
 ApplyBasename::
     ld hl, sp+$04
     ld e, [hl]
@@ -7043,6 +7119,11 @@ jr_000_20ec:
 
     inc hl
     jr jr_000_20ec
+
+; [ezgb]
+; AdvanceTextCursor: ++wTextCursorX; wrap at $13 → X=0, ++Y; at Y=$11 → Y=0 (no scroll).
+; jr_000_2100: X wrap + maybe ++Y; jr_000_210d: Y wrap to 0; jr_000_210f: pop HL ret.
+; Mode-1 framebuffer text sibling of AdvanceTileCursor. Used by DrawGlyphAdvance.
 
 AdvanceTextCursor::
     push hl
@@ -7073,9 +7154,10 @@ jr_000_210f:
 
 
 ; [ezgb]
-; DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline
-; (CirclePlot8) vs filled chords (CircleFillH/CircleFillV). Error in wCircleErr
-; ($d72c). Stack wrapper DrawCircleXY ($27a0).
+; DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline (CirclePlot8) vs filled chords.
+; Error in wCircleErr/$d72d. Stack wrapper DrawCircleXY ($27a0).
+; Jump_000_2132/jr_000_2132: while X1≤Y1; outline if fill==0; err≥0 → jr_000_2176 else CircleFillH + ++X1 +err+$06 loop.
+; jr_000_2176: CircleFillV + ++X1 --Y1 +err+$0a → Jump_000_2132.
 
 DrawCircle::
     ld a, b
@@ -7410,8 +7492,10 @@ CirclePlot8::
 
 
 ; [ezgb]
-; DrawRectImpl: normalize wDrawX0/X1 and wDrawY0/Y1, outline via four DrawLine
-; calls, optional fill when wDrawRectFill ($d724) nonzero. Called by DrawRect.
+; DrawRectImpl: normalize corners; outline via four DrawLine; optional fill if wDrawRectFill ($d724). Called by DrawRect.
+; jr_000_22d9: if X1<X0 swap; fall. jr_000_22ec: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.
+; If fill==0 or empty inset ret; else swap wDrawColor/wDrawColorB; jr_000_236d: horiz DrawLine at Y0; if Y0!=Y1 ++Y0 loop.
+; jr_000_238d: restore colors (swap again) ret.
 
 DrawRectImpl::
     ld a, [wDrawX0]
@@ -7537,61 +7621,65 @@ jr_000_238d:
 
 
 ; [ezgb]
-; DrawLine: Bresenham line in mode-1 framebuffer. Register ABI: BC=(x0,y0), DE=(x1,y1).
-; Uses GfxRowTable + ApplyPixel; also called from DrawRect edge walks and circle chords.
+; DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|@$d72a, |dx|@$d729; err wCircleErr/$d72d..$d731.
+; Setup: jr_000_23a2/jr_000_23ac abs dy/dx; |dx|<|dy| → Jump_000_2519 y-major; else Jump_000_23c4 maybe swap ends; jr_000_23ce/jr_000_23d0 set $d72b ±ystep + GfxRowTable/err.
+; X-major Jump_000_2433: err≥0 jr_000_2464 plot+ystep (jr_000_247e/jr_000_248c row wrap $0130/$fed0); else jr_000_244b err+=2dy; jr_000_24a5/jr_000_24b0 byte advance; --E loop.
+; Horiz Jump_000_24bd: jr_000_24d0/jr_000_24db/jr_000_24e3/jr_000_24ef/jr_000_250a/jr_000_250c/jr_000_2513 mask runs.
+; Y-major Jump_000_2519: Jump_000_252a/jr_000_2534/jr_000_2536 swap+$d72b; dx==0 → Jump_000_260c; else jr_000_259e plot (jr_000_25b0), err jr_000_25d0/jr_000_25e2/jr_000_25ec xstep → jr_000_2602.
+; Vert Jump_000_260c: jr_000_261a/jr_000_2628 ApplyPixel down. Callers: DrawRect edges + circle chords.
 
 DrawLine::
     ld a, c
     sub e
-    jr nc, jr_000_23a2
+    jr nc, DrawLine_absDy
 
     cpl
     inc a
 
-jr_000_23a2:
+DrawLine_absDy::
     ld [$d72a], a
     ld h, a
     ld a, b
     sub d
-    jr nc, jr_000_23ac
+    jr nc, DrawLine_absDx
 
     cpl
     inc a
 
-jr_000_23ac:
+DrawLine_absDx::
     ld [$d729], a
     sub h
-    jp c, Jump_000_2519
+    jp c, DrawLine_yMajor
 
     ld a, b
     sub d
-    jp nc, Jump_000_23c4
+    jp nc, DrawLine_maybeSwapEnds
 
     ld a, c
     sub e
-    jr z, jr_000_23d0
+    jr z, DrawLine_setYstepErr
 
     ld a, $00
-    jr nc, jr_000_23d0
+    jr nc, DrawLine_setYstepErr
 
     ld a, $ff
-    jr jr_000_23d0
+    jr DrawLine_setYstepErr
 
-Jump_000_23c4:
+DrawLine_maybeSwapEnds::
     ld a, e
     sub c
-    jr z, jr_000_23ce
+    jr z, DrawLine_swapEndsDone
 
     ld a, $00
-    jr nc, jr_000_23ce
+    jr nc, DrawLine_swapEndsDone
 
     ld a, $ff
 
-jr_000_23ce:
+DrawLine_swapEndsDone::
     ld b, d
     ld c, e
 
-jr_000_23d0:
+DrawLine_setYstepErr::
     ld [$d72b], a
     ld hl, GfxRowTable
     ld d, $00
@@ -7608,7 +7696,7 @@ jr_000_23d0:
     add hl, de
     ld a, [$d72a]
     or a
-    jp z, Jump_000_24bd
+    jp z, DrawLine_horiz
 
     push hl
     ld h, $00
@@ -7656,15 +7744,15 @@ jr_000_23d0:
     ld b, a
     ld c, a
 
-Jump_000_2433:
+DrawLine_xMajor::
     rrc c
     ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_2464
+    jr z, DrawLine_xMajorPlotYstep
 
     push de
     bit 7, c
-    jr z, jr_000_244b
+    jr z, DrawLine_xMajorErrAdd
 
     ld a, b
     cpl
@@ -7674,7 +7762,7 @@ Jump_000_2433:
     ld c, $80
     ld b, c
 
-jr_000_244b:
+DrawLine_xMajorErrAdd::
     ld a, [$d72d]
     ld d, a
     ld a, [$d72f]
@@ -7686,9 +7774,9 @@ jr_000_244b:
     adc d
     ld [wCircleErr], a
     pop de
-    jr jr_000_24a5
+    jr DrawLine_xMajorByteAdv
 
-jr_000_2464:
+DrawLine_xMajorPlotYstep::
     push de
     push bc
     ld a, b
@@ -7697,30 +7785,30 @@ jr_000_2464:
     call ApplyPixel
     ld a, [$d72b]
     or a
-    jr z, jr_000_247e
+    jr z, DrawLine_xMajorRowWrapA
 
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_248c
+    jr nz, DrawLine_xMajorRowWrapB
 
     ld de, $0130
     add hl, de
-    jr jr_000_248c
+    jr DrawLine_xMajorRowWrapB
 
-jr_000_247e:
+DrawLine_xMajorRowWrapA::
     dec hl
     dec hl
     dec hl
     ld a, l
     and $0f
     xor $0e
-    jr nz, jr_000_248c
+    jr nz, DrawLine_xMajorRowWrapB
 
     ld de, $fed0
     add hl, de
 
-jr_000_248c:
+DrawLine_xMajorRowWrapB::
     ld a, [$d72d]
     ld d, a
     ld a, [$d731]
@@ -7735,9 +7823,9 @@ jr_000_248c:
     ld b, c
     pop de
 
-jr_000_24a5:
+DrawLine_xMajorByteAdv::
     bit 7, c
-    jr z, jr_000_24b0
+    jr z, DrawLine_xMajorLoopDec
 
     push de
     ld de, $0010
@@ -7745,12 +7833,12 @@ jr_000_24a5:
     pop de
     ld b, c
 
-jr_000_24b0:
+DrawLine_xMajorLoopDec::
     ld a, b
     or c
     ld b, a
     dec e
-    jp nz, Jump_000_2433
+    jp nz, DrawLine_xMajor
 
     ld a, b
     cpl
@@ -7758,13 +7846,13 @@ jr_000_24b0:
     jp ApplyPixel
 
 
-Jump_000_24bd:
+DrawLine_horiz::
     ld a, [$d729]
     ld e, a
     inc e
     ld a, b
     and $07
-    jr z, jr_000_24db
+    jr z, DrawLine_horizMidRun
 
     push hl
     add $10
@@ -7774,26 +7862,26 @@ Jump_000_24bd:
     pop hl
     xor a
 
-jr_000_24d0:
+DrawLine_horizMaskShift::
     rrca
     or c
     dec e
-    jr z, jr_000_24e3
+    jr z, DrawLine_horizTailPixel
 
     bit 0, a
-    jr z, jr_000_24d0
+    jr z, DrawLine_horizMaskShift
 
-    jr jr_000_24e3
+    jr DrawLine_horizTailPixel
 
-jr_000_24db:
+DrawLine_horizMidRun::
     ld a, e
     dec a
     and $f8
-    jr z, jr_000_250a
+    jr z, DrawLine_horizMaskInit
 
-    jr jr_000_24ef
+    jr DrawLine_horizDoneCheck
 
-jr_000_24e3:
+DrawLine_horizTailPixel::
     ld b, a
     cpl
     ld c, a
@@ -7803,13 +7891,13 @@ jr_000_24e3:
     add hl, de
     pop de
 
-jr_000_24ef:
+DrawLine_horizDoneCheck::
     ld a, e
     or a
     ret z
 
     and $f8
-    jr z, jr_000_250a
+    jr z, DrawLine_horizMaskInit
 
     xor a
     ld c, a
@@ -7825,55 +7913,55 @@ jr_000_24ef:
     ret z
 
     ld e, a
-    jr jr_000_24ef
+    jr DrawLine_horizDoneCheck
 
-jr_000_250a:
+DrawLine_horizMaskInit::
     ld a, $80
 
-jr_000_250c:
+DrawLine_horizMaskLoop::
     dec e
-    jr z, jr_000_2513
+    jr z, DrawLine_horizApplyPixel
 
     sra a
-    jr jr_000_250c
+    jr DrawLine_horizMaskLoop
 
-jr_000_2513:
+DrawLine_horizApplyPixel::
     ld b, a
     cpl
     ld c, a
     jp ApplyPixel
 
 
-Jump_000_2519:
+DrawLine_yMajor::
     ld a, c
     sub e
-    jp nc, Jump_000_252a
+    jp nc, DrawLine_yMajorMaybeSwap
 
     ld a, b
     sub d
-    jr z, jr_000_2536
+    jr z, DrawLine_yMajorSetYstep
 
     ld a, $00
-    jr nc, jr_000_2536
+    jr nc, DrawLine_yMajorSetYstep
 
     ld a, $ff
-    jr jr_000_2536
+    jr DrawLine_yMajorSetYstep
 
-Jump_000_252a:
+DrawLine_yMajorMaybeSwap::
     ld a, c
     sub e
-    jr z, jr_000_2534
+    jr z, DrawLine_yMajorSwapDone
 
     ld a, $00
-    jr nc, jr_000_2534
+    jr nc, DrawLine_yMajorSwapDone
 
     ld a, $ff
 
-jr_000_2534:
+DrawLine_yMajorSwapDone::
     ld b, d
     ld c, e
 
-jr_000_2536:
+DrawLine_yMajorSetYstep::
     ld [$d72b], a
     ld hl, GfxRowTable
     ld d, $00
@@ -7893,7 +7981,7 @@ jr_000_2536:
     inc e
     ld a, [$d729]
     or a
-    jp z, Jump_000_260c
+    jp z, DrawLine_vert
 
     push hl
     ld h, $00
@@ -7941,7 +8029,7 @@ jr_000_2536:
     ld b, a
     ld c, a
 
-jr_000_259e:
+DrawLine_yMajorPlot::
     push de
     push bc
     ld a, b
@@ -7951,16 +8039,16 @@ jr_000_259e:
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_25b0
+    jr nz, DrawLine_yMajorAfterPlot
 
     ld de, $0130
     add hl, de
 
-jr_000_25b0:
+DrawLine_yMajorAfterPlot::
     pop bc
     ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_25d0
+    jr z, DrawLine_yMajorErrCheck
 
     ld a, [$d72d]
     ld d, a
@@ -7972,30 +8060,30 @@ jr_000_25b0:
     ld a, [$d72e]
     adc d
     ld [wCircleErr], a
-    jr jr_000_2602
+    jr DrawLine_yMajorLoopDec
 
-jr_000_25d0:
+DrawLine_yMajorErrCheck::
     ld a, [$d72b]
     or a
-    jr nz, jr_000_25e2
+    jr nz, DrawLine_yMajorXstep
 
     rlc b
     bit 0, b
-    jr z, jr_000_25ec
+    jr z, DrawLine_yMajorErrAdd
 
     ld de, $fff0
     add hl, de
-    jr jr_000_25ec
+    jr DrawLine_yMajorErrAdd
 
-jr_000_25e2:
+DrawLine_yMajorXstep::
     rrc b
     bit 7, b
-    jr z, jr_000_25ec
+    jr z, DrawLine_yMajorErrAdd
 
     ld de, $0010
     add hl, de
 
-jr_000_25ec:
+DrawLine_yMajorErrAdd::
     ld a, [$d72d]
     ld d, a
     ld a, [$d731]
@@ -8007,10 +8095,10 @@ jr_000_25ec:
     adc d
     ld [wCircleErr], a
 
-jr_000_2602:
+DrawLine_yMajorLoopDec::
     pop de
     dec e
-    jr nz, jr_000_259e
+    jr nz, DrawLine_yMajorPlot
 
     ld a, b
     cpl
@@ -8018,7 +8106,7 @@ jr_000_2602:
     jp ApplyPixel
 
 
-Jump_000_260c:
+DrawLine_vert::
     ld a, b
     and $07
     push hl
@@ -8031,23 +8119,23 @@ Jump_000_260c:
     cpl
     ld c, a
 
-jr_000_261a:
+DrawLine_vertApplyPixel::
     push de
     call ApplyPixel
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_2628
+    jr nz, DrawLine_vertLoopDec
 
     ld de, $0130
     add hl, de
 
-jr_000_2628:
+DrawLine_vertLoopDec::
     pop de
     dec e
     ret z
 
-    jr jr_000_261a
+    jr DrawLine_vertApplyPixel
 
 ; [ezgb]
 ; PlotPixel: set one pixel in the mode-1 framebuffer. Register ABI: B=x, C=y.
@@ -8079,9 +8167,10 @@ PlotPixel::
     ld c, a
 
 ; [ezgb]
-; ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW.
-; wDrawOp ($D723): 0=replace, 1=OR, 2=XOR, 3=AND-clear.
-; wDrawColor ($D734) bits 0/1 select which 2bpp planes to touch (color 0-3).
+; ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW. wDrawColor@$D734 planes; wDrawOp@$D723.
+; Dispatch: op1 → jr_000_267e OR; op2 → jr_000_2698 XOR; op3 → jr_000_26b2 AND-clear; else replace.
+; Replace: plane0 clear → B=0 then jr_000_2665; plane1 clear → E=0; jr_000_266b STAT-wait and/or write lo/hi; maybe pop BC.
+; OR jr_000_267e: jr_000_2685/jr_000_268b plane gates + STAT or-write. XOR jr_000_2698: jr_000_269f/jr_000_26a5. AND jr_000_26b2: jr_000_26b9/jr_000_26bf.
 
 ApplyPixel::
     ld a, [wDrawColor]
@@ -8212,7 +8301,9 @@ jr_000_26bf:
 
 
 ; [ezgb]
-; GetPixel: same x/y address math as PlotPixel; returns plane bits in E (0-3).
+; GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).
+; jr_000_26e7: STAT-wait read 2bpp pair; mask from $10+(x&7).
+; jr_000_26f9: if plane0 bit clear skip; set0 B. jr_000_26ff: plane1 bit → set1 B; E=B ret.
 
 GetPixel::
     ld hl, GfxRowTable
@@ -8265,9 +8356,11 @@ jr_000_26ff:
 
 
 ; [ezgb]
-; DrawGlyph(C=tile): blit 8×8 from font sheet $3206 into framebuffer at
-; wTextCursorX/Y via GfxRowTable. DrawGlyphAdvance ($2770) wraps this +
-; AdvanceTextCursor.
+; DrawGlyph(C=tile): blit 8×8 from font sheet $3206 into framebuffer at wTextCursorX/Y via GfxRowTable.
+; Setup: row ptr from GfxRowTable[Y<<3]; +X<<3; glyph base $3206+C*8; C=wDrawColor.
+; jr_000_2730: A=*src++; B=src bits. colorB.0 → A=$ff else jr_000_273f; A|=B; color.0 clear → A^=B; jr_000_2745 D=A.
+; jr_000_2745: colorB.1 → A=$ff else jr_000_274c; A|=B; color.1 clear → A^=B; jr_000_2752 E=A; pop HL.
+; jr_000_2754: STAT-wait; [HL++]=D,E; pop DE; if L&$0f → jr_000_2730 else ret. DrawGlyphAdvance wraps + AdvanceTextCursor.
 
 DrawGlyph::
     ld hl, GfxRowTable
@@ -8795,6 +8888,11 @@ S16DivSex8::
     sbc a
     ld d, a
 
+; [ezgb]
+; S16DivMod(BC=dividend, DE=divisor): signed wrapper around U16DivMod.
+; Abs DE if neg; jr_000_2925: abs BC if neg; jr_000_292f: U16DivMod (C set → early ret).
+; jr_000_293e: restore quot sign (B^D) on BC; rem sign (dividend) on DE.
+
 S16DivMod::
     ld a, b
     push af
@@ -8932,6 +9030,7 @@ jr_000_2985:
 ; U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;
 ; returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.
 ; High fan-in is every C << >> on longs — name from the loop, no emulator needed.
+; Jump_000_299e: while count--: rr HL:DE (logical); count==0 ret.
 
 U32Shr::
     ld hl, $0002
@@ -8962,6 +9061,7 @@ Jump_000_299e:
 
 ; [ezgb]
 ; S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte).
+; Stack: s32 + shift count → HL:DE. Jump_000_29bb: while count--: sra H, rr L/D/E; twin of U32Shr.
 
 S32Sar::
     ld hl, $0002
@@ -8991,7 +9091,8 @@ Jump_000_29bb:
 
 
 ; [ezgb]
-; U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count.
+; U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count → HL:DE.
+; Jump_000_29d8: while count--: rl E/D/L/H; twin of U32Shr/S32Sar.
 
 U32Shl::
     ld hl, $0002
@@ -9021,7 +9122,12 @@ Jump_000_29d8:
 
 
 ; [ezgb]
-; S32DivImpl: body of S32Div stub. MemIsZero early-out; signed abs then U32DivEngine.
+; S32DivImpl: body of S32Div stub. Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL quotient.
+; div0: MemIsZero dividend → DEHL=0 Jump_000_2a5c; else jr_000_29f9.
+; jr_000_29f9: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2a5c; else jr_000_2a0f.
+; jr_000_2a0f: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2a23.
+; jr_000_2a23: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2a35.
+; jr_000_2a35: U32DivEngine → quot@sp+$01; rr sign → if set NegateBytes quot; jr_000_2a53 load DEHL; Jump_000_2a5c epilogue.
 
 S32DivImpl::
     add sp, -$09
@@ -9142,6 +9248,12 @@ LycCb_Bg8800::
     ret
 
 
+; [ezgb]
+; U32DivImpl: body of U32Div stub. Frame -$08; dividend@sp+$0a, divisor@sp+$0e → DEHL quotient.
+; MemIsZero dividend → DEHL=0 Jump_000_2aba; else jr_000_2a8a.
+; jr_000_2a8a: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2aba; else jr_000_2aa0.
+; jr_000_2aa0: U32DivEngine → load quot@sp+$00 into DEHL; Jump_000_2aba epilogue. Unsigned twin of S32DivImpl.
+
 U32DivImpl::
     add sp, -$08
     ld b, $04
@@ -9199,7 +9311,8 @@ Jump_000_2aba:
 
 ; [ezgb]
 ; MemIsZero: scan B bytes at HL; Z if all zero else NZ. Used by U32/S32 div/mod
-; stubs to reject zero dividend/divisor before Call_000_2de0.
+; stubs to reject zero dividend/divisor before U32DivEngine.
+; jr_000_2abf: while C--: *HL++==0 else NZ ret; fallthrough Z ret.
 
 MemIsZero::
     xor a
@@ -9232,6 +9345,7 @@ jr_000_2abf:
 ; [ezgb]
 ; ClearNegZero32: HL→MSB of 4-byte LE value; if value is 0 or $80000000,
 ; clear sign bit (force -0 → +0). Used by S32Cmp.
+; jr_000_2ad9: if bit7 clear A=0 else A=$80; match MSB then scan 3 lower bytes==0 → res 7.
 
 ClearNegZero32::
     xor a
@@ -9267,6 +9381,7 @@ jr_000_2ad9:
 ; [ezgb]
 ; MemCmp3Down: compare 3 bytes at DE vs HL walking downward; NZ on first diff.
 ; Local helper for S32Cmp MSB-side compare.
+; jr_000_2aed: C=3; *DE-*HL; NZ ret; dec both; --C; Z after 3 → equal ret.
 
 MemCmp3Down::
     ld c, $03
@@ -9284,9 +9399,10 @@ jr_000_2aed:
     jr jr_000_2aed
 
 ; [ezgb]
-; S32Cmp: signed long compare of stack args at sp+7 and sp+b (MSB at high addr).
-; Canon ±0 via ClearNegZero32, then sign-dispatch + MemCmp3Down. No external
-; callers in this build (only self-refs); kept as SDCC runtime residue.
+; S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.
+; a MSB set: if b also neg → MemCmp3Down swapped; else jr_000_2b14 C-set (a<b) ret.
+; jr_000_2b17: a pos; if b neg → A=$ff ret; else jr_000_2b20 MemCmp3Down a vs b.
+; No external callers in this build (SDCC runtime residue).
 
 S32Cmp::
     ld hl, sp+$07
@@ -9331,7 +9447,12 @@ jr_000_2b20:
     jr MemCmp3Down
 
 ; [ezgb]
-; S32ModImpl: body of S32Mod stub. MemIsZero early-out; signed abs then remainder path.
+; S32ModImpl: body of S32Mod stub (twin of S32DivImpl). Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL rem.
+; div0: MemIsZero dividend → DEHL=0 Jump_000_2b9f; else jr_000_2b3b.
+; jr_000_2b3b: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2b9f; else jr_000_2b51.
+; jr_000_2b51: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2b65.
+; jr_000_2b65: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2b77.
+; jr_000_2b77: U32DivEngine → rem@sp+$05; rr sign → if set NegateBytes rem; jr_000_2b96 load DEHL; Jump_000_2b9f epilogue.
 
 S32ModImpl::
     add sp, -$09
@@ -9452,6 +9573,10 @@ MulU8xU8Arg::
     ld c, a
     ld e, [hl]
 
+; [ezgb]
+; MulU8xU8(C×E) → DE: 8×8→16 shift-add. HL=0; jr_000_2bba: rr C, C-set → add hl,de.
+; jr_000_2bc0: sla e / rl d; jr_000_2bc8 finish when DE shifted out. Used by U32MulEngine.
+
 MulU8xU8::
     xor a
     ld h, a
@@ -9480,6 +9605,12 @@ jr_000_2bc8:
     ld d, h
     ret
 
+
+; [ezgb]
+; U16Mul(a@sp+$02, b@sp+$04) → DE: shift-add (Russian peasant). Load DE=a, BC=b.
+; jr_000_2bd8: HL=0; fall jr_000_2bdb. jr_000_2bdb: sra B; NZ → jr_000_2be8 else rr C; C-set add HL,DE; jr_000_2be4.
+; jr_000_2be4: Z after rr → jr_000_2bf9 else jr_000_2bed. jr_000_2be8: rr C; NC → jr_000_2bed else add HL,DE; fall jr_000_2bed.
+; jr_000_2bed: sla E; Z → jr_000_2bf5 else rl D → jr_000_2bdb. jr_000_2bf5: rl D; NZ → jr_000_2bdb; fall jr_000_2bf9 DE=HL ret.
 
 U16Mul::
     ld hl, sp+$02
@@ -9532,7 +9663,10 @@ jr_000_2bf9:
 
 
 ; [ezgb]
-; U32ModImpl: body of U32Mod stub. MemIsZero early-out; else U32DivEngine remainder path.
+; U32ModImpl: body of U32Mod stub. Twin of U32DivImpl; frame -$08; rem@sp+$04 → DEHL.
+; MemIsZero dividend → DEHL=0 Jump_000_2c3f; else jr_000_2c0f.
+; jr_000_2c0f: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2c3f; else jr_000_2c25.
+; jr_000_2c25: U32DivEngine → load rem@sp+$04 into DEHL; Jump_000_2c3f epilogue.
 
 U32ModImpl::
     add sp, -$08
@@ -9590,8 +9724,10 @@ Jump_000_2c3f:
 
 
 ; [ezgb]
-; Strrchr(ptr, char): walk to the NUL then scan back for char. Used with '/' to
-; find the basename of a launch path.
+; Strrchr(ptr@sp+$06, ch@sp+$08): last char in string → DE (0 if none). Used for '/' basename.
+; Jump_000_2c50: ++BC until NUL; stash end@sp+$00. Jump_000_2c5b: --ptr; if at start → Jump_000_2c85 else Jump_000_2c73.
+; Jump_000_2c73: *ptr!=ch → Jump_000_2c82 → Jump_000_2c5b; else jr_000_2c85. Jump_000_2c85/jr_000_2c85: recheck match.
+; Hit jr_000_2c97 DE=ptr → Jump_000_2ca2; miss Jump_000_2c94 → Jump_000_2c9f DE=0 → Jump_000_2ca2 ret.
 
 Strrchr::
     push af
@@ -9607,18 +9743,18 @@ Strrchr::
     inc hl
     ld b, [hl]
 
-Jump_000_2c50:
+Strrchr_scanToNul::
     ld a, [bc]
     inc bc
     or a
-    jp nz, Jump_000_2c50
+    jp nz, Strrchr_scanToNul
 
     ld hl, sp+$00
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_000_2c5b:
+Strrchr_walkBack::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -9632,15 +9768,15 @@ Jump_000_2c5b:
     ld a, [hl+]
     inc hl
     sub [hl]
-    jp nz, Jump_000_2c73
+    jp nz, Strrchr_cmpChar
 
     dec hl
     ld a, [hl+]
     inc hl
     sub [hl]
-    jp z, Jump_000_2c85
+    jp z, Strrchr_recheckMatch
 
-Jump_000_2c73:
+Strrchr_cmpChar::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -9649,16 +9785,15 @@ Jump_000_2c73:
     ld c, a
     ld hl, sp+$08
     sub [hl]
-    jp nz, Jump_000_2c82
+    jp nz, Strrchr_mismatch
 
-    jr jr_000_2c85
+    jr Strrchr_recheckMatch
 
-Jump_000_2c82:
-    jp Jump_000_2c5b
+Strrchr_mismatch::
+    jp Strrchr_walkBack
 
 
-Jump_000_2c85:
-jr_000_2c85:
+Strrchr_recheckMatch::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -9667,32 +9802,33 @@ jr_000_2c85:
     ld c, a
     ld hl, sp+$08
     sub [hl]
-    jp nz, Jump_000_2c94
+    jp nz, Strrchr_missSkip
 
-    jr jr_000_2c97
+    jr Strrchr_hitPtr
 
-Jump_000_2c94:
-    jp Jump_000_2c9f
+Strrchr_missSkip::
+    jp Strrchr_missZero
 
 
-jr_000_2c97:
+Strrchr_hitPtr::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
     ld d, [hl]
-    jp Jump_000_2ca2
+    jp Strrchr_epilogueRet
 
 
-Jump_000_2c9f:
+Strrchr_missZero::
     ld de, $0000
 
-Jump_000_2ca2:
+Strrchr_epilogueRet::
     add sp, $04
     ret
 
 
 ; [ezgb]
 ; Memset(dest, byte, len): fill dest with byte. Sibling of Memcpy.
+; jr_000_2cb2: while BC≠0: *HL++=D, --BC. Stack: dest@sp+$02, byte@+$04, len@+$05.
 
 Memset::
     ld hl, sp+$05
@@ -9718,6 +9854,7 @@ jr_000_2cb2:
 
 ; [ezgb]
 ; Memcpy(dest, src, len).
+; jr_000_2cc9: while BC≠0: *HL++=*DE++, --BC. Stack: dest@sp+$02, src@+$04, len@+$06.
 
 Memcpy::
     ld hl, sp+$06
@@ -9746,7 +9883,10 @@ jr_000_2cc9:
     jr jr_000_2cc9
 
 ; [ezgb]
-; Strncpy(dest, src, n): copy until NUL or n bytes, then zero-pad remainder.
+; Strncpy(dest, src, n): frame -$07; stash dest@sp+$01, src@sp+$03, n=BC, ret-dest@sp+$05.
+; Jump_000_2cf1: if BC==0 or *src==0 → Jump_000_2d1b; else --BC, ++src (jr_000_2d0c carry), *dest++=A (jr_000_2d18 carry) → Jump_000_2cf1.
+; Jump_000_2d1b: stash rem n@sp+$03; Jump_000_2d20: --n; if 0 → Jump_000_2d44 else *dest++=0 (jr_000_2d41 carry) → Jump_000_2d20.
+; Jump_000_2d44: DE=orig dest; add sp,$07 ret.
 
 Strncpy::
     add sp, -$07
@@ -9867,6 +10007,7 @@ Jump_000_2d44:
 ; [ezgb]
 ; NegateBytes: two's-complement negate of B bytes at HL (0-sbc loop).
 ; S32Div/S32Mod use this to abs signed long operands.
+; jr_000_2d4f: D=0; for C=B: *HL++ = D-sbc-*HL (borrow chain); ret.
 
 NegateBytes::
     ld c, b
@@ -9921,6 +10062,7 @@ SetTileCursor::
 
 ; [ezgb]
 ; GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E.
+; jr_000_2d7f: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorX.
 
 GetTileCursorX::
     ld a, [wGfxMode]
@@ -9939,6 +10081,7 @@ jr_000_2d7f:
 
 ; [ezgb]
 ; GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.
+; jr_000_2d90: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY.
 
 GetTileCursorY::
     ld a, [wGfxMode]
@@ -9957,6 +10100,7 @@ jr_000_2d90:
 
 ; [ezgb]
 ; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)
+; Jump_000_2da2: while *s++: ++len@sp+$00 (jr_000_2daf); Jump_000_2db2 DE=len ret.
 
 CStrLen::
     push af
@@ -9997,6 +10141,7 @@ Jump_000_2db2:
 
 ; [ezgb]
 ; MemZero: write 0 to B bytes at HL. U32DivEngine clears quot/rem scratch with this.
+; jr_000_2dbc: C=B; store A=0 via [HL+], dec C until zero.
 
 MemZero::
     ld c, b
@@ -10042,6 +10187,8 @@ U32MulImpl::
 ; [ezgb]
 ; U32DivEngine: multi-byte restoring divide used by U32Div/U32Mod. Helpers:
 ; MemZero, MemRol ($2ee2), MemSubCmp ($2ed8), MemSub ($2e30), IncWord ($2ecb).
+; B=digit width; C=B*8 bit count. Zero quot+rem scratch; jr_000_2df9: rol rem←dividend,
+; MemSubCmp divisor; NC → MemSub; jr_000_2e1f: rol quot bit; --C loop. Orphan before MemSub.
 
 U32DivEngine::
     ld a, b
@@ -10106,6 +10253,10 @@ jr_000_2e1f:
     push bc
     jr jr_000_2df9
 
+; [ezgb]
+; MemSub: multi-byte SBC: [DE] -= [HL] for B bytes (carry chain). U32DivEngine rem -= divisor.
+; jr_000_2e31: C=B; A=[DE] SBC [HL] → [DE]; ++HL/DE; until C=0.
+
 MemSub::
     ld c, b
 
@@ -10123,6 +10274,7 @@ jr_000_2e31:
 
 ; [ezgb]
 ; MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine.
+; jr_000_2e3b: C=B; store A via [HL+], dec C until zero.
 
 MemFill::
     ld c, b
@@ -10138,6 +10290,8 @@ jr_000_2e3b:
 ; [ezgb]
 ; U32MulEngine: multi-byte unsigned mul (B digit pairs). Zeros dest via MemZero,
 ; per-byte MulU8xU8 + PropagateCarry. U32Mul stub drives this with B=4.
+; Jump_000_2e5e/jr_000_2e64: inner digit cross-products; add to dest + PropagateCarry; IncWord ptrs.
+; jr_000_2e98: next outer digit (CopyBytes reset ptrs) → 2e5e; jr_000_2ec0 ret when B exhausted.
 
 U32MulEngine::
     add sp, -$06
@@ -10263,6 +10417,7 @@ IncWord::
 
 ; [ezgb]
 ; CopyBytes: copy B bytes DE→HL (register ABI).
+; jr_000_2ed1: C=B; A=[DE++] → [HL+]; until C=0.
 
 CopyBytes::
     ld c, b
@@ -10276,6 +10431,10 @@ jr_000_2ed1:
 
     ret
 
+
+; [ezgb]
+; MemSubCmp: multi-byte SBC compare [DE] vs [HL] for B bytes (no store). Flags = last SBC; U32DivEngine trial rem>=divisor.
+; jr_000_2eda: C=B; A=[DE] SBC [HL]; ++HL/DE; until C=0 (result discarded, carry retained).
 
 MemSubCmp::
     ld c, b
@@ -10292,6 +10451,10 @@ jr_000_2eda:
     ret
 
 
+; [ezgb]
+; MemRol: rotate-left B bytes at HL through carry (RL [HL]). U32DivEngine shifts rem←dividend bit.
+; jr_000_2ee3: C=B; RL [HL]; ++HL; until C=0.
+
 MemRol::
     ld c, b
 
@@ -10305,10 +10468,10 @@ jr_000_2ee3:
 
 
 ; [ezgb]
-; EnterGfxMode1: LCD off, prep VRAM/tilemap/callbacks, turn LCD on, set wGfxMode=1.
-; Defaults: wDrawOp=0 (replace), wDrawColor=3, wDrawColorB=0.
-; Draw helpers (DrawRect/PlotPixelXY/…) call this when wGfxMode!=1. Mode $02 set
-; elsewhere ($3d4a); full mode table still TODO.
+; EnterGfxMode1: LCD off if on; prep VRAM/tilemap/callbacks; LCD on; wGfxMode=1.
+; Defaults: wDrawOp=0, wDrawColor=3, wDrawColorB=0. Draw helpers call this when wGfxMode!=1.
+; jr_000_2ef4: VramFill $8100×$1680; VBlankCb_Bg8000 + LycCb_Bg8800; LYC=$48 STAT=$44; IE bit1.
+; jr_000_2f23: E=$12 rows; jr_000_2f25: fill 20 tiles/row ids $10+ (skip 12); LCDC on; ei ret.
 
 EnterGfxMode1::
     di
@@ -10382,6 +10545,7 @@ VramLoadTiles8100::
 ; [ezgb]
 ; BlitTile: B/C tile row/col via GfxRowTable; VramCopy $10 bytes (2bpp tile) to FB.
 ; Optional second plane from saved DE. Stack wrapper ensures EnterGfxMode1.
+; jr_000_2f84: dest=GfxRowTable[col]+row*16 on stack; if HL==0 skip first VramCopy $10; then pop dest + DE and VramCopy $10 (2nd plane).
 
 BlitTile::
     push de
@@ -10595,7 +10759,7 @@ GfxRowTable::
     inc b
     adc e
     ld b, $8b
-    ld [$0a8b], sp
+    ld [DirList_skipDot], sp
     adc e
     inc c
     adc e
@@ -13139,6 +13303,10 @@ jr_000_3a0a:
     ret
 
 
+; [ezgb]
+; ReadJoypadRaw: hardware P1 read → packed buttons in A (then swapped for menu ABI).
+; jr_000_3a22: after d-pad nibble ($20 select), swap into B; read face buttons ($10); OR; final swap; P1=$30 idle.
+
 ReadJoypadRaw::
     push bc
     ld a, $20
@@ -13205,43 +13373,53 @@ WaitJoypadMaskArg::
     ret
 
 
+; [ezgb]
+; DelayDE: push BC; DelayInner(DE); B=$32; Jump_000_3a5f pad loop; nop; pop BC; trail; ret. Used by Delay($3a93).
+; Jump_000_3a5f → jr_000_3a61 → jr_000_3a63 → jr_000_3a65 → jr_000_3a67 → jr_000_3a69: five jr pads then --B; NZ → Jump_000_3a5f.
+; After pad: nop; pop BC; jr_000_3a71 → jr_000_3a73 → jr_000_3a75 → ret (three more jr pads).
+
 DelayDE::
     push bc
     call DelayInner
     ld b, $32
 
-Jump_000_3a5f:
-    jr jr_000_3a61
+DelayDE_padLoop::
+    jr DelayDE_padA
 
-jr_000_3a61:
-    jr jr_000_3a63
+DelayDE_padA::
+    jr DelayDE_padB
 
-jr_000_3a63:
-    jr jr_000_3a65
+DelayDE_padB::
+    jr DelayDE_padC
 
-jr_000_3a65:
-    jr jr_000_3a67
+DelayDE_padC::
+    jr DelayDE_padD
 
-jr_000_3a67:
-    jr jr_000_3a69
+DelayDE_padD::
+    jr DelayDE_padDecB
 
-jr_000_3a69:
+DelayDE_padDecB::
     dec b
-    jp nz, Jump_000_3a5f
+    jp nz, DelayDE_padLoop
 
     nop
     pop bc
-    jr jr_000_3a71
+    jr DelayDE_trailA
 
-jr_000_3a71:
-    jr jr_000_3a73
+DelayDE_trailA::
+    jr DelayDE_trailB
 
-jr_000_3a73:
-    jr jr_000_3a75
+DelayDE_trailB::
+    jr DelayDE_ret
 
-jr_000_3a75:
+DelayDE_ret::
     ret
 
+
+; [ezgb]
+; DelayInner: --DE; if DE==0 ret; else B=$33; Jump_000_3a7c pad; nop; trail; jr DelayInner. Nested core for DelayDE.
+; Jump_000_3a7c → jr_000_3a7e → jr_000_3a80 → jr_000_3a82 → jr_000_3a84 → jr_000_3a86: five jr pads then --B; NZ → Jump_000_3a7c.
+; After pad: nop; jr_000_3a8d → jr_000_3a8f → jr_000_3a91 → DelayInner (three jr pads then outer loop).
 
 DelayInner::
     dec de
@@ -13251,35 +13429,35 @@ DelayInner::
 
     ld b, $33
 
-Jump_000_3a7c:
-    jr jr_000_3a7e
+DelayInner_padLoop::
+    jr DelayInner_padA
 
-jr_000_3a7e:
-    jr jr_000_3a80
+DelayInner_padA::
+    jr DelayInner_padB
 
-jr_000_3a80:
-    jr jr_000_3a82
+DelayInner_padB::
+    jr DelayInner_padC
 
-jr_000_3a82:
-    jr jr_000_3a84
+DelayInner_padC::
+    jr DelayInner_padD
 
-jr_000_3a84:
-    jr jr_000_3a86
+DelayInner_padD::
+    jr DelayInner_padDecB
 
-jr_000_3a86:
+DelayInner_padDecB::
     dec b
-    jp nz, Jump_000_3a7c
+    jp nz, DelayInner_padLoop
 
     nop
-    jr jr_000_3a8d
+    jr DelayInner_trailA
 
-jr_000_3a8d:
-    jr jr_000_3a8f
+DelayInner_trailA::
+    jr DelayInner_trailB
 
-jr_000_3a8f:
-    jr jr_000_3a91
+DelayInner_trailB::
+    jr DelayInner_outerLoop
 
-jr_000_3a91:
+DelayInner_outerLoop::
     jr DelayInner
 
 ; [ezgb]
@@ -13294,6 +13472,11 @@ Delay::
     call DelayDE
     ret
 
+
+; [ezgb]
+; CopyTilesVram(HL=dst VRAM, BC=src, DE=count): plain 2bpp byte-pair blit (no color remap). Sibling CopyTilesColor.
+; DE==0 early ret; H≥$98 → H-=$10. jr_000_3aa7: if E==0 --D; jr_000_3aac STAT-wait [HL++]=[BC++]; jr_000_3ab5 STAT-wait second byte.
+; jr_000_3ac9: --E; NZ → jr_000_3aac; --D; if D signed clear → jr_000_3aac else ret. H wrap $98→$88 after lo-byte wrap.
 
 CopyTilesVram::
     ld a, d
@@ -13351,6 +13534,12 @@ jr_000_3ac9:
 
     ret
 
+
+; [ezgb]
+; CopyTilesColor(HL=dst VRAM, BC=src, DE=count): 2bpp byte-pair blit with wDrawColor/wDrawColorB remap. DE==0 early ret; H≥$98 → H-=$10.
+; jr_000_3add: load *src++; colorB.0 → B=$ff else jr_000_3aee; colorB.1 → C=$ff else jr_000_3af4.
+; jr_000_3af4: D=color^colorB; bit0 → B^=src (else jr_000_3b01); bit1 → C^=src (else jr_000_3b08).
+; jr_000_3b08: STAT-wait [HL++]=B; jr_000_3b10: STAT-wait [HL++]=C; H==$98 → $88; jr_000_3b1f: --DE; NZ → jr_000_3add else ret. Used by UploadFontTiles.
 
 CopyTilesColor::
     ld a, d
@@ -13439,6 +13628,8 @@ jr_000_3b1f:
 ; RegisterFont(HL=font desc): LCD off; find free 3-byte slot in wFontSlots ($d73a,
 ; 6 entries); store next-tile id + font ptr; SelectFont; if wGfxMode bit1 set,
 ; UploadFontTiles; bump wFontNextTile by glyph count; LCD on. Returns HL=slot or 0.
+; jr_000_3b30: scan slots; free → jr_000_3b42 store+SelectFont+maybe Upload; full → HL=0.
+; jr_000_3b66: LCDC on ($81 & ~$18) ret. Orphan before UploadFontTiles.
 
 RegisterFont::
     call LcdOff
@@ -13496,6 +13687,7 @@ jr_000_3b66:
 ; [ezgb]
 ; UploadFontTiles: blit current font glyphs into VRAM near $9000+wFontBaseTile.
 ; Uses CopyTilesVram ($3a9c) or CopyTilesColor ($3ad2) per font header flags.
+; jr_000_3b9b: glyph src offset BC from header lo2 ($01→$80, $02→$0, else $100); dest=$9000+base*16; bit2→Color else Vram.
 
 UploadFontTiles::
     ld hl, wFontPtr
@@ -13600,9 +13792,9 @@ jr_000_3bd6:
 
 
 ; [ezgb]
-; PutBgTile(A): map char through font at wFontPtr, write tile id to BG map
-; $9800 + y*32 + x (wTileCursorY/X). STAT-safe. Optional farcall when
-; wFontFarFlag==0 (via ResetTileText first).
+; PutBgTile(A): map char through font at wFontPtr → tile id at BG $9800+y*32+x (wTileCursorY/X). STAT-safe.
+; If wFontFarFlag==0: ResetTileText + FarCallTrampoline; jr_000_3c01 nop fallthrough.
+; jr_000_3c02: if font hdr&3!=2 index glyph table else keep A; jr_000_3c19 +wFontBaseTile; map ptr; jr_000_3c34 STAT-wait store E.
 
 PutBgTile::
     push af
@@ -13707,6 +13899,7 @@ SelectFontArg::
 ; [ezgb]
 ; ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,
 ; clear wFontSlots, default draw colors, ClearBgMap.
+; jr_000_3c6b: zero $12 bytes at wFontSlots; then wDrawColor=3 / wDrawColorB=0; ClearBgMap.
 
 ResetTileText::
     push bc
@@ -13733,6 +13926,7 @@ jr_000_3c6b:
 
 ; [ezgb]
 ; ClearBgMap: fill BG map $9800 with tile 0 (32×32), STAT-safe.
+; jr_000_3c85: 32 rows; jr_000_3c87: STAT-wait write 0, 32 cols/row. Orphan before RetreatTileCursor.
 
 ClearBgMap::
     push de
@@ -13761,6 +13955,10 @@ jr_000_3c87:
     ret
 
 
+; [ezgb]
+; RetreatTileCursor: --wTileCursorX; at X=0 wrap to $13 and --Y (clamp at Y=0).
+; jr_000_3ca4: X wrap + maybe --Y; jr_000_3cae: pop HL ret. Inverse of AdvanceTileCursor.
+
 RetreatTileCursor::
     push hl
     ld hl, wTileCursorX
@@ -13787,6 +13985,7 @@ jr_000_3cae:
 
 ; [ezgb]
 ; TileNewline: wTileCursorX=0; ++Y or ScrollBgUp at bottom row ($11).
+; jr_000_3cc0: Y==$11 → ScrollBgUp; else ++Y; jr_000_3cc3 ret. Used by PrintChar on $0a.
 
 TileNewline::
     push hl
@@ -13810,6 +14009,8 @@ jr_000_3cc3:
 
 ; [ezgb]
 ; AdvanceTileCursor: ++wTileCursorX; wrap at $13 and bump Y (tilemap text).
+; jr_000_3cd1: X wrap → Y++; at Y=$11 → jr_000_3cde: if wGfxMode bit2 set reset cursors else jr_000_3cee ScrollBgUp.
+; jr_000_3cf1: pop HL ret. Sibling of AdvanceTextCursor.
 
 AdvanceTileCursor::
     push hl
@@ -13848,6 +14049,11 @@ jr_000_3cf1:
     pop hl
     ret
 
+
+; [ezgb]
+; ScrollBgUp: shift BG map $9800 up one row (31 row copies $9820→$9800). Called by AdvanceTileCursor.
+; jr_000_3cfe: D=$20 tiles/row; jr_000_3d00: STAT-wait copy [BC]→[HL++]; --E rows.
+; jr_000_3d11: STAT-wait clear bottom row to 0; pop HL/DE/BC ret.
 
 ScrollBgUp::
     push bc
@@ -13895,6 +14101,7 @@ jr_000_3d11:
 ; [ezgb]
 ; EnterGfxMode2: tear down mode-1 VBlank/LCD callbacks if LCD on, InitGfxMode2
 ; (clear cursors + BG, wGfxMode=2), restore LCDC. Tilemap text mode.
+; jr_000_3d3d: if LCD already off skip LcdOff+RemoveCallbackSlot; then InitGfxMode2, LCDC|=$81 &=$E7, ei.
 
 EnterGfxMode2::
     di
@@ -13952,6 +14159,7 @@ VramFill::
 ; [ezgb]
 ; VramFillActiveWinMap: pick window tilemap base from LCDC bit6 ($9800/$9C00),
 ; then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3.
+; jr_000_3d73: bit6 set → HL=$9C00; else $9800; both jr to shared $3d86 VramFill tail.
 
 VramFillActiveWinMap::
     ldh a, [rLCDC]
@@ -13968,6 +14176,7 @@ jr_000_3d73:
 ; [ezgb]
 ; VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then
 ; VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap.
+; jr_000_3d83: bit3 set → HL=$9C00; else $9800; jr_000_3d86: DE=$0400 jp VramFill.
 
 VramFillActiveBgMap::
     ldh a, [rLCDC]

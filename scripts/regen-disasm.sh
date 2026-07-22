@@ -38,7 +38,14 @@ run() {
 
 cd "$RE"
 run python3 "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite
-run python3 "$ROOT/scripts/annotate-disasm.py" "$VER"
+run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
+  ann_ec=$?
+  if [[ "$ann_ec" -eq 1 ]]; then
+    echo "warn: annotate-disasm.py exit $ann_ec (orphan note blocks — continuing)" >&2
+  else
+    exit "$ann_ec"
+  fi
+}
 run make -C disassembly
 
 echo "=== naming-progress ==="

@@ -42,10 +42,11 @@ SdWindowPeek::
 
 
 ; [ezgb]
-; SD sector read (disk_read). Program LBA via $7FB0-$7FB4, wait, then copy
-; from $A000 into caller buffer via VramCopyStack. Called as FarCallDiskRead.
-; Sibling DiskWrite_B2 is the write path (buffer -> $A000, then trigger).
-; Prologue: SetFpga7F30_B2.
+; DiskRead_B2: SD sector read (FarCallDiskRead). Prologue SetFpga7F30_B2 $01; sibling DiskWrite_B2.
+; Jump_002_4036: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 Jump_002_4071 else Jump_002_4065 rem then Jump_002_4071.
+; Jump_002_4071: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.
+; Jump_002_418d: SdWindowPeek until !=$e1; Jump_002_419d: mode $01 + VramCopyStack $A000→buf, idx+=4 → Jump_002_4036.
+; Jump_002_41c7: mode $00; E=0; add sp,$13 ret.
 
 DiskRead_B2::
     add sp, -$13
@@ -354,9 +355,11 @@ Jump_002_41c7:
 
 
 ; [ezgb]
-; SD sector write (disk_write). Copy buffer to $A000 via VramCopyStack, then
-; program $7FB0/$7FB1/$7FB2 and trigger. Prologue: SetFpga7F30_B2 $01 then $03.
-; Called as FarCallDiskWrite. Sibling DiskRead_B2 is the read path.
+; DiskWrite_B2: SD sector write (FarCallDiskWrite). Prologue SetFpga7F30_B2 $01 then $03; sibling DiskRead_B2.
+; Jump_002_41ed: chunk loop vs count@sp+$1a; rem>4 → clamp Jump_002_4223 else Jump_002_421c rem then Jump_002_4223.
+; Jump_002_4223: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.
+; Jump_002_4350: SdWindowPeek until !=$e1; Jump_002_4360: idx+=4 → Jump_002_41ed.
+; Jump_002_4369: Delay+$000a; mode $00; E=0 ret.
 
 DiskWrite_B2::
     add sp, -$10
