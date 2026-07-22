@@ -125,10 +125,6 @@ Deterministic scripts do the hunt and mechanical names. You (or an agent) only
 ./scripts/map-next.sh --banks 09       # FatFs canonical bank (prefer for lib work)
 ./scripts/map-next.sh --include-lib    # all lib banks + app
 
-# Cron / no-LLM pass (clones → propose --apply → regen → packet)
-./scripts/label-cron.sh 1.05e
-# exit 2 ⇒ packet needs judgment
-
 # Pieces (if you prefer not to use map-next):
 ./scripts/propose-labels.py 1.05e          # review; --apply when ok
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5

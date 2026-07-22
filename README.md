@@ -35,7 +35,6 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 │   ├── label-packet.py        # body/callers/WRAM packet for top worklist target
 │   ├── interior-packet.py     # unnamed interior labels + --apply batch sym writes
 │   ├── propose-labels.py      # mechanical IRQ/farcall/FPGA/clone proposals
-│   ├── label-cron.sh          # stamp → propose → regen → packet (no LLM)
 │   ├── regen-disasm.sh        # mgbdis → annotate → make → progress
 │   ├── setup-sameboy.sh
 │   ├── refresh-sameboy-patch.sh

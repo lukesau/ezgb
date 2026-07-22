@@ -64,17 +64,17 @@ refuses to rewrite the bank files. `annotate-disasm.py` also emits `wram.inc`
 for any `kernel.sym` entries with CPU addr ≥ `$C000` (mgbdis rewrites
 `[wGfxMode]` but does not define those labels itself).
 
-## Agent vs cron (token-cheap)
+## Agent vs mechanical (token-cheap)
 
 | Pass | Who | What |
 |---|---|---|
 | Session | Human or agent | `map-next.sh` — progress + proposals + worklist + packet |
-| Deterministic | `label-cron.sh` (timer, no LLM) | `stamp-bank-clones` → `propose-labels --apply` → `regen-disasm` → `label-packet` |
-| Judgment | Human or agent (cron / packet exit 2 / `needs_judgment: 1`) | Ambiguous WRAM, UI/control flow; apply or reject proposals — **do not re-explore** |
+| Mechanical | `propose-labels.py --apply` (+ regen) | IRQ wrappers / farcalls / FPGA shapes / bank clones |
+| Judgment | Human or agent (`needs_judgment: 1`) | Ambiguous WRAM, UI/control flow; apply or reject proposals — **do not re-explore** |
 
 ```sh
 ./scripts/map-next.sh                  # human default: progress + proposals + packet
-./scripts/label-cron.sh 1.05e          # exit 2 = needs judgment
+./scripts/map-next.sh --apply          # stamp mechanical proposals, then packet
 ./scripts/label-packet.py 1.05e --app --frontier-only --top 5
 ./scripts/propose-labels.py 1.05e      # dry-run; --apply to stamp
 ./scripts/regen-disasm.sh 1.05e
@@ -263,7 +263,6 @@ conservative for the same reason.
 ./scripts/doc-symbol-coverage.py --top 25
 
 # mechanical + regen
-./scripts/label-cron.sh 1.05e
 ./scripts/propose-labels.py 1.05e --apply
 ./scripts/regen-disasm.sh 1.05e
 
