@@ -1926,7 +1926,7 @@ Fpga7FD2WaitClear_B8::
     ld a, $e4
     ld [bc], a
 
-Jump_008_475e:
+Fpga7FD2WaitClear_B8_pollA000::
     ld bc, $a000
     ld a, [bc]
     ld c, a
@@ -1934,7 +1934,7 @@ Jump_008_475e:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_008_475e
+    jp nz, Fpga7FD2WaitClear_B8_pollA000
 
     ld bc, $7f00
     ld a, $e1
@@ -11790,12 +11790,12 @@ RomLoad_Build_B8::
     ld hl, sp+$0a
     ld c, [hl]
 
-Jump_008_6df0:
+RomLoad_Build_B8_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_008_6e12
+    jp z, RomLoad_Build_B8_epilogueRet
 
     ld hl, sp+$00
     ld e, [hl]
@@ -11804,12 +11804,12 @@ Jump_008_6df0:
     ld a, [de]
     dec hl
     inc [hl]
-    jr nz, jr_008_6e03
+    jr nz, RomLoad_Build_B8_incSrc
 
     inc hl
     inc [hl]
 
-jr_008_6e03:
+RomLoad_Build_B8_incSrc::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -11817,16 +11817,16 @@ jr_008_6e03:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_008_6e0f
+    jr nz, RomLoad_Build_B8_storeCont
 
     inc hl
     inc [hl]
 
-jr_008_6e0f:
-    jp Jump_008_6df0
+RomLoad_Build_B8_storeCont::
+    jp RomLoad_Build_B8_decN
 
 
-Jump_008_6e12:
+RomLoad_Build_B8_epilogueRet::
     add sp, $04
     ret
 
@@ -12388,7 +12388,7 @@ DrawFwVersionScreen::
     ld a, [bc]
     ld c, a
     or a
-    jp z, Jump_008_70e1
+    jp z, DrawFwVersionScreen_drawChrome
 
     inc hl
     ld e, [hl]
@@ -12397,7 +12397,7 @@ DrawFwVersionScreen::
     ld a, c
     ld [de], a
 
-Jump_008_70e1:
+DrawFwVersionScreen_drawChrome::
     ld hl, $0000
     push hl
     ld a, $00
@@ -12452,19 +12452,19 @@ Jump_008_70e1:
     call DrawString
     add sp, $05
 
-Jump_008_7141:
+DrawFwVersionScreen_waitSelect::
     call WaitVBlankFlag
     call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     and $40
-    jr nz, jr_008_7152
+    jr nz, DrawFwVersionScreen_epilogueRet
 
-    jp Jump_008_7141
+    jp DrawFwVersionScreen_waitSelect
 
 
-jr_008_7152:
+DrawFwVersionScreen_epilogueRet::
     add sp, $34
     ret
 

@@ -135,12 +135,12 @@ RomLoad_Build_B4::
     ld hl, sp+$0a
     ld c, [hl]
 
-Jump_004_40c2:
+RomLoad_Build_B4_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_004_40e4
+    jp z, RomLoad_Build_B4_epilogueRet
 
     ld hl, sp+$00
     ld e, [hl]
@@ -149,12 +149,12 @@ Jump_004_40c2:
     ld a, [de]
     dec hl
     inc [hl]
-    jr nz, jr_004_40d5
+    jr nz, RomLoad_Build_B4_incSrc
 
     inc hl
     inc [hl]
 
-jr_004_40d5:
+RomLoad_Build_B4_incSrc::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -162,16 +162,16 @@ jr_004_40d5:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_004_40e1
+    jr nz, RomLoad_Build_B4_storeCont
 
     inc hl
     inc [hl]
 
-jr_004_40e1:
-    jp Jump_004_40c2
+RomLoad_Build_B4_storeCont::
+    jp RomLoad_Build_B4_decN
 
 
-Jump_004_40e4:
+RomLoad_Build_B4_epilogueRet::
     add sp, $04
     ret
 
@@ -337,8 +337,8 @@ RomLoad_ResetIntoRom_B4::
     ld a, $e4
     ld [bc], a
 
-Jump_004_41ce:
-    jp Jump_004_41ce
+RomLoad_ResetIntoRom_B4_hang::
+    jp RomLoad_ResetIntoRom_B4_hang
 
 
     ret
@@ -1552,13 +1552,13 @@ DrawTimeAutosaveScreen::
     sub $01
     jp nz, DrawTimeAutosaveScreen_setupSkipDrawRect
 
-    jr jr_004_47d1
+    jr DrawTimeAutosaveScreen_setupDoDrawRect
 
 DrawTimeAutosaveScreen_setupSkipDrawRect::
     jp DrawTimeAutosaveScreen_fieldSlotPtrs
 
 
-jr_004_47d1:
+DrawTimeAutosaveScreen_setupDoDrawRect::
     ld hl, $0002
     push hl
     ld a, $02
@@ -1784,13 +1784,13 @@ DrawTimeAutosaveScreen_redraw::
     sub $01
     jp nz, DrawTimeAutosaveScreen_hiliteGate
 
-    jr jr_004_4909
+    jr DrawTimeAutosaveScreen_hilitePath
 
 DrawTimeAutosaveScreen_hiliteGate::
     jp DrawTimeAutosaveScreen_fpgaPage6
 
 
-jr_004_4909:
+DrawTimeAutosaveScreen_hilitePath::
     xor a
     ld hl, sp+$3d
     or [hl]
@@ -1875,13 +1875,13 @@ DrawTimeAutosaveScreen_setStringB::
     sub $01
     jp nz, DrawTimeAutosaveScreen_setStringC
 
-    jr jr_004_4995
+    jr DrawTimeAutosaveScreen_setStringCPath
 
 DrawTimeAutosaveScreen_setStringC::
     jp DrawTimeAutosaveScreen_setStringD
 
 
-jr_004_4995:
+DrawTimeAutosaveScreen_setStringCPath::
     ld hl, $0002
     push hl
     ld a, $02
@@ -1916,13 +1916,13 @@ DrawTimeAutosaveScreen_setStringE::
     sub $01
     jp nz, DrawTimeAutosaveScreen_setStringsDone
 
-    jr jr_004_49d0
+    jr DrawTimeAutosaveScreen_setStringsDonePath
 
 DrawTimeAutosaveScreen_setStringsDone::
     jp DrawTimeAutosaveScreen_fpgaPage6
 
 
-jr_004_49d0:
+DrawTimeAutosaveScreen_setStringsDonePath::
     ld hl, $0002
     push hl
     ld a, $02
@@ -2070,13 +2070,13 @@ DrawTimeAutosaveScreen_fpgaPage6::
     sub b
     jp nz, DrawTimeAutosaveScreen_fpgaSlotGate
 
-    jr jr_004_4aa6
+    jr DrawTimeAutosaveScreen_fpgaSlotGatePath
 
 DrawTimeAutosaveScreen_fpgaSlotGate::
     jp DrawTimeAutosaveScreen_field0Clone
 
 
-jr_004_4aa6:
+DrawTimeAutosaveScreen_fpgaSlotGatePath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2196,13 +2196,13 @@ DrawTimeAutosaveScreen_field0LoadVal::
     sub b
     jp nz, DrawTimeAutosaveScreen_field0Next
 
-    jr jr_004_4b46
+    jr DrawTimeAutosaveScreen_field0NextPath
 
 DrawTimeAutosaveScreen_field0Next::
     jp DrawTimeAutosaveScreen_field1Clone
 
 
-jr_004_4b46:
+DrawTimeAutosaveScreen_field0NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2319,13 +2319,13 @@ DrawTimeAutosaveScreen_field1LoadVal::
     sub b
     jp nz, DrawTimeAutosaveScreen_field1Next
 
-    jr jr_004_4be4
+    jr DrawTimeAutosaveScreen_field1NextPath
 
 DrawTimeAutosaveScreen_field1Next::
     jp DrawTimeAutosaveScreen_field2Clone
 
 
-jr_004_4be4:
+DrawTimeAutosaveScreen_field1NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2433,13 +2433,13 @@ DrawTimeAutosaveScreen_field2LoadVal::
     sub b
     jp nz, DrawTimeAutosaveScreen_field2Next
 
-    jr jr_004_4c72
+    jr DrawTimeAutosaveScreen_field2NextPath
 
 DrawTimeAutosaveScreen_field2Next::
     jp DrawTimeAutosaveScreen_field3Clone
 
 
-jr_004_4c72:
+DrawTimeAutosaveScreen_field2NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2556,13 +2556,13 @@ DrawTimeAutosaveScreen_field3LoadVal::
     sub b
     jp nz, DrawTimeAutosaveScreen_field3Next
 
-    jr jr_004_4d11
+    jr DrawTimeAutosaveScreen_field3NextPath
 
 DrawTimeAutosaveScreen_field3Next::
     jp DrawTimeAutosaveScreen_field4Clone
 
 
-jr_004_4d11:
+DrawTimeAutosaveScreen_field3NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2679,13 +2679,13 @@ DrawTimeAutosaveScreen_field4LoadVal::
     sub b
     jp nz, DrawTimeAutosaveScreen_field4Next
 
-    jr jr_004_4db0
+    jr DrawTimeAutosaveScreen_field4NextPath
 
 DrawTimeAutosaveScreen_field4Next::
     jp DrawTimeAutosaveScreen_field5Clone
 
 
-jr_004_4db0:
+DrawTimeAutosaveScreen_field4NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
@@ -2961,13 +2961,13 @@ DrawTimeAutosaveScreen_savYearClone::
     sub $01
     jp nz, DrawTimeAutosaveScreen_savMonGate
 
-    jr jr_004_4f3b
+    jr DrawTimeAutosaveScreen_savMonGatePath
 
 DrawTimeAutosaveScreen_savMonGate::
     jp DrawTimeAutosaveScreen_savMonClone
 
 
-jr_004_4f3b:
+DrawTimeAutosaveScreen_savMonGatePath::
     ld hl, $0002
     push hl
     ld a, $03
@@ -3050,13 +3050,13 @@ DrawTimeAutosaveScreen_savMonClone::
     sub $02
     jp nz, DrawTimeAutosaveScreen_savDayGate
 
-    jr jr_004_4fbd
+    jr DrawTimeAutosaveScreen_savDayGatePath
 
 DrawTimeAutosaveScreen_savDayGate::
     jp DrawTimeAutosaveScreen_savDayClone
 
 
-jr_004_4fbd:
+DrawTimeAutosaveScreen_savDayGatePath::
     ld hl, $0002
     push hl
     ld a, $03
@@ -3130,13 +3130,13 @@ DrawTimeAutosaveScreen_savDayClone::
     sub $03
     jp nz, DrawTimeAutosaveScreen_savHrGate
 
-    jr jr_004_502e
+    jr DrawTimeAutosaveScreen_savHrGatePath
 
 DrawTimeAutosaveScreen_savHrGate::
     jp DrawTimeAutosaveScreen_savHrClone
 
 
-jr_004_502e:
+DrawTimeAutosaveScreen_savHrGatePath::
     ld hl, $0002
     push hl
     ld a, $03
@@ -3219,13 +3219,13 @@ DrawTimeAutosaveScreen_savHrClone::
     sub $04
     jp nz, DrawTimeAutosaveScreen_savMinGate
 
-    jr jr_004_50b0
+    jr DrawTimeAutosaveScreen_savMinGatePath
 
 DrawTimeAutosaveScreen_savMinGate::
     jp DrawTimeAutosaveScreen_savMinClone
 
 
-jr_004_50b0:
+DrawTimeAutosaveScreen_savMinGatePath::
     ld hl, $0002
     push hl
     ld a, $03
@@ -3308,13 +3308,13 @@ DrawTimeAutosaveScreen_savMinClone::
     sub $05
     jp nz, DrawTimeAutosaveScreen_savSecGate
 
-    jr jr_004_5132
+    jr DrawTimeAutosaveScreen_savSecGatePath
 
 DrawTimeAutosaveScreen_savSecGate::
     jp DrawTimeAutosaveScreen_savSecClone
 
 
-jr_004_5132:
+DrawTimeAutosaveScreen_savSecGatePath::
     ld hl, $0002
     push hl
     ld a, $03
@@ -3351,12 +3351,12 @@ DrawTimeAutosaveScreen_inputLoop::
     ld b, $00
     ld a, c
     and $02
-    jr nz, jr_004_5170
+    jr nz, DrawTimeAutosaveScreen_inputLoopFieldDec
 
     jp DrawTimeAutosaveScreen_fieldDecWrap
 
 
-jr_004_5170:
+DrawTimeAutosaveScreen_inputLoopFieldDec::
     xor a
     ld hl, sp+$40
     or [hl]
@@ -3394,12 +3394,12 @@ DrawTimeAutosaveScreen_fieldDecDirty::
 DrawTimeAutosaveScreen_fieldDecWrap::
     ld a, c
     and $01
-    jr nz, jr_004_51a1
+    jr nz, DrawTimeAutosaveScreen_fieldDecWrapFieldInc
 
     jp DrawTimeAutosaveScreen_fieldIncWrap
 
 
-jr_004_51a1:
+DrawTimeAutosaveScreen_fieldDecWrapFieldInc::
     xor a
     ld hl, sp+$40
     or [hl]
@@ -3417,13 +3417,13 @@ jr_004_51a1:
     sub $06
     jp nz, DrawTimeAutosaveScreen_fieldIncGate
 
-    jr jr_004_51bd
+    jr DrawTimeAutosaveScreen_fieldIncGateWrap0
 
 DrawTimeAutosaveScreen_fieldIncGate::
     jp DrawTimeAutosaveScreen_fieldIncDirty
 
 
-jr_004_51bd:
+DrawTimeAutosaveScreen_fieldIncGateWrap0::
     ld hl, sp+$3f
     ld [hl], $00
 
@@ -3436,12 +3436,12 @@ DrawTimeAutosaveScreen_fieldIncDirty::
 DrawTimeAutosaveScreen_fieldIncWrap::
     ld a, c
     and $04
-    jr nz, jr_004_51d0
+    jr nz, DrawTimeAutosaveScreen_fieldIncWrapBump
 
     jp DrawTimeAutosaveScreen_fieldDecBtn
 
 
-jr_004_51d0:
+DrawTimeAutosaveScreen_fieldIncWrapBump::
     xor a
     ld hl, sp+$40
     or [hl]
@@ -3467,13 +3467,13 @@ jr_004_51d0:
     sub $63
     jp nz, DrawTimeAutosaveScreen_field0YrGate
 
-    jr jr_004_51f6
+    jr DrawTimeAutosaveScreen_field0YrGateZero
 
 DrawTimeAutosaveScreen_field0YrGate::
     jp DrawTimeAutosaveScreen_field0YrWrap
 
 
-jr_004_51f6:
+DrawTimeAutosaveScreen_field0YrGateZero::
     ld hl, sp+$2e
     ld e, [hl]
     inc hl
@@ -3505,13 +3505,13 @@ DrawTimeAutosaveScreen_field1MonCheck::
     sub $01
     jp nz, DrawTimeAutosaveScreen_field1MonGate
 
-    jr jr_004_521e
+    jr DrawTimeAutosaveScreen_field1MonGatePath
 
 DrawTimeAutosaveScreen_field1MonGate::
     jp DrawTimeAutosaveScreen_field2DayCheck
 
 
-jr_004_521e:
+DrawTimeAutosaveScreen_field1MonGatePath::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -3521,13 +3521,13 @@ jr_004_521e:
     sub $0c
     jp nz, DrawTimeAutosaveScreen_field1MonPath
 
-    jr jr_004_522f
+    jr DrawTimeAutosaveScreen_field1MonPathZero
 
 DrawTimeAutosaveScreen_field1MonPath::
     jp DrawTimeAutosaveScreen_field1MonLoad
 
 
-jr_004_522f:
+DrawTimeAutosaveScreen_field1MonPathZero::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -3559,13 +3559,13 @@ DrawTimeAutosaveScreen_field2DayCheck::
     sub $02
     jp nz, DrawTimeAutosaveScreen_field2DayGate
 
-    jr jr_004_5257
+    jr DrawTimeAutosaveScreen_field2DayGatePath
 
 DrawTimeAutosaveScreen_field2DayGate::
     jp DrawTimeAutosaveScreen_field3HrCheck
 
 
-jr_004_5257:
+DrawTimeAutosaveScreen_field2DayGatePath::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -3637,13 +3637,13 @@ DrawTimeAutosaveScreen_field2DayLoadA::
     sub $1f
     jp nz, DrawTimeAutosaveScreen_field2DayPath
 
-    jr jr_004_52ab
+    jr DrawTimeAutosaveScreen_field2DayPathZero
 
 DrawTimeAutosaveScreen_field2DayPath::
     jp DrawTimeAutosaveScreen_field2DayLoadB
 
 
-jr_004_52ab:
+DrawTimeAutosaveScreen_field2DayPathZero::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3679,13 +3679,13 @@ DrawTimeAutosaveScreen_field2DayLoadC::
     sub $1e
     jp nz, DrawTimeAutosaveScreen_field2DayPath2
 
-    jr jr_004_52d7
+    jr DrawTimeAutosaveScreen_field2DayPath2Zero
 
 DrawTimeAutosaveScreen_field2DayPath2::
     jp DrawTimeAutosaveScreen_field2DayLoadD
 
 
-jr_004_52d7:
+DrawTimeAutosaveScreen_field2DayPath2Zero::
     ld hl, sp+$2a
     ld e, [hl]
     inc hl
@@ -3793,13 +3793,13 @@ DrawTimeAutosaveScreen_field3HrCheck::
     sub $03
     jp nz, DrawTimeAutosaveScreen_field3HrGate
 
-    jr jr_004_5357
+    jr DrawTimeAutosaveScreen_field3HrGatePath
 
 DrawTimeAutosaveScreen_field3HrGate::
     jp DrawTimeAutosaveScreen_field4MinCheck
 
 
-jr_004_5357:
+DrawTimeAutosaveScreen_field3HrGatePath::
     ld hl, sp+$28
     ld e, [hl]
     inc hl
@@ -3809,13 +3809,13 @@ jr_004_5357:
     sub $17
     jp nz, DrawTimeAutosaveScreen_field3HrPath
 
-    jr jr_004_5368
+    jr DrawTimeAutosaveScreen_field3HrPathZero
 
 DrawTimeAutosaveScreen_field3HrPath::
     jp DrawTimeAutosaveScreen_field3HrLoad
 
 
-jr_004_5368:
+DrawTimeAutosaveScreen_field3HrPathZero::
     ld hl, sp+$28
     ld e, [hl]
     inc hl
@@ -3847,13 +3847,13 @@ DrawTimeAutosaveScreen_field4MinCheck::
     sub $04
     jp nz, DrawTimeAutosaveScreen_field4MinGate
 
-    jr jr_004_5390
+    jr DrawTimeAutosaveScreen_field4MinGatePath
 
 DrawTimeAutosaveScreen_field4MinGate::
     jp DrawTimeAutosaveScreen_field5SecCheck
 
 
-jr_004_5390:
+DrawTimeAutosaveScreen_field4MinGatePath::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -3863,13 +3863,13 @@ jr_004_5390:
     sub $3b
     jp nz, DrawTimeAutosaveScreen_field4MinPath
 
-    jr jr_004_53a1
+    jr DrawTimeAutosaveScreen_field4MinPathZero
 
 DrawTimeAutosaveScreen_field4MinPath::
     jp DrawTimeAutosaveScreen_field4MinLoad
 
 
-jr_004_53a1:
+DrawTimeAutosaveScreen_field4MinPathZero::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -3901,13 +3901,13 @@ DrawTimeAutosaveScreen_field5SecCheck::
     sub $05
     jp nz, DrawTimeAutosaveScreen_field5SecGate
 
-    jr jr_004_53c9
+    jr DrawTimeAutosaveScreen_field5SecGatePath
 
 DrawTimeAutosaveScreen_field5SecGate::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-jr_004_53c9:
+DrawTimeAutosaveScreen_field5SecGatePath::
     ld hl, sp+$30
     ld e, [hl]
     inc hl
@@ -4077,13 +4077,13 @@ DrawTimeAutosaveScreen_field1MonDecCheck::
     sub $02
     jp nz, DrawTimeAutosaveScreen_field1MonDecSkip
 
-    jr jr_004_5489
+    jr DrawTimeAutosaveScreen_field1MonDecSkipPath
 
 DrawTimeAutosaveScreen_field1MonDecSkip::
     jp DrawTimeAutosaveScreen_field3HrDecCheck
 
 
-jr_004_5489:
+DrawTimeAutosaveScreen_field1MonDecSkipPath::
     ld hl, sp+$2c
     ld e, [hl]
     inc hl
@@ -4227,13 +4227,13 @@ DrawTimeAutosaveScreen_field2DayDecLoadE::
     sub $01
     jp nz, DrawTimeAutosaveScreen_field2DayDecSkip
 
-    jr jr_004_552b
+    jr DrawTimeAutosaveScreen_field2DayDecSkipPath
 
 DrawTimeAutosaveScreen_field2DayDecSkip::
     jp DrawTimeAutosaveScreen_field2DayDecLoadG
 
 
-jr_004_552b:
+DrawTimeAutosaveScreen_field2DayDecSkipPath::
     ld hl, sp+$2e
     ld e, [hl]
     inc hl
@@ -4294,13 +4294,13 @@ DrawTimeAutosaveScreen_field3HrDecCheck::
     sub $03
     jp nz, DrawTimeAutosaveScreen_field3HrDecSkip
 
-    jr jr_004_5577
+    jr DrawTimeAutosaveScreen_field3HrDecSkipPath
 
 DrawTimeAutosaveScreen_field3HrDecSkip::
     jp DrawTimeAutosaveScreen_field4MinDecCheck
 
 
-jr_004_5577:
+DrawTimeAutosaveScreen_field3HrDecSkipPath::
     ld hl, sp+$28
     ld e, [hl]
     inc hl
@@ -4340,13 +4340,13 @@ DrawTimeAutosaveScreen_field4MinDecCheck::
     sub $04
     jp nz, DrawTimeAutosaveScreen_field4MinDecSkip
 
-    jr jr_004_55a8
+    jr DrawTimeAutosaveScreen_field4MinDecSkipPath
 
 DrawTimeAutosaveScreen_field4MinDecSkip::
     jp DrawTimeAutosaveScreen_field5SecDecCheck
 
 
-jr_004_55a8:
+DrawTimeAutosaveScreen_field4MinDecSkipPath::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -4386,13 +4386,13 @@ DrawTimeAutosaveScreen_field5SecDecCheck::
     sub $05
     jp nz, DrawTimeAutosaveScreen_field5SecDecSkip
 
-    jr jr_004_55d9
+    jr DrawTimeAutosaveScreen_field5SecDecSkipPath
 
 DrawTimeAutosaveScreen_field5SecDecSkip::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-jr_004_55d9:
+DrawTimeAutosaveScreen_field5SecDecSkipPath::
     ld hl, sp+$30
     ld e, [hl]
     inc hl
@@ -4445,36 +4445,36 @@ DrawTimeAutosaveScreen_hiliteInc::
 DrawTimeAutosaveScreen_exitCheck40::
     ld a, c
     and $40
-    jr nz, jr_004_5618
+    jr nz, DrawTimeAutosaveScreen_exitCheck40Epilogue
 
     jp DrawTimeAutosaveScreen_exitCheck20
 
 
-jr_004_5618:
+DrawTimeAutosaveScreen_exitCheck40Epilogue::
     jp DrawTimeAutosaveScreen_epilogueRet
 
 
 DrawTimeAutosaveScreen_exitCheck20::
     ld a, c
     and $20
-    jr nz, jr_004_5623
+    jr nz, DrawTimeAutosaveScreen_exitCheck20Redraw
 
     jp DrawTimeAutosaveScreen_exitCheck10
 
 
-jr_004_5623:
+DrawTimeAutosaveScreen_exitCheck20Redraw::
     jp DrawTimeAutosaveScreen_redraw
 
 
 DrawTimeAutosaveScreen_exitCheck10::
     ld a, c
     and $10
-    jr nz, jr_004_562e
+    jr nz, DrawTimeAutosaveScreen_exitCheck10Confirm
 
     jp DrawTimeAutosaveScreen_redraw
 
 
-jr_004_562e:
+DrawTimeAutosaveScreen_exitCheck10Confirm::
     xor a
     ld hl, sp+$3d
     or [hl]

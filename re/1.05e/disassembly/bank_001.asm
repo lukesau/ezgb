@@ -1795,12 +1795,12 @@ LastRomPersistLoop::
     ld [de], a
     inc hl
     inc [hl]
-    jr nz, jr_001_48af
+    jr nz, LastRomPersistLoop_copyCont
 
     inc hl
     inc [hl]
 
-jr_001_48af:
+LastRomPersistLoop_copyCont::
     jp LastRomPersistLoop
 
 
@@ -1832,16 +1832,16 @@ IsLeapYear::
     ld hl, sp+$04
     ld a, [hl]
     and $03
-    jr nz, jr_001_48d3
+    jr nz, IsLeapYear_notDiv4
 
-    jp Jump_001_48d6
-
-
-jr_001_48d3:
-    jp Jump_001_4913
+    jp IsLeapYear_mod100
 
 
-Jump_001_48d6:
+IsLeapYear_notDiv4::
+    jp IsLeapYear_retFlag
+
+
+IsLeapYear_mod100::
     ld hl, $0064
     push hl
     ld hl, sp+$06
@@ -1858,7 +1858,7 @@ Jump_001_48d6:
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_001_4911
+    jp nz, IsLeapYear_setLeap
 
     ld hl, $0190
     push hl
@@ -1876,16 +1876,16 @@ Jump_001_48d6:
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp z, Jump_001_4911
+    jp z, IsLeapYear_setLeap
 
     ld c, $00
-    jp Jump_001_4913
+    jp IsLeapYear_retFlag
 
 
-Jump_001_4911:
+IsLeapYear_setLeap::
     ld c, $01
 
-Jump_001_4913:
+IsLeapYear_retFlag::
     ld e, c
     add sp, $02
     ret

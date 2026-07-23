@@ -136,10 +136,10 @@ RunCallbackList::
     inc a
     ld [wIntNest], a
 
-jr_000_0071:
+RunCallbackList_walk::
     ld a, [hl+]
     or [hl]
-    jr z, jr_000_0080
+    jr z, RunCallbackList_decNest
 
     push hl
     ld a, [hl-]
@@ -148,9 +148,9 @@ jr_000_0071:
     call CallHL
     pop hl
     inc hl
-    jr jr_000_0071
+    jr RunCallbackList_walk
 
-jr_000_0080:
+RunCallbackList_decNest::
     ld a, [wIntNest]
     dec a
     ld [wIntNest], a
@@ -1587,7 +1587,7 @@ RemoveCallbackSlot::
     dec de
     inc hl
 
-jr_000_0661:
+RemoveCallbackSlot_compactTail::
     ld a, [hl+]
     ld [de], a
     ld b, a
@@ -1598,7 +1598,7 @@ jr_000_0661:
     or b
     ret z
 
-    jr jr_000_0661
+    jr RemoveCallbackSlot_compactTail
 
 ; [ezgb]
 ; InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.
@@ -1608,12 +1608,12 @@ jr_000_0661:
 InstallCallbackSlot::
     ld a, [hl+]
     or [hl]
-    jr z, jr_000_0673
+    jr z, InstallCallbackSlot_storeFree
 
     inc hl
     jr InstallCallbackSlot
 
-jr_000_0673:
+InstallCallbackSlot_storeFree::
     ld [hl], b
     dec hl
     ld [hl], c
@@ -1627,12 +1627,12 @@ jr_000_0673:
 VBlankCallback::
     ld hl, $d6d1
     inc [hl]
-    jr nz, jr_000_067f
+    jr nz, VBlankCallback_oamDmaFlag
 
     inc hl
     inc [hl]
 
-jr_000_067f:
+VBlankCallback_oamDmaFlag::
     call $ff80
     ld a, $01
     ld [$d6ce], a
@@ -1653,12 +1653,12 @@ WaitVBlankFlag::
     ld [$d6ce], a
     ei
 
-jr_000_0692:
+WaitVBlankFlag_haltLoop::
     halt
     nop
     ld a, [$d6ce]
     or a
-    jr z, jr_000_0692
+    jr z, WaitVBlankFlag_haltLoop
 
     xor a
     ld [$d6ce], a
@@ -1699,9 +1699,9 @@ OamDmaStub::
     ldh [rDMA], a
     ld a, $28
 
-jr_000_06bc:
+OamDmaStub_delayLoop::
     dec a
-    jr nz, jr_000_06bc
+    jr nz, OamDmaStub_delayLoop
 
     ret
 
@@ -1958,18 +1958,18 @@ WaitJoypadSelect::
     ld b, $00
     ld a, c
     sub $40
-    jp nz, Jump_000_07ce
+    jp nz, WaitJoypadSelect_retry
 
     or b
-    jp nz, Jump_000_07ce
+    jp nz, WaitJoypadSelect_retry
 
-    jr jr_000_07d1
+    jr WaitJoypadSelect_delayRet
 
-Jump_000_07ce:
+WaitJoypadSelect_retry::
     jp WaitJoypadSelect
 
 
-jr_000_07d1:
+WaitJoypadSelect_delayRet::
     ld hl, $00c8
     push hl
     call Delay
@@ -2346,12 +2346,12 @@ DrawU32Decimal::
     ld a, $14
     ld hl, $cc2f
     sub [hl]
-    jp nc, Jump_000_0982
+    jp nc, DrawU32Decimal_epilogueRet
 
     ld hl, $cc2f
     ld [hl], $00
 
-Jump_000_0982:
+DrawU32Decimal_epilogueRet::
     add sp, $15
     ret
 
@@ -2373,8 +2373,8 @@ SdReadRetryCount::
     call DrawString
     add sp, $05
 
-Jump_000_0998:
-    jp Jump_000_0998
+SdReadRetryCount_errorHang::
+    jp SdReadRetryCount_errorHang
 
 
     ret
@@ -2501,12 +2501,12 @@ MemSet8_B0::
     ld hl, sp+$08
     ld c, [hl]
 
-Jump_000_0a27:
+MemSet8_B0_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_000_0a40
+    jp z, MemSet8_B0_epilogueRet
 
     ld hl, sp+$06
     ld a, [hl]
@@ -2517,16 +2517,16 @@ Jump_000_0a27:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_0a3d
+    jr nz, MemSet8_B0_storeCont
 
     inc hl
     inc [hl]
 
-jr_000_0a3d:
-    jp Jump_000_0a27
+MemSet8_B0_storeCont::
+    jp MemSet8_B0_decN
 
 
-Jump_000_0a40:
+MemSet8_B0_epilogueRet::
     add sp, $02
     ret
 
@@ -3228,7 +3228,7 @@ DrawDirEntryLabel_epilogueRet::
     ret
 
 
-    jr nz, jr_000_0e02
+    jr nz, SdMenuMain_afterMount
 
     jr nz, SdMenuMain
 
@@ -3256,7 +3256,7 @@ SdMenuMain::
     ld l, [hl]
     dec b
 
-jr_000_0e02:
+SdMenuMain_afterMount::
     nop
     add sp, $05
     ld c, e
@@ -3264,7 +3264,7 @@ jr_000_0e02:
     ld [hl], c
     ld a, [hl]
     or a
-    jp z, Jump_000_0e24
+    jp z, SdMenuMain_mountOk
 
     ld hl, $cc2f
     ld a, [hl]
@@ -3277,11 +3277,11 @@ jr_000_0e02:
     call DrawString
     add sp, $05
 
-Jump_000_0e21:
-    jp Jump_000_0e21
+SdMenuMain_initErrorHang::
+    jp SdMenuMain_initErrorHang
 
 
-Jump_000_0e24:
+SdMenuMain_mountOk::
     ld hl, $cc2f
     ld a, [hl]
     push af
@@ -4123,7 +4123,7 @@ FileBrowserEntry_modeFarcall2::
     ret nc
 
     ld l, a
-    ld [$2100], sp
+    ld [AdvanceTextCursor_wrapX], sp
     ld [hl-], a
     nop
     push hl
@@ -4210,12 +4210,12 @@ LastRomLoadRecord::
     ld [bc], a
     ld hl, sp+$0f
     inc [hl]
-    jr nz, jr_000_12ee
+    jr nz, LastRomLoadRecord_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_12ee:
+LastRomLoadRecord_copyCont::
     jp LastRomLoadRecord
 
 
@@ -4684,7 +4684,7 @@ MenuDispatchAB_launchFarcalls::
     call FarCallTrampoline
     dec hl
     ld c, b
-    ld bc, $2100
+    ld bc, AdvanceTextCursor_wrapX
     and h
     call nz, $cde5
     adc l
@@ -5245,7 +5245,7 @@ BatteryCheck::
     ld a, [bc]
     ld c, a
     sub $88
-    jp z, Jump_000_18eb
+    jp z, BatteryCheck_enterSdMenu
 
     ld hl, $0805
     push hl
@@ -5316,23 +5316,23 @@ BatteryCheck::
     call DrawString
     add sp, $05
 
-Jump_000_18d7:
+BatteryCheck_waitA::
     call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     and $10
-    jr nz, jr_000_18e5
+    jr nz, BatteryCheck_markOk
 
-    jp Jump_000_18d7
+    jp BatteryCheck_waitA
 
 
-jr_000_18e5:
+BatteryCheck_markOk::
     ld bc, $a201
     ld a, $88
     ld [bc], a
 
-Jump_000_18eb:
+BatteryCheck_enterSdMenu::
     ld hl, $0000
     push hl
     ld a, $03
@@ -7110,7 +7110,7 @@ ApplyBasename::
     ld h, [hl]
     ld l, a
 
-jr_000_20ec:
+ApplyBasename_copyLoop::
     ld a, [de]
     inc de
     ld [hl], a
@@ -7118,7 +7118,7 @@ jr_000_20ec:
     ret z
 
     inc hl
-    jr jr_000_20ec
+    jr ApplyBasename_copyLoop
 
 ; [ezgb]
 ; AdvanceTextCursor: ++wTextCursorX; wrap at $13 → X=0, ++Y; at Y=$11 → Y=0 (no scroll).
@@ -7130,25 +7130,25 @@ AdvanceTextCursor::
     ld hl, wTextCursorX
     ld a, $13
     cp [hl]
-    jr z, jr_000_2100
+    jr z, AdvanceTextCursor_wrapX
 
     inc [hl]
-    jr jr_000_210f
+    jr AdvanceTextCursor_epilogueRet
 
-jr_000_2100:
+AdvanceTextCursor_wrapX::
     ld [hl], $00
     ld hl, wTextCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_210d
+    jr z, AdvanceTextCursor_wrapY
 
     inc [hl]
-    jr jr_000_210f
+    jr AdvanceTextCursor_epilogueRet
 
-jr_000_210d:
+AdvanceTextCursor_wrapY::
     ld [hl], $00
 
-jr_000_210f:
+AdvanceTextCursor_epilogueRet::
     pop hl
     ret
 
@@ -7179,8 +7179,7 @@ DrawCircle::
     ld a, h
     ld [wCircleErr], a
 
-Jump_000_2132:
-jr_000_2132:
+DrawCircle_midpointLoop::
     ld a, [wDrawX1]
     ld b, a
     ld a, [wDrawY1]
@@ -7192,7 +7191,7 @@ jr_000_2132:
     call z, CirclePlot8
     ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_2176
+    jr z, DrawCircle_errGe0
 
     ld a, [wDrawRectFill]
     or a
@@ -7216,9 +7215,9 @@ jr_000_2132:
     ld [wCircleErr], a
     ld a, l
     ld [$d72d], a
-    jr jr_000_2132
+    jr DrawCircle_midpointLoop
 
-jr_000_2176:
+DrawCircle_errGe0::
     ld a, [wDrawRectFill]
     or a
     call nz, CircleFillV
@@ -7250,7 +7249,7 @@ jr_000_2176:
     ld a, [wDrawY1]
     dec a
     ld [wDrawY1], a
-    jp Jump_000_2132
+    jp DrawCircle_midpointLoop
 
 
 CircleFillH::
@@ -7503,27 +7502,27 @@ DrawRectImpl::
     ld a, [wDrawX1]
     ld c, a
     sub b
-    jr nc, jr_000_22d9
+    jr nc, DrawRectImpl_afterSwapX
 
     ld a, c
     ld [wDrawX0], a
     ld a, b
     ld [wDrawX1], a
 
-jr_000_22d9:
+DrawRectImpl_afterSwapX::
     ld a, [wDrawY0]
     ld b, a
     ld a, [wDrawY1]
     ld c, a
     sub b
-    jr nc, jr_000_22ec
+    jr nc, DrawRectImpl_drawOutline
 
     ld a, c
     ld [wDrawY0], a
     ld a, b
     ld [wDrawY1], a
 
-jr_000_22ec:
+DrawRectImpl_drawOutline::
     ld a, [wDrawX0]
     ld b, a
     ld d, a
@@ -7591,7 +7590,7 @@ jr_000_22ec:
     ld a, c
     ld [wDrawColorB], a
 
-jr_000_236d:
+DrawRectImpl_fillScan::
     ld a, [wDrawX0]
     ld b, a
     ld a, [wDrawX1]
@@ -7604,13 +7603,13 @@ jr_000_236d:
     ld b, a
     ld a, [wDrawY0]
     cp b
-    jr z, jr_000_238d
+    jr z, DrawRectImpl_restoreColors
 
     inc a
     ld [wDrawY0], a
-    jr jr_000_236d
+    jr DrawRectImpl_fillScan
 
-jr_000_238d:
+DrawRectImpl_restoreColors::
     ld a, [wDrawColor]
     ld c, a
     ld a, [wDrawColorB]
@@ -8187,21 +8186,21 @@ ApplyPixel::
 
     ld e, b
     bit 0, d
-    jr nz, jr_000_2665
+    jr nz, ApplyPixel_checkPlane1
 
     push bc
     ld b, $00
 
-jr_000_2665:
+ApplyPixel_checkPlane1::
     bit 1, d
-    jr nz, jr_000_266b
+    jr nz, ApplyPixel_waitStatWrite
 
     ld e, $00
 
-jr_000_266b:
+ApplyPixel_waitStatWrite::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_266b
+    jr nz, ApplyPixel_waitStatWrite
 
     ld a, [hl]
     and c
@@ -8327,10 +8326,10 @@ GetPixel::
     ld a, [bc]
     ld c, a
 
-jr_000_26e7:
+GetPixel_waitStat::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_26e7
+    jr nz, GetPixel_waitStat
 
     ld a, [hl+]
     ld d, a
@@ -8339,18 +8338,18 @@ jr_000_26e7:
     ld b, $00
     ld a, d
     and c
-    jr z, jr_000_26f9
+    jr z, GetPixel_testPlane0
 
     set 0, b
 
-jr_000_26f9:
+GetPixel_testPlane0::
     ld a, e
     and c
-    jr z, jr_000_26ff
+    jr z, GetPixel_retColor
 
     set 1, b
 
-jr_000_26ff:
+GetPixel_retColor::
     ld e, b
     ret
 
@@ -8899,7 +8898,7 @@ S16DivMod::
     xor d
     push af
     bit 7, d
-    jr z, jr_000_2925
+    jr z, S16DivMod_absDividend
 
     sub a
     sub e
@@ -8908,9 +8907,9 @@ S16DivMod::
     sub d
     ld d, a
 
-jr_000_2925:
+S16DivMod_absDividend::
     bit 7, b
-    jr z, jr_000_292f
+    jr z, S16DivMod_u16Div
 
     sub a
     sub c
@@ -8919,13 +8918,13 @@ jr_000_2925:
     sub b
     ld b, a
 
-jr_000_292f:
+S16DivMod_u16Div::
     call U16DivMod
     ret c
 
     pop af
     and $80
-    jr z, jr_000_293e
+    jr z, S16DivMod_restoreSigns
 
     sub a
     sub c
@@ -8934,7 +8933,7 @@ jr_000_292f:
     sub b
     ld b, a
 
-jr_000_293e:
+S16DivMod_restoreSigns::
     pop af
     and $80
     ret z
@@ -9047,7 +9046,7 @@ U32Shr::
     ld l, c
     ld h, b
 
-Jump_000_299e:
+U32Shr_shiftLoop::
     or a
     ret z
 
@@ -9056,7 +9055,7 @@ Jump_000_299e:
     rr d
     rr e
     dec a
-    jp Jump_000_299e
+    jp U32Shr_shiftLoop
 
 
 ; [ezgb]
@@ -9078,7 +9077,7 @@ S32Sar::
     ld l, c
     ld h, b
 
-Jump_000_29bb:
+S32Sar_shiftLoop::
     or a
     ret z
 
@@ -9087,7 +9086,7 @@ Jump_000_29bb:
     rr d
     rr e
     dec a
-    jp Jump_000_29bb
+    jp S32Sar_shiftLoop
 
 
 ; [ezgb]
@@ -9109,7 +9108,7 @@ U32Shl::
     ld l, c
     ld h, b
 
-Jump_000_29d8:
+U32Shl_shiftLoop::
     or a
     ret z
 
@@ -9118,7 +9117,7 @@ Jump_000_29d8:
     rl l
     rl h
     dec a
-    jp Jump_000_29d8
+    jp U32Shl_shiftLoop
 
 
 ; [ezgb]
@@ -9259,20 +9258,20 @@ U32DivImpl::
     ld b, $04
     ld hl, sp+$0a
     call MemIsZero
-    jr nz, jr_000_2a8a
+    jr nz, U32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2aba
+    jp U32DivImpl_epilogueRet
 
 
-jr_000_2a8a:
+U32DivImpl_checkDivisor::
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, jr_000_2aa0
+    jr nz, U32DivImpl_runEngine
 
     ld a, $21
     ld [$d6c7], a
@@ -9281,10 +9280,10 @@ jr_000_2a8a:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2aba
+    jp U32DivImpl_epilogueRet
 
 
-jr_000_2aa0:
+U32DivImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -9304,7 +9303,7 @@ jr_000_2aa0:
     ld h, [hl]
     ld l, a
 
-Jump_000_2aba:
+U32DivImpl_epilogueRet::
     add sp, $08
     ret
 
@@ -9318,13 +9317,13 @@ MemIsZero::
     xor a
     ld c, b
 
-jr_000_2abf:
+MemIsZero_scanLoop::
     cp [hl]
     ret nz
 
     inc hl
     dec c
-    jr nz, jr_000_2abf
+    jr nz, MemIsZero_scanLoop
 
     ret
 
@@ -9350,11 +9349,11 @@ jr_000_2abf:
 ClearNegZero32::
     xor a
     bit 7, [hl]
-    jr z, jr_000_2ad9
+    jr z, ClearNegZero32_matchMsb
 
     ld a, $80
 
-jr_000_2ad9:
+ClearNegZero32_matchMsb::
     cp [hl]
     ret nz
 
@@ -9386,7 +9385,7 @@ jr_000_2ad9:
 MemCmp3Down::
     ld c, $03
 
-jr_000_2aed:
+MemCmp3Down_cmpLoop::
     ld a, [de]
     sub [hl]
     ret nz
@@ -9396,7 +9395,7 @@ jr_000_2aed:
     dec c
     ret z
 
-    jr jr_000_2aed
+    jr MemCmp3Down_cmpLoop
 
 ; [ezgb]
 ; S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.
@@ -9415,7 +9414,7 @@ S32Cmp::
 
     ld hl, sp+$0b
     bit 7, [hl]
-    jr z, jr_000_2b14
+    jr z, S32Cmp_retALess
 
     ld hl, sp+$0b
     ld d, h
@@ -9423,7 +9422,7 @@ S32Cmp::
     ld hl, sp+$07
     jr MemCmp3Down
 
-jr_000_2b14:
+S32Cmp_retALess::
     xor a
     ccf
     ret
@@ -9583,23 +9582,23 @@ MulU8xU8::
     ld l, a
     ld d, a
 
-jr_000_2bba:
+MulU8xU8_rrC::
     xor a
     rr c
-    jr nc, jr_000_2bc0
+    jr nc, MulU8xU8_shiftE
 
     add hl, de
 
-jr_000_2bc0:
+MulU8xU8_shiftE::
     sla e
-    jr z, jr_000_2bc8
+    jr z, MulU8xU8_finish
 
     rl d
-    jr jr_000_2bba
+    jr MulU8xU8_rrC
 
-jr_000_2bc8:
+MulU8xU8_finish::
     rl d
-    jr nz, jr_000_2bba
+    jr nz, MulU8xU8_rrC
 
     ld e, l
     ld d, h
@@ -9673,20 +9672,20 @@ U32ModImpl::
     ld b, $04
     ld hl, sp+$0a
     call MemIsZero
-    jr nz, jr_000_2c0f
+    jr nz, U32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2c3f
+    jp U32ModImpl_epilogueRet
 
 
-jr_000_2c0f:
+U32ModImpl_checkDivisor::
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, jr_000_2c25
+    jr nz, U32ModImpl_runEngine
 
     ld a, $21
     ld [$d6c7], a
@@ -9695,10 +9694,10 @@ jr_000_2c0f:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2c3f
+    jp U32ModImpl_epilogueRet
 
 
-jr_000_2c25:
+U32ModImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -9718,7 +9717,7 @@ jr_000_2c25:
     ld h, [hl]
     ld l, a
 
-Jump_000_2c3f:
+U32ModImpl_epilogueRet::
     add sp, $08
     ret
 
@@ -9842,7 +9841,7 @@ Memset::
     ld h, [hl]
     ld l, a
 
-jr_000_2cb2:
+Memset_fillLoop::
     ld a, b
     or c
     ret z
@@ -9850,7 +9849,7 @@ jr_000_2cb2:
     dec bc
     ld [hl], d
     inc hl
-    jr jr_000_2cb2
+    jr Memset_fillLoop
 
 ; [ezgb]
 ; Memcpy(dest, src, len).
@@ -9870,7 +9869,7 @@ Memcpy::
     ld h, [hl]
     ld l, a
 
-jr_000_2cc9:
+Memcpy_copyLoop::
     ld a, b
     or c
     ret z
@@ -9880,7 +9879,7 @@ jr_000_2cc9:
     ld [hl], a
     dec bc
     inc hl
-    jr jr_000_2cc9
+    jr Memcpy_copyLoop
 
 ; [ezgb]
 ; Strncpy(dest, src, n): frame -$07; stash dest@sp+$01, src@sp+$03, n=BC, ret-dest@sp+$05.
@@ -10014,12 +10013,12 @@ NegateBytes::
     xor a
     ld d, a
 
-jr_000_2d4f:
+NegateBytes_sbcLoop::
     ld a, d
     sbc [hl]
     ld [hl+], a
     dec c
-    jr nz, jr_000_2d4f
+    jr nz, NegateBytes_sbcLoop
 
     ret
 
@@ -10067,13 +10066,13 @@ SetTileCursor::
 GetTileCursorX::
     ld a, [wGfxMode]
     and $02
-    jr nz, jr_000_2d7f
+    jr nz, GetTileCursorX_retX
 
     push bc
     call EnterGfxMode2
     pop bc
 
-jr_000_2d7f:
+GetTileCursorX_retX::
     ld a, [wTileCursorX]
     ld e, a
     ret
@@ -10086,13 +10085,13 @@ jr_000_2d7f:
 GetTileCursorY::
     ld a, [wGfxMode]
     and $02
-    jr nz, jr_000_2d90
+    jr nz, GetTileCursorY_retY
 
     push bc
     call EnterGfxMode2
     pop bc
 
-jr_000_2d90:
+GetTileCursorY_retY::
     ld a, [wTileCursorY]
     ld e, a
     ret
@@ -10113,24 +10112,24 @@ CStrLen::
     inc hl
     ld b, [hl]
 
-Jump_000_2da2:
+CStrLen_scan::
     ld a, [bc]
     inc bc
     or a
-    jp z, Jump_000_2db2
+    jp z, CStrLen_retLen
 
     ld hl, sp+$00
     inc [hl]
-    jr nz, jr_000_2daf
+    jr nz, CStrLen_incCont
 
     inc hl
     inc [hl]
 
-jr_000_2daf:
-    jp Jump_000_2da2
+CStrLen_incCont::
+    jp CStrLen_scan
 
 
-Jump_000_2db2:
+CStrLen_retLen::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10147,10 +10146,10 @@ MemZero::
     ld c, b
     xor a
 
-jr_000_2dbc:
+MemZero_fillLoop::
     ld [hl+], a
     dec c
-    jr nz, jr_000_2dbc
+    jr nz, MemZero_fillLoop
 
     ret
 
@@ -10208,7 +10207,7 @@ U32DivEngine::
     ld l, a
     call MemZero
 
-jr_000_2df9:
+U32DivEngine_bitLoop::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
@@ -10233,11 +10232,11 @@ jr_000_2df9:
     call MemSubCmp
     pop hl
     pop de
-    jr c, jr_000_2e1f
+    jr c, U32DivEngine_rolQuot
 
     call MemSub
 
-jr_000_2e1f:
+U32DivEngine_rolQuot::
     ccf
     push af
     ld hl, sp+$08
@@ -10251,7 +10250,7 @@ jr_000_2e1f:
     ret z
 
     push bc
-    jr jr_000_2df9
+    jr U32DivEngine_bitLoop
 
 ; [ezgb]
 ; MemSub: multi-byte SBC: [DE] -= [HL] for B bytes (carry chain). U32DivEngine rem -= divisor.
@@ -10260,14 +10259,14 @@ jr_000_2e1f:
 MemSub::
     ld c, b
 
-jr_000_2e31:
+MemSub_sbcLoop::
     ld a, [de]
     sbc [hl]
     ld [de], a
     inc hl
     inc de
     dec c
-    jr nz, jr_000_2e31
+    jr nz, MemSub_sbcLoop
 
     ret
 
@@ -10279,10 +10278,10 @@ jr_000_2e31:
 MemFill::
     ld c, b
 
-jr_000_2e3b:
+MemFill_fillLoop::
     ld [hl+], a
     dec c
-    jr nz, jr_000_2e3b
+    jr nz, MemFill_fillLoop
 
     ret
 
@@ -10317,13 +10316,13 @@ U32MulEngine::
     ld hl, sp+$04
     ld [hl], b
 
-Jump_000_2e5e:
+U32MulEngine_outerSetup::
     ld hl, sp+$04
     ld a, [hl]
     ld hl, sp+$05
     ld [hl], a
 
-jr_000_2e64:
+U32MulEngine_innerDigit::
     ld hl, sp+$0c
     ld a, [hl+]
     ld h, [hl]
@@ -10345,7 +10344,7 @@ jr_000_2e64:
     add e
     ld [hl+], a
     dec c
-    jr z, jr_000_2e98
+    jr z, U32MulEngine_nextOuter
 
     ld a, [hl]
     adc d
@@ -10353,18 +10352,18 @@ jr_000_2e64:
     call PropagateCarry
     ld hl, sp+$05
     dec [hl]
-    jr z, jr_000_2e98
+    jr z, U32MulEngine_nextOuter
 
     ld hl, sp+$0c
     call IncWord
     ld hl, sp+$08
     call IncWord
-    jr jr_000_2e64
+    jr U32MulEngine_innerDigit
 
-jr_000_2e98:
+U32MulEngine_nextOuter::
     ld hl, sp+$04
     dec [hl]
-    jr z, jr_000_2ec0
+    jr z, U32MulEngine_epilogueRet
 
     ld hl, sp+$00
     call IncWord
@@ -10383,10 +10382,10 @@ jr_000_2e98:
     ld hl, sp+$0e
     call CopyBytes
     pop bc
-    jp Jump_000_2e5e
+    jp U32MulEngine_outerSetup
 
 
-jr_000_2ec0:
+U32MulEngine_epilogueRet::
     add sp, $06
     ret
 
@@ -10422,12 +10421,12 @@ IncWord::
 CopyBytes::
     ld c, b
 
-jr_000_2ed1:
+CopyBytes_copyLoop::
     ld a, [de]
     inc de
     ld [hl+], a
     dec c
-    jr nz, jr_000_2ed1
+    jr nz, CopyBytes_copyLoop
 
     ret
 
@@ -10440,13 +10439,13 @@ MemSubCmp::
     ld c, b
     xor a
 
-jr_000_2eda:
+MemSubCmp_sbcLoop::
     ld a, [de]
     sbc [hl]
     inc hl
     inc de
     dec c
-    jr nz, jr_000_2eda
+    jr nz, MemSubCmp_sbcLoop
 
     ret
 
@@ -10458,11 +10457,11 @@ jr_000_2eda:
 MemRol::
     ld c, b
 
-jr_000_2ee3:
+MemRol_rlLoop::
     rl [hl]
     inc hl
     dec c
-    jr nz, jr_000_2ee3
+    jr nz, MemRol_rlLoop
 
     ret
 
@@ -10477,11 +10476,11 @@ EnterGfxMode1::
     di
     ldh a, [rLCDC]
     bit 7, a
-    jr z, jr_000_2ef4
+    jr z, EnterGfxMode1_vramFill
 
     call LcdOff
 
-jr_000_2ef4:
+EnterGfxMode1_vramFill::
     ld hl, $8100
     ld de, $1680
     ld b, $00
@@ -10502,18 +10501,18 @@ jr_000_2ef4:
     ld bc, $000c
     ld e, $12
 
-jr_000_2f23:
+EnterGfxMode1_rowSetup::
     ld d, $14
 
-jr_000_2f25:
+EnterGfxMode1_fillRow::
     ld [hl+], a
     inc a
     dec d
-    jr nz, jr_000_2f25
+    jr nz, EnterGfxMode1_fillRow
 
     add hl, bc
     dec e
-    jr nz, jr_000_2f23
+    jr nz, EnterGfxMode1_rowSetup
 
     ldh a, [rLCDC]
     or $91
@@ -10576,12 +10575,12 @@ BlitTile::
     push bc
     ld a, h
     or l
-    jr z, jr_000_2f84
+    jr z, BlitTile_copyPlane2
 
     ld de, $0010
     call VramCopy
 
-jr_000_2f84:
+BlitTile_copyPlane2::
     pop hl
     pop bc
     ld de, $0010
@@ -13259,7 +13258,7 @@ jr_000_39e6:
     nop
     jr c, @+$6e
 
-    jr jr_000_3a22
+    jr ReadJoypadRaw_readFace
 
     ld a, h
     nop
@@ -13316,7 +13315,7 @@ ReadJoypadRaw::
     cpl
     and $0f
 
-jr_000_3a22:
+ReadJoypadRaw_readFace::
     swap a
     ld b, a
     ld a, $10
@@ -13485,52 +13484,52 @@ CopyTilesVram::
 
     ld a, h
     cp $98
-    jr c, jr_000_3aa7
+    jr c, CopyTilesVram_checkE
 
     sub $10
     ld h, a
 
-jr_000_3aa7:
+CopyTilesVram_checkE::
     xor a
     cp e
-    jr nz, jr_000_3aac
+    jr nz, CopyTilesVram_waitStatLo
 
     dec d
 
-jr_000_3aac:
+CopyTilesVram_waitStatLo::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3aac
+    jr nz, CopyTilesVram_waitStatLo
 
     ld a, [bc]
     ld [hl+], a
     inc bc
 
-jr_000_3ab5:
+CopyTilesVram_waitStatHi::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3ab5
+    jr nz, CopyTilesVram_waitStatHi
 
     ld a, [bc]
     ld [hl], a
     inc bc
     inc l
-    jr nz, jr_000_3ac9
+    jr nz, CopyTilesVram_decCount
 
     inc h
     ld a, h
     cp $98
-    jr nz, jr_000_3ac9
+    jr nz, CopyTilesVram_decCount
 
     ld h, $88
 
-jr_000_3ac9:
+CopyTilesVram_decCount::
     dec e
-    jr nz, jr_000_3aac
+    jr nz, CopyTilesVram_waitStatLo
 
     dec d
     bit 7, d
-    jr z, jr_000_3aac
+    jr z, CopyTilesVram_waitStatLo
 
     ret
 
@@ -13637,23 +13636,23 @@ RegisterFont::
     ld hl, $d73b
     ld b, $06
 
-jr_000_3b30:
+RegisterFont_scanSlots::
     ld a, [hl]
     inc hl
     or [hl]
     cp $00
-    jr z, jr_000_3b42
+    jr z, RegisterFont_storeSlot
 
     inc hl
     inc hl
     dec b
-    jr nz, jr_000_3b30
+    jr nz, RegisterFont_scanSlots
 
     pop hl
     ld hl, $0000
-    jr jr_000_3b66
+    jr RegisterFont_lcdOn
 
-jr_000_3b42:
+RegisterFont_storeSlot::
     pop de
     ld [hl], d
     dec hl
@@ -13676,7 +13675,7 @@ jr_000_3b42:
     ld [wFontNextTile], a
     pop hl
 
-jr_000_3b66:
+RegisterFont_lcdOn::
     ldh a, [rLCDC]
     or $81
     and $e7
@@ -13709,15 +13708,15 @@ UploadFontTiles::
     and $03
     ld bc, $0080
     cp $01
-    jr z, jr_000_3b9b
+    jr z, UploadFontTiles_blitGlyphs
 
     ld bc, $0000
     cp $02
-    jr z, jr_000_3b9b
+    jr z, UploadFontTiles_blitGlyphs
 
     ld bc, $0100
 
-jr_000_3b9b:
+UploadFontTiles_blitGlyphs::
     inc hl
     inc hl
     add hl, bc
@@ -13800,19 +13799,19 @@ PutBgTile::
     push af
     ld a, [wFontFarFlag]
     or a
-    jr nz, jr_000_3c02
+    jr nz, PutBgTile_mapGlyph
 
     call ResetTileText
     xor a
     ld [wFontNextTile], a
     call FarCallTrampoline
     db $fd
-    jr nc, jr_000_3c01
+    jr nc, PutBgTile_afterFarCall
 
-jr_000_3c01:
+PutBgTile_afterFarCall::
     nop
 
-jr_000_3c02:
+PutBgTile_mapGlyph::
     pop af
     push bc
     push de
@@ -13825,14 +13824,14 @@ jr_000_3c02:
     ld a, [hl+]
     and $03
     cp $02
-    jr z, jr_000_3c19
+    jr z, PutBgTile_addBaseTile
 
     inc hl
     ld d, $00
     add hl, de
     ld e, [hl]
 
-jr_000_3c19:
+PutBgTile_addBaseTile::
     ld a, [wFontBaseTile]
     add e
     ld e, a
@@ -13851,10 +13850,10 @@ jr_000_3c19:
     ld bc, $9800
     add hl, bc
 
-jr_000_3c34:
+PutBgTile_waitStatStore::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3c34
+    jr nz, PutBgTile_waitStatStore
 
     ld [hl], e
     pop hl
@@ -13910,10 +13909,10 @@ ResetTileText::
     ld hl, wFontSlots
     ld b, $12
 
-jr_000_3c6b:
+ResetTileText_clearSlots::
     ld [hl+], a
     dec b
-    jr nz, jr_000_3c6b
+    jr nz, ResetTileText_clearSlots
 
     ld a, $03
     ld [wDrawColor], a
@@ -13934,21 +13933,21 @@ ClearBgMap::
     ld hl, $9800
     ld e, $20
 
-jr_000_3c85:
+ClearBgMap_rowSetup::
     ld d, $20
 
-jr_000_3c87:
+ClearBgMap_waitStatWrite::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3c87
+    jr nz, ClearBgMap_waitStatWrite
 
     ld [hl], $00
     inc hl
     dec d
-    jr nz, jr_000_3c87
+    jr nz, ClearBgMap_waitStatWrite
 
     dec e
-    jr nz, jr_000_3c85
+    jr nz, ClearBgMap_rowSetup
 
     pop hl
     pop de
@@ -13964,21 +13963,21 @@ RetreatTileCursor::
     ld hl, wTileCursorX
     xor a
     cp [hl]
-    jr z, jr_000_3ca4
+    jr z, RetreatTileCursor_wrapX
 
     dec [hl]
-    jr jr_000_3cae
+    jr RetreatTileCursor_epilogueRet
 
-jr_000_3ca4:
+RetreatTileCursor_wrapX::
     ld [hl], $13
     ld hl, wTileCursorY
     xor a
     cp [hl]
-    jr z, jr_000_3cae
+    jr z, RetreatTileCursor_epilogueRet
 
     dec [hl]
 
-jr_000_3cae:
+RetreatTileCursor_epilogueRet::
     pop hl
     ret
 
@@ -13994,15 +13993,15 @@ TileNewline::
     ld hl, wTileCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_3cc0
+    jr z, TileNewline_scrollBg
 
     inc [hl]
-    jr jr_000_3cc3
+    jr TileNewline_epilogueRet
 
-jr_000_3cc0:
+TileNewline_scrollBg::
     call ScrollBgUp
 
-jr_000_3cc3:
+TileNewline_epilogueRet::
     pop hl
     ret
 
@@ -14017,35 +14016,35 @@ AdvanceTileCursor::
     ld hl, wTileCursorX
     ld a, $13
     cp [hl]
-    jr z, jr_000_3cd1
+    jr z, AdvanceTileCursor_wrapX
 
     inc [hl]
-    jr jr_000_3cf1
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3cd1:
+AdvanceTileCursor_wrapX::
     ld [hl], $00
     ld hl, wTileCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_3cde
+    jr z, AdvanceTileCursor_checkGfxMode
 
     inc [hl]
-    jr jr_000_3cf1
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3cde:
+AdvanceTileCursor_checkGfxMode::
     ld a, [wGfxMode]
     and $04
-    jr z, jr_000_3cee
+    jr z, AdvanceTileCursor_scrollBg
 
     xor a
     ld [wTileCursorY], a
     ld [wTileCursorX], a
-    jr jr_000_3cf1
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3cee:
+AdvanceTileCursor_scrollBg::
     call ScrollBgUp
 
-jr_000_3cf1:
+AdvanceTileCursor_epilogueRet::
     pop hl
     ret
 
@@ -14063,34 +14062,34 @@ ScrollBgUp::
     ld bc, $9820
     ld e, $1f
 
-jr_000_3cfe:
+ScrollBgUp_rowSetup::
     ld d, $20
 
-jr_000_3d00:
+ScrollBgUp_copyTile::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_3d00
+    jr nz, ScrollBgUp_copyTile
 
     ld a, [bc]
     ld [hl+], a
     inc bc
     dec d
-    jr nz, jr_000_3d00
+    jr nz, ScrollBgUp_copyTile
 
     dec e
-    jr nz, jr_000_3cfe
+    jr nz, ScrollBgUp_rowSetup
 
     ld d, $20
 
-jr_000_3d11:
+ScrollBgUp_clearBottom::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_3d11
+    jr nz, ScrollBgUp_clearBottom
 
     ld a, $00
     ld [hl+], a
     dec d
-    jr nz, jr_000_3d11
+    jr nz, ScrollBgUp_clearBottom
 
     pop hl
     pop de
@@ -14107,7 +14106,7 @@ EnterGfxMode2::
     di
     ldh a, [rLCDC]
     bit 7, a
-    jr z, jr_000_3d3d
+    jr z, EnterGfxMode2_initAndEnableLcd
 
     call LcdOff
     ld bc, VBlankCb_Bg8000
@@ -14117,7 +14116,7 @@ EnterGfxMode2::
     ld hl, wLcdCallbacks
     call RemoveCallbackSlot
 
-jr_000_3d3d:
+EnterGfxMode2_initAndEnableLcd::
     call InitGfxMode2
     ldh a, [rLCDC]
     or $81
@@ -14164,14 +14163,14 @@ VramFill::
 VramFillActiveWinMap::
     ldh a, [rLCDC]
     bit 6, a
-    jr nz, jr_000_3d73
+    jr nz, VramFillActiveWinMap_map9C00
 
     ld hl, $9800
-    jr jr_000_3d86
+    jr VramFillActiveBgMap_doFill
 
-jr_000_3d73:
+VramFillActiveWinMap_map9C00::
     ld hl, $9c00
-    jr jr_000_3d86
+    jr VramFillActiveBgMap_doFill
 
 ; [ezgb]
 ; VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then
@@ -14181,15 +14180,15 @@ jr_000_3d73:
 VramFillActiveBgMap::
     ldh a, [rLCDC]
     bit 3, a
-    jr nz, jr_000_3d83
+    jr nz, VramFillActiveBgMap_use9c00
 
     ld hl, $9800
-    jr jr_000_3d86
+    jr VramFillActiveBgMap_doFill
 
-jr_000_3d83:
+VramFillActiveBgMap_use9c00::
     ld hl, $9c00
 
-jr_000_3d86:
+VramFillActiveBgMap_doFill::
     ld de, $0400
     jp VramFill
 
