@@ -222,6 +222,21 @@
 00:d74c wTileCursorX
 00:d74d wTileCursorY
 
+01:4000 CStrCat_B1
+01:4007 CStrCat_B1_findNul
+01:4010 CStrCat_B1_stashPtrs
+01:401c CStrCat_B1_copyLoop
+01:402e CStrCat_B1_incSrc
+01:403a CStrCat_B1_afterStore
+01:403d CStrCat_B1_writeNul
+01:5736 BuildSaverBackupPath
+01:5761 BuildSaverBackupPath_outerLoop
+01:579b BuildSaverBackupPath_innerLoop
+01:588a BuildSaverBackupPath_innerNext
+01:58a0 BuildSaverBackupPath_innerContinue
+01:58a3 BuildSaverBackupPath_outerNext
+01:58aa BuildSaverBackupPath_outerContinue
+01:58ad BuildSaverBackupPath_epilogue
 01:4048 CStrCmp
 01:40a3 CStrChr
 01:40e3 DrawBrowserEntries
@@ -1596,7 +1611,30 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- Fpga7FD2WaitClear_B8 ---
+08:4000 PlotIconGlyphs
+08:4054 PlotIconGlyphs_loopHead
+08:4076 PlotIconGlyphs_bit0
+08:4087 PlotIconGlyphs_bit1Check
+08:408f PlotIconGlyphs_bit1
+08:409f PlotIconGlyphs_bit2Check
+08:40a7 PlotIconGlyphs_bit2
+08:40b8 PlotIconGlyphs_bit3Check
+08:40c0 PlotIconGlyphs_bit3
+08:40d1 PlotIconGlyphs_bit4Check
+08:40d9 PlotIconGlyphs_bit4
+08:40ea PlotIconGlyphs_bit5Check
+08:40f2 PlotIconGlyphs_bit5
+08:4103 PlotIconGlyphs_bit6Check
+08:410b PlotIconGlyphs_bit6
+08:411b PlotIconGlyphs_bit7Check
+08:4123 PlotIconGlyphs_bit7
+08:4132 PlotIconGlyphs_next
+08:413b PlotIconGlyphs_epilogueRet
+08:413e Bank8ReservedSpace2
+08:413e .data:601:8
 08:475e Fpga7FD2WaitClear_B8_pollA000
+08:476b Bank8ReservedSpace
+08:476b .data:266e:8
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RemoveCallbackSlot ---
@@ -2890,6 +2928,21 @@
 09:5f89 CmpLfn_B9_lastSegLen
 09:5fb2 CmpLfn_B9_matched
 09:5fb5 CmpLfn_B9_epilogue
+09:5fb8 LfnOfs_B9
+09:5fb8 .data:2b:1
+09:5fe3 MatchLfnEntry_B9
+09:601d MatchLfnEntry_B9_charLoop
+09:6064 MatchLfnEntry_B9_advance
+09:606f MatchLfnEntry_B9_storeOfs
+09:6097 MatchLfnEntry_B9_checkSentinel
+09:60a4 MatchLfnEntry_B9_noMatch
+09:60aa MatchLfnEntry_B9_nextOrd
+09:60b1 MatchLfnEntry_B9_loopBack
+09:60b4 MatchLfnEntry_B9_checkLastFlag
+09:60be MatchLfnEntry_B9_checkSpare
+09:60d0 MatchLfnEntry_B9_clearSpare
+09:60ea MatchLfnEntry_B9_matched
+09:60ed MatchLfnEntry_B9_epilogue
 
 ; Propagated interior labels (scripts/propagate-interior-clones.py)
 03:5e7f CmpLfn_B3_initOffset
@@ -4259,3 +4312,48 @@
 ; --- SyncFs_B7_checkFsiFlag ---
 07:4462 SyncFs_B7_fsiFlagBody
 
+03:5fad LfnOfs_B3
+03:5fad .data:2b:1
+03:5fd8 MatchLfnEntry_B3
+03:6012 MatchLfnEntry_charLoop_B3
+03:6059 MatchLfnEntry_advance_B3
+03:6064 MatchLfnEntry_storeOfs_B3
+03:608c MatchLfnEntry_checkSentinel_B3
+03:6099 MatchLfnEntry_noMatch_B3
+03:609f MatchLfnEntry_nextOrd_B3
+03:60a6 MatchLfnEntry_loopBack_B3
+03:60a9 MatchLfnEntry_checkLastFlag_B3
+03:60b3 MatchLfnEntry_checkSpare_B3
+03:60c5 MatchLfnEntry_clearSpare_B3
+03:60df MatchLfnEntry_matched_B3
+03:60e2 MatchLfnEntry_epilogue_B3
+06:5dda LfnOfs_B6
+06:5dda .data:2b:1
+06:5e05 MatchLfnEntry_B6
+06:5e3f MatchLfnEntry_charLoop_B6
+06:5e86 MatchLfnEntry_advance_B6
+06:5e91 MatchLfnEntry_storeOfs_B6
+06:5eb9 MatchLfnEntry_checkSentinel_B6
+06:5ec6 MatchLfnEntry_noMatch_B6
+06:5ecc MatchLfnEntry_nextOrd_B6
+06:5ed3 MatchLfnEntry_loopBack_B6
+06:5ed6 MatchLfnEntry_checkLastFlag_B6
+06:5ee0 MatchLfnEntry_checkSpare_B6
+06:5ef2 MatchLfnEntry_clearSpare_B6
+06:5f0c MatchLfnEntry_matched_B6
+06:5f0f MatchLfnEntry_epilogue_B6
+07:5e08 LfnOfs_B7
+07:5e08 .data:2b:1
+07:5e33 MatchLfnEntry_B7
+07:5e6d MatchLfnEntry_charLoop_B7
+07:5eb4 MatchLfnEntry_advance_B7
+07:5ebf MatchLfnEntry_storeOfs_B7
+07:5ee7 MatchLfnEntry_checkSentinel_B7
+07:5ef4 MatchLfnEntry_noMatch_B7
+07:5efa MatchLfnEntry_nextOrd_B7
+07:5f01 MatchLfnEntry_loopBack_B7
+07:5f04 MatchLfnEntry_checkLastFlag_B7
+07:5f0e MatchLfnEntry_checkSpare_B7
+07:5f20 MatchLfnEntry_clearSpare_B7
+07:5f3a MatchLfnEntry_matched_B7
+07:5f3d MatchLfnEntry_epilogue_B7

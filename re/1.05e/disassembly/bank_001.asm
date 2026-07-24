@@ -5,6 +5,7 @@
 
 SECTION "ROM Bank $001", ROMX[$4000], BANK[$1]
 
+CStrCat_B1::
     push af
     push af
     ld hl, sp+$0a
@@ -12,16 +13,16 @@ SECTION "ROM Bank $001", ROMX[$4000], BANK[$1]
     inc hl
     ld b, [hl]
 
-Jump_001_4007:
+CStrCat_B1_findNul::
     ld a, [bc]
     or a
-    jp z, Jump_001_4010
+    jp z, CStrCat_B1_stashPtrs
 
     inc bc
-    jp Jump_001_4007
+    jp CStrCat_B1_findNul
 
 
-Jump_001_4010:
+CStrCat_B1_stashPtrs::
     ld hl, sp+$0c
     ld a, [hl+]
     ld e, [hl]
@@ -33,7 +34,7 @@ Jump_001_4010:
     inc hl
     ld [hl], b
 
-Jump_001_401c:
+CStrCat_B1_copyLoop::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -41,17 +42,17 @@ Jump_001_401c:
     ld a, [de]
     ld c, a
     or a
-    jp z, Jump_001_403d
+    jp z, CStrCat_B1_writeNul
 
     ld a, c
     dec hl
     inc [hl]
-    jr nz, jr_001_402e
+    jr nz, CStrCat_B1_incSrc
 
     inc hl
     inc [hl]
 
-jr_001_402e:
+CStrCat_B1_incSrc::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -59,16 +60,16 @@ jr_001_402e:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_001_403a
+    jr nz, CStrCat_B1_afterStore
 
     inc hl
     inc [hl]
 
-jr_001_403a:
-    jp Jump_001_401c
+CStrCat_B1_afterStore::
+    jp CStrCat_B1_copyLoop
 
 
-Jump_001_403d:
+CStrCat_B1_writeNul::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -389,7 +390,7 @@ DrawBrowserEntries_bankShift::
     ld b, $00
     ld hl, sp+$1c
     ld [hl], c
-    ld bc, $4000
+    ld bc, CStrCat_B1
     dec hl
     ld a, [hl]
     add $12
@@ -725,7 +726,7 @@ DrawBrowserDetail_row0BankShift::
     ld b, $00
     ld hl, sp+$1f
     ld [hl], c
-    ld bc, $4000
+    ld bc, CStrCat_B1
     dec hl
     ld a, [hl]
     add $12
@@ -961,7 +962,7 @@ DrawBrowserDetail_row1BankShift::
     ld b, $00
     ld hl, sp+$1f
     ld [hl], c
-    ld bc, $4000
+    ld bc, CStrCat_B1
     dec hl
     ld a, [hl]
     add $12
@@ -1741,7 +1742,7 @@ LastRomPersist::
     ld b, b
     ld bc, $e800
     inc b
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -1805,7 +1806,7 @@ LastRomPersistLoop_copyCont::
 
 
 LastRomPersistDone::
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
     ld a, $00
@@ -3411,7 +3412,7 @@ RtcWriteTimeFromDayDelta_writeFpga::
     ld hl, sp+$09
     ld a, [hl]
     ld [bc], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -3440,7 +3441,7 @@ RtcWriteTimeFromDayDelta_writeFpga::
     ld hl, sp+$09
     ld a, [hl]
     ld [bc], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
     ld a, $00
@@ -3503,7 +3504,7 @@ RtcReadDaysClearRegs::
     ld bc, $a01c
     ld a, $00
     ld [bc], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -3526,7 +3527,7 @@ RtcReadDaysClearRegs::
     ld bc, $a224
     ld a, $00
     ld [bc], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
     ld a, $00
@@ -3909,7 +3910,7 @@ BackupOpenSaverPath_readLoop::
     push hl
     call FarCall_06_779a
     add sp, $08
-    ld bc, $4000
+    ld bc, CStrCat_B1
     push bc
     ld a, $0d
     push af
@@ -4220,7 +4221,7 @@ BackupOpenSaverPath_failBlankWrite::
     inc sp
     call SetFpgaPage_B1
     add sp, $01
-    ld bc, $4000
+    ld bc, CStrCat_B1
     push bc
     ld a, $0d
     push af
@@ -4409,7 +4410,7 @@ PreLaunchFramStamp::
     inc de
     ld a, [de]
     ld [hl], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -4626,7 +4627,7 @@ PreLaunchFramStamp_clearRtcFlag::
     ld [bc], a
 
 PreLaunchFramStamp_epilogue::
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
     ld a, $00
@@ -4641,6 +4642,15 @@ PreLaunchFramStamp_epilogue::
 SaverDirSlashStr::
     db "/SAVER/", $00
 
+; [ezgb]
+; BuildSaverBackupPath: sits between BackupOpenSaverPath and LaunchSetup in bank 1 (right
+; after SaverDirSlashStr). Double loop (outer/inner) walking a table via WRAM pointer
+; $c2a0/$c2a1, FarCallTrampoline + Memcpy($ff bytes) into $c0a0, size-limited against
+; $e800. Reasonable inference from control flow and the Memcpy/FarCallTrampoline calls;
+; exact role and caller not independently confirmed — named from shape + neighboring
+; context, not a traced call site.
+
+BuildSaverBackupPath::
     add sp, -$0e
     ld a, $01
     ld hl, sp+$14
@@ -4648,9 +4658,9 @@ SaverDirSlashStr::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_001_58ad
+    jp nc, BuildSaverBackupPath_epilogue
 
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $01
     ld [bc], a
     dec hl
@@ -4671,7 +4681,7 @@ SaverDirSlashStr::
     inc hl
     ld [hl], $00
 
-Jump_001_5761:
+BuildSaverBackupPath_outerLoop::
     ld hl, sp+$0c
     ld d, h
     ld e, l
@@ -4682,7 +4692,7 @@ Jump_001_5761:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_001_58ad
+    jp nc, BuildSaverBackupPath_epilogue
 
     ld hl, sp+$14
     ld e, [hl]
@@ -4717,7 +4727,7 @@ Jump_001_5761:
     inc hl
     ld [hl], $00
 
-Jump_001_579b:
+BuildSaverBackupPath_innerLoop::
     ld hl, sp+$0a
     ld d, h
     ld e, l
@@ -4728,7 +4738,7 @@ Jump_001_579b:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_001_58a3
+    jp nc, BuildSaverBackupPath_outerNext
 
     ld hl, sp+$0a
     ld c, [hl]
@@ -4803,7 +4813,7 @@ Jump_001_579b:
     ld a, $00
     sbc b
     rlca
-    jp nc, Jump_001_588a
+    jp nc, BuildSaverBackupPath_innerNext
 
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4881,7 +4891,7 @@ Jump_001_579b:
     call Memcpy
     add sp, $06
 
-Jump_001_588a:
+BuildSaverBackupPath_innerNext::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -4895,28 +4905,28 @@ Jump_001_588a:
     ld [hl], d
     ld hl, sp+$0a
     inc [hl]
-    jr nz, jr_001_58a0
+    jr nz, BuildSaverBackupPath_innerContinue
 
     inc hl
     inc [hl]
 
-jr_001_58a0:
-    jp Jump_001_579b
+BuildSaverBackupPath_innerContinue::
+    jp BuildSaverBackupPath_innerLoop
 
 
-Jump_001_58a3:
+BuildSaverBackupPath_outerNext::
     ld hl, sp+$0c
     inc [hl]
-    jr nz, jr_001_58aa
+    jr nz, BuildSaverBackupPath_outerContinue
 
     inc hl
     inc [hl]
 
-jr_001_58aa:
-    jp Jump_001_5761
+BuildSaverBackupPath_outerContinue::
+    jp BuildSaverBackupPath_outerLoop
 
 
-Jump_001_58ad:
+BuildSaverBackupPath_epilogue::
     add sp, $0e
     ret
 
@@ -7149,7 +7159,7 @@ BackupSaveDump_writeLoop::
     sbc [hl]
     jp nc, BackupSaveDump_checkRtcMagic
 
-    ld bc, $4000
+    ld bc, CStrCat_B1
     push bc
     ld a, $0d
     push af
@@ -7368,7 +7378,7 @@ BackupSaveDump_rtcPackWrite::
     push hl
     call Memset
     add sp, $05
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -7575,7 +7585,7 @@ BackupSaveDump_rtcPackWrite::
     inc hl
     ld d, [hl]
     ld [de], a
-    ld bc, $4000
+    ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
     ld a, $00

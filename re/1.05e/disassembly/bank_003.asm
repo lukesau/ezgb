@@ -6691,7 +6691,7 @@ CmpLfn_B3_charLoop::
     sbc $00
     jp nc, CmpLfn_B3_checkLastSeg
 
-    ld de, $5fad
+    ld de, LfnOfs_B3
     dec hl
     ld a, [hl+]
     ld h, [hl]
@@ -6891,39 +6891,52 @@ CmpLfn_B3_epilogue::
     ret
 
 
-    ld bc, $0503
-    rlca
-    add hl, bc
-    ld c, $10
-    ld [de], a
-    inc d
-    ld d, $18
-    inc e
-    ld e, $e8
-    di
-    ld hl, sp+$11
-    ld e, [hl]
-    inc hl
-    ld d, [hl]
-    ld hl, $001a
-    add hl, de
-    ld c, l
-    ld b, h
-    ld e, c
-    ld d, b
-    ld a, [de]
-    ld c, a
-    inc de
-    ld a, [de]
-    ld b, a
-    or c
-    jp z, Jump_003_5fd8
+LfnOfs_B3::
+    db $01
+    db $03
+    db $05
+    db $07
+    db $09
+    db $0e
+    db $10
+    db $12
+    db $14
+    db $16
+    db $18
+    db $1c
+    db $1e
+    db $e8
+    db $f3
+    db $f8
+    db $11
+    db $5e
+    db $23
+    db $56
+    db $21
+    db $1a
+    db $00
+    db $19
+    db $4d
+    db $44
+    db $59
+    db $50
+    db $1a
+    db $4f
+    db $13
+    db $1a
+    db $47
+    db $b1
+    db $ca
+    db $d8
+    db $5f
+    db $11
+    db $00
+    db $00
+    db $c3
+    db $e2
+    db $60
 
-    ld de, $0000
-    jp Jump_003_60e2
-
-
-Jump_003_5fd8:
+MatchLfnEntry_B3::
     ld hl, sp+$11
     ld a, [hl+]
     ld e, [hl]
@@ -6970,16 +6983,16 @@ Jump_003_5fd8:
     inc hl
     ld [hl], $00
 
-Jump_003_6012:
+MatchLfnEntry_charLoop_B3::
     ld hl, sp+$09
     ld a, [hl]
     sub $0d
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_60a9
+    jp nc, MatchLfnEntry_checkLastFlag_B3
 
-    ld de, $5fad
+    ld de, LfnOfs_B3
     dec hl
     ld a, [hl+]
     ld h, [hl]
@@ -7012,7 +7025,7 @@ Jump_003_6012:
     inc hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_608c
+    jp z, MatchLfnEntry_checkSentinel_B3
 
     ld hl, sp+$00
     ld a, [hl]
@@ -7020,25 +7033,25 @@ Jump_003_6012:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6059
+    jp c, MatchLfnEntry_advance_B3
 
     ld de, $0000
-    jp Jump_003_60e2
+    jp MatchLfnEntry_epilogue_B3
 
 
-Jump_003_6059:
+MatchLfnEntry_advance_B3::
     ld hl, sp+$00
     ld c, [hl]
     inc hl
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6064
+    jr nz, MatchLfnEntry_storeOfs_B3
 
     inc hl
     inc [hl]
 
-jr_003_6064:
+MatchLfnEntry_storeOfs_B3::
     ld hl, sp+$00
     ld a, [hl+]
     ld e, [hl]
@@ -7069,60 +7082,60 @@ jr_003_6064:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_003_609f
+    jp MatchLfnEntry_nextOrd_B3
 
 
-Jump_003_608c:
+MatchLfnEntry_checkSentinel_B3::
     ld hl, sp+$05
     ld a, [hl]
     inc a
-    jp nz, Jump_003_6099
+    jp nz, MatchLfnEntry_noMatch_B3
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_609f
+    jp z, MatchLfnEntry_nextOrd_B3
 
-Jump_003_6099:
+MatchLfnEntry_noMatch_B3::
     ld de, $0000
-    jp Jump_003_60e2
+    jp MatchLfnEntry_epilogue_B3
 
 
-Jump_003_609f:
+MatchLfnEntry_nextOrd_B3::
     ld hl, sp+$09
     inc [hl]
-    jr nz, jr_003_60a6
+    jr nz, MatchLfnEntry_loopBack_B3
 
     inc hl
     inc [hl]
 
-jr_003_60a6:
-    jp Jump_003_6012
+MatchLfnEntry_loopBack_B3::
+    jp MatchLfnEntry_charLoop_B3
 
 
-Jump_003_60a9:
+MatchLfnEntry_checkLastFlag_B3::
     ld hl, sp+$04
     ld a, [hl]
     and $40
-    jr nz, jr_003_60b3
+    jr nz, MatchLfnEntry_checkSpare_B3
 
-    jp Jump_003_60df
+    jp MatchLfnEntry_matched_B3
 
 
-jr_003_60b3:
+MatchLfnEntry_checkSpare_B3::
     ld hl, sp+$0b
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_60c5
+    jp c, MatchLfnEntry_clearSpare_B3
 
     ld de, $0000
-    jp Jump_003_60e2
+    jp MatchLfnEntry_epilogue_B3
 
 
-Jump_003_60c5:
+MatchLfnEntry_clearSpare_B3::
     ld hl, sp+$0b
     ld c, [hl]
     inc hl
@@ -7144,10 +7157,10 @@ Jump_003_60c5:
     ld a, $00
     ld [de], a
 
-Jump_003_60df:
+MatchLfnEntry_matched_B3::
     ld de, $0001
 
-Jump_003_60e2:
+MatchLfnEntry_epilogue_B3::
     add sp, $0d
     ret
 
@@ -7276,7 +7289,7 @@ PutLfn_B3_indexLfn::
     ld [hl], b
 
 PutLfn_B3_storeWchar::
-    ld de, $5fad
+    ld de, LfnOfs_B3
     ld hl, sp+$04
     ld a, [hl+]
     ld h, [hl]

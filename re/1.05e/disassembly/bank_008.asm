@@ -5,6 +5,7 @@
 
 SECTION "ROM Bank $008", ROMX[$4000], BANK[$8]
 
+PlotIconGlyphs::
     add sp, -$0b
     ld hl, sp+$11
     ld e, [hl]
@@ -62,11 +63,11 @@ SECTION "ROM Bank $008", ROMX[$4000], BANK[$8]
     ld hl, sp+$0a
     ld [hl], $00
 
-Jump_008_4054:
+PlotIconGlyphs_loopHead::
     ld hl, sp+$0a
     ld a, [hl]
     sub $0c
-    jp nc, Jump_008_413b
+    jp nc, PlotIconGlyphs_epilogueRet
 
     ld c, [hl]
     ld b, $00
@@ -78,19 +79,19 @@ Jump_008_4054:
     add hl, bc
     ld c, l
     ld b, h
-    ld hl, $413e
+    ld hl, Bank8ReservedSpace2
     add hl, bc
     ld c, l
     ld b, h
     ld a, [bc]
     ld c, a
     and $01
-    jr nz, jr_008_4076
+    jr nz, PlotIconGlyphs_bit0
 
-    jp Jump_008_4087
+    jp PlotIconGlyphs_bit1Check
 
 
-jr_008_4076:
+PlotIconGlyphs_bit0::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -105,15 +106,15 @@ jr_008_4076:
     add sp, $02
     pop bc
 
-Jump_008_4087:
+PlotIconGlyphs_bit1Check::
     ld a, c
     and $02
-    jr nz, jr_008_408f
+    jr nz, PlotIconGlyphs_bit1
 
-    jp Jump_008_409f
+    jp PlotIconGlyphs_bit2Check
 
 
-jr_008_408f:
+PlotIconGlyphs_bit1::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -127,15 +128,15 @@ jr_008_408f:
     add sp, $02
     pop bc
 
-Jump_008_409f:
+PlotIconGlyphs_bit2Check::
     ld a, c
     and $04
-    jr nz, jr_008_40a7
+    jr nz, PlotIconGlyphs_bit2
 
-    jp Jump_008_40b8
+    jp PlotIconGlyphs_bit3Check
 
 
-jr_008_40a7:
+PlotIconGlyphs_bit2::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -149,15 +150,15 @@ jr_008_40a7:
     add sp, $02
     pop bc
 
-Jump_008_40b8:
+PlotIconGlyphs_bit3Check::
     ld a, c
     and $08
-    jr nz, jr_008_40c0
+    jr nz, PlotIconGlyphs_bit3
 
-    jp Jump_008_40d1
+    jp PlotIconGlyphs_bit4Check
 
 
-jr_008_40c0:
+PlotIconGlyphs_bit3::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -171,15 +172,15 @@ jr_008_40c0:
     add sp, $02
     pop bc
 
-Jump_008_40d1:
+PlotIconGlyphs_bit4Check::
     ld a, c
     and $10
-    jr nz, jr_008_40d9
+    jr nz, PlotIconGlyphs_bit4
 
-    jp Jump_008_40ea
+    jp PlotIconGlyphs_bit5Check
 
 
-jr_008_40d9:
+PlotIconGlyphs_bit4::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -193,15 +194,15 @@ jr_008_40d9:
     add sp, $02
     pop bc
 
-Jump_008_40ea:
+PlotIconGlyphs_bit5Check::
     ld a, c
     and $20
-    jr nz, jr_008_40f2
+    jr nz, PlotIconGlyphs_bit5
 
-    jp Jump_008_4103
+    jp PlotIconGlyphs_bit6Check
 
 
-jr_008_40f2:
+PlotIconGlyphs_bit5::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -216,15 +217,15 @@ jr_008_40f2:
     add sp, $02
     pop bc
 
-Jump_008_4103:
+PlotIconGlyphs_bit6Check::
     ld a, c
     and $40
-    jr nz, jr_008_410b
+    jr nz, PlotIconGlyphs_bit6
 
-    jp Jump_008_411b
+    jp PlotIconGlyphs_bit7Check
 
 
-jr_008_410b:
+PlotIconGlyphs_bit6::
     push bc
     ld hl, sp+$04
     ld a, [hl]
@@ -238,15 +239,15 @@ jr_008_410b:
     add sp, $02
     pop bc
 
-Jump_008_411b:
+PlotIconGlyphs_bit7Check::
     ld a, c
     and $80
-    jr nz, jr_008_4123
+    jr nz, PlotIconGlyphs_bit7
 
-    jp Jump_008_4132
+    jp PlotIconGlyphs_next
 
 
-jr_008_4123:
+PlotIconGlyphs_bit7::
     ld hl, sp+$02
     ld a, [hl]
     push af
@@ -258,1650 +259,213 @@ jr_008_4123:
     call PlotPixelXY
     add sp, $02
 
-Jump_008_4132:
+PlotIconGlyphs_next::
     ld hl, sp+$02
     inc [hl]
     ld hl, sp+$0a
     inc [hl]
-    jp Jump_008_4054
+    jp PlotIconGlyphs_loopHead
 
 
-Jump_008_413b:
+PlotIconGlyphs_epilogueRet::
     add sp, $0b
     ret
 
 
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_42ee
-
-    jr nz, @+$22
-
-    jr nz, jr_008_42f2
-
-    nop
-    jr nz, jr_008_42d5
-
-jr_008_42d5:
-    nop
-    nop
-    jr z, @+$52
-
-    ld d, b
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_42e3:
-    nop
-    jr z, jr_008_430e
-
-    db $fc
-    jr z, jr_008_4339
-
-    db $fc
-    ld d, b
-    ld d, b
-    nop
-    nop
-
-jr_008_42ee:
-    nop
-    jr nz, jr_008_4369
-
-    xor b
-
-jr_008_42f2:
-    and b
-    ld h, b
-    jr nc, jr_008_431e
-
-    xor b
-    ldh a, [rNR41]
-    nop
-    nop
-    nop
-    ld c, b
-    xor b
-    or b
-    ld d, b
-    jr z, jr_008_4336
-
-    ld d, h
-    ld c, b
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_435a
-
-    ld d, b
-    ld a, b
-    xor b
-    xor b
-
-jr_008_430e:
-    sub b
-    ld l, h
-    nop
-    nop
-    nop
-    ld b, b
-    ld b, b
-    add b
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_431e:
-    nop
-    inc b
-    ld [$1010], sp
-    db $10
-    db $10
-    db $10
-    db $10
-    ld [$0004], sp
-    nop
-    ld b, b
-    jr nz, jr_008_433e
-
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    jr nz, @+$42
-
-    nop
-
-jr_008_4336:
-    nop
-    nop
-    nop
-
-jr_008_4339:
-    jr nz, jr_008_42e3
-
-    ld [hl], b
-    ld [hl], b
-    xor b
-
-jr_008_433e:
-    jr nz, jr_008_4340
-
-jr_008_4340:
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_4366
-
-    jr nz, jr_008_4340
-
-    jr nz, jr_008_436a
-
-    jr nz, jr_008_434c
-
-jr_008_434c:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld b, b
-    ld b, b
-    add b
-
-jr_008_435a:
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld hl, sp+$00
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_4366:
-    nop
-    nop
-    nop
-
-jr_008_4369:
-    nop
-
-jr_008_436a:
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld b, b
-    nop
-    nop
-    nop
-    ld [$1010], sp
-    db $10
-    jr nz, jr_008_4399
-
-    ld b, b
-    ld b, b
-    ld b, b
-    add b
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    adc b
-    adc b
-    adc b
-    adc b
-    adc b
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_43ee
-
-    jr nz, jr_008_43b0
-
-    jr nz, @+$22
-
-    jr nz, jr_008_4404
-
-    nop
-    nop
-    nop
-    nop
-    ld [hl], b
-
-jr_008_4399:
-    adc b
-    adc b
-    db $10
-    jr nz, jr_008_43de
-
-    add b
-    ld hl, sp+$00
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    ld [$0830], sp
-    ld [$7088], sp
-    nop
-    nop
-    nop
-    nop
-
-jr_008_43b0:
-    db $10
-    jr nc, jr_008_4403
-
-    ld d, b
-    sub b
-    ld a, b
-    db $10
-    jr jr_008_43b9
-
-jr_008_43b9:
-    nop
-    nop
-    nop
-    ld hl, sp-$80
-    add b
-    ldh a, [$ff08]
-    ld [$7088], sp
-    nop
-    nop
-    nop
-    nop
-    ld [hl], b
-    sub b
-    add b
-    ldh a, [$ff88]
-    adc b
-    adc b
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    ld hl, sp-$70
-    db $10
-    jr nz, jr_008_43f9
-
-    jr nz, @+$22
-
-    jr nz, jr_008_43dd
-
-jr_008_43dd:
-    nop
-
-jr_008_43de:
-    nop
-    nop
-    ld [hl], b
-    adc b
-    adc b
-    ld [hl], b
-    adc b
-    adc b
-    adc b
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-
-jr_008_43ee:
-    adc b
-    adc b
-    ld a, b
-    ld [$7048], sp
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_43f9:
-    nop
-    jr nz, jr_008_43fc
-
-jr_008_43fc:
-    nop
-    nop
-    nop
-    jr nz, jr_008_4401
-
-jr_008_4401:
-    nop
-    nop
-
-jr_008_4403:
-    nop
-
-jr_008_4404:
-    nop
-    nop
-    nop
-    jr nz, jr_008_4409
-
-jr_008_4409:
-    nop
-    nop
-    jr nz, jr_008_442d
-
-    nop
-    nop
-    inc b
-    ld [$2010], sp
-    ld b, b
-    jr nz, jr_008_4426
-
-    ld [$0004], sp
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld hl, sp+$00
-    nop
-    ld hl, sp+$00
-    nop
-    nop
-    nop
-
-jr_008_4426:
-    nop
-    ld b, b
-    jr nz, jr_008_443a
-
-    ld [$0804], sp
-
-jr_008_442d:
-    db $10
-    jr nz, jr_008_4470
-
-    nop
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    adc b
-    db $10
-    jr nz, jr_008_445a
-
-jr_008_443a:
-    nop
-    jr nz, jr_008_443d
-
-jr_008_443d:
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    sbc b
-    xor b
-    xor b
-    cp b
-    add b
-    ld a, b
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_446e
-
-    jr nc, jr_008_44a0
-
-    ld d, b
-    ld a, b
-    ld c, b
-    call z, RST_00
-    nop
-    nop
-    ldh a, [rOBP0]
-
-jr_008_445a:
-    ld c, b
-    ld [hl], b
-    ld c, b
-    ld c, b
-    ld c, b
-    ldh a, [rP1]
-    nop
-    nop
-    nop
-    ld a, b
-    adc b
-    add b
-    add b
-    add b
-    add b
-    adc b
-    ld [hl], b
-    nop
-    nop
-
-jr_008_446e:
-    nop
-    nop
-
-jr_008_4470:
-    ldh a, [rOBP0]
-    ld c, b
-    ld c, b
-    ld c, b
-    ld c, b
-    ld c, b
-    ldh a, [rP1]
-    nop
-    nop
-    nop
-    ld hl, sp+$48
-    ld d, b
-    ld [hl], b
-    ld d, b
-    ld b, b
-    ld c, b
-    ld hl, sp+$00
-    nop
-    nop
-    nop
-    ld hl, sp+$48
-    ld d, b
-    ld [hl], b
-    ld d, b
-    ld b, b
-    ld b, b
-    ldh [rP1], a
-    nop
-    nop
-    nop
-    jr c, jr_008_44de
-
-    add b
-    add b
-    sbc h
-    adc b
-    ld c, b
-    jr nc, jr_008_449d
-
-jr_008_449d:
-    nop
-    nop
-    nop
-
-jr_008_44a0:
-    call z, Call_008_4848
-    ld a, b
-    ld c, b
-    ld c, b
-    ld c, b
-    call z, RST_00
-    nop
-    nop
-
-jr_008_44ac:
-    ld hl, sp+$20
-    jr nz, jr_008_44d0
-
-    jr nz, jr_008_44d2
-
-    jr nz, jr_008_44ac
-
-    nop
-    nop
-    nop
-    nop
-    ld a, h
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    sub b
-    ldh [rP1], a
-    nop
-    nop
-    db $ec
-    ld c, b
-    ld d, b
-    ld h, b
-    ld d, b
-    ld d, b
-    ld c, b
-    db $ec
-    nop
-    nop
-    nop
-    nop
-
-jr_008_44d0:
-    ldh [rLCDC], a
-
-jr_008_44d2:
-    ld b, b
-    ld b, b
-    ld b, b
-    ld b, b
-    ld b, h
-    db $fc
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ret c
-
-jr_008_44de:
-    ret c
-
-    ret c
-
-    xor b
-    xor b
-    xor b
-    xor b
-    nop
-    nop
-    nop
-    nop
-    call c, Call_008_6848
-    ld l, b
-    ld e, b
-    ld e, b
-    ld c, b
-    add sp, $00
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    adc b
-    adc b
-    adc b
-    adc b
-    adc b
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    ldh a, [rOBP0]
-    ld c, b
-    ld [hl], b
-    ld b, b
-    ld b, b
-    ld b, b
-    ldh [rP1], a
-    nop
-    nop
-    nop
-    ld [hl], b
-    adc b
-    adc b
-    adc b
-    adc b
-    add sp, -$68
-    ld [hl], b
-    jr jr_008_4516
-
-jr_008_4516:
-    nop
-    nop
-    ldh a, [rOBP0]
-    ld c, b
-    ld [hl], b
-    ld d, b
-    ld c, b
-    ld c, b
-    db $ec
-    nop
-    nop
-    nop
-    nop
-    ld a, b
-    adc b
-    add b
-    ld h, b
-    db $10
-    ld [$f088], sp
-    nop
-    nop
-    nop
-    nop
-    ld hl, sp-$58
-    jr nz, jr_008_4554
-
-    jr nz, jr_008_4556
-
-    jr nz, @+$72
-
-    nop
-    nop
-    nop
-    nop
-    call z, Call_008_4848
-    ld c, b
-    ld c, b
-    ld c, b
-    ld c, b
-    jr nc, jr_008_4545
-
-jr_008_4545:
-    nop
-    nop
-    nop
-    call z, Call_008_4848
-    ld d, b
-    ld d, b
-    jr nc, jr_008_456f
-
-    jr nz, jr_008_4551
-
-jr_008_4551:
-    nop
-    nop
-    nop
-
-jr_008_4554:
-    xor b
-    xor b
-
-jr_008_4556:
-    xor b
-    ld [hl], b
-    ld d, b
-    ld d, b
-    ld d, b
-    ld d, b
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ld d, b
-    ld d, b
-    jr nz, jr_008_4585
-
-    ld d, b
-    ld d, b
-    ret c
-
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ld d, b
-    ld d, b
-
-jr_008_456f:
-    jr nz, jr_008_4591
-
-    jr nz, @+$22
-
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    ld hl, sp-$70
-    db $10
-    jr nz, jr_008_459d
-
-    ld b, b
-    ld c, b
-    ld hl, sp+$00
-    nop
-    nop
-    jr c, jr_008_45a5
-
-jr_008_4585:
-    jr nz, jr_008_45a7
-
-    jr nz, jr_008_45a9
-
-    jr nz, jr_008_45ab
-
-    jr nz, jr_008_45c5
-
-    nop
-    nop
-    ld b, b
-    ld b, b
-
-jr_008_4591:
-    ld b, b
-    jr nz, jr_008_45b4
-
-    db $10
-    db $10
-    db $10
-    ld [$0000], sp
-    nop
-    ld [hl], b
-    db $10
-
-jr_008_459d:
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    ld [hl], b
-
-jr_008_45a5:
-    nop
-    nop
-
-jr_008_45a7:
-    jr nz, jr_008_45f9
-
-jr_008_45a9:
-    nop
-    nop
-
-jr_008_45ab:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_45b4:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    db $fc
-    nop
-    jr nz, jr_008_45c1
-
-jr_008_45c1:
-    nop
-    nop
-    nop
-    nop
-
-jr_008_45c5:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr nc, jr_008_4619
-
-    jr c, jr_008_461b
-
-    inc a
-    nop
-    nop
-    nop
-    nop
-    ret nz
-
-    ld b, b
-    ld b, b
-    ld [hl], b
-    ld c, b
-    ld c, b
-    ld c, b
-    ld [hl], b
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr c, @+$4a
-
-    ld b, b
-    ld b, b
-    jr c, jr_008_45ed
-
-jr_008_45ed:
-    nop
-    nop
-    nop
-    jr jr_008_45fa
-
-    ld [$4838], sp
-    ld c, b
-    ld c, b
-    inc a
-    nop
-
-jr_008_45f9:
-    nop
-
-jr_008_45fa:
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr nc, jr_008_4649
-
-    ld a, b
-    ld b, b
-    jr c, jr_008_4605
-
-jr_008_4605:
-    nop
-    nop
-    nop
-    inc e
-    jr nz, jr_008_462b
-
-    ld a, b
-    jr nz, jr_008_462e
-
-    jr nz, jr_008_4688
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    inc a
-    ld c, b
-
-jr_008_4619:
-    jr nc, jr_008_465b
-
-jr_008_461b:
-    ld a, b
-    ld b, h
-    jr c, jr_008_461f
-
-jr_008_461f:
-    nop
-    ret nz
-
-    ld b, b
-    ld b, b
-    ld [hl], b
-    ld c, b
-    ld c, b
-    ld c, b
-    db $ec
-    nop
-    nop
-    nop
-
-jr_008_462b:
-    nop
-    jr nz, jr_008_462e
-
-jr_008_462e:
-    nop
-    ld h, b
-    jr nz, jr_008_4652
-
-    jr nz, jr_008_46a4
-
-    nop
-    nop
-    nop
-    nop
-    stop
-    nop
-    jr nc, jr_008_464d
-
-    db $10
-    db $10
-    db $10
-    db $10
-    ldh [rP1], a
-    nop
-    ret nz
-
-    ld b, b
-    ld b, b
-    ld e, h
-    ld d, b
-
-jr_008_4649:
-    ld [hl], b
-    ld c, b
-    db $ec
-    nop
-
-jr_008_464d:
-    nop
-    nop
-    nop
-
-jr_008_4650:
-    ldh [rNR41], a
-
-jr_008_4652:
-    jr nz, jr_008_4674
-
-    jr nz, jr_008_4676
-
-    jr nz, jr_008_4650
-
-    nop
-    nop
-    nop
-
-jr_008_465b:
-    nop
-    nop
-    nop
-    nop
-    ldh a, [$ffa8]
-    xor b
-    xor b
-    xor b
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ldh a, [rOBP0]
-    ld c, b
-    ld c, b
-    db $ec
-    nop
-    nop
-    nop
-    nop
-
-jr_008_4674:
-    nop
-    nop
-
-jr_008_4676:
-    nop
-    jr nc, jr_008_46c1
-
-    ld c, b
-    ld c, b
-    jr nc, jr_008_467d
-
-jr_008_467d:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ldh a, [rOBP0]
-    ld c, b
-    ld c, b
-    ld [hl], b
-
-jr_008_4688:
-    ld b, b
-    ldh [rP1], a
-    nop
-    nop
-    nop
-    nop
-    jr c, jr_008_46d9
-
-    ld c, b
-    ld c, b
-    jr c, jr_008_469d
-
-    inc e
-    nop
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ld h, b
-
-jr_008_469d:
-    ld b, b
-    ld b, b
-    ldh [rP1], a
-    nop
-    nop
-    nop
-
-jr_008_46a4:
-    nop
-    nop
-    nop
-    ld a, b
-    ld b, b
-    jr nc, jr_008_46b3
-
-    ld a, b
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr nz, jr_008_46d3
-
-jr_008_46b3:
-    ld [hl], b
-    jr nz, jr_008_46d6
-
-jr_008_46b6:
-    jr nz, jr_008_46d0
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ld c, b
-
-jr_008_46c1:
-    ld c, b
-    ld c, b
-    inc a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    db $ec
-    ld c, b
-    ld d, b
-    jr nc, jr_008_46f0
-
-jr_008_46d0:
-    nop
-    nop
-    nop
-
-jr_008_46d3:
-    nop
-    nop
-    nop
-
-jr_008_46d6:
-    nop
-    xor b
-    xor b
-
-jr_008_46d9:
-    ld [hl], b
-    ld d, b
-    ld d, b
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ret c
-
-    ld d, b
-    jr nz, jr_008_4737
-
-    ret c
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    db $ec
-
-jr_008_46f0:
-    ld c, b
-    ld d, b
-    jr nc, jr_008_4714
-
-    jr nz, jr_008_46b6
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld a, b
-    db $10
-    jr nz, @+$22
-
-    ld a, b
-    nop
-    nop
-    nop
-    jr jr_008_4715
-
-    db $10
-    db $10
-    jr nz, jr_008_4719
-
-    db $10
-    db $10
-    db $10
-    jr jr_008_470e
-
-jr_008_470e:
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-    db $10
-
-jr_008_4714:
-    db $10
-
-jr_008_4715:
-    db $10
-    db $10
-    db $10
-    db $10
-
-jr_008_4719:
-    stop
-    ld h, b
-    jr nz, jr_008_473e
-
-    jr nz, jr_008_4730
-
-    jr nz, @+$22
-
-    jr nz, @+$22
-
-    ld h, b
-    nop
-    ld b, b
-    and h
-    jr jr_008_472a
-
-jr_008_472a:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_4730:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_4737:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_008_473e:
-    nop
+Bank8ReservedSpace2::
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $20, $20
+    db $20, $20, $20, $20, $00, $20, $00, $00
+    db $00, $28, $50, $50, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $28, $28
+    db $fc, $28, $50, $fc, $50, $50, $00, $00
+    db $00, $20, $78, $a8, $a0, $60, $30, $28
+    db $a8, $f0, $20, $00, $00, $00, $48, $a8
+    db $b0, $50, $28, $34, $54, $48, $00, $00
+    db $00, $00, $20, $50, $50, $78, $a8, $a8
+    db $90, $6c, $00, $00, $00, $40, $40, $80
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $04, $08, $10, $10, $10, $10, $10
+    db $10, $08, $04, $00, $00, $40, $20, $10
+    db $10, $10, $10, $10, $10, $20, $40, $00
+    db $00, $00, $00, $20, $a8, $70, $70, $a8
+    db $20, $00, $00, $00, $00, $00, $20, $20
+    db $20, $f8, $20, $20, $20, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $40, $40, $80, $00, $00, $00, $00
+    db $00, $f8, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $40, $00, $00, $00, $08, $10, $10
+    db $10, $20, $20, $40, $40, $40, $80, $00
+    db $00, $00, $70, $88, $88, $88, $88, $88
+    db $88, $70, $00, $00, $00, $00, $20, $60
+    db $20, $20, $20, $20, $20, $70, $00, $00
+    db $00, $00, $70, $88, $88, $10, $20, $40
+    db $80, $f8, $00, $00, $00, $00, $70, $88
+    db $08, $30, $08, $08, $88, $70, $00, $00
+    db $00, $00, $10, $30, $50, $50, $90, $78
+    db $10, $18, $00, $00, $00, $00, $f8, $80
+    db $80, $f0, $08, $08, $88, $70, $00, $00
+    db $00, $00, $70, $90, $80, $f0, $88, $88
+    db $88, $70, $00, $00, $00, $00, $f8, $90
+    db $10, $20, $20, $20, $20, $20, $00, $00
+    db $00, $00, $70, $88, $88, $70, $88, $88
+    db $88, $70, $00, $00, $00, $00, $70, $88
+    db $88, $88, $78, $08, $48, $70, $00, $00
+    db $00, $00, $00, $00, $20, $00, $00, $00
+    db $00, $20, $00, $00, $00, $00, $00, $00
+    db $00, $20, $00, $00, $00, $20, $20, $00
+    db $00, $04, $08, $10, $20, $40, $20, $10
+    db $08, $04, $00, $00, $00, $00, $00, $00
+    db $f8, $00, $00, $f8, $00, $00, $00, $00
+    db $00, $40, $20, $10, $08, $04, $08, $10
+    db $20, $40, $00, $00, $00, $00, $70, $88
+    db $88, $10, $20, $20, $00, $20, $00, $00
+    db $00, $00, $70, $88, $98, $a8, $a8, $b8
+    db $80, $78, $00, $00, $00, $00, $20, $20
+    db $30, $50, $50, $78, $48, $cc, $00, $00
+    db $00, $00, $f0, $48, $48, $70, $48, $48
+    db $48, $f0, $00, $00, $00, $00, $78, $88
+    db $80, $80, $80, $80, $88, $70, $00, $00
+    db $00, $00, $f0, $48, $48, $48, $48, $48
+    db $48, $f0, $00, $00, $00, $00, $f8, $48
+    db $50, $70, $50, $40, $48, $f8, $00, $00
+    db $00, $00, $f8, $48, $50, $70, $50, $40
+    db $40, $e0, $00, $00, $00, $00, $38, $48
+    db $80, $80, $9c, $88, $48, $30, $00, $00
+    db $00, $00, $cc, $48, $48, $78, $48, $48
+    db $48, $cc, $00, $00, $00, $00, $f8, $20
+    db $20, $20, $20, $20, $20, $f8, $00, $00
+    db $00, $00, $7c, $10, $10, $10, $10, $10
+    db $10, $90, $e0, $00, $00, $00, $ec, $48
+    db $50, $60, $50, $50, $48, $ec, $00, $00
+    db $00, $00, $e0, $40, $40, $40, $40, $40
+    db $44, $fc, $00, $00, $00, $00, $d8, $d8
+    db $d8, $d8, $a8, $a8, $a8, $a8, $00, $00
+    db $00, $00, $dc, $48, $68, $68, $58, $58
+    db $48, $e8, $00, $00, $00, $00, $70, $88
+    db $88, $88, $88, $88, $88, $70, $00, $00
+    db $00, $00, $f0, $48, $48, $70, $40, $40
+    db $40, $e0, $00, $00, $00, $00, $70, $88
+    db $88, $88, $88, $e8, $98, $70, $18, $00
+    db $00, $00, $f0, $48, $48, $70, $50, $48
+    db $48, $ec, $00, $00, $00, $00, $78, $88
+    db $80, $60, $10, $08, $88, $f0, $00, $00
+    db $00, $00, $f8, $a8, $20, $20, $20, $20
+    db $20, $70, $00, $00, $00, $00, $cc, $48
+    db $48, $48, $48, $48, $48, $30, $00, $00
+    db $00, $00, $cc, $48, $48, $50, $50, $30
+    db $20, $20, $00, $00, $00, $00, $a8, $a8
+    db $a8, $70, $50, $50, $50, $50, $00, $00
+    db $00, $00, $d8, $50, $50, $20, $20, $50
+    db $50, $d8, $00, $00, $00, $00, $d8, $50
+    db $50, $20, $20, $20, $20, $70, $00, $00
+    db $00, $00, $f8, $90, $10, $20, $20, $40
+    db $48, $f8, $00, $00, $00, $38, $20, $20
+    db $20, $20, $20, $20, $20, $20, $38, $00
+    db $00, $40, $40, $40, $20, $20, $10, $10
+    db $10, $08, $00, $00, $00, $70, $10, $10
+    db $10, $10, $10, $10, $10, $10, $70, $00
+    db $00, $20, $50, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $fc
+    db $00, $20, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $30, $48, $38, $48, $3c, $00, $00
+    db $00, $00, $c0, $40, $40, $70, $48, $48
+    db $48, $70, $00, $00, $00, $00, $00, $00
+    db $00, $38, $48, $40, $40, $38, $00, $00
+    db $00, $00, $18, $08, $08, $38, $48, $48
+    db $48, $3c, $00, $00, $00, $00, $00, $00
+    db $00, $30, $48, $78, $40, $38, $00, $00
+    db $00, $00, $1c, $20, $20, $78, $20, $20
+    db $20, $78, $00, $00, $00, $00, $00, $00
+    db $00, $3c, $48, $30, $40, $78, $44, $38
+    db $00, $00, $c0, $40, $40, $70, $48, $48
+    db $48, $ec, $00, $00, $00, $00, $20, $00
+    db $00, $60, $20, $20, $20, $70, $00, $00
+    db $00, $00, $10, $00, $00, $30, $10, $10
+    db $10, $10, $10, $e0, $00, $00, $c0, $40
+    db $40, $5c, $50, $70, $48, $ec, $00, $00
+    db $00, $00, $e0, $20, $20, $20, $20, $20
+    db $20, $f8, $00, $00, $00, $00, $00, $00
+    db $00, $f0, $a8, $a8, $a8, $a8, $00, $00
+    db $00, $00, $00, $00, $00, $f0, $48, $48
+    db $48, $ec, $00, $00, $00, $00, $00, $00
+    db $00, $30, $48, $48, $48, $30, $00, $00
+    db $00, $00, $00, $00, $00, $f0, $48, $48
+    db $48, $70, $40, $e0, $00, $00, $00, $00
+    db $00, $38, $48, $48, $48, $38, $08, $1c
+    db $00, $00, $00, $00, $00, $d8, $60, $40
+    db $40, $e0, $00, $00, $00, $00, $00, $00
+    db $00, $78, $40, $30, $08, $78, $00, $00
+    db $00, $00, $00, $20, $20, $70, $20, $20
+    db $20, $18, $00, $00, $00, $00, $00, $00
+    db $00, $d8, $48, $48, $48, $3c, $00, $00
+    db $00, $00, $00, $00, $00, $ec, $48, $50
+    db $30, $20, $00, $00, $00, $00, $00, $00
+    db $00, $a8, $a8, $70, $50, $50, $00, $00
+    db $00, $00, $00, $00, $00, $d8, $50, $20
+    db $50, $d8, $00, $00, $00, $00, $00, $00
+    db $00, $ec, $48, $50, $30, $20, $20, $c0
+    db $00, $00, $00, $00, $00, $78, $10, $20
+    db $20, $78, $00, $00, $00, $18, $10, $10
+    db $10, $20, $10, $10, $10, $10, $18, $00
+    db $10, $10, $10, $10, $10, $10, $10, $10
+    db $10, $10, $10, $10, $00, $60, $20, $20
+    db $20, $10, $20, $20, $20, $20, $60, $00
+    db $40, $a4, $18, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00
 
 ; [ezgb]
 ; Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.
@@ -1936,9834 +500,1237 @@ Fpga7FD2WaitClear_B8_pollA000::
     or [hl]
     jp nz, Fpga7FD2WaitClear_B8_pollA000
 
-    ld bc, $7f00
-    ld a, $e1
-    ld [bc], a
-    ld bc, $7f10
-    ld a, $e2
-    ld [bc], a
-    ld bc, $7f20
-    ld a, $e3
-    ld [bc], a
-    ld bc, $7fd2
-    ld a, $00
-    ld [bc], a
-    ld bc, $7ff0
-    ld a, $e4
-    ld [bc], a
-    ld e, [hl]
-    add sp, $01
-    ret
-
-
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-
-Call_008_4848:
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-
-Call_008_6848:
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    rst RST_38
-    ld a, a
-    inc c
-    ld c, b
-    ld [bc], a
-    nop
+Bank8ReservedSpace::
+    db $01, $00, $7f, $3e, $e1, $02, $01, $10
+    db $7f, $3e, $e2, $02, $01, $20, $7f, $3e
+    db $e3, $02, $01, $d2, $7f, $3e, $00, $02
+    db $01, $f0, $7f, $3e, $e4, $02, $5e, $e8
+    db $01, $c9, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $00, $00, $00, $00, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $00, $00, $00, $00, $00, $00, $00, $00
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $ff, $7f, $ff, $7f, $ff, $7f
+    db $ff, $7f, $0c, $48, $02, $00
 
 ; [ezgb]
 ; RomLoad_Build_B8(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst. Twin of RomLoad_Build_B4.

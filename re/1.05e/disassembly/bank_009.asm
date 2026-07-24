@@ -6745,7 +6745,7 @@ CmpLfn_B9_charLoop::
     sbc $00
     jp nc, CmpLfn_B9_checkLastSeg
 
-    ld de, $5fb8
+    ld de, LfnOfs_B9
     dec hl
     ld a, [hl+]
     ld h, [hl]
@@ -6945,39 +6945,59 @@ CmpLfn_B9_epilogue::
     ret
 
 
-    ld bc, $0503
-    rlca
-    add hl, bc
-    ld c, $10
-    ld [de], a
-    inc d
-    ld d, $18
-    inc e
-    ld e, $e8
-    di
-    ld hl, sp+$11
-    ld e, [hl]
-    inc hl
-    ld d, [hl]
-    ld hl, $001a
-    add hl, de
-    ld c, l
-    ld b, h
-    ld e, c
-    ld d, b
-    ld a, [de]
-    ld c, a
-    inc de
-    ld a, [de]
-    ld b, a
-    or c
-    jp z, Jump_009_5fe3
+LfnOfs_B9::
+    db $01
+    db $03
+    db $05
+    db $07
+    db $09
+    db $0e
+    db $10
+    db $12
+    db $14
+    db $16
+    db $18
+    db $1c
+    db $1e
+    db $e8
+    db $f3
+    db $f8
+    db $11
+    db $5e
+    db $23
+    db $56
+    db $21
+    db $1a
+    db $00
+    db $19
+    db $4d
+    db $44
+    db $59
+    db $50
+    db $1a
+    db $4f
+    db $13
+    db $1a
+    db $47
+    db $b1
+    db $ca
+    db $e3
+    db $5f
+    db $11
+    db $00
+    db $00
+    db $c3
+    db $ed
+    db $60
 
-    ld de, $0000
-    jp Jump_009_60ed
+; [ezgb]
+; MatchLfnEntry_B9(ord, target, entry): walks 13 LFN chars via LfnOfs_B9, compares against
+; target buffer; DE=1 on full match (checkLastFlag $40=LAST_LONG_ENTRY spare-byte cleanup),
+; DE=0 on mismatch/sentinel. Shape matches FatFs LFN-entry matching; not textually called
+; anywhere in this build (no caller found) — exact ff.c correspondence and caller not
+; confirmed, named from its own control flow only. Twin of MatchLfnEntry_B3/B6/B7.
 
-
-Jump_009_5fe3:
+MatchLfnEntry_B9::
     ld hl, sp+$11
     ld a, [hl+]
     ld e, [hl]
@@ -7024,16 +7044,16 @@ Jump_009_5fe3:
     inc hl
     ld [hl], $00
 
-Jump_009_601d:
+MatchLfnEntry_B9_charLoop::
     ld hl, sp+$09
     ld a, [hl]
     sub $0d
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_009_60b4
+    jp nc, MatchLfnEntry_B9_checkLastFlag
 
-    ld de, $5fb8
+    ld de, LfnOfs_B9
     dec hl
     ld a, [hl+]
     ld h, [hl]
@@ -7066,7 +7086,7 @@ Jump_009_601d:
     inc hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_6097
+    jp z, MatchLfnEntry_B9_checkSentinel
 
     ld hl, sp+$00
     ld a, [hl]
@@ -7074,25 +7094,25 @@ Jump_009_601d:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_6064
+    jp c, MatchLfnEntry_B9_advance
 
     ld de, $0000
-    jp Jump_009_60ed
+    jp MatchLfnEntry_B9_epilogue
 
 
-Jump_009_6064:
+MatchLfnEntry_B9_advance::
     ld hl, sp+$00
     ld c, [hl]
     inc hl
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_009_606f
+    jr nz, MatchLfnEntry_B9_storeOfs
 
     inc hl
     inc [hl]
 
-jr_009_606f:
+MatchLfnEntry_B9_storeOfs::
     ld hl, sp+$00
     ld a, [hl+]
     ld e, [hl]
@@ -7123,60 +7143,60 @@ jr_009_606f:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_009_60aa
+    jp MatchLfnEntry_B9_nextOrd
 
 
-Jump_009_6097:
+MatchLfnEntry_B9_checkSentinel::
     ld hl, sp+$05
     ld a, [hl]
     inc a
-    jp nz, Jump_009_60a4
+    jp nz, MatchLfnEntry_B9_noMatch
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_009_60aa
+    jp z, MatchLfnEntry_B9_nextOrd
 
-Jump_009_60a4:
+MatchLfnEntry_B9_noMatch::
     ld de, $0000
-    jp Jump_009_60ed
+    jp MatchLfnEntry_B9_epilogue
 
 
-Jump_009_60aa:
+MatchLfnEntry_B9_nextOrd::
     ld hl, sp+$09
     inc [hl]
-    jr nz, jr_009_60b1
+    jr nz, MatchLfnEntry_B9_loopBack
 
     inc hl
     inc [hl]
 
-jr_009_60b1:
-    jp Jump_009_601d
+MatchLfnEntry_B9_loopBack::
+    jp MatchLfnEntry_B9_charLoop
 
 
-Jump_009_60b4:
+MatchLfnEntry_B9_checkLastFlag::
     ld hl, sp+$04
     ld a, [hl]
     and $40
-    jr nz, jr_009_60be
+    jr nz, MatchLfnEntry_B9_checkSpare
 
-    jp Jump_009_60ea
+    jp MatchLfnEntry_B9_matched
 
 
-jr_009_60be:
+MatchLfnEntry_B9_checkSpare::
     ld hl, sp+$0b
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_60d0
+    jp c, MatchLfnEntry_B9_clearSpare
 
     ld de, $0000
-    jp Jump_009_60ed
+    jp MatchLfnEntry_B9_epilogue
 
 
-Jump_009_60d0:
+MatchLfnEntry_B9_clearSpare::
     ld hl, sp+$0b
     ld c, [hl]
     inc hl
@@ -7198,10 +7218,10 @@ Jump_009_60d0:
     ld a, $00
     ld [de], a
 
-Jump_009_60ea:
+MatchLfnEntry_B9_matched::
     ld de, $0001
 
-Jump_009_60ed:
+MatchLfnEntry_B9_epilogue::
     add sp, $0d
     ret
 
@@ -7335,7 +7355,7 @@ PutLfn_B9_indexLfn::
     ld [hl], b
 
 PutLfn_B9_storeWchar::
-    ld de, $5fb8
+    ld de, LfnOfs_B9
     ld hl, sp+$04
     ld a, [hl+]
     ld h, [hl]
