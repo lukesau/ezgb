@@ -32,11 +32,11 @@ MemCpy16_B3::
     ld hl, sp+$00
     ld [hl], a
 
-Jump_003_401b:
+MemCpy16_B3_wordLoop::
     ld hl, sp+$00
     ld a, [hl]
     sub $02
-    jp c, Jump_003_4059
+    jp c, MemCpy16_B3_byteTail
 
     inc hl
     ld e, [hl]
@@ -82,19 +82,19 @@ Jump_003_401b:
     dec hl
     dec [hl]
     dec [hl]
-    jp Jump_003_401b
+    jp MemCpy16_B3_wordLoop
 
 
-Jump_003_4059:
+MemCpy16_B3_byteTail::
     ld hl, sp+$00
     ld c, [hl]
 
-Jump_003_405c:
+MemCpy16_B3_byteLoop::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_003_407e
+    jp z, MemCpy16_B3_epilogue
 
     ld hl, sp+$01
     ld e, [hl]
@@ -103,12 +103,12 @@ Jump_003_405c:
     ld a, [de]
     dec hl
     inc [hl]
-    jr nz, jr_003_406f
+    jr nz, MemCpy16_B3_storeByte
 
     inc hl
     inc [hl]
 
-jr_003_406f:
+MemCpy16_B3_storeByte::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
@@ -116,16 +116,16 @@ jr_003_406f:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_003_407b
+    jr nz, MemCpy16_B3_byteNext
 
     inc hl
     inc [hl]
 
-jr_003_407b:
-    jp Jump_003_405c
+MemCpy16_B3_byteNext::
+    jp MemCpy16_B3_byteLoop
 
 
-Jump_003_407e:
+MemCpy16_B3_epilogue::
     add sp, $05
     ret
 
@@ -318,13 +318,13 @@ MemCmp_B3::
     ld hl, sp+$02
     ld [hl], a
 
-Jump_003_414c:
+MemCmp_B3_loop::
     ld hl, sp+$02
     ld b, [hl]
     dec [hl]
     xor a
     or b
-    jp z, Jump_003_418d
+    jp z, MemCmp_B3_epilogue
 
     ld hl, sp+$07
     ld e, [hl]
@@ -334,12 +334,12 @@ Jump_003_414c:
     ld b, a
     dec hl
     inc [hl]
-    jr nz, jr_003_4162
+    jr nz, MemCmp_B3_storeA
 
     inc hl
     inc [hl]
 
-jr_003_4162:
+MemCmp_B3_storeA::
     ld hl, sp+$00
     ld [hl], b
     inc hl
@@ -352,12 +352,12 @@ jr_003_4162:
     ld c, a
     dec hl
     inc [hl]
-    jr nz, jr_003_4175
+    jr nz, MemCmp_B3_compare
 
     inc hl
     inc [hl]
 
-jr_003_4175:
+MemCmp_B3_compare::
     ld b, $00
     ld hl, sp+$00
     ld e, [hl]
@@ -377,9 +377,9 @@ jr_003_4175:
     ld [hl], b
     ld a, c
     or b
-    jp z, Jump_003_414c
+    jp z, MemCmp_B3_loop
 
-Jump_003_418d:
+MemCmp_B3_epilogue::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
@@ -397,7 +397,7 @@ MemChr_B3::
     ld [hl+], a
     ld [hl], e
 
-Jump_003_419e:
+MemChr_B3_loop::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -405,7 +405,7 @@ Jump_003_419e:
     ld a, [de]
     ld c, a
     or a
-    jp z, Jump_003_41c4
+    jp z, MemChr_B3_epilogue
 
     ld a, c
     rla
@@ -414,26 +414,26 @@ Jump_003_419e:
     ld a, c
     ld hl, sp+$06
     sub [hl]
-    jp nz, Jump_003_41ba
+    jp nz, MemChr_B3_next
 
     ld a, b
     inc hl
     sub [hl]
-    jp z, Jump_003_41c4
+    jp z, MemChr_B3_epilogue
 
-Jump_003_41ba:
+MemChr_B3_next::
     ld hl, sp+$00
     inc [hl]
-    jr nz, jr_003_41c1
+    jr nz, MemChr_B3_nextJr
 
     inc hl
     inc [hl]
 
-jr_003_41c1:
-    jp Jump_003_419e
+MemChr_B3_nextJr::
+    jp MemChr_B3_loop
 
 
-Jump_003_41c4:
+MemChr_B3_epilogue::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -475,7 +475,7 @@ SyncWindow_B3::
     ld e, a
     ld a, [de]
     or a
-    jp z, Jump_003_4365
+    jp z, SyncWindow_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -549,14 +549,14 @@ SyncWindow_B3::
     ld c, e
     xor a
     or c
-    jp z, Jump_003_425a
+    jp z, SyncWindow_B3_clearDirty
 
     ld hl, sp+$10
     ld [hl], $01
-    jp Jump_003_4365
+    jp SyncWindow_B3_epilogue
 
 
-Jump_003_425a:
+SyncWindow_B3_clearDirty::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -654,7 +654,7 @@ Jump_003_425a:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_4365
+    jp nc, SyncWindow_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -672,14 +672,14 @@ Jump_003_425a:
     inc hl
     ld [hl], b
 
-Jump_003_42e2:
+SyncWindow_B3_mirrorFat::
     ld hl, sp+$00
     ld a, [hl]
     sub $02
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_4365
+    jp c, SyncWindow_B3_epilogue
 
     ld hl, sp+$08
     ld e, [hl]
@@ -776,10 +776,10 @@ Jump_003_42e2:
     ld [hl], e
     inc hl
     ld [hl], d
-    jp Jump_003_42e2
+    jp SyncWindow_B3_mirrorFat
 
 
-Jump_003_4365:
+SyncWindow_B3_epilogue::
     ld hl, sp+$10
     ld e, [hl]
     add sp, $15
@@ -828,27 +828,27 @@ MoveWindow_B3::
     ld a, [hl]
     ld hl, sp+$00
     sub [hl]
-    jp nz, Jump_003_43b9
+    jp nz, MoveWindow_B3_reload
 
     ld hl, sp+$0e
     ld a, [hl]
     ld hl, sp+$01
     sub [hl]
-    jp nz, Jump_003_43b9
+    jp nz, MoveWindow_B3_reload
 
     ld hl, sp+$0f
     ld a, [hl]
     ld hl, sp+$02
     sub [hl]
-    jp nz, Jump_003_43b9
+    jp nz, MoveWindow_B3_reload
 
     ld hl, sp+$10
     ld a, [hl]
     ld hl, sp+$03
     sub [hl]
-    jp z, Jump_003_442e
+    jp z, MoveWindow_B3_epilogue
 
-Jump_003_43b9:
+MoveWindow_B3_reload::
     ld hl, sp+$04
     ld a, [hl+]
     ld h, [hl]
@@ -861,7 +861,7 @@ Jump_003_43b9:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_442e
+    jp nz, MoveWindow_B3_epilogue
 
     ld hl, sp+$04
     ld e, [hl]
@@ -906,7 +906,7 @@ Jump_003_43b9:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_4419
+    jp z, MoveWindow_B3_storeWinsect
 
     ld hl, sp+$0d
     ld [hl], $ff
@@ -919,7 +919,7 @@ Jump_003_43b9:
     ld hl, sp+$08
     ld [hl], $01
 
-Jump_003_4419:
+MoveWindow_B3_storeWinsect::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -940,7 +940,7 @@ Jump_003_4419:
     ld a, [hl]
     ld [de], a
 
-Jump_003_442e:
+MoveWindow_B3_epilogue::
     ld hl, sp+$08
     ld e, [hl]
     add sp, $09
@@ -964,7 +964,7 @@ SyncFs_B3::
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_4602
+    jp nz, SyncFs_B3_epilogue
 
     ld hl, sp+$13
     ld a, [hl+]
@@ -979,15 +979,15 @@ SyncFs_B3::
     ld a, [de]
     ld c, a
     sub $03
-    jp nz, Jump_003_445f
+    jp nz, SyncFs_B3_checkFsiFlag
 
-    jr jr_003_4462
+    jr SyncFs_B3_fsiFlagBody
 
-Jump_003_445f:
-    jp Jump_003_45e0
+SyncFs_B3_checkFsiFlag::
+    jp SyncFs_B3_ioctlSync
 
 
-jr_003_4462:
+SyncFs_B3_fsiFlagBody::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -1003,15 +1003,15 @@ jr_003_4462:
     ld a, [de]
     ld c, a
     sub $01
-    jp nz, Jump_003_447b
+    jp nz, SyncFs_B3_buildFsInfo
 
-    jr jr_003_447e
+    jr SyncFs_B3_fillWin
 
-Jump_003_447b:
-    jp Jump_003_45e0
+SyncFs_B3_buildFsInfo::
+    jp SyncFs_B3_ioctlSync
 
 
-jr_003_447e:
+SyncFs_B3_fillWin::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -1231,20 +1231,20 @@ jr_003_447e:
     ld [hl], a
     ld hl, sp+$04
     inc [hl]
-    jr nz, jr_003_459d
+    jr nz, SyncFs_B3_diskWrite
 
     inc hl
     inc [hl]
-    jr nz, jr_003_459d
+    jr nz, SyncFs_B3_diskWrite
 
     inc hl
     inc [hl]
-    jr nz, jr_003_459d
+    jr nz, SyncFs_B3_diskWrite
 
     inc hl
     inc [hl]
 
-jr_003_459d:
+SyncFs_B3_diskWrite::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -1300,7 +1300,7 @@ jr_003_459d:
     ld a, $00
     ld [de], a
 
-Jump_003_45e0:
+SyncFs_B3_ioctlSync::
     ld hl, sp+$0e
     ld c, [hl]
     inc hl
@@ -1321,12 +1321,12 @@ Jump_003_45e0:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_4602
+    jp z, SyncFs_B3_epilogue
 
     ld hl, sp+$10
     ld [hl], $01
 
-Jump_003_4602:
+SyncFs_B3_epilogue::
     ld hl, sp+$10
     ld e, [hl]
     add sp, $11
@@ -1435,14 +1435,14 @@ Clust2Sect_B3::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_4687
+    jp c, Clust2Sect_B3_inRange
 
     ld de, $0000
     ld hl, $0000
-    jp Jump_003_4704
+    jp Clust2Sect_B3_epilogue
 
 
-Jump_003_4687:
+Clust2Sect_B3_inRange::
     ld hl, sp+$08
     ld c, [hl]
     inc hl
@@ -1550,7 +1550,7 @@ Jump_003_4687:
     ld h, [hl]
     ld l, a
 
-Jump_003_4704:
+Clust2Sect_B3_epilogue::
     add sp, $0a
     ret
 
@@ -1574,7 +1574,7 @@ GetFat_B3::
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_4755
+    jp c, GetFat_B3_intErr
 
     ld hl, sp+$16
     ld a, [hl+]
@@ -1622,9 +1622,9 @@ GetFat_B3::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_4761
+    jp c, GetFat_B3_switchType
 
-Jump_003_4755:
+GetFat_B3_intErr::
     ld hl, sp+$08
     ld [hl], $01
     xor a
@@ -1632,10 +1632,10 @@ Jump_003_4755:
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-    jp Jump_003_4adf
+    jp GetFat_B3_epilogue
 
 
-Jump_003_4761:
+GetFat_B3_switchType::
     ld hl, sp+$08
     ld [hl], $ff
     inc hl
@@ -1651,11 +1651,11 @@ Jump_003_4761:
     ld a, [de]
     ld c, a
     sub $01
-    jp c, Jump_003_4ad6
+    jp c, GetFat_B3_badType
 
     ld a, $03
     sub c
-    jp c, Jump_003_4ad6
+    jp c, GetFat_B3_badType
 
     dec c
     ld e, c
@@ -1667,16 +1667,16 @@ Jump_003_4761:
     jp hl
 
 
-    jp Jump_003_4793
+    jp GetFat_B3_fat12
 
 
-    jp Jump_003_4913
+    jp GetFat_B3_fat16
 
 
-    jp Jump_003_49e9
+    jp GetFat_B3_fat32
 
 
-Jump_003_4793:
+GetFat_B3_fat12::
     ld hl, sp+$18
     ld a, [hl]
     ld hl, sp+$10
@@ -1783,7 +1783,7 @@ Jump_003_4793:
     ld c, e
     xor a
     or c
-    jp nz, Jump_003_4adf
+    jp nz, GetFat_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -1802,12 +1802,12 @@ Jump_003_4793:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_4833
+    jr nz, GetFat_B3_fat12WinOff
 
     inc hl
     inc [hl]
 
-jr_003_4833:
+GetFat_B3_fat12WinOff::
     ld a, b
     and $01
     ld b, a
@@ -1910,7 +1910,7 @@ jr_003_4833:
     ld c, e
     xor a
     or c
-    jp nz, Jump_003_4adf
+    jp nz, GetFat_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -1951,28 +1951,28 @@ jr_003_4833:
     ld hl, sp+$18
     ld a, [hl]
     and $01
-    jr nz, jr_003_48ec
+    jr nz, GetFat_B3_fat12Odd
 
-    jp Jump_003_48fd
+    jp GetFat_B3_fat12Even
 
 
-jr_003_48ec:
+GetFat_B3_fat12Odd::
     ld hl, sp+$12
     ld c, [hl]
     inc hl
     ld b, [hl]
     ld a, $04
 
-jr_003_48f3:
+GetFat_B3_fat12Shr4::
     srl b
     rr c
     dec a
-    jr nz, jr_003_48f3
+    jr nz, GetFat_B3_fat12Shr4
 
-    jp Jump_003_4905
+    jp GetFat_B3_storeVal
 
 
-Jump_003_48fd:
+GetFat_B3_fat12Even::
     ld hl, sp+$12
     ld c, [hl]
     inc hl
@@ -1980,7 +1980,7 @@ Jump_003_48fd:
     and $0f
     ld b, a
 
-Jump_003_4905:
+GetFat_B3_storeVal::
     ld hl, sp+$08
     ld [hl], c
     inc hl
@@ -1989,10 +1989,10 @@ Jump_003_4905:
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_003_4adf
+    jp GetFat_B3_epilogue
 
 
-Jump_003_4913:
+GetFat_B3_fat16::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -2090,7 +2090,7 @@ Jump_003_4913:
     ld c, e
     xor a
     or c
-    jp nz, Jump_003_4adf
+    jp nz, GetFat_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -2163,10 +2163,10 @@ Jump_003_4913:
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_003_4adf
+    jp GetFat_B3_epilogue
 
 
-Jump_003_49e9:
+GetFat_B3_fat32::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -2264,7 +2264,7 @@ Jump_003_49e9:
     ld c, e
     xor a
     or c
-    jp nz, Jump_003_4adf
+    jp nz, GetFat_B3_epilogue
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -2353,10 +2353,10 @@ Jump_003_49e9:
     and $0f
     ld hl, sp+$0b
     ld [hl], a
-    jp Jump_003_4adf
+    jp GetFat_B3_epilogue
 
 
-Jump_003_4ad6:
+GetFat_B3_badType::
     ld hl, sp+$08
     ld [hl], $01
     xor a
@@ -2365,7 +2365,7 @@ Jump_003_4ad6:
     ld [hl+], a
     ld [hl], a
 
-Jump_003_4adf:
+GetFat_B3_epilogue::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -2392,7 +2392,7 @@ PutFat_B3::
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_4b39
+    jp c, PutFat_B3_intErr
 
     ld hl, sp+$1b
     ld a, [hl+]
@@ -2440,15 +2440,15 @@ PutFat_B3::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_4b40
+    jp c, PutFat_B3_switchType
 
-Jump_003_4b39:
+PutFat_B3_intErr::
     ld hl, sp+$14
     ld [hl], $02
-    jp Jump_003_4f82
+    jp PutFat_B3_epilogue
 
 
-Jump_003_4b40:
+PutFat_B3_switchType::
     ld hl, sp+$12
     ld e, [hl]
     inc hl
@@ -2456,11 +2456,11 @@ Jump_003_4b40:
     ld a, [de]
     ld b, a
     sub $01
-    jp c, Jump_003_4f7e
+    jp c, PutFat_B3_badType
 
     ld a, $03
     sub b
-    jp c, Jump_003_4f7e
+    jp c, PutFat_B3_badType
 
     dec b
     ld e, b
@@ -2472,16 +2472,16 @@ Jump_003_4b40:
     jp hl
 
 
-    jp Jump_003_4b66
+    jp PutFat_B3_fat12
 
 
-    jp Jump_003_4d76
+    jp PutFat_B3_fat16
 
 
-    jp Jump_003_4e58
+    jp PutFat_B3_fat32
 
 
-Jump_003_4b66:
+PutFat_B3_fat12::
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$17
@@ -2590,7 +2590,7 @@ Jump_003_4b66:
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Jump_003_4f82
+    jp nz, PutFat_B3_epilogue
 
     dec hl
     dec hl
@@ -2610,12 +2610,12 @@ Jump_003_4b66:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_4c0a
+    jr nz, PutFat_B3_fat12WinOff
 
     inc hl
     inc [hl]
 
-jr_003_4c0a:
+PutFat_B3_fat12WinOff::
     ld a, b
     and $01
     ld b, a
@@ -2653,7 +2653,7 @@ jr_003_4c0a:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_4c57
+    jp z, PutFat_B3_fat12EvenFirst
 
     ld hl, sp+$15
     ld e, [hl]
@@ -2674,14 +2674,14 @@ jr_003_4c0a:
     ld b, a
     or c
     ld b, a
-    jp Jump_003_4c5a
+    jp PutFat_B3_fat12StoreFirst
 
 
-Jump_003_4c57:
+PutFat_B3_fat12EvenFirst::
     ld hl, sp+$21
     ld b, [hl]
 
-Jump_003_4c5a:
+PutFat_B3_fat12StoreFirst::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -2783,7 +2783,7 @@ Jump_003_4c5a:
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Jump_003_4f82
+    jp nz, PutFat_B3_epilogue
 
     ld hl, sp+$17
     ld c, [hl]
@@ -2815,7 +2815,7 @@ Jump_003_4c5a:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_4d27
+    jp z, PutFat_B3_fat12Second
 
     ld a, $04
     push af
@@ -2844,10 +2844,10 @@ Jump_003_4c5a:
     ld [hl], d
     ld hl, sp+$04
     ld c, [hl]
-    jp Jump_003_4d5e
+    jp PutFat_B3_fat12StoreSecond
 
 
-Jump_003_4d27:
+PutFat_B3_fat12Second::
     ld hl, sp+$15
     ld e, [hl]
     inc hl
@@ -2891,7 +2891,7 @@ Jump_003_4d27:
     or b
     ld c, a
 
-Jump_003_4d5e:
+PutFat_B3_fat12StoreSecond::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -2908,10 +2908,10 @@ Jump_003_4d5e:
     ld b, h
     ld a, $01
     ld [bc], a
-    jp Jump_003_4f82
+    jp PutFat_B3_epilogue
 
 
-Jump_003_4d76:
+PutFat_B3_fat16::
     ld hl, sp+$12
     ld e, [hl]
     inc hl
@@ -3011,7 +3011,7 @@ Jump_003_4d76:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_4f82
+    jp nz, PutFat_B3_epilogue
 
     dec hl
     dec hl
@@ -3091,10 +3091,10 @@ Jump_003_4d76:
     ld b, h
     ld a, $01
     ld [bc], a
-    jp Jump_003_4f82
+    jp PutFat_B3_epilogue
 
 
-Jump_003_4e58:
+PutFat_B3_fat32::
     ld hl, sp+$12
     ld e, [hl]
     inc hl
@@ -3194,7 +3194,7 @@ Jump_003_4e58:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_4f82
+    jp nz, PutFat_B3_epilogue
 
     dec hl
     dec hl
@@ -3327,14 +3327,14 @@ Jump_003_4e58:
     ld b, h
     ld a, $01
     ld [bc], a
-    jp Jump_003_4f82
+    jp PutFat_B3_epilogue
 
 
-Jump_003_4f7e:
+PutFat_B3_badType::
     ld hl, sp+$14
     ld [hl], $02
 
-Jump_003_4f82:
+PutFat_B3_epilogue::
     ld hl, sp+$14
     ld e, [hl]
     add sp, $19
@@ -3363,7 +3363,7 @@ RemoveChain_B3::
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_4fd9
+    jp c, RemoveChain_B3_intErr
 
     ld hl, sp+$10
     ld a, [hl+]
@@ -3413,17 +3413,17 @@ RemoveChain_B3::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_4fde
+    jp c, RemoveChain_B3_okInit
 
-Jump_003_4fd9:
+RemoveChain_B3_intErr::
     ld b, $02
-    jp Jump_003_5129
+    jp RemoveChain_B3_epilogue
 
 
-Jump_003_4fde:
+RemoveChain_B3_okInit::
     ld b, $00
 
-Jump_003_4fe0:
+RemoveChain_B3_walkLoop::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -3458,7 +3458,7 @@ Jump_003_4fe0:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_5129
+    jp nc, RemoveChain_B3_epilogue
 
     push bc
     ld hl, sp+$16
@@ -3496,72 +3496,72 @@ Jump_003_4fe0:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_5129
+    jp z, RemoveChain_B3_epilogue
 
     ld hl, sp+$0a
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_5054
+    jp nz, RemoveChain_B3_notIntFat
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5054
+    jp nz, RemoveChain_B3_notIntFat
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5054
+    jp nz, RemoveChain_B3_notIntFat
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5054
+    jp nz, RemoveChain_B3_notIntFat
 
-    jr jr_003_5057
+    jr RemoveChain_B3_fatIntErr
 
-Jump_003_5054:
-    jp Jump_003_505c
+RemoveChain_B3_notIntFat::
+    jp RemoveChain_B3_checkDiskErr
 
 
-jr_003_5057:
+RemoveChain_B3_fatIntErr::
     ld b, $02
-    jp Jump_003_5129
+    jp RemoveChain_B3_epilogue
 
 
-Jump_003_505c:
+RemoveChain_B3_checkDiskErr::
     ld hl, sp+$0a
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5077
+    jp nz, RemoveChain_B3_notDiskErr
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5077
+    jp nz, RemoveChain_B3_notDiskErr
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5077
+    jp nz, RemoveChain_B3_notDiskErr
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5077
+    jp nz, RemoveChain_B3_notDiskErr
 
-    jr jr_003_507a
+    jr RemoveChain_B3_diskErr
 
-Jump_003_5077:
-    jp Jump_003_507f
+RemoveChain_B3_notDiskErr::
+    jp RemoveChain_B3_putFatFree
 
 
-jr_003_507a:
+RemoveChain_B3_diskErr::
     ld b, $01
-    jp Jump_003_5129
+    jp RemoveChain_B3_epilogue
 
 
-Jump_003_507f:
+RemoveChain_B3_putFatFree::
     ld hl, $0000
     push hl
     ld hl, $0000
@@ -3587,7 +3587,7 @@ Jump_003_507f:
     ld b, c
     xor a
     or b
-    jp nz, Jump_003_5129
+    jp nz, RemoveChain_B3_epilogue
 
     ld hl, sp+$06
     ld e, [hl]
@@ -3616,40 +3616,40 @@ Jump_003_507f:
     ld hl, sp+$02
     ld a, [hl]
     inc a
-    jp nz, Jump_003_50da
+    jp nz, RemoveChain_B3_decFreeClst
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_50da
+    jp nz, RemoveChain_B3_decFreeClst
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_50da
+    jp nz, RemoveChain_B3_decFreeClst
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_5115
+    jp z, RemoveChain_B3_stashFinal
 
-Jump_003_50da:
+RemoveChain_B3_decFreeClst::
     ld hl, sp+$02
     inc [hl]
-    jr nz, jr_003_50e9
+    jr nz, RemoveChain_B3_setDirty
 
     inc hl
     inc [hl]
-    jr nz, jr_003_50e9
+    jr nz, RemoveChain_B3_setDirty
 
     inc hl
     inc [hl]
-    jr nz, jr_003_50e9
+    jr nz, RemoveChain_B3_setDirty
 
     inc hl
     inc [hl]
 
-jr_003_50e9:
+RemoveChain_B3_setDirty::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -3690,7 +3690,7 @@ jr_003_50e9:
     ld d, [hl]
     ld [de], a
 
-Jump_003_5115:
+RemoveChain_B3_stashFinal::
     ld hl, sp+$0a
     ld d, h
     ld e, l
@@ -3706,10 +3706,10 @@ Jump_003_5115:
     inc de
     ld a, [de]
     ld [hl], a
-    jp Jump_003_4fe0
+    jp RemoveChain_B3_walkLoop
 
 
-Jump_003_5129:
+RemoveChain_B3_epilogue::
     ld e, b
     add sp, $0e
     ret
@@ -4566,24 +4566,24 @@ DirSdi_B3::
     ld hl, sp+$12
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_5521
+    jp nz, DirSdi_B3_rangeCheck
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5521
+    jp nz, DirSdi_B3_rangeCheck
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5521
+    jp nz, DirSdi_B3_rangeCheck
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_003_555c
+    jp z, DirSdi_B3_intErr
 
-Jump_003_5521:
+DirSdi_B3_rangeCheck::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -4633,14 +4633,14 @@ Jump_003_5521:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_5561
+    jp c, DirSdi_B3_afterRange
 
-Jump_003_555c:
+DirSdi_B3_intErr::
     ld e, $02
-    jp Jump_003_57fd
+    jp DirSdi_B3_epilogue
 
 
-Jump_003_5561:
+DirSdi_B3_afterRange::
     ld hl, sp+$12
     ld a, [hl+]
     or [hl]
@@ -4648,7 +4648,7 @@ Jump_003_5561:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_55b2
+    jp nz, DirSdi_B3_staticOrDyn
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -4662,15 +4662,15 @@ Jump_003_5561:
     ld a, [bc]
     ld c, a
     sub $03
-    jp nz, Jump_003_557f
+    jp nz, DirSdi_B3_notFat32Root
 
-    jr jr_003_5582
+    jr DirSdi_B3_fat32RootBase
 
-Jump_003_557f:
-    jp Jump_003_55b2
+DirSdi_B3_notFat32Root::
+    jp DirSdi_B3_staticOrDyn
 
 
-jr_003_5582:
+DirSdi_B3_fat32RootBase::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -4714,7 +4714,7 @@ jr_003_5582:
     ld a, [de]
     ld [hl], a
 
-Jump_003_55b2:
+DirSdi_B3_staticOrDyn::
     ld hl, sp+$12
     ld a, [hl+]
     or [hl]
@@ -4722,7 +4722,7 @@ Jump_003_55b2:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_55fb
+    jp nz, DirSdi_B3_dynCsize
 
     ld hl, sp+$08
     ld e, [hl]
@@ -4745,13 +4745,13 @@ Jump_003_55b2:
     inc hl
     ld a, [hl]
     sbc b
-    jp c, Jump_003_55de
+    jp c, DirSdi_B3_staticSect
 
     ld e, $02
-    jp Jump_003_57fd
+    jp DirSdi_B3_epilogue
 
 
-Jump_003_55de:
+DirSdi_B3_staticSect::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -4774,10 +4774,10 @@ Jump_003_55de:
     inc de
     ld a, [de]
     ld [hl], a
-    jp Jump_003_5720
+    jp DirSdi_B3_storeClust
 
 
-Jump_003_55fb:
+DirSdi_B3_dynCsize::
     ld hl, sp+$08
     ld c, [hl]
     inc hl
@@ -4792,19 +4792,19 @@ Jump_003_55fb:
     inc hl
     ld [hl], b
     ld a, $05
-    jr jr_003_5616
+    jr DirSdi_B3_csizeShiftLoop
 
-jr_003_560f:
+DirSdi_B3_csizeShift::
     ld hl, sp+$0c
     sla [hl]
     inc hl
     rl [hl]
 
-jr_003_5616:
+DirSdi_B3_csizeShiftLoop::
     dec a
-    jr nz, jr_003_560f
+    jr nz, DirSdi_B3_csizeShift
 
-Jump_003_5619:
+DirSdi_B3_followLoop::
     ld hl, sp+$1a
     ld d, h
     ld e, l
@@ -4815,7 +4815,7 @@ Jump_003_5619:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_56e8
+    jp c, DirSdi_B3_clust2Sect
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -4867,35 +4867,35 @@ Jump_003_5619:
     ld hl, sp+$12
     ld a, [hl]
     inc a
-    jp nz, Jump_003_567b
+    jp nz, DirSdi_B3_afterGetFat
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_567b
+    jp nz, DirSdi_B3_afterGetFat
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_567b
+    jp nz, DirSdi_B3_afterGetFat
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_567b
+    jp nz, DirSdi_B3_afterGetFat
 
-    jr jr_003_567e
+    jr DirSdi_B3_diskErr
 
-Jump_003_567b:
-    jp Jump_003_5683
+DirSdi_B3_afterGetFat::
+    jp DirSdi_B3_checkClust
 
 
-jr_003_567e:
+DirSdi_B3_diskErr::
     ld e, $01
-    jp Jump_003_57fd
+    jp DirSdi_B3_epilogue
 
 
-Jump_003_5683:
+DirSdi_B3_checkClust::
     ld hl, sp+$12
     ld a, [hl]
     sub $02
@@ -4908,7 +4908,7 @@ Jump_003_5683:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_56cd
+    jp c, DirSdi_B3_clustIntErr
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -4955,14 +4955,14 @@ Jump_003_5683:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_56d2
+    jp c, DirSdi_B3_subCsz
 
-Jump_003_56cd:
+DirSdi_B3_clustIntErr::
     ld e, $02
-    jp Jump_003_57fd
+    jp DirSdi_B3_epilogue
 
 
-Jump_003_56d2:
+DirSdi_B3_subCsz::
     ld hl, sp+$1a
     ld e, [hl]
     inc hl
@@ -4979,10 +4979,10 @@ Jump_003_56d2:
     ld hl, sp+$1b
     ld [hl-], a
     ld [hl], e
-    jp Jump_003_5619
+    jp DirSdi_B3_followLoop
 
 
-Jump_003_56e8:
+DirSdi_B3_clust2Sect::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -5031,7 +5031,7 @@ Jump_003_56e8:
     ld a, [de]
     ld [hl], a
 
-Jump_003_5720:
+DirSdi_B3_storeClust::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -5064,13 +5064,13 @@ Jump_003_5720:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_574d
+    jp nz, DirSdi_B3_setSectDir
 
     ld e, $02
-    jp Jump_003_57fd
+    jp DirSdi_B3_epilogue
 
 
-Jump_003_574d:
+DirSdi_B3_setSectDir::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -5088,11 +5088,11 @@ Jump_003_574d:
     ld b, [hl]
     ld a, $04
 
-jr_003_5763:
+DirSdi_B3_sectDiv::
     srl b
     rr c
     dec a
-    jr nz, jr_003_5763
+    jr nz, DirSdi_B3_sectDiv
 
     ld hl, sp+$00
     ld [hl], c
@@ -5210,7 +5210,7 @@ jr_003_5763:
     ld [de], a
     ld e, $00
 
-Jump_003_57fd:
+DirSdi_B3_epilogue::
     add sp, $16
     ret
 
@@ -5265,7 +5265,7 @@ DirNext_B3::
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_5856
+    jp z, DirNext_B3_noFile
 
     ld hl, sp+$16
     ld e, [hl]
@@ -5298,14 +5298,14 @@ DirNext_B3::
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_585b
+    jp nz, DirNext_B3_checkInSector
 
-Jump_003_5856:
+DirNext_B3_noFile::
     ld e, $04
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_585b:
+DirNext_B3_checkInSector::
     ld hl, sp+$1c
     ld a, [hl]
     and $0f
@@ -5315,24 +5315,24 @@ Jump_003_585b:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_5c24
+    jp nz, DirNext_B3_advanceOk
 
     inc hl
     inc [hl]
-    jr nz, jr_003_5879
+    jr nz, DirNext_B3_incSector
 
     inc hl
     inc [hl]
-    jr nz, jr_003_5879
+    jr nz, DirNext_B3_incSector
 
     inc hl
     inc [hl]
-    jr nz, jr_003_5879
+    jr nz, DirNext_B3_incSector
 
     inc hl
     inc [hl]
 
-jr_003_5879:
+DirNext_B3_incSector::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -5383,7 +5383,7 @@ jr_003_5879:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_58da
+    jp nz, DirNext_B3_stretchPath
 
     inc hl
     ld e, [hl]
@@ -5411,13 +5411,13 @@ jr_003_5879:
     inc hl
     ld a, [hl]
     sbc b
-    jp c, Jump_003_5c24
+    jp c, DirNext_B3_advanceOk
 
     ld e, $04
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_58da:
+DirNext_B3_stretchPath::
     ld hl, sp+$1c
     ld a, [hl]
     ld hl, sp+$08
@@ -5428,13 +5428,13 @@ Jump_003_58da:
     ld [hl], a
     ld a, $04
 
-jr_003_58e8:
+DirNext_B3_sectToClust::
     ld hl, sp+$09
     srl [hl]
     dec hl
     rr [hl]
     dec a
-    jr nz, jr_003_58e8
+    jr nz, DirNext_B3_sectToClust
 
     ld hl, sp+$16
     ld e, [hl]
@@ -5464,7 +5464,7 @@ jr_003_58e8:
     and [hl]
     ld b, a
     or c
-    jp nz, Jump_003_5c24
+    jp nz, DirNext_B3_advanceOk
 
     ld hl, sp+$14
     ld a, [hl+]
@@ -5505,45 +5505,45 @@ jr_003_58e8:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_003_5950
+    jp c, DirNext_B3_clustUnderflow
 
     ld e, $02
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5950:
+DirNext_B3_clustUnderflow::
     ld hl, sp+$1e
     ld a, [hl]
     inc a
-    jp nz, Jump_003_596b
+    jp nz, DirNext_B3_clustIncOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_596b
+    jp nz, DirNext_B3_clustIncOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_596b
+    jp nz, DirNext_B3_clustIncOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_596b
+    jp nz, DirNext_B3_clustIncOk
 
-    jr jr_003_596e
+    jr DirNext_B3_intErr
 
-Jump_003_596b:
-    jp Jump_003_5973
+DirNext_B3_clustIncOk::
+    jp DirNext_B3_afterClustInc
 
 
-jr_003_596e:
+DirNext_B3_intErr::
     ld e, $01
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5973:
+DirNext_B3_afterClustInc::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5593,18 +5593,18 @@ Jump_003_5973:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_5bd3
+    jp c, DirNext_B3_storeClust
 
     ld hl, sp+$26
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_59ba
+    jp nz, DirNext_B3_createChain
 
     ld e, $04
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_59ba:
+DirNext_B3_createChain::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -5669,77 +5669,77 @@ Jump_003_59ba:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_5a0d
+    jp nz, DirNext_B3_afterCreateChain
 
     ld e, $07
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5a0d:
+DirNext_B3_afterCreateChain::
     ld hl, sp+$1e
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_5a29
+    jp nz, DirNext_B3_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5a29
+    jp nz, DirNext_B3_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5a29
+    jp nz, DirNext_B3_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5a29
+    jp nz, DirNext_B3_newClustOk
 
-    jr jr_003_5a2c
+    jr DirNext_B3_diskErr
 
-Jump_003_5a29:
-    jp Jump_003_5a31
+DirNext_B3_newClustOk::
+    jp DirNext_B3_incNewClust
 
 
-jr_003_5a2c:
+DirNext_B3_diskErr::
     ld e, $02
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5a31:
+DirNext_B3_incNewClust::
     ld hl, sp+$1e
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5a4c
+    jp nz, DirNext_B3_newClustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5a4c
+    jp nz, DirNext_B3_newClustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5a4c
+    jp nz, DirNext_B3_newClustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5a4c
+    jp nz, DirNext_B3_newClustWrapOk
 
-    jr jr_003_5a4f
+    jr DirNext_B3_syncIntErr
 
-Jump_003_5a4c:
-    jp Jump_003_5a54
+DirNext_B3_newClustWrapOk::
+    jp DirNext_B3_syncWindow
 
 
-jr_003_5a4f:
+DirNext_B3_syncIntErr::
     ld e, $01
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5a54:
+DirNext_B3_syncWindow::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5755,13 +5755,13 @@ Jump_003_5a54:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_5a6f
+    jp z, DirNext_B3_clearDirBuf
 
     ld e, $01
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5a6f:
+DirNext_B3_clearDirBuf::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5850,7 +5850,7 @@ Jump_003_5a6f:
     inc hl
     ld [hl], $00
 
-Jump_003_5ae1:
+DirNext_B3_sectorLoop::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5875,7 +5875,7 @@ Jump_003_5ae1:
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, Jump_003_5b76
+    jp nc, DirNext_B3_partialTail
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -5897,13 +5897,13 @@ Jump_003_5ae1:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_5b24
+    jp z, DirNext_B3_stampTemplate
 
     ld e, $01
-    jp Jump_003_5c81
+    jp DirNext_B3_epilogue
 
 
-Jump_003_5b24:
+DirNext_B3_stampTemplate::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -5933,20 +5933,20 @@ Jump_003_5b24:
     ld [hl], a
     ld hl, sp+$04
     inc [hl]
-    jr nz, jr_003_5b52
+    jr nz, DirNext_B3_stampCont
 
     inc hl
     inc [hl]
-    jr nz, jr_003_5b52
+    jr nz, DirNext_B3_stampCont
 
     inc hl
     inc [hl]
-    jr nz, jr_003_5b52
+    jr nz, DirNext_B3_stampCont
 
     inc hl
     inc [hl]
 
-jr_003_5b52:
+DirNext_B3_stampCont::
     ld e, c
     ld d, b
     ld hl, sp+$04
@@ -5966,22 +5966,22 @@ jr_003_5b52:
     ld [de], a
     ld hl, sp+$1a
     inc [hl]
-    jr nz, jr_003_5b6b
+    jr nz, DirNext_B3_stampNext
 
     inc hl
     inc [hl]
 
-jr_003_5b6b:
+DirNext_B3_stampNext::
     ld hl, sp+$1a
     ld a, [hl+]
     ld e, [hl]
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], e
-    jp Jump_003_5ae1
+    jp DirNext_B3_sectorLoop
 
 
-Jump_003_5b76:
+DirNext_B3_partialTail::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -6062,7 +6062,7 @@ Jump_003_5b76:
     ld a, [hl]
     ld [de], a
 
-Jump_003_5bd3:
+DirNext_B3_storeClust::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -6134,7 +6134,7 @@ Jump_003_5bd3:
     ld a, [hl]
     ld [de], a
 
-Jump_003_5c24:
+DirNext_B3_advanceOk::
     ld hl, sp+$18
     ld e, [hl]
     inc hl
@@ -6205,7 +6205,7 @@ Jump_003_5c24:
     ld [de], a
     ld e, $00
 
-Jump_003_5c81:
+DirNext_B3_epilogue::
     add sp, $22
     ret
 
@@ -6233,7 +6233,7 @@ DirAlloc_B3::
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_5d50
+    jp nz, DirAlloc_B3_done
 
     dec hl
     dec hl
@@ -6258,7 +6258,7 @@ DirAlloc_B3::
     ld [hl+], a
     ld [hl], d
 
-Jump_003_5cbb:
+DirAlloc_B3_scanLoop::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6302,7 +6302,7 @@ Jump_003_5cbb:
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Jump_003_5d50
+    jp nz, DirAlloc_B3_done
 
     ld hl, sp+$06
     ld e, [hl]
@@ -6322,50 +6322,50 @@ Jump_003_5cbb:
     ld a, [bc]
     ld c, a
     sub $e5
-    jp z, Jump_003_5d10
+    jp z, DirAlloc_B3_incFreeRun
 
     xor a
     or c
-    jp nz, Jump_003_5d31
+    jp nz, DirAlloc_B3_resetRun
 
-Jump_003_5d10:
+DirAlloc_B3_incFreeRun::
     ld hl, sp+$08
     inc [hl]
-    jr nz, jr_003_5d17
+    jr nz, DirAlloc_B3_checkRunLen
 
     inc hl
     inc [hl]
 
-jr_003_5d17:
+DirAlloc_B3_checkRunLen::
     ld hl, sp+$08
     ld a, [hl]
     ld hl, sp+$0f
     sub [hl]
-    jp nz, Jump_003_5d2b
+    jp nz, DirAlloc_B3_needMore
 
     ld hl, sp+$09
     ld a, [hl]
     ld hl, sp+$10
     sub [hl]
-    jp nz, Jump_003_5d2b
+    jp nz, DirAlloc_B3_needMore
 
-    jr jr_003_5d2e
+    jr DirAlloc_B3_runComplete
 
-Jump_003_5d2b:
-    jp Jump_003_5d38
-
-
-jr_003_5d2e:
-    jp Jump_003_5d50
+DirAlloc_B3_needMore::
+    jp DirAlloc_B3_dirNext
 
 
-Jump_003_5d31:
+DirAlloc_B3_runComplete::
+    jp DirAlloc_B3_done
+
+
+DirAlloc_B3_resetRun::
     ld hl, sp+$08
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_003_5d38:
+DirAlloc_B3_dirNext::
     ld hl, $0001
     push hl
     ld hl, sp+$08
@@ -6380,25 +6380,25 @@ Jump_003_5d38:
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_003_5cbb
+    jp z, DirAlloc_B3_scanLoop
 
-Jump_003_5d50:
+DirAlloc_B3_done::
     ld hl, sp+$0a
     ld a, [hl]
     sub $04
-    jp nz, Jump_003_5d5a
+    jp nz, DirAlloc_B3_keepErr
 
-    jr jr_003_5d5d
+    jr DirAlloc_B3_denied
 
-Jump_003_5d5a:
-    jp Jump_003_5d61
+DirAlloc_B3_keepErr::
+    jp DirAlloc_B3_epilogue
 
 
-jr_003_5d5d:
+DirAlloc_B3_denied::
     ld hl, sp+$0a
     ld [hl], $07
 
-Jump_003_5d61:
+DirAlloc_B3_epilogue::
     ld hl, sp+$0a
     ld e, [hl]
     add sp, $0b
@@ -6440,15 +6440,15 @@ LdClust_B3::
     ld a, [bc]
     ld c, a
     sub $03
-    jp nz, Jump_003_5d96
+    jp nz, LdClust_B3_notFat32
 
-    jr jr_003_5d99
+    jr LdClust_B3_orHiWord
 
-Jump_003_5d96:
-    jp Jump_003_5df3
+LdClust_B3_notFat32::
+    jp LdClust_B3_epilogue
 
 
-jr_003_5d99:
+LdClust_B3_orHiWord::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -6519,7 +6519,7 @@ jr_003_5d99:
     ld hl, sp+$07
     ld [hl], a
 
-Jump_003_5df3:
+LdClust_B3_epilogue::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6631,13 +6631,13 @@ CmpLfn_B3::
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_5e7f
+    jp z, CmpLfn_B3_initOffset
 
     ld de, $0000
-    jp Jump_003_5faa
+    jp CmpLfn_B3_epilogue
 
 
-Jump_003_5e7f:
+CmpLfn_B3_initOffset::
     ld hl, sp+$12
     ld a, [hl+]
     ld e, [hl]
@@ -6682,14 +6682,14 @@ Jump_003_5e7f:
     inc hl
     ld [hl], $00
 
-Jump_003_5eb7:
+CmpLfn_B3_charLoop::
     ld hl, sp+$0a
     ld a, [hl]
     sub $0d
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_5f70
+    jp nc, CmpLfn_B3_checkLastSeg
 
     ld de, $5fad
     dec hl
@@ -6724,7 +6724,7 @@ Jump_003_5eb7:
     inc hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_5f53
+    jp z, CmpLfn_B3_checkFiller
 
     ld hl, sp+$02
     ld a, [hl]
@@ -6732,7 +6732,7 @@ Jump_003_5eb7:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_5f43
+    jp nc, CmpLfn_B3_mismatch
 
     ld hl, sp+$06
     ld a, [hl+]
@@ -6751,12 +6751,12 @@ Jump_003_5eb7:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_5f13
+    jr nz, CmpLfn_B3_compareUpper
 
     inc hl
     inc [hl]
 
-jr_003_5f13:
+CmpLfn_B3_compareUpper::
     ld hl, sp+$02
     ld a, [hl+]
     ld e, [hl]
@@ -6787,57 +6787,57 @@ jr_003_5f13:
     ld hl, sp+$00
     ld a, [hl]
     sub c
-    jp nz, Jump_003_5f43
+    jp nz, CmpLfn_B3_mismatch
 
     inc hl
     ld a, [hl]
     sub b
-    jp z, Jump_003_5f49
+    jp z, CmpLfn_B3_storeWc
 
-Jump_003_5f43:
+CmpLfn_B3_mismatch::
     ld de, $0000
-    jp Jump_003_5faa
+    jp CmpLfn_B3_epilogue
 
 
-Jump_003_5f49:
+CmpLfn_B3_storeWc::
     ld hl, sp+$06
     ld a, [hl+]
     ld e, [hl]
     inc hl
     ld [hl+], a
     ld [hl], e
-    jp Jump_003_5f66
+    jp CmpLfn_B3_nextChar
 
 
-Jump_003_5f53:
+CmpLfn_B3_checkFiller::
     ld hl, sp+$06
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5f60
+    jp nz, CmpLfn_B3_fillerBad
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_5f66
+    jp z, CmpLfn_B3_nextChar
 
-Jump_003_5f60:
+CmpLfn_B3_fillerBad::
     ld de, $0000
-    jp Jump_003_5faa
+    jp CmpLfn_B3_epilogue
 
 
-Jump_003_5f66:
+CmpLfn_B3_nextChar::
     ld hl, sp+$0a
     inc [hl]
-    jr nz, jr_003_5f6d
+    jr nz, CmpLfn_B3_nextCharJr
 
     inc hl
     inc [hl]
 
-jr_003_5f6d:
-    jp Jump_003_5eb7
+CmpLfn_B3_nextCharJr::
+    jp CmpLfn_B3_charLoop
 
 
-Jump_003_5f70:
+CmpLfn_B3_checkLastSeg::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6845,16 +6845,16 @@ Jump_003_5f70:
     ld a, [de]
     ld c, a
     and $40
-    jr nz, jr_003_5f7e
+    jr nz, CmpLfn_B3_lastSegLen
 
-    jp Jump_003_5fa7
+    jp CmpLfn_B3_matched
 
 
-jr_003_5f7e:
+CmpLfn_B3_lastSegLen::
     ld hl, sp+$08
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_5fa7
+    jp z, CmpLfn_B3_matched
 
     ld hl, sp+$0c
     ld c, [hl]
@@ -6877,16 +6877,16 @@ jr_003_5f7e:
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_5fa7
+    jp z, CmpLfn_B3_matched
 
     ld de, $0000
-    jp Jump_003_5faa
+    jp CmpLfn_B3_epilogue
 
 
-Jump_003_5fa7:
+CmpLfn_B3_matched::
     ld de, $0001
 
-Jump_003_5faa:
+CmpLfn_B3_epilogue::
     add sp, $0e
     ret
 
@@ -7230,30 +7230,30 @@ PutLfn_B3::
     inc hl
     ld [hl], $00
 
-Jump_003_614b:
+PutLfn_B3_charLoop::
     ld hl, sp+$02
     ld a, [hl]
     inc a
-    jp nz, Jump_003_6158
+    jp nz, PutLfn_B3_loadWchar
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_617b
+    jp z, PutLfn_B3_storeWchar
 
-Jump_003_6158:
+PutLfn_B3_loadWchar::
     ld hl, sp+$00
     ld c, [hl]
     inc hl
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6163
+    jr nz, PutLfn_B3_indexLfn
 
     inc hl
     inc [hl]
 
-jr_003_6163:
+PutLfn_B3_indexLfn::
     sla c
     rl b
     ld hl, sp+$08
@@ -7275,7 +7275,7 @@ jr_003_6163:
     inc hl
     ld [hl], b
 
-Jump_003_617b:
+PutLfn_B3_storeWchar::
     ld de, $5fad
     ld hl, sp+$04
     ld a, [hl+]
@@ -7307,41 +7307,41 @@ Jump_003_617b:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_61a9
+    jp nz, PutLfn_B3_nextSlot
 
     dec hl
     ld [hl], $ff
     inc hl
     ld [hl], $ff
 
-Jump_003_61a9:
+PutLfn_B3_nextSlot::
     ld hl, sp+$04
     inc [hl]
-    jr nz, jr_003_61b0
+    jr nz, PutLfn_B3_checkDone
 
     inc hl
     inc [hl]
 
-jr_003_61b0:
+PutLfn_B3_checkDone::
     ld hl, sp+$04
     ld a, [hl]
     sub $0d
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_614b
+    jp c, PutLfn_B3_charLoop
 
     ld hl, sp+$02
     ld a, [hl]
     inc a
-    jp nz, Jump_003_61c9
+    jp nz, PutLfn_B3_moreLfn
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_61e5
+    jp z, PutLfn_B3_setLlef
 
-Jump_003_61c9:
+PutLfn_B3_moreLfn::
     ld hl, sp+$00
     ld c, [hl]
     inc hl
@@ -7363,15 +7363,15 @@ Jump_003_61c9:
     ld a, [de]
     ld b, a
     or c
-    jp nz, Jump_003_61eb
+    jp nz, PutLfn_B3_storeOrd
 
-Jump_003_61e5:
+PutLfn_B3_setLlef::
     ld hl, sp+$0c
     ld a, [hl]
     or $40
     ld [hl], a
 
-Jump_003_61eb:
+PutLfn_B3_storeOrd::
     ld hl, sp+$0a
     ld c, [hl]
     inc hl
@@ -7409,7 +7409,7 @@ GenNumName_B3::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_003_62f9
+    jp nc, GenNumName_B3_makeSuffix
 
     dec hl
     ld a, [hl]
@@ -7429,7 +7429,7 @@ GenNumName_B3::
     ld [hl+], a
     ld [hl], e
 
-Jump_003_6230:
+GenNumName_B3_crcLfnLoop::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -7440,7 +7440,7 @@ Jump_003_6230:
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_62ed
+    jp z, GenNumName_B3_storeHashSeq
 
     dec hl
     ld e, [hl]
@@ -7462,7 +7462,7 @@ Jump_003_6230:
     inc hl
     ld [hl], $00
 
-Jump_003_6258:
+GenNumName_B3_crcBitLoop::
     ld a, $01
     push af
     inc sp
@@ -7553,12 +7553,12 @@ Jump_003_6258:
     dec hl
     ld a, [hl]
     and $01
-    jr nz, jr_003_62cc
+    jr nz, GenNumName_B3_crcPolyXor
 
-    jp Jump_003_62da
+    jp GenNumName_B3_crcBitNext
 
 
-jr_003_62cc:
+GenNumName_B3_crcPolyXor::
     ld hl, sp+$0a
     ld a, [hl]
     xor $21
@@ -7570,7 +7570,7 @@ jr_003_62cc:
     xor $01
     ld [hl], a
 
-Jump_003_62da:
+GenNumName_B3_crcBitNext::
     ld hl, sp+$12
     ld e, [hl]
     inc hl
@@ -7583,12 +7583,12 @@ Jump_003_62da:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_6258
+    jp nz, GenNumName_B3_crcBitLoop
 
-    jp Jump_003_6230
+    jp GenNumName_B3_crcLfnLoop
 
 
-Jump_003_62ed:
+GenNumName_B3_storeHashSeq::
     ld hl, sp+$0a
     ld a, [hl]
     ld hl, sp+$25
@@ -7598,7 +7598,7 @@ Jump_003_62ed:
     ld hl, sp+$26
     ld [hl], a
 
-Jump_003_62f9:
+GenNumName_B3_makeSuffix::
     ld hl, sp+$15
     ld a, l
     ld d, h
@@ -7610,7 +7610,7 @@ Jump_003_62f9:
     inc hl
     ld [hl], $00
 
-Jump_003_6308:
+GenNumName_B3_hexDigit::
     ld hl, sp+$25
     ld a, [hl]
     and $0f
@@ -7622,13 +7622,13 @@ Jump_003_6308:
     ld [hl], a
     ld a, $39
     sub [hl]
-    jp nc, Jump_003_6320
+    jp nc, GenNumName_B3_storeDigit
 
     ld a, [hl]
     add $07
     ld [hl], a
 
-Jump_003_6320:
+GenNumName_B3_storeDigit::
     ld hl, sp+$12
     ld c, [hl]
     inc hl
@@ -7660,17 +7660,17 @@ Jump_003_6320:
     ld [bc], a
     ld a, $04
 
-jr_003_6343:
+GenNumName_B3_seqShr4::
     ld hl, sp+$26
     srl [hl]
     dec hl
     rr [hl]
     dec a
-    jr nz, jr_003_6343
+    jr nz, GenNumName_B3_seqShr4
 
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_6308
+    jp nz, GenNumName_B3_hexDigit
 
     ld hl, sp+$12
     ld a, [hl+]
@@ -7696,7 +7696,7 @@ jr_003_6343:
     inc hl
     ld [hl], $00
 
-Jump_003_6371:
+GenNumName_B3_findAppend::
     ld hl, sp+$10
     ld d, h
     ld e, l
@@ -7707,7 +7707,7 @@ Jump_003_6371:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_639e
+    jp nc, GenNumName_B3_appendStart
 
     ld hl, sp+$1f
     ld e, [hl]
@@ -7723,20 +7723,20 @@ Jump_003_6371:
     ld a, [bc]
     ld c, a
     sub $20
-    jp z, Jump_003_639e
+    jp z, GenNumName_B3_appendStart
 
     ld hl, sp+$10
     inc [hl]
-    jr nz, jr_003_639b
+    jr nz, GenNumName_B3_findAppendCont
 
     inc hl
     inc [hl]
 
-jr_003_639b:
-    jp Jump_003_6371
+GenNumName_B3_findAppendCont::
+    jp GenNumName_B3_findAppend
 
 
-Jump_003_639e:
+GenNumName_B3_appendStart::
     ld hl, sp+$04
     ld a, [hl+]
     ld e, [hl]
@@ -7744,19 +7744,19 @@ Jump_003_639e:
     ld [hl+], a
     ld [hl], e
 
-Jump_003_63a5:
+GenNumName_B3_appendLoop::
     ld hl, sp+$10
     ld c, [hl]
     inc hl
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_63b0
+    jr nz, GenNumName_B3_appendInc
 
     inc hl
     inc [hl]
 
-jr_003_63b0:
+GenNumName_B3_appendInc::
     ld hl, sp+$1f
     ld a, [hl+]
     ld h, [hl]
@@ -7773,7 +7773,7 @@ jr_003_63b0:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_63df
+    jp nc, GenNumName_B3_appendSpace
 
     dec hl
     ld c, [hl]
@@ -7781,12 +7781,12 @@ jr_003_63b0:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_63d2
+    jr nz, GenNumName_B3_appendFromNs
 
     inc hl
     inc [hl]
 
-jr_003_63d2:
+GenNumName_B3_appendFromNs::
     ld hl, sp+$00
     ld a, [hl+]
     ld h, [hl]
@@ -7796,13 +7796,13 @@ jr_003_63d2:
     ld b, h
     ld a, [bc]
     ld c, a
-    jp Jump_003_63e1
+    jp GenNumName_B3_appendStore
 
 
-Jump_003_63df:
+GenNumName_B3_appendSpace::
     ld c, $20
 
-Jump_003_63e1:
+GenNumName_B3_appendStore::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -7815,7 +7815,7 @@ Jump_003_63e1:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_63a5
+    jp c, GenNumName_B3_appendLoop
 
     add sp, $1d
     ret
@@ -7838,7 +7838,7 @@ SumSfn_B3::
     inc hl
     ld [hl], $00
 
-Jump_003_640c:
+SumSfn_B3_loop::
     ld hl, sp+$04
     ld c, [hl]
     srl c
@@ -7856,12 +7856,12 @@ Jump_003_640c:
     ld b, a
     dec hl
     inc [hl]
-    jr nz, jr_003_6425
+    jr nz, SumSfn_B3_afterPtrInc
 
     inc hl
     inc [hl]
 
-jr_003_6425:
+SumSfn_B3_afterPtrInc::
     ld a, c
     add b
     ld c, a
@@ -7880,7 +7880,7 @@ jr_003_6425:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_640c
+    jp nz, SumSfn_B3_loop
 
     inc hl
     ld e, [hl]
@@ -7912,13 +7912,13 @@ DirFind_B3::
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_003_645e
+    jp z, DirFind_B3_initOrd
 
     ld e, [hl]
-    jp Jump_003_6698
+    jp DirFind_B3_epilogue
 
 
-Jump_003_645e:
+DirFind_B3_initOrd::
     ld hl, sp+$14
     ld [hl], $ff
     inc hl
@@ -8005,7 +8005,7 @@ Jump_003_645e:
     ld [hl+], a
     ld [hl], d
 
-Jump_003_64d0:
+DirFind_B3_readEntry::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -8049,7 +8049,7 @@ Jump_003_64d0:
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Jump_003_6695
+    jp nz, DirFind_B3_found
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -8074,14 +8074,14 @@ Jump_003_64d0:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6529
+    jp nz, DirFind_B3_checkAttr
 
     inc hl
     ld [hl], $04
-    jp Jump_003_6695
+    jp DirFind_B3_found
 
 
-Jump_003_6529:
+DirFind_B3_checkAttr::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -8096,21 +8096,21 @@ Jump_003_6529:
     ld hl, sp+$18
     ld a, [hl]
     sub $e5
-    jp z, Jump_003_654e
+    jp z, DirFind_B3_deletedEntry
 
     ld a, c
     and $08
-    jr nz, jr_003_6548
+    jr nz, DirFind_B3_volumeSkip
 
-    jp Jump_003_6561
+    jp DirFind_B3_checkAmLfn
 
 
-jr_003_6548:
+DirFind_B3_volumeSkip::
     ld a, c
     sub $0f
-    jp z, Jump_003_6561
+    jp z, DirFind_B3_checkAmLfn
 
-Jump_003_654e:
+DirFind_B3_deletedEntry::
     ld hl, sp+$15
     ld [hl], $ff
     ld hl, sp+$10
@@ -8122,21 +8122,21 @@ Jump_003_654e:
     inc de
     ld a, $ff
     ld [de], a
-    jp Jump_003_667d
+    jp DirFind_B3_dirNextLoop
 
 
-Jump_003_6561:
+DirFind_B3_checkAmLfn::
     ld a, c
     sub $0f
-    jp nz, Jump_003_6569
+    jp nz, DirFind_B3_sfnPath
 
-    jr jr_003_656c
+    jr DirFind_B3_lfnChain
 
-Jump_003_6569:
-    jp Jump_003_6617
+DirFind_B3_sfnPath::
+    jp DirFind_B3_sumSfnMatch
 
 
-jr_003_656c:
+DirFind_B3_lfnChain::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -8147,17 +8147,17 @@ jr_003_656c:
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_667d
+    jp z, DirFind_B3_dirNextLoop
 
     ld hl, sp+$18
     ld a, [hl]
     and $40
-    jr nz, jr_003_6584
+    jr nz, DirFind_B3_storeOrdChksum
 
-    jp Jump_003_65b0
+    jp DirFind_B3_ordCompare
 
 
-jr_003_6584:
+DirFind_B3_storeOrdChksum::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -8195,20 +8195,20 @@ jr_003_6584:
     ld a, b
     ld [de], a
 
-Jump_003_65b0:
+DirFind_B3_ordCompare::
     ld hl, sp+$18
     ld a, [hl]
     ld hl, sp+$15
     sub [hl]
-    jp nz, Jump_003_65bb
+    jp nz, DirFind_B3_ordMismatch
 
-    jr jr_003_65be
+    jr DirFind_B3_ordMatch
 
-Jump_003_65bb:
-    jp Jump_003_65d2
+DirFind_B3_ordMismatch::
+    jp DirFind_B3_cmpLfnFail
 
 
-jr_003_65be:
+DirFind_B3_ordMatch::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -8222,20 +8222,20 @@ jr_003_65be:
     ld hl, sp+$14
     ld a, [hl]
     sub c
-    jp z, Jump_003_65d7
+    jp z, DirFind_B3_cmpLfnOk
 
-Jump_003_65d2:
+DirFind_B3_cmpLfnFail::
     ld c, $00
-    jp Jump_003_65d9
+    jp DirFind_B3_afterCmpLfn
 
 
-Jump_003_65d7:
+DirFind_B3_cmpLfnOk::
     ld c, $01
 
-Jump_003_65d9:
+DirFind_B3_afterCmpLfn::
     xor a
     or c
-    jp z, Jump_003_65fb
+    jp z, DirFind_B3_ordUpdateFail
 
     ld hl, sp+$08
     ld e, [hl]
@@ -8258,42 +8258,42 @@ Jump_003_65d9:
     ld c, e
     ld a, c
     or b
-    jp nz, Jump_003_6600
+    jp nz, DirFind_B3_ordUpdateOk
 
-Jump_003_65fb:
+DirFind_B3_ordUpdateFail::
     ld c, $00
-    jp Jump_003_6602
+    jp DirFind_B3_afterOrdUpdate
 
 
-Jump_003_6600:
+DirFind_B3_ordUpdateOk::
     ld c, $01
 
-Jump_003_6602:
+DirFind_B3_afterOrdUpdate::
     xor a
     or c
-    jp z, Jump_003_660f
+    jp z, DirFind_B3_ordInvalidate
 
     ld hl, sp+$15
     ld a, [hl]
     dec a
     ld c, a
-    jp Jump_003_6611
+    jp DirFind_B3_storeOrd
 
 
-Jump_003_660f:
+DirFind_B3_ordInvalidate::
     ld c, $ff
 
-Jump_003_6611:
+DirFind_B3_storeOrd::
     ld hl, sp+$15
     ld [hl], c
-    jp Jump_003_667d
+    jp DirFind_B3_dirNextLoop
 
 
-Jump_003_6617:
+DirFind_B3_sumSfnMatch::
     xor a
     ld hl, sp+$15
     or [hl]
-    jp nz, Jump_003_6630
+    jp nz, DirFind_B3_checkNtres
 
     inc hl
     ld a, [hl+]
@@ -8306,9 +8306,9 @@ Jump_003_6617:
     ld hl, sp+$14
     ld a, [hl]
     sub c
-    jp z, Jump_003_6695
+    jp z, DirFind_B3_found
 
-Jump_003_6630:
+DirFind_B3_checkNtres::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -8329,16 +8329,16 @@ Jump_003_6630:
     ld a, [bc]
     ld c, a
     and $01
-    jr nz, jr_003_664e
+    jr nz, DirFind_B3_ntresSkip
 
-    jp Jump_003_6651
-
-
-jr_003_664e:
-    jp Jump_003_666d
+    jp DirFind_B3_memcmpSfn
 
 
-Jump_003_6651:
+DirFind_B3_ntresSkip::
+    jp DirFind_B3_invalidate
+
+
+DirFind_B3_memcmpSfn::
     ld a, $0b
     push af
     inc sp
@@ -8358,9 +8358,9 @@ Jump_003_6651:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_003_6695
+    jp z, DirFind_B3_found
 
-Jump_003_666d:
+DirFind_B3_invalidate::
     ld hl, sp+$15
     ld [hl], $ff
     ld hl, sp+$10
@@ -8373,7 +8373,7 @@ Jump_003_666d:
     ld a, $ff
     ld [de], a
 
-Jump_003_667d:
+DirFind_B3_dirNextLoop::
     ld hl, $0000
     push hl
     ld hl, sp+$14
@@ -8388,13 +8388,13 @@ Jump_003_667d:
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_003_64d0
+    jp z, DirFind_B3_readEntry
 
-Jump_003_6695:
+DirFind_B3_found::
     ld hl, sp+$19
     ld e, [hl]
 
-Jump_003_6698:
+DirFind_B3_epilogue::
     add sp, $1a
     ret
 
@@ -8494,25 +8494,25 @@ DirRegister_B3::
     ld a, [de]
     ld c, a
     and $20
-    jr nz, jr_003_670c
+    jr nz, DirRegister_B3_deniedIsDir
 
-    jp Jump_003_6711
+    jp DirRegister_B3_checkCollision
 
 
-jr_003_670c:
+DirRegister_B3_deniedIsDir::
     ld e, $06
-    jp Jump_003_6a27
+    jp DirRegister_B3_epilogue
 
 
-Jump_003_6711:
+DirRegister_B3_checkCollision::
     ld a, c
     and $01
-    jr nz, jr_003_6719
+    jr nz, DirRegister_B3_genNumInit
 
-    jp Jump_003_67c5
+    jp DirRegister_B3_checkLfn
 
 
-jr_003_6719:
+DirRegister_B3_genNumInit::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -8537,14 +8537,14 @@ jr_003_6719:
     inc hl
     ld [hl], $00
 
-Jump_003_673a:
+DirRegister_B3_genNumLoop::
     ld hl, sp+$23
     ld a, [hl]
     sub $64
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_6780
+    jp nc, DirRegister_B3_afterGenNum
 
     dec hl
     ld a, [hl+]
@@ -8580,54 +8580,54 @@ Jump_003_673a:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6780
+    jp nz, DirRegister_B3_afterGenNum
 
     dec hl
     dec hl
     inc [hl]
-    jr nz, jr_003_677d
+    jr nz, DirRegister_B3_genNumNext
 
     inc hl
     inc [hl]
 
-jr_003_677d:
-    jp Jump_003_673a
+DirRegister_B3_genNumNext::
+    jp DirRegister_B3_genNumLoop
 
 
-Jump_003_6780:
+DirRegister_B3_afterGenNum::
     ld hl, sp+$23
     ld a, [hl]
     sub $64
-    jp nz, Jump_003_6790
+    jp nz, DirRegister_B3_genNumOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6790
+    jp nz, DirRegister_B3_genNumOk
 
-    jr jr_003_6793
+    jr DirRegister_B3_deniedTooMany
 
-Jump_003_6790:
-    jp Jump_003_6798
+DirRegister_B3_genNumOk::
+    jp DirRegister_B3_checkNoFile
 
 
-jr_003_6793:
+DirRegister_B3_deniedTooMany::
     ld e, $07
-    jp Jump_003_6a27
+    jp DirRegister_B3_epilogue
 
 
-Jump_003_6798:
+DirRegister_B3_checkNoFile::
     ld hl, sp+$25
     ld a, [hl]
     sub $04
-    jp z, Jump_003_67a6
+    jp z, DirRegister_B3_patchAttrSize
 
     ld hl, sp+$25
     ld e, [hl]
-    jp Jump_003_6a27
+    jp DirRegister_B3_epilogue
 
 
-Jump_003_67a6:
+DirRegister_B3_patchAttrSize::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -8654,7 +8654,7 @@ Jump_003_67a6:
     ld a, [hl]
     ld [de], a
 
-Jump_003_67c5:
+DirRegister_B3_checkLfn::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -8662,18 +8662,18 @@ Jump_003_67c5:
     ld a, [de]
     ld c, a
     and $02
-    jr nz, jr_003_67d3
+    jr nz, DirRegister_B3_countLfnSlots
 
-    jp Jump_003_681e
+    jp DirRegister_B3_slotsOne
 
 
-jr_003_67d3:
+DirRegister_B3_countLfnSlots::
     ld hl, sp+$23
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_003_67da:
+DirRegister_B3_lfnLenLoop::
     ld hl, sp+$23
     ld c, [hl]
     inc hl
@@ -8695,20 +8695,20 @@ Jump_003_67da:
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_6800
+    jp z, DirRegister_B3_u16DivSlots
 
     ld hl, sp+$23
     inc [hl]
-    jr nz, jr_003_67fd
+    jr nz, DirRegister_B3_lfnLenCont
 
     inc hl
     inc [hl]
 
-jr_003_67fd:
-    jp Jump_003_67da
+DirRegister_B3_lfnLenCont::
+    jp DirRegister_B3_lfnLenLoop
 
 
-Jump_003_6800:
+DirRegister_B3_u16DivSlots::
     ld hl, sp+$23
     ld e, [hl]
     inc hl
@@ -8728,16 +8728,16 @@ Jump_003_6800:
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_003_6825
+    jp DirRegister_B3_dirAlloc
 
 
-Jump_003_681e:
+DirRegister_B3_slotsOne::
     ld hl, sp+$21
     ld [hl], $01
     inc hl
     ld [hl], $00
 
-Jump_003_6825:
+DirRegister_B3_dirAlloc::
     ld hl, sp+$21
     ld a, [hl+]
     ld h, [hl]
@@ -8755,7 +8755,7 @@ Jump_003_6825:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6957
+    jp nz, DirRegister_B3_finalizeSfn
 
     ld hl, sp+$21
     ld e, [hl]
@@ -8769,7 +8769,7 @@ Jump_003_6825:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6957
+    jp z, DirRegister_B3_finalizeSfn
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -8810,7 +8810,7 @@ Jump_003_6825:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6957
+    jp nz, DirRegister_B3_finalizeSfn
 
     ld hl, sp+$0e
     ld e, [hl]
@@ -8845,7 +8845,7 @@ Jump_003_6825:
     ld [hl+], a
     ld [hl], e
 
-Jump_003_68ad:
+DirRegister_B3_putLfnLoop::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -8889,7 +8889,7 @@ Jump_003_68ad:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6957
+    jp nz, DirRegister_B3_finalizeSfn
 
     ld hl, sp+$06
     ld a, [hl]
@@ -8966,7 +8966,7 @@ Jump_003_68ad:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6957
+    jp nz, DirRegister_B3_finalizeSfn
 
     ld hl, sp+$06
     ld e, [hl]
@@ -8980,13 +8980,13 @@ Jump_003_68ad:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_68ad
+    jp nz, DirRegister_B3_putLfnLoop
 
-Jump_003_6957:
+DirRegister_B3_finalizeSfn::
     xor a
     ld hl, sp+$25
     or [hl]
-    jp nz, Jump_003_6a24
+    jp nz, DirRegister_B3_loadResult
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -9037,7 +9037,7 @@ Jump_003_6957:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_6a24
+    jp nz, DirRegister_B3_loadResult
 
     ld hl, sp+$0a
     ld e, [hl]
@@ -9147,11 +9147,11 @@ Jump_003_6957:
     ld a, $01
     ld [bc], a
 
-Jump_003_6a24:
+DirRegister_B3_loadResult::
     ld hl, sp+$25
     ld e, [hl]
 
-Jump_003_6a27:
+DirRegister_B3_epilogue::
     add sp, $26
     ret
 
@@ -9279,12 +9279,12 @@ CreateName_B3_lfnCharLoop::
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6aa6
+    jr nz, CreateName_B3_afterLfnPtrInc
 
     inc hl
     inc [hl]
 
-jr_003_6aa6:
+CreateName_B3_afterLfnPtrInc::
     ld hl, sp+$04
     ld a, [hl+]
     ld e, [hl]
@@ -9345,7 +9345,7 @@ CreateName_B3_notTerminator::
     jp c, CreateName_B3_mapCp437
 
     ld e, $06
-    jp Jump_003_709f
+    jp CreateName_B3_cleanup
 
 
 CreateName_B3_mapCp437::
@@ -9372,7 +9372,7 @@ CreateName_B3_mapCp437::
     jp nz, CreateName_B3_checkIllegalAscii
 
     ld e, $06
-    jp Jump_003_709f
+    jp CreateName_B3_cleanup
 
 
 CreateName_B3_checkIllegalAscii::
@@ -9400,7 +9400,7 @@ CreateName_B3_checkIllegalAscii::
     jp z, CreateName_B3_storeWcharLfn
 
     ld e, $06
-    jp Jump_003_709f
+    jp CreateName_B3_cleanup
 
 
 CreateName_B3_storeWcharLfn::
@@ -9410,12 +9410,12 @@ CreateName_B3_storeWcharLfn::
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6b4c
+    jr nz, CreateName_B3_afterWcharIdxInc
 
     inc hl
     inc [hl]
 
-jr_003_6b4c:
+CreateName_B3_afterWcharIdxInc::
     ld hl, sp+$02
     ld a, [hl+]
     ld e, [hl]
@@ -9492,13 +9492,13 @@ CreateName_B3_storeNsflag::
     or a
     jp nz, CreateName_B3_notLen1Dot
 
-    jr jr_003_6bad
+    jr CreateName_B3_checkSingleDot
 
 CreateName_B3_notLen1Dot::
     jp CreateName_B3_checkDotDot
 
 
-jr_003_6bad:
+CreateName_B3_checkSingleDot::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -9538,13 +9538,13 @@ CreateName_B3_checkDotDot::
     or a
     jp nz, CreateName_B3_notLen2DotDot
 
-    jr jr_003_6be3
+    jr CreateName_B3_checkDotDotTail
 
 CreateName_B3_notLen2DotDot::
     jp CreateName_B3_normalPath
 
 
-jr_003_6be3:
+CreateName_B3_checkDotDotTail::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -9573,13 +9573,13 @@ jr_003_6be3:
     or b
     jp nz, CreateName_B3_dotDotMismatch
 
-    jr jr_003_6c0b
+    jr CreateName_B3_checkDotDotHead
 
 CreateName_B3_dotDotMismatch::
     jp CreateName_B3_normalPath
 
 
-jr_003_6c0b:
+CreateName_B3_checkDotDotHead::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -9704,12 +9704,12 @@ CreateName_B3_sfnPadStore::
     ld [bc], a
     ld hl, sp+$13
     inc [hl]
-    jr nz, jr_003_6ca7
+    jr nz, CreateName_B3_afterSfnPadIdxInc
 
     inc hl
     inc [hl]
 
-jr_003_6ca7:
+CreateName_B3_afterSfnPadIdxInc::
     jp CreateName_B3_sfnPadLoop
 
 
@@ -9735,7 +9735,7 @@ CreateName_B3_dotEntryDone::
     or $20
     ld [bc], a
     ld e, $00
-    jp Jump_003_709f
+    jp CreateName_B3_cleanup
 
 
 CreateName_B3_normalPath::
@@ -9836,7 +9836,7 @@ CreateName_B3_afterStripTrail::
     jp nz, CreateName_B3_nulTermClearSfn
 
     ld e, $06
-    jp Jump_003_709f
+    jp CreateName_B3_cleanup
 
 
 CreateName_B3_nulTermClearSfn::
@@ -9894,7 +9894,7 @@ CreateName_B3_nulTermClearSfn::
     inc hl
     ld [hl], $00
 
-Jump_003_6d86:
+CreateName_B3_skipLeadSpaceDot::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -9917,45 +9917,44 @@ Jump_003_6d86:
     ld b, a
     ld a, c
     sub $20
-    jp nz, Jump_003_6da8
+    jp nz, CreateName_B3_skipLeadNotSpace
 
     or b
-    jp z, Jump_003_6db7
+    jp z, CreateName_B3_skipLeadInc
 
-Jump_003_6da8:
+CreateName_B3_skipLeadNotSpace::
     ld a, c
     sub $2e
-    jp nz, Jump_003_6db4
+    jp nz, CreateName_B3_skipLeadNonLead
 
     or b
-    jp nz, Jump_003_6db4
+    jp nz, CreateName_B3_skipLeadNonLead
 
-    jr jr_003_6db7
+    jr CreateName_B3_skipLeadInc
 
-Jump_003_6db4:
-    jp Jump_003_6dc9
+CreateName_B3_skipLeadNonLead::
+    jp CreateName_B3_afterSkipLead
 
 
-Jump_003_6db7:
-jr_003_6db7:
+CreateName_B3_skipLeadInc::
     ld hl, sp+$02
     inc [hl]
-    jr nz, jr_003_6dbe
+    jr nz, CreateName_B3_afterSkipLeadIdxInc
 
     inc hl
     inc [hl]
 
-jr_003_6dbe:
+CreateName_B3_afterSkipLeadIdxInc::
     ld hl, sp+$02
     ld a, [hl+]
     ld e, [hl]
     ld hl, sp+$0f
     ld [hl+], a
     ld [hl], e
-    jp Jump_003_6d86
+    jp CreateName_B3_skipLeadSpaceDot
 
 
-Jump_003_6dc9:
+CreateName_B3_afterSkipLead::
     ld hl, sp+$02
     ld a, [hl+]
     ld e, [hl]
@@ -9965,18 +9964,18 @@ Jump_003_6dc9:
     ld hl, sp+$02
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6dde
+    jp z, CreateName_B3_findLastDot
 
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
 
-Jump_003_6dde:
+CreateName_B3_findLastDot::
     ld hl, sp+$0d
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6e22
+    jp z, CreateName_B3_initBodyLen
 
     dec hl
     ld e, [hl]
@@ -10012,12 +10011,12 @@ Jump_003_6dde:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_003_6e15
+    jp nz, CreateName_B3_findLastDotCont
 
     or b
-    jp z, Jump_003_6e22
+    jp z, CreateName_B3_initBodyLen
 
-Jump_003_6e15:
+CreateName_B3_findLastDotCont::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -10026,10 +10025,10 @@ Jump_003_6e15:
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_003_6dde
+    jp CreateName_B3_findLastDot
 
 
-Jump_003_6e22:
+CreateName_B3_initBodyLen::
     ld hl, sp+$13
     ld [hl], $00
     inc hl
@@ -10041,19 +10040,19 @@ Jump_003_6e22:
     inc hl
     ld [hl], $00
 
-Jump_003_6e34:
+CreateName_B3_sfnFillLoop::
     ld hl, sp+$0f
     ld c, [hl]
     inc hl
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6e3f
+    jr nz, CreateName_B3_afterSfnFillIdxInc
 
     inc hl
     inc [hl]
 
-jr_003_6e3f:
+CreateName_B3_afterSfnFillIdxInc::
     sla c
     rl b
     ld hl, sp+$15
@@ -10077,59 +10076,59 @@ jr_003_6e3f:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6ffe
+    jp z, CreateName_B3_sfnDoneDdem
 
     dec hl
     ld a, [hl]
     sub $20
-    jp nz, Jump_003_6e6a
+    jp nz, CreateName_B3_sfnFillCheckDot
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_003_6e8f
+    jp z, CreateName_B3_sfnFillSpaceLoss
 
-Jump_003_6e6a:
+CreateName_B3_sfnFillCheckDot::
     ld hl, sp+$17
     ld a, [hl]
     sub $2e
-    jp nz, Jump_003_6e7a
+    jp nz, CreateName_B3_sfnFillNotDot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6e7a
+    jp nz, CreateName_B3_sfnFillNotDot
 
-    jr jr_003_6e7d
+    jr CreateName_B3_sfnFillDotPath
 
-Jump_003_6e7a:
-    jp Jump_003_6e98
+CreateName_B3_sfnFillNotDot::
+    jp CreateName_B3_sfnFillSlotCheck
 
 
-jr_003_6e7d:
+CreateName_B3_sfnFillDotPath::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_003_6e8f
+    jp nz, CreateName_B3_sfnFillSpaceLoss
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp z, Jump_003_6e98
+    jp z, CreateName_B3_sfnFillSlotCheck
 
-Jump_003_6e8f:
+CreateName_B3_sfnFillSpaceLoss::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_003_6e34
+    jp CreateName_B3_sfnFillLoop
 
 
-Jump_003_6e98:
+CreateName_B3_sfnFillSlotCheck::
     ld hl, sp+$13
     ld d, h
     ld e, l
@@ -10141,76 +10140,75 @@ Jump_003_6e98:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_6ebe
+    jp nc, CreateName_B3_sfnFillSlotFull
 
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_003_6ebb
+    jp nz, CreateName_B3_sfnFillToMap
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_003_6ebb
+    jp nz, CreateName_B3_sfnFillToMap
 
-    jr jr_003_6ebe
+    jr CreateName_B3_sfnFillSlotFull
 
-Jump_003_6ebb:
-    jp Jump_003_6f1f
+CreateName_B3_sfnFillToMap::
+    jp CreateName_B3_sfnMapCp437
 
 
-Jump_003_6ebe:
-jr_003_6ebe:
+CreateName_B3_sfnFillSlotFull::
     ld hl, sp+$11
     ld a, [hl]
     sub $0b
-    jp nz, Jump_003_6ece
+    jp nz, CreateName_B3_sfnFillToExt
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6ece
+    jp nz, CreateName_B3_sfnFillToExt
 
-    jr jr_003_6ed1
+    jr CreateName_B3_sfnFillSlotFullLoss
 
-Jump_003_6ece:
-    jp Jump_003_6eda
+CreateName_B3_sfnFillToExt::
+    jp CreateName_B3_sfnFillBodyToExt
 
 
-jr_003_6ed1:
+CreateName_B3_sfnFillSlotFullLoss::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_003_6ffe
+    jp CreateName_B3_sfnDoneDdem
 
 
-Jump_003_6eda:
+CreateName_B3_sfnFillBodyToExt::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_003_6eec
+    jp nz, CreateName_B3_sfnFillBodyOverflow
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp z, Jump_003_6ef2
+    jp z, CreateName_B3_sfnFillEnterExt
 
-Jump_003_6eec:
+CreateName_B3_sfnFillBodyOverflow::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
 
-Jump_003_6ef2:
+CreateName_B3_sfnFillEnterExt::
     ld hl, sp+$0d
     ld d, h
     ld e, l
@@ -10222,7 +10220,7 @@ Jump_003_6ef2:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_6ffe
+    jp c, CreateName_B3_sfnDoneDdem
 
     ld hl, sp+$0d
     ld a, [hl+]
@@ -10241,17 +10239,17 @@ Jump_003_6ef2:
     ld hl, sp+$1a
     sla [hl]
     sla [hl]
-    jp Jump_003_6e34
+    jp CreateName_B3_sfnFillLoop
 
 
-Jump_003_6f1f:
+CreateName_B3_sfnMapCp437::
     ld hl, sp+$17
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6f60
+    jp c, CreateName_B3_sfnCheckIllegal
 
     ld hl, $0000
     push hl
@@ -10271,7 +10269,7 @@ Jump_003_6f1f:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6f5a
+    jp z, CreateName_B3_sfnMapCp437Fail
 
     dec hl
     ld c, [hl]
@@ -10288,17 +10286,17 @@ Jump_003_6f1f:
     inc hl
     ld [hl], $00
 
-Jump_003_6f5a:
+CreateName_B3_sfnMapCp437Fail::
     ld hl, sp+$19
     ld a, [hl]
     or $02
     ld [hl], a
 
-Jump_003_6f60:
+CreateName_B3_sfnCheckIllegal::
     ld hl, sp+$17
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6f7c
+    jp z, CreateName_B3_sfnReplaceUnderscore
 
     dec hl
     ld a, [hl+]
@@ -10313,9 +10311,9 @@ Jump_003_6f60:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_003_6f8b
+    jp z, CreateName_B3_sfnCaseUpper
 
-Jump_003_6f7c:
+CreateName_B3_sfnReplaceUnderscore::
     ld hl, sp+$17
     ld [hl], $5f
     inc hl
@@ -10324,17 +10322,17 @@ Jump_003_6f7c:
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_003_6fd9
+    jp CreateName_B3_sfnStoreByte
 
 
-Jump_003_6f8b:
+CreateName_B3_sfnCaseUpper::
     ld hl, sp+$17
     ld a, [hl]
     sub $41
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6fab
+    jp c, CreateName_B3_sfnCaseLower
 
     ld a, $5a
     dec hl
@@ -10342,24 +10340,24 @@ Jump_003_6f8b:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_003_6fab
+    jp c, CreateName_B3_sfnCaseLower
 
     inc hl
     inc hl
     ld a, [hl]
     or $02
     ld [hl], a
-    jp Jump_003_6fd9
+    jp CreateName_B3_sfnStoreByte
 
 
-Jump_003_6fab:
+CreateName_B3_sfnCaseLower::
     ld hl, sp+$17
     ld a, [hl]
     sub $61
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6fd9
+    jp c, CreateName_B3_sfnStoreByte
 
     ld a, $7a
     dec hl
@@ -10367,7 +10365,7 @@ Jump_003_6fab:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_003_6fd9
+    jp c, CreateName_B3_sfnStoreByte
 
     inc hl
     inc hl
@@ -10388,7 +10386,7 @@ Jump_003_6fab:
     ld [hl-], a
     ld [hl], e
 
-Jump_003_6fd9:
+CreateName_B3_sfnStoreByte::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10405,12 +10403,12 @@ Jump_003_6fd9:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_003_6fef
+    jr nz, CreateName_B3_sfnStoreByteJr
 
     inc hl
     inc [hl]
 
-jr_003_6fef:
+CreateName_B3_sfnStoreByteJr::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
@@ -10421,10 +10419,10 @@ jr_003_6fef:
     ld hl, sp+$17
     ld a, [hl]
     ld [bc], a
-    jp Jump_003_6e34
+    jp CreateName_B3_sfnFillLoop
 
 
-Jump_003_6ffe:
+CreateName_B3_sfnDoneDdem::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10441,15 +10439,15 @@ Jump_003_6ffe:
     ld a, [de]
     ld c, a
     sub $e5
-    jp nz, Jump_003_7015
+    jp nz, CreateName_B3_afterDdem
 
-    jr jr_003_7018
+    jr CreateName_B3_replaceDdem
 
-Jump_003_7015:
-    jp Jump_003_7020
+CreateName_B3_afterDdem::
+    jp CreateName_B3_checkBodyOnly
 
 
-jr_003_7018:
+CreateName_B3_replaceDdem::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10457,107 +10455,106 @@ jr_003_7018:
     ld a, $05
     ld [de], a
 
-Jump_003_7020:
+CreateName_B3_checkBodyOnly::
     ld hl, sp+$11
     ld a, [hl]
     sub $08
-    jp nz, Jump_003_7030
+    jp nz, CreateName_B3_afterBodyOnly
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_7030
+    jp nz, CreateName_B3_afterBodyOnly
 
-    jr jr_003_7033
+    jr CreateName_B3_ntShiftBodyOnly
 
-Jump_003_7030:
-    jp Jump_003_7039
+CreateName_B3_afterBodyOnly::
+    jp CreateName_B3_caseMixCheck
 
 
-jr_003_7033:
+CreateName_B3_ntShiftBodyOnly::
     ld hl, sp+$1a
     sla [hl]
     sla [hl]
 
-Jump_003_7039:
+CreateName_B3_caseMixCheck::
     ld hl, sp+$1a
     ld a, [hl]
     and $0c
     ld c, a
     sub $0c
-    jp z, Jump_003_7054
+    jp z, CreateName_B3_caseMixSetLfn
 
     ld hl, sp+$1a
     ld a, [hl]
     and $03
     ld b, a
     sub $03
-    jp nz, Jump_003_7051
+    jp nz, CreateName_B3_caseMixOk
 
-    jr jr_003_7054
+    jr CreateName_B3_caseMixSetLfn
 
-Jump_003_7051:
-    jp Jump_003_705a
+CreateName_B3_caseMixOk::
+    jp CreateName_B3_storeNtFlags
 
 
-Jump_003_7054:
-jr_003_7054:
+CreateName_B3_caseMixSetLfn::
     ld hl, sp+$19
     ld a, [hl]
     or $02
     ld [hl], a
 
-Jump_003_705a:
+CreateName_B3_storeNtFlags::
     ld hl, sp+$19
     ld a, [hl]
     and $02
-    jr nz, jr_003_7064
+    jr nz, CreateName_B3_skipNtFlags
 
-    jp Jump_003_7067
-
-
-jr_003_7064:
-    jp Jump_003_708e
+    jp CreateName_B3_ntExtCheck
 
 
-Jump_003_7067:
+CreateName_B3_skipNtFlags::
+    jp CreateName_B3_storeNsflagFinal
+
+
+CreateName_B3_ntExtCheck::
     ld hl, sp+$1a
     ld a, [hl]
     and $03
     ld b, a
     sub $01
-    jp nz, Jump_003_7074
+    jp nz, CreateName_B3_afterNtExt
 
-    jr jr_003_7077
+    jr CreateName_B3_setNsExt
 
-Jump_003_7074:
-    jp Jump_003_707d
+CreateName_B3_afterNtExt::
+    jp CreateName_B3_ntBodyCheck
 
 
-jr_003_7077:
+CreateName_B3_setNsExt::
     ld hl, sp+$19
     ld a, [hl]
     or $10
     ld [hl], a
 
-Jump_003_707d:
+CreateName_B3_ntBodyCheck::
     ld a, c
     sub $04
-    jp nz, Jump_003_7085
+    jp nz, CreateName_B3_afterNtBody
 
-    jr jr_003_7088
+    jr CreateName_B3_setNsBody
 
-Jump_003_7085:
-    jp Jump_003_708e
+CreateName_B3_afterNtBody::
+    jp CreateName_B3_storeNsflagFinal
 
 
-jr_003_7088:
+CreateName_B3_setNsBody::
     ld hl, sp+$19
     ld a, [hl]
     or $08
     ld [hl], a
 
-Jump_003_708e:
+CreateName_B3_storeNsflagFinal::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10571,7 +10568,7 @@ Jump_003_708e:
     ld [bc], a
     ld e, $00
 
-Jump_003_709f:
+CreateName_B3_cleanup::
     add sp, $1b
     ret
 
@@ -10610,21 +10607,20 @@ FollowPath_B3::
     ld hl, sp+$06
     ld [hl], a
     sub $2f
-    jp z, Jump_003_70cf
+    jp z, FollowPath_B3_clearSclust
 
     ld hl, sp+$06
     ld a, [hl]
     sub $5c
-    jp nz, Jump_003_70cc
+    jp nz, FollowPath_B3_hasLeadSep
 
-    jr jr_003_70cf
+    jr FollowPath_B3_clearSclust
 
-Jump_003_70cc:
-    jp Jump_003_70f8
+FollowPath_B3_hasLeadSep::
+    jp FollowPath_B3_copyCdir
 
 
-Jump_003_70cf:
-jr_003_70cf:
+FollowPath_B3_clearSclust::
     ld hl, $0001
     add hl, bc
     ld a, l
@@ -10653,10 +10649,10 @@ jr_003_70cf:
     inc de
     ld a, $00
     ld [de], a
-    jp Jump_003_7136
+    jp FollowPath_B3_checkEmptyPath
 
 
-Jump_003_70f8:
+FollowPath_B3_copyCdir::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -10712,7 +10708,7 @@ Jump_003_70f8:
     ld a, [hl]
     ld [de], a
 
-Jump_003_7136:
+FollowPath_B3_checkEmptyPath::
     ld hl, sp+$0f
     ld c, [hl]
     inc hl
@@ -10726,7 +10722,7 @@ Jump_003_7136:
     sub $20
     ld a, b
     sbc $00
-    jp nc, Jump_003_7173
+    jp nc, FollowPath_B3_segmentLoop
 
     ld hl, $0000
     push hl
@@ -10755,10 +10751,10 @@ Jump_003_7136:
     inc de
     ld a, $00
     ld [de], a
-    jp Jump_003_72b8
+    jp FollowPath_B3_epilogue
 
 
-Jump_003_7173:
+FollowPath_B3_segmentLoop::
     ld hl, sp+$0f
     ld c, l
     ld b, h
@@ -10775,7 +10771,7 @@ Jump_003_7173:
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_72b8
+    jp nz, FollowPath_B3_epilogue
 
     ld hl, sp+$0d
     ld a, [hl+]
@@ -10819,28 +10815,28 @@ Jump_003_7173:
     xor a
     ld hl, sp+$0a
     or [hl]
-    jp z, Jump_003_722f
+    jp z, FollowPath_B3_found
 
     ld a, [hl]
     sub $04
-    jp nz, Jump_003_71cd
+    jp nz, FollowPath_B3_findFail
 
-    jr jr_003_71d0
+    jr FollowPath_B3_noFileLastSeg
 
-Jump_003_71cd:
-    jp Jump_003_72b8
+FollowPath_B3_findFail::
+    jp FollowPath_B3_epilogue
 
 
-jr_003_71d0:
+FollowPath_B3_noFileLastSeg::
     ld hl, sp+$07
     ld a, [hl]
     and $20
-    jr nz, jr_003_71da
+    jr nz, FollowPath_B3_dotEntry
 
-    jp Jump_003_721b
+    jp FollowPath_B3_nonLastNsflag
 
 
-jr_003_71da:
+FollowPath_B3_dotEntry::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10880,50 +10876,50 @@ jr_003_71da:
     ld hl, sp+$07
     ld a, [hl]
     and $04
-    jr nz, jr_003_7214
+    jr nz, FollowPath_B3_lastSegOk
 
-    jp Jump_003_7173
+    jp FollowPath_B3_segmentLoop
 
 
-jr_003_7214:
+FollowPath_B3_lastSegOk::
     ld hl, sp+$0a
     ld [hl], $00
-    jp Jump_003_72b8
+    jp FollowPath_B3_epilogue
 
 
-Jump_003_721b:
+FollowPath_B3_nonLastNsflag::
     ld hl, sp+$07
     ld a, [hl]
     and $04
-    jr nz, jr_003_7225
+    jr nz, FollowPath_B3_nsLastOk
 
-    jp Jump_003_7228
-
-
-jr_003_7225:
-    jp Jump_003_72b8
+    jp FollowPath_B3_deniedNotDir
 
 
-Jump_003_7228:
+FollowPath_B3_nsLastOk::
+    jp FollowPath_B3_epilogue
+
+
+FollowPath_B3_deniedNotDir::
     ld hl, sp+$0a
     ld [hl], $05
-    jp Jump_003_72b8
+    jp FollowPath_B3_epilogue
 
 
-Jump_003_722f:
+FollowPath_B3_found::
     ld hl, sp+$07
     ld a, [hl]
     and $04
-    jr nz, jr_003_7239
+    jr nz, FollowPath_B3_foundLastSeg
 
-    jp Jump_003_723c
-
-
-jr_003_7239:
-    jp Jump_003_72b8
+    jp FollowPath_B3_checkAttrDir
 
 
-Jump_003_723c:
+FollowPath_B3_foundLastSeg::
+    jp FollowPath_B3_epilogue
+
+
+FollowPath_B3_checkAttrDir::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10954,22 +10950,22 @@ Jump_003_723c:
     ld a, [bc]
     ld c, a
     and $10
-    jr nz, jr_003_7266
+    jr nz, FollowPath_B3_isDir
 
-    jp Jump_003_7269
-
-
-jr_003_7266:
-    jp Jump_003_7270
+    jp FollowPath_B3_notDir
 
 
-Jump_003_7269:
+FollowPath_B3_isDir::
+    jp FollowPath_B3_enterSubdir
+
+
+FollowPath_B3_notDir::
     ld hl, sp+$0a
     ld [hl], $05
-    jp Jump_003_72b8
+    jp FollowPath_B3_epilogue
 
 
-Jump_003_7270:
+FollowPath_B3_enterSubdir::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -11027,10 +11023,10 @@ Jump_003_7270:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_003_7173
+    jp FollowPath_B3_segmentLoop
 
 
-Jump_003_72b8:
+FollowPath_B3_epilogue::
     ld hl, sp+$0a
     ld e, [hl]
     add sp, $0b
@@ -11061,7 +11057,7 @@ GetLdNumber_B3::
     ld [hl-], a
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_738d
+    jp z, GetLdNumber_B3_returnResult
 
     dec hl
     ld c, [hl]
@@ -11072,7 +11068,7 @@ GetLdNumber_B3::
     inc hl
     ld [hl], b
 
-Jump_003_72e7:
+GetLdNumber_B3_scanColon::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -11089,24 +11085,24 @@ Jump_003_72e7:
     sub $20
     ld a, b
     sbc $00
-    jp c, Jump_003_730d
+    jp c, GetLdNumber_B3_afterScan
 
     ld a, [hl]
     sub $3a
-    jp z, Jump_003_730d
+    jp z, GetLdNumber_B3_afterScan
 
     ld hl, sp+$00
     inc [hl]
-    jr nz, jr_003_730a
+    jr nz, GetLdNumber_B3_scanCont
 
     inc hl
     inc [hl]
 
-jr_003_730a:
-    jp Jump_003_72e7
+GetLdNumber_B3_scanCont::
+    jp GetLdNumber_B3_scanColon
 
 
-Jump_003_730d:
+GetLdNumber_B3_afterScan::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -11114,15 +11110,15 @@ Jump_003_730d:
     ld a, [de]
     ld c, a
     sub $3a
-    jp nz, Jump_003_731b
+    jp nz, GetLdNumber_B3_noColon
 
-    jr jr_003_731e
+    jr GetLdNumber_B3_parseDigit
 
-Jump_003_731b:
-    jp Jump_003_7386
+GetLdNumber_B3_noColon::
+    jp GetLdNumber_B3_defaultVol0
 
 
-jr_003_731e:
+GetLdNumber_B3_parseDigit::
     ld hl, sp+$05
     ld c, [hl]
     inc hl
@@ -11139,12 +11135,12 @@ jr_003_731e:
     ld c, a
     dec hl
     inc [hl]
-    jr nz, jr_003_7334
+    jr nz, GetLdNumber_B3_digitSignExt
 
     inc hl
     inc [hl]
 
-jr_003_7334:
+GetLdNumber_B3_digitSignExt::
     ld a, c
     rla
     sbc a
@@ -11159,32 +11155,32 @@ jr_003_7334:
     sub $0a
     ld a, b
     sbc $00
-    jp nc, Jump_003_737e
+    jp nc, GetLdNumber_B3_returnVol
 
     ld hl, sp+$09
     ld a, [hl]
     ld hl, sp+$00
     sub [hl]
-    jp nz, Jump_003_735d
+    jp nz, GetLdNumber_B3_notSingleDigit
 
     ld hl, sp+$0a
     ld a, [hl]
     ld hl, sp+$01
     sub [hl]
-    jp nz, Jump_003_735d
+    jp nz, GetLdNumber_B3_notSingleDigit
 
-    jr jr_003_7360
+    jr GetLdNumber_B3_checkVolRange
 
-Jump_003_735d:
-    jp Jump_003_737e
+GetLdNumber_B3_notSingleDigit::
+    jp GetLdNumber_B3_returnVol
 
 
-jr_003_7360:
+GetLdNumber_B3_checkVolRange::
     ld a, c
     sub $01
     ld a, b
     sbc $00
-    jp nc, Jump_003_737e
+    jp nc, GetLdNumber_B3_returnVol
 
     ld hl, sp+$07
     ld [hl], c
@@ -11206,27 +11202,27 @@ jr_003_7360:
     ld a, b
     ld [de], a
 
-Jump_003_737e:
+GetLdNumber_B3_returnVol::
     ld hl, sp+$07
     ld e, [hl]
     inc hl
     ld d, [hl]
-    jp Jump_003_7392
+    jp GetLdNumber_B3_epilogue
 
 
-Jump_003_7386:
+GetLdNumber_B3_defaultVol0::
     ld hl, sp+$07
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_003_738d:
+GetLdNumber_B3_returnResult::
     ld hl, sp+$07
     ld e, [hl]
     inc hl
     ld d, [hl]
 
-Jump_003_7392:
+GetLdNumber_B3_epilogue::
     add sp, $0b
     ret
 
@@ -11264,13 +11260,13 @@ FindVolume_B3::
     ld c, e
     ld a, b
     bit 7, a
-    jp z, Jump_003_73c2
+    jp z, FindVolume_B3_lookupFs
 
     ld e, $0b
-    jp Jump_003_7417
+    jp FindVolume_B3_epilogue
 
 
-Jump_003_73c2:
+FindVolume_B3_lookupFs::
     sla c
     rl b
     ld hl, $c5a5
@@ -11285,13 +11281,13 @@ Jump_003_73c2:
     ld a, [de]
     ld b, a
     or c
-    jp nz, Jump_003_73dc
+    jp nz, FindVolume_B3_bindRfs
 
     ld e, $0c
-    jp Jump_003_7417
+    jp FindVolume_B3_epilogue
 
 
-Jump_003_73dc:
+FindVolume_B3_bindRfs::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -11303,7 +11299,7 @@ Jump_003_73dc:
     ld [de], a
     ld a, [bc]
     or a
-    jp z, Jump_003_7415
+    jp z, FindVolume_B3_ok
 
     inc bc
     ld a, [bc]
@@ -11315,37 +11311,37 @@ Jump_003_73dc:
     ld c, e
     ld a, c
     and $01
-    jr nz, jr_003_73fe
+    jr nz, FindVolume_B3_needInit
 
-    jp Jump_003_7401
-
-
-jr_003_73fe:
-    jp Jump_003_7415
+    jp FindVolume_B3_checkMode
 
 
-Jump_003_7401:
+FindVolume_B3_needInit::
+    jp FindVolume_B3_ok
+
+
+FindVolume_B3_checkMode::
     xor a
     ld hl, sp+$18
     or [hl]
-    jp z, Jump_003_7415
+    jp z, FindVolume_B3_ok
 
     ld a, c
     and $04
-    jr nz, jr_003_7410
+    jr nz, FindVolume_B3_writeProtect
 
-    jp Jump_003_7415
+    jp FindVolume_B3_ok
 
 
-jr_003_7410:
+FindVolume_B3_writeProtect::
     ld e, $0a
-    jp Jump_003_7417
+    jp FindVolume_B3_epilogue
 
 
-Jump_003_7415:
+FindVolume_B3_ok::
     ld e, $00
 
-Jump_003_7417:
+FindVolume_B3_epilogue::
     add sp, $12
     ret
 
@@ -11361,7 +11357,7 @@ Validate_B3::
     ld hl, sp+$06
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_7493
+    jp z, Validate_B3_invalid
 
     dec hl
     ld e, [hl]
@@ -11373,7 +11369,7 @@ Validate_B3::
     ld a, [de]
     ld b, a
     or c
-    jp z, Jump_003_7493
+    jp z, Validate_B3_invalid
 
     dec hl
     ld e, [hl]
@@ -11386,7 +11382,7 @@ Validate_B3::
     ld b, a
     ld a, [bc]
     or a
-    jp z, Jump_003_7493
+    jp z, Validate_B3_invalid
 
     dec hl
     ld e, [hl]
@@ -11429,20 +11425,20 @@ Validate_B3::
     ld hl, sp+$00
     ld a, [hl]
     sub c
-    jp nz, Jump_003_7478
+    jp nz, Validate_B3_idMismatch
 
     inc hl
     ld a, [hl]
     sub b
-    jp nz, Jump_003_7478
+    jp nz, Validate_B3_idMismatch
 
-    jr jr_003_747b
+    jr Validate_B3_diskStatus
 
-Jump_003_7478:
-    jp Jump_003_7493
+Validate_B3_idMismatch::
+    jp Validate_B3_invalid
 
 
-jr_003_747b:
+Validate_B3_diskStatus::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -11457,21 +11453,20 @@ jr_003_747b:
     ld c, e
     ld a, c
     and $01
-    jr nz, jr_003_7493
+    jr nz, Validate_B3_invalid
 
-    jp Jump_003_7498
+    jp Validate_B3_ok
 
 
-Jump_003_7493:
-jr_003_7493:
+Validate_B3_invalid::
     ld e, $09
-    jp Jump_003_749a
+    jp Validate_B3_epilogue
 
 
-Jump_003_7498:
+Validate_B3_ok::
     ld e, $00
 
-Jump_003_749a:
+Validate_B3_epilogue::
     add sp, $04
     ret
 
@@ -11496,7 +11491,7 @@ Fsync_B3::
     ld b, c
     xor a
     or b
-    jp nz, Jump_003_768b
+    jp nz, Fsync_B3_loadResult
 
     ld hl, sp+$12
     ld a, [hl+]
@@ -11519,20 +11514,20 @@ Fsync_B3::
     ld a, [de]
     ld c, a
     and $20
-    jr nz, jr_003_74d1
+    jr nz, Fsync_B3_hasModified
 
-    jp Jump_003_768b
+    jp Fsync_B3_loadResult
 
 
-jr_003_74d1:
+Fsync_B3_hasModified::
     ld a, c
     and $40
-    jr nz, jr_003_74d9
+    jr nz, Fsync_B3_flushWin
 
-    jp Jump_003_7544
+    jp Fsync_B3_updateDir
 
 
-jr_003_74d9:
+Fsync_B3_flushWin::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -11602,13 +11597,13 @@ jr_003_74d9:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_7536
+    jp z, Fsync_B3_clearDirty
 
     ld e, $01
-    jp Jump_003_768c
+    jp Fsync_B3_epilogue
 
 
-Jump_003_7536:
+Fsync_B3_clearDirty::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -11622,7 +11617,7 @@ Jump_003_7536:
     ld d, [hl]
     ld [de], a
 
-Jump_003_7544:
+Fsync_B3_updateDir::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -11670,7 +11665,7 @@ Jump_003_7544:
     ld b, c
     xor a
     or b
-    jp nz, Jump_003_768b
+    jp nz, Fsync_B3_loadResult
 
     ld hl, sp+$06
     ld e, [hl]
@@ -11893,10 +11888,10 @@ Jump_003_7544:
     ld c, e
     ld b, c
 
-Jump_003_768b:
+Fsync_B3_loadResult::
     ld e, b
 
-Jump_003_768c:
+Fsync_B3_epilogue::
     add sp, $10
     ret
 
@@ -11919,7 +11914,7 @@ Close_B3::
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Jump_003_76c6
+    jp nz, Close_B3_epilogue
 
     ld hl, sp+$07
     ld a, [hl+]
@@ -11933,7 +11928,7 @@ Close_B3::
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Jump_003_76c6
+    jp nz, Close_B3_epilogue
 
     ld hl, sp+$07
     ld c, [hl]
@@ -11947,7 +11942,7 @@ Close_B3::
     ld a, $00
     ld [de], a
 
-Jump_003_76c6:
+Close_B3_epilogue::
     ld hl, sp+$00
     ld e, [hl]
     add sp, $01
@@ -11981,13 +11976,13 @@ Lseek_B3::
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_003_76e6
+    jp z, Lseek_B3_afterValidate
 
     ld e, [hl]
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_76e6:
+Lseek_B3_afterValidate::
     ld hl, sp+$2f
     ld a, [hl+]
     ld e, [hl]
@@ -12009,13 +12004,13 @@ Jump_003_76e6:
     ld a, [de]
     ld c, a
     or a
-    jp z, Jump_003_7707
+    jp z, Lseek_B3_checkOfsVsFsize
 
     ld e, c
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7707:
+Lseek_B3_checkOfsVsFsize::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12058,7 +12053,7 @@ Jump_003_7707:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_7763
+    jp nc, Lseek_B3_clearFptr
 
     ld hl, sp+$0e
     ld e, [hl]
@@ -12071,16 +12066,16 @@ Jump_003_7707:
     ld a, [bc]
     ld c, a
     and $02
-    jr nz, jr_003_774f
+    jr nz, Lseek_B3_ofsInRange
 
-    jp Jump_003_7752
-
-
-jr_003_774f:
-    jp Jump_003_7763
+    jp Lseek_B3_clampOfs
 
 
-Jump_003_7752:
+Lseek_B3_ofsInRange::
+    jp Lseek_B3_clearFptr
+
+
+Lseek_B3_clampOfs::
     ld hl, sp+$10
     ld d, h
     ld e, l
@@ -12097,7 +12092,7 @@ Jump_003_7752:
     ld a, [de]
     ld [hl], a
 
-Jump_003_7763:
+Lseek_B3_clearFptr::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12150,7 +12145,7 @@ Jump_003_7763:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_7cf6
+    jp z, Lseek_B3_fillWindow
 
     ld hl, sp+$0e
     ld e, [hl]
@@ -12209,7 +12204,7 @@ Jump_003_7763:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_793c
+    jp z, Lseek_B3_fromSclust
 
     ld hl, sp+$31
     ld e, [hl]
@@ -12345,7 +12340,7 @@ Jump_003_7763:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_793c
+    jp c, Lseek_B3_fromSclust
 
     ld hl, sp+$20
     ld e, [hl]
@@ -12480,10 +12475,10 @@ Jump_003_7763:
     inc de
     ld a, [de]
     ld [hl], a
-    jp Jump_003_7a29
+    jp Lseek_B3_sameCluster
 
 
-Jump_003_793c:
+Lseek_B3_fromSclust::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12528,7 +12523,7 @@ Jump_003_793c:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_7a0c
+    jp nz, Lseek_B3_setClust
 
     push bc
     ld hl, $0000
@@ -12571,30 +12566,30 @@ Jump_003_793c:
     ld hl, sp+$24
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_79bf
+    jp nz, Lseek_B3_afterCreateChain
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_79bf
+    jp nz, Lseek_B3_afterCreateChain
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_79bf
+    jp nz, Lseek_B3_afterCreateChain
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_79bf
+    jp nz, Lseek_B3_afterCreateChain
 
-    jr jr_003_79c2
+    jr Lseek_B3_createChainDiskErr
 
-Jump_003_79bf:
-    jp Jump_003_79cf
+Lseek_B3_afterCreateChain::
+    jp Lseek_B3_checkChainClust
 
 
-jr_003_79c2:
+Lseek_B3_createChainDiskErr::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -12602,37 +12597,37 @@ jr_003_79c2:
     ld a, $02
     ld [de], a
     ld e, $02
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_79cf:
+Lseek_B3_checkChainClust::
     ld hl, sp+$24
     ld a, [hl]
     inc a
-    jp nz, Jump_003_79ea
+    jp nz, Lseek_B3_chainOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_79ea
+    jp nz, Lseek_B3_chainOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_79ea
+    jp nz, Lseek_B3_chainOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_79ea
+    jp nz, Lseek_B3_chainOk
 
-    jr jr_003_79ed
+    jr Lseek_B3_chainAborted
 
-Jump_003_79ea:
-    jp Jump_003_79fa
+Lseek_B3_chainOk::
+    jp Lseek_B3_writeSclust
 
 
-jr_003_79ed:
+Lseek_B3_chainAborted::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -12640,10 +12635,10 @@ jr_003_79ed:
     ld a, $01
     ld [de], a
     ld e, $01
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_79fa:
+Lseek_B3_writeSclust::
     ld e, c
     ld d, b
     ld hl, sp+$24
@@ -12662,7 +12657,7 @@ Jump_003_79fa:
     ld a, [hl]
     ld [de], a
 
-Jump_003_7a0c:
+Lseek_B3_setClust::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12689,7 +12684,7 @@ Jump_003_7a0c:
     ld a, [hl]
     ld [de], a
 
-Jump_003_7a29:
+Lseek_B3_sameCluster::
     ld hl, sp+$24
     ld a, [hl+]
     or [hl]
@@ -12697,7 +12692,7 @@ Jump_003_7a29:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_7cf6
+    jp z, Lseek_B3_fillWindow
 
     ld hl, sp+$0e
     ld e, [hl]
@@ -12711,7 +12706,7 @@ Jump_003_7a29:
     ld [hl+], a
     ld [hl], d
 
-Jump_003_7a43:
+Lseek_B3_followLoop::
     ld hl, sp+$20
     ld d, h
     ld e, l
@@ -12730,7 +12725,7 @@ Jump_003_7a43:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_7c08
+    jp nc, Lseek_B3_setFptr
 
     ld hl, sp+$00
     ld e, [hl]
@@ -12739,12 +12734,12 @@ Jump_003_7a43:
     ld a, [de]
     ld c, a
     and $02
-    jr nz, jr_003_7a68
+    jr nz, Lseek_B3_extendChain
 
-    jp Jump_003_7abf
+    jp Lseek_B3_getFatNext
 
 
-jr_003_7a68:
+Lseek_B3_extendChain::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12799,7 +12794,7 @@ jr_003_7a68:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_7af7
+    jp nz, Lseek_B3_afterGetFat
 
     ld hl, sp+$20
     ld d, h
@@ -12816,10 +12811,10 @@ jr_003_7a68:
     inc de
     ld a, [de]
     ld [hl], a
-    jp Jump_003_7c08
+    jp Lseek_B3_setFptr
 
 
-Jump_003_7abf:
+Lseek_B3_getFatNext::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -12868,34 +12863,34 @@ Jump_003_7abf:
     ld a, [de]
     ld [hl], a
 
-Jump_003_7af7:
+Lseek_B3_afterGetFat::
     ld hl, sp+$24
     ld a, [hl]
     inc a
-    jp nz, Jump_003_7b12
+    jp nz, Lseek_B3_getFatOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_7b12
+    jp nz, Lseek_B3_getFatOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_7b12
+    jp nz, Lseek_B3_getFatOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_7b12
+    jp nz, Lseek_B3_getFatOk
 
-    jr jr_003_7b15
+    jr Lseek_B3_getFatDiskErr
 
-Jump_003_7b12:
-    jp Jump_003_7b22
+Lseek_B3_getFatOk::
+    jp Lseek_B3_checkFatClust
 
 
-jr_003_7b15:
+Lseek_B3_getFatDiskErr::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -12903,10 +12898,10 @@ jr_003_7b15:
     ld a, $01
     ld [de], a
     ld e, $01
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7b22:
+Lseek_B3_checkFatClust::
     ld a, $01
     ld hl, sp+$24
     sub [hl]
@@ -12919,7 +12914,7 @@ Jump_003_7b22:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_003_7b6c
+    jp nc, Lseek_B3_getFatIntErr
 
     ld hl, sp+$0e
     ld e, [hl]
@@ -12966,9 +12961,9 @@ Jump_003_7b22:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_7b79
+    jp c, Lseek_B3_pastEof
 
-Jump_003_7b6c:
+Lseek_B3_getFatIntErr::
     ld hl, sp+$16
     ld e, [hl]
     inc hl
@@ -12976,10 +12971,10 @@ Jump_003_7b6c:
     ld a, $02
     ld [de], a
     ld e, $02
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7b79:
+Lseek_B3_pastEof::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13102,10 +13097,10 @@ Jump_003_7b79:
     ld hl, sp+$34
     ld [hl-], a
     ld [hl], e
-    jp Jump_003_7a43
+    jp Lseek_B3_followLoop
 
 
-Jump_003_7c08:
+Lseek_B3_setFptr::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -13175,17 +13170,17 @@ Jump_003_7c08:
     ld hl, sp+$31
     ld a, [hl]
     or a
-    jr nz, jr_003_7c62
+    jr nz, Lseek_B3_clust2Sect
 
     inc hl
     ld a, [hl]
     and $01
-    jr nz, jr_003_7c62
+    jr nz, Lseek_B3_clust2Sect
 
-    jp Jump_003_7cf6
+    jp Lseek_B3_fillWindow
 
 
-jr_003_7c62:
+Lseek_B3_clust2Sect::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13240,7 +13235,7 @@ jr_003_7c62:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_7cb2
+    jp nz, Lseek_B3_sectOffset
 
     ld hl, sp+$16
     ld e, [hl]
@@ -13249,10 +13244,10 @@ jr_003_7c62:
     ld a, $02
     ld [de], a
     ld e, $02
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7cb2:
+Lseek_B3_sectOffset::
     ld a, $09
     push af
     inc sp
@@ -13310,7 +13305,7 @@ Jump_003_7cb2:
     ld [hl-], a
     ld [hl], e
 
-Jump_003_7cf6:
+Lseek_B3_fillWindow::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -13330,17 +13325,17 @@ Jump_003_7cf6:
     ld hl, sp+$00
     ld a, [hl]
     or a
-    jr nz, jr_003_7d17
+    jr nz, Lseek_B3_sameSector
 
     inc hl
     ld a, [hl]
     and $01
-    jr nz, jr_003_7d17
+    jr nz, Lseek_B3_sameSector
 
-    jp Jump_003_7e2e
+    jp Lseek_B3_clampFptr
 
 
-jr_003_7d17:
+Lseek_B3_sameSector::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13369,27 +13364,27 @@ jr_003_7d17:
     ld a, [hl]
     ld hl, sp+$00
     sub [hl]
-    jp nz, Jump_003_7d58
+    jp nz, Lseek_B3_winsectMismatch
 
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$01
     sub [hl]
-    jp nz, Jump_003_7d58
+    jp nz, Lseek_B3_winsectMismatch
 
     ld hl, sp+$1e
     ld a, [hl]
     ld hl, sp+$02
     sub [hl]
-    jp nz, Jump_003_7d58
+    jp nz, Lseek_B3_winsectMismatch
 
     ld hl, sp+$1f
     ld a, [hl]
     ld hl, sp+$03
     sub [hl]
-    jp z, Jump_003_7e2e
+    jp z, Lseek_B3_clampFptr
 
-Jump_003_7d58:
+Lseek_B3_winsectMismatch::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13405,12 +13400,12 @@ Jump_003_7d58:
     ld a, [de]
     ld c, a
     and $40
-    jr nz, jr_003_7d71
+    jr nz, Lseek_B3_flushDirty
 
-    jp Jump_003_7dcc
+    jp Lseek_B3_diskRead
 
 
-jr_003_7d71:
+Lseek_B3_flushDirty::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13459,7 +13454,7 @@ jr_003_7d71:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_7dbe
+    jp z, Lseek_B3_clearDirty
 
     ld hl, sp+$16
     ld e, [hl]
@@ -13468,10 +13463,10 @@ jr_003_7d71:
     ld a, $01
     ld [de], a
     ld e, $01
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7dbe:
+Lseek_B3_clearDirty::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -13485,7 +13480,7 @@ Jump_003_7dbe:
     ld d, [hl]
     ld [de], a
 
-Jump_003_7dcc:
+Lseek_B3_diskRead::
     ld hl, sp+$0e
     ld e, [hl]
     inc hl
@@ -13534,7 +13529,7 @@ Jump_003_7dcc:
     ld c, e
     xor a
     or c
-    jp z, Jump_003_7e19
+    jp z, Lseek_B3_storeWinsect
 
     ld hl, sp+$16
     ld e, [hl]
@@ -13543,10 +13538,10 @@ Jump_003_7dcc:
     ld a, $01
     ld [de], a
     ld e, $01
-    jp Jump_003_7eac
+    jp Lseek_B3_epilogue
 
 
-Jump_003_7e19:
+Lseek_B3_storeWinsect::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -13567,7 +13562,7 @@ Jump_003_7e19:
     ld a, [hl]
     ld [de], a
 
-Jump_003_7e2e:
+Lseek_B3_clampFptr::
     ld hl, sp+$0c
     ld e, [hl]
     inc hl
@@ -13618,7 +13613,7 @@ Jump_003_7e2e:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_7ea9
+    jp nc, Lseek_B3_loadResult
 
     ld hl, sp+$0c
     ld e, [hl]
@@ -13676,11 +13671,11 @@ Jump_003_7e2e:
     ld d, [hl]
     ld [de], a
 
-Jump_003_7ea9:
+Lseek_B3_loadResult::
     ld hl, sp+$28
     ld e, [hl]
 
-Jump_003_7eac:
+Lseek_B3_epilogue::
     add sp, $29
     ret
 
