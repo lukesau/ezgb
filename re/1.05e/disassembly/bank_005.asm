@@ -262,12 +262,12 @@ MemSet8_B5::
     ld hl, sp+$08
     ld c, [hl]
 
-Jump_005_4110:
+MemSet8_B5_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_005_4129
+    jp z, MemSet8_B5_epilogueRet
 
     ld hl, sp+$06
     ld a, [hl]
@@ -278,16 +278,16 @@ Jump_005_4110:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_005_4126
+    jr nz, MemSet8_B5_storeCont
 
     inc hl
     inc [hl]
 
-jr_005_4126:
-    jp Jump_005_4110
+MemSet8_B5_storeCont::
+    jp MemSet8_B5_decN
 
 
-Jump_005_4129:
+MemSet8_B5_epilogueRet::
     add sp, $02
     ret
 
@@ -5655,35 +5655,34 @@ CreateName_B5::
     inc hl
     ld b, [hl]
 
-Jump_005_59a8:
+CreateName_B5_skipLeadSep::
     ld a, [bc]
     ld hl, sp+$08
     ld [hl], a
     sub $2f
-    jp z, Jump_005_59be
+    jp z, CreateName_B5_skipLeadSepInc
 
     ld hl, sp+$08
     ld a, [hl]
     sub $5c
-    jp nz, Jump_005_59bb
+    jp nz, CreateName_B5_skipLeadSepElse
 
-    jr jr_005_59be
+    jr CreateName_B5_skipLeadSepInc
 
-Jump_005_59bb:
-    jp Jump_005_59c7
+CreateName_B5_skipLeadSepElse::
+    jp CreateName_B5_startSegment
 
 
-Jump_005_59be:
-jr_005_59be:
+CreateName_B5_skipLeadSepInc::
     inc bc
     ld hl, sp+$0b
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_005_59a8
+    jp CreateName_B5_skipLeadSep
 
 
-Jump_005_59c7:
+CreateName_B5_startSegment::
     ld hl, sp+$0b
     ld [hl], c
     inc hl
@@ -5726,7 +5725,7 @@ Jump_005_59c7:
     inc hl
     ld [hl], $00
 
-Jump_005_59fe:
+CreateName_B5_lfnCharLoop::
     ld hl, sp+$04
     ld c, [hl]
     inc hl
@@ -5766,43 +5765,43 @@ jr_005_5a09:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_005_5ad0
+    jp c, CreateName_B5_endSegment
 
     dec hl
     ld a, [hl]
     sub $2f
-    jp nz, Jump_005_5a3a
+    jp nz, CreateName_B5_checkBackslashSep
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_005_5ad0
+    jp z, CreateName_B5_endSegment
 
-Jump_005_5a3a:
+CreateName_B5_checkBackslashSep::
     ld hl, sp+$17
     ld a, [hl]
     sub $5c
-    jp nz, Jump_005_5a48
+    jp nz, CreateName_B5_notTerminator
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_005_5ad0
+    jp z, CreateName_B5_endSegment
 
-Jump_005_5a48:
+CreateName_B5_notTerminator::
     ld hl, sp+$02
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_005_5a59
+    jp c, CreateName_B5_mapCp437
 
     ld e, $06
     jp Jump_005_6002
 
 
-Jump_005_5a59:
+CreateName_B5_mapCp437::
     ld hl, sp+$18
     ld [hl], $00
     ld hl, $0001
@@ -5823,20 +5822,20 @@ Jump_005_5a59:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_005_5a7e
+    jp nz, CreateName_B5_checkIllegalAscii
 
     ld e, $06
     jp Jump_005_6002
 
 
-Jump_005_5a7e:
+CreateName_B5_checkIllegalAscii::
     ld hl, sp+$17
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_005_5aa4
+    jp nc, CreateName_B5_storeWcharLfn
 
     dec hl
     ld a, [hl+]
@@ -5851,13 +5850,13 @@ Jump_005_5a7e:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_005_5aa4
+    jp z, CreateName_B5_storeWcharLfn
 
     ld e, $06
     jp Jump_005_6002
 
 
-Jump_005_5aa4:
+CreateName_B5_storeWcharLfn::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -5894,10 +5893,10 @@ jr_005_5aaf:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_005_59fe
+    jp CreateName_B5_lfnCharLoop
 
 
-Jump_005_5ad0:
+CreateName_B5_endSegment::
     ld hl, sp+$0b
     ld e, [hl]
     inc hl
@@ -5924,32 +5923,32 @@ Jump_005_5ad0:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_005_5af8
+    jp nc, CreateName_B5_nsflagNotLast
 
     ld c, $04
-    jp Jump_005_5afa
+    jp CreateName_B5_storeNsflag
 
 
-Jump_005_5af8:
+CreateName_B5_nsflagNotLast::
     ld c, $00
 
-Jump_005_5afa:
+CreateName_B5_storeNsflag::
     ld hl, sp+$19
     ld [hl], c
     ld hl, sp+$0d
     ld a, [hl]
     sub $01
-    jp nz, Jump_005_5b0d
+    jp nz, CreateName_B5_notLen1Dot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_005_5b0d
+    jp nz, CreateName_B5_notLen1Dot
 
     jr jr_005_5b10
 
-Jump_005_5b0d:
-    jp Jump_005_5b33
+CreateName_B5_notLen1Dot::
+    jp CreateName_B5_checkDotDot
 
 
 jr_005_5b10:
@@ -5976,26 +5975,26 @@ jr_005_5b10:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_005_5b33
+    jp nz, CreateName_B5_checkDotDot
 
     or b
-    jp z, Jump_005_5b97
+    jp z, CreateName_B5_dotEntry
 
-Jump_005_5b33:
+CreateName_B5_checkDotDot::
     ld hl, sp+$0d
     ld a, [hl]
     sub $02
-    jp nz, Jump_005_5b43
+    jp nz, CreateName_B5_notLen2DotDot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_005_5b43
+    jp nz, CreateName_B5_notLen2DotDot
 
     jr jr_005_5b46
 
-Jump_005_5b43:
-    jp Jump_005_5c2a
+CreateName_B5_notLen2DotDot::
+    jp CreateName_B5_normalPath
 
 
 jr_005_5b46:
@@ -6022,15 +6021,15 @@ jr_005_5b46:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_005_5b6b
+    jp nz, CreateName_B5_dotDotMismatch
 
     or b
-    jp nz, Jump_005_5b6b
+    jp nz, CreateName_B5_dotDotMismatch
 
     jr jr_005_5b6e
 
-Jump_005_5b6b:
-    jp Jump_005_5c2a
+CreateName_B5_dotDotMismatch::
+    jp CreateName_B5_normalPath
 
 
 jr_005_5b6e:
@@ -6058,19 +6057,18 @@ jr_005_5b6e:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_005_5b94
+    jp nz, CreateName_B5_notDotDot
 
     or b
-    jp nz, Jump_005_5b94
+    jp nz, CreateName_B5_notDotDot
 
-    jr jr_005_5b97
+    jr CreateName_B5_dotEntry
 
-Jump_005_5b94:
-    jp Jump_005_5c2a
+CreateName_B5_notDotDot::
+    jp CreateName_B5_normalPath
 
 
-Jump_005_5b97:
-jr_005_5b97:
+CreateName_B5_dotEntry::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -6107,14 +6105,14 @@ jr_005_5b97:
     inc hl
     ld [hl], $00
 
-Jump_005_5bc7:
+CreateName_B5_sfnPadLoop::
     ld hl, sp+$13
     ld a, [hl]
     sub $0b
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_005_5c0d
+    jp nc, CreateName_B5_dotEntryDone
 
     ld hl, sp+$00
     ld e, [hl]
@@ -6142,18 +6140,18 @@ Jump_005_5bc7:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_005_5bfb
+    jp nc, CreateName_B5_sfnPadSpace
 
     ld hl, sp+$02
     ld [hl], $2e
-    jp Jump_005_5bff
+    jp CreateName_B5_sfnPadStore
 
 
-Jump_005_5bfb:
+CreateName_B5_sfnPadSpace::
     ld hl, sp+$02
     ld [hl], $20
 
-Jump_005_5bff:
+CreateName_B5_sfnPadStore::
     ld hl, sp+$02
     ld a, [hl]
     ld [bc], a
@@ -6165,10 +6163,10 @@ Jump_005_5bff:
     inc [hl]
 
 jr_005_5c0a:
-    jp Jump_005_5bc7
+    jp CreateName_B5_sfnPadLoop
 
 
-Jump_005_5c0d:
+CreateName_B5_dotEntryDone::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -6193,7 +6191,7 @@ Jump_005_5c0d:
     jp Jump_005_6002
 
 
-Jump_005_5c2a:
+CreateName_B5_normalPath::
     ld hl, sp+$0d
     ld a, [hl+]
     ld e, [hl]
@@ -6201,11 +6199,11 @@ Jump_005_5c2a:
     ld [hl+], a
     ld [hl], e
 
-Jump_005_5c32:
+CreateName_B5_stripTrailing::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp z, Jump_005_5c8a
+    jp z, CreateName_B5_afterStripTrail
 
     dec hl
     ld c, [hl]
@@ -6235,32 +6233,31 @@ Jump_005_5c32:
     dec hl
     ld a, [hl]
     sub $20
-    jp nz, Jump_005_5c63
+    jp nz, CreateName_B5_stripTrailNotSpace
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_005_5c76
+    jp z, CreateName_B5_stripTrailDec
 
-Jump_005_5c63:
+CreateName_B5_stripTrailNotSpace::
     ld hl, sp+$17
     ld a, [hl]
     sub $2e
-    jp nz, Jump_005_5c73
+    jp nz, CreateName_B5_stripTrailBreak
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_005_5c73
+    jp nz, CreateName_B5_stripTrailBreak
 
-    jr jr_005_5c76
+    jr CreateName_B5_stripTrailDec
 
-Jump_005_5c73:
-    jp Jump_005_5c8a
+CreateName_B5_stripTrailBreak::
+    jp CreateName_B5_afterStripTrail
 
 
-Jump_005_5c76:
-jr_005_5c76:
+CreateName_B5_stripTrailDec::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -6276,10 +6273,10 @@ jr_005_5c76:
     ld hl, sp+$0d
     ld [hl+], a
     ld [hl], e
-    jp Jump_005_5c32
+    jp CreateName_B5_stripTrailing
 
 
-Jump_005_5c8a:
+CreateName_B5_afterStripTrail::
     ld hl, sp+$00
     ld a, [hl+]
     ld e, [hl]
@@ -6289,13 +6286,13 @@ Jump_005_5c8a:
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_005_5c9e
+    jp nz, CreateName_B5_nulTermClearSfn
 
     ld e, $06
     jp Jump_005_6002
 
 
-Jump_005_5c9e:
+CreateName_B5_nulTermClearSfn::
     ld hl, sp+$00
     ld c, [hl]
     inc hl

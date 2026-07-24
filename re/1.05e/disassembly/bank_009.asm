@@ -3762,7 +3762,7 @@ CreateChain_B9::
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_009_51af
+    jp nz, CreateChain_B9_getFatExisting
 
     ld hl, sp+$1d
     ld a, [hl+]
@@ -3799,7 +3799,7 @@ CreateChain_B9::
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_009_51a3
+    jp z, CreateChain_B9_clstEmptySet1
 
     ld hl, sp+$0d
     ld e, [hl]
@@ -3841,9 +3841,9 @@ CreateChain_B9::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_009_5266
+    jp c, CreateChain_B9_copyScanState
 
-Jump_009_51a3:
+CreateChain_B9_clstEmptySet1::
     ld hl, sp+$0f
     ld [hl], $01
     xor a
@@ -3851,10 +3851,10 @@ Jump_009_51a3:
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-    jp Jump_009_5266
+    jp CreateChain_B9_copyScanState
 
 
-Jump_009_51af:
+CreateChain_B9_getFatExisting::
     ld hl, sp+$21
     ld a, [hl+]
     ld h, [hl]
@@ -3894,41 +3894,41 @@ Jump_009_51af:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_009_51ee
+    jp nc, CreateChain_B9_afterGetFat
 
     ld de, $0001
     ld hl, $0000
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_51ee:
+CreateChain_B9_afterGetFat::
     ld hl, sp+$17
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5209
+    jp nz, CreateChain_B9_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5209
+    jp nz, CreateChain_B9_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5209
+    jp nz, CreateChain_B9_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5209
+    jp nz, CreateChain_B9_notEofCluster
 
-    jr jr_009_520c
+    jr CreateChain_B9_eofCluster
 
-Jump_009_5209:
-    jp Jump_009_5218
+CreateChain_B9_notEofCluster::
+    jp CreateChain_B9_cmpNFatent
 
 
-jr_009_520c:
+CreateChain_B9_eofCluster::
     ld hl, sp+$17
     ld e, [hl]
     inc hl
@@ -3937,10 +3937,10 @@ jr_009_520c:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_5218:
+CreateChain_B9_cmpNFatent::
     ld hl, sp+$1d
     ld c, [hl]
     inc hl
@@ -3981,7 +3981,7 @@ Jump_009_5218:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_009_5255
+    jp nc, CreateChain_B9_stretchOk
 
     ld hl, sp+$17
     ld e, [hl]
@@ -3991,10 +3991,10 @@ Jump_009_5218:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_5255:
+CreateChain_B9_stretchOk::
     ld hl, sp+$1f
     ld d, h
     ld e, l
@@ -4011,7 +4011,7 @@ Jump_009_5255:
     ld a, [de]
     ld [hl], a
 
-Jump_009_5266:
+CreateChain_B9_copyScanState::
     ld hl, sp+$0f
     ld d, h
     ld e, l
@@ -4058,23 +4058,23 @@ Jump_009_5266:
     ld c, l
     ld b, h
 
-Jump_009_52a0:
+CreateChain_B9_allocScan::
     ld hl, sp+$13
     inc [hl]
-    jr nz, jr_009_52af
+    jr nz, CreateChain_B9_allocScanCont
 
     inc hl
     inc [hl]
-    jr nz, jr_009_52af
+    jr nz, CreateChain_B9_allocScanCont
 
     inc hl
     inc [hl]
-    jr nz, jr_009_52af
+    jr nz, CreateChain_B9_allocScanCont
 
     inc hl
     inc [hl]
 
-jr_009_52af:
+CreateChain_B9_allocScanCont::
     ld e, c
     ld d, b
     ld a, [de]
@@ -4107,7 +4107,7 @@ jr_009_52af:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_009_52ee
+    jp c, CreateChain_B9_scanHitEnd
 
     ld hl, sp+$13
     ld [hl], $02
@@ -4119,14 +4119,14 @@ jr_009_52af:
     xor a
     ld hl, sp+$08
     or [hl]
-    jp z, Jump_009_52ee
+    jp z, CreateChain_B9_scanHitEnd
 
     ld de, $0000
     ld hl, $0000
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_52ee:
+CreateChain_B9_scanHitEnd::
     push bc
     ld hl, sp+$17
     ld a, [hl+]
@@ -4178,57 +4178,56 @@ Jump_009_52ee:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_009_53a4
+    jp z, CreateChain_B9_putFatLink
 
     ld hl, sp+$17
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5347
+    jp nz, CreateChain_B9_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5347
+    jp nz, CreateChain_B9_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_5347
+    jp nz, CreateChain_B9_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_009_5366
+    jp z, CreateChain_B9_eofCheckVal
 
-Jump_009_5347:
+CreateChain_B9_eofCheck::
     ld hl, sp+$17
     ld a, [hl]
     sub $01
-    jp nz, Jump_009_5363
+    jp nz, CreateChain_B9_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_5363
+    jp nz, CreateChain_B9_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_5363
+    jp nz, CreateChain_B9_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_5363
+    jp nz, CreateChain_B9_eofCheckCont
 
-    jr jr_009_5366
+    jr CreateChain_B9_eofCheckVal
 
-Jump_009_5363:
-    jp Jump_009_5372
+CreateChain_B9_eofCheckCont::
+    jp CreateChain_B9_matchScanStart
 
 
-Jump_009_5366:
-jr_009_5366:
+CreateChain_B9_eofCheckVal::
     ld hl, sp+$17
     ld e, [hl]
     inc hl
@@ -4237,47 +4236,47 @@ jr_009_5366:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_5372:
+CreateChain_B9_matchScanStart::
     ld hl, sp+$13
     ld a, [hl]
     ld hl, sp+$0f
     sub [hl]
-    jp nz, Jump_009_5398
+    jp nz, CreateChain_B9_scanContinue
 
     ld hl, sp+$14
     ld a, [hl]
     ld hl, sp+$10
     sub [hl]
-    jp nz, Jump_009_5398
+    jp nz, CreateChain_B9_scanContinue
 
     ld hl, sp+$15
     ld a, [hl]
     ld hl, sp+$11
     sub [hl]
-    jp nz, Jump_009_5398
+    jp nz, CreateChain_B9_scanContinue
 
     ld hl, sp+$16
     ld a, [hl]
     ld hl, sp+$12
     sub [hl]
-    jp nz, Jump_009_5398
+    jp nz, CreateChain_B9_scanContinue
 
-    jr jr_009_539b
+    jr CreateChain_B9_noFreeRet0
 
-Jump_009_5398:
-    jp Jump_009_52a0
+CreateChain_B9_scanContinue::
+    jp CreateChain_B9_allocScan
 
 
-jr_009_539b:
+CreateChain_B9_noFreeRet0::
     ld de, $0000
     ld hl, $0000
-    jp Jump_009_54d8
+    jp CreateChain_B9_epilogue
 
 
-Jump_009_53a4:
+CreateChain_B9_putFatLink::
     ld hl, $0fff
     push hl
     ld hl, $ffff
@@ -4302,7 +4301,7 @@ Jump_009_53a4:
     ld c, e
     xor a
     or c
-    jp nz, Jump_009_53f9
+    jp nz, CreateChain_B9_updateFreeClst
 
     ld hl, sp+$1f
     ld a, [hl+]
@@ -4311,7 +4310,7 @@ Jump_009_53a4:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_009_53f9
+    jp z, CreateChain_B9_updateFreeClst
 
     ld hl, sp+$15
     ld a, [hl+]
@@ -4343,10 +4342,10 @@ Jump_009_53a4:
     ld b, e
     ld c, b
 
-Jump_009_53f9:
+CreateChain_B9_updateFreeClst::
     xor a
     or c
-    jp nz, Jump_009_549a
+    jp nz, CreateChain_B9_putFatFail
 
     ld hl, sp+$09
     ld e, [hl]
@@ -4398,24 +4397,24 @@ Jump_009_53f9:
     ld hl, sp+$00
     ld a, [hl]
     inc a
-    jp nz, Jump_009_544e
+    jp nz, CreateChain_B9_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_544e
+    jp nz, CreateChain_B9_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_009_544e
+    jp nz, CreateChain_B9_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_009_54cf
+    jp z, CreateChain_B9_newChainOnly
 
-Jump_009_544e:
+CreateChain_B9_linkAndDirty::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -4479,21 +4478,21 @@ Jump_009_544e:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_009_54cf
+    jp CreateChain_B9_newChainOnly
 
 
-Jump_009_549a:
+CreateChain_B9_putFatFail::
     ld a, c
     sub $01
-    jp nz, Jump_009_54a2
+    jp nz, CreateChain_B9_putFatFailCont
 
-    jr jr_009_54a5
+    jr CreateChain_B9_diskErrorRet
 
-Jump_009_54a2:
-    jp Jump_009_54b5
+CreateChain_B9_putFatFailCont::
+    jp CreateChain_B9_setFrNoFilesystem
 
 
-jr_009_54a5:
+CreateChain_B9_diskErrorRet::
     ld hl, sp+$00
     ld [hl], $ff
     inc hl
@@ -4502,10 +4501,10 @@ jr_009_54a5:
     ld [hl], $ff
     inc hl
     ld [hl], $ff
-    jp Jump_009_54be
+    jp CreateChain_B9_storeResult
 
 
-Jump_009_54b5:
+CreateChain_B9_setFrNoFilesystem::
     ld hl, sp+$00
     ld [hl], $01
     xor a
@@ -4514,7 +4513,7 @@ Jump_009_54b5:
     ld [hl+], a
     ld [hl], a
 
-Jump_009_54be:
+CreateChain_B9_storeResult::
     ld hl, sp+$00
     ld d, h
     ld e, l
@@ -4531,7 +4530,7 @@ Jump_009_54be:
     ld a, [de]
     ld [hl], a
 
-Jump_009_54cf:
+CreateChain_B9_newChainOnly::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -4541,7 +4540,7 @@ Jump_009_54cf:
     ld h, [hl]
     ld l, a
 
-Jump_009_54d8:
+CreateChain_B9_epilogue::
     add sp, $1b
     ret
 
@@ -9680,35 +9679,34 @@ CreateName_B9::
     inc hl
     ld b, [hl]
 
-Jump_009_6c59:
+CreateName_B9_skipLeadSep::
     ld a, [bc]
     ld hl, sp+$08
     ld [hl], a
     sub $2f
-    jp z, Jump_009_6c6f
+    jp z, CreateName_B9_skipLeadSepInc
 
     ld hl, sp+$08
     ld a, [hl]
     sub $5c
-    jp nz, Jump_009_6c6c
+    jp nz, CreateName_B9_skipLeadSepElse
 
-    jr jr_009_6c6f
+    jr CreateName_B9_skipLeadSepInc
 
-Jump_009_6c6c:
-    jp Jump_009_6c78
+CreateName_B9_skipLeadSepElse::
+    jp CreateName_B9_startSegment
 
 
-Jump_009_6c6f:
-jr_009_6c6f:
+CreateName_B9_skipLeadSepInc::
     inc bc
     ld hl, sp+$0b
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_009_6c59
+    jp CreateName_B9_skipLeadSep
 
 
-Jump_009_6c78:
+CreateName_B9_startSegment::
     ld hl, sp+$0b
     ld [hl], c
     inc hl
@@ -9751,7 +9749,7 @@ Jump_009_6c78:
     inc hl
     ld [hl], $00
 
-Jump_009_6caf:
+CreateName_B9_lfnCharLoop::
     ld hl, sp+$04
     ld c, [hl]
     inc hl
@@ -9791,43 +9789,43 @@ jr_009_6cba:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_6d81
+    jp c, CreateName_B9_endSegment
 
     dec hl
     ld a, [hl]
     sub $2f
-    jp nz, Jump_009_6ceb
+    jp nz, CreateName_B9_checkBackslashSep
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_009_6d81
+    jp z, CreateName_B9_endSegment
 
-Jump_009_6ceb:
+CreateName_B9_checkBackslashSep::
     ld hl, sp+$17
     ld a, [hl]
     sub $5c
-    jp nz, Jump_009_6cf9
+    jp nz, CreateName_B9_notTerminator
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_009_6d81
+    jp z, CreateName_B9_endSegment
 
-Jump_009_6cf9:
+CreateName_B9_notTerminator::
     ld hl, sp+$02
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_6d0a
+    jp c, CreateName_B9_mapCp437
 
     ld e, $06
-    jp Jump_009_72b2
+    jp CreateName_B9_cleanup
 
 
-Jump_009_6d0a:
+CreateName_B9_mapCp437::
     ld hl, sp+$18
     ld [hl], $00
     ld hl, $0001
@@ -9848,20 +9846,20 @@ Jump_009_6d0a:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_009_6d2f
+    jp nz, CreateName_B9_checkIllegalAscii
 
     ld e, $06
-    jp Jump_009_72b2
+    jp CreateName_B9_cleanup
 
 
-Jump_009_6d2f:
+CreateName_B9_checkIllegalAscii::
     ld hl, sp+$17
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_009_6d55
+    jp nc, CreateName_B9_storeWcharLfn
 
     dec hl
     ld a, [hl+]
@@ -9876,13 +9874,13 @@ Jump_009_6d2f:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_009_6d55
+    jp z, CreateName_B9_storeWcharLfn
 
     ld e, $06
-    jp Jump_009_72b2
+    jp CreateName_B9_cleanup
 
 
-Jump_009_6d55:
+CreateName_B9_storeWcharLfn::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -9919,10 +9917,10 @@ jr_009_6d60:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_009_6caf
+    jp CreateName_B9_lfnCharLoop
 
 
-Jump_009_6d81:
+CreateName_B9_endSegment::
     ld hl, sp+$0b
     ld e, [hl]
     inc hl
@@ -9949,32 +9947,32 @@ Jump_009_6d81:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_009_6da9
+    jp nc, CreateName_B9_nsflagNotLast
 
     ld c, $04
-    jp Jump_009_6dab
+    jp CreateName_B9_storeNsflag
 
 
-Jump_009_6da9:
+CreateName_B9_nsflagNotLast::
     ld c, $00
 
-Jump_009_6dab:
+CreateName_B9_storeNsflag::
     ld hl, sp+$19
     ld [hl], c
     ld hl, sp+$0d
     ld a, [hl]
     sub $01
-    jp nz, Jump_009_6dbe
+    jp nz, CreateName_B9_notLen1Dot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_6dbe
+    jp nz, CreateName_B9_notLen1Dot
 
     jr jr_009_6dc1
 
-Jump_009_6dbe:
-    jp Jump_009_6de4
+CreateName_B9_notLen1Dot::
+    jp CreateName_B9_checkDotDot
 
 
 jr_009_6dc1:
@@ -10001,26 +9999,26 @@ jr_009_6dc1:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_009_6de4
+    jp nz, CreateName_B9_checkDotDot
 
     or b
-    jp z, Jump_009_6e48
+    jp z, CreateName_B9_dotEntry
 
-Jump_009_6de4:
+CreateName_B9_checkDotDot::
     ld hl, sp+$0d
     ld a, [hl]
     sub $02
-    jp nz, Jump_009_6df4
+    jp nz, CreateName_B9_notLen2DotDot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_6df4
+    jp nz, CreateName_B9_notLen2DotDot
 
     jr jr_009_6df7
 
-Jump_009_6df4:
-    jp Jump_009_6edb
+CreateName_B9_notLen2DotDot::
+    jp CreateName_B9_normalPath
 
 
 jr_009_6df7:
@@ -10047,15 +10045,15 @@ jr_009_6df7:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_009_6e1c
+    jp nz, CreateName_B9_dotDotMismatch
 
     or b
-    jp nz, Jump_009_6e1c
+    jp nz, CreateName_B9_dotDotMismatch
 
     jr jr_009_6e1f
 
-Jump_009_6e1c:
-    jp Jump_009_6edb
+CreateName_B9_dotDotMismatch::
+    jp CreateName_B9_normalPath
 
 
 jr_009_6e1f:
@@ -10083,19 +10081,18 @@ jr_009_6e1f:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_009_6e45
+    jp nz, CreateName_B9_notDotDot
 
     or b
-    jp nz, Jump_009_6e45
+    jp nz, CreateName_B9_notDotDot
 
-    jr jr_009_6e48
+    jr CreateName_B9_dotEntry
 
-Jump_009_6e45:
-    jp Jump_009_6edb
+CreateName_B9_notDotDot::
+    jp CreateName_B9_normalPath
 
 
-Jump_009_6e48:
-jr_009_6e48:
+CreateName_B9_dotEntry::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -10132,14 +10129,14 @@ jr_009_6e48:
     inc hl
     ld [hl], $00
 
-Jump_009_6e78:
+CreateName_B9_sfnPadLoop::
     ld hl, sp+$13
     ld a, [hl]
     sub $0b
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_009_6ebe
+    jp nc, CreateName_B9_dotEntryDone
 
     ld hl, sp+$00
     ld e, [hl]
@@ -10167,18 +10164,18 @@ Jump_009_6e78:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_009_6eac
+    jp nc, CreateName_B9_sfnPadSpace
 
     ld hl, sp+$02
     ld [hl], $2e
-    jp Jump_009_6eb0
+    jp CreateName_B9_sfnPadStore
 
 
-Jump_009_6eac:
+CreateName_B9_sfnPadSpace::
     ld hl, sp+$02
     ld [hl], $20
 
-Jump_009_6eb0:
+CreateName_B9_sfnPadStore::
     ld hl, sp+$02
     ld a, [hl]
     ld [bc], a
@@ -10190,10 +10187,10 @@ Jump_009_6eb0:
     inc [hl]
 
 jr_009_6ebb:
-    jp Jump_009_6e78
+    jp CreateName_B9_sfnPadLoop
 
 
-Jump_009_6ebe:
+CreateName_B9_dotEntryDone::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10215,10 +10212,10 @@ Jump_009_6ebe:
     or $20
     ld [bc], a
     ld e, $00
-    jp Jump_009_72b2
+    jp CreateName_B9_cleanup
 
 
-Jump_009_6edb:
+CreateName_B9_normalPath::
     ld hl, sp+$0d
     ld a, [hl+]
     ld e, [hl]
@@ -10226,11 +10223,11 @@ Jump_009_6edb:
     ld [hl+], a
     ld [hl], e
 
-Jump_009_6ee3:
+CreateName_B9_stripTrailing::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_6f3b
+    jp z, CreateName_B9_afterStripTrail
 
     dec hl
     ld c, [hl]
@@ -10260,32 +10257,31 @@ Jump_009_6ee3:
     dec hl
     ld a, [hl]
     sub $20
-    jp nz, Jump_009_6f14
+    jp nz, CreateName_B9_stripTrailNotSpace
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_009_6f27
+    jp z, CreateName_B9_stripTrailDec
 
-Jump_009_6f14:
+CreateName_B9_stripTrailNotSpace::
     ld hl, sp+$17
     ld a, [hl]
     sub $2e
-    jp nz, Jump_009_6f24
+    jp nz, CreateName_B9_stripTrailBreak
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_6f24
+    jp nz, CreateName_B9_stripTrailBreak
 
-    jr jr_009_6f27
+    jr CreateName_B9_stripTrailDec
 
-Jump_009_6f24:
-    jp Jump_009_6f3b
+CreateName_B9_stripTrailBreak::
+    jp CreateName_B9_afterStripTrail
 
 
-Jump_009_6f27:
-jr_009_6f27:
+CreateName_B9_stripTrailDec::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10301,10 +10297,10 @@ jr_009_6f27:
     ld hl, sp+$0d
     ld [hl+], a
     ld [hl], e
-    jp Jump_009_6ee3
+    jp CreateName_B9_stripTrailing
 
 
-Jump_009_6f3b:
+CreateName_B9_afterStripTrail::
     ld hl, sp+$00
     ld a, [hl+]
     ld e, [hl]
@@ -10314,13 +10310,13 @@ Jump_009_6f3b:
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_009_6f4f
+    jp nz, CreateName_B9_nulTermClearSfn
 
     ld e, $06
-    jp Jump_009_72b2
+    jp CreateName_B9_cleanup
 
 
-Jump_009_6f4f:
+CreateName_B9_nulTermClearSfn::
     ld hl, sp+$00
     ld c, [hl]
     inc hl
@@ -10374,7 +10370,7 @@ Jump_009_6f4f:
     inc hl
     ld [hl], $00
 
-Jump_009_6f99:
+CreateName_B9_skipLeadSpaceDot::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -10397,27 +10393,26 @@ Jump_009_6f99:
     ld b, a
     ld a, c
     sub $20
-    jp nz, Jump_009_6fbb
+    jp nz, CreateName_B9_skipLeadNotSpace
 
     or b
-    jp z, Jump_009_6fca
+    jp z, CreateName_B9_skipLeadInc
 
-Jump_009_6fbb:
+CreateName_B9_skipLeadNotSpace::
     ld a, c
     sub $2e
-    jp nz, Jump_009_6fc7
+    jp nz, CreateName_B9_skipLeadNonLead
 
     or b
-    jp nz, Jump_009_6fc7
+    jp nz, CreateName_B9_skipLeadNonLead
 
-    jr jr_009_6fca
+    jr CreateName_B9_skipLeadInc
 
-Jump_009_6fc7:
-    jp Jump_009_6fdc
+CreateName_B9_skipLeadNonLead::
+    jp CreateName_B9_afterSkipLead
 
 
-Jump_009_6fca:
-jr_009_6fca:
+CreateName_B9_skipLeadInc::
     ld hl, sp+$02
     inc [hl]
     jr nz, jr_009_6fd1
@@ -10432,10 +10427,10 @@ jr_009_6fd1:
     ld hl, sp+$0f
     ld [hl+], a
     ld [hl], e
-    jp Jump_009_6f99
+    jp CreateName_B9_skipLeadSpaceDot
 
 
-Jump_009_6fdc:
+CreateName_B9_afterSkipLead::
     ld hl, sp+$02
     ld a, [hl+]
     ld e, [hl]
@@ -10445,18 +10440,18 @@ Jump_009_6fdc:
     ld hl, sp+$02
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_6ff1
+    jp z, CreateName_B9_findLastDot
 
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
 
-Jump_009_6ff1:
+CreateName_B9_findLastDot::
     ld hl, sp+$0d
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_7035
+    jp z, CreateName_B9_initBodyLen
 
     dec hl
     ld e, [hl]
@@ -10492,12 +10487,12 @@ Jump_009_6ff1:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_009_7028
+    jp nz, CreateName_B9_findLastDotCont
 
     or b
-    jp z, Jump_009_7035
+    jp z, CreateName_B9_initBodyLen
 
-Jump_009_7028:
+CreateName_B9_findLastDotCont::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -10506,10 +10501,10 @@ Jump_009_7028:
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_009_6ff1
+    jp CreateName_B9_findLastDot
 
 
-Jump_009_7035:
+CreateName_B9_initBodyLen::
     ld hl, sp+$13
     ld [hl], $00
     inc hl
@@ -10521,7 +10516,7 @@ Jump_009_7035:
     inc hl
     ld [hl], $00
 
-Jump_009_7047:
+CreateName_B9_sfnFillLoop::
     ld hl, sp+$0f
     ld c, [hl]
     inc hl
@@ -10557,59 +10552,59 @@ jr_009_7052:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_7211
+    jp z, CreateName_B9_sfnDoneDdem
 
     dec hl
     ld a, [hl]
     sub $20
-    jp nz, Jump_009_707d
+    jp nz, CreateName_B9_sfnFillCheckDot
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_009_70a2
+    jp z, CreateName_B9_sfnFillSpaceLoss
 
-Jump_009_707d:
+CreateName_B9_sfnFillCheckDot::
     ld hl, sp+$17
     ld a, [hl]
     sub $2e
-    jp nz, Jump_009_708d
+    jp nz, CreateName_B9_sfnFillNotDot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_708d
+    jp nz, CreateName_B9_sfnFillNotDot
 
-    jr jr_009_7090
+    jr CreateName_B9_sfnFillDotPath
 
-Jump_009_708d:
-    jp Jump_009_70ab
+CreateName_B9_sfnFillNotDot::
+    jp CreateName_B9_sfnFillSlotCheck
 
 
-jr_009_7090:
+CreateName_B9_sfnFillDotPath::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_009_70a2
+    jp nz, CreateName_B9_sfnFillSpaceLoss
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp z, Jump_009_70ab
+    jp z, CreateName_B9_sfnFillSlotCheck
 
-Jump_009_70a2:
+CreateName_B9_sfnFillSpaceLoss::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_009_7047
+    jp CreateName_B9_sfnFillLoop
 
 
-Jump_009_70ab:
+CreateName_B9_sfnFillSlotCheck::
     ld hl, sp+$13
     ld d, h
     ld e, l
@@ -10621,76 +10616,75 @@ Jump_009_70ab:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_009_70d1
+    jp nc, CreateName_B9_sfnFillSlotFull
 
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_009_70ce
+    jp nz, CreateName_B9_sfnFillToMap
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_009_70ce
+    jp nz, CreateName_B9_sfnFillToMap
 
-    jr jr_009_70d1
+    jr CreateName_B9_sfnFillSlotFull
 
-Jump_009_70ce:
-    jp Jump_009_7132
+CreateName_B9_sfnFillToMap::
+    jp CreateName_B9_sfnMapCp437
 
 
-Jump_009_70d1:
-jr_009_70d1:
+CreateName_B9_sfnFillSlotFull::
     ld hl, sp+$11
     ld a, [hl]
     sub $0b
-    jp nz, Jump_009_70e1
+    jp nz, CreateName_B9_sfnFillToExt
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_70e1
+    jp nz, CreateName_B9_sfnFillToExt
 
-    jr jr_009_70e4
+    jr CreateName_B9_sfnFillSlotFullLoss
 
-Jump_009_70e1:
-    jp Jump_009_70ed
+CreateName_B9_sfnFillToExt::
+    jp CreateName_B9_sfnFillBodyToExt
 
 
-jr_009_70e4:
+CreateName_B9_sfnFillSlotFullLoss::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_009_7211
+    jp CreateName_B9_sfnDoneDdem
 
 
-Jump_009_70ed:
+CreateName_B9_sfnFillBodyToExt::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp nz, Jump_009_70ff
+    jp nz, CreateName_B9_sfnFillBodyOverflow
 
     ld hl, sp+$10
     ld a, [hl]
     dec hl
     dec hl
     sub [hl]
-    jp z, Jump_009_7105
+    jp z, CreateName_B9_sfnFillEnterExt
 
-Jump_009_70ff:
+CreateName_B9_sfnFillBodyOverflow::
     ld hl, sp+$19
     ld a, [hl]
     or $03
     ld [hl], a
 
-Jump_009_7105:
+CreateName_B9_sfnFillEnterExt::
     ld hl, sp+$0d
     ld d, h
     ld e, l
@@ -10702,7 +10696,7 @@ Jump_009_7105:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_009_7211
+    jp c, CreateName_B9_sfnDoneDdem
 
     ld hl, sp+$0d
     ld a, [hl+]
@@ -10721,17 +10715,17 @@ Jump_009_7105:
     ld hl, sp+$1a
     sla [hl]
     sla [hl]
-    jp Jump_009_7047
+    jp CreateName_B9_sfnFillLoop
 
 
-Jump_009_7132:
+CreateName_B9_sfnMapCp437::
     ld hl, sp+$17
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_7173
+    jp c, CreateName_B9_sfnCheckIllegal
 
     ld hl, $0000
     push hl
@@ -10751,7 +10745,7 @@ Jump_009_7132:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_716d
+    jp z, CreateName_B9_sfnMapCp437Fail
 
     dec hl
     ld c, [hl]
@@ -10768,17 +10762,17 @@ Jump_009_7132:
     inc hl
     ld [hl], $00
 
-Jump_009_716d:
+CreateName_B9_sfnMapCp437Fail::
     ld hl, sp+$19
     ld a, [hl]
     or $02
     ld [hl], a
 
-Jump_009_7173:
+CreateName_B9_sfnCheckIllegal::
     ld hl, sp+$17
     ld a, [hl+]
     or [hl]
-    jp z, Jump_009_718f
+    jp z, CreateName_B9_sfnReplaceUnderscore
 
     dec hl
     ld a, [hl+]
@@ -10793,9 +10787,9 @@ Jump_009_7173:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_009_719e
+    jp z, CreateName_B9_sfnCaseUpper
 
-Jump_009_718f:
+CreateName_B9_sfnReplaceUnderscore::
     ld hl, sp+$17
     ld [hl], $5f
     inc hl
@@ -10804,17 +10798,17 @@ Jump_009_718f:
     ld a, [hl]
     or $03
     ld [hl], a
-    jp Jump_009_71ec
+    jp CreateName_B9_sfnStoreByte
 
 
-Jump_009_719e:
+CreateName_B9_sfnCaseUpper::
     ld hl, sp+$17
     ld a, [hl]
     sub $41
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_71be
+    jp c, CreateName_B9_sfnCaseLower
 
     ld a, $5a
     dec hl
@@ -10822,24 +10816,24 @@ Jump_009_719e:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_009_71be
+    jp c, CreateName_B9_sfnCaseLower
 
     inc hl
     inc hl
     ld a, [hl]
     or $02
     ld [hl], a
-    jp Jump_009_71ec
+    jp CreateName_B9_sfnStoreByte
 
 
-Jump_009_71be:
+CreateName_B9_sfnCaseLower::
     ld hl, sp+$17
     ld a, [hl]
     sub $61
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_009_71ec
+    jp c, CreateName_B9_sfnStoreByte
 
     ld a, $7a
     dec hl
@@ -10847,7 +10841,7 @@ Jump_009_71be:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_009_71ec
+    jp c, CreateName_B9_sfnStoreByte
 
     inc hl
     inc hl
@@ -10868,7 +10862,7 @@ Jump_009_71be:
     ld [hl-], a
     ld [hl], e
 
-Jump_009_71ec:
+CreateName_B9_sfnStoreByte::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10885,12 +10879,12 @@ Jump_009_71ec:
     ld b, [hl]
     dec hl
     inc [hl]
-    jr nz, jr_009_7202
+    jr nz, CreateName_B9_sfnStoreByteJr
 
     inc hl
     inc [hl]
 
-jr_009_7202:
+CreateName_B9_sfnStoreByteJr::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
@@ -10901,10 +10895,10 @@ jr_009_7202:
     ld hl, sp+$17
     ld a, [hl]
     ld [bc], a
-    jp Jump_009_7047
+    jp CreateName_B9_sfnFillLoop
 
 
-Jump_009_7211:
+CreateName_B9_sfnDoneDdem::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10921,15 +10915,15 @@ Jump_009_7211:
     ld a, [de]
     ld c, a
     sub $e5
-    jp nz, Jump_009_7228
+    jp nz, CreateName_B9_afterDdem
 
-    jr jr_009_722b
+    jr CreateName_B9_replaceDdem
 
-Jump_009_7228:
-    jp Jump_009_7233
+CreateName_B9_afterDdem::
+    jp CreateName_B9_checkBodyOnly
 
 
-jr_009_722b:
+CreateName_B9_replaceDdem::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -10937,107 +10931,106 @@ jr_009_722b:
     ld a, $05
     ld [de], a
 
-Jump_009_7233:
+CreateName_B9_checkBodyOnly::
     ld hl, sp+$11
     ld a, [hl]
     sub $08
-    jp nz, Jump_009_7243
+    jp nz, CreateName_B9_afterBodyOnly
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_009_7243
+    jp nz, CreateName_B9_afterBodyOnly
 
-    jr jr_009_7246
+    jr CreateName_B9_ntShiftBodyOnly
 
-Jump_009_7243:
-    jp Jump_009_724c
+CreateName_B9_afterBodyOnly::
+    jp CreateName_B9_caseMixCheck
 
 
-jr_009_7246:
+CreateName_B9_ntShiftBodyOnly::
     ld hl, sp+$1a
     sla [hl]
     sla [hl]
 
-Jump_009_724c:
+CreateName_B9_caseMixCheck::
     ld hl, sp+$1a
     ld a, [hl]
     and $0c
     ld c, a
     sub $0c
-    jp z, Jump_009_7267
+    jp z, CreateName_B9_caseMixSetLfn
 
     ld hl, sp+$1a
     ld a, [hl]
     and $03
     ld b, a
     sub $03
-    jp nz, Jump_009_7264
+    jp nz, CreateName_B9_caseMixOk
 
-    jr jr_009_7267
+    jr CreateName_B9_caseMixSetLfn
 
-Jump_009_7264:
-    jp Jump_009_726d
+CreateName_B9_caseMixOk::
+    jp CreateName_B9_storeNtFlags
 
 
-Jump_009_7267:
-jr_009_7267:
+CreateName_B9_caseMixSetLfn::
     ld hl, sp+$19
     ld a, [hl]
     or $02
     ld [hl], a
 
-Jump_009_726d:
+CreateName_B9_storeNtFlags::
     ld hl, sp+$19
     ld a, [hl]
     and $02
-    jr nz, jr_009_7277
+    jr nz, CreateName_B9_skipNtFlags
 
-    jp Jump_009_727a
-
-
-jr_009_7277:
-    jp Jump_009_72a1
+    jp CreateName_B9_ntExtCheck
 
 
-Jump_009_727a:
+CreateName_B9_skipNtFlags::
+    jp CreateName_B9_storeNsflagFinal
+
+
+CreateName_B9_ntExtCheck::
     ld hl, sp+$1a
     ld a, [hl]
     and $03
     ld b, a
     sub $01
-    jp nz, Jump_009_7287
+    jp nz, CreateName_B9_afterNtExt
 
-    jr jr_009_728a
+    jr CreateName_B9_setNsExt
 
-Jump_009_7287:
-    jp Jump_009_7290
+CreateName_B9_afterNtExt::
+    jp CreateName_B9_ntBodyCheck
 
 
-jr_009_728a:
+CreateName_B9_setNsExt::
     ld hl, sp+$19
     ld a, [hl]
     or $10
     ld [hl], a
 
-Jump_009_7290:
+CreateName_B9_ntBodyCheck::
     ld a, c
     sub $04
-    jp nz, Jump_009_7298
+    jp nz, CreateName_B9_afterNtBody
 
-    jr jr_009_729b
+    jr CreateName_B9_setNsBody
 
-Jump_009_7298:
-    jp Jump_009_72a1
+CreateName_B9_afterNtBody::
+    jp CreateName_B9_storeNsflagFinal
 
 
-jr_009_729b:
+CreateName_B9_setNsBody::
     ld hl, sp+$19
     ld a, [hl]
     or $08
     ld [hl], a
 
-Jump_009_72a1:
+CreateName_B9_storeNsflagFinal::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -11051,7 +11044,7 @@ Jump_009_72a1:
     ld [bc], a
     ld e, $00
 
-Jump_009_72b2:
+CreateName_B9_cleanup::
     add sp, $1b
     ret
 

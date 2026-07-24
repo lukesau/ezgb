@@ -263,12 +263,12 @@ MemSet8_B3::
     ld hl, sp+$08
     ld c, [hl]
 
-Jump_003_410f:
+MemSet8_B3_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_003_4128
+    jp z, MemSet8_B3_epilogueRet
 
     ld hl, sp+$06
     ld a, [hl]
@@ -279,16 +279,16 @@ Jump_003_410f:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_003_4125
+    jr nz, MemSet8_B3_storeCont
 
     inc hl
     inc [hl]
 
-jr_003_4125:
-    jp Jump_003_410f
+MemSet8_B3_storeCont::
+    jp MemSet8_B3_decN
 
 
-Jump_003_4128:
+MemSet8_B3_epilogueRet::
     add sp, $02
     ret
 
@@ -3733,7 +3733,7 @@ CreateChain_B3::
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_003_51a3
+    jp nz, CreateChain_B3_getFatExisting
 
     ld hl, sp+$1d
     ld a, [hl+]
@@ -3770,7 +3770,7 @@ CreateChain_B3::
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_5197
+    jp z, CreateChain_B3_clstEmptySet1
 
     ld hl, sp+$0d
     ld e, [hl]
@@ -3812,9 +3812,9 @@ CreateChain_B3::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_525a
+    jp c, CreateChain_B3_copyScanState
 
-Jump_003_5197:
+CreateChain_B3_clstEmptySet1::
     ld hl, sp+$0f
     ld [hl], $01
     xor a
@@ -3822,10 +3822,10 @@ Jump_003_5197:
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-    jp Jump_003_525a
+    jp CreateChain_B3_copyScanState
 
 
-Jump_003_51a3:
+CreateChain_B3_getFatExisting::
     ld hl, sp+$21
     ld a, [hl+]
     ld h, [hl]
@@ -3865,41 +3865,41 @@ Jump_003_51a3:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_51e2
+    jp nc, CreateChain_B3_afterGetFat
 
     ld de, $0001
     ld hl, $0000
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_51e2:
+CreateChain_B3_afterGetFat::
     ld hl, sp+$17
     ld a, [hl]
     inc a
-    jp nz, Jump_003_51fd
+    jp nz, CreateChain_B3_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_51fd
+    jp nz, CreateChain_B3_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_51fd
+    jp nz, CreateChain_B3_notEofCluster
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_51fd
+    jp nz, CreateChain_B3_notEofCluster
 
-    jr jr_003_5200
+    jr CreateChain_B3_eofCluster
 
-Jump_003_51fd:
-    jp Jump_003_520c
+CreateChain_B3_notEofCluster::
+    jp CreateChain_B3_cmpNFatent
 
 
-jr_003_5200:
+CreateChain_B3_eofCluster::
     ld hl, sp+$17
     ld e, [hl]
     inc hl
@@ -3908,10 +3908,10 @@ jr_003_5200:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_520c:
+CreateChain_B3_cmpNFatent::
     ld hl, sp+$1d
     ld c, [hl]
     inc hl
@@ -3952,7 +3952,7 @@ Jump_003_520c:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_5249
+    jp nc, CreateChain_B3_stretchOk
 
     ld hl, sp+$17
     ld e, [hl]
@@ -3962,10 +3962,10 @@ Jump_003_520c:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_5249:
+CreateChain_B3_stretchOk::
     ld hl, sp+$1f
     ld d, h
     ld e, l
@@ -3982,7 +3982,7 @@ Jump_003_5249:
     ld a, [de]
     ld [hl], a
 
-Jump_003_525a:
+CreateChain_B3_copyScanState::
     ld hl, sp+$0f
     ld d, h
     ld e, l
@@ -4029,23 +4029,23 @@ Jump_003_525a:
     ld c, l
     ld b, h
 
-Jump_003_5294:
+CreateChain_B3_allocScan::
     ld hl, sp+$13
     inc [hl]
-    jr nz, jr_003_52a3
+    jr nz, CreateChain_B3_allocScanCont
 
     inc hl
     inc [hl]
-    jr nz, jr_003_52a3
+    jr nz, CreateChain_B3_allocScanCont
 
     inc hl
     inc [hl]
-    jr nz, jr_003_52a3
+    jr nz, CreateChain_B3_allocScanCont
 
     inc hl
     inc [hl]
 
-jr_003_52a3:
+CreateChain_B3_allocScanCont::
     ld e, c
     ld d, b
     ld a, [de]
@@ -4078,7 +4078,7 @@ jr_003_52a3:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_003_52e2
+    jp c, CreateChain_B3_scanHitEnd
 
     ld hl, sp+$13
     ld [hl], $02
@@ -4090,14 +4090,14 @@ jr_003_52a3:
     xor a
     ld hl, sp+$08
     or [hl]
-    jp z, Jump_003_52e2
+    jp z, CreateChain_B3_scanHitEnd
 
     ld de, $0000
     ld hl, $0000
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_52e2:
+CreateChain_B3_scanHitEnd::
     push bc
     ld hl, sp+$17
     ld a, [hl+]
@@ -4149,57 +4149,56 @@ Jump_003_52e2:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_5398
+    jp z, CreateChain_B3_putFatLink
 
     ld hl, sp+$17
     ld a, [hl]
     inc a
-    jp nz, Jump_003_533b
+    jp nz, CreateChain_B3_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_533b
+    jp nz, CreateChain_B3_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_533b
+    jp nz, CreateChain_B3_eofCheck
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_535a
+    jp z, CreateChain_B3_eofCheckVal
 
-Jump_003_533b:
+CreateChain_B3_eofCheck::
     ld hl, sp+$17
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_5357
+    jp nz, CreateChain_B3_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5357
+    jp nz, CreateChain_B3_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5357
+    jp nz, CreateChain_B3_eofCheckCont
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_5357
+    jp nz, CreateChain_B3_eofCheckCont
 
-    jr jr_003_535a
+    jr CreateChain_B3_eofCheckVal
 
-Jump_003_5357:
-    jp Jump_003_5366
+CreateChain_B3_eofCheckCont::
+    jp CreateChain_B3_matchScanStart
 
 
-Jump_003_535a:
-jr_003_535a:
+CreateChain_B3_eofCheckVal::
     ld hl, sp+$17
     ld e, [hl]
     inc hl
@@ -4208,47 +4207,47 @@ jr_003_535a:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_5366:
+CreateChain_B3_matchScanStart::
     ld hl, sp+$13
     ld a, [hl]
     ld hl, sp+$0f
     sub [hl]
-    jp nz, Jump_003_538c
+    jp nz, CreateChain_B3_scanContinue
 
     ld hl, sp+$14
     ld a, [hl]
     ld hl, sp+$10
     sub [hl]
-    jp nz, Jump_003_538c
+    jp nz, CreateChain_B3_scanContinue
 
     ld hl, sp+$15
     ld a, [hl]
     ld hl, sp+$11
     sub [hl]
-    jp nz, Jump_003_538c
+    jp nz, CreateChain_B3_scanContinue
 
     ld hl, sp+$16
     ld a, [hl]
     ld hl, sp+$12
     sub [hl]
-    jp nz, Jump_003_538c
+    jp nz, CreateChain_B3_scanContinue
 
-    jr jr_003_538f
+    jr CreateChain_B3_noFreeRet0
 
-Jump_003_538c:
-    jp Jump_003_5294
+CreateChain_B3_scanContinue::
+    jp CreateChain_B3_allocScan
 
 
-jr_003_538f:
+CreateChain_B3_noFreeRet0::
     ld de, $0000
     ld hl, $0000
-    jp Jump_003_54cc
+    jp CreateChain_B3_epilogue
 
 
-Jump_003_5398:
+CreateChain_B3_putFatLink::
     ld hl, $0fff
     push hl
     ld hl, $ffff
@@ -4273,7 +4272,7 @@ Jump_003_5398:
     ld c, e
     xor a
     or c
-    jp nz, Jump_003_53ed
+    jp nz, CreateChain_B3_updateFreeClst
 
     ld hl, sp+$1f
     ld a, [hl+]
@@ -4282,7 +4281,7 @@ Jump_003_5398:
     or [hl]
     inc hl
     or [hl]
-    jp z, Jump_003_53ed
+    jp z, CreateChain_B3_updateFreeClst
 
     ld hl, sp+$15
     ld a, [hl+]
@@ -4314,10 +4313,10 @@ Jump_003_5398:
     ld b, e
     ld c, b
 
-Jump_003_53ed:
+CreateChain_B3_updateFreeClst::
     xor a
     or c
-    jp nz, Jump_003_548e
+    jp nz, CreateChain_B3_putFatFail
 
     ld hl, sp+$09
     ld e, [hl]
@@ -4369,24 +4368,24 @@ Jump_003_53ed:
     ld hl, sp+$00
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5442
+    jp nz, CreateChain_B3_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5442
+    jp nz, CreateChain_B3_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Jump_003_5442
+    jp nz, CreateChain_B3_linkAndDirty
 
     inc hl
     ld a, [hl]
     inc a
-    jp z, Jump_003_54c3
+    jp z, CreateChain_B3_newChainOnly
 
-Jump_003_5442:
+CreateChain_B3_linkAndDirty::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -4450,21 +4449,21 @@ Jump_003_5442:
     inc hl
     ld d, [hl]
     ld [de], a
-    jp Jump_003_54c3
+    jp CreateChain_B3_newChainOnly
 
 
-Jump_003_548e:
+CreateChain_B3_putFatFail::
     ld a, c
     sub $01
-    jp nz, Jump_003_5496
+    jp nz, CreateChain_B3_putFatFailCont
 
-    jr jr_003_5499
+    jr CreateChain_B3_diskErrorRet
 
-Jump_003_5496:
-    jp Jump_003_54a9
+CreateChain_B3_putFatFailCont::
+    jp CreateChain_B3_setFrNoFilesystem
 
 
-jr_003_5499:
+CreateChain_B3_diskErrorRet::
     ld hl, sp+$00
     ld [hl], $ff
     inc hl
@@ -4473,10 +4472,10 @@ jr_003_5499:
     ld [hl], $ff
     inc hl
     ld [hl], $ff
-    jp Jump_003_54b2
+    jp CreateChain_B3_storeResult
 
 
-Jump_003_54a9:
+CreateChain_B3_setFrNoFilesystem::
     ld hl, sp+$00
     ld [hl], $01
     xor a
@@ -4485,7 +4484,7 @@ Jump_003_54a9:
     ld [hl+], a
     ld [hl], a
 
-Jump_003_54b2:
+CreateChain_B3_storeResult::
     ld hl, sp+$00
     ld d, h
     ld e, l
@@ -4502,7 +4501,7 @@ Jump_003_54b2:
     ld a, [de]
     ld [hl], a
 
-Jump_003_54c3:
+CreateChain_B3_newChainOnly::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -4512,7 +4511,7 @@ Jump_003_54c3:
     ld h, [hl]
     ld l, a
 
-Jump_003_54cc:
+CreateChain_B3_epilogue::
     add sp, $1b
     ret
 
@@ -9203,35 +9202,34 @@ CreateName_B3::
     inc hl
     ld b, [hl]
 
-Jump_003_6a45:
+CreateName_B3_skipLeadSep::
     ld a, [bc]
     ld hl, sp+$08
     ld [hl], a
     sub $2f
-    jp z, Jump_003_6a5b
+    jp z, CreateName_B3_skipLeadSepInc
 
     ld hl, sp+$08
     ld a, [hl]
     sub $5c
-    jp nz, Jump_003_6a58
+    jp nz, CreateName_B3_skipLeadSepElse
 
-    jr jr_003_6a5b
+    jr CreateName_B3_skipLeadSepInc
 
-Jump_003_6a58:
-    jp Jump_003_6a64
+CreateName_B3_skipLeadSepElse::
+    jp CreateName_B3_startSegment
 
 
-Jump_003_6a5b:
-jr_003_6a5b:
+CreateName_B3_skipLeadSepInc::
     inc bc
     ld hl, sp+$0b
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_003_6a45
+    jp CreateName_B3_skipLeadSep
 
 
-Jump_003_6a64:
+CreateName_B3_startSegment::
     ld hl, sp+$0b
     ld [hl], c
     inc hl
@@ -9274,7 +9272,7 @@ Jump_003_6a64:
     inc hl
     ld [hl], $00
 
-Jump_003_6a9b:
+CreateName_B3_lfnCharLoop::
     ld hl, sp+$04
     ld c, [hl]
     inc hl
@@ -9314,43 +9312,43 @@ jr_003_6aa6:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6b6d
+    jp c, CreateName_B3_endSegment
 
     dec hl
     ld a, [hl]
     sub $2f
-    jp nz, Jump_003_6ad7
+    jp nz, CreateName_B3_checkBackslashSep
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_003_6b6d
+    jp z, CreateName_B3_endSegment
 
-Jump_003_6ad7:
+CreateName_B3_checkBackslashSep::
     ld hl, sp+$17
     ld a, [hl]
     sub $5c
-    jp nz, Jump_003_6ae5
+    jp nz, CreateName_B3_notTerminator
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_003_6b6d
+    jp z, CreateName_B3_endSegment
 
-Jump_003_6ae5:
+CreateName_B3_notTerminator::
     ld hl, sp+$02
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_003_6af6
+    jp c, CreateName_B3_mapCp437
 
     ld e, $06
     jp Jump_003_709f
 
 
-Jump_003_6af6:
+CreateName_B3_mapCp437::
     ld hl, sp+$18
     ld [hl], $00
     ld hl, $0001
@@ -9371,20 +9369,20 @@ Jump_003_6af6:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_6b1b
+    jp nz, CreateName_B3_checkIllegalAscii
 
     ld e, $06
     jp Jump_003_709f
 
 
-Jump_003_6b1b:
+CreateName_B3_checkIllegalAscii::
     ld hl, sp+$17
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_6b41
+    jp nc, CreateName_B3_storeWcharLfn
 
     dec hl
     ld a, [hl+]
@@ -9399,13 +9397,13 @@ Jump_003_6b1b:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_003_6b41
+    jp z, CreateName_B3_storeWcharLfn
 
     ld e, $06
     jp Jump_003_709f
 
 
-Jump_003_6b41:
+CreateName_B3_storeWcharLfn::
     ld hl, sp+$02
     ld c, [hl]
     inc hl
@@ -9442,10 +9440,10 @@ jr_003_6b4c:
     inc hl
     ld a, [hl]
     ld [de], a
-    jp Jump_003_6a9b
+    jp CreateName_B3_lfnCharLoop
 
 
-Jump_003_6b6d:
+CreateName_B3_endSegment::
     ld hl, sp+$0b
     ld e, [hl]
     inc hl
@@ -9472,32 +9470,32 @@ Jump_003_6b6d:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_6b95
+    jp nc, CreateName_B3_nsflagNotLast
 
     ld c, $04
-    jp Jump_003_6b97
+    jp CreateName_B3_storeNsflag
 
 
-Jump_003_6b95:
+CreateName_B3_nsflagNotLast::
     ld c, $00
 
-Jump_003_6b97:
+CreateName_B3_storeNsflag::
     ld hl, sp+$19
     ld [hl], c
     ld hl, sp+$0d
     ld a, [hl]
     sub $01
-    jp nz, Jump_003_6baa
+    jp nz, CreateName_B3_notLen1Dot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6baa
+    jp nz, CreateName_B3_notLen1Dot
 
     jr jr_003_6bad
 
-Jump_003_6baa:
-    jp Jump_003_6bd0
+CreateName_B3_notLen1Dot::
+    jp CreateName_B3_checkDotDot
 
 
 jr_003_6bad:
@@ -9524,26 +9522,26 @@ jr_003_6bad:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_003_6bd0
+    jp nz, CreateName_B3_checkDotDot
 
     or b
-    jp z, Jump_003_6c34
+    jp z, CreateName_B3_dotEntry
 
-Jump_003_6bd0:
+CreateName_B3_checkDotDot::
     ld hl, sp+$0d
     ld a, [hl]
     sub $02
-    jp nz, Jump_003_6be0
+    jp nz, CreateName_B3_notLen2DotDot
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6be0
+    jp nz, CreateName_B3_notLen2DotDot
 
     jr jr_003_6be3
 
-Jump_003_6be0:
-    jp Jump_003_6cc7
+CreateName_B3_notLen2DotDot::
+    jp CreateName_B3_normalPath
 
 
 jr_003_6be3:
@@ -9570,15 +9568,15 @@ jr_003_6be3:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_003_6c08
+    jp nz, CreateName_B3_dotDotMismatch
 
     or b
-    jp nz, Jump_003_6c08
+    jp nz, CreateName_B3_dotDotMismatch
 
     jr jr_003_6c0b
 
-Jump_003_6c08:
-    jp Jump_003_6cc7
+CreateName_B3_dotDotMismatch::
+    jp CreateName_B3_normalPath
 
 
 jr_003_6c0b:
@@ -9606,19 +9604,18 @@ jr_003_6c0b:
     ld b, a
     ld a, c
     sub $2e
-    jp nz, Jump_003_6c31
+    jp nz, CreateName_B3_notDotDot
 
     or b
-    jp nz, Jump_003_6c31
+    jp nz, CreateName_B3_notDotDot
 
-    jr jr_003_6c34
+    jr CreateName_B3_dotEntry
 
-Jump_003_6c31:
-    jp Jump_003_6cc7
+CreateName_B3_notDotDot::
+    jp CreateName_B3_normalPath
 
 
-Jump_003_6c34:
-jr_003_6c34:
+CreateName_B3_dotEntry::
     ld hl, sp+$0d
     ld c, [hl]
     inc hl
@@ -9655,14 +9652,14 @@ jr_003_6c34:
     inc hl
     ld [hl], $00
 
-Jump_003_6c64:
+CreateName_B3_sfnPadLoop::
     ld hl, sp+$13
     ld a, [hl]
     sub $0b
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_003_6caa
+    jp nc, CreateName_B3_dotEntryDone
 
     ld hl, sp+$00
     ld e, [hl]
@@ -9690,18 +9687,18 @@ Jump_003_6c64:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_003_6c98
+    jp nc, CreateName_B3_sfnPadSpace
 
     ld hl, sp+$02
     ld [hl], $2e
-    jp Jump_003_6c9c
+    jp CreateName_B3_sfnPadStore
 
 
-Jump_003_6c98:
+CreateName_B3_sfnPadSpace::
     ld hl, sp+$02
     ld [hl], $20
 
-Jump_003_6c9c:
+CreateName_B3_sfnPadStore::
     ld hl, sp+$02
     ld a, [hl]
     ld [bc], a
@@ -9713,10 +9710,10 @@ Jump_003_6c9c:
     inc [hl]
 
 jr_003_6ca7:
-    jp Jump_003_6c64
+    jp CreateName_B3_sfnPadLoop
 
 
-Jump_003_6caa:
+CreateName_B3_dotEntryDone::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -9741,7 +9738,7 @@ Jump_003_6caa:
     jp Jump_003_709f
 
 
-Jump_003_6cc7:
+CreateName_B3_normalPath::
     ld hl, sp+$0d
     ld a, [hl+]
     ld e, [hl]
@@ -9749,11 +9746,11 @@ Jump_003_6cc7:
     ld [hl+], a
     ld [hl], e
 
-Jump_003_6ccf:
+CreateName_B3_stripTrailing::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp z, Jump_003_6d27
+    jp z, CreateName_B3_afterStripTrail
 
     dec hl
     ld c, [hl]
@@ -9783,32 +9780,31 @@ Jump_003_6ccf:
     dec hl
     ld a, [hl]
     sub $20
-    jp nz, Jump_003_6d00
+    jp nz, CreateName_B3_stripTrailNotSpace
 
     inc hl
     ld a, [hl]
     or a
-    jp z, Jump_003_6d13
+    jp z, CreateName_B3_stripTrailDec
 
-Jump_003_6d00:
+CreateName_B3_stripTrailNotSpace::
     ld hl, sp+$17
     ld a, [hl]
     sub $2e
-    jp nz, Jump_003_6d10
+    jp nz, CreateName_B3_stripTrailBreak
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_003_6d10
+    jp nz, CreateName_B3_stripTrailBreak
 
-    jr jr_003_6d13
+    jr CreateName_B3_stripTrailDec
 
-Jump_003_6d10:
-    jp Jump_003_6d27
+CreateName_B3_stripTrailBreak::
+    jp CreateName_B3_afterStripTrail
 
 
-Jump_003_6d13:
-jr_003_6d13:
+CreateName_B3_stripTrailDec::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -9824,10 +9820,10 @@ jr_003_6d13:
     ld hl, sp+$0d
     ld [hl+], a
     ld [hl], e
-    jp Jump_003_6ccf
+    jp CreateName_B3_stripTrailing
 
 
-Jump_003_6d27:
+CreateName_B3_afterStripTrail::
     ld hl, sp+$00
     ld a, [hl+]
     ld e, [hl]
@@ -9837,13 +9833,13 @@ Jump_003_6d27:
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_003_6d3b
+    jp nz, CreateName_B3_nulTermClearSfn
 
     ld e, $06
     jp Jump_003_709f
 
 
-Jump_003_6d3b:
+CreateName_B3_nulTermClearSfn::
     ld hl, sp+$00
     ld c, [hl]
     inc hl

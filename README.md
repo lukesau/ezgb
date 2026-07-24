@@ -34,6 +34,7 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 │   ├── map-interior.sh        # interior Jump_/jr_ naming loop (kernel.sym + regen)
 │   ├── label-packet.py        # body/callers/WRAM packet for top worklist target
 │   ├── interior-packet.py     # unnamed interior labels + --apply batch sym writes
+│   ├── propagate-interior-clones.py  # clone interior labels across FatFs bank twins
 │   ├── propose-labels.py      # mechanical IRQ/farcall/FPGA/clone proposals
 │   ├── regen-disasm.sh        # mgbdis → annotate → make → progress
 │   ├── setup-sameboy.sh
