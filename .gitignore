@@ -23,6 +23,12 @@ re/*/disassembly/game.sym
 # Debugger auto-trace output
 scripts/debug/*.log
 
+# SameBoy run artifacts (battery save, screenshot, debug log) — regenerated
+# locally, not source; the debug log also embeds your local filesystem path.
+re/*/kernel.sav
+re/*/kernel.bmp
+re/*/kernel.log
+
 # Ephemeral propose-labels / packet output
 re/*/label-proposals.txt
 
