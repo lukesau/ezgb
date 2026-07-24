@@ -3,6 +3,8 @@
 ; See docs/fram-save-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 
+00:0024 .padding:4
+00:0376 InvalidFarCallTrap
 00:0150 KernelEntry
 00:01df HaltLoop
 00:0600 SetGfxMode
@@ -76,6 +78,7 @@
 00:1a9a RtcReadPage
 00:1e1a MapCp437
 00:1ed5 Cp437UnicodeTable
+00:1ed5 .data:100:2
 00:1fd5 WToUpper
 00:20bb RleUnpack
 00:20e2 ApplyBasename
@@ -116,6 +119,12 @@
 00:2917 S16DivMod
 00:2949 U16DivZext8
 00:294c U16DivMod
+00:2957 U16DivMod_setup
+00:295f U16DivMod_shiftLoop
+00:2975 U16DivMod_restoreBorrow
+00:2977 U16DivMod_checkBit
+00:2980 U16DivMod_lastBit
+00:2985 U16DivMod_finish
 00:298f U32Shr
 00:29ac S32Sar
 00:29c9 U32Shl
@@ -146,8 +155,11 @@
 00:2ee2 MemRol
 00:2eea EnterGfxMode1
 00:2fbb GfxRowTable
+00:2fbb .data:120:2
 00:30db VramCopy
 00:30ea VramCopyStack
+00:3104 DefaultFontData
+00:3104 .data:912:2
 00:3a16 ReadJoypadRaw
 00:3a43 WaitJoypadMask
 00:3a4f WaitJoypadMaskArg
@@ -161,6 +173,8 @@
 00:3b6f UploadFontTiles
 00:3bb7 SelectFont
 00:3bc4 PrintChar
+00:3bd5 PrintChar_skipNewline
+00:3bd6 PrintChar_putChar
 00:3bed PutBgTile
 00:3c3f RegisterFontArg
 00:3c4d SelectFontArg

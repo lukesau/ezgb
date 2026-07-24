@@ -30,7 +30,7 @@ RST_08::
 RST_10::
     add b
     ld b, b
-    jr nz, jr_000_0024
+    jr nz, @+$12
 
     ld [$0204], sp
     db $01
@@ -47,11 +47,8 @@ RST_20::
     rst RST_38
     rst RST_38
 
-jr_000_0024:
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+    ; padding
+    ds $4, $ff
 
 RST_28::
     rst RST_38
@@ -831,7 +828,13 @@ HaltLoop::
     rst RST_38
     rst RST_38
 
-Call_000_0376:
+; [ezgb]
+; InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call
+; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline — fires only if
+; the trampoline signals failure. Followed by ~82 more rst $38 bytes (alignment filler
+; reusing the same opcode, not separately reachable).
+
+InvalidFarCallTrap::
     rst RST_38
     rst RST_38
     rst RST_38
@@ -5486,7 +5489,7 @@ FarCall_03_76cc::
     ld l, a
     push hl
     call FarCallTrampoline
-    call z, Call_000_0376
+    call z, InvalidFarCallTrap
     nop
     add sp, $06
     ret
@@ -6597,251 +6600,135 @@ MapCp437_retDe::
     ret
 
 
-; [ezgb]
-; Cp437UnicodeTable: 128 LE uint16s, CP437 $80+$i -> Unicode. Perfect match to
-; IBM code page 437 (e.g. $80->U+00C7, $B0->U+2591, $FF->U+00A0).
-
 Cp437UnicodeTable::
-    rst RST_00
-    nop
-    db $fc
-    nop
-    jp hl
-
-
-    nop
-    ldh [c], a
-    nop
-    db $e4
-    nop
-    ldh [rP1], a
-    push hl
-    nop
-    rst RST_20
-    nop
-    ld [$eb00], a
-    nop
-    add sp, $00
-    rst RST_28
-    nop
-    xor $00
-    db $ec
-    nop
-    call nz, $c500
-    nop
-    ret
-
-
-    nop
-    and $00
-    add $00
-    db $f4
-    nop
-    or $00
-    ldh a, [c]
-    nop
-    ei
-    nop
-    ld sp, hl
-    nop
-    rst RST_38
-    nop
-    sub $00
-    call c, $a200
-    nop
-    and e
-    nop
-    and l
-    nop
-    and a
-    jr nz, MapCp437_decodeCmp
-
-    ld bc, $00e1
-    db $ed
-    nop
-    di
-    nop
-    ld a, [$f100]
-    nop
-    pop de
-    nop
-    xor d
-    nop
-    cp d
-    nop
-    cp a
-    nop
-    db $10
-    inc hl
-    xor h
-    nop
-    cp l
-    nop
-    cp h
-    nop
-    and c
-    nop
-    xor e
-    nop
-    cp e
-    nop
-    sub c
-    dec h
-    sub d
-    dec h
-    sub e
-    dec h
-    ld [bc], a
-    dec h
-    inc h
-    dec h
-    ld h, c
-    dec h
-    ld h, d
-    dec h
-    ld d, [hl]
-    dec h
-    ld d, l
-    dec h
-    ld h, e
-    dec h
-    ld d, c
-    dec h
-    ld d, a
-    dec h
-    ld e, l
-    dec h
-    ld e, h
-    dec h
-    ld e, e
-    dec h
-    db $10
-    dec h
-    inc d
-    dec h
-    inc [hl]
-    dec h
-    inc l
-    dec h
-    inc e
-    dec h
-    nop
-    dec h
-    inc a
-    dec h
-    ld e, [hl]
-    dec h
-    ld e, a
-    dec h
-    ld e, d
-    dec h
-    ld d, h
-    dec h
-    ld l, c
-    dec h
-    ld h, [hl]
-    dec h
-    ld h, b
-    dec h
-    ld d, b
-    dec h
-    ld l, h
-    dec h
-    ld h, a
-    dec h
-    ld l, b
-    dec h
-    ld h, h
-    dec h
-    ld h, l
-    dec h
-    ld e, c
-    dec h
-    ld e, b
-    dec h
-    ld d, d
-    dec h
-    ld d, e
-
-jr_000_1f82:
-    dec h
-    ld l, e
-    dec h
-    ld l, d
-    dec h
-    jr @+$27
-
-    inc c
-    dec h
-    adc b
-    dec h
-    add h
-    dec h
-    adc h
-    dec h
-    sub b
-    dec h
-    add b
-    dec h
-    or c
-    inc bc
-    rst RST_18
-    nop
-    sub e
-    inc bc
-    ret nz
-
-    inc bc
-    and e
-    inc bc
-    jp $b503
-
-
-    nop
-    call nz, $a603
-    inc bc
-    sbc b
-    inc bc
-    xor c
-    inc bc
-    or h
-    inc bc
-    ld e, $22
-    add $03
-    or l
-    inc bc
-    add hl, hl
-    ld [hl+], a
-    ld h, c
-    ld [hl+], a
-    or c
-    nop
-    ld h, l
-    ld [hl+], a
-    ld h, h
-    ld [hl+], a
-    jr nz, WToUpper_asciiGate
-
-    ld hl, $f723
-    nop
-    ld c, b
-    ld [hl+], a
-    or b
-    nop
-    add hl, de
-    ld [hl+], a
-    or a
-    nop
-    ld a, [de]
-    ld [hl+], a
-    ld a, a
-    jr nz, jr_000_1f82
-
-    nop
-    and b
-    dec h
-    and b
-    nop
+    db $c7, $00
+    db $fc, $00
+    db $e9, $00
+    db $e2, $00
+    db $e4, $00
+    db $e0, $00
+    db $e5, $00
+    db $e7, $00
+    db $ea, $00
+    db $eb, $00
+    db $e8, $00
+    db $ef, $00
+    db $ee, $00
+    db $ec, $00
+    db $c4, $00
+    db $c5, $00
+    db $c9, $00
+    db $e6, $00
+    db $c6, $00
+    db $f4, $00
+    db $f6, $00
+    db $f2, $00
+    db $fb, $00
+    db $f9, $00
+    db $ff, $00
+    db $d6, $00
+    db $dc, $00
+    db $a2, $00
+    db $a3, $00
+    db $a5, $00
+    db $a7, $20
+    db $92, $01
+    db $e1, $00
+    db $ed, $00
+    db $f3, $00
+    db $fa, $00
+    db $f1, $00
+    db $d1, $00
+    db $aa, $00
+    db $ba, $00
+    db $bf, $00
+    db $10, $23
+    db $ac, $00
+    db $bd, $00
+    db $bc, $00
+    db $a1, $00
+    db $ab, $00
+    db $bb, $00
+    db $91, $25
+    db $92, $25
+    db $93, $25
+    db $02, $25
+    db $24, $25
+    db $61, $25
+    db $62, $25
+    db $56, $25
+    db $55, $25
+    db $63, $25
+    db $51, $25
+    db $57, $25
+    db $5d, $25
+    db $5c, $25
+    db $5b, $25
+    db $10, $25
+    db $14, $25
+    db $34, $25
+    db $2c, $25
+    db $1c, $25
+    db $00, $25
+    db $3c, $25
+    db $5e, $25
+    db $5f, $25
+    db $5a, $25
+    db $54, $25
+    db $69, $25
+    db $66, $25
+    db $60, $25
+    db $50, $25
+    db $6c, $25
+    db $67, $25
+    db $68, $25
+    db $64, $25
+    db $65, $25
+    db $59, $25
+    db $58, $25
+    db $52, $25
+    db $53, $25
+    db $6b, $25
+    db $6a, $25
+    db $18, $25
+    db $0c, $25
+    db $88, $25
+    db $84, $25
+    db $8c, $25
+    db $90, $25
+    db $80, $25
+    db $b1, $03
+    db $df, $00
+    db $93, $03
+    db $c0, $03
+    db $a3, $03
+    db $c3, $03
+    db $b5, $00
+    db $c4, $03
+    db $a6, $03
+    db $98, $03
+    db $a9, $03
+    db $b4, $03
+    db $1e, $22
+    db $c6, $03
+    db $b5, $03
+    db $29, $22
+    db $61, $22
+    db $b1, $00
+    db $65, $22
+    db $64, $22
+    db $20, $23
+    db $21, $23
+    db $f7, $00
+    db $48, $22
+    db $b0, $00
+    db $19, $22
+    db $b7, $00
+    db $1a, $22
+    db $7f, $20
+    db $b2, $00
+    db $a0, $25
+    db $a0, $00
 
 ; [ezgb]
 ; WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.
@@ -8959,7 +8846,7 @@ U16DivZext8::
 U16DivMod::
     ld a, e
     or d
-    jr nz, jr_000_2957
+    jr nz, U16DivMod_setup
 
     ld bc, $0000
     ld d, b
@@ -8968,14 +8855,14 @@ U16DivMod::
     ret
 
 
-jr_000_2957:
+U16DivMod_setup::
     ld l, c
     ld h, b
     ld bc, $0000
     or a
     ld a, $10
 
-jr_000_295f:
+U16DivMod_shiftLoop::
     push af
     rl l
     rl h
@@ -8989,32 +8876,32 @@ jr_000_295f:
     sbc d
     ld b, a
     ccf
-    jr c, jr_000_2975
+    jr c, U16DivMod_restoreBorrow
 
     pop bc
-    jr jr_000_2977
+    jr U16DivMod_checkBit
 
-jr_000_2975:
+U16DivMod_restoreBorrow::
     inc sp
     inc sp
 
-jr_000_2977:
-    jr c, jr_000_2980
+U16DivMod_checkBit::
+    jr c, U16DivMod_lastBit
 
     pop af
     dec a
     or a
-    jr nz, jr_000_295f
+    jr nz, U16DivMod_shiftLoop
 
-    jr jr_000_2985
+    jr U16DivMod_finish
 
-jr_000_2980:
+U16DivMod_lastBit::
     pop af
     dec a
     scf
-    jr nz, jr_000_295f
+    jr nz, U16DivMod_shiftLoop
 
-jr_000_2985:
+U16DivMod_finish::
     ld d, b
     ld e, c
     rl l
@@ -10630,271 +10517,151 @@ VramLoadTiles8100Arg::
     ret
 
 
-; [ezgb]
-; GfxRowTable: 144 words, scanline y -> VRAM address for mode-1 framebuffer.
-; Starts at $8100 (tile $10), 20 tiles wide (160px). Used by PlotPixel/GetPixel.
-
 GfxRowTable::
-    nop
-    add c
-    ld [bc], a
-    add c
-    inc b
-    add c
-    ld b, $81
-    ld [$0a81], sp
-    add c
-    inc c
-    add c
-    ld c, $81
-    ld b, b
-    add d
-    ld b, d
-    add d
-    ld b, h
-    add d
-    ld b, [hl]
-    add d
-    ld c, b
-    add d
-    ld c, d
-    add d
-    ld c, h
-    add d
-    ld c, [hl]
-    add d
-    add b
-    add e
-    add d
-    add e
-    add h
-    add e
-    add [hl]
-    add e
-    adc b
-    add e
-    adc d
-    add e
-    adc h
-    add e
-    adc [hl]
-    add e
-    ret nz
-
-    add h
-    jp nz, $c484
-
-    add h
-    add $84
-    ret z
-
-    add h
-    jp z, $cc84
-
-    add h
-    adc $84
-    nop
-    add [hl]
-    ld [bc], a
-    add [hl]
-    inc b
-    add [hl]
-    ld b, $86
-    ld [$0a86], sp
-    add [hl]
-    inc c
-    add [hl]
-    ld c, $86
-    ld b, b
-    add a
-    ld b, d
-    add a
-    ld b, h
-    add a
-    ld b, [hl]
-    add a
-    ld c, b
-    add a
-    ld c, d
-    add a
-    ld c, h
-    add a
-    ld c, [hl]
-    add a
-    add b
-    adc b
-    add d
-    adc b
-    add h
-    adc b
-    add [hl]
-    adc b
-    adc b
-    adc b
-    adc d
-    adc b
-    adc h
-    adc b
-    adc [hl]
-    adc b
-    ret nz
-
-    adc c
-    jp nz, $c489
-
-    adc c
-    add $89
-    ret z
-
-    adc c
-    jp z, $cc89
-
-    adc c
-    adc $89
-    nop
-    adc e
-    ld [bc], a
-    adc e
-    inc b
-    adc e
-    ld b, $8b
-    ld [DirList_skipDot], sp
-    adc e
-    inc c
-    adc e
-    ld c, $8b
-    ld b, b
-    adc h
-    ld b, d
-    adc h
-    ld b, h
-    adc h
-    ld b, [hl]
-    adc h
-    ld c, b
-    adc h
-    ld c, d
-    adc h
-    ld c, h
-    adc h
-    ld c, [hl]
-    adc h
-    add b
-    adc l
-    add d
-    adc l
-    add h
-    adc l
-    add [hl]
-    adc l
-    adc b
-    adc l
-    adc d
-    adc l
-    adc h
-    adc l
-    adc [hl]
-    adc l
-    ret nz
-
-    adc [hl]
-    jp nz, $c48e
-
-    adc [hl]
-    add $8e
-    ret z
-
-    adc [hl]
-    jp z, $cc8e
-
-    adc [hl]
-    adc $8e
-    nop
-    sub b
-    ld [bc], a
-    sub b
-    inc b
-    sub b
-    ld b, $90
-    ld [$0a90], sp
-    sub b
-    inc c
-    sub b
-    ld c, $90
-    ld b, b
-    sub c
-    ld b, d
-    sub c
-    ld b, h
-    sub c
-    ld b, [hl]
-    sub c
-    ld c, b
-    sub c
-    ld c, d
-    sub c
-    ld c, h
-    sub c
-    ld c, [hl]
-    sub c
-    add b
-    sub d
-    add d
-    sub d
-    add h
-    sub d
-    add [hl]
-    sub d
-    adc b
-    sub d
-    adc d
-    sub d
-    adc h
-    sub d
-    adc [hl]
-    sub d
-    ret nz
-
-    sub e
-    jp nz, $c493
-
-    sub e
-    add $93
-    ret z
-
-    sub e
-    jp z, $cc93
-
-    sub e
-    adc $93
-    nop
-    sub l
-    ld [bc], a
-    sub l
-    inc b
-    sub l
-    ld b, $95
-    ld [$0a95], sp
-    sub l
-    inc c
-    sub l
-    ld c, $95
-    ld b, b
-    sub [hl]
-    ld b, d
-    sub [hl]
-    ld b, h
-    sub [hl]
-    ld b, [hl]
-    sub [hl]
-    ld c, b
-    sub [hl]
-    ld c, d
-    sub [hl]
-    ld c, h
-    sub [hl]
-    ld c, [hl]
-    sub [hl]
+    db $00, $81
+    db $02, $81
+    db $04, $81
+    db $06, $81
+    db $08, $81
+    db $0a, $81
+    db $0c, $81
+    db $0e, $81
+    db $40, $82
+    db $42, $82
+    db $44, $82
+    db $46, $82
+    db $48, $82
+    db $4a, $82
+    db $4c, $82
+    db $4e, $82
+    db $80, $83
+    db $82, $83
+    db $84, $83
+    db $86, $83
+    db $88, $83
+    db $8a, $83
+    db $8c, $83
+    db $8e, $83
+    db $c0, $84
+    db $c2, $84
+    db $c4, $84
+    db $c6, $84
+    db $c8, $84
+    db $ca, $84
+    db $cc, $84
+    db $ce, $84
+    db $00, $86
+    db $02, $86
+    db $04, $86
+    db $06, $86
+    db $08, $86
+    db $0a, $86
+    db $0c, $86
+    db $0e, $86
+    db $40, $87
+    db $42, $87
+    db $44, $87
+    db $46, $87
+    db $48, $87
+    db $4a, $87
+    db $4c, $87
+    db $4e, $87
+    db $80, $88
+    db $82, $88
+    db $84, $88
+    db $86, $88
+    db $88, $88
+    db $8a, $88
+    db $8c, $88
+    db $8e, $88
+    db $c0, $89
+    db $c2, $89
+    db $c4, $89
+    db $c6, $89
+    db $c8, $89
+    db $ca, $89
+    db $cc, $89
+    db $ce, $89
+    db $00, $8b
+    db $02, $8b
+    db $04, $8b
+    db $06, $8b
+    db $08, $8b
+    db $0a, $8b
+    db $0c, $8b
+    db $0e, $8b
+    db $40, $8c
+    db $42, $8c
+    db $44, $8c
+    db $46, $8c
+    db $48, $8c
+    db $4a, $8c
+    db $4c, $8c
+    db $4e, $8c
+    db $80, $8d
+    db $82, $8d
+    db $84, $8d
+    db $86, $8d
+    db $88, $8d
+    db $8a, $8d
+    db $8c, $8d
+    db $8e, $8d
+    db $c0, $8e
+    db $c2, $8e
+    db $c4, $8e
+    db $c6, $8e
+    db $c8, $8e
+    db $ca, $8e
+    db $cc, $8e
+    db $ce, $8e
+    db $00, $90
+    db $02, $90
+    db $04, $90
+    db $06, $90
+    db $08, $90
+    db $0a, $90
+    db $0c, $90
+    db $0e, $90
+    db $40, $91
+    db $42, $91
+    db $44, $91
+    db $46, $91
+    db $48, $91
+    db $4a, $91
+    db $4c, $91
+    db $4e, $91
+    db $80, $92
+    db $82, $92
+    db $84, $92
+    db $86, $92
+    db $88, $92
+    db $8a, $92
+    db $8c, $92
+    db $8e, $92
+    db $c0, $93
+    db $c2, $93
+    db $c4, $93
+    db $c6, $93
+    db $c8, $93
+    db $ca, $93
+    db $cc, $93
+    db $ce, $93
+    db $00, $95
+    db $02, $95
+    db $04, $95
+    db $06, $95
+    db $08, $95
+    db $0a, $95
+    db $0c, $95
+    db $0e, $95
+    db $40, $96
+    db $42, $96
+    db $44, $96
+    db $46, $96
+    db $48, $96
+    db $4a, $96
+    db $4c, $96
+    db $4e, $96
 
 ; [ezgb]
 ; VramCopy: copy DE bytes BC→HL waiting for STAT mode≠2 (VRAM-safe).
@@ -10935,2372 +10702,1173 @@ VramCopyStack::
     ret
 
 
-    ld hl, $3104
+    ld hl, DefaultFontData
     call RegisterFont
     ret
 
 
-    inc b
-    rst RST_38
-    nop
-    ld bc, $0302
-    inc b
-    dec b
-    ld b, $07
-    ld [$0a09], sp
-    dec bc
-    inc c
-    dec c
-    ld c, $0f
-    db $10
-    ld de, $1312
-    inc d
-    dec d
-    ld d, $17
-    jr jr_000_3139
-
-    ld a, [de]
-    dec de
-    inc e
-    dec e
-    ld e, $1f
-    jr nz, jr_000_3149
-
-    ld [hl+], a
-    inc hl
-    inc h
-    dec h
-    ld h, $27
-    jr z, jr_000_3159
-
-    ld a, [hl+]
-    dec hl
-    inc l
-    dec l
-    ld l, $2f
-    jr nc, jr_000_3169
-
-    ld [hl-], a
-
-jr_000_3139:
-    inc sp
-    inc [hl]
-    dec [hl]
-    ld [hl], $37
-    jr c, jr_000_3179
-
-    ld a, [hl-]
-    dec sp
-    inc a
-    dec a
-    ld a, $3f
-    ld b, b
-    ld b, c
-    ld b, d
-
-jr_000_3149:
-    ld b, e
-    ld b, h
-    ld b, l
-    ld b, [hl]
-    ld b, a
-    ld c, b
-    ld c, c
-    ld c, d
-    ld c, e
-    ld c, h
-    ld c, l
-    ld c, [hl]
-    ld c, a
-    ld d, b
-    ld d, c
-    ld d, d
-
-jr_000_3159:
-    ld d, e
-    ld d, h
-    ld d, l
-    ld d, [hl]
-    ld d, a
-    ld e, b
-    ld e, c
-    ld e, d
-    ld e, e
-    ld e, h
-    ld e, l
-    ld e, [hl]
-    ld e, a
-    ld h, b
-    ld h, c
-    ld h, d
-
-jr_000_3169:
-    ld h, e
-    ld h, h
-    ld h, l
-    ld h, [hl]
-    ld h, a
-    ld l, b
-    ld l, c
-    ld l, d
-    ld l, e
-    ld l, h
-    ld l, l
-    ld l, [hl]
-    ld l, a
-    ld [hl], b
-    ld [hl], c
-    ld [hl], d
-
-jr_000_3179:
-    ld [hl], e
-    ld [hl], h
-    ld [hl], l
-    halt
-    ld [hl], a
-    ld a, b
-    ld a, c
-    ld a, d
-    ld a, e
-    ld a, h
-    ld a, l
-    ld a, [hl]
-    ld a, a
-    add b
-    add c
-    add d
-    add e
-    add h
-    add l
-    add [hl]
-    add a
-    adc b
-    adc c
-    adc d
-    adc e
-    adc h
-    adc l
-    adc [hl]
-    adc a
-    sub b
-    sub c
-    sub d
-    sub e
-    sub h
-    sub l
-    sub [hl]
-    sub a
-    sbc b
-    sbc c
-    sbc d
-    sbc e
-    sbc h
-    sbc l
-    sbc [hl]
-    sbc a
-    and b
-    and c
-    and d
-    and e
-    and h
-    and l
-    and [hl]
-    and a
-    xor b
-    xor c
-    xor d
-    xor e
-    xor h
-    xor l
-    xor [hl]
-    xor a
-    or b
-    or c
-    or d
-    or e
-    or h
-    or l
-    or [hl]
-    or a
-    cp b
-    cp c
-    cp d
-    cp e
-    cp h
-    cp l
-    cp [hl]
-    cp a
-    ret nz
-
-    pop bc
-    jp nz, $c4c3
-
-    push bc
-    add $c7
-    ret z
-
-    ret
-
-
-    jp z, $cccb
-
-    call $cfce
-    ret nc
-
-    pop de
-    jp nc, $d4d3
-
-    push de
-    sub $d7
-    ret c
-
-    reti
-
-
-    jp c, $dcdb
-
-    db $dd
-    sbc $df
-    ldh [$ffe1], a
-    ldh [c], a
-    db $e3
-    db $e4
-    push hl
-    and $e7
-    add sp, -$17
-    ld [$eceb], a
-    db $ed
-    xor $ef
-    ldh a, [$fff1]
-    ldh a, [c]
-    di
-    db $f4
-    push af
-    or $f7
-    ld hl, sp-$07
-    ld a, [$fcfb]
-    db $fd
-    cp $ff
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr jr_000_3234
-
-    ld b, d
-    add c
-    rst RST_20
-    inc h
-    inc h
-    inc a
-    inc a
-    inc h
-    inc h
-    rst RST_20
-    add c
-    ld b, d
-    inc h
-    jr @+$1a
-
-    inc d
-    ldh a, [c]
-    add c
-    add c
-    ldh a, [c]
-    inc d
-    jr jr_000_323f
-
-    jr z, jr_000_3278
-
-    add c
-    add c
-    ld c, a
-    jr z, jr_000_3246
-
-    rst RST_38
-    add c
-    add c
-    add c
-    add c
-    add c
-
-jr_000_3234:
-    add c
-    rst RST_38
-    ld hl, sp-$78
-    adc a
-    adc c
-    ld sp, hl
-    ld b, c
-    ld b, c
-    ld a, a
-    rst RST_38
-
-jr_000_323f:
-    adc c
-    adc c
-    adc c
-    ld sp, hl
-    add c
-    add c
-    rst RST_38
-
-jr_000_3246:
-    ld bc, $0603
-    adc h
-    ret c
-
-    ld [hl], b
-    jr nz, jr_000_324e
-
-jr_000_324e:
-    ld a, [hl]
-    jp $d3d3
-
-
-    db $db
-    jp $7ec3
-
-
-    jr jr_000_3294
-
-    inc l
-    inc l
-    ld a, [hl]
-    jr jr_000_3275
-
-    nop
-    db $10
-    inc e
-    ld [de], a
-    db $10
-    db $10
-    ld [hl], b
-    ldh a, [$ff60]
-    ldh a, [$ffc0]
-    cp $d8
-    sbc $18
-    jr jr_000_326e
-
-jr_000_326e:
-    ld [hl], b
-    ret z
-
-    sbc $db
-    db $db
-    ld a, [hl]
-    dec de
-
-jr_000_3275:
-    dec de
-    nop
-    nop
-
-jr_000_3278:
-    nop
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    nop
-    nop
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    ld a, h
-    add $c6
-    nop
-    add $c6
-    ld a, h
-    nop
-    ld b, $06
-    ld b, $00
-    ld b, $06
-
-jr_000_3294:
-    ld b, $00
-    ld a, h
-    ld b, $06
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    nop
-    ld a, h
-    ld b, $06
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    add $c6
-    add $7c
-    ld b, $06
-    ld b, $00
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    add $c6
-    ld a, h
-    nop
-    ld a, h
-    ld b, $06
-    nop
-    ld b, $06
-    ld b, $00
-    ld a, h
-    add $c6
-    ld a, h
-    add $c6
-    ld a, h
-    nop
-    ld a, h
-    add $c6
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld b, $7e
-    ld h, [hl]
-    inc a
-    nop
-    ld a, b
-    ld h, [hl]
-    ld a, l
-    ld h, h
-    ld a, [hl]
-    inc bc
-    dec bc
-    ld b, $00
-    nop
-    nop
-    rra
-    rra
-    rra
-    inc e
-    inc e
-    nop
-    nop
-    nop
-    db $fc
-    db $fc
-    db $fc
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    rra
-    rra
-    rra
-    nop
-    nop
-    inc e
-    inc e
-    inc e
-    db $fc
-    db $fc
-    db $fc
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr @+$1a
-
-    jr jr_000_332a
-
-    jr jr_000_3314
-
-jr_000_3314:
-    jr jr_000_3316
-
-jr_000_3316:
-    ld h, [hl]
-    ld h, [hl]
-    ld b, h
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    inc h
-    ld a, [hl]
-    inc h
-    inc h
-    ld a, [hl]
-    inc h
-    nop
-    inc d
-    ld a, $55
-    inc a
-
-jr_000_332a:
-    ld e, $55
-    ld a, $14
-    ld h, d
-    ld h, [hl]
-    inc c
-    jr @+$32
-
-    ld h, [hl]
-    ld b, [hl]
-    nop
-    ld a, b
-    call z, $ce61
-    call z, $78cc
-    nop
-    jr jr_000_3358
-
-    stop
-    nop
-    nop
-    nop
-    nop
-    inc b
-    ld [$1818], sp
-    jr jr_000_3364
-
-    ld [$2004], sp
-    db $10
-    jr jr_000_336a
-
-    jr @+$1a
-
-    db $10
-    jr nz, jr_000_3357
-
-jr_000_3357:
-    ld d, h
-
-jr_000_3358:
-    jr c, jr_000_3358
-
-    jr c, jr_000_33b0
-
-    nop
-    nop
-    nop
-    jr jr_000_3379
-
-    ld a, [hl]
-    jr @+$1a
-
-jr_000_3364:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_336a:
-    nop
-    jr nc, jr_000_339d
-
-    jr nz, jr_000_336f
-
-jr_000_336f:
-    nop
-    nop
-    inc a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_3379:
-    nop
-    nop
-    jr @+$1a
-
-    nop
-    inc bc
-    ld b, $0c
-    jr jr_000_33b3
-
-    ld h, b
-    ret nz
-
-    nop
-    inc a
-    ld h, [hl]
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr jr_000_33c8
-
-    jr jr_000_33aa
-
-    jr jr_000_33ac
-
-    jr jr_000_3396
-
-jr_000_3396:
-    inc a
-    ld h, [hl]
-    ld c, $1c
-    jr c, jr_000_340c
-
-    ld a, [hl]
-
-jr_000_339d:
-    nop
-    ld a, [hl]
-    inc c
-    jr jr_000_33de
-
-    ld b, $46
-    inc a
-    nop
-    inc c
-    inc e
-    inc l
-    ld c, h
-
-jr_000_33aa:
-    ld a, [hl]
-    inc c
-
-jr_000_33ac:
-    inc c
-    nop
-    ld a, [hl]
-    ld h, b
-
-jr_000_33b0:
-    ld a, h
-    ld b, $06
-
-jr_000_33b3:
-    ld b, [hl]
-    inc a
-    nop
-    inc e
-    jr nz, jr_000_3419
-
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    ld b, $0e
-    inc e
-    jr @+$1a
-
-    jr jr_000_33c6
-
-jr_000_33c6:
-    inc a
-    ld h, [hl]
-
-jr_000_33c8:
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $06
-    inc c
-    jr c, jr_000_33d6
-
-jr_000_33d6:
-    nop
-    jr jr_000_33f1
-
-    nop
-    nop
-    jr jr_000_33f5
-
-    nop
-
-jr_000_33de:
-    nop
-    jr jr_000_33f9
-
-    nop
-    jr jr_000_33fc
-
-    stop
-    ld b, $0c
-    jr jr_000_341a
-
-    jr @+$0e
-
-    ld b, $00
-    nop
-    nop
-    inc a
-
-jr_000_33f1:
-    nop
-    nop
-    inc a
-    nop
-
-jr_000_33f5:
-    nop
-    ld h, b
-    jr nc, jr_000_3411
-
-jr_000_33f9:
-    inc c
-    jr jr_000_342c
-
-jr_000_33fc:
-    ld h, b
-    nop
-    inc a
-    ld b, [hl]
-    ld b, $0c
-    jr jr_000_341c
-
-    nop
-    jr jr_000_3443
-
-    ld h, [hl]
-    ld l, [hl]
-    ld l, d
-    ld l, [hl]
-    ld h, b
-
-jr_000_340c:
-    inc a
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3411:
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3419:
-    ld a, h
-
-jr_000_341a:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_341c:
-    ld a, h
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_342c:
-    ld a, h
-    nop
-    ld a, [hl]
-    ld h, b
-    ld h, b
-    ld a, h
-    ld h, b
-    ld h, b
-    ld a, [hl]
-    nop
-    ld a, [hl]
-    ld h, b
-    ld h, b
-    ld a, h
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld l, [hl]
-    ld h, [hl]
-
-jr_000_3443:
-    ld h, [hl]
-    ld a, $00
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    jr jr_000_3468
-
-    jr jr_000_346a
-
-    jr jr_000_346c
-
-    jr jr_000_3456
-
-jr_000_3456:
-    ld b, $06
-    ld b, $06
-    ld b, $46
-    inc a
-    nop
-    ld h, [hl]
-    ld l, h
-    ld a, b
-    ld [hl], b
-    ld a, b
-    ld l, h
-    ld h, [hl]
-    nop
-    ld h, b
-    ld h, b
-
-jr_000_3468:
-    ld h, b
-    ld h, b
-
-jr_000_346a:
-    ld h, b
-    ld h, b
-
-jr_000_346c:
-    ld a, h
-    nop
-    db $fc
-    sub $d6
-    sub $d6
-    add $c6
-    nop
-    ld h, d
-    ld [hl], d
-    ld a, d
-    ld e, [hl]
-    ld c, [hl]
-    ld b, [hl]
-    ld b, d
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld b, $7c
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    inc a
-    ld h, d
-    ld [hl], b
-    inc a
-    ld c, $46
-    inc a
-    nop
-    ld a, [hl]
-    jr @+$1a
-
-    jr @+$1a
-
-    jr jr_000_34c5
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, h
-    ld a, b
-    nop
-    add $c6
-    add $d6
-    sub $d6
-    db $fc
-
-jr_000_34c5:
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr @+$1a
-
-    jr jr_000_34d6
-
-jr_000_34d6:
-    ld a, [hl]
-    ld c, $1c
-    jr c, jr_000_354b
-
-    ld h, b
-    ld a, [hl]
-    nop
-    ld e, $18
-    jr jr_000_34fa
-
-    jr jr_000_34fc
-
-    ld e, $00
-    ld b, b
-    ld h, b
-    jr nc, jr_000_3502
-
-    inc c
-    ld b, $02
-    nop
-    ld a, b
-    jr jr_000_3509
-
-    jr jr_000_350b
-
-    jr jr_000_356d
-
-    nop
-    db $10
-    jr c, jr_000_3565
-
-    nop
-
-jr_000_34fa:
-    nop
-    nop
-
-jr_000_34fc:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_3502:
-    nop
-    nop
-    ld a, [hl]
-    nop
-    nop
-    ret nz
-
-    ret nz
-
-jr_000_3509:
-    ld h, b
-    nop
-
-jr_000_350b:
-    nop
-    nop
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld a, $66
-    ld h, [hl]
-    ld a, $00
-    ld h, b
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    nop
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld b, $3e
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    nop
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld e, $30
-    ld a, h
-    jr nc, @+$32
-
-    jr nc, jr_000_356d
-
-    nop
-    nop
-    ld a, $66
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $46
-    inc a
-    ld h, b
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_354b:
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    jr jr_000_3550
-
-jr_000_3550:
-    jr jr_000_356a
-
-    jr jr_000_356c
-
-    jr jr_000_3556
-
-jr_000_3556:
-    nop
-    ld [$1818], sp
-    jr jr_000_3574
-
-    ld e, b
-    jr nc, jr_000_35bf
-
-    ld h, h
-    ld l, b
-    ld [hl], b
-    ld a, b
-    ld l, h
-    ld h, [hl]
-
-jr_000_3565:
-    nop
-    jr jr_000_3580
-
-    jr jr_000_3582
-
-jr_000_356a:
-    jr jr_000_3584
-
-jr_000_356c:
-    inc c
-
-jr_000_356d:
-    nop
-    nop
-    db $fc
-    sub $d6
-    sub $d6
-
-jr_000_3574:
-    add $00
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    inc a
-
-jr_000_3580:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3582:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3584:
-    inc a
-    nop
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    ld h, b
-    nop
-    ld a, $66
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $06
-    nop
-    ld l, h
-    ld [hl], b
-    ld h, b
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    nop
-    inc a
-    ld [hl], d
-    jr c, jr_000_35bf
-
-    ld c, [hl]
-    inc a
-    nop
-    jr jr_000_35e4
-
-    jr @+$1a
-
-    jr @+$1a
-
-    inc c
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, h
-    ld a, b
-    nop
-    nop
-
-jr_000_35bf:
-    add $c6
-    sub $d6
-    sub $fc
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, $1e
-    ld b, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    ld c, $1c
-    jr c, jr_000_364c
-
-    ld a, [hl]
-    nop
-    ld c, $18
-    jr jr_000_3612
-
-    jr jr_000_35fc
-
-jr_000_35e4:
-    ld c, $00
-    jr jr_000_3600
-
-    jr jr_000_3602
-
-    jr jr_000_3604
-
-    jr @+$1a
-
-    ld [hl], b
-    jr jr_000_3609
-
-    inc c
-    jr jr_000_360c
-
-    ld [hl], b
-    nop
-    nop
-    ld h, b
-    ldh a, [c]
-    sbc [hl]
-    inc c
-    nop
-
-jr_000_35fc:
-    nop
-    nop
-    db $10
-    db $10
-
-jr_000_3600:
-    jr z, jr_000_362a
-
-jr_000_3602:
-    ld b, h
-    ld b, h
-
-jr_000_3604:
-    add d
-    cp $3c
-    ld h, d
-    ld h, b
-
-jr_000_3609:
-    ld h, b
-    ld h, b
-    ld h, d
-
-jr_000_360c:
-    inc e
-    jr nc, @+$26
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3612:
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    inc c
-    jr jr_000_3619
-
-jr_000_3619:
-    inc a
-    ld a, [hl]
-    ld h, b
-    inc a
-    nop
-    jr jr_000_3686
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc h
-    nop
-    inc a
-    ld b, [hl]
-
-jr_000_362a:
-    ld a, $46
-    ld a, $00
-    jr nc, jr_000_3648
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    jr jr_000_3650
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, d
-    inc a
-    ld [$1818], sp
-    inc [hl]
-
-jr_000_3648:
-    nop
-    inc a
-    ld a, [hl]
-    ld h, b
-
-jr_000_364c:
-    ld a, $00
-    inc h
-    nop
-
-jr_000_3650:
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, b
-    ld a, $00
-    jr nc, @+$1a
-
-    nop
-    inc a
-    ld a, [hl]
-    ld h, b
-    inc a
-    nop
-    inc h
-    nop
-    jr jr_000_367a
-
-    jr jr_000_367c
-
-    jr jr_000_3666
-
-jr_000_3666:
-    jr jr_000_368c
-
-    nop
-    jr jr_000_3683
-
-    jr jr_000_3685
-
-    nop
-    db $10
-    ld [$1800], sp
-    jr jr_000_368c
-
-    jr jr_000_3676
-
-jr_000_3676:
-    inc h
-    nop
-    inc a
-    ld h, [hl]
-
-jr_000_367a:
-    ld a, [hl]
-    ld h, [hl]
-
-jr_000_367c:
-    ld h, [hl]
-    nop
-    jr jr_000_3680
-
-jr_000_3680:
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-
-jr_000_3683:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3685:
-    nop
-
-jr_000_3686:
-    inc c
-    jr jr_000_3707
-
-    ld h, b
-    ld a, h
-    ld h, b
-
-jr_000_368c:
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    dec de
-    ld a, a
-    ret c
-
-    ld a, [hl]
-    nop
-    ccf
-    ld a, b
-    ret c
-
-    sbc $f8
-    ret c
-
-    rst RST_18
-    nop
-    jr jr_000_36d4
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    inc h
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr nc, jr_000_36c8
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr jr_000_36dc
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr nc, jr_000_36d8
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld h, [hl]
-    nop
-
-jr_000_36c8:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $46
-    inc a
-    ld h, [hl]
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_36d4:
-    inc a
-    nop
-    ld h, [hl]
-    nop
-
-jr_000_36d8:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_36dc:
-    inc a
-    nop
-    jr jr_000_371c
-
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    jr @+$1e
-
-    ld a, [hl-]
-    jr nc, jr_000_3766
-
-    jr nc, jr_000_371c
-
-    ld a, [hl]
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr jr_000_372f
-
-    jr @+$1a
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld l, h
-    ld h, [hl]
-    ld h, [hl]
-    db $ec
-    nop
-    jr @+$1a
-
-    jr jr_000_371a
-
-    jr jr_000_371c
-
-    jr jr_000_371e
-
-    inc c
-
-jr_000_3707:
-    jr jr_000_3709
-
-jr_000_3709:
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc c
-    jr jr_000_3711
-
-jr_000_3711:
-    jr jr_000_372b
-
-    jr jr_000_372d
-
-    nop
-    inc c
-    jr jr_000_3719
-
-jr_000_3719:
-    inc a
-
-jr_000_371a:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_371c:
-    inc a
-    nop
-
-jr_000_371e:
-    inc c
-    jr jr_000_3721
-
-jr_000_3721:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    inc [hl]
-    ld e, b
-    nop
-    ld a, h
-    ld h, [hl]
-
-jr_000_372b:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_372d:
-    nop
-    ld a, [de]
-
-jr_000_372f:
-    inc l
-    ld h, d
-    ld [hl], d
-    ld e, d
-    ld c, [hl]
-    ld b, [hl]
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld a, $66
-    ld a, $00
-    ld a, [hl]
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    nop
-    jr jr_000_3749
-
-jr_000_3749:
-    jr jr_000_377b
-
-    ld h, b
-    ld h, [hl]
-    inc a
-    nop
-    nop
-    nop
-    ld a, $30
-    jr nc, jr_000_3785
-
-    nop
-    nop
-    nop
-    nop
-    ld a, h
-    inc c
-    inc c
-    inc c
-    nop
-    ld h, d
-    db $e4
-    ld l, b
-    halt
-    dec hl
-    ld b, e
-    add [hl]
-    rrca
-
-jr_000_3766:
-    ld h, d
-    db $e4
-    ld l, b
-    halt
-    ld l, $56
-    sbc a
-    ld b, $00
-    jr jr_000_3771
-
-jr_000_3771:
-    jr @+$1a
-
-    jr @+$1a
-
-    jr jr_000_3792
-
-    ld [hl], $6c
-    ret c
-
-    ld l, h
-
-jr_000_377b:
-    ld [hl], $1b
-    nop
-    ret c
-
-    ld l, h
-    ld [hl], $1b
-    ld [hl], $6c
-    ret c
-
-jr_000_3785:
-    nop
-    inc [hl]
-    ld e, b
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc [hl]
-    ld e, b
-    nop
-    inc a
-
-jr_000_3792:
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld [bc], a
-    inc a
-    ld h, [hl]
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    inc a
-    ld b, b
-    nop
-    ld [bc], a
-    inc a
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    inc a
-    ld b, b
-    nop
-    nop
-    ld a, [hl]
-    db $db
-    sbc $d8
-    ld a, a
-    nop
-    nop
-    ld a, [hl]
-    ret c
-
-    ret c
-
-    db $fc
-    ret c
-
-    ret c
-
-    sbc $20
-    db $10
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc [hl]
-    ld e, b
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc [hl]
-    ld e, b
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    inc c
-    jr @+$32
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    db $10
-    jr c, jr_000_37f2
-
-    db $10
-    stop
-    nop
-    ld a, d
-    jp z, $caca
-
-    ld a, d
-    ld a, [bc]
-    ld a, [bc]
-    ld a, [bc]
-    inc a
-    ld b, d
-    sbc c
-    or l
-
-jr_000_37f2:
-    or c
-    sbc l
-    ld b, d
-    inc a
-    inc a
-    ld b, d
-    cp c
-    or l
-    cp c
-    or l
-    ld b, d
-    inc a
-    pop af
-    ld e, e
-    ld d, l
-    ld d, c
-    ld d, c
-    nop
-    nop
-    nop
-    ld h, [hl]
-    nop
-    and $66
-    ld h, [hl]
-    or $06
-    inc e
-    or $66
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    or $06
-    inc e
-    nop
-    ld h, [hl]
-    halt
-    inc a
-    ld l, [hl]
-    ld h, [hl]
-    nop
-    nop
-    nop
-    ld a, h
-    inc c
-    inc c
-    inc c
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld e, $06
-    ld c, $1e
-    ld [hl], $00
-    nop
-    nop
-    ld a, [hl]
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    ld a, h
-    ld b, $66
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    ld e, $0c
-    ld b, $06
-    ld b, $00
-    nop
-    nop
-    ld a, [hl]
-    ld [hl], $36
-    ld [hl], $36
-    nop
-    nop
-    ld h, b
-    ld l, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    nop
-    nop
-    nop
-    inc a
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld a, $06
-    ld b, $06
-    ld a, $00
-    nop
-    ld h, b
-    ld a, [hl]
-    ld b, $06
-    ld b, $0e
-    nop
-    nop
-    nop
-    ld l, h
-    ld a, $66
-    ld h, [hl]
-    ld l, [hl]
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc a
-    nop
-    nop
-    nop
-    ld a, $36
-    ld [hl], $36
-    inc e
-    nop
-    nop
-    nop
-    ld [hl], $36
-    ld [hl], $36
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    ld h, [hl]
-    halt
-    ld b, $7e
-    nop
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld c, $7e
-    nop
-    nop
-    nop
-    ld a, $06
-    ld [hl], $36
-    inc [hl]
-    jr nc, jr_000_38ae
-
-jr_000_38ae:
-    nop
-    ld a, b
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    sub $d6
-    sub $d6
-    cp $00
-    nop
-    nop
-    ld a, h
-    ld l, h
-    ld l, h
-    ld l, h
-    db $ec
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    ld a, $06
-    ld b, $06
-    ld b, $06
-    nop
-    nop
-    cp $66
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    ld h, [hl]
-    halt
-    ld b, $06
-    ld b, $00
-    nop
-    ld [hl], $36
-    inc e
-    inc c
-    inc c
-    inc c
-    nop
-    inc e
-    ld [hl-], a
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld c, h
-    jr c, jr_000_38f7
-
-jr_000_38f7:
-    db $10
-    jr c, jr_000_3966
-
-    add $82
-    nop
-    nop
-    ld h, [hl]
-    rst RST_30
-    sbc c
-    sbc c
-    rst RST_28
-    ld h, [hl]
-    nop
-    nop
-    nop
-    nop
-    halt
-    call c, $dcc8
-    halt
-    nop
-    inc e
-    ld [hl], $66
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    nop
-    cp $66
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, b
-    ld hl, sp+$00
-    nop
-    cp $6c
-    ld l, h
-    ld l, h
-    ld l, h
-    ld c, b
-    cp $66
-    jr nc, @+$1a
-
-    jr nc, @+$68
-
-    cp $00
-    nop
-    ld e, $38
-    ld l, h
-    ld l, h
-    ld l, h
-    jr c, jr_000_3936
-
-jr_000_3936:
-    nop
-    nop
-    ld l, h
-    ld l, h
-    ld l, h
-    ld l, h
-    ld a, a
-    ret nz
-
-    nop
-    nop
-    ld a, [hl]
-    jr jr_000_395b
-
-    jr jr_000_395d
-
-    db $10
-    inc a
-    jr jr_000_3985
-
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr jr_000_398a
-
-    nop
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_395b:
-    inc h
-    ld h, [hl]
-
-jr_000_395d:
-    nop
-    inc e
-    ld [hl], $78
-    call c, $eccc
-    ld a, b
-    nop
-
-jr_000_3966:
-    inc c
-    jr jr_000_39a1
-
-    ld d, h
-    ld d, h
-    jr c, jr_000_399d
-
-    ld h, b
-    nop
-    db $10
-    ld a, h
-    sub $d6
-    sub $7c
-    db $10
-    ld a, $70
-    ld h, b
-    ld a, [hl]
-    ld h, b
-    ld [hl], b
-    ld a, $00
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3985:
-    nop
-    nop
-    ld a, [hl]
-    nop
-    ld a, [hl]
-
-jr_000_398a:
-    nop
-    ld a, [hl]
-    nop
-    nop
-    jr @+$1a
-
-    ld a, [hl]
-    jr @+$1a
-
-    nop
-    ld a, [hl]
-    nop
-    jr nc, jr_000_39b0
-
-    inc c
-    jr jr_000_39cb
-
-    nop
-    ld a, [hl]
-
-jr_000_399d:
-    nop
-    inc c
-    jr @+$32
-
-jr_000_39a1:
-    jr @+$0e
-
-    nop
-    ld a, [hl]
-    nop
-    nop
-    ld c, $1b
-    dec de
-    jr jr_000_39c4
-
-    jr jr_000_39c6
-
-    jr jr_000_39c8
-
-jr_000_39b0:
-    jr jr_000_39ca
-
-    ret c
-
-    ret c
-
-    ld [hl], b
-    nop
-    jr jr_000_39d0
-
-    nop
-    ld a, [hl]
-    nop
-
-jr_000_39bb:
-    jr jr_000_39d5
-
-    nop
-    nop
-    ld [hl-], a
-    ld c, h
-    nop
-    ld [hl-], a
-    ld c, h
-
-jr_000_39c4:
-    nop
-    nop
-
-jr_000_39c6:
-    jr c, @+$6e
-
-jr_000_39c8:
-    jr c, jr_000_39ca
-
-jr_000_39ca:
-    nop
-
-jr_000_39cb:
-    nop
-    nop
-    nop
-    jr c, @+$7e
-
-jr_000_39d0:
-    jr c, jr_000_39d2
-
-jr_000_39d2:
-    nop
-    nop
-    nop
-
-jr_000_39d5:
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr jr_000_39f4
-
-    nop
-    nop
-    nop
-    nop
-    rrca
-    jr jr_000_39bb
-
-    ld [hl], b
-    jr nc, jr_000_39e6
-
-jr_000_39e6:
-    jr c, @+$6e
-
-    ld l, h
-    ld l, h
-    ld l, h
-    nop
-    nop
-    nop
-    jr c, @+$6e
-
-    jr ReadJoypadRaw_readFace
-
-    ld a, h
-    nop
-
-jr_000_39f4:
-    nop
-    nop
-    ld a, b
-    inc c
-    jr c, jr_000_3a06
-
-    ld a, b
-    nop
-    nop
-    nop
-    nop
-    cp $00
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_3a06:
-    push af
-    push bc
-
-jr_000_3a08:
-    ld b, $ff
-
-jr_000_3a0a:
-    call ReadJoypadRaw
-    or a
-    jr nz, jr_000_3a08
-
-    dec b
-    jr nz, jr_000_3a0a
-
-    pop bc
-    pop af
-    ret
-
+DefaultFontData::
+    db $04, $ff
+    db $00, $01
+    db $02, $03
+    db $04, $05
+    db $06, $07
+    db $08, $09
+    db $0a, $0b
+    db $0c, $0d
+    db $0e, $0f
+    db $10, $11
+    db $12, $13
+    db $14, $15
+    db $16, $17
+    db $18, $19
+    db $1a, $1b
+    db $1c, $1d
+    db $1e, $1f
+    db $20, $21
+    db $22, $23
+    db $24, $25
+    db $26, $27
+    db $28, $29
+    db $2a, $2b
+    db $2c, $2d
+    db $2e, $2f
+    db $30, $31
+    db $32, $33
+    db $34, $35
+    db $36, $37
+    db $38, $39
+    db $3a, $3b
+    db $3c, $3d
+    db $3e, $3f
+    db $40, $41
+    db $42, $43
+    db $44, $45
+    db $46, $47
+    db $48, $49
+    db $4a, $4b
+    db $4c, $4d
+    db $4e, $4f
+    db $50, $51
+    db $52, $53
+    db $54, $55
+    db $56, $57
+    db $58, $59
+    db $5a, $5b
+    db $5c, $5d
+    db $5e, $5f
+    db $60, $61
+    db $62, $63
+    db $64, $65
+    db $66, $67
+    db $68, $69
+    db $6a, $6b
+    db $6c, $6d
+    db $6e, $6f
+    db $70, $71
+    db $72, $73
+    db $74, $75
+    db $76, $77
+    db $78, $79
+    db $7a, $7b
+    db $7c, $7d
+    db $7e, $7f
+    db $80, $81
+    db $82, $83
+    db $84, $85
+    db $86, $87
+    db $88, $89
+    db $8a, $8b
+    db $8c, $8d
+    db $8e, $8f
+    db $90, $91
+    db $92, $93
+    db $94, $95
+    db $96, $97
+    db $98, $99
+    db $9a, $9b
+    db $9c, $9d
+    db $9e, $9f
+    db $a0, $a1
+    db $a2, $a3
+    db $a4, $a5
+    db $a6, $a7
+    db $a8, $a9
+    db $aa, $ab
+    db $ac, $ad
+    db $ae, $af
+    db $b0, $b1
+    db $b2, $b3
+    db $b4, $b5
+    db $b6, $b7
+    db $b8, $b9
+    db $ba, $bb
+    db $bc, $bd
+    db $be, $bf
+    db $c0, $c1
+    db $c2, $c3
+    db $c4, $c5
+    db $c6, $c7
+    db $c8, $c9
+    db $ca, $cb
+    db $cc, $cd
+    db $ce, $cf
+    db $d0, $d1
+    db $d2, $d3
+    db $d4, $d5
+    db $d6, $d7
+    db $d8, $d9
+    db $da, $db
+    db $dc, $dd
+    db $de, $df
+    db $e0, $e1
+    db $e2, $e3
+    db $e4, $e5
+    db $e6, $e7
+    db $e8, $e9
+    db $ea, $eb
+    db $ec, $ed
+    db $ee, $ef
+    db $f0, $f1
+    db $f2, $f3
+    db $f4, $f5
+    db $f6, $f7
+    db $f8, $f9
+    db $fa, $fb
+    db $fc, $fd
+    db $fe, $ff
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $24
+    db $42, $81
+    db $e7, $24
+    db $24, $3c
+    db $3c, $24
+    db $24, $e7
+    db $81, $42
+    db $24, $18
+    db $18, $14
+    db $f2, $81
+    db $81, $f2
+    db $14, $18
+    db $18, $28
+    db $4f, $81
+    db $81, $4f
+    db $28, $18
+    db $ff, $81
+    db $81, $81
+    db $81, $81
+    db $81, $ff
+    db $f8, $88
+    db $8f, $89
+    db $f9, $41
+    db $41, $7f
+    db $ff, $89
+    db $89, $89
+    db $f9, $81
+    db $81, $ff
+    db $01, $03
+    db $06, $8c
+    db $d8, $70
+    db $20, $00
+    db $7e, $c3
+    db $d3, $d3
+    db $db, $c3
+    db $c3, $7e
+    db $18, $3c
+    db $2c, $2c
+    db $7e, $18
+    db $18, $00
+    db $10, $1c
+    db $12, $10
+    db $10, $70
+    db $f0, $60
+    db $f0, $c0
+    db $fe, $d8
+    db $de, $18
+    db $18, $00
+    db $70, $c8
+    db $de, $db
+    db $db, $7e
+    db $1b, $1b
+    db $00, $00
+    db $00, $ff
+    db $ff, $ff
+    db $00, $00
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1c
+    db $7c, $c6
+    db $c6, $00
+    db $c6, $c6
+    db $7c, $00
+    db $06, $06
+    db $06, $00
+    db $06, $06
+    db $06, $00
+    db $7c, $06
+    db $06, $7c
+    db $c0, $c0
+    db $7c, $00
+    db $7c, $06
+    db $06, $7c
+    db $06, $06
+    db $7c, $00
+    db $c6, $c6
+    db $c6, $7c
+    db $06, $06
+    db $06, $00
+    db $7c, $c0
+    db $c0, $7c
+    db $06, $06
+    db $7c, $00
+    db $7c, $c0
+    db $c0, $7c
+    db $c6, $c6
+    db $7c, $00
+    db $7c, $06
+    db $06, $00
+    db $06, $06
+    db $06, $00
+    db $7c, $c6
+    db $c6, $7c
+    db $c6, $c6
+    db $7c, $00
+    db $7c, $c6
+    db $c6, $7c
+    db $06, $06
+    db $7c, $00
+    db $00, $3c
+    db $46, $06
+    db $7e, $66
+    db $3c, $00
+    db $78, $66
+    db $7d, $64
+    db $7e, $03
+    db $0b, $06
+    db $00, $00
+    db $00, $1f
+    db $1f, $1f
+    db $1c, $1c
+    db $00, $00
+    db $00, $fc
+    db $fc, $fc
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1f
+    db $1f, $1f
+    db $00, $00
+    db $1c, $1c
+    db $1c, $fc
+    db $fc, $fc
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $18, $00
+    db $66, $66
+    db $44, $00
+    db $00, $00
+    db $00, $00
+    db $00, $24
+    db $7e, $24
+    db $24, $7e
+    db $24, $00
+    db $14, $3e
+    db $55, $3c
+    db $1e, $55
+    db $3e, $14
+    db $62, $66
+    db $0c, $18
+    db $30, $66
+    db $46, $00
+    db $78, $cc
+    db $61, $ce
+    db $cc, $cc
+    db $78, $00
+    db $18, $18
+    db $10, $00
+    db $00, $00
+    db $00, $00
+    db $04, $08
+    db $18, $18
+    db $18, $18
+    db $08, $04
+    db $20, $10
+    db $18, $18
+    db $18, $18
+    db $10, $20
+    db $00, $54
+    db $38, $fe
+    db $38, $54
+    db $00, $00
+    db $00, $18
+    db $18, $7e
+    db $18, $18
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $30
+    db $30, $20
+    db $00, $00
+    db $00, $3c
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $18
+    db $18, $00
+    db $03, $06
+    db $0c, $18
+    db $30, $60
+    db $c0, $00
+    db $3c, $66
+    db $6e, $76
+    db $66, $66
+    db $3c, $00
+    db $18, $38
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $3c, $66
+    db $0e, $1c
+    db $38, $70
+    db $7e, $00
+    db $7e, $0c
+    db $18, $3c
+    db $06, $46
+    db $3c, $00
+    db $0c, $1c
+    db $2c, $4c
+    db $7e, $0c
+    db $0c, $00
+    db $7e, $60
+    db $7c, $06
+    db $06, $46
+    db $3c, $00
+    db $1c, $20
+    db $60, $7c
+    db $66, $66
+    db $3c, $00
+    db $7e, $06
+    db $0e, $1c
+    db $18, $18
+    db $18, $00
+    db $3c, $66
+    db $66, $3c
+    db $66, $66
+    db $3c, $00
+    db $3c, $66
+    db $66, $3e
+    db $06, $0c
+    db $38, $00
+    db $00, $18
+    db $18, $00
+    db $00, $18
+    db $18, $00
+    db $00, $18
+    db $18, $00
+    db $18, $18
+    db $10, $00
+    db $06, $0c
+    db $18, $30
+    db $18, $0c
+    db $06, $00
+    db $00, $00
+    db $3c, $00
+    db $00, $3c
+    db $00, $00
+    db $60, $30
+    db $18, $0c
+    db $18, $30
+    db $60, $00
+    db $3c, $46
+    db $06, $0c
+    db $18, $18
+    db $00, $18
+    db $3c, $66
+    db $6e, $6a
+    db $6e, $60
+    db $3c, $00
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $66, $00
+    db $7c, $66
+    db $66, $7c
+    db $66, $66
+    db $7c, $00
+    db $3c, $62
+    db $60, $60
+    db $60, $62
+    db $3c, $00
+    db $7c, $66
+    db $66, $66
+    db $66, $66
+    db $7c, $00
+    db $7e, $60
+    db $60, $7c
+    db $60, $60
+    db $7e, $00
+    db $7e, $60
+    db $60, $7c
+    db $60, $60
+    db $60, $00
+    db $3c, $62
+    db $60, $6e
+    db $66, $66
+    db $3e, $00
+    db $66, $66
+    db $66, $7e
+    db $66, $66
+    db $66, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $06, $06
+    db $06, $06
+    db $06, $46
+    db $3c, $00
+    db $66, $6c
+    db $78, $70
+    db $78, $6c
+    db $66, $00
+    db $60, $60
+    db $60, $60
+    db $60, $60
+    db $7c, $00
+    db $fc, $d6
+    db $d6, $d6
+    db $d6, $c6
+    db $c6, $00
+    db $62, $72
+    db $7a, $5e
+    db $4e, $46
+    db $42, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $7c, $66
+    db $66, $7c
+    db $60, $60
+    db $60, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $06
+    db $7c, $66
+    db $66, $7c
+    db $66, $66
+    db $66, $00
+    db $3c, $62
+    db $70, $3c
+    db $0e, $46
+    db $3c, $00
+    db $7e, $18
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $66, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $66
+    db $66, $66
+    db $66, $64
+    db $78, $00
+    db $c6, $c6
+    db $c6, $d6
+    db $d6, $d6
+    db $fc, $00
+    db $66, $66
+    db $66, $3c
+    db $66, $66
+    db $66, $00
+    db $66, $66
+    db $66, $3c
+    db $18, $18
+    db $18, $00
+    db $7e, $0e
+    db $1c, $38
+    db $70, $60
+    db $7e, $00
+    db $1e, $18
+    db $18, $18
+    db $18, $18
+    db $1e, $00
+    db $40, $60
+    db $30, $18
+    db $0c, $06
+    db $02, $00
+    db $78, $18
+    db $18, $18
+    db $18, $18
+    db $78, $00
+    db $10, $38
+    db $6c, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $7e, $00
+    db $00, $c0
+    db $c0, $60
+    db $00, $00
+    db $00, $00
+    db $00, $3c
+    db $46, $3e
+    db $66, $66
+    db $3e, $00
+    db $60, $7c
+    db $66, $66
+    db $66, $66
+    db $7c, $00
+    db $00, $3c
+    db $62, $60
+    db $60, $62
+    db $3c, $00
+    db $06, $3e
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $00, $3c
+    db $66, $7e
+    db $60, $62
+    db $3c, $00
+    db $1e, $30
+    db $7c, $30
+    db $30, $30
+    db $30, $00
+    db $00, $3e
+    db $66, $66
+    db $66, $3e
+    db $46, $3c
+    db $60, $7c
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $18, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $00, $08
+    db $18, $18
+    db $18, $18
+    db $58, $30
+    db $60, $64
+    db $68, $70
+    db $78, $6c
+    db $66, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $0c, $00
+    db $00, $fc
+    db $d6, $d6
+    db $d6, $d6
+    db $c6, $00
+    db $00, $7c
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $00, $3c
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $00, $7c
+    db $66, $66
+    db $66, $7c
+    db $60, $60
+    db $00, $3e
+    db $66, $66
+    db $66, $66
+    db $3e, $06
+    db $00, $6c
+    db $70, $60
+    db $60, $60
+    db $60, $00
+    db $00, $3c
+    db $72, $38
+    db $1c, $4e
+    db $3c, $00
+    db $18, $3c
+    db $18, $18
+    db $18, $18
+    db $0c, $00
+    db $00, $66
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $00, $66
+    db $66, $66
+    db $66, $64
+    db $78, $00
+    db $00, $c6
+    db $c6, $d6
+    db $d6, $d6
+    db $fc, $00
+    db $00, $66
+    db $66, $3c
+    db $66, $66
+    db $66, $00
+    db $00, $66
+    db $66, $66
+    db $26, $1e
+    db $46, $3c
+    db $00, $7e
+    db $0e, $1c
+    db $38, $70
+    db $7e, $00
+    db $0e, $18
+    db $18, $30
+    db $18, $18
+    db $0e, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $70, $18
+    db $18, $0c
+    db $18, $18
+    db $70, $00
+    db $00, $60
+    db $f2, $9e
+    db $0c, $00
+    db $00, $00
+    db $10, $10
+    db $28, $28
+    db $44, $44
+    db $82, $fe
+    db $3c, $62
+    db $60, $60
+    db $60, $62
+    db $1c, $30
+    db $24, $00
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $0c, $18
+    db $00, $3c
+    db $7e, $60
+    db $3c, $00
+    db $18, $66
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $24, $00
+    db $3c, $46
+    db $3e, $46
+    db $3e, $00
+    db $30, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $18, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $00, $3c
+    db $62, $60
+    db $62, $3c
+    db $08, $18
+    db $18, $34
+    db $00, $3c
+    db $7e, $60
+    db $3e, $00
+    db $24, $00
+    db $3c, $66
+    db $7e, $60
+    db $3e, $00
+    db $30, $18
+    db $00, $3c
+    db $7e, $60
+    db $3c, $00
+    db $24, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $18, $24
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $10, $08
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $24, $00
+    db $3c, $66
+    db $7e, $66
+    db $66, $00
+    db $18, $00
+    db $3c, $66
+    db $7e, $66
+    db $66, $00
+    db $0c, $18
+    db $7e, $60
+    db $7c, $60
+    db $7e, $00
+    db $00, $00
+    db $7e, $1b
+    db $7f, $d8
+    db $7e, $00
+    db $3f, $78
+    db $d8, $de
+    db $f8, $d8
+    db $df, $00
+    db $18, $34
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $24, $00
+    db $3c, $66
+    db $66, $66
+    db $3c, $00
+    db $30, $18
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $18, $24
+    db $00, $66
+    db $66, $66
+    db $3c, $00
+    db $30, $18
+    db $00, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $00
+    db $66, $66
+    db $66, $3e
+    db $46, $3c
+    db $66, $00
+    db $3c, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $00
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $18, $3c
+    db $62, $60
+    db $60, $62
+    db $3c, $18
+    db $1c, $3a
+    db $30, $7c
+    db $30, $30
+    db $7e, $00
+    db $66, $66
+    db $3c, $18
+    db $3c, $18
+    db $18, $00
+    db $3c, $66
+    db $66, $6c
+    db $66, $66
+    db $ec, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $0c, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $0c, $18
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $0c, $18
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $0c, $18
+    db $00, $66
+    db $66, $66
+    db $3e, $00
+    db $34, $58
+    db $00, $7c
+    db $66, $66
+    db $66, $00
+    db $1a, $2c
+    db $62, $72
+    db $5a, $4e
+    db $46, $00
+    db $00, $3c
+    db $46, $3e
+    db $66, $3e
+    db $00, $7e
+    db $00, $3c
+    db $66, $66
+    db $66, $3c
+    db $00, $7e
+    db $00, $18
+    db $00, $18
+    db $30, $60
+    db $66, $3c
+    db $00, $00
+    db $00, $3e
+    db $30, $30
+    db $30, $00
+    db $00, $00
+    db $00, $7c
+    db $0c, $0c
+    db $0c, $00
+    db $62, $e4
+    db $68, $76
+    db $2b, $43
+    db $86, $0f
+    db $62, $e4
+    db $68, $76
+    db $2e, $56
+    db $9f, $06
+    db $00, $18
+    db $00, $18
+    db $18, $18
+    db $18, $18
+    db $1b, $36
+    db $6c, $d8
+    db $6c, $36
+    db $1b, $00
+    db $d8, $6c
+    db $36, $1b
+    db $36, $6c
+    db $d8, $00
+    db $34, $58
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $34, $58
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $02, $3c
+    db $66, $6e
+    db $76, $66
+    db $3c, $40
+    db $00, $02
+    db $3c, $6e
+    db $76, $66
+    db $3c, $40
+    db $00, $00
+    db $7e, $db
+    db $de, $d8
+    db $7f, $00
+    db $00, $7e
+    db $d8, $d8
+    db $fc, $d8
+    db $d8, $de
+    db $20, $10
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $34, $58
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $34, $58
+    db $3c, $66
+    db $66, $66
+    db $66, $3c
+    db $66, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $0c, $18
+    db $30, $00
+    db $00, $00
+    db $00, $00
+    db $00, $10
+    db $38, $10
+    db $10, $10
+    db $00, $00
+    db $7a, $ca
+    db $ca, $ca
+    db $7a, $0a
+    db $0a, $0a
+    db $3c, $42
+    db $99, $b5
+    db $b1, $9d
+    db $42, $3c
+    db $3c, $42
+    db $b9, $b5
+    db $b9, $b5
+    db $42, $3c
+    db $f1, $5b
+    db $55, $51
+    db $51, $00
+    db $00, $00
+    db $66, $00
+    db $e6, $66
+    db $66, $f6
+    db $06, $1c
+    db $f6, $66
+    db $66, $66
+    db $66, $f6
+    db $06, $1c
+    db $00, $66
+    db $76, $3c
+    db $6e, $66
+    db $00, $00
+    db $00, $7c
+    db $0c, $0c
+    db $0c, $7e
+    db $00, $00
+    db $00, $1e
+    db $06, $0e
+    db $1e, $36
+    db $00, $00
+    db $00, $7e
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $7c
+    db $06, $66
+    db $66, $66
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $1e
+    db $0c, $06
+    db $06, $06
+    db $00, $00
+    db $00, $7e
+    db $36, $36
+    db $36, $36
+    db $00, $00
+    db $60, $6e
+    db $66, $66
+    db $66, $7e
+    db $00, $00
+    db $00, $3c
+    db $0c, $0c
+    db $00, $00
+    db $00, $00
+    db $00, $3e
+    db $06, $06
+    db $06, $3e
+    db $00, $00
+    db $60, $7e
+    db $06, $06
+    db $06, $0e
+    db $00, $00
+    db $00, $6c
+    db $3e, $66
+    db $66, $6e
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $3c
+    db $00, $00
+    db $00, $3e
+    db $36, $36
+    db $36, $1c
+    db $00, $00
+    db $00, $36
+    db $36, $36
+    db $36, $7e
+    db $00, $00
+    db $00, $7e
+    db $66, $76
+    db $06, $7e
+    db $00, $00
+    db $00, $66
+    db $66, $3c
+    db $0e, $7e
+    db $00, $00
+    db $00, $3e
+    db $06, $36
+    db $36, $34
+    db $30, $00
+    db $00, $78
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $d6
+    db $d6, $d6
+    db $d6, $fe
+    db $00, $00
+    db $00, $7c
+    db $6c, $6c
+    db $6c, $ec
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $0c
+    db $0c, $00
+    db $00, $3e
+    db $06, $06
+    db $06, $06
+    db $06, $00
+    db $00, $fe
+    db $66, $66
+    db $66, $7e
+    db $00, $00
+    db $00, $7e
+    db $66, $76
+    db $06, $06
+    db $06, $00
+    db $00, $36
+    db $36, $1c
+    db $0c, $0c
+    db $0c, $00
+    db $1c, $32
+    db $3c, $66
+    db $66, $3c
+    db $4c, $38
+    db $00, $10
+    db $38, $6c
+    db $c6, $82
+    db $00, $00
+    db $66, $f7
+    db $99, $99
+    db $ef, $66
+    db $00, $00
+    db $00, $00
+    db $76, $dc
+    db $c8, $dc
+    db $76, $00
+    db $1c, $36
+    db $66, $7c
+    db $66, $66
+    db $7c, $60
+    db $00, $fe
+    db $66, $62
+    db $60, $60
+    db $60, $f8
+    db $00, $00
+    db $fe, $6c
+    db $6c, $6c
+    db $6c, $48
+    db $fe, $66
+    db $30, $18
+    db $30, $66
+    db $fe, $00
+    db $00, $1e
+    db $38, $6c
+    db $6c, $6c
+    db $38, $00
+    db $00, $00
+    db $6c, $6c
+    db $6c, $6c
+    db $7f, $c0
+    db $00, $00
+    db $7e, $18
+    db $18, $18
+    db $18, $10
+    db $3c, $18
+    db $3c, $66
+    db $66, $3c
+    db $18, $3c
+    db $00, $3c
+    db $66, $7e
+    db $66, $66
+    db $3c, $00
+    db $00, $3c
+    db $66, $66
+    db $66, $24
+    db $66, $00
+    db $1c, $36
+    db $78, $dc
+    db $cc, $ec
+    db $78, $00
+    db $0c, $18
+    db $38, $54
+    db $54, $38
+    db $30, $60
+    db $00, $10
+    db $7c, $d6
+    db $d6, $d6
+    db $7c, $10
+    db $3e, $70
+    db $60, $7e
+    db $60, $70
+    db $3e, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $00, $7e
+    db $00, $7e
+    db $00, $7e
+    db $00, $00
+    db $18, $18
+    db $7e, $18
+    db $18, $00
+    db $7e, $00
+    db $30, $18
+    db $0c, $18
+    db $30, $00
+    db $7e, $00
+    db $0c, $18
+    db $30, $18
+    db $0c, $00
+    db $7e, $00
+    db $00, $0e
+    db $1b, $1b
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $d8, $d8
+    db $70, $00
+    db $18, $18
+    db $00, $7e
+    db $00, $18
+    db $18, $00
+    db $00, $32
+    db $4c, $00
+    db $32, $4c
+    db $00, $00
+    db $38, $6c
+    db $38, $00
+    db $00, $00
+    db $00, $00
+    db $38, $7c
+    db $38, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $18
+    db $00, $00
+    db $00, $00
+    db $0f, $18
+    db $d8, $70
+    db $30, $00
+    db $38, $6c
+    db $6c, $6c
+    db $6c, $00
+    db $00, $00
+    db $38, $6c
+    db $18, $30
+    db $7c, $00
+    db $00, $00
+    db $78, $0c
+    db $38, $0c
+    db $78, $00
+    db $00, $00
+    db $00, $fe
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $f5, $c5
+    db $06, $ff
+    db $cd, $16
+    db $3a, $b7
+    db $20, $f8
+    db $05, $20
+    db $f7, $c1
+    db $f1, $c9
 
 ; [ezgb]
 ; ReadJoypadRaw: hardware P1 read → packed buttons in A (then swapped for menu ABI).
@@ -13758,22 +12326,22 @@ SelectFont::
 
 PrintChar::
     cp $0a
-    jr nz, jr_000_3bd6
+    jr nz, PrintChar_putChar
 
     push af
     ld a, [wGfxMode]
     and $08
-    jr nz, jr_000_3bd5
+    jr nz, PrintChar_skipNewline
 
     call TileNewline
     pop af
     ret
 
 
-jr_000_3bd5:
+PrintChar_skipNewline::
     pop af
 
-jr_000_3bd6:
+PrintChar_putChar::
     call PutBgTile
     call AdvanceTileCursor
     ret

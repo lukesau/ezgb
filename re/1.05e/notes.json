@@ -3408,6 +3408,26 @@
         "Jump_005_4f96/jr_005_4fa1 store wchar; Jump_005_4fc9 pad/term chk; Jump_005_4fd6 E=0;",
         "Jump_005_4fdc/jr_005_4fe3 next; Jump_005_4fe6/jr_005_4ff0/Jump_005_5002 store ord; Jump_005_501c/501f."
       ]
+    },
+    {
+      "bank": 0,
+      "addr": "0376",
+      "lines": [
+        "InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call",
+        "wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline \u2014 fires only if",
+        "the trampoline signals failure. Followed by ~82 more rst $38 bytes (alignment filler",
+        "reusing the same opcode, not separately reachable)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "3104",
+      "lines": [
+        "DefaultFontData: font descriptor + glyph data blob passed to RegisterFont at boot",
+        "(ld hl, $3104 / call RegisterFont, just before this address, itself unlabeled \u2014",
+        "orphan init stub). $0912 bytes, ending exactly at ReadJoypadRaw ($3a16). Marked .data",
+        "so mgbdis stops misdecoding it as code; exact field layout not reverse engineered."
+      ]
     }
   ]
 }
