@@ -240,6 +240,6 @@ C file under test (pinned symbols contribute address fixups only).
 
 ## License
 
-GPLv3, see [LICENSE](LICENSE). Applies to this project's own code (disassembly, notes,
+AGPLv3, see [LICENSE](LICENSE). Applies to this project's own code (disassembly, notes,
 tooling). It does not and cannot relicense EZ Flash's original firmware, which isn't
 redistributed in this repo (see above).

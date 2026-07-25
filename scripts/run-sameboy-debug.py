@@ -44,14 +44,27 @@ def read_sbd(path):
 
 
 def ensure_kernel_sym(version):
-    """SameBoy loads <rom>.sym next to the ROM; mgbdis emits game.sym."""
+    """SameBoy loads <rom>.sym next to the ROM.
+
+    kernel.sym is this project's persistent, hand-edited (and git-tracked)
+    source of truth for mgbdis, not a disposable build artifact — it must
+    never be deleted or overwritten here. Addresses in it match kernel.gb
+    directly (regen-disasm.sh keeps the rebuilt ROM byte-identical), so it's
+    already valid for SameBoy's own symbol display as-is.
+
+    Only auto-manage the file (symlink it to disassembly/game.sym) when it's
+    missing entirely or was already a symlink from a previous run of this
+    script — never touch a real, pre-existing kernel.sym.
+    """
     kernel = os.path.join(ROOT, "re", version, "kernel.gb")
     sym = os.path.join(ROOT, "re", version, "kernel.sym")
     game_sym = os.path.join(ROOT, "re", version, "disassembly", "game.sym")
     if not os.path.isfile(kernel):
         sys.exit(f"error: missing {kernel} (copy ezgb.dat there)")
+    if os.path.isfile(sym) and not os.path.islink(sym):
+        return kernel  # real, tracked file — never overwrite it here
     if os.path.isfile(game_sym):
-        if os.path.islink(sym) or os.path.isfile(sym):
+        if os.path.islink(sym):
             os.remove(sym)
         os.symlink(os.path.relpath(game_sym, os.path.dirname(sym)), sym)
     return kernel

@@ -22,22 +22,29 @@ if [[ ! -f "$RE/kernel.gb" ]]; then
   exit 1
 fi
 
+# Returns the wrapped command's real exit code (does not exit the script
+# itself) so callers can use `run ... || { handle $?; }` for cases where a
+# specific nonzero code is expected/non-fatal (see annotate-disasm.py below).
+# Callers that want any failure to be fatal should do `run ... || exit $?`.
 run() {
   if [[ "$VERBOSE" -eq 1 ]]; then
     "$@"
   else
-    "$@" >/tmp/ezgb-regen-$$.log 2>&1 || {
-      echo "error: command failed: $*" >&2
-      tail -n 40 /tmp/ezgb-regen-$$.log >&2
-      rm -f /tmp/ezgb-regen-$$.log
-      exit 1
-    }
-    rm -f /tmp/ezgb-regen-$$.log
+    local log="/tmp/ezgb-regen-$$.log"
+    if "$@" >"$log" 2>&1; then
+      rm -f "$log"
+      return 0
+    fi
+    local ec=$?
+    echo "error: command failed: $*" >&2
+    tail -n 40 "$log" >&2
+    rm -f "$log"
+    return "$ec"
   fi
 }
 
 cd "$RE"
-run python3 "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite
+run python3 "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
 run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
   ann_ec=$?
   if [[ "$ann_ec" -eq 1 ]]; then
@@ -46,7 +53,7 @@ run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
     exit "$ann_ec"
   fi
 }
-run make -C disassembly
+run make -C disassembly || exit $?
 
 echo "=== naming-progress ==="
 "$ROOT/scripts/naming-progress.sh" "$VER"

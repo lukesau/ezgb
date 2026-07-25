@@ -1,0 +1,8 @@
+# Temporary: dump raw Opendir_B5/Readdir_B5 output for struct-layout
+# confirmation. See decomp/src/fastlaunch_probe.c.
+#
+# No breakpoint here on purpose — the probe halts in an infinite loop within
+# milliseconds of SD mount, faster than a scripted breakpoint address is
+# worth pinning down. Just `continue`, wait ~2s, then Ctrl+C to break in and
+# run the examine commands below by hand.
+continue

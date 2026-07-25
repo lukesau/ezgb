@@ -9,6 +9,7 @@ __pycache__/
 /juniorkernel-1.04e-FW4/
 /juniorkernel-1.05e-FW5/
 re/*/kernel.gb
+re/*/kernel.gb.orig
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code
 tools/

@@ -3294,11 +3294,10 @@ SdMenuMain_mountOk::
     ld hl, MicroSdInitOkStr
     push hl
     call DrawString
-    add sp, $05
-    ld hl, sp+$06
-    ld [hl], $00
-    inc hl
-    ld [hl], $40
+    call FarCallTrampoline
+    or $49
+    ld [$3600], sp
+    ld b, b
     dec hl
     ld e, [hl]
     inc hl

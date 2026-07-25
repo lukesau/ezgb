@@ -1633,8 +1633,8 @@
 08:413e Bank8ReservedSpace2
 08:413e .data:601:8
 08:475e Fpga7FD2WaitClear_B8_pollA000
-08:476b Bank8ReservedSpace
-08:476b .data:266e:8
+08:4a04 Bank8ReservedSpace
+08:4a04 .data:23d5:8
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RemoveCallbackSlot ---
@@ -4357,3 +4357,11 @@
 07:5f20 MatchLfnEntry_clearSpare_B7
 07:5f3a MatchLfnEntry_matched_B7
 07:5f3d MatchLfnEntry_epilogue_B7
+08:4772 FarCallOpendir_B5
+08:4772 .data:16:8
+08:4788 FarCallReaddir_B5
+08:4788 .data:16:8
+08:479e FastlaunchScanDebug
+08:479e .data:258:8
+08:49f6 FastlaunchScanDebugTest
+08:49f6 .data:e:8
