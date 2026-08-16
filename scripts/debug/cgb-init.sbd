@@ -1,0 +1,10 @@
+# CGB-mode init (decomp/src/cgb_init.c), hooked over the boot LCD-on at $01ba.
+#
+# $02fb is CgbInit's entry. $0303 is the first instruction of the CGB-only
+# branch, reached only when the VBK feature test passed — i.e. the console is
+# genuinely in CGB mode, not DMG compatibility mode. So:
+#   $02fb hit, $0303 hit     -> CGB mode, palettes + attribute map initialised
+#   $02fb hit, $0303 missed  -> DMG (or DMG-compat); init correctly skipped
+breakpoint $02fb
+breakpoint $0303
+continue
