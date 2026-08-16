@@ -1,0 +1,14 @@
+# Absolute addresses of matched bank-0 symbols in kernel 1.05e.
+# Used with: verify.py ... --pins tools/pins/1.05e.bank0
+# Names are C identifiers (leading _ added automatically).
+
+install_callback_slot 066c
+remove_callback_slot  064c
+lcd_off               069f
+wait_vblank_flag      0688
+oam_dma_stub          06b6
+vblank_callback       0677
+serial_callback       06c0
+return_zero           1a77
+store_d732_d733       2765
+store_d734_d735_d723  2791

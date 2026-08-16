@@ -1,0 +1,24 @@
+; Same idea as abs_pair_store.def, for three consecutive stack uchar args
+; written to three absolute WRAM bytes (last load is (hl), not (hl+)).
+replace restart {
+	ld	de, #%1
+	ldhl	sp,	#%2
+	ld	a, (hl+)
+	ld	(de), a
+	ld	de, #%3
+	ld	a, (hl+)
+	ld	(de), a
+	ld	de, #%4
+	ld	a, (hl)
+	ld	(de), a
+	ret
+} by {
+	ldhl	sp,#%2
+	ld	a,(hl+)
+	ld	(#%1),a
+	ld	a,(hl+)
+	ld	(#%3),a
+	ld	a,(hl)
+	ld	(#%4),a
+	ret
+}

@@ -1,0 +1,35 @@
+; SDCC 4.6 codegen for lcd_off / Call_000_069f vs the Jr kernel's older shape:
+;   bit 7,a / ret z     ->  add a,a / ret nc   (test LCDC enable via carry)
+;   sub a,#n            ->  cp a,#n            (compare without relying on A after)
+;   res 7,a             ->  and a,#0x7f        (clear LCDC bit 7)
+; Same C; peep restores historical opcodes.
+
+replace restart {
+	ldh	a, (#0xff40)
+	bit	7,a
+	ret	z
+} by {
+	ldh	a, (#0xff40)
+	add	a, a
+	ret	nc
+}
+
+replace restart {
+	ldh	a, (#%1)
+	sub	a, #%2
+	jr	%3, %4
+} by {
+	ldh	a, (#%1)
+	cp	a, #%2
+	jr	%3, %4
+}
+
+replace restart {
+	ldh	a, (#0xff40)
+	res	7, a
+	ldh	(#0xff40), a
+} by {
+	ldh	a, (#0xff40)
+	and	a, #0x7f
+	ldh	(#0xff40), a
+}

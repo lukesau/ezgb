@@ -101,6 +101,9 @@ regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools sec
   [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md).
 - Matching decompilation in `decomp/` is a longer-term rewrite track (see `docs/PROGRESS.md`),
   secondary to naming the ASM.
+- Code injection into the stock kernel is proven working end to end: compile C, place it in
+  verified-free ROM, hook it, see it on screen. Recipe, hook-site rules and the free-space
+  map: [`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
 
 ## Rebuilding a disassembly
 

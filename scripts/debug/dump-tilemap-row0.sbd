@@ -1,0 +1,6 @@
+# Which BG map is live (LCDC bit 3) plus the top row of both candidate maps,
+# 32 tiles each (only the first 20 are on screen). Used to check where a
+# DrawString call's glyphs actually land.
+print [$ff40]
+examine/24 $9800
+examine/24 $9c00

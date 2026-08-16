@@ -11,8 +11,11 @@ __pycache__/
 re/*/kernel.gb
 re/*/kernel.gb.orig
 
-# cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code
-tools/
+# cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
+# Anchored: an unanchored `tools/` matches a directory of that name at ANY
+# depth, which silently swallowed decomp/tools/ — this project's own injection
+# and verification tooling — for as long as it existed.
+/tools/
 
 # build artifacts from `make` inside re/*/disassembly
 re/*/disassembly/game.gb

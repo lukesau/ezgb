@@ -503,98 +503,654 @@ Fpga7FD2WaitClear_B8_pollA000::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
-    db $01
+    ld bc, $7f10
+    ld a, $e2
+    ld [bc], a
+    ld bc, $7f20
+    ld a, $e3
+    ld [bc], a
+    ld bc, $7fd2
+    ld a, $00
+    ld [bc], a
+    ld bc, $7ff0
+    ld a, $e4
+    ld [bc], a
+    ld e, [hl]
+    add sp, $01
+    ret
 
-FarCallOpendir_B5::
-    db $f8, $04, $2a, $66, $6f, $e5, $f8, $04
-    db $2a, $66, $6f, $e5, $cd, $8d, $07, $dd
-    db $73, $05, $00, $e8, $04, $c9
 
-FarCallReaddir_B5::
-    db $f8, $04, $2a, $66, $6f, $e5, $f8, $04
-    db $2a, $66, $6f, $e5, $cd, $8d, $07, $76
-    db $75, $05, $00, $e8, $04, $c9
-
-FastlaunchScanDebug::
-    db $e8, $b0, $f8, $52, $2a, $66, $6f, $36
-    db $00, $f8, $48, $36, $00, $11, $fe, $48
-    db $d5, $21, $02, $00, $39, $e5, $cd, $72
-    db $47, $e8, $04, $f8, $4f, $73, $11, $00
-    db $d7, $7e, $12, $f8, $49, $3e, $01, $22
-    db $36, $d7, $f8, $4f, $7e, $b7, $c2, $fb
-    db $48, $f8, $4b, $36, $00, $f8, $4b, $34
-    db $ca, $70, $48, $11, $80, $d7, $d5, $21
-    db $02, $00, $39, $e5, $cd, $88, $47, $e8
-    db $04, $f8, $4f, $73, $f8, $49, $2a, $23
-    db $23, $c6, $01, $32, $2b, $7e, $ce, $00
-    db $f8, $4d, $22, $23, $7e, $b7, $28, $1d
-    db $f8, $49, $2a, $66, $6f, $36, $ef, $f8
-    db $4c, $7e, $f8, $49, $77, $f8, $4d, $7e
-    db $f8, $4a, $32, $2a, $5f, $56, $f8, $4f
-    db $7e, $12, $c3, $fb, $48, $fa, $89, $d7
-    db $f8, $4f, $77, $b7, $28, $4c, $11, $80
-    db $d7, $d5, $cd, $5e, $49, $e1, $f8, $4e
-    db $7b, $22, $72, $fa, $88, $d7, $f8, $49
-    db $5e, $23, $66, $6b, $77, $f8, $4c, $2a
-    db $4f, $2a, $47, $2a, $5f, $56, $1a, $02
-    db $03, $f8, $49, $79, $22, $70, $fa, $88
-    db $d7, $cb, $67, $c2, $d3, $47, $21, $30
-    db $00, $39, $e5, $f8, $50, $2a, $5f, $56
-    db $d5, $cd, $76, $49, $e8, $04, $f8, $4f
-    db $73, $7e, $b7, $ca, $d3, $47, $f8, $48
-    db $36, $01, $f8, $49, $2a, $66, $6f, $36
-    db $fe, $f8, $49, $2a, $4f, $3a, $2b, $47
-    db $03, $7e, $02, $03, $7e, $b7, $28, $75
-    db $21, $30, $00, $39, $c5, $e5, $cd, $4d
-    db $49, $e1, $f8, $4c, $73, $c1, $f8, $4d
-    db $79, $22, $78, $22, $36, $00, $f8, $4f
-    db $7e, $f8, $4a, $96, $30, $2a, $f8, $4f
-    db $5e, $16, $00, $21, $30, $00, $39, $19
-    db $e5, $7d, $f8, $4d, $77, $e1, $7c, $f8
-    db $4c, $32, $2a, $5f, $2a, $57, $1a, $5e
-    db $23, $66, $6b, $77, $f8, $4d, $34, $20
-    db $02, $23, $34, $f8, $4f, $34, $18, $ce
-    db $1e, $00, $7b, $f8, $4a, $96, $30, $17
-    db $f8, $52, $2a, $83, $4f, $7e, $ce, $00
-    db $47, $d5, $16, $00, $21, $32, $00, $39
-    db $19, $d1, $7e, $02, $1c, $18, $e3, $f8
-    db $4a, $7e, $f8, $52, $86, $23, $4f, $3e
-    db $00, $8e, $47, $af, $02, $e8, $50, $c9
-    db $2f, $00, $f8, $02, $7e, $d6, $61, $38
-    db $0a, $3e, $7a, $96, $38, $05, $7e, $c6
-    db $e0, $5f, $c9, $f8, $02, $5e, $c9, $16
-    db $00, $f8, $02, $2a, $82, $4f, $7e, $ce
-    db $00, $47, $0a, $d5, $f5, $33, $cd, $00
-    db $49, $33, $f1, $57, $f8, $04, $2a, $82
-    db $4f, $7e, $ce, $00, $47, $0a, $d5, $f5
-    db $33, $cd, $00, $49, $33, $7b, $d1, $93
-    db $28, $03, $1e, $00, $c9, $7b, $b7, $20
-    db $03, $1e, $01, $c9, $14, $18, $ca, $1e
-    db $00, $f8, $02, $2a, $83, $4f, $7e, $ce
-    db $00, $47, $0a, $b7, $c8, $1c, $18, $f1
-    db $f8, $02, $2a, $c6, $16, $5f, $7e, $ce
-    db $00, $57, $1a, $b7, $c0, $f8, $02, $2a
-    db $c6, $09, $5f, $7e, $ce, $00, $57, $c9
-    db $3b, $3b, $f8, $04, $2a, $5f, $56, $d5
-    db $cd, $4d, $49, $e1, $3e, $0b, $93, $38
-    db $04, $1e, $00, $18, $5c, $7b, $c6, $f5
-    db $4f, $f8, $04, $2a, $81, $5f, $7e, $ce
-    db $00, $c5, $21, $ea, $49, $e5, $57, $d5
-    db $cd, $15, $49, $e8, $04, $7b, $c1, $b7
-    db $20, $03, $5f, $18, $3c, $f8, $07, $3a
-    db $b6, $28, $34, $06, $00, $78, $91, $30
-    db $23, $f8, $06, $7e, $80, $f5, $f8, $02
-    db $f1, $77, $f5, $f8, $09, $f1, $7e, $ce
-    db $00, $f8, $01, $77, $f8, $04, $2a, $80
-    db $5f, $7e, $ce, $00, $57, $1a, $e1, $e5
-    db $77, $04, $18, $d9, $f8, $06, $2a, $81
-    db $4f, $7e, $ce, $00, $47, $af, $02, $1e
-    db $01, $33, $33, $c9, $2e, $66, $61, $73
-    db $74, $6c, $61, $75, $6e, $63, $68, $00
-
-FastlaunchScanDebugTest::
-    db $21, $20, $da, $36, $33, $11, $21, $da
-    db $d5, $cd, $9e, $47, $18, $fe
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
+    ld a, a
+    rst RST_38
 
 Bank8ReservedSpace::
     db $7f, $00, $00, $00, $00, $00, $00, $00
@@ -2548,7 +3104,7 @@ DrawFwVersionScreen_epilogueRet::
     push hl
     call DrawString
     add sp, $05
-    jp Jump_008_7331
+    jp $746b
 
 
 Jump_008_7203:
@@ -2911,44 +3467,13 @@ LastRomReturnStr::
 LastRomStartStr::
     db "[A]start", $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+EzgbTabBanner::
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $91, $27, $e8, $03, $af, $67, $2e
+    db $0f, $e5, $3e, $05, $f5, $33, $11, $8b
+    db $74, $d5, $cd, $b7, $08, $e8, $05, $c9
+    db $2a, $4d, $4f, $44, $2a, $00
+
     rst RST_38
     rst RST_38
     rst RST_38

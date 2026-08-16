@@ -77,6 +77,20 @@ post-enum seam.
 Artifacts removed from the tree: `scripts/apply-fast-launch.py`,
 `patches/fast-launch/`, `re/*/kernel-fast.gb`, root `*.RUN` test markers.
 
+## The later `.fastlaunch` scan attempt was built on a corrupted ROM
+
+The `fastlaunch_scan_debug` round (`decomp/src/fastlaunch_debug.c`, injected at
+bank 8 `$4772`) landed on live code and live data, not free space — details in
+[`inject-smoke-test.md`](inject-smoke-test.md). It clobbered the tail of
+`Fpga7FD2WaitClear_B8` (used by the ROM-launch path) and the head of a palette
+table.
+
+So the conclusion recorded in that file's header comment — "every entry's name
+read back as the same wrong garbage byte, therefore `Readdir_B5` is overrunning
+a too-small `fno[]`" — is not safe. A corrupted-ROM run is not evidence about
+`FILINFO` layout. Re-run the probe from a clean injection (bank 8 `$746b`, or
+bank 2 for room) before sizing `FNO_SIZE` again.
+
 ## Failure modes observed under SameBoy
 
 - Early death: SD `READ` LBA 0, 257, 258 (boot + two root sectors) then

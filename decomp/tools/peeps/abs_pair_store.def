@@ -1,0 +1,20 @@
+; SDCC 4.6 emits ld de,#abs / (de),a for consecutive absolute byte stores.
+; Older GB SDCC (the Jr kernel's era) used ld (#abs),a and a second (hl+).
+; This peep restores that shape so two-uchar stack args match the ROM.
+replace restart {
+	ld	de, #%1
+	ldhl	sp,	#%2
+	ld	a, (hl+)
+	ld	(de), a
+	ld	de, #%3
+	ld	a, (hl)
+	ld	(de), a
+	ret
+} by {
+	ldhl	sp,#%2
+	ld	a,(hl+)
+	ld	(#%1),a
+	ld	a,(hl+)
+	ld	(#%3),a
+	ret
+}

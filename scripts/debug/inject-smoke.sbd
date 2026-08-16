@@ -1,0 +1,12 @@
+# Code-injection smoke test (decomp/src/ezgb_tab_banner.c).
+#
+# $748a is EzgbTabBanner's `ret` — the last instruction of the injected
+# function, so breaking here proves the body ran to completion, not just that
+# the hook transferred control. (Breaking at the $746b entry also works but
+# false-fires: SameBoy breakpoints are address-only, and other ROM banks have
+# live code at $746b.)
+#
+# The examine dumps read the BG tilemap's top row, where the function draws
+# its marker to the right of the " SD " / " SET " / " HELP " tabs.
+breakpoint $748a
+continue

@@ -1,16 +1,39 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..c82021f
+index 0000000..0b7c4ed
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,868 @@
+@@ -0,0 +1,891 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
++#include <stdarg.h>
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <string.h>
 +#include <time.h>
 +#include <unistd.h>
++
++/* Routine "the stub is alive" status, NOT for failures.
++ *
++ * Everything GB_ezflash_jr_configure() logs runs inside GB_load_rom(), which
++ * the SDL front-end wraps in start_capturing_logs()/end_capturing_logs(true,
++ * ..., "Warning", ...) — so ANY GB_log() there becomes a modal message box
++ * that has to be dismissed by hand before the emulator will run a single
++ * instruction. That makes scripted/unattended runs (scripts/run-sameboy-debug.py)
++ * hang silently on a dialog nobody is watching.
++ *
++ * Normal startup chatter is not a warning, so it goes to stderr: still on the
++ * same PTY the debug wrapper reads, just not through the popup path. Real
++ * failures keep using GB_log() precisely BECAUSE it blocks — those are worth
++ * interrupting for. */
++static void ezjr_status(const char *fmt, ...)
++{
++    va_list args;
++    va_start(args, fmt);
++    vfprintf(stderr, fmt, args);
++    va_end(args);
++    fflush(stderr);
++}
 +
 +/* Observed battery-status window: write $11 to $4000, then read $A201 expect $88.
 + * See Call_000_1835 in re/1.05e/disassembly/bank_000.asm.
@@ -69,7 +92,7 @@ index 0000000..c82021f
 +        gb->rom[i + 1] = target_lo;
 +        gb->rom[i + 2] = 0x0E;
 +        gb->rom[i + 3] = 0x00; /* nop */
-+        GB_log(gb, "EZ Jr stub: soft-patched SD init hang at $%04x -> always success\n", i);
++        ezjr_status("EZ Jr stub: soft-patched SD init hang at $%04x -> always success\n", i);
 +        return;
 +    }
 +    GB_log(gb, "EZ Jr stub: SD init hang pattern not found, no soft-patch applied\n");
@@ -114,7 +137,7 @@ index 0000000..c82021f
 +    ez->img_size = (size_t)sz;
 +    ez->img_dirty = false;
 +    snprintf(ez->img_path, sizeof(ez->img_path), "%s", path);
-+    GB_log(gb, "EZ Jr stub: loaded SD image %s (%zu bytes)\n", path, ez->img_size);
++    ezjr_status("EZ Jr stub: loaded SD image %s (%zu bytes)\n", path, ez->img_size);
 +    return true;
 +}
 +
@@ -238,8 +261,8 @@ index 0000000..c82021f
 +    fclose(f);
 +    if (got > 0 && ez->log) {
 +        uint8_t *p11 = ez->cart_sram + EZJR_STATUS_BANK * EZJR_SRAM_BANK_SIZE;
-+        GB_log(gb, "EZ Jr stub: restored FRAM %zu bytes (backup AA=$%02x banks=$%02x)\n",
-+               got, p11[0x000], p11[0x001]);
++        ezjr_status("EZ Jr stub: restored FRAM %zu bytes (backup AA=$%02x banks=$%02x)\n",
++                    got, p11[0x000], p11[0x001]);
 +    }
 +}
 +
@@ -670,7 +693,7 @@ index 0000000..c82021f
 +    if (!gb->ezflash_jr.cart_sram) {
 +        GB_log(gb, "EZ Jr stub: cart SRAM alloc failed\n");
 +    }
-+    GB_log(gb, "EZ Jr stub: enabled (title EZGB). Set SAMEBOY_EZFLASH_JR=0 to disable.\n");
++    ezjr_status("EZ Jr stub: enabled (title EZGB). Set SAMEBOY_EZFLASH_JR=0 to disable.\n");
 +    soft_patch_sd_init_hang(gb);
 +    load_sd_image(gb);
 +    fram_path_from_img(&gb->ezflash_jr);
@@ -910,7 +933,7 @@ index 0000000..60e2bb7
 +    /* After $7FE0: ROM runs but cart_sram/img stay alive (mbc_ram aliases cart_sram). */
 +    bool game_mode;
 +    bool mbc_ram_is_cart_sram;
-+    bool fram_dirty; /* host-side FRAM image needs flush (non-volatile FRAM) */
++    bool fram_dirty; /* host-side FRAM image needs flush (battery-backed SRAM) */
 +    char fram_path[1024];
 +    uint8_t unlock_step;
 +    uint8_t rom_latch; /* $4000: SRAM page while $7FC0=$03 */
