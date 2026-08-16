@@ -4,12 +4,30 @@ A deliberately trivial mod whose only job is to prove the
 inject → hook → run chain works end to end, so that when a real feature
 misbehaves the plumbing is not one of the suspects.
 
-**What it does:** draws `*MOD*` on the file browser's tab row, in the empty
-five cells to the right of ` HELP `.
+**What it does:** draws `*MOD*` on the file browser's tab row, in the five
+cells to the right of ` HELP `.
 
 **Status:** confirmed working on 1.05e under SameBoy — visible on screen, and
 the breakpoint at the injected function's `ret` fires, so the body runs to
 completion rather than just being branched into.
+
+**The marker is transient, by design of where it's hooked.** `*MOD*` renders
+in full, then cols 16-19 are immediately overwritten and it settles to `*1`.
+Cols 16-19 are the browser's page-number field — bank 1 `$42ae`,
+`U32ToAscii_B0` base 10 then `DrawString(buf, len=4, col=$10, row=0)` — drawn
+after the tab row. Only col 15 is free on that row: the tabs end at 14, the
+page field starts at 16.
+
+That is a property of the hook site, not a fault in the injection. Any hook on
+the tab-row draw runs *before* the file-list draw, so anything the list touches
+wins. A marker that must persist needs either col 15 alone, or a hook that runs
+after the list draw.
+
+How this was pinned down, since it generalises: all text goes through
+`DrawGlyph` (`$2701`), which reads `wTextCursorX`/`Y` (`$d732`/`$d733`) rather
+than taking coordinates — so one conditional breakpoint catches every draw into
+a screen region no matter which helper or bank issued it, and the backtrace
+names the culprit. See `scripts/debug/who-draws-row0-right.sbd`.
 
 ## The three pieces
 
@@ -88,9 +106,13 @@ injected code ran, it just also corrupted the kernel underneath itself:
    writes and its `ret`. That function is not dead — `RomLoad_BuildAndRun7FD2Wait_B8`
    copies it to WRAM as a trampoline on the ROM-launch path.
 2. **It overwrote data that looks like padding.** Past that function is a long
-   `ff 7f ff 7f 00 00 …` table. Alternating `$7FFF`/`$0000` is white/black in
-   BGR555, i.e. a palette table, not filler. Only runs of a *single* repeated
-   byte are safe to treat as free.
+   `ff 7f ff 7f 00 00 …` table — structured 16-bit data, not filler. (An
+   earlier version of this note called it a BGR555 palette table. That reading
+   is unsupported: the kernel never writes `BCPS`/`BCPD` (`$ff68`/`$ff69`)
+   anywhere, and its ROM header CGB flag is `$00`, so it has no CGB palettes
+   to fill. What the table actually is remains unidentified — which does not
+   change the rule.) Only runs of a *single* repeated byte are safe to treat
+   as free.
 
 The `$4772` choice appears to have been made by eyeballing a hex dump for
 "looks empty" rather than scanning for single-byte filler runs — and bank 8

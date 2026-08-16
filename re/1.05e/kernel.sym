@@ -4357,5 +4357,9 @@
 07:5f20 MatchLfnEntry_clearSpare_B7
 07:5f3a MatchLfnEntry_matched_B7
 07:5f3d MatchLfnEntry_epilogue_B7
-08:746b EzgbTabBanner
-08:746b .data:26:8
+00:01e3 BrowserScroll
+00:01e3 .data:f8:8
+00:02e0 BrowserScrollDownHook
+00:02e0 .data:b:8
+00:02f0 BrowserScrollUpHook
+00:02f0 .data:b:8

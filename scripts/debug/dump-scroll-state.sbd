@@ -1,0 +1,8 @@
+# Scroll state at a browser_scroll hook hit.
+#   $c2a2  u16 entries enumerated so far (grows as DirList streams more)
+#   $c5a4  end-of-directory latch
+# The frame slots (dirty, base u16, sel) sit at SP+$12..SP+$15 — SameBoy
+# evaluates $sp, so this follows the frame wherever it is.
+examine/2 $c2a2
+examine/1 $c5a4
+examine/4 $sp+$12

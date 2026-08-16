@@ -3104,7 +3104,7 @@ DrawFwVersionScreen_epilogueRet::
     push hl
     call DrawString
     add sp, $05
-    jp $746b
+    jp Jump_008_7331
 
 
 Jump_008_7203:
@@ -3467,13 +3467,44 @@ LastRomReturnStr::
 LastRomStartStr::
     db "[A]start", $00
 
-EzgbTabBanner::
-    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
-    db $cd, $91, $27, $e8, $03, $af, $67, $2e
-    db $0f, $e5, $3e, $05, $f5, $33, $11, $8b
-    db $74, $d5, $cd, $b7, $08, $e8, $05, $c9
-    db $2a, $4d, $4f, $44, $2a, $00
-
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

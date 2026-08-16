@@ -424,286 +424,59 @@ HaltLoop::
     ret
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserScroll::
+    db $e8, $f1, $f8, $11, $2a, $47, $4e, $78
+    db $c6, $01, $f5, $f8, $02, $f1, $22, $79
+    db $ce, $00, $22, $d1, $d5, $1a, $22, $13
+    db $1a, $22, $78, $c6, $03, $22, $79, $ce
+    db $00, $32, $2a, $5f, $2a, $57, $1a, $77
+    db $2a, $22, $af, $32, $2a, $23, $c6, $01
+    db $22, $3e, $00, $ce, $00, $22, $11, $a2
+    db $c2, $1a, $22, $13, $1a, $22, $78, $22
+    db $71, $f8, $09, $2a, $d6, $10, $7e, $de
+    db $00, $30, $2a, $f8, $07, $7e, $06, $00
+    db $f8, $02, $86, $23, $4f, $78, $8e, $47
+    db $03, $f8, $0b, $79, $96, $23, $78, $9e
+    db $30, $4f, $f8, $06, $3a, $2b, $3c, $5e
+    db $23, $66, $6b, $77, $f8, $0d, $2a, $66
+    db $6f, $36, $02, $18, $3c, $f8, $02, $2a
+    db $c6, $10, $4f, $7e, $ce, $00, $47, $f8
+    db $0b, $79, $96, $23, $78, $9e, $38, $17
+    db $fa, $a4, $c5, $b7, $20, $23, $c5, $cd
+    db $43, $0a, $c1, $21, $a2, $c2, $2a, $66
+    db $6f, $79, $95, $78, $9c, $30, $12, $f8
+    db $02, $2a, $4f, $46, $03, $e1, $e5, $79
+    db $22, $70, $f8, $0d, $2a, $66, $6f, $36
+    db $01, $e8, $0f, $c9, $e8, $fa, $f8, $08
+    db $2a, $4f, $46, $59, $50, $13, $13, $13
+    db $1a, $f8, $05, $77, $e1, $c5, $b7, $28
+    db $0b, $f8, $05, $7e, $3d, $12, $e1, $36
+    db $03, $e5, $18, $21, $03, $59, $50, $1a
+    db $f8, $02, $22, $13, $1a, $77, $3a, $b6
+    db $28, $13, $2a, $23, $c6, $ff, $32, $2a
+    db $23, $ce, $ff, $32, $2a, $02, $03, $7e
+    db $02, $e1, $36, $01, $e5, $e8, $06, $c9
+
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+
+BrowserScrollDownHook::
+    db $f8, $12, $e5, $cd, $e3, $01, $e8, $02
+    db $c3, $ab, $16
+
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+
+BrowserScrollUpHook::
+    db $f8, $12, $e5, $cd, $97, $02, $e8, $02
+    db $c3, $ab, $16
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -4000,8 +3773,9 @@ FileBrowserEntry_afterPageInc::
 
 
 FileBrowserEntry_rowDec::
-    xor a
-    ld hl, sp+$15
+    jp $02f0
+
+
     or [hl]
     jp z, MenuDispatchAB_waitVBlankLoop
 
@@ -4021,8 +3795,9 @@ FileBrowserEntry_afterRowDec::
 
 
 FileBrowserEntry_rowInc::
-    ld hl, sp+$15
-    ld c, [hl]
+    jp $02e0
+
+
     ld b, $00
     inc bc
     ld a, c

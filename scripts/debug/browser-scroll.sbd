@@ -1,0 +1,11 @@
+# Continuous browser scrolling (decomp/src/browser_scroll.c).
+#
+# $02e0 / $02f0 are the DOWN / UP hook stubs; $01e3 / $0297 are the C bodies
+# they call. Breaking on the stubs proves the patched handlers actually reach
+# the new code, and the backtrace shows the FileBrowserEntry frame they run in.
+#
+# Neither fires without a key press, so a run that reaches the browser with no
+# hits is the regression check: the 3-byte jp patches did not break boot.
+breakpoint $02e0
+breakpoint $02f0
+continue

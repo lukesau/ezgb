@@ -1,0 +1,6 @@
+# At a DrawGlyph breakpoint: which character, at which cell, from whom.
+# C holds the glyph code (DrawGlyphAdvance loads it from sp+$04 into C).
+print [$d732]
+print [$d733]
+registers
+backtrace
