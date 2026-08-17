@@ -10,6 +10,11 @@ __pycache__/
 /juniorkernel-1.05e-FW5/
 re/*/kernel.gb
 re/*/kernel.gb.orig
+# ...and anything else derived from it: probe builds, chain-boot copies,
+# ezgb.dat drops. A modified kernel still contains EZ Flash's firmware.
+re/*/*.gb
+re/*/*.gbc
+re/*/*.dat
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
@@ -35,6 +40,14 @@ re/*/kernel.log
 
 # Ephemeral propose-labels / packet output
 re/*/label-proposals.txt
+
+# Cart config-flash dumps and repair images. Same policy as the firmware
+# packages: these are EZ Flash's FPGA bitstream, not this project's work, so
+# they stay local. See fpga/README.md.
+/fpga/**
+!/fpga/README.md
+*.bin
+!sd/fram.bin
 
 # Local microSD for the SameBoy EZ Jr FPGA stub.
 # ROMs, saves, and raw card images are copyrighted / personal — stay out of git.
