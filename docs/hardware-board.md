@@ -11,7 +11,7 @@ exact strings as approximate; the families are confident.
 | U1 | `XILINX SPARTAN XC3S200A VQG100AGQ1240` | Spartan-3A, 200K gates, 100-pin VQFP | High | The FPGA. Everything custom about this cart. |
 | — | `25Q40H E20090N` (8-pin SOIC) | 4 Mbit / **512 KB** SPI NOR flash (W25Q40 family) | High | **FPGA configuration storage.** See below — this is the important one. |
 | U4 | `Spansion 71GL032A40BFW0B` (BGA) | S71GL032A MCP, 32 Mbit / **4 MB** NOR flash | High | Game ROM storage — where a launched ROM is programmed. |
-| U9 | `3350LLZD… Z544I208A` (BGA) | **Unidentified.** Best candidate for the **FRAM**, by elimination — see below. | Low | Save storage. |
+| U9 | `3350LLZDQD` / `Z544I208A`, lowercase-`i` logo (BGA) | **PSRAM** — community teardowns identify this part. NOT FRAM. | Medium | Save + file-list storage, kept alive by the coin cell |
 | U6, U7 | `LVT162245` ×2 (`P01AD` = lot code, Fairchild) | 74LVT162245, 16-bit bus transceiver, 3.3 V with 5 V-tolerant inputs | High | Cart-edge bus interface. Two × 16 bits ≈ 16 address + 8 data + control. Your "PHY" reading is right. |
 | U3 | `8563S 2506 TMS` (8-pin) | PCF8563/BM8563 I²C real-time clock | High | The RTC. Paired with the coin cell; this is what 1.05e's "RTC codes are rewritten" refers to. |
 | U2 | `74HC595D` (16-pin) | 8-bit shift register, serial in / parallel out with latch | High | I/O expansion — more signals than the FPGA has spare pins for. |
@@ -20,40 +20,40 @@ exact strings as approximate; the families are confident.
 | — | Tactile button, centre of board | — | — | Inaccessible with the shell closed, so factory/recovery use. Purpose unverified. |
 | — | `JTAG` header, back edge, 8 pads | — | High | Xilinx JTAG chain — FPGA and/or config flash. |
 
-## Where the FRAM is — and why the `$A000` window is probably two devices
+## There is no FRAM on this board — saves are battery-backed PSRAM
 
-The Jr's saves are non-volatile without a battery (the coin cell backs only the
-RTC), so a real FRAM exists. Every other part on the board is accounted for, so
-the unidentified BGA (U9) is the candidate by elimination. But it is probably
-*not* the whole story behind the `$A000` cart-RAM window:
+**This corrects an error that propagated through several docs in this repo.**
+The Jr was believed to use FRAM, with the coin cell backing only the RTC. That
+is the **Omega DE**, not the Junior.
 
-- The file-list cache needs ~2 MB. EZ Flash's own changelog states a maximum of
-  7000 files; at the 255-byte entry stride that is ~1.78 MB. Independently, the
-  page-latch arithmetic (`$12 + (idx>>5)`, overflowing at 7,616 entries) gives
-  238 pages × 8 KB ≈ 1.95 MB. Two derivations, same ~2 MB.
-- FRAM at that density would be an expensive part for a cart at this price.
-- U4 is an **MCP**: the Spansion `S71` prefix denotes a multi-chip package,
-  typically GL-series NOR stacked with PSRAM. `71GL032A` plausibly carries 4 MB
-  NOR **plus** ~2 MB PSRAM — which would cover both the game ROM and the file
-  cache.
+U9 is `3350LLZDQD` — identified as **PSRAM** in community teardowns. The
+coin cell backs **both the RTC and the save memory**, which is why "my EZ Flash
+Jr battery dies in a month" is a recurring complaint: PSRAM draws far more
+standby current than FRAM. Reported cell life runs roughly 1-8 months depending
+on which memory variant a unit shipped with, against 10+ years for an original
+battery-backed cartridge. Some owners swap the cell for a CR2032 or replace the
+memory part outright.
 
-Behavioural evidence for the file cache being **volatile**: the kernel never
-trusts it. `FileBrowserEntry` zeroes `$c2a2/$c2a3` and re-runs `Opendir_B5` +
-`DirList` from scratch on every entry to the browser, and no code path reads
-those pages without having just written them. That is the correct behaviour for
-PSRAM that is garbage after a power cycle, and wasteful behaviour for
-non-volatile storage.
+Consequences for everything else in these notes:
 
-So the working model is: **page `$11` (BACKUPSAVE meta, last-ROM path) in FRAM;
-pages `$12`+ (file list) in PSRAM** — one `$A000` window, two backing stores,
-selected by the page latch. This supersedes an earlier note claiming the
-file-list pages "survive power-off (it's FRAM)".
+- Saves and the `$A300` last-ROM metadata are **volatile if the coin cell
+  dies**. They are not intrinsically non-volatile.
+- The BACKUPSAVE `$AA` stamp at page `$11` surviving a power cycle proves the
+  battery is doing its job, not that the storage is non-volatile.
+- The earlier "page `$11` in FRAM, pages `$12`+ in PSRAM — one window, two
+  backing stores" model is unsupported. One battery-backed memory covering both
+  is simpler and fits the evidence.
+- The argument that the kernel re-enumerates the file list "because PSRAM is
+  volatile" was weak reasoning even if the conclusion is harmless: with the cell
+  fitted the cache would survive, and re-enumerating is simply correct behaviour
+  because the SD card may have changed.
 
-All of the above is inference from part families, capacity arithmetic and
-kernel behaviour — not measurement. To settle it: read U9's marking under
-better magnification (a manufacturer logo would probably decide it), and
-confirm the split functionally by checking whether data written to a page
-`$12`+ survives a power cycle while page `$11` does.
+Capacity still checks out against the `$12 + (idx>>5)` page arithmetic (~2 MB;
+EZ Flash's changelog states a 7000-file maximum). Community teardowns also
+describe the Spansion `71GL032A` MCP as 32 Mbit flash for ROMs plus additional
+memory, so exact partitioning between U4 and U9 is not settled.
+
+Sources: beyondconsoles EZ-Flash Junior review; GBAtemp battery-drain threads.
 
 ## Why the config flash matters
 

@@ -27,7 +27,9 @@ HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]r
 | WRAM mirror | Read back into `$c4a4`; written from `$c2a6` |
 
 `$A300` (bank 17 + rompage `$03`) sits in the same cart FRAM window as save meta (see
-`docs/fram-save-map.md`). FRAM needs no battery; the cart’s battery is for the RTC only.
+`docs/fram-save-map.md`). Corrected: that storage is battery-backed **PSRAM**, not FRAM —
+the coin cell backs the save memory as well as the RTC, so `$A300` is lost if it dies.
+See `hardware-board.md`.
 Older notes that lumped this window with “NOR/NVRAM for RTC” should be read with that
 split in mind (`docs/DIFF_1.04e_vs_1.05e.md` / `docs/1.05e-instability.md`).
 

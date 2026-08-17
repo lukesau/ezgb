@@ -3,11 +3,19 @@
 How cart save RAM works on the EZ Flash Jr kernel, and where it shows up in the disassembly.
 Annotations are kept in tracked files and reinjected into `bank_*.asm`.
 
-**Hardware note:** on-cart save storage is **FRAM** — non-volatile by itself, no battery
-required. The only battery-backed part of the Jr is the **RTC**. Games still *see* “battery
-RAM” because the FPGA emulates a normal MBC `$A000` window; physically those writes land in
-FRAM. (The kernel’s `BATTERY` / `DRY!!!` notice is about the **console** AA cells, not the
-cart.)
+> **CORRECTION — this file's title and premise are wrong.** The Jr has **no FRAM**;
+> that is the Omega DE. On-cart save storage is **PSRAM** (U9, `3350LLZDQD`), and the
+> coin cell backs **both the RTC and the save memory**. Saves are therefore lost if the
+> cell dies — hence the well-known "EZ Flash Jr battery dies in a month" complaints.
+> See `hardware-board.md`. Everything below about the *kernel-side* save map, the
+> `$A000` window and the BACKUPSAVE flow is unaffected and still accurate; only the
+> storage technology and the battery dependency were wrong. The filename is kept for
+> now so existing cross-references do not break.
+
+**Hardware note (corrected):** on-cart save storage is battery-backed **PSRAM**. Games
+*see* “battery RAM” because the FPGA emulates a normal MBC `$A000` window; physically
+those writes land in PSRAM kept alive by the coin cell. (The kernel’s `BATTERY` /
+`DRY!!!` notice is about the **console** AA cells, not the cart.)
 
 ## Two bus personalities, one FRAM chip
 
