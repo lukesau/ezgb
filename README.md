@@ -46,15 +46,17 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 │   └── doc-symbol-coverage.py # rank table only (fan-in); prefer map-next/packet
 ├── sd/                        # local microSD image for the stub (see sd/README.md)
 │   └── README.md
-├── ezgb.dat                   # NOT TRACKED, your own kernel dump goes here
 ├── juniorkernel-1.04e-FW4/    # NOT TRACKED, official firmware package (see below)
 │   ├── Changelog.txt
 │   ├── ezgb.dat
 │   ├── readme.txt
 │   └── Update_FW4.gb
-├── juniorkernel-1.05e-FW5/    # NOT TRACKED, same idea, newer firmware
+├── juniorkernel-1.05e-FW5-0731/   # NOT TRACKED, same idea, newer firmware
 │   ├── ezgb.dat
 │   └── Update_FW5_7-31.gb
+├── juniorkernel-1.05e-FW5-0918/   # NOT TRACKED, unreleased 2021 FW5 (see issue #1)
+│   ├── ezgb.dat
+│   └── Update_FW5_2021-9-18.gb
 ├── re/
 │   ├── 1.04e/
 │   │   ├── disassembly/
@@ -65,7 +67,8 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 │   │   │   ├── hardware.inc
 │   │   │   └── Makefile
 │   │   └── kernel.gb          # NOT TRACKED, copy of the firmware package's ezgb.dat
-│   ├── 1.05e/                 # same layout as 1.04e
+│   ├── 1.05e/                 # same layout; this is the FW5 2020-07-31 build
+│   ├── 1.05e-0918/            # same layout; the FW5 2021-09-18 build
 └── tools/                     # NOT TRACKED, cloned reference repos (see Tools below)
     ├── mgbdis/
     ├── SameBoy/               # from scripts/setup-sameboy.sh
@@ -76,8 +79,10 @@ switch). See [`docs/omega-jr-compare.md`](docs/omega-jr-compare.md). Earlier in-
 Paths marked NOT TRACKED are gitignored. They're either EZ Flash's copyrighted binaries
 (the firmware packages and the `kernel.gb` copies derived from them) or cloned third-party
 reference repos, not this project's own work. A fresh checkout needs its own dump of the
-kernel (`ezgb.dat`, or a full firmware package folder) placed at the paths above to
-regenerate or rebuild against; `tools/` repos can be re-cloned per the Tools section below.
+kernel, as a firmware package folder, with `ezgb.dat` copied to
+`re/<version>/kernel.gb` to regenerate or rebuild against. Always name a specific
+version rather than relying on a loose kernel at the repo root — the FW5 packages
+differ (see [docs/DIFF_1.05e-0731_vs_0918.md](docs/DIFF_1.05e-0731_vs_0918.md)); `tools/` repos can be re-cloned per the Tools section below.
 
 ## Status
 

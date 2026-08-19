@@ -4,7 +4,9 @@
 __pycache__/
 *.py[cod]
 
-# EZ Flash's copyrighted firmware binaries, not our work, keep local-only
+# EZ Flash's copyrighted firmware binaries, not our work, keep local-only.
+# /ezgb.dat is kept as a guard: nothing reads a root-level kernel any more
+# (use re/<version>/kernel.gb), but a stray dump dropped here must not be committed.
 /ezgb.dat
 /juniorkernel-1.04e-FW4/
 /juniorkernel-1.05e-FW5-0731/
