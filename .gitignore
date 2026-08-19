@@ -7,7 +7,8 @@ __pycache__/
 # EZ Flash's copyrighted firmware binaries, not our work, keep local-only
 /ezgb.dat
 /juniorkernel-1.04e-FW4/
-/juniorkernel-1.05e-FW5/
+/juniorkernel-1.05e-FW5-0731/
+/juniorkernel-1.05e-FW5-0918/
 re/*/kernel.gb
 re/*/kernel.gb.orig
 # ...and anything else derived from it: probe builds, chain-boot copies,
@@ -44,8 +45,8 @@ re/*/label-proposals.txt
 # Cart config-flash dumps and repair images. Same policy as the firmware
 # packages: these are EZ Flash's FPGA bitstream, not this project's work, so
 # they stay local. See fpga/README.md.
-/fpga/**
-!/fpga/README.md
+/fpga/
+
 *.bin
 !sd/psram.bin
 
