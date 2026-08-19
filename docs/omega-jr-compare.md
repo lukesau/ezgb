@@ -75,8 +75,10 @@ The staged game image is almost certainly **volatile RAM** behind the FPGA (SRAM
 —“FPGA buffer” in our notes; Omega’s analogue for SD launches is `Loadfile2PSRAM`), not a
 NOR game slot. Cart memory that *does* keep state across power-off:
 
-- **FRAM** — saves and meta such as `$A300` last-path; non-volatile, **no battery**
-- **RTC** — the only **battery-backed** part of the Jr
+- **PSRAM** (U9) — saves and meta such as `$A300` last-path; **battery-backed**, so a
+  dead coin cell loses saves as well as the clock. FRAM is an Omega part, not a Jr one
+  (see [hardware-board.md](hardware-board.md))
+- **RTC** — also kept alive by that same cell
 
 Evidence the big game image does not persist across power-off:
 

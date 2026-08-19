@@ -47,7 +47,7 @@ void cgb_init_and_lcd_on(void) {
      * reads the launched ROM's $0147/$0149 and has the FPGA emulate that MBC
      * (bank_001.asm:6188+, feeding $7F37), and an emulated MBC keeps
      * $A000-$BFFF disabled until this write. Both the SD data window and the
-     * FRAM meta pages live at $A000, which is why a chain-booted kernel fails
+     * PSRAM meta pages live at $A000, which is why a chain-booted kernel fails
      * SD init *and* the battery check from one cause.
      *
      * Booted normally, the FPGA is not emulating an MBC and this is an

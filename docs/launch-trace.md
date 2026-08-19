@@ -68,7 +68,8 @@ Preferred (preloads breakpoints from `scripts/debug/launch.sbd`, links
 `kernel.sym` so SameBoy can resolve labels):
 
 ```sh
-./scripts/run-sameboy-debug.sh              # interactive; BPs already set
+./scripts/run-sameboy-debug.sh --breakpoints   # interactive, launch-path BPs
+./scripts/run-sameboy-debug.sh                 # plain boot, no BPs (default)
 ./scripts/run-sameboy-debug.sh --trace      # dump WRAM/regs on each stop → scripts/debug/launch-trace.log
 ```
 

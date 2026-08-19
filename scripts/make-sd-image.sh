@@ -32,14 +32,28 @@ echo "Formatting $DEV as FAT16 (EZJR)"
 newfs_msdos -F 16 -v EZJR "$DEV" >/dev/null
 hdiutil detach "$DEV" >/dev/null
 
+# Set SD_KEEP_MACOS_JUNK=1 to build a deliberately dirty card: AppleDouble
+# ._* files, .DS_Store, .Spotlight-V100, .fseventsd. Used to test the kernel's
+# dotfile filter (DirListSkipDotLongName), which must hide all of it.
+KEEP_JUNK="${SD_KEEP_MACOS_JUNK:-0}"
+
 scrub_macos_junk() {
   local mnt="$1"
+  [[ "$KEEP_JUNK" == "1" ]] && return 0
   rm -rf "$mnt/.fseventsd" "$mnt/.Spotlight-V100" "$mnt/.Trashes" \
          "$mnt/.TemporaryItems" "$mnt/.DocumentRevisions-V100" \
          "$mnt/.DS_Store" "$mnt/.metadata_never_index" 2>/dev/null || true
   find "$mnt" \( -name '.DS_Store' -o -name '._*' -o -name '.fseventsd' \
               -o -name '.metadata_never_index' \) -exec rm -rf {} + 2>/dev/null || true
 }
+
+# Stage the current patched kernel as sd/root/ezgb.dat so the card always
+# carries the build we are testing. Non-fatal: kernel.gb is untracked firmware
+# and may simply be absent.
+if [[ -x "$ROOT/scripts/build-ezgb-dat.sh" ]]; then
+  "$ROOT/scripts/build-ezgb-dat.sh" "${EZGB_KERNEL_VERSION:-1.05e}" \
+    || echo "warning: could not stage ezgb.dat; card will not contain a kernel" >&2
+fi
 
 if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
   MNT="$(mktemp -d /tmp/ezjr-sd.XXXXXX)"
@@ -49,12 +63,17 @@ if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
   }
   trap cleanup EXIT
   echo "Copying $ROOTFS -> image"
-  export COPYFILE_DISABLE=1
+  [[ "$KEEP_JUNK" == "1" ]] || export COPYFILE_DISABLE=1
   hdiutil attach -imagekey diskimage-class=CRawDiskImage -mountpoint "$MNT" "$IMG" >/dev/null
   scrub_macos_junk "$MNT"
-  rsync -a --exclude '.DS_Store' --exclude '._*' --exclude '.Spotlight-V100' \
-        --exclude '.fseventsd' --exclude '.Trashes' --exclude '.metadata_never_index' \
-        "$ROOTFS"/ "$MNT"/
+  if [[ "$KEEP_JUNK" == "1" ]]; then
+    echo "SD_KEEP_MACOS_JUNK=1 — copying macOS cruft too (dotfile-filter test card)"
+    rsync -a "$ROOTFS"/ "$MNT"/
+  else
+    rsync -a --exclude '.DS_Store' --exclude '._*' --exclude '.Spotlight-V100' \
+          --exclude '.fseventsd' --exclude '.Trashes' --exclude '.metadata_never_index' \
+          "$ROOTFS"/ "$MNT"/
+  fi
   scrub_macos_junk "$MNT"
   # Warn about non-8.3 names (spaces / long names → VFAT LFN → often broken in Jr UI)
   while IFS= read -r -d '' f; do

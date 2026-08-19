@@ -38,7 +38,7 @@ CGB mode is unreachable at first boot (`cgb-mode.md`): the bootstrap's header
 decides DMG-vs-CGB before our code exists. But the flag *is* honoured on a game
 launch. So chain-booting a CGB-flagged kernel — ideally the kernel rebooting
 itself automatically — was the only route to CGB mode without FPGA work. It
-only works if the kernel can still reach the SD card and FRAM from the game
+only works if the kernel can still reach the SD card and PSRAM from the game
 slot. It hangs with BATTERY DRY and "Micro SD initial error!" instead.
 
 ## Method

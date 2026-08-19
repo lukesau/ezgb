@@ -30,7 +30,7 @@ Common habits:
 6. **RAM and constants get names too.** Once `$D732` is “text cursor X”, every
    store becomes readable. Magic bytes → named constants when repeated.
 7. **One subsystem at a time.** pret slices (battle, map, menu). We slice
-   (boot, SD/FS, browser, loader, FRAM/RTC, draw).
+   (boot, SD/FS, browser, loader, PSRAM/RTC, draw).
 8. **Cross-reference a sibling.** pret compares Red↔Yellow↔Crystal. We compare
    Jr↔Omega DE source + live UX ([`omega-jr-compare.md`](omega-jr-compare.md)).
 9. **Decomp is optional and late.** pret’s GB games stayed ASM for years.
@@ -137,7 +137,7 @@ not a workout on the `c` key.
 Minimum bar for a name:
 
 - [ ] Know callers (grep the `Call_xxx` / address)
-- [ ] Know what it reads/writes (regs, WRAM, `$7Fxx`, FRAM)
+- [ ] Know what it reads/writes (regs, WRAM, `$7Fxx`, PSRAM)
 - [ ] Pure leaf proven from the body, **or** one live way to hit it
 
 Tools:
@@ -222,7 +222,7 @@ Work top-down along paths you already care about; fill fan-in leaves as you go.
 | 4 | SD / FatFs-shaped FS | `DirList`, `SdMenuMain` | [`ezgb-dat-boot.md`](ezgb-dat-boot.md) |
 | 5 | File browser / menus | partial | [`last-rom.md`](last-rom.md) |
 | 6 | ROM load / FPGA handoff | `RomLoaderMain`, `RomLoad_*` | [`launch-trace.md`](launch-trace.md), [`REGISTERS.md`](REGISTERS.md) |
-| 7 | FRAM / saves / RTC | partial | [`fram-save-map.md`](fram-save-map.md) |
+| 7 | PSRAM / saves / RTC | partial | [`psram-save-map.md`](psram-save-map.md) |
 | 8 | Settings / HELP / misc UI | mostly unnamed | Omega `setwindow*.c` |
 | 9 | Matching decomp leaves | optional | [`PROGRESS.md`](PROGRESS.md) |
 
@@ -267,7 +267,7 @@ conservative for the same reason.
 ./scripts/regen-disasm.sh 1.05e
 
 # live
-./scripts/run-sameboy-debug.sh
+./scripts/run-sameboy-debug.sh --breakpoints
 ```
 
 pret’s broader tooling lives in `tools/gb-asm-tools` ([upstream](https://github.com/pret/gb-asm-tools));

@@ -7,8 +7,8 @@
       "lines": [
         "ROM load + soft-boot (kernel FPGA path only \u2014 not used by launched games).",
         "$7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.",
-        "$7FE0=$80: reset into loaded ROM; same FRAM chip, FPGA emulates game MBC.",
-        "See docs/fram-save-map.md and sd/README.md."
+        "$7FE0=$80: reset into loaded ROM; same PSRAM chip, FPGA emulates game MBC.",
+        "See docs/psram-save-map.md and sd/README.md."
       ]
     },
     {
@@ -75,9 +75,9 @@
       "bank": 1,
       "addr": "47a7",
       "lines": [
-        "SetFpgaPage: unlock \u2192 $7FC0=page (arg on stack; $03=cart FRAM window) \u2192 commit.",
-        "With $7FC0=$03, $4000 latches FRAM bank; $A000-$BFFF is non-volatile FRAM",
-        "(no battery; cart battery is RTC-only). See docs/fram-save-map.md."
+        "SetFpgaPage: unlock \u2192 $7FC0=page (arg on stack; $03=cart PSRAM window) \u2192 commit.",
+        "With $7FC0=$03, $4000 latches PSRAM bank; $A000-$BFFF is battery-backed PSRAM",
+        "(no battery; cart battery is RTC-only). See docs/psram-save-map.md."
       ]
     },
     {
@@ -109,7 +109,7 @@
       "bank": 1,
       "addr": "55c2",
       "lines": [
-        "PreLaunchFramStamp: page $11 (SetFpgaPage_B1 $03) per-launch FRAM stamp for SAVER/*.SAV.",
+        "PreLaunchSaveStamp: page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.",
         "$A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.",
         "Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done \u2192 Jump_001_5657.",
         "Jump_001_5657: if $d3f0 \u2192 $A202=$77 + ROM size@$A210\u201313 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup."
@@ -352,7 +352,7 @@
       "bank": 0,
       "addr": "0e76",
       "lines": [
-        "BackupBranchEntry: FRAM stamp \u2192 SAVER basename, then fall into FileBrowserEntry.",
+        "BackupBranchEntry: save stamp \u2192 SAVER basename, then fall into FileBrowserEntry.",
         "Read $A202\u2192$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.",
         "Jump_000_0ec4: copy $A010.. \u2192 $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.",
         "Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d)."
@@ -1683,8 +1683,8 @@
         "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; Jump_001_51b2 force \".sav\"; Open_B6 FarCall_06_7309 \u2192 $ca0f.",
         "Size from $d3ed: Jump_001_5233 ($d3eb==2 \u2192 Jump_001_523e/jr_001_5241 $2000 else Jump_001_5251 0); 1/2 Jump_001_525b $2000; 4 Jump_001_526b $20000; 5 Jump_001_527b $10000; else Jump_001_528b $8000.",
         "Jump_001_5298: open ok else Jump_001_54d1; and $30==$30 \u2192 Jump_001_530e/jr_001_5311 RTC flag else Jump_001_531c; Jump_001_5320/Jump_001_5327 read+$200 VramCopyStack loop.",
-        "Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close \u2192 PreLaunchFramStamp.",
-        "Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs \u2192 PreLaunchFramStamp."
+        "Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close \u2192 PreLaunchSaveStamp.",
+        "Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs \u2192 PreLaunchSaveStamp."
       ]
     },
     {
@@ -2217,7 +2217,7 @@
       "addr": "50e4",
       "lines": [
         "RtcReadDaysClearRegs: RtcToDayCount \u2192 HL:DE; then zero $A018\u2013$A01C (FPGA page $06)",
-        "and $A220\u2013$A224 (page $03, $4000=$11 window). Callers stash days before launch/FRAM."
+        "and $A220\u2013$A224 (page $03, $4000=$11 window). Callers stash days before launch/PSRAM."
       ]
     },
     {
@@ -2243,7 +2243,7 @@
       "addr": "643a",
       "lines": [
         "BackupSaveDump: open SAVER FarCall_06_7309 mode $12 \u2192 $ca0f; fail Jump_001_6738 ret.",
-        "Jump_001_647b: while offset < size@sp+$0f: bank FRAM, VramCopyStack $200, FarCall_07_7739 write.",
+        "Jump_001_647b: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.",
         "Spinner ++sp+$04: Jump_001_652f; ==3 jr_001_6532 reset0; Jump_001_6536 \".\"; Jump_001_6551 \u2192 Jump_001_655b/jr_001_655e \"..\"; Jump_001_6572 \"...\"; Jump_001_6583 +=$200 \u2192 Jump_001_647b.",
         "Jump_001_65a1: $d3f6==$77 \u2192 jr_001_65af Memset+$A220 pack+write else Jump_001_65ac \u2192 Jump_001_672f close 768f; Jump_001_6738 fail (jr_001_673f/jr_001_6743 strs)."
       ]

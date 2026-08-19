@@ -3,14 +3,19 @@
 
 SameBoy has no --debugger-script flag. This drives the SDL debugger over a PTY:
   1. Start with -s (stop before first instruction)
-  2. Feed breakpoints/watches from scripts/debug/*.sbd
+  2. Feed breakpoints/watches from scripts/debug/*.sbd (opt-in)
   3. Interactive: hand the terminal back to you
      --trace: on each Breakpoint/Watchpoint, run dump-launch.sbd then continue
 
+By default it just boots: no breakpoints, and the stub's per-command FPGA/SD
+trace off. Both were needed to map the loader and only get in the way when the
+point is to run a ROM.
+
 Examples:
-  ./scripts/run-sameboy-debug.sh
-  ./scripts/run-sameboy-debug.sh --trace
-  ./scripts/run-sameboy-debug.sh --version 1.04e --script scripts/debug/launch.sbd
+  ./scripts/run-sameboy-debug.sh                  # plain boot
+  ./scripts/run-sameboy-debug.sh --breakpoints    # launch-path breakpoints
+  ./scripts/run-sameboy-debug.sh --verbose-stub   # every FPGA/SD command
+  ./scripts/run-sameboy-debug.sh --trace          # implies --breakpoints
 """
 
 import argparse
@@ -128,7 +133,21 @@ def drain(fd, timeout=0.05):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--version", default="1.05e", help="kernel version dir under re/")
-    ap.add_argument("--script", default=DEFAULT_SCRIPT, help="debugger init .sbd")
+    ap.add_argument("--model", default="cgb",
+                    help="SameBoy model (default cgb). Use dmg to emulate an "
+                         "original Game Boy; auto-detection would pick dmg from "
+                         "the kernel header and hide all CGB behaviour.")
+    ap.add_argument("--script", default=None,
+                    help="debugger init .sbd to preload. Default: none — just boot. "
+                         "The launch-path breakpoints (%s) were for mapping the "
+                         "loader and only get in the way when running a ROM." %
+                         os.path.relpath(DEFAULT_SCRIPT, ROOT))
+    ap.add_argument("--breakpoints", action="store_const", const=DEFAULT_SCRIPT,
+                    dest="script", help="shorthand for --script " +
+                    os.path.relpath(DEFAULT_SCRIPT, ROOT))
+    ap.add_argument("--verbose-stub", action="store_true",
+                    help="enable the EZ Jr stub's per-command FPGA/SD trace "
+                         "(thousands of lines per boot)")
     ap.add_argument("--dump", default=DEFAULT_DUMP, help="commands to run on each stop (--trace)")
     ap.add_argument(
         "--trace",
@@ -148,10 +167,16 @@ def main():
     )
     args = ap.parse_args()
 
+    # --trace has nothing to dump without breakpoints to stop on.
+    if args.trace and not args.script:
+        args.script = DEFAULT_SCRIPT
+
     sameboy = find_sameboy()
     kernel = ensure_kernel_sym(args.version)
     img = ensure_sd_img()
-    init_cmds = read_sbd(args.script)
+    # With no init script the emulator still starts halted (-s), so it needs at
+    # least a continue to reach the kernel.
+    init_cmds = read_sbd(args.script) if args.script else ["continue"]
     dump_cmds = read_sbd(args.dump) if args.trace else []
 
     log_path = args.log
@@ -163,17 +188,22 @@ def main():
         env["SAMEBOY_EZFLASH_JR_IMG"] = img
     # Keep a real TERM so SameBoy's console initializes; PTY supplies the tty.
     env.setdefault("TERM", "xterm-256color")
+    if args.verbose_stub:
+        env["SAMEBOY_EZFLASH_JR_LOG"] = "1"
 
     print(f"ROM:     {kernel}")
     if img:
         print(f"SD img:  {img}")
-    print(f"script:  {args.script}")
+    print(f"script:  {args.script or 'none (--breakpoints for the launch-path set)'}")
     if args.trace:
         print(f"trace:   on (dump={args.dump}, log={log_path})")
         print("Navigate the browser and press A on a .GB — stops dump automatically.")
     else:
-        print("Interactive: breakpoints preloaded. A on a .GB to open.")
-        print("At a stop, useful paste:  scripts/debug/dump-launch.sbd")
+        if args.script:
+            print("Interactive: breakpoints preloaded. A on a .GB to open.")
+            print("At a stop, useful paste:  scripts/debug/dump-launch.sbd")
+        else:
+            print("Interactive: no breakpoints. Ctrl+C to break into the debugger.")
     print()
 
     log_f = open(log_path, "a") if log_path else None
@@ -184,7 +214,14 @@ def main():
     pid, fd = pty.fork()
     if pid == 0:
         os.chdir(os.path.join(ROOT, "tools", "SameBoy"))
-        os.execve(sameboy, [sameboy, "-s", kernel], env)
+        # --model matters: SameBoy otherwise auto-selects the model from the
+        # loaded ROM's header, and kernel.gb is $0143=$00, so it emulates a DMG
+        # — where CGB mode cannot exist and RP ($FF56) is not implemented. That
+        # silently misrepresents the hardware: a real Jr in a GBC/GBA runs the
+        # kernel in DMG *compatibility* mode on Color silicon, so a launched
+        # CGB ROM gets real CGB mode after the reset. Forcing a Color model
+        # reproduces that.
+        os.execve(sameboy, [sameboy, "--model", args.model, "-s", kernel], env)
 
     # Child is SameBoy; parent drives the debugger.
     buf = b""

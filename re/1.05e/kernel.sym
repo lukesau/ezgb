@@ -1,6 +1,6 @@
 ; Human-readable names for mgbdis (place beside kernel.gb).
 ; Regenerate:  cd re/1.05e && mgbdis kernel.gb && ../../scripts/annotate-disasm.py 1.05e
-; See docs/fram-save-map.md
+; See docs/psram-save-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 
 00:0024 .padding:4
@@ -252,7 +252,7 @@
 01:4856 LastRomPersist
 01:487d LastRomPersistLoop
 01:48b2 LastRomPersistDone
-01:55c2 PreLaunchFramStamp
+01:55c2 PreLaunchSaveStamp
 01:58b0 LaunchSetup
 01:5e14 RomLoaderMain
 01:6747 BackupSavePrompt
@@ -1345,12 +1345,12 @@
 04:44ec CStrCat_writeNul
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- PreLaunchFramStamp ---
-01:561d PreLaunchFramStamp_copyBasename
-01:5654 PreLaunchFramStamp_copyCont
-01:5657 PreLaunchFramStamp_checkRtc
-01:5716 PreLaunchFramStamp_clearRtcFlag
-01:571c PreLaunchFramStamp_epilogue
+; --- PreLaunchSaveStamp ---
+01:561d PreLaunchSaveStamp_copyBasename
+01:5654 PreLaunchSaveStamp_copyCont
+01:5657 PreLaunchSaveStamp_checkRtc
+01:5716 PreLaunchSaveStamp_clearRtcFlag
+01:571c PreLaunchSaveStamp_epilogue
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RomLoad_ClearCartWindow_B8 ---
@@ -4363,3 +4363,4 @@
 00:02e0 .data:b:8
 00:02f0 BrowserScrollUpHook
 00:02f0 .data:b:8
+00:03cc DirListSkipDotLongName

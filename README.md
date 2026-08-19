@@ -122,7 +122,7 @@ for `kernel.sym` entries at CPU addr ≥ `$C000` (mgbdis rewrites `[wGfxMode]` b
 does not define those labels).
 
 Persistent annotations: [re/1.05e/kernel.sym](re/1.05e/kernel.sym) (names),
-[re/1.05e/notes.json](re/1.05e/notes.json) (comment blocks). See [docs/fram-save-map.md](docs/fram-save-map.md).
+[re/1.05e/notes.json](re/1.05e/notes.json) (comment blocks). See [docs/psram-save-map.md](docs/psram-save-map.md).
 `mgbdis` applies the `kernel.sym` names to the labels (`Call_000_0de4` → `SdMenuMain`);
 `annotate-disasm.py` then injects the `notes.json` blocks, matching either the assigned
 name or the raw `*_bbb_aaaa` label for still-unnamed addresses.

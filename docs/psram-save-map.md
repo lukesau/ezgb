@@ -1,9 +1,9 @@
-# Cart SRAM / FRAM and saves (1.05e)
+# Cart SRAM / PSRAM and saves (1.05e)
 
 How cart save RAM works on the EZ Flash Jr kernel, and where it shows up in the disassembly.
 Annotations are kept in tracked files and reinjected into `bank_*.asm`.
 
-> **CORRECTION — this file's title and premise are wrong.** The Jr has **no FRAM**;
+> **CORRECTION (applied).** This file originally called the save store FRAM. The Jr has **no FRAM**;
 > that is the Omega DE. On-cart save storage is **PSRAM** (U9, `3350LLZDQD`), and the
 > coin cell backs **both the RTC and the save memory**. Saves are therefore lost if the
 > cell dies — hence the well-known "EZ Flash Jr battery dies in a month" complaints.
@@ -17,31 +17,31 @@ Annotations are kept in tracked files and reinjected into `bank_*.asm`.
 those writes land in PSRAM kept alive by the coin cell. (The kernel’s `BATTERY` /
 `DRY!!!` notice is about the **console** AA cells, not the cart.)
 
-## Two bus personalities, one FRAM chip
+## Two bus personalities, one PSRAM chip
 
 | Phase | CPU runs | How RAM is accessed |
 |---|---|---|
 | Kernel menu | `EZGB` (`kernel.gb`) | FPGA unlock/commit on `$7Fxx`; `$7FC0=$03` + `$4000`=page + `$A000`–`$BFFF` |
 | Launched game | Loaded `.gb` ROM | Normal MBC only (`$2000`–`$5FFF`, `$A000`–`$BFFF`); **no** `$7Fxx` commands |
-| Next kernel boot | `EZGB` again | Kernel reads page `$11` meta; optional FRAM → `SAVER/` on SD |
+| Next kernel boot | `EZGB` again | Kernel reads page `$11` meta; optional PSRAM → `SAVER/` on SD |
 
 The game does not talk to FPGA command registers while saving. The FPGA emulates the
-game's MBC and maps `$A000` writes into the **same** physical FRAM the kernel used
+game's MBC and maps `$A000` writes into the **same** physical PSRAM the kernel used
 from the menu.
 
 SameBoy stub mirrors this: `mbc_ram` aliases `cart_sram` after `$7FE0` soft-reset.
 
 ## Save lifecycle
 
-1. **In-game** — MBC “battery RAM” writes land in FRAM only (no host power needed to retain).
+1. **In-game** — MBC “battery RAM” writes land in PSRAM only (no host power needed to retain).
 2. **Before launch** — kernel stamps page `$11` (`$AA` = pending backup, savename, bank count).
-3. **After power-up** — if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies FRAM to `SAVER/*.SAV` on the SD image.
+3. **After power-up** — if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies PSRAM to `SAVER/*.SAV` on the SD image.
 
 Details for the emulator workflow: [sd/README.md](../sd/README.md).
 
 ## BACKUPSAVE flag lifecycle
 
-The whole feature turns on one byte in FRAM, page `$11` (bank 17), address **`$A000`**,
+The whole feature turns on one byte in PSRAM, page `$11` (bank 17), address **`$A000`**,
 reachable only from the kernel via `SetFpgaPage_B1`/`_B0` with `$7FC0=$03`. The prompt shown
 on boot (`BACKUPSAVE` / `Saving..` / `[B]NO` `[A]OK`) is `BackupSavePrompt` at `01:6747`.
 
@@ -50,7 +50,7 @@ on boot (`BACKUPSAVE` / `Saving..` / `[B]NO` `[A]OK`) is `BackupSavePrompt` at `
 On **every ROM launch**, just before handing off to the game, the loader stamps page `$11`
 (`bank_001.asm`, `Jump_001_55c2` region):
 
-| FRAM addr | Written | Meaning |
+| PSRAM addr | Written | Meaning |
 |---|---|---|
 | `$A000` | `$AA` | Backup pending |
 | `$A001` | auto-save flag | `1` = dump without prompting; else prompt |
@@ -64,7 +64,7 @@ it whether or not you actually create a new in-game save. That's why:
   never "miss" the chance to dump). Consistent, as observed.
 - You can also get the prompt after a session where you **didn't** make a new save — the flag
   reflects "a game was launched," not "the save changed." Harmless (it just re-dumps whatever
-  is in FRAM), but it's the source of the "false positive" prompts.
+  is in PSRAM), but it's the source of the "false positive" prompts.
 
 ### What triggers the prompt on boot
 
@@ -84,7 +84,7 @@ The reset is `[$A000] = $00`, written **on entry to the backup branch** (`jr_000
 **regardless of whether you pick `[A]OK` or `[B]NO`**. Choosing NO still clears it; you get the
 prompt once per launch, then it's gone until the next launch re-arms it.
 
-Practical caveat (matches the "seems inconsistent" observation): the clear is a single FRAM
+Practical caveat (matches the "seems inconsistent" observation): the clear is a single PSRAM
 write with the FPGA page mapped. If that write doesn't commit (interrupted boot, marginal
 power, a card/FPGA hiccup), `$A000` can stay `$AA` and you'll be prompted again next boot. The
 arm side (`$A000=$AA` at launch) is a normal part of the launch path and fires reliably, which
@@ -99,7 +99,7 @@ pinned to a specific address.)
 
 ### Version parity
 
-The mechanism, FRAM addresses, and `BackupSavePrompt` exist identically in 1.04e (addresses
+The mechanism, PSRAM addresses, and `BackupSavePrompt` exist identically in 1.04e (addresses
 shifted; see `docs/DIFF_1.04e_vs_1.05e.md`). The 1.05e-only `$d3f6` cache of `$A202` is RTC
 state, adjacent to this path but not part of the save-dump flag itself.
 

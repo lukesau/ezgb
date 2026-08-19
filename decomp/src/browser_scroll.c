@@ -13,7 +13,7 @@
  *   sp+$13  base    first visible entry index (u16, spans sp+$13..$14)
  *   sp+$15  sel     selected row within the window, 0..15
  *
- * Entries live in cart FRAM (page $12 + (idx >> 5), record at
+ * Entries live in cart PSRAM (page $12 + (idx >> 5), record at
  * $A000 + 255 * (idx & $1f)), not WRAM, and are never evicted — so scrolling
  * UP never touches the SD card. Only scrolling DOWN past what has been
  * enumerated so far needs another DirList batch.
@@ -24,7 +24,7 @@
  * base + sel. Scrolling therefore just moves `base` off its old 16-alignment.
  */
 
-/* Streams the next batch of up to 16 entries into cart FRAM and advances the
+/* Streams the next batch of up to 16 entries into cart PSRAM and advances the
  * count. Resumes from the persistent DIR object at $c9f5 — never rewinds. */
 extern void DirList(void);
 

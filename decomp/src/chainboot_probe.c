@@ -149,10 +149,10 @@ static void probe_body(unsigned char tag) {
      * console reset, so it may never need a clean restore and one may not
      * exist. It therefore goes LAST, after everything readable is on screen.
      *
-     * $7FC0 personalities: $03 = cart SRAM (FRAM / file list), $00 = the one
+     * $7FC0 personalities: $03 = cart SRAM (PSRAM / file list), $00 = the one
      * the kernel sets around FatFs calls. */
     /* Cart-SRAM personality with a real page latched. Page $11 is the meta
-     * page: BatteryCheck expects $A201 == $88 there (docs/fram-save-map.md),
+     * page: BatteryCheck expects $A201 == $88 there (docs/psram-save-map.md),
      * so this row is the method's own validation — if it does not read $88 in
      * OS mode, the sequence is still wrong. */
     survey(0xc0, 0x03, 0x11, 0x00, 11);

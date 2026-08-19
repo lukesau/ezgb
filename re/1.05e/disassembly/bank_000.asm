@@ -694,14 +694,13 @@ InvalidFarCallTrap::
     jp EnterGfxMode1
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+DirListSkipDotLongName::
+    cp $2e
+    jp z, DirList_readdir
+
+    jp DirList_bankSlot
+
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -2379,7 +2378,7 @@ DirList_skipDot::
     ld b, a
     ld a, [bc]
     or a
-    jp nz, DirList_bankSlot
+    jp nz, DirListSkipDotLongName
 
     ld bc, $c9e4
 
@@ -3118,7 +3117,7 @@ GotoFileBrowser::
 
 
 ; [ezgb]
-; BackupBranchEntry: FRAM stamp → SAVER basename, then fall into FileBrowserEntry.
+; BackupBranchEntry: save stamp → SAVER basename, then fall into FileBrowserEntry.
 ; Read $A202→$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.
 ; Jump_000_0ec4: copy $A010.. → $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.
 ; Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d).

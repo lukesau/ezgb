@@ -26,8 +26,8 @@ HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]r
 | Contents | Full launch path as a C string, same format as `$c2a6` (e.g. `/pokemon/Pokemon Blue.gb`, long-filename form) |
 | WRAM mirror | Read back into `$c4a4`; written from `$c2a6` |
 
-`$A300` (bank 17 + rompage `$03`) sits in the same cart FRAM window as save meta (see
-`docs/fram-save-map.md`). Corrected: that storage is battery-backed **PSRAM**, not FRAM —
+`$A300` (bank 17 + rompage `$03`) sits in the same cart PSRAM window as save meta (see
+`docs/psram-save-map.md`). Corrected: that storage is battery-backed **PSRAM**, not FRAM —
 the coin cell backs the save memory as well as the RTC, so `$A300` is lost if it dies.
 See `hardware-board.md`.
 Older notes that lumped this window with “NOR/NVRAM for RTC” should be read with that

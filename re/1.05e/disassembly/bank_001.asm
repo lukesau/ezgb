@@ -1597,9 +1597,9 @@ FormatFileSize_retDeHl::
 
 
 ; [ezgb]
-; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart FRAM window) → commit.
-; With $7FC0=$03, $4000 latches FRAM bank; $A000-$BFFF is non-volatile FRAM
-; (no battery; cart battery is RTC-only). See docs/fram-save-map.md.
+; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart PSRAM window) → commit.
+; With $7FC0=$03, $4000 latches PSRAM bank; $A000-$BFFF is battery-backed PSRAM
+; (no battery; cart battery is RTC-only). See docs/psram-save-map.md.
 
 SetFpgaPage_B1::
     ld bc, $7f00
@@ -3468,7 +3468,7 @@ RtcWriteTimeFromDayDelta_writeFpga::
 
 ; [ezgb]
 ; RtcReadDaysClearRegs: RtcToDayCount → HL:DE; then zero $A018–$A01C (FPGA page $06)
-; and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/FRAM.
+; and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/PSRAM.
 
 RtcReadDaysClearRegs::
     push af
@@ -3551,8 +3551,8 @@ RtcReadDaysClearRegs::
 ; BackupOpenSaverPath: build $c3a5="/SAVER/"+name; Jump_001_51b2 force ".sav"; Open_B6 FarCall_06_7309 → $ca0f.
 ; Size from $d3ed: Jump_001_5233 ($d3eb==2 → Jump_001_523e/jr_001_5241 $2000 else Jump_001_5251 0); 1/2 Jump_001_525b $2000; 4 Jump_001_526b $20000; 5 Jump_001_527b $10000; else Jump_001_528b $8000.
 ; Jump_001_5298: open ok else Jump_001_54d1; and $30==$30 → Jump_001_530e/jr_001_5311 RTC flag else Jump_001_531c; Jump_001_5320/Jump_001_5327 read+$200 VramCopyStack loop.
-; Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close → PreLaunchFramStamp.
-; Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs → PreLaunchFramStamp.
+; Jump_001_53ee RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; Jump_001_54bc close → PreLaunchSaveStamp.
+; Jump_001_54d1 Memset $FF; Jump_001_54e9 blank write twin; Jump_001_559a RtcReadDaysClearRegs → PreLaunchSaveStamp.
 
 BackupOpenSaverPath::
     add sp, -$1e
@@ -4175,7 +4175,7 @@ BackupOpenSaverPath_closePreLaunch::
     push hl
     call FarCall_03_768f
     add sp, $02
-    jp PreLaunchFramStamp
+    jp PreLaunchSaveStamp
 
 
 BackupOpenSaverPath_failMemsetFf::
@@ -4364,12 +4364,12 @@ BackupOpenSaverPath_failRtcPreLaunch::
     add sp, $01
 
 ; [ezgb]
-; PreLaunchFramStamp: page $11 (SetFpgaPage_B1 $03) per-launch FRAM stamp for SAVER/*.SAV.
+; PreLaunchSaveStamp: page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
 ; $A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.
 ; Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done → Jump_001_5657.
 ; Jump_001_5657: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup.
 
-PreLaunchFramStamp::
+PreLaunchSaveStamp::
     ld a, $0d
     push af
     inc sp
@@ -4435,7 +4435,7 @@ PreLaunchFramStamp::
     inc hl
     ld [hl], $00
 
-PreLaunchFramStamp_copyBasename::
+PreLaunchSaveStamp_copyBasename::
     ld hl, sp+$0b
     ld c, [hl]
     ld b, $00
@@ -4446,7 +4446,7 @@ PreLaunchFramStamp_copyBasename::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, PreLaunchFramStamp_checkRtc
+    jp nc, PreLaunchSaveStamp_checkRtc
 
     dec hl
     ld e, [hl]
@@ -4476,20 +4476,20 @@ PreLaunchFramStamp_copyBasename::
     ld [de], a
     ld hl, sp+$09
     inc [hl]
-    jr nz, PreLaunchFramStamp_copyCont
+    jr nz, PreLaunchSaveStamp_copyCont
 
     inc hl
     inc [hl]
 
-PreLaunchFramStamp_copyCont::
-    jp PreLaunchFramStamp_copyBasename
+PreLaunchSaveStamp_copyCont::
+    jp PreLaunchSaveStamp_copyBasename
 
 
-PreLaunchFramStamp_checkRtc::
+PreLaunchSaveStamp_checkRtc::
     xor a
     ld hl, $d3f0
     or [hl]
-    jp z, PreLaunchFramStamp_clearRtcFlag
+    jp z, PreLaunchSaveStamp_clearRtcFlag
 
     ld bc, $a202
     ld a, $77
@@ -4618,15 +4618,15 @@ PreLaunchFramStamp_checkRtc::
     ld hl, sp+$04
     ld a, [hl]
     ld [bc], a
-    jp PreLaunchFramStamp_epilogue
+    jp PreLaunchSaveStamp_epilogue
 
 
-PreLaunchFramStamp_clearRtcFlag::
+PreLaunchSaveStamp_clearRtcFlag::
     ld bc, $a202
     ld a, $00
     ld [bc], a
 
-PreLaunchFramStamp_epilogue::
+PreLaunchSaveStamp_epilogue::
     ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
@@ -7095,7 +7095,7 @@ BootMenuLoadingStr::
 
 ; [ezgb]
 ; BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_6738 ret.
-; Jump_001_647b: while offset < size@sp+$0f: bank FRAM, VramCopyStack $200, FarCall_07_7739 write.
+; Jump_001_647b: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.
 ; Spinner ++sp+$04: Jump_001_652f; ==3 jr_001_6532 reset0; Jump_001_6536 "."; Jump_001_6551 → Jump_001_655b/jr_001_655e ".."; Jump_001_6572 "..."; Jump_001_6583 +=$200 → Jump_001_647b.
 ; Jump_001_65a1: $d3f6==$77 → jr_001_65af Memset+$A220 pack+write else Jump_001_65ac → Jump_001_672f close 768f; Jump_001_6738 fail (jr_001_673f/jr_001_6743 strs).
 

@@ -55,6 +55,9 @@ run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
 }
 run make -C disassembly || exit $?
 
+echo "=== ezgb.dat ==="
+"$ROOT/scripts/build-ezgb-dat.sh" "$VER" || true
+
 echo "=== naming-progress ==="
 "$ROOT/scripts/naming-progress.sh" "$VER"
 echo "=== app worklist ==="

@@ -55,10 +55,11 @@ looking for `sd/card.img`.
 
 Matches the physical cart:
 
-1. **In-game save** → FRAM only (`cart_sram`; non-volatile, no cart battery). Mirrored to
-   `sd/fram.bin` next to `card.img` so quitting SameBoy is a power-down.
+1. **In-game save** → PSRAM only (`cart_sram`; battery-backed, so a dead coin cell
+   loses it). Mirrored to `sd/psram.bin` next to `card.img` so quitting SameBoy is a
+   power-down. SD writes are written through to `card.img` immediately.
 2. **Power up** (load `kernel.gb` again) → kernel sees page `$11` flag `$AA`,
-   shows **BACKUPSAVE** / `[A]OK`, and on confirm copies FRAM into `SAVER/*.SAV`
+   shows **BACKUPSAVE** / `[A]OK`, and on confirm copies PSRAM into `SAVER/*.SAV`
    on `card.img`.
 3. While a game launched through the stub is running, SameBoy will **not** write
    a host `.sav` beside the ROM.
