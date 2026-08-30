@@ -4376,3 +4376,17 @@
 00:02fb .data:41:8
 00:03f4 BrowserPageEndHook
 00:03f4 .data:b:8
+02:4380 FarCallOpendir_B5
+02:4380 .data:16:8
+02:4396 FarCallReaddir_B5
+02:4396 .data:16:8
+00:0420 fastlaunch_do_launch
+00:0420 .data:1e:8
+02:4500 FastLaunchScan
+02:4500 .data:442:8
+00:0400 FarCallScan
+00:0400 .data:8:8
+00:0440 fastlaunch_boot
+00:0440 .data:10:8
+00:0450 fastlaunch_hook
+00:0450 .data:23:8

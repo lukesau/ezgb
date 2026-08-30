@@ -1,158 +1,162 @@
-/* FastLaunch: at boot, look for a "<name>.fastlaunch" marker file in the SD
- * root; if found, search the whole SD tree for "<name>.gb"/"<name>.gbc" and
- * report its full path. Never launches anything itself — see
- * fastlaunch_launch.c (not yet written) for the boot-hook wiring, once the
- * $c2a0/$c4a4 launch handoff contract is confirmed live. This file only
- * finds the path; callers get an empty result_path on any "nothing to do"
- * outcome (no trigger file, no match, any FatFs error) so the caller can
- * always safely fall through to the normal menu.
+/* FastLaunch scan (root-only): decide at boot whether to skip the browser and
+ * launch a ROM straight away, and report its full path in result_path
+ * (leading '/', e.g. "/PKMRED.GB"). Two triggers, both looking only at the SD
+ * root:
  *
- * FILINFO layout below was confirmed live against this exact kernel build
- * (2026-07, SD card root containing /SAVER and /Pokemon/PKMRED.GB), not
- * assumed from tools/omega-de-kernel/source/ff15/ff.h — that reference
- * config may not exactly match this kernel's FF_USE_LFN/FF_MAX_LFN build.
- * See decomp/src/shims.md for how FarCallOpendir_B5/FarCallReaddir_B5 work.
+ *   1. Marker file: a "<name>.fastlaunch" in root launches "<name>.gb" or
+ *      "<name>.gbc" from root.
+ *   2. Lone ROM: if the root holds exactly one real file (ignoring the kernel
+ *      ezgb.dat, dot-files, and macOS junk) and it is a .gb/.gbc, launch it.
  *
- *   offset 0-3   fsize   (unused here)
- *   offset 4-5   fdate   (unused here)
- *   offset 6-7   ftime   (unused here)
- *   offset 8     fattrib (bit 4 / 0x10 = AM_DIR)
- *   offset 9-21  altname (13 bytes, NUL-terminated 8.3 short name)
- *   offset 22..  fname   (long name if present; this kernel's FatFs build
- *                         leaves it empty rather than copying the short
- *                         name in, unlike the reference ff.c source, so
- *                         code here must fall back to altname explicitly)
+ * The marker takes priority. On any "nothing to do" outcome (no trigger, no
+ * matching ROM, any FatFs error) result_path[0] is left 0 so the caller falls
+ * through to the normal menu.
  *
- * End-of-directory: ff.c's get_fileinfo() invalidates fname unconditionally
- * on every call (even end-of-directory), but only touches altname when
- * there's a real entry to report (end-of-directory returns before reaching
- * that step). So fname[0]==0 is NOT a reliable end marker on its own (a
- * real short-name-only entry also leaves it empty) — this code clears
- * altname[0] before every readdir call and checks THAT for "no more
- * entries", which is unambiguous.
+ * FILINFO layout (classic FatFs _USE_LFN external-buffer form) CONFIRMED live
+ * against this exact kernel (see docs/fast-launch-notes.md):
+ *   +0..3   fsize
+ *   +8      fattrib (bit 4 / $10 = AM_DIR)
+ *   +9..21  fname[13]  8.3 short name, NUL-terminated
+ *   +22..23 lfname     POINTER to an external long-name buffer (set by us)
+ *   +24..25 lfsize     size of that buffer
+ * The long name lands in the buffer lfname points at; it is empty (buf[0]==0)
+ * for an 8.3-only entry, so entry_name() falls back to fname. End-of-directory
+ * is the standard FatFs contract: fname[0] == 0.
+ *
+ * Big buffers live at fixed WRAM scratch ($D780-$D980: below the $E000 stack,
+ * above the kernel's variables which top out ~$D73B, cleared to 0 at boot), so
+ * the scan keeps only a few bytes on the stack. Nothing else touches this
+ * window during boot/browse. Only one DIR object is needed (no recursion).
  *
  * IMPORTANT for injection: SDCC/sdld link functions in source-declaration
- * order, so `fastlaunch_scan` — the function inject.py's caller actually
- * wants to pin an address to — is defined FIRST, ahead of the static
- * helpers it calls (with forward declarations below). Getting this order
- * backwards silently pins the address of whichever helper happens to be
- * declared first instead, which still compiles and links with no error or
- * warning — it just calls the wrong function. Learned this the hard way
- * live-debugging an empty scan result that turned out to be `to_upper()`
- * running instead of the real scan.
+ * order, and inject.py pins the FIRST-declared function, so fastlaunch_scan is
+ * defined first, ahead of the static helpers it calls (forward-declared just
+ * below).
  */
 
 extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *path);
 extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
 
-#define DIR_SIZE 48
-#define FNO_SIZE 100
-#define FNO_ATTRIB 8
-#define FNO_ALTNAME 9
-#define FNO_FNAME 22
-#define AM_DIR 0x10
+/* Fixed WRAM scratch. */
+#define FNO   ((unsigned char *)0xD780)  /* FILINFO, 26 used */
+#define LFN   ((unsigned char *)0xD7A0)  /* long-name buffer, 256 */
+#define BASE  ((unsigned char *)0xD8A0)  /* marker stem / target base, 48 */
+#define NAME  ((unsigned char *)0xD8D0)  /* last real file's name, 48 */
+#define DIRO  ((unsigned char *)0xD900)  /* the one DIR object, 128 reserved */
 
-#define MAX_DEPTH 6
-#define PATH_MAX 100
-#define BASENAME_MAX 40
+#define FNO_ATTRIB  8
+#define FNO_SFN     9
+#define FNO_LFNPTR  22
+#define FNO_LFNSIZE 24
+#define AM_DIR      0x10
 
-typedef struct {
-    unsigned char dir[DIR_SIZE];
-    unsigned char path_len; /* length of `path` up to and including this dir's trailing '/' */
-} Level;
+#define LFN_SIZE  254
+#define NAME_MAX  48
 
 static unsigned char to_upper(unsigned char c);
-static unsigned char streq_ci(const unsigned char *a, const unsigned char *b);
 static unsigned char strlen_u(const unsigned char *s);
-static const unsigned char *entry_name(const unsigned char *fno);
-static unsigned char match_fastlaunch_ext(const unsigned char *name, unsigned char *out_base);
-static unsigned char match_rom_name(const unsigned char *name, const unsigned char *base);
+static const unsigned char *entry_name(void);
+static unsigned char is_end(void);
+static void readdir_prep(void);
+static unsigned char streq_ci(const unsigned char *a, const unsigned char *b);
+static unsigned char is_rom(const unsigned char *name);
+static unsigned char match_fastlaunch_ext(const unsigned char *name);
+static unsigned char match_rom_name(const unsigned char *name);
+static void write_result(unsigned char *result_path, const unsigned char *name);
 
-/* Clears result_path[0] on any "nothing found / nothing to do" outcome
- * (no trigger file, no match anywhere, any FatFs error) so the caller can
- * always safely treat an empty result as "boot normally". On success,
- * result_path holds the full path (leading '/', e.g. "/Pokemon/PKMRED.GB"). */
-void fastlaunch_scan(unsigned char *result_path) {
-    unsigned char fno[FNO_SIZE];
-    unsigned char root_dir[DIR_SIZE];
-    unsigned char base[BASENAME_MAX];
-    unsigned char found_base;
-    unsigned char path[PATH_MAX];
-    unsigned char plen;
-    Level levels[MAX_DEPTH];
-    unsigned char depth;
-    unsigned char res, i;
+/* Takes no argument: it is reached by a far-call (FarCallTrampoline), which
+ * shifts stack args by 6 bytes, so passing a pointer across it is fragile.
+ * Instead it writes straight to the kernel's launch basename buffer $c4a4 —
+ * which is exactly where the launch step reads the path from. */
+#define RESULT ((unsigned char *)0xC4A4)
+
+void fastlaunch_scan(void) {
+    unsigned char *result_path = RESULT;
+    unsigned char root[2];
+    unsigned char have_marker;
+    unsigned char realcount;
+    unsigned char last_is_rom;
+    const unsigned char *name;
+    unsigned char i, n;
 
     result_path[0] = 0;
-    found_base = 0;
 
-    /* --- Step 1: root scan for *.fastlaunch --- */
-    if (FarCallOpendir_B5(root_dir, (const unsigned char *)"/") != 0) return;
+    /* FILINFO.lfname = LFN buffer, FILINFO.lfsize = 254 (set once; reused). */
+    FNO[FNO_LFNPTR]     = (unsigned char)((unsigned int)LFN & 0xFF);
+    FNO[FNO_LFNPTR + 1] = (unsigned char)((unsigned int)LFN >> 8);
+    FNO[FNO_LFNSIZE]     = (unsigned char)LFN_SIZE;
+    FNO[FNO_LFNSIZE + 1] = 0;
+
+    root[0] = '/';
+    root[1] = 0;
+
+    /* --- Pass 1: classify the root --- */
+    have_marker = 0;
+    realcount = 0;
+    last_is_rom = 0;
+
+    if (FarCallOpendir_B5(DIRO, root) != 0) return;
     for (;;) {
-        fno[FNO_ALTNAME] = 0;
-        res = FarCallReaddir_B5(root_dir, fno);
-        if (res != 0) return;
-        if (fno[FNO_ALTNAME] == 0) break; /* end of root listing, no trigger file */
-        if (fno[FNO_ATTRIB] & AM_DIR) continue; /* trigger must be a plain file */
-        if (match_fastlaunch_ext(entry_name(fno), base)) {
-            found_base = 1;
-            break;
+        readdir_prep();
+        if (FarCallReaddir_B5(DIRO, FNO) != 0) return;
+        if (is_end()) break;
+        if (FNO[FNO_ATTRIB] & AM_DIR) continue;
+        name = entry_name();
+        if (name[0] == '.') continue;                 /* dot-files / macOS junk */
+        if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
+
+        if (match_fastlaunch_ext(name)) {             /* fills BASE with the stem */
+            have_marker = 1;
+            continue;                                 /* marker is not a "real file" */
         }
+
+        /* A real file: count it and remember it (for the lone-ROM rule). */
+        realcount++;
+        n = strlen_u(name);
+        if (n >= NAME_MAX) n = NAME_MAX - 1;
+        for (i = 0; i < n; i++) NAME[i] = name[i];
+        NAME[n] = 0;
+        last_is_rom = is_rom(NAME);
     }
-    if (!found_base) return;
 
-    /* --- Step 2: DFS the whole tree for base + .gb/.gbc --- */
-    path[0] = '/';
-    path[1] = 0;
-    plen = 1;
-    if (FarCallOpendir_B5(levels[0].dir, path) != 0) return;
-    levels[0].path_len = plen;
-    depth = 0;
-
-    while (1) {
-        fno[FNO_ALTNAME] = 0;
-        res = FarCallReaddir_B5(levels[depth].dir, fno);
-        if (res != 0 || fno[FNO_ALTNAME] == 0) {
-            /* error, or end of this directory's listing: back out one level */
-            if (depth == 0) return; /* whole tree exhausted */
-            depth--;
-            continue;
-        }
-
-        {
-            const unsigned char *name = entry_name(fno);
-            if (fno[FNO_ATTRIB] & AM_DIR) {
-                unsigned char base_len, nlen;
-                if (name[0] == '.') continue; /* skip . and .. */
-                if (depth + 1 >= MAX_DEPTH) continue; /* too deep, skip subtree */
-                base_len = levels[depth].path_len;
-                nlen = strlen_u(name);
-                if ((unsigned int)base_len + nlen + 2 >= PATH_MAX) continue; /* path too long, skip */
-                for (i = 0; i < nlen; i++) path[base_len + i] = name[i];
-                path[base_len + nlen] = '/';
-                path[base_len + nlen + 1] = 0;
-                if (FarCallOpendir_B5(levels[depth + 1].dir, path) == 0) {
-                    levels[depth + 1].path_len = base_len + nlen + 1;
-                    depth++;
-                }
-                /* opendir failure: just skip this subdir, stay at current depth */
-                continue;
-            }
-            if (match_rom_name(name, base)) {
-                unsigned char base_len = levels[depth].path_len;
-                unsigned char nlen = strlen_u(name);
-                for (i = 0; i < base_len; i++) result_path[i] = path[i];
-                for (i = 0; i < nlen; i++) result_path[base_len + i] = name[i];
-                result_path[base_len + nlen] = 0;
+    /* --- Decide --- */
+    if (have_marker) {
+        /* Pass 2: find BASE + .gb/.gbc in root. */
+        if (FarCallOpendir_B5(DIRO, root) != 0) return;
+        for (;;) {
+            readdir_prep();
+            if (FarCallReaddir_B5(DIRO, FNO) != 0) return;
+            if (is_end()) return;
+            if (FNO[FNO_ATTRIB] & AM_DIR) continue;
+            name = entry_name();
+            if (match_rom_name(name)) {
+                write_result(result_path, name);
                 return;
             }
         }
     }
+
+    if (realcount == 1 && last_is_rom) {
+        write_result(result_path, NAME);
+    }
+}
+
+static void write_result(unsigned char *result_path, const unsigned char *name) {
+    unsigned char i;
+    result_path[0] = '/';
+    for (i = 0; name[i]; i++) result_path[1 + i] = name[i];
+    result_path[1 + i] = 0;
 }
 
 static unsigned char to_upper(unsigned char c) {
     if (c >= 'a' && c <= 'z') return c - 0x20;
     return c;
+}
+
+static unsigned char strlen_u(const unsigned char *s) {
+    unsigned char n = 0;
+    while (s[n]) n++;
+    return n;
 }
 
 static unsigned char streq_ci(const unsigned char *a, const unsigned char *b) {
@@ -166,44 +170,72 @@ static unsigned char streq_ci(const unsigned char *a, const unsigned char *b) {
     }
 }
 
-static unsigned char strlen_u(const unsigned char *s) {
-    unsigned char n = 0;
-    while (s[n]) n++;
-    return n;
+/* Long name if the readdir produced one, else the 8.3 short name. */
+static const unsigned char *entry_name(void) {
+    if (LFN[0] != 0) return LFN;
+    return FNO + FNO_SFN;
 }
 
-/* Selects fname when non-empty (this build seems to never actually take
- * that path, see file header, but a future FatFs config change shouldn't
- * silently break this), else altname. */
-static const unsigned char *entry_name(const unsigned char *fno) {
-    if (fno[FNO_FNAME] != 0) return fno + FNO_FNAME;
-    return fno + FNO_ALTNAME;
+static unsigned char is_end(void) {
+    return FNO[FNO_SFN] == 0;
 }
 
-/* True if name ends in ".fastlaunch" (case-insensitive); if so and out_base
- * is non-NULL, copies the name without that suffix into it. */
-static unsigned char match_fastlaunch_ext(const unsigned char *name, unsigned char *out_base) {
+static void readdir_prep(void) {
+    FNO[FNO_SFN] = 0;
+    LFN[0] = 0;
+}
+
+/* True if name ends in ".gb" or ".gbc" (case-insensitive). */
+static unsigned char is_rom(const unsigned char *name) {
     unsigned char len = strlen_u(name);
-    unsigned char suflen = 11; /* strlen(".fastlaunch") */
-    unsigned char i;
-    if (len <= suflen) return 0;
-    if (!streq_ci(name + (len - suflen), (const unsigned char *)".fastlaunch")) return 0;
-    if (out_base) {
-        for (i = 0; i < len - suflen; i++) out_base[i] = name[i];
-        out_base[len - suflen] = 0;
+    const unsigned char *ext;
+    if (len < 3) return 0;
+    /* find the last '.' */
+    {
+        unsigned char i, dot = 0, has = 0;
+        for (i = 0; i < len; i++) if (name[i] == '.') { dot = i; has = 1; }
+        if (!has) return 0;
+        ext = name + dot;
     }
+    if (to_upper(ext[1]) == 'G' && to_upper(ext[2]) == 'B') {
+        if (ext[3] == 0) return 1;
+        if (to_upper(ext[3]) == 'C' && ext[4] == 0) return 1;
+    }
+    return 0;
+}
+
+/* If name ends in ".fastlaunch" (case-insensitive), copy the stem into BASE
+ * and return 1. */
+static unsigned char match_fastlaunch_ext(const unsigned char *name) {
+    static const unsigned char suf[12] = {'.','f','a','s','t','l','a','u','n','c','h',0};
+    unsigned char len = strlen_u(name);
+    unsigned char suflen = 11;
+    unsigned char i, stem;
+    if (len <= suflen) return 0;
+    stem = len - suflen;
+    for (i = 0; i < suflen; i++) {
+        if (to_upper(name[stem + i]) != to_upper(suf[i])) return 0;
+    }
+    if (stem >= NAME_MAX) return 0;
+    for (i = 0; i < stem; i++) BASE[i] = name[i];
+    BASE[stem] = 0;
     return 1;
 }
 
-/* True if name is base + ".gb" or base + ".gbc" (case-insensitive). */
-static unsigned char match_rom_name(const unsigned char *name, const unsigned char *base) {
-    unsigned char blen = strlen_u(base);
+/* True if name is BASE + ".gb" or BASE + ".gbc" (case-insensitive). */
+static unsigned char match_rom_name(const unsigned char *name) {
+    unsigned char blen = strlen_u(BASE);
     unsigned char nlen = strlen_u(name);
     unsigned char i;
+    const unsigned char *ext;
     if (nlen <= blen) return 0;
     for (i = 0; i < blen; i++) {
-        if (to_upper(name[i]) != to_upper(base[i])) return 0;
+        if (to_upper(name[i]) != to_upper(BASE[i])) return 0;
     }
-    return streq_ci(name + blen, (const unsigned char *)".gb")
-        || streq_ci(name + blen, (const unsigned char *)".gbc");
+    ext = name + blen;
+    if (ext[0] == '.' && to_upper(ext[1]) == 'G' && to_upper(ext[2]) == 'B') {
+        if (ext[3] == 0) return 1;
+        if (to_upper(ext[3]) == 'C' && ext[4] == 0) return 1;
+    }
+    return 0;
 }

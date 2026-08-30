@@ -39,11 +39,15 @@ commands.
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
 | **Hide macOS cruft** | Filters `._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc. that a Mac scatters on the card and the stock browser lists. | [`docs/browser-dotfile-filter.md`](docs/browser-dotfile-filter.md) |
+| **Fast launch** | Boots straight into a ROM, skipping the browser: either the card's only root ROM, or the one a `<name>.fastlaunch` marker names. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
 
-**In progress:** an Omega DE-style **Mode B** that boots straight into one ROM
-without the file browser. The launch path and last-ROM persistence are mapped
-([`docs/last-rom.md`](docs/last-rom.md)); the boot-hook wiring is deferred
-([`docs/fast-launch-notes.md`](docs/fast-launch-notes.md)).
+Once built, **fast launch is driven entirely from the card** (no rebuild to
+change what boots): put a single ROM in the root to boot it automatically, or
+drop an empty `<name>.fastlaunch` next to `<name>.gb`/`.gbc` in the root to pin
+that one. Anything else (several ROMs, no marker) boots to the normal browser.
+Folders, `ezgb.dat`, and dot-files/macOS junk are ignored. **Hold B at power-on
+to skip fast launch and go to the browser.** Verified in emulator; not yet run
+on real hardware.
 
 **Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,
@@ -89,7 +93,7 @@ re/               Disassemblies, one dir per firmware version (1.04e, 1.05e, 1.0
     kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
     notes.json    Persistent comments
 decomp/           Matching C decompilation + injectable feature sources
-  src/            browser_sort.c, browser_scroll*.c, cgb_init.c, ...
+  src/            browser_sort.c, browser_scroll*.c, fastlaunch*.c, cgb_init.c, ...
   tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
 docs/             Findings, feature write-ups, hardware notes
 scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers

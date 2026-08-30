@@ -1,0 +1,6 @@
+# Probe dump area: $D700 canary, opendir res, then 6x [res|26 FILINFO|32 LFN].
+examine/120 $d700
+examine/120 $d778
+examine/120 $d7f0
+examine/16 $d940
+examine/32 $d960

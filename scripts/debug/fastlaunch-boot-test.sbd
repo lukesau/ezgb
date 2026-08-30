@@ -1,0 +1,3 @@
+# Fast-launch boot: $7fe0=$80 is the stub's "boot the loaded ROM" trigger.
+watch $7fe0
+continue

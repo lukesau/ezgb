@@ -1,0 +1,5 @@
+# Break at the FILINFO probe's settled self-loop ($4429 in bank 2), but only
+# once the probe's $D700 canary is set — so a same-address hit in another bank
+# during boot can't false-trigger.
+breakpoint $4429 if [$d700] == $c0
+continue
