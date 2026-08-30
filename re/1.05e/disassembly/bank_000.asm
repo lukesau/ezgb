@@ -464,7 +464,7 @@ BrowserScroll::
     rst RST_38
 
 BrowserScrollDownHook::
-    db $f8, $12, $e5, $cd, $e3, $01, $e8, $02
+    db $f8, $12, $e5, $cd, $8c, $3d, $e8, $02
     db $c3, $ab, $16
 
     rst RST_38
@@ -704,30 +704,11 @@ DirListSkipDotLongName::
 BrowserSortAllStub::
     db $cd, $8d, $07, $6b, $74, $08, $00, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+FarCallDrawDetailBottom::
+    db $3e, $02, $f5, $33, $01, $0f, $00, $c5
+    db $f8, $05, $2a, $66, $6f, $e5, $cd, $8d
+    db $07, $ba, $42, $01, $00, $e8, $05, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -12530,322 +12511,48 @@ VramFillActiveBgMap_doFill::
     jp VramFill
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserScrollDownRepaint::
+    db $e8, $fb, $f8, $07, $2a, $5f, $56, $d5
+    db $cd, $e3, $01, $e1, $f8, $07, $7e, $f8
+    db $03, $77, $f8, $08, $7e, $f8, $04, $32
+    db $3a, $2b, $77, $f8, $04, $3a, $2b, $32
+    db $2a, $5f, $56, $1a, $fe, $01, $20, $70
+    db $f8, $01, $2a, $66, $6f, $36, $00, $f8
+    db $07, $2a, $4f, $46, $79, $c6, $f8, $4f
+    db $78, $ce, $ff, $47, $af, $02, $69, $60
+    db $23, $36, $00, $69, $60, $23, $23, $36
+    db $00, $03, $03, $03, $af, $02, $cd, $b2
+    db $3e, $f8, $03, $3a, $2b, $2b, $c6, $01
+    db $22, $23, $23, $23, $7e, $ce, $00, $f8
+    db $01, $22, $23, $d1, $d5, $1a, $22, $13
+    db $1a, $32, $2a, $5f, $56, $d5, $cd, $dc
+    db $03, $e1, $f8, $04, $36, $0e, $f8, $04
+    db $3a, $22, $7e, $3d, $32, $7e, $b7, $28
+    db $17, $2b, $d1, $d5, $1a, $22, $13, $1a
+    db $22, $3a, $2b, $f5, $33, $2a, $5f, $56
+    db $d5, $cd, $2b, $3e, $e8, $03, $18, $de
+    db $e8, $05, $c9, $44, $49, $52, $00, $e8
+    db $fc, $f8, $08, $3a, $2b, $0e, $00, $86
+    db $23, $5f, $79, $8e, $4f, $7b, $e6, $1f
+    db $f8, $00, $22, $36, $00, $f8, $08, $46
+    db $04, $04, $7b, $cb, $39, $cb, $1f, $cb
+    db $39, $cb, $1f, $cb, $39, $cb, $1f, $cb
+    db $39, $cb, $1f, $cb, $39, $cb, $1f, $c6
+    db $12, $ea, $00, $40, $f8, $00, $4e, $af
+    db $96, $23, $23, $32, $79, $9e, $23, $23
+    db $32, $2a, $5f, $7e, $c6, $a0, $57, $21
+    db $fe, $00, $19, $7e, $fe, $10, $20, $27
+    db $c5, $c5, $33, $af, $0f, $f5, $d5, $cd
+    db $b7, $08, $e8, $05, $11, $03, $00, $d5
+    db $af, $f5, $33, $cd, $91, $27, $e8, $04
+    db $21, $03, $11, $e5, $11, $27, $3e, $d5
+    db $cd, $b7, $08, $e8, $05, $18, $0c, $c5
+    db $33, $21, $14, $00, $e5, $d5, $cd, $b7
+    db $08, $e8, $05, $e8, $04, $c9, $21, $00
+    db $7f, $36, $e1, $2e, $10, $36, $e2, $2e
+    db $20, $36, $e3, $2e, $c0, $36, $03, $2e
+    db $f0, $36, $e4, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

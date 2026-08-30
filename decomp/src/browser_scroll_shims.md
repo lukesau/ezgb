@@ -34,10 +34,22 @@ for all of them (`browser_scroll.c`, `struct BrowserScrollState`):
 | `sp+$13..$14` | `base` (u16) |
 | `sp+$15` | `sel` |
 
-## BrowserScrollDownHook -> `browser_scroll_down` (`00:01e3`)
+## BrowserScrollDownHook -> `browser_scroll_down_repaint` (`00:3d8c`)
 
 ```
-f8 12 e5 cd e3 01 e8 02 c3 ab 16      (11 bytes)
+f8 12 e5 cd 8c 3d e8 02 c3 ab 16      (11 bytes)
+```
+
+Originally this called `browser_scroll_down` (`00:01e3`) directly. The call
+target was later repointed to `browser_scroll_down_repaint`
+(`browser_scroll_repaint.c`, cave `00:3d8c`), which wraps it to repaint
+bottom-up after a window shift; only bytes 4-5 of the stub changed. That
+wrapper needs `FarCallDrawDetailBottom` (`00:03dc`), a hand-assembled
+trampoline shim marshalling one u16 `base` argument into
+`DrawBrowserDetail`'s `(base, row=15, mode=2)` frame at `01:42ba`:
+
+```
+3e 02 f5 33 01 0f 00 c5 f8 05 2a 66 6f e5 cd 8d 07 ba 42 01 00 e8 05 c9   (24 bytes)
 ```
 
 ## BrowserScrollUpHook -> `browser_scroll_up` (`00:0297`)

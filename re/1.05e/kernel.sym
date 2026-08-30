@@ -4368,3 +4368,7 @@
 08:746b .data:631:8
 00:03d4 BrowserSortAllStub
 00:03d4 .data:8:8
+00:03dc FarCallDrawDetailBottom
+00:03dc .data:18:8
+00:3d8c BrowserScrollDownRepaint
+00:3d8c .data:13c:8
