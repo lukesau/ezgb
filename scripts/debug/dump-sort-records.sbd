@@ -1,0 +1,14 @@
+# At the BrowserSortAll return site ($1032): entry count, then the first ten
+# 255-byte records (name prefix). BrowserSortAll leaves page $03 / bank $12
+# mapped, so record k is at $A000 + 255*k, attr at +$fe.
+examine/2 $c2a2
+examine/16 $a000
+examine/16 $a0ff
+examine/16 $a1fe
+examine/16 $a2fd
+examine/16 $a3fc
+examine/16 $a4fb
+examine/16 $a5fa
+examine/16 $a6f9
+examine/16 $a7f8
+examine/16 $a8f7

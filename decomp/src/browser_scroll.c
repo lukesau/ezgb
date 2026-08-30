@@ -18,6 +18,11 @@
  * UP never touches the SD card. Only scrolling DOWN past what has been
  * enumerated so far needs another DirList batch.
  *
+ * Since browser_sort.c the whole directory is enumerated (and the $c5a4
+ * latch set) before the browser first draws, so the DirList branch below
+ * never fires in practice. It is kept as the correct fallback if the sort
+ * hook is ever removed — with it gone, this is what streams further batches.
+ *
  * Nothing downstream requires `base` to be a multiple of 16:
  * DrawBrowserEntries clamps its row count to min(count - base, 16) and indexes
  * entries as base + i, and DrawBrowserDetail / MenuDispatchAB_bankEntry use

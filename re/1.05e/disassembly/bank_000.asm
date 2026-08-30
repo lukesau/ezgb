@@ -701,14 +701,9 @@ DirListSkipDotLongName::
     jp DirList_bankSlot
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserSortAllStub::
+    db $cd, $8d, $07, $6b, $74, $08, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3439,7 +3434,7 @@ FileBrowserEntry_memsetWireDirList::
     inc de
     ld a, $00
     ld [de], a
-    call DirList
+    call $03d4
     ld hl, sp+$15
     ld [hl], $00
     dec hl

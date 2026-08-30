@@ -1,0 +1,9 @@
+# Sorted file browser (decomp/src/browser_sort.c).
+#
+# $102f in FileBrowserEntry was `call DirList`; it is now `call $03d4`
+# (BrowserSortAllStub -> bank 8 BrowserSortAll), which enumerates the whole
+# directory, sorts it (dirs first, caseless names), and returns with PSRAM
+# page $03 / bank $12 mapped. Breaking at the return site therefore lets the
+# dump script read the first 32 sorted records straight out of $A000.
+breakpoint $1032
+continue

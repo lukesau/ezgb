@@ -55,6 +55,76 @@ memory, so exact partitioning between U4 and U9 is not settled.
 
 Sources: beyondconsoles EZ-Flash Junior review; GBAtemp battery-drain threads.
 
+## JTAG header — FPGA package pins
+
+The 8-pad `JTAG` header on the back edge goes to the XC3S200A's dedicated JTAG
+and configuration pins. From the VQ100 footprint (DS529, `tools/`), the pins to
+identify a buzzed pad against are:
+
+| Signal | VQ100 pin | Notes |
+|---|---|---|
+| **TMS** | 1 | dedicated JTAG |
+| **TDI** | 2 | dedicated JTAG |
+| **TDO** | 75 | dedicated JTAG — the only JTAG **output** (drives when powered) |
+| **TCK** | 76 | dedicated JTAG |
+| PROG_B | 100 | config; pulse low to reconfigure |
+| DONE | 54 | config; high when configured |
+| INIT_B | 48 | config/status |
+| VCCAUX | 22, 55, 92 | JTAG reference supply; dual-range **2.5 V or 3.3 V** (board picks one) |
+| GND | 8,14,18,35,42,58,63,69,74,80,87,91,95 | many |
+
+### Confirmed pad order (buzzed out 2026-08-19)
+
+Left → right, pad 1 nearest the `JTAG` silkscreen. Verified by continuity from
+each pad to the FPGA package pin:
+
+| Pad | Signal | VQ100 pin |
+|---|---|---|
+| 1 | **TDO** | 75 |
+| 2 | **TCK** | 76 |
+| 3 | **TMS** | 1 |
+| 4 | **TDI** | 2 |
+| 5 | **GND** | — |
+| 6 | **VCC / VREF** | power rail (see below) |
+| 7 | **VCC / VREF** | power rail (see below) |
+| 8 | **GND** | — |
+
+This is a JTAG-only header — all four TAP signals plus two GND and two VCC.
+**No pad connects to PROG_B (pin 100) — confirmed by direct continuity check**;
+DONE/INIT_B are likewise not broken out. None are needed: JTAG can reconfigure
+via `JPROGRAM`. Pad 1 was briefly mislabelled PROG_B before the package
+orientation was corrected; it is TDO (pin 75), and PROG_B is absent entirely.
+
+**Pads 6 and 7 cannot be told apart by continuity.** On an unpowered board every
+supply rail (VCCINT 1.2 V, VCCAUX, VCCO 3.3 V) reads continuous to every other
+through the decoupling caps and internal paths — pads 6, 7 and all VCC rails beep
+together, which is expected and uninformative. Resolve it **under power**:
+backprobe pads 6/7 in DC-volts (GND on pad 5) and use whichever reads **~2.5–3.3 V**
+as the cable's VREF; avoid a **1.2 V** reading (that is VCCINT). A VREF-sensing
+cable (Digilent HS2) then adapts to that level.
+
+The minimum to configure over JTAG is TDO/TCK/TMS/TDI + GND + a ~3.3 V VREF pad —
+which this header fully provides.
+
+**The separate 3-pad group** (left of the JTAG header) showed **no continuity to
+the FPGA** — so those are not FPGA pins. Most likely the `EN25F40` SPI config
+flash lines (in-system reflash without clamshelling); buzz them to the flash chip
+and to config pins 51/52/53 (CCLK/DIN/DOUT-MISO) to confirm.
+
+### HS2 wiring
+
+All same-name, straight through (no TDI/TDO crossover):
+
+```
+HS2 TCK  → pad 2      HS2 TDI → pad 4      HS2 GND  → pad 5 or 8
+HS2 TMS  → pad 3      HS2 TDO → pad 1      HS2 VREF → pad 6 or 7 (the ~3.3 V one)
+```
+
+The exact JTAG **IDCODE** is not in this datasheet's extracted text; the
+XC3S200A value follows the Spartan-3A pattern `0x0221x093` (expected
+`0x02218093`). It does not need to be memorised — `xc3sprog`/iMPACT enumerate the
+chain and name the device, which is the step-1 success check.
+
 ## Why the config flash matters
 
 The Spartan-3A is **SRAM-based**. It has no internal configuration memory, so
@@ -103,6 +173,17 @@ So the bootstrap is either:
 **Dumping the `25Q40H` distinguishes (a) from (b) definitively, and reading is
 completely non-destructive.** If the Nintendo logo and the `ezgb.dat not found`
 strings appear in the dump as plain data, it is (a) and the path is short.
+
+**Update (from the FW4 flash dump we hold — see
+[fpga-flash-map.md](fpga-flash-map.md)):** the evidence now leans toward (b).
+The 512 KB image contains only two FPGA bitstream slots plus one 8 KB
+high-entropy blob at `$30000` (entropy 7.80, no logo under any encoding, no
+strings, not GB code, absent from `ezgb.dat`). There is **no plaintext bootstrap
+ROM anywhere in the flash** — no Nintendo logo, no `ezgb.dat`/`LOADING` strings
+in any slot. So hypothesis (a) has no supporting evidence in the actual dump,
+and the bootstrap is most likely embedded in the bitstream (b). Confirming it
+still requires the bitstream format, but the "separate plaintext ROM" idea can
+be set aside.
 
 ## Suggested experiment order (all non-destructive)
 

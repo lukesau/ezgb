@@ -4364,3 +4364,7 @@
 00:02f0 BrowserScrollUpHook
 00:02f0 .data:b:8
 00:03cc DirListSkipDotLongName
+08:746b BrowserSortAll
+08:746b .data:631:8
+00:03d4 BrowserSortAllStub
+00:03d4 .data:8:8

@@ -18,6 +18,11 @@ re/*/kernel.gb.orig
 re/*/*.gb
 re/*/*.gbc
 re/*/*.dat
+# Raw mgbdis output of the FW updaters: unannotated, firmware-derived working
+# artifacts for the FPGA-flash analysis (docs/fpga-flash-map.md), kept local.
+# Unlike the kernel disassembly, these are not an annotated RE deliverable.
+/re/updater-fw4/
+/re/updater-fw5-0731/
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY

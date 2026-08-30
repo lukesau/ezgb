@@ -73,22 +73,50 @@ you choose to present.
 
 ### 4. Persistence
 
-Only once a design is proven over JTAG: write it to the `EN25F40`. Keep the
-factory dump. Note the confirmed layout — image A at `0x00000` is what the FPGA
-boots; image B at `0x40000` is a spare that is *not* an automatic fallback.
+Only once a design is proven over JTAG: write it to the `EN25F40`, wrapped in
+the same container the factory uses. The flash layout is now mapped to the byte
+(`fpga-flash-map.md`): two slots, A at `$00000` and B at `$40000`, each a
+`$46`-byte container header + an XC3S200A bitstream (length confirmed to 32
+bytes of the datasheet figure). A custom `.bit` goes into a slot in that form.
+
+**Which slot boots, and whether the other is an auto-fallback, is not yet
+confirmed — resolve it before trusting persistence.** Two facts bear on it:
+
+- In the FW4 chip dump both slots hold near-identical bitstreams (8 differing
+  bytes, all in the CRC tail), and the FW4 updater payload equals slot **B**
+  exactly.
+- The FW5 package instead carries two *genuinely different* images — one
+  byte-identical between 0731 and 0918 (a golden/fallback candidate) and one
+  that changes (the active image).
+
+That golden+active split is the signature of Spartan-3A **MultiBoot with
+fallback**: on a config CRC failure the FPGA reloads a golden image. If EZ Flash
+wired that up, then developing a custom bitstream in the *active* slot is
+self-recovering — a bad image falls back to golden instead of bricking. That
+would make flash persistence far safer than the 2026-08-16 experience. Confirm
+it two ways before relying on it: read the MultiBoot/fallback bits in the
+bitstream's config-option register, and/or deliberately flash a
+known-bad-CRC image to the active slot on a sacrificial cart and see if it
+recovers. Until confirmed, treat flash writes as brick-risky and keep the golden
+dump.
 
 ## What we already know that helps
 
-- Full config flash layout, and a working repair procedure
-  (`hardware-board.md`).
-- A dump of the factory bitstream, if it is ever worth studying for pin
-  assignments rather than logic.
-- The FPGA's register interface as seen from the Game Boy side — the
-  unlock/command/commit protocol and the meaning of many `$7Fxx` ports
-  (`REGISTERS.md`, `game-slot-access.md`). A replacement design can either
-  reimplement that interface for kernel compatibility, or discard it entirely
-  and define its own.
-- The kernel disassembly, fully labelled, if compatibility is wanted.
+- **Byte-exact config-flash layout** and container format (`fpga-flash-map.md`),
+  plus a working repair procedure (`hardware-board.md`). We know precisely where
+  and in what wrapper a custom bitstream must be written for persistence.
+- **The factory bitstream is a confirmed XC3S200A image**, standard Xilinx
+  packet format (its length matches the datasheet to 32 bytes; it ends in the
+  Xilinx `NOP` word). Worth keeping for pin-assignment study, though the
+  boundary-scan route below gets the pinout without decoding it.
+- **The FPGA's register interface is already documented from the kernel side** —
+  the unlock/command/commit protocol and the meaning of many `$7Fxx` ports
+  (`REGISTERS.md`, `game-slot-access.md`, `fpga-flash-map.md`). This is the
+  single biggest asset: the fully-labelled kernel disassembly *is* the spec for
+  what the FPGA does. A replacement design can reimplement that interface for
+  kernel compatibility, or discard it and define its own.
+- **A likely MultiBoot fallback** (see Persistence) that, if confirmed, makes
+  flash-based iteration recoverable rather than brick-risky.
 
 ## Reality check
 
