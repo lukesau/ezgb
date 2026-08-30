@@ -477,71 +477,17 @@ BrowserScrollUpHook::
     db $f8, $12, $e5, $cd, $97, $02, $e8, $02
     db $c3, $ab, $16
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserPageEnd::
+    db $3b, $3b, $21, $a2, $c2, $2a, $4f, $46
+    db $78, $b1, $28, $32, $f8, $04, $7e, $f8
+    db $00, $77, $f8, $05, $7e, $f8, $01, $77
+    db $e1, $e5, $23, $2a, $66, $6f, $79, $95
+    db $4f, $78, $9c, $47, $3e, $10, $b9, $3e
+    db $00, $98, $30, $03, $01, $10, $00, $0d
+    db $e1, $e5, $23, $23, $23, $7e, $91, $28
+    db $05, $71, $e1, $36, $01, $e5, $33, $33
+    db $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -709,17 +655,10 @@ FarCallDrawDetailBottom::
     db $f8, $05, $2a, $66, $6f, $e5, $cd, $8d
     db $07, $ba, $42, $01, $00, $e8, $05, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserPageEndHook::
+    db $f8, $12, $e5, $cd, $fb, $02, $e8, $02
+    db $c3, $ab, $16
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3684,7 +3623,7 @@ FileBrowserEntry_pageInc::
     ld a, b
     ld hl, $c2a3
     sbc [hl]
-    jp nc, MenuDispatchAB_waitVBlankLoop
+    jp nc, $03f4
 
     ld hl, sp+$13
     ld e, [hl]
@@ -12521,7 +12460,7 @@ BrowserScrollDownRepaint::
     db $07, $2a, $4f, $46, $79, $c6, $f8, $4f
     db $78, $ce, $ff, $47, $af, $02, $69, $60
     db $23, $36, $00, $69, $60, $23, $23, $36
-    db $00, $03, $03, $03, $af, $02, $cd, $b2
+    db $00, $03, $03, $03, $af, $02, $cd, $be
     db $3e, $f8, $03, $3a, $2b, $2b, $c6, $01
     db $22, $23, $23, $23, $7e, $ce, $00, $f8
     db $01, $22, $23, $d1, $d5, $1a, $22, $13
@@ -12541,30 +12480,19 @@ BrowserScrollDownRepaint::
     db $12, $ea, $00, $40, $f8, $00, $4e, $af
     db $96, $23, $23, $32, $79, $9e, $23, $23
     db $32, $2a, $5f, $7e, $c6, $a0, $57, $21
-    db $fe, $00, $19, $7e, $fe, $10, $20, $27
+    db $fe, $00, $19, $7e, $fe, $10, $20, $33
     db $c5, $c5, $33, $af, $0f, $f5, $d5, $cd
     db $b7, $08, $e8, $05, $11, $03, $00, $d5
     db $af, $f5, $33, $cd, $91, $27, $e8, $04
     db $21, $03, $11, $e5, $11, $27, $3e, $d5
-    db $cd, $b7, $08, $e8, $05, $18, $0c, $c5
-    db $33, $21, $14, $00, $e5, $d5, $cd, $b7
-    db $08, $e8, $05, $e8, $04, $c9, $21, $00
-    db $7f, $36, $e1, $2e, $10, $36, $e2, $2e
-    db $20, $36, $e3, $2e, $c0, $36, $03, $2e
-    db $f0, $36, $e4, $c9
+    db $cd, $b7, $08, $e8, $05, $af, $0f, $f5
+    db $3e, $03, $f5, $33, $cd, $91, $27, $e8
+    db $03, $18, $0c, $c5, $33, $21, $14, $00
+    db $e5, $d5, $cd, $b7, $08, $e8, $05, $e8
+    db $04, $c9, $21, $00, $7f, $36, $e1, $2e
+    db $10, $36, $e2, $2e, $20, $36, $e3, $2e
+    db $c0, $36, $03, $2e, $f0, $36, $e4, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

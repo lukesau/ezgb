@@ -24,9 +24,16 @@ effect of the stock dirty path (zeroing the marquee tick at frame
    the in-screen cursor moves already use.
 2. Rows 13 → 0, one at a time, replicating `DrawBrowserEntries`' per-row
    body with the stock primitives (`DrawString` `00:08b7`,
-   `StoreDrawParams` `00:2791`). No ink management needed: the helper's
-   epilogue leaves ink normal and rows 0..13 are never selected during a
-   shift (`sel` is pinned at 15).
+   `StoreDrawParams` `00:2791`) — **including the per-row ink reset after a
+   DIR tag**. `StoreDrawParams` is not an (index, value) setter: it stores
+   all three draw-state bytes (`$d734/$d735/$d723`,
+   `decomp/src/store_d734_d735_d723.c`) every call, so the DIR tag's
+   `(0, $0003)` switches everything drawn after it to inverse video until
+   the stock `(3, $0000)` reset. Omitting that reset was a real shipped bug
+   here: after the first repaint, every row below the topmost directory
+   painted white-on-black. No highlight management is needed beyond that:
+   the helper's epilogue leaves ink normal and rows 0..13 are never
+   selected during a shift (`sel` is pinned at 15).
 
 Why not iterate the two-row helper over all eight pairs: its epilogue prints
 the selection-number field as `base+row+1` on **every** call, so the field
@@ -56,14 +63,15 @@ python3 tools/inject.py src/browser_scroll_repaint.c 1.05e 0 3d8c \
 # then set stub bytes $02e4-$02e5 to 8c 3d and regen
 ```
 
-## Verified / to verify
+## Verified
 
-- The shim path fired live under SameBoy (breakpoint `$03dc`, repeated
-  press→repaint→input-loop cycles, entry count intact) while this was the
-  earlier "pre-draw rows 14/15 then stock sweep" variant; the full bottom-up
-  version compiles to the same wiring with the row loop added.
-- The bottom-up visual itself needs an eyeball pass (SameBoy keystroke
-  automation requires macOS Accessibility permission): scroll past the
-  bottom of a >16-entry directory and confirm the new bottom entry paints
-  first, the sweep runs upward, highlight and DIR tags are correct, and the
-  top-right selection number reads base+16.
+- Under SameBoy with CGEvent-driven key presses: repeated window-shift
+  presses each hit the `$03dc` shim breakpoint and returned to the input
+  loop with the entry count intact — wrapper wired, helper called, browser
+  loop healthy across repaints.
+- Visually (manual): the new bottom entry paints first and the sweep runs
+  upward, with highlight, DIR tags, and the selection number correct.
+- Ink-reset regression: with a breakpoint after the wrapper returns,
+  `$d734/$d735/$d723` read `03 00 00` (the reset state) after every
+  window-shift repaint of the directory-heavy test root; the missing-reset
+  bug left `00 03 00` and black rows below the first directory.

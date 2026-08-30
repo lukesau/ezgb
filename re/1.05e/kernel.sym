@@ -4371,4 +4371,8 @@
 00:03dc FarCallDrawDetailBottom
 00:03dc .data:18:8
 00:3d8c BrowserScrollDownRepaint
-00:3d8c .data:13c:8
+00:3d8c .data:148:8
+00:02fb BrowserPageEnd
+00:02fb .data:41:8
+00:03f4 BrowserPageEndHook
+00:03f4 .data:b:8

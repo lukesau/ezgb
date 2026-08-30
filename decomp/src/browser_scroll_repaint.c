@@ -18,10 +18,11 @@
  *   2. Rows 13 down to 0 one at a time with the stock drawing primitives,
  *      replicating DrawBrowserEntries' per-row body byte for byte:
  *      dir rows DrawString(name, len 0, col 0) + StoreDrawParams(0, 3) +
- *      "DIR" at col $11; file rows DrawString(name, len $14, col 0).
- *      No ink handling is needed: DrawBrowserDetail's epilogue leaves ink
- *      normal (StoreDrawParams(3, 0) before the number), and rows 0..13 are
- *      never the selection during a window shift (sel is pinned at 15).
+ *      "DIR" at col $11 + the stock per-row ink reset (see draw_row); file
+ *      rows DrawString(name, len $14, col 0). No highlight handling is
+ *      needed: DrawBrowserDetail's epilogue leaves ink normal and rows
+ *      0..13 are never the selection during a window shift (sel is pinned
+ *      at 15).
  *
  * dirty is then cleared so FileBrowserEntry's own redraw does nothing; the
  * one side effect of its dirty!=0 path — zeroing the 32-bit marquee tick at
@@ -100,6 +101,13 @@ static void draw_row(u16 base, u8 n) {
         DrawString(rec, 0, 0, row);
         StoreDrawParams(0, 0x0003);
         DrawString(dir_tag, 3, 0x11, row);
+        /* StoreDrawParams is not an (index, value) setter — it stores all
+         * three draw-state bytes ($d734/$d735/$d723) every call, so the DIR
+         * tag's (0, $0003) flips the ink to inverse video for everything
+         * drawn after it. Stock DrawBrowserEntries undoes that with this
+         * same reset at the end of every row; without it, every row painted
+         * below a directory comes out white-on-black. */
+        StoreDrawParams(3, 0x0000);
     } else {
         DrawString(rec, 0x14, 0, row);
     }
