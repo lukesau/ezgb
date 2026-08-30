@@ -1,24 +1,34 @@
-/* Boot-time entry point for fast launch, hooked over the browser's
- * "call BrowserSortAllStub" at 00:102f (which is itself the sorted-browser
- * feature's replacement for the stock DirList call). By that point the SD card
- * is mounted, so the scan can read the root.
+/* Pre-paint boot hook for fast launch, hooked over the browser's
+ * "call BrowserSortAllStub" at 00:102f (itself the sorted-browser feature's
+ * replacement for the stock DirList call). This runs after the SD card is
+ * mounted but BEFORE FileBrowserEntry_redraw ($1071) paints the list, so a
+ * fast-launch card goes straight to Loading without the browser flashing.
  *
- * Runs the scan first; on a hit it stages the full path in $c4a4 and launches
- * (never returns). Otherwise it performs the normal browser enumeration/sort it
- * displaced and returns, so a card with no fast-launch trigger boots to the
- * file browser exactly as before.
+ * One-shot via the $DBFF flag (cleared at boot): the scan runs only on the
+ * first FileBrowserEntry — later entries (directory navigation) skip it and
+ * just do the sort, so browsing stays fast and never re-triggers a launch. The
+ * sort (BrowserSortAllStub) runs on every entry either way, so a no-trigger
+ * card browses exactly as before.
+ *
+ * Alternative to the post-paint hook in fastlaunch_hook.c (00:110B). Only one
+ * of the two should wire the launch at a time.
  */
-extern void FarCallScan(void);                         /* -> bank 2 fastlaunch_scan (writes $c4a4) */
-extern void fastlaunch_do_launch(void);                /* reuses LastRomRelaunch; no return */
-extern void BrowserSortAllStub(void);                  /* 00:03d4, the displaced call */
+extern void FarCallScan(void);                /* -> bank 2 fastlaunch_scan (writes $c4a4) */
+extern void fastlaunch_do_launch(void);       /* reuses LastRomRelaunch; no return */
+extern void BrowserSortAllStub(void);         /* 00:03d4, the displaced call (sort/enum) */
 
 void fastlaunch_boot(void) {
     unsigned char *c4a4 = (unsigned char *)0xC4A4;
+    unsigned char *flag = (unsigned char *)0xDBFF;
 
-    FarCallScan();                /* scans root, writes the launch path to $c4a4 */
-    if (c4a4[0] != 0) {
-        fastlaunch_do_launch();   /* boots the ROM; never returns */
+    BrowserSortAllStub();             /* enumerate/sort FIRST (the launch needs its state) */
+
+    if (*flag == 0) {
+        *flag = 1;
+        FarCallScan();                /* scans root, writes the launch path to $c4a4 */
+        if (c4a4[0] != 0) {
+            fastlaunch_do_launch();   /* boots the ROM; never returns */
+        }
     }
-
-    BrowserSortAllStub();         /* no trigger: normal browser; ret -> $1032 */
+    /* no trigger: return -> $1032 -> FileBrowserEntry_redraw paints the list */
 }

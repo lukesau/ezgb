@@ -36,6 +36,23 @@
 
 extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *path);
 extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
+extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page */
+
+/* Ready-made bank-0 FatFs thunks (reached by ordinary call; they handle the
+ * FarCallTrampoline arg-shift internally). Used to read the config file. */
+extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode); /* f_open */
+extern unsigned char FarCall_06_779a(unsigned char *fp, unsigned char *buf, unsigned int btr, unsigned int *br); /* f_read */
+extern unsigned char FarCall_03_768f(unsigned char *fp); /* f_close */
+
+#define FIL_OBJ  ((unsigned char *)0xCA0F)   /* kernel's FIL; free while browser is idle */
+#define CFGBUF   ((unsigned char *)0xDA00)   /* config file contents */
+#define FA_READ  0x01
+#define CFG_MAX  128
+
+/* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
+ * $00; the file-record window ($A000, where the browser rests) is $03. */
+#define SD_PAGE     0x00
+#define PSRAM_PAGE  0x03
 
 /* Fixed WRAM scratch. */
 #define FNO   ((unsigned char *)0xD780)  /* FILINFO, 26 used */
@@ -63,6 +80,8 @@ static unsigned char is_rom(const unsigned char *name);
 static unsigned char match_fastlaunch_ext(const unsigned char *name);
 static unsigned char match_rom_name(const unsigned char *name);
 static void write_result(unsigned char *result_path, const unsigned char *name);
+static void scan_root(void);
+static unsigned char scan_config(void);
 
 /* Takes no argument: it is reached by a far-call (FarCallTrampoline), which
  * shifts stack args by 6 bytes, so passing a pointer across it is fragile.
@@ -70,7 +89,18 @@ static void write_result(unsigned char *result_path, const unsigned char *name);
  * which is exactly where the launch step reads the path from. */
 #define RESULT ((unsigned char *)0xC4A4)
 
+/* SD reads must run under FPGA personality $7FC0=$00 (DiskRead_B2 does not set
+ * it itself — DirList sets it before every f_readdir). The scan is entered with
+ * the browser's resting $7FC0=$03 (the PSRAM record window), so it selects the
+ * SD page for its reads and restores $03 on the way out. Skipping this reads the
+ * wrong window and wedges the SD controller on real hardware, though it is
+ * invisible in the emulator, whose stub ignores $7FC0. */
 void fastlaunch_scan(void) {
+    scan_root();
+    FarCallSetPage(PSRAM_PAGE);
+}
+
+static void scan_root(void) {
     unsigned char *result_path = RESULT;
     unsigned char root[2];
     unsigned char have_marker;
@@ -80,6 +110,9 @@ void fastlaunch_scan(void) {
     unsigned char i, n;
 
     result_path[0] = 0;
+
+    /* Highest priority: an explicit path in /fastlaunch.cfg. */
+    if (scan_config()) return;
 
     /* FILINFO.lfname = LFN buffer, FILINFO.lfsize = 254 (set once; reused). */
     FNO[FNO_LFNPTR]     = (unsigned char)((unsigned int)LFN & 0xFF);
@@ -95,6 +128,7 @@ void fastlaunch_scan(void) {
     realcount = 0;
     last_is_rom = 0;
 
+    FarCallSetPage(SD_PAGE);
     if (FarCallOpendir_B5(DIRO, root) != 0) return;
     for (;;) {
         readdir_prep();
@@ -104,6 +138,7 @@ void fastlaunch_scan(void) {
         name = entry_name();
         if (name[0] == '.') continue;                 /* dot-files / macOS junk */
         if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
+        if (streq_ci(name, (const unsigned char *)"fastlaunch.cfg")) continue;
 
         if (match_fastlaunch_ext(name)) {             /* fills BASE with the stem */
             have_marker = 1;
@@ -122,6 +157,7 @@ void fastlaunch_scan(void) {
     /* --- Decide --- */
     if (have_marker) {
         /* Pass 2: find BASE + .gb/.gbc in root. */
+        FarCallSetPage(SD_PAGE);
         if (FarCallOpendir_B5(DIRO, root) != 0) return;
         for (;;) {
             readdir_prep();
@@ -146,6 +182,53 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
     result_path[0] = '/';
     for (i = 0; name[i]; i++) result_path[1 + i] = name[i];
     result_path[1 + i] = 0;
+}
+
+/* Read /fastlaunch.cfg; if present and non-empty, take its first line as the
+ * ROM path and write it to RESULT ($c4a4) with a leading '/'. Returns 1 on
+ * success. Uses the kernel's FIL at $ca0f (idle here, so no FIL size guess).
+ * The path may be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
+static unsigned char scan_config(void) {
+    /* This name literal is a bank-2 const; f_open runs in bank 6 and would read
+     * that address in the wrong bank, so the path must be copied to WRAM (always
+     * mapped) before the call — as the kernel's own opens do (e.g. /SAVER/...). */
+    static const unsigned char cfg_name[16] =
+        {'/','F','L','A','U','N','C','H','.','C','F','G',0};
+    unsigned int br;
+    unsigned char len, i, j, c;
+    unsigned char *r = RESULT;
+    unsigned char *p = CFGBUF;   /* WRAM: holds the path, then the file contents */
+
+    for (i = 0; ; i++) { p[i] = cfg_name[i]; if (cfg_name[i] == 0) break; }
+
+    FarCallSetPage(SD_PAGE);
+    if (FarCall_06_7309(FIL_OBJ, p, FA_READ) != 0) return 0;   /* no config file */
+    FarCallSetPage(SD_PAGE);
+    if (FarCall_06_779a(FIL_OBJ, CFGBUF, CFG_MAX, &br) != 0) {
+        FarCall_03_768f(FIL_OBJ);
+        return 0;
+    }
+    FarCall_03_768f(FIL_OBJ);
+    if (br == 0) return 0;
+
+    /* First line only: stop at CR/LF/NUL or end of what was read. */
+    len = 0;
+    for (;;) {
+        if (len >= CFG_MAX) break;
+        if ((unsigned int)len >= br) break;
+        c = CFGBUF[len];
+        if (c == 0x0d || c == 0x0a || c == 0) break;
+        len++;
+    }
+    while (len != 0 && CFGBUF[len - 1] == ' ') len--;
+    if (len == 0) return 0;
+
+    /* Write with a leading '/' so the launch glue sees an absolute path. */
+    i = 0;
+    if (CFGBUF[0] != '/') { r[0] = '/'; i = 1; }
+    for (j = 0; j < len; j++) { r[i] = CFGBUF[j]; i++; }
+    r[i] = 0;
+    return 1;
 }
 
 static unsigned char to_upper(unsigned char c) {
@@ -181,6 +264,7 @@ static unsigned char is_end(void) {
 }
 
 static void readdir_prep(void) {
+    FarCallSetPage(SD_PAGE);   /* re-assert SD personality before every read (as DirList does) */
     FNO[FNO_SFN] = 0;
     LFN[0] = 0;
 }

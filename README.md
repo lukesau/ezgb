@@ -42,12 +42,15 @@ commands.
 | **Fast launch** | Boots straight into a ROM, skipping the browser: either the card's only root ROM, or the one a `<name>.fastlaunch` marker names. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
 
 Once built, **fast launch is driven entirely from the card** (no rebuild to
-change what boots): put a single ROM in the root to boot it automatically, or
-drop an empty `<name>.fastlaunch` next to `<name>.gb`/`.gbc` in the root to pin
-that one. Anything else (several ROMs, no marker) boots to the normal browser.
-Folders, `ezgb.dat`, and dot-files/macOS junk are ignored. **Hold B at power-on
-to skip fast launch and go to the browser.** Verified in emulator; not yet run
-on real hardware.
+change what boots), in priority order: a `/FLAUNCH.CFG` text file whose first
+line is the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else an
+empty `<name>.fastlaunch` marker next to `<name>.gb`/`.gbc` in the root; else the
+root's only ROM. Anything else boots to the normal browser. Folders, `ezgb.dat`,
+and dot-files/macOS junk are ignored. **Hold B at power-on to skip fast launch
+and go to the browser** — confirmed on real hardware (Game Boy Color and Game
+Boy Advance SP), along with the launch itself and the `$7FC0` SD-personality
+fix. The config file and the no-flash pre-paint hook are emulator-verified and
+awaiting a hardware run.
 
 **Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,

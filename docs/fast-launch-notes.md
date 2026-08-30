@@ -25,8 +25,70 @@ stub's boot-the-loaded-ROM trigger).
   if B (`$20`) is held, skips the launch and drops to the browser. The decision
   is locked to the first loop iteration (the flag is set before the read).
 - Shims `FarCallScan` (`00:0400`), `FarCallOpendir_B5`/`FarCallReaddir_B5`
-  (`02:4380`/`02:4396`). `fastlaunch_boot.c` (`00:0440`) is a superseded
-  earlier hook variant, left injected but never called.
+  (`02:4380`/`02:4396`), `FarCallSetPage` (`02:43ac`). `fastlaunch_boot.c`
+  (`00:0440`) is a superseded earlier hook variant, left injected but never
+  called.
+
+## Bug fixed: FPGA personality ($7FC0) around SD reads
+
+Symptom (real hardware only; emulator was fine): the first fast-launch build
+broke *all* FatFs operations — entering a directory showed "file system error"
+under the Reading… modal then hung, and launching a ROM hung under Loading…
+
+Cause: SD sector reads (`DiskRead_B2`, `02:4027`) require the FPGA personality
+`$7FC0=$00`, and `DiskRead_B2` does not set it — the caller does (DirList wraps
+every `f_readdir` in `SetFpgaPage($00)`, far-call blob `e7 41 04 00` →
+`SetFpgaPageAlt_B4` `04:41e7`). The scan omitted this, so it ran its
+`f_opendir`/`f_readdir` under the browser's resting `$7FC0=$03` (the PSRAM
+record window). Confirmed by watching `$7FC0`: the last write before the scan's
+opendir was `$03`. Reading an SD sector under the PSRAM personality reads the
+wrong window and wedges the SD controller, breaking every later op (browse and
+launch). It is invisible in the emulator because the EZ Jr stub ignores `$7FC0`
+— exactly why the emulator passed while hardware failed. Banks 2 and 5 (the
+scan, FatFs, `DiskRead_B2`) never write `$7FC0`, so it is purely the caller's
+job.
+
+Fix: `fastlaunch_scan` selects `$7FC0=$00` before every read (before each
+`f_opendir`, and in `readdir_prep` before each `f_readdir`, mirroring DirList)
+and restores the browser's resting `$7FC0=$03` on the way out (the wrapper).
+`$03` is also the state `LastRomRelaunch` is normally entered in from the START
+overlay, so the launch path is unaffected. Via the `FarCallSetPage` shim
+(`02:43ac` → `04:41e7`). Pending confirmation on real hardware.
+
+## File-content config + pre-paint hook (2026-08-29, emulator-verified)
+
+**Config file.** `/FLAUNCH.CFG` in the SD root, first line = the ROM path (root
+or nested, e.g. `/Pokemon/Blue.gb`). It is the highest-priority trigger (then
+marker, then lone-ROM). Read via the kernel's ready-made bank-0 thunks
+`FarCall_06_7309` (f_open, `00:1926`), `FarCall_06_779a` (f_read, `00:1941`),
+`FarCall_03_768f` (f_close, `00:19a1`), using the kernel's own FIL at `$ca0f`
+(free while the browser is idle). Two constraints learned the hard way:
+
+- **8.3 name required.** This kernel's `f_open` (`Open_B6`) rejects long names
+  with FR_INVALID_NAME (6) — unlike readdir, which resolves LFNs. So the config
+  file is `FLAUNCH.CFG`, not `fastlaunch.cfg`. (Its *contents* may still name a
+  long/nested ROM; the launch path handles those.)
+- **Path must be in WRAM.** `f_open` runs in bank 6, so a path pointer into a
+  bank-2 ROM const reads the wrong bank. `scan_config` copies the name into
+  WRAM (`CFGBUF`) before calling, as the kernel's own opens do (`/SAVER/...`).
+
+Nested paths work because `fastlaunch_do_launch` now zeros `$c2a6` before seeding
+'/', so `LastRomRelaunch`'s prefix Memcpy is NUL-terminated for any depth.
+
+**Pre-paint hook (no browser flash).** `fastlaunch_boot.c` (`00:0490`) hooks the
+sort call at `00:102f`, *before* `FileBrowserEntry_redraw` (`$1071`) paints — so
+a fast-launch card goes straight to Loading with no browser flash. One-shot via
+`$DBFF`; it does the sort FIRST (state the launch needs) then scan/launch; a
+no-trigger card returns to `$1032` and paints/browses normally. This supersedes
+the post-paint hook `fastlaunch_hook.c` (`00:0460`, over `$110B`) — wire only one
+at a time. Verified in the emulator: fast-launch reaches `$1344`/`$7fe0=$80`
+without hitting `$1071`; no-trigger hits `$1071`+`$1107` and browses.
+
+**Bank-0 cave layout (watch for collisions).** `FarCallScan` `$0400`, `do_launch`
+`$0420` (38 B → `$0446`), `fastlaunch_hook` `$0460` (35 B, dead when pre-paint is
+active), `fastlaunch_boot` `$0490` (24 B). An earlier layout let `fastlaunch_boot`
+overlap `do_launch`'s `jp $1344`, which crashed the launch and briefly looked
+like a pre-paint problem — always check injected size vs the next address.
 
 ## Reproduce
 
@@ -40,9 +102,13 @@ python3 tools/inject_bytes.py 1.05e 2 4380 FarCallOpendir_B5 \
     f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply
 python3 tools/inject_bytes.py 1.05e 2 4396 FarCallReaddir_B5 \
     f8042a666fe5f8042a666fe5cd8d0776750500e804c9 --apply
+# FarCallSetPage shim (bank 2): SetFpgaPageAlt_B4 ($41e7) — $7FC0 personality
+python3 tools/inject_bytes.py 1.05e 2 43ac FarCallSetPage \
+    f8027ef533cd8d07e7410400e801c9 --apply
 # scan (bank 2)
 python3 tools/inject.py src/fastlaunch.c 1.05e 2 4500 FastLaunchScan \
-    --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 --apply
+    --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 \
+    --pin FarCallSetPage=43ac --apply
 # far-call-to-scan shim (bank 0)
 python3 tools/inject_bytes.py 1.05e 0 0400 FarCallScan cd8d0700450200c9 --apply
 # launch glue (bank 0)

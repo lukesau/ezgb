@@ -17,17 +17,25 @@
  * here — LastRomRelaunch reads the prefix from it before ApplyBasename
  * overwrites it with the basename.
  *
- * Fast-launch ROMs live in the root, so the directory prefix is always empty
- * and LastRomRelaunch's prefix Memcpy copies 0 bytes, leaving $c2a6 as we set
- * it here: "/". (That is the one bit of state the START overlay gets from the
- * browser's own memset; we set it explicitly so we don't depend on it.)
+ * $c2a4 must hold the FULL path here (may be nested, e.g. "/dir/rom.gb" from a
+ * config file). LastRomRelaunch's prefix Memcpy copies the directory part into
+ * $c2a6 and relies on the byte past it being NUL, which the browser normally
+ * provides by memset. We don't depend on that: we zero $c2a6 first (so any
+ * nested prefix is NUL-terminated) and seed '/', which also covers the root
+ * case (prefix_len 0 copies nothing, leaving "/").
  */
 void fastlaunch_do_launch(void) __naked {
     __asm
-        ld  hl, #0xc2a6       ; prefix dir = root
-        ld  (hl), #0x2f       ; '/'
+        ld  hl, #0xc2a6       ; zero $c2a6[0..127] (NUL-terminates any prefix)
+        ld  b, #128
+        xor a
+00002$:
+        ld  (hl), a
         inc hl
-        ld  (hl), #0x00       ; NUL
+        dec b
+        jr  nz, 00002$
+        ld  hl, #0xc2a6
+        ld  (hl), #0x2f       ; seed '/' (root case)
 
         ld  a, #0x2f          ; '/'
         push af
