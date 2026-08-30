@@ -43,6 +43,7 @@ extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page *
 extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode); /* f_open */
 extern unsigned char FarCall_06_779a(unsigned char *fp, unsigned char *buf, unsigned int btr, unsigned int *br); /* f_read */
 extern unsigned char FarCall_03_768f(unsigned char *fp); /* f_close */
+extern void WaitVBlankFlag(void);   /* 00:0688 — kernel waits VBlank before f_open */
 
 #define FIL_OBJ  ((unsigned char *)0xCA0F)   /* kernel's FIL; free while browser is idle */
 #define CFGBUF   ((unsigned char *)0xDA00)   /* config file contents */
@@ -201,8 +202,13 @@ static unsigned char scan_config(void) {
 
     for (i = 0; ; i++) { p[i] = cfg_name[i]; if (cfg_name[i] == 0) break; }
 
+    /* Match the kernel's own f_open setup (BackupSaveDump): wait VBlank, then
+     * select the SD personality. The VBlank wait is invisible in the emulator
+     * but the kernel does it before every real SD file open. */
+    WaitVBlankFlag();
     FarCallSetPage(SD_PAGE);
     if (FarCall_06_7309(FIL_OBJ, p, FA_READ) != 0) return 0;   /* no config file */
+    WaitVBlankFlag();
     FarCallSetPage(SD_PAGE);
     if (FarCall_06_779a(FIL_OBJ, CFGBUF, CFG_MAX, &br) != 0) {
         FarCall_03_768f(FIL_OBJ);

@@ -16,6 +16,7 @@
 extern void FarCallScan(void);                /* -> bank 2 fastlaunch_scan (writes $c4a4) */
 extern void fastlaunch_do_launch(void);       /* reuses LastRomRelaunch; no return */
 extern void BrowserSortAllStub(void);         /* 00:03d4, the displaced call (sort/enum) */
+extern unsigned char ReadJoypad(void);        /* 00:3a4a — post-swap key byte in E; B = $20 */
 
 void fastlaunch_boot(void) {
     unsigned char *c4a4 = (unsigned char *)0xC4A4;
@@ -25,10 +26,12 @@ void fastlaunch_boot(void) {
 
     if (*flag == 0) {
         *flag = 1;
-        FarCallScan();                /* scans root, writes the launch path to $c4a4 */
-        if (c4a4[0] != 0) {
-            fastlaunch_do_launch();   /* boots the ROM; never returns */
+        if ((ReadJoypad() & 0x20) == 0) {   /* hold B at boot to skip fast launch */
+            FarCallScan();            /* scans root, writes the launch path to $c4a4 */
+            if (c4a4[0] != 0) {
+                fastlaunch_do_launch(); /* boots the ROM; never returns */
+            }
         }
     }
-    /* no trigger: return -> $1032 -> FileBrowserEntry_redraw paints the list */
+    /* no trigger / B held: return -> $1032 -> FileBrowserEntry_redraw paints */
 }

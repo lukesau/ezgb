@@ -47,10 +47,11 @@ line is the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else an
 empty `<name>.fastlaunch` marker next to `<name>.gb`/`.gbc` in the root; else the
 root's only ROM. Anything else boots to the normal browser. Folders, `ezgb.dat`,
 and dot-files/macOS junk are ignored. **Hold B at power-on to skip fast launch
-and go to the browser** — confirmed on real hardware (Game Boy Color and Game
-Boy Advance SP), along with the launch itself and the `$7FC0` SD-personality
-fix. The config file and the no-flash pre-paint hook are emulator-verified and
-awaiting a hardware run.
+and go to the browser.** The whole feature is confirmed on real hardware (Game
+Boy Color and Game Boy Advance SP): fast launch from a config file (root and
+subfolder paths), the `.fastlaunch` marker and lone-ROM rules, hold-B to cancel,
+and the no-flash pre-paint hook that skips straight to Loading without the
+browser flashing.
 
 **Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,

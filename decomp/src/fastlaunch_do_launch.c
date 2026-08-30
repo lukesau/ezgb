@@ -26,6 +26,18 @@
  */
 void fastlaunch_do_launch(void) __naked {
     __asm
+        ; SetFpgaPage($00): the START overlay's LastRomDrawBasename does exactly
+        ; this before LastRomRelaunch, setting the SD personality for the
+        ; directory traversal. We skip that draw step, so without it the nested
+        ; opendir reads the wrong FPGA window and hangs on "Loading..." (root
+        ; paths work because opening "/" does not traverse).
+        ld  a, #0x00
+        push af
+        inc sp
+        call 0x078d          ; FarCallTrampoline
+        .db  0xe7, 0x41, 0x04, 0x00   ; -> SetFpgaPageAlt_B4 (04:41e7), page $00
+        add sp, #1
+
         ld  hl, #0xc2a6       ; zero $c2a6[0..127] (NUL-terminates any prefix)
         ld  b, #128
         xor a
