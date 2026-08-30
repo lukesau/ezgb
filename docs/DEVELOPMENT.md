@@ -48,30 +48,22 @@ Persistent annotations live in two files per version:
 
 See [psram-save-map.md](psram-save-map.md) for an example of the note format.
 
-## Naming the next function
+## Naming and annotation
 
-The disassembly is already 100% labeled, but naming and annotation is an ongoing
-refinement. Use the same context humans and agents share:
+The disassembly is 100% labeled. To refine a name or comment, edit
+`re/1.05e/kernel.sym` / `notes.json` then regenerate:
 
 ```sh
-./scripts/map-next.sh                 # progress + proposals + app worklist + full packet
-./scripts/map-next.sh --top 10        # wider picker
 ./scripts/regen-disasm.sh 1.05e       # after editing kernel.sym / notes.json
+./scripts/map-next.sh                 # progress + proposals + worklist + full packet
 ```
 
-`map-next` prints the body, callers, WRAM/`$7Fxx` touches, and `needs_judgment`
-for its top target, so do not re-grep what it already showed.
+`map-next` prints body, callers, WRAM/`$7Fxx` touches, and `needs_judgment` for
+its top target. Rank table only (no body): `doc-symbol-coverage.py --app --top
+10` (`F` = frontier) or `--top 25` (full dump incl. lib banks).
 
-Rank table only (no body context):
-
-```sh
-./scripts/doc-symbol-coverage.py --app --top 10   # app banks; F = frontier
-./scripts/doc-symbol-coverage.py --top 25         # full dump incl. lib banks
-```
-
-Full pret-style workflow notes: [MAPPING.md](MAPPING.md). Session checklist:
-[MAP-SESSION.md](MAP-SESSION.md). Interior `Jump_`/`jr_` naming:
-[INTERIOR-NAMING.md](INTERIOR-NAMING.md).
+Methodology, `bank:addr` translation, and interior-label conventions:
+[MAPPING.md](MAPPING.md).
 
 ## Matching decompilation (`decomp/`)
 

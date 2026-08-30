@@ -1,21 +1,20 @@
 # EZ Flash Omega DE ↔ Jr comparison
 
 Working notes for using Omega (published [`omega-de-kernel`](https://github.com/ez-flash/omega-de-kernel)
-source + a real cart) to help map the Jr kernel. The menu UX on both feels closely related;
-how much of that is shared code shape vs shared product design is still an open question.
-Expect a **non-zero** set of 1:1 features, not a line-for-line port (different CPU, bus, and
-storage models).
+source + a real cart) to help map the Jr kernel. The menu UX on both is closely related;
+how much is shared code vs shared product design is open. Expect some 1:1 features, not a
+line-for-line port (different CPU, bus, and storage models).
 
-Primary use of this doc while naming ASM: when a Jr routine's purpose is unclear, check whether
+Primary use while naming ASM: when a Jr routine's purpose is unclear, check whether
 Omega has an obvious counterpart (file browser, settings, SD helpers, last-played, etc.) and
-steal naming / structure from the published C.
+borrow naming/structure from the published C.
 
 ## Product goals (Jr)
 
 | Priority | Work |
 |---|---|
 | **Now** | Name and document Jr ASM (`kernel.sym` / notes / traces) |
-| **Later** | Build a **B-mode kernel** — a dedicated Jr firmware image that boots one chosen ROM without the file-browser OS |
+| **Later** | Build a **B-mode kernel**: a dedicated Jr firmware image that boots one chosen ROM without the file-browser OS |
 
 Omega DE Mode A/B is the UX target for that later work, adapted to Jr hardware constraints.
 
@@ -41,77 +40,77 @@ misbehaves (community troubleshooting note).
 
 Relevant Omega source (under `tools/omega-de-kernel/source/`):
 
-- `NORflash_OP.c` — `Loadfile2NOR`, NOR file list / format
-- `Ezcard_OP.c` — `SetRompage` / `SetRompageWithHardReset` (page select then hard/soft reset into game)
-- `ezkernelnew.c` — browser; NOR list boot via `SetRompageWithHardReset(pNorFS[…].rompage, …)`
-- `setwindow2.c` — Mode B rumble/RAM/link setting UI
+- `NORflash_OP.c`: `Loadfile2NOR`, NOR file list / format
+- `Ezcard_OP.c`: `SetRompage` / `SetRompageWithHardReset` (page select then hard/soft reset into game)
+- `ezkernelnew.c`: browser; NOR list boot via `SetRompageWithHardReset(pNorFS[…].rompage, …)`
+- `setwindow2.c`: Mode B rumble/RAM/link setting UI
 
 ## Jr constraint → B-mode kernel
 
-The Jr has **no physical A/B switch**, but it also **does not need an Omega-style NOR burn**
-to get an authentic in-game experience. Stock launch already:
+The Jr has no physical A/B switch, and needs no Omega-style manual NOR burn to get an
+authentic in-game experience. Stock launch already:
 
 1. Reads the ROM from microSD
-2. Programs it into the cart FPGA (so the GB bus sees a real cart image, not an emulated one)
-3. Soft-resets / hands off via the WRAM stub culminating in **`$7fe0=$80`** (kernel ROM
-   replaced; game runs)
+2. Programs it into the cart NOR/FPGA (so the GB bus sees a real cart image, not an emulated one)
+3. Hands off via the WRAM stub culminating in **`$7fe0=$80`** (kernel ROM replaced; game runs)
 
-That is why link cable multiplayer works like original carts: after handoff, the FPGA is
-presenting hardware-level cart behavior. Save-to-SD is a separate post-write flush (wait a
-beat after in-game save before yanking power or starting link) — not evidence of emulation.
+That is why link-cable multiplayer works like original carts: after handoff, the FPGA presents
+hardware-level cart behavior. Save-to-SD is a separate post-write flush (wait a beat after an
+in-game save before yanking power or starting link), not evidence of emulation.
 
-Omega Mode B exists because GBA Omega’s authentic path is “cold-boot a NOR-resident image
-with the switch selecting NOR vs OS.” On Jr, that authenticity is already the **normal**
-launch path. Mode B for us is only about **skipping Mode A (the browser OS)** so power-on
-goes straight into “load chosen ROM → FPGA program → soft reset.”
+Omega Mode B exists because GBA Omega's authentic path is "cold-boot a NOR-resident image,
+switch selecting NOR vs OS." On Jr that authenticity is the normal launch path already; Mode B
+here means only skipping Mode A (the browser OS) so power-on goes straight into "load chosen
+ROM → FPGA program → soft reset."
 
-So the Jr analogue is a **separate kernel build** (replace or dual-image `ezgb.dat`) whose
-job is: minimal bring-up → resolve the chosen ROM → call the existing load/launch chain.
-No NOR mirror, no new authenticity layer — reuse [`launch-trace.md`](launch-trace.md).
+The Jr analogue is a separate kernel build (replace or dual-image `ezgb.dat`): minimal bring-up
+→ resolve the chosen ROM → call the existing load/launch chain. No new authenticity layer;
+reuse [`launch-trace.md`](launch-trace.md).
 
-### Volatility (why cold boot still reloads)
+### Game staging and reuse
 
-The staged game image is almost certainly **volatile RAM** behind the FPGA (SRAM/PSRAM-class
-—“FPGA buffer” in our notes; Omega’s analogue for SD launches is `Loadfile2PSRAM`), not a
-NOR game slot. Cart memory that *does* keep state across power-off:
+The launch programs the ROM into the **Spansion 71GL032A NOR** (U4, 4 MB), then
+`$7fe0=$80` soft-resets and boots it. See [hardware-board.md](hardware-board.md).
+That NOR is non-volatile, so the last game persists across power-off.
 
-- **PSRAM** (U9) — saves and meta such as `$A300` last-path; **battery-backed**, so a
-  dead coin cell loses saves as well as the clock. FRAM is an Omega part, not a Jr one
-  (see [hardware-board.md](hardware-board.md))
-- **RTC** — also kept alive by that same cell
+The stock kernel re-streams the ROM from SD and re-programs it on every launch. It
+never checks whether the wanted game is already in NOR, so it never reuses NOR contents.
+Cold boot reloads `ezgb.dat` because the factory bootstrap presents the kernel at
+power-on, not the NOR game, independent of NOR persistence.
 
-Evidence the big game image does not persist across power-off:
+Whether the NOR game is usably readable back at runtime, and the exact U4/U9 partitioning,
+is unconfirmed; confirming needs a chip dump or driving the FPGA NOR-read path.
 
-- Every menu launch re-streams the ROM from SD before `$7fe0=$80`
-- Cold boot always reloads `ezgb.dat` from SD (factory bootstrap), same class of “buffer is
-  session storage”
+Other battery-backed memory (lost only if the coin cell dies): **PSRAM** (U9) holds
+saves and the `$A300` last-path; the **RTC** shares the same cell. See
+[psram-save-map.md](psram-save-map.md), [last-rom.md](last-rom.md).
 
-Implication for B-mode shortcuts:
+Implication for B-mode / no-splash shortcuts:
 
-| Path | Skip browser? | Skip SD→FPGA program? |
+| Path | Skip browser? | Skip SD→NOR program? |
 |---|---|---|
-| Cold boot (power cycle) | Yes (B-mode kernel) | **No** — buffer was lost; still need load (can still omit UI/dir enum) |
-| Warm / soft path while image still resident | Yes | **Maybe** — page/handoff only; unproven, map `RomLoad_*` first |
+| Cold boot (power cycle) | Needs a B-mode kernel / bootstrap change | Only if the resident NOR game can be read back and mapped (unconfirmed) |
+| Warm / in-place handoff after the load | Yes | Page/handoff only; map `RomLoad_*` and the `$7fe0` WRAM stub first |
 
-Omega Mode B’s “already flashed, just boot” cold path has no Jr free lunch without inventing
-persistent game storage the cart does not expose like Omega NOR.
+The Jr's authentic-cart launch (SD → program NOR → soft handoff) is the normal path;
+Omega reserves that for its NOR/Mode-B slot with a physical A/B switch.
 
-Earlier experiments patched the stock kernel in place (“fast-launch”); that approach is
-**deferred**. Salvageable plumbing is recorded in [`fast-launch-notes.md`](fast-launch-notes.md)
-and [`last-rom.md`](last-rom.md) (especially cart NVRAM `$A300` last-path). Prefer designing
-the B-mode kernel once the load path and related helpers are named from the full map.
+Earlier experiments patched the stock kernel in place ("fast-launch"); that approach is
+deferred. Salvageable plumbing is in [`fast-launch-notes.md`](fast-launch-notes.md) and
+[`last-rom.md`](last-rom.md) (cart NVRAM `$A300` last-path). Prefer designing the B-mode
+kernel once the load path and helpers are named from the full map.
 
 ## Already compared (hardware / structure)
 
 | Area | Omega | Jr (1.05e) | Notes |
 |---|---|---|---|
-| FPGA unlock → command → latch | `SetSDControl` / friends in `Ezcard_OP.c` (`0x9fe0000` …) | `$7f00/$7f10/$7f20` unlock, command ports, `$7ff0` commit | Same design, different map — [`REGISTERS.md`](REGISTERS.md) |
+| FPGA unlock → command → latch | `SetSDControl` / friends in `Ezcard_OP.c` (`0x9fe0000` …) | `$7f00/$7f10/$7f20` unlock, command ports, `$7ff0` commit | Same design, different map; see [`REGISTERS.md`](REGISTERS.md) |
 | SD sector I/O | `Read_SD_sectors` / `Write_SD_sectors` | `$7fb0`–`$7fb4` LBA + count family | Hypothesis aligned; confirm with traces |
 | Bank / page select | `SetRompage`, `SetRampage`, … | `$7fc0`–`$7fc4` family | Naming candidates once call sites sorted |
 | Filesystem | FatFs (`source/ff15`) | FatFs-like DIR objects in WRAM after `DirList` | UX + on-disk layout likely cousins |
 | File browser / settings chrome | Large UI in `ezkernelnew.c`, `setwindow*.c`, `draw.c` | `SdMenuMain`, dir list, SET/HELP tabs | Strong UX resemblance; ASM still mostly unnamed |
 | Direct game boot | NOR page + `SetRompageWithHardReset` (needed for Mode B authenticity) | SD → program FPGA → WRAM stub → `$7fe0=$80` soft handoff | **Jr already authentic at every launch**; Omega reserves that for NOR/Mode B |
-| Last / recent ROM | (Omega has its own persist — confirm while mapping) | `$A300` full path + START overlay | Jr side fully traced; Omega counterpart TBD for naming |
+| Last / recent ROM | (Omega has its own persist; confirm while mapping) | `$A300` full path + START overlay | Jr side fully traced; Omega counterpart TBD for naming |
 
 ## Suspected UX 1:1 (to verify while mapping)
 
@@ -142,12 +141,13 @@ Add rows here as each is confirmed or rejected.
 
 - How much Jr UI code is SDCC-shaped C parallel to Omega vs independently written for SM83?
 - Does Jr persist anything equivalent to Omega’s NOR game list, or only the single `$A300` path?
-  (Likely only `$A300` — Jr has no multi-slot NOR catalog to mirror.)
+  (Likely only `$A300`; Jr has no multi-slot NOR catalog to mirror.)
 - Factory bootstrap vs `ezgb.dat`: closest Omega analogue for “which image runs at cold boot”
   when inventing a dual A/B kernel install story on Jr.
 - Whether a B-mode Jr kernel should hardcode one path, read `$A300`, or read a small config
-  file — decide after the loader helpers are mapped, not before.
+  file: decide after the loader helpers are mapped, not before.
 - How much of the full OS kernel a B-mode image can strip (browser/UI) while still reaching
   the FPGA program + `$7fe0=$80` handoff cleanly.
-- Whether any warm-reset path can soft-boot an already-resident FPGA buffer without
-  re-streaming from SD (cold boot cannot, if the buffer is volatile RAM).
+- Whether any warm-reset path can soft-boot the already-resident NOR game without
+  re-streaming from SD (depends on whether the NOR game is readable back at runtime;
+  unconfirmed, see Game staging and reuse).

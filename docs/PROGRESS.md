@@ -14,8 +14,8 @@ actually understood, not just the literal behavior.
 | `$06b6` (anon) | 0 | `$06b6` | `$06b6` | `decomp/src/oam_dma_stub.c` | OAM DMA template: DMA from `$C000`, wait `$28`; boot copies to `$FF80` | Matched, both versions (`__naked`) |
 | `$06c0` (anon) | 0 | `$06c0` | `$06c0` (WRAM differs) | `decomp/src/serial_callback.c` | Serial IRQ cb: `$D6CD` state machine on rSB/rSC | Matched 1.05e (`__naked`). 1.04e uses `$D6A6` / `$D6A5` |
 | `Call_000_1a77` | 0 | `$1a77` | `$1a5e` | `decomp/src/misc.c` (`return_zero`) | Unconfirmed, called from bank_003, bank_007, bank_009, context not yet examined | Matched, both versions |
-| `Call_000_2765` | 0 | `$2765` | — (WRAM targets differ in 1.04e) | `decomp/src/store_d732_d733.c` | Likely set text cursor col/row (`$D732`/`$D733`); fed by `Call_000_08b7`, advanced by `Call_000_20f4` | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_pair_store.def`) |
-| `Call_000_2791` | 0 | `$2791` | — | `decomp/src/store_d734_d735_d723.c` | Store draw params `$D734`/`$D735`/`$D723`; called widely before tile/string helpers | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_triple_store.def`) |
+| `Call_000_2765` | 0 | `$2765` | n/a (WRAM targets differ in 1.04e) | `decomp/src/store_d732_d733.c` | Likely set text cursor col/row (`$D732`/`$D733`); fed by `Call_000_08b7`, advanced by `Call_000_20f4` | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_pair_store.def`) |
+| `Call_000_2791` | 0 | `$2791` | n/a | `decomp/src/store_d734_d735_d723.c` | Store draw params `$D734`/`$D735`/`$D723`; called widely before tile/string helpers | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_triple_store.def`) |
 
 Total matched: 15 functions (counting 5 wrappers separately), 220 bytes.
 

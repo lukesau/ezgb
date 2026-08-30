@@ -1,10 +1,10 @@
 # RIGHT on the last page jumps to the bottom (1.05e)
 
-Stock navigation is asymmetric: LEFT on the first page snaps the cursor to
-the top (`FileBrowserEntry_pageDecGate`), but RIGHT when the window already
-shows the tail of the list falls out of `FileBrowserEntry_pageInc`'s bounds
-check to the wait loop and does nothing. This patch adds the missing mirror:
-same trigger, cursor to the last visible row, same full-page dirty.
+Stock navigation is asymmetric: LEFT on the first page snaps the cursor to the
+top (`FileBrowserEntry_pageDecGate`), but RIGHT when the window already shows the
+tail of the list falls out of `FileBrowserEntry_pageInc`'s bounds check to the
+wait loop and does nothing. This patch adds the mirror: same trigger, cursor to
+the last visible row, same full-page dirty.
 
 | Piece | Where |
 |---|---|
@@ -19,7 +19,7 @@ hooks (`browser_scroll_shims.md`): reached by `jp`, passes `&frame.dirty`,
 exits through the wait loop.
 
 With `count <= 16` (single page) the hook also fires, so RIGHT jumps to the
-bottom of a short list — mirroring what LEFT already does at the top.
+bottom of a short list, mirroring what LEFT already does at the top.
 
 Verified under SameBoy with driven key presses: paging RIGHT through the
 54-entry test root clamps at base 38, the next press sets `sel = $0f`

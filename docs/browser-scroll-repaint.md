@@ -1,14 +1,13 @@
 # Bottom-up repaint on down-scroll (1.05e)
 
-Companion to the continuous-scroll patch (`decomp/src/browser_scroll.c`) and
-the sorted browser ([browser-sort.md](browser-sort.md)).
+Companion to the continuous-scroll patch (`decomp/src/browser_scroll.c`) and the
+sorted browser ([browser-sort.md](browser-sort.md)).
 
 ## The problem
 
-When DOWN shifts the window, the stock dirty=1 repaint
-(`DrawBrowserEntries`, `01:40e3`) sweeps rows top to bottom, so the newly
-revealed entry — the reason the user pressed DOWN — paints last, a visible
-beat after the press.
+When DOWN shifts the window, the stock dirty=1 repaint (`DrawBrowserEntries`,
+`01:40e3`) sweeps rows top to bottom, so the newly revealed entry, the reason
+the user pressed DOWN, paints last, a visible beat after the press.
 
 ## The fix
 
@@ -20,26 +19,26 @@ effect of the stock dirty path (zeroing the marquee tick at frame
 
 1. Rows 14/15 + highlight handoff + the selection-number field, via
    `DrawBrowserDetail(base, 15, mode 2)` (`01:42ba`) through the
-   `FarCallDrawDetailBottom` shim (`00:03dc`) — the same two-row primitive
-   the in-screen cursor moves already use.
-2. Rows 13 → 0, one at a time, replicating `DrawBrowserEntries`' per-row
-   body with the stock primitives (`DrawString` `00:08b7`,
-   `StoreDrawParams` `00:2791`) — **including the per-row ink reset after a
-   DIR tag**. `StoreDrawParams` is not an (index, value) setter: it stores
-   all three draw-state bytes (`$d734/$d735/$d723`,
-   `decomp/src/store_d734_d735_d723.c`) every call, so the DIR tag's
-   `(0, $0003)` switches everything drawn after it to inverse video until
-   the stock `(3, $0000)` reset. Omitting that reset was a real shipped bug
-   here: after the first repaint, every row below the topmost directory
-   painted white-on-black. No highlight management is needed beyond that:
-   the helper's epilogue leaves ink normal and rows 0..13 are never
-   selected during a shift (`sel` is pinned at 15).
+   `FarCallDrawDetailBottom` shim (`00:03dc`), the same two-row primitive the
+   in-screen cursor moves already use.
+2. Rows 13 → 0, one at a time, replicating `DrawBrowserEntries`' per-row body
+   with the stock primitives (`DrawString` `00:08b7`, `StoreDrawParams`
+   `00:2791`), **including the per-row ink reset after a DIR tag**.
 
-Why not iterate the two-row helper over all eight pairs: its epilogue prints
-the selection-number field as `base+row+1` on **every** call, so the field
-would flash wrong values and finish on `base+1`. And its no-hilite mode
-(any `mode` other than 2/3) draws `(row, row+1)` with inherited ink — usable,
-but the number-field churn kills it; per-row drawing avoids both problems.
+`StoreDrawParams` is not an (index, value) setter: every call it stores all
+three draw-state bytes (`$d734/$d735/$d723`,
+`decomp/src/store_d734_d735_d723.c`), so the DIR tag's `(0, $0003)` switches
+everything drawn after it to inverse video until the stock `(3, $0000)` reset.
+**Gotcha:** omitting that reset paints every row below the topmost directory
+white-on-black. No highlight management is needed beyond that: the helper's
+epilogue leaves ink normal, and rows 0..13 are never selected during a shift
+(`sel` is pinned at 15).
+
+Per-row drawing is used rather than iterating the two-row helper over eight
+pairs because that helper's epilogue prints the selection-number field as
+`base+row+1` on **every** call, so the field would flash wrong values and finish
+on `base+1`; and its no-hilite mode (any `mode` other than 2/3) draws
+`(row, row+1)` with inherited ink, usable but for the number-field churn.
 
 Scroll UP is untouched: its new entry appears at the top, which the stock
 top-down sweep already paints first. In-screen moves (dirty=2/3) are stock.
@@ -49,7 +48,7 @@ top-down sweep already paints first. In-screen moves (dirty=2/3) are stock.
 | Piece | Where |
 |---|---|
 | Wrapper | `00:3d8c` `BrowserScrollDownRepaint` (316 bytes; cave is 628) |
-| Detail shim | `00:03dc` `FarCallDrawDetailBottom` (24 bytes, hand-assembled — bytes in `browser_scroll_shims.md`) |
+| Detail shim | `00:03dc` `FarCallDrawDetailBottom` (24 bytes, hand-assembled; bytes in `browser_scroll_shims.md`) |
 | Hook | `00:02e0` down stub: call target repointed `$01e3` → `$3d8c` (bytes 4-5) |
 
 ```bash
@@ -65,13 +64,12 @@ python3 tools/inject.py src/browser_scroll_repaint.c 1.05e 0 3d8c \
 
 ## Verified
 
-- Under SameBoy with CGEvent-driven key presses: repeated window-shift
-  presses each hit the `$03dc` shim breakpoint and returned to the input
-  loop with the entry count intact — wrapper wired, helper called, browser
-  loop healthy across repaints.
+- Under SameBoy with CGEvent-driven key presses: repeated window-shift presses
+  each hit the `$03dc` shim breakpoint and returned to the input loop with the
+  entry count intact.
 - Visually (manual): the new bottom entry paints first and the sweep runs
   upward, with highlight, DIR tags, and the selection number correct.
 - Ink-reset regression: with a breakpoint after the wrapper returns,
   `$d734/$d735/$d723` read `03 00 00` (the reset state) after every
-  window-shift repaint of the directory-heavy test root; the missing-reset
-  bug left `00 03 00` and black rows below the first directory.
+  window-shift repaint of the directory-heavy test root. Without the reset they
+  read `00 03 00`, with black rows below the first directory.

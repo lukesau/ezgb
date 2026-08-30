@@ -26,14 +26,11 @@ HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]r
 | Contents | Full launch path as a C string, same format as `$c2a6` (e.g. `/pokemon/Pokemon Blue.gb`, long-filename form) |
 | WRAM mirror | Read back into `$c4a4`; written from `$c2a6` |
 
-`$A300` (bank 17 + rompage `$03`) sits in the same cart PSRAM window as save meta (see
-`docs/psram-save-map.md`). Corrected: that storage is battery-backed **PSRAM**, not FRAM —
-the coin cell backs the save memory as well as the RTC, so `$A300` is lost if it dies.
-See `hardware-board.md`.
-Older notes that lumped this window with “NOR/NVRAM for RTC” should be read with that
-split in mind (`docs/DIFF_1.04e_vs_1.05e.md` / `docs/1.05e-instability.md`).
+`$A300` (bank 17 + rompage `$03`) sits in the same battery-backed cart PSRAM window as save
+meta, so `$A300` is lost if the coin cell dies; see [psram-save-map.md](psram-save-map.md) and
+`hardware-board.md`.
 
-## Write side (persist on launch) — bank 1
+## Write side (persist on launch), bank 1
 
 On the normal load path, after the launch path is assembled in `$c2a6`, the loader copies it
 into `$A300`:
@@ -69,7 +66,7 @@ Jump_001_48b2:
     ld [bc], a                  ; restore bank 0
 ```
 
-## Read + display + relaunch — bank 0 (START handler)
+## Read + display + relaunch, bank 0 (START handler)
 
 ### Trigger: START = bit `$80`
 
@@ -84,11 +81,11 @@ Jump_000_1294:
 
 ### `jr_000_129e`: draw overlay + load the record
 
-1. Far-call bank8 **`$73f5`** — draws the overlay chrome and the `[B]return` / `[A]start`
+1. Far-call bank8 **`$73f5`**: draws the overlay chrome and the `[B]return` / `[A]start`
    buttons (button strings at bank8 `$7458` / `$7462`, right after that function's `ret` at
    `$7457`).
 2. Select cart NVRAM (bank 17; rompage `$03` via bank4 `$41e7`) and copy 255 bytes
-   `$A300` → `$c4a4` (`Jump_000_12bf` loop) — the mirror of the bank-1 write.
+   `$A300` → `$c4a4` (`Jump_000_12bf` loop), the mirror of the bank-1 write.
 
 ### `Jump_000_12f1`: display basename only
 
@@ -119,9 +116,9 @@ Jump_000_12f1:
     call Call_000_08b7          ; draw basename
 ```
 
-`Call_000_2c42` is a `strrchr`: it walks to the string's NUL, then scans backward for the
-target character, so it returns the last `/` regardless of nesting depth. The overlay draws
-only from `last '/' + 1`, hiding the directory prefix in the prompt.
+`Call_000_2c42` is a `strrchr`: it walks to the NUL, then scans backward for the target
+character, returning the last `/` regardless of nesting depth. The overlay draws only from
+`last '/' + 1`, hiding the directory prefix.
 
 ### `Jump_000_1330`: overlay input loop (A = start, B = return)
 
@@ -152,10 +149,10 @@ jr_000_138f:
 ```
 
 Relaunch (A) does **not** discard the directory prefix: it computes the prefix length
-(`basename_ptr − $c4a4 − 1`), copies the prefix into `$c2a6` and opens that directory, then
-uses the basename before funneling into the same load sequence the file browser uses. That is
-why a nested ROM shown by basename still loads from its full path. B (`$20`) returns via
-`jp Jump_000_0f8d`, the browser entry, which re-reads the directory (a fresh FS read).
+(`basename_ptr − $c4a4 − 1`), copies the prefix into `$c2a6`, opens that directory, then uses
+the basename before funneling into the same load sequence the file browser uses, so a nested
+ROM shown by basename still loads from its full path. B (`$20`) returns via `jp Jump_000_0f8d`,
+the browser entry, which re-reads the directory (a fresh FS read).
 
 ## Related bank-8 status-box draws
 
@@ -174,8 +171,8 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 | Symbol | Role |
 |---|---|
 | `Call_000_078d` | Far-call trampoline; 4-byte inline blob `[lo][hi][bank][pad]` (see `docs/launch-trace.md`) |
-| `Call_000_2c42` | `strrchr(ptr, char)` — used with `'/'` to find the basename |
-| `Call_000_2cba` | `memcpy(dest, src, len)` — copies the directory prefix |
+| `Call_000_2c42` | `strrchr(ptr, char)`, used with `'/'` to find the basename |
+| `Call_000_2cba` | `memcpy(dest, src, len)`, copies the directory prefix |
 | `Call_000_20e2` | Applies/appends the basename against `$c4a4` (exact semantics unconfirmed) |
 | `Call_000_08b7` | Draw string `(ptr, len, pos)` |
 | `Call_000_3a4a` | Read joypad (returns key byte) |
@@ -196,10 +193,10 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 ## B-mode / direct-boot implication
 
 `$A300` already holds a full, directory-qualified path in the exact format the loader consumes
-(`$c2a6` = `/dir/NAME.GB`). A later B-mode kernel (or a deferred stock-kernel hook) that reads
-`$A300` and drives the `jr_000_1344` split-and-load sequence would handle nested ROMs without
-the file browser. Mapping the ASM comes first; see [`omega-jr-compare.md`](omega-jr-compare.md)
-and [`fast-launch-notes.md`](fast-launch-notes.md).
+(`$c2a6` = `/dir/NAME.GB`). A later B-mode kernel (or a deferred stock-kernel hook) reading
+`$A300` and driving the `jr_000_1344` split-and-load sequence would handle nested ROMs without
+the file browser. See [`omega-jr-compare.md`](omega-jr-compare.md) and
+[`fast-launch-notes.md`](fast-launch-notes.md).
 
 ## Open questions / verification TODO
 

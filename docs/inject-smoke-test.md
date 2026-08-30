@@ -7,27 +7,23 @@ misbehaves the plumbing is not one of the suspects.
 **What it does:** draws `*MOD*` on the file browser's tab row, in the five
 cells to the right of ` HELP `.
 
-**Status:** confirmed working on 1.05e under SameBoy — visible on screen, and
+**Status:** confirmed working on 1.05e under SameBoy. Visible on screen, and
 the breakpoint at the injected function's `ret` fires, so the body runs to
 completion rather than just being branched into.
 
-**The marker is transient, by design of where it's hooked.** `*MOD*` renders
-in full, then cols 16-19 are immediately overwritten and it settles to `*1`.
-Cols 16-19 are the browser's page-number field — bank 1 `$42ae`,
-`U32ToAscii_B0` base 10 then `DrawString(buf, len=4, col=$10, row=0)` — drawn
-after the tab row. Only col 15 is free on that row: the tabs end at 14, the
-page field starts at 16.
+**The marker is transient, a property of the hook site (not a fault).** `*MOD*`
+renders in full, then cols 16-19 are overwritten and it settles to `*1`. Cols
+16-19 are the browser's page-number field (bank 1 `$42ae`, `U32ToAscii_B0` base
+10 then `DrawString(buf, len=4, col=$10, row=0)`), drawn after the tab row. Only
+col 15 is free on that row (tabs end at 14, the page field starts at 16). Any
+hook on the tab-row draw runs *before* the file-list draw, so anything the list
+touches wins; a marker that must persist needs col 15 alone or a post-list hook.
 
-That is a property of the hook site, not a fault in the injection. Any hook on
-the tab-row draw runs *before* the file-list draw, so anything the list touches
-wins. A marker that must persist needs either col 15 alone, or a hook that runs
-after the list draw.
-
-How this was pinned down, since it generalises: all text goes through
-`DrawGlyph` (`$2701`), which reads `wTextCursorX`/`Y` (`$d732`/`$d733`) rather
-than taking coordinates — so one conditional breakpoint catches every draw into
-a screen region no matter which helper or bank issued it, and the backtrace
-names the culprit. See `scripts/debug/who-draws-row0-right.sbd`.
+Pinned down via a technique that generalises: all text goes through `DrawGlyph`
+(`$2701`), which reads `wTextCursorX`/`Y` (`$d732`/`$d733`) rather than taking
+coordinates, so one conditional breakpoint catches every draw into a screen
+region regardless of helper or bank, and the backtrace names the culprit. See
+`scripts/debug/who-draws-row0-right.sbd`.
 
 ## The three pieces
 
@@ -68,13 +64,13 @@ in the middle of a function has to replicate whatever bytes it overwrote;
 a `jp` over a tail `jp`/`ret` has to replicate nothing.
 
 `patch_call.py --jp` exists for exactly this shape. A hook reached by `jp`
-must be stack-neutral and must end in `ret` — an ordinary SDCC-compiled C
+must be stack-neutral and must end in `ret`; an ordinary SDCC-compiled C
 function with no `__naked` qualifies.
 
 ## Free space in 1.05e
 
 Runs of ≥48 identical `$00`/`$FF` filler bytes in a virgin ROM. **Do not
-eyeball this** — regenerate it against `kernel.gb.orig` before choosing an
+eyeball this**; regenerate it against `kernel.gb.orig` before choosing an
 address (the scan is a few lines of Python over the ROM; see git history of
 this file if it needs rebuilding).
 
@@ -87,7 +83,7 @@ this file if it needs rebuilding).
 | 2 | `$4380`–`$7fff` | 15488 | by far the largest; bank 2 is nearly empty |
 | 4 | `$5932`–`$7fff` | 9934 | |
 | 5 | `$767f`–`$7fff` | 2433 | |
-| 8 | `$746b`–`$7fff` | 2965 | browser bank — same-bank `call` for browser hooks |
+| 8 | `$746b`–`$7fff` | 2965 | browser bank; same-bank `call` for browser hooks |
 | 9 | `$7cb7`–`$7fff` | 841 | |
 
 Banks 3, 6, 7 have under 500 bytes each.
@@ -98,25 +94,18 @@ bank 8 or bank 0; anything else needs `FarCallTrampoline`.
 
 ## What the previous (fastlaunch) attempt got wrong
 
-Worth recording, because both failures were silent — the ROM booted and the
-injected code ran, it just also corrupted the kernel underneath itself:
+Both failures were silent (the ROM booted and the injected code ran; it just
+also corrupted the kernel underneath itself):
 
 1. **It overwrote live code.** The injection at bank 8 `$4772` landed on the
    tail of `Fpga7FD2WaitClear_B8`, destroying its `$7FD2=$00` / `$7FF0=$E4`
-   writes and its `ret`. That function is not dead — `RomLoad_BuildAndRun7FD2Wait_B8`
+   writes and its `ret`. That function is live: `RomLoad_BuildAndRun7FD2Wait_B8`
    copies it to WRAM as a trampoline on the ROM-launch path.
 2. **It overwrote data that looks like padding.** Past that function is a long
-   `ff 7f ff 7f 00 00 …` table — structured 16-bit data, not filler. (An
-   earlier version of this note called it a BGR555 palette table. That reading
-   is unsupported: the kernel never writes `BCPS`/`BCPD` (`$ff68`/`$ff69`)
-   anywhere, and its ROM header CGB flag is `$00`, so it has no CGB palettes
-   to fill. What the table actually is remains unidentified — which does not
-   change the rule.) Only runs of a *single* repeated byte are safe to treat
-   as free.
+   `ff 7f ff 7f 00 00 …` table: structured 16-bit data of unidentified purpose,
+   not filler. Only runs of a *single* repeated byte are safe to treat as free.
 
-The `$4772` choice appears to have been made by eyeballing a hex dump for
-"looks empty" rather than scanning for single-byte filler runs — and bank 8
-had 2965 genuinely free bytes at `$746b` the whole time.
-
-Any conclusion drawn from a test built on that ROM should be re-checked
-against a clean injection before being trusted.
+The `$4772` choice was made by eyeballing a hex dump for "looks empty" rather
+than scanning for single-byte filler runs, when bank 8 had 2965 genuinely free
+bytes at `$746b`. Any conclusion drawn from a test built on that ROM must be
+re-checked against a clean injection before being trusted.

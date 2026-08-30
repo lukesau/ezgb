@@ -1,9 +1,9 @@
 # EZ Flash Jr kernel hardware register map (hypothesis)
 
-Derived from static analysis of `re/1.05e/disassembly` (kernel v1.05e) and cross-referenced
-against the public EZ Flash Omega (GBA) kernel source (`tools/omega-de-kernel`), which uses the
-same unlock/command/commit design for its own custom FPGA registers, at different addresses
-(GBA has a 32-bit address bus, Jr has the stock GB 16-bit bus).
+Derived from static analysis of `re/1.05e/disassembly` (kernel v1.05e), cross-referenced against
+the public EZ Flash Omega (GBA) kernel source (`tools/omega-de-kernel`), which uses the same
+unlock/command/commit design at different addresses (GBA 32-bit bus, Jr stock GB 16-bit bus).
+Omega comparison detail: [omega-jr-compare.md](omega-jr-compare.md).
 
 ## Unlock / commit handshake
 
@@ -19,22 +19,10 @@ ld bc, $7f20 \ ld a, $e3 \ ld [bc], a     ; unlock 3
 ld bc, $7ff0 \ ld a, $e4 \ ld [bc], a     ; commit
 ```
 
-29 occurrences of the unlock triple and 29 of the commit in kernel v1.05e, paired 1:1. This is
-a single reusable pattern, likely originally a C macro/inline helper since it's inlined at
-every call site rather than being a shared subroutine.
-
-Compare to Omega's `SetSDControl()` in `source/Ezcard_OP.c`:
-```c
-*(u16*)0x9fe0000 = 0xd200;
-*(u16*)0x8000000 = 0x1500;
-*(u16*)0x8020000 = 0xd200;
-*(u16*)0x8040000 = 0x1500;
-*(u16*)0x9400000 = control;   // the command value
-*(u16*)0x9fc0000 = 0x1500;    // latch
-```
-Same shape: two magic constants written to fixed ports, the real command value written to a
-third port, then a final "latch" write. Different constants/addresses because the FPGA register
-maps differ per product, same underlying design.
+29 occurrences of the unlock triple and 29 of the commit in kernel v1.05e, paired 1:1: one
+reusable pattern, inlined at every call site (likely a C macro/inline helper). Omega's
+`SetSDControl()` has the same shape (two magic constants to fixed ports, command value to a
+third, final latch write); constants/addresses differ per product.
 
 ## Registers written between unlock and commit (kernel v1.05e)
 

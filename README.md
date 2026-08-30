@@ -130,9 +130,7 @@ the FW5 packages differ
 - **Version diffs:** [`docs/DIFF_1.04e_vs_1.05e.md`](docs/DIFF_1.04e_vs_1.05e.md),
   [`docs/DIFF_1.05e-0731_vs_0918.md`](docs/DIFF_1.05e-0731_vs_0918.md),
   [`docs/1.05e-instability.md`](docs/1.05e-instability.md).
-- **Methodology:** [`docs/MAPPING.md`](docs/MAPPING.md),
-  [`docs/MAP-SESSION.md`](docs/MAP-SESSION.md),
-  [`docs/INTERIOR-NAMING.md`](docs/INTERIOR-NAMING.md).
+- **Methodology:** [`docs/MAPPING.md`](docs/MAPPING.md).
 
 ## License
 

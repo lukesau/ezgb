@@ -117,7 +117,7 @@ leading byte in at least one case (`$AA` is the first byte of a JEDEC NOR flash 
 command). Bank 17 select plus `$A000`-window writes shaped like flash commands, appearing only
 in the version whose changelog claims "RTC codes are rewritten," is a case (not dynamically
 confirmed) that those writes touch RTC-related persistence. **Caveat:** the Jr’s cart battery
-backs the **RTC *and* the save PSRAM** (corrected — the Jr has no FRAM, see
+backs the **RTC *and* the save PSRAM** (the Jr has no FRAM, see
 `hardware-board.md`), and `$A000=$AA` is also the documented
 BACKUPSAVE pending stamp in PSRAM (`docs/psram-save-map.md`). Do not treat `$AA` alone as proof
 of JEDEC NOR. See `docs/1.05e-instability.md`.

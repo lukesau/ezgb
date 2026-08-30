@@ -28,7 +28,7 @@ Both kernels are byte-identical in header: title `EZGB`, `$0143`=`$00`,
 ## Methodology
 
 Byte diff, then `difflib.SequenceMatcher` per bank to separate real edits from
-shift-noise — the pitfall documented in the 1.04e/1.05e diff. Symbol context
+shift-noise, the pitfall documented in the 1.04e/1.05e diff. Symbol context
 comes from `re/1.05e/kernel.sym`, which is annotated against the 0731 build.
 
 A fresh mgbdis disassembly of the new build is at `re/1.05e-0918/`.
@@ -37,7 +37,7 @@ A fresh mgbdis disassembly of the new build is at `re/1.05e-0918/`.
 
 Only **banks 0 and 1** differ. Banks 2–9 are byte-identical.
 
-### Bank 0 — 12 bytes, all mechanical
+### Bank 0: 12 bytes, all mechanical
 
 | Offset | 0731 → 0918 | Meaning |
 |---|---|---|
@@ -51,7 +51,7 @@ Only **banks 0 and 1** differ. Banks 2–9 are byte-identical.
 No new call sites in bank 0. Every change is a relocation of an existing
 `FarCallTrampoline` target by exactly **+610 (`$262`)**.
 
-### Bank 1 — one 610-byte insertion, plus ~200 pointer fixups
+### Bank 1: one 610-byte insertion, plus ~200 pointer fixups
 
 ```
 insert  619 bytes at $4dd0
@@ -65,7 +65,7 @@ the insertion, each moved by `+$262`. They are relocations, not logic changes.
 
 The bank's trailing free space paid for it: the 610 displaced bytes were all
 `$ff` filler, so the insertion consumed the bank's remaining headroom exactly.
-**Bank 1 is now full** — worth knowing before planning any injection there.
+**Bank 1 is now full**, worth knowing before planning any injection there.
 
 ### Where the new code went
 
@@ -76,8 +76,8 @@ call SetFpgaPage_B1     ; 01:47a7
 add  sp, $01
 ```
 
-and then diverge. That is **inside `RtcToDayCount` (01:4c5e)** — the new code
-is spliced into the middle of an RTC routine, immediately after an FPGA page
+and then diverge. That is **inside `RtcToDayCount` (01:4c5e)**: the new code is
+spliced into the middle of an RTC routine, immediately after an FPGA page
 select.
 
 What the inserted block does, confirmed from its bytes:
@@ -100,8 +100,8 @@ reached inline from `RtcToDayCount` after an FPGA page select.
 
 **Not established:** its purpose. Drawing the literal `12345678` reads like a
 diagnostic or placeholder rather than a shipping feature, but that is a guess
-from one constant. Nothing calls `$4dd0` as a function — no `call`/`jp` and no
-`FarCallTrampoline` data entry targets it — consistent with it being inline
+from one constant. Nothing calls `$4dd0` as a function: no `call`/`jp` and no
+`FarCallTrampoline` data entry targets it, consistent with it being inline
 code rather than a new routine.
 
 ## The real payload is the FPGA side
@@ -110,7 +110,7 @@ The updater is where the substantive change is:
 
 | Region | Size | 0731 vs 0918 |
 |---|---|---|
-| banks 0–1 (`$00000-$07fff`) | 32 KB | **identical** — the updater program itself |
+| banks 0–1 (`$00000-$07fff`) | 32 KB | **identical**, the updater program itself |
 | banks 2–11 (`$08000-$2ffff`) | 163,840 B | 91,495 bytes differ (~56%) |
 
 That payload region is **not** the kernel: `ezgb.dat` is not embedded verbatim
@@ -128,14 +128,14 @@ bit-reversed form. So it is encoded or wrapped in a format not yet identified.
 
 ## Assessment of the reported claims
 
-**Super Game Boy support — not visible in the kernel, and that makes sense.**
+**Super Game Boy support: not visible in the kernel, and that makes sense.**
 `$0146` is `$00` in both builds, so the kernel still does not advertise itself
 as SGB-enhanced. That is not evidence against the claim: an SGB reads the
 cartridge header once at power-on, so SGB features for a *launched* game depend
-on what the cart presents to the console at power-on — an FPGA behaviour, not a
+on what the cart presents to the console at power-on, an FPGA behaviour, not a
 kernel one. Consistent with the payload being where the change is.
 
-**SD corruption on slow cards — no evidence in the kernel.** The 610 inserted
+**SD corruption on slow cards: no evidence in the kernel.** The 610 inserted
 bytes are in an RTC routine, not the SD path, and banks 2–9 (which hold the SD
 and FatFs code) are byte-identical. If this fix is real, it is in the FPGA
 payload too.
@@ -157,7 +157,7 @@ project is not the kernel.
 
 ## Next steps
 
-- [ ] Identify the payload encoding — the missing sync word is the thread to
+- [ ] Identify the payload encoding; the missing sync word is the thread to
       pull. Compare against the SPI flash dump taken during the cart repair;
       that dump is a known-good decoded image of the same data.
 - [ ] Determine what the inserted RTC block actually does, and whether

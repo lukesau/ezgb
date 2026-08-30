@@ -3,19 +3,12 @@
 How cart save RAM works on the EZ Flash Jr kernel, and where it shows up in the disassembly.
 Annotations are kept in tracked files and reinjected into `bank_*.asm`.
 
-> **CORRECTION (applied).** This file originally called the save store FRAM. The Jr has **no FRAM**;
-> that is the Omega DE. On-cart save storage is **PSRAM** (U9, `3350LLZDQD`), and the
-> coin cell backs **both the RTC and the save memory**. Saves are therefore lost if the
-> cell dies — hence the well-known "EZ Flash Jr battery dies in a month" complaints.
-> See `hardware-board.md`. Everything below about the *kernel-side* save map, the
-> `$A000` window and the BACKUPSAVE flow is unaffected and still accurate; only the
-> storage technology and the battery dependency were wrong. The filename is kept for
-> now so existing cross-references do not break.
-
-**Hardware note (corrected):** on-cart save storage is battery-backed **PSRAM**. Games
-*see* “battery RAM” because the FPGA emulates a normal MBC `$A000` window; physically
-those writes land in PSRAM kept alive by the coin cell. (The kernel’s `BATTERY` /
-`DRY!!!` notice is about the **console** AA cells, not the cart.)
+On-cart save storage is battery-backed **PSRAM**. Games *see* "battery RAM" because the FPGA
+emulates a normal MBC `$A000` window; those writes physically land in PSRAM kept alive by the
+coin cell. The coin cell backs **both saves and the RTC**, so a dead cell loses both (the
+well-known "EZ Flash Jr battery dies in a month" complaints). Chip identity (U9, `3350LLZDQD`)
+and board detail: `hardware-board.md`. The kernel's `BATTERY` / `DRY!!!` notice is about the
+**console** AA cells, not the cart.
 
 ## Two bus personalities, one PSRAM chip
 
@@ -33,9 +26,9 @@ SameBoy stub mirrors this: `mbc_ram` aliases `cart_sram` after `$7FE0` soft-rese
 
 ## Save lifecycle
 
-1. **In-game** — MBC “battery RAM” writes land in PSRAM only (no host power needed to retain).
-2. **Before launch** — kernel stamps page `$11` (`$AA` = pending backup, savename, bank count).
-3. **After power-up** — if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies PSRAM to `SAVER/*.SAV` on the SD image.
+1. **In-game**: MBC “battery RAM” writes land in PSRAM only (no host power needed to retain).
+2. **Before launch**: kernel stamps page `$11` (`$AA` = pending backup, savename, bank count).
+3. **After power-up**: if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies PSRAM to `SAVER/*.SAV` on the SD image.
 
 Details for the emulator workflow: [sd/README.md](../sd/README.md).
 
@@ -44,6 +37,9 @@ Details for the emulator workflow: [sd/README.md](../sd/README.md).
 The whole feature turns on one byte in PSRAM, page `$11` (bank 17), address **`$A000`**,
 reachable only from the kernel via `SetFpgaPage_B1`/`_B0` with `$7FC0=$03`. The prompt shown
 on boot (`BACKUPSAVE` / `Saving..` / `[B]NO` `[A]OK`) is `BackupSavePrompt` at `01:6747`.
+
+The same page `$11` window also holds the last-ROM path record at `$A300` (255 bytes, rompage
+`$03`), likewise battery-backed and lost with the cell; see [last-rom.md](last-rom.md).
 
 ### What sets the flag (arm)
 
@@ -57,14 +53,13 @@ On **every ROM launch**, just before handing off to the game, the loader stamps 
 | `$A00F` | bank count | Size of the save region to dump |
 | `$A010`+ | basename | Used to build the `SAVER/<name>.SAV` filename |
 
-Key consequence: the flag is armed **per launch, not per save-write**. Launching a game arms
-it whether or not you actually create a new in-game save. That's why:
+The flag is armed **per launch, not per save-write**: launching a game arms it whether or not
+you create a new in-game save. Consequences:
 
-- Saving in a game and rebooting **always** shows BACKUPSAVE (launch already armed it — you
-  never "miss" the chance to dump). Consistent, as observed.
-- You can also get the prompt after a session where you **didn't** make a new save — the flag
-  reflects "a game was launched," not "the save changed." Harmless (it just re-dumps whatever
-  is in PSRAM), but it's the source of the "false positive" prompts.
+- Saving in a game and rebooting **always** shows BACKUPSAVE; launch already armed it.
+- The prompt also appears after a session with no new save; the flag reflects "a game was
+  launched," not "the save changed." Harmless (it re-dumps whatever is in PSRAM), and the
+  source of "false positive" prompts.
 
 ### What triggers the prompt on boot
 
@@ -80,22 +75,20 @@ B = skip). It also caches `$A202`→`$d3f6` (RTC) and reads the `$A00F`/`$A010`+
 ### What resets the flag
 
 The reset is `[$A000] = $00`, written **on entry to the backup branch** (`jr_000_0e76`),
-*before* the prompt is drawn. So the flag is cleared as soon as a pending backup is detected —
-**regardless of whether you pick `[A]OK` or `[B]NO`**. Choosing NO still clears it; you get the
-prompt once per launch, then it's gone until the next launch re-arms it.
+*before* the prompt is drawn. The flag is cleared as soon as a pending backup is detected,
+**regardless of `[A]OK` or `[B]NO`** (NO still clears it). You get the prompt once per launch,
+then it's gone until the next launch re-arms it.
 
-Practical caveat (matches the "seems inconsistent" observation): the clear is a single PSRAM
-write with the FPGA page mapped. If that write doesn't commit (interrupted boot, marginal
-power, a card/FPGA hiccup), `$A000` can stay `$AA` and you'll be prompted again next boot. The
-arm side (`$A000=$AA` at launch) is a normal part of the launch path and fires reliably, which
-is why arming feels far more consistent than clearing.
+The clear is a single PSRAM write with the FPGA page mapped. If that write doesn't commit
+(interrupted boot, marginal power, card/FPGA hiccup), `$A000` stays `$AA` and you are prompted
+again next boot. The arm side (`$A000=$AA` at launch) is part of the normal launch path and
+fires reliably, so arming is more consistent than clearing.
 
 ### Auto-save
 
 The SET-menu "AUTO SAVE:" toggle drives the `$A001` value stamped at launch. Because it's
-captured **at launch time**, a given boot's auto-save behavior reflects the setting that was
-active when that game was last launched. (The SET-menu global that feeds this stamp is not yet
-pinned to a specific address.)
+captured **at launch time**, a boot's auto-save behavior reflects the setting active when that
+game was last launched. The SET-menu global feeding this stamp is not yet pinned to an address.
 
 ### Version parity
 
@@ -134,7 +127,7 @@ mgbdis kernel.gb                    # reads kernel.sym for names
 cd disassembly && make              # byte-identical round-trip check
 ```
 
-Do **not** rely on hand-edited comments inside `bank_*.asm` alone — mgbdis will wipe them.
+Do **not** rely on hand-edited comments inside `bank_*.asm` alone; mgbdis will wipe them.
 Add names to `kernel.sym`, add prose to `notes.json`, then run the annotate script.
 
 Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md).

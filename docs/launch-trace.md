@@ -1,9 +1,9 @@
 # Load / launch debugger trace (1.05e)
 
-Goal: confirm the file-open → ROM-boot path under SameBoy, especially what
+Goal: confirm the file-open → ROM-boot path under SameBoy: what
 `Call_000_078d`'s `jp hl` trampoline resolves to at each site, and how the
 selected path is passed into the loader. Static decode of the `$1569` chain is
-already in good shape; this is live confirmation + argument plumbing.
+in good shape; this is live confirmation plus argument plumbing.
 
 ## Confirmed live (PKMRED.GB, 1.05e + SameBoy stub)
 
@@ -26,13 +26,12 @@ delete
 c
 ```
 
-The final `$7f36` / `$7fe0` sequence runs from a **WRAM-copied stub** (`$d1xx`),
-not from live bank4 `$448f` at the moment of the writes — so a `$448f` breakpoint
+The final `$7f36` / `$7fe0` sequence runs from a WRAM-copied stub (`$d1xx`),
+not from live bank4 `$448f` at the moment of the writes, so a `$448f` breakpoint
 can miss even though that routine is what installed the stub.
 
-Product note: this SD → FPGA program → `$7fe0=$80` handoff is already the Jr’s
-“authentic cart” launch. A future B-mode kernel reuses it and only skips the
-browser OS; Omega needs NOR + a Mode B switch for the same idea. See
+This SD → FPGA program → `$7fe0=$80` handoff is the Jr's authentic-cart launch; a
+future B-mode kernel would reuse it and only skip the browser OS. See
 [`omega-jr-compare.md`](omega-jr-compare.md).
 
 ### WRAM at `$1569` → bank1 `$5e14` (PKMRED.GB)
@@ -56,7 +55,7 @@ Far-call hops confirmed at `$07ad`:
 | `$c4a4` | `TETRIS.GB\0` | Basename |
 | `$c2a0` | `00 a0 03 00` **`02 00`** `2f` + `TETRIS.GB` | Same 4-byte prefix + `'/'`; **`$c2a4` = `$0002`** vs Pokemon **`$0000`** |
 
-Far-call prefix matched Pokemon: `$482b` → `$4048` → `$4000` → `$5e14` (bank 1), then SD helpers (e.g. bank5 `$4378` in a loop — delete `$07ad` once past `$5e14`).
+Far-call prefix matched Pokemon: `$482b` → `$4048` → `$4000` → `$5e14` (bank 1), then SD helpers (e.g. bank5 `$4378` in a loop; delete `$07ad` once past `$5e14`).
 
 B-mode / direct-boot work is deferred behind full ASM mapping; WRAM / dir-list /
 hook-site notes from a withdrawn patch attempt are in [`fast-launch-notes.md`](fast-launch-notes.md).
@@ -92,8 +91,7 @@ instead of inventing a stack dump each time.
 Joypad note: `Call_000_3a16` ends with an extra `swap a`, so the menu byte is
 **not** `hardware.inc` `PADF_*` order. Bit `$10` is **A** (confirm/open), `$20` is
 **B**, `$80` is **START** (opens the last-ROM overlay, see `docs/last-rom.md`),
-`$01`/`$02` are d-pad Right/Left. Older notes that said “Right opens” were
-misreading `$10` as `PADF_RIGHT`.
+`$01`/`$02` are d-pad Right/Left.
 
 ## Breakpoints (set first)
 
@@ -102,9 +100,9 @@ Preloaded by `scripts/debug/launch.sbd`. Manual reference:
 | Priority | Command | Why |
 |---|---|---|
 | 1 | `breakpoint $145f` | Non-dir file open (after A) |
-| 2 | `breakpoint $1569` | `.GB`/`.GBC` matched — load sequence starts |
-| 3 | `breakpoint $078d` | Banked far-call trampoline; **log HL and `$2000`/`$d6cf`** before `jp hl` — noisy during SD I/O; add only after `$1569` (`scripts/debug/farcall.sbd`) |
-| 4 | `breakpoint $5e14` | Main loader (bank 1) — only hits after bank switch |
+| 2 | `breakpoint $1569` | `.GB`/`.GBC` matched; load sequence starts |
+| 3 | `breakpoint $078d` | Banked far-call trampoline; **log HL and `$2000`/`$d6cf`** before `jp hl`; noisy during SD I/O, add only after `$1569` (`scripts/debug/farcall.sbd`) |
+| 4 | `breakpoint $5e14` | Main loader (bank 1); only hits after bank switch |
 | 5 | `watch $7f36` / `watch $7fe0` | Prefer these over `$448f` for handoff (WRAM stub) |
 
 Continue with `c`. On each `$078d` stop, note:
