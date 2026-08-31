@@ -33,20 +33,20 @@ base, verifies the result, and writes `ezgb-patched.dat` beside the input
 
 The patches are plain IPS, so any standard tool also works — Flips, Lunar
 IPS, an online ROM patcher — but those don't check md5s, so verify by hand
-against the table below. IPS files contain only this repo's injected bytes
-and are safe to share and attach to GitHub Releases.
+against [`patches/kernel/manifest.json`](../patches/kernel/manifest.json) —
+the authoritative record of each version's stock and patched md5, regenerated
+with each patch (the patched md5 changes whenever a feature lands, so it is
+deliberately not duplicated here). IPS files contain only this repo's
+injected bytes and are safe to share and attach to GitHub Releases.
 
-### Checksums
+The stock bases are stable:
 
-Recorded in [`patches/kernel/manifest.json`](../patches/kernel/manifest.json)
-(regenerated with each patch):
+| Version | Stock `ezgb.dat` md5 |
+|---|---|
+| 1.05e-0731 | `91eb7fc67332ef20b5691029181ff748` |
+| 1.05e-0918 | `5238ac5987d23b68a19d40e43af8c786` |
 
-| Version | Stock `ezgb.dat` md5 | Patched md5 |
-|---|---|---|
-| 1.05e-0731 | `91eb7fc67332ef20b5691029181ff748` | `55fdb7a36531d1df6c8702d311cc2aca` |
-| 1.05e-0918 | `5238ac5987d23b68a19d40e43af8c786` | `b14504e9c3e69696a92aef62945b4bb7` |
-
-The stock md5s are the `ezgb.dat` files inside the official
+These are the `ezgb.dat` files inside the official
 `juniorkernel-1.05e-FW5-*` packages, verified against real downloads.
 
 ## Option B: build from the disassembly
