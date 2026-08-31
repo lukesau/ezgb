@@ -38,7 +38,7 @@ commands.
 | **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `decomp/src/browser_scroll.c` |
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
-| **Hide macOS cruft** | Filters `._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc. that a Mac scatters on the card and the stock browser lists. | [`docs/browser-dotfile-filter.md`](docs/browser-dotfile-filter.md) |
+| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the fast-launch control files (`FLAUNCH.CFG`, `*.fastlaunch`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
 | **Fast launch** | Boots straight into a ROM, skipping the browser: either the card's only root ROM, or the one a `<name>.fastlaunch` marker names. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
 
 Once built, **fast launch is driven entirely from the card** (no rebuild to

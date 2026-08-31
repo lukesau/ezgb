@@ -3668,247 +3668,39 @@ BrowserSortAll::
     db $72, $18, $b1, $03, $18, $8c, $e8, $03
     db $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserHideName::
+    db $f8, $06, $2a, $4f, $46, $0a, $fe, $2e
+    db $20, $03, $1e, $01, $c9, $16, $00, $6a
+    db $26, $00, $09, $7e, $b7, $28, $08, $7a
+    db $d6, $fd, $30, $03, $14, $18, $f0, $c5
+    db $d5, $3e, $04, $f5, $33, $21, $0e, $7b
+    db $e5, $d5, $33, $c5, $cd, $40, $7b, $e8
+    db $06, $7b, $d1, $c1, $b7, $28, $03, $1e
+    db $01, $c9, $c5, $d5, $3e, $0b, $f5, $33
+    db $21, $13, $7b, $e5, $d5, $33, $c5, $cd
+    db $40, $7b, $e8, $06, $7b, $d1, $c1, $b7
+    db $28, $03, $1e, $01, $c9, $7a, $d6, $0b
+    db $20, $15, $3e, $0b, $f5, $33, $21, $1f
+    db $7b, $e5, $d5, $33, $c5, $cd, $40, $7b
+    db $e8, $06, $7b, $b7, $1e, $01, $c0, $1e
+    db $00, $c9, $2e, $67, $62, $61, $00, $2e
+    db $66, $61, $73, $74, $6c, $61, $75, $6e
+    db $63, $68, $00, $66, $6c, $61, $75, $6e
+    db $63, $68, $2e, $63, $66, $67, $00, $f8
+    db $02, $7e, $d6, $41, $38, $0a, $3e, $5a
+    db $96, $38, $05, $7e, $c6, $20, $5f, $c9
+    db $f8, $02, $5e, $c9, $f8, $04, $7e, $f8
+    db $07, $96, $30, $03, $1e, $00, $c9, $f8
+    db $04, $7e, $f8, $07, $96, $5f, $9f, $57
+    db $f8, $02, $7e, $83, $22, $7e, $8a, $77
+    db $16, $00, $7a, $f8, $07, $96, $30, $26
+    db $f8, $02, $2a, $82, $4f, $7e, $ce, $00
+    db $47, $0a, $d5, $f5, $33, $cd, $2b, $7b
+    db $33, $f1, $57, $f8, $05, $2a, $82, $4f
+    db $7e, $ce, $00, $47, $0a, $93, $28, $03
+    db $1e, $00, $c9, $14, $18, $d4, $1e, $01
+    db $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

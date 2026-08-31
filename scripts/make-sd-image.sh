@@ -34,7 +34,7 @@ hdiutil detach "$DEV" >/dev/null
 
 # Set SD_KEEP_MACOS_JUNK=1 to build a deliberately dirty card: AppleDouble
 # ._* files, .DS_Store, .Spotlight-V100, .fseventsd. Used to test the kernel's
-# dotfile filter (DirListSkipDotLongName), which must hide all of it.
+# name filter (BrowserHideName), which must hide all of it.
 KEEP_JUNK="${SD_KEEP_MACOS_JUNK:-0}"
 
 scrub_macos_junk() {

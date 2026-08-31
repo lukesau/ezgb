@@ -640,12 +640,14 @@ InvalidFarCallTrap::
     jp EnterGfxMode1
 
 
-DirListSkipDotLongName::
-    cp $2e
-    jp z, DirList_readdir
-
-    jp DirList_bankSlot
-
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
 
 BrowserSortAllStub::
     db $cd, $8d, $07, $6b, $74, $08, $00, $c9
@@ -740,31 +742,12 @@ fastlaunch_boot::
     db $cb, $6b, $c0, $cd, $00, $04, $fa, $a4
     db $c4, $b7, $c2, $20, $04, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+DirListHideNameStub::
+    db $20, $03, $01, $e4, $c9, $c5, $c5, $cd
+    db $8d, $07, $9c, $7a, $08, $00, $e8, $02
+    db $c1, $7b, $b7, $c2, $56, $0a, $c3, $a3
+    db $0a
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -2199,7 +2182,8 @@ DirList_skipDot::
     ld b, a
     ld a, [bc]
     or a
-    jp nz, DirListSkipDotLongName
+    jp $04ae
+
 
     ld bc, $c9e4
 
