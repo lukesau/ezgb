@@ -31,7 +31,7 @@ exhausted, app mode appends interior-debt rows (mark D: c=Jump_ count, d=jr_ cou
 Usage:
   scripts/doc-symbol-coverage.py [version] [flags]
 
-  version         kernel version under re/ (default: 1.05e)
+  version         kernel version under re/ (default: 1.05e-0731)
   --all           include already-named symbols in the table
   --top N         show only the first N rows (default: all; --app defaults to 15)
   --app           app-focused worklist (recommended for naming loops):
@@ -910,7 +910,7 @@ def main():
         skip_banks = parse_bank_list(args[i + 1])
         del args[i:i + 2]
 
-    version = args[0] if args else "1.05e"
+    version = args[0] if args else "1.05e-0731"
 
     need_bodies = skip_runtime or frontier_only or app_mode
     if not need_bodies and not app_mode:

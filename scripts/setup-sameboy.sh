@@ -42,4 +42,4 @@ fi
 
 echo "SameBoy ready at $DEST (base $BASE_COMMIT)"
 echo "Build: cd \"$DEST\" && make CONF=debug sdl"
-echo "Run:   \"$DEST/build/bin/SDL/sameboy\" \"$ROOT/re/1.05e/kernel.gb\""
+echo "Run:   \"$DEST/build/bin/SDL/sameboy\" \"$ROOT/re/1.05e-0731/kernel.gb\""

@@ -133,7 +133,7 @@ Add rows here as each is confirmed or rejected.
 1. Pick an app-focused unnamed Jr symbol (`./scripts/map-next.sh`, or `./scripts/doc-symbol-coverage.py --app`).
 2. If it sits on a UI or SD path, reproduce the same action on Omega and skim the matching
    `.c` function.
-3. Name the Jr label in `re/1.05e/kernel.sym`, add a short note in `notes.json` if the Omega
+3. Name the Jr label in `re/1.05e-0731/kernel.sym`, add a short note in `notes.json` if the Omega
    analogue is clear (cite Omega file/symbol).
 4. Keep B-mode design notes out of the critical path until load + SD + boot helpers are named.
 

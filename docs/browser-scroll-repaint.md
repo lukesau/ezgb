@@ -53,9 +53,9 @@ top-down sweep already paints first. In-screen moves (dirty=2/3) are stock.
 
 ```bash
 cd decomp
-python3 tools/inject_bytes.py 1.05e 0 03dc FarCallDrawDetailBottom \
+python3 tools/inject_bytes.py 1.05e-0731 0 03dc FarCallDrawDetailBottom \
     3e02f533010f00c5f8052a666fe5cd8d07ba420100e805c9 --apply
-python3 tools/inject.py src/browser_scroll_repaint.c 1.05e 0 3d8c \
+python3 tools/inject.py src/browser_scroll_repaint.c 1.05e-0731 0 3d8c \
     BrowserScrollDownRepaint --pin browser_scroll_down=01e3 \
     --pin FarCallDrawDetailBottom=03dc --pin DrawString=08b7 \
     --pin StoreDrawParams=2791 --apply

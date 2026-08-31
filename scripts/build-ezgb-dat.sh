@@ -10,9 +10,9 @@
 # memcmps each entry against "ezgb.dat" and skips the match.
 #
 # Usage:
-#   scripts/build-ezgb-dat.sh              # 1.05e
-#   scripts/build-ezgb-dat.sh 1.05e
-#   scripts/build-ezgb-dat.sh 1.05e --fix-checksum
+#   scripts/build-ezgb-dat.sh              # 1.05e-0731
+#   scripts/build-ezgb-dat.sh 1.05e-0731
+#   scripts/build-ezgb-dat.sh 1.05e-0731 --fix-checksum
 #
 # --fix-checksum rewrites the global checksum at $014E-$014F. Off by default:
 # patching the ROM invalidates it, but neither the Game Boy boot ROM nor the
@@ -21,7 +21,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="1.05e"
+VER="1.05e-0731"
 FIX=0
 for arg in "$@"; do
   case "$arg" in

@@ -50,11 +50,11 @@ with:
 
 ```bash
 cd decomp
-python3 tools/inject.py src/browser_sort.c 1.05e 8 746b BrowserSortAll \
+python3 tools/inject.py src/browser_sort.c 1.05e-0731 8 746b BrowserSortAll \
     --pin DirList=0a43 --apply
-python3 tools/inject_bytes.py 1.05e 0 03d4 BrowserSortAllStub \
+python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \
     cd8d076b740800c9 --apply
-python3 tools/patch_call.py 1.05e 0 102f 3 00:03d4 --apply --regen
+python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
 ```
 
 ## Choices and caps

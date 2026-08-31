@@ -18,7 +18,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="1.05e"
+VER="1.05e-0731"
 TOP=5
 MAX_LABELS=40
 INCLUDE_LIB=0

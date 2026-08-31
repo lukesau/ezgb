@@ -52,7 +52,7 @@ The check sits before the directory/file split, so it hides junk *directories*
 one `jp` on the common path. Reproduce with:
 
 ```bash
-python3 decomp/tools/inject_bytes.py 1.05e 0 03cc DirListSkipDotLongName \
+python3 decomp/tools/inject_bytes.py 1.05e-0731 0 03cc DirListSkipDotLongName \
     fe2eca560ac3a30a --apply --regen
 ```
 

@@ -86,7 +86,7 @@ def main():
         i = args.index("--base")
         only_base = args[i + 1]
         args = args[:i] + args[i + 2:]
-    version = args[0] if args else "1.05e"
+    version = args[0] if args else "1.05e-0731"
 
     sym_path = ROOT / "re" / version / "kernel.sym"
     named, by_name, lines = load_sym(sym_path)

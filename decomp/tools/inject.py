@@ -25,10 +25,10 @@ Usage:
 
 Examples:
     # Dry run: compile, show bytes, do not touch kernel.sym.
-    inject.py src/fastlaunch_hook.c 1.05e 8 476b FastLaunchHook
+    inject.py src/fastlaunch_hook.c 1.05e-0731 8 476b FastLaunchHook
 
     # Write into kernel.sym and regenerate the disassembly.
-    inject.py src/fastlaunch_hook.c 1.05e 8 476b FastLaunchHook \\
+    inject.py src/fastlaunch_hook.c 1.05e-0731 8 476b FastLaunchHook \\
         --pin DrawString=0e0e --apply --regen
 
 Pins work exactly as in verify.py: declare `extern` in the C file, pass
@@ -135,7 +135,7 @@ def build_arg_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("c_file", help="C source to compile")
-    p.add_argument("version", choices=("1.04e", "1.05e"), help="kernel version")
+    p.add_argument("version", choices=("1.04e", "1.05e-0731", "1.05e-0918"), help="kernel version")
     p.add_argument("bank", type=int, help="ROM bank number")
     p.add_argument("address", help="target address within bank (hex, e.g. 476b or 0x476b)")
     p.add_argument("name", help="kernel.sym label for the injected function")

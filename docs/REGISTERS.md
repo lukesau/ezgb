@@ -1,6 +1,6 @@
 # EZ Flash Jr kernel hardware register map (hypothesis)
 
-Derived from static analysis of `re/1.05e/disassembly` (kernel v1.05e), cross-referenced against
+Derived from static analysis of `re/1.05e-0731/disassembly` (kernel v1.05e), cross-referenced against
 the public EZ Flash Omega (GBA) kernel source (`tools/omega-de-kernel`), which uses the same
 unlock/command/commit design at different addresses (GBA 32-bit bus, Jr stock GB 16-bit bus).
 Omega comparison detail: [omega-jr-compare.md](omega-jr-compare.md).
@@ -41,5 +41,5 @@ third, final latch write); constants/addresses differ per product.
 All of this is static hypothesis, not confirmed behavior. The next step is dynamic tracing
 (SameBoy debugger with a watchpoint on writes to `$7f00-$7fff`) to see, for each of these
 ports, what SD card / flash chip activity or menu behavior happens immediately after. That
-would convert these guesses into verified facts. See `re/1.05e/disassembly` for the full
+would convert these guesses into verified facts. See `re/1.05e-0731/disassembly` for the full
 labeled source; the call sites are listed above by bank.

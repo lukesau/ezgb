@@ -71,7 +71,7 @@ def auto_key(name):
 
 def main():
     args = sys.argv[1:]
-    version = "1.05e"
+    version = "1.05e-0731"
     mode = "summary"
     for a in args:
         if a in ("all", "summary"):

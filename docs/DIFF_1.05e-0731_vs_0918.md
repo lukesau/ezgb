@@ -29,7 +29,7 @@ Both kernels are byte-identical in header: title `EZGB`, `$0143`=`$00`,
 
 Byte diff, then `difflib.SequenceMatcher` per bank to separate real edits from
 shift-noise, the pitfall documented in the 1.04e/1.05e diff. Symbol context
-comes from `re/1.05e/kernel.sym`, which is annotated against the 0731 build.
+comes from `re/1.05e-0731/kernel.sym`, which is annotated against the 0731 build.
 
 A fresh mgbdis disassembly of the new build is at `re/1.05e-0918/`.
 
@@ -146,7 +146,7 @@ project is not the kernel.
 
 ## What this means for our work
 
-- Our `re/1.05e` annotations remain valid for 0918, offset by `+$262` for bank-1
+- Our `re/1.05e-0731` annotations remain valid for 0918, offset by `+$262` for bank-1
   addresses at or beyond `$4dd0`. `kernel.sym` needs no rework to read the new
   build.
 - **Bank 1 has no free space left in 0918.** Our injections live in bank 0
@@ -163,3 +163,28 @@ project is not the kernel.
 - [ ] Determine what the inserted RTC block actually does, and whether
       `12345678` is a literal or a misread of a pointer pair.
 - [ ] Decide whether to port our two bank-0 patches onto 0918 and run it.
+
+## Port of the injected features (2026-08-30)
+
+All injected features (fast launch, browser sort/scroll/page-end, dotfile
+filter, tab banner, NOR reuse — see [nor-reuse.md](nor-reuse.md)) were ported
+from the 0731 featured build to 0918 by replaying the byte diff
+(`re/1.05e-0731/kernel.gb.orig` → `kernel.gb`) onto the stock 0918 dump:
+
+- All 20 diff regions land in bytes that are identical between the two stock
+  kernels (none overlap the six relocated bank-0 operands), so the port is
+  byte-exact. The only bank-1 reference in any injected code is a far-call to
+  `DrawBrowserDetail` (`01:42ba`), below the `$4dd0` insertion — unmoved.
+- `re/1.05e-0918/kernel.gb` is the ported featured build (md5 `6cf9bf64`);
+  `kernel.gb.orig` is stock (md5 `5238ac59`). `kernel.sym` / `notes.json`
+  were ported with the bank-1 remap (+619 for `$4dd0`–`$50ce`, +610 from
+  `$50d8`; nothing named lived in the 9 deleted bytes), validated by 3-byte
+  spot checks (all mismatches were pointer-relocation operands) and by the
+  disassembly round-trip (`make` rebuilds the ROM bar the usual header bytes).
+- SameBoy-verified on the 0918 build: boots to the (sorted, filtered) browser,
+  and Start→A relaunch runs the full FPGA config then boots via the no-copy
+  path with zero `$7f36` writes. Normal-launch copy path was verified on the
+  identical 0731 code earlier the same day.
+
+The `re/` folders were renamed to carry the build date (`re/1.05e-0731`,
+`re/1.05e-0918`); the decomp/inject tools accept both as version keys.

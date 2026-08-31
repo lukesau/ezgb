@@ -29,7 +29,7 @@ LD_HL_ABS_RX = re.compile(r"^\s*ld\s+hl,\s*\$([0-9a-fA-F]{4})\s*$", re.I)
 JP_RX = re.compile(r"^\s*jp\s+(\w+)\s*$", re.I)
 CODE_RX = re.compile(r"^\s*[^;\s]")
 
-# Known IRQ callback list bases (1.05e) → role stem
+# Known IRQ callback list bases (1.05e-0731) → role stem
 CALLBACK_LISTS = {
     "d6d3": "VBlank",
     "d6e3": "Lcd",
@@ -146,7 +146,7 @@ def propose_farcall_thunks(version, named):
     if not rom_path.is_file():
         return []
     rom = rom_path.read_bytes()
-    # FarCallTrampoline is at 00:078d in 1.05e — find from sym if named
+    # FarCallTrampoline is at 00:078d in 1.05e-0731 — find from sym if named
     tramp_addr = None
     for (b, a), n in named.items():
         if n == "FarCallTrampoline" and b == "00":
@@ -349,7 +349,7 @@ def main():
     args = sys.argv[1:]
     apply = "--apply" in args
     args = [a for a in args if a not in {"--apply", "--dry-run"}]
-    version = args[0] if args else "1.05e"
+    version = args[0] if args else "1.05e-0731"
 
     sym_path = ROOT / "re" / version / "kernel.sym"
     named, lines = load_sym(sym_path)

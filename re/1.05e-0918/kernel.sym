@@ -1,0 +1,4394 @@
+; Human-readable names for mgbdis (place beside kernel.gb).
+; Regenerate:  cd re/1.05e && mgbdis kernel.gb && ../../scripts/annotate-disasm.py 1.05e
+; See docs/psram-save-map.md
+; App worklist: scripts/doc-symbol-coverage.py --app --top 10
+
+00:0024 .padding:4
+00:0376 InvalidFarCallTrap
+00:0150 KernelEntry
+00:01df HaltLoop
+00:0600 SetGfxMode
+00:06ef SetGfxModeStack
+00:06f8 GetGfxMode
+00:0067 RunCallbackList
+00:0093 CallHL
+00:0610 RemoveVBlankCallback
+00:0616 RemoveLcdCallback
+00:061c RemoveTimerCallback
+00:0622 RemoveSerialCallback
+00:0628 RemoveJoypadCallback
+00:062e RegisterVBlankCallback
+00:0634 RegisterLcdCallback
+00:063a RegisterTimerCallback
+00:0640 RegisterSerialCallback
+00:0646 RegisterJoypadCallback
+00:064c RemoveCallbackSlot
+00:066c InstallCallbackSlot
+00:0677 VBlankCallback
+00:0688 WaitVBlankFlag
+00:069f LcdOff
+00:06b6 OamDmaStub
+00:06c0 SerialCallback
+00:06fd DiNest
+00:0706 EiNest
+00:0710 SetIeReg
+00:071f RemoveVBlankCallbackArg
+00:072a RemoveLcdCallbackArg
+00:0735 RemoveTimerCallbackArg
+00:0740 RemoveSerialCallbackArg
+00:074b RemoveJoypadCallbackArg
+00:0756 RegisterVBlankCallbackArg
+00:0761 RegisterLcdCallbackArg
+00:076c RegisterTimerCallbackArg
+00:0777 RegisterSerialCallbackArg
+00:0782 RegisterJoypadCallbackArg
+00:078d FarCallTrampoline
+00:08b7 DrawString
+00:092a DrawU32Decimal
+00:0985 SdReadRetryCount
+00:0a43 DirList
+00:0de4 SdMenuMain
+00:0e73 GotoFileBrowser
+00:0e76 BackupBranchEntry
+00:0f8d FileBrowserEntry
+00:1294 MenuKeyDispatch
+00:129e LastRomOverlay
+00:12bf LastRomLoadRecord
+00:12f1 LastRomDrawBasename
+00:1330 LastRomInputLoop
+00:1344 LastRomRelaunch
+00:1385 LastRomCheckReturn
+00:138f LastRomReturn
+00:1392 MenuDispatchAB
+00:16f4 U32ToAscii_B0
+00:1835 BatteryCheck
+00:1926 FarCall_06_7309
+00:1941 FarCall_06_779a
+00:1963 FarCall_07_7739
+00:1985 FarCall_03_76cc
+00:19a1 FarCall_03_768f
+00:19b1 FarCall_09_77ff
+00:19c1 FarCall_05_4279
+00:1a29 DiskStatus
+00:1a2c DiskInitialize
+00:1a2f FarCallDiskRead
+00:1a53 FarCallDiskWrite
+00:1a77 ReturnZero
+00:1a7a SetFpgaPage_B0
+00:1a9a RtcReadPage
+00:1e1a MapCp437
+00:1ed5 Cp437UnicodeTable
+00:1ed5 .data:100:2
+00:1fd5 WToUpper
+00:20bb RleUnpack
+00:20e2 ApplyBasename
+00:20f4 AdvanceTextCursor
+00:2111 DrawCircle
+00:21b4 CircleFillH
+00:21ec CircleFillV
+00:2248 CirclePlot8
+00:22c6 DrawRectImpl
+00:239c DrawLine
+00:262d PlotPixel
+00:264a ApplyPixel
+00:26cc GetPixel
+00:2701 DrawGlyph
+00:2765 SetTextCursor
+00:2770 DrawGlyphAdvance
+00:2785 GetPixelXY
+00:2791 StoreDrawParams
+00:27a0 DrawCircleXY
+00:27ba DrawRect
+00:27de DrawLineXY
+00:27f6 PlotPixelXY
+00:280a PlotPixelEx
+00:2826 U32Mul
+00:2829 S32Div
+00:282c U32Div
+00:282f S32Mod
+00:2832 U32Mod
+00:288f S8Div
+00:289d S8Mod
+00:28a9 S16Div
+00:28bd S16Mod
+00:28cf U8Div
+00:28dd U8Mod
+00:28e9 U16Div
+00:28fd U16Mod
+00:290f S16DivSex8
+00:2917 S16DivMod
+00:2949 U16DivZext8
+00:294c U16DivMod
+00:2957 U16DivMod_setup
+00:295f U16DivMod_shiftLoop
+00:2975 U16DivMod_restoreBorrow
+00:2977 U16DivMod_checkBit
+00:2980 U16DivMod_lastBit
+00:2985 U16DivMod_finish
+00:298f U32Shr
+00:29ac S32Sar
+00:29c9 U32Shl
+00:2a77 U32DivImpl
+00:29e6 S32DivImpl
+00:2abd MemIsZero
+00:2b28 S32ModImpl
+00:2bfc U32ModImpl
+00:2c42 Strrchr
+00:2ca5 Memset
+00:2cba Memcpy
+00:2cd3 Strncpy
+00:2d4c NegateBytes
+00:2d56 PrintCharArg
+00:2d5f PutBgTileArg
+00:2d68 SetTileCursor
+00:2d73 GetTileCursorX
+00:2d84 GetTileCursorY
+00:2d95 CStrLen
+00:2dba MemZero
+00:2dc1 U32MulImpl
+00:2de0 U32DivEngine
+00:2e30 MemSub
+00:2e3a MemFill
+00:2ecb IncWord
+00:2ed0 CopyBytes
+00:2ed8 MemSubCmp
+00:2ee2 MemRol
+00:2eea EnterGfxMode1
+00:2fbb GfxRowTable
+00:2fbb .data:120:2
+00:30db VramCopy
+00:30ea VramCopyStack
+00:3104 DefaultFontData
+00:3104 .data:912:2
+00:3a16 ReadJoypadRaw
+00:3a43 WaitJoypadMask
+00:3a4f WaitJoypadMaskArg
+00:3a4a ReadJoypad
+00:3a59 DelayDE
+00:3a76 DelayInner
+00:3a93 Delay
+00:3a9c CopyTilesVram
+00:3ad2 CopyTilesColor
+00:3b27 RegisterFont
+00:3b6f UploadFontTiles
+00:3bb7 SelectFont
+00:3bc4 PrintChar
+00:3bd5 PrintChar_skipNewline
+00:3bd6 PrintChar_putChar
+00:3bed PutBgTile
+00:3c3f RegisterFontArg
+00:3c4d SelectFontArg
+00:3c5c ResetTileText
+00:3c7e ClearBgMap
+00:3c99 RetreatTileCursor
+00:3cb0 TileNewline
+00:3cc5 AdvanceTileCursor
+00:3cf3 ScrollBgUp
+00:3d21 EnterGfxMode2
+00:3d4a InitGfxMode2
+
+; WRAM
+00:d6d3 wVBlankCallbacks
+00:d6e3 wLcdCallbacks
+00:d6f3 wTimerCallbacks
+00:d703 wSerialCallbacks
+00:d713 wJoypadCallbacks
+00:d723 wDrawOp
+00:d724 wDrawRectFill
+00:d725 wDrawX0
+00:d726 wDrawX1
+00:d727 wDrawY0
+00:d728 wDrawY1
+00:d72c wCircleErr
+00:d732 wTextCursorX
+00:d733 wTextCursorY
+00:d734 wDrawColor
+00:d735 wDrawColorB
+00:cc33 wWToUpperKeys
+00:d00f wWToUpperVals
+00:d3f9 wFileSizeFmtLo
+00:d5eb wFileSizeFmtHi
+00:d6a7 wDaysInMonth
+00:d6b3 wDaysInMonthLeap
+00:d6bf wDaysInYearTab
+00:d6ca wGfxMode
+00:d6cf wRomBank
+00:d6d0 wIntNest
+00:d736 wFontBaseTile
+00:d737 wFontPtr
+00:d738 wFontFarFlag
+00:d739 wFontNextTile
+00:d73a wFontSlots
+00:d74c wTileCursorX
+00:d74d wTileCursorY
+
+01:4000 CStrCat_B1
+01:4007 CStrCat_B1_findNul
+01:4010 CStrCat_B1_stashPtrs
+01:401c CStrCat_B1_copyLoop
+01:402e CStrCat_B1_incSrc
+01:403a CStrCat_B1_afterStore
+01:403d CStrCat_B1_writeNul
+01:5998 BuildSaverBackupPath
+01:59c3 BuildSaverBackupPath_outerLoop
+01:59fd BuildSaverBackupPath_innerLoop
+01:5aec BuildSaverBackupPath_innerNext
+01:5b02 BuildSaverBackupPath_innerContinue
+01:5b05 BuildSaverBackupPath_outerNext
+01:5b0c BuildSaverBackupPath_outerContinue
+01:5b0f BuildSaverBackupPath_epilogue
+01:4048 CStrCmp
+01:40a3 CStrChr
+01:40e3 DrawBrowserEntries
+01:42b6 BrowserDirStr
+01:42b6 .text:4
+01:42ba DrawBrowserDetail
+01:45af BrowserDirStr2
+01:45af .text:4
+01:45b3 FormatFileSize
+01:47a7 SetFpgaPage_B1
+01:47c7 SetFpga7F34_35_B1
+01:482b LoaderPrepPath
+01:4856 LastRomPersist
+01:487d LastRomPersistLoop
+01:48b2 LastRomPersistDone
+01:5824 PreLaunchSaveStamp
+01:5b12 LaunchSetup
+01:6076 RomLoaderMain
+01:69a9 BackupSavePrompt
+01:6af6 BackupUiStrings
+01:6af6 .text:22
+01:6b18 BootUnpackWramTables
+01:6b18 .code:10
+01:6b28 .data:3e5
+01:6f0d .code:6
+01:6f13 .data:3e5
+01:72f8 .code:6
+01:72fe .data:1f7
+01:74f5 .code:6
+01:74fb .data:bf
+01:75ba .code:6
+01:75c0 .data:e
+01:75ce .code:6
+01:75d4 .data:e
+01:75e2 .code:6
+01:75e8 .data:a
+01:75f2 .code:1
+
+02:4000 SetFpga7F30_B2
+02:4020 SdWindowPeek
+02:4027 DiskRead_B2
+02:41d5 DiskWrite_B2
+
+; FatFs-shaped helpers — linked per bank (GB near-call only within mapped bank).
+; Every copy is suffixed _BN (including bank 9). Banks 3 and 7 are byte-identical
+; for SyncWindow/MoveWindow/MemCpy16; 6/9 differ only in relocated immediates.
+03:4000 MemCpy16_B3
+03:4101 MemSet8_B3
+03:41d2 SyncWindow_B3
+03:436b MoveWindow_B3
+03:4434 SyncFs_B3
+03:4608 Clust2Sect_B3
+03:4707 GetFat_B3
+03:61f6 GenNumName_B3
+05:4102 MemSet8_B5
+05:41d3 MoveWindow_B5
+06:4000 RetStub_B6
+06:4001 MemCpy16_B6
+06:4102 MemSet8_B6
+06:41d3 SyncWindow_B6
+06:436c MoveWindow_B6
+06:4435 Clust2Sect_B6
+06:4534 GetFat_B6
+06:6023 GenNumName_B6
+06:64c8 DirRegister_B6
+07:4000 MemCpy16_B7
+07:4101 MemSet8_B7
+07:41d2 SyncWindow_B7
+07:436b MoveWindow_B7
+07:4608 Clust2Sect_B7
+07:4707 GetFat_B7
+07:6051 GenNumName_B7
+09:4000 RetStub_B9
+09:4001 MemCpy16_B9
+09:4102 MemSet16_B9
+09:41e5 SyncWindow_B9
+09:437e MoveWindow_B9
+09:4447 SyncFs_B9
+09:4614 Clust2Sect_B9
+09:4713 GetFat_B9
+09:6201 GenNumName_B9
+09:68b0 DirRegister_B9
+
+04:4000 RomLoad_InitiatePoll
+04:409c RomLoad_SoftReset
+04:40ab RomLoad_Build_B4
+04:40e7 RomLoad_BuildAndRunPoll
+04:40fc SetFpga7F34_35_B4
+04:4140 SetRomLoadCtrl_B4
+04:4207 SetFpgaRomSize_B4
+04:44f7 U32ToAscii
+04:44af CStrCat
+04:466e SetFpgaPage_B4
+04:468e SetFpga7FD0_B4
+
+08:6e5a SetRomLoadCtrl_B8
+08:6e7a SetFpgaPage_B8
+08:6e9a RomLoad_WriteCmdWindow_B8
+08:6ed2 RomLoad_BuildAndRunPeek_B8
+08:6ee7 RomLoad_BuildAndRun7FD2Wait_B8
+08:6efc RomLoad_ClearCartWindow_B8
+08:7344 DrawReadingBox
+08:7332 MenuTabSdStr
+08:7332 .text:5
+08:7337 MenuTabSetStr
+08:7337 .text:6
+08:733d MenuTabHelpStr
+08:733d .text:7
+08:7374 ReadingBoxStr
+08:7374 .text:b
+08:737f DrawLoadingBox
+08:73af LoadingBoxStr
+08:73af .text:b
+08:73ba DrawErrorFileBox
+08:73ea ErrorFileBoxStr
+08:73ea .text:b
+08:73f5 DrawLastRomButtons
+08:7458 LastRomReturnStr
+08:7458 .text:a
+08:7462 LastRomStartStr
+08:7462 .text:9
+
+; Auto-stamped cross-bank clones (scripts/stamp-bank-clones.py)
+00:099c FileSystemErrorStr
+00:099c .text:13
+00:09af MemCmp_B0
+00:0bc8 EzgbDatStr
+00:0bc8 .text:9
+00:16b5 MicroSdInitErrorStr
+00:16b5 .text:3f
+00:16cd MicroSdInitOkStr
+00:16e2 SaverDirStr
+00:16e9 PathSlashStr
+00:16eb ExtGbcStr
+00:16f0 ExtGbStr
+00:190f BatteryDryPadStr
+00:190f .text:17
+00:1911 BatteryDryTitleStr
+00:1919 BatteryDryMsgStr
+00:1920 BatteryDryOkStr
+00:0a19 MemSet8_B0
+03:412b MemCmp_B3
+03:4195 MemChr_B3
+03:4aeb PutFat_B3
+03:512d CreateChain_B3
+03:54cf DirSdi_B3
+03:5800 DirNext_B3
+03:5c84 DirAlloc_B3
+03:5d67 LdClust_B3
+03:5dff StClust_B3
+03:5e61 CmpLfn_B3
+03:60e5 PutLfn_B3
+03:63f7 SumSfn_B3
+03:6440 DirFind_B3
+03:6a2a CreateName_B3
+03:70b2 FollowPath_B3
+03:72be GetLdNumber_B3
+03:741a Validate_B3
+03:749d Fsync_B3
+05:4000 RetStub_B5
+05:4001 MemCpy16_B5
+05:412c MemCmp_B5
+05:4196 MemChr_B5
+05:475c DirSdi_B5
+05:4a95 DirNext_B5
+05:4d06 LdClust_B5
+05:4d9e CmpLfn_B5
+05:5022 GenNumName_B5
+05:5223 SumSfn_B5
+05:526c DirFind_B5
+05:54c7 DirRead_B5
+05:56d1 GetFileInfo_B5
+05:598d CreateName_B5
+05:6015 FollowPath_B5
+05:6260 GetLdNumber_B5
+05:6337 CheckFs_B5
+05:6447 FindVolume_B5
+05:6d96 Validate_B5
+05:6e19 Mount_B5
+06:412c MemCmp_B6
+06:4196 MemChr_B6
+06:4918 PutFat_B6
+06:4db5 RemoveChain_B6
+06:4f5a CreateChain_B6
+06:52fc DirSdi_B6
+06:562d DirNext_B6
+06:5ab1 DirAlloc_B6
+06:5b94 LdClust_B6
+06:5c2c StClust_B6
+06:5c8e CmpLfn_B6
+06:5f12 PutLfn_B6
+06:6224 SumSfn_B6
+06:626d DirFind_B6
+06:6857 CreateName_B6
+06:6edf FollowPath_B6
+06:712a GetLdNumber_B6
+06:7201 FindVolume_B6
+06:7286 Validate_B6
+07:412b MemCmp_B7
+07:4195 MemChr_B7
+07:4aeb PutFat_B7
+07:4f88 CreateChain_B7
+07:532a DirSdi_B7
+07:565b DirNext_B7
+07:5adf DirAlloc_B7
+07:5bc2 LdClust_B7
+07:5c5a StClust_B7
+07:5cbc CmpLfn_B7
+07:5f40 PutLfn_B7
+07:6252 SumSfn_B7
+07:629b DirFind_B7
+07:6a8f GetFileInfo_B7
+07:6d4b CreateName_B7
+07:73d3 FollowPath_B7
+07:75df GetLdNumber_B7
+07:76b6 Validate_B7
+08:6dd9 RomLoad_Build_B8
+08:473f Fpga7FD2WaitClear_B8
+09:413e MemCmp_B9
+09:41a8 MemChr_B9
+09:4af7 PutFat_B9
+09:4f94 RemoveChain_B9
+09:5139 CreateChain_B9
+09:54db DirSdi_B9
+09:580c DirNext_B9
+09:5c8f DirAlloc_B9
+09:5d72 LdClust_B9
+09:5e0a StClust_B9
+09:5e6c CmpLfn_B9
+09:60f0 PutLfn_B9
+09:6402 SumSfn_B9
+09:644b DirFind_B9
+09:6c3e CreateName_B9
+09:72c5 FollowPath_B9
+09:7510 GetLdNumber_B9
+09:75e7 CheckFs_B9
+09:76f7 FindVolume_B9
+
+; Auto-proposed mechanical labels (scripts/propose-labels.py)
+; --- farcall-thunk ---
+00:19f5 FarCall_05_4378
+; --- fpga-helper (corrected: 6e15 is peek; set/clear are neighbors) ---
+08:6e15 SdWindowPeek_B8
+08:6e1c SetFpga7FD2On_B8
+08:6e3b SetFpga7FD2Off_B8
+
+; SDCC signed-long compare helpers (only self-referenced in this build)
+00:2ad2 ClearNegZero32
+00:2aeb MemCmp3Down
+00:2af6 S32Cmp
+
+; Calendar / RTC day-count (bank 1)
+01:48c6 IsLeapYear
+01:4917 DateToDaysSince1970
+01:4c5e RtcToDayCount
+01:5346 RtcReadDaysClearRegs
+01:6280 DrawCardTypeScreen
+01:6513 DrawInfoPanelRect
+01:6532 BootRomInfoMenu
+01:5990 SaverDirSlashStr
+01:5990 .text:8
+01:64bd CardtypeStr
+01:64bd .text:a
+01:64c7 MbcNoneStr
+01:64c7 .text:6
+01:64cd Mbc1Str
+01:64cd .text:5
+01:64d2 Mbc2Str
+01:64d2 .text:5
+01:64d7 Mbc3Str
+01:64d7 .text:5
+01:64dc Mbc5Str
+01:64dc .text:5
+01:64e1 Mbc1mStr
+01:64e1 .text:6
+01:64e7 MbcNotStr
+01:64e7 .text:4
+01:64eb RomSizeLabelStr
+01:64eb .text:a
+01:64f5 SizeKbStr
+01:64f5 .text:3
+01:64f8 RamSizeLabelStr
+01:64f8 .text:a
+01:6502 BatteryLabelStr
+01:6502 .text:a
+01:650c BatteryYesStr
+01:650c .text:4
+01:6510 BatteryNoStr
+01:6510 .text:3
+01:6686 BootMenuBootStr
+01:6686 .text:5
+01:668b BootMenuRomInfoStr
+01:668b .text:9
+01:6694 BootMenuLoadingStr
+01:6694 .text:8
+01:669c BackupSaveDump
+01:505c RtcWriteTimeFromDayDelta
+01:5e6a MapCartTypeToUi
+
+; Bank0 joypad / mul runtime
+00:07bc WaitJoypadSelect
+00:07db PlotBitRowXY
+00:2ba2 S8Mul
+00:2bb1 MulU8xU8Arg
+00:2bb6 MulU8xU8
+00:2bcf U16Mul
+00:2e40 U32MulEngine
+00:2ec3 PropagateCarry
+00:2f4c VramLoadTiles8100
+00:2f56 BlitTile
+00:2f8d BlitTileXY
+00:2fa8 VramLoadTiles8100Arg
+00:3d5a VramFill
+00:0bd1 DrawDirEntryLabel
+
+; FatFs siblings inferred from bank-09 (unlabeled mgbdis entries)
+07:4434 SyncFs_B7
+03:669b DirRegister_B3
+07:6700 DirRegister_B7
+07:64f6 DirRead_B7
+09:66a6 DirRead_B9
+09:77ff Open_B9
+03:4f88 RemoveChain_B3
+03:7395 FindVolume_B3
+03:76cc Lseek_B3
+06:7309 Open_B6
+05:7576 Readdir_B5
+06:779a Read_B6
+07:7739 Write_B7
+09:777c Validate_B9
+05:6ea4 Chdir_B5
+05:73dd Opendir_B5
+05:7008 Getcwd_B5
+03:768f Close_B3
+05:4279 Clust2Sect_B5
+05:4378 GetFat_B5
+04:46f4 DrawTimeAutosaveScreen
+04:5915 TimeLabelStr
+04:5915 .text:6
+04:591b TimeSetLabelStr
+04:591b .text:4
+04:591f AutoSaveLabelStr
+04:591f .text:b
+04:592a AutoSaveSavLabelStr
+04:592a .text:4
+04:592e PathSlashStr_B4
+04:592e .text:2
+08:6fd0 DrawFwVersionScreen
+01:53c5 BackupOpenSaverPath
+00:2a5f VBlankCb_Bg8000
+00:2a6a LycCb_Bg8800
+01:480b SetFpga7FD4_B1
+04:43ec SetFpga7FC4_B4
+04:446e SetFpga7FC3_B4
+04:448f RomLoad_CopyCmdWindowPoll_B4
+04:46ae InitTimeAutosaveFpga_B4
+04:4160 SetFpga7F37_B4
+04:4180 RomLoad_ResetIntoRom_B4
+04:41d2 RomLoad_BuildAndRunReset_B4
+04:41e7 SetFpgaPageAlt_B4
+00:3d68 VramFillActiveWinMap
+00:3d78 VramFillActiveBgMap
+05:754d Closedir_B5
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- LcdOff ---
+00:06a3 LcdOff_waitLyHigh
+00:06a9 LcdOff_waitLyLow
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen ---
+04:47ce DrawTimeAutosaveScreen_setupSkipDrawRect
+04:47ef DrawTimeAutosaveScreen_fieldSlotPtrs
+04:48f5 DrawTimeAutosaveScreen_redraw
+04:4906 DrawTimeAutosaveScreen_hiliteGate
+04:4920 DrawTimeAutosaveScreen_hiliteStoreDrawParamsA
+04:492d DrawTimeAutosaveScreen_hiliteStoreDrawParamsB
+04:4959 DrawTimeAutosaveScreen_setStringA
+04:496a DrawTimeAutosaveScreen_setStringB
+04:4992 DrawTimeAutosaveScreen_setStringC
+04:49a5 DrawTimeAutosaveScreen_setStringD
+04:49b2 DrawTimeAutosaveScreen_setStringE
+04:49cd DrawTimeAutosaveScreen_setStringsDone
+04:49ee DrawTimeAutosaveScreen_fpgaPage6
+04:4aa3 DrawTimeAutosaveScreen_fpgaSlotGate
+04:4aad DrawTimeAutosaveScreen_field0Clone
+04:4b2e DrawTimeAutosaveScreen_field0LoadVal
+04:4b43 DrawTimeAutosaveScreen_field0Next
+04:4b4d DrawTimeAutosaveScreen_field1Clone
+04:4bcc DrawTimeAutosaveScreen_field1LoadVal
+04:4be1 DrawTimeAutosaveScreen_field1Next
+04:4beb DrawTimeAutosaveScreen_field2Clone
+04:4c5a DrawTimeAutosaveScreen_field2LoadVal
+04:4c6f DrawTimeAutosaveScreen_field2Next
+04:4c79 DrawTimeAutosaveScreen_field3Clone
+04:4cf9 DrawTimeAutosaveScreen_field3LoadVal
+04:4d0e DrawTimeAutosaveScreen_field3Next
+04:4d18 DrawTimeAutosaveScreen_field4Clone
+04:4d98 DrawTimeAutosaveScreen_field4LoadVal
+04:4dad DrawTimeAutosaveScreen_field4Next
+04:4db7 DrawTimeAutosaveScreen_field5Clone
+04:4e26 DrawTimeAutosaveScreen_clearDirtyMemcpy
+04:4e42 DrawTimeAutosaveScreen_savRedraw
+04:4ec6 DrawTimeAutosaveScreen_savYearClone
+04:4f38 DrawTimeAutosaveScreen_savMonGate
+04:4f48 DrawTimeAutosaveScreen_savMonClone
+04:4fba DrawTimeAutosaveScreen_savDayGate
+04:4fca DrawTimeAutosaveScreen_savDayClone
+04:502b DrawTimeAutosaveScreen_savHrGate
+04:503b DrawTimeAutosaveScreen_savHrClone
+04:50ad DrawTimeAutosaveScreen_savMinGate
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_savMinGate ---
+04:50bd DrawTimeAutosaveScreen_savMinClone
+04:512f DrawTimeAutosaveScreen_savSecGate
+04:513f DrawTimeAutosaveScreen_savSecClone
+04:5162 DrawTimeAutosaveScreen_inputLoop
+04:5189 DrawTimeAutosaveScreen_fieldDecCheck
+04:5192 DrawTimeAutosaveScreen_fieldDecDirty
+04:5199 DrawTimeAutosaveScreen_fieldDecWrap
+04:51ba DrawTimeAutosaveScreen_fieldIncGate
+04:51c1 DrawTimeAutosaveScreen_fieldIncDirty
+04:51c8 DrawTimeAutosaveScreen_fieldIncWrap
+04:51f3 DrawTimeAutosaveScreen_field0YrGate
+04:5201 DrawTimeAutosaveScreen_field0YrWrap
+04:5211 DrawTimeAutosaveScreen_field1MonCheck
+04:521b DrawTimeAutosaveScreen_field1MonGate
+04:522c DrawTimeAutosaveScreen_field1MonPath
+04:523a DrawTimeAutosaveScreen_field1MonLoad
+04:524a DrawTimeAutosaveScreen_field2DayCheck
+04:5254 DrawTimeAutosaveScreen_field2DayGate
+04:529a DrawTimeAutosaveScreen_field2DayLoadA
+04:52a8 DrawTimeAutosaveScreen_field2DayPath
+04:52b6 DrawTimeAutosaveScreen_field2DayLoadB
+04:52c6 DrawTimeAutosaveScreen_field2DayLoadC
+04:52d4 DrawTimeAutosaveScreen_field2DayPath2
+04:52e2 DrawTimeAutosaveScreen_field2DayLoadD
+04:52f2 DrawTimeAutosaveScreen_field2DayU8Mod
+04:5317 DrawTimeAutosaveScreen_field2DayModCheck
+04:532c DrawTimeAutosaveScreen_field2DayModGate
+04:532f DrawTimeAutosaveScreen_field2DayModPath
+04:533a DrawTimeAutosaveScreen_field2DayModLoad
+04:534a DrawTimeAutosaveScreen_field3HrCheck
+04:5354 DrawTimeAutosaveScreen_field3HrGate
+04:5365 DrawTimeAutosaveScreen_field3HrPath
+04:5373 DrawTimeAutosaveScreen_field3HrLoad
+04:5383 DrawTimeAutosaveScreen_field4MinCheck
+04:538d DrawTimeAutosaveScreen_field4MinGate
+04:539e DrawTimeAutosaveScreen_field4MinPath
+04:53ac DrawTimeAutosaveScreen_field4MinLoad
+04:53bc DrawTimeAutosaveScreen_field5SecCheck
+04:53c6 DrawTimeAutosaveScreen_field5SecGate
+04:53d7 DrawTimeAutosaveScreen_field5SecPath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_field5SecPath ---
+04:53da DrawTimeAutosaveScreen_field5SecJr
+04:53e5 DrawTimeAutosaveScreen_field5SecLoad
+04:53f2 DrawTimeAutosaveScreen_fieldBumpDirty
+04:53f9 DrawTimeAutosaveScreen_hiliteDec
+04:5407 DrawTimeAutosaveScreen_fieldDecBtn
+04:540f DrawTimeAutosaveScreen_fieldDecBtnJr
+04:5438 DrawTimeAutosaveScreen_field0YrDecLoad
+04:5448 DrawTimeAutosaveScreen_field0YrDecCheck
+04:5452 DrawTimeAutosaveScreen_field0YrDecSkip
+04:5455 DrawTimeAutosaveScreen_field0YrDecJr
+04:546c DrawTimeAutosaveScreen_field0YrDecPath
+04:547c DrawTimeAutosaveScreen_field1MonDecCheck
+04:5486 DrawTimeAutosaveScreen_field1MonDecSkip
+04:54cc DrawTimeAutosaveScreen_field2DayDecLoadA
+04:54e3 DrawTimeAutosaveScreen_field2DayDecLoadB
+04:54f3 DrawTimeAutosaveScreen_field2DayDecLoadC
+04:550a DrawTimeAutosaveScreen_field2DayDecLoadD
+04:551a DrawTimeAutosaveScreen_field2DayDecLoadE
+04:5528 DrawTimeAutosaveScreen_field2DayDecSkip
+04:554f DrawTimeAutosaveScreen_field2DayDecLoadF
+04:555a DrawTimeAutosaveScreen_field2DayDecLoadG
+04:556a DrawTimeAutosaveScreen_field3HrDecCheck
+04:5574 DrawTimeAutosaveScreen_field3HrDecSkip
+04:558b DrawTimeAutosaveScreen_field3HrDecLoad
+04:559b DrawTimeAutosaveScreen_field4MinDecCheck
+04:55a5 DrawTimeAutosaveScreen_field4MinDecSkip
+04:55bc DrawTimeAutosaveScreen_field4MinDecLoad
+04:55cc DrawTimeAutosaveScreen_field5SecDecCheck
+04:55d6 DrawTimeAutosaveScreen_field5SecDecSkip
+04:55ed DrawTimeAutosaveScreen_field5SecDecLoad
+04:55fa DrawTimeAutosaveScreen_fieldDecJoinDirty
+04:5601 DrawTimeAutosaveScreen_hiliteInc
+04:5610 DrawTimeAutosaveScreen_exitCheck40
+04:561b DrawTimeAutosaveScreen_exitCheck20
+04:5626 DrawTimeAutosaveScreen_exitCheck10
+04:5747 DrawTimeAutosaveScreen_confirmBcdWrite
+04:58d6 DrawTimeAutosaveScreen_toggleA200Check
+04:58e2 DrawTimeAutosaveScreen_toggleA200Clear
+04:58e6 DrawTimeAutosaveScreen_toggleA200Apply
+04:5912 DrawTimeAutosaveScreen_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawLine ---
+00:23a2 DrawLine_absDy
+00:23ac DrawLine_absDx
+00:23c4 DrawLine_maybeSwapEnds
+00:23ce DrawLine_swapEndsDone
+00:23d0 DrawLine_setYstepErr
+00:2433 DrawLine_xMajor
+00:244b DrawLine_xMajorErrAdd
+00:2464 DrawLine_xMajorPlotYstep
+00:247e DrawLine_xMajorRowWrapA
+00:248c DrawLine_xMajorRowWrapB
+00:24a5 DrawLine_xMajorByteAdv
+00:24b0 DrawLine_xMajorLoopDec
+00:24bd DrawLine_horiz
+00:24d0 DrawLine_horizMaskShift
+00:24db DrawLine_horizMidRun
+00:24e3 DrawLine_horizTailPixel
+00:24ef DrawLine_horizDoneCheck
+00:250a DrawLine_horizMaskInit
+00:250c DrawLine_horizMaskLoop
+00:2513 DrawLine_horizApplyPixel
+00:2519 DrawLine_yMajor
+00:252a DrawLine_yMajorMaybeSwap
+00:2534 DrawLine_yMajorSwapDone
+00:2536 DrawLine_yMajorSetYstep
+00:259e DrawLine_yMajorPlot
+00:25b0 DrawLine_yMajorAfterPlot
+00:25d0 DrawLine_yMajorErrCheck
+00:25e2 DrawLine_yMajorXstep
+00:25ec DrawLine_yMajorErrAdd
+00:2602 DrawLine_yMajorLoopDec
+00:260c DrawLine_vert
+00:261a DrawLine_vertApplyPixel
+00:2628 DrawLine_vertLoopDec
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SetFpgaRomSize_B4 ---
+04:426b SetFpgaRomSize_B4_mask0
+04:4275 SetFpgaRomSize_B4_mask03
+04:427f SetFpgaRomSize_B4_mask07
+04:4289 SetFpgaRomSize_B4_mask0f
+04:4293 SetFpgaRomSize_B4_mask1f
+04:429d SetFpgaRomSize_B4_mask3f
+04:42a7 SetFpgaRomSize_B4_mask7f
+04:42b1 SetFpgaRomSize_B4_mask00ff
+04:42bb SetFpgaRomSize_B4_mask01ff
+04:42c5 SetFpgaRomSize_B4_mask47
+04:42cf SetFpgaRomSize_B4_mask4f
+04:42d9 SetFpgaRomSize_B4_mask5f
+04:42e3 SetFpgaRomSize_B4_maskDefault0
+04:42ea SetFpgaRomSize_B4_clampCaps
+04:4308 SetFpgaRomSize_B4_clamp01
+04:430f SetFpgaRomSize_B4_afterClamp01
+04:431a SetFpgaRomSize_B4_clamp03
+04:4321 SetFpgaRomSize_B4_afterClamp03
+04:432c SetFpgaRomSize_B4_clamp07
+04:4333 SetFpgaRomSize_B4_afterClamp07
+04:433e SetFpgaRomSize_B4_clamp0f
+04:4345 SetFpgaRomSize_B4_afterClamp0f
+04:4350 SetFpgaRomSize_B4_clamp1f
+04:4357 SetFpgaRomSize_B4_afterClamp1f
+04:4362 SetFpgaRomSize_B4_clamp3f
+04:4369 SetFpgaRomSize_B4_afterClamp3f
+04:4374 SetFpgaRomSize_B4_clamp7f
+04:437b SetFpgaRomSize_B4_afterClamp7f
+04:4386 SetFpgaRomSize_B4_clampFf
+04:438d SetFpgaRomSize_B4_afterClampFf
+04:4398 SetFpgaRomSize_B4_clamp01ff
+04:439f SetFpgaRomSize_B4_unlockWriteCommit
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FileBrowserEntry ---
+00:0fcd FileBrowserEntry_clearPageIdx
+00:0ff4 FileBrowserEntry_memsetWireDirList
+00:1071 FileBrowserEntry_redraw
+00:1089 FileBrowserEntry_redrawSkipCode3
+00:108c FileBrowserEntry_redrawCode3Farcall
+00:10b1 FileBrowserEntry_redrawCodeGe2
+00:10df FileBrowserEntry_drawDirEntryLabel
+00:1107 FileBrowserEntry_inputLoop
+00:1128 FileBrowserEntry_pageDec
+00:114d FileBrowserEntry_pageDecZero
+00:1154 FileBrowserEntry_pageDecDirty
+00:115b FileBrowserEntry_pageDecGate
+00:116b FileBrowserEntry_afterPageDec
+00:1175 FileBrowserEntry_dirListBtn
+00:1180 FileBrowserEntry_pageInc
+00:11bf FileBrowserEntry_pageIncClamp
+00:11d6 FileBrowserEntry_pageIncDirty
+00:11dd FileBrowserEntry_afterPageInc
+00:11e7 FileBrowserEntry_rowDec
+00:11f6 FileBrowserEntry_afterRowDec
+00:1200 FileBrowserEntry_rowInc
+00:1223 FileBrowserEntry_afterRow
+00:122d FileBrowserEntry_modeBtn
+00:1238 FileBrowserEntry_modeSkipWrap
+00:123b FileBrowserEntry_modeWrapZero
+00:1242 FileBrowserEntry_modeCheck1
+00:124c FileBrowserEntry_modeSkipFarcall1
+00:124f FileBrowserEntry_modeFarcall1
+00:1267 FileBrowserEntry_modeCheck2
+00:1271 FileBrowserEntry_modeSkipFarcall2
+00:1274 FileBrowserEntry_modeFarcall2
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BackupOpenSaverPath ---
+01:5414 BackupOpenSaverPath_forceSavExt
+01:5495 BackupOpenSaverPath_sizeFromD3eb
+01:54a0 BackupOpenSaverPath_sizeSkip2k
+01:54a3 BackupOpenSaverPath_size2kRtc
+01:54b3 BackupOpenSaverPath_size0
+01:54bd BackupOpenSaverPath_size2k
+01:54cd BackupOpenSaverPath_size20000
+01:54dd BackupOpenSaverPath_size10000
+01:54ed BackupOpenSaverPath_size8000
+01:54fa BackupOpenSaverPath_openOk
+01:5570 BackupOpenSaverPath_rtcFlagSkip
+01:5573 BackupOpenSaverPath_rtcFlagSet
+01:557e BackupOpenSaverPath_afterRtcFlag
+01:5582 BackupOpenSaverPath_readInit
+01:5589 BackupOpenSaverPath_readLoop
+01:5650 BackupOpenSaverPath_rtcMetaRestore
+01:56f7 BackupOpenSaverPath_rtcReadDaysClear
+01:571e BackupOpenSaverPath_closePreLaunch
+01:5733 BackupOpenSaverPath_failMemsetFf
+01:574b BackupOpenSaverPath_failBlankWrite
+01:57fc BackupOpenSaverPath_failRtcPreLaunch
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MapCartTypeToUi ---
+01:5f73 MapCartTypeToUi_bucket0
+01:5f7b MapCartTypeToUi_bucket1
+01:5f83 MapCartTypeToUi_bucket2
+01:5f8b MapCartTypeToUi_bucket3
+01:5f93 MapCartTypeToUi_bucket4
+01:5f9b MapCartTypeToUi_bucket6a
+01:5fa3 MapCartTypeToUi_bucket6b
+01:5fa8 MapCartTypeToUi_batteryCheck
+01:6011 MapCartTypeToUi_batterySkip
+01:6014 MapCartTypeToUi_batterySet
+01:601c MapCartTypeToUi_batteryClear
+01:6021 MapCartTypeToUi_timerCheck
+01:6033 MapCartTypeToUi_timerSkip
+01:6036 MapCartTypeToUi_timerSet
+01:603e MapCartTypeToUi_timerClear
+01:6043 MapCartTypeToUi_rumbleCheck
+01:6068 MapCartTypeToUi_rumbleSet
+01:6070 MapCartTypeToUi_rumbleClear
+01:6075 MapCartTypeToUi_ret
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawCardTypeScreen ---
+01:62ce DrawCardTypeScreen_mbcNone
+01:62df DrawCardTypeScreen_mbc1
+01:62f0 DrawCardTypeScreen_mbc2
+01:6301 DrawCardTypeScreen_mbc3
+01:6312 DrawCardTypeScreen_mbc5
+01:6323 DrawCardTypeScreen_mbc1m
+01:6334 DrawCardTypeScreen_mbcNot
+01:6342 DrawCardTypeScreen_afterMbc
+01:6379 DrawCardTypeScreen_romShiftLoop
+01:637d DrawCardTypeScreen_romShiftDone
+01:6400 DrawCardTypeScreen_ram0
+01:6405 DrawCardTypeScreen_ram8
+01:640a DrawCardTypeScreen_ram80
+01:640f DrawCardTypeScreen_ram20
+01:6411 DrawCardTypeScreen_afterRam
+01:6490 DrawCardTypeScreen_batteryNo
+01:64a1 DrawCardTypeScreen_waitJoypad
+01:64af DrawCardTypeScreen_waitA
+01:64b2 DrawCardTypeScreen_waitB
+01:64ba DrawCardTypeScreen_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawBrowserDetail ---
+01:42c8 DrawBrowserDetail_mode2Prep
+01:42c9 DrawBrowserDetail_mode2Rows
+01:42fb DrawBrowserDetail_modeNormalRows
+01:4324 DrawBrowserDetail_row0Bank
+01:433b DrawBrowserDetail_row0BankShift
+01:4364 DrawBrowserDetail_mode3Prep
+01:4365 DrawBrowserDetail_mode3Hilite
+01:437c DrawBrowserDetail_afterHilite
+01:4390 DrawBrowserDetail_entry0
+01:43cd DrawBrowserDetail_entry0SkipDir
+01:43d0 DrawBrowserDetail_entry0Dir
+01:441a DrawBrowserDetail_entry0File
+01:4442 DrawBrowserDetail_focusInk
+01:4459 DrawBrowserDetail_afterFocusInk
+01:446d DrawBrowserDetail_row1Bank
+01:4484 DrawBrowserDetail_row1BankShift
+01:44dd DrawBrowserDetail_entry1SkipDir
+01:44e0 DrawBrowserDetail_entry1Dir
+01:452a DrawBrowserDetail_entry1File
+01:4552 DrawBrowserDetail_drawSize
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MenuDispatchAB ---
+00:139c MenuDispatchAB_bankEntry
+00:13b3 MenuDispatchAB_bankShift
+00:140c MenuDispatchAB_fileSkipDir
+00:140f MenuDispatchAB_dirAppend
+00:143b MenuDispatchAB_dirToBrowser
+00:145f MenuDispatchAB_fileOpen
+00:14d6 MenuDispatchAB_toupperExtA
+00:14fb MenuDispatchAB_toupperExtB
+00:1520 MenuDispatchAB_memcmpExt
+00:1566 MenuDispatchAB_extMatch
+00:1569 MenuDispatchAB_launchFarcalls
+00:1588 MenuDispatchAB_failSkipWait
+00:158b MenuDispatchAB_failWaitSelect
+00:1591 MenuDispatchAB_failHang
+00:162c MenuDispatchAB_failHangLoop
+00:162f MenuDispatchAB_checkB
+00:1639 MenuDispatchAB_parentDir
+00:16ab MenuDispatchAB_waitVBlankLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirList ---
+00:0a56 DirList_readdir
+00:0a83 DirList_failEmpty
+00:0a8b DirList_skipDot
+00:0aa3 DirList_bankSlot
+00:0abf DirList_bankShift
+00:0aeb DirList_notDir
+00:0aee DirList_dirAttr
+00:0b3e DirList_afterDirStore
+00:0b41 DirList_needAmArc
+00:0b4c DirList_skipNoArc
+00:0b4f DirList_memcmpEzgbDat
+00:0bb8 DirList_countCheck
+00:0bc2 DirList_moreEntries
+00:0bc5 DirList_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PlotBitRowXY ---
+00:07e5 PlotBitRowXY_bit0Plot
+00:07f7 PlotBitRowXY_bit0Skip
+00:0801 PlotBitRowXY_bit1Plot
+00:0813 PlotBitRowXY_bit1Skip
+00:081d PlotBitRowXY_bit2Plot
+00:082f PlotBitRowXY_bit2Skip
+00:0839 PlotBitRowXY_bit3Plot
+00:084c PlotBitRowXY_bit3Skip
+00:0856 PlotBitRowXY_bit4Plot
+00:0868 PlotBitRowXY_bit4Skip
+00:0872 PlotBitRowXY_bit5Plot
+00:0883 PlotBitRowXY_bit5Skip
+00:088d PlotBitRowXY_bit6Plot
+00:089d PlotBitRowXY_bit6Skip
+00:08a7 PlotBitRowXY_bit7Plot
+00:08b5 PlotBitRowXY_ret
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BootRomInfoMenu ---
+01:653b BootRomInfoMenu_drawPanel
+01:653e BootRomInfoMenu_hiliteBoot
+01:658a BootRomInfoMenu_romInfoInk
+01:65c6 BootRomInfoMenu_inputLoop
+01:65dd BootRomInfoMenu_selDec
+01:65e8 BootRomInfoMenu_afterSelDec
+01:65f2 BootRomInfoMenu_selInc
+01:6605 BootRomInfoMenu_afterSelInc
+01:660f BootRomInfoMenu_confirmA
+01:6619 BootRomInfoMenu_bootLoading
+01:661c BootRomInfoMenu_romInfoScreen
+01:6629 BootRomInfoMenu_checkB
+01:6633 BootRomInfoMenu_cancelRetFf
+01:6638 BootRomInfoMenu_delayRedraw
+01:6644 BootRomInfoMenu_loadingStr
+01:6683 BootRomInfoMenu_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FormatFileSize ---
+01:45e7 FormatFileSize_pickFmtHi
+01:45ec FormatFileSize_pickFmtLo
+01:45f1 FormatFileSize_walkTable
+01:4691 FormatFileSize_opScaleSubA
+01:46bd FormatFileSize_opScaleSubB
+01:46e2 FormatFileSize_opSub10
+01:46f6 FormatFileSize_opSub20
+01:470a FormatFileSize_opSub30
+01:471e FormatFileSize_opSub1a
+01:4732 FormatFileSize_opAdd8
+01:4744 FormatFileSize_opSub50
+01:4758 FormatFileSize_opSub1c60
+01:476c FormatFileSize_afterOp
+01:478a FormatFileSize_rewriteLo16
+01:479b FormatFileSize_retDeHl
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BackupSaveDump ---
+01:66dd BackupSaveDump_writeLoop
+01:6791 BackupSaveDump_spinnerSkipReset
+01:6794 BackupSaveDump_spinnerReset0
+01:6798 BackupSaveDump_spinnerDot
+01:67b3 BackupSaveDump_afterDot
+01:67bd BackupSaveDump_spinnerSkipDots
+01:67c0 BackupSaveDump_spinnerDots
+01:67d4 BackupSaveDump_spinnerEllipsis
+01:67e5 BackupSaveDump_advance200
+01:6803 BackupSaveDump_checkRtcMagic
+01:680e BackupSaveDump_skipRtcPack
+01:6811 BackupSaveDump_rtcPackWrite
+01:6991 BackupSaveDump_close
+01:699a BackupSaveDump_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RomLoaderMain ---
+01:60b8 RomLoaderMain_readHdr
+01:612a RomLoaderMain_checksumLoop
+01:6154 RomLoaderMain_checksumCont
+01:6157 RomLoaderMain_mapCartType
+01:618c RomLoaderMain_skipSizeGate
+01:618f RomLoaderMain_sizeGate
+01:61cc RomLoaderMain_xorFold
+01:6247 RomLoaderMain_xorFoldCont
+01:624a RomLoaderMain_cmpMagic
+01:6269 RomLoaderMain_skipMbc1m
+01:626c RomLoaderMain_setMbc1m
+01:6271 RomLoaderMain_closeRet
+01:627d RomLoaderMain_failRetFf
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawBrowserEntries ---
+01:40ff DrawBrowserEntries_clampRows
+01:412c DrawBrowserEntries_clearInk
+01:413d DrawBrowserEntries_rowLoop
+01:415a DrawBrowserEntries_skipHilite
+01:415d DrawBrowserEntries_hilite
+01:416a DrawBrowserEntries_rowBank
+01:4181 DrawBrowserEntries_bankShift
+01:41da DrawBrowserEntries_skipDir
+01:41dd DrawBrowserEntries_dirEntry
+01:4229 DrawBrowserEntries_fileEntry
+01:4253 DrawBrowserEntries_resetInk
+01:4266 DrawBrowserEntries_drawSelSize
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32ToAscii ---
+04:451b U32ToAscii_digitLoop
+04:4539 U32ToAscii_skipEmit
+04:453c U32ToAscii_emitDigit
+04:45d0 U32ToAscii_digit0to9
+04:45d3 U32ToAscii_digitAtoF
+04:45e5 U32ToAscii_afterAlpha
+04:45e8 U32ToAscii_setupReverse
+04:4605 U32ToAscii_copyLoop
+04:462a U32ToAscii_copyCont
+04:462d U32ToAscii_writeNul
+04:466b U32ToAscii_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32ToAscii_B0 ---
+00:1718 U32ToAscii_B0_digitLoop
+00:1736 U32ToAscii_B0_skipEmit
+00:1739 U32ToAscii_B0_emitDigit
+00:17cd U32ToAscii_B0_digit0to9
+00:17d0 U32ToAscii_B0_digitAtoF
+00:17e2 U32ToAscii_B0_afterAlpha
+00:17e5 U32ToAscii_B0_setupReverse
+00:1802 U32ToAscii_B0_copyLoop
+00:1827 U32ToAscii_B0_copyCont
+00:182a U32ToAscii_B0_writeNul
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- LaunchSetup ---
+01:5b5b LaunchSetup_fatTypeCheck
+01:5b67 LaunchSetup_skipFat12
+01:5b6a LaunchSetup_fat12Limit
+01:5b7a LaunchSetup_fatOtherLimit
+01:5b87 LaunchSetup_seedClust2Sect
+01:5c46 LaunchSetup_walkClusters
+01:5c8e LaunchSetup_walkCont
+01:5cd4 LaunchSetup_appendCluster
+01:5d74 LaunchSetup_eofCheck
+01:5e64 LaunchSetup_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MapCp437 ---
+00:1e30 MapCp437_dirEncode
+00:1e5a MapCp437_tableLookup
+00:1e76 MapCp437_afterEncode
+00:1e7e MapCp437_dirDecode
+00:1e85 MapCp437_decodeScan
+00:1ea6 MapCp437_decodeCmp
+00:1eb3 MapCp437_decodeMiss
+00:1eba MapCp437_decodeCont
+00:1ebd MapCp437_decodeHit
+00:1ed0 MapCp437_retDe
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Strrchr ---
+00:2c50 Strrchr_scanToNul
+00:2c5b Strrchr_walkBack
+00:2c73 Strrchr_cmpChar
+00:2c82 Strrchr_mismatch
+00:2c85 Strrchr_recheckMatch
+00:2c94 Strrchr_missSkip
+00:2c97 Strrchr_hitPtr
+00:2c9f Strrchr_missZero
+00:2ca2 Strrchr_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DateToDaysSince1970 ---
+01:492f DateToDaysSince1970_yearLoop
+01:4974 DateToDaysSince1970_nonLeapYear
+01:4992 DateToDaysSince1970_incYear
+01:4999 DateToDaysSince1970_yearCont
+01:499c DateToDaysSince1970_afterYears
+01:49b2 DateToDaysSince1970_monthLoop
+01:4a1c DateToDaysSince1970_nonLeapMonths
+01:4a59 DateToDaysSince1970_incMonth
+01:4a60 DateToDaysSince1970_monthCont
+01:4a63 DateToDaysSince1970_addHms
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RtcWriteTimeFromDayDelta ---
+01:50a3 RtcWriteTimeFromDayDelta_zeroHms
+01:50bb RtcWriteTimeFromDayDelta_seedC0a0
+01:50ff RtcWriteTimeFromDayDelta_overflowZero
+01:5114 RtcWriteTimeFromDayDelta_div60a
+01:514b RtcWriteTimeFromDayDelta_modSec
+01:51b7 RtcWriteTimeFromDayDelta_modMin
+01:5231 RtcWriteTimeFromDayDelta_modHr
+01:52ce RtcWriteTimeFromDayDelta_writeFpga
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SetFpga7FC4_B4 ---
+04:4417 SetFpga7FC4_B4_mode0
+04:4422 SetFpga7FC4_B4_mode0SkipRtc
+04:4425 SetFpga7FC4_B4_mode0Rtc
+04:442c SetFpga7FC4_B4_store00a
+04:4433 SetFpga7FC4_B4_store00b
+04:443a SetFpga7FC4_B4_store0f
+04:4441 SetFpga7FC4_B4_store07
+04:4448 SetFpga7FC4_B4_store03
+04:444c SetFpga7FC4_B4_unlockWriteCommit
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DelayDE ---
+00:3a5f DelayDE_padLoop
+00:3a61 DelayDE_padA
+00:3a63 DelayDE_padB
+00:3a65 DelayDE_padC
+00:3a67 DelayDE_padD
+00:3a69 DelayDE_padDecB
+00:3a71 DelayDE_trailA
+00:3a73 DelayDE_trailB
+00:3a75 DelayDE_ret
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DelayInner ---
+00:3a7c DelayInner_padLoop
+00:3a7e DelayInner_padA
+00:3a80 DelayInner_padB
+00:3a82 DelayInner_padC
+00:3a84 DelayInner_padD
+00:3a86 DelayInner_padDecB
+00:3a8d DelayInner_trailA
+00:3a8f DelayInner_trailB
+00:3a91 DelayInner_outerLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- WToUpper ---
+00:1fe2 WToUpper_asciiGate
+00:200e WToUpper_initSearch
+00:2021 WToUpper_midKey
+00:2065 WToUpper_cmpKey
+00:207a WToUpper_lowerHi
+00:2082 WToUpper_decCount
+00:2092 WToUpper_hitOrMiss
+00:20b3 WToUpper_retDe
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BackupSavePrompt ---
+01:69e6 BackupSavePrompt_skipAuto
+01:69e9 BackupSavePrompt_autoDump
+01:6a32 BackupSavePrompt_drawConfirm
+01:6a83 BackupSavePrompt_joyLoop
+01:6a91 BackupSavePrompt_confirmDump
+01:6aeb BackupSavePrompt_checkB
+01:6af3 BackupSavePrompt_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawDirEntryLabel ---
+00:0c0a DrawDirEntryLabel_bankShift
+00:0c81 DrawDirEntryLabel_skipDirWidth
+00:0c84 DrawDirEntryLabel_dirWidth11
+00:0c8b DrawDirEntryLabel_fileWidth14
+00:0c8f DrawDirEntryLabel_scrollCheck
+00:0d2c DrawDirEntryLabel_drawEllipsis
+00:0ddd DrawDirEntryLabel_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawString ---
+00:08d5 DrawString_copyLen
+00:08db DrawString_stashPtr
+00:08e5 DrawString_glyphLoop
+00:08fd DrawString_drawChar
+00:0909 DrawString_drawSpace
+00:0923 DrawString_incC
+00:0927 DrawString_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U16Mul ---
+00:2bd8 U16Mul_initHl0
+00:2bdb U16Mul_loop
+00:2be4 U16Mul_afterAddLo
+00:2be8 U16Mul_rrCPath
+00:2bed U16Mul_slaE
+00:2bf5 U16Mul_rlDOnly
+00:2bf9 U16Mul_retDe
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Strncpy ---
+00:2cf1 Strncpy_copyLoop
+00:2d0c Strncpy_incSrc
+00:2d18 Strncpy_afterStore
+00:2d1b Strncpy_stashRem
+00:2d20 Strncpy_padLoop
+00:2d41 Strncpy_padCont
+00:2d44 Strncpy_retDest
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CopyTilesColor ---
+00:3add CopyTilesColor_loop
+00:3aee CopyTilesColor_afterColorB0
+00:3af4 CopyTilesColor_xorMask
+00:3b01 CopyTilesColor_afterBit0
+00:3b08 CopyTilesColor_statWaitB
+00:3b10 CopyTilesColor_statWaitC
+00:3b1f CopyTilesColor_decCount
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CStrCmp ---
+01:4056 CStrCmp_loop
+01:4069 CStrCmp_mismatch
+01:406c CStrCmp_matchGate
+01:4079 CStrCmp_advance
+01:4081 CStrCmp_advanceCont
+01:4084 CStrCmp_sexSub
+01:40a0 CStrCmp_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CStrChr ---
+01:40b9 CStrChr_initBc
+01:40be CStrChr_loop
+01:40cf CStrChr_skipStore
+01:40d2 CStrChr_storeMatch
+01:40d7 CStrChr_advance
+01:40db CStrChr_loadSaved
+01:40e0 CStrChr_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- S32DivImpl ---
+00:29f9 S32DivImpl_checkDivisor
+00:2a0f S32DivImpl_clearSign
+00:2a23 S32DivImpl_checkDividendSign
+00:2a35 S32DivImpl_u32DivEngine
+00:2a53 S32DivImpl_loadQuot
+00:2a5c S32DivImpl_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- S32ModImpl ---
+00:2b3b S32ModImpl_checkDivisor
+00:2b51 S32ModImpl_clearSign
+00:2b65 S32ModImpl_checkDividendSign
+00:2b77 S32ModImpl_u32DivEngine
+00:2b96 S32ModImpl_loadRem
+00:2b9f S32ModImpl_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DiskRead_B2 ---
+02:4036 DiskRead_B2_chunkLoop
+02:4065 DiskRead_B2_remChunk
+02:4071 DiskRead_B2_issueLba
+02:418d DiskRead_B2_waitPeek
+02:419d DiskRead_B2_copyWindow
+02:41c7 DiskRead_B2_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DiskWrite_B2 ---
+02:41ed DiskWrite_B2_chunkLoop
+02:421c DiskWrite_B2_remChunk
+02:4223 DiskWrite_B2_issueLba
+02:4350 DiskWrite_B2_waitPeek
+02:4360 DiskWrite_B2_advanceIdx
+02:4369 DiskWrite_B2_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawGlyph ---
+00:2730 DrawGlyph_rowLoop
+00:273f DrawGlyph_afterColorB0
+00:2745 DrawGlyph_plane0Done
+00:274c DrawGlyph_afterColorB1
+00:2752 DrawGlyph_plane1Done
+00:2754 DrawGlyph_statWait
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CStrCat ---
+04:44b6 CStrCat_findNul
+04:44bf CStrCat_stashPtrs
+04:44cb CStrCat_copyLoop
+04:44dd CStrCat_incSrc
+04:44e9 CStrCat_afterStore
+04:44ec CStrCat_writeNul
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PreLaunchSaveStamp ---
+01:587f PreLaunchSaveStamp_copyBasename
+01:58b6 PreLaunchSaveStamp_copyCont
+01:58b9 PreLaunchSaveStamp_checkRtc
+01:5978 PreLaunchSaveStamp_clearRtcFlag
+01:597e PreLaunchSaveStamp_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RomLoad_ClearCartWindow_B8 ---
+08:6f0a RomLoad_ClearCartWindow_B8_fillBuf
+08:6f3a RomLoad_ClearCartWindow_B8_fillCont
+08:6f3d RomLoad_ClearCartWindow_B8_resetCounter
+08:6f44 RomLoad_ClearCartWindow_B8_cmdLoop
+08:6fcd RomLoad_ClearCartWindow_B8_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RleUnpack ---
+00:20be RleUnpack_fetchLen
+00:20c7 RleUnpack_runStore
+00:20d0 RleUnpack_literalOrDone
+00:20d5 RleUnpack_copyLiteral
+00:20e0 RleUnpack_retPastStream
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- KernelEntry ---
+00:015d KernelEntry_clearWram
+00:0169 KernelEntry_clearOam
+00:0172 KernelEntry_clearHram
+00:019e KernelEntry_copyOamDmaStub
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SerialCallback ---
+00:06d0 SerialCallback_ifState1
+00:06de SerialCallback_clearState
+00:06e0 SerialCallback_storeState
+00:06ea SerialCallback_rearmSc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BackupBranchEntry ---
+00:0ec4 BackupBranchEntry_copyBasename
+00:0f05 BackupBranchEntry_copyCont
+00:0f08 BackupBranchEntry_openSaverDir
+00:0f5b BackupBranchEntry_seedSlashPath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemCmp_B0 ---
+00:09d0 MemCmp_B0_decN
+00:09e6 MemCmp_B0_incS1
+00:09f9 MemCmp_B0_cmpBytes
+00:0a11 MemCmp_B0_retDiff
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawRectImpl ---
+00:22d9 DrawRectImpl_afterSwapX
+00:22ec DrawRectImpl_drawOutline
+00:236d DrawRectImpl_fillScan
+00:238d DrawRectImpl_restoreColors
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32MulEngine ---
+00:2e5e U32MulEngine_outerSetup
+00:2e64 U32MulEngine_innerDigit
+00:2e98 U32MulEngine_nextOuter
+00:2ec0 U32MulEngine_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CopyTilesVram ---
+00:3aa7 CopyTilesVram_checkE
+00:3aac CopyTilesVram_waitStatLo
+00:3ab5 CopyTilesVram_waitStatHi
+00:3ac9 CopyTilesVram_decCount
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PutBgTile ---
+00:3c01 PutBgTile_afterFarCall
+00:3c02 PutBgTile_mapGlyph
+00:3c19 PutBgTile_addBaseTile
+00:3c34 PutBgTile_waitStatStore
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- AdvanceTileCursor ---
+00:3cd1 AdvanceTileCursor_wrapX
+00:3cde AdvanceTileCursor_checkGfxMode
+00:3cee AdvanceTileCursor_scrollBg
+00:3cf1 AdvanceTileCursor_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- IsLeapYear ---
+01:48d3 IsLeapYear_notDiv4
+01:48d6 IsLeapYear_mod100
+01:4911 IsLeapYear_setLeap
+01:4913 IsLeapYear_retFlag
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RomLoad_Build_B4 ---
+04:40c2 RomLoad_Build_B4_decN
+04:40d5 RomLoad_Build_B4_incSrc
+04:40e1 RomLoad_Build_B4_storeCont
+04:40e4 RomLoad_Build_B4_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RomLoad_Build_B8 ---
+08:6df0 RomLoad_Build_B8_decN
+08:6e03 RomLoad_Build_B8_incSrc
+08:6e0f RomLoad_Build_B8_storeCont
+08:6e12 RomLoad_Build_B8_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SdMenuMain ---
+00:0e02 SdMenuMain_afterMount
+00:0e21 SdMenuMain_initErrorHang
+00:0e24 SdMenuMain_mountOk
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BatteryCheck ---
+00:18d7 BatteryCheck_waitA
+00:18e5 BatteryCheck_markOk
+00:18eb BatteryCheck_enterSdMenu
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawCircle ---
+00:2132 DrawCircle_midpointLoop
+00:2176 DrawCircle_errGe0
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32DivImpl ---
+00:2a8a U32DivImpl_checkDivisor
+00:2aa0 U32DivImpl_runEngine
+00:2aba U32DivImpl_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32ModImpl ---
+00:2c0f U32ModImpl_checkDivisor
+00:2c25 U32ModImpl_runEngine
+00:2c3f U32ModImpl_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RegisterFont ---
+00:3b30 RegisterFont_scanSlots
+00:3b42 RegisterFont_storeSlot
+00:3b66 RegisterFont_lcdOn
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemSet8_B0 ---
+00:0a27 MemSet8_B0_decN
+00:0a3d MemSet8_B0_storeCont
+00:0a40 MemSet8_B0_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- AdvanceTextCursor ---
+00:2100 AdvanceTextCursor_wrapX
+00:210d AdvanceTextCursor_wrapY
+00:210f AdvanceTextCursor_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetPixel ---
+00:26e7 GetPixel_waitStat
+00:26f9 GetPixel_testPlane0
+00:26ff GetPixel_retColor
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- S16DivMod ---
+00:2925 S16DivMod_absDividend
+00:292f S16DivMod_u16Div
+00:293e S16DivMod_restoreSigns
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MulU8xU8 ---
+00:2bba MulU8xU8_rrC
+00:2bc0 MulU8xU8_shiftE
+00:2bc8 MulU8xU8_finish
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CStrLen ---
+00:2da2 CStrLen_scan
+00:2daf CStrLen_incCont
+00:2db2 CStrLen_retLen
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- EnterGfxMode1 ---
+00:2ef4 EnterGfxMode1_vramFill
+00:2f23 EnterGfxMode1_rowSetup
+00:2f25 EnterGfxMode1_fillRow
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ScrollBgUp ---
+00:3cfe ScrollBgUp_rowSetup
+00:3d00 ScrollBgUp_copyTile
+00:3d11 ScrollBgUp_clearBottom
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawFwVersionScreen ---
+08:70e1 DrawFwVersionScreen_drawChrome
+08:7141 DrawFwVersionScreen_waitSelect
+08:7152 DrawFwVersionScreen_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RunCallbackList ---
+00:0071 RunCallbackList_walk
+00:0080 RunCallbackList_decNest
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- WaitJoypadSelect ---
+00:07ce WaitJoypadSelect_retry
+00:07d1 WaitJoypadSelect_delayRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ApplyPixel ---
+00:2665 ApplyPixel_checkPlane1
+00:266b ApplyPixel_waitStatWrite
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32DivEngine ---
+00:2df9 U32DivEngine_bitLoop
+00:2e1f U32DivEngine_rolQuot
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ClearBgMap ---
+00:3c85 ClearBgMap_rowSetup
+00:3c87 ClearBgMap_waitStatWrite
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RetreatTileCursor ---
+00:3ca4 RetreatTileCursor_wrapX
+00:3cae RetreatTileCursor_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- TileNewline ---
+00:3cc0 TileNewline_scrollBg
+00:3cc3 TileNewline_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- VramFillActiveBgMap ---
+00:3d83 VramFillActiveBgMap_use9c00
+00:3d86 VramFillActiveBgMap_doFill
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- VBlankCallback ---
+00:067f VBlankCallback_oamDmaFlag
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- WaitVBlankFlag ---
+00:0692 WaitVBlankFlag_haltLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawU32Decimal ---
+00:0982 DrawU32Decimal_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SdReadRetryCount ---
+00:0998 SdReadRetryCount_errorHang
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- LastRomLoadRecord ---
+00:12ee LastRomLoadRecord_copyCont
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- LastRomPersistLoop ---
+01:48af LastRomPersistLoop_copyCont
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RomLoad_ResetIntoRom_B4 ---
+04:41ce RomLoad_ResetIntoRom_B4_hang
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Fpga7FD2WaitClear_B8 ---
+08:4000 PlotIconGlyphs
+08:4054 PlotIconGlyphs_loopHead
+08:4076 PlotIconGlyphs_bit0
+08:4087 PlotIconGlyphs_bit1Check
+08:408f PlotIconGlyphs_bit1
+08:409f PlotIconGlyphs_bit2Check
+08:40a7 PlotIconGlyphs_bit2
+08:40b8 PlotIconGlyphs_bit3Check
+08:40c0 PlotIconGlyphs_bit3
+08:40d1 PlotIconGlyphs_bit4Check
+08:40d9 PlotIconGlyphs_bit4
+08:40ea PlotIconGlyphs_bit5Check
+08:40f2 PlotIconGlyphs_bit5
+08:4103 PlotIconGlyphs_bit6Check
+08:410b PlotIconGlyphs_bit6
+08:411b PlotIconGlyphs_bit7Check
+08:4123 PlotIconGlyphs_bit7
+08:4132 PlotIconGlyphs_next
+08:413b PlotIconGlyphs_epilogueRet
+08:413e Bank8ReservedSpace2
+08:413e .data:601:8
+08:475e Fpga7FD2WaitClear_B8_pollA000
+08:4a04 Bank8ReservedSpace
+08:4a04 .data:23d5:8
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RemoveCallbackSlot ---
+00:0661 RemoveCallbackSlot_compactTail
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- InstallCallbackSlot ---
+00:0673 InstallCallbackSlot_storeFree
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- OamDmaStub ---
+00:06bc OamDmaStub_delayLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ApplyBasename ---
+00:20ec ApplyBasename_copyLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32Shr ---
+00:299e U32Shr_shiftLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- S32Sar ---
+00:29bb S32Sar_shiftLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- U32Shl ---
+00:29d8 U32Shl_shiftLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemIsZero ---
+00:2abf MemIsZero_scanLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ClearNegZero32 ---
+00:2ad9 ClearNegZero32_matchMsb
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemCmp3Down ---
+00:2aed MemCmp3Down_cmpLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- S32Cmp ---
+00:2b14 S32Cmp_retALess
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Memset ---
+00:2cb2 Memset_fillLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Memcpy ---
+00:2cc9 Memcpy_copyLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- NegateBytes ---
+00:2d4f NegateBytes_sbcLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetTileCursorX ---
+00:2d7f GetTileCursorX_retX
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetTileCursorY ---
+00:2d90 GetTileCursorY_retY
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemZero ---
+00:2dbc MemZero_fillLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemSub ---
+00:2e31 MemSub_sbcLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemFill ---
+00:2e3b MemFill_fillLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CopyBytes ---
+00:2ed1 CopyBytes_copyLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemSubCmp ---
+00:2eda MemSubCmp_sbcLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemRol ---
+00:2ee3 MemRol_rlLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- BlitTile ---
+00:2f84 BlitTile_copyPlane2
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ReadJoypadRaw ---
+00:3a22 ReadJoypadRaw_readFace
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- UploadFontTiles ---
+00:3b9b UploadFontTiles_blitGlyphs
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- ResetTileText ---
+00:3c6b ResetTileText_clearSlots
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- EnterGfxMode2 ---
+00:3d3d EnterGfxMode2_initAndEnableLcd
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- VramFillActiveWinMap ---
+00:3d73 VramFillActiveWinMap_map9C00
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_setupSkipDrawRect ---
+04:47d1 DrawTimeAutosaveScreen_setupDoDrawRect
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_hiliteGate ---
+04:4909 DrawTimeAutosaveScreen_hilitePath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_setStringC ---
+04:4995 DrawTimeAutosaveScreen_setStringCPath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_setStringsDone ---
+04:49d0 DrawTimeAutosaveScreen_setStringsDonePath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_fpgaSlotGate ---
+04:4aa6 DrawTimeAutosaveScreen_fpgaSlotGatePath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_field0Next ---
+04:4b46 DrawTimeAutosaveScreen_field0NextPath
+; --- DrawTimeAutosaveScreen_field1Next ---
+04:4be4 DrawTimeAutosaveScreen_field1NextPath
+; --- DrawTimeAutosaveScreen_field2Next ---
+04:4c72 DrawTimeAutosaveScreen_field2NextPath
+; --- DrawTimeAutosaveScreen_field3Next ---
+04:4d11 DrawTimeAutosaveScreen_field3NextPath
+; --- DrawTimeAutosaveScreen_field4Next ---
+04:4db0 DrawTimeAutosaveScreen_field4NextPath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_savDayGate ---
+04:4fbd DrawTimeAutosaveScreen_savDayGatePath
+; --- DrawTimeAutosaveScreen_savHrGate ---
+04:502e DrawTimeAutosaveScreen_savHrGatePath
+; --- DrawTimeAutosaveScreen_savMinGate ---
+04:50b0 DrawTimeAutosaveScreen_savMinGatePath
+; --- DrawTimeAutosaveScreen_savMonGate ---
+04:4f3b DrawTimeAutosaveScreen_savMonGatePath
+; --- DrawTimeAutosaveScreen_savSecGate ---
+04:5132 DrawTimeAutosaveScreen_savSecGatePath
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_field0YrGate ---
+04:51f6 DrawTimeAutosaveScreen_field0YrGateZero
+; --- DrawTimeAutosaveScreen_field1MonGate ---
+04:521e DrawTimeAutosaveScreen_field1MonGatePath
+; --- DrawTimeAutosaveScreen_field1MonPath ---
+04:522f DrawTimeAutosaveScreen_field1MonPathZero
+; --- DrawTimeAutosaveScreen_field2DayGate ---
+04:5257 DrawTimeAutosaveScreen_field2DayGatePath
+; --- DrawTimeAutosaveScreen_fieldDecWrap ---
+04:51a1 DrawTimeAutosaveScreen_fieldDecWrapFieldInc
+; --- DrawTimeAutosaveScreen_fieldIncGate ---
+04:51bd DrawTimeAutosaveScreen_fieldIncGateWrap0
+; --- DrawTimeAutosaveScreen_fieldIncWrap ---
+04:51d0 DrawTimeAutosaveScreen_fieldIncWrapBump
+; --- DrawTimeAutosaveScreen_inputLoop ---
+04:5170 DrawTimeAutosaveScreen_inputLoopFieldDec
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DrawTimeAutosaveScreen_exitCheck10 ---
+04:562e DrawTimeAutosaveScreen_exitCheck10Confirm
+; --- DrawTimeAutosaveScreen_exitCheck20 ---
+04:5623 DrawTimeAutosaveScreen_exitCheck20Redraw
+; --- DrawTimeAutosaveScreen_exitCheck40 ---
+04:5618 DrawTimeAutosaveScreen_exitCheck40Epilogue
+; --- DrawTimeAutosaveScreen_field1MonDecSkip ---
+04:5489 DrawTimeAutosaveScreen_field1MonDecSkipPath
+; --- DrawTimeAutosaveScreen_field2DayDecSkip ---
+04:552b DrawTimeAutosaveScreen_field2DayDecSkipPath
+; --- DrawTimeAutosaveScreen_field2DayPath ---
+04:52ab DrawTimeAutosaveScreen_field2DayPathZero
+; --- DrawTimeAutosaveScreen_field2DayPath2 ---
+04:52d7 DrawTimeAutosaveScreen_field2DayPath2Zero
+; --- DrawTimeAutosaveScreen_field3HrDecSkip ---
+04:5577 DrawTimeAutosaveScreen_field3HrDecSkipPath
+; --- DrawTimeAutosaveScreen_field3HrGate ---
+04:5357 DrawTimeAutosaveScreen_field3HrGatePath
+; --- DrawTimeAutosaveScreen_field3HrPath ---
+04:5368 DrawTimeAutosaveScreen_field3HrPathZero
+; --- DrawTimeAutosaveScreen_field4MinDecSkip ---
+04:55a8 DrawTimeAutosaveScreen_field4MinDecSkipPath
+; --- DrawTimeAutosaveScreen_field4MinGate ---
+04:5390 DrawTimeAutosaveScreen_field4MinGatePath
+; --- DrawTimeAutosaveScreen_field4MinPath ---
+04:53a1 DrawTimeAutosaveScreen_field4MinPathZero
+; --- DrawTimeAutosaveScreen_field5SecDecSkip ---
+04:55d9 DrawTimeAutosaveScreen_field5SecDecSkipPath
+; --- DrawTimeAutosaveScreen_field5SecGate ---
+04:53c9 DrawTimeAutosaveScreen_field5SecGatePath
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:410f MemSet8_B3_decN
+03:4125 MemSet8_B3_storeCont
+03:4128 MemSet8_B3_epilogueRet
+05:4110 MemSet8_B5_decN
+05:4126 MemSet8_B5_storeCont
+05:4129 MemSet8_B5_epilogueRet
+06:4110 MemSet8_B6_decN
+06:4126 MemSet8_B6_storeCont
+06:4129 MemSet8_B6_epilogueRet
+07:410f MemSet8_B7_decN
+07:4125 MemSet8_B7_storeCont
+07:4128 MemSet8_B7_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9 ---
+09:6c59 CreateName_B9_skipLeadSep
+09:6c6c CreateName_B9_skipLeadSepElse
+09:6c6f CreateName_B9_skipLeadSepInc
+09:6c78 CreateName_B9_startSegment
+09:6caf CreateName_B9_lfnCharLoop
+09:6ceb CreateName_B9_checkBackslashSep
+09:6cf9 CreateName_B9_notTerminator
+09:6d0a CreateName_B9_mapCp437
+09:6d2f CreateName_B9_checkIllegalAscii
+09:6d55 CreateName_B9_storeWcharLfn
+09:6d81 CreateName_B9_endSegment
+09:6da9 CreateName_B9_nsflagNotLast
+09:6dab CreateName_B9_storeNsflag
+09:6dbe CreateName_B9_notLen1Dot
+09:6de4 CreateName_B9_checkDotDot
+09:6df4 CreateName_B9_notLen2DotDot
+09:6e1c CreateName_B9_dotDotMismatch
+09:6e45 CreateName_B9_notDotDot
+09:6e48 CreateName_B9_dotEntry
+09:6e78 CreateName_B9_sfnPadLoop
+09:6eac CreateName_B9_sfnPadSpace
+09:6eb0 CreateName_B9_sfnPadStore
+09:6ebe CreateName_B9_dotEntryDone
+09:6edb CreateName_B9_normalPath
+09:6ee3 CreateName_B9_stripTrailing
+09:6f14 CreateName_B9_stripTrailNotSpace
+09:6f24 CreateName_B9_stripTrailBreak
+09:6f27 CreateName_B9_stripTrailDec
+09:6f3b CreateName_B9_afterStripTrail
+09:6f4f CreateName_B9_nulTermClearSfn
+09:6f99 CreateName_B9_skipLeadSpaceDot
+09:6fbb CreateName_B9_skipLeadNotSpace
+09:6fc7 CreateName_B9_skipLeadNonLead
+09:6fca CreateName_B9_skipLeadInc
+09:6fdc CreateName_B9_afterSkipLead
+09:6ff1 CreateName_B9_findLastDot
+09:7028 CreateName_B9_findLastDotCont
+09:7035 CreateName_B9_initBodyLen
+09:7047 CreateName_B9_sfnFillLoop
+09:707d CreateName_B9_sfnFillCheckDot
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_sfnFillCheckDot ---
+09:708d CreateName_B9_sfnFillNotDot
+09:7090 CreateName_B9_sfnFillDotPath
+09:70a2 CreateName_B9_sfnFillSpaceLoss
+09:70ab CreateName_B9_sfnFillSlotCheck
+09:70ce CreateName_B9_sfnFillToMap
+09:70d1 CreateName_B9_sfnFillSlotFull
+09:70e1 CreateName_B9_sfnFillToExt
+09:70e4 CreateName_B9_sfnFillSlotFullLoss
+09:70ed CreateName_B9_sfnFillBodyToExt
+09:70ff CreateName_B9_sfnFillBodyOverflow
+09:7105 CreateName_B9_sfnFillEnterExt
+09:7132 CreateName_B9_sfnMapCp437
+09:716d CreateName_B9_sfnMapCp437Fail
+09:7173 CreateName_B9_sfnCheckIllegal
+09:718f CreateName_B9_sfnReplaceUnderscore
+09:719e CreateName_B9_sfnCaseUpper
+09:71be CreateName_B9_sfnCaseLower
+09:71ec CreateName_B9_sfnStoreByte
+09:7202 CreateName_B9_sfnStoreByteJr
+09:7211 CreateName_B9_sfnDoneDdem
+09:7228 CreateName_B9_afterDdem
+09:722b CreateName_B9_replaceDdem
+09:7233 CreateName_B9_checkBodyOnly
+09:7243 CreateName_B9_afterBodyOnly
+09:7246 CreateName_B9_ntShiftBodyOnly
+09:724c CreateName_B9_caseMixCheck
+09:7264 CreateName_B9_caseMixOk
+09:7267 CreateName_B9_caseMixSetLfn
+09:726d CreateName_B9_storeNtFlags
+09:7277 CreateName_B9_skipNtFlags
+09:727a CreateName_B9_ntExtCheck
+09:7287 CreateName_B9_afterNtExt
+09:728a CreateName_B9_setNsExt
+09:7290 CreateName_B9_ntBodyCheck
+09:7298 CreateName_B9_afterNtBody
+09:729b CreateName_B9_setNsBody
+09:72a1 CreateName_B9_storeNsflagFinal
+09:72b2 CreateName_B9_cleanup
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6a45 CreateName_B3_skipLeadSep
+03:6a58 CreateName_B3_skipLeadSepElse
+03:6a5b CreateName_B3_skipLeadSepInc
+03:6a64 CreateName_B3_startSegment
+03:6a9b CreateName_B3_lfnCharLoop
+03:6ad7 CreateName_B3_checkBackslashSep
+03:6ae5 CreateName_B3_notTerminator
+03:6af6 CreateName_B3_mapCp437
+03:6b1b CreateName_B3_checkIllegalAscii
+03:6b41 CreateName_B3_storeWcharLfn
+03:6b6d CreateName_B3_endSegment
+03:6b95 CreateName_B3_nsflagNotLast
+03:6b97 CreateName_B3_storeNsflag
+03:6baa CreateName_B3_notLen1Dot
+03:6bd0 CreateName_B3_checkDotDot
+03:6be0 CreateName_B3_notLen2DotDot
+03:6c08 CreateName_B3_dotDotMismatch
+03:6c31 CreateName_B3_notDotDot
+03:6c34 CreateName_B3_dotEntry
+03:6c64 CreateName_B3_sfnPadLoop
+03:6c98 CreateName_B3_sfnPadSpace
+03:6c9c CreateName_B3_sfnPadStore
+03:6caa CreateName_B3_dotEntryDone
+03:6cc7 CreateName_B3_normalPath
+03:6ccf CreateName_B3_stripTrailing
+03:6d00 CreateName_B3_stripTrailNotSpace
+03:6d10 CreateName_B3_stripTrailBreak
+03:6d13 CreateName_B3_stripTrailDec
+03:6d27 CreateName_B3_afterStripTrail
+03:6d3b CreateName_B3_nulTermClearSfn
+05:59a8 CreateName_B5_skipLeadSep
+05:59bb CreateName_B5_skipLeadSepElse
+05:59be CreateName_B5_skipLeadSepInc
+05:59c7 CreateName_B5_startSegment
+05:59fe CreateName_B5_lfnCharLoop
+05:5a3a CreateName_B5_checkBackslashSep
+05:5a48 CreateName_B5_notTerminator
+05:5a59 CreateName_B5_mapCp437
+05:5a7e CreateName_B5_checkIllegalAscii
+05:5aa4 CreateName_B5_storeWcharLfn
+05:5ad0 CreateName_B5_endSegment
+05:5af8 CreateName_B5_nsflagNotLast
+05:5afa CreateName_B5_storeNsflag
+05:5b0d CreateName_B5_notLen1Dot
+05:5b33 CreateName_B5_checkDotDot
+05:5b43 CreateName_B5_notLen2DotDot
+05:5b6b CreateName_B5_dotDotMismatch
+05:5b94 CreateName_B5_notDotDot
+05:5b97 CreateName_B5_dotEntry
+05:5bc7 CreateName_B5_sfnPadLoop
+05:5bfb CreateName_B5_sfnPadSpace
+05:5bff CreateName_B5_sfnPadStore
+05:5c0d CreateName_B5_dotEntryDone
+05:5c2a CreateName_B5_normalPath
+05:5c32 CreateName_B5_stripTrailing
+05:5c63 CreateName_B5_stripTrailNotSpace
+05:5c73 CreateName_B5_stripTrailBreak
+05:5c76 CreateName_B5_stripTrailDec
+05:5c8a CreateName_B5_afterStripTrail
+05:5c9e CreateName_B5_nulTermClearSfn
+06:6872 CreateName_B6_skipLeadSep
+06:6885 CreateName_B6_skipLeadSepElse
+06:6888 CreateName_B6_skipLeadSepInc
+06:6891 CreateName_B6_startSegment
+06:68c8 CreateName_B6_lfnCharLoop
+06:6904 CreateName_B6_checkBackslashSep
+06:6912 CreateName_B6_notTerminator
+06:6923 CreateName_B6_mapCp437
+06:6948 CreateName_B6_checkIllegalAscii
+06:696e CreateName_B6_storeWcharLfn
+06:699a CreateName_B6_endSegment
+06:69c2 CreateName_B6_nsflagNotLast
+06:69c4 CreateName_B6_storeNsflag
+06:69d7 CreateName_B6_notLen1Dot
+06:69fd CreateName_B6_checkDotDot
+06:6a0d CreateName_B6_notLen2DotDot
+06:6a35 CreateName_B6_dotDotMismatch
+06:6a5e CreateName_B6_notDotDot
+06:6a61 CreateName_B6_dotEntry
+06:6a91 CreateName_B6_sfnPadLoop
+06:6ac5 CreateName_B6_sfnPadSpace
+06:6ac9 CreateName_B6_sfnPadStore
+06:6ad7 CreateName_B6_dotEntryDone
+06:6af4 CreateName_B6_normalPath
+06:6afc CreateName_B6_stripTrailing
+06:6b2d CreateName_B6_stripTrailNotSpace
+06:6b3d CreateName_B6_stripTrailBreak
+06:6b40 CreateName_B6_stripTrailDec
+06:6b54 CreateName_B6_afterStripTrail
+06:6b68 CreateName_B6_nulTermClearSfn
+07:6d66 CreateName_B7_skipLeadSep
+07:6d79 CreateName_B7_skipLeadSepElse
+07:6d7c CreateName_B7_skipLeadSepInc
+07:6d85 CreateName_B7_startSegment
+07:6dbc CreateName_B7_lfnCharLoop
+07:6df8 CreateName_B7_checkBackslashSep
+07:6e06 CreateName_B7_notTerminator
+07:6e17 CreateName_B7_mapCp437
+07:6e3c CreateName_B7_checkIllegalAscii
+07:6e62 CreateName_B7_storeWcharLfn
+07:6e8e CreateName_B7_endSegment
+07:6eb6 CreateName_B7_nsflagNotLast
+07:6eb8 CreateName_B7_storeNsflag
+07:6ecb CreateName_B7_notLen1Dot
+07:6ef1 CreateName_B7_checkDotDot
+07:6f01 CreateName_B7_notLen2DotDot
+07:6f29 CreateName_B7_dotDotMismatch
+07:6f52 CreateName_B7_notDotDot
+07:6f55 CreateName_B7_dotEntry
+07:6f85 CreateName_B7_sfnPadLoop
+07:6fb9 CreateName_B7_sfnPadSpace
+07:6fbd CreateName_B7_sfnPadStore
+07:6fcb CreateName_B7_dotEntryDone
+07:6fe8 CreateName_B7_normalPath
+07:6ff0 CreateName_B7_stripTrailing
+07:7021 CreateName_B7_stripTrailNotSpace
+07:7031 CreateName_B7_stripTrailBreak
+07:7034 CreateName_B7_stripTrailDec
+07:7048 CreateName_B7_afterStripTrail
+07:705c CreateName_B7_nulTermClearSfn
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateChain_B9 ---
+09:51a3 CreateChain_B9_clstEmptySet1
+09:51af CreateChain_B9_getFatExisting
+09:51ee CreateChain_B9_afterGetFat
+09:5209 CreateChain_B9_notEofCluster
+09:520c CreateChain_B9_eofCluster
+09:5218 CreateChain_B9_cmpNFatent
+09:5255 CreateChain_B9_stretchOk
+09:5266 CreateChain_B9_copyScanState
+09:52a0 CreateChain_B9_allocScan
+09:52af CreateChain_B9_allocScanCont
+09:52ee CreateChain_B9_scanHitEnd
+09:5347 CreateChain_B9_eofCheck
+09:5363 CreateChain_B9_eofCheckCont
+09:5366 CreateChain_B9_eofCheckVal
+09:5372 CreateChain_B9_matchScanStart
+09:5398 CreateChain_B9_scanContinue
+09:539b CreateChain_B9_noFreeRet0
+09:53a4 CreateChain_B9_putFatLink
+09:53f9 CreateChain_B9_updateFreeClst
+09:544e CreateChain_B9_linkAndDirty
+09:549a CreateChain_B9_putFatFail
+09:54a2 CreateChain_B9_putFatFailCont
+09:54a5 CreateChain_B9_diskErrorRet
+09:54b5 CreateChain_B9_setFrNoFilesystem
+09:54be CreateChain_B9_storeResult
+09:54cf CreateChain_B9_newChainOnly
+09:54d8 CreateChain_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5197 CreateChain_B3_clstEmptySet1
+03:51a3 CreateChain_B3_getFatExisting
+03:51e2 CreateChain_B3_afterGetFat
+03:51fd CreateChain_B3_notEofCluster
+03:5200 CreateChain_B3_eofCluster
+03:520c CreateChain_B3_cmpNFatent
+03:5249 CreateChain_B3_stretchOk
+03:525a CreateChain_B3_copyScanState
+03:5294 CreateChain_B3_allocScan
+03:52a3 CreateChain_B3_allocScanCont
+03:52e2 CreateChain_B3_scanHitEnd
+03:533b CreateChain_B3_eofCheck
+03:5357 CreateChain_B3_eofCheckCont
+03:535a CreateChain_B3_eofCheckVal
+03:5366 CreateChain_B3_matchScanStart
+03:538c CreateChain_B3_scanContinue
+03:538f CreateChain_B3_noFreeRet0
+03:5398 CreateChain_B3_putFatLink
+03:53ed CreateChain_B3_updateFreeClst
+03:5442 CreateChain_B3_linkAndDirty
+03:548e CreateChain_B3_putFatFail
+03:5496 CreateChain_B3_putFatFailCont
+03:5499 CreateChain_B3_diskErrorRet
+03:54a9 CreateChain_B3_setFrNoFilesystem
+03:54b2 CreateChain_B3_storeResult
+03:54c3 CreateChain_B3_newChainOnly
+03:54cc CreateChain_B3_epilogue
+06:4fc4 CreateChain_B6_clstEmptySet1
+06:4fd0 CreateChain_B6_getFatExisting
+06:500f CreateChain_B6_afterGetFat
+06:502a CreateChain_B6_notEofCluster
+06:502d CreateChain_B6_eofCluster
+06:5039 CreateChain_B6_cmpNFatent
+06:5076 CreateChain_B6_stretchOk
+06:5087 CreateChain_B6_copyScanState
+06:50c1 CreateChain_B6_allocScan
+06:50d0 CreateChain_B6_allocScanCont
+06:510f CreateChain_B6_scanHitEnd
+06:5168 CreateChain_B6_eofCheck
+06:5184 CreateChain_B6_eofCheckCont
+06:5187 CreateChain_B6_eofCheckVal
+06:5193 CreateChain_B6_matchScanStart
+06:51b9 CreateChain_B6_scanContinue
+06:51bc CreateChain_B6_noFreeRet0
+06:51c5 CreateChain_B6_putFatLink
+06:521a CreateChain_B6_updateFreeClst
+06:526f CreateChain_B6_linkAndDirty
+06:52bb CreateChain_B6_putFatFail
+06:52c3 CreateChain_B6_putFatFailCont
+06:52c6 CreateChain_B6_diskErrorRet
+06:52d6 CreateChain_B6_setFrNoFilesystem
+06:52df CreateChain_B6_storeResult
+06:52f0 CreateChain_B6_newChainOnly
+06:52f9 CreateChain_B6_epilogue
+07:4ff2 CreateChain_B7_clstEmptySet1
+07:4ffe CreateChain_B7_getFatExisting
+07:503d CreateChain_B7_afterGetFat
+07:5058 CreateChain_B7_notEofCluster
+07:505b CreateChain_B7_eofCluster
+07:5067 CreateChain_B7_cmpNFatent
+07:50a4 CreateChain_B7_stretchOk
+07:50b5 CreateChain_B7_copyScanState
+07:50ef CreateChain_B7_allocScan
+07:50fe CreateChain_B7_allocScanCont
+07:513d CreateChain_B7_scanHitEnd
+07:5196 CreateChain_B7_eofCheck
+07:51b2 CreateChain_B7_eofCheckCont
+07:51b5 CreateChain_B7_eofCheckVal
+07:51c1 CreateChain_B7_matchScanStart
+07:51e7 CreateChain_B7_scanContinue
+07:51ea CreateChain_B7_noFreeRet0
+07:51f3 CreateChain_B7_putFatLink
+07:5248 CreateChain_B7_updateFreeClst
+07:529d CreateChain_B7_linkAndDirty
+07:52e9 CreateChain_B7_putFatFail
+07:52f1 CreateChain_B7_putFatFailCont
+07:52f4 CreateChain_B7_diskErrorRet
+07:5304 CreateChain_B7_setFrNoFilesystem
+07:530d CreateChain_B7_storeResult
+07:531e CreateChain_B7_newChainOnly
+07:5327 CreateChain_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirFind_B9 ---
+09:6469 DirFind_B9_initOrd
+09:64db DirFind_B9_readEntry
+09:6534 DirFind_B9_checkAttr
+09:6553 DirFind_B9_volumeSkip
+09:6559 DirFind_B9_deletedEntry
+09:656c DirFind_B9_checkAmLfn
+09:6574 DirFind_B9_sfnPath
+09:6577 DirFind_B9_lfnChain
+09:658f DirFind_B9_storeOrdChksum
+09:65bb DirFind_B9_ordCompare
+09:65c6 DirFind_B9_ordMismatch
+09:65c9 DirFind_B9_ordMatch
+09:65dd DirFind_B9_cmpLfnFail
+09:65e2 DirFind_B9_cmpLfnOk
+09:65e4 DirFind_B9_afterCmpLfn
+09:6606 DirFind_B9_ordUpdateFail
+09:660b DirFind_B9_ordUpdateOk
+09:660d DirFind_B9_afterOrdUpdate
+09:661a DirFind_B9_ordInvalidate
+09:661c DirFind_B9_storeOrd
+09:6622 DirFind_B9_sumSfnMatch
+09:663b DirFind_B9_checkNtres
+09:6659 DirFind_B9_ntresSkip
+09:665c DirFind_B9_memcmpSfn
+09:6678 DirFind_B9_invalidate
+09:6688 DirFind_B9_dirNextLoop
+09:66a0 DirFind_B9_found
+09:66a3 DirFind_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:645e DirFind_B3_initOrd
+03:64d0 DirFind_B3_readEntry
+03:6529 DirFind_B3_checkAttr
+03:6548 DirFind_B3_volumeSkip
+03:654e DirFind_B3_deletedEntry
+03:6561 DirFind_B3_checkAmLfn
+03:6569 DirFind_B3_sfnPath
+03:656c DirFind_B3_lfnChain
+03:6584 DirFind_B3_storeOrdChksum
+03:65b0 DirFind_B3_ordCompare
+03:65bb DirFind_B3_ordMismatch
+03:65be DirFind_B3_ordMatch
+03:65d2 DirFind_B3_cmpLfnFail
+03:65d7 DirFind_B3_cmpLfnOk
+03:65d9 DirFind_B3_afterCmpLfn
+03:65fb DirFind_B3_ordUpdateFail
+03:6600 DirFind_B3_ordUpdateOk
+03:6602 DirFind_B3_afterOrdUpdate
+03:660f DirFind_B3_ordInvalidate
+03:6611 DirFind_B3_storeOrd
+03:6617 DirFind_B3_sumSfnMatch
+03:6630 DirFind_B3_checkNtres
+03:664e DirFind_B3_ntresSkip
+03:6651 DirFind_B3_memcmpSfn
+03:666d DirFind_B3_invalidate
+03:667d DirFind_B3_dirNextLoop
+03:6695 DirFind_B3_found
+03:6698 DirFind_B3_epilogue
+05:528a DirFind_B5_initOrd
+05:52fc DirFind_B5_readEntry
+05:5355 DirFind_B5_checkAttr
+05:5374 DirFind_B5_volumeSkip
+05:537a DirFind_B5_deletedEntry
+05:538d DirFind_B5_checkAmLfn
+05:5395 DirFind_B5_sfnPath
+05:5398 DirFind_B5_lfnChain
+05:53b0 DirFind_B5_storeOrdChksum
+05:53dc DirFind_B5_ordCompare
+05:53e7 DirFind_B5_ordMismatch
+05:53ea DirFind_B5_ordMatch
+05:53fe DirFind_B5_cmpLfnFail
+05:5403 DirFind_B5_cmpLfnOk
+05:5405 DirFind_B5_afterCmpLfn
+05:5427 DirFind_B5_ordUpdateFail
+05:542c DirFind_B5_ordUpdateOk
+05:542e DirFind_B5_afterOrdUpdate
+05:543b DirFind_B5_ordInvalidate
+05:543d DirFind_B5_storeOrd
+05:5443 DirFind_B5_sumSfnMatch
+05:545c DirFind_B5_checkNtres
+05:547a DirFind_B5_ntresSkip
+05:547d DirFind_B5_memcmpSfn
+05:5499 DirFind_B5_invalidate
+05:54a9 DirFind_B5_dirNextLoop
+05:54c1 DirFind_B5_found
+05:54c4 DirFind_B5_epilogue
+06:628b DirFind_B6_initOrd
+06:62fd DirFind_B6_readEntry
+06:6356 DirFind_B6_checkAttr
+06:6375 DirFind_B6_volumeSkip
+06:637b DirFind_B6_deletedEntry
+06:638e DirFind_B6_checkAmLfn
+06:6396 DirFind_B6_sfnPath
+06:6399 DirFind_B6_lfnChain
+06:63b1 DirFind_B6_storeOrdChksum
+06:63dd DirFind_B6_ordCompare
+06:63e8 DirFind_B6_ordMismatch
+06:63eb DirFind_B6_ordMatch
+06:63ff DirFind_B6_cmpLfnFail
+06:6404 DirFind_B6_cmpLfnOk
+06:6406 DirFind_B6_afterCmpLfn
+06:6428 DirFind_B6_ordUpdateFail
+06:642d DirFind_B6_ordUpdateOk
+06:642f DirFind_B6_afterOrdUpdate
+06:643c DirFind_B6_ordInvalidate
+06:643e DirFind_B6_storeOrd
+06:6444 DirFind_B6_sumSfnMatch
+06:645d DirFind_B6_checkNtres
+06:647b DirFind_B6_ntresSkip
+06:647e DirFind_B6_memcmpSfn
+06:649a DirFind_B6_invalidate
+06:64aa DirFind_B6_dirNextLoop
+06:64c2 DirFind_B6_found
+06:64c5 DirFind_B6_epilogue
+07:62b9 DirFind_B7_initOrd
+07:632b DirFind_B7_readEntry
+07:6384 DirFind_B7_checkAttr
+07:63a3 DirFind_B7_volumeSkip
+07:63a9 DirFind_B7_deletedEntry
+07:63bc DirFind_B7_checkAmLfn
+07:63c4 DirFind_B7_sfnPath
+07:63c7 DirFind_B7_lfnChain
+07:63df DirFind_B7_storeOrdChksum
+07:640b DirFind_B7_ordCompare
+07:6416 DirFind_B7_ordMismatch
+07:6419 DirFind_B7_ordMatch
+07:642d DirFind_B7_cmpLfnFail
+07:6432 DirFind_B7_cmpLfnOk
+07:6434 DirFind_B7_afterCmpLfn
+07:6456 DirFind_B7_ordUpdateFail
+07:645b DirFind_B7_ordUpdateOk
+07:645d DirFind_B7_afterOrdUpdate
+07:646a DirFind_B7_ordInvalidate
+07:646c DirFind_B7_storeOrd
+07:6472 DirFind_B7_sumSfnMatch
+07:648b DirFind_B7_checkNtres
+07:64a9 DirFind_B7_ntresSkip
+07:64ac DirFind_B7_memcmpSfn
+07:64c8 DirFind_B7_invalidate
+07:64d8 DirFind_B7_dirNextLoop
+07:64f0 DirFind_B7_found
+07:64f3 DirFind_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirNext_B9 ---
+09:5862 DirNext_B9_noFile
+09:5867 DirNext_B9_checkInSector
+09:5885 DirNext_B9_incSector
+09:58e6 DirNext_B9_stretchPath
+09:58f4 DirNext_B9_sectToClust
+09:595c DirNext_B9_clustUnderflow
+09:5977 DirNext_B9_clustIncOk
+09:597a DirNext_B9_intErr
+09:597f DirNext_B9_afterClustInc
+09:59c6 DirNext_B9_createChain
+09:5a19 DirNext_B9_afterCreateChain
+09:5a35 DirNext_B9_newClustOk
+09:5a38 DirNext_B9_diskErr
+09:5a3d DirNext_B9_incNewClust
+09:5a58 DirNext_B9_newClustWrapOk
+09:5a5b DirNext_B9_syncIntErr
+09:5a60 DirNext_B9_syncWindow
+09:5a7b DirNext_B9_clearDirBuf
+09:5aec DirNext_B9_sectorLoop
+09:5b2f DirNext_B9_stampTemplate
+09:5b5d DirNext_B9_stampCont
+09:5b76 DirNext_B9_stampNext
+09:5b81 DirNext_B9_partialTail
+09:5bde DirNext_B9_storeClust
+09:5c2f DirNext_B9_advanceOk
+09:5c8c DirNext_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5856 DirNext_B3_noFile
+03:585b DirNext_B3_checkInSector
+03:5879 DirNext_B3_incSector
+03:58da DirNext_B3_stretchPath
+03:58e8 DirNext_B3_sectToClust
+03:5950 DirNext_B3_clustUnderflow
+03:596b DirNext_B3_clustIncOk
+03:596e DirNext_B3_intErr
+03:5973 DirNext_B3_afterClustInc
+03:59ba DirNext_B3_createChain
+03:5a0d DirNext_B3_afterCreateChain
+03:5a29 DirNext_B3_newClustOk
+03:5a2c DirNext_B3_diskErr
+03:5a31 DirNext_B3_incNewClust
+03:5a4c DirNext_B3_newClustWrapOk
+03:5a4f DirNext_B3_syncIntErr
+03:5a54 DirNext_B3_syncWindow
+03:5a6f DirNext_B3_clearDirBuf
+05:4aeb DirNext_B5_noFile
+05:4af0 DirNext_B5_checkInSector
+05:4b0e DirNext_B5_incSector
+05:4b6f DirNext_B5_stretchPath
+05:4b7d DirNext_B5_sectToClust
+05:4f15 PutLfn_B5
+06:5683 DirNext_B6_noFile
+06:5688 DirNext_B6_checkInSector
+06:56a6 DirNext_B6_incSector
+06:5707 DirNext_B6_stretchPath
+06:5715 DirNext_B6_sectToClust
+06:577d DirNext_B6_clustUnderflow
+06:5798 DirNext_B6_clustIncOk
+06:579b DirNext_B6_intErr
+06:57a0 DirNext_B6_afterClustInc
+06:57e7 DirNext_B6_createChain
+06:583a DirNext_B6_afterCreateChain
+06:5856 DirNext_B6_newClustOk
+06:5859 DirNext_B6_diskErr
+06:585e DirNext_B6_incNewClust
+06:5879 DirNext_B6_newClustWrapOk
+06:587c DirNext_B6_syncIntErr
+06:5881 DirNext_B6_syncWindow
+06:589c DirNext_B6_clearDirBuf
+07:56b1 DirNext_B7_noFile
+07:56b6 DirNext_B7_checkInSector
+07:56d4 DirNext_B7_incSector
+07:5735 DirNext_B7_stretchPath
+07:5743 DirNext_B7_sectToClust
+07:57ab DirNext_B7_clustUnderflow
+07:57c6 DirNext_B7_clustIncOk
+07:57c9 DirNext_B7_intErr
+07:57ce DirNext_B7_afterClustInc
+07:5815 DirNext_B7_createChain
+07:5868 DirNext_B7_afterCreateChain
+07:5884 DirNext_B7_newClustOk
+07:5887 DirNext_B7_diskErr
+07:588c DirNext_B7_incNewClust
+07:58a7 DirNext_B7_newClustWrapOk
+07:58aa DirNext_B7_syncIntErr
+07:58af DirNext_B7_syncWindow
+07:58ca DirNext_B7_clearDirBuf
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Open_B9 ---
+09:7882 Open_B9_afterFollow
+09:788c Open_B9_notNoFile
+09:788f Open_B9_noFileCheckDir
+09:78af Open_B9_deniedIsDir
+09:78b3 Open_B9_checkCreate
+09:78bd Open_B9_openFail
+09:78c0 Open_B9_createChain
+09:7915 Open_B9_afterCreateChain
+09:7931 Open_B9_newClustOk
+09:7934 Open_B9_diskErr
+09:7938 Open_B9_checkClustWrap
+09:7953 Open_B9_clustWrapOk
+09:7956 Open_B9_intErr
+09:795a Open_B9_syncWindow
+09:7976 Open_B9_afterSync
+09:7a84 Open_B9_attrNotTrunc
+09:7a87 Open_B9_truncAttr
+09:7acd Open_B9_sizeMismatch
+09:7ad0 Open_B9_zeroFsize
+09:7ad7 Open_B9_stClustStore
+09:7b17 Open_B9_lfnOrdLoop
+09:7b54 Open_B9_lfnOrdCont
+09:7ba0 Open_B9_dirRegister
+09:7bb5 Open_B9_regFailCleanup
+09:7c07 Open_B9_okPath
+09:7cb1 Open_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+06:7442 Open_B6_checkClustWrap
+06:7621 Open_B6_lfnOrdLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirRead_B9 ---
+09:66c9 DirRead_B9_entryLoop
+09:6736 DirRead_B9_checkSfn
+09:6764 DirRead_B9_volCompare
+09:6765 DirRead_B9_volCompareJr
+09:6776 DirRead_B9_skipEntry
+09:677d DirRead_B9_checkOrd
+09:6787 DirRead_B9_sfnPath
+09:678a DirRead_B9_lfnOrd
+09:6794 DirRead_B9_stashChksum
+09:67d8 DirRead_B9_attrFilter
+09:67e3 DirRead_B9_attrMismatch
+09:67e6 DirRead_B9_chksumMatch
+09:67fa DirRead_B9_lfnFail
+09:67ff DirRead_B9_lfnOk
+09:6801 DirRead_B9_afterLfnGate
+09:682b DirRead_B9_pickLfnFail
+09:6830 DirRead_B9_pickLfnOk
+09:6832 DirRead_B9_afterPickLfn
+09:683f DirRead_B9_ordInvalidate
+09:6841 DirRead_B9_storeOrd
+09:6847 DirRead_B9_sfnSumCheck
+09:6860 DirRead_B9_clearLfnPtr
+09:6877 DirRead_B9_dirNext
+09:688f DirRead_B9_done
+09:68aa DirRead_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+05:54ea DirRead_B5_entryLoop
+05:5557 DirRead_B5_checkSfn
+05:5585 DirRead_B5_volCompare
+05:5586 DirRead_B5_volCompareJr
+05:5597 DirRead_B5_skipEntry
+05:559e DirRead_B5_checkOrd
+05:55a8 DirRead_B5_sfnPath
+05:55ab DirRead_B5_lfnOrd
+05:55b5 DirRead_B5_stashChksum
+05:55f9 DirRead_B5_attrFilter
+05:5604 DirRead_B5_attrMismatch
+05:5607 DirRead_B5_chksumMatch
+05:561b DirRead_B5_lfnFail
+05:5620 DirRead_B5_lfnOk
+05:5622 DirRead_B5_afterLfnGate
+05:564c DirRead_B5_pickLfnFail
+05:5651 DirRead_B5_pickLfnOk
+05:5653 DirRead_B5_afterPickLfn
+05:5660 DirRead_B5_ordInvalidate
+05:5662 DirRead_B5_storeOrd
+05:5668 DirRead_B5_sfnSumCheck
+05:5681 DirRead_B5_clearLfnPtr
+05:5698 DirRead_B5_dirNext
+05:56b0 DirRead_B5_done
+05:56cb DirRead_B5_epilogue
+07:6519 DirRead_B7_entryLoop
+07:6586 DirRead_B7_checkSfn
+07:65b4 DirRead_B7_volCompare
+07:65b5 DirRead_B7_volCompareJr
+07:65c6 DirRead_B7_skipEntry
+07:65cd DirRead_B7_checkOrd
+07:65d7 DirRead_B7_sfnPath
+07:65da DirRead_B7_lfnOrd
+07:65e4 DirRead_B7_stashChksum
+07:6628 DirRead_B7_attrFilter
+07:6633 DirRead_B7_attrMismatch
+07:6636 DirRead_B7_chksumMatch
+07:664a DirRead_B7_lfnFail
+07:664f DirRead_B7_lfnOk
+07:6651 DirRead_B7_afterLfnGate
+07:667b DirRead_B7_pickLfnFail
+07:6680 DirRead_B7_pickLfnOk
+07:6682 DirRead_B7_afterPickLfn
+07:668f DirRead_B7_ordInvalidate
+07:6691 DirRead_B7_storeOrd
+07:6697 DirRead_B7_sfnSumCheck
+07:66b0 DirRead_B7_clearLfnPtr
+07:66c7 DirRead_B7_dirNext
+07:66df DirRead_B7_done
+07:66fa DirRead_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirSdi_B9 ---
+09:552d DirSdi_B9_rangeCheck
+09:5568 DirSdi_B9_intErr
+09:556d DirSdi_B9_afterRange
+09:558b DirSdi_B9_notFat32Root
+09:558e DirSdi_B9_fat32RootBase
+09:55be DirSdi_B9_staticOrDyn
+09:55ea DirSdi_B9_staticSect
+09:5607 DirSdi_B9_dynCsize
+09:561b DirSdi_B9_csizeShift
+09:5622 DirSdi_B9_csizeShiftLoop
+09:5625 DirSdi_B9_followLoop
+09:5687 DirSdi_B9_afterGetFat
+09:568a DirSdi_B9_diskErr
+09:568f DirSdi_B9_checkClust
+09:56d9 DirSdi_B9_clustIntErr
+09:56de DirSdi_B9_subCsz
+09:56f4 DirSdi_B9_clust2Sect
+09:572c DirSdi_B9_storeClust
+09:5759 DirSdi_B9_setSectDir
+09:576f DirSdi_B9_sectDiv
+09:5809 DirSdi_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5521 DirSdi_B3_rangeCheck
+03:555c DirSdi_B3_intErr
+03:5561 DirSdi_B3_afterRange
+03:557f DirSdi_B3_notFat32Root
+03:5582 DirSdi_B3_fat32RootBase
+03:55b2 DirSdi_B3_staticOrDyn
+03:55de DirSdi_B3_staticSect
+03:55fb DirSdi_B3_dynCsize
+03:560f DirSdi_B3_csizeShift
+03:5616 DirSdi_B3_csizeShiftLoop
+03:5619 DirSdi_B3_followLoop
+03:567b DirSdi_B3_afterGetFat
+03:567e DirSdi_B3_diskErr
+03:5683 DirSdi_B3_checkClust
+03:56cd DirSdi_B3_clustIntErr
+03:56d2 DirSdi_B3_subCsz
+03:56e8 DirSdi_B3_clust2Sect
+03:5720 DirSdi_B3_storeClust
+03:574d DirSdi_B3_setSectDir
+03:5763 DirSdi_B3_sectDiv
+03:57fd DirSdi_B3_epilogue
+05:47ae DirSdi_B5_rangeCheck
+05:47e9 DirSdi_B5_intErr
+05:47ee DirSdi_B5_afterRange
+05:480c DirSdi_B5_notFat32Root
+05:480f DirSdi_B5_fat32RootBase
+05:483f DirSdi_B5_staticOrDyn
+05:486b DirSdi_B5_staticSect
+05:4888 DirSdi_B5_dynCsize
+05:489c DirSdi_B5_csizeShift
+05:48a3 DirSdi_B5_csizeShiftLoop
+05:48a6 DirSdi_B5_followLoop
+06:534e DirSdi_B6_rangeCheck
+06:5389 DirSdi_B6_intErr
+06:538e DirSdi_B6_afterRange
+06:53ac DirSdi_B6_notFat32Root
+06:53af DirSdi_B6_fat32RootBase
+06:53df DirSdi_B6_staticOrDyn
+06:540b DirSdi_B6_staticSect
+06:5428 DirSdi_B6_dynCsize
+06:543c DirSdi_B6_csizeShift
+06:5443 DirSdi_B6_csizeShiftLoop
+06:5446 DirSdi_B6_followLoop
+06:54a8 DirSdi_B6_afterGetFat
+06:54ab DirSdi_B6_diskErr
+06:54b0 DirSdi_B6_checkClust
+06:54fa DirSdi_B6_clustIntErr
+06:54ff DirSdi_B6_subCsz
+06:5515 DirSdi_B6_clust2Sect
+06:554d DirSdi_B6_storeClust
+06:557a DirSdi_B6_setSectDir
+06:5590 DirSdi_B6_sectDiv
+06:562a DirSdi_B6_epilogue
+07:537c DirSdi_B7_rangeCheck
+07:53b7 DirSdi_B7_intErr
+07:53bc DirSdi_B7_afterRange
+07:53da DirSdi_B7_notFat32Root
+07:53dd DirSdi_B7_fat32RootBase
+07:540d DirSdi_B7_staticOrDyn
+07:5439 DirSdi_B7_staticSect
+07:5456 DirSdi_B7_dynCsize
+07:546a DirSdi_B7_csizeShift
+07:5471 DirSdi_B7_csizeShiftLoop
+07:5474 DirSdi_B7_followLoop
+07:54d6 DirSdi_B7_afterGetFat
+07:54d9 DirSdi_B7_diskErr
+07:54de DirSdi_B7_checkClust
+07:5528 DirSdi_B7_clustIntErr
+07:552d DirSdi_B7_subCsz
+07:5543 DirSdi_B7_clust2Sect
+07:557b DirSdi_B7_storeClust
+07:55a8 DirSdi_B7_setSectDir
+07:55be DirSdi_B7_sectDiv
+07:5658 DirSdi_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirRegister_B9 ---
+09:6921 DirRegister_B9_deniedIsDir
+09:6926 DirRegister_B9_checkCollision
+09:692e DirRegister_B9_genNumInit
+09:694f DirRegister_B9_genNumLoop
+09:6992 DirRegister_B9_genNumNext
+09:6995 DirRegister_B9_afterGenNum
+09:69a5 DirRegister_B9_genNumOk
+09:69a8 DirRegister_B9_deniedTooMany
+09:69ad DirRegister_B9_checkNoFile
+09:69bb DirRegister_B9_patchAttrSize
+09:69da DirRegister_B9_checkLfn
+09:69e8 DirRegister_B9_countLfnSlots
+09:69ef DirRegister_B9_lfnLenLoop
+09:6a12 DirRegister_B9_lfnLenCont
+09:6a15 DirRegister_B9_u16DivSlots
+09:6a33 DirRegister_B9_slotsOne
+09:6a3a DirRegister_B9_dirAlloc
+09:6ac2 DirRegister_B9_putLfnLoop
+09:6b6c DirRegister_B9_finalizeSfn
+09:6c38 DirRegister_B9_setResult
+09:6c3b DirRegister_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:670c DirRegister_B3_deniedIsDir
+03:6711 DirRegister_B3_checkCollision
+03:6719 DirRegister_B3_genNumInit
+03:673a DirRegister_B3_genNumLoop
+03:677d DirRegister_B3_genNumNext
+03:6780 DirRegister_B3_afterGenNum
+03:6790 DirRegister_B3_genNumOk
+03:6793 DirRegister_B3_deniedTooMany
+03:6798 DirRegister_B3_checkNoFile
+03:67a6 DirRegister_B3_patchAttrSize
+03:67c5 DirRegister_B3_checkLfn
+03:67d3 DirRegister_B3_countLfnSlots
+03:67da DirRegister_B3_lfnLenLoop
+03:67fd DirRegister_B3_lfnLenCont
+03:6800 DirRegister_B3_u16DivSlots
+03:681e DirRegister_B3_slotsOne
+03:6825 DirRegister_B3_dirAlloc
+03:68ad DirRegister_B3_putLfnLoop
+03:6957 DirRegister_B3_finalizeSfn
+06:6539 DirRegister_B6_deniedIsDir
+06:653e DirRegister_B6_checkCollision
+06:6546 DirRegister_B6_genNumInit
+06:6567 DirRegister_B6_genNumLoop
+06:65aa DirRegister_B6_genNumNext
+06:65ad DirRegister_B6_afterGenNum
+06:65bd DirRegister_B6_genNumOk
+06:65c0 DirRegister_B6_deniedTooMany
+06:65c5 DirRegister_B6_checkNoFile
+06:65d3 DirRegister_B6_patchAttrSize
+06:65f2 DirRegister_B6_checkLfn
+06:6600 DirRegister_B6_countLfnSlots
+06:6607 DirRegister_B6_lfnLenLoop
+06:662a DirRegister_B6_lfnLenCont
+06:662d DirRegister_B6_u16DivSlots
+06:664b DirRegister_B6_slotsOne
+06:6652 DirRegister_B6_dirAlloc
+06:66da DirRegister_B6_putLfnLoop
+06:6784 DirRegister_B6_finalizeSfn
+07:6771 DirRegister_B7_deniedIsDir
+07:6776 DirRegister_B7_checkCollision
+07:677e DirRegister_B7_genNumInit
+07:679f DirRegister_B7_genNumLoop
+07:67e2 DirRegister_B7_genNumNext
+07:67e5 DirRegister_B7_afterGenNum
+07:67f5 DirRegister_B7_genNumOk
+07:67f8 DirRegister_B7_deniedTooMany
+07:67fd DirRegister_B7_checkNoFile
+07:680b DirRegister_B7_patchAttrSize
+07:682a DirRegister_B7_checkLfn
+07:6838 DirRegister_B7_countLfnSlots
+07:683f DirRegister_B7_lfnLenLoop
+07:6862 DirRegister_B7_lfnLenCont
+07:6865 DirRegister_B7_u16DivSlots
+07:6883 DirRegister_B7_slotsOne
+07:688a DirRegister_B7_dirAlloc
+07:6912 DirRegister_B7_putLfnLoop
+07:69bc DirRegister_B7_finalizeSfn
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FollowPath_B9 ---
+09:72df FollowPath_B9_hasLeadSep
+09:72e2 FollowPath_B9_clearSclust
+09:730b FollowPath_B9_copyCdir
+09:7349 FollowPath_B9_checkEmptyPath
+09:7386 FollowPath_B9_segmentLoop
+09:73e4 FollowPath_B9_findFail
+09:73e7 FollowPath_B9_noFileLastSeg
+09:73f1 FollowPath_B9_dotEntry
+09:742b FollowPath_B9_lastSegOk
+09:7432 FollowPath_B9_nonLastNsflag
+09:743c FollowPath_B9_nsLastOk
+09:743f FollowPath_B9_deniedNotDir
+09:7446 FollowPath_B9_found
+09:748b FollowPath_B9_foundLastSeg
+09:748e FollowPath_B9_checkAttrDir
+09:74b8 FollowPath_B9_isDir
+09:74bb FollowPath_B9_notDir
+09:74c2 FollowPath_B9_ldClustEnter
+09:750a FollowPath_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:70cc FollowPath_B3_hasLeadSep
+03:70cf FollowPath_B3_clearSclust
+03:70f8 FollowPath_B3_copyCdir
+03:7136 FollowPath_B3_checkEmptyPath
+03:7173 FollowPath_B3_segmentLoop
+05:602f FollowPath_B5_hasLeadSep
+05:6032 FollowPath_B5_clearSclust
+05:605b FollowPath_B5_copyCdir
+05:6099 FollowPath_B5_checkEmptyPath
+05:60d6 FollowPath_B5_segmentLoop
+05:6134 FollowPath_B5_findFail
+05:6137 FollowPath_B5_noFileLastSeg
+05:6141 FollowPath_B5_dotEntry
+05:617b FollowPath_B5_lastSegOk
+05:6182 FollowPath_B5_nonLastNsflag
+05:618c FollowPath_B5_nsLastOk
+05:618f FollowPath_B5_deniedNotDir
+05:6196 FollowPath_B5_found
+05:61db FollowPath_B5_foundLastSeg
+05:61de FollowPath_B5_checkAttrDir
+05:6208 FollowPath_B5_isDir
+05:620b FollowPath_B5_notDir
+05:6212 FollowPath_B5_ldClustEnter
+05:625a FollowPath_B5_epilogue
+06:6ef9 FollowPath_B6_hasLeadSep
+06:6efc FollowPath_B6_clearSclust
+06:6f25 FollowPath_B6_copyCdir
+06:6f63 FollowPath_B6_checkEmptyPath
+06:6fa0 FollowPath_B6_segmentLoop
+06:6ffe FollowPath_B6_findFail
+06:7001 FollowPath_B6_noFileLastSeg
+06:700b FollowPath_B6_dotEntry
+06:7045 FollowPath_B6_lastSegOk
+06:704c FollowPath_B6_nonLastNsflag
+06:7056 FollowPath_B6_nsLastOk
+06:7059 FollowPath_B6_deniedNotDir
+06:7060 FollowPath_B6_found
+06:70a5 FollowPath_B6_foundLastSeg
+06:70a8 FollowPath_B6_checkAttrDir
+06:70d2 FollowPath_B6_isDir
+06:70d5 FollowPath_B6_notDir
+06:70dc FollowPath_B6_ldClustEnter
+06:7124 FollowPath_B6_epilogue
+07:73ed FollowPath_B7_hasLeadSep
+07:73f0 FollowPath_B7_clearSclust
+07:7419 FollowPath_B7_copyCdir
+07:7457 FollowPath_B7_checkEmptyPath
+07:7494 FollowPath_B7_segmentLoop
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GenNumName_B9 ---
+09:623b GenNumName_B9_crcLfnLoop
+09:6263 GenNumName_B9_crcBitLoop
+09:62d7 GenNumName_B9_crcPolyXor
+09:62e5 GenNumName_B9_crcBitNext
+09:62f8 GenNumName_B9_storeHashSeq
+09:6304 GenNumName_B9_makeSuffix
+09:6313 GenNumName_B9_hexDigit
+09:632b GenNumName_B9_storeDigit
+09:634e GenNumName_B9_seqShr4
+09:637c GenNumName_B9_findAppend
+09:63a6 GenNumName_B9_findAppendCont
+09:63a9 GenNumName_B9_appendStart
+09:63b0 GenNumName_B9_appendLoop
+09:63bb GenNumName_B9_appendInc
+09:63dd GenNumName_B9_appendFromNs
+09:63ea GenNumName_B9_appendSpace
+09:63ec GenNumName_B9_appendStore
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6230 GenNumName_B3_crcLfnLoop
+03:6258 GenNumName_B3_crcBitLoop
+03:62cc GenNumName_B3_crcPolyXor
+03:62da GenNumName_B3_crcBitNext
+03:62ed GenNumName_B3_storeHashSeq
+03:62f9 GenNumName_B3_makeSuffix
+03:6308 GenNumName_B3_hexDigit
+03:6320 GenNumName_B3_storeDigit
+03:6343 GenNumName_B3_seqShr4
+03:6371 GenNumName_B3_findAppend
+03:639b GenNumName_B3_findAppendCont
+03:639e GenNumName_B3_appendStart
+03:63a5 GenNumName_B3_appendLoop
+03:63b0 GenNumName_B3_appendInc
+03:63d2 GenNumName_B3_appendFromNs
+03:63df GenNumName_B3_appendSpace
+03:63e1 GenNumName_B3_appendStore
+05:505c GenNumName_B5_crcLfnLoop
+05:5084 GenNumName_B5_crcBitLoop
+05:50f8 GenNumName_B5_crcPolyXor
+05:5106 GenNumName_B5_crcBitNext
+05:5119 GenNumName_B5_storeHashSeq
+05:5125 GenNumName_B5_makeSuffix
+05:5134 GenNumName_B5_hexDigit
+05:514c GenNumName_B5_storeDigit
+05:516f GenNumName_B5_seqShr4
+05:519d GenNumName_B5_findAppend
+05:51c7 GenNumName_B5_findAppendCont
+05:51ca GenNumName_B5_appendStart
+05:51d1 GenNumName_B5_appendLoop
+05:51dc GenNumName_B5_appendInc
+05:51fe GenNumName_B5_appendFromNs
+05:520b GenNumName_B5_appendSpace
+05:520d GenNumName_B5_appendStore
+06:605d GenNumName_B6_crcLfnLoop
+06:6085 GenNumName_B6_crcBitLoop
+06:60f9 GenNumName_B6_crcPolyXor
+06:6107 GenNumName_B6_crcBitNext
+06:611a GenNumName_B6_storeHashSeq
+06:6126 GenNumName_B6_makeSuffix
+06:6135 GenNumName_B6_hexDigit
+06:614d GenNumName_B6_storeDigit
+06:6170 GenNumName_B6_seqShr4
+06:619e GenNumName_B6_findAppend
+06:61c8 GenNumName_B6_findAppendCont
+06:61cb GenNumName_B6_appendStart
+06:61d2 GenNumName_B6_appendLoop
+06:61dd GenNumName_B6_appendInc
+06:61ff GenNumName_B6_appendFromNs
+06:620c GenNumName_B6_appendSpace
+06:620e GenNumName_B6_appendStore
+07:608b GenNumName_B7_crcLfnLoop
+07:60b3 GenNumName_B7_crcBitLoop
+07:6127 GenNumName_B7_crcPolyXor
+07:6135 GenNumName_B7_crcBitNext
+07:6148 GenNumName_B7_storeHashSeq
+07:6154 GenNumName_B7_makeSuffix
+07:6163 GenNumName_B7_hexDigit
+07:617b GenNumName_B7_storeDigit
+07:619e GenNumName_B7_seqShr4
+07:61cc GenNumName_B7_findAppend
+07:61f6 GenNumName_B7_findAppendCont
+07:61f9 GenNumName_B7_appendStart
+07:6200 GenNumName_B7_appendLoop
+07:620b GenNumName_B7_appendInc
+07:622d GenNumName_B7_appendFromNs
+07:623a GenNumName_B7_appendSpace
+07:623c GenNumName_B7_appendStore
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- RemoveChain_B9 ---
+09:4fe5 RemoveChain_B9_intErr
+09:4fea RemoveChain_B9_okInit
+09:4fec RemoveChain_B9_walkLoop
+09:5060 RemoveChain_B9_notIntFat
+09:5063 RemoveChain_B9_fatIntErr
+09:5068 RemoveChain_B9_checkDiskErr
+09:5083 RemoveChain_B9_notDiskErr
+09:5086 RemoveChain_B9_diskErr
+09:508b RemoveChain_B9_putFatFree
+09:50e6 RemoveChain_B9_decFreeClst
+09:50f5 RemoveChain_B9_setDirty
+09:5121 RemoveChain_B9_stashFinal
+09:5135 RemoveChain_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:4fd9 RemoveChain_B3_intErr
+03:4fde RemoveChain_B3_okInit
+03:4fe0 RemoveChain_B3_walkLoop
+03:5054 RemoveChain_B3_notIntFat
+03:5057 RemoveChain_B3_fatIntErr
+03:505c RemoveChain_B3_checkDiskErr
+03:5077 RemoveChain_B3_notDiskErr
+03:507a RemoveChain_B3_diskErr
+03:507f RemoveChain_B3_putFatFree
+03:50da RemoveChain_B3_decFreeClst
+03:50e9 RemoveChain_B3_setDirty
+03:5115 RemoveChain_B3_stashFinal
+03:5129 RemoveChain_B3_epilogue
+06:4e06 RemoveChain_B6_intErr
+06:4e0b RemoveChain_B6_okInit
+06:4e0d RemoveChain_B6_walkLoop
+06:4e81 RemoveChain_B6_notIntFat
+06:4e84 RemoveChain_B6_fatIntErr
+06:4e89 RemoveChain_B6_checkDiskErr
+06:4ea4 RemoveChain_B6_notDiskErr
+06:4ea7 RemoveChain_B6_diskErr
+06:4eac RemoveChain_B6_putFatFree
+06:4f07 RemoveChain_B6_decFreeClst
+06:4f16 RemoveChain_B6_setDirty
+06:4f42 RemoveChain_B6_stashFinal
+06:4f56 RemoveChain_B6_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CmpLfn_B9 ---
+09:5e8a CmpLfn_B9_initOffset
+09:5ec2 CmpLfn_B9_charLoop
+09:5f1e CmpLfn_B9_compareUpper
+09:5f4e CmpLfn_B9_mismatch
+09:5f54 CmpLfn_B9_storeWc
+09:5f5e CmpLfn_B9_checkFiller
+09:5f6b CmpLfn_B9_fillerBad
+09:5f71 CmpLfn_B9_nextChar
+09:5f78 CmpLfn_B9_nextCharJr
+09:5f7b CmpLfn_B9_checkLastSeg
+09:5f89 CmpLfn_B9_lastSegLen
+09:5fb2 CmpLfn_B9_matched
+09:5fb5 CmpLfn_B9_epilogue
+09:5fb8 LfnOfs_B9
+09:5fb8 .data:2b:1
+09:5fe3 MatchLfnEntry_B9
+09:601d MatchLfnEntry_B9_charLoop
+09:6064 MatchLfnEntry_B9_advance
+09:606f MatchLfnEntry_B9_storeOfs
+09:6097 MatchLfnEntry_B9_checkSentinel
+09:60a4 MatchLfnEntry_B9_noMatch
+09:60aa MatchLfnEntry_B9_nextOrd
+09:60b1 MatchLfnEntry_B9_loopBack
+09:60b4 MatchLfnEntry_B9_checkLastFlag
+09:60be MatchLfnEntry_B9_checkSpare
+09:60d0 MatchLfnEntry_B9_clearSpare
+09:60ea MatchLfnEntry_B9_matched
+09:60ed MatchLfnEntry_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5e7f CmpLfn_B3_initOffset
+03:5eb7 CmpLfn_B3_charLoop
+03:5f13 CmpLfn_B3_compareUpper
+03:5f43 CmpLfn_B3_mismatch
+03:5f49 CmpLfn_B3_storeWc
+03:5f53 CmpLfn_B3_checkFiller
+03:5f60 CmpLfn_B3_fillerBad
+03:5f66 CmpLfn_B3_nextChar
+03:5f6d CmpLfn_B3_nextCharJr
+03:5f70 CmpLfn_B3_checkLastSeg
+03:5f7e CmpLfn_B3_lastSegLen
+03:5fa7 CmpLfn_B3_matched
+03:5faa CmpLfn_B3_epilogue
+05:4dbc CmpLfn_B5_initOffset
+05:4df4 CmpLfn_B5_charLoop
+05:4e50 CmpLfn_B5_compareUpper
+05:4e80 CmpLfn_B5_mismatch
+05:4e86 CmpLfn_B5_storeWc
+05:4e90 CmpLfn_B5_checkFiller
+05:4e9d CmpLfn_B5_fillerBad
+05:4ea3 CmpLfn_B5_nextChar
+05:4eaa CmpLfn_B5_nextCharJr
+05:4ead CmpLfn_B5_checkLastSeg
+05:4ebb CmpLfn_B5_lastSegLen
+05:4ee4 CmpLfn_B5_matched
+05:4ee7 CmpLfn_B5_epilogue
+06:5cac CmpLfn_B6_initOffset
+06:5ce4 CmpLfn_B6_charLoop
+06:5d40 CmpLfn_B6_compareUpper
+06:5d70 CmpLfn_B6_mismatch
+06:5d76 CmpLfn_B6_storeWc
+06:5d80 CmpLfn_B6_checkFiller
+06:5d8d CmpLfn_B6_fillerBad
+06:5d93 CmpLfn_B6_nextChar
+06:5d9a CmpLfn_B6_nextCharJr
+06:5d9d CmpLfn_B6_checkLastSeg
+06:5dab CmpLfn_B6_lastSegLen
+06:5dd4 CmpLfn_B6_matched
+06:5dd7 CmpLfn_B6_epilogue
+07:5cda CmpLfn_B7_initOffset
+07:5d12 CmpLfn_B7_charLoop
+07:5d6e CmpLfn_B7_compareUpper
+07:5d9e CmpLfn_B7_mismatch
+07:5da4 CmpLfn_B7_storeWc
+07:5dae CmpLfn_B7_checkFiller
+07:5dbb CmpLfn_B7_fillerBad
+07:5dc1 CmpLfn_B7_nextChar
+07:5dc8 CmpLfn_B7_nextCharJr
+07:5dcb CmpLfn_B7_checkLastSeg
+07:5dd9 CmpLfn_B7_lastSegLen
+07:5e02 CmpLfn_B7_matched
+07:5e05 CmpLfn_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetFat_B9 ---
+09:4761 GetFat_B9_intErr
+09:476d GetFat_B9_switchType
+09:479f GetFat_B9_fat12
+09:483f GetFat_B9_fat12WinOff
+09:48f8 GetFat_B9_fat12Odd
+09:48ff GetFat_B9_fat12Shr4
+09:4909 GetFat_B9_fat12Even
+09:4911 GetFat_B9_storeVal
+09:491f GetFat_B9_fat16
+09:49f5 GetFat_B9_fat32
+09:4ae2 GetFat_B9_badType
+09:4aeb GetFat_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:4755 GetFat_B3_intErr
+03:4761 GetFat_B3_switchType
+03:4793 GetFat_B3_fat12
+03:4833 GetFat_B3_fat12WinOff
+03:48ec GetFat_B3_fat12Odd
+03:48f3 GetFat_B3_fat12Shr4
+03:48fd GetFat_B3_fat12Even
+03:4905 GetFat_B3_storeVal
+03:4913 GetFat_B3_fat16
+03:49e9 GetFat_B3_fat32
+03:4ad6 GetFat_B3_badType
+03:4adf GetFat_B3_epilogue
+05:43c6 GetFat_B5_intErr
+05:43d2 GetFat_B5_switchType
+05:4404 GetFat_B5_fat12
+05:44a4 GetFat_B5_fat12WinOff
+05:455d GetFat_B5_fat12Odd
+05:4564 GetFat_B5_fat12Shr4
+05:456e GetFat_B5_fat12Even
+05:4576 GetFat_B5_storeVal
+05:4584 GetFat_B5_fat16
+05:465a GetFat_B5_fat32
+05:4747 GetFat_B5_badType
+05:4750 GetFat_B5_epilogue
+06:4582 GetFat_B6_intErr
+06:458e GetFat_B6_switchType
+06:45c0 GetFat_B6_fat12
+06:4660 GetFat_B6_fat12WinOff
+06:4719 GetFat_B6_fat12Odd
+06:4720 GetFat_B6_fat12Shr4
+06:472a GetFat_B6_fat12Even
+06:4732 GetFat_B6_storeVal
+06:4740 GetFat_B6_fat16
+06:4816 GetFat_B6_fat32
+06:4903 GetFat_B6_badType
+06:490c GetFat_B6_epilogue
+07:4755 GetFat_B7_intErr
+07:4761 GetFat_B7_switchType
+07:4793 GetFat_B7_fat12
+07:4833 GetFat_B7_fat12WinOff
+07:48ec GetFat_B7_fat12Odd
+07:48f3 GetFat_B7_fat12Shr4
+07:48fd GetFat_B7_fat12Even
+07:4905 GetFat_B7_storeVal
+07:4913 GetFat_B7_fat16
+07:49e9 GetFat_B7_fat32
+07:4ad6 GetFat_B7_badType
+07:4adf GetFat_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PutFat_B9 ---
+09:4b45 PutFat_B9_intErr
+09:4b4c PutFat_B9_switchType
+09:4b72 PutFat_B9_fat12
+09:4c16 PutFat_B9_fat12WinOff
+09:4c63 PutFat_B9_fat12EvenFirst
+09:4c66 PutFat_B9_fat12StoreFirst
+09:4d33 PutFat_B9_fat12Second
+09:4d6a PutFat_B9_fat12StoreSecond
+09:4d82 PutFat_B9_fat16
+09:4e64 PutFat_B9_fat32
+09:4f8a PutFat_B9_badType
+09:4f8e PutFat_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:4b39 PutFat_B3_intErr
+03:4b40 PutFat_B3_switchType
+03:4b66 PutFat_B3_fat12
+03:4c0a PutFat_B3_fat12WinOff
+03:4c57 PutFat_B3_fat12EvenFirst
+03:4c5a PutFat_B3_fat12StoreFirst
+03:4d27 PutFat_B3_fat12Second
+03:4d5e PutFat_B3_fat12StoreSecond
+03:4d76 PutFat_B3_fat16
+03:4e58 PutFat_B3_fat32
+03:4f7e PutFat_B3_badType
+03:4f82 PutFat_B3_epilogue
+06:4966 PutFat_B6_intErr
+06:496d PutFat_B6_switchType
+06:4993 PutFat_B6_fat12
+06:4a37 PutFat_B6_fat12WinOff
+06:4a84 PutFat_B6_fat12EvenFirst
+06:4a87 PutFat_B6_fat12StoreFirst
+06:4b54 PutFat_B6_fat12Second
+06:4b8b PutFat_B6_fat12StoreSecond
+06:4ba3 PutFat_B6_fat16
+06:4c85 PutFat_B6_fat32
+06:4dab PutFat_B6_badType
+06:4daf PutFat_B6_epilogue
+07:4b39 PutFat_B7_intErr
+07:4b40 PutFat_B7_switchType
+07:4b66 PutFat_B7_fat12
+07:4c0a PutFat_B7_fat12WinOff
+07:4c57 PutFat_B7_fat12EvenFirst
+07:4c5a PutFat_B7_fat12StoreFirst
+07:4d27 PutFat_B7_fat12Second
+07:4d5e PutFat_B7_fat12StoreSecond
+07:4d76 PutFat_B7_fat16
+07:4e58 PutFat_B7_fat32
+07:4f7e PutFat_B7_badType
+07:4f82 PutFat_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetLdNumber_B9 ---
+09:7539 GetLdNumber_B9_scanColon
+09:755c GetLdNumber_B9_scanCont
+09:755f GetLdNumber_B9_afterScan
+09:756d GetLdNumber_B9_noColon
+09:7570 GetLdNumber_B9_parseDigit
+09:7586 GetLdNumber_B9_digitSignExt
+09:75af GetLdNumber_B9_notSingleDigit
+09:75b2 GetLdNumber_B9_checkVolRange
+09:75d0 GetLdNumber_B9_returnVol
+09:75d8 GetLdNumber_B9_defaultVol0
+09:75df GetLdNumber_B9_returnResult
+09:75e4 GetLdNumber_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:72e7 GetLdNumber_B3_scanColon
+03:730a GetLdNumber_B3_scanCont
+03:730d GetLdNumber_B3_afterScan
+03:731b GetLdNumber_B3_noColon
+03:731e GetLdNumber_B3_parseDigit
+03:7334 GetLdNumber_B3_digitSignExt
+03:735d GetLdNumber_B3_notSingleDigit
+03:7360 GetLdNumber_B3_checkVolRange
+03:737e GetLdNumber_B3_returnVol
+03:7386 GetLdNumber_B3_defaultVol0
+03:738d GetLdNumber_B3_returnResult
+03:7392 GetLdNumber_B3_epilogue
+05:6289 GetLdNumber_B5_scanColon
+05:62ac GetLdNumber_B5_scanCont
+05:62af GetLdNumber_B5_afterScan
+05:62bd GetLdNumber_B5_noColon
+05:62c0 GetLdNumber_B5_parseDigit
+05:62d6 GetLdNumber_B5_digitSignExt
+05:62ff GetLdNumber_B5_notSingleDigit
+05:6302 GetLdNumber_B5_checkVolRange
+05:6320 GetLdNumber_B5_returnVol
+05:6328 GetLdNumber_B5_defaultVol0
+05:632f GetLdNumber_B5_returnResult
+05:6334 GetLdNumber_B5_epilogue
+06:7153 GetLdNumber_B6_scanColon
+06:7176 GetLdNumber_B6_scanCont
+06:7179 GetLdNumber_B6_afterScan
+06:7187 GetLdNumber_B6_noColon
+06:718a GetLdNumber_B6_parseDigit
+06:71a0 GetLdNumber_B6_digitSignExt
+06:71c9 GetLdNumber_B6_notSingleDigit
+06:71cc GetLdNumber_B6_checkVolRange
+06:71ea GetLdNumber_B6_returnVol
+06:71f2 GetLdNumber_B6_defaultVol0
+06:71f9 GetLdNumber_B6_returnResult
+06:71fe GetLdNumber_B6_epilogue
+07:7608 GetLdNumber_B7_scanColon
+07:762b GetLdNumber_B7_scanCont
+07:762e GetLdNumber_B7_afterScan
+07:763c GetLdNumber_B7_noColon
+07:763f GetLdNumber_B7_parseDigit
+07:7655 GetLdNumber_B7_digitSignExt
+07:767e GetLdNumber_B7_notSingleDigit
+07:7681 GetLdNumber_B7_checkVolRange
+07:769f GetLdNumber_B7_returnVol
+07:76a7 GetLdNumber_B7_defaultVol0
+07:76ae GetLdNumber_B7_returnResult
+07:76b3 GetLdNumber_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirAlloc_B9 ---
+09:5cc6 DirAlloc_B9_scanLoop
+09:5d1b DirAlloc_B9_incFreeRun
+09:5d22 DirAlloc_B9_checkRunLen
+09:5d36 DirAlloc_B9_needMore
+09:5d39 DirAlloc_B9_runComplete
+09:5d3c DirAlloc_B9_resetRun
+09:5d43 DirAlloc_B9_dirNext
+09:5d5b DirAlloc_B9_done
+09:5d65 DirAlloc_B9_keepErr
+09:5d68 DirAlloc_B9_denied
+09:5d6c DirAlloc_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5cbb DirAlloc_B3_scanLoop
+03:5d10 DirAlloc_B3_incFreeRun
+03:5d17 DirAlloc_B3_checkRunLen
+03:5d2b DirAlloc_B3_needMore
+03:5d2e DirAlloc_B3_runComplete
+03:5d31 DirAlloc_B3_resetRun
+03:5d38 DirAlloc_B3_dirNext
+03:5d50 DirAlloc_B3_done
+03:5d5a DirAlloc_B3_keepErr
+03:5d5d DirAlloc_B3_denied
+03:5d61 DirAlloc_B3_epilogue
+06:5ae8 DirAlloc_B6_scanLoop
+06:5b3d DirAlloc_B6_incFreeRun
+06:5b44 DirAlloc_B6_checkRunLen
+06:5b58 DirAlloc_B6_needMore
+06:5b5b DirAlloc_B6_runComplete
+06:5b5e DirAlloc_B6_resetRun
+06:5b65 DirAlloc_B6_dirNext
+06:5b7d DirAlloc_B6_done
+06:5b87 DirAlloc_B6_keepErr
+06:5b8a DirAlloc_B6_denied
+06:5b8e DirAlloc_B6_epilogue
+07:5b16 DirAlloc_B7_scanLoop
+07:5b6b DirAlloc_B7_incFreeRun
+07:5b72 DirAlloc_B7_checkRunLen
+07:5b86 DirAlloc_B7_needMore
+07:5b89 DirAlloc_B7_runComplete
+07:5b8c DirAlloc_B7_resetRun
+07:5b93 DirAlloc_B7_dirNext
+07:5bab DirAlloc_B7_done
+07:5bb5 DirAlloc_B7_keepErr
+07:5bb8 DirAlloc_B7_denied
+07:5bbc DirAlloc_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CheckFs_B9 ---
+09:763d CheckFs_B9_checkBootSig
+09:7669 CheckFs_B9_noBootSig
+09:766e CheckFs_B9_checkFatStr
+09:76a8 CheckFs_B9_notFat12Str
+09:76ab CheckFs_B9_fatOk
+09:76b0 CheckFs_B9_checkFat32Str
+09:76ea CheckFs_B9_notFat32Str
+09:76ed CheckFs_B9_fat32Ok
+09:76f2 CheckFs_B9_notFat
+09:76f4 CheckFs_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+05:638d CheckFs_B5_checkBootSig
+05:63b9 CheckFs_B5_noBootSig
+05:63be CheckFs_B5_checkFatStr
+05:63f8 CheckFs_B5_notFat12Str
+05:63fb CheckFs_B5_fatOk
+05:6400 CheckFs_B5_checkFat32Str
+05:643a CheckFs_B5_notFat32Str
+05:643d CheckFs_B5_fat32Ok
+05:6442 CheckFs_B5_notFat
+05:6444 CheckFs_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PutLfn_B9 ---
+09:6156 PutLfn_B9_charLoop
+09:6163 PutLfn_B9_loadWchar
+09:616e PutLfn_B9_indexLfn
+09:6186 PutLfn_B9_storeWchar
+09:61b4 PutLfn_B9_nextSlot
+09:61bb PutLfn_B9_checkDone
+09:61d4 PutLfn_B9_moreLfn
+09:61f0 PutLfn_B9_setLlef
+09:61f6 PutLfn_B9_storeOrd
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:614b PutLfn_B3_charLoop
+03:6158 PutLfn_B3_loadWchar
+03:6163 PutLfn_B3_indexLfn
+03:617b PutLfn_B3_storeWchar
+03:61a9 PutLfn_B3_nextSlot
+03:61b0 PutLfn_B3_checkDone
+03:61c9 PutLfn_B3_moreLfn
+03:61e5 PutLfn_B3_setLlef
+03:61eb PutLfn_B3_storeOrd
+06:5f78 PutLfn_B6_charLoop
+06:5f85 PutLfn_B6_loadWchar
+06:5f90 PutLfn_B6_indexLfn
+06:5fa8 PutLfn_B6_storeWchar
+06:5fd6 PutLfn_B6_nextSlot
+06:5fdd PutLfn_B6_checkDone
+06:5ff6 PutLfn_B6_moreLfn
+06:6012 PutLfn_B6_setLlef
+06:6018 PutLfn_B6_storeOrd
+07:5fa6 PutLfn_B7_charLoop
+07:5fb3 PutLfn_B7_loadWchar
+07:5fbe PutLfn_B7_indexLfn
+07:5fd6 PutLfn_B7_storeWchar
+07:6004 PutLfn_B7_nextSlot
+07:600b PutLfn_B7_checkDone
+07:6024 PutLfn_B7_moreLfn
+07:6040 PutLfn_B7_setLlef
+07:6046 PutLfn_B7_storeOrd
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FindVolume_B9 ---
+09:7724 FindVolume_B9_lookupFs
+09:773e FindVolume_B9_bindRfs
+09:7760 FindVolume_B9_needInit
+09:7763 FindVolume_B9_checkMode
+09:7772 FindVolume_B9_writeProtect
+09:7777 FindVolume_B9_ok
+09:7779 FindVolume_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:73c2 FindVolume_B3_lookupFs
+03:73dc FindVolume_B3_bindRfs
+03:73fe FindVolume_B3_needInit
+03:7401 FindVolume_B3_checkMode
+03:7410 FindVolume_B3_writeProtect
+03:7415 FindVolume_B3_ok
+03:7417 FindVolume_B3_epilogue
+06:722e FindVolume_B6_lookupFs
+06:7248 FindVolume_B6_bindRfs
+06:726a FindVolume_B6_needInit
+06:726d FindVolume_B6_checkMode
+06:727c FindVolume_B6_writeProtect
+06:7281 FindVolume_B6_ok
+06:7283 FindVolume_B6_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SyncFs_B9 ---
+09:446f SyncFs_B9_notFat32
+09:4472 SyncFs_B9_checkFsiFlag
+09:448b SyncFs_B9_fsiClean
+09:448e SyncFs_B9_buildFsInfo
+09:45a7 SyncFs_B9_diskWrite
+09:45e6 SyncFs_B9_ioctlSync
+09:4610 SyncFs_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:445f SyncFs_B3_checkFsiFlag
+03:447b SyncFs_B3_buildFsInfo
+07:445f SyncFs_B7_checkFsiFlag
+07:447b SyncFs_B7_buildFsInfo
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemCpy16_B9 ---
+09:401c MemCpy16_B9_wordLoop
+09:405a MemCpy16_B9_byteTail
+09:405d MemCpy16_B9_byteLoop
+09:4070 MemCpy16_B9_storeByte
+09:407c MemCpy16_B9_byteNext
+09:407f MemCpy16_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:401b MemCpy16_B3_wordLoop
+03:4059 MemCpy16_B3_byteTail
+03:405c MemCpy16_B3_byteLoop
+03:406f MemCpy16_B3_storeByte
+03:407b MemCpy16_B3_byteNext
+03:407e MemCpy16_B3_epilogue
+05:401c MemCpy16_B5_wordLoop
+05:405a MemCpy16_B5_byteTail
+05:405d MemCpy16_B5_byteLoop
+05:4070 MemCpy16_B5_storeByte
+05:407c MemCpy16_B5_byteNext
+05:407f MemCpy16_B5_epilogue
+06:401c MemCpy16_B6_wordLoop
+06:405a MemCpy16_B6_byteTail
+06:405d MemCpy16_B6_byteLoop
+06:4070 MemCpy16_B6_storeByte
+06:407c MemCpy16_B6_byteNext
+06:407f MemCpy16_B6_epilogue
+07:401b MemCpy16_B7_wordLoop
+07:4059 MemCpy16_B7_byteTail
+07:405c MemCpy16_B7_byteLoop
+07:406f MemCpy16_B7_storeByte
+07:407b MemCpy16_B7_byteNext
+07:407e MemCpy16_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Validate_B9 ---
+09:77da Validate_B9_idMismatch
+09:77dd Validate_B9_diskStatus
+09:77f5 Validate_B9_invalid
+09:77fa Validate_B9_ok
+09:77fc Validate_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:7478 Validate_B3_idMismatch
+03:747b Validate_B3_diskStatus
+03:7493 Validate_B3_invalid
+03:7498 Validate_B3_ok
+03:749a Validate_B3_epilogue
+05:6df4 Validate_B5_idMismatch
+05:6df7 Validate_B5_diskStatus
+05:6e0f Validate_B5_invalid
+05:6e14 Validate_B5_ok
+05:6e16 Validate_B5_epilogue
+06:72e4 Validate_B6_idMismatch
+06:72e7 Validate_B6_diskStatus
+06:72ff Validate_B6_invalid
+06:7304 Validate_B6_ok
+06:7306 Validate_B6_epilogue
+07:7714 Validate_B7_idMismatch
+07:7717 Validate_B7_diskStatus
+07:772f Validate_B7_invalid
+07:7734 Validate_B7_ok
+07:7736 Validate_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemCmp_B9 ---
+09:415f MemCmp_B9_loop
+09:4175 MemCmp_B9_storeA
+09:4188 MemCmp_B9_compare
+09:41a0 MemCmp_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:414c MemCmp_B3_loop
+03:4162 MemCmp_B3_storeA
+03:4175 MemCmp_B3_compare
+03:418d MemCmp_B3_epilogue
+05:414d MemCmp_B5_loop
+05:4163 MemCmp_B5_storeA
+05:4176 MemCmp_B5_compare
+05:418e MemCmp_B5_epilogue
+06:414d MemCmp_B6_loop
+06:4163 MemCmp_B6_storeA
+06:4176 MemCmp_B6_compare
+06:418e MemCmp_B6_epilogue
+07:414c MemCmp_B7_loop
+07:4162 MemCmp_B7_storeA
+07:4175 MemCmp_B7_compare
+07:418d MemCmp_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemChr_B9 ---
+09:41b1 MemChr_B9_loop
+09:41cd MemChr_B9_next
+09:41d4 MemChr_B9_nextJr
+09:41d7 MemChr_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:419e MemChr_B3_loop
+03:41ba MemChr_B3_next
+03:41c1 MemChr_B3_nextJr
+03:41c4 MemChr_B3_epilogue
+05:419f MemChr_B5_loop
+05:41bb MemChr_B5_next
+05:41c2 MemChr_B5_nextJr
+05:41c5 MemChr_B5_epilogue
+06:419f MemChr_B6_loop
+06:41bb MemChr_B6_next
+06:41c2 MemChr_B6_nextJr
+06:41c5 MemChr_B6_epilogue
+07:419e MemChr_B7_loop
+07:41ba MemChr_B7_next
+07:41c1 MemChr_B7_nextJr
+07:41c4 MemChr_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MemSet16_B9 ---
+09:4116 MemSet16_B9_loop
+09:4138 MemSet16_B9_next
+09:413b MemSet16_B9_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SyncWindow_B9 ---
+09:426d SyncWindow_B9_clearDirty
+09:42f5 SyncWindow_B9_mirrorFat
+09:4378 SyncWindow_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:425a SyncWindow_B3_clearDirty
+03:42e2 SyncWindow_B3_mirrorFat
+03:4365 SyncWindow_B3_epilogue
+06:425b SyncWindow_B6_clearDirty
+06:42e3 SyncWindow_B6_mirrorFat
+06:4366 SyncWindow_B6_epilogue
+07:425a SyncWindow_B7_clearDirty
+07:42e2 SyncWindow_B7_mirrorFat
+07:4365 SyncWindow_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MoveWindow_B9 ---
+09:43cc MoveWindow_B9_reload
+09:442c MoveWindow_B9_storeWinsect
+09:4441 MoveWindow_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:43b9 MoveWindow_B3_reload
+03:4419 MoveWindow_B3_storeWinsect
+03:442e MoveWindow_B3_epilogue
+06:43ba MoveWindow_B6_reload
+06:441a MoveWindow_B6_storeWinsect
+06:442f MoveWindow_B6_epilogue
+07:43b9 MoveWindow_B7_reload
+07:4419 MoveWindow_B7_storeWinsect
+07:442e MoveWindow_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- LdClust_B9 ---
+09:5da1 LdClust_B9_notFat32
+09:5da4 LdClust_B9_orHiWord
+09:5dfe LdClust_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:5d96 LdClust_B3_notFat32
+03:5d99 LdClust_B3_orHiWord
+03:5df3 LdClust_B3_epilogue
+05:4d35 LdClust_B5_notFat32
+05:4d38 LdClust_B5_orHiWord
+05:4d92 LdClust_B5_epilogue
+06:5bc3 LdClust_B6_notFat32
+06:5bc6 LdClust_B6_orHiWord
+06:5c20 LdClust_B6_epilogue
+07:5bf1 LdClust_B7_notFat32
+07:5bf4 LdClust_B7_orHiWord
+07:5c4e LdClust_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Clust2Sect_B9 ---
+09:4693 Clust2Sect_B9_inRange
+09:4710 Clust2Sect_B9_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:4687 Clust2Sect_B3_inRange
+03:4704 Clust2Sect_B3_epilogue
+05:42f8 Clust2Sect_B5_inRange
+05:4375 Clust2Sect_B5_epilogue
+06:44b4 Clust2Sect_B6_inRange
+06:4531 Clust2Sect_B6_epilogue
+07:4687 Clust2Sect_B7_inRange
+07:4704 Clust2Sect_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SumSfn_B9 ---
+09:6417 SumSfn_B9_loop
+09:6430 SumSfn_B9_afterPtrInc
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:640c SumSfn_B3_loop
+03:6425 SumSfn_B3_afterPtrInc
+05:5238 SumSfn_B5_loop
+05:5251 SumSfn_B5_afterPtrInc
+06:6239 SumSfn_B6_loop
+06:6252 SumSfn_B6_afterPtrInc
+07:6267 SumSfn_B7_loop
+07:6280 SumSfn_B7_afterPtrInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_lfnCharLoop ---
+09:6cba CreateName_B9_afterLfnPtrInc
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6aa6 CreateName_B3_afterLfnPtrInc
+05:5a09 CreateName_B5_afterLfnPtrInc
+06:68d3 CreateName_B6_afterLfnPtrInc
+07:6dc7 CreateName_B7_afterLfnPtrInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_storeWcharLfn ---
+09:6d60 CreateName_B9_afterWcharIdxInc
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6b4c CreateName_B3_afterWcharIdxInc
+05:5aaf CreateName_B5_afterWcharIdxInc
+06:6979 CreateName_B6_afterWcharIdxInc
+07:6e6d CreateName_B7_afterWcharIdxInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_notLen1Dot ---
+09:6dc1 CreateName_B9_checkSingleDot
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6bad CreateName_B3_checkSingleDot
+05:5b10 CreateName_B5_checkSingleDot
+06:69da CreateName_B6_checkSingleDot
+07:6ece CreateName_B7_checkSingleDot
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_notLen2DotDot ---
+09:6df7 CreateName_B9_checkDotDotTail
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6be3 CreateName_B3_checkDotDotTail
+05:5b46 CreateName_B5_checkDotDotTail
+06:6a10 CreateName_B6_checkDotDotTail
+07:6f04 CreateName_B7_checkDotDotTail
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_dotDotMismatch ---
+09:6e1f CreateName_B9_checkDotDotHead
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6c0b CreateName_B3_checkDotDotHead
+05:5b6e CreateName_B5_checkDotDotHead
+06:6a38 CreateName_B6_checkDotDotHead
+07:6f2c CreateName_B7_checkDotDotHead
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_sfnPadStore ---
+09:6ebb CreateName_B9_afterSfnPadIdxInc
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+03:6ca7 CreateName_B3_afterSfnPadIdxInc
+05:5c0a CreateName_B5_afterSfnPadIdxInc
+06:6ad4 CreateName_B6_afterSfnPadIdxInc
+07:6fc8 CreateName_B7_afterSfnPadIdxInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_skipLeadInc ---
+09:6fd1 CreateName_B9_afterSkipLeadIdxInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B9_sfnFillLoop ---
+09:7052 CreateName_B9_afterSfnFillIdxInc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FindVolume_B5 ---
+05:6479 FindVolume_B5_afterLdOk
+05:649f FindVolume_B5_bindFs
+05:64cf FindVolume_B5_checkMode
+05:64e3 FindVolume_B5_retOk
+05:64e8 FindVolume_B5_diskInit
+05:651e FindVolume_B5_afterInitOk
+05:6532 FindVolume_B5_checkFs0
+05:6558 FindVolume_B5_toFmtCheck
+05:657f FindVolume_B5_mbrPteScan
+05:65fa FindVolume_B5_lbaClear
+05:6601 FindVolume_B5_lbaLoad
+05:6620 FindVolume_B5_pteScanDone
+05:6627 FindVolume_B5_tryPartitions
+05:6681 FindVolume_B5_emptyPart
+05:6683 FindVolume_B5_checkFsResult
+05:669e FindVolume_B5_fmtDispatch
+05:66a8 FindVolume_B5_fmtNotDiskErr
+05:66b0 FindVolume_B5_fmtNonzero
+05:66bc FindVolume_B5_parseBpb
+05:66e7 FindVolume_B5_badBytsPerSec
+05:66ec FindVolume_B5_readFatSz
+05:673f FindVolume_B5_checkNumFats
+05:679c FindVolume_B5_mulFatSize
+05:682c FindVolume_B5_badSecPerClus
+05:6831 FindVolume_B5_checkRootEnt
+05:6869 FindVolume_B5_readTotSec
+05:68bc FindVolume_B5_checkRsvd
+05:68d7 FindVolume_B5_calcBases
+05:6963 FindVolume_B5_volSizeCheck
+05:69d1 FindVolume_B5_fsTypeFat12
+05:69ed FindVolume_B5_fsTypeFat16
+05:6a05 FindVolume_B5_fillFsFields
+05:6af7 FindVolume_B5_toFat32Root
+05:6b0d FindVolume_B5_fat12_16Root
+05:6b90 FindVolume_B5_fat32Path
+05:6ba3 FindVolume_B5_readRootClus
+05:6bff FindVolume_B5_toClusterCalc
+05:6c47 FindVolume_B5_u32MulShr
+05:6ccb FindVolume_B5_mergeBases
+05:6cdc FindVolume_B5_afterRootCalc
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FindVolume_B5_afterInitOk ---
+05:652d FindVolume_B5_protectFail
+; --- FindVolume_B5_afterRootCalc ---
+05:6d4a FindVolume_B5_storeFsType
+05:6d68 FindVolume_B5_bumpMountCtr
+05:6d93 FindVolume_B5_epilogue
+; --- FindVolume_B5_bindFs ---
+05:64cc FindVolume_B5_needReinit
+; --- FindVolume_B5_calcBases ---
+05:6912 FindVolume_B5_csizeShift
+; --- FindVolume_B5_checkFsResult ---
+05:6692 FindVolume_B5_nextPte
+; --- FindVolume_B5_checkMode ---
+05:64de FindVolume_B5_writeProtect
+; --- FindVolume_B5_checkRootEnt ---
+05:6864 FindVolume_B5_badRootEnt
+; --- FindVolume_B5_diskInit ---
+05:6519 FindVolume_B5_initFail
+; --- FindVolume_B5_fmtNotDiskErr ---
+05:66ab FindVolume_B5_noFilesystem
+; --- FindVolume_B5_lbaLoad ---
+05:661d FindVolume_B5_afterLbaInc
+; --- FindVolume_B5_mbrPteScan ---
+05:65b7 FindVolume_B5_pteLoopBody
+05:65be FindVolume_B5_pteLoopCont
+; --- FindVolume_B5_toClusterCalc ---
+05:6c02 FindVolume_B5_fat16U32Shl
+; --- FindVolume_B5_toFat32Root ---
+05:6afa FindVolume_B5_toFat12_16Root
+; --- FindVolume_B5_toFmtCheck ---
+05:655b FindVolume_B5_fmtIsFat
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B3_nulTermClearSfn ---
+03:6d86 CreateName_B3_skipLeadSpaceDot
+03:6da8 CreateName_B3_skipLeadNotSpace
+03:6db4 CreateName_B3_skipLeadNonLead
+03:6db7 CreateName_B3_skipLeadInc
+03:6dbe CreateName_B3_afterSkipLeadIdxInc
+03:6dc9 CreateName_B3_afterSkipLead
+03:6dde CreateName_B3_findLastDot
+03:6e15 CreateName_B3_findLastDotCont
+03:6e22 CreateName_B3_initBodyLen
+03:6e34 CreateName_B3_sfnFillLoop
+03:6e3f CreateName_B3_afterSfnFillIdxInc
+03:6e6a CreateName_B3_sfnFillCheckDot
+03:6e7a CreateName_B3_sfnFillNotDot
+03:6e7d CreateName_B3_sfnFillDotPath
+03:6e8f CreateName_B3_sfnFillSpaceLoss
+03:6e98 CreateName_B3_sfnFillSlotCheck
+03:6ebb CreateName_B3_sfnFillToMap
+03:6ebe CreateName_B3_sfnFillSlotFull
+03:6ece CreateName_B3_sfnFillToExt
+03:6ed1 CreateName_B3_sfnFillSlotFullLoss
+03:6eda CreateName_B3_sfnFillBodyToExt
+03:6eec CreateName_B3_sfnFillBodyOverflow
+03:6ef2 CreateName_B3_sfnFillEnterExt
+03:6f1f CreateName_B3_sfnMapCp437
+03:6f5a CreateName_B3_sfnMapCp437Fail
+03:6f60 CreateName_B3_sfnCheckIllegal
+03:6f7c CreateName_B3_sfnReplaceUnderscore
+03:6f8b CreateName_B3_sfnCaseUpper
+03:6fab CreateName_B3_sfnCaseLower
+03:6fd9 CreateName_B3_sfnStoreByte
+03:6fef CreateName_B3_sfnStoreByteJr
+03:6ffe CreateName_B3_sfnDoneDdem
+03:7015 CreateName_B3_afterDdem
+03:7018 CreateName_B3_replaceDdem
+03:7020 CreateName_B3_checkBodyOnly
+03:7030 CreateName_B3_afterBodyOnly
+03:7033 CreateName_B3_ntShiftBodyOnly
+03:7039 CreateName_B3_caseMixCheck
+03:7051 CreateName_B3_caseMixOk
+03:7054 CreateName_B3_caseMixSetLfn
+03:705a CreateName_B3_storeNtFlags
+03:7064 CreateName_B3_skipNtFlags
+03:7067 CreateName_B3_ntExtCheck
+03:7074 CreateName_B3_afterNtExt
+03:7077 CreateName_B3_setNsExt
+03:707d CreateName_B3_ntBodyCheck
+03:7085 CreateName_B3_afterNtBody
+03:7088 CreateName_B3_setNsBody
+03:708e CreateName_B3_storeNsflagFinal
+03:709f CreateName_B3_cleanup
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B5_nulTermClearSfn ---
+05:5ce9 CreateName_B5_skipLeadSpaceDot
+05:5d0b CreateName_B5_skipLeadNotSpace
+05:5d17 CreateName_B5_skipLeadNonLead
+05:5d1a CreateName_B5_skipLeadInc
+05:5d21 CreateName_B5_afterSkipLeadIdxInc
+05:5d2c CreateName_B5_afterSkipLead
+05:5d41 CreateName_B5_findLastDot
+05:5d78 CreateName_B5_findLastDotCont
+05:5d85 CreateName_B5_initBodyLen
+05:5d97 CreateName_B5_sfnFillLoop
+05:5da2 CreateName_B5_afterSfnFillIdxInc
+05:5dcd CreateName_B5_sfnFillCheckDot
+05:5ddd CreateName_B5_sfnFillNotDot
+05:5de0 CreateName_B5_sfnFillDotPath
+05:5df2 CreateName_B5_sfnFillSpaceLoss
+05:5dfb CreateName_B5_sfnFillSlotCheck
+05:5e1e CreateName_B5_sfnFillToMap
+05:5e21 CreateName_B5_sfnFillSlotFull
+05:5e31 CreateName_B5_sfnFillToExt
+05:5e34 CreateName_B5_sfnFillSlotFullLoss
+05:5e3d CreateName_B5_sfnFillBodyToExt
+05:5e4f CreateName_B5_sfnFillBodyOverflow
+05:5e55 CreateName_B5_sfnFillEnterExt
+05:5e82 CreateName_B5_sfnMapCp437
+05:5ebd CreateName_B5_sfnMapCp437Fail
+05:5ec3 CreateName_B5_sfnCheckIllegal
+05:5edf CreateName_B5_sfnReplaceUnderscore
+05:5eee CreateName_B5_sfnCaseUpper
+05:5f0e CreateName_B5_sfnCaseLower
+05:5f3c CreateName_B5_sfnStoreByte
+05:5f52 CreateName_B5_sfnStoreByteJr
+05:5f61 CreateName_B5_sfnDoneDdem
+05:5f78 CreateName_B5_afterDdem
+05:5f7b CreateName_B5_replaceDdem
+05:5f83 CreateName_B5_checkBodyOnly
+05:5f93 CreateName_B5_afterBodyOnly
+05:5f96 CreateName_B5_ntShiftBodyOnly
+05:5f9c CreateName_B5_caseMixCheck
+05:5fb4 CreateName_B5_caseMixOk
+05:5fb7 CreateName_B5_caseMixSetLfn
+05:5fbd CreateName_B5_storeNtFlags
+05:5fc7 CreateName_B5_skipNtFlags
+05:5fca CreateName_B5_ntExtCheck
+05:5fd7 CreateName_B5_afterNtExt
+05:5fda CreateName_B5_setNsExt
+05:5fe0 CreateName_B5_ntBodyCheck
+05:5fe8 CreateName_B5_afterNtBody
+05:5feb CreateName_B5_setNsBody
+05:5ff1 CreateName_B5_storeNsflagFinal
+05:6002 CreateName_B5_cleanup
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B6_nulTermClearSfn ---
+06:6bb3 CreateName_B6_skipLeadSpaceDot
+06:6bd5 CreateName_B6_skipLeadNotSpace
+06:6be1 CreateName_B6_skipLeadNonLead
+06:6be4 CreateName_B6_skipLeadInc
+06:6beb CreateName_B6_afterSkipLeadIdxInc
+06:6bf6 CreateName_B6_afterSkipLead
+06:6c0b CreateName_B6_findLastDot
+06:6c42 CreateName_B6_findLastDotCont
+06:6c4f CreateName_B6_initBodyLen
+06:6c61 CreateName_B6_sfnFillLoop
+06:6c6c CreateName_B6_afterSfnFillIdxInc
+06:6c97 CreateName_B6_sfnFillCheckDot
+06:6ca7 CreateName_B6_sfnFillNotDot
+06:6caa CreateName_B6_sfnFillDotPath
+06:6cbc CreateName_B6_sfnFillSpaceLoss
+06:6cc5 CreateName_B6_sfnFillSlotCheck
+06:6ce8 CreateName_B6_sfnFillToMap
+06:6ceb CreateName_B6_sfnFillSlotFull
+06:6cfb CreateName_B6_sfnFillToExt
+06:6cfe CreateName_B6_sfnFillSlotFullLoss
+06:6d07 CreateName_B6_sfnFillBodyToExt
+06:6d19 CreateName_B6_sfnFillBodyOverflow
+06:6d1f CreateName_B6_sfnFillEnterExt
+06:6d4c CreateName_B6_sfnMapCp437
+06:6d87 CreateName_B6_sfnMapCp437Fail
+06:6d8d CreateName_B6_sfnCheckIllegal
+06:6da9 CreateName_B6_sfnReplaceUnderscore
+06:6db8 CreateName_B6_sfnCaseUpper
+06:6dd8 CreateName_B6_sfnCaseLower
+06:6e06 CreateName_B6_sfnStoreByte
+06:6e1c CreateName_B6_sfnStoreByteJr
+06:6e2b CreateName_B6_sfnDoneDdem
+06:6e42 CreateName_B6_afterDdem
+06:6e45 CreateName_B6_replaceDdem
+06:6e4d CreateName_B6_checkBodyOnly
+06:6e5d CreateName_B6_afterBodyOnly
+06:6e60 CreateName_B6_ntShiftBodyOnly
+06:6e66 CreateName_B6_caseMixCheck
+06:6e7e CreateName_B6_caseMixOk
+06:6e81 CreateName_B6_caseMixSetLfn
+06:6e87 CreateName_B6_storeNtFlags
+06:6e91 CreateName_B6_skipNtFlags
+06:6e94 CreateName_B6_ntExtCheck
+06:6ea1 CreateName_B6_afterNtExt
+06:6ea4 CreateName_B6_setNsExt
+06:6eaa CreateName_B6_ntBodyCheck
+06:6eb2 CreateName_B6_afterNtBody
+06:6eb5 CreateName_B6_setNsBody
+06:6ebb CreateName_B6_storeNsflagFinal
+06:6ecc CreateName_B6_cleanup
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- CreateName_B7_nulTermClearSfn ---
+07:70a7 CreateName_B7_skipLeadSpaceDot
+07:70c9 CreateName_B7_skipLeadNotSpace
+07:70d5 CreateName_B7_skipLeadNonLead
+07:70d8 CreateName_B7_skipLeadInc
+07:70df CreateName_B7_afterSkipLeadIdxInc
+07:70ea CreateName_B7_afterSkipLead
+07:70ff CreateName_B7_findLastDot
+07:7136 CreateName_B7_findLastDotCont
+07:7143 CreateName_B7_initBodyLen
+07:7155 CreateName_B7_sfnFillLoop
+07:7160 CreateName_B7_afterSfnFillIdxInc
+07:718b CreateName_B7_sfnFillCheckDot
+07:719b CreateName_B7_sfnFillNotDot
+07:719e CreateName_B7_sfnFillDotPath
+07:71b0 CreateName_B7_sfnFillSpaceLoss
+07:71b9 CreateName_B7_sfnFillSlotCheck
+07:71dc CreateName_B7_sfnFillToMap
+07:71df CreateName_B7_sfnFillSlotFull
+07:71ef CreateName_B7_sfnFillToExt
+07:71f2 CreateName_B7_sfnFillSlotFullLoss
+07:71fb CreateName_B7_sfnFillBodyToExt
+07:720d CreateName_B7_sfnFillBodyOverflow
+07:7213 CreateName_B7_sfnFillEnterExt
+07:7240 CreateName_B7_sfnMapCp437
+07:727b CreateName_B7_sfnMapCp437Fail
+07:7281 CreateName_B7_sfnCheckIllegal
+07:729d CreateName_B7_sfnReplaceUnderscore
+07:72ac CreateName_B7_sfnCaseUpper
+07:72cc CreateName_B7_sfnCaseLower
+07:72fa CreateName_B7_sfnStoreByte
+07:7310 CreateName_B7_sfnStoreByteJr
+07:731f CreateName_B7_sfnDoneDdem
+07:7336 CreateName_B7_afterDdem
+07:7339 CreateName_B7_replaceDdem
+07:7341 CreateName_B7_checkBodyOnly
+07:7351 CreateName_B7_afterBodyOnly
+07:7354 CreateName_B7_ntShiftBodyOnly
+07:735a CreateName_B7_caseMixCheck
+07:7372 CreateName_B7_caseMixOk
+07:7375 CreateName_B7_caseMixSetLfn
+07:737b CreateName_B7_storeNtFlags
+07:7385 CreateName_B7_skipNtFlags
+07:7388 CreateName_B7_ntExtCheck
+07:7395 CreateName_B7_afterNtExt
+07:7398 CreateName_B7_setNsExt
+07:739e CreateName_B7_ntBodyCheck
+07:73a6 CreateName_B7_afterNtBody
+07:73a9 CreateName_B7_setNsBody
+07:73af CreateName_B7_storeNsflagFinal
+07:73c0 CreateName_B7_cleanup
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Lseek_B3 ---
+03:76e6 Lseek_B3_afterValidate
+03:7707 Lseek_B3_checkOfsVsFsize
+03:774f Lseek_B3_ofsInRange
+03:7752 Lseek_B3_clampOfs
+03:7763 Lseek_B3_clearFptr
+03:793c Lseek_B3_fromSclust
+03:79bf Lseek_B3_afterCreateChain
+03:79c2 Lseek_B3_createChainDiskErr
+03:79cf Lseek_B3_checkChainClust
+03:79ea Lseek_B3_chainOk
+03:79ed Lseek_B3_chainAborted
+03:79fa Lseek_B3_writeSclust
+03:7a0c Lseek_B3_setClust
+03:7a29 Lseek_B3_sameCluster
+03:7a43 Lseek_B3_followLoop
+03:7a68 Lseek_B3_extendChain
+03:7abf Lseek_B3_getFatNext
+03:7af7 Lseek_B3_afterGetFat
+03:7b12 Lseek_B3_getFatOk
+03:7b15 Lseek_B3_getFatDiskErr
+03:7b22 Lseek_B3_checkFatClust
+03:7b6c Lseek_B3_getFatIntErr
+03:7b79 Lseek_B3_pastEof
+03:7c08 Lseek_B3_setFptr
+03:7c62 Lseek_B3_clust2Sect
+03:7cb2 Lseek_B3_sectOffset
+03:7cf6 Lseek_B3_fillWindow
+03:7d17 Lseek_B3_sameSector
+03:7d58 Lseek_B3_winsectMismatch
+03:7d71 Lseek_B3_flushDirty
+03:7dbe Lseek_B3_clearDirty
+03:7dcc Lseek_B3_diskRead
+03:7e19 Lseek_B3_storeWinsect
+03:7e2e Lseek_B3_clampFptr
+03:7ea9 Lseek_B3_loadResult
+03:7eac Lseek_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Write_B7 ---
+07:776d Write_B7_afterValidate
+07:778e Write_B7_checkFaWrite
+07:77a7 Write_B7_hasWriteMode
+07:77aa Write_B7_denied
+07:77af Write_B7_initRemain
+07:781a Write_B7_setupPtrs
+07:7865 Write_B7_mainLoop
+07:788d Write_B7_winDirtyPath
+07:7890 Write_B7_calcCluster
+07:7952 Write_B7_extendChain
+07:7995 Write_B7_afterCreateChain
+07:79bc Write_B7_afterChainOkCheck
+07:79bf Write_B7_chainDiskErr
+07:79cc Write_B7_checkChainClust
+07:79e7 Write_B7_chainClustOk
+07:79ea Write_B7_chainAborted
+07:79f7 Write_B7_storeClust
+07:7a3e Write_B7_maybeFlush
+07:7a4c Write_B7_flushDirty
+07:7aab Write_B7_clearDirty
+07:7ab9 Write_B7_clust2Sect
+07:7b0a Write_B7_partialSector
+07:7b97 Write_B7_directWrite
+07:7bd7 Write_B7_copyIntoWin
+07:7c97 Write_B7_afterWinCopy
+07:7ca9 Write_B7_sameSectPath
+07:7cdf Write_B7_checkWinsect
+07:7d36 Write_B7_diskRead
+07:7d6c Write_B7_afterWinReady
+07:7d81 Write_B7_winCopyPath
+07:7dbe Write_B7_memcpySetDirty
+07:7e0d Write_B7_advance
+07:7eac Write_B7_growFsize
+07:7efc Write_B7_setModified
+07:7f0c Write_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Read_B6 ---
+06:77ce Read_B6_afterValidate
+06:77ef Read_B6_checkFaRead
+06:7808 Read_B6_hasReadMode
+06:780b Read_B6_denied
+06:7810 Read_B6_initRemain
+06:789f Read_B6_setupPtrs
+06:78db Read_B6_mainLoop
+06:7903 Read_B6_winDirtyPath
+06:7906 Read_B6_calcCluster
+06:798e Read_B6_getFatNext
+06:79d1 Read_B6_checkEof
+06:79f2 Read_B6_afterGetFat
+06:7a0d Read_B6_getFatOk
+06:7a10 Read_B6_getFatDiskErr
+06:7a1d Read_B6_storeClust
+06:7a32 Read_B6_clust2Sect
+06:7a83 Read_B6_partialSector
+06:7b10 Read_B6_directRead
+06:7b50 Read_B6_fullSector
+06:7b5e Read_B6_copyFromDisk
+06:7c09 Read_B6_afterDiskCopy
+06:7c1b Read_B6_sameSectPath
+06:7c51 Read_B6_checkWinsect
+06:7c5f Read_B6_winReady
+06:7cb5 Read_B6_flushDirty
+06:7cc3 Read_B6_diskReadWin
+06:7cdf Read_B6_afterDiskRead
+06:7d15 Read_B6_storeWinsect
+06:7d2a Read_B6_winCopyPath
+06:7d67 Read_B6_memcpyFromWin
+06:7da8 Read_B6_advance
+06:7e47 Read_B6_retOk
+06:7e49 Read_B6_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Getcwd_B5 ---
+05:70cc Getcwd_B5_parentWalkLoop
+05:719e Getcwd_B5_findChildEntry
+05:7214 Getcwd_B5_dirNextChild
+05:722b Getcwd_B5_afterFindChild
+05:7235 Getcwd_B5_findChildOk
+05:7238 Getcwd_B5_setIntErr
+05:723c Getcwd_B5_checkRes
+05:72a4 Getcwd_B5_initNameLen
+05:72ab Getcwd_B5_nameLenLoop
+05:72c4 Getcwd_B5_nameLenCont
+05:72c7 Getcwd_B5_checkBufSpace
+05:72e3 Getcwd_B5_stackName
+05:72eb Getcwd_B5_stackNameLoop
+05:732d Getcwd_B5_stackSlash
+05:7351 Getcwd_B5_afterWalk
+05:7374 Getcwd_B5_skipRootSlash
+05:7377 Getcwd_B5_addRootSlash
+05:7385 Getcwd_B5_afterRootSlash
+05:7388 Getcwd_B5_copyPath
+05:7398 Getcwd_B5_copyPathLoop
+05:73a3 Getcwd_B5_copyPathBody
+05:73b8 Getcwd_B5_copyPathCont
+05:73cf Getcwd_B5_nulTerm
+05:73d7 Getcwd_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- GetFileInfo_B5 ---
+05:5740 GetFileInfo_B5_sfnLoop
+05:5756 GetFileInfo_B5_sfnSkipSpace
+05:576d GetFileInfo_B5_afterKanji05
+05:5770 GetFileInfo_B5_mapE5
+05:5772 GetFileInfo_B5_checkDotSlot
+05:5782 GetFileInfo_B5_noDotInsert
+05:5785 GetFileInfo_B5_insertDot
+05:5793 GetFileInfo_B5_caseAdjust
+05:57af GetFileInfo_B5_toLower
+05:57b3 GetFileInfo_B5_storeSfnByte
+05:57c0 GetFileInfo_B5_sfnLoopCont
+05:57c3 GetFileInfo_B5_copyMeta
+05:5869 GetFileInfo_B5_nulTermSfn
+05:58d3 GetFileInfo_B5_lfnSetup
+05:58f1 GetFileInfo_B5_lfnLoop
+05:5939 GetFileInfo_B5_lfnAppend
+05:5958 GetFileInfo_B5_lfnAdvance
+05:5963 GetFileInfo_B5_lfnAdvanceCont
+05:597a GetFileInfo_B5_nulTermLfn
+05:598a GetFileInfo_B5_epilogue
+
+; Propagated interior labels (scripts/propagate-interior-clones.py)
+07:6afe GetFileInfo_B7_sfnLoop
+07:6b14 GetFileInfo_B7_sfnSkipSpace
+07:6b2b GetFileInfo_B7_afterKanji05
+07:6b2e GetFileInfo_B7_mapE5
+07:6b30 GetFileInfo_B7_checkDotSlot
+07:6b40 GetFileInfo_B7_noDotInsert
+07:6b43 GetFileInfo_B7_insertDot
+07:6b51 GetFileInfo_B7_caseAdjust
+07:6b6d GetFileInfo_B7_toLower
+07:6b71 GetFileInfo_B7_storeSfnByte
+07:6b7e GetFileInfo_B7_sfnLoopCont
+07:6b81 GetFileInfo_B7_copyMeta
+07:6c27 GetFileInfo_B7_nulTermSfn
+07:6c91 GetFileInfo_B7_lfnSetup
+07:6caf GetFileInfo_B7_lfnLoop
+07:6cf7 GetFileInfo_B7_lfnAppend
+07:6d16 GetFileInfo_B7_lfnAdvance
+07:6d21 GetFileInfo_B7_lfnAdvanceCont
+07:6d38 GetFileInfo_B7_nulTermLfn
+07:6d48 GetFileInfo_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FollowPath_B3_segmentLoop ---
+03:71cd FollowPath_B3_findFail
+03:71d0 FollowPath_B3_noFileLastSeg
+03:71da FollowPath_B3_dotEntry
+03:7214 FollowPath_B3_lastSegOk
+03:721b FollowPath_B3_nonLastNsflag
+03:7225 FollowPath_B3_nsLastOk
+03:7228 FollowPath_B3_deniedNotDir
+03:722f FollowPath_B3_found
+03:7239 FollowPath_B3_foundLastSeg
+03:723c FollowPath_B3_checkAttrDir
+03:7266 FollowPath_B3_isDir
+03:7269 FollowPath_B3_notDir
+03:7270 FollowPath_B3_enterSubdir
+03:72b8 FollowPath_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- FollowPath_B7_segmentLoop ---
+07:74ee FollowPath_B7_findFail
+07:74f1 FollowPath_B7_noFileLastSeg
+07:74fb FollowPath_B7_dotEntry
+07:7535 FollowPath_B7_lastSegOk
+07:753c FollowPath_B7_nonLastNsflag
+07:7546 FollowPath_B7_nsLastOk
+07:7549 FollowPath_B7_deniedNotDir
+07:7550 FollowPath_B7_found
+07:755a FollowPath_B7_foundLastSeg
+07:755d FollowPath_B7_checkAttrDir
+07:7587 FollowPath_B7_isDir
+07:758a FollowPath_B7_notDir
+07:7591 FollowPath_B7_enterSubdir
+07:75d9 FollowPath_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- PutLfn_B5 ---
+05:4f4f PutLfn_B5_charLoop
+05:4f96 PutLfn_B5_advanceLfnIdx
+05:4fa1 PutLfn_B5_storeWchar
+05:4fc9 PutLfn_B5_checkPadding
+05:4fd6 PutLfn_B5_retFail
+05:4fdc PutLfn_B5_nextSlot
+05:4fe3 PutLfn_B5_nextSlotCont
+05:4fe6 PutLfn_B5_checkLlef
+05:4ff0 PutLfn_B5_moreLfn
+05:5002 PutLfn_B5_storeOrd
+05:501c PutLfn_B5_retOk
+05:501f PutLfn_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirSdi_B5_followLoop ---
+05:490c DirSdi_B5_afterGetFat
+05:490f DirSdi_B5_diskErr
+05:4914 DirSdi_B5_checkClust
+05:495e DirSdi_B5_clustIntErr
+05:4963 DirSdi_B5_subCsz
+05:4979 DirSdi_B5_clust2Sect
+05:49b5 DirSdi_B5_storeClust
+05:49e2 DirSdi_B5_setSectDir
+05:49f8 DirSdi_B5_sectDiv
+05:4a92 DirSdi_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Opendir_B5 ---
+05:73eb Opendir_B5_afterNullCheck
+05:749a Opendir_B5_loadDirClust
+05:74d8 Opendir_B5_notDir
+05:74dc Opendir_B5_dirSdi0
+05:7521 Opendir_B5_afterDirSdi
+05:752b Opendir_B5_dirSdiOk
+05:752e Opendir_B5_noFileAsDenied
+05:7532 Opendir_B5_cleanup
+05:7547 Opendir_B5_loadResult
+05:754a Opendir_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Open_B6 ---
+06:7317 Open_B6_initFp
+06:73d3 Open_B6_afterFollow
+06:73dd Open_B6_createPath
+06:73ec Open_B6_skipDirRegister
+06:73ef Open_B6_dirRegister
+06:73fe Open_B6_setCreated
+06:741d Open_B6_foundEntry
+06:7431 Open_B6_deniedDirRdo
+06:7438 Open_B6_checkOpenExisting
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Open_B6_checkClustWrap ---
+06:7446 Open_B6_afterModeChecks
+06:7457 Open_B6_createTruncate
+06:75d2 Open_B6_openExisting
+06:75ed Open_B6_volumeDenied
+06:75f4 Open_B6_checkWriteMode
+06:75fe Open_B6_checkReadonly
+06:7606 Open_B6_deniedReadonly
+06:760a Open_B6_afterAttrChecks
+06:761b Open_B6_setModified
+; --- Open_B6_lfnOrdLoop ---
+06:767a Open_B6_fillFp
+06:7794 Open_B6_cleanup
+06:7797 Open_B6_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirNext_B3_clearDirBuf ---
+03:5ae1 DirNext_B3_sectorLoop
+03:5b24 DirNext_B3_stampTemplate
+03:5b52 DirNext_B3_stampCont
+03:5b6b DirNext_B3_stampNext
+03:5b76 DirNext_B3_partialTail
+03:5bd3 DirNext_B3_storeClust
+03:5c24 DirNext_B3_advanceOk
+03:5c81 DirNext_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirNext_B5_sectToClust ---
+05:4be9 DirNext_B5_clustUnderflow
+05:4c04 DirNext_B5_clustIncOk
+05:4c07 DirNext_B5_intErr
+05:4c0c DirNext_B5_afterClustInc
+05:4c53 DirNext_B5_stretchNoFile
+05:4c58 DirNext_B5_storeClust
+05:4ca7 DirNext_B5_advanceOk
+05:4d03 DirNext_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirNext_B6_clearDirBuf ---
+06:590e DirNext_B6_sectorLoop
+06:5951 DirNext_B6_stampTemplate
+06:597f DirNext_B6_stampCont
+06:5998 DirNext_B6_stampNext
+06:59a3 DirNext_B6_partialTail
+06:5a00 DirNext_B6_storeClust
+06:5a51 DirNext_B6_advanceOk
+06:5aae DirNext_B6_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirNext_B7_clearDirBuf ---
+07:593c DirNext_B7_sectorLoop
+07:597f DirNext_B7_stampTemplate
+07:59ad DirNext_B7_stampCont
+07:59c6 DirNext_B7_stampNext
+07:59d1 DirNext_B7_partialTail
+07:5a2e DirNext_B7_storeClust
+07:5a7f DirNext_B7_advanceOk
+07:5adc DirNext_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Chdir_B5 ---
+05:6f76 Chdir_B5_checkAttrDir
+05:6f85 Chdir_B5_loadDirClust
+05:6fed Chdir_B5_notDir
+05:6ff1 Chdir_B5_afterPath
+05:6ffb Chdir_B5_pathOk
+05:6ffe Chdir_B5_noFileAsDenied
+05:7002 Chdir_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Readdir_B5 ---
+05:75a4 Readdir_B5_dirRead
+05:75f0 Readdir_B5_afterDirRead
+05:75f3 Readdir_B5_eofClearClust
+05:761e Readdir_B5_getInfoNext
+05:764d Readdir_B5_afterDirNext
+05:7650 Readdir_B5_eofClearClust2
+05:767b Readdir_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Mount_B5 ---
+05:6e3a Mount_B5_afterLdOk
+05:6e55 Mount_B5_afterUnreg
+05:6e63 Mount_B5_registerFs
+05:6e7e Mount_B5_retOk
+05:6e83 Mount_B5_findVolume
+05:6ea1 Mount_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Fsync_B3 ---
+03:74d1 Fsync_B3_hasModified
+03:74d9 Fsync_B3_flushWin
+03:7536 Fsync_B3_clearDirty
+03:7544 Fsync_B3_updateDir
+03:768b Fsync_B3_loadResult
+03:768c Fsync_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SyncFs_B3_buildFsInfo ---
+03:447e SyncFs_B3_fillWin
+03:459d SyncFs_B3_diskWrite
+03:45e0 SyncFs_B3_ioctlSync
+03:4602 SyncFs_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SyncFs_B7_buildFsInfo ---
+07:447e SyncFs_B7_fillWin
+07:459d SyncFs_B7_diskWrite
+07:45e0 SyncFs_B7_ioctlSync
+07:4602 SyncFs_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- MoveWindow_B5 ---
+05:421c MoveWindow_B5_reload
+05:425e MoveWindow_B5_storeWinsect
+05:4273 MoveWindow_B5_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirRegister_B3_finalizeSfn ---
+03:6a24 DirRegister_B3_loadResult
+03:6a27 DirRegister_B3_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- DirRegister_B6_finalizeSfn ---
+06:6851 DirRegister_B6_loadResult
+06:6854 DirRegister_B6_epilogue
+; --- DirRegister_B7_finalizeSfn ---
+07:6a89 DirRegister_B7_loadResult
+07:6a8c DirRegister_B7_epilogue
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- Close_B3 ---
+03:76c6 Close_B3_epilogue
+; --- Closedir_B5 ---
+05:7570 Closedir_B5_epilogue
+; --- SyncFs_B3_checkFsiFlag ---
+03:4462 SyncFs_B3_fsiFlagBody
+; --- SyncFs_B7_checkFsiFlag ---
+07:4462 SyncFs_B7_fsiFlagBody
+
+03:5fad LfnOfs_B3
+03:5fad .data:2b:1
+03:5fd8 MatchLfnEntry_B3
+03:6012 MatchLfnEntry_charLoop_B3
+03:6059 MatchLfnEntry_advance_B3
+03:6064 MatchLfnEntry_storeOfs_B3
+03:608c MatchLfnEntry_checkSentinel_B3
+03:6099 MatchLfnEntry_noMatch_B3
+03:609f MatchLfnEntry_nextOrd_B3
+03:60a6 MatchLfnEntry_loopBack_B3
+03:60a9 MatchLfnEntry_checkLastFlag_B3
+03:60b3 MatchLfnEntry_checkSpare_B3
+03:60c5 MatchLfnEntry_clearSpare_B3
+03:60df MatchLfnEntry_matched_B3
+03:60e2 MatchLfnEntry_epilogue_B3
+06:5dda LfnOfs_B6
+06:5dda .data:2b:1
+06:5e05 MatchLfnEntry_B6
+06:5e3f MatchLfnEntry_charLoop_B6
+06:5e86 MatchLfnEntry_advance_B6
+06:5e91 MatchLfnEntry_storeOfs_B6
+06:5eb9 MatchLfnEntry_checkSentinel_B6
+06:5ec6 MatchLfnEntry_noMatch_B6
+06:5ecc MatchLfnEntry_nextOrd_B6
+06:5ed3 MatchLfnEntry_loopBack_B6
+06:5ed6 MatchLfnEntry_checkLastFlag_B6
+06:5ee0 MatchLfnEntry_checkSpare_B6
+06:5ef2 MatchLfnEntry_clearSpare_B6
+06:5f0c MatchLfnEntry_matched_B6
+06:5f0f MatchLfnEntry_epilogue_B6
+07:5e08 LfnOfs_B7
+07:5e08 .data:2b:1
+07:5e33 MatchLfnEntry_B7
+07:5e6d MatchLfnEntry_charLoop_B7
+07:5eb4 MatchLfnEntry_advance_B7
+07:5ebf MatchLfnEntry_storeOfs_B7
+07:5ee7 MatchLfnEntry_checkSentinel_B7
+07:5ef4 MatchLfnEntry_noMatch_B7
+07:5efa MatchLfnEntry_nextOrd_B7
+07:5f01 MatchLfnEntry_loopBack_B7
+07:5f04 MatchLfnEntry_checkLastFlag_B7
+07:5f0e MatchLfnEntry_checkSpare_B7
+07:5f20 MatchLfnEntry_clearSpare_B7
+07:5f3a MatchLfnEntry_matched_B7
+07:5f3d MatchLfnEntry_epilogue_B7
+00:01e3 BrowserScroll
+00:01e3 .data:f8:8
+00:02e0 BrowserScrollDownHook
+00:02e0 .data:b:8
+00:02f0 BrowserScrollUpHook
+00:02f0 .data:b:8
+00:03cc DirListSkipDotLongName
+08:746b BrowserSortAll
+08:746b .data:631:8
+00:03d4 BrowserSortAllStub
+00:03d4 .data:8:8
+00:03dc FarCallDrawDetailBottom
+00:03dc .data:18:8
+00:3d8c BrowserScrollDownRepaint
+00:3d8c .data:148:8
+00:02fb BrowserPageEnd
+00:02fb .data:41:8
+00:03f4 BrowserPageEndHook
+00:03f4 .data:b:8
+02:4380 FarCallOpendir_B5
+02:4380 .data:16:8
+02:4396 FarCallReaddir_B5
+02:4396 .data:16:8
+00:0400 FarCallScan
+00:0400 .data:8:8
+02:43ac FarCallSetPage
+02:43ac .data:f:8
+00:0460 fastlaunch_hook
+00:0460 .data:23:8
+02:4500 FastLaunchScan
+02:4500 .data:5b6:8
+00:0490 fastlaunch_boot
+00:0490 .data:1e:8
+00:0420 fastlaunch_do_launch
+00:0420 .data:33:8

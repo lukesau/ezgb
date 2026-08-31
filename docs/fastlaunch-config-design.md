@@ -140,4 +140,4 @@ pursued.
 Investigated read-only across `docs/hardware-board.md`, `docs/fpga-flash-map.md`,
 `docs/fpga-ace.md`, `docs/game-slot-access.md`, `docs/psram-save-map.md`,
 `docs/last-rom.md`, `docs/omega-jr-compare.md`, `decomp/src/shims.md`,
-`re/1.05e/disassembly/bank_*.asm`, and `re/1.05e/kernel.sym`.
+`re/1.05e-0731/disassembly/bank_*.asm`, and `re/1.05e-0731/kernel.sym`.

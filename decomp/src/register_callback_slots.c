@@ -8,7 +8,7 @@
  * Verify with the callee pinned to the kernel address:
  *   verify.py src/register_callback_slots.c 1.05e 0 062e \
  *       --pin install_callback_slot=066c
- *   # or: --pins tools/pins/1.05e.bank0
+ *   # or: --pins tools/pins/1.05e-0731.bank0
  */
 
 extern void install_callback_slot(void);

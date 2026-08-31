@@ -6,9 +6,11 @@ Annotations are kept in tracked files and reinjected into `bank_*.asm`.
 On-cart save storage is battery-backed **PSRAM**. Games *see* "battery RAM" because the FPGA
 emulates a normal MBC `$A000` window; those writes physically land in PSRAM kept alive by the
 coin cell. The coin cell backs **both saves and the RTC**, so a dead cell loses both (the
-well-known "EZ Flash Jr battery dies in a month" complaints). Chip identity (U9, `3350LLZDQD`)
-and board detail: `hardware-board.md`. The kernel's `BATTERY` / `DRY!!!` notice is about the
-**console** AA cells, not the cart.
+well-known "EZ Flash Jr battery dies in a month" complaints). The save/settings pSRAM is the
+**512 KB pSRAM die inside U4** (the `S71GL032A40` MCP — datasheet-confirmed, and an exact match
+for the 64-page / 512 KB map); the *game* ROM lives in a separate, larger pSRAM in U9. Chip
+detail: [hardware-board.md](hardware-board.md). The kernel's `BATTERY` / `DRY!!!` notice is
+about the **console** AA cells, not the cart.
 
 ## Two bus personalities, one PSRAM chip
 
@@ -98,8 +100,8 @@ state, adjacent to this path but not part of the save-dump flag itself.
 
 ## Key symbols (1.05e)
 
-Human names live in [re/1.05e/kernel.sym](../re/1.05e/kernel.sym). Block comments live in
-[re/1.05e/notes.json](../re/1.05e/notes.json) and are injected by
+Human names live in [re/1.05e-0731/kernel.sym](../re/1.05e-0731/kernel.sym). Block comments live in
+[re/1.05e-0731/notes.json](../re/1.05e-0731/notes.json) and are injected by
 `scripts/annotate-disasm.py`.
 
 | Symbol | Bank:addr | Role |
@@ -120,9 +122,9 @@ Human names live in [re/1.05e/kernel.sym](../re/1.05e/kernel.sym). Block comment
 
 ```sh
 # After updating kernel.gb or editing kernel.sym / notes.json:
-cd re/1.05e
+cd re/1.05e-0731
 mgbdis kernel.gb                    # reads kernel.sym for names
-../../scripts/annotate-disasm.py 1.05e   # injects ; [ezgb] comment blocks
+../../scripts/annotate-disasm.py 1.05e-0731   # injects ; [ezgb] comment blocks
 
 cd disassembly && make              # byte-identical round-trip check
 ```
@@ -130,4 +132,10 @@ cd disassembly && make              # byte-identical round-trip check
 Do **not** rely on hand-edited comments inside `bank_*.asm` alone; mgbdis will wipe them.
 Add names to `kernel.sym`, add prose to `notes.json`, then run the annotate script.
 
-Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md).
+## Full page map & free space
+
+The per-page layout of the whole 512 KB pSRAM (which pages the kernel uses, and
+~7 KB immediately-free in page 17 plus ~344 KB of untouched pages pending a
+hardware probe) is in [psram-page-map.md](psram-page-map.md).
+
+Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md), [psram-page-map.md](psram-page-map.md).

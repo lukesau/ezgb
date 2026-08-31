@@ -1,0 +1,4 @@
+registers
+print [$2000]
+print [$d6cf]
+backtrace

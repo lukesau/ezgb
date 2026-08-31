@@ -35,13 +35,13 @@ region regardless of helper or bank, and the backtrace names the culprit. See
 
 ```sh
 cd decomp
-python3 tools/inject.py src/ezgb_tab_banner.c 1.05e 8 746b EzgbTabBanner \
+python3 tools/inject.py src/ezgb_tab_banner.c 1.05e-0731 8 746b EzgbTabBanner \
     --pin DrawString=08b7 --pin StoreDrawParams=2791 --apply
-python3 tools/patch_call.py 1.05e 8 7200 3 08:746b --jp --apply --regen
+python3 tools/patch_call.py 1.05e-0731 8 7200 3 08:746b --jp --apply --regen
 ```
 
 Total ROM footprint: 38 bytes of code + a 3-byte hook. Revert with
-`cp re/1.05e/kernel.gb.orig re/1.05e/kernel.gb`, then drop the two
+`cp re/1.05e-0731/kernel.gb.orig re/1.05e-0731/kernel.gb`, then drop the two
 `08:746b` lines from `kernel.sym` and regen.
 
 Verify it fires:

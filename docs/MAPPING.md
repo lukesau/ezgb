@@ -35,15 +35,15 @@ Persist through:
 
 | Artifact | Role |
 |---|---|
-| `re/1.05e/kernel.sym` | Human symbol names (`bank:addr Name`); mgbdis applies these |
-| `re/1.05e/notes.json` | Multi-line `; [ezgb]` comment blocks at labels |
+| `re/1.05e-0731/kernel.sym` | Human symbol names (`bank:addr Name`); mgbdis applies these |
+| `re/1.05e-0731/notes.json` | Multi-line `; [ezgb]` comment blocks at labels |
 | `docs/*.md` | Traces, hardware maps, subsystem writeups |
 | `decomp/` | Byte-matched C (optional, later) |
 
 Regen after adding sym names (details in [`DEVELOPMENT.md`](DEVELOPMENT.md)):
 
 ```sh
-./scripts/regen-disasm.sh 1.05e    # mgbdis → annotate → make → progress → worklist
+./scripts/regen-disasm.sh 1.05e-0731    # mgbdis → annotate → make → progress → worklist
 ```
 
 `make` must stay green (byte-identical aside from known header cosmetics).
@@ -53,15 +53,15 @@ Regen after adding sym names (details in [`DEVELOPMENT.md`](DEVELOPMENT.md)):
 Tools print `bank:addr` (e.g. `00:27ba`), not a filename.
 
 - **File:** bank is two hex digits; the file is `bank_` + three hex digits +
-  `.asm` under `re/1.05e/disassembly/` (`00` → `bank_000.asm`).
+  `.asm` under `re/1.05e-0731/disassembly/` (`00` → `bank_000.asm`).
 - **Label:** mgbdis auto-names are `Call_BBB_AAAA` / `Jump_BBB_AAAA` /
   `jr_BBB_AAAA` (`BBB` = bank in three hex, `AAAA` = address in four). `00:27ba`
   → `Call_000_27ba` / `Jump_000_27ba`. Once named in `kernel.sym` and
   regenerated, the label becomes the human name; the address still finds it:
 
   ```sh
-  rg -n "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e/disassembly/bank_000.asm
-  rg -n -A 35 "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e/disassembly/bank_000.asm  # body window
+  rg -n "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e-0731/disassembly/bank_000.asm
+  rg -n -A 35 "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e-0731/disassembly/bank_000.asm  # body window
   ```
 
 A label line ending in `:` alone is the definition; an indented `call
@@ -112,7 +112,7 @@ Minimum bar for a name:
 | SDCC runtime | Short typed op | `U32Shr`, `U32Shl`, `Memcpy` |
 | Unsure | Leave auto-named | keep `Call_000_27ba` |
 
-`notes.json` block for non-obvious contracts (then `annotate-disasm.py 1.05e`;
+`notes.json` block for non-obvious contracts (then `annotate-disasm.py 1.05e-0731`;
 comments marked `; [ezgb]`, replaced safely on re-run):
 
 ```json
@@ -205,12 +205,12 @@ Wrong names are worse than `Call_`: they poison every future read.
 
 ```sh
 ./scripts/map-next.sh [--top 10]                              # progress + proposals + worklist + packet
-./scripts/naming-progress.sh 1.05e
-./scripts/label-packet.py 1.05e --app --frontier-only --top 5
+./scripts/naming-progress.sh 1.05e-0731
+./scripts/label-packet.py 1.05e-0731 --app --frontier-only --top 5
 ./scripts/doc-symbol-coverage.py --app --frontier-only --top 5
 ./scripts/doc-symbol-coverage.py --top 25                     # rank dump incl. lib banks, no body
-./scripts/propose-labels.py 1.05e --apply                     # mechanical, then regen
-./scripts/regen-disasm.sh 1.05e
+./scripts/propose-labels.py 1.05e-0731 --apply                     # mechanical, then regen
+./scripts/regen-disasm.sh 1.05e-0731
 ./scripts/run-sameboy-debug.sh --breakpoints                  # live
 ```
 

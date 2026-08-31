@@ -6,7 +6,7 @@ without duplicating. Safe to run after mgbdis regen (pair with re/<version>/kern
 for human symbol names).
 
 Usage:
-  ./scripts/annotate-disasm.py 1.05e
+  ./scripts/annotate-disasm.py 1.05e-0731
   ./scripts/annotate-disasm.py 1.04e
 """
 
@@ -199,7 +199,7 @@ def annotate_bank(path, blocks_for_bank, sym_names):
 def main():
     if len(sys.argv) != 2:
         print(f"usage: {sys.argv[0]} <version>", file=sys.stderr)
-        print("  example: {0} 1.05e".format(sys.argv[0]), file=sys.stderr)
+        print("  example: {0} 1.05e-0731".format(sys.argv[0]), file=sys.stderr)
         sys.exit(2)
 
     version = sys.argv[1]

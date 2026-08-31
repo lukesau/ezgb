@@ -3,17 +3,17 @@
 # and the app worklist. Quiet by default; pass -v for full mgbdis/make output.
 #
 # Usage:
-#   scripts/regen-disasm.sh              # 1.05e
-#   scripts/regen-disasm.sh 1.05e
-#   scripts/regen-disasm.sh 1.05e -v
+#   scripts/regen-disasm.sh              # 1.05e-0731
+#   scripts/regen-disasm.sh 1.05e-0731
+#   scripts/regen-disasm.sh 1.05e-0731 -v
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-1.05e}"
+VER="${1:-1.05e-0731}"
 VERBOSE=0
 if [[ "${2:-}" == "-v" ]] || [[ "${1:-}" == "-v" ]]; then
   VERBOSE=1
-  [[ "${1:-}" == "-v" ]] && VER="1.05e"
+  [[ "${1:-}" == "-v" ]] && VER="1.05e-0731"
 fi
 
 RE="$ROOT/re/$VER"

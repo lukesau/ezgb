@@ -22,9 +22,9 @@ section.
 ## Rebuilding a disassembly
 
 ```sh
-cd re/1.05e
+cd re/1.05e-0731
 python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # apply kernel.sym names
-../../scripts/annotate-disasm.py 1.05e                      # notes.json + wram.inc
+../../scripts/annotate-disasm.py 1.05e-0731                      # notes.json + wram.inc
 
 cd disassembly
 make            # requires rgbasm/rgblink/rgbfix (rgbds)
@@ -40,9 +40,9 @@ ROM-header bytes differ; see [REGISTERS.md](REGISTERS.md)).
 
 Persistent annotations live in two files per version:
 
-- [`re/1.05e/kernel.sym`](../re/1.05e/kernel.sym): names (`Call_000_0de4` becomes
+- [`re/1.05e-0731/kernel.sym`](../re/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
   `SdMenuMain`). mgbdis applies these to labels.
-- [`re/1.05e/notes.json`](../re/1.05e/notes.json): comment blocks.
+- [`re/1.05e-0731/notes.json`](../re/1.05e-0731/notes.json): comment blocks.
   `annotate-disasm.py` injects them, matching either the assigned name or the
   raw `*_bbb_aaaa` label for still-unnamed addresses.
 
@@ -51,10 +51,10 @@ See [psram-save-map.md](psram-save-map.md) for an example of the note format.
 ## Naming and annotation
 
 The disassembly is 100% labeled. To refine a name or comment, edit
-`re/1.05e/kernel.sym` / `notes.json` then regenerate:
+`re/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
 
 ```sh
-./scripts/regen-disasm.sh 1.05e       # after editing kernel.sym / notes.json
+./scripts/regen-disasm.sh 1.05e-0731       # after editing kernel.sym / notes.json
 ./scripts/map-next.sh                 # progress + proposals + worklist + full packet
 ```
 
@@ -90,7 +90,7 @@ release (bridge small gaps with a peep file under `decomp/tools/peeps/`).
 
 ### Workflow
 
-1. Pick a function from `re/1.05e/disassembly/bank_*.asm` (or `1.04e`). Note its
+1. Pick a function from `re/1.05e-0731/disassembly/bank_*.asm` (or `1.04e`). Note its
    bank and address.
 2. Write equivalent C in `decomp/src/`. One function (or a few closely related)
    per attempt for easier mismatch isolation.
@@ -114,12 +114,12 @@ absolute target (no stub bytes emitted):
 
 ```sh
 # single pin
-decomp/tools/verify.py src/register_callback_slots.c 1.05e 0 062e \
+decomp/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
     --pin install_callback_slot=066c
 
 # or a pins file (matched bank-0 symbols for 1.05e)
-decomp/tools/verify.py src/register_callback_slots.c 1.05e 0 062e \
-    --pins tools/pins/1.05e.bank0
+decomp/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
+    --pins tools/pins/1.05e-0731.bank0
 ```
 
 Pins are needed for not-yet-decompiled callees, and for matched ones you choose
@@ -182,12 +182,12 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools
   ./scripts/gbdiff.sh                    # symbol-annotated byte diff of the two dumps
   ./scripts/gbdiff.sh old.gb new.gb      # ...or any two ROMs
-  ./scripts/naming-progress.sh           # % of 1.05e symbols still auto-named by mgbdis
-  ./scripts/naming-progress.sh 1.05e all # ...plus the full list of unnamed symbols
+  ./scripts/naming-progress.sh           # % of 1.05e-0731 symbols still auto-named by mgbdis
+  ./scripts/naming-progress.sh 1.05e-0731 all # ...plus the full list of unnamed symbols
   ```
 
   `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
-  (we ship `re/1.05e/kernel.sym`; add `re/1.04e/kernel.sym` to annotate the
+  (we ship `re/1.05e-0731/kernel.sym`; add `re/1.04e/kernel.sym` to annotate the
   older side). `naming-progress.sh` reads a built `disassembly/game.sym`, so
   `make` the disassembly first.
 - **[omega-de-kernel](https://github.com/ez-flash/omega-de-kernel)**: EZ Flash's

@@ -1,5 +1,5 @@
 # Absolute addresses of matched bank-0 symbols in kernel 1.05e.
-# Used with: verify.py ... --pins tools/pins/1.05e.bank0
+# Used with: verify.py ... --pins tools/pins/1.05e-0731.bank0
 # Names are C identifiers (leading _ added automatically).
 
 install_callback_slot 066c

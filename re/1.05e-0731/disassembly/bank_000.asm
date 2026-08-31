@@ -660,6 +660,19 @@ BrowserPageEndHook::
     db $c3, $ab, $16
 
     rst RST_38
+
+FarCallScan::
+    db $cd, $8d, $07, $00, $45, $02, $00, $c9
+
+    rlca
+    nop
+    ld b, l
+    ld [bc], a
+    nop
+    add sp, $02
+    ret
+
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -676,6 +689,16 @@ BrowserPageEndHook::
     rst RST_38
     rst RST_38
     rst RST_38
+
+fastlaunch_do_launch::
+    db $3e, $00, $f5, $33, $cd, $8d, $07, $e7
+    db $41, $04, $00, $e8, $01, $21, $a6, $c2
+    db $06, $80, $af, $77, $23, $05, $20, $fb
+    db $21, $a6, $c2, $36, $2f, $3e, $2f, $f5
+    db $33, $21, $a4, $c4, $e5, $cd, $42, $2c
+    db $e8, $03, $13, $d5, $d5, $d5, $d5, $d5
+    db $c3, $44, $13
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -689,6 +712,14 @@ BrowserPageEndHook::
     rst RST_38
     rst RST_38
     rst RST_38
+
+fastlaunch_hook::
+    db $fa, $ff, $db, $b7, $20, $19, $3e, $01
+    db $ea, $ff, $db, $cd, $4a, $3a, $7b, $e6
+    db $20, $20, $0c, $cd, $00, $04, $fa, $a4
+    db $c4, $b7, $28, $03, $cd, $20, $04, $21
+    db $2d, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -702,138 +733,13 @@ BrowserPageEndHook::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+fastlaunch_boot::
+    db $cd, $d4, $03, $fa, $ff, $db, $b7, $c0
+    db $21, $ff, $db, $36, $01, $cd, $4a, $3a
+    db $cb, $6b, $c0, $cd, $00, $04, $fa, $a4
+    db $c4, $b7, $c2, $20, $04, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3354,7 +3260,7 @@ FileBrowserEntry_memsetWireDirList::
     inc de
     ld a, $00
     ld [de], a
-    call $03d4
+    call $0490
     ld hl, sp+$15
     ld [hl], $00
     dec hl
@@ -12446,7 +12352,7 @@ VramFillActiveBgMap_use9c00::
     ld hl, $9c00
 
 VramFillActiveBgMap_doFill::
-    ld de, $0400
+    ld de, FarCallScan
     jp VramFill
 
 

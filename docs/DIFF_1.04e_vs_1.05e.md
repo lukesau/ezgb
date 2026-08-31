@@ -4,9 +4,9 @@ Accounting of every place the two kernel binaries differ in behavior. Useful bef
 modified or alternate kernel (including a future B-mode image): understand both versions well
 enough that work against either does not collide with version-specific changes.
 
-Source: `re/1.04e/kernel.gb` (SHA1 `43c76dc...`) vs `re/1.05e/kernel.gb` (SHA1 `ce1d531...`),
+Source: `re/1.04e/kernel.gb` (SHA1 `43c76dc...`) vs `re/1.05e-0731/kernel.gb` (SHA1 `ce1d531...`),
 both hash-verified against EZ Flash's own distribution. Disassemblies in
-`re/1.04e/disassembly/` and `re/1.05e/disassembly/`.
+`re/1.04e/disassembly/` and `re/1.05e-0731/disassembly/`.
 
 ## Methodology
 

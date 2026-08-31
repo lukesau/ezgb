@@ -77,7 +77,7 @@ Manual equivalent:
 ```sh
 export SAMEBOY_EZFLASH_JR_IMG="$PWD/sd/card.img"   # optional if cwd walk finds it
 cd tools/SameBoy
-./build/bin/SDL/sameboy -s ../../re/1.05e/kernel.gb
+./build/bin/SDL/sameboy -s ../../re/1.05e-0731/kernel.gb
 ```
 
 `-s` / `--stop-debugger` breaks before the first instruction. Debugger is also

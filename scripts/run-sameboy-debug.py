@@ -132,7 +132,7 @@ def drain(fd, timeout=0.05):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--version", default="1.05e", help="kernel version dir under re/")
+    ap.add_argument("--version", default="1.05e-0731", help="kernel version dir under re/")
     ap.add_argument("--model", default="cgb",
                     help="SameBoy model (default cgb). Use dmg to emulate an "
                          "original Game Boy; auto-detection would pick dmg from "

@@ -14,15 +14,15 @@
 #
 # Usage:
 #   ./scripts/map-next.sh
-#   ./scripts/map-next.sh 1.05e
+#   ./scripts/map-next.sh 1.05e-0731
 #   ./scripts/map-next.sh --top 10
-#   ./scripts/map-next.sh 1.05e --apply
+#   ./scripts/map-next.sh 1.05e-0731 --apply
 #   ./scripts/map-next.sh --include-lib --top 5          # FatFs + app
 #   ./scripts/map-next.sh --banks 09 --top 5             # canonical FatFs bank only
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="1.05e"
+VER="1.05e-0731"
 TOP=5
 APPLY=0
 INCLUDE_LIB=0

@@ -335,7 +335,7 @@ def main():
     if "--apply" in args:
         i = args.index("--apply")
         apply_path = args[i + 1]
-        version = "1.05e"
+        version = "1.05e-0731"
         for a in args:
             if re.fullmatch(r"[0-9]+\.[0-9a-zA-Z]+", a):
                 version = a
@@ -357,7 +357,7 @@ def main():
         cleaned.append(a)
         i += 1
 
-    version = "1.05e"
+    version = "1.05e-0731"
     for a in cleaned:
         if re.fullmatch(r"[0-9]+\.[0-9a-zA-Z]+", a):
             version = a

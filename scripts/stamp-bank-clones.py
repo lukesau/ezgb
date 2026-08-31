@@ -185,7 +185,7 @@ def main():
     args = sys.argv[1:]
     dry = "--dry-run" in args
     args = [a for a in args if a != "--dry-run"]
-    version = args[0] if args else "1.05e"
+    version = args[0] if args else "1.05e-0731"
     sym_path = ROOT / "re" / version / "kernel.sym"
 
     named, lines = load_sym(sym_path)

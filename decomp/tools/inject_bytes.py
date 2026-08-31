@@ -11,7 +11,7 @@ Usage:
                     [--apply] [--regen]
 
 Example (see decomp/src/shims.md for how these bytes were derived):
-    inject_bytes.py 1.05e 8 4772 FarCallOpendir_B5 \\
+    inject_bytes.py 1.05e-0731 8 4772 FarCallOpendir_B5 \\
         f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply --regen
 """
 import argparse
@@ -53,7 +53,7 @@ def patch_kernel_gb(gb_path, offset, code_bytes):
 
 def build_arg_parser():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("version", choices=("1.04e", "1.05e"))
+    p.add_argument("version", choices=("1.04e", "1.05e-0731", "1.05e-0918"))
     p.add_argument("bank", type=int)
     p.add_argument("address", help="hex address")
     p.add_argument("name", help="kernel.sym label")

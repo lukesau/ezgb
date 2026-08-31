@@ -32,5 +32,5 @@ priorities.
   `res 7,a` where the kernel used `add a,a` / `cp` / `and $7f`.
 - `Jump_000_066c` / `Call_000_064c` / wrappers use HL+BC register ABI (boot passes
   `ld bc, handler` then `call` wrapper). `__naked` for that convention; wrappers use
-  `extern` + `--pin install_callback_slot=066c` (see `tools/pins/1.05e.bank0`).
+  `extern` + `--pin install_callback_slot=066c` (see `tools/pins/1.05e-0731.bank0`).
   `$062e`–`$06c0` boot IRQ/setup stretch is matched on 1.05e.

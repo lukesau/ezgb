@@ -1,7 +1,7 @@
 # Last-ROM feature (START overlay), 1.05e
 
 The file browser's **START** overlay shows the last-launched ROM and lets you re-run it
-without navigating the tree. Reverse engineered statically from `re/1.05e/disassembly`;
+without navigating the tree. Reverse engineered statically from `re/1.05e-0731/disassembly`;
 addresses are 1.05e. Confirmed against a photo of the physical menu (tab bar `SD / SET /
 HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]return` /
 `[A]start` buttons).
@@ -35,7 +35,7 @@ meta, so `$A300` is lost if the coin cell dies; see [psram-save-map.md](psram-sa
 On the normal load path, after the launch path is assembled in `$c2a6`, the loader copies it
 into `$A300`:
 
-```1677:1749:re/1.05e/disassembly/bank_001.asm
+```1677:1749:re/1.05e-0731/disassembly/bank_001.asm
 Jump_001_4856:
     ld hl, $c4a4
     push hl
@@ -70,7 +70,7 @@ Jump_001_48b2:
 
 ### Trigger: START = bit `$80`
 
-```4015:4021:re/1.05e/disassembly/bank_000.asm
+```4015:4021:re/1.05e-0731/disassembly/bank_000.asm
 Jump_000_1294:
     ld hl, sp+$00
     ld a, [hl]
@@ -89,7 +89,7 @@ Jump_000_1294:
 
 ### `Jump_000_12f1`: display basename only
 
-```4094:4133:re/1.05e/disassembly/bank_000.asm
+```4094:4133:re/1.05e-0731/disassembly/bank_000.asm
 Jump_000_12f1:
     ld bc, $4000
     ld a, $00
@@ -122,7 +122,7 @@ character, returning the last `/` regardless of nesting depth. The overlay draws
 
 ### `Jump_000_1330`: overlay input loop (A = start, B = return)
 
-```4131:4201:re/1.05e/disassembly/bank_000.asm
+```4131:4201:re/1.05e-0731/disassembly/bank_000.asm
 Jump_000_1330:
     call Call_000_3a4a
     ...
@@ -197,6 +197,11 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 `$A300` and driving the `jr_000_1344` split-and-load sequence would handle nested ROMs without
 the file browser. See [`omega-jr-compare.md`](omega-jr-compare.md) and
 [`fast-launch-notes.md`](fast-launch-notes.md).
+
+The other half of a B-mode boot — skipping the SD→NOR copy because the game is already in
+NOR — exists as a dormant, caller-less kernel primitive (`RomLoad_ResetIntoRom_B4`,
+`04:4180`); an experimental hook makes this overlay's A press use it. See
+[`nor-reuse.md`](nor-reuse.md).
 
 ## Open questions / verification TODO
 

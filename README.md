@@ -60,12 +60,12 @@ not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
 ## Building a modded kernel
 
 You supply your own firmware dump; this repo does not redistribute EZ Flash's
-binaries. Drop it at `re/1.05e/kernel.gb` (a copy of the `ezgb.dat` from the
+binaries. Drop it at `re/1.05e-0731/kernel.gb` (a copy of the `ezgb.dat` from the
 official firmware package), then:
 
 ```sh
 # 1. Regenerate the disassembly from your dump (one-time per version)
-cd re/1.05e
+cd re/1.05e-0731
 python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
 ../../scripts/annotate-disasm.py 1.05e
 
@@ -83,7 +83,7 @@ scripts/build-ezgb-dat.sh 1.05e
 scripts/make-sd-image.sh
 ```
 
-Injection edits `re/1.05e/kernel.gb` in place, so it becomes the patched
+Injection edits `re/1.05e-0731/kernel.gb` in place, so it becomes the patched
 artifact. Run it in SameBoy (with the EZ Jr FPGA stub, see
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#tools)), or copy `ezgb.dat` to the
 root of a real cart's microSD. Hook-site rules and the free-space map:

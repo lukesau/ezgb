@@ -51,7 +51,7 @@ scrub_macos_junk() {
 # carries the build we are testing. Non-fatal: kernel.gb is untracked firmware
 # and may simply be absent.
 if [[ -x "$ROOT/scripts/build-ezgb-dat.sh" ]]; then
-  "$ROOT/scripts/build-ezgb-dat.sh" "${EZGB_KERNEL_VERSION:-1.05e}" \
+  "$ROOT/scripts/build-ezgb-dat.sh" "${EZGB_KERNEL_VERSION:-1.05e-0731}" \
     || echo "warning: could not stage ezgb.dat; card will not contain a kernel" >&2
 fi
 

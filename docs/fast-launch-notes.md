@@ -126,27 +126,27 @@ launch is independent of them):
 cd decomp
 # --- bank 2 ---
 # FatFs opendir/readdir shims
-python3 tools/inject_bytes.py 1.05e 2 4380 FarCallOpendir_B5 \
+python3 tools/inject_bytes.py 1.05e-0731 2 4380 FarCallOpendir_B5 \
     f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply
-python3 tools/inject_bytes.py 1.05e 2 4396 FarCallReaddir_B5 \
+python3 tools/inject_bytes.py 1.05e-0731 2 4396 FarCallReaddir_B5 \
     f8042a666fe5f8042a666fe5cd8d0776750500e804c9 --apply
 # FarCallSetPage shim: SetFpgaPageAlt_B4 ($41e7), the $7FC0 personality
-python3 tools/inject_bytes.py 1.05e 2 43ac FarCallSetPage \
+python3 tools/inject_bytes.py 1.05e-0731 2 43ac FarCallSetPage \
     f8027ef533cd8d07e7410400e801c9 --apply
 # scan (config read via ready-made f_open/f_read/f_close thunks + VBlank)
-python3 tools/inject.py src/fastlaunch.c 1.05e 2 4500 FastLaunchScan \
+python3 tools/inject.py src/fastlaunch.c 1.05e-0731 2 4500 FastLaunchScan \
     --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 --pin FarCallSetPage=43ac \
     --pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_03_768f=19a1 \
     --pin WaitVBlankFlag=0688 --apply
 # --- bank 0 (mind the cave layout) ---
-python3 tools/inject_bytes.py 1.05e 0 0400 FarCallScan cd8d0700450200c9 --apply
-python3 tools/inject.py src/fastlaunch_do_launch.c 1.05e 0 0420 fastlaunch_do_launch --apply
-python3 tools/inject.py src/fastlaunch_hook.c 1.05e 0 0460 fastlaunch_hook --apply   # post-paint variant (unwired)
-python3 tools/inject.py src/fastlaunch_boot.c 1.05e 0 0490 fastlaunch_boot \
+python3 tools/inject_bytes.py 1.05e-0731 0 0400 FarCallScan cd8d0700450200c9 --apply
+python3 tools/inject.py src/fastlaunch_do_launch.c 1.05e-0731 0 0420 fastlaunch_do_launch --apply
+python3 tools/inject.py src/fastlaunch_hook.c 1.05e-0731 0 0460 fastlaunch_hook --apply   # post-paint variant (unwired)
+python3 tools/inject.py src/fastlaunch_boot.c 1.05e-0731 0 0490 fastlaunch_boot \
     --pin FarCallScan=0400 --pin fastlaunch_do_launch=0420 \
     --pin BrowserSortAllStub=03d4 --pin ReadJoypad=3a4a --apply
 # wire the pre-paint hook: `call $03d4` (cd d4 03) at 00:102f -> `call $0490` (cd 90 04)
-python3 tools/inject_bytes.py 1.05e 0 102f FastLaunchHookSite cd9004 --apply --regen
+python3 tools/inject_bytes.py 1.05e-0731 0 102f FastLaunchHookSite cd9004 --apply --regen
 ```
 
 The scan lives in [`../decomp/src/fastlaunch.c`](../decomp/src/fastlaunch.c)
@@ -158,7 +158,7 @@ injected into empty bank 2, hooked from `FileBrowserEntry_inputLoop` (`00:1107`)
 a lone-ROM card returned `/PKMRED.GB`, and a `PKMRED.fastlaunch` marker card (with
 a second ROM present, so the lone-rule stayed out) resolved to `/PKMRED.GB` via
 the marker path. The verified test ROM is preserved at
-`re/1.05e/kernel.gb.fl-scan-verified`.
+`re/1.05e-0731/kernel.gb.fl-scan-verified`.
 
 Possible follow-up: loosen the lone-ROM rule to "exactly one *ROM* file" (ignore
 non-ROM clutter in root) instead of "exactly one real file".

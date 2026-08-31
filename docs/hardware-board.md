@@ -10,8 +10,8 @@ exact strings as approximate; the families are confident.
 |---|---|---|---|---|
 | U1 | `XILINX SPARTAN XC3S200A VQG100AGQ1240` | Spartan-3A, 200K gates, 100-pin VQFP | High | The FPGA. Everything custom about this cart. |
 | - | `25Q40H E20090N` (8-pin SOIC) | 4 Mbit / **512 KB** SPI NOR flash (W25Q40 family) | High | **FPGA configuration storage** (see below). |
-| U4 | `Spansion 71GL032A40BFW0B` (BGA) | S71GL032A MCP, 32 Mbit / **4 MB** NOR flash | High | Game ROM storage: where a launched ROM is programmed. |
-| U9 | `3350LLZDQD` / `Z544I208A`, lowercase-`i` logo (BGA) | **PSRAM** per community teardowns; not FRAM | Medium | Save + file-list storage, kept alive by the coin cell |
+| U4 | `Spansion 71GL032A40BFW0B` (BGA) | **S71GL032A40 MCP** (datasheet, `tools/S71GL032A.PDF`): a stacked package of **one S29PL032A = 4 MB NOR flash die + a 512 KB (4 Mbit) pSRAM die** | High | Its **512 KB pSRAM die = the battery-backed save/settings store** (exact size match to the 64-page / 512 KB map — [psram-page-map.md](psram-page-map.md)). Its 4 MB NOR die: **no GB-side use found** (see below). |
+| U9 | `3350LLZDQ0` / `3350LLZDQD`, lowercase-`i` (Intel-era) logo (BGA) | **Undocumented.** No datasheet is findable for this marking (web search + the forum's own links 404/paywall). A GBAtemp poster guessed *Numonyx RD38F3350*, an Intel/Numonyx NOR+pSRAM MCP — **unverified**, so treat "it also contains a NOR die" as speculative. | Med (function) / Low (part ID) | **Holds the ~8 MB volatile game-ROM store** — this part is *proven by us*: the loaded ROM (up to the 64 Mbit GB max) lives in fast pSRAM that fades toward `$FF` off-power and clears on cart removal ([nor-reuse.md](nor-reuse.md)). Whether U9 additionally contains a NOR die is unconfirmed. |
 | U6, U7 | `LVT162245` ×2 (`P01AD` = lot code, Fairchild) | 74LVT162245, 16-bit bus transceiver, 3.3 V with 5 V-tolerant inputs | High | Cart-edge bus interface (PHY). Two × 16 bits ≈ 16 address + 8 data + control. |
 | U3 | `8563S 2506 TMS` (8-pin) | PCF8563/BM8563 I²C real-time clock | High | The RTC. Paired with the coin cell; this is what 1.05e's "RTC codes are rewritten" refers to. |
 | U2 | `74HC595D` (16-pin) | 8-bit shift register, serial in / parallel out with latch | High | I/O expansion: more signals than the FPGA has spare pins for. |
@@ -20,25 +20,56 @@ exact strings as approximate; the families are confident.
 | - | Tactile button, centre of board | - | High | Reset button; reboots the cart. Sits right against the shell, so a light press on the plastic over it triggers a reset without opening the case. |
 | - | `JTAG` header, back edge, 8 pads | - | High | Xilinx JTAG chain (FPGA and/or config flash). |
 
-## U9 is battery-backed PSRAM
+## The two big memory chips (U4, U9) — memory map
 
-U9 is `3350LLZDQD`, PSRAM per community teardowns (not FRAM). The coin cell backs
-**both the RTC and the save memory**. PSRAM draws far more standby current than
-FRAM, so cell life runs roughly 1-8 months (depending on memory variant) against
-10+ years for an original battery-backed cartridge, the recurring "battery dies
-in a month" complaint. Some owners swap the cell for a CR2032 or replace the
-memory part.
+The confusion ("is U4 the ROM chip? is U9 SRAM or PSRAM?") is settled by two
+things we can actually stand behind: **U4's datasheet** and **our own
+measurements**. (A GBAtemp thread raised the question and floated some IDs, but
+it is not treated here as authoritative.)
 
-Because saves live in battery-backed PSRAM, they and the `$A300` last-ROM
-metadata are **volatile if the coin cell dies**. Save layout is owned by
-[psram-save-map.md](psram-save-map.md).
+U4's datasheet (`tools/S71GL032A.PDF`, p.3) is the firm anchor: the
+`S71GL032A` is **not** a single part but a **stacked MCP** — "one S29PL032A
+Flash memory die + pSRAM." So U4 alone contains both **4 MB NOR** and **512 KB
+pSRAM**. That one fact forces the rest by deduction: an 8 MB game ROM cannot
+live in U4's 512 KB pSRAM, so the game store must be a *different* chip (U9),
+and it must hold ≥ 8 MB of pSRAM — no external part number needed to conclude
+that.
 
-Community teardowns describe the Spansion `71GL032A` MCP as 32 Mbit flash for
-ROMs plus additional memory, so exact U4/U9 partitioning is not settled.
-Capacity checks out against the `$12 + (idx>>5)` page arithmetic (~2 MB; EZ
-Flash's changelog states a 7000-file maximum).
+What is **proven by our own measurements** (independent of any part number):
 
-Sources: beyondconsoles EZ-Flash Junior review; GBAtemp battery-drain threads.
+| Store | Where | Size | Volatile? | Evidence |
+|---|---|---|---|---|
+| **Game ROM** (loaded game) | U9's pSRAM | **~8 MB** (64 Mbit) | Volatile, fades off-power | [nor-reuse.md](nor-reuse.md); loads 64 Mbit ROMs = GB max |
+| **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) | Battery-backed (coin cell) | [psram-page-map.md](psram-page-map.md); 512 KB = 64 pages exactly |
+| **FPGA bitstream** (+ stage1 as BRAM) | SPI flash (`25Q40H`, board revs vary) | 512 KB–2 MB | Nonvolatile | [fpga-flash-map.md](fpga-flash-map.md), [updater-flash-write.md](updater-flash-write.md) |
+| **NOR die of U4** | S29PL032A (datasheet-confirmed) | 4 MB | Nonvolatile | **no GB-side use found** |
+
+The size coincidences pin the pSRAM assignments hard: the game store loads
+64 Mbit ROMs (= 8 MB pSRAM in U9); the save store is exactly 512 KB / 64 pages
+(= U4's datasheet-confirmed 4 Mbit pSRAM die). So EZ-Flash appears to have
+chosen these parts **for their pSRAM** (8 MB fast RAM for the ROM, 512 KB
+battery-backed RAM for saves).
+
+**What is *not* confirmed:** U9's exact identity and full contents. Its marking
+`3350LLZDQ0` (lowercase-`i`/Intel-era logo) is undocumented — no datasheet turns
+up for it (web search + the forum's own links are dead), and the forum's
+`RD38F3350` guess can't be verified, so it is **not** asserted here. We know only
+that U9 holds ≥ 8 MB pSRAM (by deduction above). Whether it *also* carries a NOR
+die is speculative. What is certain is only U4's 4 MB NOR, and that **no
+GB-visible firmware path reaches any NOR die**: the `$7FC0` sweep finds no
+personality that maps NOR
+([fpga-personalities.md](fpga-personalities.md)) and the updater writes only the
+SPI config flash ([updater-flash-write.md](updater-flash-write.md)). Whether the
+NOR is even wired to the FPGA is unknown; it may be dead silicon in the package.
+
+The coin cell backs **the RTC and U4's 512 KB save pSRAM**. pSRAM draws far more
+standby current than FRAM, so cell life runs ~1–8 months vs 10+ years for an
+original battery-backed cart — the recurring "battery dies in a month"
+complaint. Saves and the `$A300` last-ROM record are lost when the cell dies.
+
+Sources: `tools/S71GL032A.PDF` (U4 datasheet — the one firm reference); GBAtemp
+"how does EZ Flash Junior work" thread (U9 discussion, unverified); our own
+measurements ([nor-reuse.md](nor-reuse.md), [psram-page-map.md](psram-page-map.md)).
 
 ## JTAG header: FPGA package pins
 
@@ -241,6 +272,28 @@ consistent with the updater containing no trace of it and 512 KB of config flash
 showing nothing under any encoding. Testing needs either a BGA dump or driving
 the FPGA's NOR-read path over `$7Fxx` (the interface that bricked a cart on
 2026-08-16; not recommended).
+
+**Resolved toward BRAM, not the parallel NOR (2026-08-30).** A full read of the
+FW4 updater's write path (see [updater-flash-write.md](updater-flash-write.md))
+found **no separate stage1-write mechanism at all**: the updater writes only the
+SPI config flash via `$7FD2`, its embedded payload is the FPGA bitstream, and
+stage1 is not carried in it under any tested encoding. The clean explanation is
+that stage1 is **BRAM-initialised inside the bitstream** — so flashing a new
+bitstream to the SPI config flash implicitly updates stage1 on the next
+power-on, which is exactly daid's "somehow updated, mechanism unknown". This
+also explains why the config-flash dump shows no contiguous stage1 (BRAM init
+is bit-interleaved across bitstream frames) and why every FW's stage1 differs
+(37% FW4↔FW5) in lockstep with a different bitstream (64% FW4↔FW5).
+
+**So what is the parallel NOR die for?** Now genuinely open. It is not the game
+store (that is the volatile RAM die, [nor-reuse.md](nor-reuse.md)), the updater
+never touches it, and stage1 most likely lives in BRAM. Candidates: vestigial /
+reserved (nitro2k01's sibling revision even upgrades U4 to the 8 MB
+`S71GL064A08`, suggesting it is populated but perhaps unused by GB-visible
+firmware); or reached only by an FPGA feature/personality not exposed to the GB
+CPU. If it is truly firmware-unused, it is a large nonvolatile store with **no
+known GB-side access path** — the prize, but gated on either an undiscovered
+FPGA command or a replacement FPGA design ([fpga-ace.md](fpga-ace.md)).
 
 **Consequence for CGB mode:** the "patch the bootstrap's CGB flag" shortcut is
 dead. The remaining route is a replacement FPGA design (`fpga-ace.md`), serving

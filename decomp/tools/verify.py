@@ -8,13 +8,13 @@ This is the core verification loop for the matching decompilation project:
 write C, run this, get a yes/no plus a byte diff if it doesn't match yet.
 
 Usage:
-    verify.py <file.c> <version:1.04e|1.05e> <bank> <address_hex>
+    verify.py <file.c> <version:1.04e|1.05e-0731> <bank> <address_hex>
               [--peep peep_file] [--pin SYM=ADDR ...] [--pins pins_file]
 
 Examples:
-    verify.py src/misc.c 1.05e 0 1a77
-    verify.py src/store_d732_d733.c 1.05e 0 2765 --peep tools/peeps/abs_pair_store.def
-    verify.py src/register_callback_slots.c 1.05e 0 062e \\
+    verify.py src/misc.c 1.05e-0731 0 1a77
+    verify.py src/store_d732_d733.c 1.05e-0731 0 2765 --peep tools/peeps/abs_pair_store.def
+    verify.py src/register_callback_slots.c 1.05e-0731 0 062e \\
         --pin install_callback_slot=066c
 
 Callee pins: declare `extern void foo(void);` (or the real prototype) in the C
@@ -70,7 +70,7 @@ def build_arg_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("c_file", help="C source to compile")
-    p.add_argument("version", choices=("1.04e", "1.05e"), help="kernel version")
+    p.add_argument("version", choices=("1.04e", "1.05e-0731", "1.05e-0918"), help="kernel version")
     p.add_argument("bank", type=int, help="ROM bank number")
     p.add_argument("address", help="address within bank (hex, e.g. 1a77 or 0x1a77)")
     p.add_argument(

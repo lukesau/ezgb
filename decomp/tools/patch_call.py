@@ -25,7 +25,7 @@ Usage:
                   [--jp] [--apply] [--regen]
 
 Example (see docs/inject-smoke-test.md for the paired injection):
-    patch_call.py 1.05e 8 7200 3 08:746b --jp --apply --regen
+    patch_call.py 1.05e-0731 8 7200 3 08:746b --jp --apply --regen
 """
 import argparse
 import os
@@ -53,7 +53,7 @@ def parse_bank_addr(s):
 
 def build_arg_parser():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("version", choices=("1.04e", "1.05e"))
+    p.add_argument("version", choices=("1.04e", "1.05e-0731", "1.05e-0918"))
     p.add_argument("bank", type=int, help="bank of the patch site")
     p.add_argument("address", help="patch site address (hex)")
     p.add_argument("length", type=int, help="bytes to overwrite (>= 3)")
