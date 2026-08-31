@@ -57,29 +57,47 @@ browser flashing.
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,
 not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
 
-## Building a modded kernel
+## Getting the modded kernel
 
-You supply your own firmware dump; this repo does not redistribute EZ Flash's
-binaries. Drop it at `re/1.05e-0731/kernel.gb` (a copy of the `ezgb.dat` from the
-official firmware package), then:
+This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
+is not downloadable here — but you don't need one. Two supported routes, both
+producing the same bytes (details, checksums, and the copyright rationale in
+[`docs/distribution.md`](docs/distribution.md)):
+
+- **Patch the official firmware** — take `ezgb.dat` from EZ Flash's official
+  firmware package and apply the IPS from
+  [`patches/kernel/`](patches/kernel/):
+  `python3 scripts/kernel-patch.py apply ezgb.dat` (verifies md5s; any
+  standard IPS tool works too).
+- **Build from the disassembly** —
+  `scripts/build-kernel.sh 1.05e-0731 --install` reassembles the modded
+  kernel with rgbds and verifies its md5.
+
+Both include all features above. To pick features individually or hack on
+new ones, use the development flow below.
+
+## Building a modded kernel from your own dump
+
+Drop your firmware dump at `re/1.05e-0731/kernel.gb` (a copy of the
+`ezgb.dat` from the official firmware package), then:
 
 ```sh
 # 1. Regenerate the disassembly from your dump (one-time per version)
 cd re/1.05e-0731
 python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../scripts/annotate-disasm.py 1.05e
+../../scripts/annotate-disasm.py 1.05e-0731
 
 # 2. Apply features (example: sorted browser; see each doc for its commands)
 cd ../../decomp
-python3 tools/inject.py src/browser_sort.c 1.05e 8 746b BrowserSortAll \
+python3 tools/inject.py src/browser_sort.c 1.05e-0731 8 746b BrowserSortAll \
     --pin DirList=0a43 --apply
-python3 tools/inject_bytes.py 1.05e 0 03d4 BrowserSortAllStub \
+python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \
     cd8d076b740800c9 --apply
-python3 tools/patch_call.py 1.05e 0 102f 3 00:03d4 --apply --regen
+python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
 
 # 3. Stage as ezgb.dat and build the emulator card image
 cd ..
-scripts/build-ezgb-dat.sh 1.05e
+scripts/build-ezgb-dat.sh 1.05e-0731
 scripts/make-sd-image.sh
 ```
 
@@ -92,8 +110,8 @@ root of a real cart's microSD. Hook-site rules and the free-space map:
 ## Repo layout
 
 ```
-re/               Disassemblies, one dir per firmware version (1.04e, 1.05e, 1.05e-0918)
-  1.05e/          Primary target; disassembly/ reassembles to the original
+re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731, 1.05e-0918)
+  1.05e-0731/     Primary target; disassembly/ reassembles to the original
     kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
     notes.json    Persistent comments
 decomp/           Matching C decompilation + injectable feature sources
@@ -101,6 +119,7 @@ decomp/           Matching C decompilation + injectable feature sources
   tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
 docs/             Findings, feature write-ups, hardware notes
 scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
+patches/kernel/   IPS patches: stock ezgb.dat -> modded kernel (safe to share)
 patches/sameboy/  EZ Jr FPGA stub as diffs over a pinned SameBoy commit
 sd/               Local microSD image for the emulator     (see sd/README.md)
 fpga/, tools/     FPGA dumps and cloned reference repos     (not tracked)
