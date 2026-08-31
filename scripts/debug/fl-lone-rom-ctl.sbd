@@ -1,0 +1,6 @@
+# Control for the lone-ROM test: also break at FileBrowserEntry_inputLoop.
+# Buggy scan (FLAUNCH.CFG counted as a real file) -> browser ($1107) fires
+# without $1344 ever hitting. Fixed scan -> $1344 fires first.
+breakpoint $1344
+breakpoint $1107
+continue

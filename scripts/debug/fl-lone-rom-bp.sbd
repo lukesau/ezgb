@@ -1,0 +1,5 @@
+# Fast-launch lone-ROM verification: stop when the boot path reaches
+# LastRomRelaunch ($1344, jumped to by fastlaunch_do_launch) and dump the
+# resolved path at $c4a4. If fast launch does not trigger, this never fires.
+breakpoint $1344
+continue

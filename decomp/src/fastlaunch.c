@@ -112,7 +112,7 @@ static void scan_root(void) {
 
     result_path[0] = 0;
 
-    /* Highest priority: an explicit path in /fastlaunch.cfg. */
+    /* Highest priority: an explicit path in /FLAUNCH.CFG. */
     if (scan_config()) return;
 
     /* FILINFO.lfname = LFN buffer, FILINFO.lfsize = 254 (set once; reused). */
@@ -139,7 +139,7 @@ static void scan_root(void) {
         name = entry_name();
         if (name[0] == '.') continue;                 /* dot-files / macOS junk */
         if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
-        if (streq_ci(name, (const unsigned char *)"fastlaunch.cfg")) continue;
+        if (streq_ci(name, (const unsigned char *)"flaunch.cfg")) continue;
 
         if (match_fastlaunch_ext(name)) {             /* fills BASE with the stem */
             have_marker = 1;
@@ -185,7 +185,7 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
     result_path[1 + i] = 0;
 }
 
-/* Read /fastlaunch.cfg; if present and non-empty, take its first line as the
+/* Read /FLAUNCH.CFG; if present and non-empty, take its first line as the
  * ROM path and write it to RESULT ($c4a4) with a leading '/'. Returns 1 on
  * success. Uses the kernel's FIL at $ca0f (idle here, so no FIL size guess).
  * The path may be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
