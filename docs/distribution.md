@@ -1,21 +1,18 @@
 # Getting a modded kernel: patch or build
 
 The modded kernel is ~160KB of EZ Flash's copyrighted firmware with a few KB
-of this project's code injected. A built `ezgb.dat` therefore can't be posted
-publicly (GitHub Releases included) — distributing the build distributes EZ
-Flash's firmware, and "modified" doesn't change whose bytes they are. That
-their firmware is a free download doesn't grant redistribution rights.
+of this project's code injected, so a built `ezgb.dat` is never posted
+publicly (GitHub Releases included). Only the *difference* between stock and
+modded — the code this project wrote — is distributed, as IPS patches.
 
-What CAN be distributed is the *difference* between stock and modded — which
-is exactly the code this project wrote. Two supported ways to get from there
-to a running cart:
+There are two supported ways to get a modded kernel:
 
 | | You need | You run |
 |---|---|---|
 | **A. Patch** | official `ezgb.dat` + a file from `patches/kernel/` | any IPS patcher |
 | **B. Full build** | this repo + rgbds + Python 3 | `scripts/build-kernel.sh` |
 
-Both produce byte-identical output (the md5s below).
+Both produce byte-identical output.
 
 ## Option A: patch the official firmware (recommended for users)
 
@@ -32,14 +29,12 @@ base, verifies the result, and writes `ezgb-patched.dat` beside the input
 (`-o PATH` to choose). Rename it to `ezgb.dat` on the card root.
 
 The patches are plain IPS, so any standard tool also works — Flips, Lunar
-IPS, an online ROM patcher — but those don't check md5s, so verify by hand
-against [`patches/kernel/manifest.json`](../patches/kernel/manifest.json) —
-the authoritative record of each version's stock and patched md5, regenerated
-with each patch (the patched md5 changes whenever a feature lands, so it is
-deliberately not duplicated here). IPS files contain only this repo's
-injected bytes and are safe to share and attach to GitHub Releases.
+IPS, an online ROM patcher — but those don't check md5s. Verify by hand
+against [`patches/kernel/manifest.json`](../patches/kernel/manifest.json),
+the authoritative record of each version's stock and patched md5 (regenerated
+with each patch, so patched md5s are not duplicated here).
 
-The stock bases are stable:
+Stock bases:
 
 | Version | Stock `ezgb.dat` md5 |
 |---|---|
@@ -47,7 +42,7 @@ The stock bases are stable:
 | 1.05e-0918 | `5238ac5987d23b68a19d40e43af8c786` |
 
 These are the `ezgb.dat` files inside the official
-`juniorkernel-1.05e-FW5-*` packages, verified against real downloads.
+`juniorkernel-1.05e-FW5-*` packages.
 
 ## Option B: build from the disassembly
 
@@ -59,23 +54,23 @@ scripts/build-kernel.sh 1.05e-0731            # -> re/.../disassembly/game_trunc
 scripts/build-kernel.sh 1.05e-0918 --install  # also copy to re/.../kernel.gb
 ```
 
-This runs `make` in `re/<ver>/disassembly`, then undoes the two things rgbds
-does that the shipped firmware doesn't have: it truncates the 256KB-padded
-output back to the real 160KB (10 banks), and restores the 4 header bytes
-rgbfix "corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F`
-global checksum — stale in the shipped firmware, and nothing verifies them).
-The result is verified against `patched_md5` in the manifest; `--install`
-puts it at `re/<ver>/kernel.gb`, where `scripts/build-ezgb-dat.sh` and the
-SameBoy scripts expect it.
+This runs `make` in `re/<ver>/disassembly`, then undoes two rgbds behaviors
+the shipped firmware doesn't have: it truncates the 256KB-padded output back
+to the real 160KB (10 banks), and restores the 4 header bytes rgbfix
+"corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F` global
+checksum — stale in the shipped firmware, and nothing verifies them). The
+result is verified against `patched_md5` in the manifest; `--install` puts it
+at `re/<ver>/kernel.gb`, where `scripts/build-ezgb-dat.sh` and the SameBoy
+scripts expect it.
 
-A mismatch against the manifest means the disassembly has changes the patch
-hasn't picked up yet (see below) — or a broken build.
+A mismatch against the manifest means either the disassembly has changes the
+patch hasn't picked up yet (see below) or a broken build.
 
-Note the honest corollary: since the disassembly reassembles the ROM, the
-`bank_*.asm` files are the firmware in source-encoded form. The repo sits in
-the same tolerated-but-gray zone as other proprietary-binary decomp projects;
-Releases would escalate that from "repo you can build" to "binary handed
-out", which is why only patches ship.
+Since the disassembly reassembles the ROM, the `bank_*.asm` files are the
+firmware in source-encoded form — the repo sits in the same
+tolerated-but-gray zone as other proprietary-binary decomp projects. That is
+another reason only patches ship in Releases: attaching a built binary would
+escalate from "repo you can build" to "binary handed out".
 
 ## Maintainers: regenerating the patches
 
