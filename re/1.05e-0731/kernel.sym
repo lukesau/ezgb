@@ -4385,8 +4385,6 @@
 02:43ac .data:f:8
 00:0460 fastlaunch_hook
 00:0460 .data:23:8
-02:4500 FastLaunchScan
-02:4500 .data:5b6:8
 00:0490 fastlaunch_boot
 00:0490 .data:1e:8
 00:0420 fastlaunch_do_launch
@@ -4395,3 +4393,5 @@
 00:04ae .data:19:8
 08:7a9c BrowserHideName
 08:7a9c .data:f1:8
+02:4500 FastLaunchScan
+02:4500 .data:5b3:8
