@@ -2,7 +2,7 @@
 
 The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. Its menu/OS
 firmware (the "kernel") runs on the stock Game Boy CPU (SM83) and, unlike its
-GBA sibling the [EZ Flash Omega](https://github.com/ez-flash/omega-de-kernel),
+GBA sibling the [EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel),
 ships only as a compiled binary with no published source.
 
 This repo reverse-engineers that kernel and adds new features you can compile

@@ -3,7 +3,8 @@
 Standard IPS patches that turn a **stock** official `ezgb.dat` into this
 repo's modded kernel (all features: sorted browser, scrolling fixes, dotfile
 filter, fast launch). One patch per firmware version; `manifest.json` holds
-the md5s of the expected input and output.
+the md5s of the expected input and output, and `VERSION` the current mod
+version (`N.M`).
 
 ```bash
 python3 ../../scripts/kernel-patch.py apply /path/to/ezgb.dat

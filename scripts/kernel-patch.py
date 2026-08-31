@@ -12,10 +12,15 @@ expected result for each firmware version, so both sides of the patch are
 verified — a patch applied to the wrong base silently produces garbage, and
 IPS itself carries no checksums.
 
+patches/kernel/VERSION holds the mod version ("N.M"). Regenerating the
+patches bumps M automatically when any patch's content changed; N is bumped
+by hand when a feature lands (edit the file — the next content-changing
+regen then produces N.1, N.2, ...).
+
 Usage:
-  # Maintainer: regenerate the patch after changing injections
+  # Maintainer: regenerate all patches after changing injections
   #   diffs re/<ver>/kernel.gb.orig (stock) -> re/<ver>/kernel.gb (modded)
-  scripts/kernel-patch.py make 1.05e-0731
+  scripts/kernel-patch.py make
 
   # User: patch an official ezgb.dat (version auto-detected by md5)
   scripts/kernel-patch.py apply ~/Downloads/ezgb.dat -o /Volumes/EZGB/ezgb.dat
@@ -29,6 +34,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATCH_DIR = os.path.join(ROOT, "patches", "kernel")
 MANIFEST = os.path.join(PATCH_DIR, "manifest.json")
+VERSION_FILE = os.path.join(PATCH_DIR, "VERSION")
 
 # IPS record layout: 3-byte offset, 2-byte size, then `size` bytes.
 # size 0 means RLE: 2-byte run length, 1 byte to repeat.
@@ -54,6 +60,21 @@ def load_manifest():
         return {}
     with open(MANIFEST) as f:
         return json.load(f)
+
+
+def read_mod_version():
+    if not os.path.isfile(VERSION_FILE):
+        return None
+    raw = open(VERSION_FILE).read().strip()
+    n, _, m = raw.partition(".")
+    if not (n.isdigit() and m.isdigit()):
+        sys.exit(f"error: {VERSION_FILE} must contain N.M, got {raw!r}")
+    return int(n), int(m)
+
+
+def write_mod_version(n, m):
+    with open(VERSION_FILE, "w") as f:
+        f.write(f"{n}.{m}\n")
 
 
 def diff_runs(old, new):
@@ -117,8 +138,9 @@ def apply_ips(base, patch):
     return bytes(out)
 
 
-def cmd_make(args):
-    ver_dir = os.path.join(ROOT, "re", args.version)
+def make_one(version):
+    """Regenerate one version's IPS + manifest entry; True if the IPS changed."""
+    ver_dir = os.path.join(ROOT, "re", version)
     stock_path = os.path.join(ver_dir, "kernel.gb.orig")
     modded_path = os.path.join(ver_dir, "kernel.gb")
     for p, what in ((stock_path, "stock dump"), (modded_path, "modded build")):
@@ -133,18 +155,20 @@ def cmd_make(args):
 
     runs = diff_runs(stock, modded)
     os.makedirs(PATCH_DIR, exist_ok=True)
-    patch_name = f"ezgb-{args.version}.ips"
+    patch_name = f"ezgb-{version}.ips"
     patch_path = os.path.join(PATCH_DIR, patch_name)
+    old_ips = open(patch_path, "rb").read() if os.path.isfile(patch_path) else None
     write_ips(runs, modded, patch_path)
+    new_ips = open(patch_path, "rb").read()
 
     # Round-trip before publishing the manifest entry.
-    result = apply_ips(stock, open(patch_path, "rb").read())
+    result = apply_ips(stock, new_ips)
     if result != modded:
         os.remove(patch_path)
         sys.exit("error: round-trip failed — patch did not reproduce kernel.gb")
 
     manifest = load_manifest()
-    manifest[args.version] = {
+    manifest[version] = {
         "patch": patch_name,
         "stock_md5": md5(stock),
         "patched_md5": md5(modded),
@@ -158,6 +182,28 @@ def cmd_make(args):
           f"{total} patched bytes")
     print(f"  stock   md5 {md5(stock)}")
     print(f"  patched md5 {md5(modded)}")
+    return new_ips != old_ips
+
+
+def cmd_make(args):
+    versions = args.versions or sorted(load_manifest())
+    if not versions:
+        sys.exit(f"error: no versions given and no manifest at {MANIFEST}")
+    changed = False
+    for version in versions:
+        changed |= make_one(version)
+
+    ver = read_mod_version()
+    if ver is None:
+        write_mod_version(1, 0)
+        print("mod version 1.0 (initialized "
+              f"{os.path.relpath(VERSION_FILE, ROOT)})")
+    elif changed:
+        n, m = ver[0], ver[1] + 1
+        write_mod_version(n, m)
+        print(f"mod version {ver[0]}.{ver[1]} -> {n}.{m} (patch content changed)")
+    else:
+        print(f"mod version {ver[0]}.{ver[1]} (patch content unchanged, no bump)")
 
 
 def cmd_apply(args):
@@ -215,7 +261,9 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     mk = sub.add_parser("make", help="diff kernel.gb.orig -> kernel.gb into an IPS")
-    mk.add_argument("version", help="version dir under re/, e.g. 1.05e-0731")
+    mk.add_argument("versions", nargs="*",
+                    help="version dirs under re/, e.g. 1.05e-0731 "
+                         "(default: every version in the manifest)")
     mk.set_defaults(func=cmd_make)
 
     app = sub.add_parser("apply", help="apply the IPS to a stock ezgb.dat")

@@ -64,31 +64,6 @@ at `re/<ver>/kernel.gb`, where `scripts/build-ezgb-dat.sh` and the SameBoy
 scripts expect it.
 
 A mismatch against the manifest means either the disassembly has changes the
-patch hasn't picked up yet (see below) or a broken build.
-
-Since the disassembly reassembles the ROM, the `bank_*.asm` files are the
-firmware in source-encoded form — the repo sits in the same
-tolerated-but-gray zone as other proprietary-binary decomp projects. That is
-another reason only patches ship in Releases: attaching a built binary would
-escalate from "repo you can build" to "binary handed out".
-
-## Maintainers: regenerating the patches
-
-After changing any injection (and regenerating/re-injecting per the feature
-docs), refresh the IPS and manifest from the canonical artifacts
-(`re/<ver>/kernel.gb.orig` stock → `re/<ver>/kernel.gb` modded):
-
-```bash
-python3 scripts/kernel-patch.py make 1.05e-0731
-python3 scripts/kernel-patch.py make 1.05e-0918
-```
-
-The command round-trips the patch before writing the manifest entry. Commit
-`patches/kernel/*.ips` + `manifest.json` together with the source change.
-Keep both versions in sync — the injected code is byte-identical across them
-(bank 2 and bank 0 are identical in the stock kernels), so the two patches
-should always change together.
-
-For a GitHub Release: attach the `.ips` files (and optionally
-`scripts/kernel-patch.py`); never `ezgb.dat`, `kernel.gb`, updater packages,
-or FPGA bitstreams.
+patch hasn't picked up yet (the patches are regenerated per
+[DEVELOPMENT.md](DEVELOPMENT.md#regenerating-the-kernel-patches)) or a
+broken build.
