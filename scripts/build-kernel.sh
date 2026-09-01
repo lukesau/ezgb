@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the modded kernel from the committed disassembly — no firmware
+# Build the modded kernel from the committed disassembly - no firmware
 # download needed, since re/<ver>/disassembly reassembles the full ROM.
 #
 # Two fixups make the rgbds output byte-identical to the canonical patched
@@ -72,9 +72,9 @@ if os.path.isfile(manifest_path):
     entry = json.load(open(manifest_path)).get(ver)
     if entry:
         if got == entry["patched_md5"]:
-            print("  matches manifest patched_md5 — canonical build")
+            print("  matches manifest patched_md5 - canonical build")
         else:
-            print(f"  differs from manifest patched_md5 {entry['patched_md5']} — "
+            print(f"  differs from manifest patched_md5 {entry['patched_md5']} - "
                   "either the disassembly has newer changes than the patch, or "
                   "the build is broken; if intended, rerun kernel-patch.py make",
                   file=sys.stderr)

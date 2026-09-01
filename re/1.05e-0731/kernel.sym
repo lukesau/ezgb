@@ -280,7 +280,7 @@
 02:4027 DiskRead_B2
 02:41d5 DiskWrite_B2
 
-; FatFs-shaped helpers — linked per bank (GB near-call only within mapped bank).
+; FatFs-shaped helpers - linked per bank (GB near-call only within mapped bank).
 ; Every copy is suffixed _BN (including bank 9). Banks 3 and 7 are byte-identical
 ; for SyncWindow/MoveWindow/MemCpy16; 6/9 differ only in relocated immediates.
 03:4000 MemCpy16_B3

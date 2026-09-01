@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stage the patched kernel as ezgb.dat, the name the Jr's bootstrap loads.
 #
-# It is a byte-for-byte copy of re/<ver>/kernel.gb — no rewriting. The kernel
+# It is a byte-for-byte copy of re/<ver>/kernel.gb - no rewriting. The kernel
 # is patched in place by decomp/tools/inject*.py, so kernel.gb is already the
 # authoritative artifact and this only gives it the name the cart expects.
 #
@@ -65,7 +65,7 @@ glob = (sum(b) - b[0x14e] - b[0x14f]) & 0xFFFF
 stored = (b[0x14e] << 8) | b[0x14f]
 print("  header checksum $%02X %s" % (b[0x14d], "ok" if hdr == b[0x14d] else "BAD"))
 if stored != glob:
-    print("  global checksum $%04X, computed $%04X — stale after patching." % (stored, glob))
+    print("  global checksum $%04X, computed $%04X - stale after patching." % (stored, glob))
     print("  Not verified by the boot ROM or the Jr bootstrap; --fix-checksum to rewrite.")
 else:
     print("  global checksum $%04X ok" % stored)

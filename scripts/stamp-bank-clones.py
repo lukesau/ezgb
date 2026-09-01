@@ -6,7 +6,7 @@ normalizing bank-local immediates ($4xxx–$7xxx and Call_/Jump_/jr_ targets).
 
 1. If any copy is already named, propagate that base name to unnamed siblings
    as Name_BN (every bank gets a suffix, including bank 9).
-2. Else assign Clone_<canonBank><canonAddr>_BN on each copy — links them
+2. Else assign Clone_<canonBank><canonAddr>_BN on each copy - links them
    without claiming FatFs/app identity.
 
 Usage:
@@ -56,7 +56,7 @@ def base_name(name):
 
 
 def stamp_name(base, bank, named, key):
-    """Always Name_BN — no unsuffixed canonical."""
+    """Always Name_BN - no unsuffixed canonical."""
     candidate = f"{base}_B{int(bank, 16)}"
     if any(n == candidate and k != key for k, n in named.items()):
         candidate = f"{base}_B{int(bank, 16)}_{key[1]}"

@@ -5,14 +5,14 @@ Why: FAT directories never shrink. Deleting or moving files out of a folder
 leaves 0xE5 tombstone slots behind, and the 0x00 terminator stays beyond the
 highest slot ever used. FatFs's dir_read (DirRead_B5, bank 5) skips that whole
 tombstone tail *inside one f_readdir call*, so the kernel's DirList hangs for
-the entire walk the first time it reads past the last live entry — exactly the
+the entire walk the first time it reads past the last live entry - exactly the
 one-time multi-second stall seen when scrolling DOWN past the visible page in
 a short directory listing (docs/browser-scroll... / decomp/src/browser_scroll.c).
 
 This script reports, for one directory on a card image or raw device:
   - cluster chain length (how big the directory file really is)
   - live entries vs 0xE5 tombstones vs LFN slots
-  - the size of the dead tail after the last live entry — the slots that the
+  - the size of the dead tail after the last live entry - the slots that the
     final, end-of-directory readdir must scan in one go.
 
 Usage:
@@ -74,14 +74,14 @@ class Volume:
         self.tot_sec = tot16 or tot32
         self.fatsz = self.fatsz16 or self.fatsz32
         if not (self.bytes_per_sec and self.sec_per_clus and self.fatsz and self.tot_sec):
-            raise ValueError("implausible BPB — wrong offset or not FAT")
+            raise ValueError("implausible BPB - wrong offset or not FAT")
 
         self.root_dir_secs = (self.root_ent_cnt * 32 + self.bytes_per_sec - 1) // self.bytes_per_sec
         self.first_data_sec = self.rsvd + self.nfats * self.fatsz + self.root_dir_secs
         data_secs = self.tot_sec - self.first_data_sec
         self.n_clusters = data_secs // self.sec_per_clus
         if self.n_clusters < 4085:
-            raise ValueError("FAT12 volume — not supported by this script")
+            raise ValueError("FAT12 volume - not supported by this script")
         self.fat32 = self.n_clusters >= 65525
         self.fat_off = base + self.rsvd * self.bytes_per_sec
 
@@ -224,7 +224,7 @@ def main():
             print(f"terminator   : slot {term} of {len(raw) // 32}")
             tail = term - last_live - 1
         else:
-            print("terminator   : none — directory clusters are fully occupied")
+            print("terminator   : none - directory clusters are fully occupied")
             tail = (len(raw) // 32) - last_live - 1
         secs = (tail * 32 + vol.bytes_per_sec - 1) // vol.bytes_per_sec
         print(f"dead tail    : {tail} slots after the last live entry "

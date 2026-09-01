@@ -198,8 +198,8 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 the file browser. See [`omega-jr-compare.md`](omega-jr-compare.md) and
 [`fast-launch-notes.md`](fast-launch-notes.md).
 
-The other half of a B-mode boot — skipping the SD→NOR copy because the game is already in
-NOR — exists as a dormant, caller-less kernel primitive (`RomLoad_ResetIntoRom_B4`,
+The other half of a B-mode boot - skipping the SD→NOR copy because the game is already in
+NOR - exists as a dormant, caller-less kernel primitive (`RomLoad_ResetIntoRom_B4`,
 `04:4180`); an experimental hook makes this overlay's A press use it. See
 [`nor-reuse.md`](nor-reuse.md).
 

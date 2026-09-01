@@ -4052,7 +4052,7 @@ SumSfn_B5_afterPtrInc::
 ; [ezgb]
 ; DirFind_B5(dp): FatFs dir_find. DirSdi_B5(0); fail Jump_005_528a init else err Jump_005_54c4.
 ; Jump_005_528a: clear ord/hash ptrs; Jump_005_52fc read entry + MoveWindow_B5; fail Jump_005_54c1; LFN chain Jump_005_5355 else ord=4 Jump_005_54c1.
-; Jump_005_5355: attr — deleted $E5 Jump_005_537a; volume jr_005_5374; LFN ord $0F Jump_005_5395 else Jump_005_538d/Jump_005_5395 SFN path.
+; Jump_005_5355: attr - deleted $E5 Jump_005_537a; volume jr_005_5374; LFN ord $0F Jump_005_5395 else Jump_005_538d/Jump_005_5395 SFN path.
 ; jr_005_5398: empty LFN chk Jump_005_54a9; AM_LFN jr_005_53b0 store ord/chksum else Jump_005_53dc ord compare (Jump_005_53e7/jr_005_53ea/Jump_005_53fe/Jump_005_5403/Jump_005_5405 CmpLfn_B5).
 ; Jump_005_5427/Jump_005_542c/Jump_005_542e/Jump_005_543b/Jump_005_543d: LFN ord update Jump_005_54a9; Jump_005_5443 SumSfn_B5 match Jump_005_54c1.
 ; Jump_005_545c NTRES jr_005_547a skip; Jump_005_547d MemCmp_B5 SFN match Jump_005_54c1 else Jump_005_5499 invalidate; Jump_005_54a9 DirNext_B5 loop Jump_005_52fc; Jump_005_54c1/Jump_005_54c4 epilogue.
@@ -4562,7 +4562,7 @@ DirFind_B5_epilogue::
 
 ; [ezgb]
 ; DirRead_B5(dp, vol@sp+$13): FatFs dir_read. Frame -$0f; sp+$0e default E=$04; sp+$09 LFN ord/$ff.
-; Jump_005_54ea: load dir ptr@dp+$0e — cluster zero → Jump_005_56b0; MoveWindow_B5 err → Jump_005_56b0.
+; Jump_005_54ea: load dir ptr@dp+$0e - cluster zero → Jump_005_56b0; MoveWindow_B5 err → Jump_005_56b0.
 ; NTRES@dp+$1c≠0 → Jump_005_5557; else set mode $04 → Jump_005_56b0.
 ; Jump_005_5557: SFN[0] DDEM $E5 → Jump_005_5597; AM_VOL vs vol arg (Jump_005_5585/jr_005_5586) mismatch → Jump_005_5597.
 ; Jump_005_559e: ord $0F → jr_005_55ab else Jump_005_55a8→Jump_005_5668 SFN path.
@@ -5632,7 +5632,7 @@ GetFileInfo_B5_epilogue::
 ; Jump_005_5e82: wchar>=$80 MapCp437 (fail Jump_005_5ebd NSFLAG|$02); then Jump_005_5ec3 MemChr_B5 illegal set → '_' Jump_005_5edf NSFLAG|$03 else Jump_005_5eee.
 ; Case: A-Z Jump_005_5f0e skip else NSFLAG|$02 → Jump_005_5f3c; a-z Jump_005_5f0e NSFLAG|$01 + toupper; store via jr_005_5f52 → Jump_005_5d97.
 ; Jump_005_5f61: SFN[0]==$E5 → $05 (jr_005_5f7b) else Jump_005_5f78/Jump_005_5f83; body-only Jump_005_5f93/jr_005_5f96 NT<<2; case mix Jump_005_5f9c/Jump_005_5fb4/Jump_005_5fb7/jr_005_5fb7 → NSFLAG|$02; Jump_005_5fbd/jr_005_5fc7/Jump_005_5fca/Jump_005_5fd7/jr_005_5fda/Jump_005_5fe0/Jump_005_5fe8/jr_005_5feb/Jump_005_5ff1 store NSFLAG; E=0 → Jump_005_6002.
-; CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B5 @ 05:6015 (already named) — not CreateName interior.
+; CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B5 @ 05:6015 (already named) - not CreateName interior.
 
 CreateName_B5::
     add sp, -$1b

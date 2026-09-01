@@ -13,7 +13,7 @@ the other banks' names are arithmetic, not re-derived reverse-engineering:
 
 Each computed target is verified against the twin bank's disassembly (must
 still be an auto Jump_/jr_ label at that exact address) before being proposed
-or applied — if a twin's body diverges, the row is skipped, not guessed.
+or applied - if a twin's body diverges, the row is skipped, not guessed.
 
 Usage:
   scripts/propagate-interior-clones.py [version]              # print proposals

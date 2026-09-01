@@ -14,14 +14,14 @@
  *   sp+$15  sel     selected row within the window, 0..15
  *
  * Entries live in cart PSRAM (page $12 + (idx >> 5), record at
- * $A000 + 255 * (idx & $1f)), not WRAM, and are never evicted — so scrolling
+ * $A000 + 255 * (idx & $1f)), not WRAM, and are never evicted - so scrolling
  * UP never touches the SD card. Only scrolling DOWN past what has been
  * enumerated so far needs another DirList batch.
  *
  * Since browser_sort.c the whole directory is enumerated (and the $c5a4
  * latch set) before the browser first draws, so the DirList branch below
  * never fires in practice. It is kept as the correct fallback if the sort
- * hook is ever removed — with it gone, this is what streams further batches.
+ * hook is ever removed - with it gone, this is what streams further batches.
  *
  * Nothing downstream requires `base` to be a multiple of 16:
  * DrawBrowserEntries clamps its row count to min(count - base, 16) and indexes
@@ -30,7 +30,7 @@
  */
 
 /* Streams the next batch of up to 16 entries into cart PSRAM and advances the
- * count. Resumes from the persistent DIR object at $c9f5 — never rewinds. */
+ * count. Resumes from the persistent DIR object at $c9f5 - never rewinds. */
 extern void DirList(void);
 
 #define ROWS 16 /* visible list rows; matches the sel cap at bank_000.asm:4038 */

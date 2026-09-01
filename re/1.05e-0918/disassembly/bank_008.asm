@@ -2424,7 +2424,7 @@ SetFpga7FD2Off_B8::
 
 
 ; [ezgb]
-; SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 — unlock, $7F36=stack u8,
+; SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 - unlock, $7F36=stack u8,
 ; commit. SetFpgaPage_B8 ($6e7a) is the $7FC0 sibling beside it.
 
 SetRomLoadCtrl_B8::

@@ -17,14 +17,14 @@ index 0000000..b1e5990
 + *
 + * Everything GB_ezflash_jr_configure() logs runs inside GB_load_rom(), which
 + * the SDL front-end wraps in start_capturing_logs()/end_capturing_logs(true,
-+ * ..., "Warning", ...) — so ANY GB_log() there becomes a modal message box
++ * ..., "Warning", ...) - so ANY GB_log() there becomes a modal message box
 + * that has to be dismissed by hand before the emulator will run a single
 + * instruction. That makes scripted/unattended runs (scripts/run-sameboy-debug.py)
 + * hang silently on a dialog nobody is watching.
 + *
 + * Normal startup chatter is not a warning, so it goes to stderr: still on the
 + * same PTY the debug wrapper reads, just not through the popup path. Real
-+ * failures keep using GB_log() precisely BECAUSE it blocks — those are worth
++ * failures keep using GB_log() precisely BECAUSE it blocks - those are worth
 + * interrupting for. */
 +static void ezjr_status(const char *fmt, ...)
 +{
@@ -597,7 +597,7 @@ index 0000000..b1e5990
 +        if (ez->pending_rom && ez->pending_rom_size) {
 +            ez->pending_boot = true;
 +            if (ez->log) {
-+                GB_log(gb, "EZ Jr ROMLOAD: $7FE0=$80 — will boot loaded ROM after this instruction\n");
++                GB_log(gb, "EZ Jr ROMLOAD: $7FE0=$80 - will boot loaded ROM after this instruction\n");
 +            }
 +        }
 +        else if (ez->log) {
@@ -611,7 +611,7 @@ index 0000000..b1e5990
 +        return;
 +    }
 +
-+    /* Write path (bank_002): latch count|$80 on $7FB4 then commit — no $7F30=3. */
++    /* Write path (bank_002): latch count|$80 on $7FB4 then commit - no $7F30=3. */
 +    if (ez->last_cmd_addr >= 0x7FB0 && ez->last_cmd_addr <= 0x7FB4) {
 +        if (ez->sd_regs[4] & 0x80) {
 +            sd_do_write(gb);
@@ -681,12 +681,12 @@ index 0000000..b1e5990
 +    ez->bank_regs[4] = sram_code;
 +    psram_path_from_img(ez);
 +    /* Kernel already wrote page $11 ($AA, bank count, /SAVER/....sav) before
-+     * $7FE0 — keep it so the next kernel boot can flush PSRAM to the SD image. */
++     * $7FE0 - keep it so the next kernel boot can flush PSRAM to the SD image. */
 +    if (cart_sram && expect) {
 +        ez->psram_dirty = true;
 +    }
 +
-+    /* Same physical SRAM the kernel filled — game MBC RAM is an alias, as on cart. */
++    /* Same physical SRAM the kernel filled - game MBC RAM is an alias, as on cart. */
 +    if (cart_sram && gb->mbc_ram_size) {
 +        if (gb->mbc_ram && !ez->mbc_ram_is_cart_sram) {
 +            free(gb->mbc_ram);
@@ -981,7 +981,7 @@ index 0000000..8de3aa4
 + * Stage 2: RTC page via $7FC0=$06, BCD registers at $A008-$A00E.
 + * Stage 3: cart SRAM banks via $7FC0=$03 (file-list / status cache),
 + *          FW version via $7FC0=$04, ROM-load status via $7F36.
-+ * Stage 4: $7FE0 boot — game keeps the same cart_sram backing store (like hardware).
++ * Stage 4: $7FE0 boot - game keeps the same cart_sram backing store (like hardware).
 + * Stage 5: PSRAM on disk (sd/psram.bin) for power-cycle; host .sav suppressed;
 + *          kernel BACKUPSAVE dumps PSRAM to SAVER on next boot after [A]OK.
 + *
@@ -1038,7 +1038,7 @@ index 0000000..8de3aa4
 +internal bool GB_ezflash_jr_write(GB_gameboy_t *gb, uint16_t addr, uint8_t value);
 +/* Returns true if *out was filled by the stub. */
 +internal bool GB_ezflash_jr_read(GB_gameboy_t *gb, uint16_t addr, uint8_t *out);
-+/* Call after GB_clear_running_thread in GB_run — applies pending ROM boot/reset. */
++/* Call after GB_clear_running_thread in GB_run - applies pending ROM boot/reset. */
 +internal void GB_ezflash_jr_post_run(GB_gameboy_t *gb);
 +#endif
 diff --git a/Core/gb.c b/Core/gb.c

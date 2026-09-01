@@ -3,7 +3,7 @@
 The modded kernel is ~160KB of EZ Flash's copyrighted firmware with a few KB
 of this project's code injected, so a built `ezgb.dat` is never posted
 publicly (GitHub Releases included). Only the *difference* between stock and
-modded — the code this project wrote — is distributed, as IPS patches.
+modded - the code this project wrote - is distributed, as IPS patches.
 
 There are two supported ways to get a modded kernel:
 
@@ -28,8 +28,8 @@ The script detects the version by md5, refuses a wrong or already-patched
 base, verifies the result, and writes `ezgb-patched.dat` beside the input
 (`-o PATH` to choose). Rename it to `ezgb.dat` on the card root.
 
-The patches are plain IPS, so any standard tool also works — Flips, Lunar
-IPS, an online ROM patcher — but those don't check md5s. Verify by hand
+The patches are plain IPS, so any standard tool also works - Flips, Lunar
+IPS, an online ROM patcher - but those don't check md5s. Verify by hand
 against [`patches/kernel/manifest.json`](../patches/kernel/manifest.json),
 the authoritative record of each version's stock and patched md5 (regenerated
 with each patch, so patched md5s are not duplicated here).
@@ -46,7 +46,7 @@ These are the `ezgb.dat` files inside the official
 
 ## Option B: build from the disassembly
 
-The committed disassembly reassembles the modded kernel directly — no
+The committed disassembly reassembles the modded kernel directly - no
 firmware download needed:
 
 ```bash
@@ -58,7 +58,7 @@ This runs `make` in `re/<ver>/disassembly`, then undoes two rgbds behaviors
 the shipped firmware doesn't have: it truncates the 256KB-padded output back
 to the real 160KB (10 banks), and restores the 4 header bytes rgbfix
 "corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F` global
-checksum — stale in the shipped firmware, and nothing verifies them). The
+checksum - stale in the shipped firmware, and nothing verifies them). The
 result is verified against `patched_md5` in the manifest; `--install` puts it
 at `re/<ver>/kernel.gb`, where `scripts/build-ezgb-dat.sh` and the SameBoy
 scripts expect it.

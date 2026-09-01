@@ -1,5 +1,5 @@
 /* Launch the full path staged in $c4a4 by reusing the kernel's own
- * LastRomRelaunch (bank 0 $1344) verbatim — the exact sequence the START
+ * LastRomRelaunch (bank 0 $1344) verbatim - the exact sequence the START
  * overlay runs to relaunch the last ROM, which is proven to load and boot an
  * arbitrary path.
  *
@@ -9,12 +9,12 @@
  * build a stack frame whose sp+$08 slot holds it, and jp into LastRomRelaunch.
  * It then computes the directory prefix, opens it, applies the basename against
  * $c4a4, and far-calls the bank-8 loader ("Loading....") which ends in
- * $7fe0=$80 — the ROM is replaced and the game boots. So this never returns.
+ * $7fe0=$80 - the ROM is replaced and the game boots. So this never returns.
  *
  * The four extra pushes are padding so the basename lands at sp+$08 (=$10 below
  * the return-address; LastRomRelaunch reads sp+$08 twice and nothing else from
  * that frame before the machine reboots). $c4a4 must still hold the FULL path
- * here — LastRomRelaunch reads the prefix from it before ApplyBasename
+ * here - LastRomRelaunch reads the prefix from it before ApplyBasename
  * overwrites it with the basename.
  *
  * $c2a4 must hold the FULL path here (may be nested, e.g. "/dir/rom.gb" from a

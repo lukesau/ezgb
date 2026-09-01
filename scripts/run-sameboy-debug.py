@@ -52,14 +52,14 @@ def ensure_kernel_sym(version):
     """SameBoy loads <rom>.sym next to the ROM.
 
     kernel.sym is this project's persistent, hand-edited (and git-tracked)
-    source of truth for mgbdis, not a disposable build artifact — it must
+    source of truth for mgbdis, not a disposable build artifact - it must
     never be deleted or overwritten here. Addresses in it match kernel.gb
     directly (regen-disasm.sh keeps the rebuilt ROM byte-identical), so it's
     already valid for SameBoy's own symbol display as-is.
 
     Only auto-manage the file (symlink it to disassembly/game.sym) when it's
     missing entirely or was already a symlink from a previous run of this
-    script — never touch a real, pre-existing kernel.sym.
+    script - never touch a real, pre-existing kernel.sym.
     """
     kernel = os.path.join(ROOT, "re", version, "kernel.gb")
     sym = os.path.join(ROOT, "re", version, "kernel.sym")
@@ -67,7 +67,7 @@ def ensure_kernel_sym(version):
     if not os.path.isfile(kernel):
         sys.exit(f"error: missing {kernel} (copy ezgb.dat there)")
     if os.path.isfile(sym) and not os.path.islink(sym):
-        return kernel  # real, tracked file — never overwrite it here
+        return kernel  # real, tracked file - never overwrite it here
     if os.path.isfile(game_sym):
         if os.path.islink(sym):
             os.remove(sym)
@@ -138,7 +138,7 @@ def main():
                          "original Game Boy; auto-detection would pick dmg from "
                          "the kernel header and hide all CGB behaviour.")
     ap.add_argument("--script", default=None,
-                    help="debugger init .sbd to preload. Default: none — just boot. "
+                    help="debugger init .sbd to preload. Default: none - just boot. "
                          "The launch-path breakpoints (%s) were for mapping the "
                          "loader and only get in the way when running a ROM." %
                          os.path.relpath(DEFAULT_SCRIPT, ROOT))
@@ -197,7 +197,7 @@ def main():
     print(f"script:  {args.script or 'none (--breakpoints for the launch-path set)'}")
     if args.trace:
         print(f"trace:   on (dump={args.dump}, log={log_path})")
-        print("Navigate the browser and press A on a .GB — stops dump automatically.")
+        print("Navigate the browser and press A on a .GB - stops dump automatically.")
     else:
         if args.script:
             print("Interactive: breakpoints preloaded. A on a .GB to open.")
@@ -216,7 +216,7 @@ def main():
         os.chdir(os.path.join(ROOT, "tools", "SameBoy"))
         # --model matters: SameBoy otherwise auto-selects the model from the
         # loaded ROM's header, and kernel.gb is $0143=$00, so it emulates a DMG
-        # — where CGB mode cannot exist and RP ($FF56) is not implemented. That
+        # - where CGB mode cannot exist and RP ($FF56) is not implemented. That
         # silently misrepresents the hardware: a real Jr in a GBC/GBA runs the
         # kernel in DMG *compatibility* mode on Color silicon, so a launched
         # CGB ROM gets real CGB mode after the reset. Forcing a Color model
@@ -298,7 +298,7 @@ def main():
                             log_f.write(f"\n--- auto dump #{stops} ---\n")
                             log_f.flush()
                         write_cmds(fd, dump_cmds)
-                        # $7fe0=$80 replaces the kernel ROM — stop auto-continue
+                        # $7fe0=$80 replaces the kernel ROM - stop auto-continue
                         boot = re.search(
                             r"Watchpoint.*7fe0.*\$80|\[.*7fe0.*\].*=\s*\$80",
                             text,
@@ -306,7 +306,7 @@ def main():
                         )
                         if boot:
                             print(
-                                "\n[trace] $7fe0=$80 — leaving debugger stopped "
+                                "\n[trace] $7fe0=$80 - leaving debugger stopped "
                                 "(delete leftover BPs before continuing into the game)",
                                 file=sys.stderr,
                             )

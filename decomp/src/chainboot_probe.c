@@ -1,6 +1,6 @@
 /* FPGA interface survey, run from a ROM launched in the game slot.
  *
- * The goal here is no longer "make chain-boot work" — it is to map which FPGA
+ * The goal here is no longer "make chain-boot work" - it is to map which FPGA
  * registers respond at all when the cart is emulating a game, and how. A
  * command that kills the console is a result, not a failure, so long as the
  * screen shows how far we got.
@@ -15,7 +15,7 @@
  *   - $7FC0, $4000 and the unlock triple are all INERT from the game slot.
  *   - $7F36 = $03 is the ONE write the FPGA visibly reacts to: issued from
  *     ROM it kills the console instantly, because it opens the ROM-load
- *     command window — i.e. it remaps the cart out from under the PC.
+ *     command window - i.e. it remaps the cart out from under the PC.
  *   - The kernel never drives these registers from ROM either.
  *     RomLoad_BuildAndRun7FD2Wait_B8 (bank_008.asm:2534) copies its FPGA
  *     routine to $D000 and calls it there, wrapped in DiNest/EiNest.
@@ -36,7 +36,7 @@
  *   in   $FFF0  port low byte (the port is $7F00 | this)
  *        $FFF1  value to write
  *        $FFF4  value to write on the way back out (restore)
- *        $FFF5  page latched into $4000 after the command — the step v10 was
+ *        $FFF5  page latched into $4000 after the command - the step v10 was
  *               missing. The kernel always does personality THEN page; without
  *               it we sampled whatever page happened to be selected, which is
  *               why every OS-mode read came back $FF.
@@ -48,7 +48,7 @@
  * prints immediately, so a fatal command still leaves everything before it on
  * screen.
  *
- * Output: `Pnn A=xx W=yy` — port, $A000 read, $5A write-back.
+ * Output: `Pnn A=xx W=yy` - port, $A000 read, $5A write-back.
  *   46      open bus; nothing responded (game slot)
  *   A/B     in OS mode these are real reads of the selected page
  *   11/22   sentinels survived: the routine never reached its stores
@@ -65,9 +65,9 @@ static void probe_body(unsigned char tag);
 
 /* One entry point per candidate stopping point, each tagged, so the output
  * says which one the hardware actually reached:
- *   N  $0f8d  FileBrowserEntry — the normal, non-error boot path. This is the
+ *   N  $0f8d  FileBrowserEntry - the normal, non-error boot path. This is the
  *             one that fires when the probe IS ezgb.dat and everything works.
- *   B  $18e2  BatteryCheck_waitA back-edge — reached by construction
+ *   B  $18e2  BatteryCheck_waitA back-edge - reached by construction
  *   S  $0e21  SdMenuMain_initErrorHang
  *   F  $0998  SdReadRetryCount_errorHang
  */
@@ -88,7 +88,7 @@ static unsigned char hexd(unsigned char n) {
     return (n < 10) ? (unsigned char)(n + '0') : (unsigned char)(n - 10 + 'A');
 }
 
-/* "pp:gg A=xx B=yy" — port low byte, page, $A000, $A201. */
+/* "pp:gg A=xx B=yy" - port low byte, page, $A000, $A201. */
 static void show2(unsigned char port, unsigned char page, unsigned char a,
                   unsigned char b, unsigned char row) {
     unsigned char line[16];
@@ -143,7 +143,7 @@ static void probe_body(unsigned char tag) {
 
     /* ORDER MATTERS, and v9 got it wrong: $7F36 went first and poisoned every
      * line after it. $7F36 = $03 opens the ROM-load command window, and
-     * writing $00 back does NOT undo its side effects — after it, glyph
+     * writing $00 back does NOT undo its side effects - after it, glyph
      * rendering is garbage even in OS mode, from HRAM, with interrupts off.
      * The kernel only ever uses it inside the ROM-load path, which ends in a
      * console reset, so it may never need a clean restore and one may not
@@ -153,7 +153,7 @@ static void probe_body(unsigned char tag) {
      * the kernel sets around FatFs calls. */
     /* Cart-SRAM personality with a real page latched. Page $11 is the meta
      * page: BatteryCheck expects $A201 == $88 there (docs/psram-save-map.md),
-     * so this row is the method's own validation — if it does not read $88 in
+     * so this row is the method's own validation - if it does not read $88 in
      * OS mode, the sequence is still wrong. */
     survey(0xc0, 0x03, 0x11, 0x00, 11);
     survey(0xc0, 0x03, 0x12, 0x00, 12);   /* file-list scratch page */

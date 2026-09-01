@@ -2951,7 +2951,7 @@ PutFat_B6_epilogue::
 ; clst<2 → Jump_006_4e06 B=$02; start cluster > clst → Jump_006_4e0b B=$00 else Jump_006_4e06.
 ; Jump_006_4e0d loop: walker≥clst → Jump_006_4f56 ret B; GetFat_B6; FAT zero → Jump_006_4f56.
 ; FAT==1 → jr_006_4e84 B=$02 else Jump_006_4e81→Jump_006_4e89; inc FAT wraps → jr_006_4ea7 B=$01 else Jump_006_4ea4→Jump_006_4eac.
-; Jump_006_4eac: PutFat_B6 free slot; err → Jump_006_4f56; advance walker — inc hits 0 → Jump_006_4f42 else Jump_006_4f07 (jr_006_4f16) + FA_DIRTY → Jump_006_4e0d.
+; Jump_006_4eac: PutFat_B6 free slot; err → Jump_006_4f56; advance walker - inc hits 0 → Jump_006_4f42 else Jump_006_4f07 (jr_006_4f16) + FA_DIRTY → Jump_006_4e0d.
 ; Jump_006_4f42: stash final cluster@sp+$12 → Jump_006_4e0d; Jump_006_4f56: ld e,B / add sp,$0e / ret.
 
 RemoveChain_B6::
@@ -4822,14 +4822,14 @@ DirSdi_B6_epilogue::
 
 ; [ezgb]
 ; DirNext_B6(dp, stretch): FatFs dir_next. Frame -$22; ++dp->dptr index; walk dir sectors/clusters.
-; Index+1==0 → Jump_006_5683 E=$04 (FR_NO_FILE); load dir entry@dp+$0e — four dwords zero → Jump_006_5683.
+; Index+1==0 → Jump_006_5683 E=$04 (FR_NO_FILE); load dir entry@dp+$0e - four dwords zero → Jump_006_5683.
 ; Jump_006_5688: index&$0f≠0 → Jump_006_5a51 in-sector advance; else inc sector (jr_006_56a6 carry chain) + copy 32-byte slot.
 ; Next cluster from dp chain zero → Jump_006_5707 stretch path; volsize compare fail → Jump_006_5a51 else E=$04 → Jump_006_5aae.
 ; Jump_006_5707: sector→cluster via jr_006_5715 ÷16; fs-type mask vs cluster → nz Jump_006_5a51; GetFat_B6.
-; Cluster−1 underflow → Jump_006_577d: inc cluster words — all zero jr_006_579b E=$01 else Jump_006_5798→Jump_006_57a0.
+; Cluster−1 underflow → Jump_006_577d: inc cluster words - all zero jr_006_579b E=$01 else Jump_006_5798→Jump_006_57a0.
 ; Jump_006_57a0: cluster<saved → Jump_006_5a00; stretch==0 → E=$04 Jump_006_5aae else Jump_006_57e7 CreateChain_B6.
 ; CreateChain result zero → E=$07 Jump_006_5aae; else Jump_006_583a cluster−1 all zero → jr_006_5859 E=$02 else Jump_006_5856→Jump_006_585e.
-; Jump_006_585e: inc cluster words — all wrap jr_006_587c E=$01 else Jump_006_5879→Jump_006_5881 SyncWindow_B6.
+; Jump_006_585e: inc cluster words - all wrap jr_006_587c E=$01 else Jump_006_5879→Jump_006_5881 SyncWindow_B6.
 ; Jump_006_5881: SyncWindow_B6 err→E=$01 Jump_006_5aae else Jump_006_589c MemSet8 dir buf + Clust2Sect → Jump_006_590e sector loop.
 ; Jump_006_590e: offset≥ssize → Jump_006_59a3 else dirty+SyncWindow; err E=$01; Jump_006_5951 stamp template (jr_006_597f/jr_006_5998) → Jump_006_590e.
 ; Jump_006_59a3: partial tail copy + sector base for index; Jump_006_5a00 store cluster + Clust2Sect → window sector.
@@ -7509,7 +7509,7 @@ SumSfn_B6_afterPtrInc::
 ; [ezgb]
 ; DirFind_B6(dp): FatFs dir_find. DirSdi_B6(0); fail Jump_006_628b init else err Jump_006_64c5.
 ; Jump_006_628b: clear ord/hash ptrs; Jump_006_62fd read entry + MoveWindow_B6; fail Jump_006_64c2; LFN chain Jump_006_6356 else ord=4 Jump_006_64c2.
-; Jump_006_6356: attr — deleted $E5 Jump_006_637b; volume jr_006_6375; LFN ord $0F Jump_006_6396 else Jump_006_638e/Jump_006_6396 SFN path.
+; Jump_006_6356: attr - deleted $E5 Jump_006_637b; volume jr_006_6375; LFN ord $0F Jump_006_6396 else Jump_006_638e/Jump_006_6396 SFN path.
 ; jr_006_6399: empty LFN chk Jump_006_64aa; AM_LFN jr_006_63b1 store ord/chksum else Jump_006_63dd ord compare (Jump_006_63e8/jr_006_63eb/Jump_006_63ff/Jump_006_6404/Jump_006_6406 CmpLfn_B6).
 ; Jump_006_6428/Jump_006_642d/Jump_006_642f/Jump_006_643c/Jump_006_643e: LFN ord update Jump_006_64aa; Jump_006_6444 SumSfn_B6 match Jump_006_64c2.
 ; Jump_006_645d NTRES jr_006_647b skip; Jump_006_647e MemCmp_B6 SFN match Jump_006_64c2 else Jump_006_649a invalidate; Jump_006_64aa DirNext_B6 loop Jump_006_62fd; Jump_006_64c2/Jump_006_64c5 epilogue.
@@ -8792,7 +8792,7 @@ DirRegister_B6_epilogue::
 ; Jump_006_6d4c: wchar>=$80 MapCp437 (fail Jump_006_6d87 NSFLAG|$02); then Jump_006_6d8d MemChr_B6 illegal set → '_' Jump_006_6da9 NSFLAG|$03 else Jump_006_6db8.
 ; Case: A-Z Jump_006_6dd8 skip else NSFLAG|$02 → Jump_006_6e06; a-z Jump_006_6dd8 NSFLAG|$01 + toupper; store via jr_006_6e1c → Jump_006_6c61.
 ; Jump_006_6e2b: SFN[0]==$E5 → $05 (jr_006_6e45) else Jump_006_6e42/Jump_006_6e4d; body-only Jump_006_6e5d/jr_006_6e60 NT<<2; case mix Jump_006_6e66/Jump_006_6e7e/Jump_006_6e81/jr_006_6e81 → NSFLAG|$02; Jump_006_6e87/jr_006_6e91/Jump_006_6e94/Jump_006_6ea1/jr_006_6ea4/Jump_006_6eaa/Jump_006_6eb2/jr_006_6eb5/Jump_006_6ebb store NSFLAG; E=0 → Jump_006_6ecc.
-; CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B6 @ 06:6edf (already named) — not CreateName interior.
+; CreateName CF ends at cleanup Jump (add sp,$1b / ret). Post-ret illegal-char table then FollowPath_B6 @ 06:6edf (already named) - not CreateName interior.
 
 CreateName_B6::
     add sp, -$1b
@@ -11138,10 +11138,10 @@ Validate_B6_epilogue::
 ; FollowPath_B6; err or cluster==0 → Jump_006_73d3 (empty path → E=$06).
 ; Jump_006_73d3: mode create bits → jr_006_73dd else Jump_006_75d2 open-existing checks.
 ; jr_006_73dd: E==$04 → jr_006_73ef DirRegister_B6 else Jump_006_73ec→Jump_006_73fe; mode|$08 + cluster copy → Jump_006_7446.
-; Jump_006_741d: found — attr DIR/RDO → jr_006_7431 E=$07 else Jump_006_7438; FA_OPEN_EXISTING → jr_006_7442 E=$08 → Jump_006_7446.
+; Jump_006_741d: found - attr DIR/RDO → jr_006_7431 E=$07 else Jump_006_7438; FA_OPEN_EXISTING → jr_006_7442 E=$08 → Jump_006_7446.
 ; Jump_006_7446: err → Jump_006_760a; FA_CREATE → jr_006_7457 RtcReadPage + StClust create/truncate (RemoveChain/MoveWindow) → Jump_006_760a.
 ; Jump_006_75d2: attr volume → jr_006_75ed E=$04 else Jump_006_75f4; need FA_WRITE → jr_006_75fe; RDO w/o FA_WRITE → jr_006_7606 E=$07 → Jump_006_760a.
-; Jump_006_760a: err → Jump_006_767a; ok — FA_CREATE → jr_006_761b FA_MODIFIED; Jump_006_7621 stash winsect/fptr/cluster into fp.
+; Jump_006_760a: err → Jump_006_767a; ok - FA_CREATE → jr_006_761b FA_MODIFIED; Jump_006_7621 stash winsect/fptr/cluster into fp.
 ; Jump_006_767a: err → Jump_006_7794 else LdClust + fill fp→obj; Jump_006_7794/Jump_006_7797 add sp,$42 ret E.
 
 Open_B6::

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Patch raw, already-assembled bytes into kernel.gb at a fixed address and
-label them in kernel.sym — the non-C counterpart to inject.py, for
+label them in kernel.sym - the non-C counterpart to inject.py, for
 hand-written asm (e.g. FarCallTrampoline shims, which SDCC/C has no way to
 express: the trampoline's calling convention embeds raw target bytes
 directly after the `call`, not something a C extern/pin can produce).
@@ -89,7 +89,7 @@ def main():
         f"{key} .data:{len(code_bytes):x}:{args.width}",
     ]
     if not args.apply:
-        print("\n(dry run — pass --apply to patch kernel.gb + write kernel.sym)")
+        print("\n(dry run - pass --apply to patch kernel.gb + write kernel.sym)")
         print("\n".join(new_lines))
         return
 

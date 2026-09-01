@@ -1,4 +1,4 @@
-/* Instrumented copy of fastlaunch_scan for live debugging only — NOT the
+/* Instrumented copy of fastlaunch_scan for live debugging only - NOT the
  * final feature (see fastlaunch.c for that).
  *
  * This round's finding: opendir succeeded and readdir found the right
@@ -6,12 +6,12 @@
  * entry's name read back as the same wrong garbage byte. Attrib (offset 8)
  * being right while name (offset 9+) is wrong, identically, every time, is
  * the signature of Readdir_B5 writing PAST the end of a too-small fno[]
- * buffer and corrupting whatever's adjacent — not a stack-depth issue at
+ * buffer and corrupting whatever's adjacent - not a stack-depth issue at
  * all (that theory doesn't explain garbage landing at a FIXED offset with
  * a FIXED wrong value). FNO_SIZE has been 45-100 bytes across every test
  * so far; the real FILINFO's `fname` field could plausibly need up to
  * ~256 bytes (tools/omega-de-kernel's ff15 config default,
- * FF_MAX_LFN=255) even if this kernel's actual build uses less — so this
+ * FF_MAX_LFN=255) even if this kernel's actual build uses less - so this
  * round goes generously large (280 bytes) rather than guess again.
  *
  *   $d700: opendir("/") result
@@ -37,7 +37,7 @@ static const unsigned char *entry_name(const unsigned char *fno);
 static unsigned char match_fastlaunch_ext(const unsigned char *name, unsigned char *out_base);
 
 void fastlaunch_scan_debug(unsigned char *result_path) {
-    /* fno lives in fixed WRAM, not on the stack — 280 bytes on the stack
+    /* fno lives in fixed WRAM, not on the stack - 280 bytes on the stack
      * re-introduces the "did that break something via depth, or via size"
      * ambiguity from the previous round. root_dir/base stay small and on
      * the stack, matching what the original probe already proved safe. */

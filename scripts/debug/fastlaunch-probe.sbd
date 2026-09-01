@@ -1,7 +1,7 @@
 # Temporary: dump raw Opendir_B5/Readdir_B5 output for struct-layout
 # confirmation. See decomp/src/fastlaunch_scan_debug_test.c.
 #
-# Previously used "continue, wait ~2s, Ctrl+C" — imprecise, human-timing
+# Previously used "continue, wait ~2s, Ctrl+C" - imprecise, human-timing
 # dependent, and results varied run to run in ways that turned out to be
 # about WHEN the interrupt landed, not the code under test. Breakpointing
 # on the test wrapper's own infinite loop (address known exactly, since we

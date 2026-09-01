@@ -7,7 +7,7 @@ On-cart save storage is battery-backed **PSRAM**. Games *see* "battery RAM" beca
 emulates a normal MBC `$A000` window; those writes physically land in PSRAM kept alive by the
 coin cell. The coin cell backs **both saves and the RTC**, so a dead cell loses both (the
 well-known "EZ Flash Jr battery dies in a month" complaints). The save/settings pSRAM is the
-**512 KB pSRAM die inside U4** (the `S71GL032A40` MCP — datasheet-confirmed, and an exact match
+**512 KB pSRAM die inside U4** (the `S71GL032A40` MCP - datasheet-confirmed, and an exact match
 for the 64-page / 512 KB map); the *game* ROM lives in a separate, larger pSRAM in U9. Chip
 detail: [hardware-board.md](hardware-board.md). The kernel's `BATTERY` / `DRY!!!` notice is
 about the **console** AA cells, not the cart.

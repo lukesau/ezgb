@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interior-label naming packet — phase after notes.json CF is complete.
+"""Interior-label naming packet - phase after notes.json CF is complete.
 
 Lists auto Jump_/jr_ labels inside a named function (D / interior-debt row), with
 note hints and code snippets. Optionally applies kernel.sym entries from a file.
@@ -45,7 +45,7 @@ AUTO_LABEL_RX = re.compile(
 SYM_LINE_RX = re.compile(
     r"^([0-9a-fA-F]{1,2}):([0-9a-fA-F]{4})\s+([A-Za-z_][\w]*)\s*(?:;.*)?$"
 )
-# RGBDS builtins that must not be used as label names (subset — extend if make fails).
+# RGBDS builtins that must not be used as label names (subset - extend if make fails).
 RGBDS_RESERVED = {
     "strlen", "strcat", "strchr", "strcmp", "strcpy", "strncpy", "strrchr",
     "strstr", "strtol", "strtoul", "sizeof", "def", "end", "section", "include",
@@ -183,7 +183,7 @@ def print_worklist(version, top, include_lib, only_banks, skip_banks, skip_compl
     show = debt[:top] if top else debt
     print(f"=== INTERIOR WORKLIST ({mode}, show {len(show)}/{len(debt)}) ===")
     if not show:
-        print("  (empty — all D rows cleared in asm, or none ranked)")
+        print("  (empty - all D rows cleared in asm, or none ranked)")
         print()
         return debt
     print("addr      parent                   c   d  left sym")
@@ -421,10 +421,10 @@ def main():
     if not unnamed:
         print("=== UNNAMED INTERIOR LABELS ===")
         if sym_pending:
-            print(f"  (none in asm — {sym_pending} in kernel.sym awaiting regen)")
+            print(f"  (none in asm - {sym_pending} in kernel.sym awaiting regen)")
             print("  Run: ./scripts/regen-disasm.sh", version)
         else:
-            print("  (none — function interior complete)")
+            print("  (none - function interior complete)")
         print()
         print("interior_complete: 1")
         print("needs_regen: 1" if sym_pending else "needs_regen: 0")

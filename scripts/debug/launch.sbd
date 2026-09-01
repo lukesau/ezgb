@@ -2,7 +2,7 @@
 # Comments and blank lines are stripped by the launcher.
 #
 # After the file browser appears: A on a .GB to open/launch.
-# Do NOT enable $078d here — it fires constantly during SD I/O.
+# Do NOT enable $078d here - it fires constantly during SD I/O.
 # Add it after $1569 with: breakpoint $078d
 
 breakpoint $145f

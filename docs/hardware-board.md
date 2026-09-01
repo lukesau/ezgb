@@ -10,8 +10,8 @@ exact strings as approximate; the families are confident.
 |---|---|---|---|---|
 | U1 | `XILINX SPARTAN XC3S200A VQG100AGQ1240` | Spartan-3A, 200K gates, 100-pin VQFP | High | The FPGA. Everything custom about this cart. |
 | - | `25Q40H E20090N` (8-pin SOIC) | 4 Mbit / **512 KB** SPI NOR flash (W25Q40 family) | High | **FPGA configuration storage** (see below). |
-| U4 | `Spansion 71GL032A40BFW0B` (BGA) | **S71GL032A40 MCP** (datasheet, `tools/S71GL032A.PDF`): a stacked package of **one S29PL032A = 4 MB NOR flash die + a 512 KB (4 Mbit) pSRAM die** | High | Its **512 KB pSRAM die = the battery-backed save/settings store** (exact size match to the 64-page / 512 KB map — [psram-page-map.md](psram-page-map.md)). Its 4 MB NOR die: **no GB-side use found** (see below). |
-| U9 | `3350LLZDQ0` (lowercase-`i`/Numonyx logo), 88-ball FBGA | **Numonyx RD38F3350LLZDQ0** — StrataFlash Wireless (L18/L30) SCSP MCP, datasheet-confirmed (`tools/RD38F3350-StrataFlash-Wireless-L18-L30.pdf`, Table 28): **two 128 Mbit L30 NOR dies (256 Mbit = 32 MB NOR) + one 64 Mbit (8 MB) pSRAM die**, on a shared x16 NOR+pSRAM bus (QUAD+ ballout `Q`). | High | Its **8 MB pSRAM die = the volatile game-ROM store** (holds the loaded ROM, exactly the 64 Mbit GB max; hardware-proven volatile — fades toward `$FF` off-power, [nor-reuse.md](nor-reuse.md)). Its **32 MB NOR: no GB-side use found**, but it shares U9's bus with the game pSRAM so it is very likely wired to the FPGA. |
+| U4 | `Spansion 71GL032A40BFW0B` (BGA) | **S71GL032A40 MCP** (datasheet, `tools/S71GL032A.PDF`): a stacked package of **one S29PL032A = 4 MB NOR flash die + a 512 KB (4 Mbit) pSRAM die** | High | Its **512 KB pSRAM die = the battery-backed save/settings store** (exact size match to the 64-page / 512 KB map - [psram-page-map.md](psram-page-map.md)). Its 4 MB NOR die: **no GB-side use found** (see below). |
+| U9 | `3350LLZDQ0` (lowercase-`i`/Numonyx logo), 88-ball FBGA | **Numonyx RD38F3350LLZDQ0** - StrataFlash Wireless (L18/L30) SCSP MCP, datasheet-confirmed (`tools/RD38F3350-StrataFlash-Wireless-L18-L30.pdf`, Table 28): **two 128 Mbit L30 NOR dies (256 Mbit = 32 MB NOR) + one 64 Mbit (8 MB) pSRAM die**, on a shared x16 NOR+pSRAM bus (QUAD+ ballout `Q`). | High | Its **8 MB pSRAM die = the volatile game-ROM store** (holds the loaded ROM, exactly the 64 Mbit GB max; hardware-proven volatile - fades toward `$FF` off-power, [nor-reuse.md](nor-reuse.md)). Its **32 MB NOR: no GB-side use found**, but it shares U9's bus with the game pSRAM so it is very likely wired to the FPGA. |
 | U6, U7 | `LVT162245` ×2 (`P01AD` = lot code, Fairchild) | 74LVT162245, 16-bit bus transceiver, 3.3 V with 5 V-tolerant inputs | High | Cart-edge bus interface (PHY). Two × 16 bits ≈ 16 address + 8 data + control. |
 | U3 | `8563S 2506 TMS` (8-pin) | PCF8563/BM8563 I²C real-time clock | High | The RTC. Paired with the coin cell; this is what 1.05e's "RTC codes are rewritten" refers to. |
 | U2 | `74HC595D` (16-pin) | 8-bit shift register, serial in / parallel out with latch | High | I/O expansion: more signals than the FPGA has spare pins for. |
@@ -20,7 +20,7 @@ exact strings as approximate; the families are confident.
 | - | Tactile button, centre of board | - | High | Reset button; reboots the cart. Sits right against the shell, so a light press on the plastic over it triggers a reset without opening the case. |
 | - | `JTAG` header, back edge, 8 pads | - | High | Xilinx JTAG chain (FPGA and/or config flash). |
 
-## The two big memory chips (U4, U9) — memory map
+## The two big memory chips (U4, U9) - memory map
 
 The confusion ("is U4 the ROM chip? is U9 SRAM or PSRAM?") is settled by two
 things we can actually stand behind: **U4's datasheet** and **our own
@@ -28,11 +28,11 @@ measurements**. (A GBAtemp thread raised the question and floated some IDs, but
 it is not treated here as authoritative.)
 
 U4's datasheet (`tools/S71GL032A.PDF`, p.3) is the firm anchor: the
-`S71GL032A` is **not** a single part but a **stacked MCP** — "one S29PL032A
+`S71GL032A` is **not** a single part but a **stacked MCP** - "one S29PL032A
 Flash memory die + pSRAM." So U4 alone contains both **4 MB NOR** and **512 KB
 pSRAM**. That one fact forces the rest by deduction: an 8 MB game ROM cannot
 live in U4's 512 KB pSRAM, so the game store must be a *different* chip (U9),
-and it must hold ≥ 8 MB of pSRAM — no external part number needed to conclude
+and it must hold ≥ 8 MB of pSRAM - no external part number needed to conclude
 that.
 
 What is **proven by our own measurements** (independent of any part number):
@@ -51,7 +51,7 @@ chosen these parts **for their pSRAM** (8 MB fast RAM for the ROM, 512 KB
 battery-backed RAM for saves).
 
 **What is *not* confirmed:** U9's exact identity and full contents. Its marking
-`3350LLZDQ0` (lowercase-`i`/Intel-era logo) is undocumented — no datasheet turns
+`3350LLZDQ0` (lowercase-`i`/Intel-era logo) is undocumented - no datasheet turns
 up for it (web search + the forum's own links are dead), and the forum's
 `RD38F3350` guess can't be verified, so it is **not** asserted here. We know only
 that U9 holds ≥ 8 MB pSRAM (by deduction above). Whether it *also* carries a NOR
@@ -64,10 +64,10 @@ NOR is even wired to the FPGA is unknown; it may be dead silicon in the package.
 
 The coin cell backs **the RTC and U4's 512 KB save pSRAM**. pSRAM draws far more
 standby current than FRAM, so cell life runs ~1–8 months vs 10+ years for an
-original battery-backed cart — the recurring "battery dies in a month"
+original battery-backed cart - the recurring "battery dies in a month"
 complaint. Saves and the `$A300` last-ROM record are lost when the cell dies.
 
-Sources: `tools/S71GL032A.PDF` (U4 datasheet — the one firm reference); GBAtemp
+Sources: `tools/S71GL032A.PDF` (U4 datasheet - the one firm reference); GBAtemp
 "how does EZ Flash Junior work" thread (U9 discussion, unverified); our own
 measurements ([nor-reuse.md](nor-reuse.md), [psram-page-map.md](psram-page-map.md)).
 
@@ -278,7 +278,7 @@ FW4 updater's write path (see [updater-flash-write.md](updater-flash-write.md))
 found **no separate stage1-write mechanism at all**: the updater writes only the
 SPI config flash via `$7FD2`, its embedded payload is the FPGA bitstream, and
 stage1 is not carried in it under any tested encoding. The clean explanation is
-that stage1 is **BRAM-initialised inside the bitstream** — so flashing a new
+that stage1 is **BRAM-initialised inside the bitstream** - so flashing a new
 bitstream to the SPI config flash implicitly updates stage1 on the next
 power-on, which is exactly daid's "somehow updated, mechanism unknown". This
 also explains why the config-flash dump shows no contiguous stage1 (BRAM init
@@ -292,7 +292,7 @@ reserved (nitro2k01's sibling revision even upgrades U4 to the 8 MB
 `S71GL064A08`, suggesting it is populated but perhaps unused by GB-visible
 firmware); or reached only by an FPGA feature/personality not exposed to the GB
 CPU. If it is truly firmware-unused, it is a large nonvolatile store with **no
-known GB-side access path** — the prize, but gated on either an undiscovered
+known GB-side access path** - the prize, but gated on either an undiscovered
 FPGA command or a replacement FPGA design ([fpga-ace.md](fpga-ace.md)).
 
 **Consequence for CGB mode:** the "patch the bootstrap's CGB flag" shortcut is

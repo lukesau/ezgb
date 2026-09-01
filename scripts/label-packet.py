@@ -90,7 +90,7 @@ def find_body(version, bank, addr, full_named_span=False):
             return opath, (ostart, oend), olines
         return path, None, lines
 
-    # Interior-debt packets: same span rules as scan_interior_debt — through
+    # Interior-debt packets: same span rules as scan_interior_debt - through
     # mid-function Jump_/jr_, stop at next named symbol or function-ending ret.
     if full_named_span and human:
         named_names = {
@@ -400,7 +400,7 @@ def main():
             print()
             print(
                 "Interior debt: CF notes should exist in notes.json. "
-                "Name labels via kernel.sym — see ./scripts/map-interior.sh"
+                "Name labels via kernel.sym - see ./scripts/map-interior.sh"
             )
             print()
 
@@ -427,13 +427,13 @@ def main():
             seen.add(ck)
             print(f"  {cb}:{ca}  Call_{int(cb, 16):03x}_{ca}")
         elif m.group(3):
-            # named symbol call — skip
+            # named symbol call - skip
             pass
     if not seen:
         print("  (none)")
     print()
 
-    # Abs touches — for debt, scan the full named span, not just the truncated body.
+    # Abs touches - for debt, scan the full named span, not just the truncated body.
     abs_source = body_text
     if is_debt and span:
         abs_source = "\n".join(lines[span[0]:span[1]])

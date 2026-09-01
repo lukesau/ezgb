@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Interior-label naming loop — phase after notes.json CF is complete.
+# Interior-label naming loop - phase after notes.json CF is complete.
 #
 # Names auto Jump_/jr_ inside already-named functions via kernel.sym + regen.
 # Does not touch notes-only CF work (see docs/MAP-SESSION.md).

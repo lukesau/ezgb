@@ -13,9 +13,9 @@ constant pushed before the call). Register meanings cross-checked against
 |---|---|---|---|
 | `$00` | 32 | nothing (unmap) | every access epilogue |
 | `$02` | 2 | **game-store write path** (ROM-load command window with `$7F36=$01`) | `RomLoad_WriteCmdWindow_B8` (`08:6e9e`), launch tail (`00:15bf`) |
-| `$03` | 17 | **battery-backed pSRAM pages** (page via `$4000` latch) | saves, file list, and all settings — see below |
+| `$03` | 17 | **battery-backed pSRAM pages** (page via `$4000` latch) | saves, file list, and all settings - see below |
 | `$04` | 1 | FW version bytes | `DrawFwVersionScreen` (`08:7087`) |
-| `$05` | 1 | config-flash / fw-update | `RomLoad_ClearCartWindow_B8` (`08:6f98`) — **dead code** (unreferenced) |
+| `$05` | 1 | config-flash / fw-update | `RomLoad_ClearCartWindow_B8` (`08:6f98`) - **dead code** (unreferenced) |
 | `$06` | 7 | RTC registers (BCD, `$Ax08`+) | clock read/set |
 
 Only the six documented personalities appear. **No undocumented value, and no
@@ -28,10 +28,10 @@ updater exposes a path to the U4 NOR die.
 
 `$02` is set while the ROM-load command window (`$7F36=$01`, 512 bytes at
 `$A000`) is written, then the FPGA streams the game from SD into the store.
-daid notes `$02` is "used during stage1, but SRAM is not accessed afterwards" —
+daid notes `$02` is "used during stage1, but SRAM is not accessed afterwards" -
 i.e. it arms the FPGA's SD→store path rather than exposing a CPU-readable
 window. The store it targets is the **volatile pSRAM die** (proven in
-[nor-reuse.md](nor-reuse.md)). So `$02` does touch the U4 device — but the RAM
+[nor-reuse.md](nor-reuse.md)). So `$02` does touch the U4 device - but the RAM
 die, not the NOR die. Whether the NOR die is even selectable on that bus (by a
 different sub-address or chip-enable) is unknown and not reachable through any
 existing `$7FC0` value.
@@ -40,10 +40,10 @@ existing `$7FC0` value.
 
 `RomLoad_ClearCartWindow_B8` (`08:6efc`) loops ~`0x2000` times packing
 addresses `$40000+i`, writing the command window, and doing a `$05` +
-`$7FD2`-wait per iteration — the shape of a config-flash erase/program pass.
+`$7FD2`-wait per iteration - the shape of a config-flash erase/program pass.
 But nothing references it (no `call`/`jp`/far-call blob targets it); it is an
 orphan sitting before `DrawFwVersionScreen`. So the kernel carries a
-config-flash-write routine it never invokes — consistent with config-flash
+config-flash-write routine it never invokes - consistent with config-flash
 programming being the updater's job, not the kernel's.
 
 ## Where settings actually live (answering "where's the auto-save flag?")
@@ -54,16 +54,16 @@ Every persistent kernel value is in the **battery-backed pSRAM**, page `$11`
 
 | Offset | Value |
 |---|---|
-| `$A200` | **auto-save flag** (`$00`/`$01`) — read in `DrawTimeAutosaveScreen` (`04:46f4`); toggled by SELECT (`04:58d6`) |
-| `$A201` | cart-init stamp (`$88`) — `00:4842`, `00:4929` |
-| `$A300` | last-launched ROM full path (255 B) — `00:12bf` read, `01:4856` write ([last-rom.md](last-rom.md)) |
+| `$A200` | **auto-save flag** (`$00`/`$01`) - read in `DrawTimeAutosaveScreen` (`04:46f4`); toggled by SELECT (`04:58d6`) |
+| `$A201` | cart-init stamp (`$88`) - `00:4842`, `00:4929` |
+| `$A300` | last-launched ROM full path (255 B) - `00:12bf` read, `01:4856` write ([last-rom.md](last-rom.md)) |
 | save data + file list | other pages of the same pSRAM |
 
 So the auto-save checkbox is "nonvolatile" only as long as the coin cell lasts:
 it lives in the exact same battery-backed pSRAM as saves and the last-ROM
 record, and dies with the battery (the recurring "settings reset when the
 battery drains" complaint, [hardware-board.md](hardware-board.md)). The kernel
-uses **no truly-nonvolatile store for settings** — which is itself evidence
+uses **no truly-nonvolatile store for settings** - which is itself evidence
 that no such GB-writable store is available to it. A settings/config store that
 survives a dead battery would need exactly the parallel-NOR access path that
 does not currently exist.

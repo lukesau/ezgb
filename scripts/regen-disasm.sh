@@ -48,7 +48,7 @@ run python3 "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
 run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
   ann_ec=$?
   if [[ "$ann_ec" -eq 1 ]]; then
-    echo "warn: annotate-disasm.py exit $ann_ec (orphan note blocks — continuing)" >&2
+    echo "warn: annotate-disasm.py exit $ann_ec (orphan note blocks - continuing)" >&2
   else
     exit "$ann_ec"
   fi

@@ -60,16 +60,16 @@ not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
 ## Getting the modded kernel
 
 This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
-is not downloadable here — but you don't need one. Two supported routes, both
+is not downloadable here - but you don't need one. Two supported routes, both
 producing the same bytes (details, checksums, and the copyright rationale in
 [`docs/distribution.md`](docs/distribution.md)):
 
-- **Patch the official firmware** — take `ezgb.dat` from EZ Flash's official
+- **Patch the official firmware** - take `ezgb.dat` from EZ Flash's official
   firmware package and apply the IPS from
   [`patches/kernel/`](patches/kernel/):
   `python3 scripts/kernel-patch.py apply ezgb.dat` (verifies md5s; any
   standard IPS tool works too).
-- **Build from the disassembly** —
+- **Build from the disassembly** -
   `scripts/build-kernel.sh 1.05e-0731 --install` reassembles the modded
   kernel with rgbds and verifies its md5.
 

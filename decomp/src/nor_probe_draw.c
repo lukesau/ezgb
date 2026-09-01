@@ -1,11 +1,11 @@
 /*
- * NorProbeDraw — rom-area read-back probe (NOR-reuse investigation).
+ * NorProbeDraw - rom-area read-back probe (NOR-reuse investigation).
  *
  * Drawn once when the START overlay opens (hook over `call ReadJoypad` at
  * 00:1330, one-shot via $DBFD, cleared on FileBrowserEntry). The kernel runs
  * *from* the rom area as a banked ROM: MBC latch $2000 selects which 16KB
  * bank appears at $4000. The kernel image occupies banks 0-9, so banks 10+
- * are whatever sits in the rom area past the kernel — i.e. the tail of the
+ * are whatever sits in the rom area past the kernel - i.e. the tail of the
  * previously launched game, if the store retains it across power-off.
  *
  * Draws four lines "BB:XXXXXXXX" (bank, first 4 bytes at $4000 in hex) at
@@ -17,7 +17,7 @@
  *             if masked, this reads as bank 0 = kernel $0000 bytes)
  *
  * IMPORTANT (learned the hard way): this must be ONE function with no static
- * helpers or const arrays — SDCC emits statics/data ahead of the entry point,
+ * helpers or const arrays - SDCC emits statics/data ahead of the entry point,
  * but inject.py's label (and the hook's `call`) point at the block start.
  *
  * Interrupts are disabled around the bank flip: the VBlank path may far-call
@@ -53,7 +53,7 @@ void NorProbeDraw(void)
             LATCH = LATCH_SHADOW;
         }
 
-        /* "BB:XXXXXXXX" — nibble stream: bank, then the 4 bytes */
+        /* "BB:XXXXXXXX" - nibble stream: bank, then the 4 bytes */
         k = 0;
         for (i = 0; i < 10; i++) {
             if (i < 2)  v = bank;

@@ -43,7 +43,7 @@ extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page *
 extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode); /* f_open */
 extern unsigned char FarCall_06_779a(unsigned char *fp, unsigned char *buf, unsigned int btr, unsigned int *br); /* f_read */
 extern unsigned char FarCall_03_768f(unsigned char *fp); /* f_close */
-extern void WaitVBlankFlag(void);   /* 00:0688 — kernel waits VBlank before f_open */
+extern void WaitVBlankFlag(void);   /* 00:0688 - kernel waits VBlank before f_open */
 
 #define FIL_OBJ  ((unsigned char *)0xCA0F)   /* kernel's FIL; free while browser is idle */
 #define CFGBUF   ((unsigned char *)0xDA00)   /* config file contents */
@@ -86,12 +86,12 @@ static unsigned char scan_config(void);
 
 /* Takes no argument: it is reached by a far-call (FarCallTrampoline), which
  * shifts stack args by 6 bytes, so passing a pointer across it is fragile.
- * Instead it writes straight to the kernel's launch basename buffer $c4a4 —
+ * Instead it writes straight to the kernel's launch basename buffer $c4a4 -
  * which is exactly where the launch step reads the path from. */
 #define RESULT ((unsigned char *)0xC4A4)
 
 /* SD reads must run under FPGA personality $7FC0=$00 (DiskRead_B2 does not set
- * it itself — DirList sets it before every f_readdir). The scan is entered with
+ * it itself - DirList sets it before every f_readdir). The scan is entered with
  * the browser's resting $7FC0=$03 (the PSRAM record window), so it selects the
  * SD page for its reads and restores $03 on the way out. Skipping this reads the
  * wrong window and wedges the SD controller on real hardware, though it is
@@ -192,7 +192,7 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
 static unsigned char scan_config(void) {
     /* This name literal is a bank-2 const; f_open runs in bank 6 and would read
      * that address in the wrong bank, so the path must be copied to WRAM (always
-     * mapped) before the call — as the kernel's own opens do (e.g. /SAVER/...). */
+     * mapped) before the call - as the kernel's own opens do (e.g. /SAVER/...). */
     static const unsigned char cfg_name[16] =
         {'/','F','L','A','U','N','C','H','.','C','F','G',0};
     unsigned int br;

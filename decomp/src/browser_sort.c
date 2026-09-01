@@ -4,7 +4,7 @@
  * The stock kernel lists entries in raw FAT directory order (readdir order),
  * so a reorganized card shows folders scrambled. EZ Flash's own Omega DE
  * kernel solves this by enumerating the whole directory up front and sorting
- * (Sort_folder/Sort_file in omega-de-kernel ezkernelnew.c — bubble sort +
+ * (Sort_folder/Sort_file in omega-de-kernel ezkernelnew.c - bubble sort +
  * strcmp over two arrays, folders drawn before files). The Jr kernel never
  * got that. This is the same ordering, restructured for the Jr's hardware:
  * entries are not in a flat RAM array but in 255-byte PSRAM records behind
@@ -12,7 +12,7 @@
  * minutes on the SM83. So: sort compact keys, then move each record once.
  *
  * Hooked in place of the single `call DirList` in FileBrowserEntry
- * (00:102f) via an 8-byte FarCallTrampoline stub at 00:03d4 — see
+ * (00:102f) via an 8-byte FarCallTrampoline stub at 00:03d4 - see
  * browser_sort_shims.md. Runs from a bank 8 code cave.
  *
  * Phases:
@@ -37,7 +37,7 @@
  *    $A000 + 255 * (idx & $1f), NUL-terminated name at +0 (ApplyBasename),
  *    attr at +$fe. Nothing else lives in a record (the browser's number
  *    field is base+sel+1, not a stored size).
- *  - Scratch keys: same page, bank $ff — records would only reach it past
+ *  - Scratch keys: same page, bank $ff - records would only reach it past
  *    entry 7584, beyond EZ Flash's stated 7000-file cap, and sorting is
  *    skipped long before that anyway (MAX_SORT). The SameBoy stub masks
  *    banks to 6 bits ($ff -> $3f), still clear of records below 1440
@@ -47,12 +47,12 @@
  *
  * Caps: directories over MAX_SORT entries are left unsorted (a partial sort
  * would mislead). Enumeration stops at MAX_ENUM and forces the latch so no
- * later DirList call can push record banks toward the save pages — the
+ * later DirList call can push record banks toward the save pages - the
  * stock kernel would happily wrap $4000 past $ff on a pathological
  * directory; we refuse earlier.
  *
  * Cost: entering a directory now pays full enumeration (SD-bound, the cost
- * that used to hide in the first scroll past the last page) plus the sort —
+ * that used to hide in the first scroll past the last page) plus the sort -
  * key build and heapsort are linear-ish and cheap, the permutation moves
  * each name once. Omega pays the same enumeration price on the GBA.
  */

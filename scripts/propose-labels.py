@@ -146,7 +146,7 @@ def propose_farcall_thunks(version, named):
     if not rom_path.is_file():
         return []
     rom = rom_path.read_bytes()
-    # FarCallTrampoline is at 00:078d in 1.05e-0731 — find from sym if named
+    # FarCallTrampoline is at 00:078d in 1.05e-0731 - find from sym if named
     tramp_addr = None
     for (b, a), n in named.items():
         if n == "FarCallTrampoline" and b == "00":
@@ -217,7 +217,7 @@ def propose_fpga_helpers(version, named):
     for path, bank, key, body_lines, _ in iter_functions(version):
         if key in named:
             continue
-        # Only the first basic block through ret — mgbdis often leaves the next
+        # Only the first basic block through ret - mgbdis often leaves the next
         # unlabeled function's bytes in the same "body" until the next Call_.
         text = "\n".join(code_ops_until_ret(body_lines))
         if not text:
@@ -387,7 +387,7 @@ def main():
 
     prop_path = ROOT / "re" / version / "label-proposals.txt"
     with prop_path.open("w", encoding="utf-8") as f:
-        f.write(f"# propose-labels.py {version} — {len(proposals)} proposals\n")
+        f.write(f"# propose-labels.py {version} - {len(proposals)} proposals\n")
         for p in proposals:
             bank, addr = p["key"]
             f.write(f"{bank}:{addr} {p['name']}  # {p['kind']}: {p['reason']}\n")

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Human lean mapping surface — same context agents get each tick.
+# Human lean mapping surface - same context agents get each tick.
 #
 # 1. naming-progress summary
 # 2. propose-labels (dry-run by default; --apply to stamp)
@@ -108,10 +108,10 @@ if grep -qE ': 0 candidates|; show 0$' "$COV_OUT"; then
   APP_OUT="$(mktemp)"
   python3 "$ROOT/scripts/doc-symbol-coverage.py" "$VER" "${COV_FLAGS[@]}" >"$APP_OUT"
   if ! grep -qE ': 0 candidates|; show 0$' "$APP_OUT"; then
-    echo "(no frontier rows — falling back without --frontier-only)"
+    echo "(no frontier rows - falling back without --frontier-only)"
     cat "$APP_OUT"
   else
-    # both empty — still show the empty frontier table already teed
+    # both empty - still show the empty frontier table already teed
     :
   fi
   rm -f "$APP_OUT"
@@ -127,7 +127,7 @@ echo
 echo "=== next ==="
 echo "  1. Read TARGET + BODY + ABS TOUCHES + CALLERS (do not re-grep)."
 echo "  2. Name clear targets in re/$VER/kernel.sym; notes in re/$VER/notes.json"
-echo "     (surgical edits only — no broad replaces)."
+echo "     (surgical edits only - no broad replaces)."
 echo "  3. Prefer bank 09 for FatFs; stamp clones cover 03/05/06/07 when bodies match."
 echo "  4. ./scripts/regen-disasm.sh $VER"
 echo "  glossary: frontier/F = unnamed callee of a named fn;"

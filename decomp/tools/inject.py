@@ -13,7 +13,7 @@ silently jump to the wrong place once embedded.
 
 The injected bytes are recorded as `bank:addr .data:LEN:WIDTH` (same
 directive mgbdis uses for tables/reserved space) rather than as normal
-disassembled instructions — this is opaque, C-compiled machine code, not
+disassembled instructions - this is opaque, C-compiled machine code, not
 something meant to be hand-edited as asm here. The name you give it is a
 completely ordinary kernel.sym label, so existing asm (and other injected C)
 can `call` it normally.
@@ -78,7 +78,7 @@ def kernel_gb_path(version):
 def patch_kernel_gb(gb_path, offset, code_bytes):
     """Overwrite code_bytes into kernel.gb at offset, in place.
 
-    kernel.gb is the ROM mgbdis actually disassembles — a kernel.sym label
+    kernel.gb is the ROM mgbdis actually disassembles - a kernel.sym label
     plus a .data: directive only changes how existing bytes are *displayed*,
     it never changes what's in the ROM. Actually injecting new behavior
     means the ROM's bytes themselves have to change here.
@@ -108,7 +108,7 @@ def patch_kernel_gb(gb_path, offset, code_bytes):
 
 def extract_code_bytes(compiled, code_origin):
     """Contiguous run of bytes starting at code_origin. Warn about anything
-    the compile emitted outside that range (e.g. _DATA globals — those can't
+    the compile emitted outside that range (e.g. _DATA globals - those can't
     be injected as ROM bytes without a crt0 to copy them at boot, which this
     build doesn't have; avoid initialized statics in injected C)."""
     if code_origin not in compiled:
@@ -123,7 +123,7 @@ def extract_code_bytes(compiled, code_origin):
     if stray:
         lo, hi = min(stray), max(stray)
         print(f"warning: {len(stray)} byte(s) compiled outside the code range, "
-              f"at ${lo:04x}..${hi:04x} (likely _DATA globals) — NOT injected. "
+              f"at ${lo:04x}..${hi:04x} (likely _DATA globals) - NOT injected. "
               f"Injected C can't rely on initialized statics; use stack locals "
               f"or explicit runtime init instead.")
     return bytes(out)
@@ -195,7 +195,7 @@ def main():
         code_origin = address
         if not (0x4000 <= address <= 0x7fff):
             print(f"error: bank {bank} address ${address:04x} outside $4000-$7fff "
-                  f"(ROMX window — this is a CPU address, not a flat file offset)")
+                  f"(ROMX window - this is a CPU address, not a flat file offset)")
             sys.exit(1)
 
     c_path = os.path.abspath(args.c_file)
@@ -223,7 +223,7 @@ def main():
     existing = open(sym_path, encoding="utf-8").read()
     key = f"{bank:02x}:{address:04x}"
     if re.search(rf"^{re.escape(key)}\s", existing, re.MULTILINE):
-        print(f"error: {key} already has a kernel.sym entry — pick a different address "
+        print(f"error: {key} already has a kernel.sym entry - pick a different address "
               f"or remove the existing one first (inject.py never overwrites in place)")
         sys.exit(1)
 
@@ -233,7 +233,7 @@ def main():
     ]
 
     if not args.apply:
-        print("\n(dry run — pass --apply to patch kernel.gb + write kernel.sym)")
+        print("\n(dry run - pass --apply to patch kernel.gb + write kernel.sym)")
         print("\n".join(new_lines))
         return
 

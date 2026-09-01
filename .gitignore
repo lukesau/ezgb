@@ -26,8 +26,8 @@ re/*/*.dat
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
-# depth, which silently swallowed decomp/tools/ — this project's own injection
-# and verification tooling — for as long as it existed.
+# depth, which silently swallowed decomp/tools/ - this project's own injection
+# and verification tooling - for as long as it existed.
 /tools/
 
 # build artifacts from `make` inside re/*/disassembly
@@ -40,7 +40,7 @@ re/*/disassembly/game.sym
 # Debugger auto-trace output
 scripts/debug/*.log
 
-# SameBoy run artifacts (battery save, screenshot, debug log) — regenerated
+# SameBoy run artifacts (battery save, screenshot, debug log) - regenerated
 # locally, not source; the debug log also embeds your local filesystem path.
 re/*/kernel.sav
 re/*/kernel.bmp
@@ -58,7 +58,7 @@ re/*/label-proposals.txt
 !sd/psram.bin
 
 # Local microSD for the SameBoy EZ Jr FPGA stub.
-# ROMs, saves, and raw card images are copyrighted / personal — stay out of git.
+# ROMs, saves, and raw card images are copyrighted / personal - stay out of git.
 /sd/**
 !/sd/README.md
 

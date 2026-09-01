@@ -549,7 +549,7 @@ BrowserPageEnd::
 
 ; [ezgb]
 ; InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call
-; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline — fires only if
+; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline - fires only if
 ; the trampoline signals failure. Followed by ~82 more rst $38 bytes (alignment filler
 ; reusing the same opcode, not separately reachable).
 
@@ -5049,7 +5049,7 @@ FarCall_07_7739::
 
 ; [ezgb]
 ; FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f
-; (FIL/fp) plus ofs words — FatFs f_lseek.
+; (FIL/fp) plus ofs words - FatFs f_lseek.
 
 FarCall_03_76cc::
     ld hl, sp+$06
@@ -5201,7 +5201,7 @@ FarCall_05_4378::
 
 
 ; [ezgb]
-; DiskStatus(pdrv): FatFs disk_status stub — ld e,0 / ret (always ready).
+; DiskStatus(pdrv): FatFs disk_status stub - ld e,0 / ret (always ready).
 ; Callers test E bits STA_NOINIT ($01) / STA_PROTECT ($04) and map to FR_
 ; codes ($0c FR_NOT_ENABLED, $0a FR_WRITE_PROTECTED). Sibling DiskInitialize
 ; ($1a2c) is the same body; ReturnZero ($1a77) is the no-arg FR_OK stub.
@@ -5212,7 +5212,7 @@ DiskStatus::
 
 
 ; [ezgb]
-; DiskInitialize(pdrv): FatFs disk_initialize stub — same ld e,0 / ret as
+; DiskInitialize(pdrv): FatFs disk_initialize stub - same ld e,0 / ret as
 ; DiskStatus. Mount path maps STA_NOINIT -> FR_NOT_READY ($03).
 
 DiskInitialize::
@@ -8494,7 +8494,7 @@ U16DivMod_finish::
 ; [ezgb]
 ; U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;
 ; returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.
-; High fan-in is every C << >> on longs — name from the loop, no emulator needed.
+; High fan-in is every C << >> on longs - name from the loop, no emulator needed.
 ; Jump_000_299e: while count--: rr HL:DE (logical); count==0 ret.
 
 U32Shr::
@@ -9564,7 +9564,7 @@ GetTileCursorY_retY::
 
 
 ; [ezgb]
-; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)
+; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen - RGBDS STRLEN.)
 ; Jump_000_2da2: while *s++: ++len@sp+$00 (jr_000_2daf); Jump_000_2db2 DE=len ret.
 
 CStrLen::
@@ -12043,7 +12043,7 @@ SelectFontArg::
 
 
 ; [ezgb]
-; ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,
+; ResetTileText: EnterGfxMode2 path prep - InitGfxMode2 via $3d21, wFontNextTile=1,
 ; clear wFontSlots, default draw colors, ClearBgMap.
 ; jr_000_3c6b: zero $12 bytes at wFontSlots; then wDrawColor=3 / wDrawColorB=0; ClearBgMap.
 
@@ -12284,7 +12284,7 @@ InitGfxMode2::
 
 
 ; [ezgb]
-; VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
+; VramFill: STAT-safe fill - wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
 ; zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400).
 
 VramFill::

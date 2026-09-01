@@ -1,7 +1,7 @@
 # Who draws into the top-right corner of the screen?
 #
 # Every text glyph goes through DrawGlyph ($2701), which reads the cursor from
-# wTextCursorX/Y ($d732/$d733) rather than taking coordinates — so one
+# wTextCursorX/Y ($d732/$d733) rather than taking coordinates - so one
 # conditional breakpoint catches all of them regardless of which helper or bank
 # issued the draw. Filter to row 0, column >= $10, i.e. the right-hand end of
 # the tab row, where EzgbTabBanner's marker gets clobbered a moment after it

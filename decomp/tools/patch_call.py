@@ -5,14 +5,14 @@ Overwrite an existing instruction sequence in kernel.gb with `call TARGET`
 gets executed.
 
 This is a raw binary patch of kernel.gb, separate from inject.py (which only
-places new code in free space — it doesn't wire anything to call it). The
+places new code in free space - it doesn't wire anything to call it). The
 hook function at TARGET is responsible for replicating whatever original
 instruction(s) got overwritten before doing its own work, if the original
-behavior needs to be preserved (it usually does) — this tool does not try to
+behavior needs to be preserved (it usually does) - this tool does not try to
 infer or replay that for you.
 
 `call nn` / `jp nn` are both 3 bytes. If the patched region is longer than 3
-bytes, the remainder is filled with `nop` (never fewer than 3 — that would
+bytes, the remainder is filled with `nop` (never fewer than 3 - that would
 overwrite mid-instruction and corrupt whatever follows).
 
 --jp writes `jp` instead of `call`: use it when the overwritten instruction
@@ -69,20 +69,20 @@ def main():
 
     mnemonic = "jp" if args.jp else "call"
     if args.length < 3:
-        print(f"error: length {args.length} < 3 — a {mnemonic} nn is 3 bytes, can't fit")
+        print(f"error: length {args.length} < 3 - a {mnemonic} nn is 3 bytes, can't fit")
         sys.exit(1)
 
     address = parse_hex(args.address)
     target_bank, target_addr = parse_bank_addr(args.target)
     # call nn always encodes an absolute CPU address (the $4000-$7fff ROMX
-    # window address, same convention as everywhere else in this repo) —
+    # window address, same convention as everywhere else in this repo) -
     # the CPU doesn't know or care which bank that resolves to; whichever
     # bank happens to be paged in when the call executes is what runs. If
     # the call site and the target aren't in the same bank (and the target
     # isn't bank 0, which is always mapped), this needs a real bank switch
-    # or FarCallTrampoline, not a bare `call` — this tool doesn't do that.
+    # or FarCallTrampoline, not a bare `call` - this tool doesn't do that.
     if target_bank != 0 and target_bank != args.bank:
-        print(f"error: patch site is bank {args.bank}, target is bank {target_bank} — "
+        print(f"error: patch site is bank {args.bank}, target is bank {target_bank} - "
               f"a bare `{mnemonic}` can't cross ROMX banks (target isn't bank 0 either). "
               f"Use FarCallTrampoline for that, this tool only does same-bank/bank-0 calls.")
         sys.exit(1)
@@ -107,7 +107,7 @@ def main():
           + (", nop" * (args.length - 3)) + ")")
 
     if not args.apply:
-        print("\n(dry run — pass --apply to write into kernel.gb)")
+        print("\n(dry run - pass --apply to write into kernel.gb)")
         return
 
     orig_path = gb_path + ".orig"

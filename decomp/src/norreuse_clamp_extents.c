@@ -1,5 +1,5 @@
 /*
- * NorReuseClampExtents — NOR-reuse experiment v2 (partial copy).
+ * NorReuseClampExtents - NOR-reuse experiment v2 (partial copy).
  *
  * Called from NorReuseBootShim_B4 (04:5940) on the Start->A relaunch path,
  * after LaunchSetup has staged the 512-byte ROM-load command table at $c0a0

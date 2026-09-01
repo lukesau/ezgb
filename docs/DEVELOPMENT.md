@@ -169,7 +169,7 @@ python3 scripts/kernel-patch.py make    # all versions in the manifest
 ```
 
 The command round-trips each patch before writing its manifest entry, and
-regenerates every supported base in one run — the injected code is
+regenerates every supported base in one run - the injected code is
 byte-identical across them (bank 2 and bank 0 are identical in the stock
 kernels), so the patches always change together. Commit
 `patches/kernel/*.ips` + `manifest.json` + `VERSION` together with the
@@ -177,7 +177,7 @@ source change.
 
 ### Mod version
 
-`patches/kernel/VERSION` holds the mod version `N.M` — the version releases
+`patches/kernel/VERSION` holds the mod version `N.M` - the version releases
 are tagged with (`mod-N.M`). `make` bumps **M** automatically whenever a
 regen actually changes patch content (an identical regen doesn't bump).
 **N** is bumped by hand when a feature lands: edit the file to `N.0`, and
@@ -186,11 +186,11 @@ the next content-changing regen produces `N.1`.
 ### Release policy
 
 Since the disassembly reassembles the ROM, the `bank_*.asm` files are the
-firmware in source-encoded form — the repo sits in the same
+firmware in source-encoded form - the repo sits in the same
 tolerated-but-gray zone as other proprietary-binary decomp projects.
 Attaching a built binary to a Release would escalate that from "repo you can
 build" to "binary handed out", so a GitHub Release gets only the `.ips` files
-(and optionally `scripts/kernel-patch.py`) — never `ezgb.dat`, `kernel.gb`,
+(and optionally `scripts/kernel-patch.py`) - never `ezgb.dat`, `kernel.gb`,
 updater packages, or FPGA bitstreams.
 
 Releases are tagged `mod-N.M` (from `patches/kernel/VERSION`) and carry one

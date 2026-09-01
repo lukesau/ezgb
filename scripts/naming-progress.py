@@ -2,7 +2,7 @@
 """Naming progress for a kernel version.
 
 Same pret unnamed.py heuristic on game.sym (auto-name ends with its address),
-plus: Jump_/jr_ symbols count as named when documented in notes.json — either
+plus: Jump_/jr_ symbols count as named when documented in notes.json - either
 cited as Jump_BBB_AAAA / jr_BBB_AAAA in a note line, or a notes block is
 anchored at that bank:addr.
 

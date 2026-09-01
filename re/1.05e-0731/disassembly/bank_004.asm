@@ -6,7 +6,7 @@
 SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
 
 ; [ezgb]
-; ROM load + soft-boot (kernel FPGA path only — not used by launched games).
+; ROM load + soft-boot (kernel FPGA path only - not used by launched games).
 ; $7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.
 ; $7FE0=$80: reset into loaded ROM; same PSRAM chip, FPGA emulates game MBC.
 ; See docs/psram-save-map.md and sd/README.md.
@@ -363,7 +363,7 @@ RomLoad_BuildAndRunReset_B4::
 
 
 ; [ezgb]
-; SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) — unlock,
+; SetFpgaPageAlt_B4: byte-identical to SetFpgaPage_B4 (04:466e) - unlock,
 ; $7FC0=stack u8, commit. Earlier copy sitting just before SetFpgaRomSize_B4.
 
 SetFpgaPageAlt_B4::

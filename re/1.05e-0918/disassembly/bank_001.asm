@@ -5091,7 +5091,7 @@ SaverDirSlashStr::
 ; after SaverDirSlashStr). Double loop (outer/inner) walking a table via WRAM pointer
 ; $c2a0/$c2a1, FarCallTrampoline + Memcpy($ff bytes) into $c0a0, size-limited against
 ; $e800. Reasonable inference from control flow and the Memcpy/FarCallTrampoline calls;
-; exact role and caller not independently confirmed — named from shape + neighboring
+; exact role and caller not independently confirmed - named from shape + neighboring
 ; context, not a traced call site.
 
 BuildSaverBackupPath::

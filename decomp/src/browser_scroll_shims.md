@@ -1,6 +1,6 @@
 # Browser scroll hook stubs
 
-Hand-assembled, not SDCC-compiled — same reason as `shims.md`, but a different
+Hand-assembled, not SDCC-compiled - same reason as `shims.md`, but a different
 constraint: these are not far-call trampolines, they are *frame-preserving*
 entry stubs.
 
@@ -10,8 +10,8 @@ reached by `jr nz`, that read and write the enclosing `SdMenuMain` stack frame
 at fixed `sp+N` offsets and exit with `jp MenuDispatchAB_waitVBlankLoop`
 (`00:16ab`). C cannot address a caller's frame, and any C prologue moves SP.
 
-So each stub is **jumped to**, never called — SP is therefore still exactly the
-`FileBrowserEntry` frame pointer on entry — and it computes the frame address
+So each stub is **jumped to**, never called - SP is therefore still exactly the
+`FileBrowserEntry` frame pointer on entry - and it computes the frame address
 *before* pushing anything:
 
 ```asm
@@ -59,7 +59,7 @@ f8 12 e5 cd 97 02 e8 02 c3 ab 16      (11 bytes)
 ```
 
 Both C entry points come from linking `browser_scroll.c` at `_CODE = 0x01e3`
-and reading the sdld map, not from counting bytes by hand — the file compiles
+and reading the sdld map, not from counting bytes by hand - the file compiles
 to one contiguous 248-byte block, so `browser_scroll_up`'s address is whatever
 the linker placed it at and must be re-checked if that file changes:
 

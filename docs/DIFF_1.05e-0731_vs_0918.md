@@ -167,14 +167,14 @@ project is not the kernel.
 ## Port of the injected features (2026-08-30)
 
 All injected features (fast launch, browser sort/scroll/page-end, dotfile
-filter, tab banner, NOR reuse — see [nor-reuse.md](nor-reuse.md)) were ported
+filter, tab banner, NOR reuse - see [nor-reuse.md](nor-reuse.md)) were ported
 from the 0731 featured build to 0918 by replaying the byte diff
 (`re/1.05e-0731/kernel.gb.orig` → `kernel.gb`) onto the stock 0918 dump:
 
 - All 20 diff regions land in bytes that are identical between the two stock
   kernels (none overlap the six relocated bank-0 operands), so the port is
   byte-exact. The only bank-1 reference in any injected code is a far-call to
-  `DrawBrowserDetail` (`01:42ba`), below the `$4dd0` insertion — unmoved.
+  `DrawBrowserDetail` (`01:42ba`), below the `$4dd0` insertion - unmoved.
 - `re/1.05e-0918/kernel.gb` is the ported featured build (md5 `6cf9bf64`);
   `kernel.gb.orig` is stock (md5 `5238ac59`). `kernel.sym` / `notes.json`
   were ported with the bank-1 remap (+619 for `$4dd0`–`$50ce`, +610 from

@@ -4,8 +4,8 @@
  *                 (starts with a $C0 canary as its very first write)
  *   $da20       : $33 marker (test wrapper reached this point)
  *   $da21..     : result path, NUL-terminated
- * ($d780-$da1b is fastlaunch_scan_debug's own WRAM scratch — see its header
- * comment — so this must not overlap that range.) */
+ * ($d780-$da1b is fastlaunch_scan_debug's own WRAM scratch - see its header
+ * comment - so this must not overlap that range.) */
 extern void fastlaunch_scan_debug(unsigned char *result_path);
 
 void fastlaunch_scan_debug_test(void) {

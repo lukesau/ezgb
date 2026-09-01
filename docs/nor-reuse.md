@@ -1,10 +1,10 @@
 # NOR reuse: booting the game already in NOR (1.05e)
 
-> **VERDICT (2026-08-30): dead — the game store is volatile RAM, not NOR.**
+> **VERDICT (2026-08-30): dead - the game store is volatile RAM, not NOR.**
 > The read-back probe (below) proved it on hardware: after a full launch, a
 > *fast* power cycle reads back the game's exact bytes; leaving the cart off
 > longer makes bits visibly fade toward `$FF`; pulling the cart discharges it
-> to clean `$FF`. Charge decay over time is the signature of DRAM/pSRAM —
+> to clean `$FF`. Charge decay over time is the signature of DRAM/pSRAM -
 > flash cannot do this. The per-launch SD→cart copy is therefore a hardware
 > requirement, not kernel laziness. All experimental wiring was reverted (the
 > featured builds carry only fast launch + browser features again); this page
@@ -12,14 +12,14 @@
 > [hardware-board.md](hardware-board.md).
 
 The stock launch path re-copies the selected ROM from microSD into the cart's
-4 MB Spansion NOR (U4) on **every** launch — that copy is the multi-second
+4 MB Spansion NOR (U4) on **every** launch - that copy is the multi-second
 "Loading...." wait. But the game from the previous launch is still sitting in
 NOR (it's nonvolatile), so relaunching the *same* game shouldn't need the copy
 at all. This page documents the kernel primitive that makes that possible, and
 the experimental Start→A hook that uses it.
 
 This is the Jr's latent equivalent of the Omega's **Mode B** (boot the game
-previously burned to NOR, no OS in the way) — see
+previously burned to NOR, no OS in the way) - see
 [omega-jr-compare.md](omega-jr-compare.md).
 
 ## The find: a dormant no-copy boot primitive
@@ -34,7 +34,7 @@ callers** in the entire kernel:
 
 Caller scan (2026-08-30): no far-call blob `d2 41 04 00` or `80 41 04 00`
 anywhere in the ROM, and no bank-4-local `call`/`jp` to either address. (The
-`cd d2 41` hits in banks 3/7 are unrelated — bank-local calls to the
+`cd d2 41` hits in banks 3/7 are unrelated - bank-local calls to the
 `SyncWindow_B3`/`_B7` FatFs helpers that happen to live at their own `$41d2`.)
 Presumably factory/test code, or a leftover from a planned feature.
 
@@ -57,7 +57,7 @@ jp $41ce                             ; self-loop until the FPGA resets us
 ```
 
 What it does **not** do is the load: no `$7f36` write, no command block, no SD
-streaming. It configures nothing about the game either — it assumes the MBC
+streaming. It configures nothing about the game either - it assumes the MBC
 type / size mask / rompage registers are already set. That makes it composable
 with the stock launch tail, which sets all of those *before* the copy step.
 
@@ -82,9 +82,9 @@ in [launch-trace.md](launch-trace.md)) ends at:
 load-cmd window), memcpy 512 bytes `$c0a0`→`$a000` (the cluster/extent list
 `LaunchSetup` staged), then `RomLoad_BuildAndRunPoll` installs the WRAM stub
 that polls the FPGA while it streams SD→NOR and finally fires `$7fe0=$80`.
-Everything upstream of `$1623` — `RomLoaderMain` header read/checksum,
+Everything upstream of `$1623` - `RomLoaderMain` header read/checksum,
 `LaunchSetup`, and the whole FPGA config block (`$7fc0`, `$7f37`, `$7fd4`,
-`$7fc4`, `$7fc1/$7fc2`, `$7fc3`) — is game *configuration*, not the copy.
+`$7fc4`, `$7fc1/$7fc2`, `$7fc3`) - is game *configuration*, not the copy.
 
 So "skip the copy, everything else the same" is precisely: run the tail
 unchanged, but at `$1623` call `$41d2` instead of `$448f`.
@@ -106,7 +106,7 @@ patches, `$DBFE` as the one-shot flag (zeroed by the boot WRAM clear):
 else `jp $448f`. **v2 shim (current, 18 B):** flag set → `call
 NorReuseClampExtents` (`04:5960`, from
 [`norreuse_clamp_extents.c`](../decomp/src/norreuse_clamp_extents.c)) then fall
-into `jp $448f` — the *stock* copy path runs, but with the command table's
+into `jp $448f` - the *stock* copy path runs, but with the command table's
 extent list clamped to the first 512 sectors (256 KB), so the FPGA gets its
 full load cycle while only the prefix is re-streamed. The size/meta fields are
 untouched. Files smaller than the clamp hit the list terminator and copy in
@@ -116,33 +116,33 @@ Scope: **only** the START-overlay A press sets the flag. Browser launches and
 fast-launch (whose `do_launch` jumps straight to `$1344`,
 [fast-launch-notes.md](fast-launch-notes.md)) still take the full-copy path.
 The `FileBrowserEntry` hook is hardening: if a relaunch errors out between
-`$1344` and `$1623`, the kernel returns to the browser, which clears the flag —
+`$1344` and `$1623`, the kernel returns to the browser, which clears the flag -
 a stale flag can't turn a later normal launch into a wrong-game no-copy boot.
 
 The relaunch still runs the header read, save stamping, and FPGA config, so
-the game the FPGA is configured for is whatever `$A300` names — which, by
+the game the FPGA is configured for is whatever `$A300` names - which, by
 construction of the last-ROM record ([last-rom.md](last-rom.md)), is the game
 last copied into NOR.
 
 ## Verification status
 
-**Emulator (SameBoy + EZ Jr stub, 2026-08-30) — confirmed:**
+**Emulator (SameBoy + EZ Jr stub, 2026-08-30) - confirmed:**
 
 - Start→A on the last ROM: full FPGA config sequence in the log
-  (`$7f37/$7fd4/$7fc4/$7fc1/$7fc2/$7fc3`), then the ResetIntoRom signature —
+  (`$7f37/$7fd4/$7fc4/$7fc1/$7fc2/$7fc3`), then the ResetIntoRom signature -
   `$7f32=$00` commit followed by `$7fe0=$80` commit, with **no `$7f36` write
   anywhere**. Stub reports `$7FE0=$80 but no pending ROM`, expected: the
   stub's "NOR" doesn't persist across processes.
 - Regression: normal browser launch still performs the full copy
   (`built 1048576 / 1048576 bytes, title=POKEMON RED`) and boots.
 
-**Hardware, v1 (2026-08-30) — FAILED, root cause identified.** On a real Jr
+**Hardware, v1 (2026-08-30) - FAILED, root cause identified.** On a real Jr
 (FW5-0918, ported 0918 kernel) the no-copy Start→A boot hangs on the Game Boy
 splash screen; fast launch (full copy) on the same build works. The failure is
 **not** evidence about NOR volatility: per daid's stage1 RE
 ([daid/ezflashjr](https://github.com/daid/ezflashjr) `doc/General.md` /
 `Sequence.md`), the factory bootstrap **loads `ezgb.dat` into the same rom
-area** the game occupies — using the very same `$7f36` ROMLoadInfo mechanism —
+area** the game occupies - using the very same `$7f36` ROMLoadInfo mechanism -
 on *every power-on*. So at Start→A time the rom area holds the 160 KB kernel
 image followed by the stale tail of the last game. v1 booted that frankenimage
 under the game's MBC config: the kernel's valid Nintendo logo gets the splash
@@ -169,10 +169,10 @@ Hold-B and all fast-launch behavior are unchanged in both versions.
 
 Because the kernel *runs from the rom area* as a banked ROM (MBC latch `$2000`
 selects the 16KB bank at `$4000`, kernel = banks 0–9), the store can be read
-directly — no boot, no copy, pure reads. `NorProbeDraw`
+directly - no boot, no copy, pure reads. `NorProbeDraw`
 ([`nor_probe_draw.c`](../decomp/src/nor_probe_draw.c), `00:3ed4`) draws four
 lines `BB:XXXXXXXX` (bank number, first 4 bytes of that bank) at rows
-`$0b`–`$0e` when the START overlay opens: banks `09` (control — always the
+`$0b`–`$0e` when the START overlay opens: banks `09` (control - always the
 kernel's own last bank), `10` (rom area `$28000`, just past the kernel), `16`
 (`$40000`, past v2's copy window), `32` (`$80000`, deep tail). One-shot hook
 over the overlay input loop's `call ReadJoypad` at `00:1330` →
@@ -191,7 +191,7 @@ Two injection lessons paid for here: SDCC emits `static` helpers and const
 arrays *ahead* of the entry point, so an injected C entry must be the sole
 top-level object in the file or the hook `call`s into a helper; and the
 bank-0 `$03cc` cave really does end at `$05b5` (a lone `jp $3d21` stub lives
-at `$05b6` — briefly clobbered by an oversized inject, restored from
+at `$05b6` - briefly clobbered by an oversized inject, restored from
 `kernel.gb.orig`, probe relocated to the `$3ed4` cave).
 
 ## The probe experiments that settled it (hardware, 2026-08-30)
@@ -205,7 +205,7 @@ fully launched game):
 | `10` / `$40000` | `EFBEFF9E` | `F0D16FF0` | mostly-1 bits |
 | `20` / `$80000` | `FFF9FFFF` | `CD17403E` | nearly erased |
 
-No region matched — and the bit-density gradient (0-heavy near the kernel,
+No region matched - and the bit-density gradient (0-heavy near the kernel,
 1-heavy deep) was the decay tell. The controlled follow-up: full-launch
 Crystal → power cycle → probe. **Fast cycle: all three read back the exact
 file bytes. Longer off-time: bits fade toward `$FF`. Cart removal: clean
@@ -215,7 +215,7 @@ power drops on residual charge only.
 ## What this settles
 
 - **The game store is a pSRAM die, and it's U9's, not U4's** (chip map, see
-  [hardware-board.md](hardware-board.md)): deduced from U4's datasheet — an
+  [hardware-board.md](hardware-board.md)): deduced from U4's datasheet - an
   8 MB ROM can't fit in U4's 512 KB pSRAM die, so it must live in a larger
   pSRAM in U9, while U4's 512 KB pSRAM die is the battery-backed *save* store.
   (U4 is a datasheet-confirmed NOR+pSRAM MCP; U9's exact make-up is unverified.)
@@ -227,7 +227,7 @@ power drops on residual charge only.
 - **stage1's kernel load clobbers the first 160 KB regardless** (still true,
   still confirmed by v1's splash-then-hang signature).
 - `RomLoad_ResetIntoRom_B4` can only ever make sense for a warm reset within
-  a powered session — from power-on there is nothing valid to reset into.
+  a powered session - from power-on there is nothing valid to reset into.
 
 All wiring (overlay hook, shim, blob repoint, browser-entry clear, probe) was
 reverted; the featured builds are back to fast launch + browser features only

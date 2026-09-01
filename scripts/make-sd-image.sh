@@ -4,7 +4,7 @@
 # On modern macOS, newfs_msdos cannot format a plain file ("Cannot get partition
 # offset"). We attach it as a raw disk image first and format the /dev/disk* node.
 #
-# While the image is mounted, macOS injects .fseventsd / Spotlight junk — strip
+# While the image is mounted, macOS injects .fseventsd / Spotlight junk - strip
 # that before detaching. Prefer 8.3 names in sd/root/ (e.g. TETRIS.GB, PKMRED.GB);
 # VFAT long names often render as garbage in the Jr file browser.
 set -euo pipefail
@@ -13,7 +13,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SD="$ROOT/sd"
 IMG="$SD/card.img"
 ROOTFS="$SD/root"
-# Default 64MiB — plenty for a handful of ROMs; override with SD_IMAGE_MB=128 etc.
+# Default 64MiB - plenty for a handful of ROMs; override with SD_IMAGE_MB=128 etc.
 MB="${SD_IMAGE_MB:-64}"
 
 mkdir -p "$SD"
@@ -28,7 +28,7 @@ if [[ -z "$DEV" || ! -e "$DEV" ]]; then
   exit 1
 fi
 echo "Formatting $DEV as FAT16 (EZJR)"
-# Superfloppy (no partition table) — FatFs mounts this; Jr cards are often similar.
+# Superfloppy (no partition table) - FatFs mounts this; Jr cards are often similar.
 newfs_msdos -F 16 -v EZJR "$DEV" >/dev/null
 hdiutil detach "$DEV" >/dev/null
 
@@ -67,7 +67,7 @@ if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
   hdiutil attach -imagekey diskimage-class=CRawDiskImage -mountpoint "$MNT" "$IMG" >/dev/null
   scrub_macos_junk "$MNT"
   if [[ "$KEEP_JUNK" == "1" ]]; then
-    echo "SD_KEEP_MACOS_JUNK=1 — copying macOS cruft too (dotfile-filter test card)"
+    echo "SD_KEEP_MACOS_JUNK=1 - copying macOS cruft too (dotfile-filter test card)"
     rsync -a "$ROOTFS"/ "$MNT"/
   else
     rsync -a --exclude '.DS_Store' --exclude '._*' --exclude '.Spotlight-V100' \
@@ -80,7 +80,7 @@ if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
     base="$(basename "$f")"
     [[ "$base" == .* ]] && continue
     if [[ "$base" == *' '* || ${#base} -gt 12 ]]; then
-      echo "warning: non-8.3 name '$base' — Jr browser may show garbage; rename e.g. PKMRED.GB" >&2
+      echo "warning: non-8.3 name '$base' - Jr browser may show garbage; rename e.g. PKMRED.GB" >&2
     fi
   done < <(find "$MNT" -mindepth 1 -maxdepth 2 \( -type f -o -type d \) -print0)
   sync

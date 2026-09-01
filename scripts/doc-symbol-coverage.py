@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rank table: docs / kernel.sym / call fan-in / orphans — what to label next.
+"""Rank table: docs / kernel.sym / call fan-in / orphans - what to label next.
 
 This prints a **rank table only** (addr, fan-in, docs, frontier mark). It does
 not include body, callers, or WRAM context. For the full lean surface humans
@@ -59,7 +59,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 # FatFs-shaped code is linked per bank (near-call only). Bank 9 is canonical;
-# 3/5/6/7 are mostly copies — huge unnamed mass, low app-mapping value.
+# 3/5/6/7 are mostly copies - huge unnamed mass, low app-mapping value.
 LIB_BANKS = frozenset({"03", "05", "06", "07", "09"})
 
 # Docs may cite any mgbdis auto-name, including Jump_/jr_ seams.
@@ -75,7 +75,7 @@ AUTO_LABEL_RX = re.compile(
     r"^(?:Call|Jump|jr|Data|Unknown)_([0-9a-fA-F]{3})_([0-9a-fA-F]{4}):\s*$"
 )
 ANY_LABEL_RX = re.compile(r"^([A-Za-z_][\w]*)::?\s*$")
-# Absolute WRAM / FPGA — means not a pure compiler leaf.
+# Absolute WRAM / FPGA - means not a pure compiler leaf.
 ABS_APP_RX = re.compile(r"\$(?:[DdCc][0-9a-fA-F]{3}|7[Ff][0-9a-fA-F]{2})\b")
 STACK_FRAME_RX = re.compile(r"add\s+hl,\s*sp", re.IGNORECASE)
 SHIFT_RX = re.compile(r"\b(?:rr|rl|sra|sla|rrc|rlc)\s+", re.IGNORECASE)
@@ -195,7 +195,7 @@ def is_sdcc_runtime(body):
 
 
 def is_padding_or_trap(body):
-    """Bank fillers / RST $38 traps — not naming targets."""
+    """Bank fillers / RST $38 traps - not naming targets."""
     code = [ln for ln in body.splitlines() if CODE_LINE_RX.match(ln)]
     if not code:
         return True
@@ -272,7 +272,7 @@ def insn_size(line):
         return 3
     if re.match(r"(jp|call)\s+", s):
         return 3
-    # ld a, [wLabel] / ld [wLabel], a — absolute 16-bit (FA/EA).
+    # ld a, [wLabel] / ld [wLabel], a - absolute 16-bit (FA/EA).
     # Exclude [hl]/[hl+]/[hli]/… (those are 1-byte).
     def _is_hl_mem(operand_s):
         return bool(re.search(r"\[hl[i\+\-]?(?:d)?\]", operand_s))
@@ -669,7 +669,7 @@ def rank_candidates(
 
     keys = set(docs) | set(fanin) | set(call_keys) | set(entry_jumps) | set(orphans)
 
-    # Per-bank sorted named ROM *code* addrs — Jump_ strictly between two named
+    # Per-bank sorted named ROM *code* addrs - Jump_ strictly between two named
     # symbols is an interior branch. Exclude WRAM and mgbdis magics (.text:N)
     # so bank-0 WRAM does not become the "last named" symbol.
     named_by_bank = collections.defaultdict(list)
@@ -705,7 +705,7 @@ def rank_candidates(
         for na in addrs:
             if na > lo:
                 return addr < na
-        # No named symbol after lo — still interior to that last named function
+        # No named symbol after lo - still interior to that last named function
         # (e.g. Jump_004_48f5 inside DrawTimeAutosaveScreen with nothing after).
         return True
 
@@ -748,7 +748,7 @@ def rank_candidates(
                 continue
 
         # Mid-function Jump_ labels (not real entries after ret). Docs cannot
-        # resurrect these — cite the human name or bank:addr once known.
+        # resurrect these - cite the human name or bank:addr once known.
         if (
             key in jump_keys
             and key not in entry_jumps

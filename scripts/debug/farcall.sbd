@@ -1,4 +1,4 @@
-# Noisy far-call trampoline — enable only AFTER $1569 has hit once.
+# Noisy far-call trampoline - enable only AFTER $1569 has hit once.
 # Prefer loading this mid-session rather than at boot:
 #   ./scripts/run-sameboy-debug.sh
 #   … Right on a ROM, hit $1569 …

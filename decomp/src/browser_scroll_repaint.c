@@ -1,14 +1,14 @@
 /* Bottom-up repaint for the down-scroll.
  *
  * The stock dirty=1 full repaint (DrawBrowserEntries) sweeps rows top to
- * bottom, so on a down-scroll the newly revealed entry — the one the user
- * pressed DOWN to see — is painted last, a visible beat after the press.
+ * bottom, so on a down-scroll the newly revealed entry - the one the user
+ * pressed DOWN to see - is painted last, a visible beat after the press.
  * This wrapper sits between the BrowserScrollDownHook stub (00:02e0) and
  * browser_scroll_down: when the scroll shifts the window (dirty = 1) it
  * takes the repaint over entirely and paints in reverse:
  *
  *   1. DrawBrowserDetail(base, 15, mode 2) via the FarCallDrawDetailBottom
- *      shim — the same two-row primitive the in-screen cursor moves use.
+ *      shim - the same two-row primitive the in-screen cursor moves use.
  *      It draws row 14 un-highlighted and the new bottom entry highlighted,
  *      and its epilogue draws the selection-number field as base+row+1 =
  *      base+16, which is exactly right for sel=15. (That number is also why
@@ -25,8 +25,8 @@
  *      at 15).
  *
  * dirty is then cleared so FileBrowserEntry's own redraw does nothing; the
- * one side effect of its dirty!=0 path — zeroing the 32-bit marquee tick at
- * frame sp+$0a..$0d — is replicated here (the hook's state pointer is
+ * one side effect of its dirty!=0 path - zeroing the 32-bit marquee tick at
+ * frame sp+$0a..$0d - is replicated here (the hook's state pointer is
  * frame sp+$12, so the tick sits at st-8; see browser_scroll_shims.md for
  * the frame map).
  *
@@ -101,7 +101,7 @@ static void draw_row(u16 base, u8 n) {
         DrawString(rec, 0, 0, row);
         StoreDrawParams(0, 0x0003);
         DrawString(dir_tag, 3, 0x11, row);
-        /* StoreDrawParams is not an (index, value) setter — it stores all
+        /* StoreDrawParams is not an (index, value) setter - it stores all
          * three draw-state bytes ($d734/$d735/$d723) every call, so the DIR
          * tag's (0, $0003) flips the ink to inverse video for everything
          * drawn after it. Stock DrawBrowserEntries undoes that with this

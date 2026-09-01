@@ -17,7 +17,7 @@ bounds what it *can* touch.
 
 | Page | Bytes changed across dumps | Role | Free? |
 |---|---|---|---|
-| `$00`–`$0F` (0–15) | 3 B each | **Game save RAM** — the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
+| `$00`–`$0F` (0–15) | 3 B each | **Game save RAM** - the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
 | `$10` (16) | 0 (all-zero both dumps) | first page above the save region | **untouched** |
 | `$11` (17) | 39 B | **Meta**: autosave flag `$A001`, backup savename `$A00F-$A025`, cart-init `$A201`, last-ROM path `$A300-$A316`. Highest byte ever used: **`$A316`**. | **partly** |
 | `$12` (18) | 4163 B | browser path/name scratch (heavily rewritten) | No |
@@ -33,7 +33,7 @@ not by that masked index.
 
 ## Spare space, by confidence
 
-**Tier 1 — safe now: ~7 KB inside page 17.** The kernel maps page 17 for meta
+**Tier 1 - safe now: ~7 KB inside page 17.** The kernel maps page 17 for meta
 and touches only `$A000`–`$A316` (autosave, backup savename, cart stamp,
 last-ROM path). It is **not cleared on boot** (that is the whole point of the
 last-ROM / BACKUPSAVE records persisting), and no routine memsets the page. With
@@ -43,7 +43,7 @@ kernel-preserved. Ideal for a small persistent config/state blob for our
 features. Access it exactly as the kernel does: `$4000=$11`, `$7FC0=$03`,
 read/write `$B400`+ region… (use `$A400`+ within the window), `$7FC0=$00`.
 
-**Tier 2 — larger but unconfirmed: pages `$14`–`$3E` (20–62) ≈ 344 KB.** These
+**Tier 2 - larger but unconfirmed: pages `$14`–`$3E` (20–62) ≈ 344 KB.** These
 are above the `& $1F` save-index range and away from the browser caches, and sit
 all-zero in both real dumps. Prefer these over pages 16–31 (which a hypothetical
 >16-bank save could reach, though no real GB/GBC game does). Two things must be
@@ -53,7 +53,7 @@ confirmed on hardware before trusting them:
    SameBoy stub's model (`EZJR_SRAM_BANKS=64`). daid's teardown lists U4's pSRAM
    die as 1 MB; how much is actually battery-backed and latch-addressable is
    unverified. A high page might alias a low one, or read open bus.
-2. **Kernel truly never writes them** — the dumps are strong but not exhaustive
+2. **Kernel truly never writes them** - the dumps are strong but not exhaustive
    (a code path my sessions didn't exercise could differ).
 
 ## Hardware verification (recommended before Tier 2 use)
@@ -75,8 +75,8 @@ never disturbs it.
 ## Bottom line
 
 There is a **safe ~7 KB today** (page 17 `$A400`–`$BFFF`) for a battery-backed
-config store — enough for feature flags, a fast-launch config, a richer
-last-ROM/most-recent list, per-game settings, etc. — with a **potential ~344 KB
+config store - enough for feature flags, a fast-launch config, a richer
+last-ROM/most-recent list, per-game settings, etc. - with a **potential ~344 KB
 more** (pages 20–62) pending a one-time hardware probe. All of it dies with the
 coin cell (same limitation as saves); it is convenient persistence, not
 permanent storage. Truly battery-independent storage still needs the parallel

@@ -2,19 +2,19 @@
 """Make or apply IPS patches for the modded EZ Flash Jr kernel.
 
 The repo never distributes EZ Flash's firmware; what it CAN distribute is the
-difference between the stock kernel and the modded one — which is exactly the
+difference between the stock kernel and the modded one - which is exactly the
 injected code this project wrote. That difference ships as a standard IPS
 patch in patches/kernel/, so end users can apply it with this script or with
 any ordinary IPS tool (Flips, Lunar IPS, an online ROM patcher).
 
 patches/kernel/manifest.json records the md5 of the stock base and of the
 expected result for each firmware version, so both sides of the patch are
-verified — a patch applied to the wrong base silently produces garbage, and
+verified - a patch applied to the wrong base silently produces garbage, and
 IPS itself carries no checksums.
 
 patches/kernel/VERSION holds the mod version ("N.M"). Regenerating the
 patches bumps M automatically when any patch's content changed; N is bumped
-by hand when a feature lands (edit the file — the next content-changing
+by hand when a feature lands (edit the file - the next content-changing
 regen then produces N.1, N.2, ...).
 
 Usage:
@@ -47,7 +47,7 @@ EOF_OFFSET = 0x454F46
 MAX_RECORD = 0xFFFF
 # Join diff runs separated by up to this many equal bytes. 0 = exact diffs
 # only: a couple more records, but the patch then contains not a single byte
-# of the stock firmware — only code this project wrote.
+# of the stock firmware - only code this project wrote.
 JOIN_GAP = 0
 
 
@@ -151,7 +151,7 @@ def make_one(version):
     if len(stock) != len(modded):
         sys.exit(f"error: size mismatch: stock {len(stock)}, modded {len(modded)}")
     if stock == modded:
-        sys.exit("error: kernel.gb is identical to kernel.gb.orig — nothing to patch")
+        sys.exit("error: kernel.gb is identical to kernel.gb.orig - nothing to patch")
 
     runs = diff_runs(stock, modded)
     os.makedirs(PATCH_DIR, exist_ok=True)
@@ -165,7 +165,7 @@ def make_one(version):
     result = apply_ips(stock, new_ips)
     if result != modded:
         os.remove(patch_path)
-        sys.exit("error: round-trip failed — patch did not reproduce kernel.gb")
+        sys.exit("error: round-trip failed - patch did not reproduce kernel.gb")
 
     manifest = load_manifest()
     manifest[version] = {
@@ -243,7 +243,7 @@ def cmd_apply(args):
     patch_path = os.path.join(PATCH_DIR, entry["patch"])
     result = apply_ips(base, open(patch_path, "rb").read())
     if md5(result) != entry["patched_md5"]:
-        sys.exit("error: patched output failed md5 verification — "
+        sys.exit("error: patched output failed md5 verification - "
                  "the patch and manifest disagree; regenerate the patch")
 
     out = args.output or os.path.join(os.path.dirname(os.path.abspath(args.base)),
