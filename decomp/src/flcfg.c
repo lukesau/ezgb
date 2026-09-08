@@ -272,14 +272,14 @@ static void draw_rows(u8 cur) {
 
     StoreDrawParams(0, 0, 0);
     DrawRect(0x82, 0x48, 0x8a, 0x50, 1);          /* clear box */
-    if (cur == ROW_CHECK) StoreDrawParams(2, 2, 0); else StoreDrawParams(3, 0, 0);
+    if (cur == ROW_CHECK) StoreDrawParams(1, 1, 0); else StoreDrawParams(3, 0, 0);
     DrawRect(0x82, 0x48, 0x8a, 0x50, 0);          /* outline */
     if (FL_EN) {
-        StoreDrawParams(2, 2, 0);
+        StoreDrawParams(3, 3, 0);
         DrawRect(0x84, 0x4a, 0x88, 0x4e, 1);      /* check mark */
     }
 
-    if (cur == ROW_PICK) StoreDrawParams(3, 2, 0); else StoreDrawParams(3, 0, 0);
+    if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     DrawRect(0x73, 0x55, 0x9b, 0x61, 1);          /* button box */
     DrawString(pick_str, 4, 15, 11);
     StoreDrawParams(3, 0, 0);

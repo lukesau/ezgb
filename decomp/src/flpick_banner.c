@@ -19,7 +19,7 @@ void flpick_banner(void) {
     static const u8 banner[16] =
         {' ','P','I','C','K',' ','A',' ','R','O','M',' ',' ',' ',' ',0};
     if (FL_PICK == 0) return;
-    StoreDrawParams(3, 2, 0);
+    StoreDrawParams(0, 3, 0);
     DrawString(banner, 15, 0, 0);
     StoreDrawParams(3, 0, 0);
 }

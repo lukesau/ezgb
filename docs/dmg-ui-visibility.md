@@ -42,16 +42,34 @@ is a two-byte immediate change (`ld hl, $0002` → `$0003`, `ld a, $03` →
 The trailing `(3, $0000)` reset after each highlighted draw is unchanged, so
 nothing downstream sees a different draw state.
 
-### Other screens that still use the dark-gray pair
+### Every other dark-gray site
 
-26 more `ink 3, paper 2` sites exist outside the browser: the `SD/SET/HELP`
-tab bar and `BatteryCheck` (bank 0), `DrawInfoPanelRect`,
-`BootRomInfoMenu_*` and `BackupSavePrompt` (bank 1), the
-`DrawTimeAutosaveScreen_*` settings pages (bank 4), and the
-`DrawFwVersionScreen` / `Reading` / `Loading` / error boxes (bank 8). They
-are left stock in this change. If they should follow, the cleanest route is
-one remap inside `StoreDrawParams` (a cave + `jp`, since the stock body has
-no spare bytes) rather than 26 more two-byte edits.
+The same pair was used for every highlight and box in the kernel, so all 26
+remaining sites were changed too, with one mapping per role:
+
+| Stock ink/paper | Role | Now |
+|---|---|---|
+| 3 / 2 | highlighted text, buttons, tab strip, Reading/Loading/error boxes | 0 / 3 (white on black) |
+| 1 / 2 | boot-menu BOOT / ROM INFO selection | 0 / 3 |
+| 2 / 2 | AUTO SAVE check-mark fill (`04:47d1`, `04:49d0`) | 3 / 3 (solid black) |
+| 2 / 2 | checkbox outline while the cursor is on it (`04:4995`) | 1 / 1 (light gray) |
+
+Sites: `BatteryCheck` (`00:1868`, `00:18a8`); `DrawInfoPanelRect`,
+`BootRomInfoMenu_hiliteBoot`, `BootRomInfoMenu_romInfoInk`, `BackupSavePrompt`
+x2 (bank 1); `DrawTimeAutosaveScreen` and its time-set digit and checkbox
+paths (`04:4766`..`04:5635`, 14 sites); the tab-strip drawer's three arms
+(`08:71b3`, `08:722e`, `08:72a9`) and `DrawReadingBox`, `DrawLoadingBox`,
+`DrawErrorFileBox` (bank 8). All are the same two-byte immediate edit as
+above, and all bank 0/4/8 addresses are identical in both kernels.
+
+The two injected C shims followed suit at source level and were re-injected:
+`flcfg.c` (PICK button 0/3, checkbox outline 1/1, check mark 3/3) and
+`flpick_banner.c` (0/3). SDCC emits `xor a` for the zero ink where it used
+`ld a, $03`, so each blob is 2 bytes shorter (`FlCfg` `$4ea`, `FlPickBanner`
+`$40`); the freed tail bytes were restored to stock.
+
+The checkbox outline keeps its stock "dimmed while selected" idea but in light
+gray, which is two ramp steps from the normal black outline instead of one.
 
 ## Change 2: folder icon instead of `DIR`
 
@@ -97,8 +115,13 @@ hides the problem):
 ./scripts/run-sameboy-debug.sh --model dmg
 ```
 
-Checked: selected row white on black on boot, after cursor moves, and after
-scrolling past the first page (rows painted by the repaint shim); folder
-icons on both selected and unselected directory rows.
+Checked in the emulator: browser selection on boot, after cursor moves, and
+after scrolling past the first page (rows painted by the repaint shim); folder
+icons on selected and unselected directory rows; the SD/SET/HELP tab strip;
+the SET button, PICK button and both checkboxes on the SET tab; the PICK A
+ROM banner; the Loading box.
 
-Not yet checked on real hardware.
+Real hardware: the folder icon is confirmed on a Jr. The shade change has been
+run on Game Boy Color hardware, where it looks as intended, but the point of
+it (readability on an unlit DMG / Pocket screen) has not yet been seen on an
+actual DMG.
