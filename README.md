@@ -38,20 +38,24 @@ commands.
 | **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `decomp/src/browser_scroll.c` |
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
-| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the fast-launch control files (`FLAUNCH.CFG`, `*.fastlaunch`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
-| **Fast launch** | Boots straight into a ROM, skipping the browser: either the card's only root ROM, or the one a `<name>.fastlaunch` marker names. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
+| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the fast-launch config file (`FLAUNCH.CFG`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
+| **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named in `/FLAUNCH.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
+| **Fast-launch SET tab** | Configure fast launch on the cart itself: a FAST LAUNCH enable/disable checkbox on the SET tab, and a PICK button that chooses the target ROM in the file browser. Writes `/FLAUNCH.CFG`. | [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md) |
 
 Once built, **fast launch is driven entirely from the card** (no rebuild to
 change what boots), in priority order: a `/FLAUNCH.CFG` text file whose first
-line is the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else an
-empty `<name>.fastlaunch` marker next to `<name>.gb`/`.gbc` in the root; else the
+line is the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else the
 root's only ROM. Anything else boots to the normal browser. Folders, `ezgb.dat`,
-and dot-files/macOS junk are ignored. **Hold B at power-on to skip fast launch
-and go to the browser.** The whole feature is confirmed on real hardware (Game
+and dot-files/macOS junk are ignored. A leading `#` on the first line of
+`/FLAUNCH.CFG` disables fast launch entirely (every trigger skipped) while
+keeping the path for later. **Hold SELECT at power-on to skip fast launch and go to
+the browser.** You can also configure all of this **from the cart's SET tab** (a
+FAST LAUNCH checkbox and a ROM PICK button that rewrite `/FLAUNCH.CFG`); see
+[`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md). The whole feature is confirmed on real hardware (Game
 Boy Color and Game Boy Advance SP): fast launch from a config file (root and
-subfolder paths), the `.fastlaunch` marker and lone-ROM rules, hold-B to cancel,
-and the no-flash pre-paint hook that skips straight to Loading without the
-browser flashing.
+subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the
+browser flashing. (The cancel button was B when confirmed and is now SELECT — a
+one-bit change, not separately re-tested on hardware.)
 
 **Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,
@@ -60,16 +64,16 @@ not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
 ## Getting the modded kernel
 
 This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
-is not downloadable here - but you don't need one. Two supported routes, both
+is not downloadable here, but you don't need one. Two supported routes, both
 producing the same bytes (details, checksums, and the copyright rationale in
 [`docs/distribution.md`](docs/distribution.md)):
 
-- **Patch the official firmware** - take `ezgb.dat` from EZ Flash's official
+- **Patch the official firmware**: take `ezgb.dat` from EZ Flash's official
   firmware package and apply the IPS from
   [`patches/kernel/`](patches/kernel/):
   `python3 scripts/kernel-patch.py apply ezgb.dat` (verifies md5s; any
   standard IPS tool works too).
-- **Build from the disassembly** -
+- **Build from the disassembly**:
   `scripts/build-kernel.sh 1.05e-0731 --install` reassembles the modded
   kernel with rgbds and verifies its md5.
 
