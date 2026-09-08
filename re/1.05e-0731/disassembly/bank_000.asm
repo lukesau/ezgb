@@ -549,7 +549,7 @@ BrowserPageEnd::
 
 ; [ezgb]
 ; InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call
-; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline - fires only if
+; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline — fires only if
 ; the trampoline signals failure. Followed by ~82 more rst $38 bytes (alignment filler
 ; reusing the same opcode, not separately reachable).
 
@@ -739,7 +739,7 @@ fastlaunch_hook::
 fastlaunch_boot::
     db $cd, $d4, $03, $fa, $ff, $db, $b7, $c0
     db $21, $ff, $db, $36, $01, $cd, $4a, $3a
-    db $cb, $6b, $c0, $cd, $00, $04, $fa, $a4
+    db $cb, $73, $c0, $cd, $00, $04, $fa, $a4
     db $c4, $b7, $c2, $20, $04, $c9
 
 DirListHideNameStub::
@@ -748,6 +748,12 @@ DirListHideNameStub::
     db $c1, $7b, $b7, $c2, $56, $0a, $c3, $a3
     db $0a
 
+FlPickHook::
+    db $fa, $fe, $db, $b7, $28, $0a, $cd, $8d
+    db $07, $76, $59, $04, $00, $c3, $4f, $12
+    db $cd, $8d, $07, $2b, $48, $01, $00, $c3
+    db $70, $15
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -755,58 +761,18 @@ DirListHideNameStub::
     rst RST_38
     rst RST_38
     rst RST_38
+
+FlSetExitHook::
+    db $fa, $fe, $db, $b7, $c2, $8d, $0f, $f8
+    db $0e, $36, $02, $c3, $67, $12
+
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+FlPickCancelHook::
+    db $fa, $fe, $db, $b7, $ca, $ab, $16, $c3
+    db $4f, $12
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -2443,9 +2409,9 @@ DrawDirEntryLabel::
     sbc [hl]
     jp nc, DrawDirEntryLabel_epilogueRet
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3677,8 +3643,10 @@ FileBrowserEntry_modeFarcall1::
     ld b, [hl]
     inc b
     nop
-    ld hl, sp+$0e
-    ld [hl], $02
+    jp $04e8
+
+
+    nop
 
 FileBrowserEntry_modeCheck2::
     ld hl, sp+$0e
@@ -4263,14 +4231,16 @@ MenuDispatchAB_extMatch::
 
 
 MenuDispatchAB_launchFarcalls::
+    jp $04c7
+
+
+    nop
+    nop
+    nop
+    nop
+    ld hl, $c4a4
+    push hl
     call FarCallTrampoline
-    dec hl
-    ld c, b
-    ld bc, AdvanceTextCursor_wrapX
-    and h
-    call nz, $cde5
-    adc l
-    rlca
     inc d
     ld e, [hl]
     ld bc, $e800
@@ -4420,7 +4390,9 @@ MenuDispatchAB_parentDir::
     ld c, e
     ld a, c
     or b
-    jp z, MenuDispatchAB_waitVBlankLoop
+
+FlPickCancelSite::
+    db $ca, $f8, $04
 
     ld hl, $00ff
     push hl
@@ -5049,7 +5021,7 @@ FarCall_07_7739::
 
 ; [ezgb]
 ; FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f
-; (FIL/fp) plus ofs words - FatFs f_lseek.
+; (FIL/fp) plus ofs words — FatFs f_lseek.
 
 FarCall_03_76cc::
     ld hl, sp+$06
@@ -5201,7 +5173,7 @@ FarCall_05_4378::
 
 
 ; [ezgb]
-; DiskStatus(pdrv): FatFs disk_status stub - ld e,0 / ret (always ready).
+; DiskStatus(pdrv): FatFs disk_status stub — ld e,0 / ret (always ready).
 ; Callers test E bits STA_NOINIT ($01) / STA_PROTECT ($04) and map to FR_
 ; codes ($0c FR_NOT_ENABLED, $0a FR_WRITE_PROTECTED). Sibling DiskInitialize
 ; ($1a2c) is the same body; ReturnZero ($1a77) is the no-arg FR_OK stub.
@@ -5212,7 +5184,7 @@ DiskStatus::
 
 
 ; [ezgb]
-; DiskInitialize(pdrv): FatFs disk_initialize stub - same ld e,0 / ret as
+; DiskInitialize(pdrv): FatFs disk_initialize stub — same ld e,0 / ret as
 ; DiskStatus. Mount path maps STA_NOINIT -> FR_NOT_READY ($03).
 
 DiskInitialize::
@@ -8494,7 +8466,7 @@ U16DivMod_finish::
 ; [ezgb]
 ; U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;
 ; returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.
-; High fan-in is every C << >> on longs - name from the loop, no emulator needed.
+; High fan-in is every C << >> on longs — name from the loop, no emulator needed.
 ; Jump_000_299e: while count--: rr HL:DE (logical); count==0 ret.
 
 U32Shr::
@@ -9564,7 +9536,7 @@ GetTileCursorY_retY::
 
 
 ; [ezgb]
-; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen - RGBDS STRLEN.)
+; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)
 ; Jump_000_2da2: while *s++: ++len@sp+$00 (jr_000_2daf); Jump_000_2db2 DE=len ret.
 
 CStrLen::
@@ -11184,18 +11156,20 @@ DefaultFontData::
     db $55, $51
     db $51, $00
     db $00, $00
-    db $66, $00
-    db $e6, $66
-    db $66, $f6
-    db $06, $1c
-    db $f6, $66
-    db $66, $66
-    db $66, $f6
-    db $06, $1c
-    db $00, $66
-    db $76, $3c
-    db $6e, $66
-    db $00, $00
+
+FolderIconGlyphs::
+    db $ff, $ff
+    db $ff, $ff
+    db $ff, $ff
+    db $ff, $ff
+    db $f8, $f7
+    db $f0, $f7
+    db $f7, $f7
+    db $f0, $ff
+    db $ff, $7f
+    db $0f, $ef
+    db $ef, $ef
+    db $0f, $ff
     db $00, $7c
     db $0c, $0c
     db $0c, $7e
@@ -12043,7 +12017,7 @@ SelectFontArg::
 
 
 ; [ezgb]
-; ResetTileText: EnterGfxMode2 path prep - InitGfxMode2 via $3d21, wFontNextTile=1,
+; ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,
 ; clear wFontSlots, default draw colors, ClearBgMap.
 ; jr_000_3c6b: zero $12 bytes at wFontSlots; then wDrawColor=3 / wDrawColorB=0; ClearBgMap.
 
@@ -12284,7 +12258,7 @@ InitGfxMode2::
 
 
 ; [ezgb]
-; VramFill: STAT-safe fill - wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
+; VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
 ; zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400).
 
 VramFill::
@@ -12360,7 +12334,7 @@ BrowserScrollDownRepaint::
     db $17, $2b, $d1, $d5, $1a, $22, $13, $1a
     db $22, $3a, $2b, $f5, $33, $2a, $5f, $56
     db $d5, $cd, $2b, $3e, $e8, $03, $18, $de
-    db $e8, $05, $c9, $44, $49, $52, $00, $e8
+    db $e8, $05, $c9, $c0, $c1, $c2, $00, $e8
     db $fc, $f8, $08, $3a, $2b, $0e, $00, $86
     db $23, $5f, $79, $8e, $4f, $7b, $e6, $1f
     db $f8, $00, $22, $36, $00, $f8, $08, $46

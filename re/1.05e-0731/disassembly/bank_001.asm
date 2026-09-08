@@ -347,9 +347,9 @@ DrawBrowserEntries_skipHilite::
 
 
 DrawBrowserEntries_hilite::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -598,7 +598,7 @@ DrawBrowserEntries_drawSelSize::
 
 
 BrowserDirStr::
-    db "DIR", $00
+    db $c0, $c1, $c2, $00
 
 ; [ezgb]
 ; DrawBrowserDetail(base@sp+$2a, row@sp+$2c, mode@sp+$2e): draw two adjacent browser rows.
@@ -748,9 +748,9 @@ DrawBrowserDetail_mode3Hilite::
     or a
     jp z, DrawBrowserDetail_afterHilite
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -919,9 +919,9 @@ DrawBrowserDetail_afterFocusInk::
     or [hl]
     jp z, DrawBrowserDetail_row1Bank
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -1162,7 +1162,7 @@ DrawBrowserDetail_drawSize::
 
 
 BrowserDirStr2::
-    db "DIR", $00
+    db $c0, $c1, $c2, $00
 
 ; [ezgb]
 ; FormatFileSize(u32@sp+$10): if size≥$10000 Jump_001_479b passthrough; else Jump_001_45e7 pick fmt table.
@@ -4647,7 +4647,7 @@ SaverDirSlashStr::
 ; after SaverDirSlashStr). Double loop (outer/inner) walking a table via WRAM pointer
 ; $c2a0/$c2a1, FarCallTrampoline + Memcpy($ff bytes) into $c0a0, size-limited against
 ; $e800. Reasonable inference from control flow and the Memcpy/FarCallTrampoline calls;
-; exact role and caller not independently confirmed - named from shape + neighboring
+; exact role and caller not independently confirmed — named from shape + neighboring
 ; context, not a traced call site.
 
 BuildSaverBackupPath::

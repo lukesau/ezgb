@@ -160,6 +160,7 @@
 00:30ea VramCopyStack
 00:3104 DefaultFontData
 00:3104 .data:912:2
+00:3806 FolderIconGlyphs
 00:3a16 ReadJoypadRaw
 00:3a43 WaitJoypadMask
 00:3a4f WaitJoypadMaskArg
@@ -280,7 +281,7 @@
 02:4027 DiskRead_B2
 02:41d5 DiskWrite_B2
 
-; FatFs-shaped helpers - linked per bank (GB near-call only within mapped bank).
+; FatFs-shaped helpers, linked per bank (GB near-call only within mapped bank).
 ; Every copy is suffixed _BN (including bank 9). Banks 3 and 7 are byte-identical
 ; for SyncWindow/MoveWindow/MemCpy16; 6/9 differ only in relocated immediates.
 03:4000 MemCpy16_B3
@@ -4385,13 +4386,37 @@
 02:43ac .data:f:8
 00:0460 fastlaunch_hook
 00:0460 .data:23:8
-00:0490 fastlaunch_boot
-00:0490 .data:1e:8
 00:0420 fastlaunch_do_launch
 00:0420 .data:33:8
 00:04ae DirListHideNameStub
 00:04ae .data:19:8
-08:7a9c BrowserHideName
-08:7a9c .data:f1:8
+04:5932 FlSetEnterHook
+04:5932 .data:16:8
+04:5948 FlSetRowsHook
+04:5948 .data:11:8
+04:5959 FlSetADispatch
+04:5959 .data:1d:8
+04:5976 FlPickCommitFar
+04:5976 .data:e:8
+04:5604 FlSetHiliteClamp
+04:5604 .data:2:8
+04:5632 FlSetAHookSite
+04:5632 .data:3:8
+00:04c7 FlPickHook
+00:04c7 .data:1a:8
+00:04e8 FlSetExitHook
+00:04e8 .data:e:8
+00:04f8 FlPickCancelHook
+00:04f8 .data:a:8
+00:164e FlPickCancelSite
+00:164e .data:3:8
+08:7b8d FlPickBanner
+08:7b8d .data:42:8
+04:5990 FlCfg
+04:5990 .data:4ec:8
+00:0490 fastlaunch_boot
+00:0490 .data:1e:8
 02:4500 FastLaunchScan
-02:4500 .data:5b3:8
+02:4500 .data:3d5:8
+08:7a9c BrowserHideName
+08:7a9c .data:ca:8
