@@ -5,9 +5,9 @@ Game Boy Advance SP). Fast launch from a `/FLAUNCH.CFG` config file (root or
 subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash
 pre-paint hook all work on metal. (The `<name>.fastlaunch` marker trigger that
 was also confirmed then was **removed 2026-09-07**; the config file and SET tab
-cover its use, see "Removed" below.) (The cancel button was B
-when confirmed; it is now SELECT — a one-bit mask change, `bit 6,e` vs
-`bit 5,e`, not otherwise re-tested on hardware.) It is a stock-kernel in-place
+cover its use, see "Removed" below.) The cancel button was B when first
+confirmed and is now SELECT (`bit 6,e` vs `bit 5,e`), confirmed on hardware
+as well. It is a stock-kernel in-place
 hook, not a separate hold-a-button kernel.
 
 Source of truth is `decomp/src/fastlaunch*.c`.

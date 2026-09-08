@@ -55,8 +55,7 @@ FAST LAUNCH checkbox and a ROM PICK button that rewrite `/FLAUNCH.CFG`); see
 [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md). The whole feature is confirmed on real hardware (Game
 Boy Color and Game Boy Advance SP): fast launch from a config file (root and
 subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the
-browser flashing. (The cancel button was B when confirmed and is now SELECT — a
-one-bit change, not separately re-tested on hardware.)
+browser flashing. The SELECT cancel is confirmed on hardware too.
 
 **Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,
