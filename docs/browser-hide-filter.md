@@ -7,8 +7,8 @@ clutter get hidden by this patch:
   roughly doubles), `.DS_Store`, `.Spotlight-V100/`, `.fseventsd/`,
   `.Trashes/`, `.TemporaryItems/`
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
-  with an Omega), the fast-launch machinery (`FLAUNCH.CFG` and `*.fastlaunch`
-  markers - [fast-launch-notes.md](fast-launch-notes.md)), plus the stock
+  with an Omega), the fast-launch config file (`FLAUNCH.CFG`, see
+  [fast-launch-notes.md](fast-launch-notes.md)), plus the stock
   kernel's own `ezgb.dat` memcmp
 
 This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
@@ -17,7 +17,7 @@ This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
 ## Why the stock filter misses the junk
 
 `DirList` (`00:0a43`) has a dotfile test at `DirList_skipDot` (`00:0a8b`),
-but it tests the first byte of `FILINFO.fname` at `$c9e4` - the **8.3 short
+but it tests the first byte of `FILINFO.fname` at `$c9e4`, the **8.3 short
 name**, which can never begin with `.`. macOS's `._Foo.gbc` becomes
 `_FOO~1.GBC` and the test never fires. The long name is only resolved
 *afterwards*, through the `lfname` pointer at `$c9f1` (FILINFO / LFN layout
@@ -35,18 +35,22 @@ have **no long name at all** and take the short-name branch. The filter
 therefore hooks the point where the two branches converge, with `BC` holding
 whichever name pointer (LFN buffer or `$c9e4`) the entry will actually use.
 
+Because `FLAUNCH.CFG` is hidden, the SET-tab ROM picker
+([`fastlaunch-set-tab.md`](fastlaunch-set-tab.md)) runs over the already-filtered
+list, so the config file itself can never be picked as a fast-launch target.
+
 ## The patch
 
 Three pieces, byte-identical in the 0731 and 0918 featured builds:
 
 | Site | What |
 |---|---|
-| `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`) - now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
+| `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
 | `08:7a9c` | `BrowserHideName` ([decomp/src/browser_hide.c](../decomp/src/browser_hide.c), 241 bytes, bank-8 cave after `BrowserSortAll`) |
 
 ```asm
-DirListHideNameStub::      ; 00:04ae - NZ means BC already = long-name ptr
+DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     jr nz, .have
     ld bc, $c9e4           ; no LFN: use the 8.3 short name
 .have:
@@ -62,14 +66,15 @@ DirListHideNameStub::      ; 00:04ae - NZ means BC already = long-name ptr
     jp DirList_bankSlot    ; kept: continue unchanged, BC = name ptr
 ```
 
-`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `*.fastlaunch`,
-`FLAUNCH.CFG` - extension and name tests case-insensitive, since 8.3 short
+`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `FLAUNCH.CFG`.
+(It also hid `*.fastlaunch` until that fast-launch trigger was removed on
+2026-09-07.) Extension and name tests are case-insensitive, since 8.3 short
 names come back uppercase while long names keep the host's casing.
 
 **Far-call gotcha:** `FarCallTrampoline` pushes three words (restore thunk
 `$07ae`, saved-bank AF, real return) between the caller's pushed args and the
-jump, so a far-called function finds its first arg at `sp+6`, not `sp+2` -
-the kernel's own far targets are all compiled that way (e.g. `Opendir_B5`
+jump, so a far-called function finds its first arg at `sp+6`, not `sp+2`.
+The kernel's own far targets are all compiled that way (e.g. `Opendir_B5`
 reads its first arg at frame+6). SDCC compiles a normal function to read
 `sp+2`, so `browser_hide_name` declares two dummy leading params to soak up
 the trampoline words. Any future injected C that receives stack args via
@@ -95,8 +100,8 @@ python3 tools/patch_call.py 1.05e-0731 0 0a9d 3 00:04ae --jp --apply --regen
 
 macOS does set `AM_HID` on its junk (`$22` on `._*` files, `$12` on
 `.fseventsd`), so `fattrib & $02` would also catch that half. The name test
-was preferred because it does not depend on which host wrote the card - and
-the `.gba`/fast-launch names aren't hidden-flagged anywhere.
+was preferred because it does not depend on which host wrote the card, and
+because the `.gba`/fast-launch names aren't hidden-flagged anywhere.
 
 ## Testing
 
@@ -104,11 +109,13 @@ SameBoy, `scripts/debug/browser-sort.sbd` + `dump-sort-records.sbd`: break at
 `$1032` (the `BrowserSortAll` return site) and read the entry count at
 `$c2a2` plus the sorted records at `$a000 + 255*k`. With `sd/root/`
 containing `TEST.GBA`, `Advance Game.gba` (forces an LFN), an empty
-`FLAUNCH.CFG`, and `Pokemon Red.fastlaunch`, the count is 46 with all four
+`FLAUNCH.CFG`, and `Pokemon Red.fastlaunch`, the count was 46 with all four
 absent from the records; before the patch it was 50 with all four listed.
-Verified on both featured builds 2026-08-30. Those four files stay in
-`sd/root/` as regression fixtures (the empty `FLAUNCH.CFG` is a no-op for
-fast launch - `scan_config` ignores an empty file).
+Verified on both featured builds 2026-08-30. Since the `*.fastlaunch` rule was
+dropped (2026-09-07) that same card lists 47 entries, `Pokemon Red.fastlaunch`
+included. Those files stay in `sd/root/` as regression fixtures (the empty
+`FLAUNCH.CFG` is a no-op for fast launch, since `scan_config` ignores an empty
+file).
 
 For the macOS-junk half, build a deliberately dirty card:
 

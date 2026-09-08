@@ -2,9 +2,13 @@
 
 **Status (2026-08-30): complete, confirmed on real hardware** (Game Boy Color and
 Game Boy Advance SP). Fast launch from a `/FLAUNCH.CFG` config file (root or
-subfolder paths), the `.fastlaunch` marker, the lone-ROM rule, hold-B to cancel,
-and the no-flash pre-paint hook all work on metal. It is a stock-kernel in-place
-hook, not a separate B-mode kernel.
+subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash
+pre-paint hook all work on metal. (The `<name>.fastlaunch` marker trigger that
+was also confirmed then was **removed 2026-09-07**; the config file and SET tab
+cover its use, see "Removed" below.) (The cancel button was B
+when confirmed; it is now SELECT — a one-bit mask change, `bit 6,e` vs
+`bit 5,e`, not otherwise re-tested on hardware.) It is a stock-kernel in-place
+hook, not a separate hold-a-button kernel.
 
 Source of truth is `decomp/src/fastlaunch*.c`.
 
@@ -13,7 +17,7 @@ Source of truth is `decomp/src/fastlaunch*.c`.
 - **Scan** (`decomp/src/fastlaunch.c`, `FastLaunchScan`, `02:4500`). Writes the
   full ROM path to the fixed WRAM buffer `$c4a4` (no arg crosses the far-call:
   FarCallTrampoline shifts stack args by 6 bytes). Trigger priority: config file,
-  then `.fastlaunch` marker, then lone ROM. Selects `$7FC0=$00` before every SD
+  then lone ROM. Selects `$7FC0=$00` before every SD
   read and restores `$03` on exit (see the `$7FC0` bug below). Returns an empty
   result on any "nothing to do" outcome, so the kernel boots to the normal
   browser.
@@ -27,8 +31,7 @@ Source of truth is `decomp/src/fastlaunch*.c`.
 - **Hook (active): pre-paint.** `fastlaunch_boot.c` (`00:0490`) over the sort call
   at `00:102f`, *before* `FileBrowserEntry_redraw` (`$1071`) paints, so a
   fast-launch card never flashes the browser. One-shot via `$DBFF`. It sorts first
-  (state the launch needs), then, unless B is held (`ReadJoypad` `00:3a4a`, bit
-  `$20`), scans and launches; a no-trigger card returns to `$1032` and
+  (state the launch needs), XXX  `$20`), scans and launches; a no-trigger card returns to `$1032` and
   paints/browses. The post-paint variant `fastlaunch_hook.c` (`00:0460`, over
   `$110B`) is an alternative; wire only one at a time. The active build uses the
   pre-paint hook and leaves `$110B` as the original `21 2d 00`.
@@ -42,19 +45,46 @@ Source of truth is `decomp/src/fastlaunch*.c`.
 
 ## Triggers (priority order)
 
+0. **Disabled.** If `/FLAUNCH.CFG` line 1 begins with `#`, fast launch is off:
+   the scan skips **every** trigger below and the card boots to the browser. The
+   path after the `#` is kept so re-enabling restores it. This is what the SET
+   tab's FAST LAUNCH checkbox writes when unchecked (see
+   [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md)).
 1. **Config file.** `/FLAUNCH.CFG`, first line = the ROM path. Highest priority and
    the only trigger that may point **anywhere**, including subfolders
    (`/Pokemon/Blue.gb`); the launch glue traverses into the directory. The other
-   two are root-only.
-2. **Marker file.** A `<name>.fastlaunch` file in root launches `<name>.gb` or
-   `<name>.gbc` from root.
-3. **Lone ROM.** If root holds exactly one real file (ignoring the kernel
+   one is root-only.
+2. **Lone ROM.** If root holds exactly one real file (ignoring the kernel
    `ezgb.dat`, `FLAUNCH.CFG`, dot-files, and macOS junk; directories don't count)
-   and it is a `.gb`/`.gbc`, launch it. No marker needed.
+   and it is a `.gb`/`.gbc`, launch it. No configuration needed.
 
-The marker/lone-ROM scan is root-only by design: one `f_opendir`/`f_readdir` pass,
+The lone-ROM scan is root-only by design: one `f_opendir`/`f_readdir` pass,
 one DIR object, no recursion. A whole-tree DFS is not an option here; it hits a
 DIR-object-size overlap bug and never matches a nested ROM.
+
+`scan_config` returns 2 for the disabled case; `scan_root` treats any non-zero
+return as "config handled it" and stops, leaving `$c4a4` empty so the browser
+takes over.
+
+### Removed: the `<name>.fastlaunch` marker (2026-09-07)
+
+Until mod 2.6 a third trigger sat between the two above: an empty
+`<name>.fastlaunch` file in root launched `<name>.gb`/`.gbc` from root (a
+second `f_readdir` pass matched the stem). It was hardware-confirmed but
+redundant once `/FLAUNCH.CFG` and the SET tab existed, so the scan lost its
+marker pass (`match_fastlaunch_ext`/`match_rom_name`, the `BASE` scratch at
+`$D8A0`, and `have_marker`), shrinking `FastLaunchScan` from `$5bb` to `$3d5`
+bytes, and `BrowserHideName` no longer hides `*.fastlaunch` (`$f1` → `$ca`
+bytes). A stray `*.fastlaunch` file now simply counts as a real (non-ROM) file,
+so it also disables the lone-ROM rule until deleted.
+
+## Configuring from the SET tab
+
+Fast launch is configurable on the cart itself, without a computer: the kernel's
+SET tab gains a **FAST LAUNCH** enable/disable checkbox and a **ROM: PICK**
+button that opens the normal file browser to choose the target. Both read and
+rewrite `/FLAUNCH.CFG`, which stays the single source of truth. Full design, hook
+map, and shim listings: [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).
 
 ### Config file constraints
 
@@ -93,10 +123,14 @@ entered in from the START overlay, so the launch path is unaffected.
 ## Bank-0 cave layout (watch for collisions)
 
 `FarCallScan` `$0400`, `do_launch` `$0420` (51 B → `$0453`), `fastlaunch_hook`
-`$0460` (35 B, dead when pre-paint is active), `fastlaunch_boot` `$0490` (30 B).
-If a grown `fastlaunch_boot` overlaps `do_launch`'s `jp $1344`, the launch
-crashes; always check injected size vs the next address after any change. (Bank-0
-free ranges: [`inject-smoke-test.md`](inject-smoke-test.md).)
+`$0460` (35 B, dead when pre-paint is active), `fastlaunch_boot` `$0490` (30 B),
+`DirListHideNameStub` `$04ae` (25 B → `$04c7`). The SET-tab feature then uses
+`FlPickHook` `$04c7` (26 B), `FlSetExitHook` `$04e8` (14 B), `FlPickCancelHook`
+`$04f8` (10 B → `$0502`); the cave runs to `$05b5`. If a grown `fastlaunch_boot`
+overlaps `do_launch`'s `jp $1344`, the launch crashes; always check injected size
+vs the next address after any change. (Bank-0 free ranges:
+[`inject-smoke-test.md`](inject-smoke-test.md); SET-tab hooks in banks 4/8:
+[`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).)
 
 ## FILINFO / LFN layout (confirmed live)
 
@@ -113,9 +147,9 @@ browser's own `FileBrowserEntry_memsetWireDirList`):
 | `+24..25` | lfsize |
 
 The long name lands in that buffer (empty for 8.3-only entries, in which case fall
-back to fname); end-of-dir is fname[0]==0. LFN support is required because the
-marker and nested ROMs are long names, and it works only if the lfname pointer is
-set before `f_readdir`.
+back to fname); end-of-dir is fname[0]==0. LFN support is required because ROM
+names are usually long names, and it works only if the lfname pointer is set
+before `f_readdir`.
 
 ## Reproduce
 
@@ -153,12 +187,11 @@ The scan lives in [`../decomp/src/fastlaunch.c`](../decomp/src/fastlaunch.c)
 (`fastlaunch_scan`), using the two FatFs shims in
 [`../decomp/src/shims.md`](../decomp/src/shims.md).
 
-**Verified under SameBoy** (both triggers) via `decomp/src/fastlaunch_scan_test.c`
-injected into empty bank 2, hooked from `FileBrowserEntry_inputLoop` (`00:1107`):
-a lone-ROM card returned `/PKMRED.GB`, and a `PKMRED.fastlaunch` marker card (with
-a second ROM present, so the lone-rule stayed out) resolved to `/PKMRED.GB` via
-the marker path. The verified test ROM is preserved at
-`re/1.05e-0731/kernel.gb.fl-scan-verified`.
+**Verified under SameBoy** (originally both root triggers) via
+`decomp/src/fastlaunch_scan_test.c` injected into empty bank 2, hooked from
+`FileBrowserEntry_inputLoop` (`00:1107`): a lone-ROM card returned `/PKMRED.GB`
+(the since-removed marker trigger was verified the same way). The verified test
+ROM is preserved at `re/1.05e-0731/kernel.gb.fl-scan-verified`.
 
 Possible follow-up: loosen the lone-ROM rule to "exactly one *ROM* file" (ignore
 non-ROM clutter in root) instead of "exactly one real file".

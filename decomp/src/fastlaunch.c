@@ -1,16 +1,17 @@
 /* FastLaunch scan (root-only): decide at boot whether to skip the browser and
  * launch a ROM straight away, and report its full path in result_path
- * (leading '/', e.g. "/PKMRED.GB"). Two triggers, both looking only at the SD
- * root:
+ * (leading '/', e.g. "/PKMRED.GB"). Two triggers:
  *
- *   1. Marker file: a "<name>.fastlaunch" in root launches "<name>.gb" or
- *      "<name>.gbc" from root.
- *   2. Lone ROM: if the root holds exactly one real file (ignoring the kernel
- *      ezgb.dat, dot-files, and macOS junk) and it is a .gb/.gbc, launch it.
+ *   1. Config file: /FLAUNCH.CFG, first line = the ROM path (root or nested).
+ *      A leading '#' means fast launch is disabled outright.
+ *   2. Lone ROM: if the SD root holds exactly one real file (ignoring the
+ *      kernel ezgb.dat, FLAUNCH.CFG, dot-files, and macOS junk) and it is a
+ *      .gb/.gbc, launch it.
  *
- * The marker takes priority. On any "nothing to do" outcome (no trigger, no
- * matching ROM, any FatFs error) result_path[0] is left 0 so the caller falls
- * through to the normal menu.
+ * The config file takes priority. (An earlier "<name>.fastlaunch" marker-file
+ * trigger was dropped 2026-09-07; the SET tab + config file replace it.) On
+ * any "nothing to do" outcome (no trigger, any FatFs error) result_path[0] is
+ * left 0 so the caller falls through to the normal menu.
  *
  * FILINFO layout (classic FatFs _USE_LFN external-buffer form) CONFIRMED live
  * against this exact kernel (see docs/fast-launch-notes.md):
@@ -43,7 +44,7 @@ extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page *
 extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode); /* f_open */
 extern unsigned char FarCall_06_779a(unsigned char *fp, unsigned char *buf, unsigned int btr, unsigned int *br); /* f_read */
 extern unsigned char FarCall_03_768f(unsigned char *fp); /* f_close */
-extern void WaitVBlankFlag(void);   /* 00:0688 - kernel waits VBlank before f_open */
+extern void WaitVBlankFlag(void);   /* 00:0688; kernel waits VBlank before f_open */
 
 #define FIL_OBJ  ((unsigned char *)0xCA0F)   /* kernel's FIL; free while browser is idle */
 #define CFGBUF   ((unsigned char *)0xDA00)   /* config file contents */
@@ -58,7 +59,6 @@ extern void WaitVBlankFlag(void);   /* 00:0688 - kernel waits VBlank before f_op
 /* Fixed WRAM scratch. */
 #define FNO   ((unsigned char *)0xD780)  /* FILINFO, 26 used */
 #define LFN   ((unsigned char *)0xD7A0)  /* long-name buffer, 256 */
-#define BASE  ((unsigned char *)0xD8A0)  /* marker stem / target base, 48 */
 #define NAME  ((unsigned char *)0xD8D0)  /* last real file's name, 48 */
 #define DIRO  ((unsigned char *)0xD900)  /* the one DIR object, 128 reserved */
 
@@ -78,20 +78,18 @@ static unsigned char is_end(void);
 static void readdir_prep(void);
 static unsigned char streq_ci(const unsigned char *a, const unsigned char *b);
 static unsigned char is_rom(const unsigned char *name);
-static unsigned char match_fastlaunch_ext(const unsigned char *name);
-static unsigned char match_rom_name(const unsigned char *name);
 static void write_result(unsigned char *result_path, const unsigned char *name);
 static void scan_root(void);
 static unsigned char scan_config(void);
 
 /* Takes no argument: it is reached by a far-call (FarCallTrampoline), which
  * shifts stack args by 6 bytes, so passing a pointer across it is fragile.
- * Instead it writes straight to the kernel's launch basename buffer $c4a4 -
+ * Instead it writes straight to the kernel's launch basename buffer $c4a4,
  * which is exactly where the launch step reads the path from. */
 #define RESULT ((unsigned char *)0xC4A4)
 
 /* SD reads must run under FPGA personality $7FC0=$00 (DiskRead_B2 does not set
- * it itself - DirList sets it before every f_readdir). The scan is entered with
+ * it itself; DirList sets it before every f_readdir). The scan is entered with
  * the browser's resting $7FC0=$03 (the PSRAM record window), so it selects the
  * SD page for its reads and restores $03 on the way out. Skipping this reads the
  * wrong window and wedges the SD controller on real hardware, though it is
@@ -104,7 +102,6 @@ void fastlaunch_scan(void) {
 static void scan_root(void) {
     unsigned char *result_path = RESULT;
     unsigned char root[2];
-    unsigned char have_marker;
     unsigned char realcount;
     unsigned char last_is_rom;
     const unsigned char *name;
@@ -112,7 +109,9 @@ static void scan_root(void) {
 
     result_path[0] = 0;
 
-    /* Highest priority: an explicit path in /FLAUNCH.CFG. */
+    /* Highest priority: /FLAUNCH.CFG. 1 = explicit path staged in RESULT;
+     * 2 = fast launch DISABLED ('#' on line 1): skip the lone-ROM rule too,
+     * so the card always boots to the browser. */
     if (scan_config()) return;
 
     /* FILINFO.lfname = LFN buffer, FILINFO.lfsize = 254 (set once; reused). */
@@ -124,8 +123,7 @@ static void scan_root(void) {
     root[0] = '/';
     root[1] = 0;
 
-    /* --- Pass 1: classify the root --- */
-    have_marker = 0;
+    /* --- Classify the root --- */
     realcount = 0;
     last_is_rom = 0;
 
@@ -141,11 +139,6 @@ static void scan_root(void) {
         if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
         if (streq_ci(name, (const unsigned char *)"flaunch.cfg")) continue;
 
-        if (match_fastlaunch_ext(name)) {             /* fills BASE with the stem */
-            have_marker = 1;
-            continue;                                 /* marker is not a "real file" */
-        }
-
         /* A real file: count it and remember it (for the lone-ROM rule). */
         realcount++;
         n = strlen_u(name);
@@ -156,23 +149,6 @@ static void scan_root(void) {
     }
 
     /* --- Decide --- */
-    if (have_marker) {
-        /* Pass 2: find BASE + .gb/.gbc in root. */
-        FarCallSetPage(SD_PAGE);
-        if (FarCallOpendir_B5(DIRO, root) != 0) return;
-        for (;;) {
-            readdir_prep();
-            if (FarCallReaddir_B5(DIRO, FNO) != 0) return;
-            if (is_end()) return;
-            if (FNO[FNO_ATTRIB] & AM_DIR) continue;
-            name = entry_name();
-            if (match_rom_name(name)) {
-                write_result(result_path, name);
-                return;
-            }
-        }
-    }
-
     if (realcount == 1 && last_is_rom) {
         write_result(result_path, NAME);
     }
@@ -187,12 +163,15 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
 
 /* Read /FLAUNCH.CFG; if present and non-empty, take its first line as the
  * ROM path and write it to RESULT ($c4a4) with a leading '/'. Returns 1 on
- * success. Uses the kernel's FIL at $ca0f (idle here, so no FIL size guess).
- * The path may be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
+ * success, 2 if line 1 starts with '#' (fast launch disabled from the SET
+ * tab; the path after the '#' is kept in the file for re-enabling, see
+ * docs/fastlaunch-set-tab.md), 0 otherwise. Uses the kernel's FIL at $ca0f
+ * (idle here, so no FIL size guess). The path may be nested (e.g.
+ * /Pokemon/Blue.gb); the launch glue handles it. */
 static unsigned char scan_config(void) {
     /* This name literal is a bank-2 const; f_open runs in bank 6 and would read
      * that address in the wrong bank, so the path must be copied to WRAM (always
-     * mapped) before the call - as the kernel's own opens do (e.g. /SAVER/...). */
+     * mapped) before the call, as the kernel's own opens do (e.g. /SAVER/...). */
     static const unsigned char cfg_name[16] =
         {'/','F','L','A','U','N','C','H','.','C','F','G',0};
     unsigned int br;
@@ -228,6 +207,7 @@ static unsigned char scan_config(void) {
     }
     while (len != 0 && CFGBUF[len - 1] == ' ') len--;
     if (len == 0) return 0;
+    if (CFGBUF[0] == '#') return 2;   /* disabled: no trigger at all */
 
     /* Write with a leading '/' so the launch glue sees an absolute path. */
     i = 0;
@@ -288,42 +268,6 @@ static unsigned char is_rom(const unsigned char *name) {
         ext = name + dot;
     }
     if (to_upper(ext[1]) == 'G' && to_upper(ext[2]) == 'B') {
-        if (ext[3] == 0) return 1;
-        if (to_upper(ext[3]) == 'C' && ext[4] == 0) return 1;
-    }
-    return 0;
-}
-
-/* If name ends in ".fastlaunch" (case-insensitive), copy the stem into BASE
- * and return 1. */
-static unsigned char match_fastlaunch_ext(const unsigned char *name) {
-    static const unsigned char suf[12] = {'.','f','a','s','t','l','a','u','n','c','h',0};
-    unsigned char len = strlen_u(name);
-    unsigned char suflen = 11;
-    unsigned char i, stem;
-    if (len <= suflen) return 0;
-    stem = len - suflen;
-    for (i = 0; i < suflen; i++) {
-        if (to_upper(name[stem + i]) != to_upper(suf[i])) return 0;
-    }
-    if (stem >= NAME_MAX) return 0;
-    for (i = 0; i < stem; i++) BASE[i] = name[i];
-    BASE[stem] = 0;
-    return 1;
-}
-
-/* True if name is BASE + ".gb" or BASE + ".gbc" (case-insensitive). */
-static unsigned char match_rom_name(const unsigned char *name) {
-    unsigned char blen = strlen_u(BASE);
-    unsigned char nlen = strlen_u(name);
-    unsigned char i;
-    const unsigned char *ext;
-    if (nlen <= blen) return 0;
-    for (i = 0; i < blen; i++) {
-        if (to_upper(name[i]) != to_upper(BASE[i])) return 0;
-    }
-    ext = name + blen;
-    if (ext[0] == '.' && to_upper(ext[1]) == 'G' && to_upper(ext[2]) == 'B') {
         if (ext[3] == 0) return 1;
         if (to_upper(ext[3]) == 'C' && ext[4] == 0) return 1;
     }
