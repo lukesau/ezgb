@@ -38,6 +38,7 @@ commands.
 | **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `decomp/src/browser_scroll.c` |
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
+| **DMG-readable highlight + folder icons** | Selected row is white on black instead of black on dark gray (unreadable on an original Game Boy), and directories show a folder icon in place of the `DIR` tag. | [`docs/dmg-ui-visibility.md`](docs/dmg-ui-visibility.md) |
 | **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the fast-launch config file (`FLAUNCH.CFG`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
 | **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named in `/FLAUNCH.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
 | **Fast-launch SET tab** | Configure fast launch on the cart itself: a FAST LAUNCH enable/disable checkbox on the SET tab, and a PICK button that chooses the target ROM in the file browser. Writes `/FLAUNCH.CFG`. | [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md) |
