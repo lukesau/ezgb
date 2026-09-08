@@ -478,7 +478,9 @@ DrawBrowserEntries_dirEntry::
     ld a, $00
     push af
     inc sp
-    call StoreDrawParams
+    nop
+    nop
+    nop
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]
@@ -855,7 +857,9 @@ DrawBrowserDetail_entry0Dir::
     ld a, $00
     push af
     inc sp
-    call StoreDrawParams
+    nop
+    nop
+    nop
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]
@@ -1049,7 +1053,9 @@ DrawBrowserDetail_entry1Dir::
     ld a, $00
     push af
     inc sp
-    call StoreDrawParams
+    nop
+    nop
+    nop
     add sp, $03
     ld hl, sp+$04
     ld a, [hl]

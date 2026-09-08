@@ -1810,7 +1810,9 @@ DrawString_drawSpace::
     ld a, $03
     push af
     inc sp
-    call StoreDrawParams
+    nop
+    nop
+    nop
     add sp, $03
     pop bc
     push bc
@@ -11158,18 +11160,18 @@ DefaultFontData::
     db $00, $00
 
 FolderIconGlyphs::
-    db $ff, $ff
-    db $ff, $ff
-    db $ff, $ff
-    db $ff, $ff
-    db $f8, $f7
-    db $f0, $f7
-    db $f7, $f7
-    db $f0, $ff
-    db $ff, $7f
-    db $0f, $ef
-    db $ef, $ef
-    db $0f, $ff
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $0f, $09
+    db $0f, $08
+    db $08, $08
+    db $0f, $00
+    db $00, $00
+    db $f0, $10
+    db $10, $10
+    db $f0, $00
     db $00, $7c
     db $0c, $0c
     db $0c, $7e
@@ -12324,7 +12326,7 @@ BrowserScrollDownRepaint::
     db $07, $2a, $4f, $46, $79, $c6, $f8, $4f
     db $78, $ce, $ff, $47, $af, $02, $69, $60
     db $23, $36, $00, $69, $60, $23, $23, $36
-    db $00, $03, $03, $03, $af, $02, $cd, $be
+    db $00, $03, $03, $03, $af, $02, $cd, $b2
     db $3e, $f8, $03, $3a, $2b, $2b, $c6, $01
     db $22, $23, $23, $23, $7e, $ce, $00, $f8
     db $01, $22, $23, $d1, $d5, $1a, $22, $13
@@ -12344,19 +12346,30 @@ BrowserScrollDownRepaint::
     db $12, $ea, $00, $40, $f8, $00, $4e, $af
     db $96, $23, $23, $32, $79, $9e, $23, $23
     db $32, $2a, $5f, $7e, $c6, $a0, $57, $21
-    db $fe, $00, $19, $7e, $fe, $10, $20, $33
+    db $fe, $00, $19, $7e, $fe, $10, $20, $27
     db $c5, $c5, $33, $af, $0f, $f5, $d5, $cd
-    db $b7, $08, $e8, $05, $11, $03, $00, $d5
-    db $af, $f5, $33, $cd, $91, $27, $e8, $04
-    db $21, $03, $11, $e5, $11, $27, $3e, $d5
-    db $cd, $b7, $08, $e8, $05, $af, $0f, $f5
-    db $3e, $03, $f5, $33, $cd, $91, $27, $e8
-    db $03, $18, $0c, $c5, $33, $21, $14, $00
-    db $e5, $d5, $cd, $b7, $08, $e8, $05, $e8
-    db $04, $c9, $21, $00, $7f, $36, $e1, $2e
-    db $10, $36, $e2, $2e, $20, $36, $e3, $2e
-    db $c0, $36, $03, $2e, $f0, $36, $e4, $c9
+    db $b7, $08, $e8, $06, $21, $03, $11, $e5
+    db $11, $27, $3e, $d5, $cd, $b7, $08, $e8
+    db $05, $af, $0f, $f5, $3e, $03, $f5, $33
+    db $cd, $91, $27, $e8, $03, $18, $0c, $c5
+    db $33, $21, $14, $00, $e5, $d5, $cd, $b7
+    db $08, $e8, $05, $e8, $04, $c9, $21, $00
+    db $7f, $36, $e1, $2e, $10, $36, $e2, $2e
+    db $20, $36, $e3, $2e, $c0, $36, $03, $2e
+    db $f0, $36, $e4, $c9
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
