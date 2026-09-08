@@ -17,7 +17,7 @@
  *      finish on base+1.)
  *   2. Rows 13 down to 0 one at a time with the stock drawing primitives,
  *      replicating DrawBrowserEntries' per-row body byte for byte:
- *      dir rows DrawString(name, len 0, col 0) + StoreDrawParams(0, 3) +
+ *      dir rows DrawString(name, len 0, col 0) +
  *      "DIR" at col $11 + the stock per-row ink reset (see draw_row); file
  *      rows DrawString(name, len $14, col 0). No highlight handling is
  *      needed: DrawBrowserDetail's epilogue leaves ink normal and rows
@@ -65,8 +65,7 @@ static void draw_row(u16 base, u8 n);
 static void fpga_sram_page(void);
 
 /* Folder icon: blank ($C0) + left half ($C1) + right half ($C2), the 8px
- * folder centred across the last two columns; see docs/dmg-ui-visibility.md.
- * Drawn under the DIR tag's inverse ink, so the glyphs are stored complemented. */
+ * folder centred across the last two columns; see docs/dmg-ui-visibility.md. */
 static const u8 dir_tag[] = { 0xC0, 0xC1, 0xC2, 0 };
 
 void browser_scroll_down_repaint(struct BrowserScrollState *st) {
@@ -102,14 +101,11 @@ static void draw_row(u16 base, u8 n) {
     rec = WIN + ((slot << 8) - slot); /* slot * 255 */
     if (rec[ATTR_OFS] == ATTR_DIR) {
         DrawString(rec, 0, 0, row);
-        StoreDrawParams(0, 0x0003);
+        /* The folder tag is drawn in whatever ink the row has (stock forced
+         * inverse video here; see docs/dmg-ui-visibility.md). These rows are
+         * never the selection, so it comes out black on white. The reset is
+         * kept to match stock DrawBrowserEntries' per-row epilogue. */
         DrawString(dir_tag, 3, 0x11, row);
-        /* StoreDrawParams is not an (index, value) setter: it stores all
-         * three draw-state bytes ($d734/$d735/$d723) every call, so the DIR
-         * tag's (0, $0003) flips the ink to inverse video for everything
-         * drawn after it. Stock DrawBrowserEntries undoes that with this
-         * same reset at the end of every row; without it, every row painted
-         * below a directory comes out white-on-black. */
         StoreDrawParams(3, 0x0000);
     } else {
         DrawString(rec, 0x14, 0, row);

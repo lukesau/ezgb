@@ -76,7 +76,7 @@ gray, which is two ramp steps from the normal black outline instead of one.
 `DrawGlyph` reads glyphs straight from the 256-entry 1bpp sheet at
 `$3206` (8 bytes per code, `$3206 + code*8`; the sheet is CP437-shaped with
 Hebrew letters in `$C0-$DF` where CP437 has box drawing). No English UI
-string uses that block, so two of its codes were repurposed:
+string uses that block, so three of its codes were repurposed:
 
 | Code | ROM | Glyph |
 |---|---|---|
@@ -84,27 +84,47 @@ string uses that block, so two of its codes were repurposed:
 | `$C1` | `00:380e` | left 4px blank, then the left half of the folder |
 | `$C2` | `00:3816` | right half of the folder, then 4px blank |
 
-The folder itself is an 8x7 outline with a tab at top-left, split down the
-middle so it sits centred across the last two columns with 4px of padding on
-each side. Labelled `FolderIconGlyphs` in `kernel.sym`; the rest of the block
-is stock.
+The folder is an 8x7 outline with a square-cornered tab at top-left, split
+down the middle so it sits centred across the last two columns with 4px of
+padding on each side. Labelled `FolderIconGlyphs` in `kernel.sym`; the rest
+of the block is stock.
 
 The three copies of the tag string (`BrowserDirStr` `01:42b6`,
 `BrowserDirStr2` `01:45af`, and `dir_tag` inside the injected
 `browser_scroll_repaint.c` shim at `00:3e27`) changed from `"DIR",0` to
 `$C0,$C1,$C2,0`: a blank in column 17, then the two folder halves. The
-`DrawString(ptr, len 3, col $11, row)` calls and their surrounding
-`StoreDrawParams(0, 3)` / `(3, 0)` bracket are untouched.
+`DrawString(ptr, len 3, col $11, row)` calls are untouched.
 
-**Why the glyphs are stored complemented.** The tag is only ever drawn under
-that inverse ink (ink 0, paper 3: set bits render white, clear bits black).
-Storing the bitmap inverted makes it come out as a black folder on the white
-background, and an all-ones glyph renders as a plain white space. This keeps
-the change data-only; the alternative was flipping the ink at all three draw
-sites plus re-injecting the shim.
+**The tag inherits the row's ink.** Stock forced inverse video (ink 0,
+paper 3) before drawing `DIR` and reset afterwards. The forced set is now
+NOPed at the three stock sites (`01:4207`, `01:43f8`, `01:4508`, the
+`call StoreDrawParams` at +8) and removed from the shim, so the glyphs are
+stored as plain bitmaps: black folder on white on a normal row, and white on
+black on the selected row without any per-row logic. The trailing
+`(3, $0000)` resets are unchanged.
 
 Caveat: a filename containing bytes `$C0`-`$C2` (Hebrew alef/bet/gimel in
 this font) now shows a blank or half a folder in those positions.
+
+## Change 3: the selection bar spans the whole row
+
+Stock `DrawString` pads a short string with spaces up to `len` (or 17 when
+`len` is 0), and before the first padding space it calls
+`StoreDrawParams(3, 0)`, so the padding is always drawn in normal ink and the
+highlight band stopped at the end of the name. That call (`00:0912`, 3 bytes)
+is now NOPed; the surrounding push / `add sp` stay balanced. Padding inherits
+the current ink, so a selected file row (name field 20 wide) and a selected
+directory row (17 wide, then the tag) are black edge to edge.
+
+This is a global change to a primitive with ~86 callers, so every highlight
+site was checked: apart from the browser, all of them draw strings at their
+exact length (tab labels, `SET`/`PICK`, the time digits, the prompt and box
+strings), so the reset never fired for them. The one padded highlight,
+`BootRomInfoMenu` (`01:62d0`, `len 0`), has no callers anywhere in the ROM.
+Both browser painters (`DrawBrowserEntries` per-row epilogue,
+`DrawBrowserDetail` focus/drawSize resets) restore normal ink explicitly, so
+nothing leaks into following rows. The long-name marquee
+(`DrawDirEntryLabel`) always draws exactly `width` characters.
 
 ## Verification
 
@@ -116,12 +136,11 @@ hides the problem):
 ```
 
 Checked in the emulator: browser selection on boot, after cursor moves, and
-after scrolling past the first page (rows painted by the repaint shim); folder
-icons on selected and unselected directory rows; the SD/SET/HELP tab strip;
+after scrolling past the first page (rows painted by the repaint shim), the
+bar spanning the full row in each case; folder icons on unselected directory
+rows and inverted on the selected one; the SD/SET/HELP tab strip;
 the SET button, PICK button and both checkboxes on the SET tab; the PICK A
 ROM banner; the Loading box.
 
-Real hardware: the folder icon is confirmed on a Jr. The shade change has been
-run on Game Boy Color hardware, where it looks as intended, but the point of
-it (readability on an unlit DMG / Pocket screen) has not yet been seen on an
-actual DMG.
+Real hardware: the highlight change, the folder icon, and the full-width
+selection bar are all confirmed on a real Jr (mod 2.8).

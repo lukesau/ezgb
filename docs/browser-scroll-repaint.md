@@ -27,12 +27,13 @@ effect of the stock dirty path (zeroing the marquee tick at frame
 
 `StoreDrawParams` is not an (index, value) setter: every call it stores all
 three draw-state bytes (`$d734/$d735/$d723`,
-`decomp/src/store_d734_d735_d723.c`), so the DIR tag's `(0, $0003)` switches
-everything drawn after it to inverse video until the stock `(3, $0000)` reset.
-**Gotcha:** omitting that reset paints every row below the topmost directory
-white-on-black. No highlight management is needed beyond that: the helper's
-epilogue leaves ink normal, and rows 0..13 are never selected during a shift
-(`sel` is pinned at 15).
+`decomp/src/store_d734_d735_d723.c`). Stock forced inverse video before the
+`DIR` tag and reset afterwards; since the folder-icon change
+([dmg-ui-visibility.md](dmg-ui-visibility.md)) the tag is drawn in the row's
+current ink, so the shim no longer sets it and only keeps the stock
+`(3, $0000)` reset. No highlight management is needed: the helper's epilogue
+leaves ink normal, and rows 0..13 are never selected during a shift (`sel` is
+pinned at 15).
 
 Per-row drawing is used rather than iterating the two-row helper over eight
 pairs because that helper's epilogue prints the selection-number field as
