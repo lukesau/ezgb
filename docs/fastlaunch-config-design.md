@@ -3,7 +3,8 @@
 Status: **design investigation.** The file-content config it recommends has since
 shipped as `/FLAUNCH.CFG`, first line = ROM path (see
 [`fast-launch-notes.md`](fast-launch-notes.md)). The on-device configuration UI
-below is not built. All addresses are `bank:addr` for 1.05e.
+below has since shipped too: enable/disable checkbox + browser ROM picker on the
+SET tab, see [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md). All addresses are `bank:addr` for 1.05e.
 
 ## Verdict
 
