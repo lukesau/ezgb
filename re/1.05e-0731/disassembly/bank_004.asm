@@ -1497,9 +1497,9 @@ DrawTimeAutosaveScreen::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -1559,9 +1559,9 @@ DrawTimeAutosaveScreen_setupSkipDrawRect::
 
 
 DrawTimeAutosaveScreen_setupDoDrawRect::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $02
+    ld a, $03
     push af
     inc sp
     call StoreDrawParams
@@ -1797,9 +1797,9 @@ DrawTimeAutosaveScreen_hilitePath::
     or [hl]
     jp nz, DrawTimeAutosaveScreen_hiliteStoreDrawParamsA
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -1883,9 +1883,9 @@ DrawTimeAutosaveScreen_setStringC::
 
 
 DrawTimeAutosaveScreen_setStringCPath::
-    ld hl, $0002
+    ld hl, $0001
     push hl
-    ld a, $02
+    ld a, $01
     push af
     inc sp
     call StoreDrawParams
@@ -1924,9 +1924,9 @@ DrawTimeAutosaveScreen_setStringsDone::
 
 
 DrawTimeAutosaveScreen_setStringsDonePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $02
+    ld a, $03
     push af
     inc sp
     call StoreDrawParams
@@ -2803,9 +2803,9 @@ DrawTimeAutosaveScreen_savRedraw::
     or [hl]
     jp z, DrawTimeAutosaveScreen_inputLoop
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -2880,9 +2880,9 @@ DrawTimeAutosaveScreen_savRedraw::
     or [hl]
     jp nz, DrawTimeAutosaveScreen_savYearClone
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -2969,9 +2969,9 @@ DrawTimeAutosaveScreen_savMonGate::
 
 
 DrawTimeAutosaveScreen_savMonGatePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3058,9 +3058,9 @@ DrawTimeAutosaveScreen_savDayGate::
 
 
 DrawTimeAutosaveScreen_savDayGatePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3138,9 +3138,9 @@ DrawTimeAutosaveScreen_savHrGate::
 
 
 DrawTimeAutosaveScreen_savHrGatePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3227,9 +3227,9 @@ DrawTimeAutosaveScreen_savMinGate::
 
 
 DrawTimeAutosaveScreen_savMinGatePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3316,9 +3316,9 @@ DrawTimeAutosaveScreen_savSecGate::
 
 
 DrawTimeAutosaveScreen_savSecGatePath::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -4486,9 +4486,9 @@ DrawTimeAutosaveScreen_exitCheck10Confirm::
 FlSetAHookSite::
     db $c2, $59, $59
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -5224,29 +5224,31 @@ FlCfg::
     db $50, $01, $e5, $21, $48, $8a, $e5, $3e
     db $82, $f5, $33, $cd, $ba, $27, $e8, $05
     db $f8, $02, $7e, $d6, $02, $20, $10, $af
-    db $67, $2e, $02, $e5, $3e, $02, $f5, $33
+    db $67, $2e, $01, $e5, $3e, $01, $f5, $33
     db $cd, $91, $27, $e8, $03, $18, $0d, $af
     db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
     db $91, $27, $e8, $03, $af, $67, $2e, $50
     db $e5, $21, $48, $8a, $e5, $3e, $82, $f5
     db $33, $cd, $ba, $27, $e8, $05, $fa, $80
-    db $da, $b7, $28, $1f, $af, $67, $2e, $02
-    db $e5, $3e, $02, $f5, $33, $cd, $91, $27
+    db $da, $b7, $28, $1f, $af, $67, $2e, $03
+    db $e5, $3e, $03, $f5, $33, $cd, $91, $27
     db $e8, $03, $21, $4e, $01, $e5, $21, $4a
     db $88, $e5, $3e, $84, $f5, $33, $cd, $ba
     db $27, $e8, $05, $f8, $02, $7e, $d6, $03
-    db $20, $10, $af, $67, $2e, $02, $e5, $3e
-    db $03, $f5, $33, $cd, $91, $27, $e8, $03
-    db $18, $0d, $af, $0f, $f5, $af, $3e, $03
-    db $f5, $33, $cd, $91, $27, $e8, $03, $21
-    db $61, $01, $e5, $21, $55, $9b, $e5, $3e
-    db $73, $f5, $33, $cd, $ba, $27, $e8, $05
-    db $21, $0f, $0b, $e5, $3e, $04, $f5, $33
-    db $11, $77, $5e, $d5, $cd, $b7, $08, $e8
-    db $05, $af, $0f, $f5, $af, $3e, $03, $f5
-    db $33, $cd, $91, $27, $e8, $03, $c9, $50
-    db $49, $43, $4b, $00
+    db $20, $0e, $21, $03, $00, $e5, $af, $f5
+    db $33, $cd, $91, $27, $e8, $03, $18, $0d
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $91, $27, $e8, $03, $21, $61, $01
+    db $e5, $21, $55, $9b, $e5, $3e, $73, $f5
+    db $33, $cd, $ba, $27, $e8, $05, $21, $0f
+    db $0b, $e5, $3e, $04, $f5, $33, $11, $75
+    db $5e, $d5, $cd, $b7, $08, $e8, $05, $af
+    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
+    db $91, $27, $e8, $03, $c9, $50, $49, $43
+    db $4b, $00
 
+    rst RST_38
+    rst RST_38
     push de
     call DrawString
     add sp, $05

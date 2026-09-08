@@ -6824,9 +6824,9 @@ BatteryNoStr::
 ; Shared chrome behind Cardtype/BOOT/ROM-info style screens.
 
 DrawInfoPanelRect::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -6871,9 +6871,9 @@ BootRomInfoMenu_hiliteBoot::
     or [hl]
     jp nz, BootRomInfoMenu_romInfoInk
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $01
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -6923,9 +6923,9 @@ BootRomInfoMenu_romInfoInk::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $01
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -7653,9 +7653,9 @@ BackupSavePrompt::
     push af
     push af
     push af
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -7742,9 +7742,9 @@ BackupSavePrompt_autoDump::
 
 
 BackupSavePrompt_drawConfirm::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams

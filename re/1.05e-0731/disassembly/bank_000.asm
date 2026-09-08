@@ -4810,9 +4810,9 @@ BatteryCheck::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -4844,9 +4844,9 @@ BatteryCheck::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams

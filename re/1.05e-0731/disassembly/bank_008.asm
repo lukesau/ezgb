@@ -3063,9 +3063,9 @@ DrawFwVersionScreen_epilogueRet::
     inc sp
     call DrawRect
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3136,9 +3136,9 @@ jr_008_7210:
     inc sp
     call DrawRect
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3209,9 +3209,9 @@ jr_008_728b:
     inc sp
     call DrawRect
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3304,9 +3304,9 @@ MenuTabHelpStr::
     db " HELP ", $00
 
 DrawReadingBox::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3342,9 +3342,9 @@ ReadingBoxStr::
 ; See docs/last-rom.md.
 
 DrawLoadingBox::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3374,9 +3374,9 @@ LoadingBoxStr::
     db "Loading...", $00
 
 DrawErrorFileBox::
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
     call StoreDrawParams
@@ -3737,16 +3737,17 @@ BrowserHideName::
     rst RST_38
 
 FlPickBanner::
-    db $fa, $fe, $db, $b7, $c8, $af, $67, $2e
-    db $02, $e5, $3e, $03, $f5, $33, $cd, $91
-    db $27, $e8, $03, $af, $0f, $f5, $af, $3e
-    db $0f, $f5, $33, $11, $bf, $7b, $d5, $cd
-    db $b7, $08, $e8, $05, $af, $0f, $f5, $af
-    db $3e, $03, $f5, $33, $cd, $91, $27, $e8
-    db $03, $c9, $20, $50, $49, $43, $4b, $20
-    db $41, $20, $52, $4f, $4d, $20, $20, $20
-    db $20, $00
+    db $fa, $fe, $db, $b7, $c8, $21, $03, $00
+    db $e5, $af, $f5, $33, $cd, $91, $27, $e8
+    db $03, $af, $0f, $f5, $af, $3e, $0f, $f5
+    db $33, $11, $bd, $7b, $d5, $cd, $b7, $08
+    db $e8, $05, $af, $0f, $f5, $af, $3e, $03
+    db $f5, $33, $cd, $91, $27, $e8, $03, $c9
+    db $20, $50, $49, $43, $4b, $20, $41, $20
+    db $52, $4f, $4d, $20, $20, $20, $20, $00
 
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

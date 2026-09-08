@@ -4410,13 +4410,13 @@
 00:04f8 .data:a:8
 00:164e FlPickCancelSite
 00:164e .data:3:8
-08:7b8d FlPickBanner
-08:7b8d .data:42:8
-04:5990 FlCfg
-04:5990 .data:4ec:8
 00:0490 fastlaunch_boot
 00:0490 .data:1e:8
 02:4500 FastLaunchScan
 02:4500 .data:3d5:8
 08:7a9c BrowserHideName
 08:7a9c .data:ca:8
+04:5990 FlCfg
+04:5990 .data:4ea:8
+08:7b8d FlPickBanner
+08:7b8d .data:40:8
