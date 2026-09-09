@@ -164,7 +164,7 @@ past it is whatever the cart retained. Outcomes:
   region → the rom area is volatile (RAM-die or DRAM-backed): NOR reuse
   across power cycles is dead, definitively.
 
-Hold-SELECT and all fast-launch behavior are unchanged in both versions.
+Hold-START (the fast-launch cancel) and all fast-launch behavior are unchanged in both versions.
 
 ## Read-back probe (in both builds)
 
