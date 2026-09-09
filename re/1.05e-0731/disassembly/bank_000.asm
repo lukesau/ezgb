@@ -739,7 +739,7 @@ fastlaunch_hook::
 fastlaunch_boot::
     db $cd, $d4, $03, $fa, $ff, $db, $b7, $c0
     db $21, $ff, $db, $36, $01, $cd, $4a, $3a
-    db $cb, $73, $c0, $cd, $00, $04, $fa, $a4
+    db $7b, $07, $d8, $cd, $00, $04, $fa, $a4
     db $c4, $b7, $c2, $20, $04, $c9
 
 DirListHideNameStub::
@@ -808,78 +808,21 @@ BatteryDryHook::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+LastRomFallbackHook::
+    db $3e, $05, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $fa, $fb, $db, $b7
+    db $c2, $f1, $12, $c3, $8f, $13
+
+DirEnterBoundCheck::
+    db $21, $a0, $c2, $5e, $23, $56, $f8, $04
+    db $2a, $66, $6f, $19, $06, $00, $2a, $b7
+    db $28, $03, $04, $18, $f9, $21, $a6, $c2
+    db $0e, $00, $2a, $b7, $28, $03, $0c, $18
+    db $f9, $78, $81, $38, $0a, $fe, $fe, $30
+    db $06, $21, $e9, $16, $c3, $12, $14, $c3
+    db $8d, $0f
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3711,7 +3654,7 @@ LastRomLoadRecord::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, LastRomDrawBasename
+    jp nc, $0540
 
     ld de, $c4a4
     dec hl
@@ -3972,7 +3915,9 @@ MenuDispatchAB_fileSkipDir::
 
 
 MenuDispatchAB_dirAppend::
-    ld hl, PathSlashStr
+    jp $0556
+
+
     push hl
     ld hl, $c2a6
     push hl
@@ -11149,13 +11094,13 @@ FolderIconGlyphs::
     db $a9, $81
     db $7e, $00
     db $7e, $99
-    db $85, $89
+    db $a5, $89
     db $81, $89
     db $7e, $00
-    db $00, $1e
-    db $06, $0e
-    db $1e, $36
-    db $00, $00
+    db $fe, $83
+    db $81, $bd
+    db $81, $99
+    db $99, $ff
     db $00, $7e
     db $0c, $0c
     db $0c, $0c
@@ -12335,39 +12280,40 @@ BrowserScrollDownRepaint::
     db $f0, $36, $e4, $c9
 
 DrawNameWithIcon::
-    db $e8, $fc, $f8, $08, $7e, $b7, $20, $0e
-    db $f8, $00, $36, $a9, $23, $36, $3f, $f8
-    db $08, $36, $10, $c3, $7f, $3f, $01, $ff
-    db $00, $78, $d6, $fe, $30, $15, $f8, $06
-    db $2a, $80, $5f, $7e, $ce, $00, $57, $1a
-    db $b7, $28, $08, $fe, $2e, $20, $01, $48
-    db $04, $18, $e6, $f8, $00, $36, $af, $23
-    db $36, $3f, $79, $3c, $28, $76, $23, $79
-    db $22, $af, $32, $5e, $16, $00, $13, $7b
-    db $f8, $06, $86, $23, $5f, $7a, $8e, $57
-    db $1a, $c5, $f5, $33, $cd, $b1, $3f, $33
-    db $c1, $7b, $d6, $47, $20, $56, $f8, $02
-    db $5e, $16, $00, $13, $13, $7b, $f8, $06
-    db $86, $23, $5f, $7a, $8e, $57, $1a, $c5
-    db $f5, $33, $cd, $b1, $3f, $33, $7b, $c1
-    db $fe, $42, $20, $38, $78, $91, $3d, $fe
-    db $02, $20, $09, $f8, $00, $36, $ab, $23
-    db $36, $3f, $18, $28, $fe, $03, $20, $24
-    db $f8, $02, $4e, $06, $00, $03, $03, $03
-    db $79, $f8, $06, $86, $23, $4f, $78, $8e
-    db $47, $0a, $f5, $33, $cd, $b1, $3f, $33
-    db $7b, $fe, $43, $20, $07, $f8, $00, $36
-    db $ad, $23, $36, $3f, $f8, $08, $35, $f8
-    db $0a, $7e, $f5, $33, $21, $01, $00, $e5
-    db $f8, $03, $2a, $5f, $56, $d5, $cd, $b7
-    db $08, $e8, $05, $f8, $0a, $3a, $2b, $57
-    db $1e, $01, $d5, $3a, $2b, $f5, $33, $2a
-    db $5f, $56, $d5, $cd, $b7, $08, $e8, $09
-    db $c9, $c0, $00, $c1, $00, $c2, $00, $c3
-    db $00, $f8, $02, $7e, $d6, $61, $38, $0a
-    db $3e, $7a, $96, $38, $05, $7e, $c6, $e0
-    db $5f, $c9, $f8, $02, $5e, $c9
+    db $e8, $fd, $f8, $07, $7e, $b7, $20, $0b
+    db $f8, $00, $36, $c0, $f8, $07, $36, $10
+    db $c3, $9c, $3f, $f8, $01, $3e, $ff, $22
+    db $36, $00, $f8, $02, $7e, $d6, $fe, $30
+    db $20, $f8, $05, $7e, $f8, $02, $86, $23
+    db $23, $23, $23, $4f, $7e, $ce, $00, $47
+    db $0a, $b7, $28, $0d, $fe, $2e, $20, $04
+    db $f8, $02, $3a, $77, $f8, $02, $34, $18
+    db $d9, $f8, $00, $3e, $c3, $22, $7e, $3c
+    db $ca, $99, $3f, $f8, $02, $3a, $96, $23
+    db $3d, $32, $4e, $06, $00, $59, $50, $13
+    db $f8, $05, $2a, $83, $5f, $7e, $8a, $57
+    db $1a, $e6, $df, $f8, $01, $77, $59, $50
+    db $13, $13, $f8, $05, $2a, $83, $5f, $7e
+    db $8a, $57, $1a, $e6, $df, $5f, $f8, $02
+    db $7e, $d6, $03, $3e, $01, $28, $01, $af
+    db $57, $03, $03, $03, $f8, $05, $2a, $81
+    db $4f, $7e, $88, $47, $f8, $01, $7e, $d6
+    db $47, $20, $23, $7b, $d6, $42, $20, $1e
+    db $f8, $02, $7e, $d6, $02, $20, $06, $f8
+    db $00, $36, $c1, $18, $2c, $7a, $b7, $28
+    db $28, $0a, $cb, $af, $fe, $43, $20, $21
+    db $f8, $00, $36, $c2, $18, $1b, $7a, $b7
+    db $28, $17, $f8, $01, $7e, $d6, $53, $20
+    db $10, $7b, $d6, $41, $20, $0b, $0a, $cb
+    db $af, $fe, $56, $20, $04, $f8, $00, $36
+    db $c4, $f8, $07, $35, $f8, $00, $4d, $44
+    db $f8, $09, $7e, $f5, $33, $21, $01, $00
+    db $e5, $c5, $cd, $b7, $08, $e8, $05, $f8
+    db $09, $3a, $2b, $57, $1e, $01, $d5, $3a
+    db $2b, $f5, $33, $2a, $5f, $56, $d5, $cd
+    db $b7, $08, $e8, $08, $c9
 
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

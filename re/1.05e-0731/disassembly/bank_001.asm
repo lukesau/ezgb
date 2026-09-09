@@ -1820,8 +1820,7 @@ LastRomPersistDone::
     inc sp
     call SetFpgaPage_B1
     add sp, $01
-    add sp, $04
-    ret
+    jp $7610
 
 
     cpl
@@ -8723,21 +8722,11 @@ RtcDumpHook::
     db $8d, $07, $00, $4a, $02, $00, $c9
 
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+LastRomSaveHook::
+    db $3e, $04, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $e8, $04, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
