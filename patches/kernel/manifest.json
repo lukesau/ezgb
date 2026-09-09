@@ -1,13 +1,13 @@
 {
   "1.05e-0731": {
     "patch": "ezgb-1.05e-0731.ips",
-    "patched_md5": "ff58ca8d4f5e5ffcab111b527ef4970f",
+    "patched_md5": "bdacb06340834010b43ef7fbeba97875",
     "size": 163840,
     "stock_md5": "91eb7fc67332ef20b5691029181ff748"
   },
   "1.05e-0918": {
     "patch": "ezgb-1.05e-0918.ips",
-    "patched_md5": "ca41614f754e507bd2212de2fcd41050",
+    "patched_md5": "2ea42789c75ae8e0300ba0d4da94374a",
     "size": 163840,
     "stock_md5": "5238ac5987d23b68a19d40e43af8c786"
   }

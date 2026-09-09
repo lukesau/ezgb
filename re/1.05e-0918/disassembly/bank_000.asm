@@ -11097,10 +11097,10 @@ FolderIconGlyphs::
     db $a5, $89
     db $81, $89
     db $7e, $00
-    db $fe, $bd
-    db $bd, $81
+    db $fc, $fe
+    db $bd, $bd
     db $81, $81
-    db $81, $ff
+    db $ff, $00
     db $00, $7e
     db $0c, $0c
     db $0c, $0c

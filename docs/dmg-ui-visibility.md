@@ -94,10 +94,10 @@ repurposed, labelled `FolderIconGlyphs` in `kernel.sym`:
 | `$C1` | `00:380e` | `.gb` cartridge (placeholder: outline with a label band) |
 | `$C2` | `00:3816` | `.gbc` cartridge (placeholder: outline with a checkered label) |
 | `$C3` | `00:381e` | boxed `?` for any other file type |
-| `$C4` | `00:3826` | `.sav` floppy disk (notched top, filled sliding cover) |
+| `$C4` | `00:3826` | `.sav` floppy disk (diagonal corner notch, filled sliding cover) |
 
 Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,
-`7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`, `FE BD BD 81 81 81 81 FF`.
+`7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`, `FC FE BD BD 81 81 FF 00`.
 Redraw any of them by writing 8 bytes at those
 offsets. Bit 0 of each row is the pixel next to the name's first letter, so
 leaving it clear gives a 1px gap.
