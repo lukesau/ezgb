@@ -17,9 +17,9 @@
  *      finish on base+1.)
  *   2. Rows 13 down to 0 one at a time with the stock drawing primitives,
  *      replicating DrawBrowserEntries' per-row body byte for byte:
- *      dir rows DrawString(name, len 0, col 0) +
+ *      dir rows DrawNameWithIcon(name, len 0, col 0) +
  *      "DIR" at col $11 + the stock per-row ink reset (see draw_row); file
- *      rows DrawString(name, len $14, col 0). No highlight handling is
+ *      rows DrawNameWithIcon(name, len $14, col 0). No highlight handling is
  *      needed: DrawBrowserDetail's epilogue leaves ink normal and rows
  *      0..13 are never the selection during a window shift (sel is pinned
  *      at 15).
@@ -54,6 +54,7 @@ extern void browser_scroll_down(struct BrowserScrollState *st); /* 00:01e3 */
 extern void FarCallDrawDetailBottom(u16 base);                  /* 00:03dc */
 extern void DrawString(volatile const u8 *s, u8 len, u8 col, u8 row); /* 00:08b7 */
 extern void StoreDrawParams(u8 idx, u16 val);                   /* 00:2791 */
+extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);   /* 00:3ec8 */
 
 #define RAM_BANK (*(volatile u8 *)0x4000)
 #define WIN ((volatile u8 *)0xa000)
@@ -64,9 +65,8 @@ extern void StoreDrawParams(u8 idx, u16 val);                   /* 00:2791 */
 static void draw_row(u16 base, u8 n);
 static void fpga_sram_page(void);
 
-/* Folder icon: blank ($C0) + left half ($C1) + right half ($C2), the 8px
- * folder centred across the last two columns; see docs/dmg-ui-visibility.md. */
-static const u8 dir_tag[] = { 0xC0, 0xC1, 0xC2, 0 };
+/* Stock DIR tag; the row icon is drawn by DrawNameWithIcon (browser_icons.c). */
+static const u8 dir_tag[] = "DIR";
 
 void browser_scroll_down_repaint(struct BrowserScrollState *st) {
     u8 n;
@@ -100,15 +100,15 @@ static void draw_row(u16 base, u8 n) {
     RAM_BANK = (u8)(REC_BANK_BASE + (u8)(idx >> 5));
     rec = WIN + ((slot << 8) - slot); /* slot * 255 */
     if (rec[ATTR_OFS] == ATTR_DIR) {
-        DrawString(rec, 0, 0, row);
-        /* The folder tag is drawn in whatever ink the row has (stock forced
+        DrawNameWithIcon(rec, 0, 0, row);
+        /* The DIR tag is drawn in whatever ink the row has (stock forced
          * inverse video here; see docs/dmg-ui-visibility.md). These rows are
          * never the selection, so it comes out black on white. The reset is
          * kept to match stock DrawBrowserEntries' per-row epilogue. */
         DrawString(dir_tag, 3, 0x11, row);
         StoreDrawParams(3, 0x0000);
     } else {
-        DrawString(rec, 0x14, 0, row);
+        DrawNameWithIcon(rec, 0x14, 0, row);
     }
 }
 

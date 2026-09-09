@@ -71,40 +71,73 @@ The two injected C shims followed suit at source level and were re-injected:
 The checkbox outline keeps its stock "dimmed while selected" idea but in light
 gray, which is two ramp steps from the normal black outline instead of one.
 
-## Change 2: folder icon instead of `DIR`
+## Change 2: icon column on the left, `DIR` tag back on the right
 
-`DrawGlyph` reads glyphs straight from the 256-entry 1bpp sheet at
-`$3206` (8 bytes per code, `$3206 + code*8`; the sheet is CP437-shaped with
-Hebrew letters in `$C0-$DF` where CP437 has box drawing). No English UI
-string uses that block, so three of its codes were repurposed:
+Every browser row now starts with one icon glyph in column 0 and the name in
+columns 1 onward, one column narrower than stock (16 for directories, 19 for
+files). Directories keep the stock text `DIR` tag in columns 17-19, drawn in
+the row's ink (stock forced inverse video there; those three
+`call StoreDrawParams` sites, `01:4207`, `01:43f8`, `01:4508` at +8, are
+NOPed and the shim no longer sets it), so the tag reads black on white on a
+normal row and white on black inside the selection bar.
+
+### Glyphs
+
+`DrawGlyph` reads glyphs straight from the 256-entry 1bpp sheet at `$3206`
+(8 bytes per code, `$3206 + code*8`; CP437-shaped with Hebrew letters in
+`$C0-$DF`). No English UI string uses that block, so three codes were
+repurposed, labelled `FolderIconGlyphs` in `kernel.sym`:
 
 | Code | ROM | Glyph |
 |---|---|---|
-| `$C0` | `00:3806` | blank |
-| `$C1` | `00:380e` | left 4px blank, then the left half of the folder |
-| `$C2` | `00:3816` | right half of the folder, then 4px blank |
+| `$C0` | `00:3806` | folder, square-cornered tab at top-left |
+| `$C1` | `00:380e` | `.gb` cartridge (placeholder: outline with a label band) |
+| `$C2` | `00:3816` | `.gbc` cartridge (placeholder: outline with a checkered label) |
+| `$C3` | `00:381e` | boxed `?` for any other file type |
 
-The folder is an 8x7 outline with a square-cornered tab at top-left, split
-down the middle so it sits centred across the last two columns with 4px of
-padding on each side. Labelled `FolderIconGlyphs` in `kernel.sym`; the rest
-of the block is stock.
+Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,
+`7E 81 A9 95 A9 81 7E 00`, `7E 99 85 89 81 89 7E 00`. Redraw the carts by writing 8 bytes at those
+offsets. Bit 0 of each row is the pixel next to the name's first letter, so
+leaving it clear gives a 1px gap.
 
-The three copies of the tag string (`BrowserDirStr` `01:42b6`,
-`BrowserDirStr2` `01:45af`, and `dir_tag` inside the injected
-`browser_scroll_repaint.c` shim at `00:3e27`) changed from `"DIR",0` to
-`$C0,$C1,$C2,0`: a blank in column 17, then the two folder halves. The
-`DrawString(ptr, len 3, col $11, row)` calls are untouched.
+Caveat: a filename containing bytes `$C0`-`$C3` (Hebrew alef to dalet in
+this font) shows an icon in that position.
 
-**The tag inherits the row's ink.** Stock forced inverse video (ink 0,
-paper 3) before drawing `DIR` and reset afterwards. The forced set is now
-NOPed at the three stock sites (`01:4207`, `01:43f8`, `01:4508`, the
-`call StoreDrawParams` at +8) and removed from the shim, so the glyphs are
-stored as plain bitmaps: black folder on white on a normal row, and white on
-black on the selected row without any per-row logic. The trailing
-`(3, $0000)` resets are unchanged.
+### `DrawNameWithIcon` (`00:3ec8`, [decomp/src/browser_icons.c](../decomp/src/browser_icons.c), 254 B)
 
-Caveat: a filename containing bytes `$C0`-`$C2` (Hebrew alef/bet/gimel in
-this font) now shows a blank or half a folder in those positions.
+The six stock name draws are one `DrawString(name, len, 0, row)` each, with
+`len` 0 for directories (the 17-wide default) and `$14` for files. They now
+call a wrapper with the same stack convention instead, so each site is a
+3-byte `call` retarget and no stock code grows. The wrapper picks the glyph
+(folder when `len` is 0, else by extension: `.gb`, `.gbc`, case-insensitive,
+anything else the boxed `?`), draws it at column 0 with `DrawString`, then draws
+the name at column 1 with `len` 16 or `len-1`. It draws in whatever ink the
+row has, so the icon inverts with the selection bar. It lives in the free
+tail of the `00:3d8c` cave, after `BrowserScrollDownRepaint`.
+
+| Site | Address | Was |
+|---|---|---|
+| `DrawBrowserEntries` dir / file | `01:4202` / `01:424e` | `call DrawString` |
+| `DrawBrowserDetail` entry0 dir / file | `01:43f3` / `01:443d` | `call DrawString` |
+| `DrawBrowserDetail` entry1 dir / file | `01:4503` / `01:454d` | `call DrawString` |
+| `browser_scroll_repaint.c` dir / file | in the shim | `DrawString(rec, ...)` |
+
+The long-name marquee (`DrawDirEntryLabel`, `00:0be7`) redraws only the name,
+so its field widths moved with it: `00:0c87` `$11` to `$10`, `00:0c8e` `$14`
+to `$13`, and its `DrawString` x at `00:0dcc` `0` to `1`. The icon drawn by
+the row painter stays put.
+
+```sh
+cd decomp
+python3 tools/inject.py src/browser_icons.c $V 0 3ec8 DrawNameWithIcon --pin DrawString=08b7 --apply
+python3 tools/inject.py src/browser_scroll_repaint.c $V 0 3d8c BrowserScrollDownRepaint \
+    --pin browser_scroll_down=01e3 --pin FarCallDrawDetailBottom=03dc --pin DrawString=08b7 \
+    --pin StoreDrawParams=2791 --pin DrawNameWithIcon=3ec8 --apply
+```
+
+`inject.py` places the first-defined function at the origin, so the wrapper
+must stay the first definition in the file (the `up()` helper is prototyped
+above it and defined below).
 
 ## Change 3: the selection bar spans the whole row
 
@@ -137,8 +170,9 @@ hides the problem):
 
 Checked in the emulator: browser selection on boot, after cursor moves, and
 after scrolling past the first page (rows painted by the repaint shim), the
-bar spanning the full row in each case; folder icons on unselected directory
-rows and inverted on the selected one; the SD/SET/HELP tab strip;
+bar spanning the full row in each case; the icon column (folder, .gb, .gbc,
+boxed ?) on normal rows, inverted on the selected one, and on rows painted by
+the repaint shim; the long-name marquee scrolling from column 1; the SD/SET/HELP tab strip;
 the SET button, PICK button and both checkboxes on the SET tab; the PICK A
 ROM banner; the Loading box.
 

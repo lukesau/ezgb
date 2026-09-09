@@ -28,12 +28,12 @@ effect of the stock dirty path (zeroing the marquee tick at frame
 `StoreDrawParams` is not an (index, value) setter: every call it stores all
 three draw-state bytes (`$d734/$d735/$d723`,
 `decomp/src/store_d734_d735_d723.c`). Stock forced inverse video before the
-`DIR` tag and reset afterwards; since the folder-icon change
-([dmg-ui-visibility.md](dmg-ui-visibility.md)) the tag is drawn in the row's
-current ink, so the shim no longer sets it and only keeps the stock
-`(3, $0000)` reset. No highlight management is needed: the helper's epilogue
-leaves ink normal, and rows 0..13 are never selected during a shift (`sel` is
-pinned at 15).
+`DIR` tag and reset afterwards; since the icon-column change
+([dmg-ui-visibility.md](dmg-ui-visibility.md)) the name goes through
+`DrawNameWithIcon` and the tag is drawn in the row's current ink, so the shim
+no longer sets it and only keeps the stock `(3, $0000)` reset. No highlight
+management is needed: the helper's epilogue leaves ink normal, and rows
+0..13 are never selected during a shift (`sel` is pinned at 15).
 
 Per-row drawing is used rather than iterating the two-row helper over eight
 pairs because that helper's epilogue prints the selection-number field as
@@ -48,7 +48,7 @@ top-down sweep already paints first. In-screen moves (dirty=2/3) are stock.
 
 | Piece | Where |
 |---|---|
-| Wrapper | `00:3d8c` `BrowserScrollDownRepaint` (316 bytes; cave is 628) |
+| Wrapper | `00:3d8c` `BrowserScrollDownRepaint` (316 bytes; cave is 628, its tail from `00:3ec8` holds `DrawNameWithIcon`, see [dmg-ui-visibility.md](dmg-ui-visibility.md)) |
 | Detail shim | `00:03dc` `FarCallDrawDetailBottom` (24 bytes, hand-assembled; bytes in `browser_scroll_shims.md`) |
 | Hook | `00:02e0` down stub: call target repointed `$01e3` → `$3d8c` (bytes 4-5) |
 
@@ -59,7 +59,7 @@ python3 tools/inject_bytes.py 1.05e-0731 0 03dc FarCallDrawDetailBottom \
 python3 tools/inject.py src/browser_scroll_repaint.c 1.05e-0731 0 3d8c \
     BrowserScrollDownRepaint --pin browser_scroll_down=01e3 \
     --pin FarCallDrawDetailBottom=03dc --pin DrawString=08b7 \
-    --pin StoreDrawParams=2791 --apply
+    --pin StoreDrawParams=2791 --pin DrawNameWithIcon=3ec8 --apply
 # then set stub bytes $02e4-$02e5 to 8c 3d and regen
 ```
 
