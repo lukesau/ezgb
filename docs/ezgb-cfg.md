@@ -31,7 +31,7 @@ RTC=2026-09-08 10:15:32
 |---|---|---|
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
-| `RTC` | Last known good clock. Only the digits matter: the first 14 digits in order are `YYYYMMDDhhmmss`, so `2026-09-08 10:15:32` and `20260908101532` are the same value. Century is dropped (the RTC keeps two year digits, 20xx). | every save-to-SD dump, every TIME SET confirm |
+| `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
 
 The firmware rewrites the whole file from its known keys as a fixed 192-byte
 record padded with spaces (this FatFs build has no `f_truncate`, so a

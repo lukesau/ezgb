@@ -25,7 +25,8 @@
  *   FLAUNCH=/Pokemon/Blue.gb      fast-launch target (a leading '#' on the
  *                                 value = fast launch disabled, path kept)
  *   RTC=2026-09-08 14:33:00       last known good clock (digits are all that
- *                                 matter: 14 digits YYYYMMDDhhmmss in order)
+ *                                 matter, split on any
+ *                                 punctuation into YYYY MM DD HH MM SS)
  *
  * The firmware rewrites the whole file from its known keys as a fixed
  * REC_LEN record padded with spaces (this FatFs has no f_truncate), so hand
@@ -352,23 +353,37 @@ static void parse_flaunch(const u8 *v, u8 len) {
     FL_PLEN = n;
 }
 
-/* Take the first 14 digits of the value, in any punctuation: YYYYMMDDhhmmss.
- * Century is dropped (the RTC keeps two year digits, 20xx). */
+/* Split the value into six numeric fields on any non-digit (YYYY-MM-DD
+ * HH:MM:SS), keeping the LAST two digits of each as a BCD byte. This tolerates
+ * a 2-, 3- or 4-digit year (a stale file with "026" or "26" still restores;
+ * the century is implicitly dropped) and is rewritten cleanly on the next
+ * save. Needs exactly six fields, else the line is ignored. */
 static void parse_rtc(const u8 *v, u8 len) {
-    u8 d[14];
-    u8 i, n;
-    n = 0;
-    for (i = 0; i < len && n < 14; i++) {
-        if (v[i] >= '0' && v[i] <= '9') d[n++] = v[i] - '0';
+    u8 f[6];
+    u8 fi, d0, d1, ndig, i, c;
+
+    for (i = 0; i < 6; i++) f[i] = 0;
+    fi = 0; d0 = 0; d1 = 0; ndig = 0;
+    for (i = 0; i <= len; i++) {
+        c = (i < len) ? v[i] : 0;
+        if (c >= '0' && c <= '9') {
+            d0 = d1;
+            d1 = (u8)(c - '0');
+            ndig++;
+        } else {
+            if (ndig != 0 && fi < 6) f[fi++] = (u8)((d0 << 4) | d1);
+            d0 = 0; d1 = 0; ndig = 0;
+            if (c == 0) break;
+        }
     }
-    if (n < 14) return;
-    RTC_BK[R_YR]  = (d[2] << 4) | d[3];
-    RTC_BK[R_MON] = (d[4] << 4) | d[5];
-    RTC_BK[R_DAY] = (d[6] << 4) | d[7];
+    if (fi < 6) return;
+    RTC_BK[R_YR]  = f[0];
+    RTC_BK[R_MON] = f[1];
+    RTC_BK[R_DAY] = f[2];
     RTC_BK[R_WD]  = 0x03;                 /* what the SET tab writes */
-    RTC_BK[R_HR]  = (d[8] << 4) | d[9];
-    RTC_BK[R_MIN] = (d[10] << 4) | d[11];
-    RTC_BK[R_SEC] = (d[12] << 4) | d[13];
+    RTC_BK[R_HR]  = f[3];
+    RTC_BK[R_MIN] = f[4];
+    RTC_BK[R_SEC] = f[5];
     RTC_VALID = rtc_valid(RTC_BK);
 }
 

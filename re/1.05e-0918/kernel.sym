@@ -4410,8 +4410,12 @@
 08:7b8d .data:40:8
 00:3d8c BrowserScrollDownRepaint
 00:3d8c .data:13c:8
+00:0490 fastlaunch_boot
+00:0490 .data:1e:8
+00:3ec8 DrawNameWithIcon
+00:3ec8 .data:fd:8
 02:4a00 EzCfg
-02:4a00 .data:bd4:8
+02:4a00 .data:c0a:8
 02:4500 FastLaunchScan
 02:4500 .data:2fe:8
 04:5990 FlCfg
@@ -4436,7 +4440,3 @@
 01:7600 .data:f:8
 01:7610 LastRomSaveHook
 01:7610 .data:f:8
-00:0490 fastlaunch_boot
-00:0490 .data:1e:8
-00:3ec8 DrawNameWithIcon
-00:3ec8 .data:fd:8
