@@ -11097,8 +11097,8 @@ FolderIconGlyphs::
     db $a5, $89
     db $81, $89
     db $7e, $00
-    db $fc, $82
-    db $81, $81
+    db $f8, $8c
+    db $8e, $81
     db $81, $81
     db $ff, $00
     db $00, $7e

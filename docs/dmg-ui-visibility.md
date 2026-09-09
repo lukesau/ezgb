@@ -97,7 +97,7 @@ repurposed, labelled `FolderIconGlyphs` in `kernel.sym`:
 | `$C4` | `00:3826` | `.sav` page (dog-eared top-right corner) |
 
 Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,
-`7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`, `FC 82 81 81 81 81 FF 00`.
+`7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`, `F8 8C 8E 81 81 81 FF 00`.
 Redraw any of them by writing 8 bytes at those
 offsets. Bit 0 of each row is the pixel next to the name's first letter, so
 leaving it clear gives a 1px gap.
