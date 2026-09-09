@@ -15,6 +15,10 @@
  * same bit the last-ROM overlay tests). The decision is made once (the flag is
  * set first), so it is locked to whatever is held on the first loop iteration.
  */
+extern unsigned char ReadJoypad(void);   /* 00:3a4a in 1.05e; pinned per version */
+extern void FarCallScan(void);           /* 00:0400 */
+extern void fastlaunch_do_launch(void);  /* 00:0420 */
+
 void fastlaunch_hook(void) __naked {
     __asm
         ld  a, (#0xdbff)
@@ -22,15 +26,15 @@ void fastlaunch_hook(void) __naked {
         jr  nz, 00001$        ; already ran this power-on
         ld  a, #0x01
         ld  (#0xdbff), a
-        call 0x3a4a           ; ReadJoypad -> E = keys held (post-swap; B = $20)
+        call _ReadJoypad      ; ReadJoypad -> E = keys held (post-swap; B = $20)
         ld  a, e
         and #0x20             ; hold B at boot to skip fast launch
         jr  nz, 00001$
-        call 0x0400           ; FarCallScan -> scans root, writes $c4a4
+        call _FarCallScan     ; FarCallScan -> scans root, writes $c4a4
         ld  a, (#0xc4a4)
         or  a
         jr  z, 00001$         ; no trigger -> continue browsing
-        call 0x0420           ; fastlaunch_do_launch -> boots the ROM; no return
+        call _fastlaunch_do_launch ; fastlaunch_do_launch -> boots the ROM; no return
 00001$:
         ld  hl, #0x002d       ; replay the displaced instruction
         ret

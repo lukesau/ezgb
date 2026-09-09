@@ -30,7 +30,7 @@ RST_08::
 RST_10::
     add b
     ld b, b
-    jr nz, jr_000_0024
+    jr nz, @+$12
 
     ld [$0204], sp
     db $01
@@ -47,11 +47,8 @@ RST_20::
     rst RST_38
     rst RST_38
 
-jr_000_0024:
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+    ; padding
+    ds $4, $ff
 
 RST_28::
     rst RST_38
@@ -85,69 +82,75 @@ RST_38::
 
 VBlankInterrupt::
     push hl
-    ld hl, $d6ac
-    jp Jump_000_0067
+    ld hl, wVBlankCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 LCDCInterrupt::
     push hl
-    ld hl, $d6bc
-    jp Jump_000_0067
+    ld hl, wLcdCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 TimerOverflowInterrupt::
     push hl
-    ld hl, $d6cc
-    jp Jump_000_0067
+    ld hl, wTimerCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 SerialTransferCompleteInterrupt::
     push hl
-    ld hl, $d6dc
-    jp Jump_000_0067
+    ld hl, wSerialCallbacks
+    jp RunCallbackList
 
 
     rst RST_38
 
 JoypadTransitionInterrupt::
     push hl
-    ld hl, $d6ec
-    jp Jump_000_0067
+    ld hl, wJoypadCallbacks
+    jp RunCallbackList
 
 
-Jump_000_0067:
+; [ezgb]
+; RunCallbackList: shared IRQ dispatcher. HL = list base (uint16 fn ptrs,
+; 0-terminated). Nest via wIntNest; CallHL each slot. Vectors: VBlank→wVBlankCallbacks
+; ($d6d3), LCD→$d6e3, Timer→$d6f3, Serial→$d703, Joypad→$d713.
+; jr_000_0071: walk until NUL ptr; jr_000_0080: --wIntNest; nest≠0 → ret else jr_000_008e reti.
+
+RunCallbackList::
     push af
 
     push bc
     push de
-    ld a, [$d6a9]
+    ld a, [wIntNest]
     inc a
-    ld [$d6a9], a
+    ld [wIntNest], a
 
-jr_000_0071:
+RunCallbackList_walk::
     ld a, [hl+]
     or [hl]
-    jr z, jr_000_0080
+    jr z, RunCallbackList_decNest
 
     push hl
     ld a, [hl-]
     ld l, [hl]
     ld h, a
-    call Call_000_0093
+    call CallHL
     pop hl
     inc hl
-    jr jr_000_0071
+    jr RunCallbackList_walk
 
-jr_000_0080:
-    ld a, [$d6a9]
+RunCallbackList_decNest::
+    ld a, [wIntNest]
     dec a
-    ld [$d6a9], a
+    ld [wIntNest], a
     jr z, jr_000_008e
 
     pop de
@@ -165,7 +168,7 @@ jr_000_008e:
     reti
 
 
-Call_000_0093:
+CallHL::
     jp hl
 
 
@@ -280,7 +283,7 @@ Call_000_0093:
 
 Boot::
     nop
-    jp Jump_000_0150
+    jp KernelEntry
 
 
 HeaderLogo::
@@ -321,7 +324,13 @@ HeaderComplementCheck::
 HeaderGlobalChecksum::
     db $7a, $ed
 
-Jump_000_0150:
+; [ezgb]
+; KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.
+; jr_000_015d: zero WRAM $DFFF down $2000 (B/C nested); jr_000_0169: OAM $FEFF..$100; jr_000_0172: HRAM $FFFF..$80.
+; Save boot A@$d6c9; bank1; LcdOff; scroll/STAT/WY/WX init; jr_000_019e: copy OamDmaStub → $FF80.
+; Register VBlank/Serial; BGP/OBP/LCDC/IE; serial SB=$66 SC=$80; BootUnpackWramTables ($68b6); BatteryCheck; fall HaltLoop.
+
+KernelEntry::
     di
     ld d, a
     xor a
@@ -330,38 +339,38 @@ Jump_000_0150:
     ld c, $20
     ld b, $00
 
-jr_000_015d:
+KernelEntry_clearWram::
     ld [hl-], a
     dec b
-    jr nz, jr_000_015d
+    jr nz, KernelEntry_clearWram
 
     dec c
-    jr nz, jr_000_015d
+    jr nz, KernelEntry_clearWram
 
     ld hl, $feff
     ld b, $00
 
-jr_000_0169:
+KernelEntry_clearOam::
     ld [hl-], a
     dec b
-    jr nz, jr_000_0169
+    jr nz, KernelEntry_clearOam
 
     ld hl, $ffff
     ld b, $80
 
-jr_000_0172:
+KernelEntry_clearHram::
     ld [hl-], a
     dec b
-    jr nz, jr_000_0172
+    jr nz, KernelEntry_clearHram
 
     ld a, d
     ld [$d6a2], a
     ld a, $01
-    ld [$d6a8], a
+    ld [wRomBank], a
     ld [$2000], a
     xor a
-    ld [$d6a9], a
-    call Call_000_069f
+    ld [wIntNest], a
+    call LcdOff
     xor a
     ldh [rSCY], a
     ldh [rSCX], a
@@ -370,20 +379,20 @@ jr_000_0172:
     ld a, $07
     ldh [rWX], a
     ld bc, $ff80
-    ld hl, $06b6
+    ld hl, OamDmaStub
     ld b, $0a
 
-jr_000_019e:
+KernelEntry_copyOamDmaStub::
     ld a, [hl+]
     ldh [c], a
     inc c
     dec b
-    jr nz, jr_000_019e
+    jr nz, KernelEntry_copyOamDmaStub
 
-    ld bc, $0677
-    call Call_000_062e
-    ld bc, $06c0
-    call Call_000_0640
+    ld bc, VBlankCallback
+    call RegisterVBlankCallback
+    ld bc, SerialCallback
+    call RegisterSerialCallback
     ld a, $e4
     ldh [rBGP], a
     ldh [rOBP0], a
@@ -406,505 +415,78 @@ jr_000_019e:
     ld [$d6aa], a
     ld [$d6ab], a
     call $5c87
-    call Call_000_181c
+    call BatteryCheck
 
-jr_000_01df:
+HaltLoop::
     halt
-    jr jr_000_01df
+    jr HaltLoop
 
     ret
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserScroll::
+    db $e8, $f1, $f8, $11, $2a, $47, $4e, $78
+    db $c6, $01, $f5, $f8, $02, $f1, $22, $79
+    db $ce, $00, $22, $d1, $d5, $1a, $22, $13
+    db $1a, $22, $78, $c6, $03, $22, $79, $ce
+    db $00, $32, $2a, $5f, $2a, $57, $1a, $77
+    db $2a, $22, $af, $32, $2a, $23, $c6, $01
+    db $22, $3e, $00, $ce, $00, $22, $11, $a2
+    db $c2, $1a, $22, $13, $1a, $22, $78, $22
+    db $71, $f8, $09, $2a, $d6, $10, $7e, $de
+    db $00, $30, $2a, $f8, $07, $7e, $06, $00
+    db $f8, $02, $86, $23, $4f, $78, $8e, $47
+    db $03, $f8, $0b, $79, $96, $23, $78, $9e
+    db $30, $4f, $f8, $06, $3a, $2b, $3c, $5e
+    db $23, $66, $6b, $77, $f8, $0d, $2a, $66
+    db $6f, $36, $02, $18, $3c, $f8, $02, $2a
+    db $c6, $10, $4f, $7e, $ce, $00, $47, $f8
+    db $0b, $79, $96, $23, $78, $9e, $38, $17
+    db $fa, $a4, $c5, $b7, $20, $23, $c5, $cd
+    db $47, $0a, $c1, $21, $a2, $c2, $2a, $66
+    db $6f, $79, $95, $78, $9c, $30, $12, $f8
+    db $02, $2a, $4f, $46, $03, $e1, $e5, $79
+    db $22, $70, $f8, $0d, $2a, $66, $6f, $36
+    db $01, $e8, $0f, $c9, $e8, $fa, $f8, $08
+    db $2a, $4f, $46, $59, $50, $13, $13, $13
+    db $1a, $f8, $05, $77, $e1, $c5, $b7, $28
+    db $0b, $f8, $05, $7e, $3d, $12, $e1, $36
+    db $03, $e5, $18, $21, $03, $59, $50, $1a
+    db $f8, $02, $22, $13, $1a, $77, $3a, $b6
+    db $28, $13, $2a, $23, $c6, $ff, $32, $2a
+    db $23, $ce, $ff, $32, $2a, $02, $03, $7e
+    db $02, $e1, $36, $01, $e5, $e8, $06, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
 
-Call_000_0303:
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    jp Jump_000_2b31
+BrowserScrollDownHook::
+    db $f8, $12, $e5, $cd, $8c, $3d, $e8, $02
+    db $c3, $92, $16
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+
+BrowserScrollUpHook::
+    db $f8, $12, $e5, $cd, $97, $02, $e8, $02
+    db $c3, $92, $16
+
+BrowserPageEnd::
+    db $3b, $3b, $21, $a2, $c2, $2a, $4f, $46
+    db $78, $b1, $28, $32, $f8, $04, $7e, $f8
+    db $00, $77, $f8, $05, $7e, $f8, $01, $77
+    db $e1, $e5, $23, $2a, $66, $6f, $79, $95
+    db $4f, $78, $9c, $47, $3e, $10, $b9, $3e
+    db $00, $98, $30, $03, $01, $10, $00, $0d
+    db $e1, $e5, $23, $23, $23, $7e, $91, $28
+    db $05, $71, $e1, $36, $01, $e5, $33, $33
+    db $c9
 
     rst RST_38
     rst RST_38
@@ -964,6 +546,14 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+; [ezgb]
+; InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call
+; wrapper) does call z, InvalidFarCallTrap right after FarCallTrampoline — fires only if
+; the trampoline signals failure. Followed by ~82 more rst $38 bytes (alignment filler
+; reusing the same opcode, not separately reachable).
+
+InvalidFarCallTrap::
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1047,6 +637,9 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+    jp EnterGfxMode1
+
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1055,7 +648,24 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+BrowserSortAllStub::
+    db $cd, $8d, $07, $6b, $74, $08, $00, $c9
+
+FarCallDrawDetailBottom::
+    db $3e, $02, $f5, $33, $01, $0f, $00, $c5
+    db $f8, $05, $2a, $66, $6f, $e5, $cd, $8d
+    db $07, $ba, $42, $01, $00, $e8, $05, $c9
+
+BrowserPageEndHook::
+    db $f8, $12, $e5, $cd, $fb, $02, $e8, $02
+    db $c3, $92, $16
+
     rst RST_38
+
+FarCallScan::
+    db $cd, $8d, $07, $00, $45, $02, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1080,6 +690,16 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+fastlaunch_do_launch::
+    db $3e, $00, $f5, $33, $cd, $8d, $07, $e7
+    db $41, $04, $00, $e8, $01, $21, $a6, $c2
+    db $06, $80, $af, $77, $23, $05, $20, $fb
+    db $21, $a6, $c2, $36, $2f, $3e, $2f, $f5
+    db $33, $21, $a4, $c4, $e5, $cd, $89, $28
+    db $e8, $03, $13, $d5, $d5, $d5, $d5, $d5
+    db $c3, $38, $13
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1093,6 +713,14 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+fastlaunch_hook::
+    db $fa, $ff, $db, $b7, $20, $19, $3e, $01
+    db $ea, $ff, $db, $cd, $91, $36, $7b, $e6
+    db $20, $20, $0c, $cd, $00, $04, $fa, $a4
+    db $c4, $b7, $28, $03, $cd, $20, $04, $21
+    db $2d, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1106,6 +734,25 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+fastlaunch_boot::
+    db $cd, $d4, $03, $fa, $ff, $db, $b7, $c0
+    db $21, $ff, $db, $36, $01, $cd, $91, $36
+    db $7b, $07, $d8, $cd, $00, $04, $fa, $a4
+    db $c4, $b7, $c2, $20, $04, $c9
+
+DirListHideNameStub::
+    db $20, $03, $01, $e4, $c9, $c5, $c5, $cd
+    db $8d, $07, $00, $7c, $08, $00, $e8, $02
+    db $c1, $7b, $b7, $c2, $5a, $0a, $c3, $a7
+    db $0a
+
+FlPickHook::
+    db $fa, $fe, $db, $b7, $28, $0a, $cd, $8d
+    db $07, $76, $59, $04, $00, $c3, $43, $12
+    db $cd, $8d, $07, $0b, $48, $01, $00, $c3
+    db $64, $15
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1113,8 +760,18 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+FlSetExitHook::
+    db $fa, $fe, $db, $b7, $c2, $81, $0f, $f8
+    db $0e, $36, $02, $c3, $5b, $12
+
     rst RST_38
     rst RST_38
+
+FlPickCancelHook::
+    db $fa, $fe, $db, $b7, $ca, $92, $16, $c3
+    db $43, $12
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1129,15 +786,42 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
+
+RtcBootHook::
+    db $3e, $03, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $3e, $11, $ea, $00
+    db $40, $cd, $8d, $07, $e7, $41, $04, $00
+    db $c3, $54, $0e
+
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
+
+BatteryDryHook::
+    db $3e, $01, $ea, $fd, $db, $01, $01, $a2
+    db $3e, $88, $02, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
+
+LastRomFallbackHook::
+    db $3e, $05, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $fa, $fb, $db, $b7
+    db $c2, $e5, $12, $c3, $83, $13
+
+DirEnterBoundCheck::
+    db $21, $a0, $c2, $5e, $23, $56, $f8, $04
+    db $2a, $66, $6f, $19, $06, $00, $2a, $b7
+    db $28, $03, $04, $18, $f9, $21, $a6, $c2
+    db $0e, $00, $2a, $b7, $28, $03, $0c, $18
+    db $f9, $78, $81, $38, $0a, $fe, $fe, $30
+    db $06, $21, $d0, $16, $c3, $06, $14, $c3
+    db $81, $0f
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1184,219 +868,7 @@ Call_000_0303:
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    jp Jump_000_3968
+    jp EnterGfxMode2
 
 
     rst RST_38
@@ -1471,7 +943,11 @@ Call_000_0303:
     rst RST_38
     rst RST_38
 
-Call_000_0600:
+; [ezgb]
+; SetGfxMode: wGfxMode=L; jp 4-byte table at $01e2 (mode&3). Wrappers:
+; SetGfxModeStack ($06ef), GetGfxMode ($06f8) returns E=wGfxMode.
+
+SetGfxMode::
     ld a, l
     ld [$d6a3], a
     and $03
@@ -1483,59 +959,71 @@ Call_000_0600:
     jp hl
 
 
-Call_000_0610:
-    ld hl, $d6ac
-    jp Jump_000_064c
+RemoveVBlankCallback::
+    ld hl, wVBlankCallbacks
+    jp RemoveCallbackSlot
 
 
-Call_000_0616:
-    ld hl, $d6bc
-    jp Jump_000_064c
+RemoveLcdCallback::
+    ld hl, wLcdCallbacks
+    jp RemoveCallbackSlot
 
 
-Call_000_061c:
-    ld hl, $d6cc
-    jp Jump_000_064c
+RemoveTimerCallback::
+    ld hl, wTimerCallbacks
+    jp RemoveCallbackSlot
 
 
-Call_000_0622:
-    ld hl, $d6dc
-    jp Jump_000_064c
+RemoveSerialCallback::
+    ld hl, wSerialCallbacks
+    jp RemoveCallbackSlot
 
 
-Call_000_0628:
-    ld hl, $d6ec
-    jp Jump_000_064c
+RemoveJoypadCallback::
+    ld hl, wJoypadCallbacks
+    jp RemoveCallbackSlot
 
 
-Call_000_062e:
-    ld hl, $d6ac
-    jp Jump_000_066c
+; [ezgb]
+; RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).
+; Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,
+; RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*
+; wrappers at $0610–$0628. See decomp/src/register_callback_slots.c.
+
+RegisterVBlankCallback::
+    ld hl, wVBlankCallbacks
+    jp InstallCallbackSlot
 
 
-Call_000_0634:
-    ld hl, $d6bc
-    jp Jump_000_066c
+; [ezgb]
+; RegisterLcdCallback: install BC into wLcdCallbacks ($d6e3). EnterGfxMode1
+; registers LycCb_Bg8800 ($2a6a) here and enables STAT LYC after RegisterVBlankCallback.
+
+RegisterLcdCallback::
+    ld hl, wLcdCallbacks
+    jp InstallCallbackSlot
 
 
-Call_000_063a:
-    ld hl, $d6cc
-    jp Jump_000_066c
+RegisterTimerCallback::
+    ld hl, wTimerCallbacks
+    jp InstallCallbackSlot
 
 
-Call_000_0640:
-    ld hl, $d6dc
-    jp Jump_000_066c
+RegisterSerialCallback::
+    ld hl, wSerialCallbacks
+    jp InstallCallbackSlot
 
 
-Call_000_0646:
-    ld hl, $d6ec
-    jp Jump_000_066c
+RegisterJoypadCallback::
+    ld hl, wJoypadCallbacks
+    jp InstallCallbackSlot
 
 
-Call_000_064c:
-Jump_000_064c:
-jr_000_064c:
+; [ezgb]
+; RemoveCallbackSlot: find BC in uint16 list at HL; zero slot; compact tail (jr_000_0661).
+; Empty head → ret; mismatch → recurse/self walk; match → clear + slide remaining ptrs until NUL.
+
+RemoveCallbackSlot::
     ld a, [hl+]
     ld e, a
     ld d, [hl]
@@ -1544,11 +1032,11 @@ jr_000_064c:
 
     ld a, e
     cp c
-    jr nz, jr_000_064c
+    jr nz, RemoveCallbackSlot
 
     ld a, d
     cp b
-    jr nz, jr_000_064c
+    jr nz, RemoveCallbackSlot
 
     xor a
     ld [hl-], a
@@ -1559,7 +1047,7 @@ jr_000_064c:
     dec de
     inc hl
 
-jr_000_0661:
+RemoveCallbackSlot_compactTail::
     ld a, [hl+]
     ld [de], a
     ld b, a
@@ -1570,39 +1058,52 @@ jr_000_0661:
     or b
     ret z
 
-    jr jr_000_0661
+    jr RemoveCallbackSlot_compactTail
 
-Jump_000_066c:
-jr_000_066c:
+; [ezgb]
+; InstallCallbackSlot: walk uint16 list at HL, store BC (fn ptr) in first free slot.
+; RemoveCallbackSlot ($064c) finds BC and compacts the tail. HL/BC register ABI.
+; Occupied → skip+self; jr_000_0673: write BC at free NUL slot (hi then lo) ret.
+
+InstallCallbackSlot::
     ld a, [hl+]
     or [hl]
-    jr z, jr_000_0673
+    jr z, InstallCallbackSlot_storeFree
 
     inc hl
-    jr jr_000_066c
+    jr InstallCallbackSlot
 
-jr_000_0673:
+InstallCallbackSlot_storeFree::
     ld [hl], b
     dec hl
     ld [hl], c
     ret
 
 
+; [ezgb]
+; VBlankCallback: ++frame counter $d6d1/$d6d2 (jr_000_067f carry); call OAM DMA $FF80; set $d6ce=1.
+; Registered by KernelEntry via RegisterVBlankCallback. WaitVBlankFlag polls $d6ce.
+
+VBlankCallback::
     ld hl, $d6aa
     inc [hl]
-    jr nz, jr_000_067f
+    jr nz, VBlankCallback_oamDmaFlag
 
     inc hl
     inc [hl]
 
-jr_000_067f:
+VBlankCallback_oamDmaFlag::
     call $ff80
     ld a, $01
     ld [$d6a7], a
     ret
 
 
-Call_000_0688:
+; [ezgb]
+; WaitVBlankFlag: halt until VBlank sets $D6CE; no-op if LCD is off.
+; LCDC bit7 clear → ret. Clear $d6ce under di/ei; jr_000_0692: halt until $d6ce≠0; clear + ret.
+
+WaitVBlankFlag::
     ldh a, [rLCDC]
     add a
     ret nc
@@ -1612,32 +1113,36 @@ Call_000_0688:
     ld [$d6a7], a
     ei
 
-jr_000_0692:
+WaitVBlankFlag_haltLoop::
     halt
     nop
     ld a, [$d6a7]
     or a
-    jr z, jr_000_0692
+    jr z, WaitVBlankFlag_haltLoop
 
     xor a
     ld [$d6a7], a
     ret
 
 
-Call_000_069f:
+; [ezgb]
+; LcdOff: wait for a safe LY window, then clear LCDC bit 7; no-op if already off.
+; LCDC bit7 clear (add a → NC) → ret. jr_000_06a3: spin while LY≥$92; jr_000_06a9: spin while LY<$91; then LCDC&=$7f.
+
+LcdOff::
     ldh a, [rLCDC]
     add a
     ret nc
 
-jr_000_06a3:
+LcdOff_waitLyHigh::
     ldh a, [rLY]
     cp $92
-    jr nc, jr_000_06a3
+    jr nc, LcdOff_waitLyHigh
 
-jr_000_06a9:
+LcdOff_waitLyLow::
     ldh a, [rLY]
     cp $91
-    jr c, jr_000_06a9
+    jr c, LcdOff_waitLyLow
 
     ldh a, [rLCDC]
     and $7f
@@ -1645,195 +1150,234 @@ jr_000_06a9:
     ret
 
 
+; [ezgb]
+; OamDmaStub: source for HRAM OAM DMA at $FF80 (KernelEntry copies 10 bytes).
+; ldh [rDMA],$c0; jr_000_06bc: delay loop A=$28 then ret. Called from VBlankCallback.
+
+OamDmaStub::
     ld a, $c0
     ldh [rDMA], a
     ld a, $28
 
-jr_000_06bc:
+OamDmaStub_delayLoop::
     dec a
-    jr nz, jr_000_06bc
+    jr nz, OamDmaStub_delayLoop
 
     ret
 
 
+; [ezgb]
+; SerialCallback: ISR for serial xfer; state in $d6cd, payload $d6cc.
+; jr_000_06d0: state≠2 → if state==1 expect rSB=$55 else $d6cd=$04 (jr_000_06e0); state2: store rSB→$d6cc.
+; jr_000_06de/06e0: clear/set $d6cd, SC=0, SB=$66; jr_000_06ea: re-arm SC=$80 ret. Orphan before SetGfxModeStack.
+
+SerialCallback::
     ld a, [$d6a6]
     cp $02
-    jr nz, jr_000_06d0
+    jr nz, SerialCallback_ifState1
 
     ldh a, [rSB]
     ld [$d6a5], a
     ld a, $00
-    jr jr_000_06de
+    jr SerialCallback_clearState
 
-jr_000_06d0:
+SerialCallback_ifState1::
     cp $01
-    jr nz, jr_000_06ea
+    jr nz, SerialCallback_rearmSc
 
     ldh a, [rSB]
     cp $55
-    jr z, jr_000_06de
+    jr z, SerialCallback_clearState
 
     ld a, $04
-    jr jr_000_06e0
+    jr SerialCallback_storeState
 
-jr_000_06de:
+SerialCallback_clearState::
     ld a, $00
 
-jr_000_06e0:
+SerialCallback_storeState::
     ld [$d6a6], a
     xor a
     ldh [rSC], a
     ld a, $66
     ldh [rSB], a
 
-jr_000_06ea:
+SerialCallback_rearmSc::
     ld a, $80
     ldh [rSC], a
     ret
 
 
+SetGfxModeStack::
     ld hl, sp+$02
     ld l, [hl]
     ld h, $00
-    call Call_000_0600
+    call SetGfxMode
     ret
 
 
+GetGfxMode::
     ld hl, $d6a3
     ld e, [hl]
     ret
 
 
-Call_000_06fd:
+; [ezgb]
+; DiNest: di; ++wIntNest ($d6d0). Pair EiNest ($0706) decs and ei when nest hits 0.
+; FarCallTrampoline and critical sections use this nest counter.
+
+DiNest::
     di
-    ld a, [$d6a9]
+    ld a, [wIntNest]
     inc a
-    ld [$d6a9], a
+    ld [wIntNest], a
     ret
 
 
-Call_000_0706:
-    ld a, [$d6a9]
+; [ezgb]
+; EiNest: --wIntNest; ei only when counter reaches 0 (nested DI safe).
+
+EiNest::
+    ld a, [wIntNest]
     dec a
-    ld [$d6a9], a
+    ld [wIntNest], a
     ret nz
 
     ei
     ret
 
 
-    call Call_000_06fd
+; [ezgb]
+; SetIeReg: DiNest; clear rIF; load rIE from stack u8; EiNest. Safe IE write.
+
+SetIeReg::
+    call DiNest
     ld hl, sp+$02
     xor a
     ldh [rIF], a
     ld a, [hl]
     ldh [rIE], a
-    call Call_000_0706
+    call EiNest
     ret
 
 
+; [ezgb]
+; RemoveVBlankCallbackArg / RemoveLcdCallbackArg / RemoveTimerCallbackArg /
+; RemoveSerialCallbackArg / RemoveJoypadCallbackArg: stack ptr → BC then Remove*.
+; Register*CallbackArg siblings at $0756..$0782 likewise wrap Register*.
+
+RemoveVBlankCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0610
+    call RemoveVBlankCallback
     pop bc
     ret
 
 
+RemoveLcdCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0616
+    call RemoveLcdCallback
     pop bc
     ret
 
 
+RemoveTimerCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_061c
+    call RemoveTimerCallback
     pop bc
     ret
 
 
+RemoveSerialCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0622
+    call RemoveSerialCallback
     pop bc
     ret
 
 
+RemoveJoypadCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0628
+    call RemoveJoypadCallback
     pop bc
     ret
 
 
+RegisterVBlankCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_062e
+    call RegisterVBlankCallback
     pop bc
     ret
 
 
+RegisterLcdCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0634
+    call RegisterLcdCallback
     pop bc
     ret
 
 
+RegisterTimerCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_063a
+    call RegisterTimerCallback
     pop bc
     ret
 
 
+RegisterSerialCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0640
+    call RegisterSerialCallback
     pop bc
     ret
 
 
+RegisterJoypadCallbackArg::
     push bc
     ld hl, sp+$04
     ld c, [hl]
     inc hl
     ld b, [hl]
-    call Call_000_0646
+    call RegisterJoypadCallback
     pop bc
     ret
 
 
-Call_000_078d:
-    call Call_000_06fd
+FarCallTrampoline::
+    call DiNest
     pop hl
     ld e, [hl]
     inc hl
@@ -1843,12 +1387,12 @@ Call_000_078d:
     inc hl
     push hl
     ld b, a
-    ld a, [$d6a8]
+    ld a, [wRomBank]
     push af
     ld a, b
-    ld [$d6a8], a
+    ld [wRomBank], a
     ld [$2000], a
-    call Call_000_0706
+    call EiNest
     ld hl, $07ae
     push hl
     ld l, e
@@ -1856,49 +1400,59 @@ Call_000_078d:
     jp hl
 
 
-    call Call_000_06fd
+    call DiNest
     pop af
     ld [$2000], a
-    ld [$d6a8], a
-    call Call_000_0706
+    ld [wRomBank], a
+    call EiNest
     ret
 
 
-Call_000_07bc:
-Jump_000_07bc:
-    call Call_000_3691
+; [ezgb]
+; WaitJoypadSelect: spin ReadJoypad until pad==$40 (SELECT); then Delay+$00c8.
+; Jump_000_07ce: retry; jr_000_07d1: delay ret. Orphan before PlotBitRowXY.
+
+WaitJoypadSelect::
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     sub $40
-    jp nz, Jump_000_07ce
+    jp nz, WaitJoypadSelect_retry
 
     or b
-    jp nz, Jump_000_07ce
+    jp nz, WaitJoypadSelect_retry
 
-    jr jr_000_07d1
+    jr WaitJoypadSelect_delayRet
 
-Jump_000_07ce:
-    jp Jump_000_07bc
+WaitJoypadSelect_retry::
+    jp WaitJoypadSelect
 
 
-jr_000_07d1:
+WaitJoypadSelect_delayRet::
     ld hl, $00c8
     push hl
-    call Call_000_36da
+    call Delay
     add sp, $02
     ret
 
 
+; [ezgb]
+; PlotBitRowXY(flags@sp+$02, x@sp+$03, y@sp+$04): plot up to 8 pixels via PlotPixelXY. bit0→x+7 … bit7→x (MSB left).
+; Per bit: test flag; set → jr_ plot PlotPixelXY(x+offset,y); clear → Jump_ skip. Chain:
+; bit0 jr_000_07e5 / Jump_000_07f7; bit1 jr_000_0801 / Jump_000_0813; bit2 jr_000_081d / Jump_000_082f; bit3 jr_000_0839 / Jump_000_084c;
+; bit4 jr_000_0856 / Jump_000_0868; bit5 jr_000_0872 / Jump_000_0883; bit6 jr_000_088d / Jump_000_089d; bit7 jr_000_08a7 / Jump_000_08b5 ret.
+
+PlotBitRowXY::
     ld hl, sp+$02
     ld a, [hl]
     and $01
-    jr nz, jr_000_07e5
+    jr nz, PlotBitRowXY_bit0Plot
 
-    jp Jump_000_07f7
+    jp PlotBitRowXY_bit0Skip
 
 
-jr_000_07e5:
+PlotBitRowXY_bit0Plot::
     ld hl, sp+$03
     ld a, [hl]
     add $07
@@ -1910,22 +1464,20 @@ jr_000_07e5:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_07f7:
+PlotBitRowXY_bit0Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $02
-    jr nz, jr_000_0801
+    jr nz, PlotBitRowXY_bit1Plot
 
-    jp Jump_000_0813
+    jp PlotBitRowXY_bit1Skip
 
 
-jr_000_0801:
+PlotBitRowXY_bit1Plot::
     ld hl, sp+$03
-
-Call_000_0803:
     ld a, [hl]
     add $06
     ld c, a
@@ -1936,19 +1488,19 @@ Call_000_0803:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_0813:
+PlotBitRowXY_bit1Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $04
-    jr nz, jr_000_081d
+    jr nz, PlotBitRowXY_bit2Plot
 
-    jp Jump_000_082f
+    jp PlotBitRowXY_bit2Skip
 
 
-jr_000_081d:
+PlotBitRowXY_bit2Plot::
     ld hl, sp+$03
     ld a, [hl]
     add $05
@@ -1960,19 +1512,19 @@ jr_000_081d:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_082f:
+PlotBitRowXY_bit2Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $08
-    jr nz, jr_000_0839
+    jr nz, PlotBitRowXY_bit3Plot
 
-    jp Jump_000_084c
+    jp PlotBitRowXY_bit3Skip
 
 
-jr_000_0839:
+PlotBitRowXY_bit3Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -1986,19 +1538,19 @@ jr_000_0839:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_084c:
+PlotBitRowXY_bit3Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $10
-    jr nz, jr_000_0856
+    jr nz, PlotBitRowXY_bit4Plot
 
-    jp Jump_000_0868
+    jp PlotBitRowXY_bit4Skip
 
 
-jr_000_0856:
+PlotBitRowXY_bit4Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2011,19 +1563,19 @@ jr_000_0856:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_0868:
+PlotBitRowXY_bit4Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $20
-    jr nz, jr_000_0872
+    jr nz, PlotBitRowXY_bit5Plot
 
-    jp Jump_000_0883
+    jp PlotBitRowXY_bit5Skip
 
 
-jr_000_0872:
+PlotBitRowXY_bit5Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2035,19 +1587,19 @@ jr_000_0872:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_0883:
+PlotBitRowXY_bit5Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $40
-    jr nz, jr_000_088d
+    jr nz, PlotBitRowXY_bit6Plot
 
-    jp Jump_000_089d
+    jp PlotBitRowXY_bit6Skip
 
 
-jr_000_088d:
+PlotBitRowXY_bit6Plot::
     ld hl, sp+$03
     ld c, [hl]
     inc c
@@ -2058,19 +1610,19 @@ jr_000_088d:
     ld a, c
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_089d:
+PlotBitRowXY_bit6Skip::
     ld hl, sp+$02
     ld a, [hl]
     and $80
-    jr nz, jr_000_08a7
+    jr nz, PlotBitRowXY_bit7Plot
 
-    jp Jump_000_08b5
+    jp PlotBitRowXY_ret
 
 
-jr_000_08a7:
+PlotBitRowXY_bit7Plot::
     ld hl, sp+$04
     ld a, [hl]
     push af
@@ -2079,17 +1631,23 @@ jr_000_08a7:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_243d
+    call PlotPixelXY
     add sp, $02
 
-Jump_000_08b5:
+PlotBitRowXY_ret::
     ret
 
 
     ret
 
 
-Call_000_08b7:
+; [ezgb]
+; DrawString(ptr, len, screen pos): highest fan-in text primitive (~86 callers). SetTextCursor then glyph loop.
+; len==0 → max=$11 else Jump_000_08d5 copy len; both meet Jump_000_08db stash ptr@sp+$00, C=0.
+; Jump_000_08e5: if C≥max → Jump_000_0927 ret; *ptr==0 → Jump_000_0909 StoreDrawParams + DrawGlyphAdvance $20; else ++ptr (jr_000_08fd) DrawGlyphAdvance(char).
+; Jump_000_0923: ++C → Jump_000_08e5; Jump_000_0927 ret.
+
+DrawString::
     push af
     dec sp
     ld hl, sp+$09
@@ -2100,25 +1658,25 @@ Call_000_08b7:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_23ac
+    call SetTextCursor
     add sp, $02
     xor a
     ld hl, sp+$07
     or [hl]
-    jp nz, Jump_000_08d5
+    jp nz, DrawString_copyLen
 
     ld hl, sp+$02
     ld [hl], $11
-    jp Jump_000_08db
+    jp DrawString_stashPtr
 
 
-Jump_000_08d5:
+DrawString_copyLen::
     ld hl, sp+$07
     ld a, [hl]
     ld hl, sp+$02
     ld [hl], a
 
-Jump_000_08db:
+DrawString_stashPtr::
     ld hl, sp+$05
     ld a, [hl+]
     ld e, [hl]
@@ -2127,11 +1685,11 @@ Jump_000_08db:
     ld [hl], e
     ld c, $00
 
-Jump_000_08e5:
+DrawString_glyphLoop::
     ld a, c
     ld hl, sp+$02
     sub [hl]
-    jp nc, Jump_000_0927
+    jp nc, DrawString_epilogueRet
 
     dec hl
     dec hl
@@ -2141,53 +1699,62 @@ Jump_000_08e5:
     ld a, [de]
     ld b, a
     or a
-    jp z, Jump_000_0909
+    jp z, DrawString_drawSpace
 
     dec hl
     inc [hl]
-    jr nz, jr_000_08fd
+    jr nz, DrawString_drawChar
 
     inc hl
     inc [hl]
 
-jr_000_08fd:
+DrawString_drawChar::
     push bc
     push bc
     inc sp
-    call Call_000_23b7
+    call DrawGlyphAdvance
     add sp, $01
     pop bc
-    jp Jump_000_0923
+    jp DrawString_incC
 
 
-Jump_000_0909:
+DrawString_drawSpace::
     push bc
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_23d8
+    nop
+    nop
+    nop
     add sp, $03
     pop bc
     push bc
     ld a, $20
     push af
     inc sp
-    call Call_000_23b7
+    call DrawGlyphAdvance
     add sp, $01
     pop bc
 
-Jump_000_0923:
+DrawString_incC::
     inc c
-    jp Jump_000_08e5
+    jp DrawString_glyphLoop
 
 
-Jump_000_0927:
+DrawString_epilogueRet::
     add sp, $03
     ret
 
 
+; [ezgb]
+; DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
+; Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
+; See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).
+; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; ≥$14 → 0; Jump_000_0982 ret.
+
+DrawU32Decimal::
     add sp, -$15
     ld hl, sp+$01
     ld c, l
@@ -2206,13 +1773,13 @@ Jump_000_0927:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_16db
+    call U32ToAscii_B0
     add sp, $07
     ld hl, sp+$01
     ld c, l
     ld b, h
     push bc
-    call Call_000_29dc
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -2234,63 +1801,60 @@ Jump_000_0927:
     push af
     inc sp
     push bc
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $cc30
     inc [hl]
     ld a, $14
     ld hl, $cc30
     sub [hl]
-    jp nc, Jump_000_0986
+    jp nc, DrawU32Decimal_epilogueRet
 
     ld hl, $cc30
     ld [hl], $00
     ld hl, $cc2f
     inc [hl]
 
-Jump_000_0986:
+DrawU32Decimal_epilogueRet::
     add sp, $15
     ret
 
 
-Call_000_0989:
+; [ezgb]
+; SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);
+; then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.
+; Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr.
+
+SdReadRetryCount::
     ld hl, $cc2f
     ld a, [hl]
     push af
     inc sp
     ld hl, $0100
     push hl
-    ld hl, $09a0
+    ld hl, FileSystemErrorStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_099c:
-    jp Jump_000_099c
+SdReadRetryCount_errorHang::
+    jp SdReadRetryCount_errorHang
 
 
     ret
 
 
-    ld b, [hl]
-    ld l, c
-    ld l, h
-    ld h, l
-    jr nz, jr_000_0a19
+FileSystemErrorStr::
+    db "File system error!", $00
 
-    ld a, c
-    ld [hl], e
-    ld [hl], h
-    ld h, l
-    ld l, l
-    jr nz, jr_000_0a12
+; [ezgb]
+; MemCmp_B0(s1@sp+$0b, s2@sp+$0d, n@sp+$0f): FatFs mem_cmp twin of MemCmp_B5/B9. Frame -$09; Diff@sp+$03=0.
+; Jump_000_09d0: --n; if was0 → Jump_000_0a11; else *s1++ (jr_000_09e6 carry), *s2++ (jr_000_09f9 carry).
+; jr_000_09f9: sex(*s1)-*s2 → diff@sp+$03; if 0 → Jump_000_09d0 else fall Jump_000_0a11.
+; Jump_000_0a11: DE=diff ret. DirList hides ezgb.dat via this.
 
-    ld [hl], d
-    ld [hl], d
-    ld l, a
-    ld [hl], d
-    ld hl, $e800
-    rst RST_30
+MemCmp_B0::
+    add sp, -$09
     ld hl, sp+$0b
     ld c, [hl]
     inc hl
@@ -2314,13 +1878,13 @@ Jump_000_099c:
     ld hl, sp+$02
     ld [hl], a
 
-Jump_000_09d4:
+MemCmp_B0_decN::
     ld hl, sp+$02
     ld b, [hl]
     dec [hl]
     xor a
     or b
-    jp z, Jump_000_0a15
+    jp z, MemCmp_B0_retDiff
 
     ld hl, sp+$07
     ld e, [hl]
@@ -2330,12 +1894,12 @@ Jump_000_09d4:
     ld b, a
     dec hl
     inc [hl]
-    jr nz, jr_000_09ea
+    jr nz, MemCmp_B0_incS1
 
     inc hl
     inc [hl]
 
-jr_000_09ea:
+MemCmp_B0_incS1::
     ld hl, sp+$00
     ld [hl], b
     inc hl
@@ -2348,12 +1912,12 @@ jr_000_09ea:
     ld c, a
     dec hl
     inc [hl]
-    jr nz, jr_000_09fd
+    jr nz, MemCmp_B0_cmpBytes
 
     inc hl
     inc [hl]
 
-jr_000_09fd:
+MemCmp_B0_cmpBytes::
     ld b, $00
     ld hl, sp+$00
     ld e, [hl]
@@ -2373,22 +1937,22 @@ jr_000_09fd:
     ld [hl], b
     ld a, c
     or b
+    jp z, MemCmp_B0_decN
 
-jr_000_0a12:
-    jp z, Jump_000_09d4
-
-Jump_000_0a15:
+MemCmp_B0_retDiff::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
-
-jr_000_0a19:
     ld d, [hl]
     add sp, $09
     ret
 
 
-Call_000_0a1d:
+; [ezgb]
+; MemSet8_B0(dest@sp+$04, byte@sp+$06, n@sp+$08): fill n bytes (u8 count) with byte.
+; Jump_000_0a27: while n--: *dest++=byte (jr_000_0a3d); Jump_000_0a40 ret. Sibling of Memset; used near DirList.
+
+MemSet8_B0::
     push af
     ld hl, sp+$04
     ld c, [hl]
@@ -2401,12 +1965,12 @@ Call_000_0a1d:
     ld hl, sp+$08
     ld c, [hl]
 
-Jump_000_0a2b:
+MemSet8_B0_decN::
     ld b, c
     dec c
     xor a
     or b
-    jp z, Jump_000_0a44
+    jp z, MemSet8_B0_epilogueRet
 
     ld hl, sp+$06
     ld a, [hl]
@@ -2417,21 +1981,28 @@ Jump_000_0a2b:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_0a41
+    jr nz, MemSet8_B0_storeCont
 
     inc hl
     inc [hl]
 
-jr_000_0a41:
-    jp Jump_000_0a2b
+MemSet8_B0_storeCont::
+    jp MemSet8_B0_decN
 
 
-Jump_000_0a44:
+MemSet8_B0_epilogueRet::
     add sp, $02
     ret
 
 
-Call_000_0a47:
+; [ezgb]
+; DirList: enumerate into $c2a0; count $c2a2/$c2a3; cap 16 (sp+$04).
+; Jump_000_0a56: farcall readdir; fail/empty → Jump_000_0a83 → Jump_000_0bc5 ($c5a4=1); Jump_000_0a8b skip ".".
+; Jump_000_0aa3/jr_000_0abf: bank slot; Jump_000_0aeb: if not dir → Jump_000_0b41; else jr_000_0aee attr $10 + ApplyBasename → jr_000_0b3e → Jump_000_0bb8.
+; Jump_000_0b41: need AM_ARC else Jump_000_0b4c → Jump_000_0bb8; jr_000_0b4f MemCmp EzgbDatStr → skip Jump_000_0a56; else store $20+basename.
+; Jump_000_0bb8/jr_000_0bb8: if count<$10 Jump_000_0bc2 → Jump_000_0a56 else Jump_000_0bc5/jr_000_0bc5 ret.
+
+DirList::
     add sp, -$09
     ld hl, sp+$04
     ld [hl], $00
@@ -2444,11 +2015,11 @@ Call_000_0a47:
     ld [hl+], a
     ld [hl], d
 
-Jump_000_0a5a:
+DirList_readdir::
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -2458,7 +2029,7 @@ Jump_000_0a5a:
     push hl
     ld hl, $c9f5
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     halt
     ld [hl], l
     dec b
@@ -2467,24 +2038,24 @@ Jump_000_0a5a:
     ld c, e
     ld a, c
     or a
-    jp nz, Jump_000_0a87
+    jp nz, DirList_failEmpty
 
     ld bc, $c9e4
     ld a, [bc]
     ld c, a
     or a
-    jp nz, Jump_000_0a8f
+    jp nz, DirList_skipDot
 
-Jump_000_0a87:
+DirList_failEmpty::
     ld hl, $c5a4
     ld [hl], $01
-    jp Jump_000_0bc9
+    jp DirList_epilogueRet
 
 
-Jump_000_0a8f:
+DirList_skipDot::
     ld a, c
     sub $2e
-    jp z, Jump_000_0a5a
+    jp z, DirList_readdir
 
     ld bc, $c9f1
     ld e, c
@@ -2496,11 +2067,12 @@ Jump_000_0a8f:
     ld b, a
     ld a, [bc]
     or a
-    jp nz, Jump_000_0aa7
+    jp $04ae
+
 
     ld bc, $c9e4
 
-Jump_000_0aa7:
+DirList_bankSlot::
     ld hl, sp+$07
     ld [hl], c
     inc hl
@@ -2508,7 +2080,7 @@ Jump_000_0aa7:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -2520,11 +2092,11 @@ Jump_000_0aa7:
     ld b, [hl]
     ld a, $05
 
-jr_000_0ac3:
+DirList_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_0ac3
+    jr nz, DirList_bankShift
 
     ld hl, sp+$05
     ld [hl], c
@@ -2547,15 +2119,15 @@ jr_000_0ac3:
     ld a, [de]
     ld c, a
     sub $10
-    jp nz, Jump_000_0aef
+    jp nz, DirList_notDir
 
-    jr jr_000_0af2
+    jr DirList_dirAttr
 
-Jump_000_0aef:
-    jp Jump_000_0b45
+DirList_notDir::
+    jp DirList_needAmArc
 
 
-jr_000_0af2:
+DirList_dirAttr::
     ld hl, sp+$06
     ld e, [hl]
     ld d, $00
@@ -2605,52 +2177,52 @@ jr_000_0af2:
     ld l, a
     push hl
     push bc
-    call Call_000_1d29
+    call ApplyBasename
     add sp, $04
     ld hl, sp+$04
     inc [hl]
     ld hl, $c2a2
     inc [hl]
-    jr nz, jr_000_0b42
+    jr nz, DirList_afterDirStore
 
     ld hl, $c2a3
     inc [hl]
 
-jr_000_0b42:
-    jp Jump_000_0bbc
+DirList_afterDirStore::
+    jp DirList_countCheck
 
 
-Jump_000_0b45:
+DirList_needAmArc::
     ld a, c
     and $20
     ld c, a
     sub $20
-    jp nz, Jump_000_0b50
+    jp nz, DirList_skipNoArc
 
-    jr jr_000_0b53
+    jr DirList_memcmpEzgbDat
 
-Jump_000_0b50:
-    jp Jump_000_0bbc
+DirList_skipNoArc::
+    jp DirList_countCheck
 
 
-jr_000_0b53:
+DirList_memcmpEzgbDat::
     ld a, $08
     push af
     inc sp
-    ld hl, $0bcc
+    ld hl, EzgbDatStr
     push hl
     ld hl, sp+$0a
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call $09b3
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_0a5a
+    jp z, DirList_readdir
 
     ld hl, sp+$06
     ld e, [hl]
@@ -2703,46 +2275,44 @@ jr_000_0b53:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_1d29
+    call ApplyBasename
     add sp, $04
     ld hl, sp+$04
     inc [hl]
     ld hl, $c2a2
     inc [hl]
-    jr nz, jr_000_0bbc
+    jr nz, DirList_countCheck
 
     ld hl, $c2a3
     inc [hl]
 
-Jump_000_0bbc:
-jr_000_0bbc:
+DirList_countCheck::
     ld hl, sp+$04
     ld a, [hl]
     sub $10
-    jp nz, Jump_000_0bc6
+    jp nz, DirList_moreEntries
 
-    jr jr_000_0bc9
+    jr DirList_epilogueRet
 
-Jump_000_0bc6:
-    jp Jump_000_0a5a
+DirList_moreEntries::
+    jp DirList_readdir
 
 
-Jump_000_0bc9:
-jr_000_0bc9:
+DirList_epilogueRet::
     add sp, $09
     ret
 
 
-    ld h, l
-    ld a, d
-    ld h, a
-    ld h, d
-    ld l, $64
-    ld h, c
-    ld [hl], h
-    nop
+EzgbDatStr::
+    db "ezgb.dat", $00
 
-Call_000_0bd5:
+; [ezgb]
+; DrawDirEntryLabel(size@sp+$12, ofs@sp+$16, y@sp+$18): frame -$10. size≤$14 → Jump_000_0ddd skip.
+; jr_000_0c0a: >>5 bank from ofs; attr+$fe==$10 → jr_000_0c84 width $11 else Jump_000_0c81 → Jump_000_0c8b width $14.
+; Jump_000_0c8f: if namelen≥width → Jump_000_0ddd; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → Jump_000_0ddd.
+; Jump_000_0d2c: update $cc31/32; Strncpy name+$fe ellipsis into $c4a4; DrawString at y+2; Jump_000_0ddd epilogue.
+
+DrawDirEntryLabel::
     add sp, -$10
     ld a, $14
     ld hl, sp+$12
@@ -2756,14 +2326,14 @@ Call_000_0bd5:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_000_0de1
+    jp nc, DrawDirEntryLabel_epilogueRet
 
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
-    call Call_000_23d8
+    call StoreDrawParams
     add sp, $03
     ld hl, sp+$16
     ld e, [hl]
@@ -2785,11 +2355,11 @@ Call_000_0bd5:
     ld b, [hl]
     ld a, $05
 
-jr_000_0c0e:
+DrawDirEntryLabel_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_0c0e
+    jr nz, DrawDirEntryLabel_bankShift
 
     ld hl, sp+$0c
     ld [hl], c
@@ -2842,7 +2412,7 @@ jr_000_0c0e:
     ld c, l
     ld b, h
     push bc
-    call Call_000_29dc
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -2867,30 +2437,30 @@ jr_000_0c0e:
     ld a, [bc]
     ld c, a
     sub $10
-    jp nz, Jump_000_0c85
+    jp nz, DrawDirEntryLabel_skipDirWidth
 
-    jr jr_000_0c88
+    jr DrawDirEntryLabel_dirWidth11
 
-Jump_000_0c85:
-    jp Jump_000_0c8f
+DrawDirEntryLabel_skipDirWidth::
+    jp DrawDirEntryLabel_fileWidth14
 
 
-jr_000_0c88:
+DrawDirEntryLabel_dirWidth11::
     ld hl, sp+$0f
-    ld [hl], $11
-    jp Jump_000_0c93
+    ld [hl], $10
+    jp DrawDirEntryLabel_scrollCheck
 
 
-Jump_000_0c8f:
+DrawDirEntryLabel_fileWidth14::
     ld hl, sp+$0f
-    ld [hl], $14
+    ld [hl], $13
 
-Jump_000_0c93:
+DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$0f
     ld a, [hl]
     dec hl
     sub [hl]
-    jp nc, Jump_000_0de1
+    jp nc, DrawDirEntryLabel_epilogueRet
 
     ld hl, sp+$12
     ld e, [hl]
@@ -2930,7 +2500,7 @@ Jump_000_0c93:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_25d6
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -2971,7 +2541,7 @@ Jump_000_0c93:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2473
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -2995,15 +2565,15 @@ Jump_000_0c93:
     ld a, [hl]
     ld hl, sp+$0a
     sub [hl]
-    jp nz, Jump_000_0d30
+    jp nz, DrawDirEntryLabel_drawEllipsis
 
     ld hl, $cc32
     ld a, [hl]
     ld hl, sp+$0b
     sub [hl]
-    jp z, Jump_000_0de1
+    jp z, DrawDirEntryLabel_epilogueRet
 
-Jump_000_0d30:
+DrawDirEntryLabel_drawEllipsis::
     ld hl, sp+$0a
     ld a, [hl+]
     ld e, [hl]
@@ -3035,20 +2605,20 @@ Jump_000_0d30:
     push bc
     ld hl, $c4a4
     push hl
-    call Call_000_291a
+    call Strncpy
     add sp, $06
     ld hl, $0de4
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
     inc b
     ld hl, $c4a4
     push hl
-    call Call_000_29dc
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -3078,7 +2648,7 @@ Jump_000_0d30:
     ld [hl], d
     ld hl, $c4a4
     push hl
-    call Call_000_29dc
+    call CStrLen
     add sp, $02
     ld b, d
     ld c, e
@@ -3097,7 +2667,7 @@ Jump_000_0d30:
     ld l, a
     push hl
     push bc
-    call Call_000_291a
+    call Strncpy
     add sp, $06
     ld hl, sp+$18
     ld c, [hl]
@@ -3106,7 +2676,7 @@ Jump_000_0d30:
     ld a, c
     push af
     inc sp
-    ld a, $00
+    ld a, $01
     push af
     inc sp
     ld hl, sp+$11
@@ -3115,20 +2685,25 @@ Jump_000_0d30:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_0de1:
+DrawDirEntryLabel_epilogueRet::
     add sp, $10
     ret
 
 
-    jr nz, jr_000_0e06
+    jr nz, SdMenuMain_afterMount
 
-    jr nz, jr_000_0de8
+    jr nz, SdMenuMain
 
-Call_000_0de8:
-jr_000_0de8:
+; [ezgb]
+; SdMenuMain: SD init, BACKUPSAVE, file browser. Kernel FPGA path; stays in menu loop.
+; FarCall SD mount (inline after call); jr_000_0e02: check status@sp+$16; NZ → DrawString MicroSdInitErrorStr; Jump_000_0e21 hang.
+; Jump_000_0e24: OK string; page $11 via $4000; if $A000≠$AA → GotoFileBrowser else jr BackupBranchEntry.
+; Launched games never enter here. BackupBranchEntry clears $A000 (see 00:0e76 / 01:6747).
+
+SdMenuMain::
     add sp, -$17
     ld hl, $c2a0
     ld [hl], $00
@@ -3141,12 +2716,12 @@ jr_000_0de8:
     push hl
     ld hl, $c7a9
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, de
     ld l, [hl]
     dec b
 
-jr_000_0e06:
+SdMenuMain_afterMount::
     nop
     add sp, $05
     ld c, e
@@ -3154,7 +2729,7 @@ jr_000_0e06:
     ld [hl], c
     ld a, [hl]
     or a
-    jp z, Jump_000_0e28
+    jp z, SdMenuMain_mountOk
 
     ld hl, $cc2f
     ld a, [hl]
@@ -3162,25 +2737,25 @@ jr_000_0e06:
     inc sp
     ld hl, $0014
     push hl
-    ld hl, $169c
+    ld hl, MicroSdInitErrorStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_0e25:
-    jp Jump_000_0e25
+SdMenuMain_initErrorHang::
+    jp SdMenuMain_initErrorHang
 
 
-Jump_000_0e28:
+SdMenuMain_mountOk::
     ld hl, $cc2f
     ld a, [hl]
     push af
     inc sp
     ld hl, $0014
     push hl
-    ld hl, $16b4
+    ld hl, MicroSdInitOkStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, sp+$06
     ld [hl], $00
@@ -3195,10 +2770,12 @@ Jump_000_0e28:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
-    rst RST_20
-    ld b, c
-    inc b
+    jp $0510
+
+
+    nop
+    nop
+    nop
     nop
     add sp, $01
     ld hl, sp+$06
@@ -3218,20 +2795,26 @@ Jump_000_0e28:
     dec hl
     ld a, [hl]
     sub $aa
-    jp nz, Jump_000_0e77
+    jp nz, GotoFileBrowser
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Jump_000_0e77
+    jp nz, GotoFileBrowser
 
-    jr jr_000_0e7a
+    jr BackupBranchEntry
 
-Jump_000_0e77:
-    jp Jump_000_0f4f
+GotoFileBrowser::
+    jp BackupBranchEntry_seedSlashPath
 
 
-jr_000_0e7a:
+; [ezgb]
+; BackupBranchEntry: save stamp → SAVER basename, then fall into FileBrowserEntry.
+; Read $A202→$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.
+; Jump_000_0ec4: copy $A010.. → $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.
+; Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d).
+
+BackupBranchEntry::
     ld hl, sp+$06
     ld [hl], $00
     inc hl
@@ -3280,7 +2863,7 @@ jr_000_0e7a:
     inc hl
     ld [hl], $00
 
-Jump_000_0eb8:
+BackupBranchEntry_copyBasename::
     ld hl, sp+$06
     ld [hl], b
     inc hl
@@ -3295,7 +2878,7 @@ Jump_000_0eb8:
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, Jump_000_0efc
+    jp nc, BackupBranchEntry_openSaverDir
 
     ld de, $c3a5
     ld hl, sp+$0f
@@ -3328,16 +2911,16 @@ Jump_000_0eb8:
     ld [de], a
     ld hl, sp+$0f
     inc [hl]
-    jr nz, jr_000_0ef9
+    jr nz, BackupBranchEntry_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_0ef9:
-    jp Jump_000_0eb8
+BackupBranchEntry_copyCont::
+    jp BackupBranchEntry_copyBasename
 
 
-Jump_000_0efc:
+BackupBranchEntry_openSaverDir::
     ld de, $c3a5
     ld l, b
     ld h, $00
@@ -3357,7 +2940,7 @@ Jump_000_0efc:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3365,9 +2948,9 @@ Jump_000_0efc:
     add sp, $01
     pop bc
     push bc
-    ld hl, $16c9
+    ld hl, SaverDirStr
     push hl
-    call Call_000_1998
+    call FarCall_09_77ff
     add sp, $02
     pop bc
     ld hl, sp+$11
@@ -3392,13 +2975,13 @@ Jump_000_0efc:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     jr jr_000_0fa6
 
     ld bc, $e800
     dec b
 
-Jump_000_0f4f:
+BackupBranchEntry_seedSlashPath::
     ld hl, sp+$00
     ld [hl], $00
     inc hl
@@ -3412,7 +2995,7 @@ Jump_000_0f4f:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3425,13 +3008,20 @@ Jump_000_0f4f:
     inc sp
     ld hl, $c2a6
     push hl
-    call Call_000_28ec
+    call Memset
     add sp, $05
     ld de, $c2a6
     ld a, $2f
     ld [de], a
 
-Jump_000_0f81:
+; [ezgb]
+; FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail SdReadRetryCount. Main browser loop.
+; Jump_000_0fcd/Jump_000_0ff4: zero $c2a2/$c2a3; memset $c4a4+$c9db; wire $c9f1→$c4a4, $c9f3=$00fe; DirList.
+; jr_000_1071 redraw: dirty → Jump_000_1089/jr_000_108c (code3 farcall+label) or Jump_000_10b1 (code≥2); Jump_000_10df DrawDirEntryLabel if count≠0 → Jump_000_1107.
+; Jump_000_1107 Delay+ReadJoypad: $02 jr_000_1128 page-- (Jump_000_114d/Jump_000_1154/Jump_000_115b/Jump_000_116b); $01 jr_000_1175 DirList + Jump_000_1180 page++ (Jump_000_11bf/Jump_000_11d6/Jump_000_11dd).
+; $04/$08 jr_000_11e7/Jump_000_11f6 / jr_000_1200/Jump_000_1223 row; $40 jr_000_122d mode (Jump_000_1238/jr_000_123b/Jump_000_1242/Jump_000_124c/jr_000_124f farcall) → Jump_000_1267/Jump_000_1271/jr_000_1274 or MenuKeyDispatch.
+
+FileBrowserEntry::
     ld hl, $cc2f
     ld [hl], $00
     ld hl, $cc30
@@ -3440,14 +3030,14 @@ Jump_000_0f81:
     ld [hl], $00
     ld hl, $c5a4
     ld [hl], $00
-    call Call_000_078d
+    call FarCallTrampoline
     ld b, h
     ld [hl], e
     ld [$3e00], sp
     nop
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3457,7 +3047,7 @@ jr_000_0fa6:
     add sp, $01
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     and h
     ld l, [hl]
     dec b
@@ -3468,11 +3058,11 @@ jr_000_0fa6:
     ld [hl], b
     ld a, [hl]
     or a
-    jp z, Jump_000_0fc1
+    jp z, FileBrowserEntry_clearPageIdx
 
-    call Call_000_0989
+    call SdReadRetryCount
 
-Jump_000_0fc1:
+FileBrowserEntry_clearPageIdx::
     ld hl, $c2a2
     ld [hl], $00
     ld hl, $c2a3
@@ -3481,7 +3071,7 @@ Jump_000_0fc1:
     push hl
     ld hl, $c9f5
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     db $dd
     ld [hl], e
     dec b
@@ -3492,11 +3082,11 @@ Jump_000_0fc1:
     ld [hl], b
     ld a, [hl]
     or a
-    jp z, Jump_000_0fe8
+    jp z, FileBrowserEntry_memsetWireDirList
 
-    call Call_000_0989
+    call SdReadRetryCount
 
-Jump_000_0fe8:
+FileBrowserEntry_memsetWireDirList::
     ld hl, $00ff
     push hl
     ld a, $00
@@ -3504,7 +3094,7 @@ Jump_000_0fe8:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_28ec
+    call Memset
     add sp, $05
     ld c, $db
     ld b, $c9
@@ -3514,7 +3104,7 @@ Jump_000_0fe8:
     push af
     inc sp
     push bc
-    call Call_000_28ec
+    call Memset
     add sp, $05
     ld bc, $c9f1
     ld e, c
@@ -3532,7 +3122,7 @@ Jump_000_0fe8:
     inc de
     ld a, $00
     ld [de], a
-    call Call_000_0a47
+    call $0490
     ld hl, sp+$15
     ld [hl], $00
     dec hl
@@ -3552,37 +3142,37 @@ Jump_000_0fe8:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
     ld bc, $033e
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
     ld bc, $0af8
     inc [hl]
-    jr nz, jr_000_1065
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
-    jr nz, jr_000_1065
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
-    jr nz, jr_000_1065
+    jr nz, FileBrowserEntry_redraw
 
     inc hl
     inc [hl]
 
-jr_000_1065:
+FileBrowserEntry_redraw::
     xor a
     ld hl, sp+$12
     or [hl]
-    jp z, Jump_000_10d3
+    jp z, FileBrowserEntry_drawDirEntryLabel
 
     xor a
     ld hl, sp+$0a
@@ -3593,19 +3183,19 @@ jr_000_1065:
     ld hl, sp+$12
     ld a, [hl]
     sub $01
-    jp nz, Jump_000_107d
+    jp nz, FileBrowserEntry_redrawSkipCode3
 
-    jr jr_000_1080
+    jr FileBrowserEntry_redrawCode3Farcall
 
-Jump_000_107d:
-    jp Jump_000_10a5
+FileBrowserEntry_redrawSkipCode3::
+    jp FileBrowserEntry_redrawCodeGe2
 
 
-jr_000_1080:
+FileBrowserEntry_redrawCode3Farcall::
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3621,24 +3211,24 @@ jr_000_1080:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     db $e3
     ld b, b
     ld bc, $e800
     inc b
-    jp Jump_000_10d3
+    jp FileBrowserEntry_drawDirEntryLabel
 
 
-Jump_000_10a5:
+FileBrowserEntry_redrawCodeGe2::
     ld a, $01
     ld hl, sp+$12
     sub [hl]
-    jp nc, Jump_000_10d3
+    jp nc, FileBrowserEntry_drawDirEntryLabel
 
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -3657,18 +3247,18 @@ Jump_000_10a5:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     cp d
     ld b, d
     ld bc, $e800
     dec b
 
-Jump_000_10d3:
+FileBrowserEntry_drawDirEntryLabel::
     ld hl, $c2a2
     ld a, [hl]
     ld hl, $c2a3
     or [hl]
-    jp z, Jump_000_10fb
+    jp z, FileBrowserEntry_inputLoop
 
     ld hl, sp+$15
     ld c, [hl]
@@ -3690,17 +3280,17 @@ Jump_000_10d3:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_0bd5
+    call DrawDirEntryLabel
     add sp, $08
 
-Jump_000_10fb:
+FileBrowserEntry_inputLoop::
     ld hl, sp+$12
     ld [hl], $00
     ld hl, $002d
     push hl
-    call Call_000_36da
+    call Delay
     add sp, $02
-    call Call_000_3691
+    call ReadJoypad
     ld b, e
     ld c, b
     ld hl, sp+$00
@@ -3710,16 +3300,16 @@ Jump_000_10fb:
     dec hl
     ld a, [hl]
     and $02
-    jr nz, jr_000_111c
+    jr nz, FileBrowserEntry_pageDec
 
-    jp Jump_000_115f
+    jp FileBrowserEntry_afterPageDec
 
 
-jr_000_111c:
+FileBrowserEntry_pageDec::
     ld hl, sp+$13
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_114f
+    jp z, FileBrowserEntry_pageDecGate
 
     ld a, $0f
     dec hl
@@ -3727,7 +3317,7 @@ jr_000_111c:
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, Jump_000_1141
+    jp nc, FileBrowserEntry_pageDecZero
 
     dec hl
     ld e, [hl]
@@ -3742,51 +3332,51 @@ jr_000_111c:
     ld hl, sp+$14
     ld [hl-], a
     ld [hl], e
-    jp Jump_000_1148
+    jp FileBrowserEntry_pageDecDirty
 
 
-Jump_000_1141:
+FileBrowserEntry_pageDecZero::
     ld hl, sp+$13
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_000_1148:
+FileBrowserEntry_pageDecDirty::
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_114f:
+FileBrowserEntry_pageDecGate::
     xor a
     ld hl, sp+$15
     or [hl]
-    jp z, Jump_000_1692
+    jp z, MenuDispatchAB_waitVBlankLoop
 
     ld [hl], $00
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_115f:
+FileBrowserEntry_afterPageDec::
     ld hl, sp+$00
     ld a, [hl]
     and $01
-    jr nz, jr_000_1169
+    jr nz, FileBrowserEntry_dirListBtn
 
-    jp Jump_000_11d1
+    jp FileBrowserEntry_afterPageInc
 
 
-jr_000_1169:
+FileBrowserEntry_dirListBtn::
     xor a
     ld hl, $c5a4
     or [hl]
-    jp nz, Jump_000_1174
+    jp nz, FileBrowserEntry_pageInc
 
-    call Call_000_0a47
+    call DirList
 
-Jump_000_1174:
+FileBrowserEntry_pageInc::
     ld hl, sp+$13
     ld e, [hl]
     inc hl
@@ -3801,7 +3391,7 @@ Jump_000_1174:
     ld a, b
     ld hl, $c2a3
     sbc [hl]
-    jp nc, Jump_000_1692
+    jp nc, $03f4
 
     ld hl, sp+$13
     ld e, [hl]
@@ -3824,16 +3414,16 @@ Jump_000_1174:
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, Jump_000_11b3
+    jp c, FileBrowserEntry_pageIncClamp
 
     ld hl, sp+$13
     ld [hl], c
     inc hl
     ld [hl], b
-    jp Jump_000_11ca
+    jp FileBrowserEntry_pageIncDirty
 
 
-Jump_000_11b3:
+FileBrowserEntry_pageIncClamp::
     ld hl, $c2a2
     ld hl, $c2a2
     ld e, [hl]
@@ -3849,45 +3439,47 @@ Jump_000_11b3:
     ld [hl-], a
     ld [hl], e
 
-Jump_000_11ca:
+FileBrowserEntry_pageIncDirty::
     ld hl, sp+$12
     ld [hl], $01
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_11d1:
+FileBrowserEntry_afterPageInc::
     ld hl, sp+$00
     ld a, [hl]
     and $04
-    jr nz, jr_000_11db
+    jr nz, FileBrowserEntry_rowDec
 
-    jp Jump_000_11ea
+    jp FileBrowserEntry_afterRowDec
 
 
-jr_000_11db:
-    xor a
-    ld hl, sp+$15
+FileBrowserEntry_rowDec::
+    jp $02f0
+
+
     or [hl]
-    jp z, Jump_000_1692
+    jp z, MenuDispatchAB_waitVBlankLoop
 
     dec [hl]
     ld hl, sp+$12
     ld [hl], $03
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_11ea:
+FileBrowserEntry_afterRowDec::
     ld hl, sp+$00
     ld a, [hl]
     and $08
-    jr nz, jr_000_11f4
+    jr nz, FileBrowserEntry_rowInc
 
-    jp Jump_000_1217
+    jp FileBrowserEntry_afterRow
 
 
-jr_000_11f4:
-    ld hl, sp+$15
-    ld c, [hl]
+FileBrowserEntry_rowInc::
+    jp $02e0
+
+
     ld b, $00
     inc bc
     ld a, c
@@ -3896,64 +3488,64 @@ jr_000_11f4:
     ld a, b
     ld hl, $c2a3
     sbc [hl]
-    jp nc, Jump_000_1692
+    jp nc, MenuDispatchAB_waitVBlankLoop
 
     ld hl, sp+$15
     ld a, [hl]
     sub $0f
-    jp nc, Jump_000_1692
+    jp nc, MenuDispatchAB_waitVBlankLoop
 
     inc [hl]
     ld hl, sp+$12
     ld [hl], $02
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-Jump_000_1217:
+FileBrowserEntry_afterRow::
     ld hl, sp+$00
     ld a, [hl]
     and $40
-    jr nz, jr_000_1221
+    jr nz, FileBrowserEntry_modeBtn
 
-    jp Jump_000_1288
+    jp MenuKeyDispatch
 
 
-jr_000_1221:
+FileBrowserEntry_modeBtn::
     ld hl, sp+$0e
     inc [hl]
     ld a, [hl]
     sub $02
-    jp nz, Jump_000_122c
+    jp nz, FileBrowserEntry_modeSkipWrap
 
-    jr jr_000_122f
+    jr FileBrowserEntry_modeWrapZero
 
-Jump_000_122c:
-    jp Jump_000_1236
+FileBrowserEntry_modeSkipWrap::
+    jp FileBrowserEntry_modeCheck1
 
 
-jr_000_122f:
+FileBrowserEntry_modeWrapZero::
     ld hl, sp+$0e
     ld [hl], $00
-    jp Jump_000_125b
+    jp FileBrowserEntry_modeCheck2
 
 
-Jump_000_1236:
+FileBrowserEntry_modeCheck1::
     ld hl, sp+$0e
     ld a, [hl]
     sub $01
-    jp nz, Jump_000_1240
+    jp nz, FileBrowserEntry_modeSkipFarcall1
 
-    jr jr_000_1243
+    jr FileBrowserEntry_modeFarcall1
 
-Jump_000_1240:
-    jp Jump_000_125b
+FileBrowserEntry_modeSkipFarcall1::
+    jp FileBrowserEntry_modeCheck2
 
 
-jr_000_1243:
+FileBrowserEntry_modeFarcall1::
     ld a, $01
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
@@ -3963,26 +3555,28 @@ jr_000_1243:
     ld b, [hl]
     inc b
     nop
-    ld hl, sp+$0e
-    ld [hl], $02
+    jp $04e8
 
-Jump_000_125b:
+
+    nop
+
+FileBrowserEntry_modeCheck2::
     ld hl, sp+$0e
     ld a, [hl]
     sub $02
-    jp nz, Jump_000_1265
+    jp nz, FileBrowserEntry_modeSkipFarcall2
 
-    jr jr_000_1268
+    jr FileBrowserEntry_modeFarcall2
 
-Jump_000_1265:
-    jp Jump_000_1692
+FileBrowserEntry_modeSkipFarcall2::
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-jr_000_1268:
+FileBrowserEntry_modeFarcall2::
     ld a, $02
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, c
     ld [hl], c
     ld [$e800], sp
@@ -3995,22 +3589,31 @@ jr_000_1268:
     ld [hl-], a
     nop
     push hl
-    call Call_000_36da
+    call Delay
     add sp, $02
-    jp Jump_000_0f81
+    jp FileBrowserEntry
 
 
-Jump_000_1288:
+; [ezgb]
+; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.
+; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md).
+
+MenuKeyDispatch::
     ld hl, sp+$00
     ld a, [hl]
     and $80
-    jr nz, jr_000_1292
+    jr nz, LastRomOverlay
 
-    jp Jump_000_1386
+    jp MenuDispatchAB
 
 
-jr_000_1292:
-    call Call_000_078d
+; [ezgb]
+; LastRomOverlay: draw chrome (bank8 DrawLastRomButtons) and copy the 255-byte
+; path record $A300 -> $c4a4. Shows basename only; relaunch (A) uses the full
+; path via LastRomRelaunch. See docs/last-rom.md.
+
+LastRomOverlay::
+    call FarCallTrampoline
     push af
     ld [hl], e
     ld [$0100], sp
@@ -4021,7 +3624,7 @@ jr_000_1292:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4032,14 +3635,18 @@ jr_000_1292:
     inc hl
     ld [hl], $00
 
-Jump_000_12b3:
+; [ezgb]
+; LastRomLoadRecord: copy $A300..+$00ff → $c4a4 (idx@sp+$0f); then LastRomDrawBasename.
+; Loop via jr_000_12ee → self until idx≥$00ff; fallthrough jp LastRomDrawBasename when done.
+
+LastRomLoadRecord::
     ld hl, sp+$0f
     ld a, [hl]
     sub $ff
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_12e5
+    jp nc, $0540
 
     ld de, $c4a4
     dec hl
@@ -4065,23 +3672,23 @@ Jump_000_12b3:
     ld [bc], a
     ld hl, sp+$0f
     inc [hl]
-    jr nz, jr_000_12e2
+    jr nz, LastRomLoadRecord_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_12e2:
-    jp Jump_000_12b3
+LastRomLoadRecord_copyCont::
+    jp LastRomLoadRecord
 
 
-Jump_000_12e5:
+LastRomDrawBasename::
     ld bc, $4000
     ld a, $00
     ld [bc], a
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4092,7 +3699,7 @@ Jump_000_12e5:
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_2889
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4113,11 +3720,11 @@ Jump_000_12e5:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_1324:
-    call Call_000_3691
+LastRomInputLoop::
+    call ReadJoypad
     ld b, e
     ld c, b
     ld hl, sp+$04
@@ -4127,12 +3734,12 @@ Jump_000_1324:
     dec hl
     ld a, [hl]
     and $10
-    jr nz, jr_000_1338
+    jr nz, LastRomRelaunch
 
-    jp Jump_000_1379
+    jp LastRomCheckReturn
 
 
-jr_000_1338:
+LastRomRelaunch::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -4150,11 +3757,11 @@ jr_000_1338:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_2901
+    call Memcpy
     add sp, $06
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     and h
     ld l, [hl]
     dec b
@@ -4167,38 +3774,45 @@ jr_000_1338:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_1d29
+    call ApplyBasename
     add sp, $04
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, a
     ld [hl], e
     ld [$c300], sp
     ld h, h
     dec d
 
-Jump_000_1379:
+LastRomCheckReturn::
     ld hl, sp+$04
     ld a, [hl]
     and $20
-    jr nz, jr_000_1383
+    jr nz, LastRomReturn
 
-    jp Jump_000_1324
-
-
-jr_000_1383:
-    jp Jump_000_0f81
+    jp LastRomInputLoop
 
 
-Jump_000_1386:
+LastRomReturn::
+    jp FileBrowserEntry
+
+
+; [ezgb]
+; MenuDispatchAB: A($10) open selection; B($20) parent dir; else Jump_000_16ab WaitVBlankFlag → browser loop $1062.
+; jr_000_139c/jr_000_13b3: bank entry >>5+$12@$4000; Jump_000_140c: file → Jump_000_145f else jr_000_140f/Jump_000_143b dir append → FileBrowserEntry.
+; Jump_000_145f: ApplyBasename+$c4a4; Jump_000_14d6/Jump_000_14fb toupper ext@$c3a5; Jump_000_1520 MemCmp .gbc/.gb.
+; Match jr_000_1566 → Jump_000_1569 launch farcalls; fail Jump_000_1588/jr_000_158b WaitJoypadSelect; Jump_000_1591..Jump_000_162c hang.
+; Jump_000_162f: B → jr_000_1639 strip last /$c2a6 (Strrchr); empty "/"; jp FileBrowserEntry; else Jump_000_16ab.
+
+MenuDispatchAB::
     ld hl, sp+$00
     ld a, [hl]
     and $10
-    jr nz, jr_000_1390
+    jr nz, MenuDispatchAB_bankEntry
 
-    jp Jump_000_1616
+    jp MenuDispatchAB_checkB
 
 
-jr_000_1390:
+MenuDispatchAB_bankEntry::
     ld hl, sp+$15
     ld c, [hl]
     ld b, $00
@@ -4219,11 +3833,11 @@ jr_000_1390:
     ld b, [hl]
     ld a, $05
 
-jr_000_13a7:
+MenuDispatchAB_bankShift::
     srl b
     rr c
     dec a
-    jr nz, jr_000_13a7
+    jr nz, MenuDispatchAB_bankShift
 
     ld hl, sp+$04
     ld a, [hl]
@@ -4284,20 +3898,22 @@ jr_000_13a7:
     ld a, [bc]
     ld b, a
     sub $10
-    jp nz, Jump_000_1400
+    jp nz, MenuDispatchAB_fileSkipDir
 
-    jr jr_000_1403
+    jr MenuDispatchAB_dirAppend
 
-Jump_000_1400:
-    jp Jump_000_1453
+MenuDispatchAB_fileSkipDir::
+    jp MenuDispatchAB_fileOpen
 
 
-jr_000_1403:
-    ld hl, $16d0
+MenuDispatchAB_dirAppend::
+    jp $0556
+
+
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -4308,19 +3924,19 @@ jr_000_1403:
     ld [hl], c
     xor a
     or [hl]
-    jp z, Jump_000_142f
+    jp z, MenuDispatchAB_dirToBrowser
 
-    ld hl, $16d0
+    ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
     inc b
 
-Jump_000_142f:
+MenuDispatchAB_dirToBrowser::
     ld hl, $c2a0
     ld hl, $c2a0
     ld e, [hl]
@@ -4336,16 +3952,16 @@ Jump_000_142f:
     push bc
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     nop
     ld b, b
     ld bc, $e800
     inc b
-    jp Jump_000_0f81
+    jp FileBrowserEntry
 
 
-Jump_000_1453:
-    call Call_000_078d
+MenuDispatchAB_fileOpen::
+    call FarCallTrampoline
     ld a, a
     ld [hl], e
     ld [$3e00], sp
@@ -4356,7 +3972,7 @@ Jump_000_1453:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_0a1d
+    call MemSet8_B0
     add sp, $05
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4373,14 +3989,14 @@ Jump_000_1453:
     push bc
     ld hl, $c4a4
     push hl
-    call Call_000_1d29
+    call ApplyBasename
     add sp, $04
     ld a, $2e
     push af
     inc sp
     ld hl, $c4a4
     push hl
-    call Call_000_2889
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4389,7 +4005,7 @@ Jump_000_1453:
     push bc
     ld hl, $c3a5
     push hl
-    call Call_000_2901
+    call Memcpy
     add sp, $06
     ld de, $c3a5
     ld hl, $0001
@@ -4404,12 +4020,12 @@ Jump_000_1453:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_14ca
+    jp c, MenuDispatchAB_toupperExtA
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_14ca
+    jp c, MenuDispatchAB_toupperExtA
 
     ld a, b
     add $e0
@@ -4419,7 +4035,7 @@ Jump_000_1453:
     ld d, [hl]
     ld [de], a
 
-Jump_000_14ca:
+MenuDispatchAB_toupperExtA::
     ld de, $c3a5
     ld hl, $0002
     add hl, de
@@ -4433,12 +4049,12 @@ Jump_000_14ca:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_14ef
+    jp c, MenuDispatchAB_toupperExtB
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_14ef
+    jp c, MenuDispatchAB_toupperExtB
 
     ld a, b
     add $e0
@@ -4448,7 +4064,7 @@ Jump_000_14ca:
     ld d, [hl]
     ld [de], a
 
-Jump_000_14ef:
+MenuDispatchAB_toupperExtB::
     ld de, $c3a5
     ld hl, $0003
     add hl, de
@@ -4462,12 +4078,12 @@ Jump_000_14ef:
     ld b, a
     sub $61
     rlca
-    jp c, Jump_000_1514
+    jp c, MenuDispatchAB_memcmpExt
 
     ld a, $7a
     sub b
     rlca
-    jp c, Jump_000_1514
+    jp c, MenuDispatchAB_memcmpExt
 
     ld a, b
     add $e0
@@ -4477,38 +4093,38 @@ Jump_000_14ef:
     ld d, [hl]
     ld [de], a
 
-Jump_000_1514:
+MenuDispatchAB_memcmpExt::
     ld a, $05
     push af
     inc sp
-    ld hl, $16d2
+    ld hl, ExtGbcStr
     push hl
     ld hl, $c3a5
     push hl
-    call $09b3
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_155d
+    jp z, MenuDispatchAB_launchFarcalls
 
     ld a, $04
     push af
     inc sp
-    ld hl, $16d7
+    ld hl, ExtGbStr
     push hl
     ld hl, $c3a5
     push hl
-    call $09b3
+    call MemCmp_B0
     add sp, $05
     ld b, d
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_155d
+    jp z, MenuDispatchAB_launchFarcalls
 
-    call Call_000_078d
+    call FarCallTrampoline
     cp d
     ld [hl], e
     ld [$cd00], sp
@@ -4518,24 +4134,26 @@ Jump_000_1514:
     ld b, $00
     ld a, c
     and $20
-    jr nz, jr_000_155a
+    jr nz, MenuDispatchAB_extMatch
 
     jp $154b
 
 
-jr_000_155a:
-    jp Jump_000_0f81
+MenuDispatchAB_extMatch::
+    jp FileBrowserEntry
 
 
-Jump_000_155d:
-    call Call_000_078d
-    dec bc
-    ld c, b
-    ld bc, $2100
-    and h
-    call nz, $cde5
-    adc l
-    rlca
+MenuDispatchAB_launchFarcalls::
+    jp $04c7
+
+
+    nop
+    nop
+    nop
+    nop
+    ld hl, $c4a4
+    push hl
+    call FarCallTrampoline
     ld h, [hl]
     ld d, e
     ld bc, $e800
@@ -4545,20 +4163,20 @@ Jump_000_155d:
     ld [hl], b
     ld a, [hl]
     inc a
-    jp nz, Jump_000_157c
+    jp nz, MenuDispatchAB_failSkipWait
 
-    jr jr_000_157f
+    jr MenuDispatchAB_failWaitSelect
 
-Jump_000_157c:
-    jp Jump_000_1585
-
-
-jr_000_157f:
-    call Call_000_07bc
-    jp Jump_000_0f81
+MenuDispatchAB_failSkipWait::
+    jp MenuDispatchAB_failHang
 
 
-Jump_000_1585:
+MenuDispatchAB_failWaitSelect::
+    call WaitJoypadSelect
+    jp FileBrowserEntry
+
+
+MenuDispatchAB_failHang::
     xor a
     ld hl, $d3ef
     or [hl]
@@ -4570,7 +4188,7 @@ Jump_000_1585:
     push hl
     ld hl, $c4a4
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     and [hl]
     ld c, b
     ld bc, $e800
@@ -4586,7 +4204,7 @@ Jump_000_1585:
     ld a, $02
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -4604,7 +4222,7 @@ Jump_000_1585:
     ld b, a
     push bc
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     ld h, b
     ld b, c
     inc b
@@ -4614,7 +4232,7 @@ Jump_000_1585:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     db $ec
     ld b, e
     inc b
@@ -4624,51 +4242,51 @@ Jump_000_1585:
     ld a, [hl]
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rlca
     ld b, d
     inc b
     nop
     add sp, $01
-    call Call_000_078d
+    call FarCallTrampoline
     ld l, [hl]
     ld b, h
     inc b
     nop
-    call Call_000_069f
-    call Call_000_06fd
+    call LcdOff
+    call DiNest
     ld hl, sp+$16
     ld a, [hl]
     push af
     inc sp
     ld hl, $c0a0
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     adc a
     ld b, h
     inc b
     nop
     add sp, $03
 
-Jump_000_1613:
-    jp Jump_000_1613
+MenuDispatchAB_failHangLoop::
+    jp MenuDispatchAB_failHangLoop
 
 
-Jump_000_1616:
+MenuDispatchAB_checkB::
     ld hl, sp+$00
     ld a, [hl]
     and $20
-    jr nz, jr_000_1620
+    jr nz, MenuDispatchAB_parentDir
 
-    jp Jump_000_1692
+    jp MenuDispatchAB_waitVBlankLoop
 
 
-jr_000_1620:
-    ld hl, $16d0
+MenuDispatchAB_parentDir::
+    ld hl, PathSlashStr
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld c, b
     ld b, b
     ld bc, $e800
@@ -4677,7 +4295,9 @@ jr_000_1620:
     ld c, e
     ld a, c
     or b
-    jp z, Jump_000_1692
+
+FlPickCancelSite::
+    db $ca, $f8, $04
 
     ld hl, $00ff
     push hl
@@ -4685,14 +4305,14 @@ jr_000_1620:
     push hl
     ld hl, $c3a5
     push hl
-    call Call_000_2901
+    call Memcpy
     add sp, $06
     ld a, $2f
     push af
     inc sp
     ld hl, $c3a5
     push hl
-    call Call_000_2889
+    call Strrchr
     add sp, $03
     ld b, d
     ld c, e
@@ -4704,7 +4324,7 @@ jr_000_1620:
     inc sp
     ld hl, $c2a6
     push hl
-    call Call_000_28ec
+    call Memset
     add sp, $05
     pop bc
     ld a, c
@@ -4718,21 +4338,21 @@ jr_000_1620:
     push hl
     ld hl, $c2a6
     push hl
-    call Call_000_2901
+    call Memcpy
     add sp, $06
     ld de, $c2a6
     ld a, [de]
     or a
-    jp nz, Jump_000_0f81
+    jp nz, FileBrowserEntry
 
     ld de, $c2a6
     ld a, $2f
     ld [de], a
-    jp Jump_000_0f81
+    jp FileBrowserEntry
 
 
-Jump_000_1692:
-    call Call_000_0688
+MenuDispatchAB_waitVBlankLoop::
+    call WaitVBlankFlag
     jp $1056
 
 
@@ -4741,65 +4361,47 @@ Jump_000_1692:
 
 
     nop
-    ld c, l
-    ld l, c
-    ld h, e
-    ld [hl], d
-    ld l, a
-    jr nz, jr_000_16f6
 
-    ld b, h
-    jr nz, jr_000_170f
+MicroSdInitErrorStr::
+    db "Micro SD initial error!", $00
 
-    ld l, [hl]
-    ld l, c
-    ld [hl], h
-    ld l, c
-    ld h, c
-    ld l, h
-    jr nz, @+$67
+; [ezgb]
+; MicroSdInitOkStr: NUL-term "Micro SD initial OK!" for SdMenuMain.
 
-    ld [hl], d
-    ld [hl], d
-    ld l, a
-    ld [hl], d
-    ld hl, $4d00
-    ld l, c
-    ld h, e
-    ld [hl], d
-    ld l, a
-    jr nz, jr_000_170e
+MicroSdInitOkStr::
+    db "Micro SD initial OK!", $00
 
-    ld b, h
-    jr nz, @+$6b
+; [ezgb]
+; SaverDirStr: NUL-term "/SAVER"; BackupBranchEntry Open_B9 path.
 
-    ld l, [hl]
-    ld l, c
-    ld [hl], h
-    ld l, c
-    ld h, c
-    ld l, h
-    jr nz, jr_000_1715
+SaverDirStr::
+    db "/SAVER", $00
 
-    ld c, e
-    ld hl, $2f00
-    ld d, e
-    ld b, c
-    ld d, [hl]
-    ld b, l
-    ld d, d
-    nop
-    cpl
-    nop
-    ld l, $47
-    ld b, d
-    ld b, e
-    nop
-    ld l, $47
-    ld b, d
-    nop
+; [ezgb]
+; PathSlashStr: NUL-term "/"; path join in browser/backup helpers.
 
-Call_000_16db:
+PathSlashStr::
+    db "/", $00
+
+; [ezgb]
+; ExtGbcStr: NUL-term ".GBC" extension compare/append.
+
+ExtGbcStr::
+    db ".GBC", $00
+
+; [ezgb]
+; ExtGbStr: NUL-term ".GB" extension compare/append.
+
+ExtGbStr::
+    db ".GB", $00
+
+; [ezgb]
+; U32ToAscii_B0: bank0 twin of U32ToAscii (04:44f7); same ABI val/buf/radix. Used from bank0/1/8 UI chrome.
+; Jump_000_1718: if val!=0 → Jump_000_1739; elif digits → Jump_000_1736 → Jump_000_17e5; else jr_000_1739 fall emit.
+; Jump_000_1739/jr_000_1739: U32Div+U32Mod; rem<$0a → '0'+n (jr_000_17cd) else Jump_000_17d0 +$57 (jr_000_17e2) → Jump_000_1718.
+; Jump_000_17e5: setup reverse; Jump_000_1802 copy (jr_000_1827) → Jump_000_182a NUL / plant "0".
+
+U32ToAscii_B0::
     add sp, -$33
     ld hl, sp+$12
     ld a, l
@@ -4821,8 +4423,6 @@ Call_000_16db:
     ld hl, sp+$06
     ld a, [de]
     ld [hl+], a
-
-jr_000_16f6:
     inc de
     ld a, [de]
     ld [hl+], a
@@ -4833,7 +4433,7 @@ jr_000_16f6:
     ld a, [de]
     ld [hl], a
 
-Jump_000_16ff:
+U32ToAscii_B0_digitLoop::
     ld hl, sp+$06
     ld a, [hl+]
     or [hl]
@@ -4841,34 +4441,27 @@ Jump_000_16ff:
     or [hl]
     inc hl
     or [hl]
-    jp nz, Jump_000_1720
+    jp nz, U32ToAscii_B0_emitDigit
 
     inc hl
     ld a, [hl]
     ld hl, sp+$04
-
-jr_000_170e:
     sub [hl]
-
-jr_000_170f:
-    jp nz, Jump_000_171d
+    jp nz, U32ToAscii_B0_skipEmit
 
     ld hl, sp+$0b
     ld a, [hl]
-
-jr_000_1715:
     ld hl, sp+$05
     sub [hl]
-    jp nz, Jump_000_171d
+    jp nz, U32ToAscii_B0_skipEmit
 
-    jr jr_000_1720
+    jr U32ToAscii_B0_emitDigit
 
-Jump_000_171d:
-    jp Jump_000_17cc
+U32ToAscii_B0_skipEmit::
+    jp U32ToAscii_B0_setupReverse
 
 
-Jump_000_1720:
-jr_000_1720:
+U32ToAscii_B0_emitDigit::
     ld hl, sp+$3b
     ld a, [hl]
     ld hl, sp+$00
@@ -4898,7 +4491,7 @@ jr_000_1720:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2473
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$10
@@ -4930,7 +4523,7 @@ jr_000_1720:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2479
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -4969,7 +4562,7 @@ jr_000_1720:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_17b7
+    jp nc, U32ToAscii_B0_digitAtoF
 
     ld hl, sp+$0e
     ld c, [hl]
@@ -4982,16 +4575,16 @@ jr_000_1720:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_17b4
+    jr nz, U32ToAscii_B0_digit0to9
 
     inc hl
     inc [hl]
 
-jr_000_17b4:
-    jp Jump_000_16ff
+U32ToAscii_B0_digit0to9::
+    jp U32ToAscii_B0_digitLoop
 
 
-Jump_000_17b7:
+U32ToAscii_B0_digitAtoF::
     ld hl, sp+$0e
     ld c, [hl]
     ld a, c
@@ -5003,16 +4596,16 @@ Jump_000_17b7:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_17c9
+    jr nz, U32ToAscii_B0_afterAlpha
 
     inc hl
     inc [hl]
 
-jr_000_17c9:
-    jp Jump_000_16ff
+U32ToAscii_B0_afterAlpha::
+    jp U32ToAscii_B0_digitLoop
 
 
-Jump_000_17cc:
+U32ToAscii_B0_setupReverse::
     ld hl, sp+$39
     ld a, [hl+]
     ld e, [hl]
@@ -5036,7 +4629,7 @@ Jump_000_17cc:
     ld [hl+], a
     ld [hl], e
 
-Jump_000_17e9:
+U32ToAscii_B0_copyLoop::
     ld a, c
     ld hl, sp+$00
     sub [hl]
@@ -5044,7 +4637,7 @@ Jump_000_17e9:
     inc hl
     sbc [hl]
     rlca
-    jp nc, Jump_000_1811
+    jp nc, U32ToAscii_B0_writeNul
 
     dec hl
     ld e, [hl]
@@ -5067,16 +4660,16 @@ Jump_000_17e9:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_180e
+    jr nz, U32ToAscii_B0_copyCont
 
     inc hl
     inc [hl]
 
-jr_000_180e:
-    jp Jump_000_17e9
+U32ToAscii_B0_copyCont::
+    jp U32ToAscii_B0_copyLoop
 
 
-Jump_000_1811:
+U32ToAscii_B0_writeNul::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -5087,7 +4680,12 @@ Jump_000_1811:
     ret
 
 
-Call_000_181c:
+; [ezgb]
+; Battery gate: FPGA SRAM page $11, read $A201 (expect $88 = not dry).
+; ≠$88: draw BatteryDry* UI; Jump_000_18d7 wait A ($10); jr_000_18e5 write $A201=$88.
+; Jump_000_18eb: teardown page0, call SdMenuMain. Orphan before BatteryDryPadStr.
+
+BatteryCheck::
     ld hl, $cc2f
     ld [hl], $00
     ld bc, $4000
@@ -5096,7 +4694,7 @@ Call_000_181c:
     ld a, $03
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
@@ -5106,23 +4704,23 @@ Call_000_181c:
     ld a, [bc]
     ld c, a
     sub $88
-    jp z, Jump_000_18d2
+    jp z, BatteryCheck_enterSdMenu
 
     ld hl, $0805
     push hl
     ld a, $01
     push af
     inc sp
-    ld hl, $18f6
+    ld hl, BatteryDryPadStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
-    call Call_000_23d8
+    call StoreDrawParams
     add sp, $03
     ld hl, $016c
     push hl
@@ -5131,32 +4729,32 @@ Call_000_181c:
     ld a, $23
     push af
     inc sp
-    call Call_000_2401
+    call DrawRect
     add sp, $05
     ld hl, $0705
     push hl
     ld a, $07
     push af
     inc sp
-    ld hl, $18f8
+    ld hl, BatteryDryTitleStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
     ld hl, $0805
     push hl
     ld a, $06
     push af
     inc sp
-    ld hl, $1900
+    ld hl, BatteryDryMsgStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
-    ld hl, $0002
+    ld hl, $0003
     push hl
-    ld a, $03
+    ld a, $00
     push af
     inc sp
-    call Call_000_23d8
+    call StoreDrawParams
     add sp, $03
     ld hl, $016a
     push hl
@@ -5165,41 +4763,42 @@ Call_000_181c:
     ld a, $4e
     push af
     inc sp
-    call Call_000_2401
+    call DrawRect
     add sp, $05
     ld hl, $0c0a
     push hl
     ld a, $05
     push af
     inc sp
-    ld hl, $1907
+    ld hl, BatteryDryOkStr
     push hl
-    call Call_000_08b7
+    call DrawString
     add sp, $05
 
-Jump_000_18be:
-    call Call_000_3691
+BatteryCheck_waitA::
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
     and $10
-    jr nz, jr_000_18cc
+    jr nz, BatteryCheck_markOk
 
-    jp Jump_000_18be
+    jp BatteryCheck_waitA
 
 
-jr_000_18cc:
-    ld bc, $a201
-    ld a, $88
-    ld [bc], a
+BatteryCheck_markOk::
+    call $0530
+    nop
+    nop
+    nop
 
-Jump_000_18d2:
+BatteryCheck_enterSdMenu::
     ld hl, $0000
     push hl
     ld a, $03
     push af
     inc sp
-    call Call_000_23d8
+    call StoreDrawParams
     add sp, $03
     ld bc, $4000
     ld a, $00
@@ -5207,40 +4806,43 @@ Jump_000_18d2:
     ld a, $00
     push af
     inc sp
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_20
     ld b, c
     inc b
     nop
     add sp, $01
-    call Call_000_0de8
+    call SdMenuMain
     ret
 
 
-    jr nz, jr_000_18f8
+BatteryDryPadStr::
+    db " ", $00
 
-jr_000_18f8:
-    ld b, d
-    ld b, c
-    ld d, h
-    ld d, h
-    ld b, l
-    ld d, d
-    ld e, c
-    nop
-    ld b, h
-    ld d, d
-    ld e, c
-    ld hl, $2121
-    nop
-    ld e, e
-    ld b, c
-    ld e, l
-    ld c, a
-    ld c, e
-    nop
+; [ezgb]
+; BatteryDryTitleStr: NUL-term "BATTERY" for BatteryCheck dry notice.
 
-Call_000_190d:
+BatteryDryTitleStr::
+    db "BATTERY", $00
+
+; [ezgb]
+; BatteryDryMsgStr: NUL-term "DRY!!!" for BatteryCheck dry notice.
+
+BatteryDryMsgStr::
+    db "DRY!!!", $00
+
+; [ezgb]
+; BatteryDryOkStr: NUL-term "[A]OK" dismiss prompt for BatteryCheck.
+
+BatteryDryOkStr::
+    db "[A]OK", $00
+
+; [ezgb]
+; FarCall_06_7309: stack thunk → bank6:$7309 via FarCallTrampoline (embedded
+; addr/bank after call). Siblings: FarCall_06_779a ($1941), FarCall_03_76cc
+; ($1985), FarCall_03_768f ($19a1), FarCall_09_77ff ($19b1).
+
+FarCall_06_7309::
     ld hl, sp+$06
     ld a, [hl]
     push af
@@ -5256,7 +4858,7 @@ Call_000_190d:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, bc
     ld [hl], e
     ld b, $00
@@ -5264,7 +4866,7 @@ Call_000_190d:
     ret
 
 
-Call_000_1928:
+FarCall_06_779a::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
@@ -5285,7 +4887,7 @@ Call_000_1928:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld [hl], a
     ld [hl], a
     ld b, $00
@@ -5293,7 +4895,7 @@ Call_000_1928:
     ret
 
 
-Call_000_194a:
+FarCall_07_7739::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
@@ -5314,7 +4916,7 @@ Call_000_194a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add hl, sp
     ld [hl], a
     rlca
@@ -5323,7 +4925,11 @@ Call_000_194a:
     ret
 
 
-Call_000_196c:
+; [ezgb]
+; FarCall_03_76cc: 3-arg farcall to Lseek_B3 (03:76cc). Callers in bank1 push $ca0f
+; (FIL/fp) plus ofs words — FatFs f_lseek.
+
+FarCall_03_76cc::
     ld hl, sp+$06
     ld a, [hl+]
     ld h, [hl]
@@ -5339,7 +4945,7 @@ Call_000_196c:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     cp l
     halt
     inc bc
@@ -5348,13 +4954,13 @@ Call_000_196c:
     ret
 
 
-Call_000_1988:
+FarCall_03_768f::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     add b
     halt
     inc bc
@@ -5363,13 +4969,13 @@ Call_000_1988:
     ret
 
 
-Call_000_1998:
+FarCall_09_77ff::
     ld hl, sp+$02
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     rst RST_38
     ld [hl], a
     add hl, bc
@@ -5378,7 +4984,7 @@ Call_000_1998:
     ret
 
 
-Call_000_19a8:
+FarCall_05_4279::
     push af
     push af
     ld hl, sp+$0a
@@ -5396,7 +5002,7 @@ Call_000_19a8:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, c
     ld b, d
     dec b
@@ -5424,7 +5030,11 @@ Call_000_19a8:
     ret
 
 
-Call_000_19dc:
+; [ezgb]
+; FarCall_05_4378: stack thunk via FarCallTrampoline to 05:4378.
+; Auto-proposed by scripts/propose-labels.py.
+
+FarCall_05_4378::
     push af
     push af
     ld hl, sp+$0a
@@ -5442,7 +5052,7 @@ Call_000_19dc:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     ld a, b
     ld b, e
     dec b
@@ -5470,17 +5080,31 @@ Call_000_19dc:
     ret
 
 
-Call_000_1a10:
+; [ezgb]
+; DiskStatus(pdrv): FatFs disk_status stub — ld e,0 / ret (always ready).
+; Callers test E bits STA_NOINIT ($01) / STA_PROTECT ($04) and map to FR_
+; codes ($0c FR_NOT_ENABLED, $0a FR_WRITE_PROTECTED). Sibling DiskInitialize
+; ($1a2c) is the same body; ReturnZero ($1a77) is the no-arg FR_OK stub.
+
+DiskStatus::
     ld e, $00
     ret
 
 
-Call_000_1a13:
+; [ezgb]
+; DiskInitialize(pdrv): FatFs disk_initialize stub — same ld e,0 / ret as
+; DiskStatus. Mount path maps STA_NOINIT -> FR_NOT_READY ($03).
+
+DiskInitialize::
     ld e, $00
     ret
 
 
-Call_000_1a16:
+; [ezgb]
+; FarCall stub: repack stack args, FarCallTrampoline to DiskRead_B2 (SD sector
+; read), return E. Sibling FarCallDiskWrite ($1a53) is the write path.
+
+FarCallDiskRead::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -5501,7 +5125,7 @@ Call_000_1a16:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     daa
     ld b, b
     ld [bc], a
@@ -5512,7 +5136,11 @@ Call_000_1a16:
     ret
 
 
-Call_000_1a3a:
+; [ezgb]
+; FarCall stub: repack stack args, FarCallTrampoline to DiskWrite_B2 (SD sector
+; write), return E. Sibling FarCallDiskRead ($1a2f) is the read path.
+
+FarCallDiskWrite::
     ld hl, sp+$09
     ld c, [hl]
     ld hl, sp+$03
@@ -5533,7 +5161,7 @@ Call_000_1a3a:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_078d
+    call FarCallTrampoline
     push de
     ld b, c
     ld [bc], a
@@ -5544,12 +5172,18 @@ Call_000_1a3a:
     ret
 
 
-Call_000_1a5e:
+ReturnZero::
     ld e, $00
     ret
 
 
-Call_000_1a61:
+; [ezgb]
+; MapCp437(code@sp+$07, dir@sp+$09) → DE. codes <$80 pass-through Jump_000_1ed0. Table IBM CP437 high-half @1ed5.
+; Jump_000_1e30 dir!=0: if code≥$100 plant 0 → Jump_000_1e76; else Jump_000_1e5a table[(code-$80)*2] → Jump_000_1e76 → Jump_000_1ed0.
+; Jump_000_1e7e dir==0: idx=0; Jump_000_1e85 while idx<$80: cmp word (jr_000_1ea6); miss Jump_000_1eb3 ++idx (jr_000_1eba) → Jump_000_1e85.
+; Hit/exhaust Jump_000_1ebd: idx+$80 → Jump_000_1ed0 ret.
+
+MapCp437::
     push af
     push af
     dec sp
@@ -5559,20 +5193,20 @@ Call_000_1a61:
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_1a77
+    jp nc, MapCp437_dirEncode
 
     dec hl
     ld c, [hl]
     inc hl
     ld b, [hl]
-    jp Jump_000_1b17
+    jp MapCp437_retDe
 
 
-Jump_000_1a77:
+MapCp437_dirEncode::
     ld hl, sp+$09
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_1ac5
+    jp z, MapCp437_dirDecode
 
     ld hl, sp+$07
     ld a, [hl]
@@ -5590,16 +5224,16 @@ Jump_000_1a77:
     rla
     ld [hl], a
     or a
-    jp z, Jump_000_1aa1
+    jp z, MapCp437_tableLookup
 
     inc hl
     ld [hl], $00
     inc hl
     ld [hl], $00
-    jp Jump_000_1abd
+    jp MapCp437_afterEncode
 
 
-Jump_000_1aa1:
+MapCp437_tableLookup::
     ld hl, sp+$07
     ld c, [hl]
     ld a, c
@@ -5608,7 +5242,7 @@ Jump_000_1aa1:
     ld b, $00
     sla c
     rl b
-    ld hl, $1b1c
+    ld hl, Cp437UnicodeTable
     add hl, bc
     ld c, l
     ld b, h
@@ -5621,28 +5255,28 @@ Jump_000_1aa1:
     ld a, [de]
     ld [hl], a
 
-Jump_000_1abd:
+MapCp437_afterEncode::
     ld hl, sp+$03
     ld c, [hl]
     inc hl
     ld b, [hl]
-    jp Jump_000_1b17
+    jp MapCp437_retDe
 
 
-Jump_000_1ac5:
+MapCp437_dirDecode::
     ld hl, sp+$03
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-Jump_000_1acc:
+MapCp437_decodeScan::
     ld hl, sp+$03
     ld a, [hl]
     sub $80
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, Jump_000_1b04
+    jp nc, MapCp437_decodeHit
 
     dec hl
     ld c, [hl]
@@ -5650,7 +5284,7 @@ Jump_000_1acc:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $1b1c
+    ld hl, Cp437UnicodeTable
     add hl, bc
     ld c, l
     ld b, h
@@ -5662,30 +5296,30 @@ Jump_000_1acc:
     ld a, [de]
     ld b, a
 
-jr_000_1aed:
+MapCp437_decodeCmp::
     ld hl, sp+$07
     ld a, [hl]
     sub c
-    jp nz, Jump_000_1afa
+    jp nz, MapCp437_decodeMiss
 
     inc hl
     ld a, [hl]
     sub b
-    jp z, Jump_000_1b04
+    jp z, MapCp437_decodeHit
 
-Jump_000_1afa:
+MapCp437_decodeMiss::
     ld hl, sp+$03
     inc [hl]
-    jr nz, jr_000_1b01
+    jr nz, MapCp437_decodeCont
 
     inc hl
     inc [hl]
 
-jr_000_1b01:
-    jp Jump_000_1acc
+MapCp437_decodeCont::
+    jp MapCp437_decodeScan
 
 
-Jump_000_1b04:
+MapCp437_decodeHit::
     ld hl, sp+$03
     ld e, [hl]
     inc hl
@@ -5701,255 +5335,151 @@ Jump_000_1b04:
     ld c, [hl]
     ld b, $00
 
-Jump_000_1b17:
+MapCp437_retDe::
     ld e, c
     ld d, b
     add sp, $05
     ret
 
 
-    rst RST_00
-    nop
-    db $fc
-    nop
-    jp hl
+Cp437UnicodeTable::
+    db $c7, $00
+    db $fc, $00
+    db $e9, $00
+    db $e2, $00
+    db $e4, $00
+    db $e0, $00
+    db $e5, $00
+    db $e7, $00
+    db $ea, $00
+    db $eb, $00
+    db $e8, $00
+    db $ef, $00
+    db $ee, $00
+    db $ec, $00
+    db $c4, $00
+    db $c5, $00
+    db $c9, $00
+    db $e6, $00
+    db $c6, $00
+    db $f4, $00
+    db $f6, $00
+    db $f2, $00
+    db $fb, $00
+    db $f9, $00
+    db $ff, $00
+    db $d6, $00
+    db $dc, $00
+    db $a2, $00
+    db $a3, $00
+    db $a5, $00
+    db $a7, $20
+    db $92, $01
+    db $e1, $00
+    db $ed, $00
+    db $f3, $00
+    db $fa, $00
+    db $f1, $00
+    db $d1, $00
+    db $aa, $00
+    db $ba, $00
+    db $bf, $00
+    db $10, $23
+    db $ac, $00
+    db $bd, $00
+    db $bc, $00
+    db $a1, $00
+    db $ab, $00
+    db $bb, $00
+    db $91, $25
+    db $92, $25
+    db $93, $25
+    db $02, $25
+    db $24, $25
+    db $61, $25
+    db $62, $25
+    db $56, $25
+    db $55, $25
+    db $63, $25
+    db $51, $25
+    db $57, $25
+    db $5d, $25
+    db $5c, $25
+    db $5b, $25
+    db $10, $25
+    db $14, $25
+    db $34, $25
+    db $2c, $25
+    db $1c, $25
+    db $00, $25
+    db $3c, $25
+    db $5e, $25
+    db $5f, $25
+    db $5a, $25
+    db $54, $25
+    db $69, $25
+    db $66, $25
+    db $60, $25
+    db $50, $25
+    db $6c, $25
+    db $67, $25
+    db $68, $25
+    db $64, $25
+    db $65, $25
+    db $59, $25
+    db $58, $25
+    db $52, $25
+    db $53, $25
+    db $6b, $25
+    db $6a, $25
+    db $18, $25
+    db $0c, $25
+    db $88, $25
+    db $84, $25
+    db $8c, $25
+    db $90, $25
+    db $80, $25
+    db $b1, $03
+    db $df, $00
+    db $93, $03
+    db $c0, $03
+    db $a3, $03
+    db $c3, $03
+    db $b5, $00
+    db $c4, $03
+    db $a6, $03
+    db $98, $03
+    db $a9, $03
+    db $b4, $03
+    db $1e, $22
+    db $c6, $03
+    db $b5, $03
+    db $29, $22
+    db $61, $22
+    db $b1, $00
+    db $65, $22
+    db $64, $22
+    db $20, $23
+    db $21, $23
+    db $f7, $00
+    db $48, $22
+    db $b0, $00
+    db $19, $22
+    db $b7, $00
+    db $1a, $22
+    db $7f, $20
+    db $b2, $00
+    db $a0, $25
+    db $a0, $00
 
+; [ezgb]
+; WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.
+; jr_000_1fe2: if code≥$80 → Jump_000_200e; else if not in 'a'..'z' → Jump_000_20b3; else code-=$20 → Jump_000_20b3.
+; Jump_000_200e: init lo/hi/count; Jump_000_2021: mid key from wWToUpperKeys; eq → Jump_000_2092; else Jump_000_2065.
+; Jump_000_2065: key<code → raise lo else Jump_000_207a lower hi; Jump_000_2082 --count; NZ → Jump_000_2021 else fall Jump_000_2092.
+; Jump_000_2092: if count==0 miss → Jump_000_20b3; else replace from wWToUpperVals; Jump_000_20b3: DE=code ret.
 
-    nop
-    ldh [c], a
-    nop
-    db $e4
-    nop
-    ldh [rP1], a
-    push hl
-    nop
-    rst RST_20
-    nop
-    ld [$eb00], a
-    nop
-    add sp, $00
-    rst RST_28
-    nop
-    xor $00
-    db $ec
-    nop
-    call nz, $c500
-    nop
-    ret
-
-
-    nop
-    and $00
-    add $00
-    db $f4
-    nop
-    or $00
-    ldh a, [c]
-    nop
-    ei
-    nop
-    ld sp, hl
-    nop
-    rst RST_38
-    nop
-    sub $00
-    call c, $a200
-    nop
-    and e
-    nop
-    and l
-    nop
-    and a
-    jr nz, jr_000_1aed
-
-    ld bc, $00e1
-    db $ed
-    nop
-    di
-    nop
-    ld a, [$f100]
-    nop
-    pop de
-    nop
-    xor d
-    nop
-    cp d
-    nop
-    cp a
-    nop
-    db $10
-    inc hl
-    xor h
-    nop
-    cp l
-    nop
-    cp h
-    nop
-    and c
-    nop
-    xor e
-    nop
-    cp e
-    nop
-    sub c
-    dec h
-    sub d
-    dec h
-    sub e
-    dec h
-    ld [bc], a
-    dec h
-    inc h
-    dec h
-    ld h, c
-    dec h
-    ld h, d
-    dec h
-    ld d, [hl]
-    dec h
-    ld d, l
-    dec h
-    ld h, e
-    dec h
-    ld d, c
-    dec h
-    ld d, a
-    dec h
-    ld e, l
-    dec h
-    ld e, h
-    dec h
-    ld e, e
-    dec h
-    db $10
-    dec h
-    inc d
-    dec h
-    inc [hl]
-    dec h
-    inc l
-    dec h
-    inc e
-    dec h
-    nop
-    dec h
-    inc a
-    dec h
-    ld e, [hl]
-    dec h
-    ld e, a
-    dec h
-    ld e, d
-    dec h
-    ld d, h
-    dec h
-    ld l, c
-    dec h
-    ld h, [hl]
-    dec h
-    ld h, b
-    dec h
-    ld d, b
-    dec h
-    ld l, h
-    dec h
-    ld h, a
-    dec h
-    ld l, b
-    dec h
-    ld h, h
-    dec h
-    ld h, l
-    dec h
-    ld e, c
-    dec h
-    ld e, b
-    dec h
-    ld d, d
-    dec h
-    ld d, e
-
-jr_000_1bc9:
-    dec h
-    ld l, e
-    dec h
-    ld l, d
-    dec h
-    jr @+$27
-
-    inc c
-    dec h
-    adc b
-    dec h
-    add h
-    dec h
-    adc h
-    dec h
-    sub b
-    dec h
-    add b
-    dec h
-    or c
-    inc bc
-    rst RST_18
-    nop
-    sub e
-    inc bc
-    ret nz
-
-    inc bc
-    and e
-    inc bc
-    jp $b503
-
-
-    nop
-    call nz, $a603
-    inc bc
-    sbc b
-    inc bc
-    xor c
-    inc bc
-    or h
-    inc bc
-    ld e, $22
-    add $03
-    or l
-    inc bc
-    add hl, hl
-    ld [hl+], a
-    ld h, c
-    ld [hl+], a
-    or c
-    nop
-    ld h, l
-    ld [hl+], a
-    ld h, h
-    ld [hl+], a
-    jr nz, jr_000_1c29
-
-    ld hl, $f723
-    nop
-    ld c, b
-    ld [hl+], a
-    or b
-    nop
-    add hl, de
-    ld [hl+], a
-    or a
-    nop
-    ld a, [de]
-    ld [hl+], a
-    ld a, a
-    jr nz, jr_000_1bc9
-
-    nop
-    and b
-    dec h
-    and b
-    nop
-
-Call_000_1c1c:
+WToUpper::
     push af
     push af
     push af
@@ -5961,8 +5491,8 @@ Call_000_1c1c:
     ld a, [hl]
     sbc $00
 
-jr_000_1c29:
-    jp nc, Jump_000_1c55
+WToUpper_asciiGate::
+    jp nc, WToUpper_initSearch
 
     dec hl
     ld a, [hl]
@@ -5970,7 +5500,7 @@ jr_000_1c29:
     inc hl
     ld a, [hl]
     sbc $00
-    jp c, Jump_000_1cfa
+    jp c, WToUpper_retDe
 
     ld a, $7a
     dec hl
@@ -5978,7 +5508,7 @@ jr_000_1c29:
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, Jump_000_1cfa
+    jp c, WToUpper_retDe
 
     dec hl
     ld e, [hl]
@@ -5993,10 +5523,10 @@ jr_000_1c29:
     ld hl, sp+$0b
     ld [hl-], a
     ld [hl], e
-    jp Jump_000_1cfa
+    jp WToUpper_retDe
 
 
-Jump_000_1c55:
+WToUpper_initSearch::
     ld hl, sp+$00
     ld [hl], $00
     inc hl
@@ -6010,7 +5540,7 @@ Jump_000_1c55:
     inc hl
     ld [hl], $00
 
-Jump_000_1c68:
+WToUpper_midKey::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -6045,7 +5575,7 @@ Jump_000_1c68:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $cc33
+    ld hl, wWToUpperKeys
     add hl, bc
     ld c, l
     ld b, h
@@ -6059,21 +5589,21 @@ Jump_000_1c68:
     ld hl, sp+$0a
     ld a, [hl]
     sub c
-    jp nz, Jump_000_1cac
+    jp nz, WToUpper_cmpKey
 
     inc hl
     ld a, [hl]
     sub b
-    jp z, Jump_000_1cd9
+    jp z, WToUpper_hitOrMiss
 
-Jump_000_1cac:
+WToUpper_cmpKey::
     ld a, c
     ld hl, sp+$0a
     sub [hl]
     ld a, b
     inc hl
     sbc [hl]
-    jp nc, Jump_000_1cc1
+    jp nc, WToUpper_lowerHi
 
     ld hl, sp+$06
     ld a, [hl+]
@@ -6081,10 +5611,10 @@ Jump_000_1cac:
     ld hl, sp+$00
     ld [hl+], a
     ld [hl], e
-    jp Jump_000_1cc9
+    jp WToUpper_decCount
 
 
-Jump_000_1cc1:
+WToUpper_lowerHi::
     ld hl, sp+$06
     ld a, [hl+]
     ld e, [hl]
@@ -6092,7 +5622,7 @@ Jump_000_1cc1:
     ld [hl+], a
     ld [hl], e
 
-Jump_000_1cc9:
+WToUpper_decCount::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6105,13 +5635,13 @@ Jump_000_1cc9:
     dec hl
     ld a, [hl+]
     or [hl]
-    jp nz, Jump_000_1c68
+    jp nz, WToUpper_midKey
 
-Jump_000_1cd9:
+WToUpper_hitOrMiss::
     ld hl, sp+$04
     ld a, [hl+]
     or [hl]
-    jp z, Jump_000_1cfa
+    jp z, WToUpper_retDe
 
     inc hl
     ld c, [hl]
@@ -6119,7 +5649,7 @@ Jump_000_1cd9:
     ld b, [hl]
     sla c
     rl b
-    ld hl, $d00f
+    ld hl, wWToUpperVals
     add hl, bc
     ld c, l
     ld b, h
@@ -6135,7 +5665,7 @@ Jump_000_1cd9:
     inc hl
     ld [hl], b
 
-Jump_000_1cfa:
+WToUpper_retDe::
     ld hl, sp+$0a
     ld e, [hl]
     inc hl
@@ -6144,51 +5674,62 @@ Jump_000_1cfa:
     ret
 
 
-Call_000_1d02:
+; [ezgb]
+; RleUnpack: inline RLE decompress. HL=dest on entry; stream follows the call
+; (pop return addr as src). Bit7 run vs literal; 0 terminates; ret past stream.
+; Bank1 uses it to pack WToUpper tables into $CC33/$D00F and other WRAM blobs.
+; Jump_000_20be: fetch len E; bit7 → run: load byte, Jump_000_20c7 store+inc E until wrap → loop.
+; Jump_000_20d0: E==0 → Jump_000_20e0 push HL ret; else Jump_000_20d5 copy E literals → 20be.
+
+RleUnpack::
     ld c, l
     ld b, h
     pop hl
 
-Jump_000_1d05:
+RleUnpack_fetchLen::
     ld e, [hl]
     inc hl
     bit 7, e
-    jp z, Jump_000_1d17
+    jp z, RleUnpack_literalOrDone
 
     ld a, [hl]
     inc hl
 
-Jump_000_1d0e:
+RleUnpack_runStore::
     ld [bc], a
     inc bc
     inc e
-    jp nz, Jump_000_1d0e
+    jp nz, RleUnpack_runStore
 
-    jp Jump_000_1d05
+    jp RleUnpack_fetchLen
 
 
-Jump_000_1d17:
+RleUnpack_literalOrDone::
     xor a
     or e
-    jp z, Jump_000_1d27
+    jp z, RleUnpack_retPastStream
 
-Jump_000_1d1c:
+RleUnpack_copyLiteral::
     ld a, [hl]
     inc hl
     ld [bc], a
     inc bc
     dec e
-    jp nz, Jump_000_1d1c
+    jp nz, RleUnpack_copyLiteral
 
-    jp Jump_000_1d05
+    jp RleUnpack_fetchLen
 
 
-Jump_000_1d27:
+RleUnpack_retPastStream::
     push hl
     ret
 
 
-Call_000_1d29:
+; [ezgb]
+; ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (jr_000_20ec).
+; DirList uses this to copy entry names into the browser table.
+
+ApplyBasename::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -6198,7 +5739,7 @@ Call_000_1d29:
     ld h, [hl]
     ld l, a
 
-jr_000_1d33:
+ApplyBasename_copyLoop::
     ld a, [de]
     inc de
     ld [hl], a
@@ -6206,45 +5747,56 @@ jr_000_1d33:
     ret z
 
     inc hl
-    jr jr_000_1d33
+    jr ApplyBasename_copyLoop
 
-Call_000_1d3b:
+; [ezgb]
+; AdvanceTextCursor: ++wTextCursorX; wrap at $13 → X=0, ++Y; at Y=$11 → Y=0 (no scroll).
+; jr_000_2100: X wrap + maybe ++Y; jr_000_210d: Y wrap to 0; jr_000_210f: pop HL ret.
+; Mode-1 framebuffer text sibling of AdvanceTileCursor. Used by DrawGlyphAdvance.
+
+AdvanceTextCursor::
     push hl
-    ld hl, $d70b
+    ld hl, wTextCursorX
     ld a, $13
     cp [hl]
-    jr z, jr_000_1d47
+    jr z, AdvanceTextCursor_wrapX
 
     inc [hl]
-    jr jr_000_1d56
+    jr AdvanceTextCursor_epilogueRet
 
-jr_000_1d47:
+AdvanceTextCursor_wrapX::
     ld [hl], $00
-    ld hl, $d70c
+    ld hl, wTextCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_1d54
+    jr z, AdvanceTextCursor_wrapY
 
     inc [hl]
-    jr jr_000_1d56
+    jr AdvanceTextCursor_epilogueRet
 
-jr_000_1d54:
+AdvanceTextCursor_wrapY::
     ld [hl], $00
 
-jr_000_1d56:
+AdvanceTextCursor_epilogueRet::
     pop hl
     ret
 
 
-Call_000_1d58:
+; [ezgb]
+; DrawCircle: midpoint circle. BC=center, D=radius; wDrawRectFill selects outline (CirclePlot8) vs filled chords.
+; Error in wCircleErr/$d72d. Stack wrapper DrawCircleXY ($27a0).
+; Jump_000_2132/jr_000_2132: while X1≤Y1; outline if fill==0; err≥0 → jr_000_2176 else CircleFillH + ++X1 +err+$06 loop.
+; jr_000_2176: CircleFillV + ++X1 --Y1 +err+$0a → Jump_000_2132.
+
+DrawCircle::
     ld a, b
-    ld [$d6fe], a
+    ld [wDrawX0], a
     ld a, c
-    ld [$d700], a
+    ld [wDrawY0], a
     xor a
-    ld [$d6ff], a
+    ld [wDrawX1], a
     ld a, d
-    ld [$d701], a
+    ld [wDrawY1], a
     cpl
     ld l, a
     ld h, $ff
@@ -6254,35 +5806,34 @@ Call_000_1d58:
     ld a, l
     ld [$d706], a
     ld a, h
-    ld [$d705], a
+    ld [wCircleErr], a
 
-Jump_000_1d79:
-jr_000_1d79:
-    ld a, [$d6ff]
+DrawCircle_midpointLoop::
+    ld a, [wDrawX1]
     ld b, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     sub b
     ret c
 
-    ld a, [$d6fd]
+    ld a, [wDrawRectFill]
     or a
-    call z, Call_000_1e8f
-    ld a, [$d705]
+    call z, CirclePlot8
+    ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_1dbd
+    jr z, DrawCircle_errGe0
 
-    ld a, [$d6fd]
+    ld a, [wDrawRectFill]
     or a
-    call nz, Call_000_1dfb
-    ld a, [$d6ff]
+    call nz, CircleFillH
+    ld a, [wDrawX1]
     inc a
-    ld [$d6ff], a
-    ld a, [$d705]
+    ld [wDrawX1], a
+    ld a, [wCircleErr]
     ld b, a
     ld a, [$d706]
     ld c, a
     ld h, $00
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld l, a
     add hl, hl
     add hl, hl
@@ -6290,28 +5841,28 @@ jr_000_1d79:
     ld bc, $0006
     add hl, bc
     ld a, h
-    ld [$d705], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d706], a
-    jr jr_000_1d79
+    jr DrawCircle_midpointLoop
 
-jr_000_1dbd:
-    ld a, [$d6fd]
+DrawCircle_errGe0::
+    ld a, [wDrawRectFill]
     or a
-    call nz, Call_000_1e33
-    ld a, [$d6ff]
+    call nz, CircleFillV
+    ld a, [wDrawX1]
     inc a
-    ld [$d6ff], a
+    ld [wDrawX1], a
     ld b, $00
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld c, a
     ld h, $ff
-    ld a, [$d701]
+    ld a, [wDrawY1]
     cpl
     ld l, a
     inc hl
     add hl, bc
-    ld a, [$d705]
+    ld a, [wCircleErr]
     ld b, a
     ld a, [$d706]
     ld c, a
@@ -6321,23 +5872,23 @@ jr_000_1dbd:
     ld bc, $000a
     add hl, bc
     ld a, h
-    ld [$d705], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d706], a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     dec a
-    ld [$d701], a
-    jp Jump_000_1d79
+    ld [wDrawY1], a
+    jp DrawCircle_midpointLoop
 
 
-Call_000_1dfb:
-    ld a, [$d6fe]
+CircleFillH::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -6352,7 +5903,7 @@ Call_000_1dfb:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     ld a, d
@@ -6372,20 +5923,20 @@ Call_000_1dfb:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     ret
 
 
-Call_000_1e33:
-    ld a, [$d6fe]
+CircleFillV::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -6400,7 +5951,7 @@ Call_000_1e33:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     push bc
@@ -6416,7 +5967,7 @@ Call_000_1e33:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     ld a, d
@@ -6436,7 +5987,7 @@ Call_000_1e33:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     push bc
@@ -6452,20 +6003,23 @@ Call_000_1e33:
     ld c, a
     ld d, h
     ld e, c
-    call Call_000_1fe3
+    call DrawLine
     pop de
     pop bc
     ret
 
 
-Call_000_1e8f:
-    ld a, [$d6fe]
+; [ezgb]
+; CirclePlot8: plot the 8 symmetric pixels for current (x,y) on the circle.
+
+CirclePlot8::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld e, a
     push bc
     push de
@@ -6475,7 +6029,7 @@ Call_000_1e8f:
     ld a, c
     sub e
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6486,7 +6040,7 @@ Call_000_1e8f:
     ld a, c
     sub d
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6497,7 +6051,7 @@ Call_000_1e8f:
     ld a, c
     add e
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6508,7 +6062,7 @@ Call_000_1e8f:
     ld a, c
     add d
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     ld a, d
@@ -6526,7 +6080,7 @@ Call_000_1e8f:
     ld a, c
     sub e
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6537,7 +6091,7 @@ Call_000_1e8f:
     ld a, c
     add d
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6548,7 +6102,7 @@ Call_000_1e8f:
     ld a, c
     add e
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     push bc
@@ -6559,189 +6113,203 @@ Call_000_1e8f:
     ld a, c
     sub d
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop de
     pop bc
     ret
 
 
-Call_000_1f0d:
-    ld a, [$d6fe]
+; [ezgb]
+; DrawRectImpl: normalize corners; outline via four DrawLine; optional fill if wDrawRectFill ($d724). Called by DrawRect.
+; jr_000_22d9: if X1<X0 swap; fall. jr_000_22ec: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.
+; If fill==0 or empty inset ret; else swap wDrawColor/wDrawColorB; jr_000_236d: horiz DrawLine at Y0; if Y0!=Y1 ++Y0 loop.
+; jr_000_238d: restore colors (swap again) ret.
+
+DrawRectImpl::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld c, a
     sub b
-    jr nc, jr_000_1f20
+    jr nc, DrawRectImpl_afterSwapX
 
     ld a, c
-    ld [$d6fe], a
+    ld [wDrawX0], a
     ld a, b
-    ld [$d6ff], a
+    ld [wDrawX1], a
 
-jr_000_1f20:
-    ld a, [$d700]
+DrawRectImpl_afterSwapX::
+    ld a, [wDrawY0]
     ld b, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld c, a
     sub b
-    jr nc, jr_000_1f33
+    jr nc, DrawRectImpl_drawOutline
 
     ld a, c
-    ld [$d700], a
+    ld [wDrawY0], a
     ld a, b
-    ld [$d701], a
+    ld [wDrawY1], a
 
-jr_000_1f33:
-    ld a, [$d6fe]
+DrawRectImpl_drawOutline::
+    ld a, [wDrawX0]
     ld b, a
     ld d, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld e, a
-    call Call_000_1fe3
-    ld a, [$d6ff]
+    call DrawLine
+    ld a, [wDrawX1]
     ld b, a
     ld d, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld e, a
-    call Call_000_1fe3
-    ld a, [$d6fe]
+    call DrawLine
+    ld a, [wDrawX0]
     inc a
-    ld [$d6fe], a
-    ld a, [$d6ff]
+    ld [wDrawX0], a
+    ld a, [wDrawX1]
     dec a
-    ld [$d6ff], a
-    ld a, [$d6fe]
+    ld [wDrawX1], a
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
     ld e, a
-    call Call_000_1fe3
-    ld a, [$d6fe]
+    call DrawLine
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     ld c, a
     ld e, a
-    call Call_000_1fe3
-    ld a, [$d6fd]
+    call DrawLine
+    ld a, [wDrawRectFill]
     or a
     ret z
 
-    ld a, [$d6fe]
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     sub b
     ret c
 
-    ld a, [$d700]
+    ld a, [wDrawY0]
     inc a
-    ld [$d700], a
-    ld a, [$d701]
+    ld [wDrawY0], a
+    ld a, [wDrawY1]
     dec a
-    ld [$d701], a
-    ld a, [$d700]
+    ld [wDrawY1], a
+    ld a, [wDrawY0]
     ld b, a
-    ld a, [$d701]
+    ld a, [wDrawY1]
     sub b
     ret c
 
-    ld a, [$d70d]
+    ld a, [wDrawColor]
     ld c, a
-    ld a, [$d70e]
-    ld [$d70d], a
+    ld a, [wDrawColorB]
+    ld [wDrawColor], a
     ld a, c
-    ld [$d70e], a
+    ld [wDrawColorB], a
 
-jr_000_1fb4:
-    ld a, [$d6fe]
+DrawRectImpl_fillScan::
+    ld a, [wDrawX0]
     ld b, a
-    ld a, [$d6ff]
+    ld a, [wDrawX1]
     ld d, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     ld c, a
     ld e, a
-    call Call_000_1fe3
-    ld a, [$d701]
+    call DrawLine
+    ld a, [wDrawY1]
     ld b, a
-    ld a, [$d700]
+    ld a, [wDrawY0]
     cp b
-    jr z, jr_000_1fd4
+    jr z, DrawRectImpl_restoreColors
 
     inc a
-    ld [$d700], a
-    jr jr_000_1fb4
+    ld [wDrawY0], a
+    jr DrawRectImpl_fillScan
 
-jr_000_1fd4:
-    ld a, [$d70d]
+DrawRectImpl_restoreColors::
+    ld a, [wDrawColor]
     ld c, a
-    ld a, [$d70e]
-    ld [$d70d], a
+    ld a, [wDrawColorB]
+    ld [wDrawColor], a
     ld a, c
-    ld [$d70e], a
+    ld [wDrawColorB], a
     ret
 
 
-Call_000_1fe3:
+; [ezgb]
+; DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|@$d72a, |dx|@$d729; err wCircleErr/$d72d..$d731.
+; Setup: jr_000_23a2/jr_000_23ac abs dy/dx; |dx|<|dy| → Jump_000_2519 y-major; else Jump_000_23c4 maybe swap ends; jr_000_23ce/jr_000_23d0 set $d72b ±ystep + GfxRowTable/err.
+; X-major Jump_000_2433: err≥0 jr_000_2464 plot+ystep (jr_000_247e/jr_000_248c row wrap $0130/$fed0); else jr_000_244b err+=2dy; jr_000_24a5/jr_000_24b0 byte advance; --E loop.
+; Horiz Jump_000_24bd: jr_000_24d0/jr_000_24db/jr_000_24e3/jr_000_24ef/jr_000_250a/jr_000_250c/jr_000_2513 mask runs.
+; Y-major Jump_000_2519: Jump_000_252a/jr_000_2534/jr_000_2536 swap+$d72b; dx==0 → Jump_000_260c; else jr_000_259e plot (jr_000_25b0), err jr_000_25d0/jr_000_25e2/jr_000_25ec xstep → jr_000_2602.
+; Vert Jump_000_260c: jr_000_261a/jr_000_2628 ApplyPixel down. Callers: DrawRect edges + circle chords.
+
+DrawLine::
     ld a, c
     sub e
-    jr nc, jr_000_1fe9
+    jr nc, DrawLine_absDy
 
     cpl
     inc a
 
-jr_000_1fe9:
+DrawLine_absDy::
     ld [$d703], a
     ld h, a
     ld a, b
     sub d
-    jr nc, jr_000_1ff3
+    jr nc, DrawLine_absDx
 
     cpl
     inc a
 
-jr_000_1ff3:
+DrawLine_absDx::
     ld [$d702], a
     sub h
-    jp c, Jump_000_2160
+    jp c, DrawLine_yMajor
 
     ld a, b
     sub d
-    jp nc, Jump_000_200b
+    jp nc, DrawLine_maybeSwapEnds
 
     ld a, c
     sub e
-    jr z, jr_000_2017
+    jr z, DrawLine_setYstepErr
 
     ld a, $00
-    jr nc, jr_000_2017
+    jr nc, DrawLine_setYstepErr
 
     ld a, $ff
-    jr jr_000_2017
+    jr DrawLine_setYstepErr
 
-Jump_000_200b:
+DrawLine_maybeSwapEnds::
     ld a, e
     sub c
-    jr z, jr_000_2015
+    jr z, DrawLine_swapEndsDone
 
     ld a, $00
-    jr nc, jr_000_2015
+    jr nc, DrawLine_swapEndsDone
 
     ld a, $ff
 
-jr_000_2015:
+DrawLine_swapEndsDone::
     ld b, d
     ld c, e
 
-jr_000_2017:
+DrawLine_setYstepErr::
     ld [$d704], a
-    ld hl, $2c02
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -6756,7 +6324,7 @@ jr_000_2017:
     add hl, de
     ld a, [$d703]
     or a
-    jp z, Jump_000_2104
+    jp z, DrawLine_horiz
 
     push hl
     ld h, $00
@@ -6775,7 +6343,7 @@ jr_000_2017:
     inc hl
     add hl, de
     ld a, h
-    ld [$d705], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d706], a
     ld a, [$d702]
@@ -6804,88 +6372,88 @@ jr_000_2017:
     ld b, a
     ld c, a
 
-Jump_000_207a:
+DrawLine_xMajor::
     rrc c
-    ld a, [$d705]
+    ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_20ab
+    jr z, DrawLine_xMajorPlotYstep
 
     push de
     bit 7, c
-    jr z, jr_000_2092
+    jr z, DrawLine_xMajorErrAdd
 
     ld a, b
     cpl
     ld c, a
-    call Call_000_2291
+    call ApplyPixel
     dec hl
     ld c, $80
     ld b, c
 
-jr_000_2092:
+DrawLine_xMajorErrAdd::
     ld a, [$d706]
     ld d, a
     ld a, [$d708]
     add d
     ld [$d706], a
-    ld a, [$d705]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d707]
     adc d
-    ld [$d705], a
+    ld [wCircleErr], a
     pop de
-    jr jr_000_20ec
+    jr DrawLine_xMajorByteAdv
 
-jr_000_20ab:
+DrawLine_xMajorPlotYstep::
     push de
     push bc
     ld a, b
     cpl
     ld c, a
-    call Call_000_2291
+    call ApplyPixel
     ld a, [$d704]
     or a
-    jr z, jr_000_20c5
+    jr z, DrawLine_xMajorRowWrapA
 
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_20d3
+    jr nz, DrawLine_xMajorRowWrapB
 
     ld de, $0130
     add hl, de
-    jr jr_000_20d3
+    jr DrawLine_xMajorRowWrapB
 
-jr_000_20c5:
+DrawLine_xMajorRowWrapA::
     dec hl
     dec hl
     dec hl
     ld a, l
     and $0f
     xor $0e
-    jr nz, jr_000_20d3
+    jr nz, DrawLine_xMajorRowWrapB
 
     ld de, $fed0
     add hl, de
 
-jr_000_20d3:
+DrawLine_xMajorRowWrapB::
     ld a, [$d706]
     ld d, a
     ld a, [$d70a]
     add d
     ld [$d706], a
-    ld a, [$d705]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d709]
     adc d
-    ld [$d705], a
+    ld [wCircleErr], a
     pop bc
     ld b, c
     pop de
 
-jr_000_20ec:
+DrawLine_xMajorByteAdv::
     bit 7, c
-    jr z, jr_000_20f7
+    jr z, DrawLine_xMajorLoopDec
 
     push de
     ld de, $0010
@@ -6893,26 +6461,26 @@ jr_000_20ec:
     pop de
     ld b, c
 
-jr_000_20f7:
+DrawLine_xMajorLoopDec::
     ld a, b
     or c
     ld b, a
     dec e
-    jp nz, Jump_000_207a
+    jp nz, DrawLine_xMajor
 
     ld a, b
     cpl
     ld c, a
-    jp Jump_000_2291
+    jp ApplyPixel
 
 
-Jump_000_2104:
+DrawLine_horiz::
     ld a, [$d702]
     ld e, a
     inc e
     ld a, b
     and $07
-    jr z, jr_000_2122
+    jr z, DrawLine_horizMidRun
 
     push hl
     add $10
@@ -6922,49 +6490,49 @@ Jump_000_2104:
     pop hl
     xor a
 
-jr_000_2117:
+DrawLine_horizMaskShift::
     rrca
     or c
     dec e
-    jr z, jr_000_212a
+    jr z, DrawLine_horizTailPixel
 
     bit 0, a
-    jr z, jr_000_2117
+    jr z, DrawLine_horizMaskShift
 
-    jr jr_000_212a
+    jr DrawLine_horizTailPixel
 
-jr_000_2122:
+DrawLine_horizMidRun::
     ld a, e
     dec a
     and $f8
-    jr z, jr_000_2151
+    jr z, DrawLine_horizMaskInit
 
-    jr jr_000_2136
+    jr DrawLine_horizDoneCheck
 
-jr_000_212a:
+DrawLine_horizTailPixel::
     ld b, a
     cpl
     ld c, a
     push de
-    call Call_000_2291
+    call ApplyPixel
     ld de, $000f
     add hl, de
     pop de
 
-jr_000_2136:
+DrawLine_horizDoneCheck::
     ld a, e
     or a
     ret z
 
     and $f8
-    jr z, jr_000_2151
+    jr z, DrawLine_horizMaskInit
 
     xor a
     ld c, a
     cpl
     ld b, a
     push de
-    call Call_000_2291
+    call ApplyPixel
     ld de, $000f
     add hl, de
     pop de
@@ -6973,57 +6541,57 @@ jr_000_2136:
     ret z
 
     ld e, a
-    jr jr_000_2136
+    jr DrawLine_horizDoneCheck
 
-jr_000_2151:
+DrawLine_horizMaskInit::
     ld a, $80
 
-jr_000_2153:
+DrawLine_horizMaskLoop::
     dec e
-    jr z, jr_000_215a
+    jr z, DrawLine_horizApplyPixel
 
     sra a
-    jr jr_000_2153
+    jr DrawLine_horizMaskLoop
 
-jr_000_215a:
+DrawLine_horizApplyPixel::
     ld b, a
     cpl
     ld c, a
-    jp Jump_000_2291
+    jp ApplyPixel
 
 
-Jump_000_2160:
+DrawLine_yMajor::
     ld a, c
     sub e
-    jp nc, Jump_000_2171
+    jp nc, DrawLine_yMajorMaybeSwap
 
     ld a, b
     sub d
-    jr z, jr_000_217d
+    jr z, DrawLine_yMajorSetYstep
 
     ld a, $00
-    jr nc, jr_000_217d
+    jr nc, DrawLine_yMajorSetYstep
 
     ld a, $ff
-    jr jr_000_217d
+    jr DrawLine_yMajorSetYstep
 
-Jump_000_2171:
+DrawLine_yMajorMaybeSwap::
     ld a, c
     sub e
-    jr z, jr_000_217b
+    jr z, DrawLine_yMajorSwapDone
 
     ld a, $00
-    jr nc, jr_000_217b
+    jr nc, DrawLine_yMajorSwapDone
 
     ld a, $ff
 
-jr_000_217b:
+DrawLine_yMajorSwapDone::
     ld b, d
     ld c, e
 
-jr_000_217d:
+DrawLine_yMajorSetYstep::
     ld [$d704], a
-    ld hl, $2c02
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7041,7 +6609,7 @@ jr_000_217d:
     inc e
     ld a, [$d702]
     or a
-    jp z, Jump_000_2253
+    jp z, DrawLine_vert
 
     push hl
     ld h, $00
@@ -7060,7 +6628,7 @@ jr_000_217d:
     inc hl
     add hl, de
     ld a, h
-    ld [$d705], a
+    ld [wCircleErr], a
     ld a, l
     ld [$d706], a
     ld a, [$d703]
@@ -7089,84 +6657,84 @@ jr_000_217d:
     ld b, a
     ld c, a
 
-jr_000_21e5:
+DrawLine_yMajorPlot::
     push de
     push bc
     ld a, b
     cpl
     ld c, a
-    call Call_000_2291
+    call ApplyPixel
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_21f7
+    jr nz, DrawLine_yMajorAfterPlot
 
     ld de, $0130
     add hl, de
 
-jr_000_21f7:
+DrawLine_yMajorAfterPlot::
     pop bc
-    ld a, [$d705]
+    ld a, [wCircleErr]
     bit 7, a
-    jr z, jr_000_2217
+    jr z, DrawLine_yMajorErrCheck
 
     ld a, [$d706]
     ld d, a
     ld a, [$d708]
     add d
     ld [$d706], a
-    ld a, [$d705]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d707]
     adc d
-    ld [$d705], a
-    jr jr_000_2249
+    ld [wCircleErr], a
+    jr DrawLine_yMajorLoopDec
 
-jr_000_2217:
+DrawLine_yMajorErrCheck::
     ld a, [$d704]
     or a
-    jr nz, jr_000_2229
+    jr nz, DrawLine_yMajorXstep
 
     rlc b
     bit 0, b
-    jr z, jr_000_2233
+    jr z, DrawLine_yMajorErrAdd
 
     ld de, $fff0
     add hl, de
-    jr jr_000_2233
+    jr DrawLine_yMajorErrAdd
 
-jr_000_2229:
+DrawLine_yMajorXstep::
     rrc b
     bit 7, b
-    jr z, jr_000_2233
+    jr z, DrawLine_yMajorErrAdd
 
     ld de, $0010
     add hl, de
 
-jr_000_2233:
+DrawLine_yMajorErrAdd::
     ld a, [$d706]
     ld d, a
     ld a, [$d70a]
     add d
     ld [$d706], a
-    ld a, [$d705]
+    ld a, [wCircleErr]
     ld d, a
     ld a, [$d709]
     adc d
-    ld [$d705], a
+    ld [wCircleErr], a
 
-jr_000_2249:
+DrawLine_yMajorLoopDec::
     pop de
     dec e
-    jr nz, jr_000_21e5
+    jr nz, DrawLine_yMajorPlot
 
     ld a, b
     cpl
     ld c, a
-    jp Jump_000_2291
+    jp ApplyPixel
 
 
-Jump_000_2253:
+DrawLine_vert::
     ld a, b
     and $07
     push hl
@@ -7179,26 +6747,31 @@ Jump_000_2253:
     cpl
     ld c, a
 
-jr_000_2261:
+DrawLine_vertApplyPixel::
     push de
-    call Call_000_2291
+    call ApplyPixel
     inc hl
     ld a, l
     and $0f
-    jr nz, jr_000_226f
+    jr nz, DrawLine_vertLoopDec
 
     ld de, $0130
     add hl, de
 
-jr_000_226f:
+DrawLine_vertLoopDec::
     pop de
     dec e
     ret z
 
-    jr jr_000_2261
+    jr DrawLine_vertApplyPixel
 
-Call_000_2274:
-    ld hl, $2c02
+; [ezgb]
+; PlotPixel: set one pixel in the mode-1 framebuffer. Register ABI: B=x, C=y.
+; Uses GfxRowTable ($2fbb) for scanline->VRAM; x bit from ROM $0010 masks.
+; Falls into ApplyPixel ($264a). Sibling GetPixel ($26cc) reads the same address.
+
+PlotPixel::
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7221,11 +6794,16 @@ Call_000_2274:
     cpl
     ld c, a
 
-Call_000_2291:
-Jump_000_2291:
-    ld a, [$d70d]
+; [ezgb]
+; ApplyPixel: blit one masked pixel at HL (B=mask, C=~mask). STAT-safe VRAM RMW. wDrawColor@$D734 planes; wDrawOp@$D723.
+; Dispatch: op1 → jr_000_267e OR; op2 → jr_000_2698 XOR; op3 → jr_000_26b2 AND-clear; else replace.
+; Replace: plane0 clear → B=0 then jr_000_2665; plane1 clear → E=0; jr_000_266b STAT-wait and/or write lo/hi; maybe pop BC.
+; OR jr_000_267e: jr_000_2685/jr_000_268b plane gates + STAT or-write. XOR jr_000_2698: jr_000_269f/jr_000_26a5. AND jr_000_26b2: jr_000_26b9/jr_000_26bf.
+
+ApplyPixel::
+    ld a, [wDrawColor]
     ld d, a
-    ld a, [$d6fc]
+    ld a, [wDrawOp]
     cp $01
     jr z, jr_000_22c5
 
@@ -7237,21 +6815,21 @@ Jump_000_2291:
 
     ld e, b
     bit 0, d
-    jr nz, jr_000_22ac
+    jr nz, ApplyPixel_checkPlane1
 
     push bc
     ld b, $00
 
-jr_000_22ac:
+ApplyPixel_checkPlane1::
     bit 1, d
-    jr nz, jr_000_22b2
+    jr nz, ApplyPixel_waitStatWrite
 
     ld e, $00
 
-jr_000_22b2:
+ApplyPixel_waitStatWrite::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_22b2
+    jr nz, ApplyPixel_waitStatWrite
 
     ld a, [hl]
     and c
@@ -7350,8 +6928,13 @@ jr_000_2306:
     ret
 
 
-Call_000_2313:
-    ld hl, $2c02
+; [ezgb]
+; GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).
+; jr_000_26e7: STAT-wait read 2bpp pair; mask from $10+(x&7).
+; jr_000_26f9: if plane0 bit clear skip; set0 B. jr_000_26ff: plane1 bit → set1 B; E=B ret.
+
+GetPixel::
+    ld hl, GfxRowTable
     ld d, $00
     ld e, c
     add hl, de
@@ -7372,10 +6955,10 @@ Call_000_2313:
     ld a, [bc]
     ld c, a
 
-jr_000_232e:
+GetPixel_waitStat::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_232e
+    jr nz, GetPixel_waitStat
 
     ld a, [hl+]
     ld d, a
@@ -7384,26 +6967,33 @@ jr_000_232e:
     ld b, $00
     ld a, d
     and c
-    jr z, jr_000_2340
+    jr z, GetPixel_testPlane0
 
     set 0, b
 
-jr_000_2340:
+GetPixel_testPlane0::
     ld a, e
     and c
-    jr z, jr_000_2346
+    jr z, GetPixel_retColor
 
     set 1, b
 
-jr_000_2346:
+GetPixel_retColor::
     ld e, b
     ret
 
 
-Call_000_2348:
-    ld hl, $2c02
+; [ezgb]
+; DrawGlyph(C=tile): blit 8×8 from font sheet $3206 into framebuffer at wTextCursorX/Y via GfxRowTable.
+; Setup: row ptr from GfxRowTable[Y<<3]; +X<<3; glyph base $3206+C*8; C=wDrawColor.
+; jr_000_2730: A=*src++; B=src bits. colorB.0 → A=$ff else jr_000_273f; A|=B; color.0 clear → A^=B; jr_000_2745 D=A.
+; jr_000_2745: colorB.1 → A=$ff else jr_000_274c; A|=B; color.1 clear → A^=B; jr_000_2752 E=A; pop HL.
+; jr_000_2754: STAT-wait; [HL++]=D,E; pop DE; if L&$0f → jr_000_2730 else ret. DrawGlyphAdvance wraps + AdvanceTextCursor.
+
+DrawGlyph::
+    ld hl, GfxRowTable
     ld d, $00
-    ld a, [$d70c]
+    ld a, [wTextCursorY]
     rlca
     rlca
     rlca
@@ -7414,7 +7004,7 @@ Call_000_2348:
     inc hl
     ld h, [hl]
     ld l, b
-    ld a, [$d70b]
+    ld a, [wTextCursorX]
     rlca
     rlca
     rlca
@@ -7435,53 +7025,53 @@ Call_000_2348:
     ld e, l
     ld h, b
     ld l, c
-    ld a, [$d70d]
+    ld a, [wDrawColor]
     ld c, a
 
-jr_000_2377:
+DrawGlyph_rowLoop::
     ld a, [de]
     inc de
     push de
     push hl
-    ld hl, $d70e
+    ld hl, wDrawColorB
     ld l, [hl]
     ld b, a
     xor a
     bit 0, l
-    jr z, jr_000_2386
+    jr z, DrawGlyph_afterColorB0
 
     cpl
 
-jr_000_2386:
+DrawGlyph_afterColorB0::
     or b
     bit 0, c
-    jr nz, jr_000_238c
+    jr nz, DrawGlyph_plane0Done
 
     xor b
 
-jr_000_238c:
+DrawGlyph_plane0Done::
     ld d, a
     xor a
     bit 1, l
-    jr z, jr_000_2393
+    jr z, DrawGlyph_afterColorB1
 
     cpl
 
-jr_000_2393:
+DrawGlyph_afterColorB1::
     or b
     bit 1, c
-    jr nz, jr_000_2399
+    jr nz, DrawGlyph_plane1Done
 
     xor b
 
-jr_000_2399:
+DrawGlyph_plane1Done::
     ld e, a
     pop hl
 
-jr_000_239b:
+DrawGlyph_statWait::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_239b
+    jr nz, DrawGlyph_statWait
 
     ld a, d
     ld [hl+], a
@@ -7490,60 +7080,75 @@ jr_000_239b:
     pop de
     ld a, l
     and $0f
-    jr nz, jr_000_2377
+    jr nz, DrawGlyph_rowLoop
 
     ret
 
 
-Call_000_23ac:
+; [ezgb]
+; SetTextCursor: store stack col/row into wTextCursorX/Y ($d732/$d733).
+
+SetTextCursor::
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d70b], a
+    ld [wTextCursorX], a
     ld a, [hl+]
-    ld [$d70c], a
+    ld [wTextCursorY], a
     ret
 
 
-Call_000_23b7:
+DrawGlyphAdvance::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl]
     ld c, a
-    call Call_000_2348
-    call Call_000_1d3b
+    call DrawGlyph
+    call AdvanceTextCursor
     pop bc
     ret
 
 
+; [ezgb]
+; GetPixelXY: stack ABI (x, y) → GetPixel (B/C). Sibling of PlotPixelXY.
+
+GetPixelXY::
     push bc
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
     ld a, [hl+]
     ld c, a
-    call Call_000_2313
+    call GetPixel
     pop bc
     ret
 
 
-Call_000_23d8:
+; [ezgb]
+; StoreDrawParams: store wDrawColor/wDrawColorB/wDrawOp ($D734/$D735/$D723);
+; called widely (~73 callers) before tile/string/pixel helpers.
+
+StoreDrawParams::
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d70d], a
+    ld [wDrawColor], a
     ld a, [hl+]
-    ld [$d70e], a
+    ld [wDrawColorB], a
     ld a, [hl]
-    ld [$d6fc], a
+    ld [wDrawOp], a
     ret
 
 
+; [ezgb]
+; DrawCircleXY: stack (x, y, r, fill); ensure EnterGfxMode1 then DrawCircle.
+
+DrawCircleXY::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -7552,38 +7157,47 @@ Call_000_23d8:
     ld a, [hl+]
     ld d, a
     ld a, [hl]
-    ld [$d6fd], a
-    call Call_000_1d58
+    ld [wDrawRectFill], a
+    call DrawCircle
     pop bc
     ret
 
 
-Call_000_2401:
+; [ezgb]
+; DrawRect: if wGfxMode!=1 call EnterGfxMode1; copy 5 stack args into wDrawX0/Y0/
+; X1/Y1/wDrawRectFill; call DrawRectImpl. C-shape ~ (u8 fill, u16, u16).
+; Used e.g. from BatteryCheck chrome; generic (many callers).
+
+DrawRect::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
-    ld [$d6fe], a
+    ld [wDrawX0], a
     ld a, [hl+]
-    ld [$d700], a
+    ld [wDrawY0], a
     ld a, [hl+]
-    ld [$d6ff], a
+    ld [wDrawX1], a
     ld a, [hl+]
-    ld [$d701], a
+    ld [wDrawY1], a
     ld a, [hl]
-    ld [$d6fd], a
-    call Call_000_1f0d
+    ld [wDrawRectFill], a
+    call DrawRectImpl
     pop bc
     ret
 
 
-Call_000_2425:
+; [ezgb]
+; DrawLineXY: stack ABI (x0,y0,x1,y1); ensure EnterGfxMode1 then DrawLine (BC/DE).
+; Thin C wrapper; e.g. bank8 chrome draws horizontal rules via this.
+
+DrawLineXY::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -7593,162 +7207,197 @@ Call_000_2425:
     ld d, a
     ld a, [hl+]
     ld e, a
-    call Call_000_1fe3
+    call DrawLine
     pop bc
     ret
 
 
-Call_000_243d:
+; [ezgb]
+; PlotPixelXY: stack ABI (x, y); ensure EnterGfxMode1 then PlotPixel (B/C).
+; Thin C wrapper over PlotPixel; used by bit-pattern glyph drawers.
+
+PlotPixelXY::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
     ld a, [hl+]
     ld c, a
-    call Call_000_2274
+    call PlotPixel
     pop bc
     ret
 
 
+; [ezgb]
+; PlotPixelEx: stack (x, y, wDrawColor, wDrawOp); set params then PlotPixel.
+; Like PlotPixelXY but also writes draw color/op before the blit.
+
+PlotPixelEx::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
     ld a, [hl+]
     ld c, a
     ld a, [hl+]
-    ld [$d70d], a
+    ld [wDrawColor], a
     ld a, [hl+]
-    ld [$d6fc], a
-    call Call_000_2274
+    ld [wDrawOp], a
+    call PlotPixel
     pop bc
     ret
 
 
-Call_000_246d:
-    jp Jump_000_2a08
+; [ezgb]
+; U32Mul: SDCC runtime __mullong. Stub jp U32MulImpl ($2dc1); multiplies two stack u32s,
+; returns product in HL:DE. Body zeros a 4-byte acc then U32MulEngine (B=4)
+; which uses MulU8xU8 (8x8->16 shift-add mul) per byte. Callers e.g. bank1
+; scale time fields by 24/60. Sibling stubs: S32Div/U32Div/S32Mod/U32Mod.
+
+U32Mul::
+    jp U32MulImpl
 
 
-    jp Jump_000_262d
+; [ezgb]
+; S32Div: SDCC __divslong stub jp S32DivImpl ($29e6). Signed long ÷; quotient in HL:DE.
+; Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine.
+
+S32Div::
+    jp S32DivImpl
 
 
-Call_000_2473:
-    jp Jump_000_26be
+; [ezgb]
+; U32Div: SDCC __divulong stub jp U32DivImpl ($2a77). Unsigned long ÷ via U32DivEngine;
+; returns quotient from scratch. U32ToAscii uses this with radix.
+
+U32Div::
+    jp U32DivImpl
 
 
-    jp Jump_000_276f
+; [ezgb]
+; S32Mod: SDCC __modslong stub jp S32ModImpl ($2b28). Signed long %; remainder in HL:DE.
+
+S32Mod::
+    jp S32ModImpl
 
 
-Call_000_2479:
-    jp Jump_000_2843
+; [ezgb]
+; U32Mod: SDCC __modulong stub jp U32ModImpl ($2bfc). Unsigned long %; U32ToAscii digit path.
 
-
-    ld a, $05
-    rst RST_08
-    jp Jump_000_2816
-
-
-    ld a, $05
-    rst RST_08
-    jp Jump_000_24f0
-
-
-    ld a, $05
-    rst RST_08
-    jp Jump_000_2530
-
-
-    ld a, $05
-    rst RST_08
-    jp Jump_000_27e9
-
-
-    ld a, $05
-    rst RST_08
-    jp Jump_000_24d6
+U32Mod::
+    jp U32ModImpl
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_27f8
+    jp U16Mul
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2516
+    jp S16Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_24e4
+    jp U16Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2524
+    jp S8Mul
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2504
+    jp S8Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2544
+    jp MulU8xU8Arg
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_25d6
+    jp U8Div
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_25f3
+    jp S8Mod
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2610
+    jp U8Mod
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2610
+    jp S16Mod
 
 
-Jump_000_24d6:
+    ld a, $05
+    rst RST_08
+    jp U16Mod
+
+
+    ld a, $05
+    rst RST_08
+    jp U32Shr
+
+
+    ld a, $05
+    rst RST_08
+    jp S32Sar
+
+
+    ld a, $05
+    rst RST_08
+    jp U32Shl
+
+
+    ld a, $05
+    rst RST_08
+    jp U32Shl
+
+
+; [ezgb]
+; S8Div: SDCC __divschar. Stack two s8; sex via S16DivSex8; quotient in DE.
+; Siblings: S8Mod $289d, S16Div $28a9, S16Mod $28bd.
+
+S8Div::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2556
+    call S16DivSex8
     ld e, c
     ld d, b
     ret
 
 
-Jump_000_24e4:
+S8Mod::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2556
+    call S16DivSex8
     ret
 
 
-Jump_000_24f0:
+S16Div::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -7761,13 +7410,13 @@ Jump_000_24f0:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_255e
+    call S16DivMod
     ld e, c
     ld d, b
     ret
 
 
-Jump_000_2504:
+S16Mod::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -7780,38 +7429,45 @@ Jump_000_2504:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_255e
+    call S16DivMod
     ret
 
 
-Call_000_2516:
-Jump_000_2516:
+; [ezgb]
+; U8Div: SDCC __divuchar. Stack two u8; zero-extends via U16DivZext8; returns
+; quotient in DE. Bank4 decimal digit path: push 10 / n then call (n/10).
+
+U8Div::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2590
+    call U16DivZext8
     ld e, c
     ld d, b
     ret
 
 
-Call_000_2524:
-Jump_000_2524:
+; [ezgb]
+; U8Mod: SDCC __moduchar. Same stack as U8Div; returns remainder in DE (n%10).
+
+U8Mod::
     ld hl, $0003
     add hl, sp
     ld e, [hl]
     dec hl
     ld l, [hl]
     ld c, l
-    call Call_000_2590
+    call U16DivZext8
     ret
 
 
-Call_000_2530:
-Jump_000_2530:
+; [ezgb]
+; U16Div: SDCC __divuint. Stack two u16; U16DivMod engine; quotient in DE.
+
+U16Div::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -7824,13 +7480,16 @@ Jump_000_2530:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_2593
+    call U16DivMod
     ld e, c
     ld d, b
     ret
 
 
-Jump_000_2544:
+; [ezgb]
+; U16Mod: SDCC __moduint. Stack two u16; remainder in DE.
+
+U16Mod::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -7843,11 +7502,11 @@ Jump_000_2544:
     ld h, a
     ld b, h
     ld c, l
-    call Call_000_2593
+    call U16DivMod
     ret
 
 
-Call_000_2556:
+S16DivSex8::
     ld a, c
     rlca
     sbc a
@@ -7857,13 +7516,18 @@ Call_000_2556:
     sbc a
     ld d, a
 
-Call_000_255e:
+; [ezgb]
+; S16DivMod(BC=dividend, DE=divisor): signed wrapper around U16DivMod.
+; Abs DE if neg; jr_000_2925: abs BC if neg; jr_000_292f: U16DivMod (C set → early ret).
+; jr_000_293e: restore quot sign (B^D) on BC; rem sign (dividend) on DE.
+
+S16DivMod::
     ld a, b
     push af
     xor d
     push af
     bit 7, d
-    jr z, jr_000_256c
+    jr z, S16DivMod_absDividend
 
     sub a
     sub e
@@ -7872,9 +7536,9 @@ Call_000_255e:
     sub d
     ld d, a
 
-jr_000_256c:
+S16DivMod_absDividend::
     bit 7, b
-    jr z, jr_000_2576
+    jr z, S16DivMod_u16Div
 
     sub a
     sub c
@@ -7883,13 +7547,13 @@ jr_000_256c:
     sub b
     ld b, a
 
-jr_000_2576:
-    call Call_000_2593
+S16DivMod_u16Div::
+    call U16DivMod
     ret c
 
     pop af
     and $80
-    jr z, jr_000_2585
+    jr z, S16DivMod_restoreSigns
 
     sub a
     sub c
@@ -7898,7 +7562,7 @@ jr_000_2576:
     sub b
     ld b, a
 
-jr_000_2585:
+S16DivMod_restoreSigns::
     pop af
     and $80
     ret z
@@ -7912,14 +7576,19 @@ jr_000_2585:
     ret
 
 
-Call_000_2590:
+U16DivZext8::
     ld b, $00
     ld d, b
 
-Call_000_2593:
+; [ezgb]
+; U16DivMod: unsigned 16-bit restoring divide. BC/DE in → BC=quot, DE=rem.
+; U16DivZext8 ($2949) zeros high bytes then falls in. S16DivMod ($2917) abs,
+; calls this, re-applies signs.
+
+U16DivMod::
     ld a, e
     or d
-    jr nz, jr_000_259e
+    jr nz, U16DivMod_setup
 
     ld bc, $0000
     ld d, b
@@ -7928,14 +7597,14 @@ Call_000_2593:
     ret
 
 
-jr_000_259e:
+U16DivMod_setup::
     ld l, c
     ld h, b
     ld bc, $0000
     or a
     ld a, $10
 
-jr_000_25a6:
+U16DivMod_shiftLoop::
     push af
     rl l
     rl h
@@ -7949,32 +7618,32 @@ jr_000_25a6:
     sbc d
     ld b, a
     ccf
-    jr c, jr_000_25bc
+    jr c, U16DivMod_restoreBorrow
 
     pop bc
-    jr jr_000_25be
+    jr U16DivMod_checkBit
 
-jr_000_25bc:
+U16DivMod_restoreBorrow::
     inc sp
     inc sp
 
-jr_000_25be:
-    jr c, jr_000_25c7
+U16DivMod_checkBit::
+    jr c, U16DivMod_lastBit
 
     pop af
     dec a
     or a
-    jr nz, jr_000_25a6
+    jr nz, U16DivMod_shiftLoop
 
-    jr jr_000_25cc
+    jr U16DivMod_finish
 
-jr_000_25c7:
+U16DivMod_lastBit::
     pop af
     dec a
     scf
-    jr nz, jr_000_25a6
+    jr nz, U16DivMod_shiftLoop
 
-jr_000_25cc:
+U16DivMod_finish::
     ld d, b
     ld e, c
     rl l
@@ -7985,8 +7654,13 @@ jr_000_25cc:
     ret
 
 
-Call_000_25d6:
-Jump_000_25d6:
+; [ezgb]
+; U32Shr: SDCC runtime, logical >> on unsigned long. Stack: u32 + shift count;
+; returns in HL:DE. Sibling S32Sar ($29ac) uses sra; U32Shl ($29c9) uses rl.
+; High fan-in is every C << >> on longs — name from the loop, no emulator needed.
+; Jump_000_299e: while count--: rr HL:DE (logical); count==0 ret.
+
+U32Shr::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8001,7 +7675,7 @@ Jump_000_25d6:
     ld l, c
     ld h, b
 
-Jump_000_25e5:
+U32Shr_shiftLoop::
     or a
     ret z
 
@@ -8010,10 +7684,14 @@ Jump_000_25e5:
     rr d
     rr e
     dec a
-    jp Jump_000_25e5
+    jp U32Shr_shiftLoop
 
 
-Jump_000_25f3:
+; [ezgb]
+; S32Sar: SDCC runtime, arithmetic >> on signed long (sra on high byte).
+; Stack: s32 + shift count → HL:DE. Jump_000_29bb: while count--: sra H, rr L/D/E; twin of U32Shr.
+
+S32Sar::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8028,7 +7706,7 @@ Jump_000_25f3:
     ld l, c
     ld h, b
 
-Jump_000_2602:
+S32Sar_shiftLoop::
     or a
     ret z
 
@@ -8037,11 +7715,14 @@ Jump_000_2602:
     rr d
     rr e
     dec a
-    jp Jump_000_2602
+    jp S32Sar_shiftLoop
 
 
-Call_000_2610:
-Jump_000_2610:
+; [ezgb]
+; U32Shl: SDCC runtime, << on unsigned long. Stack: u32 + shift count → HL:DE.
+; Jump_000_29d8: while count--: rl E/D/L/H; twin of U32Shr/S32Sar.
+
+U32Shl::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8056,7 +7737,7 @@ Jump_000_2610:
     ld l, c
     ld h, b
 
-Jump_000_261f:
+U32Shl_shiftLoop::
     or a
     ret z
 
@@ -8065,28 +7746,36 @@ Jump_000_261f:
     rl l
     rl h
     dec a
-    jp Jump_000_261f
+    jp U32Shl_shiftLoop
 
 
-Jump_000_262d:
+; [ezgb]
+; S32DivImpl: body of S32Div stub. Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL quotient.
+; div0: MemIsZero dividend → DEHL=0 Jump_000_2a5c; else jr_000_29f9.
+; jr_000_29f9: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2a5c; else jr_000_2a0f.
+; jr_000_2a0f: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2a23.
+; jr_000_2a23: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2a35.
+; jr_000_2a35: U32DivEngine → quot@sp+$01; rr sign → if set NegateBytes quot; jr_000_2a53 load DEHL; Jump_000_2a5c epilogue.
+
+S32DivImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
-    call Call_000_2704
-    jr nz, jr_000_2640
+    call MemIsZero
+    jr nz, S32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_26a3
+    jp S32DivImpl_epilogueRet
 
 
-jr_000_2640:
+S32DivImpl_checkDivisor::
     ld hl, sp+$0f
-    call Call_000_2704
-    jr nz, jr_000_2656
+    call MemIsZero
+    jr nz, S32DivImpl_clearSign
 
     ld a, $21
     ld [$d6a0], a
@@ -8095,37 +7784,37 @@ jr_000_2640:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_26a3
+    jp S32DivImpl_epilogueRet
 
 
-jr_000_2656:
+S32DivImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_266a
+    jr z, S32DivImpl_checkDividendSign
 
     ld hl, sp+$0f
-    call Call_000_2993
+    call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-jr_000_266a:
+S32DivImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_267c
+    jr z, S32DivImpl_u32DivEngine
 
     ld hl, sp+$0b
-    call Call_000_2993
+    call NegateBytes
     ld hl, sp+$00
     ld a, $01
     xor [hl]
     ld [hl], a
 
-jr_000_267c:
+S32DivImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -8134,17 +7823,17 @@ jr_000_267c:
     push hl
     ld hl, sp+$07
     push hl
-    call Call_000_2a27
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, jr_000_269a
+    jr nc, S32DivImpl_loadQuot
 
     ld b, $04
     ld hl, sp+$01
-    call Call_000_2993
+    call NegateBytes
 
-jr_000_269a:
+S32DivImpl_loadQuot::
     ld hl, sp+$01
     ld a, [hl+]
     ld e, a
@@ -8154,11 +7843,16 @@ jr_000_269a:
     ld h, [hl]
     ld l, a
 
-Jump_000_26a3:
+S32DivImpl_epilogueRet::
     add sp, $09
     ret
 
 
+; [ezgb]
+; VBlankCb_Bg8000: VBlank callback registered by EnterGfxMode1. Sets LCDC bit4
+; (BG tile data $8000) and LYC=$48. Pair with LycCb_Bg8800 STAT LYC ISR.
+
+VBlankCb_Bg8000::
     ldh a, [rLCDC]
     or $10
     ldh [rLCDC], a
@@ -8167,10 +7861,14 @@ Jump_000_26a3:
     ret
 
 
-jr_000_26b1:
+; [ezgb]
+; LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 → RegisterLcdCallback). Wait
+; STAT mode≠2, clear LCDC bit4 (BG tile data back to $8800). Was jr_000_2a6a.
+
+LycCb_Bg8800::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_26b1
+    jr nz, LycCb_Bg8800
 
     ldh a, [rLCDC]
     and $ef
@@ -8178,25 +7876,31 @@ jr_000_26b1:
     ret
 
 
-Jump_000_26be:
+; [ezgb]
+; U32DivImpl: body of U32Div stub. Frame -$08; dividend@sp+$0a, divisor@sp+$0e → DEHL quotient.
+; MemIsZero dividend → DEHL=0 Jump_000_2aba; else jr_000_2a8a.
+; jr_000_2a8a: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2aba; else jr_000_2aa0.
+; jr_000_2aa0: U32DivEngine → load quot@sp+$00 into DEHL; Jump_000_2aba epilogue. Unsigned twin of S32DivImpl.
+
+U32DivImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
-    call Call_000_2704
-    jr nz, jr_000_26d1
+    call MemIsZero
+    jr nz, U32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2701
+    jp U32DivImpl_epilogueRet
 
 
-jr_000_26d1:
+U32DivImpl_checkDivisor::
     ld hl, sp+$0e
-    call Call_000_2704
-    jr nz, jr_000_26e7
+    call MemIsZero
+    jr nz, U32DivImpl_runEngine
 
     ld a, $21
     ld [$d6a0], a
@@ -8205,10 +7909,10 @@ jr_000_26d1:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2701
+    jp U32DivImpl_epilogueRet
 
 
-jr_000_26e7:
+U32DivImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -8217,7 +7921,7 @@ jr_000_26e7:
     push hl
     ld hl, sp+$06
     push hl
-    call Call_000_2a27
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     ld a, [hl+]
@@ -8228,22 +7932,27 @@ jr_000_26e7:
     ld h, [hl]
     ld l, a
 
-Jump_000_2701:
+U32DivImpl_epilogueRet::
     add sp, $08
     ret
 
 
-Call_000_2704:
+; [ezgb]
+; MemIsZero: scan B bytes at HL; Z if all zero else NZ. Used by U32/S32 div/mod
+; stubs to reject zero dividend/divisor before U32DivEngine.
+; jr_000_2abf: while C--: *HL++==0 else NZ ret; fallthrough Z ret.
+
+MemIsZero::
     xor a
     ld c, b
 
-jr_000_2706:
+MemIsZero_scanLoop::
     cp [hl]
     ret nz
 
     inc hl
     dec c
-    jr nz, jr_000_2706
+    jr nz, MemIsZero_scanLoop
 
     ret
 
@@ -8261,14 +7970,19 @@ jr_000_2706:
     ret
 
 
-Call_000_2719:
+; [ezgb]
+; ClearNegZero32: HL→MSB of 4-byte LE value; if value is 0 or $80000000,
+; clear sign bit (force -0 → +0). Used by S32Cmp.
+; jr_000_2ad9: if bit7 clear A=0 else A=$80; match MSB then scan 3 lower bytes==0 → res 7.
+
+ClearNegZero32::
     xor a
     bit 7, [hl]
-    jr z, jr_000_2720
+    jr z, ClearNegZero32_matchMsb
 
     ld a, $80
 
-jr_000_2720:
+ClearNegZero32_matchMsb::
     cp [hl]
     ret nz
 
@@ -8292,10 +8006,15 @@ jr_000_2720:
     ret
 
 
-jr_000_2732:
+; [ezgb]
+; MemCmp3Down: compare 3 bytes at DE vs HL walking downward; NZ on first diff.
+; Local helper for S32Cmp MSB-side compare.
+; jr_000_2aed: C=3; *DE-*HL; NZ ret; dec both; --C; Z after 3 → equal ret.
+
+MemCmp3Down::
     ld c, $03
 
-jr_000_2734:
+MemCmp3Down_cmpLoop::
     ld a, [de]
     sub [hl]
     ret nz
@@ -8305,27 +8024,34 @@ jr_000_2734:
     dec c
     ret z
 
-    jr jr_000_2734
+    jr MemCmp3Down_cmpLoop
 
+; [ezgb]
+; S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.
+; a MSB set: if b also neg → MemCmp3Down swapped; else jr_000_2b14 C-set (a<b) ret.
+; jr_000_2b17: a pos; if b neg → A=$ff ret; else jr_000_2b20 MemCmp3Down a vs b.
+; No external callers in this build (SDCC runtime residue).
+
+S32Cmp::
     ld hl, sp+$07
-    call Call_000_2719
+    call ClearNegZero32
     ld hl, sp+$0b
-    call Call_000_2719
+    call ClearNegZero32
     ld hl, sp+$07
     bit 7, [hl]
     jr z, jr_000_275e
 
     ld hl, sp+$0b
     bit 7, [hl]
-    jr z, jr_000_275b
+    jr z, S32Cmp_retALess
 
     ld hl, sp+$0b
     ld d, h
     ld e, l
     ld hl, sp+$07
-    jr jr_000_2732
+    jr MemCmp3Down
 
-jr_000_275b:
+S32Cmp_retALess::
     xor a
     ccf
     ret
@@ -8346,27 +8072,35 @@ jr_000_2767:
     ld d, h
     ld e, l
     ld hl, sp+$0b
-    jr jr_000_2732
+    jr MemCmp3Down
 
-Jump_000_276f:
+; [ezgb]
+; S32ModImpl: body of S32Mod stub (twin of S32DivImpl). Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL rem.
+; div0: MemIsZero dividend → DEHL=0 Jump_000_2b9f; else jr_000_2b3b.
+; jr_000_2b3b: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2b9f; else jr_000_2b51.
+; jr_000_2b51: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall jr_000_2b65.
+; jr_000_2b65: if dividend MSB set NegateBytes dividend + xor sign; fall jr_000_2b77.
+; jr_000_2b77: U32DivEngine → rem@sp+$05; rr sign → if set NegateBytes rem; jr_000_2b96 load DEHL; Jump_000_2b9f epilogue.
+
+S32ModImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
-    call Call_000_2704
-    jr nz, jr_000_2782
+    call MemIsZero
+    jr nz, S32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_27e6
+    jp S32ModImpl_epilogueRet
 
 
-jr_000_2782:
+S32ModImpl_checkDivisor::
     ld hl, sp+$0f
-    call Call_000_2704
-    jr nz, jr_000_2798
+    call MemIsZero
+    jr nz, S32ModImpl_clearSign
 
     ld a, $21
     ld [$d6a0], a
@@ -8375,37 +8109,37 @@ jr_000_2782:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_27e6
+    jp S32ModImpl_epilogueRet
 
 
-jr_000_2798:
+S32ModImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_27ac
+    jr z, S32ModImpl_checkDividendSign
 
     ld hl, sp+$0f
-    call Call_000_2993
+    call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-jr_000_27ac:
+S32ModImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, jr_000_27be
+    jr z, S32ModImpl_u32DivEngine
 
     ld hl, sp+$0b
-    call Call_000_2993
+    call NegateBytes
     ld hl, sp+$00
     ld a, $01
     xor [hl]
     ld [hl], a
 
-jr_000_27be:
+S32ModImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -8414,18 +8148,18 @@ jr_000_27be:
     push hl
     ld hl, sp+$07
     push hl
-    call Call_000_2a27
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, jr_000_27dd
+    jr nc, S32ModImpl_loadRem
 
     ld b, $04
     xor a
     ld hl, sp+$05
-    call Call_000_2993
+    call NegateBytes
 
-jr_000_27dd:
+S32ModImpl_loadRem::
     ld hl, sp+$05
     ld a, [hl+]
     ld e, a
@@ -8435,12 +8169,15 @@ jr_000_27dd:
     ld h, [hl]
     ld l, a
 
-Jump_000_27e6:
+S32ModImpl_epilogueRet::
     add sp, $09
     ret
 
 
-Jump_000_27e9:
+; [ezgb]
+; S8Mul: sex two stack s8 → s16, then U16Mul. Bank-5 RST stub jp target.
+
+S8Mul::
     ld hl, sp+$02
     ld a, [hl+]
     ld c, a
@@ -8453,44 +8190,57 @@ Jump_000_27e9:
     rla
     sbc a
     ld d, a
-    jr jr_000_281f
+    jr U16Mul_initHl0
 
-Jump_000_27f8:
+; [ezgb]
+; MulU8xU8Arg: stack two u8 → C/E then MulU8xU8. Entry just above register ABI body.
+
+MulU8xU8Arg::
     ld hl, sp+$02
     ld a, [hl+]
     ld c, a
     ld e, [hl]
 
-Call_000_27fd:
+; [ezgb]
+; MulU8xU8(C×E) → DE: 8×8→16 shift-add. HL=0; jr_000_2bba: rr C, C-set → add hl,de.
+; jr_000_2bc0: sla e / rl d; jr_000_2bc8 finish when DE shifted out. Used by U32MulEngine.
+
+MulU8xU8::
     xor a
     ld h, a
     ld l, a
     ld d, a
 
-jr_000_2801:
+MulU8xU8_rrC::
     xor a
     rr c
-    jr nc, jr_000_2807
+    jr nc, MulU8xU8_shiftE
 
     add hl, de
 
-jr_000_2807:
+MulU8xU8_shiftE::
     sla e
-    jr z, jr_000_280f
+    jr z, MulU8xU8_finish
 
     rl d
-    jr jr_000_2801
+    jr MulU8xU8_rrC
 
-jr_000_280f:
+MulU8xU8_finish::
     rl d
-    jr nz, jr_000_2801
+    jr nz, MulU8xU8_rrC
 
     ld e, l
     ld d, h
     ret
 
 
-Jump_000_2816:
+; [ezgb]
+; U16Mul(a@sp+$02, b@sp+$04) → DE: shift-add (Russian peasant). Load DE=a, BC=b.
+; jr_000_2bd8: HL=0; fall jr_000_2bdb. jr_000_2bdb: sra B; NZ → jr_000_2be8 else rr C; C-set add HL,DE; jr_000_2be4.
+; jr_000_2be4: Z after rr → jr_000_2bf9 else jr_000_2bed. jr_000_2be8: rr C; NC → jr_000_2bed else add HL,DE; fall jr_000_2bed.
+; jr_000_2bed: sla E; Z → jr_000_2bf5 else rl D → jr_000_2bdb. jr_000_2bf5: rl D; NZ → jr_000_2bdb; fall jr_000_2bf9 DE=HL ret.
+
+U16Mul::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
@@ -8500,65 +8250,71 @@ Jump_000_2816:
     inc hl
     ld b, [hl]
 
-jr_000_281f:
+U16Mul_initHl0::
     ld hl, $0000
 
-jr_000_2822:
+U16Mul_loop::
     sra b
-    jr nz, jr_000_282f
+    jr nz, U16Mul_rrCPath
 
     rr c
-    jr nc, jr_000_282b
+    jr nc, U16Mul_afterAddLo
 
     add hl, de
 
-jr_000_282b:
-    jr z, jr_000_2840
+U16Mul_afterAddLo::
+    jr z, U16Mul_retDe
 
-    jr jr_000_2834
+    jr U16Mul_slaE
 
-jr_000_282f:
+U16Mul_rrCPath::
     rr c
-    jr nc, jr_000_2834
+    jr nc, U16Mul_slaE
 
     add hl, de
 
-jr_000_2834:
+U16Mul_slaE::
     sla e
-    jr z, jr_000_283c
+    jr z, U16Mul_rlDOnly
 
     rl d
-    jr jr_000_2822
+    jr U16Mul_loop
 
-jr_000_283c:
+U16Mul_rlDOnly::
     rl d
-    jr nz, jr_000_2822
+    jr nz, U16Mul_loop
 
-jr_000_2840:
+U16Mul_retDe::
     ld e, l
     ld d, h
     ret
 
 
-Jump_000_2843:
+; [ezgb]
+; U32ModImpl: body of U32Mod stub. Twin of U32DivImpl; frame -$08; rem@sp+$04 → DEHL.
+; MemIsZero dividend → DEHL=0 Jump_000_2c3f; else jr_000_2c0f.
+; jr_000_2c0f: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff Jump_000_2c3f; else jr_000_2c25.
+; jr_000_2c25: U32DivEngine → load rem@sp+$04 into DEHL; Jump_000_2c3f epilogue.
+
+U32ModImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
-    call Call_000_2704
-    jr nz, jr_000_2856
+    call MemIsZero
+    jr nz, U32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp Jump_000_2886
+    jp U32ModImpl_epilogueRet
 
 
-jr_000_2856:
+U32ModImpl_checkDivisor::
     ld hl, sp+$0e
-    call Call_000_2704
-    jr nz, jr_000_286c
+    call MemIsZero
+    jr nz, U32ModImpl_runEngine
 
     ld a, $21
     ld [$d6a0], a
@@ -8567,10 +8323,10 @@ jr_000_2856:
     ld d, a
     ld l, a
     ld h, $7f
-    jp Jump_000_2886
+    jp U32ModImpl_epilogueRet
 
 
-jr_000_286c:
+U32ModImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -8579,7 +8335,7 @@ jr_000_286c:
     push hl
     ld hl, sp+$06
     push hl
-    call Call_000_2a27
+    call U32DivEngine
     add sp, $08
     ld hl, sp+$04
     ld a, [hl+]
@@ -8590,12 +8346,18 @@ jr_000_286c:
     ld h, [hl]
     ld l, a
 
-Jump_000_2886:
+U32ModImpl_epilogueRet::
     add sp, $08
     ret
 
 
-Call_000_2889:
+; [ezgb]
+; Strrchr(ptr@sp+$06, ch@sp+$08): last char in string → DE (0 if none). Used for '/' basename.
+; Jump_000_2c50: ++BC until NUL; stash end@sp+$00. Jump_000_2c5b: --ptr; if at start → Jump_000_2c85 else Jump_000_2c73.
+; Jump_000_2c73: *ptr!=ch → Jump_000_2c82 → Jump_000_2c5b; else jr_000_2c85. Jump_000_2c85/jr_000_2c85: recheck match.
+; Hit jr_000_2c97 DE=ptr → Jump_000_2ca2; miss Jump_000_2c94 → Jump_000_2c9f DE=0 → Jump_000_2ca2 ret.
+
+Strrchr::
     push af
     push af
     ld hl, sp+$06
@@ -8609,18 +8371,18 @@ Call_000_2889:
     inc hl
     ld b, [hl]
 
-Jump_000_2897:
+Strrchr_scanToNul::
     ld a, [bc]
     inc bc
     or a
-    jp nz, Jump_000_2897
+    jp nz, Strrchr_scanToNul
 
     ld hl, sp+$00
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_000_28a2:
+Strrchr_walkBack::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -8634,15 +8396,15 @@ Jump_000_28a2:
     ld a, [hl+]
     inc hl
     sub [hl]
-    jp nz, Jump_000_28ba
+    jp nz, Strrchr_cmpChar
 
     dec hl
     ld a, [hl+]
     inc hl
     sub [hl]
-    jp z, Jump_000_28cc
+    jp z, Strrchr_recheckMatch
 
-Jump_000_28ba:
+Strrchr_cmpChar::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -8651,16 +8413,15 @@ Jump_000_28ba:
     ld c, a
     ld hl, sp+$08
     sub [hl]
-    jp nz, Jump_000_28c9
+    jp nz, Strrchr_mismatch
 
-    jr jr_000_28cc
+    jr Strrchr_recheckMatch
 
-Jump_000_28c9:
-    jp Jump_000_28a2
+Strrchr_mismatch::
+    jp Strrchr_walkBack
 
 
-Jump_000_28cc:
-jr_000_28cc:
+Strrchr_recheckMatch::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -8669,31 +8430,35 @@ jr_000_28cc:
     ld c, a
     ld hl, sp+$08
     sub [hl]
-    jp nz, Jump_000_28db
+    jp nz, Strrchr_missSkip
 
-    jr jr_000_28de
+    jr Strrchr_hitPtr
 
-Jump_000_28db:
-    jp Jump_000_28e6
+Strrchr_missSkip::
+    jp Strrchr_missZero
 
 
-jr_000_28de:
+Strrchr_hitPtr::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
     ld d, [hl]
-    jp Jump_000_28e9
+    jp Strrchr_epilogueRet
 
 
-Jump_000_28e6:
+Strrchr_missZero::
     ld de, $0000
 
-Jump_000_28e9:
+Strrchr_epilogueRet::
     add sp, $04
     ret
 
 
-Call_000_28ec:
+; [ezgb]
+; Memset(dest, byte, len): fill dest with byte. Sibling of Memcpy.
+; jr_000_2cb2: while BC≠0: *HL++=D, --BC. Stack: dest@sp+$02, byte@+$04, len@+$05.
+
+Memset::
     ld hl, sp+$05
     ld a, [hl+]
     ld c, a
@@ -8705,7 +8470,7 @@ Call_000_28ec:
     ld h, [hl]
     ld l, a
 
-jr_000_28f9:
+Memset_fillLoop::
     ld a, b
     or c
     ret z
@@ -8713,9 +8478,13 @@ jr_000_28f9:
     dec bc
     ld [hl], d
     inc hl
-    jr jr_000_28f9
+    jr Memset_fillLoop
 
-Call_000_2901:
+; [ezgb]
+; Memcpy(dest, src, len).
+; jr_000_2cc9: while BC≠0: *HL++=*DE++, --BC. Stack: dest@sp+$02, src@+$04, len@+$06.
+
+Memcpy::
     ld hl, sp+$06
     ld a, [hl+]
     ld c, a
@@ -8729,7 +8498,7 @@ Call_000_2901:
     ld h, [hl]
     ld l, a
 
-jr_000_2910:
+Memcpy_copyLoop::
     ld a, b
     or c
     ret z
@@ -8739,9 +8508,15 @@ jr_000_2910:
     ld [hl], a
     dec bc
     inc hl
-    jr jr_000_2910
+    jr Memcpy_copyLoop
 
-Call_000_291a:
+; [ezgb]
+; Strncpy(dest, src, n): frame -$07; stash dest@sp+$01, src@sp+$03, n=BC, ret-dest@sp+$05.
+; Jump_000_2cf1: if BC==0 or *src==0 → Jump_000_2d1b; else --BC, ++src (jr_000_2d0c carry), *dest++=A (jr_000_2d18 carry) → Jump_000_2cf1.
+; Jump_000_2d1b: stash rem n@sp+$03; Jump_000_2d20: --n; if 0 → Jump_000_2d44 else *dest++=0 (jr_000_2d41 carry) → Jump_000_2d20.
+; Jump_000_2d44: DE=orig dest; add sp,$07 ret.
+
+Strncpy::
     add sp, -$07
     ld hl, sp+$09
     ld a, [hl+]
@@ -8766,10 +8541,10 @@ Call_000_291a:
     ld [hl+], a
     ld [hl], e
 
-Jump_000_2938:
+Strncpy_copyLoop::
     ld a, c
     or b
-    jp z, Jump_000_2962
+    jp z, Strncpy_stashRem
 
     ld hl, sp+$03
     ld e, [hl]
@@ -8779,18 +8554,18 @@ Jump_000_2938:
     ld hl, sp+$00
     ld [hl], a
     or a
-    jp z, Jump_000_2962
+    jp z, Strncpy_stashRem
 
     dec bc
     ld a, [hl]
     ld hl, sp+$03
     inc [hl]
-    jr nz, jr_000_2953
+    jr nz, Strncpy_incSrc
 
     inc hl
     inc [hl]
 
-jr_000_2953:
+Strncpy_incSrc::
     ld hl, sp+$01
     ld e, [hl]
     inc hl
@@ -8798,22 +8573,22 @@ jr_000_2953:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_295f
+    jr nz, Strncpy_afterStore
 
     inc hl
     inc [hl]
 
-jr_000_295f:
-    jp Jump_000_2938
+Strncpy_afterStore::
+    jp Strncpy_copyLoop
 
 
-Jump_000_2962:
+Strncpy_stashRem::
     ld hl, sp+$03
     ld [hl], c
     inc hl
     ld [hl], b
 
-Jump_000_2967:
+Strncpy_padLoop::
     ld hl, sp+$03
     ld c, [hl]
     inc hl
@@ -8829,7 +8604,7 @@ Jump_000_2967:
     ld [hl], d
     ld a, c
     or b
-    jp z, Jump_000_298b
+    jp z, Strncpy_retDest
 
     ld hl, sp+$01
     ld e, [hl]
@@ -8839,16 +8614,16 @@ Jump_000_2967:
     ld [de], a
     dec hl
     inc [hl]
-    jr nz, jr_000_2988
+    jr nz, Strncpy_padCont
 
     inc hl
     inc [hl]
 
-jr_000_2988:
-    jp Jump_000_2967
+Strncpy_padCont::
+    jp Strncpy_padLoop
 
 
-Jump_000_298b:
+Strncpy_retDest::
     ld hl, sp+$05
     ld e, [hl]
     inc hl
@@ -8857,74 +8632,105 @@ Jump_000_298b:
     ret
 
 
-Call_000_2993:
+; [ezgb]
+; NegateBytes: two's-complement negate of B bytes at HL (0-sbc loop).
+; S32Div/S32Mod use this to abs signed long operands.
+; jr_000_2d4f: D=0; for C=B: *HL++ = D-sbc-*HL (borrow chain); ret.
+
+NegateBytes::
     ld c, b
     xor a
     ld d, a
 
-jr_000_2996:
+NegateBytes_sbcLoop::
     ld a, d
     sbc [hl]
     ld [hl+], a
     dec c
-    jr nz, jr_000_2996
+    jr nz, NegateBytes_sbcLoop
 
     ret
 
 
+; [ezgb]
+; PrintCharArg: stack u8 → PrintChar (A). Thin C ABI wrapper.
+
+PrintCharArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
-    call Call_000_380b
+    call PrintChar
     pop bc
     ret
 
 
+; [ezgb]
+; PutBgTileArg: stack u8 → PutBgTile (A). Thin C ABI wrapper.
+
+PutBgTileArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
-    call Call_000_3834
+    call PutBgTile
     pop bc
     ret
 
 
+; [ezgb]
+; SetTileCursor: stack (x, y) → wTileCursorX/Y. Tile-text cursor (vs SetTextCursor).
+
+SetTileCursor::
     ld hl, sp+$02
     ld a, [hl+]
-    ld [$d725], a
+    ld [wTileCursorX], a
     ld a, [hl]
-    ld [$d726], a
+    ld [wTileCursorY], a
     ret
 
 
+; [ezgb]
+; GetTileCursorX: ensure EnterGfxMode2 if needed; return wTileCursorX in E.
+; jr_000_2d7f: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorX.
+
+GetTileCursorX::
     ld a, [$d6a3]
     and $02
-    jr nz, jr_000_29c6
+    jr nz, GetTileCursorX_retX
 
     push bc
-    call Call_000_3968
+    call EnterGfxMode2
     pop bc
 
-jr_000_29c6:
-    ld a, [$d725]
+GetTileCursorX_retX::
+    ld a, [wTileCursorX]
     ld e, a
     ret
 
 
+; [ezgb]
+; GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.
+; jr_000_2d90: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY.
+
+GetTileCursorY::
     ld a, [$d6a3]
     and $02
-    jr nz, jr_000_29d7
+    jr nz, GetTileCursorY_retY
 
     push bc
-    call Call_000_3968
+    call EnterGfxMode2
     pop bc
 
-jr_000_29d7:
-    ld a, [$d726]
+GetTileCursorY_retY::
+    ld a, [wTileCursorY]
     ld e, a
     ret
 
 
-Call_000_29dc:
+; [ezgb]
+; CStrLen(s): count bytes until NUL; length in DE. (Not Strlen — RGBDS STRLEN.)
+; Jump_000_2da2: while *s++: ++len@sp+$00 (jr_000_2daf); Jump_000_2db2 DE=len ret.
+
+CStrLen::
     push af
     ld hl, sp+$00
     ld [hl], $00
@@ -8935,24 +8741,24 @@ Call_000_29dc:
     inc hl
     ld b, [hl]
 
-Jump_000_29e9:
+CStrLen_scan::
     ld a, [bc]
     inc bc
     or a
-    jp z, Jump_000_29f9
+    jp z, CStrLen_retLen
 
     ld hl, sp+$00
     inc [hl]
-    jr nz, jr_000_29f6
+    jr nz, CStrLen_incCont
 
     inc hl
     inc [hl]
 
-jr_000_29f6:
-    jp Jump_000_29e9
+CStrLen_incCont::
+    jp CStrLen_scan
 
 
-Jump_000_29f9:
+CStrLen_retLen::
     ld hl, sp+$00
     ld e, [hl]
     inc hl
@@ -8961,19 +8767,26 @@ Jump_000_29f9:
     ret
 
 
-Call_000_2a01:
+; [ezgb]
+; MemZero: write 0 to B bytes at HL. U32DivEngine clears quot/rem scratch with this.
+; jr_000_2dbc: C=B; store A=0 via [HL+], dec C until zero.
+
+MemZero::
     ld c, b
     xor a
 
-jr_000_2a03:
+MemZero_fillLoop::
     ld [hl+], a
     dec c
-    jr nz, jr_000_2a03
+    jr nz, MemZero_fillLoop
 
     ret
 
 
-Jump_000_2a08:
+; [ezgb]
+; U32MulImpl: body of U32Mul stub. Thin frame around U32MulEngine with B=4.
+
+U32MulImpl::
     add sp, -$04
     ld hl, sp+$0a
     push hl
@@ -8982,7 +8795,7 @@ Jump_000_2a08:
     ld hl, sp+$04
     push hl
     ld b, $04
-    call Call_000_2a87
+    call U32MulEngine
     add sp, $06
     ld hl, sp+$00
     ld a, [hl+]
@@ -8999,7 +8812,13 @@ Jump_000_2a08:
     ret
 
 
-Call_000_2a27:
+; [ezgb]
+; U32DivEngine: multi-byte restoring divide used by U32Div/U32Mod. Helpers:
+; MemZero, MemRol ($2ee2), MemSubCmp ($2ed8), MemSub ($2e30), IncWord ($2ecb).
+; B=digit width; C=B*8 bit count. Zero quot+rem scratch; jr_000_2df9: rol rem←dividend,
+; MemSubCmp divisor; NC → MemSub; jr_000_2e1f: rol quot bit; --C loop. Orphan before MemSub.
+
+U32DivEngine::
     ld a, b
     sla a
     sla a
@@ -9010,20 +8829,20 @@ Call_000_2a27:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2a01
+    call MemZero
     ld hl, sp+$04
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2a01
+    call MemZero
 
-jr_000_2a40:
+U32DivEngine_bitLoop::
     ld hl, sp+$08
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     xor a
-    call Call_000_2b29
+    call MemRol
     push af
     ld hl, sp+$06
     ld a, [hl+]
@@ -9031,7 +8850,7 @@ jr_000_2a40:
     ld l, a
     pop af
     push hl
-    call Call_000_2b29
+    call MemRol
     pop de
     ld hl, sp+$0a
     ld a, [hl+]
@@ -9039,14 +8858,14 @@ jr_000_2a40:
     ld l, a
     push de
     push hl
-    call Call_000_2b1f
+    call MemSubCmp
     pop hl
     pop de
-    jr c, jr_000_2a66
+    jr c, U32DivEngine_rolQuot
 
-    call Call_000_2a77
+    call MemSub
 
-jr_000_2a66:
+U32DivEngine_rolQuot::
     ccf
     push af
     ld hl, sp+$08
@@ -9054,40 +8873,55 @@ jr_000_2a66:
     ld h, [hl]
     ld l, a
     pop af
-    call Call_000_2b29
+    call MemRol
     pop bc
     dec c
     ret z
 
     push bc
-    jr jr_000_2a40
+    jr U32DivEngine_bitLoop
 
-Call_000_2a77:
+; [ezgb]
+; MemSub: multi-byte SBC: [DE] -= [HL] for B bytes (carry chain). U32DivEngine rem -= divisor.
+; jr_000_2e31: C=B; A=[DE] SBC [HL] → [DE]; ++HL/DE; until C=0.
+
+MemSub::
     ld c, b
 
-jr_000_2a78:
+MemSub_sbcLoop::
     ld a, [de]
     sbc [hl]
     ld [de], a
     inc hl
     inc de
     dec c
-    jr nz, jr_000_2a78
+    jr nz, MemSub_sbcLoop
 
     ret
 
 
+; [ezgb]
+; MemFill: store A into B bytes at HL++ (register ABI). Orphan between MemSub and U32MulEngine.
+; jr_000_2e3b: C=B; store A via [HL+], dec C until zero.
+
+MemFill::
     ld c, b
 
-jr_000_2a82:
+MemFill_fillLoop::
     ld [hl+], a
     dec c
-    jr nz, jr_000_2a82
+    jr nz, MemFill_fillLoop
 
     ret
 
 
-Call_000_2a87:
+; [ezgb]
+; U32MulEngine: multi-byte unsigned mul (B digit pairs). Zeros dest via MemZero,
+; per-byte MulU8xU8 + PropagateCarry. U32Mul stub drives this with B=4.
+; Jump_000_2e5e/jr_000_2e64: inner digit cross-products; add to dest + PropagateCarry; IncWord ptrs.
+; jr_000_2e98: next outer digit (CopyBytes reset ptrs) → 2e5e; jr_000_2ec0 ret when B exhausted.
+
+U32MulEngine::
     add sp, -$06
     ld hl, sp+$0c
     ld e, [hl]
@@ -9107,17 +8941,17 @@ Call_000_2a87:
     ld [hl], d
     ld h, d
     ld l, e
-    call Call_000_2a01
+    call MemZero
     ld hl, sp+$04
     ld [hl], b
 
-Jump_000_2aa5:
+U32MulEngine_outerSetup::
     ld hl, sp+$04
     ld a, [hl]
     ld hl, sp+$05
     ld [hl], a
 
-jr_000_2aab:
+U32MulEngine_innerDigit::
     ld hl, sp+$0c
     ld a, [hl+]
     ld h, [hl]
@@ -9128,7 +8962,7 @@ jr_000_2aab:
     ld h, [hl]
     ld l, a
     ld e, [hl]
-    call Call_000_27fd
+    call MulU8xU8
     ld hl, sp+$05
     ld c, [hl]
     ld hl, sp+$08
@@ -9139,63 +8973,68 @@ jr_000_2aab:
     add e
     ld [hl+], a
     dec c
-    jr z, jr_000_2adf
+    jr z, U32MulEngine_nextOuter
 
     ld a, [hl]
     adc d
     ld [hl+], a
-    call Call_000_2b0a
+    call PropagateCarry
     ld hl, sp+$05
     dec [hl]
-    jr z, jr_000_2adf
+    jr z, U32MulEngine_nextOuter
 
     ld hl, sp+$0c
-    call Call_000_2b12
+    call IncWord
     ld hl, sp+$08
-    call Call_000_2b12
-    jr jr_000_2aab
+    call IncWord
+    jr U32MulEngine_innerDigit
 
-jr_000_2adf:
+U32MulEngine_nextOuter::
     ld hl, sp+$04
     dec [hl]
-    jr z, jr_000_2b07
+    jr z, U32MulEngine_epilogueRet
 
     ld hl, sp+$00
-    call Call_000_2b12
+    call IncWord
     ld hl, sp+$0a
-    call Call_000_2b12
+    call IncWord
     push bc
     ld b, $02
     ld hl, sp+$02
     ld d, h
     ld e, l
     ld hl, sp+$0a
-    call Call_000_2b17
+    call CopyBytes
     ld hl, sp+$04
     ld d, h
     ld e, l
     ld hl, sp+$0e
-    call Call_000_2b17
+    call CopyBytes
     pop bc
-    jp Jump_000_2aa5
+    jp U32MulEngine_outerSetup
 
 
-jr_000_2b07:
+U32MulEngine_epilogueRet::
     add sp, $06
     ret
 
 
-Call_000_2b0a:
-jr_000_2b0a:
+; [ezgb]
+; PropagateCarry: walk C bytes at HL adding 0+carry (adc). After multi-byte add in mul.
+
+PropagateCarry::
     dec c
     ret z
 
     ld a, $00
     adc [hl]
     ld [hl+], a
-    jr jr_000_2b0a
+    jr PropagateCarry
 
-Call_000_2b12:
+; [ezgb]
+; IncWord: ++*(u16*)HL (inc low, carry into high).
+
+IncWord::
     inc [hl]
     ret nz
 
@@ -9204,64 +9043,81 @@ Call_000_2b12:
     ret
 
 
-Call_000_2b17:
+; [ezgb]
+; CopyBytes: copy B bytes DE→HL (register ABI).
+; jr_000_2ed1: C=B; A=[DE++] → [HL+]; until C=0.
+
+CopyBytes::
     ld c, b
 
-jr_000_2b18:
+CopyBytes_copyLoop::
     ld a, [de]
     inc de
     ld [hl+], a
     dec c
-    jr nz, jr_000_2b18
+    jr nz, CopyBytes_copyLoop
 
     ret
 
 
-Call_000_2b1f:
+; [ezgb]
+; MemSubCmp: multi-byte SBC compare [DE] vs [HL] for B bytes (no store). Flags = last SBC; U32DivEngine trial rem>=divisor.
+; jr_000_2eda: C=B; A=[DE] SBC [HL]; ++HL/DE; until C=0 (result discarded, carry retained).
+
+MemSubCmp::
     ld c, b
     xor a
 
-jr_000_2b21:
+MemSubCmp_sbcLoop::
     ld a, [de]
     sbc [hl]
     inc hl
     inc de
     dec c
-    jr nz, jr_000_2b21
+    jr nz, MemSubCmp_sbcLoop
 
     ret
 
 
-Call_000_2b29:
+; [ezgb]
+; MemRol: rotate-left B bytes at HL through carry (RL [HL]). U32DivEngine shifts rem←dividend bit.
+; jr_000_2ee3: C=B; RL [HL]; ++HL; until C=0.
+
+MemRol::
     ld c, b
 
-jr_000_2b2a:
+MemRol_rlLoop::
     rl [hl]
     inc hl
     dec c
-    jr nz, jr_000_2b2a
+    jr nz, MemRol_rlLoop
 
     ret
 
 
-Call_000_2b31:
-Jump_000_2b31:
+; [ezgb]
+; EnterGfxMode1: LCD off if on; prep VRAM/tilemap/callbacks; LCD on; wGfxMode=1.
+; Defaults: wDrawOp=0, wDrawColor=3, wDrawColorB=0. Draw helpers call this when wGfxMode!=1.
+; jr_000_2ef4: VramFill $8100×$1680; VBlankCb_Bg8000 + LycCb_Bg8800; LYC=$48 STAT=$44; IE bit1.
+; jr_000_2f23: E=$12 rows; jr_000_2f25: fill 20 tiles/row ids $10+ (skip 12); LCDC on; ei ret.
+
+EnterGfxMode1::
     di
     ldh a, [rLCDC]
     bit 7, a
-    jr z, jr_000_2b3b
+    jr z, EnterGfxMode1_vramFill
 
-    call Call_000_069f
+    call LcdOff
 
-jr_000_2b3b:
+EnterGfxMode1_vramFill::
     ld hl, $8100
     ld de, $1680
     ld b, $00
-    call Call_000_39a1
-    ld bc, $26a6
-    call Call_000_062e
-    ld bc, $26b1
-    call Call_000_0634
+    call VramFill
+    ld bc, VBlankCb_Bg8000
+    call RegisterVBlankCallback
+    ld bc, LycCb_Bg8800
+    call RegisterLcdCallback
     ld a, $48
     ldh [rLYC], a
     ld a, $44
@@ -9274,18 +9130,18 @@ jr_000_2b3b:
     ld bc, $000c
     ld e, $12
 
-jr_000_2b6a:
+EnterGfxMode1_rowSetup::
     ld d, $14
 
-jr_000_2b6c:
+EnterGfxMode1_fillRow::
     ld [hl+], a
     inc a
     dec d
-    jr nz, jr_000_2b6c
+    jr nz, EnterGfxMode1_fillRow
 
     add hl, bc
     dec e
-    jr nz, jr_000_2b6a
+    jr nz, EnterGfxMode1_rowSetup
 
     ldh a, [rLCDC]
     or $91
@@ -9294,23 +9150,32 @@ jr_000_2b6c:
     ld a, $01
     ld [$d6a3], a
     ld a, $00
-    ld [$d6fc], a
+    ld [wDrawOp], a
     ld a, $03
-    ld [$d70d], a
+    ld [wDrawColor], a
     ld a, $00
-    ld [$d70e], a
+    ld [wDrawColorB], a
     ei
     ret
 
 
-Call_000_2b93:
+; [ezgb]
+; VramLoadTiles8100: VramCopy BC→$8100 for $1680 bytes (tile $10+ framebuffer pool).
+; Stack wrapper ensures EnterGfxMode1 first.
+
+VramLoadTiles8100::
     ld hl, $8100
     ld de, $1680
-    call Call_000_2d22
+    call VramCopy
     ret
 
 
-Call_000_2b9d:
+; [ezgb]
+; BlitTile: B/C tile row/col via GfxRowTable; VramCopy $10 bytes (2bpp tile) to FB.
+; Optional second plane from saved DE. Stack wrapper ensures EnterGfxMode1.
+; jr_000_2f84: dest=GfxRowTable[col]+row*16 on stack; if HL==0 skip first VramCopy $10; then pop dest + DE and VramCopy $10 (2nd plane).
+
+BlitTile::
     push de
     push hl
     ld l, b
@@ -9321,7 +9186,7 @@ Call_000_2b9d:
     add hl, hl
     ld d, h
     ld e, l
-    ld hl, $2c02
+    ld hl, GfxRowTable
     sla c
     sla c
     sla c
@@ -9339,23 +9204,27 @@ Call_000_2b9d:
     push bc
     ld a, h
     or l
-    jr z, jr_000_2bcb
+    jr z, BlitTile_copyPlane2
 
     ld de, $0010
-    call Call_000_2d22
+    call VramCopy
 
-jr_000_2bcb:
+BlitTile_copyPlane2::
     pop hl
     pop bc
     ld de, $0010
-    call Call_000_2d22
+    call VramCopy
     ret
 
 
+; [ezgb]
+; BlitTileXY: ensure mode-1; stack args → BlitTile (B/C/DE/HL).
+
+BlitTileXY::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld b, a
@@ -9368,290 +9237,182 @@ jr_000_2bcb:
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    call Call_000_2b9d
+    call BlitTile
     pop bc
     ret
 
 
+; [ezgb]
+; VramLoadTiles8100Arg: ensure mode-1; stack BC → VramLoadTiles8100.
+
+VramLoadTiles8100Arg::
     push bc
     ld a, [$d6a3]
     cp $01
-    call nz, Call_000_2b31
+    call nz, EnterGfxMode1
     ld hl, sp+$04
     ld a, [hl+]
     ld c, a
     ld b, [hl]
-    call Call_000_2b93
+    call VramLoadTiles8100
     pop bc
     ret
 
 
-    nop
-    add c
-    ld [bc], a
-    add c
-    inc b
-    add c
-    ld b, $81
-    ld [$0a81], sp
-    add c
-    inc c
-    add c
-    ld c, $81
-    ld b, b
-    add d
-    ld b, d
-    add d
-    ld b, h
-    add d
-    ld b, [hl]
-    add d
-    ld c, b
-    add d
-    ld c, d
-    add d
-    ld c, h
-    add d
-    ld c, [hl]
-    add d
-    add b
-    add e
-    add d
-    add e
-    add h
-    add e
-    add [hl]
-    add e
-    adc b
-    add e
-    adc d
-    add e
-    adc h
-    add e
-    adc [hl]
-    add e
-    ret nz
+GfxRowTable::
+    db $00, $81
+    db $02, $81
+    db $04, $81
+    db $06, $81
+    db $08, $81
+    db $0a, $81
+    db $0c, $81
+    db $0e, $81
+    db $40, $82
+    db $42, $82
+    db $44, $82
+    db $46, $82
+    db $48, $82
+    db $4a, $82
+    db $4c, $82
+    db $4e, $82
+    db $80, $83
+    db $82, $83
+    db $84, $83
+    db $86, $83
+    db $88, $83
+    db $8a, $83
+    db $8c, $83
+    db $8e, $83
+    db $c0, $84
+    db $c2, $84
+    db $c4, $84
+    db $c6, $84
+    db $c8, $84
+    db $ca, $84
+    db $cc, $84
+    db $ce, $84
+    db $00, $86
+    db $02, $86
+    db $04, $86
+    db $06, $86
+    db $08, $86
+    db $0a, $86
+    db $0c, $86
+    db $0e, $86
+    db $40, $87
+    db $42, $87
+    db $44, $87
+    db $46, $87
+    db $48, $87
+    db $4a, $87
+    db $4c, $87
+    db $4e, $87
+    db $80, $88
+    db $82, $88
+    db $84, $88
+    db $86, $88
+    db $88, $88
+    db $8a, $88
+    db $8c, $88
+    db $8e, $88
+    db $c0, $89
+    db $c2, $89
+    db $c4, $89
+    db $c6, $89
+    db $c8, $89
+    db $ca, $89
+    db $cc, $89
+    db $ce, $89
+    db $00, $8b
+    db $02, $8b
+    db $04, $8b
+    db $06, $8b
+    db $08, $8b
+    db $0a, $8b
+    db $0c, $8b
+    db $0e, $8b
+    db $40, $8c
+    db $42, $8c
+    db $44, $8c
+    db $46, $8c
+    db $48, $8c
+    db $4a, $8c
+    db $4c, $8c
+    db $4e, $8c
+    db $80, $8d
+    db $82, $8d
+    db $84, $8d
+    db $86, $8d
+    db $88, $8d
+    db $8a, $8d
+    db $8c, $8d
+    db $8e, $8d
+    db $c0, $8e
+    db $c2, $8e
+    db $c4, $8e
+    db $c6, $8e
+    db $c8, $8e
+    db $ca, $8e
+    db $cc, $8e
+    db $ce, $8e
+    db $00, $90
+    db $02, $90
+    db $04, $90
+    db $06, $90
+    db $08, $90
+    db $0a, $90
+    db $0c, $90
+    db $0e, $90
+    db $40, $91
+    db $42, $91
+    db $44, $91
+    db $46, $91
+    db $48, $91
+    db $4a, $91
+    db $4c, $91
+    db $4e, $91
+    db $80, $92
+    db $82, $92
+    db $84, $92
+    db $86, $92
+    db $88, $92
+    db $8a, $92
+    db $8c, $92
+    db $8e, $92
+    db $c0, $93
+    db $c2, $93
+    db $c4, $93
+    db $c6, $93
+    db $c8, $93
+    db $ca, $93
+    db $cc, $93
+    db $ce, $93
+    db $00, $95
+    db $02, $95
+    db $04, $95
+    db $06, $95
+    db $08, $95
+    db $0a, $95
+    db $0c, $95
+    db $0e, $95
+    db $40, $96
+    db $42, $96
+    db $44, $96
+    db $46, $96
+    db $48, $96
+    db $4a, $96
+    db $4c, $96
+    db $4e, $96
 
-    add h
-    jp nz, $c484
+; [ezgb]
+; VramCopy: copy DE bytes BC→HL waiting for STAT mode≠2 (VRAM-safe).
+; VramCopyStack ($30ea) is the stack-ABI wrapper (dest, src, len).
 
-    add h
-    add $84
-    ret z
-
-    add h
-    jp z, $cc84
-
-    add h
-    adc $84
-    nop
-    add [hl]
-    ld [bc], a
-    add [hl]
-    inc b
-    add [hl]
-    ld b, $86
-    ld [$0a86], sp
-    add [hl]
-    inc c
-    add [hl]
-    ld c, $86
-    ld b, b
-    add a
-    ld b, d
-    add a
-    ld b, h
-    add a
-    ld b, [hl]
-    add a
-    ld c, b
-    add a
-    ld c, d
-    add a
-    ld c, h
-    add a
-    ld c, [hl]
-    add a
-    add b
-    adc b
-    add d
-    adc b
-    add h
-    adc b
-    add [hl]
-    adc b
-    adc b
-    adc b
-    adc d
-    adc b
-    adc h
-    adc b
-    adc [hl]
-    adc b
-    ret nz
-
-    adc c
-    jp nz, $c489
-
-    adc c
-    add $89
-    ret z
-
-    adc c
-    jp z, $cc89
-
-    adc c
-    adc $89
-    nop
-    adc e
-    ld [bc], a
-    adc e
-    inc b
-    adc e
-    ld b, $8b
-    ld [$0a8b], sp
-    adc e
-    inc c
-    adc e
-    ld c, $8b
-    ld b, b
-    adc h
-    ld b, d
-    adc h
-    ld b, h
-    adc h
-    ld b, [hl]
-    adc h
-    ld c, b
-    adc h
-    ld c, d
-    adc h
-    ld c, h
-    adc h
-    ld c, [hl]
-    adc h
-    add b
-    adc l
-    add d
-    adc l
-    add h
-    adc l
-    add [hl]
-    adc l
-    adc b
-    adc l
-    adc d
-    adc l
-    adc h
-    adc l
-    adc [hl]
-    adc l
-    ret nz
-
-    adc [hl]
-    jp nz, $c48e
-
-    adc [hl]
-    add $8e
-    ret z
-
-    adc [hl]
-    jp z, $cc8e
-
-    adc [hl]
-    adc $8e
-    nop
-    sub b
-    ld [bc], a
-    sub b
-    inc b
-    sub b
-    ld b, $90
-    ld [$0a90], sp
-    sub b
-    inc c
-    sub b
-    ld c, $90
-    ld b, b
-    sub c
-    ld b, d
-    sub c
-    ld b, h
-    sub c
-    ld b, [hl]
-    sub c
-    ld c, b
-    sub c
-    ld c, d
-    sub c
-    ld c, h
-    sub c
-    ld c, [hl]
-    sub c
-    add b
-    sub d
-    add d
-    sub d
-    add h
-    sub d
-    add [hl]
-    sub d
-    adc b
-    sub d
-    adc d
-    sub d
-    adc h
-    sub d
-    adc [hl]
-    sub d
-    ret nz
-
-    sub e
-    jp nz, $c493
-
-    sub e
-    add $93
-    ret z
-
-    sub e
-    jp z, $cc93
-
-    sub e
-    adc $93
-    nop
-    sub l
-    ld [bc], a
-    sub l
-    inc b
-    sub l
-    ld b, $95
-    ld [$0a95], sp
-    sub l
-    inc c
-    sub l
-    ld c, $95
-    ld b, b
-    sub [hl]
-    ld b, d
-    sub [hl]
-    ld b, h
-    sub [hl]
-    ld b, [hl]
-    sub [hl]
-    ld c, b
-    sub [hl]
-    ld c, d
-    sub [hl]
-    ld c, h
-    sub [hl]
-    ld c, [hl]
-    sub [hl]
-
-Call_000_2d22:
-jr_000_2d22:
+VramCopy::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_2d22
+    jr nz, VramCopy
 
     ld a, [bc]
     ld [hl+], a
@@ -9659,12 +9420,12 @@ jr_000_2d22:
     dec de
     ld a, d
     or e
-    jr nz, jr_000_2d22
+    jr nz, VramCopy
 
     ret
 
 
-Call_000_2d31:
+VramCopyStack::
     push bc
     ld hl, sp+$09
     ld d, [hl]
@@ -9678,2379 +9439,1186 @@ Call_000_2d31:
     ld a, [hl-]
     ld l, [hl]
     ld h, a
-    call Call_000_2d22
+    call VramCopy
     pop bc
     ret
 
 
-    ld hl, $2d4b
-    call Call_000_376e
+    ld hl, DefaultFontData
+    call RegisterFont
     ret
 
 
-    inc b
-    rst RST_38
-    nop
-    ld bc, $0302
-    inc b
-    dec b
-    ld b, $07
-    ld [$0a09], sp
-    dec bc
-    inc c
-    dec c
-    ld c, $0f
-    db $10
-    ld de, $1312
-    inc d
-    dec d
-    ld d, $17
-    jr jr_000_2d80
-
-    ld a, [de]
-    dec de
-    inc e
-    dec e
-    ld e, $1f
-    jr nz, jr_000_2d90
-
-    ld [hl+], a
-    inc hl
-    inc h
-    dec h
-    ld h, $27
-    jr z, jr_000_2da0
-
-    ld a, [hl+]
-    dec hl
-    inc l
-    dec l
-    ld l, $2f
-    jr nc, jr_000_2db0
-
-    ld [hl-], a
-
-jr_000_2d80:
-    inc sp
-    inc [hl]
-    dec [hl]
-    ld [hl], $37
-    jr c, jr_000_2dc0
-
-    ld a, [hl-]
-    dec sp
-    inc a
-    dec a
-    ld a, $3f
-    ld b, b
-    ld b, c
-    ld b, d
-
-jr_000_2d90:
-    ld b, e
-    ld b, h
-    ld b, l
-    ld b, [hl]
-    ld b, a
-    ld c, b
-    ld c, c
-    ld c, d
-    ld c, e
-    ld c, h
-    ld c, l
-    ld c, [hl]
-    ld c, a
-    ld d, b
-    ld d, c
-    ld d, d
-
-jr_000_2da0:
-    ld d, e
-    ld d, h
-    ld d, l
-    ld d, [hl]
-    ld d, a
-    ld e, b
-    ld e, c
-    ld e, d
-    ld e, e
-    ld e, h
-    ld e, l
-    ld e, [hl]
-    ld e, a
-    ld h, b
-    ld h, c
-    ld h, d
-
-jr_000_2db0:
-    ld h, e
-    ld h, h
-    ld h, l
-    ld h, [hl]
-    ld h, a
-    ld l, b
-    ld l, c
-    ld l, d
-    ld l, e
-    ld l, h
-    ld l, l
-    ld l, [hl]
-    ld l, a
-    ld [hl], b
-    ld [hl], c
-    ld [hl], d
-
-jr_000_2dc0:
-    ld [hl], e
-    ld [hl], h
-    ld [hl], l
-    halt
-    ld [hl], a
-    ld a, b
-    ld a, c
-    ld a, d
-    ld a, e
-    ld a, h
-    ld a, l
-    ld a, [hl]
-    ld a, a
-    add b
-    add c
-    add d
-    add e
-    add h
-    add l
-    add [hl]
-    add a
-    adc b
-    adc c
-    adc d
-    adc e
-    adc h
-    adc l
-    adc [hl]
-    adc a
-    sub b
-    sub c
-    sub d
-    sub e
-    sub h
-    sub l
-    sub [hl]
-    sub a
-    sbc b
-    sbc c
-    sbc d
-    sbc e
-    sbc h
-    sbc l
-    sbc [hl]
-    sbc a
-    and b
-    and c
-    and d
-    and e
-    and h
-    and l
-    and [hl]
-    and a
-    xor b
-    xor c
-    xor d
-    xor e
-    xor h
-    xor l
-    xor [hl]
-    xor a
-    or b
-    or c
-    or d
-    or e
-    or h
-    or l
-    or [hl]
-    or a
-    cp b
-    cp c
-    cp d
-    cp e
-    cp h
-    cp l
-    cp [hl]
-    cp a
-    ret nz
-
-    pop bc
-    jp nz, $c4c3
-
-    push bc
-    add $c7
-    ret z
-
-    ret
-
-
-    jp z, $cccb
-
-    call $cfce
-    ret nc
-
-    pop de
-    jp nc, $d4d3
-
-    push de
-    sub $d7
-    ret c
-
-    reti
-
-
-    jp c, $dcdb
-
-    db $dd
-    sbc $df
-    ldh [$ffe1], a
-    ldh [c], a
-    db $e3
-    db $e4
-    push hl
-    and $e7
-    add sp, -$17
-    ld [$eceb], a
-    db $ed
-    xor $ef
-    ldh a, [$fff1]
-    ldh a, [c]
-    di
-    db $f4
-    push af
-    or $f7
-    ld hl, sp-$07
-    ld a, [$fcfb]
-    db $fd
-    cp $ff
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr jr_000_2e7b
-
-    ld b, d
-    add c
-    rst RST_20
-    inc h
-    inc h
-    inc a
-    inc a
-    inc h
-    inc h
-    rst RST_20
-    add c
-    ld b, d
-    inc h
-    jr @+$1a
-
-    inc d
-    ldh a, [c]
-    add c
-    add c
-    ldh a, [c]
-    inc d
-    jr jr_000_2e86
-
-    jr z, jr_000_2ebf
-
-    add c
-    add c
-    ld c, a
-    jr z, jr_000_2e8d
-
-    rst RST_38
-    add c
-    add c
-    add c
-    add c
-    add c
-
-jr_000_2e7b:
-    add c
-    rst RST_38
-    ld hl, sp-$78
-    adc a
-    adc c
-    ld sp, hl
-    ld b, c
-    ld b, c
-    ld a, a
-    rst RST_38
-
-jr_000_2e86:
-    adc c
-    adc c
-    adc c
-    ld sp, hl
-    add c
-    add c
-    rst RST_38
-
-jr_000_2e8d:
-    ld bc, $0603
-    adc h
-    ret c
-
-    ld [hl], b
-    jr nz, jr_000_2e95
-
-jr_000_2e95:
-    ld a, [hl]
-    jp $d3d3
-
-
-    db $db
-    jp $7ec3
-
-
-    jr jr_000_2edb
-
-    inc l
-    inc l
-    ld a, [hl]
-    jr jr_000_2ebc
-
-    nop
-    db $10
-    inc e
-    ld [de], a
-    db $10
-    db $10
-    ld [hl], b
-    ldh a, [$ff60]
-    ldh a, [$ffc0]
-    cp $d8
-    sbc $18
-    jr jr_000_2eb5
-
-jr_000_2eb5:
-    ld [hl], b
-    ret z
-
-    sbc $db
-    db $db
-    ld a, [hl]
-    dec de
-
-jr_000_2ebc:
-    dec de
-    nop
-    nop
-
-jr_000_2ebf:
-    nop
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    nop
-    nop
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    ld a, h
-    add $c6
-    nop
-    add $c6
-    ld a, h
-    nop
-    ld b, $06
-    ld b, $00
-    ld b, $06
-
-jr_000_2edb:
-    ld b, $00
-    ld a, h
-    ld b, $06
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    nop
-    ld a, h
-    ld b, $06
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    add $c6
-    add $7c
-    ld b, $06
-    ld b, $00
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    ld a, h
-    ret nz
-
-    ret nz
-
-    ld a, h
-    add $c6
-    ld a, h
-    nop
-    ld a, h
-    ld b, $06
-    nop
-    ld b, $06
-    ld b, $00
-    ld a, h
-    add $c6
-    ld a, h
-    add $c6
-    ld a, h
-    nop
-    ld a, h
-    add $c6
-    ld a, h
-    ld b, $06
-    ld a, h
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld b, $7e
-    ld h, [hl]
-    inc a
-    nop
-    ld a, b
-    ld h, [hl]
-    ld a, l
-    ld h, h
-    ld a, [hl]
-    inc bc
-    dec bc
-    ld b, $00
-    nop
-    nop
-    rra
-    rra
-    rra
-    inc e
-    inc e
-    nop
-    nop
-    nop
-    db $fc
-    db $fc
-    db $fc
-    inc e
-    inc e
-    inc e
-    inc e
-    inc e
-    rra
-    rra
-    rra
-    nop
-    nop
-    inc e
-    inc e
-    inc e
-    db $fc
-    db $fc
-    db $fc
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr @+$1a
-
-    jr jr_000_2f71
-
-    jr jr_000_2f5b
-
-jr_000_2f5b:
-    jr jr_000_2f5d
-
-jr_000_2f5d:
-    ld h, [hl]
-    ld h, [hl]
-    ld b, h
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    inc h
-    ld a, [hl]
-    inc h
-    inc h
-    ld a, [hl]
-    inc h
-    nop
-    inc d
-    ld a, $55
-    inc a
-
-jr_000_2f71:
-    ld e, $55
-    ld a, $14
-    ld h, d
-    ld h, [hl]
-    inc c
-    jr @+$32
-
-    ld h, [hl]
-    ld b, [hl]
-    nop
-    ld a, b
-    call z, $ce61
-    call z, $78cc
-    nop
-    jr jr_000_2f9f
-
-    stop
-    nop
-    nop
-    nop
-    nop
-    inc b
-    ld [$1818], sp
-    jr jr_000_2fab
-
-    ld [$2004], sp
-    db $10
-    jr jr_000_2fb1
-
-    jr @+$1a
-
-    db $10
-    jr nz, jr_000_2f9e
-
-jr_000_2f9e:
-    ld d, h
-
-jr_000_2f9f:
-    jr c, jr_000_2f9f
-
-    jr c, jr_000_2ff7
-
-    nop
-    nop
-    nop
-    jr jr_000_2fc0
-
-    ld a, [hl]
-    jr @+$1a
-
-jr_000_2fab:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_2fb1:
-    nop
-    jr nc, jr_000_2fe4
-
-    jr nz, jr_000_2fb6
-
-jr_000_2fb6:
-    nop
-    nop
-    inc a
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_2fc0:
-    nop
-    nop
-    jr @+$1a
-
-    nop
-    inc bc
-    ld b, $0c
-    jr jr_000_2ffa
-
-    ld h, b
-    ret nz
-
-    nop
-    inc a
-    ld h, [hl]
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr jr_000_300f
-
-    jr jr_000_2ff1
-
-    jr jr_000_2ff3
-
-    jr jr_000_2fdd
-
-jr_000_2fdd:
-    inc a
-    ld h, [hl]
-    ld c, $1c
-    jr c, jr_000_3053
-
-    ld a, [hl]
-
-jr_000_2fe4:
-    nop
-    ld a, [hl]
-    inc c
-    jr jr_000_3025
-
-    ld b, $46
-    inc a
-    nop
-    inc c
-    inc e
-    inc l
-    ld c, h
-
-jr_000_2ff1:
-    ld a, [hl]
-    inc c
-
-jr_000_2ff3:
-    inc c
-    nop
-    ld a, [hl]
-    ld h, b
-
-jr_000_2ff7:
-    ld a, h
-    ld b, $06
-
-jr_000_2ffa:
-    ld b, [hl]
-    inc a
-    nop
-    inc e
-    jr nz, jr_000_3060
-
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    ld b, $0e
-    inc e
-    jr @+$1a
-
-    jr jr_000_300d
-
-jr_000_300d:
-    inc a
-    ld h, [hl]
-
-jr_000_300f:
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $06
-    inc c
-    jr c, jr_000_301d
-
-jr_000_301d:
-    nop
-    jr jr_000_3038
-
-    nop
-    nop
-    jr jr_000_303c
-
-    nop
-
-jr_000_3025:
-    nop
-    jr jr_000_3040
-
-    nop
-    jr jr_000_3043
-
-    stop
-    ld b, $0c
-    jr jr_000_3061
-
-    jr @+$0e
-
-    ld b, $00
-    nop
-    nop
-    inc a
-
-jr_000_3038:
-    nop
-    nop
-    inc a
-    nop
-
-jr_000_303c:
-    nop
-    ld h, b
-    jr nc, jr_000_3058
-
-jr_000_3040:
-    inc c
-    jr jr_000_3073
-
-jr_000_3043:
-    ld h, b
-    nop
-    inc a
-    ld b, [hl]
-    ld b, $0c
-    jr jr_000_3063
-
-    nop
-    jr jr_000_308a
-
-    ld h, [hl]
-    ld l, [hl]
-    ld l, d
-    ld l, [hl]
-    ld h, b
-
-jr_000_3053:
-    inc a
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3058:
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3060:
-    ld a, h
-
-jr_000_3061:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3063:
-    ld a, h
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3073:
-    ld a, h
-    nop
-    ld a, [hl]
-    ld h, b
-    ld h, b
-    ld a, h
-    ld h, b
-    ld h, b
-    ld a, [hl]
-    nop
-    ld a, [hl]
-    ld h, b
-    ld h, b
-    ld a, h
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld l, [hl]
-    ld h, [hl]
-
-jr_000_308a:
-    ld h, [hl]
-    ld a, $00
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    jr jr_000_30af
-
-    jr jr_000_30b1
-
-    jr jr_000_30b3
-
-    jr jr_000_309d
-
-jr_000_309d:
-    ld b, $06
-    ld b, $06
-    ld b, $46
-    inc a
-    nop
-    ld h, [hl]
-    ld l, h
-    ld a, b
-    ld [hl], b
-    ld a, b
-    ld l, h
-    ld h, [hl]
-    nop
-    ld h, b
-    ld h, b
-
-jr_000_30af:
-    ld h, b
-    ld h, b
-
-jr_000_30b1:
-    ld h, b
-    ld h, b
-
-jr_000_30b3:
-    ld a, h
-    nop
-    db $fc
-    sub $d6
-    sub $d6
-    add $c6
-    nop
-    ld h, d
-    ld [hl], d
-    ld a, d
-    ld e, [hl]
-    ld c, [hl]
-    ld b, [hl]
-    ld b, d
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld b, $7c
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    inc a
-    ld h, d
-    ld [hl], b
-    inc a
-    ld c, $46
-    inc a
-    nop
-    ld a, [hl]
-    jr @+$1a
-
-    jr @+$1a
-
-    jr jr_000_310c
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, h
-    ld a, b
-    nop
-    add $c6
-    add $d6
-    sub $d6
-    db $fc
-
-jr_000_310c:
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr @+$1a
-
-    jr jr_000_311d
-
-jr_000_311d:
-    ld a, [hl]
-    ld c, $1c
-    jr c, jr_000_3192
-
-    ld h, b
-    ld a, [hl]
-    nop
-    ld e, $18
-    jr jr_000_3141
-
-    jr jr_000_3143
-
-    ld e, $00
-    ld b, b
-    ld h, b
-    jr nc, jr_000_3149
-
-    inc c
-    ld b, $02
-    nop
-    ld a, b
-    jr jr_000_3150
-
-    jr jr_000_3152
-
-    jr jr_000_31b4
-
-    nop
-    db $10
-    jr c, jr_000_31ac
-
-    nop
-
-jr_000_3141:
-    nop
-    nop
-
-jr_000_3143:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_3149:
-    nop
-    nop
-    ld a, [hl]
-    nop
-    nop
-    ret nz
-
-    ret nz
-
-jr_000_3150:
-    ld h, b
-    nop
-
-jr_000_3152:
-    nop
-    nop
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld a, $66
-    ld h, [hl]
-    ld a, $00
-    ld h, b
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    nop
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld b, $3e
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    nop
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, b
-    ld h, d
-    inc a
-    nop
-    ld e, $30
-    ld a, h
-    jr nc, @+$32
-
-    jr nc, jr_000_31b4
-
-    nop
-    nop
-    ld a, $66
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $46
-    inc a
-    ld h, b
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3192:
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    jr jr_000_3197
-
-jr_000_3197:
-    jr jr_000_31b1
-
-    jr jr_000_31b3
-
-    jr jr_000_319d
-
-jr_000_319d:
-    nop
-    ld [$1818], sp
-    jr jr_000_31bb
-
-    ld e, b
-    jr nc, jr_000_3206
-
-    ld h, h
-    ld l, b
-    ld [hl], b
-    ld a, b
-    ld l, h
-    ld h, [hl]
-
-jr_000_31ac:
-    nop
-    jr jr_000_31c7
-
-    jr jr_000_31c9
-
-jr_000_31b1:
-    jr jr_000_31cb
-
-jr_000_31b3:
-    inc c
-
-jr_000_31b4:
-    nop
-    nop
-    db $fc
-    sub $d6
-    sub $d6
-
-jr_000_31bb:
-    add $00
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    inc a
-
-jr_000_31c7:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_31c9:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_31cb:
-    inc a
-    nop
-    nop
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    ld h, b
-    nop
-    ld a, $66
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $06
-    nop
-    ld l, h
-    ld [hl], b
-    ld h, b
-    ld h, b
-    ld h, b
-    ld h, b
-    nop
-    nop
-    inc a
-    ld [hl], d
-    jr c, jr_000_3206
-
-    ld c, [hl]
-    inc a
-    nop
-    jr jr_000_322b
-
-    jr @+$1a
-
-    jr @+$1a
-
-    inc c
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, h
-    ld a, b
-    nop
-    nop
-
-jr_000_3206:
-    add $c6
-    sub $d6
-    sub $fc
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, $1e
-    ld b, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    ld c, $1c
-    jr c, jr_000_3293
-
-    ld a, [hl]
-    nop
-    ld c, $18
-    jr jr_000_3259
-
-    jr jr_000_3243
-
-jr_000_322b:
-    ld c, $00
-    jr jr_000_3247
-
-    jr jr_000_3249
-
-    jr jr_000_324b
-
-    jr @+$1a
-
-    ld [hl], b
-    jr jr_000_3250
-
-    inc c
-    jr jr_000_3253
-
-    ld [hl], b
-    nop
-    nop
-    ld h, b
-    ldh a, [c]
-    sbc [hl]
-    inc c
-    nop
-
-jr_000_3243:
-    nop
-    nop
-    db $10
-    db $10
-
-jr_000_3247:
-    jr z, jr_000_3271
-
-jr_000_3249:
-    ld b, h
-    ld b, h
-
-jr_000_324b:
-    add d
-    cp $3c
-    ld h, d
-    ld h, b
-
-jr_000_3250:
-    ld h, b
-    ld h, b
-    ld h, d
-
-jr_000_3253:
-    inc e
-    jr nc, @+$26
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3259:
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    inc c
-    jr jr_000_3260
-
-jr_000_3260:
-    inc a
-    ld a, [hl]
-    ld h, b
-    inc a
-    nop
-    jr jr_000_32cd
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc h
-    nop
-    inc a
-    ld b, [hl]
-
-jr_000_3271:
-    ld a, $46
-    ld a, $00
-    jr nc, jr_000_328f
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    jr jr_000_3297
-
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    nop
-    inc a
-    ld h, d
-    ld h, b
-    ld h, d
-    inc a
-    ld [$1818], sp
-    inc [hl]
-
-jr_000_328f:
-    nop
-    inc a
-    ld a, [hl]
-    ld h, b
-
-jr_000_3293:
-    ld a, $00
-    inc h
-    nop
-
-jr_000_3297:
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, b
-    ld a, $00
-    jr nc, @+$1a
-
-    nop
-    inc a
-    ld a, [hl]
-    ld h, b
-    inc a
-    nop
-    inc h
-    nop
-    jr jr_000_32c1
-
-    jr jr_000_32c3
-
-    jr jr_000_32ad
-
-jr_000_32ad:
-    jr jr_000_32d3
-
-    nop
-    jr jr_000_32ca
-
-    jr jr_000_32cc
-
-    nop
-    db $10
-    ld [$1800], sp
-    jr jr_000_32d3
-
-    jr jr_000_32bd
-
-jr_000_32bd:
-    inc h
-    nop
-    inc a
-    ld h, [hl]
-
-jr_000_32c1:
-    ld a, [hl]
-    ld h, [hl]
-
-jr_000_32c3:
-    ld h, [hl]
-    nop
-    jr jr_000_32c7
-
-jr_000_32c7:
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-
-jr_000_32ca:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_32cc:
-    nop
-
-jr_000_32cd:
-    inc c
-    jr jr_000_334e
-
-    ld h, b
-    ld a, h
-    ld h, b
-
-jr_000_32d3:
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    dec de
-    ld a, a
-    ret c
-
-    ld a, [hl]
-    nop
-    ccf
-    ld a, b
-    ret c
-
-    sbc $f8
-    ret c
-
-    rst RST_18
-    nop
-    jr jr_000_331b
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    inc h
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr nc, jr_000_330f
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr jr_000_3323
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    jr nc, jr_000_331f
-
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld h, [hl]
-    nop
-
-jr_000_330f:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $46
-    inc a
-    ld h, [hl]
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_331b:
-    inc a
-    nop
-    ld h, [hl]
-    nop
-
-jr_000_331f:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3323:
-    inc a
-    nop
-    jr jr_000_3363
-
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, d
-    inc a
-    jr @+$1e
-
-    ld a, [hl-]
-    jr nc, jr_000_33ad
-
-    jr nc, jr_000_3363
-
-    ld a, [hl]
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr jr_000_3376
-
-    jr @+$1a
-
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld l, h
-    ld h, [hl]
-    ld h, [hl]
-    db $ec
-    nop
-    jr @+$1a
-
-    jr jr_000_3361
-
-    jr jr_000_3363
-
-    jr jr_000_3365
-
-    inc c
-
-jr_000_334e:
-    jr jr_000_3350
-
-jr_000_3350:
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc c
-    jr jr_000_3358
-
-jr_000_3358:
-    jr jr_000_3372
-
-    jr jr_000_3374
-
-    nop
-    inc c
-    jr jr_000_3360
-
-jr_000_3360:
-    inc a
-
-jr_000_3361:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3363:
-    inc a
-    nop
-
-jr_000_3365:
-    inc c
-    jr jr_000_3368
-
-jr_000_3368:
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, $00
-    inc [hl]
-    ld e, b
-    nop
-    ld a, h
-    ld h, [hl]
-
-jr_000_3372:
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_3374:
-    nop
-    ld a, [de]
-
-jr_000_3376:
-    inc l
-    ld h, d
-    ld [hl], d
-    ld e, d
-    ld c, [hl]
-    ld b, [hl]
-    nop
-    nop
-    inc a
-    ld b, [hl]
-    ld a, $66
-    ld a, $00
-    ld a, [hl]
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld a, [hl]
-    nop
-    jr jr_000_3390
-
-jr_000_3390:
-    jr jr_000_33c2
-
-    ld h, b
-    ld h, [hl]
-    inc a
-    nop
-    nop
-    nop
-    ld a, $30
-    jr nc, jr_000_33cc
-
-    nop
-    nop
-    nop
-    nop
-    ld a, h
-    inc c
-    inc c
-    inc c
-    nop
-    ld h, d
-    db $e4
-    ld l, b
-    halt
-    dec hl
-    ld b, e
-    add [hl]
-    rrca
-
-jr_000_33ad:
-    ld h, d
-    db $e4
-    ld l, b
-    halt
-    ld l, $56
-    sbc a
-    ld b, $00
-    jr jr_000_33b8
-
-jr_000_33b8:
-    jr @+$1a
-
-    jr @+$1a
-
-    jr jr_000_33d9
-
-    ld [hl], $6c
-    ret c
-
-    ld l, h
-
-jr_000_33c2:
-    ld [hl], $1b
-    nop
-    ret c
-
-    ld l, h
-    ld [hl], $1b
-    ld [hl], $6c
-    ret c
-
-jr_000_33cc:
-    nop
-    inc [hl]
-    ld e, b
-    nop
-    inc a
-    ld b, $7e
-    ld a, $00
-    inc [hl]
-    ld e, b
-    nop
-    inc a
-
-jr_000_33d9:
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    ld [bc], a
-    inc a
-    ld h, [hl]
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    inc a
-    ld b, b
-    nop
-    ld [bc], a
-    inc a
-    ld l, [hl]
-    halt
-    ld h, [hl]
-    inc a
-    ld b, b
-    nop
-    nop
-    ld a, [hl]
-    db $db
-    sbc $d8
-    ld a, a
-    nop
-    nop
-    ld a, [hl]
-    ret c
-
-    ret c
-
-    db $fc
-    ret c
-
-    ret c
-
-    sbc $20
-    db $10
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc [hl]
-    ld e, b
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc [hl]
-    ld e, b
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld h, [hl]
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    inc c
-    jr @+$32
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    db $10
-    jr c, jr_000_3439
-
-    db $10
-    stop
-    nop
-    ld a, d
-    jp z, $caca
-
-    ld a, d
-    ld a, [bc]
-    ld a, [bc]
-    ld a, [bc]
-    inc a
-    ld b, d
-    sbc c
-    or l
-
-jr_000_3439:
-    or c
-    sbc l
-    ld b, d
-    inc a
-    inc a
-    ld b, d
-    cp c
-    or l
-    cp c
-    or l
-    ld b, d
-    inc a
-    pop af
-    ld e, e
-    ld d, l
-    ld d, c
-    ld d, c
-    nop
-    nop
-    nop
-    ld h, [hl]
-    nop
-    and $66
-    ld h, [hl]
-    or $06
-    inc e
-    or $66
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    or $06
-    inc e
-    nop
-    ld h, [hl]
-    halt
-    inc a
-    ld l, [hl]
-    ld h, [hl]
-    nop
-    nop
-    nop
-    ld a, h
-    inc c
-    inc c
-    inc c
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld e, $06
-    ld c, $1e
-    ld [hl], $00
-    nop
-    nop
-    ld a, [hl]
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    ld a, h
-    ld b, $66
-    ld h, [hl]
-    ld h, [hl]
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    ld e, $0c
-    ld b, $06
-    ld b, $00
-    nop
-    nop
-    ld a, [hl]
-    ld [hl], $36
-    ld [hl], $36
-    nop
-    nop
-    ld h, b
-    ld l, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    nop
-    nop
-    nop
-    inc a
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    nop
-    nop
-    ld a, $06
-    ld b, $06
-    ld a, $00
-    nop
-    ld h, b
-    ld a, [hl]
-    ld b, $06
-    ld b, $0e
-    nop
-    nop
-    nop
-    ld l, h
-    ld a, $66
-    ld h, [hl]
-    ld l, [hl]
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc a
-    nop
-    nop
-    nop
-    ld a, $36
-    ld [hl], $36
-    inc e
-    nop
-    nop
-    nop
-    ld [hl], $36
-    ld [hl], $36
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    ld h, [hl]
-    halt
-    ld b, $7e
-    nop
-    nop
-    nop
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld c, $7e
-    nop
-    nop
-    nop
-    ld a, $06
-    ld [hl], $36
-    inc [hl]
-    jr nc, jr_000_34f5
-
-jr_000_34f5:
-    nop
-    ld a, b
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    nop
-    sub $d6
-    sub $d6
-    cp $00
-    nop
-    nop
-    ld a, h
-    ld l, h
-    ld l, h
-    ld l, h
-    db $ec
-    nop
-    nop
-    nop
-    inc e
-    inc c
-    inc c
-    inc c
-    inc c
-    inc c
-    nop
-    nop
-    ld a, $06
-    ld b, $06
-    ld b, $06
-    nop
-    nop
-    cp $66
-    ld h, [hl]
-    ld h, [hl]
-    ld a, [hl]
-    nop
-    nop
-    nop
-    ld a, [hl]
-    ld h, [hl]
-    halt
-    ld b, $06
-    ld b, $00
-    nop
-    ld [hl], $36
-    inc e
-    inc c
-    inc c
-    inc c
-    nop
-    inc e
-    ld [hl-], a
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    ld c, h
-    jr c, jr_000_353e
-
-jr_000_353e:
-    db $10
-    jr c, jr_000_35ad
-
-    add $82
-    nop
-    nop
-    ld h, [hl]
-    rst RST_30
-    sbc c
-    sbc c
-    rst RST_28
-    ld h, [hl]
-    nop
-    nop
-    nop
-    nop
-    halt
-    call c, $dcc8
-    halt
-    nop
-    inc e
-    ld [hl], $66
-    ld a, h
-    ld h, [hl]
-    ld h, [hl]
-    ld a, h
-    ld h, b
-    nop
-    cp $66
-    ld h, d
-    ld h, b
-    ld h, b
-    ld h, b
-    ld hl, sp+$00
-    nop
-    cp $6c
-    ld l, h
-    ld l, h
-    ld l, h
-    ld c, b
-    cp $66
-    jr nc, @+$1a
-
-    jr nc, @+$68
-
-    cp $00
-    nop
-    ld e, $38
-    ld l, h
-    ld l, h
-    ld l, h
-    jr c, jr_000_357d
-
-jr_000_357d:
-    nop
-    nop
-    ld l, h
-    ld l, h
-    ld l, h
-    ld l, h
-    ld a, a
-    ret nz
-
-    nop
-    nop
-    ld a, [hl]
-    jr jr_000_35a2
-
-    jr jr_000_35a4
-
-    db $10
-    inc a
-    jr jr_000_35cc
-
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    jr jr_000_35d1
-
-    nop
-    inc a
-    ld h, [hl]
-    ld a, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    inc a
-    nop
-    nop
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_35a2:
-    inc h
-    ld h, [hl]
-
-jr_000_35a4:
-    nop
-    inc e
-    ld [hl], $78
-    call c, $eccc
-    ld a, b
-    nop
-
-jr_000_35ad:
-    inc c
-    jr jr_000_35e8
-
-    ld d, h
-    ld d, h
-    jr c, jr_000_35e4
-
-    ld h, b
-    nop
-    db $10
-    ld a, h
-    sub $d6
-    sub $7c
-    db $10
-    ld a, $70
-    ld h, b
-    ld a, [hl]
-    ld h, b
-    ld [hl], b
-    ld a, $00
-    inc a
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-    ld h, [hl]
-
-jr_000_35cc:
-    nop
-    nop
-    ld a, [hl]
-    nop
-    ld a, [hl]
-
-jr_000_35d1:
-    nop
-    ld a, [hl]
-    nop
-    nop
-    jr @+$1a
-
-    ld a, [hl]
-    jr @+$1a
-
-    nop
-    ld a, [hl]
-    nop
-    jr nc, jr_000_35f7
-
-    inc c
-    jr jr_000_3612
-
-    nop
-    ld a, [hl]
-
-jr_000_35e4:
-    nop
-    inc c
-    jr @+$32
-
-jr_000_35e8:
-    jr @+$0e
-
-    nop
-    ld a, [hl]
-    nop
-    nop
-    ld c, $1b
-    dec de
-    jr jr_000_360b
-
-    jr jr_000_360d
-
-    jr jr_000_360f
-
-jr_000_35f7:
-    jr jr_000_3611
-
-    ret c
-
-    ret c
-
-    ld [hl], b
-    nop
-    jr jr_000_3617
-
-    nop
-    ld a, [hl]
-    nop
-
-jr_000_3602:
-    jr jr_000_361c
-
-    nop
-    nop
-    ld [hl-], a
-    ld c, h
-    nop
-    ld [hl-], a
-    ld c, h
-
-jr_000_360b:
-    nop
-    nop
-
-jr_000_360d:
-    jr c, @+$6e
-
-jr_000_360f:
-    jr c, jr_000_3611
-
-jr_000_3611:
-    nop
-
-jr_000_3612:
-    nop
-    nop
-    nop
-    jr c, @+$7e
-
-jr_000_3617:
-    jr c, jr_000_3619
-
-jr_000_3619:
-    nop
-    nop
-    nop
-
-jr_000_361c:
-    nop
-    nop
-    nop
-    nop
-    nop
-    jr jr_000_363b
-
-    nop
-    nop
-    nop
-    nop
-    rrca
-    jr jr_000_3602
-
-    ld [hl], b
-    jr nc, jr_000_362d
-
-jr_000_362d:
-    jr c, @+$6e
-
-    ld l, h
-    ld l, h
-    ld l, h
-    nop
-    nop
-    nop
-    jr c, @+$6e
-
-    jr jr_000_3669
-
-    ld a, h
-    nop
-
-jr_000_363b:
-    nop
-    nop
-    ld a, b
-    inc c
-    jr c, jr_000_364d
-
-    ld a, b
-    nop
-    nop
-    nop
-    nop
-    cp $00
-    nop
-    nop
-    nop
-    nop
-    nop
-
-jr_000_364d:
-    push af
-    push bc
-
-jr_000_364f:
-    ld b, $ff
-
-jr_000_3651:
-    call Call_000_365d
-    or a
-    jr nz, jr_000_364f
-
-    dec b
-    jr nz, jr_000_3651
-
-    pop bc
-    pop af
-    ret
-
-
-Call_000_365d:
+DefaultFontData::
+    db $04, $ff
+    db $00, $01
+    db $02, $03
+    db $04, $05
+    db $06, $07
+    db $08, $09
+    db $0a, $0b
+    db $0c, $0d
+    db $0e, $0f
+    db $10, $11
+    db $12, $13
+    db $14, $15
+    db $16, $17
+    db $18, $19
+    db $1a, $1b
+    db $1c, $1d
+    db $1e, $1f
+    db $20, $21
+    db $22, $23
+    db $24, $25
+    db $26, $27
+    db $28, $29
+    db $2a, $2b
+    db $2c, $2d
+    db $2e, $2f
+    db $30, $31
+    db $32, $33
+    db $34, $35
+    db $36, $37
+    db $38, $39
+    db $3a, $3b
+    db $3c, $3d
+    db $3e, $3f
+    db $40, $41
+    db $42, $43
+    db $44, $45
+    db $46, $47
+    db $48, $49
+    db $4a, $4b
+    db $4c, $4d
+    db $4e, $4f
+    db $50, $51
+    db $52, $53
+    db $54, $55
+    db $56, $57
+    db $58, $59
+    db $5a, $5b
+    db $5c, $5d
+    db $5e, $5f
+    db $60, $61
+    db $62, $63
+    db $64, $65
+    db $66, $67
+    db $68, $69
+    db $6a, $6b
+    db $6c, $6d
+    db $6e, $6f
+    db $70, $71
+    db $72, $73
+    db $74, $75
+    db $76, $77
+    db $78, $79
+    db $7a, $7b
+    db $7c, $7d
+    db $7e, $7f
+    db $80, $81
+    db $82, $83
+    db $84, $85
+    db $86, $87
+    db $88, $89
+    db $8a, $8b
+    db $8c, $8d
+    db $8e, $8f
+    db $90, $91
+    db $92, $93
+    db $94, $95
+    db $96, $97
+    db $98, $99
+    db $9a, $9b
+    db $9c, $9d
+    db $9e, $9f
+    db $a0, $a1
+    db $a2, $a3
+    db $a4, $a5
+    db $a6, $a7
+    db $a8, $a9
+    db $aa, $ab
+    db $ac, $ad
+    db $ae, $af
+    db $b0, $b1
+    db $b2, $b3
+    db $b4, $b5
+    db $b6, $b7
+    db $b8, $b9
+    db $ba, $bb
+    db $bc, $bd
+    db $be, $bf
+    db $c0, $c1
+    db $c2, $c3
+    db $c4, $c5
+    db $c6, $c7
+    db $c8, $c9
+    db $ca, $cb
+    db $cc, $cd
+    db $ce, $cf
+    db $d0, $d1
+    db $d2, $d3
+    db $d4, $d5
+    db $d6, $d7
+    db $d8, $d9
+    db $da, $db
+    db $dc, $dd
+    db $de, $df
+    db $e0, $e1
+    db $e2, $e3
+    db $e4, $e5
+    db $e6, $e7
+    db $e8, $e9
+    db $ea, $eb
+    db $ec, $ed
+    db $ee, $ef
+    db $f0, $f1
+    db $f2, $f3
+    db $f4, $f5
+    db $f6, $f7
+    db $f8, $f9
+    db $fa, $fb
+    db $fc, $fd
+    db $fe, $ff
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $24
+    db $42, $81
+    db $e7, $24
+    db $24, $3c
+    db $3c, $24
+    db $24, $e7
+    db $81, $42
+    db $24, $18
+    db $18, $14
+    db $f2, $81
+    db $81, $f2
+    db $14, $18
+    db $18, $28
+    db $4f, $81
+    db $81, $4f
+    db $28, $18
+    db $ff, $81
+    db $81, $81
+    db $81, $81
+    db $81, $ff
+    db $f8, $88
+    db $8f, $89
+    db $f9, $41
+    db $41, $7f
+    db $ff, $89
+    db $89, $89
+    db $f9, $81
+    db $81, $ff
+    db $01, $03
+    db $06, $8c
+    db $d8, $70
+    db $20, $00
+    db $7e, $c3
+    db $d3, $d3
+    db $db, $c3
+    db $c3, $7e
+    db $18, $3c
+    db $2c, $2c
+    db $7e, $18
+    db $18, $00
+    db $10, $1c
+    db $12, $10
+    db $10, $70
+    db $f0, $60
+    db $f0, $c0
+    db $fe, $d8
+    db $de, $18
+    db $18, $00
+    db $70, $c8
+    db $de, $db
+    db $db, $7e
+    db $1b, $1b
+    db $00, $00
+    db $00, $ff
+    db $ff, $ff
+    db $00, $00
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1c
+    db $7c, $c6
+    db $c6, $00
+    db $c6, $c6
+    db $7c, $00
+    db $06, $06
+    db $06, $00
+    db $06, $06
+    db $06, $00
+    db $7c, $06
+    db $06, $7c
+    db $c0, $c0
+    db $7c, $00
+    db $7c, $06
+    db $06, $7c
+    db $06, $06
+    db $7c, $00
+    db $c6, $c6
+    db $c6, $7c
+    db $06, $06
+    db $06, $00
+    db $7c, $c0
+    db $c0, $7c
+    db $06, $06
+    db $7c, $00
+    db $7c, $c0
+    db $c0, $7c
+    db $c6, $c6
+    db $7c, $00
+    db $7c, $06
+    db $06, $00
+    db $06, $06
+    db $06, $00
+    db $7c, $c6
+    db $c6, $7c
+    db $c6, $c6
+    db $7c, $00
+    db $7c, $c6
+    db $c6, $7c
+    db $06, $06
+    db $7c, $00
+    db $00, $3c
+    db $46, $06
+    db $7e, $66
+    db $3c, $00
+    db $78, $66
+    db $7d, $64
+    db $7e, $03
+    db $0b, $06
+    db $00, $00
+    db $00, $1f
+    db $1f, $1f
+    db $1c, $1c
+    db $00, $00
+    db $00, $fc
+    db $fc, $fc
+    db $1c, $1c
+    db $1c, $1c
+    db $1c, $1f
+    db $1f, $1f
+    db $00, $00
+    db $1c, $1c
+    db $1c, $fc
+    db $fc, $fc
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $18, $00
+    db $66, $66
+    db $44, $00
+    db $00, $00
+    db $00, $00
+    db $00, $24
+    db $7e, $24
+    db $24, $7e
+    db $24, $00
+    db $14, $3e
+    db $55, $3c
+    db $1e, $55
+    db $3e, $14
+    db $62, $66
+    db $0c, $18
+    db $30, $66
+    db $46, $00
+    db $78, $cc
+    db $61, $ce
+    db $cc, $cc
+    db $78, $00
+    db $18, $18
+    db $10, $00
+    db $00, $00
+    db $00, $00
+    db $04, $08
+    db $18, $18
+    db $18, $18
+    db $08, $04
+    db $20, $10
+    db $18, $18
+    db $18, $18
+    db $10, $20
+    db $00, $54
+    db $38, $fe
+    db $38, $54
+    db $00, $00
+    db $00, $18
+    db $18, $7e
+    db $18, $18
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $30
+    db $30, $20
+    db $00, $00
+    db $00, $3c
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $18
+    db $18, $00
+    db $03, $06
+    db $0c, $18
+    db $30, $60
+    db $c0, $00
+    db $3c, $66
+    db $6e, $76
+    db $66, $66
+    db $3c, $00
+    db $18, $38
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $3c, $66
+    db $0e, $1c
+    db $38, $70
+    db $7e, $00
+    db $7e, $0c
+    db $18, $3c
+    db $06, $46
+    db $3c, $00
+    db $0c, $1c
+    db $2c, $4c
+    db $7e, $0c
+    db $0c, $00
+    db $7e, $60
+    db $7c, $06
+    db $06, $46
+    db $3c, $00
+    db $1c, $20
+    db $60, $7c
+    db $66, $66
+    db $3c, $00
+    db $7e, $06
+    db $0e, $1c
+    db $18, $18
+    db $18, $00
+    db $3c, $66
+    db $66, $3c
+    db $66, $66
+    db $3c, $00
+    db $3c, $66
+    db $66, $3e
+    db $06, $0c
+    db $38, $00
+    db $00, $18
+    db $18, $00
+    db $00, $18
+    db $18, $00
+    db $00, $18
+    db $18, $00
+    db $18, $18
+    db $10, $00
+    db $06, $0c
+    db $18, $30
+    db $18, $0c
+    db $06, $00
+    db $00, $00
+    db $3c, $00
+    db $00, $3c
+    db $00, $00
+    db $60, $30
+    db $18, $0c
+    db $18, $30
+    db $60, $00
+    db $3c, $46
+    db $06, $0c
+    db $18, $18
+    db $00, $18
+    db $3c, $66
+    db $6e, $6a
+    db $6e, $60
+    db $3c, $00
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $66, $00
+    db $7c, $66
+    db $66, $7c
+    db $66, $66
+    db $7c, $00
+    db $3c, $62
+    db $60, $60
+    db $60, $62
+    db $3c, $00
+    db $7c, $66
+    db $66, $66
+    db $66, $66
+    db $7c, $00
+    db $7e, $60
+    db $60, $7c
+    db $60, $60
+    db $7e, $00
+    db $7e, $60
+    db $60, $7c
+    db $60, $60
+    db $60, $00
+    db $3c, $62
+    db $60, $6e
+    db $66, $66
+    db $3e, $00
+    db $66, $66
+    db $66, $7e
+    db $66, $66
+    db $66, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $06, $06
+    db $06, $06
+    db $06, $46
+    db $3c, $00
+    db $66, $6c
+    db $78, $70
+    db $78, $6c
+    db $66, $00
+    db $60, $60
+    db $60, $60
+    db $60, $60
+    db $7c, $00
+    db $fc, $d6
+    db $d6, $d6
+    db $d6, $c6
+    db $c6, $00
+    db $62, $72
+    db $7a, $5e
+    db $4e, $46
+    db $42, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $7c, $66
+    db $66, $7c
+    db $60, $60
+    db $60, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $06
+    db $7c, $66
+    db $66, $7c
+    db $66, $66
+    db $66, $00
+    db $3c, $62
+    db $70, $3c
+    db $0e, $46
+    db $3c, $00
+    db $7e, $18
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $66, $66
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $66
+    db $66, $66
+    db $66, $64
+    db $78, $00
+    db $c6, $c6
+    db $c6, $d6
+    db $d6, $d6
+    db $fc, $00
+    db $66, $66
+    db $66, $3c
+    db $66, $66
+    db $66, $00
+    db $66, $66
+    db $66, $3c
+    db $18, $18
+    db $18, $00
+    db $7e, $0e
+    db $1c, $38
+    db $70, $60
+    db $7e, $00
+    db $1e, $18
+    db $18, $18
+    db $18, $18
+    db $1e, $00
+    db $40, $60
+    db $30, $18
+    db $0c, $06
+    db $02, $00
+    db $78, $18
+    db $18, $18
+    db $18, $18
+    db $78, $00
+    db $10, $38
+    db $6c, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $7e, $00
+    db $00, $c0
+    db $c0, $60
+    db $00, $00
+    db $00, $00
+    db $00, $3c
+    db $46, $3e
+    db $66, $66
+    db $3e, $00
+    db $60, $7c
+    db $66, $66
+    db $66, $66
+    db $7c, $00
+    db $00, $3c
+    db $62, $60
+    db $60, $62
+    db $3c, $00
+    db $06, $3e
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $00, $3c
+    db $66, $7e
+    db $60, $62
+    db $3c, $00
+    db $1e, $30
+    db $7c, $30
+    db $30, $30
+    db $30, $00
+    db $00, $3e
+    db $66, $66
+    db $66, $3e
+    db $46, $3c
+    db $60, $7c
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $18, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $00, $08
+    db $18, $18
+    db $18, $18
+    db $58, $30
+    db $60, $64
+    db $68, $70
+    db $78, $6c
+    db $66, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $0c, $00
+    db $00, $fc
+    db $d6, $d6
+    db $d6, $d6
+    db $c6, $00
+    db $00, $7c
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $00, $3c
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $00, $7c
+    db $66, $66
+    db $66, $7c
+    db $60, $60
+    db $00, $3e
+    db $66, $66
+    db $66, $66
+    db $3e, $06
+    db $00, $6c
+    db $70, $60
+    db $60, $60
+    db $60, $00
+    db $00, $3c
+    db $72, $38
+    db $1c, $4e
+    db $3c, $00
+    db $18, $3c
+    db $18, $18
+    db $18, $18
+    db $0c, $00
+    db $00, $66
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $00, $66
+    db $66, $66
+    db $66, $64
+    db $78, $00
+    db $00, $c6
+    db $c6, $d6
+    db $d6, $d6
+    db $fc, $00
+    db $00, $66
+    db $66, $3c
+    db $66, $66
+    db $66, $00
+    db $00, $66
+    db $66, $66
+    db $26, $1e
+    db $46, $3c
+    db $00, $7e
+    db $0e, $1c
+    db $38, $70
+    db $7e, $00
+    db $0e, $18
+    db $18, $30
+    db $18, $18
+    db $0e, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $70, $18
+    db $18, $0c
+    db $18, $18
+    db $70, $00
+    db $00, $60
+    db $f2, $9e
+    db $0c, $00
+    db $00, $00
+    db $10, $10
+    db $28, $28
+    db $44, $44
+    db $82, $fe
+    db $3c, $62
+    db $60, $60
+    db $60, $62
+    db $1c, $30
+    db $24, $00
+    db $66, $66
+    db $66, $66
+    db $3e, $00
+    db $0c, $18
+    db $00, $3c
+    db $7e, $60
+    db $3c, $00
+    db $18, $66
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $24, $00
+    db $3c, $46
+    db $3e, $46
+    db $3e, $00
+    db $30, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $18, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $00, $3c
+    db $62, $60
+    db $62, $3c
+    db $08, $18
+    db $18, $34
+    db $00, $3c
+    db $7e, $60
+    db $3e, $00
+    db $24, $00
+    db $3c, $66
+    db $7e, $60
+    db $3e, $00
+    db $30, $18
+    db $00, $3c
+    db $7e, $60
+    db $3c, $00
+    db $24, $00
+    db $18, $18
+    db $18, $18
+    db $18, $00
+    db $18, $24
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $10, $08
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $24, $00
+    db $3c, $66
+    db $7e, $66
+    db $66, $00
+    db $18, $00
+    db $3c, $66
+    db $7e, $66
+    db $66, $00
+    db $0c, $18
+    db $7e, $60
+    db $7c, $60
+    db $7e, $00
+    db $00, $00
+    db $7e, $1b
+    db $7f, $d8
+    db $7e, $00
+    db $3f, $78
+    db $d8, $de
+    db $f8, $d8
+    db $df, $00
+    db $18, $34
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $24, $00
+    db $3c, $66
+    db $66, $66
+    db $3c, $00
+    db $30, $18
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $18, $24
+    db $00, $66
+    db $66, $66
+    db $3c, $00
+    db $30, $18
+    db $00, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $00
+    db $66, $66
+    db $66, $3e
+    db $46, $3c
+    db $66, $00
+    db $3c, $66
+    db $66, $66
+    db $3c, $00
+    db $66, $00
+    db $66, $66
+    db $66, $66
+    db $3c, $00
+    db $18, $3c
+    db $62, $60
+    db $60, $62
+    db $3c, $18
+    db $1c, $3a
+    db $30, $7c
+    db $30, $30
+    db $7e, $00
+    db $66, $66
+    db $3c, $18
+    db $3c, $18
+    db $18, $00
+    db $3c, $66
+    db $66, $6c
+    db $66, $66
+    db $ec, $00
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $0c, $18
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $0c, $18
+    db $00, $18
+    db $18, $18
+    db $18, $00
+    db $0c, $18
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $0c, $18
+    db $00, $66
+    db $66, $66
+    db $3e, $00
+    db $34, $58
+    db $00, $7c
+    db $66, $66
+    db $66, $00
+    db $1a, $2c
+    db $62, $72
+    db $5a, $4e
+    db $46, $00
+    db $00, $3c
+    db $46, $3e
+    db $66, $3e
+    db $00, $7e
+    db $00, $3c
+    db $66, $66
+    db $66, $3c
+    db $00, $7e
+    db $00, $18
+    db $00, $18
+    db $30, $60
+    db $66, $3c
+    db $00, $00
+    db $00, $3e
+    db $30, $30
+    db $30, $00
+    db $00, $00
+    db $00, $7c
+    db $0c, $0c
+    db $0c, $00
+    db $62, $e4
+    db $68, $76
+    db $2b, $43
+    db $86, $0f
+    db $62, $e4
+    db $68, $76
+    db $2e, $56
+    db $9f, $06
+    db $00, $18
+    db $00, $18
+    db $18, $18
+    db $18, $18
+    db $1b, $36
+    db $6c, $d8
+    db $6c, $36
+    db $1b, $00
+    db $d8, $6c
+    db $36, $1b
+    db $36, $6c
+    db $d8, $00
+    db $34, $58
+    db $00, $3c
+    db $06, $7e
+    db $3e, $00
+    db $34, $58
+    db $00, $3c
+    db $66, $66
+    db $3c, $00
+    db $02, $3c
+    db $66, $6e
+    db $76, $66
+    db $3c, $40
+    db $00, $02
+    db $3c, $6e
+    db $76, $66
+    db $3c, $40
+    db $00, $00
+    db $7e, $db
+    db $de, $d8
+    db $7f, $00
+    db $00, $7e
+    db $d8, $d8
+    db $fc, $d8
+    db $d8, $de
+    db $20, $10
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $34, $58
+    db $3c, $66
+    db $66, $7e
+    db $66, $66
+    db $34, $58
+    db $3c, $66
+    db $66, $66
+    db $66, $3c
+    db $66, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $0c, $18
+    db $30, $00
+    db $00, $00
+    db $00, $00
+    db $00, $10
+    db $38, $10
+    db $10, $10
+    db $00, $00
+    db $7a, $ca
+    db $ca, $ca
+    db $7a, $0a
+    db $0a, $0a
+    db $3c, $42
+    db $99, $b5
+    db $b1, $9d
+    db $42, $3c
+    db $3c, $42
+    db $b9, $b5
+    db $b9, $b5
+    db $42, $3c
+    db $f1, $5b
+    db $55, $51
+    db $51, $00
+    db $00, $00
+
+FolderIconGlyphs::
+    db $f0, $90
+    db $ff, $81
+    db $81, $81
+    db $ff, $00
+    db $7e, $81
+    db $b5, $b5
+    db $81, $81
+    db $7e, $00
+    db $7e, $81
+    db $a9, $95
+    db $a9, $81
+    db $7e, $00
+    db $7e, $99
+    db $a5, $89
+    db $81, $89
+    db $7e, $00
+    db $f8, $8c
+    db $8e, $81
+    db $81, $81
+    db $ff, $00
+    db $00, $7e
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $7c
+    db $06, $66
+    db $66, $66
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $1e
+    db $0c, $06
+    db $06, $06
+    db $00, $00
+    db $00, $7e
+    db $36, $36
+    db $36, $36
+    db $00, $00
+    db $60, $6e
+    db $66, $66
+    db $66, $7e
+    db $00, $00
+    db $00, $3c
+    db $0c, $0c
+    db $00, $00
+    db $00, $00
+    db $00, $3e
+    db $06, $06
+    db $06, $3e
+    db $00, $00
+    db $60, $7e
+    db $06, $06
+    db $06, $0e
+    db $00, $00
+    db $00, $6c
+    db $3e, $66
+    db $66, $6e
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $3c
+    db $00, $00
+    db $00, $3e
+    db $36, $36
+    db $36, $1c
+    db $00, $00
+    db $00, $36
+    db $36, $36
+    db $36, $7e
+    db $00, $00
+    db $00, $7e
+    db $66, $76
+    db $06, $7e
+    db $00, $00
+    db $00, $66
+    db $66, $3c
+    db $0e, $7e
+    db $00, $00
+    db $00, $3e
+    db $06, $36
+    db $36, $34
+    db $30, $00
+    db $00, $78
+    db $0c, $0c
+    db $0c, $0c
+    db $00, $00
+    db $00, $d6
+    db $d6, $d6
+    db $d6, $fe
+    db $00, $00
+    db $00, $7c
+    db $6c, $6c
+    db $6c, $ec
+    db $00, $00
+    db $00, $1c
+    db $0c, $0c
+    db $0c, $0c
+    db $0c, $00
+    db $00, $3e
+    db $06, $06
+    db $06, $06
+    db $06, $00
+    db $00, $fe
+    db $66, $66
+    db $66, $7e
+    db $00, $00
+    db $00, $7e
+    db $66, $76
+    db $06, $06
+    db $06, $00
+    db $00, $36
+    db $36, $1c
+    db $0c, $0c
+    db $0c, $00
+    db $1c, $32
+    db $3c, $66
+    db $66, $3c
+    db $4c, $38
+    db $00, $10
+    db $38, $6c
+    db $c6, $82
+    db $00, $00
+    db $66, $f7
+    db $99, $99
+    db $ef, $66
+    db $00, $00
+    db $00, $00
+    db $76, $dc
+    db $c8, $dc
+    db $76, $00
+    db $1c, $36
+    db $66, $7c
+    db $66, $66
+    db $7c, $60
+    db $00, $fe
+    db $66, $62
+    db $60, $60
+    db $60, $f8
+    db $00, $00
+    db $fe, $6c
+    db $6c, $6c
+    db $6c, $48
+    db $fe, $66
+    db $30, $18
+    db $30, $66
+    db $fe, $00
+    db $00, $1e
+    db $38, $6c
+    db $6c, $6c
+    db $38, $00
+    db $00, $00
+    db $6c, $6c
+    db $6c, $6c
+    db $7f, $c0
+    db $00, $00
+    db $7e, $18
+    db $18, $18
+    db $18, $10
+    db $3c, $18
+    db $3c, $66
+    db $66, $3c
+    db $18, $3c
+    db $00, $3c
+    db $66, $7e
+    db $66, $66
+    db $3c, $00
+    db $00, $3c
+    db $66, $66
+    db $66, $24
+    db $66, $00
+    db $1c, $36
+    db $78, $dc
+    db $cc, $ec
+    db $78, $00
+    db $0c, $18
+    db $38, $54
+    db $54, $38
+    db $30, $60
+    db $00, $10
+    db $7c, $d6
+    db $d6, $d6
+    db $7c, $10
+    db $3e, $70
+    db $60, $7e
+    db $60, $70
+    db $3e, $00
+    db $3c, $66
+    db $66, $66
+    db $66, $66
+    db $66, $00
+    db $00, $7e
+    db $00, $7e
+    db $00, $7e
+    db $00, $00
+    db $18, $18
+    db $7e, $18
+    db $18, $00
+    db $7e, $00
+    db $30, $18
+    db $0c, $18
+    db $30, $00
+    db $7e, $00
+    db $0c, $18
+    db $30, $18
+    db $0c, $00
+    db $7e, $00
+    db $00, $0e
+    db $1b, $1b
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $18, $18
+    db $d8, $d8
+    db $70, $00
+    db $18, $18
+    db $00, $7e
+    db $00, $18
+    db $18, $00
+    db $00, $32
+    db $4c, $00
+    db $32, $4c
+    db $00, $00
+    db $38, $6c
+    db $38, $00
+    db $00, $00
+    db $00, $00
+    db $38, $7c
+    db $38, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $18, $18
+    db $00, $00
+    db $00, $00
+    db $0f, $18
+    db $d8, $70
+    db $30, $00
+    db $38, $6c
+    db $6c, $6c
+    db $6c, $00
+    db $00, $00
+    db $38, $6c
+    db $18, $30
+    db $7c, $00
+    db $00, $00
+    db $78, $0c
+    db $38, $0c
+    db $78, $00
+    db $00, $00
+    db $00, $fe
+    db $00, $00
+    db $00, $00
+    db $00, $00
+    db $f5, $c5
+    db $06, $ff
+    db $cd, $5d
+    db $36, $b7
+    db $20, $f8
+    db $05, $20
+    db $f7, $c1
+    db $f1, $c9
+
+; [ezgb]
+; ReadJoypadRaw: hardware P1 read → packed buttons in A (then swapped for menu ABI).
+; jr_000_3a22: after d-pad nibble ($20 select), swap into B; read face buttons ($10); OR; final swap; P1=$30 idle.
+
+ReadJoypadRaw::
     push bc
     ld a, $20
     ldh [rP1], a
@@ -12059,7 +10627,7 @@ Call_000_365d:
     cpl
     and $0f
 
-jr_000_3669:
+ReadJoypadRaw_readFace::
     swap a
     ld b, a
     ld a, $10
@@ -12082,70 +10650,89 @@ jr_000_3669:
     ret
 
 
-Call_000_368a:
-jr_000_368a:
-    call Call_000_365d
+; [ezgb]
+; WaitJoypadMask: spin on ReadJoypadRaw until (A & B) nonzero. B = mask.
+
+WaitJoypadMask::
+    call ReadJoypadRaw
     and b
-    jr z, jr_000_368a
+    jr z, WaitJoypadMask
 
     ret
 
 
-Call_000_3691:
-    call Call_000_365d
+; [ezgb]
+; ReadJoypad: returns the menu key byte (post-swap: A=$10, B=$20, START=$80).
+; ReadJoypadRaw ($3a16) is the lower-level read that ends with the swap.
+
+ReadJoypad::
+    call ReadJoypadRaw
     ld e, a
     ret
 
 
+; [ezgb]
+; WaitJoypadMaskArg: stack mask → WaitJoypadMask (B); return pressed in E.
+
+WaitJoypadMaskArg::
     push bc
     ld hl, sp+$04
     ld b, [hl]
-    call Call_000_368a
+    call WaitJoypadMask
     ld e, a
     pop bc
     ret
 
 
-Call_000_36a0:
+; [ezgb]
+; DelayDE: push BC; DelayInner(DE); B=$32; Jump_000_3a5f pad loop; nop; pop BC; trail; ret. Used by Delay($3a93).
+; Jump_000_3a5f → jr_000_3a61 → jr_000_3a63 → jr_000_3a65 → jr_000_3a67 → jr_000_3a69: five jr pads then --B; NZ → Jump_000_3a5f.
+; After pad: nop; pop BC; jr_000_3a71 → jr_000_3a73 → jr_000_3a75 → ret (three more jr pads).
+
+DelayDE::
     push bc
-    call Call_000_36bd
+    call DelayInner
     ld b, $32
 
-Jump_000_36a6:
-    jr jr_000_36a8
+DelayDE_padLoop::
+    jr DelayDE_padA
 
-jr_000_36a8:
-    jr jr_000_36aa
+DelayDE_padA::
+    jr DelayDE_padB
 
-jr_000_36aa:
-    jr jr_000_36ac
+DelayDE_padB::
+    jr DelayDE_padC
 
-jr_000_36ac:
-    jr jr_000_36ae
+DelayDE_padC::
+    jr DelayDE_padD
 
-jr_000_36ae:
-    jr jr_000_36b0
+DelayDE_padD::
+    jr DelayDE_padDecB
 
-jr_000_36b0:
+DelayDE_padDecB::
     dec b
-    jp nz, Jump_000_36a6
+    jp nz, DelayDE_padLoop
 
     nop
     pop bc
-    jr jr_000_36b8
+    jr DelayDE_trailA
 
-jr_000_36b8:
-    jr jr_000_36ba
+DelayDE_trailA::
+    jr DelayDE_trailB
 
-jr_000_36ba:
-    jr jr_000_36bc
+DelayDE_trailB::
+    jr DelayDE_ret
 
-jr_000_36bc:
+DelayDE_ret::
     ret
 
 
-Call_000_36bd:
-jr_000_36bd:
+; [ezgb]
+; DelayInner: --DE; if DE==0 ret; else B=$33; Jump_000_3a7c pad; nop; trail; jr DelayInner. Nested core for DelayDE.
+; Jump_000_3a7c → jr_000_3a7e → jr_000_3a80 → jr_000_3a82 → jr_000_3a84 → jr_000_3a86: five jr pads then --B; NZ → Jump_000_3a7c.
+; After pad: nop; jr_000_3a8d → jr_000_3a8f → jr_000_3a91 → DelayInner (three jr pads then outer loop).
+
+DelayInner::
     dec de
     ld a, e
     or d
@@ -12153,232 +10740,254 @@ jr_000_36bd:
 
     ld b, $33
 
-Jump_000_36c3:
-    jr jr_000_36c5
+DelayInner_padLoop::
+    jr DelayInner_padA
 
-jr_000_36c5:
-    jr jr_000_36c7
+DelayInner_padA::
+    jr DelayInner_padB
 
-jr_000_36c7:
-    jr jr_000_36c9
+DelayInner_padB::
+    jr DelayInner_padC
 
-jr_000_36c9:
-    jr jr_000_36cb
+DelayInner_padC::
+    jr DelayInner_padD
 
-jr_000_36cb:
-    jr jr_000_36cd
+DelayInner_padD::
+    jr DelayInner_padDecB
 
-jr_000_36cd:
+DelayInner_padDecB::
     dec b
-    jp nz, Jump_000_36c3
+    jp nz, DelayInner_padLoop
 
     nop
-    jr jr_000_36d4
+    jr DelayInner_trailA
 
-jr_000_36d4:
-    jr jr_000_36d6
+DelayInner_trailA::
+    jr DelayInner_trailB
 
-jr_000_36d6:
-    jr jr_000_36d8
+DelayInner_trailB::
+    jr DelayInner_outerLoop
 
-jr_000_36d8:
-    jr jr_000_36bd
+DelayInner_outerLoop::
+    jr DelayInner
 
-Call_000_36da:
+; [ezgb]
+; Delay(count): stack u16 → DelayDE. Busy-wait; callers pass e.g. $00c8/$002d.
+; DelayDE ($3a59) + DelayInner ($3a76) are the register/nested loops.
+
+Delay::
     ld hl, sp+$02
     ld e, [hl]
     inc hl
     ld d, [hl]
-    call Call_000_36a0
+    call DelayDE
     ret
 
 
-Jump_000_36e3:
+; [ezgb]
+; CopyTilesVram(HL=dst VRAM, BC=src, DE=count): plain 2bpp byte-pair blit (no color remap). Sibling CopyTilesColor.
+; DE==0 early ret; H≥$98 → H-=$10. jr_000_3aa7: if E==0 --D; jr_000_3aac STAT-wait [HL++]=[BC++]; jr_000_3ab5 STAT-wait second byte.
+; jr_000_3ac9: --E; NZ → jr_000_3aac; --D; if D signed clear → jr_000_3aac else ret. H wrap $98→$88 after lo-byte wrap.
+
+CopyTilesVram::
     ld a, d
     or e
     ret z
 
     ld a, h
     cp $98
-    jr c, jr_000_36ee
+    jr c, CopyTilesVram_checkE
 
     sub $10
     ld h, a
 
-jr_000_36ee:
+CopyTilesVram_checkE::
     xor a
     cp e
-    jr nz, jr_000_36f3
+    jr nz, CopyTilesVram_waitStatLo
 
     dec d
 
-jr_000_36f3:
+CopyTilesVram_waitStatLo::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_36f3
+    jr nz, CopyTilesVram_waitStatLo
 
     ld a, [bc]
     ld [hl+], a
     inc bc
 
-jr_000_36fc:
+CopyTilesVram_waitStatHi::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_36fc
+    jr nz, CopyTilesVram_waitStatHi
 
     ld a, [bc]
     ld [hl], a
     inc bc
     inc l
-    jr nz, jr_000_3710
+    jr nz, CopyTilesVram_decCount
 
     inc h
     ld a, h
     cp $98
-    jr nz, jr_000_3710
+    jr nz, CopyTilesVram_decCount
 
     ld h, $88
 
-jr_000_3710:
+CopyTilesVram_decCount::
     dec e
-    jr nz, jr_000_36f3
+    jr nz, CopyTilesVram_waitStatLo
 
     dec d
     bit 7, d
-    jr z, jr_000_36f3
+    jr z, CopyTilesVram_waitStatLo
 
     ret
 
 
-Jump_000_3719:
+; [ezgb]
+; CopyTilesColor(HL=dst VRAM, BC=src, DE=count): 2bpp byte-pair blit with wDrawColor/wDrawColorB remap. DE==0 early ret; H≥$98 → H-=$10.
+; jr_000_3add: load *src++; colorB.0 → B=$ff else jr_000_3aee; colorB.1 → C=$ff else jr_000_3af4.
+; jr_000_3af4: D=color^colorB; bit0 → B^=src (else jr_000_3b01); bit1 → C^=src (else jr_000_3b08).
+; jr_000_3b08: STAT-wait [HL++]=B; jr_000_3b10: STAT-wait [HL++]=C; H==$98 → $88; jr_000_3b1f: --DE; NZ → jr_000_3add else ret. Used by UploadFontTiles.
+
+CopyTilesColor::
     ld a, d
     or e
     ret z
 
     ld a, h
     cp $98
-    jr c, jr_000_3724
+    jr c, CopyTilesColor_loop
 
     sub $10
     ld h, a
 
-jr_000_3724:
+CopyTilesColor_loop::
     push de
     ld a, [bc]
     ld e, a
     inc bc
     push bc
     ld bc, $0000
-    ld a, [$d70e]
+    ld a, [wDrawColorB]
     bit 0, a
-    jr z, jr_000_3735
+    jr z, CopyTilesColor_afterColorB0
 
     ld b, $ff
 
-jr_000_3735:
+CopyTilesColor_afterColorB0::
     bit 1, a
-    jr z, jr_000_373b
+    jr z, CopyTilesColor_xorMask
 
     ld c, $ff
 
-jr_000_373b:
+CopyTilesColor_xorMask::
     ld d, a
-    ld a, [$d70d]
+    ld a, [wDrawColor]
     xor d
     ld d, a
     bit 0, d
-    jr z, jr_000_3748
+    jr z, CopyTilesColor_afterBit0
 
     ld a, e
     xor b
     ld b, a
 
-jr_000_3748:
+CopyTilesColor_afterBit0::
     bit 1, d
-    jr z, jr_000_374f
+    jr z, CopyTilesColor_statWaitB
 
     ld a, e
     xor c
     ld c, a
 
-jr_000_374f:
+CopyTilesColor_statWaitB::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_374f
+    jr nz, CopyTilesColor_statWaitB
 
     ld [hl], b
     inc hl
 
-jr_000_3757:
+CopyTilesColor_statWaitC::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_3757
+    jr nz, CopyTilesColor_statWaitC
 
     ld [hl], c
     inc hl
     ld a, h
     cp $98
-    jr nz, jr_000_3766
+    jr nz, CopyTilesColor_decCount
 
     ld h, $88
 
-jr_000_3766:
+CopyTilesColor_decCount::
     pop bc
     pop de
     dec de
     ld a, d
     or e
-    jr nz, jr_000_3724
+    jr nz, CopyTilesColor_loop
 
     ret
 
 
-Call_000_376e:
-    call Call_000_069f
+; [ezgb]
+; RegisterFont(HL=font desc): LCD off; find free 3-byte slot in wFontSlots ($d73a,
+; 6 entries); store next-tile id + font ptr; SelectFont; if wGfxMode bit1 set,
+; UploadFontTiles; bump wFontNextTile by glyph count; LCD on. Returns HL=slot or 0.
+; jr_000_3b30: scan slots; free → jr_000_3b42 store+SelectFont+maybe Upload; full → HL=0.
+; jr_000_3b66: LCDC on ($81 & ~$18) ret. Orphan before UploadFontTiles.
+
+RegisterFont::
+    call LcdOff
     push hl
     ld hl, $d714
     ld b, $06
 
-jr_000_3777:
+RegisterFont_scanSlots::
     ld a, [hl]
     inc hl
     or [hl]
     cp $00
-    jr z, jr_000_3789
+    jr z, RegisterFont_storeSlot
 
     inc hl
     inc hl
     dec b
-    jr nz, jr_000_3777
+    jr nz, RegisterFont_scanSlots
 
     pop hl
     ld hl, $0000
-    jr jr_000_37ad
+    jr RegisterFont_lcdOn
 
-jr_000_3789:
+RegisterFont_storeSlot::
     pop de
     ld [hl], d
     dec hl
     ld [hl], e
-    ld a, [$d712]
+    ld a, [wFontNextTile]
     dec hl
     ld [hl], a
     push hl
-    call Call_000_37fe
+    call SelectFont
     ld a, [$d6a3]
     and $02
-    call nz, Call_000_37b6
-    ld hl, $d710
+    call nz, UploadFontTiles
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     inc hl
-    ld a, [$d712]
+    ld a, [wFontNextTile]
     add [hl]
-    ld [$d712], a
+    ld [wFontNextTile], a
     pop hl
 
-jr_000_37ad:
+RegisterFont_lcdOn::
     ldh a, [rLCDC]
     or $81
     and $e7
@@ -12386,8 +10995,13 @@ jr_000_37ad:
     ret
 
 
-Call_000_37b6:
-    ld hl, $d710
+; [ezgb]
+; UploadFontTiles: blit current font glyphs into VRAM near $9000+wFontBaseTile.
+; Uses CopyTilesVram ($3a9c) or CopyTilesColor ($3ad2) per font header flags.
+; jr_000_3b9b: glyph src offset BC from header lo2 ($01→$80, $02→$0, else $100); dest=$9000+base*16; bit2→Color else Vram.
+
+UploadFontTiles::
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
@@ -12406,21 +11020,21 @@ Call_000_37b6:
     and $03
     ld bc, $0080
     cp $01
-    jr z, jr_000_37e2
+    jr z, UploadFontTiles_blitGlyphs
 
     ld bc, $0000
     cp $02
-    jr z, jr_000_37e2
+    jr z, UploadFontTiles_blitGlyphs
 
     ld bc, $0100
 
-jr_000_37e2:
+UploadFontTiles_blitGlyphs::
     inc hl
     inc hl
     add hl, bc
     ld c, l
     ld b, h
-    ld a, [$d70f]
+    ld a, [wFontBaseTile]
     ld l, a
     ld h, $00
     add hl, hl
@@ -12432,95 +11046,109 @@ jr_000_37e2:
     ld h, a
     pop af
     bit 2, a
-    jp z, Jump_000_36e3
+    jp z, CopyTilesVram
 
-    jp Jump_000_3719
+    jp CopyTilesColor
 
 
-Call_000_37fe:
+; [ezgb]
+; SelectFont: copy slot triple → wFontBaseTile / wFontPtr / wFontFarFlag.
+
+SelectFont::
     ld a, [hl+]
-    ld [$d70f], a
+    ld [wFontBaseTile], a
     ld a, [hl+]
-    ld [$d710], a
+    ld [wFontPtr], a
     ld a, [hl+]
-    ld [$d711], a
+    ld [wFontFarFlag], a
     ret
 
 
-Call_000_380b:
+; [ezgb]
+; PrintChar(A): if A==$0a TileNewline (unless wGfxMode bit3); else PutBgTile
+; then AdvanceTileCursor. Tilemap text path (cursor wTileCursorX/Y).
+
+PrintChar::
     cp $0a
-    jr nz, jr_000_381d
+    jr nz, PrintChar_putChar
 
     push af
     ld a, [$d6a3]
     and $08
-    jr nz, jr_000_381c
+    jr nz, PrintChar_skipNewline
 
-    call Call_000_38f7
+    call TileNewline
     pop af
     ret
 
 
-jr_000_381c:
+PrintChar_skipNewline::
     pop af
 
-jr_000_381d:
-    call Call_000_3834
-    call Call_000_390c
+PrintChar_putChar::
+    call PutBgTile
+    call AdvanceTileCursor
     ret
 
 
-    call Call_000_3834
-    call Call_000_390c
+    call PutBgTile
+    call AdvanceTileCursor
     ret
 
 
-    call Call_000_38e0
+    call RetreatTileCursor
     ld a, $00
-    call Call_000_3834
+    call PutBgTile
     ret
 
 
-Call_000_3834:
-    push af
-    ld a, [$d711]
-    or a
-    jr nz, jr_000_3849
+; [ezgb]
+; PutBgTile(A): map char through font at wFontPtr → tile id at BG $9800+y*32+x (wTileCursorY/X). STAT-safe.
+; If wFontFarFlag==0: ResetTileText + FarCallTrampoline; jr_000_3c01 nop fallthrough.
+; jr_000_3c02: if font hdr&3!=2 index glyph table else keep A; jr_000_3c19 +wFontBaseTile; map ptr; jr_000_3c34 STAT-wait store E.
 
-    call Call_000_38a3
+PutBgTile::
+    push af
+    ld a, [wFontFarFlag]
+    or a
+    jr nz, PutBgTile_mapGlyph
+
+    call ResetTileText
     xor a
-    ld [$d712], a
-    call Call_000_078d
+    ld [wFontNextTile], a
+    call FarCallTrampoline
     ld b, h
     dec l
     nop
+
+PutBgTile_afterFarCall::
     nop
 
-jr_000_3849:
+PutBgTile_mapGlyph::
     pop af
     push bc
     push de
     push hl
     ld e, a
-    ld hl, $d710
+    ld hl, wFontPtr
     ld a, [hl+]
     ld h, [hl]
     ld l, a
     ld a, [hl+]
     and $03
     cp $02
-    jr z, jr_000_3860
+    jr z, PutBgTile_addBaseTile
 
     inc hl
     ld d, $00
     add hl, de
     ld e, [hl]
 
-jr_000_3860:
-    ld a, [$d70f]
+PutBgTile_addBaseTile::
+    ld a, [wFontBaseTile]
     add e
     ld e, a
-    ld a, [$d726]
+    ld a, [wTileCursorY]
     ld l, a
     ld h, $00
     add hl, hl
@@ -12528,17 +11156,17 @@ jr_000_3860:
     add hl, hl
     add hl, hl
     add hl, hl
-    ld a, [$d725]
+    ld a, [wTileCursorX]
     ld c, a
     ld b, $00
     add hl, bc
     ld bc, $9800
     add hl, bc
 
-jr_000_387b:
+PutBgTile_waitStatStore::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_387b
+    jr nz, PutBgTile_waitStatStore
 
     ld [hl], e
     pop hl
@@ -12547,164 +11175,199 @@ jr_000_387b:
     ret
 
 
+; [ezgb]
+; RegisterFontArg: stack font-desc ptr → RegisterFont (HL); return slot in DE.
+
+RegisterFontArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
     inc hl
     ld h, [hl]
     ld l, a
-    call Call_000_376e
+    call RegisterFont
     push hl
     pop de
     pop bc
     ret
 
 
+; [ezgb]
+; SelectFontArg: stack font-desc ptr → SelectFont (HL); returns DE=0.
+
+SelectFontArg::
     push bc
     ld hl, sp+$04
     ld a, [hl]
     inc hl
     ld h, [hl]
     ld l, a
-    call Call_000_37fe
+    call SelectFont
     pop bc
     ld de, $0000
     ret
 
 
-Call_000_38a3:
+; [ezgb]
+; ResetTileText: EnterGfxMode2 path prep — InitGfxMode2 via $3d21, wFontNextTile=1,
+; clear wFontSlots, default draw colors, ClearBgMap.
+; jr_000_3c6b: zero $12 bytes at wFontSlots; then wDrawColor=3 / wDrawColorB=0; ClearBgMap.
+
+ResetTileText::
     push bc
-    call Call_000_3968
+    call EnterGfxMode2
     ld a, $01
-    ld [$d712], a
+    ld [wFontNextTile], a
     xor a
-    ld hl, $d713
+    ld hl, wFontSlots
     ld b, $12
 
-jr_000_38b2:
+ResetTileText_clearSlots::
     ld [hl+], a
     dec b
-    jr nz, jr_000_38b2
+    jr nz, ResetTileText_clearSlots
 
     ld a, $03
-    ld [$d70d], a
+    ld [wDrawColor], a
     ld a, $00
-    ld [$d70e], a
-    call Call_000_38c5
+    ld [wDrawColorB], a
+    call ClearBgMap
     pop bc
     ret
 
 
-Call_000_38c5:
+; [ezgb]
+; ClearBgMap: fill BG map $9800 with tile 0 (32×32), STAT-safe.
+; jr_000_3c85: 32 rows; jr_000_3c87: STAT-wait write 0, 32 cols/row. Orphan before RetreatTileCursor.
+
+ClearBgMap::
     push de
     push hl
     ld hl, $9800
     ld e, $20
 
-jr_000_38cc:
+ClearBgMap_rowSetup::
     ld d, $20
 
-jr_000_38ce:
+ClearBgMap_waitStatWrite::
     ldh a, [rSTAT]
     bit 1, a
-    jr nz, jr_000_38ce
+    jr nz, ClearBgMap_waitStatWrite
 
     ld [hl], $00
     inc hl
     dec d
-    jr nz, jr_000_38ce
+    jr nz, ClearBgMap_waitStatWrite
 
     dec e
-    jr nz, jr_000_38cc
+    jr nz, ClearBgMap_rowSetup
 
     pop hl
     pop de
     ret
 
 
-Call_000_38e0:
+; [ezgb]
+; RetreatTileCursor: --wTileCursorX; at X=0 wrap to $13 and --Y (clamp at Y=0).
+; jr_000_3ca4: X wrap + maybe --Y; jr_000_3cae: pop HL ret. Inverse of AdvanceTileCursor.
+
+RetreatTileCursor::
     push hl
-    ld hl, $d725
+    ld hl, wTileCursorX
     xor a
     cp [hl]
-    jr z, jr_000_38eb
+    jr z, RetreatTileCursor_wrapX
 
     dec [hl]
-    jr jr_000_38f5
+    jr RetreatTileCursor_epilogueRet
 
-jr_000_38eb:
+RetreatTileCursor_wrapX::
     ld [hl], $13
-    ld hl, $d726
+    ld hl, wTileCursorY
     xor a
     cp [hl]
-    jr z, jr_000_38f5
+    jr z, RetreatTileCursor_epilogueRet
 
     dec [hl]
 
-jr_000_38f5:
+RetreatTileCursor_epilogueRet::
     pop hl
     ret
 
 
-Call_000_38f7:
+; [ezgb]
+; TileNewline: wTileCursorX=0; ++Y or ScrollBgUp at bottom row ($11).
+; jr_000_3cc0: Y==$11 → ScrollBgUp; else ++Y; jr_000_3cc3 ret. Used by PrintChar on $0a.
+
+TileNewline::
     push hl
     xor a
-    ld [$d725], a
-    ld hl, $d726
+    ld [wTileCursorX], a
+    ld hl, wTileCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_3907
+    jr z, TileNewline_scrollBg
 
     inc [hl]
-    jr jr_000_390a
+    jr TileNewline_epilogueRet
 
-jr_000_3907:
-    call Call_000_393a
+TileNewline_scrollBg::
+    call ScrollBgUp
 
-jr_000_390a:
+TileNewline_epilogueRet::
     pop hl
     ret
 
 
-Call_000_390c:
+; [ezgb]
+; AdvanceTileCursor: ++wTileCursorX; wrap at $13 and bump Y (tilemap text).
+; jr_000_3cd1: X wrap → Y++; at Y=$11 → jr_000_3cde: if wGfxMode bit2 set reset cursors else jr_000_3cee ScrollBgUp.
+; jr_000_3cf1: pop HL ret. Sibling of AdvanceTextCursor.
+
+AdvanceTileCursor::
     push hl
-    ld hl, $d725
+    ld hl, wTileCursorX
     ld a, $13
     cp [hl]
-    jr z, jr_000_3918
+    jr z, AdvanceTileCursor_wrapX
 
     inc [hl]
-    jr jr_000_3938
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3918:
+AdvanceTileCursor_wrapX::
     ld [hl], $00
-    ld hl, $d726
+    ld hl, wTileCursorY
     ld a, $11
     cp [hl]
-    jr z, jr_000_3925
+    jr z, AdvanceTileCursor_checkGfxMode
 
     inc [hl]
-    jr jr_000_3938
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3925:
+AdvanceTileCursor_checkGfxMode::
     ld a, [$d6a3]
     and $04
-    jr z, jr_000_3935
+    jr z, AdvanceTileCursor_scrollBg
 
     xor a
-    ld [$d726], a
-    ld [$d725], a
-    jr jr_000_3938
+    ld [wTileCursorY], a
+    ld [wTileCursorX], a
+    jr AdvanceTileCursor_epilogueRet
 
-jr_000_3935:
-    call Call_000_393a
+AdvanceTileCursor_scrollBg::
+    call ScrollBgUp
 
-jr_000_3938:
+AdvanceTileCursor_epilogueRet::
     pop hl
     ret
 
 
-Call_000_393a:
+; [ezgb]
+; ScrollBgUp: shift BG map $9800 up one row (31 row copies $9820→$9800). Called by AdvanceTileCursor.
+; jr_000_3cfe: D=$20 tiles/row; jr_000_3d00: STAT-wait copy [BC]→[HL++]; --E rows.
+; jr_000_3d11: STAT-wait clear bottom row to 0; pop HL/DE/BC ret.
+
+ScrollBgUp::
     push bc
     push de
     push hl
@@ -12712,34 +11375,34 @@ Call_000_393a:
     ld bc, $9820
     ld e, $1f
 
-jr_000_3945:
+ScrollBgUp_rowSetup::
     ld d, $20
 
-jr_000_3947:
+ScrollBgUp_copyTile::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_3947
+    jr nz, ScrollBgUp_copyTile
 
     ld a, [bc]
     ld [hl+], a
     inc bc
     dec d
-    jr nz, jr_000_3947
+    jr nz, ScrollBgUp_copyTile
 
     dec e
-    jr nz, jr_000_3945
+    jr nz, ScrollBgUp_rowSetup
 
     ld d, $20
 
-jr_000_3958:
+ScrollBgUp_clearBottom::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_3958
+    jr nz, ScrollBgUp_clearBottom
 
     ld a, $00
     ld [hl+], a
     dec d
-    jr nz, jr_000_3958
+    jr nz, ScrollBgUp_clearBottom
 
     pop hl
     pop de
@@ -12747,23 +11410,27 @@ jr_000_3958:
     ret
 
 
-Call_000_3968:
-Jump_000_3968:
+; [ezgb]
+; EnterGfxMode2: tear down mode-1 VBlank/LCD callbacks if LCD on, InitGfxMode2
+; (clear cursors + BG, wGfxMode=2), restore LCDC. Tilemap text mode.
+; jr_000_3d3d: if LCD already off skip LcdOff+RemoveCallbackSlot; then InitGfxMode2, LCDC|=$81 &=$E7, ei.
+
+EnterGfxMode2::
     di
     ldh a, [rLCDC]
     bit 7, a
-    jr z, jr_000_3984
+    jr z, EnterGfxMode2_initAndEnableLcd
 
-    call Call_000_069f
-    ld bc, $26a6
-    ld hl, $d6ac
-    call Call_000_064c
-    ld bc, $26b1
-    ld hl, $d6bc
-    call Call_000_064c
+    call LcdOff
+    ld bc, VBlankCb_Bg8000
+    ld hl, wVBlankCallbacks
+    call RemoveCallbackSlot
+    ld bc, LycCb_Bg8800
+    ld hl, wLcdCallbacks
+    call RemoveCallbackSlot
 
-jr_000_3984:
-    call Call_000_3991
+EnterGfxMode2_initAndEnableLcd::
+    call InitGfxMode2
     ldh a, [rLCDC]
     or $81
     and $e7
@@ -12772,57 +11439,71 @@ jr_000_3984:
     ret
 
 
-Call_000_3991:
+InitGfxMode2::
     xor a
-    ld [$d725], a
-    ld [$d726], a
-    call Call_000_38c5
+    ld [wTileCursorX], a
+    ld [wTileCursorY], a
+    call ClearBgMap
     ld a, $02
     ld [$d6a3], a
     ret
 
 
-Call_000_39a1:
-Jump_000_39a1:
-jr_000_39a1:
+; [ezgb]
+; VramFill: STAT-safe fill — wait mode≠2, write B to [HL++) DE times. EnterGfxMode1
+; zeros $8100.. with this; VramFillActiveWinMap/BgMap clear $9800/$9C00 ($0400).
+
+VramFill::
     ldh a, [rSTAT]
     and $02
-    jr nz, jr_000_39a1
+    jr nz, VramFill
 
     ld [hl], b
     inc hl
     dec de
     ld a, d
     or e
-    jr nz, jr_000_39a1
+    jr nz, VramFill
 
     ret
 
 
+; [ezgb]
+; VramFillActiveWinMap: pick window tilemap base from LCDC bit6 ($9800/$9C00),
+; then VramFill $0400 bytes with B. Sibling VramFillActiveBgMap uses BG map bit3.
+; jr_000_3d73: bit6 set → HL=$9C00; else $9800; both jr to shared $3d86 VramFill tail.
+
+VramFillActiveWinMap::
     ldh a, [rLCDC]
     bit 6, a
-    jr nz, jr_000_39ba
+    jr nz, VramFillActiveWinMap_map9C00
 
     ld hl, $9800
-    jr jr_000_39cd
+    jr VramFillActiveBgMap_doFill
 
-jr_000_39ba:
+VramFillActiveWinMap_map9C00::
     ld hl, $9c00
-    jr jr_000_39cd
+    jr VramFillActiveBgMap_doFill
 
+; [ezgb]
+; VramFillActiveBgMap: pick BG tilemap base from LCDC bit3 ($9800/$9C00), then
+; VramFill $0400 bytes with B. Shares tail at $3d86 with VramFillActiveWinMap.
+; jr_000_3d83: bit3 set → HL=$9C00; else $9800; jr_000_3d86: DE=$0400 jp VramFill.
+
+VramFillActiveBgMap::
     ldh a, [rLCDC]
     bit 3, a
-    jr nz, jr_000_39ca
+    jr nz, VramFillActiveBgMap_use9c00
 
     ld hl, $9800
-    jr jr_000_39cd
+    jr VramFillActiveBgMap_doFill
 
-jr_000_39ca:
+VramFillActiveBgMap_use9c00::
     ld hl, $9c00
 
-jr_000_39cd:
-    ld de, $0400
-    jp Jump_000_39a1
+VramFillActiveBgMap_doFill::
+    ld de, FarCallScan
+    jp VramFill
 
 
     rst RST_38
@@ -13778,575 +12459,83 @@ jr_000_39cd:
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+BrowserScrollDownRepaint::
+    db $e8, $fb, $f8, $07, $2a, $5f, $56, $d5
+    db $cd, $e3, $01, $e1, $f8, $07, $7e, $f8
+    db $03, $77, $f8, $08, $7e, $f8, $04, $32
+    db $3a, $2b, $77, $f8, $04, $3a, $2b, $32
+    db $2a, $5f, $56, $1a, $fe, $01, $20, $70
+    db $f8, $01, $2a, $66, $6f, $36, $00, $f8
+    db $07, $2a, $4f, $46, $79, $c6, $f8, $4f
+    db $78, $ce, $ff, $47, $af, $02, $69, $60
+    db $23, $36, $00, $69, $60, $23, $23, $36
+    db $00, $03, $03, $03, $af, $02, $cd, $b2
+    db $3e, $f8, $03, $3a, $2b, $2b, $c6, $01
+    db $22, $23, $23, $23, $7e, $ce, $00, $f8
+    db $01, $22, $23, $d1, $d5, $1a, $22, $13
+    db $1a, $32, $2a, $5f, $56, $d5, $cd, $dc
+    db $03, $e1, $f8, $04, $36, $0e, $f8, $04
+    db $3a, $22, $7e, $3d, $32, $7e, $b7, $28
+    db $17, $2b, $d1, $d5, $1a, $22, $13, $1a
+    db $22, $3a, $2b, $f5, $33, $2a, $5f, $56
+    db $d5, $cd, $2b, $3e, $e8, $03, $18, $de
+    db $e8, $05, $c9, $44, $49, $52, $00, $e8
+    db $fc, $f8, $08, $3a, $2b, $0e, $00, $86
+    db $23, $5f, $79, $8e, $4f, $7b, $e6, $1f
+    db $f8, $00, $22, $36, $00, $f8, $08, $46
+    db $04, $04, $7b, $cb, $39, $cb, $1f, $cb
+    db $39, $cb, $1f, $cb, $39, $cb, $1f, $cb
+    db $39, $cb, $1f, $cb, $39, $cb, $1f, $c6
+    db $12, $ea, $00, $40, $f8, $00, $4e, $af
+    db $96, $23, $23, $32, $79, $9e, $23, $23
+    db $32, $2a, $5f, $7e, $c6, $a0, $57, $21
+    db $fe, $00, $19, $7e, $fe, $10, $20, $27
+    db $c5, $c5, $33, $af, $0f, $f5, $d5, $cd
+    db $c8, $3e, $e8, $06, $21, $03, $11, $e5
+    db $11, $27, $3e, $d5, $cd, $b7, $08, $e8
+    db $05, $af, $0f, $f5, $3e, $03, $f5, $33
+    db $cd, $d8, $23, $e8, $03, $18, $0c, $c5
+    db $33, $21, $14, $00, $e5, $d5, $cd, $c8
+    db $3e, $e8, $05, $e8, $04, $c9, $21, $00
+    db $7f, $36, $e1, $2e, $10, $36, $e2, $2e
+    db $20, $36, $e3, $2e, $c0, $36, $03, $2e
+    db $f0, $36, $e4, $c9
+
+DrawNameWithIcon::
+    db $e8, $fd, $f8, $07, $7e, $b7, $20, $0b
+    db $f8, $00, $36, $c0, $f8, $07, $36, $10
+    db $c3, $9c, $3f, $f8, $01, $3e, $ff, $22
+    db $36, $00, $f8, $02, $7e, $d6, $fe, $30
+    db $20, $f8, $05, $7e, $f8, $02, $86, $23
+    db $23, $23, $23, $4f, $7e, $ce, $00, $47
+    db $0a, $b7, $28, $0d, $fe, $2e, $20, $04
+    db $f8, $02, $3a, $77, $f8, $02, $34, $18
+    db $d9, $f8, $00, $3e, $c3, $22, $7e, $3c
+    db $ca, $99, $3f, $f8, $02, $3a, $96, $23
+    db $3d, $32, $4e, $06, $00, $59, $50, $13
+    db $f8, $05, $2a, $83, $5f, $7e, $8a, $57
+    db $1a, $e6, $df, $f8, $01, $77, $59, $50
+    db $13, $13, $f8, $05, $2a, $83, $5f, $7e
+    db $8a, $57, $1a, $e6, $df, $5f, $f8, $02
+    db $7e, $d6, $03, $3e, $01, $28, $01, $af
+    db $57, $03, $03, $03, $f8, $05, $2a, $81
+    db $4f, $7e, $88, $47, $f8, $01, $7e, $d6
+    db $47, $20, $23, $7b, $d6, $42, $20, $1e
+    db $f8, $02, $7e, $d6, $02, $20, $06, $f8
+    db $00, $36, $c1, $18, $2c, $7a, $b7, $28
+    db $28, $0a, $cb, $af, $fe, $43, $20, $21
+    db $f8, $00, $36, $c2, $18, $1b, $7a, $b7
+    db $28, $17, $f8, $01, $7e, $d6, $53, $20
+    db $10, $7b, $d6, $41, $20, $0b, $0a, $cb
+    db $af, $fe, $56, $20, $04, $f8, $00, $36
+    db $c4, $f8, $07, $35, $f8, $00, $4d, $44
+    db $f8, $09, $7e, $f5, $33, $21, $01, $00
+    db $e5, $c5, $cd, $b7, $08, $e8, $05, $f8
+    db $09, $3a, $2b, $57, $1e, $01, $d5, $3a
+    db $2b, $f5, $33, $2a, $5f, $56, $d5, $cd
+    db $b7, $08, $e8, $08, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

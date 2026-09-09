@@ -2,7 +2,8 @@
 
 The HELP tab's version screen (`DrawFwVersionScreen`, bank 8) stock-draws
 `ver: FW5 K1.05e` and `www.ezflash.cn`. `DrawHelpModVersion` extends it: it appends the kernel date to the version
-(`K1.05e-0731` / `K1.05e-0918`, collapsing the stock double space to fit),
+(`K1.05e-0731` / `K1.05e-0918`; plain `K1.04e` on the FW4 kernel, which has
+only one build), collapsing the stock double space to fit,
 adds a `MOD <version>` line, and a two-line `github.com/ lukesau/ezgb` link, so
 a card announces exactly which build it is running.
 
@@ -15,9 +16,9 @@ itself (the three bytes it displaced), redraws `K1.05e-<date>` at row 3 col 9
 (over the second stock space, shifting it left one to make room for the
 suffix), draws `MOD <version>` at row 7 and the GitHub link at rows 9-10, then
 `jp`s to `DrawFwVersionScreen_waitSelect` (`08:7141`). The `-<date>` suffix is
-the one part that differs between the two kernels. Bank 8 is byte-identical
-across 1.05e-0731 and 1.05e-0918, so the hook and its call site are the same in
-both.
+the one part that differs between the kernels (`VERSION_TEXT` in
+`scripts/port-mod.py`). Bank 8 is byte-identical across all three builds, so
+the hook and its call site are the same everywhere.
 
 The version text lives in a fixed 10-byte field `MODSTR` at `08:7aff`, drawn as
 `len $0a`, so updating the number never changes any code — only those bytes.

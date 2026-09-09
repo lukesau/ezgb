@@ -47,13 +47,12 @@ scrub_macos_junk() {
               -o -name '.metadata_never_index' \) -exec rm -rf {} + 2>/dev/null || true
 }
 
-# Stage the current patched kernel as sd/root/ezgb.dat so the card always
-# carries the build we are testing. Non-fatal: kernel.gb is untracked firmware
-# and may simply be absent.
-if [[ -x "$ROOT/scripts/build-ezgb-dat.sh" ]]; then
-  "$ROOT/scripts/build-ezgb-dat.sh" "${EZGB_KERNEL_VERSION:-1.05e-0731}" \
-    || echo "warning: could not stage ezgb.dat; card will not contain a kernel" >&2
-fi
+# The kernel goes onto the image as ezgb.dat straight from re/<ver>/kernel.gb
+# (EZGB_KERNEL_VERSION picks the version), never via sd/root/, so the folder
+# copy stays a plain ROM/save backup and the card still mirrors a real one.
+# Non-fatal: kernel.gb is untracked firmware and may simply be absent.
+KERNEL="$ROOT/re/${EZGB_KERNEL_VERSION:-1.05e-0731}/kernel.gb"
+[[ -f "$KERNEL" ]] || echo "warning: no $KERNEL; card will not contain a kernel" >&2
 
 if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
   MNT="$(mktemp -d /tmp/ezjr-sd.XXXXXX)"
@@ -75,6 +74,7 @@ if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
           "$ROOTFS"/ "$MNT"/
   fi
   scrub_macos_junk "$MNT"
+  [[ -f "$KERNEL" ]] && cp "$KERNEL" "$MNT/ezgb.dat"
   # Warn about non-8.3 names (spaces / long names → VFAT LFN → often broken in Jr UI)
   while IFS= read -r -d '' f; do
     base="$(basename "$f")"
@@ -91,7 +91,7 @@ if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
   hdiutil detach "$MNT" >/dev/null
   trap - EXIT
   rmdir "$MNT" 2>/dev/null || true
-  echo "Done. Image has contents of sd/root/."
+  echo "Done. Image has contents of sd/root/ plus ezgb.dat ($(basename "$(dirname "$KERNEL")"))."
 else
   echo "No sd/root/ contents found; left an empty FAT volume."
   echo "Mount with ./scripts/mount-sd-image.sh and add ROMs, or populate sd/root/ and re-run."

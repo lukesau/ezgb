@@ -38,11 +38,14 @@ Stock bases:
 
 | Version | Stock `ezgb.dat` md5 |
 |---|---|
+| 1.04e | `b8c29fa5a94c37200434e4c72f0cdfea` |
 | 1.05e-0731 | `91eb7fc67332ef20b5691029181ff748` |
 | 1.05e-0918 | `5238ac5987d23b68a19d40e43af8c786` |
 
-These are the `ezgb.dat` files inside the official
-`juniorkernel-1.05e-FW5-*` packages.
+These are the `ezgb.dat` files inside the official `juniorkernel-1.04e-FW4`
+and `juniorkernel-1.05e-FW5-*` packages. The 1.04e kernel runs on FW4 and FW5
+carts alike (the kernel is loaded from the card at every boot; nothing is
+flashed), so a cart on FW4 needs no updater to use the mod.
 
 ## Option B: build from the disassembly
 
@@ -52,6 +55,7 @@ firmware download needed:
 ```bash
 scripts/build-kernel.sh 1.05e-0731            # -> re/.../disassembly/game_trunc.gb
 scripts/build-kernel.sh 1.05e-0918 --install  # also copy to re/.../kernel.gb
+scripts/build-kernel.sh 1.04e
 ```
 
 This runs `make` in `re/<ver>/disassembly`, then undoes two rgbds behaviors
@@ -60,8 +64,10 @@ to the real 160KB (10 banks), and restores the 4 header bytes rgbfix
 "corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F` global
 checksum; all are stale in the shipped firmware, and nothing verifies them).
 The result is verified against `patched_md5` in the manifest; `--install`
-puts it at `re/<ver>/kernel.gb`, where `scripts/build-ezgb-dat.sh` and the
-SameBoy scripts expect it.
+puts it at `re/<ver>/kernel.gb`, where the SameBoy scripts expect it;
+`scripts/make-dist.sh` then lays out `dist/mod-N.M/` with a card-ready
+`ezgb-mod-N.M-for-<ver>.dat` (rename to `ezgb.dat`) and the matching `.ips`
+for every version.
 
 A mismatch against the manifest means either the disassembly has changes the
 patch hasn't picked up yet (the patches are regenerated per

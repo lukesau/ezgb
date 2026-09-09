@@ -5,13 +5,17 @@
 # is patched in place by decomp/tools/inject*.py, so kernel.gb is already the
 # authoritative artifact and this only gives it the name the cart expects.
 #
-# Output lands in sd/root/, so scripts/make-sd-image.sh picks it up and the
-# emulator card mirrors a real one. The browser never lists it: DirList
-# memcmps each entry against "ezgb.dat" and skips the match.
+# Output is dist/mod-N.M/ezgb-mod-N.M-for-<ver>.dat, N.M being the mod
+# version in patches/kernel/VERSION (dist/ is gitignored: the file is EZ
+# Flash firmware). One file per kernel version per mod version, so builds for
+# different carts and releases never overwrite each other. Copy the one you
+# want to the card root as ezgb.dat; the browser never lists it (DirList
+# memcmps each entry against "ezgb.dat" and skips the match).
+# scripts/make-dist.sh runs this for every version and adds the IPS files.
 #
 # Usage:
-#   scripts/build-ezgb-dat.sh              # 1.05e-0731
-#   scripts/build-ezgb-dat.sh 1.05e-0731
+#   scripts/build-ezgb-dat.sh              # 1.05e-0731 -> dist/mod-N.M/ezgb-mod-N.M-for-1.05e-0731.dat
+#   scripts/build-ezgb-dat.sh 1.04e
 #   scripts/build-ezgb-dat.sh 1.05e-0731 --fix-checksum
 #
 # --fix-checksum rewrites the global checksum at $014E-$014F. Off by default:
@@ -32,7 +36,8 @@ for arg in "$@"; do
 done
 
 SRC="$ROOT/re/$VER/kernel.gb"
-DEST="$ROOT/sd/root/ezgb.dat"
+MODVER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
+DEST="$ROOT/dist/mod-$MODVER/ezgb-mod-$MODVER-for-$VER.dat"
 
 if [[ ! -f "$SRC" ]]; then
   echo "error: missing $SRC" >&2

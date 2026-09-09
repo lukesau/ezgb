@@ -158,3 +158,66 @@ Hypothesis, not yet confirmed:
    (`$cc2f`/`$cc30` retry function, the `$7fd4` register writer, the NOR-flash write
    sequences) would convert several of the above hypotheses into confirmed facts faster than
    continued static reading.
+
+## Port of the injected features (2026-09-09)
+
+All injected features (sorted browser, scrolling, icons and DMG contrast,
+hide filter, fast launch, SET-tab configuration, EZGB.CFG with RTC backup,
+last-ROM fallback, path bound check, HELP-tab version) were ported from the
+1.05e-0731 build to 1.04e with `scripts/port-mod.py`
+([DEVELOPMENT.md](DEVELOPMENT.md#porting-the-mod-to-another-kernel-build)),
+not by hand. Unlike the 0918 port, this one could not be a byte replay: every
+hook site in banks 0, 1 and 4 moves, and so do most bank-0 routines the
+injected code calls.
+
+What the port had to translate, all mechanically from the address map:
+
+- **Injected blocks** land in the same free space in both kernels (bank 0
+  `$01e3`–`$0588` and `$3d8c`–`$3fc5`, bank 1 `$7600`, bank 2 `$4380`/`$4500`/
+  `$4a00`, bank 4 `$5932`–`$5f1b`, bank 8 `$746b`–`$7cff`); 1.04e has more
+  free space than 1.05e everywhere.
+- **Bank 0 targets** shift by `+4` after the retry-counter change (`$0982`),
+  `-12` after the cached-field insert (`$0e89`), `-25` after `$15d3`, and
+  `-953` after the `$1a61` insertion: `StoreDrawParams` `$2791`→`$23d8`,
+  `DrawRect` `$27ba`→`$2401`, `ReadJoypad` `$3a4a`→`$3691`, `Strrchr`
+  `$2c42`→`$2889`, the FatFs thunks `-25`, `LastRomRelaunch` `$1344`→`$1338`,
+  the font glyphs `$3806`→`$344d`. `DrawString`, `DrawU32Decimal`,
+  `FarCallTrampoline`, `WaitVBlankFlag` and the bank-0 cave are unmoved.
+- **Bank 1** sites move by `-32` (`LoaderPrepPath`, `LastRomPersistDone`),
+  `-2734` and `-3119` (the `BackupSaveDump` epilogue `$6738`→`$5b09`).
+  The `DrawBrowserDetail`/`DrawBrowserEntries` sites below `$480b` are unmoved.
+- **Bank 4** moves by `-4`, `-12`, `-15` or `-27` depending on the region;
+  banks 2, 5, 7, 8 are identical, banks 3/6/9 only relocate bank-0 operands.
+- **Two sites needed a human decision.** `DrawTimeAutosaveScreen_redraw`
+  (`04:48f5`) keeps its address but opens with `call WaitVBlankFlag` in 1.04e
+  where 1.05e tests its time-set flag, so the map cannot align it; it is
+  pinned (`OVERRIDES`). And the DMG-contrast retune at `04:4e49` patches a
+  `StoreDrawParams` + `DrawString` pair in `DrawTimeAutosaveScreen_savRedraw`
+  that only 1.05e has; 1.04e has nothing to retune there (`SKIP_SITES`).
+- **WRAM.** The browser buffers the mod uses (`$c2a2`, `$c2a6`, `$c4a4`,
+  `$c5a4`, the FIL at `$ca0f`) and its own scratch (`$d780`–`$dbff`) have the
+  same role or are equally unused in 1.04e. 1.05e's RTC day tables were
+  inserted at `$d6a7`, so the kernel's runtime globals from `$d6cc` up sit 39
+  bytes lower in 1.04e (`$d6ce`→`$d6a7` VBlank flag, callback lists
+  `$d6d3`→`$d6ac`); nothing injected touches them directly, only through
+  `WaitVBlankFlag`, which is pinned per version.
+- The HELP screen draws `K1.04e` (no date; FW4 had a single kernel build).
+
+`re/1.04e/kernel.sym` and `notes.json` are ports of the 0731 files through the
+same map (53 names dropped: 1.05e-only routines such as `SetFpgaPage_B0` /
+`RtcReadPage`, and the inserted day tables); comment text still quotes 0731
+addresses. The regenerated disassembly reassembles to the ported kernel
+byte for byte (`scripts/build-kernel.sh 1.04e`).
+
+Verified under SameBoy with the EZ Jr stub: boot to the sorted, filtered,
+icon-drawn browser; scrolling; SET tab with the FAST LAUNCH and ROM PICK rows;
+PICK writing `EZGB.CFG` and reading it back; HELP tab text; launching a ROM
+with a 32 KB save from the browser; fast launch of the configured ROM at the
+next boot (Pokémon Red, save restored, `$7FE0=$80` issued), repeated from
+clean state, and with the post-paint hook variant. One caveat: the very first
+fast-launch attempt in the emulator crashed during the save restore (the
+stub log showed the CPU looping on `rst $38`); it never recurred in a dozen
+later runs on either kernel, including deliberate replays of that run's
+config and PSRAM state, so it is recorded here rather than explained. Not
+yet run on a real cart (both an FW4 and an FW5 cart are available, and the
+stock 1.04e kernel is known to run on FW5), which is the test that matters.

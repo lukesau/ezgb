@@ -24,6 +24,10 @@
  * nested prefix is NUL-terminated) and seed '/', which also covers the root
  * case (prefix_len 0 copies nothing, leaving "/").
  */
+extern void FarCallTrampoline(void);   /* 00:078d */
+extern void Strrchr(void);             /* 00:2c42 in 1.05e; pinned per version */
+extern void LastRomRelaunch(void);     /* 00:1344 in 1.05e; pinned per version */
+
 void fastlaunch_do_launch(void) __naked {
     __asm
         ; SetFpgaPage($00): the START overlay's LastRomDrawBasename does exactly
@@ -34,7 +38,7 @@ void fastlaunch_do_launch(void) __naked {
         ld  a, #0x00
         push af
         inc sp
-        call 0x078d          ; FarCallTrampoline
+        call _FarCallTrampoline
         .db  0xe7, 0x41, 0x04, 0x00   ; -> SetFpgaPageAlt_B4 (04:41e7), page $00
         add sp, #1
 
@@ -54,7 +58,7 @@ void fastlaunch_do_launch(void) __naked {
         inc sp                ; push char arg (1 byte)
         ld  hl, #0xc4a4
         push hl               ; push ptr arg
-        call 0x2c42           ; Strrchr($c4a4, '/') -> DE = ptr to last '/'
+        call _Strrchr         ; Strrchr($c4a4, '/') -> DE = ptr to last '/'
         add sp, #3            ; drop the 3 arg bytes
         inc de                ; DE = basename pointer (char after the '/')
 
@@ -63,6 +67,6 @@ void fastlaunch_do_launch(void) __naked {
         push de               ; pad
         push de               ; pad
         push de               ; pad
-        jp  0x1344            ; LastRomRelaunch (reads sp+$08 = basename ptr)
+        jp  _LastRomRelaunch  ; LastRomRelaunch (reads sp+$08 = basename ptr)
     __endasm;
 }

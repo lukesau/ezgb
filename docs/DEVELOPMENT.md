@@ -156,6 +156,58 @@ inject, hook, and run chain, documents the free-space map, and explains how to
 pick a safe hook site (and the two ways the earlier fastlaunch attempt silently
 corrupted the ROM). Read it before choosing an address.
 
+## Porting the mod to another kernel build
+
+Features are written and injected against **1.05e-0731**. The other two
+official kernels (1.05e-0918, 1.04e) are the same program with code inserted
+or removed in a few places, so the mod is carried over mechanically rather
+than re-injected by hand:
+
+```sh
+scripts/port-mod.py 1.05e-0731 1.05e-0918 --check    # regression: must print "identical"
+scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply    # rewrite re/1.05e-0918/kernel.gb
+scripts/port-mod.py 1.05e-0731 1.04e --apply --sym   # kernel.gb + kernel.sym + notes.json
+scripts/regen-disasm.sh 1.04e && scripts/build-kernel.sh 1.04e
+```
+
+How it works (`scripts/portmap.py`, `scripts/port-mod.py`):
+
+- **Address map.** Each bank of both stock ROMs is linear-decoded into a
+  stream of opcodes (operands ignored, the 4-byte target after `call
+  FarCallTrampoline` folded into one token) and the two streams are aligned
+  with difflib. Any address inside a matched run maps by offset. Try it:
+  `scripts/portmap.py 1.05e-0731 1.04e 00:1344 04:5990`.
+- **C blocks** are recompiled with SDCC at the same address, every `--pin`
+  translated through the map (`REGISTRY` in `port-mod.py` records each
+  block's source and pins; a source with a hard-coded kernel address must use
+  an `extern` + pin instead, as `fastlaunch_do_launch.c` does).
+- **Hand-assembled blocks** (shims, hooks) are decoded and their absolute
+  operands translated. `ld rr,nn` is treated as a pointer only when `nn` is a
+  `kernel.sym` label or injected code, so screen-position constants survive.
+  Blocks with string tails use `code_len`; pure data (`FolderIconGlyphs`) is
+  copied verbatim; `VERSION_TEXT` holds the per-kernel `K1.0xe-…` string.
+- **Hook sites** (every remaining byte that differs from stock) are widened
+  to instruction boundaries and translated the same way. Before writing, the
+  tool proves the target kernel has the same stock instructions at the
+  translated site; a mismatch aborts. Sites that patch code the target does
+  not have are listed in `SKIP_SITES` with a reason (1.04e: one extra SET-tab
+  string draw that only 1.05e makes), and addresses the map cannot align are
+  pinned in `OVERRIDES` after reading both disassemblies (1.04e: the SET-tab
+  redraw label).
+- **Symbols.** `--sym` ports `kernel.sym` and `notes.json` through the same
+  map; 1.04e's runtime WRAM sits 39 bytes below 1.05e's from `$D6CC` up
+  (`WRAM_SHIFT`), and names inside 1.05e's inserted RTC tables are dropped.
+
+The tool also warns about stale bytes in free space (old versions of a block
+that were never blanked); blank them in the source build rather than porting
+them. `--check` against a build that already has a `kernel.gb` is the
+regression test: porting 0731 onto 0918 must reproduce the committed 0918
+kernel byte for byte.
+
+After porting, regenerate the patches (below) and run
+`scripts/stamp-mod-version.sh`, which stamps and rebuilds every version in the
+manifest.
+
 ## Regenerating the kernel patches
 
 The IPS patches in `patches/kernel/` are how the modded kernel is distributed
@@ -195,7 +247,17 @@ updater packages, or FPGA bitstreams.
 
 Releases are tagged `mod-N.M` (from `patches/kernel/VERSION`) and carry one
 asset per supported base, named `ezgb-mod-N.M-for-<base>.ips`, e.g.
-`ezgb-mod-1.0-for-1.05e-0731.ips`.
+`ezgb-mod-4.1-for-1.04e.ips`.
+
+`scripts/make-dist.sh` (run automatically at the end of
+`scripts/stamp-mod-version.sh`) assembles `dist/mod-N.M/` with, for every
+version in the manifest, that `.ips` plus `ezgb-mod-N.M-for-<base>.dat`, the
+patched kernel ready to copy to a card as `ezgb.dat`. Each `.dat` is checked
+against the manifest md5 and each `.ips` is checked to reproduce it. `dist/`
+is gitignored; only the `.ips` files leave the machine. Nothing is staged
+into `sd/root/` any more: `scripts/make-sd-image.sh` copies the chosen
+version's `re/<ver>/kernel.gb` straight into the emulator card image
+(`EZGB_KERNEL_VERSION`, default 1.05e-0731).
 
 ## Tools
 

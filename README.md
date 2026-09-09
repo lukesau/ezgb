@@ -28,7 +28,8 @@ The reverse engineering is essentially done:
 
 ## Features you can build in
 
-Self-contained patches against the 1.05e kernel. Apply the ones you want,
+Self-contained patches against the 1.04e and 1.05e kernels (all three
+official builds). Apply the ones you want,
 produce an `ezgb.dat`, and run it. Each doc has the rationale, wiring, and exact
 commands.
 
@@ -80,6 +81,10 @@ producing the same bytes (details, checksums, and the copyright rationale in
   `scripts/build-kernel.sh 1.05e-0731 --install` reassembles the modded
   kernel with rgbds and verifies its md5.
 
+Supported bases: `1.04e` (FW4 package), `1.05e-0731` and `1.05e-0918` (FW5).
+The kernel is loaded from the card at every boot, so the 1.04e build also runs
+on an FW5 cart and no firmware updater is ever needed to switch.
+
 Both include all features above. To pick features individually or hack on
 new ones, use the development flow below.
 
@@ -102,14 +107,17 @@ python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \
     cd8d076b740800c9 --apply
 python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
 
-# 3. Stage as ezgb.dat and build the emulator card image
+# 3. Build the emulator card image (the kernel is copied in as ezgb.dat)
 cd ..
-scripts/build-ezgb-dat.sh 1.05e-0731
 scripts/make-sd-image.sh
+# ...or a card-ready dist/mod-N.M/ezgb-mod-N.M-for-1.05e-0731.dat
+scripts/build-ezgb-dat.sh 1.05e-0731
 ```
 
 Injection edits `re/1.05e-0731/kernel.gb` in place, so it becomes the patched
-artifact. Run it in SameBoy (with the EZ Jr FPGA stub, see
+artifact. Features are developed against 1.05e-0731 and carried to the other
+two kernels mechanically by `scripts/port-mod.py` (see
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#porting-the-mod-to-another-kernel-build)). Run it in SameBoy (with the EZ Jr FPGA stub, see
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#tools)), or copy `ezgb.dat` to the
 root of a real cart's microSD. Hook-site rules and the free-space map:
 [`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
@@ -119,6 +127,7 @@ root of a real cart's microSD. Hook-site rules and the free-space map:
 ```
 re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731, 1.05e-0918)
   1.05e-0731/     Primary target; disassembly/ reassembles to the original
+                  (1.04e and 1.05e-0918 are ports of it: scripts/port-mod.py)
     kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
     notes.json    Persistent comments
 decomp/           Matching C decompilation + injectable feature sources
