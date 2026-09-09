@@ -471,7 +471,7 @@ DrawBrowserEntries_dirEntry::
     ld hl, $0000
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
     ld hl, $0003
     push hl
@@ -520,7 +520,7 @@ DrawBrowserEntries_fileEntry::
     ld hl, $0014
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
 
 DrawBrowserEntries_resetInk::
@@ -600,7 +600,7 @@ DrawBrowserEntries_drawSelSize::
 
 
 BrowserDirStr::
-    db $c0, $c1, $c2, $00
+    db "DIR", $00
 
 ; [ezgb]
 ; DrawBrowserDetail(base@sp+$2a, row@sp+$2c, mode@sp+$2e): draw two adjacent browser rows.
@@ -850,7 +850,7 @@ DrawBrowserDetail_entry0Dir::
     ld hl, $0000
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
     ld hl, $0003
     push hl
@@ -898,7 +898,7 @@ DrawBrowserDetail_entry0File::
     ld hl, $0014
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
 
 DrawBrowserDetail_focusInk::
@@ -1046,7 +1046,7 @@ DrawBrowserDetail_entry1Dir::
     ld hl, $0000
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
     ld hl, $0003
     push hl
@@ -1094,7 +1094,7 @@ DrawBrowserDetail_entry1File::
     ld hl, $0014
     push hl
     push bc
-    call DrawString
+    call $3ec8
     add sp, $05
 
 DrawBrowserDetail_drawSize::
@@ -1168,7 +1168,7 @@ DrawBrowserDetail_drawSize::
 
 
 BrowserDirStr2::
-    db $c0, $c1, $c2, $00
+    db "DIR", $00
 
 ; [ezgb]
 ; FormatFileSize(u32@sp+$10): if size≥$10000 Jump_001_479b passthrough; else Jump_001_45e7 pick fmt table.
@@ -8077,8 +8077,7 @@ BackupSaveDump_close::
     add sp, $02
 
 BackupSaveDump_epilogueRet::
-    add sp, $0b
-    ret
+    jp $7600
 
 
     ld l, $20
@@ -8552,21 +8551,11 @@ BootUnpackWramTables::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+RtcDumpHook::
+    db $e8, $0b, $3e, $02, $ea, $fc, $db, $cd
+    db $8d, $07, $00, $4a, $02, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
