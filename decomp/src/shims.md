@@ -127,3 +127,43 @@ Bytes: `3e03f533210000e5cd9059e803c9`
 Injected C (`decomp/src/flpick_banner.c`), reached by `jp` from the tab-strip
 tail `08:7200` (`jp $7331` → `jp $7b8d`). Draws ` PICK A ROM ` over the tab strip
 while `$DBFE` is set; ends in `ret`, which returns through the tab drawer.
+
+---
+
+# EZGB.CFG / RTC backup shims (docs/ezgb-cfg.md)
+
+`ezcfg` (bank 2 `02:4a00`) takes no stack argument; the op goes in WRAM `$DBFC`
+(0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE), so the same entry serves a plain bank-2
+`call` and `FarCallTrampoline` alike.
+
+## FarCallEzCfg `04:5f00` (8 B)
+
+Near-callable from bank 4 (`flcfg.c`): `call FarCallTrampoline; db $00,$4a,$02,$00; ret`.
+Bytes: `cd8d07004a0200c9`
+
+## RtcSetHook `04:5f10` (11 B)
+
+`jp`ed from the TIME SET confirm tail (`04:58d3`, stock `jp $48f5`). Op BACKUP,
+far-call via `FarCallEzCfg`, then the displaced `jp DrawTimeAutosaveScreen_redraw`.
+Bytes: `3e02eafcdbcd005fc3f548`
+
+## RtcBootHook `00:0510` (27 B)
+
+`jp`ed from `00:0e49` (stock: far-call `SetFpgaPage(3)`, 7 B, right after
+"Micro SD initial OK!" and `$4000=$11`). The site's pushed arg byte is still on
+the stack, so after op RESTORE the hook re-asserts `$4000=$11` and replays the
+same far-call unchanged, then `jp $0e50` (the `add sp,$01`).
+Bytes: `3e03eafcdbcd8d07004a02003e11ea0040cd8d07e7410400c3500e`
+
+## BatteryDryHook `00:0530` (12 B)
+
+`call`ed from `BatteryCheck_markOk` (`00:18e5`, stock `ld bc,$a201; ld a,$88; ld [bc],a`,
+6 B). Sets `$DBFD=1` then performs the displaced canary write.
+Bytes: `3e01eafddb0101a23e8802c9`
+
+## RtcDumpHook `01:7600` (15 B)
+
+`jp`ed from `BackupSaveDump_epilogueRet` (`01:6738` in 0731, `01:699a` in 0918;
+stock `add sp,$0b; ret`). Pops the frame, op BACKUP, far-call, `ret`. The body
+holds no version-specific address, so the same bytes serve both builds.
+Bytes: `e80b3e02eafcdbcd8d07004a0200c9`

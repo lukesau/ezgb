@@ -2,8 +2,9 @@
 
 Fast launch (boot straight into one ROM, skipping the browser) is configurable
 on the cart itself, from the kernel's **SET** tab, without mounting the SD card
-on a computer. `/FLAUNCH.CFG` on the card stays the single source of truth; the
-UI reads and rewrites that file. See [`fast-launch-notes.md`](fast-launch-notes.md)
+on a computer. The `FLAUNCH=` key of `/EZGB.CFG` on the card is the single source
+of truth; the UI reads and rewrites it through the shared settings module
+([`ezgb-cfg.md`](ezgb-cfg.md); until mod 3.0 this was a one-line `/FLAUNCH.CFG`). See [`fast-launch-notes.md`](fast-launch-notes.md)
 for the boot-time scan this configures.
 
 All addresses are `bank:addr` for 1.05e; banks 0/2/4/8 are byte-identical across
@@ -24,17 +25,18 @@ UP/DOWN move a cursor over four rows: 0 TIME SET, 1 AUTO SAVE, 2 FAST LAUNCH,
 
 **Pick mode:** pressing A on PICK arms a flag and returns to the browser, whose
 tab strip now reads ` PICK A ROM `. Browse normally; pressing A on a `.gb`/`.gbc`
-writes its full path (`current dir` + `/` + `name`) into `/FLAUNCH.CFG` and
+writes its full path (`current dir` + `/` + `name`) into `/EZGB.CFG` and
 returns to the SET tab, which shows the new basename. Back out without choosing
 with **SELECT** (returns to SET) or **B at the root** (also returns to SET). The
 picked ROM's enabled/disabled state is preserved (picking does not auto-enable).
 
 ## CFG format
 
-`/FLAUNCH.CFG`, 8.3 name, root. Only line 1 matters (ends at CR/LF/NUL; trailing
-spaces trimmed).
+The `FLAUNCH=` value in `/EZGB.CFG` (full file format, parser and writer:
+[`ezgb-cfg.md`](ezgb-cfg.md)). A legacy one-line `/FLAUNCH.CFG` is read when
+`EZGB.CFG` is missing, with the same meanings for its line 1.
 
-| Line 1 | Meaning |
+| `FLAUNCH=` value | Meaning |
 |---|---|
 | missing / empty | enabled, no explicit target → lone-ROM rule |
 | `/Pokemon/Blue.gb` | enabled, launch that path |
@@ -67,11 +69,12 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 | Addr | Use |
 |---|---|
-| `$DA00-$DA7F` | `CFGBUF` — file contents on read, record to write (shared with `fastlaunch.c`) |
+| `$D980-$DA7F` | `CFGBUF` — file contents on read, record to write (owned by `ezcfg.c`; was `$DA00-$DA7F`) |
 | `$DA80` | `FL_EN` — 1 = enabled |
 | `$DA81` | `FL_PLEN` — stored path length (0 = no explicit target) |
 | `$DA82-$DAFF` | `FL_PATH` — stored path, NUL-terminated |
-| `$DB00-$DB0F` | `FL_SCR` — `"/FLAUNCH.CFG"` bounce for `f_open` (path must be in WRAM) |
+| `$DB00-$DB0F` | `FL_SCR` — file-name bounce for `f_open` (path must be in WRAM) |
+| `$DB40-$DB4E`, `$DBFC`, `$DBFD` | RTC copy, `ezcfg` op selector, DRY flag: see [`ezgb-cfg.md`](ezgb-cfg.md) |
 | `$DB10-$DB37` | `FL_DISP` — 40-byte zero-padded basename display buffer |
 | `$DBFE` | `FL_PICK` — pick-mode flag |
 | `$DBFF` | (existing) fast-launch one-shot, untouched |
@@ -134,22 +137,16 @@ frame reference in the replayed instruction shifts by +2.
 
 ## Reproduce
 
-After the base fast-launch injection (see [`fast-launch-notes.md`](fast-launch-notes.md)),
-run for each version key (`1.05e-0731` then `1.05e-0918`), then one
-`python3 scripts/kernel-patch.py make`:
+Since mod 3.0 the file I/O lives in `ezcfg.c`, and `fastlaunch.c`, `flcfg.c`
+and the hide filter are re-injected together by
+[`scripts/inject-ezcfg.sh`](../scripts/inject-ezcfg.sh) (see
+[`ezgb-cfg.md`](ezgb-cfg.md)). The shims and site patches below are unchanged
+and are listed here as the record of what that script leaves in place; run it
+for each version key, then one `python3 scripts/kernel-patch.py make`.
 
 ```bash
 cd decomp; V=1.05e-0731
-# scan '#'-disable rule (delete the two 02:4500 lines from re/$V/kernel.sym first)
-python3 tools/inject.py src/fastlaunch.c $V 2 4500 FastLaunchScan \
-  --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 --pin FarCallSetPage=43ac \
-  --pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_03_768f=19a1 \
-  --pin WaitVBlankFlag=0688 --apply
-# bank 4: flcfg + shims + site patches
-python3 tools/inject.py src/flcfg.c $V 4 5990 FlCfg \
-  --pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_07_7739=1963 \
-  --pin FarCall_03_768f=19a1 --pin WaitVBlankFlag=0688 --pin SetFpgaPage_B4=466e \
-  --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin ReadJoypad=3a4a --apply
+# bank 4: flcfg (via scripts/inject-ezcfg.sh) + shims + site patches
 python3 tools/inject_bytes.py $V 4 5932 FlSetEnterHook  f8024d443e00f533c5cd9059e803f85e4d44210700c9 --apply
 python3 tools/inject_bytes.py $V 4 5948 FlSetRowsHook   f8004d443e01f533c5cd9059e803c3f548 --apply
 python3 tools/inject_bytes.py $V 4 5959 FlSetADispatch  f83d7e3dcad658f8004d443e02f533c5cd9059e8037bb7caf548c31259 --apply
@@ -180,7 +177,7 @@ IPS patches; `apply` to a stock `ezgb.dat` reproduces the manifest md5.
 Under SameBoy (EZ Jr stub): the `#`-disable scan was confirmed (a `#`-prefixed
 cfg boots to the browser; the same path without `#` fast-launches), and the
 config **write primitive** was confirmed (the PICK path wrote correct
-`/FLAUNCH.CFG` files: a fresh 25-byte create and a clean overwrite of a longer
+`/FLAUNCH.CFG` files (pre-3.0 format): a fresh 25-byte create and a clean overwrite of a longer
 file). The full live UI round-trip (checkbox toggle, pick-and-return, banner) was
 not conclusively driven under the emulator; the emulator harness also ignores
 `$7FC0`, so SD/FPGA-personality behavior only shows on hardware. **Hardware

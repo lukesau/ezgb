@@ -10,7 +10,10 @@ well-known "EZ Flash Jr battery dies in a month" complaints). The save/settings 
 **512 KB pSRAM die inside U4** (the `S71GL032A40` MCP, datasheet-confirmed and an exact match
 for the 64-page / 512 KB map); the *game* ROM lives in a separate, larger pSRAM in U9. Chip
 detail: [hardware-board.md](hardware-board.md). The kernel's `BATTERY` / `DRY!!!` notice is
-about the **console** AA cells, not the cart.
+about **this** cell: `BatteryCheck` (`00:1835`) reads a canary byte at page `$11` `$A201`
+(expect `$88`) and re-stamps it after the prompt, so it fires exactly when the pSRAM (and
+the RTC, on the same cell) lost power. It never reads the RTC chip's own voltage-low flag.
+The RTC backup feature ([ezgb-cfg.md](ezgb-cfg.md)) hooks that re-stamp.
 
 ## Two bus personalities, one PSRAM chip
 

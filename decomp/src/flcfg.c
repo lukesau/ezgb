@@ -2,12 +2,15 @@
  *
  * Bank 4, injected at 04:5990, same bank as DrawTimeAutosaveScreen (04:46f4)
  * so the hand-assembled hook shims (04:5932..) reach it with a plain call.
- * The SD file /FLAUNCH.CFG is the single source of truth:
+ * The SD file /EZGB.CFG is the single source of truth, read and written by
+ * the shared bank-2 module ezcfg.c (docs/ezgb-cfg.md) through the bank-4
+ * FarCallEzCfg shim (04:5f00); this file only owns the FL_* WRAM state and
+ * the SET-tab UI:
  *
- *   line 1 = ROM path            -> enabled, launch that ROM
- *   line 1 = '#' + ROM path      -> DISABLED (every trigger skipped), path kept
- *   missing / empty              -> enabled, no explicit target (lone-ROM
- *                                   rule, see fastlaunch.c)
+ *   FLAUNCH=<path>       -> enabled, launch that ROM
+ *   FLAUNCH=#<path>      -> DISABLED (every trigger skipped), path kept
+ *   missing / empty      -> enabled, no explicit target (lone-ROM rule, see
+ *                           fastlaunch.c)
  *
  * One entry point, op-selected (inject.py pins the first-declared function):
  *
@@ -26,48 +29,34 @@
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 AUTO SAVE, 2 FAST LAUNCH, 3 PICK). NULL for op 3/4.
  *
- * SD I/O discipline (hardware-only failure otherwise, invisible in SameBoy):
- * WaitVBlankFlag + $7FC0=$00 before f_open, f_read, f_write AND f_close.
- * The SET screen rests at $7FC0=$00, so nothing to restore there; after a
- * pick the SET prologue re-selects its own pages. ReadJoypad is level
- * triggered, so every A action spins until A is released; otherwise the
- * screen we hand over to sees the same press.
- *
- * Path strings passed to FatFs must be in WRAM (f_open runs in bank 6), so
- * the file name is bounced through FL_SCR first, as fastlaunch.c does.
+ * ezcfg leaves $7FC0=$00 after its SD I/O. The SET screen rests at $7FC0=$00,
+ * so nothing to restore there; after a pick the SET prologue re-selects its
+ * own pages. ReadJoypad is level triggered, so every A action spins until A
+ * is released; otherwise the screen we hand over to sees the same press.
  */
 
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);        /* f_open  00:1926 */
-extern u8 FarCall_06_779a(u8 *fp, u8 *buf, u16 btr, u16 *br);       /* f_read  00:1941 */
-extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */
-extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 00:19a1 */
-extern void WaitVBlankFlag(void);                                   /* 00:0688 */
+extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 
-#define FIL_OBJ  ((u8 *)0xCA0F)     /* kernel FIL, idle in the menu */
-#define CFGBUF   ((u8 *)0xDA00)     /* file contents / line to write (shared with fastlaunch.c) */
 #define FL_EN    (*(volatile u8 *)0xDA80)
 #define FL_PLEN  (*(volatile u8 *)0xDA81)
 #define FL_PATH  ((u8 *)0xDA82)     /* stored path, NUL-terminated, <= PATH_MAX */
-#define FL_SCR   ((u8 *)0xDB00)     /* "/FLAUNCH.CFG" bounce, 16 */
 #define FL_DISP  ((u8 *)0xDB10)     /* 40-byte zero-padded display buffer */
+#define EZ_OP    (*(volatile u8 *)0xDBFC)
 #define FL_PICK  (*(volatile u8 *)0xDBFE)
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
 #define SELNAME  ((u8 *)0xC4A4)     /* browser: selected entry name */
 
-#define FA_READ   0x01
-#define FA_CREATE 0x0A              /* FA_WRITE | FA_CREATE_ALWAYS (truncate) */
-#define REC_LEN   124               /* fixed record: every save writes exactly this, so a
-                                       * shorter path fully overwrites the old one without any
-                                       * f_truncate (which this kernel lacks). */
-#define CFG_MAX   127
+#define OP_LOAD  0
+#define OP_SAVE  1
+
 #define PATH_MAX  120
 #define DISP_LEN  40
 
@@ -75,8 +64,7 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 #define ROW_PICK  3
 
 static void cfg_load(void);
-static u8 cfg_save(void);
-static void copy_name(void);
+static void cfg_save(void);
 static void draw_static(void);
 static void draw_name(void);
 static void draw_rows(u8 cur);
@@ -117,90 +105,16 @@ u8 flcfg(u8 *frame, u8 op) {
     return 0;
 }
 
-static void copy_name(void) {
-    static const u8 cfg_name[16] =
-        {'/','F','L','A','U','N','C','H','.','C','F','G',0};
-    u8 i;
-    for (i = 0; ; i++) { FL_SCR[i] = cfg_name[i]; if (cfg_name[i] == 0) break; }
-}
-
-/* Parse line 1 of /FLAUNCH.CFG into FL_EN / FL_PLEN / FL_PATH. Missing file
- * or empty line = enabled, no path. Mirrors scan_config() in fastlaunch.c. */
+/* /EZGB.CFG -> FL_EN / FL_PLEN / FL_PATH (and the RTC copy, unused here). */
 static void cfg_load(void) {
-    u16 br;
-    u8 len, start, i, n, r;
-
-    FL_EN = 1;
-    FL_PLEN = 0;
-    FL_PATH[0] = 0;
-
-    copy_name();
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    if (FarCall_06_7309(FIL_OBJ, FL_SCR, FA_READ) != 0) return;
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    r = FarCall_06_779a(FIL_OBJ, CFGBUF, CFG_MAX, &br);
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    FarCall_03_768f(FIL_OBJ);
-    if (r != 0 || br == 0) return;
-
-    len = 0;
-    for (;;) {
-        if (len >= CFG_MAX) break;
-        if ((u16)len >= br) break;
-        if (CFGBUF[len] == 0x0d || CFGBUF[len] == 0x0a || CFGBUF[len] == 0) break;
-        len++;
-    }
-    while (len != 0 && CFGBUF[len - 1] == ' ') len--;
-
-    start = 0;
-    if (len != 0 && CFGBUF[0] == '#') {
-        FL_EN = 0;
-        start = 1;
-        while (start < len && CFGBUF[start] == ' ') start++;
-    }
-    if (start >= len) return;
-
-    n = 0;
-    if (CFGBUF[start] != '/') FL_PATH[n++] = '/';
-    for (i = start; i < len && n < PATH_MAX; i++) FL_PATH[n++] = CFGBUF[i];
-    FL_PATH[n] = 0;
-    FL_PLEN = n;
+    EZ_OP = OP_LOAD;
+    FarCallEzCfg();
 }
 
-/* Rewrite /FLAUNCH.CFG. The first line is "[#]<path>", then CR/LF; the record
- * is padded with spaces to a fixed REC_LEN so every save writes exactly the
- * same number of bytes, so a shorter path fully overwrites a longer old one
- * with no need for f_truncate (which this kernel lacks). Opens
- * FA_CREATE_ALWAYS ($0a); f_write then f_close, each preceded by WaitVBlankFlag
- * + SetFpgaPage(0) as the kernel's own BackupSaveDump does. The parser reads
- * only line 1 and trims trailing spaces, so the padding is invisible. Returns
- * FRESULT (0 = ok). */
-static u8 cfg_save(void) {
-    u16 bw;
-    u8 n, i, r;
-
-    n = 0;
-    if (!FL_EN) CFGBUF[n++] = '#';
-    for (i = 0; i < FL_PLEN; i++) CFGBUF[n++] = FL_PATH[i];
-    CFGBUF[n++] = 0x0d;
-    CFGBUF[n++] = 0x0a;
-    while (n < REC_LEN) CFGBUF[n++] = ' ';
-
-    copy_name();
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    r = FarCall_06_7309(FIL_OBJ, FL_SCR, FA_CREATE);
-    if (r != 0) return r;
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    r = FarCall_07_7739(FIL_OBJ, CFGBUF, REC_LEN, &bw);
-    WaitVBlankFlag();
-    SetFpgaPage_B4(0);
-    FarCall_03_768f(FIL_OBJ);
-    return r;
+/* FL_* (+ the RTC copy loaded alongside) -> /EZGB.CFG. */
+static void cfg_save(void) {
+    EZ_OP = OP_SAVE;
+    FarCallEzCfg();
 }
 
 /* Browser A-on-ROM in pick mode: CWD + '/' + SELNAME becomes the new path.
@@ -209,7 +123,7 @@ static u8 cfg_save(void) {
 static void pick_commit(void) {
     u8 lc, ln, need, n, i;
 
-    cfg_load();                       /* refresh FL_EN from the file */
+    cfg_load();                       /* refresh FL_EN (and the RTC line) from the file */
 
     for (lc = 0; CWD[lc]; lc++) {}
     for (ln = 0; SELNAME[ln]; ln++) {}

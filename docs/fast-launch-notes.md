@@ -45,17 +45,19 @@ Source of truth is `decomp/src/fastlaunch*.c`.
 
 ## Triggers (priority order)
 
-0. **Disabled.** If `/FLAUNCH.CFG` line 1 begins with `#`, fast launch is off:
+0. **Disabled.** If the `FLAUNCH=` value in `/EZGB.CFG` begins with `#`, fast launch is off:
    the scan skips **every** trigger below and the card boots to the browser. The
    path after the `#` is kept so re-enabling restores it. This is what the SET
    tab's FAST LAUNCH checkbox writes when unchecked (see
    [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md)).
-1. **Config file.** `/FLAUNCH.CFG`, first line = the ROM path. Highest priority and
+1. **Config file.** `FLAUNCH=` in `/EZGB.CFG` (read through the shared settings
+   module, [`ezgb-cfg.md`](ezgb-cfg.md); a legacy one-line `/FLAUNCH.CFG` is
+   read when `EZGB.CFG` is missing) = the ROM path. Highest priority and
    the only trigger that may point **anywhere**, including subfolders
    (`/Pokemon/Blue.gb`); the launch glue traverses into the directory. The other
    one is root-only.
 2. **Lone ROM.** If root holds exactly one real file (ignoring the kernel
-   `ezgb.dat`, `FLAUNCH.CFG`, dot-files, and macOS junk; directories don't count)
+   `ezgb.dat`, `EZGB.CFG`, `FLAUNCH.CFG`, dot-files, and macOS junk; directories don't count)
    and it is a `.gb`/`.gbc`, launch it. No configuration needed.
 
 The lone-ROM scan is root-only by design: one `f_opendir`/`f_readdir` pass,
@@ -83,14 +85,14 @@ so it also disables the lone-ROM rule until deleted.
 Fast launch is configurable on the cart itself, without a computer: the kernel's
 SET tab gains a **FAST LAUNCH** enable/disable checkbox and a **ROM: PICK**
 button that opens the normal file browser to choose the target. Both read and
-rewrite `/FLAUNCH.CFG`, which stays the single source of truth. Full design, hook
+rewrite the `FLAUNCH=` line of `/EZGB.CFG`, which stays the single source of truth. Full design, hook
 map, and shim listings: [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).
 
 ### Config file constraints
 
 - **8.3 name required.** This kernel's `f_open` (`Open_B6`) rejects long names with
   FR_INVALID_NAME (6); readdir resolves LFNs but f_open does not. So the file is
-  `FLAUNCH.CFG`, not `fastlaunch.cfg`. Its *contents* may still name a long or
+  `EZGB.CFG` (formerly `FLAUNCH.CFG`), not `fastlaunch.cfg`. Its *contents* may still name a long or
   nested ROM.
 - **Path must be in WRAM.** `f_open` runs in bank 6, so a path pointer into a
   bank-2 ROM const reads the wrong bank. `scan_config` copies the name into WRAM

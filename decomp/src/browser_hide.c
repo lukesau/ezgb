@@ -5,7 +5,8 @@
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
  *    DirListSkipDotLongName behaviour (docs/browser-hide-filter.md)
  *  - *.gba (GBA ROMs on a shared card; the Jr can't launch them)
- *  - FLAUNCH.CFG, the fast-launch config file
+ *  - EZGB.CFG, the settings file (docs/ezgb-cfg.md), and FLAUNCH.CFG, its
+ *    pre-2.9 predecessor (a leftover would otherwise clutter the root)
  *
  * All extension/name tests are case-insensitive; FAT 8.3 short names come
  * back uppercase while long names keep the host's casing.
@@ -13,7 +14,7 @@
  * Called per directory entry from DirListHideNameStub (00:04ae), which
  * replaces the old LFN-only dot stub. Unlike that stub this sees BOTH name
  * paths: the resolved long name and the 8.3 short name used when no LFN
- * exists. That matters here: "FLAUNCH.CFG" and upper-case "*.GBA" are valid
+ * exists. That matters here: "EZGB.CFG" and upper-case "*.GBA" are valid
  * 8.3 names, so those entries never had a long name to test.
  *
  * The check runs before DirList's directory/file split, so a directory named
@@ -47,6 +48,9 @@ u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
     for (len = 0; name[len] && len < 253; len++) {
     }
     if (ends_ci(name, len, (const u8 *)".gba", 4)) {
+        return 1;
+    }
+    if (len == 8 && ends_ci(name, len, (const u8 *)"ezgb.cfg", 8)) {
         return 1;
     }
     if (len == 11 && ends_ci(name, len, (const u8 *)"flaunch.cfg", 11)) {

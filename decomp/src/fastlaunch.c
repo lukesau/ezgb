@@ -2,11 +2,13 @@
  * launch a ROM straight away, and report its full path in result_path
  * (leading '/', e.g. "/PKMRED.GB"). Two triggers:
  *
- *   1. Config file: /FLAUNCH.CFG, first line = the ROM path (root or nested).
- *      A leading '#' means fast launch is disabled outright.
+ *   1. Config file: /EZGB.CFG, key FLAUNCH = the ROM path (root or nested).
+ *      A leading '#' on the value means fast launch is disabled outright.
+ *      Parsed by the shared bank-2 module ezcfg.c (docs/ezgb-cfg.md), which
+ *      also reads a legacy /FLAUNCH.CFG when EZGB.CFG is missing.
  *   2. Lone ROM: if the SD root holds exactly one real file (ignoring the
- *      kernel ezgb.dat, FLAUNCH.CFG, dot-files, and macOS junk) and it is a
- *      .gb/.gbc, launch it.
+ *      kernel ezgb.dat, EZGB.CFG / FLAUNCH.CFG, dot-files, and macOS junk)
+ *      and it is a .gb/.gbc, launch it.
  *
  * The config file takes priority. (An earlier "<name>.fastlaunch" marker-file
  * trigger was dropped 2026-09-07; the SET tab + config file replace it.) On
@@ -39,17 +41,13 @@ extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *p
 extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
 extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page */
 
-/* Ready-made bank-0 FatFs thunks (reached by ordinary call; they handle the
- * FarCallTrampoline arg-shift internally). Used to read the config file. */
-extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode); /* f_open */
-extern unsigned char FarCall_06_779a(unsigned char *fp, unsigned char *buf, unsigned int btr, unsigned int *br); /* f_read */
-extern unsigned char FarCall_03_768f(unsigned char *fp); /* f_close */
-extern void WaitVBlankFlag(void);   /* 00:0688; kernel waits VBlank before f_open */
-
-#define FIL_OBJ  ((unsigned char *)0xCA0F)   /* kernel's FIL; free while browser is idle */
-#define CFGBUF   ((unsigned char *)0xDA00)   /* config file contents */
-#define FA_READ  0x01
-#define CFG_MAX  128
+/* Shared settings module (same bank, plain call; no stack args, op in WRAM). */
+extern void ezcfg(void);                          /* 02:4a00 */
+#define EZ_OP    (*(volatile unsigned char *)0xDBFC)
+#define OP_LOAD  0
+#define FL_EN    (*(volatile unsigned char *)0xDA80)
+#define FL_PLEN  (*(volatile unsigned char *)0xDA81)
+#define FL_PATH  ((unsigned char *)0xDA82)
 
 /* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
  * $00; the file-record window ($A000, where the browser rests) is $03. */
@@ -109,9 +107,9 @@ static void scan_root(void) {
 
     result_path[0] = 0;
 
-    /* Highest priority: /FLAUNCH.CFG. 1 = explicit path staged in RESULT;
-     * 2 = fast launch DISABLED ('#' on line 1): skip the lone-ROM rule too,
-     * so the card always boots to the browser. */
+    /* Highest priority: FLAUNCH= in /EZGB.CFG. 1 = explicit path staged in
+     * RESULT; 2 = fast launch DISABLED ('#' on the value): skip the lone-ROM
+     * rule too, so the card always boots to the browser. */
     if (scan_config()) return;
 
     /* FILINFO.lfname = LFN buffer, FILINFO.lfsize = 254 (set once; reused). */
@@ -137,6 +135,7 @@ static void scan_root(void) {
         name = entry_name();
         if (name[0] == '.') continue;                 /* dot-files / macOS junk */
         if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
+        if (streq_ci(name, (const unsigned char *)"ezgb.cfg")) continue;
         if (streq_ci(name, (const unsigned char *)"flaunch.cfg")) continue;
 
         /* A real file: count it and remember it (for the lone-ROM rule). */
@@ -161,58 +160,21 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
     result_path[1 + i] = 0;
 }
 
-/* Read /FLAUNCH.CFG; if present and non-empty, take its first line as the
- * ROM path and write it to RESULT ($c4a4) with a leading '/'. Returns 1 on
- * success, 2 if line 1 starts with '#' (fast launch disabled from the SET
- * tab; the path after the '#' is kept in the file for re-enabling, see
- * docs/fastlaunch-set-tab.md), 0 otherwise. Uses the kernel's FIL at $ca0f
- * (idle here, so no FIL size guess). The path may be nested (e.g.
- * /Pokemon/Blue.gb); the launch glue handles it. */
+/* Load /EZGB.CFG through ezcfg and stage the FLAUNCH path in RESULT ($c4a4)
+ * with a leading '/'. Returns 1 when a path is staged, 2 when fast launch is
+ * disabled ('#' on the value, from the SET tab; the path is kept in the file
+ * for re-enabling, see docs/fastlaunch-set-tab.md), 0 otherwise. ezcfg does
+ * the VBlank-wait + $7FC0=$00 discipline around its own SD I/O. The path may
+ * be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
 static unsigned char scan_config(void) {
-    /* This name literal is a bank-2 const; f_open runs in bank 6 and would read
-     * that address in the wrong bank, so the path must be copied to WRAM (always
-     * mapped) before the call, as the kernel's own opens do (e.g. /SAVER/...). */
-    static const unsigned char cfg_name[16] =
-        {'/','F','L','A','U','N','C','H','.','C','F','G',0};
-    unsigned int br;
-    unsigned char len, i, j, c;
     unsigned char *r = RESULT;
-    unsigned char *p = CFGBUF;   /* WRAM: holds the path, then the file contents */
+    unsigned char i;
 
-    for (i = 0; ; i++) { p[i] = cfg_name[i]; if (cfg_name[i] == 0) break; }
-
-    /* Match the kernel's own f_open setup (BackupSaveDump): wait VBlank, then
-     * select the SD personality. The VBlank wait is invisible in the emulator
-     * but the kernel does it before every real SD file open. */
-    WaitVBlankFlag();
-    FarCallSetPage(SD_PAGE);
-    if (FarCall_06_7309(FIL_OBJ, p, FA_READ) != 0) return 0;   /* no config file */
-    WaitVBlankFlag();
-    FarCallSetPage(SD_PAGE);
-    if (FarCall_06_779a(FIL_OBJ, CFGBUF, CFG_MAX, &br) != 0) {
-        FarCall_03_768f(FIL_OBJ);
-        return 0;
-    }
-    FarCall_03_768f(FIL_OBJ);
-    if (br == 0) return 0;
-
-    /* First line only: stop at CR/LF/NUL or end of what was read. */
-    len = 0;
-    for (;;) {
-        if (len >= CFG_MAX) break;
-        if ((unsigned int)len >= br) break;
-        c = CFGBUF[len];
-        if (c == 0x0d || c == 0x0a || c == 0) break;
-        len++;
-    }
-    while (len != 0 && CFGBUF[len - 1] == ' ') len--;
-    if (len == 0) return 0;
-    if (CFGBUF[0] == '#') return 2;   /* disabled: no trigger at all */
-
-    /* Write with a leading '/' so the launch glue sees an absolute path. */
-    i = 0;
-    if (CFGBUF[0] != '/') { r[0] = '/'; i = 1; }
-    for (j = 0; j < len; j++) { r[i] = CFGBUF[j]; i++; }
+    EZ_OP = OP_LOAD;
+    ezcfg();
+    if (!FL_EN) return 2;             /* disabled: no trigger at all */
+    if (FL_PLEN == 0) return 0;
+    for (i = 0; i < FL_PLEN; i++) r[i] = FL_PATH[i];
     r[i] = 0;
     return 1;
 }

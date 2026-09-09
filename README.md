@@ -39,19 +39,20 @@ commands.
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
 | **DMG-readable highlight + folder icons** | Every highlight (browser selection, tab strip, SET-tab buttons, prompts and Loading boxes) is white on black instead of black on dark gray, which is unreadable on an original Game Boy. The browser selection bar spans the full row, and directories show a folder icon in place of the `DIR` tag. | [`docs/dmg-ui-visibility.md`](docs/dmg-ui-visibility.md) |
-| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the fast-launch config file (`FLAUNCH.CFG`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
-| **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named in `/FLAUNCH.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
-| **Fast-launch SET tab** | Configure fast launch on the cart itself: a FAST LAUNCH enable/disable checkbox on the SET tab, and a PICK button that chooses the target ROM in the file browser. Writes `/FLAUNCH.CFG`. | [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md) |
+| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, and the settings file (`EZGB.CFG`, plus a leftover `FLAUNCH.CFG`) from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
+| **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named by `FLAUNCH=` in `/EZGB.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
+| **Fast-launch SET tab** | Configure fast launch on the cart itself: a FAST LAUNCH enable/disable checkbox on the SET tab, and a PICK button that chooses the target ROM in the file browser. Writes `/EZGB.CFG`. | [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md) |
+| **RTC backup to SD** | Keeps a copy of the real-time clock in `/EZGB.CFG` (updated on every save-to-SD dump and every TIME SET) and restores it at boot when the cart's coin cell has died, so a dead cell costs the time since your last save instead of resetting the clock to 2000. | [`docs/ezgb-cfg.md`](docs/ezgb-cfg.md) |
 
 Once built, **fast launch is driven entirely from the card** (no rebuild to
-change what boots), in priority order: a `/FLAUNCH.CFG` text file whose first
-line is the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else the
+change what boots), in priority order: a `FLAUNCH=` line in the `/EZGB.CFG`
+text file naming the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else the
 root's only ROM. Anything else boots to the normal browser. Folders, `ezgb.dat`,
-and dot-files/macOS junk are ignored. A leading `#` on the first line of
-`/FLAUNCH.CFG` disables fast launch entirely (every trigger skipped) while
+and dot-files/macOS junk are ignored. A leading `#` on the `FLAUNCH=` value
+disables fast launch entirely (every trigger skipped) while
 keeping the path for later. **Hold SELECT at power-on to skip fast launch and go to
 the browser.** You can also configure all of this **from the cart's SET tab** (a
-FAST LAUNCH checkbox and a ROM PICK button that rewrite `/FLAUNCH.CFG`); see
+FAST LAUNCH checkbox and a ROM PICK button that rewrite `/EZGB.CFG`); see
 [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md). The whole feature is confirmed on real hardware (Game
 Boy Color and Game Boy Advance SP): fast launch from a config file (root and
 subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the

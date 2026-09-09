@@ -7,8 +7,8 @@ clutter get hidden by this patch:
   roughly doubles), `.DS_Store`, `.Spotlight-V100/`, `.fseventsd/`,
   `.Trashes/`, `.TemporaryItems/`
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
-  with an Omega), the fast-launch config file (`FLAUNCH.CFG`, see
-  [fast-launch-notes.md](fast-launch-notes.md)), plus the stock
+  with an Omega), the settings file (`EZGB.CFG`, see [ezgb-cfg.md](ezgb-cfg.md))
+  and its pre-3.0 predecessor `FLAUNCH.CFG`, plus the stock
   kernel's own `ezgb.dat` memcmp
 
 This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
@@ -30,12 +30,12 @@ tests are `fattrib & AM_ARC` and a memcmp against `ezgb.dat`.
 
 The old stub hooked only the long-name branch. That was fine for dotfiles
 (macOS always writes an LFN for them) but useless for the new names:
-`FLAUNCH.CFG` and upper-case `*.GBA` are valid 8.3 names, so those entries
+`EZGB.CFG` and upper-case `*.GBA` are valid 8.3 names, so those entries
 have **no long name at all** and take the short-name branch. The filter
 therefore hooks the point where the two branches converge, with `BC` holding
 whichever name pointer (LFN buffer or `$c9e4`) the entry will actually use.
 
-Because `FLAUNCH.CFG` is hidden, the SET-tab ROM picker
+Because `EZGB.CFG` is hidden, the SET-tab ROM picker
 ([`fastlaunch-set-tab.md`](fastlaunch-set-tab.md)) runs over the already-filtered
 list, so the config file itself can never be picked as a fast-launch target.
 
@@ -47,7 +47,7 @@ Three pieces, byte-identical in the 0731 and 0918 featured builds:
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `08:7a9c` | `BrowserHideName` ([decomp/src/browser_hide.c](../decomp/src/browser_hide.c), 241 bytes, bank-8 cave after `BrowserSortAll`) |
+| `08:7c00` | `BrowserHideName` ([decomp/src/browser_hide.c](../decomp/src/browser_hide.c), 255 bytes, bank-8 cave after `FlPickBanner`; was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`) |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -57,7 +57,7 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     push bc                ; save the name ptr for DirList_bankSlot
     push bc                ; arg for BrowserHideName
     call FarCallTrampoline
-    db $9c, $7a, $08, $00  ; -> 08:7a9c BrowserHideName
+    db $00, $7c, $08, $00  ; -> 08:7c00 BrowserHideName
     add sp, $02
     pop bc
     ld a, e                ; 1 = hide
@@ -66,7 +66,7 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     jp DirList_bankSlot    ; kept: continue unchanged, BC = name ptr
 ```
 
-`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `FLAUNCH.CFG`.
+`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `EZGB.CFG`, `FLAUNCH.CFG`.
 (It also hid `*.fastlaunch` until that fast-launch trigger was removed on
 2026-09-07.) Extension and name tests are case-insensitive, since 8.3 short
 names come back uppercase while long names keep the host's casing.
@@ -87,9 +87,10 @@ files. Reproduce with:
 
 ```bash
 cd decomp
-python3 tools/inject.py src/browser_hide.c 1.05e-0731 8 7a9c BrowserHideName --apply
+# (since mod 3.0 the first two are done by scripts/inject-ezcfg.sh)
+python3 tools/inject.py src/browser_hide.c 1.05e-0731 8 7c00 BrowserHideName --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 04ae DirListHideNameStub \
-    200301e4c9c5c5cd8d079c7a0800e802c17bb7c2560ac3a30a --apply
+    200301e4c9c5c5cd8d07007c0800e802c17bb7c2560ac3a30a --apply
 python3 tools/patch_call.py 1.05e-0731 0 0a9d 3 00:04ae --jp --apply --regen
 ```
 
