@@ -13,7 +13,7 @@
  * has, so it inverts with the selection bar. Any call with x != 0 (none of
  * the retargeted ones) falls through to DrawString unchanged.
  *
- * Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart, $C4 .sav floppy,
+ * Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart, $C4 .sav page,
  * $C3 boxed "?" for anything else (FolderIconGlyphs, 00:3806). */
 
 typedef unsigned char u8;
@@ -42,7 +42,7 @@ void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y) {
                 if (e == 2) ic = 0xC1;                            /* .gb  */
                 else if (e == 3 && UP(s[dot + 3]) == 'C') ic = 0xC2;   /* .gbc */
             } else if (e == 3 && c1 == 'S' && c2 == 'A' && UP(s[dot + 3]) == 'V') {
-                ic = 0xC4;               /* .sav floppy */
+                ic = 0xC4;               /* .sav page */
             }
         }
         len--;
