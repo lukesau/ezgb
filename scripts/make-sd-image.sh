@@ -1,101 +1,67 @@
 #!/usr/bin/env bash
-# Build sd/card.img as a FAT16 volume and optionally copy sd/root/ into it.
+# Build sd/card.img: a deterministic FAT16 card from sd/root/, using mtools.
 #
-# On modern macOS, newfs_msdos cannot format a plain file ("Cannot get partition
-# offset"). We attach it as a raw disk image first and format the /dev/disk* node.
+# mtools writes the FAT directly (no hdiutil mount, so macOS never injects
+# .fseventsd / ._* / the ._. root sidecar whose 8.3 alias showed up as a stray
+# "~1"). It also lets us choose the on-card directory-entry ORDER exactly: the
+# stock Jr browser lists entries in raw FAT order, while the mod sorts them, so a
+# deliberate order makes the stock-vs-mod difference obvious (see the showcase
+# banner, scripts/make-showcase-banner.sh, and docs/browser-sort.md).
 #
-# While the image is mounted, macOS injects .fseventsd / Spotlight junk, so strip
-# that before detaching. Prefer 8.3 names in sd/root/ (e.g. TETRIS.GB, PKMRED.GB);
-# VFAT long names often render as garbage in the Jr file browser.
+# Order comes from sd/ORDER (one top-level name per line, '#' comments); any
+# entries in sd/root/ not listed there are appended in sorted order. The kernel
+# from re/<EZGB_KERNEL_VERSION>/kernel.gb is written last as ezgb.dat (both
+# browsers hide it). Override the size with SD_IMAGE_MB=128 etc.
 set -euo pipefail
+export MTOOLS_SKIP_CHECK=1
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SD="$ROOT/sd"
 IMG="$SD/card.img"
 ROOTFS="$SD/root"
-# Default 64MiB, plenty for a handful of ROMs; override with SD_IMAGE_MB=128 etc.
+ORDER="$SD/ORDER"
 MB="${SD_IMAGE_MB:-64}"
+KVER="${EZGB_KERNEL_VERSION:-1.05e-0731}"
+KERNEL="$ROOT/re/$KVER/kernel.gb"
 
-mkdir -p "$SD"
+command -v mformat >/dev/null || { echo "error: mtools not found (brew install mtools)" >&2; exit 1; }
+[ -d "$ROOTFS" ] || { echo "error: no $ROOTFS (create it or dump your card there)" >&2; exit 1; }
 
 echo "Creating ${MB}MiB FAT16 image at $IMG"
 rm -f "$IMG"
 dd if=/dev/zero of="$IMG" bs=1m count="$MB" status=none
+mformat -i "$IMG" -F -v EZJR ::
 
-DEV="$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount "$IMG" | awk 'NR==1 { print $1 }')"
-if [[ -z "$DEV" || ! -e "$DEV" ]]; then
-  echo "error: failed to attach $IMG for formatting" >&2
-  exit 1
-fi
-echo "Formatting $DEV as FAT16 (EZJR)"
-# Superfloppy (no partition table). FatFs mounts this; Jr cards are often similar.
-newfs_msdos -F 16 -v EZJR "$DEV" >/dev/null
-hdiutil detach "$DEV" >/dev/null
-
-# Set SD_KEEP_MACOS_JUNK=1 to build a deliberately dirty card: AppleDouble
-# ._* files, .DS_Store, .Spotlight-V100, .fseventsd. Used to test the kernel's
-# name filter (BrowserHideName), which must hide all of it.
-KEEP_JUNK="${SD_KEEP_MACOS_JUNK:-0}"
-
-scrub_macos_junk() {
-  local mnt="$1"
-  [[ "$KEEP_JUNK" == "1" ]] && return 0
-  rm -rf "$mnt/.fseventsd" "$mnt/.Spotlight-V100" "$mnt/.Trashes" \
-         "$mnt/.TemporaryItems" "$mnt/.DocumentRevisions-V100" \
-         "$mnt/.DS_Store" "$mnt/.metadata_never_index" 2>/dev/null || true
-  find "$mnt" \( -name '.DS_Store' -o -name '._*' -o -name '.fseventsd' \
-              -o -name '.metadata_never_index' \) -exec rm -rf {} + 2>/dev/null || true
+DONE=$'\n'
+copy_entry() {
+  local name="$1" src="$ROOTFS/$1"
+  case "$DONE" in *$'\n'"$name"$'\n'*) return 0;; esac   # already copied
+  DONE="${DONE}${name}"$'\n'
+  if [ ! -e "$src" ]; then echo "  skip (missing): $name"; return 0; fi
+  if [ -d "$src" ]; then mcopy -s -i "$IMG" "$src" ::/ ; else mcopy -i "$IMG" "$src" ::/ ; fi
+  echo "  + $name"
 }
 
-# The kernel goes onto the image as ezgb.dat straight from re/<ver>/kernel.gb
-# (EZGB_KERNEL_VERSION picks the version), never via sd/root/, so the folder
-# copy stays a plain ROM/save backup and the card still mirrors a real one.
-# Non-fatal: kernel.gb is untracked firmware and may simply be absent.
-KERNEL="$ROOT/re/${EZGB_KERNEL_VERSION:-1.05e-0731}/kernel.gb"
-[[ -f "$KERNEL" ]] || echo "warning: no $KERNEL; card will not contain a kernel" >&2
+# 1) entries named in sd/ORDER, in that order
+if [ -f "$ORDER" ]; then
+  while IFS= read -r line; do
+    line="${line%%#*}"; line="${line%"${line##*[![:space:]]}"}"   # strip comment + trailing ws
+    [ -z "$line" ] && continue
+    copy_entry "$line"
+  done < "$ORDER"
+fi
+# 2) anything else in sd/root/, sorted (dotfiles included)
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  copy_entry "$name"
+done < <(cd "$ROOTFS" && ls -1A | LC_ALL=C sort)
 
-if [[ -d "$ROOTFS" ]] && [[ -n "$(ls -A "$ROOTFS" 2>/dev/null || true)" ]]; then
-  MNT="$(mktemp -d /tmp/ezjr-sd.XXXXXX)"
-  cleanup() {
-    hdiutil detach "$MNT" -quiet 2>/dev/null || true
-    rmdir "$MNT" 2>/dev/null || true
-  }
-  trap cleanup EXIT
-  echo "Copying $ROOTFS -> image"
-  [[ "$KEEP_JUNK" == "1" ]] || export COPYFILE_DISABLE=1
-  hdiutil attach -imagekey diskimage-class=CRawDiskImage -mountpoint "$MNT" "$IMG" >/dev/null
-  scrub_macos_junk "$MNT"
-  if [[ "$KEEP_JUNK" == "1" ]]; then
-    echo "SD_KEEP_MACOS_JUNK=1: copying macOS cruft too (dotfile-filter test card)"
-    rsync -a "$ROOTFS"/ "$MNT"/
-  else
-    rsync -a --exclude '.DS_Store' --exclude '._*' --exclude '.Spotlight-V100' \
-          --exclude '.fseventsd' --exclude '.Trashes' --exclude '.metadata_never_index' \
-          "$ROOTFS"/ "$MNT"/
-  fi
-  scrub_macos_junk "$MNT"
-  [[ -f "$KERNEL" ]] && cp "$KERNEL" "$MNT/ezgb.dat"
-  # Warn about non-8.3 names (spaces / long names → VFAT LFN → often broken in Jr UI)
-  while IFS= read -r -d '' f; do
-    base="$(basename "$f")"
-    [[ "$base" == .* ]] && continue
-    if [[ "$base" == *' '* || ${#base} -gt 12 ]]; then
-      echo "warning: non-8.3 name '$base' (Jr browser may show garbage; rename e.g. PKMRED.GB)" >&2
-    fi
-  done < <(find "$MNT" -mindepth 1 -maxdepth 2 \( -type f -o -type d \) -print0)
-  sync
-  scrub_macos_junk "$MNT"
-  # Last chance: macOS often recreates .fseventsd on detach; remount read-write scrub is hard,
-  # so clear whatever is there now and sync hard before eject.
-  sync
-  hdiutil detach "$MNT" >/dev/null
-  trap - EXIT
-  rmdir "$MNT" 2>/dev/null || true
-  echo "Done. Image has contents of sd/root/ plus ezgb.dat ($(basename "$(dirname "$KERNEL")"))."
+# 3) the kernel, written last (hidden by both browsers, present for real hardware)
+if [ -f "$KERNEL" ]; then
+  mcopy -i "$IMG" "$KERNEL" ::/ezgb.dat && echo "  + ezgb.dat ($KVER)"
 else
-  echo "No sd/root/ contents found; left an empty FAT volume."
-  echo "Mount with ./scripts/mount-sd-image.sh and add ROMs, or populate sd/root/ and re-run."
+  echo "warning: no $KERNEL; card has no kernel" >&2
 fi
 
-ls -lh "$IMG"
-file "$IMG"
+echo "Done. Root entry order:"
+mdir -i "$IMG" ::/ | sed 's/^/  /'

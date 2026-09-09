@@ -259,6 +259,15 @@ into `sd/root/` any more: `scripts/make-sd-image.sh` copies the chosen
 version's `re/<ver>/kernel.gb` straight into the emulator card image
 (`EZGB_KERNEL_VERSION`, default 1.05e-0731).
 
+`make-sd-image.sh` builds the FAT16 card with **mtools** (`brew install
+mtools`), not hdiutil — so macOS injects no junk (no stray `~1` from a `._.`
+sidecar) and the on-card directory-entry order is deterministic. That order is
+whatever `sd/ORDER` lists (top-level names, `#` comments); entries not listed
+are appended sorted. Because the stock browser lists raw FAT order and the mod
+sorts, `sd/ORDER` is what the stock-vs-mod README banner
+(`scripts/make-showcase-banner.sh`, output `docs/banner.png`) plays off — it
+boots the stock and modded kernels on this same card and stitches the shots.
+
 ## Tools
 
 Reference repos clone into `tools/` (gitignored; re-clone as needed):

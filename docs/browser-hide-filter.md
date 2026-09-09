@@ -118,13 +118,12 @@ included. Those files stay in `sd/root/` as regression fixtures (the empty
 `FLAUNCH.CFG` is a no-op for fast launch, since `scan_config` ignores an empty
 file).
 
-For the macOS-junk half, build a deliberately dirty card:
-
-```bash
-SD_KEEP_MACOS_JUNK=1 ./scripts/make-sd-image.sh
-```
-
-macOS then writes an AppleDouble beside every file, the real-world case.
+For the macOS-junk half, keep some junk files in `sd/root/` — the showcase card
+does exactly this (a `.DS_Store`, a `._Kirby.gbc` AppleDouble sidecar, an
+`EZGB.CFG`, and an `Advance Game.gba`), so `./scripts/make-sd-image.sh` copies
+them straight onto the card and the stock browser lists them while the mod hides
+them. (`make-sd-image.sh` now builds the FAT with mtools, which never injects
+macOS junk of its own, so what you put in `sd/root/` is exactly what you test.)
 
 ## Host-side alternative
 

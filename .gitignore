@@ -61,5 +61,6 @@ re/*/label-proposals.txt
 # ROMs, saves, and raw card images are copyrighted or personal, so they stay out of git.
 /sd/**
 !/sd/README.md
+!/sd/ORDER
 
 dist/

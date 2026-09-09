@@ -8,8 +8,9 @@ card. Everything in this directory stays local (see `.gitignore`).
 ```
 sd/
 ├── README.md      # this file (tracked)
+├── ORDER          # top-level FAT entry order for the build (tracked)
 ├── card.img       # raw FAT image the emulator uses  ← required
-└── root/          # optional folder copy of your Jr backup for editing
+└── root/          # folder copy of the card contents, edited then built
 ```
 
 ## Option A: dump your physical card
@@ -25,12 +26,19 @@ sudo dd if=/dev/rdiskN of=sd/card.img bs=1m
 If you copied files into `sd/root/`:
 
 ```sh
-./scripts/make-sd-image.sh        # creates sd/card.img and copies sd/root/* into it
+./scripts/make-sd-image.sh        # creates sd/card.img from sd/root/ (needs mtools)
 ```
 
-**Use 8.3 filenames** (e.g. `TETRIS.GB`, `PKMRED.GB`, `SAVER/PKMRED.SAV`). Spaces and
-long names create VFAT LFN entries that the Jr file browser often displays as
-garbage even when the files are readable.
+It builds the FAT with **mtools** (`brew install mtools`), so no macOS junk is
+injected and the on-card directory-entry order is deterministic: top-level
+entries are written in the order listed in `sd/ORDER` (rest appended sorted).
+The stock browser lists that raw order while the mod sorts, so `sd/ORDER` is
+what the stock-vs-mod README banner plays off (`scripts/make-showcase-banner.sh`).
+
+The stock browser garbles VFAT long names (spaces / >8.3), so prefer 8.3 names
+(`TETRIS.GB`, `SAVER/PKMRED.SAV`) if you care about the stock view; the **modded**
+kernel resolves long names correctly, so the showcase card uses a few on purpose
+(`Wario Land.gb`, `Advance Game.gba`).
 
 You can also skip `root/` and mount the image to add files:
 

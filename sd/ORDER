@@ -1,0 +1,20 @@
+# Top-level FAT directory-entry order for sd/card.img (make-sd-image.sh copies in
+# this order via mtools). The STOCK browser lists entries in this raw order; the
+# MOD sorts them (directories first, then alphabetical) and hides junk. Keeping
+# the directories interleaved here — Pokemon high, SAVER mid, Zelda low — makes
+# the stock-vs-mod banner show the mod's sort at a glance. See docs/browser-sort.md.
+#
+# One top-level name per line ('#' comments, blanks ignored). Names not listed are
+# appended in sorted order; ezgb.dat is added last automatically.
+Pokemon
+Kirby.gbc
+Advance Game.gba
+SAVER
+Tetris.gb
+.DS_Store
+Wario Land.gb
+Zelda
+Pokemon.sav
+._Kirby.gbc
+readme.txt
+EZGB.CFG
