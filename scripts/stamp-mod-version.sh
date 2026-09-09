@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stamp patches/kernel/VERSION into the HELP-tab "MOD" string
-# (DrawHelpModVersion, 08:7a9c; MODSTR at 08:7ac1, a fixed 10-byte field drawn
+# (DrawHelpModVersion, 08:7a9c; MODSTR at 08:7aff, a fixed 10-byte field drawn
 # as len $0a). The displayed number equals patches/kernel/VERSION.
 #
 # kernel-patch.py make would otherwise bump M because the stamped bytes change
@@ -17,7 +17,7 @@ assert len(s) == 10
 for v in ("1.05e-0731", "1.05e-0918"):
     p = f"{root}/re/{v}/kernel.gb"
     r = bytearray(open(p, 'rb').read())
-    o = 8*0x4000 + (0x7ac1 - 0x4000)
+    o = 8*0x4000 + (0x7aff - 0x4000)
     if r[o:o+10] != s:
         r[o:o+10] = s; open(p, 'wb').write(r); print(f"  {v}: MODSTR -> {s!r}")
     else:

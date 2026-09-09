@@ -3673,96 +3673,22 @@ BrowserSortAll::
 DrawHelpModVersion::
     db $21, $00, $05, $e5, $3e, $0e, $f5, $33
     db $21, $5a, $71, $e5, $cd, $b7, $08, $e8
-    db $05, $21, $00, $07, $e5, $3e, $0a, $f5
-    db $33, $21, $c1, $7a, $e5, $cd, $b7, $08
-    db $e8, $05, $c3, $41, $71, $4d, $4f, $44
-    db $20, $33, $2e, $31, $38, $20, $20
+    db $05, $21, $09, $03, $e5, $3e, $0b, $f5
+    db $33, $21, $f4, $7a, $e5, $cd, $b7, $08
+    db $e8, $05, $21, $00, $07, $e5, $3e, $0a
+    db $f5, $33, $21, $ff, $7a, $e5, $cd, $b7
+    db $08, $e8, $05, $21, $00, $09, $e5, $3e
+    db $0b, $f5, $33, $21, $09, $7b, $e5, $cd
+    db $b7, $08, $e8, $05, $21, $00, $0a, $e5
+    db $3e, $0c, $f5, $33, $21, $14, $7b, $e5
+    db $cd, $b7, $08, $e8, $05, $c3, $41, $71
+    db $4b, $31, $2e, $30, $35, $65, $2d, $30
+    db $37, $33, $31, $4d, $4f, $44, $20, $33
+    db $2e, $31, $38, $20, $20, $67, $69, $74
+    db $68, $75, $62, $2e, $63, $6f, $6d, $2f
+    db $6c, $75, $6b, $65, $73, $61, $75, $2f
+    db $65, $7a, $67, $62
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

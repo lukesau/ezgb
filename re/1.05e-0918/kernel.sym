@@ -4441,4 +4441,4 @@
 01:7610 LastRomSaveHook
 01:7610 .data:f:8
 08:7a9c DrawHelpModVersion
-08:7a9c .data:2f:8
+08:7a9c .data:84:8
