@@ -2978,7 +2978,9 @@ DrawFwVersionScreen_drawChrome::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0500
+    jp $7a9c
+
+
     push hl
     ld a, $0e
     push af
@@ -3668,53 +3670,14 @@ BrowserSortAll::
     db $72, $18, $b1, $03, $18, $8c, $e8, $03
     db $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+DrawHelpModVersion::
+    db $21, $00, $05, $e5, $3e, $0e, $f5, $33
+    db $21, $5a, $71, $e5, $cd, $b7, $08, $e8
+    db $05, $21, $00, $07, $e5, $3e, $0a, $f5
+    db $33, $21, $c1, $7a, $e5, $cd, $b7, $08
+    db $e8, $05, $c3, $41, $71, $4d, $4f, $44
+    db $20, $33, $2e, $31, $38, $20, $20
+
     rst RST_38
     rst RST_38
     rst RST_38
