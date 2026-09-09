@@ -666,15 +666,14 @@ BrowserPageEndHook::
 FarCallScan::
     db $cd, $8d, $07, $00, $45, $02, $00, $c9
 
-    rlca
-    nop
-    ld b, l
-    ld [bc], a
-    nop
-    add sp, $02
-    ret
-
-
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

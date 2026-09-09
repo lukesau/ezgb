@@ -33,7 +33,7 @@ RTC=2026-09-08 10:15:32
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
 
-The firmware rewrites the whole file from its known keys as a fixed 192-byte
+The firmware rewrites the whole file from its known keys as a fixed one-sector (512-byte)
 record padded with spaces (this FatFs build has no `f_truncate`, so a
 shorter rewrite must still cover the old bytes). Hand-added lines and
 comments do not survive a save, and a file longer than 255 bytes is read only
@@ -79,6 +79,28 @@ the write-back sets a WRAM flag the boot restore honours unconditionally.
 prompt was about the console's AA cells was wrong and has been corrected.)
 
 ## RTC access
+
+**Hardware finding (2026-09-09, FW4 cart, 1.04e, mod 4.1).** `RTC=` stayed
+empty after TIME SET, and a hand-written time was lost at the next save, so a
+battery-less cart came up at year 2000. The cause is in the kernel's FatFs,
+not the clock: a partial-sector `f_write` or `f_read` goes through
+`MemCpy16_B7`, whose byte count is 8-bit, while the file pointer still
+advances by the full length. The kernel only ever moves whole sectors or
+48-byte records, so it never noticed. The 320-byte record introduced in mod
+3.6 therefore landed as `320 & 0xFF = 64` bytes, the rest of the sector
+keeping whatever it held before; a 60-byte FLAUNCH line put the `RTC=` value
+at byte 64, so it never reached the card. Reproduced in SameBoy with a
+digit-filler record read back through the FAT. Splitting the transfer into
+two partial calls does not work either (the second write restarts the
+sector). Since mod 4.3 the record is exactly one sector (`REC_LEN` 512) and
+is read and written with one whole-sector call each, FatFs's direct path,
+the same one the kernel's save dumps use. A shorter file still reads fine up
+to 255 bytes; a 256-511-byte one (the mod 3.6-4.2 shape) yields only its
+first `size & 0xFF` bytes once and is rewritten whole at the next save.
+`rtc_read` also masks the PCF8563 flag bits (VL, century, unused) since mod
+4.2, hygiene rather than the cause. A build compiled with `-DEZCFG_RTCRAW`
+always saves and adds an `RTCRAW=` line with the raw registers, masked read,
+stored time and the backup decision.
 
 FPGA page `$06` exposes seven BCD bytes at `$A008..$A00E` in PCF8563 register
 order: seconds, minutes, hours, day, weekday, month, year (two digits, 20xx).

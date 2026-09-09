@@ -29,7 +29,7 @@
  *                                 punctuation into YYYY MM DD HH MM SS)
  *
  * The firmware rewrites the whole file from its known keys as a fixed
- * REC_LEN record padded with spaces (this FatFs has no f_truncate), so hand
+ * REC_LEN (one-sector) record padded with spaces (this FatFs has no f_truncate), so hand
  * added lines do not survive a save; comments are not preserved either.
  *
  * RTC access: FPGA page $06 exposes seven BCD bytes at $A008..$A00E in
@@ -62,7 +62,7 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 
 #define FIL_OBJ   ((u8 *)0xCA0F)     /* kernel FIL, idle whenever we run */
-#define CFGBUF    ((u8 *)0xD800)     /* 512: file contents / record to write */
+#define CFGBUF    ((u8 *)0xD800)     /* 512: file contents / the one-sector record to write */
 #define FL_EN     (*(volatile u8 *)0xDA80)
 #define FL_PLEN   (*(volatile u8 *)0xDA81)
 #define FL_PATH   ((u8 *)0xDA82)     /* NUL-terminated, <= PATH_MAX */
@@ -70,6 +70,9 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define RTC_BK    ((u8 *)0xDB40)     /* stored time, 7 BCD bytes in register order */
 #define RTC_VALID (*(volatile u8 *)0xDB47)
 #define RTC_CUR   ((u8 *)0xDB48)     /* current RTC read, 7 bytes */
+#define RTC_RAW   ((u8 *)0xDB50)     /* EZCFG_RTCRAW builds: the unmasked register bytes */
+#define DBG_VALID (*(volatile u8 *)0xDB57)  /* EZCFG_RTCRAW: validity bits of the last BACKUP */
+#define DBG_CMP   (*(volatile u8 *)0xDB58)  /* EZCFG_RTCRAW: compare result of the last BACKUP */
 #define EZ_OP     (*(volatile u8 *)0xDBFC)
 #define DRY_FLAG  (*(volatile u8 *)0xDBFD)  /* set by BatteryDryHook (00:0530) */
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
@@ -87,8 +90,8 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
-#define CFG_MAX   511
-#define REC_LEN   320                /* FLAUNCH line 131 + RTC line 25 + LASTROM line 130 = 286 max */
+#define CFG_MAX   REC_LEN            /* CFGBUF[CFG_MAX] is the parser NUL (= LR_PATH[0], cleared before parsing) */
+#define REC_LEN   512                /* one whole sector, see far_write(); content is 286 max */
 #define PATH_MAX  120
 
 #define RTC_WIN   ((volatile u8 *)0xA008)
@@ -163,10 +166,20 @@ static void sd_prep(void) {
 
 /* ---- RTC ---- */
 
+/* PCF8563 time registers carry flag/unused bits above the BCD digits:
+ * seconds bit 7 is VL (voltage low), months bit 7 is the century flag, and
+ * the hours/days/weekday registers have unused high bits. The kernel's own
+ * readers extract digits nibble by nibble and never see them; a whole-byte
+ * BCD check would, so mask them off exactly as the datasheet lays them out. */
+static const u8 rtc_mask[7] = {0x7F, 0x7F, 0x3F, 0x3F, 0x07, 0x1F, 0xFF};
+
 static void rtc_read(void) {
     u8 i;
     fpga_page(6);
-    for (i = 0; i < 7; i++) RTC_CUR[i] = RTC_WIN[i];
+#ifdef EZCFG_RTCRAW
+    for (i = 0; i < 7; i++) RTC_RAW[i] = RTC_WIN[i];
+#endif
+    for (i = 0; i < 7; i++) RTC_CUR[i] = RTC_WIN[i] & rtc_mask[i];
     fpga_page(0);
 }
 
@@ -214,8 +227,17 @@ static signed char rtc_cmp(const u8 *a, const u8 *b) {
 static void cfg_backup(void) {
     cfg_load();
     rtc_read();
+#ifdef EZCFG_RTCRAW
+    DBG_VALID = (RTC_VALID ? 1 : 0) | (rtc_valid(RTC_CUR) ? 2 : 0);
+    DBG_CMP = RTC_VALID ? (u8)(rtc_cmp(RTC_CUR, RTC_BK) + 1) : 9;
+    if (!rtc_valid(RTC_CUR) || (RTC_VALID && rtc_cmp(RTC_CUR, RTC_BK) <= 0)) {
+        cfg_save();  /* diagnostic: record what the registers held anyway */
+        return;
+    }
+#else
     if (!rtc_valid(RTC_CUR)) return;
     if (RTC_VALID && rtc_cmp(RTC_CUR, RTC_BK) <= 0) return;
+#endif
     {
         u8 i;
         for (i = 0; i < 7; i++) RTC_BK[i] = RTC_CUR[i];
@@ -240,7 +262,7 @@ static void copy_name(const u8 *name) {
     for (i = 0; ; i++) { FL_SCR[i] = name[i]; if (name[i] == 0) break; }
 }
 
-/* Open name read-only and read up to CFG_MAX bytes into CFGBUF. Returns 1 if
+/* Open name read-only and read up to REC_LEN bytes into CFGBUF. Returns 1 if
  * the file opened (br may be 0), 0 if it does not exist. */
 static u8 open_read(const u8 *name, u16 *br) {
     u8 r;
@@ -248,11 +270,38 @@ static u8 open_read(const u8 *name, u16 *br) {
     sd_prep();
     if (FarCall_06_7309(FIL_OBJ, FL_SCR, FA_READ) != 0) return 0;
     sd_prep();
-    r = FarCall_06_779a(FIL_OBJ, CFGBUF, CFG_MAX, br);
+    /* One whole-sector read: for our own REC_LEN files this is FatFs's direct
+     * path (see far_write). A shorter file takes the partial path, whose copy
+     * is 8-bit: up to 255 bytes it is complete; 256..511 bytes land only
+     * (size & 0xFF), so trust just that prefix (a 320-byte record from mod
+     * 3.6-4.2 keeps its FLAUNCH line and is rewritten whole at the next save). */
+    r = FarCall_06_779a(FIL_OBJ, CFGBUF, REC_LEN, br);
     sd_prep();
     FarCall_03_768f(FIL_OBJ);
     if (r != 0) *br = 0;
+    else if (*br > 0xFF && *br < REC_LEN) *br &= 0xFF;
     return 1;
+}
+
+/* This kernel's FatFs copies a partial-sector transfer through the FIL
+ * buffer with an 8-bit byte count (the kernel itself only ever writes whole
+ * sectors or 48-byte records), so a single 320-byte write used to land only
+ * 320 & 0xFF = 64 bytes while the file pointer still advanced by 320: the
+ * rest of the record kept whatever the sector held before. Found on hardware
+ * 2026-09-09 (a 60-byte FLAUNCH line pushed the RTC value past byte 64, so it
+ * never reached the card). Splitting the write into two partial calls did
+ * not work either (the second call restarted the sector). So the record is
+ * exactly one sector, REC_LEN = 512, written in one call at offset 0: that is
+ * FatFs's direct whole-sector path, the same one the kernel's own save dumps
+ * take, and it never touches the 8-bit copy. Reads use the same whole-sector
+ * call (see open_read). */
+static u8 far_write(const u8 *buf, u16 len) {
+    u16 bw;
+    u8 r;
+    sd_prep();
+    r = FarCall_07_7739(FIL_OBJ, buf, len, &bw);
+    if (r != 0) return r;
+    return bw == len ? 0 : 0xFF;
 }
 
 static void cfg_load(void) {
@@ -402,7 +451,7 @@ static u8 cfg_save(void) {
     static const u8 k_fl[8]  = {'F','L','A','U','N','C','H','='};
     static const u8 k_rtc[6] = {'R','T','C','=','2','0'};
     static const u8 k_lr[8]  = {'L','A','S','T','R','O','M','='};
-    u16 bw, n;
+    u16 n;
     u8 i, r;
 
     n = 0;
@@ -433,14 +482,37 @@ static u8 cfg_save(void) {
         CFGBUF[n++] = 0x0d;
         CFGBUF[n++] = 0x0a;
     }
+#ifdef EZCFG_RTCRAW
+    {
+        /* RTCRAW=<7 raw regs> <7 masked regs> <7 stored regs> V<valid> C<cmp>
+         * valid: RTC_VALID before this op | rtc_valid(masked)<<1; cmp: 0/1/2
+         * for RTC earlier/equal/later than stored (9 when nothing stored).
+         * Diagnostic builds only; ignored by the parser. */
+        static const u8 k_raw[7] = {'R','T','C','R','A','W','='};
+        u8 d, j;
+        const u8 *src;
+        for (i = 0; i < 7; i++) CFGBUF[n++] = k_raw[i];
+        for (j = 0; j < 3; j++) {
+            src = j == 0 ? RTC_RAW : j == 1 ? RTC_CUR : RTC_BK;
+            for (i = 0; i < 7; i++) {
+                d = src[i] >> 4;   CFGBUF[n++] = d < 10 ? '0' + d : 'A' + d - 10;
+                d = src[i] & 0x0F; CFGBUF[n++] = d < 10 ? '0' + d : 'A' + d - 10;
+            }
+            CFGBUF[n++] = ' ';
+        }
+        CFGBUF[n++] = 'V'; CFGBUF[n++] = '0' + DBG_VALID;
+        CFGBUF[n++] = 'C'; CFGBUF[n++] = '0' + DBG_CMP;
+        CFGBUF[n++] = 0x0d;
+        CFGBUF[n++] = 0x0a;
+    }
+#endif
     while (n < REC_LEN) CFGBUF[n++] = ' ';
 
     copy_name(cfg_name);
     sd_prep();
     r = FarCall_06_7309(FIL_OBJ, FL_SCR, FA_CREATE);
     if (r != 0) return r;
-    sd_prep();
-    r = FarCall_07_7739(FIL_OBJ, CFGBUF, REC_LEN, &bw);
+    r = far_write(CFGBUF, REC_LEN);
     sd_prep();
     FarCall_03_768f(FIL_OBJ);
     return r;

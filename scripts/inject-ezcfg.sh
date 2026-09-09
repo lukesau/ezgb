@@ -5,7 +5,9 @@
 # docs/last-rom.md), into one kernel version.
 #
 # Usage: scripts/inject-ezcfg.sh <1.05e-0731|1.05e-0918>
-# Then:  python3 scripts/kernel-patch.py make   (once, after both versions)
+# Then:  scripts/port-mod.py 1.05e-0731 1.04e --apply --sym   (hook sites below
+#        are 1.05e addresses; 1.04e is always a port of 0731, see DEVELOPMENT.md)
+#        python3 scripts/kernel-patch.py make   (once, after all versions)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 V="${1:?version}"
@@ -21,12 +23,12 @@ esac
 # 1. Drop the kernel.sym entries of the blocks being re-injected (inject.py
 #    refuses to overwrite in place) and blank their old bytes to $FF so a
 #    smaller re-injection leaves no stale code behind.
-perl -ni -e 'print unless /^(02:4500|02:4a00|04:5990|08:7a9c|08:7c00|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610) /' "$SYM"
+perl -ni -e 'print unless /^(02:4500|02:4a00|04:5990|08:7c00|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610) /' "$SYM"
 python3 - "$GB" <<'PY'
 import sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
 def off(b,a): return a if b==0 else b*0x4000+(a-0x4000)
-for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1000),(4,0x5990,0x4ea),(8,0x7a9c,0xca),(8,0x7c00,0x120),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x12)):
+for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1000),(4,0x5990,0x4ea),(8,0x7c00,0x120),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x12)):
     rom[off(b,a):off(b,a)+n]=b'\xff'*n
 open(p,'wb').write(rom)
 PY

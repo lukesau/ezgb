@@ -5669,26 +5669,31 @@ FlCfg::
     rst RST_38
     rst RST_38
     rst RST_38
-    push de
-    call DrawString
-    add sp, $05
-    xor a
-    rrca
-    push af
-    xor a
-    ld a, $03
-    push af
-    inc sp
-    call StoreDrawParams
-    add sp, $03
-    ret
-
-
-    ld d, b
-    ld c, c
-    ld b, e
-    ld c, e
-    nop
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
