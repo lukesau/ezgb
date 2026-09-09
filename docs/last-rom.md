@@ -26,6 +26,42 @@ HELP`, a `1` index top-right, `DIR`-marked entries, the last-ROM line, and `[B]r
 | Contents | Full launch path as a C string, same format as `$c2a6` (e.g. `/pokemon/Pokemon Blue.gb`, long-filename form) |
 | WRAM mirror | Read back into `$c4a4`; written from `$c2a6` |
 
+## SD fallback when the coin cell dies (mod 3.8)
+
+`$A300` is battery-backed, so a dead cell leaves random bytes there and the
+stock overlay drew them as a garbage basename (confirmed on hardware). Two
+changes fix this, both in the `ezcfg` settings module ([ezgb-cfg.md](ezgb-cfg.md)):
+
+- **Validate the NVRAM record (option A).** Before the overlay draws, op
+  `LASTLOAD` checks the `$A300` copy in `$c4a4`: first byte `/`, a NUL within
+  255 bytes, no control/`$FF` bytes, and a non-empty basename with a `.`.
+  Random NVRAM fails the first-byte test alone 255 times out of 256.
+- **Fall back to the SD card (option B).** On every launch, op `LASTSAVE`
+  also records the launch path as a `LASTROM=` line in `/EZGB.CFG`. When the
+  `$A300` record fails validation, the overlay loads `LASTROM=` instead and
+  draws that basename; `[A]` relaunches it through the normal path. If both
+  are gone, the overlay shows `(none)` and only `[B]` responds.
+
+NVRAM stays the primary source: a valid `$A300` record is used directly with
+no SD access, so the common case is unchanged. The SD file is read only when
+the record is corrupt.
+
+Verified under SameBoy (corrupt record with and without a `LASTROM=` line, and
+the write-on-launch path) and confirmed on GBC and GBA SP.
+
+### Hooks
+
+| Site | Was | Now |
+|---|---|---|
+| `01:48c1` | `add sp,$04; ret` (LastRomPersist tail, path assembled in `$c2a6`) | `jp LastRomSaveHook` (`01:7610`): op `LASTSAVE`, then the displaced tail |
+| `00:12c8` | `jp nc, LastRomDrawBasename` (record-copy loop exit) | `jp nc, LastRomFallbackHook` (`00:0540`): op `LASTLOAD`, then `jp` to `LastRomDrawBasename` (`EZ_RES=1`) or `LastRomReturn` (`EZ_RES=0`) |
+
+`LASTROM=` shares the module's 120-char path cap and the fixed-record rewrite,
+so the record buffer grew to 512 B (`CFGBUF` at `$D800`) to hold three lines.
+The save hook is at the persist **tail**, not its entry `01:4856`: the path is
+assembled by the `FarCallTrampoline` early in `LastRomPersist`, so hooking the
+entry captured a stale `/`.
+
 `$A300` (bank 17 + rompage `$03`) sits in the same battery-backed cart PSRAM window as save
 meta, so `$A300` is lost if the coin cell dies; see [psram-save-map.md](psram-save-map.md) and
 `hardware-board.md`.

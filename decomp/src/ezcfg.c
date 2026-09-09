@@ -61,7 +61,7 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 
 #define FIL_OBJ   ((u8 *)0xCA0F)     /* kernel FIL, idle whenever we run */
-#define CFGBUF    ((u8 *)0xD980)     /* 256: file contents / record to write */
+#define CFGBUF    ((u8 *)0xD800)     /* 512: file contents / record to write */
 #define FL_EN     (*(volatile u8 *)0xDA80)
 #define FL_PLEN   (*(volatile u8 *)0xDA81)
 #define FL_PATH   ((u8 *)0xDA82)     /* NUL-terminated, <= PATH_MAX */
@@ -71,16 +71,23 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define RTC_CUR   ((u8 *)0xDB48)     /* current RTC read, 7 bytes */
 #define EZ_OP     (*(volatile u8 *)0xDBFC)
 #define DRY_FLAG  (*(volatile u8 *)0xDBFD)  /* set by BatteryDryHook (00:0530) */
+#define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
+#define LR_VALID  (*(volatile u8 *)0xDA7F)
+#define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
+#define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
+#define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
 
 #define OP_LOAD    0
 #define OP_SAVE    1
 #define OP_BACKUP  2
 #define OP_RESTORE 3
+#define OP_LASTSAVE 4              /* launch: record the launch path as LASTROM= */
+#define OP_LASTLOAD 5              /* START overlay: validate $A300 copy, else fall back to LASTROM= */
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
-#define CFG_MAX   255
-#define REC_LEN   192                /* "FLAUNCH=#" + 120 + CRLF + RTC line = 156 max */
+#define CFG_MAX   511
+#define REC_LEN   320                /* FLAUNCH line 131 + RTC line 25 + LASTROM line 130 = 286 max */
 #define PATH_MAX  120
 
 #define RTC_WIN   ((volatile u8 *)0xA008)
@@ -112,12 +119,21 @@ static signed char rtc_cmp(const u8 *a, const u8 *b);
 static u8 put_bcd(u8 *dst, u8 v);
 static void cfg_backup(void);
 static void cfg_restore(void);
+static void parse_lastrom(const u8 *v, u16 len);
+static u8 path_valid(const u8 *p);
+static void lastrom_save(void);
+static void lastrom_load(void);
+
+extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
+extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
 
 void ezcfg(void) {
     u8 op = EZ_OP;
     if (op == OP_LOAD) { cfg_load(); return; }
     if (op == OP_SAVE) { cfg_save(); return; }
     if (op == OP_BACKUP) { cfg_backup(); return; }
+    if (op == OP_LASTSAVE) { lastrom_save(); return; }
+    if (op == OP_LASTLOAD) { lastrom_load(); return; }
     cfg_restore();
 }
 
@@ -247,6 +263,8 @@ static void cfg_load(void) {
     FL_PLEN = 0;
     FL_PATH[0] = 0;
     RTC_VALID = 0;
+    LR_VALID = 0;
+    LR_PATH[0] = 0;
 
     if (open_read(cfg_name, &br)) {
         parse_record(br, 0);
@@ -260,43 +278,47 @@ static void cfg_load(void) {
  * value itself (no key). Only the first occurrence of each key counts, so a
  * stale tail left behind by a shorter rewrite cannot override the record. */
 static void parse_record(u16 br, u8 legacy) {
-    u8 p, s, e, eq, seen_fl, seen_rtc;
+    u16 p, s, e, eq;
+    u8 seen_fl, seen_rtc, seen_lr;
 
     if (br > CFG_MAX) br = CFG_MAX;
     CFGBUF[br] = 0;
     seen_fl = 0;
     seen_rtc = 0;
+    seen_lr = 0;
     p = 0;
     for (;;) {
-        if (p >= (u8)br) break;
+        if (p >= br) break;
         s = p;
-        while (s < (u8)br && CFGBUF[s] == ' ') s++;
+        while (s < br && CFGBUF[s] == ' ') s++;
         e = s;
-        while (e < (u8)br && CFGBUF[e] != 0x0d && CFGBUF[e] != 0x0a && CFGBUF[e] != 0) e++;
+        while (e < br && CFGBUF[e] != 0x0d && CFGBUF[e] != 0x0a && CFGBUF[e] != 0) e++;
         p = e;
-        while (p < (u8)br && (CFGBUF[p] == 0x0d || CFGBUF[p] == 0x0a)) p++;
-        if (CFGBUF[e] == 0 && e < (u8)br) p = br;     /* NUL: stop after this line */
+        while (p < br && (CFGBUF[p] == 0x0d || CFGBUF[p] == 0x0a)) p++;
+        if (CFGBUF[e] == 0 && e < br) p = br;         /* NUL: stop after this line */
         while (e > s && CFGBUF[e - 1] == ' ') e--;
         if (e == s) continue;
-
         if (legacy) {
-            parse_flaunch(CFGBUF + s, e - s);
+            parse_flaunch(CFGBUF + s, (u8)(e - s));
             return;
         }
         eq = s;
         while (eq < e && CFGBUF[eq] != '=') eq++;
         if (eq >= e) continue;
         {
-            u8 klen = eq - s;
-            u8 vs = eq + 1;
+            u8 klen = (u8)(eq - s);
+            u16 vs = eq + 1;
             while (klen != 0 && CFGBUF[s + klen - 1] == ' ') klen--;
             while (vs < e && CFGBUF[vs] == ' ') vs++;
             if (!seen_fl && key_is(CFGBUF + s, klen, (const u8 *)"flaunch", 7)) {
                 seen_fl = 1;
-                parse_flaunch(CFGBUF + vs, e - vs);
+                parse_flaunch(CFGBUF + vs, (u8)(e - vs));
             } else if (!seen_rtc && key_is(CFGBUF + s, klen, (const u8 *)"rtc", 3)) {
                 seen_rtc = 1;
-                parse_rtc(CFGBUF + vs, e - vs);
+                parse_rtc(CFGBUF + vs, (u8)(e - vs));
+            } else if (!seen_lr && key_is(CFGBUF + s, klen, (const u8 *)"lastrom", 7)) {
+                seen_lr = 1;
+                parse_lastrom(CFGBUF + vs, e - vs);
             }
         }
     }
@@ -364,8 +386,9 @@ static u8 cfg_save(void) {
     static const u8 cfg_name[10] = {'/','E','Z','G','B','.','C','F','G',0};
     static const u8 k_fl[8]  = {'F','L','A','U','N','C','H','='};
     static const u8 k_rtc[6] = {'R','T','C','=','2','0'};
-    u16 bw;
-    u8 n, i, r;
+    static const u8 k_lr[8]  = {'L','A','S','T','R','O','M','='};
+    u16 bw, n;
+    u8 i, r;
 
     n = 0;
     for (i = 0; i < 8; i++) CFGBUF[n++] = k_fl[i];
@@ -389,6 +412,12 @@ static u8 cfg_save(void) {
         CFGBUF[n++] = 0x0d;
         CFGBUF[n++] = 0x0a;
     }
+    if (LR_VALID) {
+        for (i = 0; i < 8; i++) CFGBUF[n++] = k_lr[i];
+        for (i = 0; LR_PATH[i]; i++) CFGBUF[n++] = LR_PATH[i];
+        CFGBUF[n++] = 0x0d;
+        CFGBUF[n++] = 0x0a;
+    }
     while (n < REC_LEN) CFGBUF[n++] = ' ';
 
     copy_name(cfg_name);
@@ -400,4 +429,75 @@ static u8 cfg_save(void) {
     sd_prep();
     FarCall_03_768f(FIL_OBJ);
     return r;
+}
+
+/* ---- LASTROM: the START overlay's fallback when the $A300 record died ---- */
+
+/* "[/]path" -> LR_PATH, capped at PATH_MAX. Empty value = no entry. */
+static void parse_lastrom(const u8 *v, u16 len) {
+    u8 n;
+    u16 i;
+    if (len == 0) return;
+    n = 0;
+    if (v[0] != '/') LR_PATH[n++] = '/';
+    for (i = 0; i < len && n < PATH_MAX; i++) LR_PATH[n++] = v[i];
+    LR_PATH[n] = 0;
+    LR_VALID = 1;
+}
+
+/* A plausible launch path: starts with '/', NUL within 254 bytes, no control
+ * bytes or $FF, and a non-empty basename containing a '.'. Random NVRAM
+ * fails the first byte alone with probability 255/256. */
+static u8 path_valid(const u8 *p) {
+    u8 i, c, dot, base;
+    if (p[0] != '/') return 0;
+    dot = 0;
+    base = 1;
+    for (i = 1; ; i++) {
+        if (i == 255) return 0;
+        c = p[i];
+        if (c == 0) break;
+        if (c < 0x20 || c == 0xFF) return 0;
+        if (c == '/') { base = (u8)(i + 1); dot = 0; }
+        if (c == '.') dot = 1;
+    }
+    return (i > base && dot) ? 1 : 0;
+}
+
+/* Launch (LastRomPersist, 01:4856): record the launch path as LASTROM=.
+ * Runs before the kernel selects its NVRAM page, so no FPGA state to restore. */
+static void lastrom_save(void) {
+    u8 n;
+    cfg_load();
+    for (n = 0; n <= PATH_MAX && LAUNCH_PATH[n]; n++) {}
+    if (n != 0 && n <= PATH_MAX) {
+        u8 i;
+        for (i = 0; i < n; i++) LR_PATH[i] = LAUNCH_PATH[i];
+        LR_PATH[n] = 0;
+        LR_VALID = 1;
+    }
+    cfg_save();
+}
+
+/* START overlay (after LastRomLoadRecord copied $A300 into OVL_PATH):
+ * EZ_RES = 1 with a usable path in OVL_PATH, else "(none)" is shown until B
+ * and EZ_RES = 0. The NVRAM copy wins when it is valid (no SD access at all);
+ * otherwise the file's LASTROM= takes its place. */
+static void lastrom_load(void) {
+    static const u8 none_str[7] = {'(','n','o','n','e',')',0};
+    u8 i;
+    if (path_valid(OVL_PATH)) { EZ_RES = 1; return; }
+    cfg_load();
+    if (LR_VALID && path_valid(LR_PATH)) {
+        for (i = 0; ; i++) { OVL_PATH[i] = LR_PATH[i]; if (LR_PATH[i] == 0) break; }
+        fpga_page(3);                     /* what LastRomOverlay had selected */
+        EZ_RES = 1;
+        return;
+    }
+    DrawString(none_str, 0x14, 0, 0x0f);  /* the overlay's basename line */
+    for (;;) {
+        WaitVBlankFlag();
+        if (ReadJoypad() & 0x20) break;   /* B */
+    }
+    EZ_RES = 0;
 }

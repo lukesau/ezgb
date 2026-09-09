@@ -9,7 +9,9 @@ cell costs you at most the time since your last save, not 26 years.
 
 It also replaces `FLAUNCH.CFG` with a single `EZGB.CFG` holding every
 on-card setting as `key=value` lines, so future settings do not each need
-their own file.
+their own file. As of mod 3.8 it also stores `LASTROM=`, the SD fallback for
+the START overlay's last-ROM record when the coin cell has died (see
+[last-rom.md](last-rom.md)).
 
 Mod version 3.x (2026-09-08). Emulator-verified end to end under SameBoy;
 **not yet hardware-tested** (see "Verification status").
@@ -28,6 +30,7 @@ RTC=2026-09-08 10:15:32
 | Key | Value | Written by |
 |---|---|---|
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
+| `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `RTC` | Last known good clock. Only the digits matter: the first 14 digits in order are `YYYYMMDDhhmmss`, so `2026-09-08 10:15:32` and `20260908101532` are the same value. Century is dropped (the RTC keeps two year digits, 20xx). | every save-to-SD dump, every TIME SET confirm |
 
 The firmware rewrites the whole file from its known keys as a fixed 192-byte
@@ -92,7 +95,7 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 2242 B | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE. |
+| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 3028 B | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE, 5 LASTLOAD. |
 | `FastLaunchScan` | `02:4500`, [decomp/src/fastlaunch.c](../decomp/src/fastlaunch.c), 766 B | Now calls `ezcfg` (op LOAD) instead of parsing a file itself; skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:5990`, [decomp/src/flcfg.c](../decomp/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
@@ -120,7 +123,9 @@ no version-specific address.
 
 | Addr | Use |
 |---|---|
-| `$D980-$DA7F` | `CFGBUF`, 256 B: file contents on read, record on write (moved from `$DA00`, where a 256-byte record would have run into `FL_EN`) |
+| `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
+| `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
+| `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
 | `$DA80` / `$DA81` / `$DA82-$DAF9` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |
 | `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged) |
