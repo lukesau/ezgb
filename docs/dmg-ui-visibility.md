@@ -96,7 +96,7 @@ repurposed, labelled `FolderIconGlyphs` in `kernel.sym`:
 | `$C3` | `00:381e` | boxed `?` for any other file type |
 
 Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,
-`7E 81 A9 95 A9 81 7E 00`, `7E 99 85 89 81 89 7E 00`. Redraw the carts by writing 8 bytes at those
+`7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`. Redraw the carts by writing 8 bytes at those
 offsets. Bit 0 of each row is the pixel next to the name's first letter, so
 leaving it clear gives a 1px gap.
 

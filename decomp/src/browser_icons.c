@@ -13,41 +13,40 @@
  * has, so it inverts with the selection bar. Any call with x != 0 (none of
  * the retargeted ones) falls through to DrawString unchanged.
  *
- * Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart, $C3 boxed "?" for
- * anything else (FolderIconGlyphs, 00:3806). */
+ * Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart, $C4 .sav floppy,
+ * $C3 boxed "?" for anything else (FolderIconGlyphs, 00:3806). */
 
 typedef unsigned char u8;
 
+#define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
+
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
 
-static u8 up(u8 c);   /* defined after: inject.py pins the FIRST-defined function at the origin */
-
 void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y) {
-    static const u8 icon_dir[2]  = { 0xC0, 0 };
-    static const u8 icon_gb[2]   = { 0xC1, 0 };
-    static const u8 icon_gbc[2]  = { 0xC2, 0 };
-    static const u8 icon_unk[2]  = { 0xC3, 0 };
-    const u8 *icon;
-    u8 i, dot, n, e;
+    u8 i, dot, n, e, c1, c2, ic;
 
     (void)x;
     if (len == 0) {
-        icon = icon_dir;
+        ic = 0xC0;                       /* folder */
         len = 16;
     } else {
         dot = 0xFF;
         for (i = 0; i < 254 && s[i]; i++) if (s[i] == '.') dot = i;
         n = i;
-        icon = icon_unk;
-        if (dot != 0xFF && up(s[dot + 1]) == 'G' && up(s[dot + 2]) == 'B') {
+        ic = 0xC3;                       /* boxed "?" */
+        if (dot != 0xFF) {
             e = (u8)(n - dot - 1);
-            if (e == 2) icon = icon_gb;
-            else if (e == 3 && up(s[dot + 3]) == 'C') icon = icon_gbc;
+            c1 = UP(s[dot + 1]);
+            c2 = UP(s[dot + 2]);
+            if (c1 == 'G' && c2 == 'B') {
+                if (e == 2) ic = 0xC1;                            /* .gb  */
+                else if (e == 3 && UP(s[dot + 3]) == 'C') ic = 0xC2;   /* .gbc */
+            } else if (e == 3 && c1 == 'S' && c2 == 'A' && UP(s[dot + 3]) == 'V') {
+                ic = 0xC4;               /* .sav floppy */
+            }
         }
         len--;
     }
-    DrawString(icon, 1, 0, y);
+    DrawString(&ic, 1, 0, y);
     DrawString(s, len, 1, y);
 }
-
-static u8 up(u8 c) { return (c >= 'a' && c <= 'z') ? (u8)(c - 32) : c; }
