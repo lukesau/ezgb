@@ -1140,7 +1140,7 @@ SyncFs_B7_fillWin::
     ld e, [hl]
     inc hl
     ld d, [hl]
-    ld hl, $01ec
+    ld hl, UiRowsHL
     add hl, de
     ld a, l
     ld d, h

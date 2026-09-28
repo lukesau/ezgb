@@ -294,18 +294,21 @@ DrawBrowserEntries_clampRows::
     ld [hl], c
     inc hl
     ld [hl], b
-    ld a, $10
-    dec hl
-    sub [hl]
-    ld a, $00
-    inc hl
-    sbc [hl]
-    jp nc, DrawBrowserEntries_clearInk
-
-    dec hl
-    ld [hl], $10
-    inc hl
-    ld [hl], $00
+    call $01fb
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 DrawBrowserEntries_clearInk::
     ld hl, $0000

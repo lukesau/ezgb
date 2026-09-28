@@ -4439,7 +4439,7 @@ DrawTimeAutosaveScreen_hiliteInc::
     ld a, [hl]
 
 FlSetHiliteClamp::
-    db $d6, $03
+    db $d6, $04
 
     jp nc, DrawTimeAutosaveScreen_redraw
 
@@ -5106,24 +5106,29 @@ FlPickCommitFar::
 FlCfg::
     db $f8, $02, $2a, $c6, $3d, $4f, $2a, $ce
     db $00, $47, $7e, $b7, $20, $1e, $21, $fe
-    db $db, $36, $00, $c5, $cd, $1c, $5a, $cd
-    db $f9, $5a, $c1, $0a, $f5, $33, $cd, $cc
-    db $5b, $33, $af, $f5, $33, $cd, $6e, $46
+    db $db, $36, $00, $c5, $cd, $44, $5a, $cd
+    db $21, $5b, $c1, $0a, $f5, $33, $cd, $09
+    db $5c, $33, $af, $f5, $33, $cd, $6e, $46
     db $33, $1e, $00, $c9, $f8, $04, $7e, $3d
-    db $20, $0a, $0a, $f5, $33, $cd, $cc, $5b
+    db $20, $0a, $0a, $f5, $33, $cd, $09, $5c
     db $33, $1e, $00, $c9, $f8, $04, $7e, $d6
-    db $02, $20, $36, $0a, $fe, $02, $20, $26
+    db $02, $20, $5e, $0a, $fe, $02, $20, $26
     db $fa, $80, $da, $b7, $28, $03, $af, $18
-    db $02, $3e, $01, $ea, $80, $da, $cd, $24
-    db $5a, $3e, $02, $f5, $33, $cd, $cc, $5b
-    db $33, $cd, $f1, $5a, $af, $f5, $33, $cd
+    db $02, $3e, $01, $ea, $80, $da, $cd, $4c
+    db $5a, $3e, $02, $f5, $33, $cd, $09, $5c
+    db $33, $cd, $19, $5b, $af, $f5, $33, $cd
+    db $6e, $46, $33, $1e, $00, $c9, $fe, $04
+    db $20, $24, $f0, $fb, $b7, $28, $03, $af
+    db $18, $02, $3e, $01, $e0, $fb, $cd, $4c
+    db $5a, $3e, $04, $f5, $33, $cd, $09, $5c
+    db $33, $cd, $19, $5b, $af, $f5, $33, $cd
     db $6e, $46, $33, $1e, $00, $c9, $21, $fe
-    db $db, $36, $01, $cd, $f1, $5a, $1e, $01
+    db $db, $36, $01, $cd, $19, $5b, $1e, $01
     db $c9, $f8, $04, $7e, $d6, $03, $20, $06
-    db $cd, $2c, $5a, $1e, $00, $c9, $cd, $1c
+    db $cd, $54, $5a, $1e, $00, $c9, $cd, $44
     db $5a, $1e, $00, $c9, $21, $fc, $db, $36
     db $00, $c3, $00, $5f, $21, $fc, $db, $36
-    db $01, $c3, $00, $5f, $e8, $fb, $cd, $1c
+    db $01, $c3, $00, $5f, $e8, $fb, $cd, $44
     db $5a, $0e, $00, $69, $26, $00, $11, $a6
     db $c2, $19, $7e, $b7, $28, $03, $0c, $18
     db $f2, $f8, $00, $71, $0e, $00, $69, $26
@@ -5146,212 +5151,76 @@ FlCfg::
     db $79, $f8, $01, $96, $30, $0f, $04, $79
     db $c6, $a4, $6f, $3e, $00, $ce, $c4, $67
     db $7e, $12, $0c, $18, $e2, $af, $12, $21
-    db $81, $da, $70, $cd, $24, $5a, $21, $fe
-    db $db, $36, $00, $cd, $f1, $5a, $e8, $05
+    db $81, $da, $70, $cd, $4c, $5a, $21, $fe
+    db $db, $36, $00, $cd, $19, $5b, $e8, $05
     db $c9, $cd, $91, $36, $cb, $63, $20, $f9
     db $c9, $af, $0f, $f5, $af, $3e, $03, $f5
     db $33, $cd, $d8, $23, $e8, $03, $3e, $09
-    db $f5, $33, $21, $0c, $00, $e5, $11, $2b
+    db $f5, $33, $21, $0c, $00, $e5, $11, $64
     db $5b, $d5, $cd, $b7, $08, $e8, $05, $3e
     db $0b, $f5, $33, $21, $04, $00, $e5, $11
-    db $38, $5b, $d5, $cd, $b7, $08, $e8, $05
-    db $c3, $3d, $5b, $46, $41, $53, $54, $20
-    db $4c, $41, $55, $4e, $43, $48, $3a, $00
-    db $52, $4f, $4d, $3a, $00, $0e, $00, $69
-    db $26, $00, $11, $10, $db, $19, $36, $00
-    db $0c, $79, $d6, $28, $38, $f1, $fa, $81
-    db $da, $b7, $20, $05, $01, $c5, $5b, $18
-    db $1f, $0e, $00, $59, $21, $82, $da, $16
-    db $00, $19, $7e, $b7, $28, $09, $fe, $2f
-    db $20, $02, $4b, $0c, $1c, $18, $ed, $79
-    db $c6, $82, $4f, $3e, $00, $ce, $da, $47
-    db $1e, $00, $7b, $d6, $28, $30, $16, $6b
-    db $26, $00, $09, $56, $7a, $b7, $28, $0d
-    db $7b, $c6, $10, $6f, $3e, $00, $ce, $db
-    db $67, $72, $1c, $18, $e5, $af, $0f, $f5
-    db $af, $3e, $03, $f5, $33, $cd, $d8, $23
-    db $e8, $03, $3e, $0d, $f5, $33, $21, $14
-    db $00, $e5, $11, $10, $db, $d5, $cd, $b7
-    db $08, $e8, $05, $3e, $0e, $f5, $33, $21
-    db $14, $00, $e5, $11, $24, $db, $d5, $cd
-    db $b7, $08, $e8, $05, $c9, $28, $41, $55
-    db $54, $4f, $29, $00, $af, $0f, $f5, $af
+    db $71, $5b, $d5, $cd, $b7, $08, $e8, $05
+    db $3e, $10, $f5, $33, $21, $03, $00, $e5
+    db $11, $76, $5b, $d5, $cd, $b7, $08, $e8
+    db $05, $c3, $7a, $5b, $46, $41, $53, $54
+    db $20, $4c, $41, $55, $4e, $43, $48, $3a
+    db $00, $52, $4f, $4d, $3a, $00, $55, $49
+    db $3a, $00, $0e, $00, $69, $26, $00, $11
+    db $10, $db, $19, $36, $00, $0c, $79, $d6
+    db $28, $38, $f1, $fa, $81, $da, $b7, $20
+    db $05, $01, $02, $5c, $18, $1f, $0e, $00
+    db $59, $21, $82, $da, $16, $00, $19, $7e
+    db $b7, $28, $09, $fe, $2f, $20, $02, $4b
+    db $0c, $1c, $18, $ed, $79, $c6, $82, $4f
+    db $3e, $00, $ce, $da, $47, $1e, $00, $7b
+    db $d6, $28, $30, $16, $6b, $26, $00, $09
+    db $56, $7a, $b7, $28, $0d, $7b, $c6, $10
+    db $6f, $3e, $00, $ce, $db, $67, $72, $1c
+    db $18, $e5, $af, $0f, $f5, $af, $3e, $03
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $3e
+    db $0d, $f5, $33, $21, $14, $00, $e5, $11
+    db $10, $db, $d5, $cd, $b7, $08, $e8, $05
+    db $3e, $0e, $f5, $33, $21, $14, $00, $e5
+    db $11, $24, $db, $d5, $cd, $b7, $08, $e8
+    db $05, $c9, $28, $41, $55, $54, $4f, $29
+    db $00, $af, $0f, $f5, $af, $f5, $33, $cd
+    db $d8, $23, $e8, $03, $21, $50, $01, $e5
+    db $21, $48, $8a, $e5, $3e, $82, $f5, $33
+    db $cd, $01, $24, $e8, $05, $f8, $02, $7e
+    db $d6, $02, $20, $10, $af, $67, $2e, $01
+    db $e5, $3e, $01, $f5, $33, $cd, $d8, $23
+    db $e8, $03, $18, $0d, $af, $0f, $f5, $af
+    db $3e, $03, $f5, $33, $cd, $d8, $23, $e8
+    db $03, $af, $67, $2e, $50, $e5, $21, $48
+    db $8a, $e5, $3e, $82, $f5, $33, $cd, $01
+    db $24, $e8, $05, $fa, $80, $da, $b7, $28
+    db $1f, $af, $67, $2e, $03, $e5, $3e, $03
     db $f5, $33, $cd, $d8, $23, $e8, $03, $21
-    db $50, $01, $e5, $21, $48, $8a, $e5, $3e
-    db $82, $f5, $33, $cd, $01, $24, $e8, $05
-    db $f8, $02, $7e, $d6, $02, $20, $10, $af
-    db $67, $2e, $01, $e5, $3e, $01, $f5, $33
-    db $cd, $d8, $23, $e8, $03, $18, $0d, $af
-    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
-    db $d8, $23, $e8, $03, $af, $67, $2e, $50
-    db $e5, $21, $48, $8a, $e5, $3e, $82, $f5
-    db $33, $cd, $01, $24, $e8, $05, $fa, $80
-    db $da, $b7, $28, $1f, $af, $67, $2e, $03
-    db $e5, $3e, $03, $f5, $33, $cd, $d8, $23
-    db $e8, $03, $21, $4e, $01, $e5, $21, $4a
-    db $88, $e5, $3e, $84, $f5, $33, $cd, $01
-    db $24, $e8, $05, $f8, $02, $7e, $d6, $03
-    db $20, $0e, $21, $03, $00, $e5, $af, $f5
-    db $33, $cd, $d8, $23, $e8, $03, $18, $0d
-    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
-    db $cd, $d8, $23, $e8, $03, $21, $61, $01
-    db $e5, $21, $55, $9b, $e5, $3e, $73, $f5
-    db $33, $cd, $01, $24, $e8, $05, $21, $0f
-    db $0b, $e5, $3e, $04, $f5, $33, $11, $95
-    db $5c, $d5, $cd, $b7, $08, $e8, $05, $af
-    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
-    db $d8, $23, $e8, $03, $c9, $50, $49, $43
-    db $4b, $00
+    db $4e, $01, $e5, $21, $4a, $88, $e5, $3e
+    db $84, $f5, $33, $cd, $01, $24, $e8, $05
+    db $f8, $02, $7e, $d6, $03, $20, $0e, $21
+    db $03, $00, $e5, $af, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $18, $0d, $af, $0f, $f5
+    db $af, $3e, $03, $f5, $33, $cd, $d8, $23
+    db $e8, $03, $21, $61, $01, $e5, $21, $55
+    db $9b, $e5, $3e, $73, $f5, $33, $cd, $01
+    db $24, $e8, $05, $21, $0f, $0b, $e5, $3e
+    db $04, $f5, $33, $11, $20, $5d, $d5, $cd
+    db $b7, $08, $e8, $05, $f8, $02, $7e, $d6
+    db $04, $20, $0e, $21, $03, $00, $e5, $af
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $18
+    db $0d, $af, $0f, $f5, $af, $3e, $03, $f5
+    db $33, $cd, $d8, $23, $e8, $03, $21, $89
+    db $01, $e5, $21, $7d, $9b, $e5, $3e, $73
+    db $f5, $33, $cd, $01, $24, $e8, $05, $f0
+    db $fb, $b7, $28, $05, $01, $2a, $5d, $18
+    db $03, $01, $25, $5d, $21, $0f, $10, $e5
+    db $3e, $04, $f5, $33, $c5, $cd, $b7, $08
+    db $e8, $05, $af, $0f, $f5, $af, $3e, $03
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $c9
+    db $50, $49, $43, $4b, $00, $20, $38, $70
+    db $78, $00, $31, $32, $70, $78, $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -5831,7 +5700,7 @@ FarCallEzCfg::
     rst RST_38
 
 RtcSetHook::
-    db $3e, $02, $ea, $fc, $db, $cd, $00, $5f
+    db $3e, $02, $ea, $d5, $db, $cd, $00, $5f
     db $c3, $f5, $48
 
     rst RST_38

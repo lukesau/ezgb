@@ -1179,7 +1179,7 @@ SyncFs_B9_buildFsInfo::
     ld e, [hl]
     inc hl
     ld d, [hl]
-    ld hl, $01ec
+    ld hl, UiRowsHL
     add hl, de
     ld c, l
     ld b, h

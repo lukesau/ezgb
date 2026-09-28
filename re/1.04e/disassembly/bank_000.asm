@@ -172,108 +172,21 @@ CallHL::
     jp hl
 
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+DrawGlyphSafe::
+    db $21, $02, $2c, $16, $00, $fa, $0c, $d7
+    db $07, $07, $07, $5f, $19, $19, $46, $23
+    db $66, $68, $fa, $0b, $d7, $07, $07, $07
+    db $5f, $19, $19, $79, $44, $4d, $62, $6f
+    db $29, $29, $29, $11, $4d, $2e, $19, $54
+    db $5d, $60, $69, $fa, $0d, $d7, $4f, $1a
+    db $13, $d5, $e5, $21, $0e, $d7, $6e, $47
+    db $af, $cb, $45, $28, $01, $2f, $b0, $cb
+    db $41, $20, $01, $a8, $57, $af, $cb, $4d
+    db $28, $01, $2f, $b0, $cb, $49, $20, $01
+    db $a8, $5f, $e1, $f3, $f0, $41, $cb, $4f
+    db $20, $fa, $7a, $22, $7b, $22, $fb, $d1
+    db $7d, $e6, $0f, $20, $ca, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -424,39 +337,210 @@ HaltLoop::
     ret
 
 
-BrowserScroll::
-    db $e8, $f1, $f8, $11, $2a, $47, $4e, $78
-    db $c6, $01, $f5, $f8, $02, $f1, $22, $79
-    db $ce, $00, $22, $d1, $d5, $1a, $22, $13
-    db $1a, $22, $78, $c6, $03, $22, $79, $ce
-    db $00, $32, $2a, $5f, $2a, $57, $1a, $77
-    db $2a, $22, $af, $32, $2a, $23, $c6, $01
-    db $22, $3e, $00, $ce, $00, $22, $11, $a2
-    db $c2, $1a, $22, $13, $1a, $22, $78, $22
-    db $71, $f8, $09, $2a, $d6, $10, $7e, $de
-    db $00, $30, $2a, $f8, $07, $7e, $06, $00
-    db $f8, $02, $86, $23, $4f, $78, $8e, $47
-    db $03, $f8, $0b, $79, $96, $23, $78, $9e
-    db $30, $4f, $f8, $06, $3a, $2b, $3c, $5e
-    db $23, $66, $6b, $77, $f8, $0d, $2a, $66
-    db $6f, $36, $02, $18, $3c, $f8, $02, $2a
-    db $c6, $10, $4f, $7e, $ce, $00, $47, $f8
-    db $0b, $79, $96, $23, $78, $9e, $38, $17
-    db $fa, $a4, $c5, $b7, $20, $23, $c5, $cd
-    db $47, $0a, $c1, $21, $a2, $c2, $2a, $66
-    db $6f, $79, $95, $78, $9c, $30, $12, $f8
-    db $02, $2a, $4f, $46, $03, $e1, $e5, $79
-    db $22, $70, $f8, $0d, $2a, $66, $6f, $36
-    db $01, $e8, $0f, $c9, $e8, $fa, $f8, $08
-    db $2a, $4f, $46, $59, $50, $13, $13, $13
-    db $1a, $f8, $05, $77, $e1, $c5, $b7, $28
-    db $0b, $f8, $05, $7e, $3d, $12, $e1, $36
-    db $03, $e5, $18, $21, $03, $59, $50, $1a
-    db $f8, $02, $22, $13, $1a, $77, $3a, $b6
-    db $28, $13, $2a, $23, $c6, $ff, $32, $2a
-    db $23, $ce, $ff, $32, $2a, $02, $03, $7e
-    db $02, $e1, $36, $01, $e5, $e8, $06, $c9
+UiRows::
+    db $f0, $fb, $b7, $3e, $10, $c8, $3e, $0a
+    db $c9
 
+UiRowsHL::
+    db $cd, $e3, $01, $6f, $26, $00, $c9
+
+UiRowsMinus1BC::
+    db $cd, $e3, $01, $3d, $4f, $06, $00, $c9
+
+ClampBrowserRows::
+    db $cd, $e3, $01, $47, $2b, $96, $3e, $00
+    db $23, $9e, $d0, $2b, $70, $23, $36, $00
+    db $c9
+
+MarqueeWidth::
+    db $f0, $fb, $b7, $3e, $13, $28, $02, $3e
+    db $0c, $f8, $11, $77, $c9
+
+MarqueeDraw::
+    db $f0, $fb, $b7, $ca, $b7, $08, $c3, $c0
+    db $05
+
+MarqueeShift::
+    db $d1, $f0, $fb, $3c, $f5, $d5, $c9
+
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -474,64 +558,25 @@ BrowserScrollDownHook::
     rst RST_38
 
 BrowserScrollUpHook::
-    db $f8, $12, $e5, $cd, $97, $02, $e8, $02
+    db $f8, $12, $e5, $cd, $bb, $3f, $e8, $02
     db $c3, $92, $16
 
 BrowserPageEnd::
-    db $3b, $3b, $21, $a2, $c2, $2a, $4f, $46
-    db $78, $b1, $28, $32, $f8, $04, $7e, $f8
-    db $00, $77, $f8, $05, $7e, $f8, $01, $77
-    db $e1, $e5, $23, $2a, $66, $6f, $79, $95
-    db $4f, $78, $9c, $47, $3e, $10, $b9, $3e
-    db $00, $98, $30, $03, $01, $10, $00, $0d
-    db $e1, $e5, $23, $23, $23, $7e, $91, $28
-    db $05, $71, $e1, $36, $01, $e5, $33, $33
-    db $c9
+    db $e8, $fa, $11, $a2, $c2, $1a, $f8, $00
+    db $22, $13, $1a, $77, $3a, $b6, $28, $5a
+    db $f8, $08, $2a, $4f, $46, $69, $60, $23
+    db $5d, $54, $1a, $f8, $02, $22, $13, $1a
+    db $77, $f8, $00, $2a, $23, $96, $23, $23
+    db $32, $2b, $2b, $2a, $23, $9e, $23, $23
+    db $77, $fa, $fb, $ff, $b7, $1e, $0a, $20
+    db $02, $1e, $10, $16, $00, $f8, $04, $7b
+    db $96, $23, $7a, $9e, $30, $13, $fa, $fb
+    db $ff, $b7, $28, $05, $1e, $0a, $af, $18
+    db $03, $1e, $10, $af, $f8, $04, $73, $23
+    db $77, $f8, $04, $5e, $1d, $69, $60, $23
+    db $23, $23, $7e, $93, $28, $04, $73, $3e
+    db $01, $02, $e8, $06, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -653,7 +698,7 @@ BrowserSortAllStub::
     db $cd, $8d, $07, $6b, $74, $08, $00, $c9
 
 FarCallDrawDetailBottom::
-    db $3e, $02, $f5, $33, $01, $0f, $00, $c5
+    db $3e, $02, $f5, $33, $cd, $f3, $01, $c5
     db $f8, $05, $2a, $66, $6f, $e5, $cd, $8d
     db $07, $ba, $42, $01, $00, $e8, $05, $c9
 
@@ -748,7 +793,7 @@ DirListHideNameStub::
     db $0a
 
 FlPickHook::
-    db $fa, $fe, $db, $b7, $28, $0a, $cd, $8d
+    db $fa, $d7, $db, $b7, $28, $0a, $cd, $8d
     db $07, $76, $59, $04, $00, $c3, $43, $12
     db $cd, $8d, $07, $0b, $48, $01, $00, $c3
     db $64, $15
@@ -762,14 +807,14 @@ FlPickHook::
     rst RST_38
 
 FlSetExitHook::
-    db $fa, $fe, $db, $b7, $c2, $81, $0f, $f8
+    db $fa, $d7, $db, $b7, $c2, $81, $0f, $f8
     db $0e, $36, $02, $c3, $5b, $12
 
     rst RST_38
     rst RST_38
 
 FlPickCancelHook::
-    db $fa, $fe, $db, $b7, $ca, $92, $16, $c3
+    db $fa, $d7, $db, $b7, $ca, $92, $16, $c3
     db $43, $12
 
     rst RST_38
@@ -788,7 +833,7 @@ FlPickCancelHook::
     rst RST_38
 
 RtcBootHook::
-    db $3e, $03, $ea, $fc, $db, $cd, $8d, $07
+    db $3e, $03, $ea, $d5, $db, $cd, $8d, $07
     db $00, $4a, $02, $00, $3e, $11, $ea, $00
     db $40, $cd, $8d, $07, $e7, $41, $04, $00
     db $c3, $54, $0e
@@ -800,7 +845,7 @@ RtcBootHook::
     rst RST_38
 
 BatteryDryHook::
-    db $3e, $01, $ea, $fd, $db, $01, $01, $a2
+    db $3e, $01, $ea, $d6, $db, $01, $01, $a2
     db $3e, $88, $02, $c9
 
     rst RST_38
@@ -809,8 +854,8 @@ BatteryDryHook::
     rst RST_38
 
 LastRomFallbackHook::
-    db $3e, $05, $ea, $fc, $db, $cd, $8d, $07
-    db $00, $4a, $02, $00, $fa, $fb, $db, $b7
+    db $3e, $05, $ea, $d5, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $fa, $d4, $db, $b7
     db $c2, $e5, $12, $c3, $83, $13
 
 DirEnterBoundCheck::
@@ -878,51 +923,19 @@ DirEnterBoundCheck::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+FarCallDrawString12::
+    db $cd, $8d, $07, $00, $75, $02, $00, $c9
+
+VramWaitSpin::
+    db $f0, $41, $cb, $4f, $20, $fa, $c9
+
+VBlankPadLatch::
+    db $f0, $40, $f6, $10, $e0, $40, $3e, $48
+    db $e0, $45, $c5, $cd, $5d, $36, $47, $f0
+    db $fc, $2f, $a0, $4f, $78, $e0, $fc, $f0
+    db $fd, $b1, $e0, $fd, $c1, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -2446,14 +2459,14 @@ DrawDirEntryLabel_skipDirWidth::
 
 
 DrawDirEntryLabel_dirWidth11::
-    ld hl, sp+$0f
-    ld [hl], $13
+    call $020c
+    nop
     jp DrawDirEntryLabel_scrollCheck
 
 
 DrawDirEntryLabel_fileWidth14::
-    ld hl, sp+$0f
-    ld [hl], $13
+    call $020c
+    nop
 
 DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$0f
@@ -2488,8 +2501,7 @@ DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    ld a, $01
-    push af
+    call $0222
     inc sp
     ld a, [hl+]
     ld h, [hl]
@@ -2685,7 +2697,7 @@ DrawDirEntryLabel_drawEllipsis::
     inc sp
     ld hl, $c4a4
     push hl
-    call DrawString
+    call $0219
     add sp, $05
 
 DrawDirEntryLabel_epilogueRet::
@@ -3323,7 +3335,7 @@ FileBrowserEntry_pageDec::
     ld e, [hl]
     inc hl
     ld d, [hl]
-    ld hl, $0010
+    call $01ec
     ld a, e
     sub l
     ld e, a
@@ -3381,7 +3393,7 @@ FileBrowserEntry_pageInc::
     ld e, [hl]
     inc hl
     ld d, [hl]
-    ld hl, $0010
+    call $01ec
     add hl, de
     ld c, l
     ld b, h
@@ -3429,7 +3441,7 @@ FileBrowserEntry_pageIncClamp::
     ld e, [hl]
     ld hl, $c2a3
     ld d, [hl]
-    ld hl, $0010
+    call $01ec
     ld a, e
     sub l
     ld e, a
@@ -6827,25 +6839,25 @@ ApplyPixel_checkPlane1::
     ld e, $00
 
 ApplyPixel_waitStatWrite::
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, ApplyPixel_waitStatWrite
+    jp $234b
 
-    ld a, [hl]
-    and c
-    or b
-    ld [hl+], a
-    ld a, [hl]
-    and c
-    or e
-    ld [hl], a
-    ld a, b
-    or a
-    ret nz
 
-    pop bc
-    ret
-
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 jr_000_22c5:
     ld c, b
@@ -6861,18 +6873,19 @@ jr_000_22cc:
     ld c, $00
 
 jr_000_22d2:
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, jr_000_22d2
+    jp $2360
 
-    ld a, [hl]
-    or b
-    ld [hl+], a
-    ld a, [hl]
-    or c
-    ld [hl], a
-    ret
 
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 jr_000_22df:
     ld c, b
@@ -6888,18 +6901,19 @@ jr_000_22e6:
     ld c, $00
 
 jr_000_22ec:
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, jr_000_22ec
+    jp $236f
 
-    ld a, [hl]
-    xor b
-    ld [hl+], a
-    ld a, [hl]
-    xor c
-    ld [hl], a
-    ret
 
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 jr_000_22f9:
     ld b, c
@@ -6915,18 +6929,19 @@ jr_000_2300:
     ld c, $ff
 
 jr_000_2306:
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, jr_000_2306
+    jp $237e
 
-    ld a, [hl]
-    and b
-    ld [hl+], a
-    ld a, [hl]
-    and c
-    ld [hl], a
-    ret
 
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 ; [ezgb]
 ; GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).
@@ -6956,15 +6971,15 @@ GetPixel::
     ld c, a
 
 GetPixel_waitStat::
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, GetPixel_waitStat
-
+    di
+    call $05c8
     ld a, [hl+]
     ld d, a
+    ei
     ld a, [hl+]
     ld e, a
     ld b, $00
+    nop
     ld a, d
     and c
     jr z, GetPixel_testPlane0
@@ -6991,99 +7006,39 @@ GetPixel_retColor::
 ; jr_000_2754: STAT-wait; [HL++]=D,E; pop DE; if L&$0f → jr_000_2730 else ret. DrawGlyphAdvance wraps + AdvanceTextCursor.
 
 DrawGlyph::
-    ld hl, GfxRowTable
-    ld d, $00
-    ld a, [wTextCursorY]
-    rlca
-    rlca
-    rlca
-    ld e, a
-    add hl, de
-    add hl, de
-    ld b, [hl]
-    inc hl
-    ld h, [hl]
-    ld l, b
-    ld a, [wTextCursorX]
-    rlca
-    rlca
-    rlca
-    ld e, a
-    add hl, de
-    add hl, de
-    ld a, c
-    ld b, h
-    ld c, l
-    ld h, d
-    ld l, a
-    add hl, hl
-    add hl, hl
-    add hl, hl
-    ld de, $2e4d
-    add hl, de
-    ld d, h
-    ld e, l
-    ld h, b
-    ld l, c
-    ld a, [wDrawColor]
-    ld c, a
+    jp $0094
 
-DrawGlyph_rowLoop::
-    ld a, [de]
-    inc de
-    push de
-    push hl
-    ld hl, wDrawColorB
-    ld l, [hl]
-    ld b, a
-    xor a
-    bit 0, l
-    jr z, DrawGlyph_afterColorB0
 
-    cpl
+ApplyPixelSafe::
+    db $f3, $f0, $41, $cb, $4f, $20, $fa, $7e
+    db $a1, $b0, $22, $7e, $a1, $b3, $fb, $77
+    db $78, $b7, $c0, $c1, $c9, $f3, $f0, $41
+    db $cb, $4f, $20, $fa, $7e, $b0, $22, $7e
+    db $b1, $fb, $77, $c9, $f3, $f0, $41, $cb
+    db $4f, $20, $fa, $7e, $a8, $22, $7e, $a9
+    db $fb, $77, $c9, $f3, $f0, $41, $cb, $4f
+    db $20, $fa, $7e, $a0, $22, $7e, $a1, $fb
+    db $77, $c9
 
-DrawGlyph_afterColorB0::
-    or b
-    bit 0, c
-    jr nz, DrawGlyph_plane0Done
+ReadJoypadLatched::
+    db $cd, $5d, $36, $5f, $f3, $f0, $fd, $b3
+    db $5f, $af, $e0, $fd, $7b, $e0, $fc, $fb
+    db $c9
 
-    xor b
-
-DrawGlyph_plane0Done::
-    ld d, a
-    xor a
-    bit 1, l
-    jr z, DrawGlyph_afterColorB1
-
-    cpl
-
-DrawGlyph_afterColorB1::
-    or b
-    bit 1, c
-    jr nz, DrawGlyph_plane1Done
-
-    xor b
-
-DrawGlyph_plane1Done::
-    ld e, a
-    pop hl
-
-DrawGlyph_statWait::
-    ldh a, [rSTAT]
-    bit 1, a
-    jr nz, DrawGlyph_statWait
-
-    ld a, d
-    ld [hl+], a
-    ld a, e
-    ld [hl+], a
-    pop de
-    ld a, l
-    and $0f
-    jr nz, DrawGlyph_rowLoop
-
-    ret
-
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 ; [ezgb]
 ; SetTextCursor: store stack col/row into wTextCursorX/Y ($d732/$d733).
@@ -7853,13 +7808,17 @@ S32DivImpl_epilogueRet::
 ; (BG tile data $8000) and LYC=$48. Pair with LycCb_Bg8800 STAT LYC ISR.
 
 VBlankCb_Bg8000::
-    ldh a, [rLCDC]
-    or $10
-    ldh [rLCDC], a
-    ld a, $48
-    ldh [rLYC], a
-    ret
+    jp $05cf
 
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 ; [ezgb]
 ; LycCb_Bg8800: STAT LYC callback (EnterGfxMode1 → RegisterLcdCallback). Wait
@@ -9579,6 +9538,8 @@ DefaultFontData::
     db $fa, $fb
     db $fc, $fd
     db $fe, $ff
+
+FontGlyphSheet::
     db $00, $00
     db $00, $00
     db $00, $00
@@ -10666,10 +10627,11 @@ WaitJoypadMask::
 ; ReadJoypadRaw ($3a16) is the lower-level read that ends with the swap.
 
 ReadJoypad::
-    call ReadJoypadRaw
-    ld e, a
-    ret
+    jp $238d
 
+
+    nop
+    nop
 
 ; [ezgb]
 ; WaitJoypadMaskArg: stack mask → WaitJoypadMask (B); return pressed in E.
@@ -12461,45 +12423,47 @@ VramFillActiveBgMap_doFill::
     rst RST_38
 
 BrowserScrollDownRepaint::
-    db $e8, $fb, $f8, $07, $2a, $5f, $56, $d5
-    db $cd, $e3, $01, $e1, $f8, $07, $7e, $f8
-    db $03, $77, $f8, $08, $7e, $f8, $04, $32
-    db $3a, $2b, $77, $f8, $04, $3a, $2b, $32
-    db $2a, $5f, $56, $1a, $fe, $01, $20, $70
-    db $f8, $01, $2a, $66, $6f, $36, $00, $f8
-    db $07, $2a, $4f, $46, $79, $c6, $f8, $4f
-    db $78, $ce, $ff, $47, $af, $02, $69, $60
-    db $23, $36, $00, $69, $60, $23, $23, $36
-    db $00, $03, $03, $03, $af, $02, $cd, $a0
-    db $3e, $f8, $03, $3a, $2b, $2b, $c6, $01
-    db $22, $23, $23, $23, $7e, $ce, $00, $f8
-    db $01, $22, $23, $d1, $d5, $1a, $22, $13
-    db $1a, $32, $2a, $5f, $56, $d5, $cd, $dc
-    db $03, $e1, $f8, $04, $36, $0e, $f8, $04
-    db $3a, $22, $7e, $3d, $32, $7e, $b7, $28
-    db $17, $2b, $d1, $d5, $1a, $22, $13, $1a
-    db $22, $3a, $2b, $f5, $33, $2a, $5f, $56
-    db $d5, $cd, $27, $3e, $e8, $03, $18, $de
-    db $e8, $05, $c9, $e8, $fc, $f8, $08, $3a
-    db $2b, $0e, $00, $86, $23, $5f, $79, $8e
-    db $4f, $7b, $e6, $1f, $f8, $00, $22, $36
-    db $00, $f8, $08, $46, $04, $04, $7b, $cb
-    db $39, $cb, $1f, $cb, $39, $cb, $1f, $cb
-    db $39, $cb, $1f, $cb, $39, $cb, $1f, $cb
-    db $39, $cb, $1f, $c6, $12, $ea, $00, $40
-    db $f8, $00, $4e, $af, $96, $23, $23, $32
-    db $79, $9e, $23, $23, $32, $2a, $5f, $7e
-    db $c6, $a0, $57, $21, $fe, $00, $19, $7e
-    db $fe, $10, $20, $19, $c5, $33, $af, $0f
-    db $f5, $d5, $cd, $c8, $3e, $e8, $05, $af
-    db $0f, $f5, $3e, $03, $f5, $33, $cd, $d8
-    db $23, $e8, $03, $18, $0c, $c5, $33, $21
-    db $14, $00, $e5, $d5, $cd, $c8, $3e, $e8
-    db $05, $e8, $04, $c9, $21, $00, $7f, $36
-    db $e1, $2e, $10, $36, $e2, $2e, $20, $36
-    db $e3, $2e, $c0, $36, $03, $2e, $f0, $36
-    db $e4, $c9
+    db $e8, $fc, $f8, $06, $2a, $5f, $56, $d5
+    db $cd, $d0, $3e, $e1, $f8, $06, $7e, $f8
+    db $02, $77, $f8, $07, $7e, $f8, $03, $32
+    db $3a, $2b, $77, $f8, $03, $3a, $2b, $77
+    db $d1, $d5, $1a, $fe, $01, $20, $6e, $e1
+    db $36, $00, $e5, $f8, $06, $2a, $46, $c6
+    db $f8, $4f, $78, $ce, $ff, $47, $af, $02
+    db $69, $60, $23, $36, $00, $69, $60, $23
+    db $23, $36, $00, $03, $03, $03, $af, $02
+    db $cd, $9d, $3e, $f8, $02, $3a, $2b, $c6
+    db $01, $22, $23, $23, $3a, $2b, $ce, $00
+    db $77, $d1, $d5, $1a, $4f, $13, $1a, $47
+    db $c5, $cd, $dc, $03, $e1, $fa, $fb, $ff
+    db $b7, $28, $06, $f8, $03, $36, $08, $18
+    db $04, $f8, $03, $36, $0e, $f8, $03, $46
+    db $78, $05, $b7, $28, $18, $d1, $d5, $1a
+    db $f8, $02, $22, $13, $1a, $32, $c5, $c5
+    db $33, $2a, $5f, $56, $d5, $cd, $24, $3e
+    db $e8, $03, $c1, $18, $e3, $e8, $04, $c9
+    db $e8, $fc, $f8, $08, $3a, $2b, $0e, $00
+    db $86, $23, $5f, $79, $8e, $4f, $7b, $e6
+    db $1f, $f8, $00, $22, $36, $00, $f8, $08
+    db $46, $04, $04, $7b, $cb, $39, $cb, $1f
+    db $cb, $39, $cb, $1f, $cb, $39, $cb, $1f
+    db $cb, $39, $cb, $1f, $cb, $39, $cb, $1f
+    db $c6, $12, $ea, $00, $40, $f8, $00, $4e
+    db $af, $96, $23, $23, $32, $79, $9e, $23
+    db $23, $32, $2a, $5f, $7e, $c6, $a0, $57
+    db $21, $fe, $00, $19, $7e, $fe, $10, $20
+    db $19, $c5, $33, $af, $0f, $f5, $d5, $cd
+    db $c8, $3e, $e8, $05, $af, $0f, $f5, $3e
+    db $03, $f5, $33, $cd, $d8, $23, $e8, $03
+    db $18, $0c, $c5, $33, $21, $14, $00, $e5
+    db $d5, $cd, $c8, $3e, $e8, $05, $e8, $04
+    db $c9, $21, $00, $7f, $36, $e1, $2e, $10
+    db $36, $e2, $2e, $20, $36, $e3, $2e, $c0
+    db $36, $03, $2e, $f0, $36, $e4, $c9
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -12520,95 +12484,46 @@ BrowserScrollDownRepaint::
     rst RST_38
 
 DrawNameWithIcon::
-    db $e8, $fd, $f8, $07, $7e, $b7, $20, $0b
-    db $f8, $00, $36, $c0, $f8, $07, $36, $13
-    db $c3, $9c, $3f, $f8, $01, $3e, $ff, $22
-    db $36, $00, $f8, $02, $7e, $d6, $fe, $30
-    db $20, $f8, $05, $7e, $f8, $02, $86, $23
-    db $23, $23, $23, $4f, $7e, $ce, $00, $47
-    db $0a, $b7, $28, $0d, $fe, $2e, $20, $04
-    db $f8, $02, $3a, $77, $f8, $02, $34, $18
-    db $d9, $f8, $00, $3e, $c3, $22, $7e, $3c
-    db $ca, $99, $3f, $f8, $02, $3a, $96, $23
-    db $3d, $32, $4e, $06, $00, $59, $50, $13
-    db $f8, $05, $2a, $83, $5f, $7e, $8a, $57
-    db $1a, $e6, $df, $f8, $01, $77, $59, $50
-    db $13, $13, $f8, $05, $2a, $83, $5f, $7e
-    db $8a, $57, $1a, $e6, $df, $5f, $f8, $02
-    db $7e, $d6, $03, $3e, $01, $28, $01, $af
-    db $57, $03, $03, $03, $f8, $05, $2a, $81
-    db $4f, $7e, $88, $47, $f8, $01, $7e, $d6
-    db $47, $20, $23, $7b, $d6, $42, $20, $1e
-    db $f8, $02, $7e, $d6, $02, $20, $06, $f8
-    db $00, $36, $c1, $18, $2c, $7a, $b7, $28
-    db $28, $0a, $cb, $af, $fe, $43, $20, $21
-    db $f8, $00, $36, $c2, $18, $1b, $7a, $b7
-    db $28, $17, $f8, $01, $7e, $d6, $53, $20
-    db $10, $7b, $d6, $41, $20, $0b, $0a, $cb
-    db $af, $fe, $56, $20, $04, $f8, $00, $36
-    db $c4, $f8, $07, $35, $f8, $00, $4d, $44
-    db $f8, $09, $7e, $f5, $33, $21, $01, $00
-    db $e5, $c5, $cd, $b7, $08, $e8, $05, $f8
-    db $09, $3a, $2b, $57, $1e, $01, $d5, $3a
-    db $2b, $f5, $33, $2a, $5f, $56, $d5, $cd
-    db $b7, $08, $e8, $08, $c9
+    db $cd, $8d, $07, $00, $73, $02, $00, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+BrowserScroll::
+    db $e8, $f1, $f8, $11, $2a, $4f, $46, $69
+    db $60, $23, $d1, $5d, $54, $d5, $1a, $f8
+    db $02, $22, $13, $1a, $77, $21, $03, $00
+    db $09, $e5, $7d, $f8, $06, $77, $e1, $7c
+    db $f8, $05, $32, $2a, $5f, $2a, $57, $1a
+    db $77, $fa, $fb, $ff, $b7, $1e, $0a, $20
+    db $02, $1e, $10, $f8, $06, $2a, $22, $af
+    db $32, $2a, $23, $c6, $01, $22, $3e, $00
+    db $ce, $00, $22, $7b, $22, $af, $22, $11
+    db $a2, $c2, $1a, $22, $13, $1a, $77, $f8
+    db $09, $5d, $54, $f8, $0b, $1a, $13, $96
+    db $23, $1a, $9e, $30, $26, $f8, $07, $7e
+    db $16, $00, $f8, $02, $86, $23, $5f, $7a
+    db $8e, $57, $13, $f8, $0d, $7b, $96, $23
+    db $7a, $9e, $30, $74, $f8, $06, $3a, $2b
+    db $3c, $5e, $23, $66, $6b, $77, $3e, $02
+    db $02, $18, $65, $f8, $0b, $7e, $1e, $00
+    db $f8, $02, $86, $f5, $f8, $0d, $f1, $77
+    db $7b, $f5, $f8, $05, $f1, $8e, $f8, $0c
+    db $77, $f8, $0b, $5d, $54, $f8, $0d, $1a
+    db $13, $96, $23, $1a, $9e, $38, $23, $fa
+    db $a4, $c5, $b7, $20, $3b, $c5, $cd, $47
+    db $0a, $c1, $11, $a2, $c2, $1a, $f8, $0d
+    db $22, $13, $1a, $77, $f8, $0b, $5d, $54
+    db $f8, $0d, $1a, $13, $96, $23, $1a, $9e
+    db $30, $1e, $f8, $02, $7e, $c6, $01, $f5
+    db $f8, $0f, $f1, $77, $f5, $f8, $05, $f1
+    db $7e, $ce, $00, $f8, $0e, $32, $d1, $d5
+    db $2a, $12, $13, $7e, $12, $3e, $01, $02
+    db $e8, $0f, $c9, $e8, $fa, $f8, $08, $2a
+    db $4f, $46, $59, $50, $13, $13, $13, $1a
+    db $f8, $05, $77, $e1, $c5, $b7, $28, $0b
+    db $f8, $05, $7e, $3d, $12, $e1, $36, $03
+    db $e5, $18, $21, $03, $59, $50, $1a, $f8
+    db $02, $22, $13, $1a, $77, $3a, $b6, $28
+    db $13, $2a, $23, $c6, $ff, $32, $2a, $23
+    db $ce, $ff, $32, $2a, $02, $03, $7e, $02
+    db $e1, $36, $01, $e5, $e8, $06, $c9
+
     rst RST_38
