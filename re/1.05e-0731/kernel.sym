@@ -4440,5 +4440,9 @@
 00:05c8 .data:7:8
 00:2704 ApplyPixelSafe
 00:2704 .data:42:8
+00:05cf VBlankPadLatch
+00:05cf .data:1e:8
+00:2746 ReadJoypadLatched
+00:2746 .data:11:8
 00:3ec8 DrawNameWithIcon
 00:3ec8 .data:fd:8
