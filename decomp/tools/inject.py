@@ -21,7 +21,7 @@ can `call` it normally.
 Usage:
     inject.py <file.c> <version> <bank> <address_hex> <name>
               [--peep peep_file] [--pin SYM=ADDR ...] [--pins pins_file]
-              [--apply] [--regen]
+              [--apply] [--regen] [--replace]
 
 Examples:
     # Dry run: compile, show bytes, do not touch kernel.sym.
@@ -30,6 +30,15 @@ Examples:
     # Write into kernel.sym and regenerate the disassembly.
     inject.py src/fastlaunch_hook.c 1.05e-0731 8 476b FastLaunchHook \\
         --pin DrawString=0e0e --apply --regen
+
+    # Rebuild an already-injected block in place (same address and name).
+    inject.py src/ezcfg.c 1.05e-0731 2 4a00 EzCfg --pin ... --replace --apply
+
+Every run checks that the block fits before anything is written: it must not
+run into another kernel.sym label or .data block in the same bank, and every
+byte it newly occupies must be $FF free space. With --replace the old block's
+own bytes count as free, its kernel.sym entry is updated in place (length
+only, position kept), and a shrunken tail is blanked back to $FF.
 
 Pins work exactly as in verify.py: declare `extern` in the C file, pass
 `--pin name=addr` (or a `--pins` file) for every existing kernel function or
@@ -154,7 +163,61 @@ def build_arg_parser():
     )
     p.add_argument("--apply", action="store_true", help="write into kernel.sym (default: dry run)")
     p.add_argument("--regen", action="store_true", help="also run regen-disasm.sh after --apply")
+    p.add_argument(
+        "--replace", action="store_true",
+        help="rebuild an existing block of the same name at this address in place",
+    )
     return p
+
+
+FREE = 0xFF
+SYM_LINE_RE = re.compile(r"^([0-9a-fA-F]{2}):([0-9a-fA-F]{4}) (\S+)")
+DATA_RE = re.compile(r"^\.data:([0-9a-fA-F]+)")
+
+
+def sym_extents(text, bank):
+    """(start, end, label) for every ROM label/.data entry in `bank`; a plain
+    label is one byte wide, a .data entry spans its length."""
+    out = []
+    for line in text.splitlines():
+        m = SYM_LINE_RE.match(line)
+        if not m or int(m.group(1), 16) != bank:
+            continue
+        addr = int(m.group(2), 16)
+        if addr >= 0x8000:
+            continue
+        d = DATA_RE.match(m.group(3))
+        out.append((addr, addr + (int(d.group(1), 16) if d else 1), m.group(3)))
+    return out
+
+
+def check_fit(text, rom, bank, address, size, old_len):
+    """Exit with a message unless [address, address+size) is free for this
+    block: no other kernel.sym entry inside it, and every byte past the old
+    block (old_len 0 for a new block) is $FF. Returns the $FF bytes free
+    after the block, for the report."""
+    end = address + size
+    limit = 0x4000 if bank == 0 else 0x8000
+    if end > limit:
+        print(f"error: {size} bytes at {bank:02x}:{address:04x} run past the end of the bank")
+        sys.exit(1)
+    for lo, hi, label in sym_extents(text, bank):
+        if lo == address:
+            continue                      # this block's own label/.data entry
+        if lo < end and hi > address:
+            print(f"error: {size} bytes at {bank:02x}:{address:04x}..{end - 1:04x} "
+                  f"would overwrite kernel.sym entry {bank:02x}:{lo:04x} {label}")
+            sys.exit(1)
+    base = rom_offset(bank, address)
+    busy = [address + i for i in range(old_len, size) if rom[base + i] != FREE]
+    if busy:
+        print(f"error: {len(busy)} byte(s) at {bank:02x}:{busy[0]:04x}.. are not $FF free "
+              f"space; the block ({size} bytes) does not fit at {bank:02x}:{address:04x}")
+        sys.exit(1)
+    room = 0
+    while end + room < limit and rom[rom_offset(bank, end + room)] == FREE:
+        room += 1
+    return room
 
 
 def main():
@@ -222,10 +285,30 @@ def main():
 
     existing = open(sym_path, encoding="utf-8").read()
     key = f"{bank:02x}:{address:04x}"
-    if re.search(rf"^{re.escape(key)}\s", existing, re.MULTILINE):
-        print(f"error: {key} already has a kernel.sym entry; pick a different address "
-              f"or remove the existing one first (inject.py never overwrites in place)")
+    data_re = re.compile(rf"^{re.escape(key)} \.data:([0-9a-fA-F]+):\d+$", re.MULTILINE)
+    old = data_re.search(existing)
+    has_entry = re.search(rf"^{re.escape(key)}\s", existing, re.MULTILINE)
+    old_len = 0
+    if args.replace:
+        if not old or not re.search(rf"^{re.escape(key)} {re.escape(args.name)}$", existing, re.MULTILINE):
+            print(f"error: --replace needs an existing '{key} {args.name}' block with a .data entry")
+            sys.exit(1)
+        old_len = int(old.group(1), 16)
+    elif has_entry:
+        print(f"error: {key} already has a kernel.sym entry; pick a different address, "
+              f"or pass --replace to rebuild that block in place")
         sys.exit(1)
+
+    gb_path = kernel_gb_path(args.version)
+    if not os.path.exists(gb_path):
+        print(f"error: {gb_path} not found")
+        sys.exit(1)
+    rom = open(gb_path, "rb").read()
+    room = check_fit(existing, rom, bank, address, len(code_bytes), old_len)
+    grow = len(code_bytes) - old_len
+    print(f"Fits: {len(code_bytes)} bytes"
+          + (f" (was {old_len}, {grow:+d})" if args.replace else "")
+          + f", {room + max(0, -grow)} bytes of $FF free after it")
 
     new_lines = [
         f"{key} {args.name}",
@@ -237,18 +320,19 @@ def main():
         print("\n".join(new_lines))
         return
 
-    gb_path = kernel_gb_path(args.version)
-    if not os.path.exists(gb_path):
-        print(f"error: {gb_path} not found")
-        sys.exit(1)
     offset = rom_offset(bank, address)
-    patch_kernel_gb(gb_path, offset, code_bytes)
-    print(f"patched {gb_path} at file offset ${offset:x} ({len(code_bytes)} bytes)")
+    stale = bytes([FREE]) * max(0, old_len - len(code_bytes))
+    patch_kernel_gb(gb_path, offset, code_bytes + stale)
+    print(f"patched {gb_path} at file offset ${offset:x} ({len(code_bytes)} bytes"
+          + (f", {len(stale)} stale bytes blanked" if stale else "") + ")")
 
-    text = existing
-    if not text.endswith("\n"):
-        text += "\n"
-    text += "\n".join(new_lines) + "\n"
+    if args.replace:
+        text = data_re.sub(new_lines[1], existing, count=1)
+    else:
+        text = existing
+        if not text.endswith("\n"):
+            text += "\n"
+        text += "\n".join(new_lines) + "\n"
     with open(sym_path, "w", encoding="utf-8") as f:
         f.write(text)
     print(f"\nwrote {sym_path}:")
