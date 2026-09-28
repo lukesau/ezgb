@@ -4417,7 +4417,7 @@
 08:7a9c DrawHelpModVersion
 08:7a9c .data:84:8
 02:4a00 EzCfg
-02:4a00 .data:c57:8
+02:4a00 .data:dad:8
 02:4500 FastLaunchScan
 02:4500 .data:2fe:8
 04:5990 FlCfg

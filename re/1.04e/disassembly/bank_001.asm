@@ -490,7 +490,9 @@ DrawBrowserEntries_dirEntry::
     push hl
     ld hl, BrowserDirStr
     push hl
-    call DrawString
+    nop
+    nop
+    nop
     add sp, $05
     jp DrawBrowserEntries_resetInk
 
@@ -869,7 +871,9 @@ DrawBrowserDetail_entry0Dir::
     push hl
     ld hl, BrowserDirStr2
     push hl
-    call DrawString
+    nop
+    nop
+    nop
     add sp, $05
     jp DrawBrowserDetail_focusInk
 
@@ -1065,7 +1069,9 @@ DrawBrowserDetail_entry1Dir::
     push hl
     ld hl, BrowserDirStr2
     push hl
-    call DrawString
+    nop
+    nop
+    nop
     add sp, $05
     jp DrawBrowserDetail_drawSize
 
