@@ -2702,6 +2702,21 @@
       ]
     },
     {
+      "bank": 0,
+      "addr": "cc33",
+      "lines": [
+        "wWToUpperKeys: u16 key table for WToUpper binary search (~$EE entries).",
+        "Filled by BootUnpackWramTables via RleUnpack; parallel vals at wWToUpperVals."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d00f",
+      "lines": [
+        "wWToUpperVals: u16 replacement table parallel to wWToUpperKeys. RleUnpack dest."
+      ]
+    },
+    {
       "bank": 1,
       "addr": "42ba",
       "lines": [
@@ -2726,6 +2741,20 @@
       "addr": "42b6",
       "lines": [
         "BrowserDirStr: \"DIR\" drawn by DrawBrowserEntries for AM_DIR rows."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d3f9",
+      "lines": [
+        "wFileSizeFmtLo: threshold/scale pairs for FormatFileSize (sizes <$1000 in low path)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "d5eb",
+      "lines": [
+        "wFileSizeFmtHi: threshold/scale pairs for FormatFileSize (sizes ≥$1000, <$10000)."
       ]
     },
     {

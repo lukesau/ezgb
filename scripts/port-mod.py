@@ -431,9 +431,21 @@ class Port:
         return bytes(self.dst)
 
     # -- kernel.sym / notes.json -------------------------------------------------
+    def xlat_any(self, bank, addr):
+        """Target address for a kernel.sym / notes.json entry, or None when the
+        target build has no equivalent. ROM addresses go through the port map;
+        WRAM/HRAM ($8000 up) follow WRAM_SHIFT, the same rule for both files."""
+        if addr >= 0x8000:
+            wram = WRAM_SHIFT.get(self.dst_ver)
+            if wram is None or addr < wram["keep_below"] or addr >= 0xe000:
+                return addr
+            if addr >= wram["shift_from"]:
+                return addr + wram["delta"]
+            return None
+        return self.xlat_soft(0 if addr < 0x4000 else bank, addr)
+
     def port_sym(self):
         src = os.path.join(ROOT, "re", self.src_ver, "kernel.sym")
-        wram = WRAM_SHIFT.get(self.dst_ver)
         out, dropped = [], []
         for line in open(src, encoding="utf-8").read().splitlines():
             m = re.match(r"^([0-9a-f]{2}):([0-9a-f]{4}) (.*)$", line)
@@ -441,15 +453,7 @@ class Port:
                 out.append(line)
                 continue
             bank, addr, rest = int(m.group(1), 16), int(m.group(2), 16), m.group(3)
-            if addr >= 0x8000:  # WRAM/HRAM names
-                if wram is None or addr < wram["keep_below"] or addr >= 0xe000:
-                    out.append(line)
-                elif addr >= wram["shift_from"]:
-                    out.append(f"{bank:02x}:{addr + wram['delta']:04x} {rest}")
-                else:
-                    dropped.append(line)
-                continue
-            r = self.xlat_soft(0 if addr < 0x4000 else bank, addr)
+            r = self.xlat_any(bank, addr)
             if r is None:
                 dropped.append(line)
                 continue
@@ -461,8 +465,7 @@ class Port:
         notes = json.load(open(src))
         kept, dropped = [], 0
         for blk in notes["blocks"]:
-            bank, addr = blk["bank"], int(blk["addr"], 16)
-            r = self.xlat_soft(0 if addr < 0x4000 else bank, addr)
+            r = self.xlat_any(int(blk["bank"]), int(blk["addr"], 16))
             if r is None:
                 dropped += 1
                 continue
@@ -528,9 +531,13 @@ def main():
             for d in dropped[:40]:
                 print("   ", d)
             notes, nd = p.port_notes()
-            with open(os.path.join(ROOT, "re", args.dst_ver, "notes.json"), "w") as f:
-                json.dump(notes, f, indent=2, ensure_ascii=False)
-                f.write("\n")
+            notes_path = os.path.join(ROOT, "re", args.dst_ver, "notes.json")
+            # Keep the target file's existing style (\u escapes or literal
+            # UTF-8, trailing newline or not) so a re-port diffs only content.
+            prev = open(notes_path, "rb").read() if os.path.exists(notes_path) else b"\n"
+            text = json.dumps(notes, indent=2, ensure_ascii=all(c < 0x80 for c in prev))
+            with open(notes_path, "w", encoding="utf-8") as f:
+                f.write(text + ("\n" if prev.endswith(b"\n") else ""))
             print(f"wrote notes.json ({nd} blocks dropped)")
 
 
