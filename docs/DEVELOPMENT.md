@@ -137,12 +137,30 @@ live.
 
 ```sh
 inject.py <file.c> <version> <bank> <address_hex> <name> \
-          [--pin SYM=ADDR ...] [--pins pins_file] [--apply] [--regen]
+          [--pin SYM=ADDR ...] [--pins pins_file] [--apply] [--regen] [--replace]
 ```
 
 The injected bytes land in `kernel.sym` as a `bank:addr .data:LEN:WIDTH` block
 (opaque compiled code, not hand-editable asm). The name is an ordinary
 `kernel.sym` label, so existing asm and other injected C can `call` it.
+
+Every run checks the block fits before writing anything: it must not run into
+another `kernel.sym` label or `.data` block, and every byte it newly occupies
+must be `$FF` free space. The report ends with the free bytes left after it.
+`--replace` rebuilds an existing block of the same name in place: its old
+bytes count as free, its `kernel.sym` length is updated where it stands, and a
+shrunken tail is blanked back to `$FF`.
+
+After editing any C block, don't work out its pins by hand:
+
+```sh
+scripts/rebuild-blocks.py            # compile every C block, report stale ones (exit 1)
+scripts/rebuild-blocks.py --apply    # re-inject the stale ones with inject.py --replace
+```
+
+It takes each block's source and pins from `REGISTRY` in `port-mod.py` (the
+one list of them) and its name and length from `kernel.sym`, and works on
+1.05e-0731; port afterwards. A new C block needs a `REGISTRY` entry.
 
 Companion tools:
 
@@ -165,8 +183,8 @@ than re-injected by hand:
 
 ```sh
 scripts/port-mod.py 1.05e-0731 1.05e-0918 --check    # regression: must print "identical"
-scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply    # rewrite re/1.05e-0918/kernel.gb
-scripts/port-mod.py 1.05e-0731 1.04e --apply --sym   # kernel.gb + kernel.sym + notes.json
+scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply --sym   # kernel.gb + kernel.sym + notes.json
+scripts/port-mod.py 1.05e-0731 1.04e --apply --sym
 scripts/regen-disasm.sh 1.04e && scripts/build-kernel.sh 1.04e
 ```
 
@@ -197,6 +215,10 @@ How it works (`scripts/portmap.py`, `scripts/port-mod.py`):
 - **Symbols.** `--sym` ports `kernel.sym` and `notes.json` through the same
   map; 1.04e's runtime WRAM sits 39 bytes below 1.05e's from `$D6CC` up
   (`WRAM_SHIFT`), and names inside 1.05e's inserted RTC tables are dropped.
+  The WRAM rule applies to both files (before mod 4.4 WRAM notes were
+  dropped from `notes.json`), and `notes.json` keeps the target file's
+  escaping and trailing newline, so `--sym` is safe on every port and a
+  re-port diffs only what moved.
 
 The tool also warns about stale bytes in free space (old versions of a block
 that were never blanked); blank them in the source build rather than porting
