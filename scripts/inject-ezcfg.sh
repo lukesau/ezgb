@@ -37,7 +37,7 @@ cd "$ROOT/decomp"
 FATFS="--pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_07_7739=1963 --pin FarCall_03_768f=19a1 --pin WaitVBlankFlag=0688"
 
 # 2. Bank 2: the settings module, then the scan that calls it.
-python3 tools/inject.py src/ezcfg.c "$V" 2 4a00 EzCfg $FATFS --pin DrawString=08b7 --pin ReadJoypad=3a4a --apply
+python3 tools/inject.py src/ezcfg.c "$V" 2 4a00 EzCfg $FATFS --pin DrawString=08b7 --pin ReadJoypad=3a4a --pin DrawRect=27ba --pin StoreDrawParams=2791 --apply
 python3 tools/inject.py src/fastlaunch.c "$V" 2 4500 FastLaunchScan \
   --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 --pin FarCallSetPage=43ac \
   --pin ezcfg=4a00 --apply

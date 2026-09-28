@@ -74,7 +74,7 @@ REGISTRY = {
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
                             "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00}),
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a}),
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (4, 0x5990): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a}),

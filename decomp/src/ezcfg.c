@@ -12,9 +12,9 @@
  *   op 2 BACKUP   LOAD, read the RTC; if it is valid and later than the
  *                 stored copy, store it and SAVE. Hooked after every
  *                 BACKUPSAVE dump and after a SET-tab TIME SET confirm.
- *   op 3 RESTORE  LOAD; if the file holds a time and the RTC is unreadable,
- *                 earlier than it, or the BATTERY DRY prompt fired this boot
- *                 (DRY flag $DBFD), write the stored time back to the RTC.
+ *   op 3 RESTORE  LOAD; if the file holds a time and a settled RTC read
+ *                 shows year 2000 (the chip lost power), write the stored
+ *                 time back to the RTC. Never overwrites any other reading.
  *                 Hooked at boot, right after "Micro SD initial OK!" and
  *                 before the BACKUPSAVE check, so the same boot's dump then
  *                 stamps a sane time rather than the dead clock's.
@@ -74,7 +74,6 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define DBG_VALID (*(volatile u8 *)0xDB57)  /* EZCFG_RTCRAW: validity bits of the last BACKUP */
 #define DBG_CMP   (*(volatile u8 *)0xDB58)  /* EZCFG_RTCRAW: compare result of the last BACKUP */
 #define EZ_OP     (*(volatile u8 *)0xDBFC)
-#define DRY_FLAG  (*(volatile u8 *)0xDBFD)  /* set by BatteryDryHook (00:0530) */
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
@@ -123,6 +122,8 @@ static signed char rtc_cmp(const u8 *a, const u8 *b);
 static u8 put_bcd(u8 *dst, u8 v);
 static void cfg_backup(void);
 static void cfg_restore(void);
+static void rtc_read_settled(void);
+static void restored_notice(void);
 static void parse_lastrom(const u8 *v, u16 len);
 static u8 path_valid(const u8 *p);
 static void lastrom_save(void);
@@ -130,6 +131,8 @@ static void lastrom_load(void);
 
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
+extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);  /* 00:27ba, pixel coords */
+extern void StoreDrawParams(u8 color, u8 colorB, u8 op);    /* 00:2791 */
 
 void ezcfg(void) {
     u8 op = EZ_OP;
@@ -246,13 +249,73 @@ static void cfg_backup(void) {
     cfg_save();
 }
 
+/* The FPGA serves the PCF8563 through a register copy it fills over I2C. On a
+ * soft reset that copy stays live, but on a cold power-up this hook runs very
+ * early and the copy may not be filled yet. Wait, then read until two reads a
+ * frame apart agree. */
+#define SETTLE_FRAMES 60             /* ~1 s */
+#define SETTLE_TRIES  8
+
+static void rtc_read_settled(void) {
+    u8 i, t, same;
+    u8 prev[7];
+    for (i = 0; i < SETTLE_FRAMES; i++) WaitVBlankFlag();
+    rtc_read();
+    for (t = 0; t < SETTLE_TRIES; t++) {
+        for (i = 0; i < 7; i++) prev[i] = RTC_CUR[i];
+        WaitVBlankFlag();
+        rtc_read();
+        same = 1;
+        for (i = 0; i < 7; i++) if (prev[i] != RTC_CUR[i]) same = 0;
+        if (same) return;
+    }
+}
+
+/* Restore only when the clock has reset to year 2000, which is what a PCF8563
+ * that lost power comes back as. Any other reading is left alone, valid or
+ * not: an unsettled cold-boot read that looked "earlier than stored" used to
+ * roll the clock back to the last save, which made the next launch of an RTC
+ * game see negative elapsed time and zero the game's clock. The BATTERY DRY
+ * flag is not needed as a trigger: a DRY boot always comes with the clock at
+ * 2000, while the clock can also reset to 2000 without the canary dying, so
+ * the year check covers both. */
 static void cfg_restore(void) {
     cfg_load();
     if (!RTC_VALID) return;
     rtc_read();
-    if (DRY_FLAG || !rtc_valid(RTC_CUR) || rtc_cmp(RTC_CUR, RTC_BK) < 0) {
-        rtc_write();
-    }
+    if (RTC_CUR[R_YR] != 0x00) return;   /* fast path: normal boots never wait */
+    rtc_read_settled();
+    if (RTC_CUR[R_YR] != 0x00) return;
+    rtc_write();
+    restored_notice();
+}
+
+/* The stock BATTERY DRY!!! modal (BatteryCheck, 00:1835), same box, rows and
+ * [A]OK button, with our text: wait for A, then for its release so the press
+ * cannot carry into the BACKUPSAVE [A]OK prompt that follows, and clear the
+ * box. "Micro SD initial OK!" sits on row 0, outside the box. */
+static void restored_notice(void) {
+    static const u8 pad[2]  = {' ', 0};
+    static const u8 l1[11]  = {'T','I','M','E',' ','R','E','S','E','T',0};
+    static const u8 l2[9]   = {'R','E','S','T','O','R','E','D',0};
+    static const u8 l3[8]   = {'F','R','O','M',' ','S','D',0};
+    static const u8 ok[6]   = {'[','A',']','O','K',0};
+
+    DrawString(pad, 1, 5, 8);
+    StoreDrawParams(0, 3, 0);
+    DrawRect(0x23, 0x25, 0x7d, 0x6c, 1);
+    DrawString(l1, 10, 5, 7);
+    DrawString(l2, 8, 5, 8);
+    DrawString(l3, 7, 5, 9);
+    StoreDrawParams(0, 3, 0);
+    DrawRect(0x4e, 0x5d, 0x7b, 0x6a, 1);
+    DrawString(ok, 5, 10, 12);
+
+    while (!(ReadJoypad() & 0x10)) WaitVBlankFlag();   /* A */
+    while (ReadJoypad() & 0x10) WaitVBlankFlag();
+
+    StoreDrawParams(0, 0, 0);
+    DrawRect(0x23, 0x25, 0x7d, 0x6c, 1);
 }
 
 /* ---- file I/O ---- */

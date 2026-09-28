@@ -55,11 +55,21 @@ good backup: the comparison refuses anything earlier than what is stored.
 
 **Restore.** At boot, right after `Micro SD initial OK!` and before the
 `BACKUPSAVE` check, the kernel loads the file and reads the RTC. It writes
-the stored time back to the clock when any of these hold:
+the stored time back to the clock only when the clock reads **year 2000**,
+which is what the PCF8563 comes back as after losing power. Any other
+reading, valid or not, is left alone: the clock is never rolled back.
 
-- the `BATTERY DRY!!!` prompt fired this boot (the cell was lost, see below),
-- the RTC bytes are not valid BCD or out of range,
-- the RTC reads earlier than the stored time.
+- **Normal boots are unaffected.** One read; any year but 2000 returns at
+  once, with no wait and no write.
+- **Debounce.** On a year-2000 read the restore waits about a second, then
+  reads until two reads a frame apart agree (up to 8 tries), and decides
+  on that settled value. On a cold power-up this hook runs early and the
+  FPGA's copy of the RTC registers may not be filled yet; a soft reset
+  never sees that because the FPGA stays powered.
+- **Notice.** After a restore, a modal in the style of the stock
+  `BATTERY DRY!!!` box reads `TIME RESET / RESTORED / FROM SD` with an
+  `[A]OK` button. It waits for A and for its release, so the press cannot
+  carry into the `BACKUPSAVE` prompt that follows, then clears the box.
 
 Restoring before that boot's `BACKUPSAVE` matters: the dump that follows then
 stamps a sane time on the `.SAV`, and its own backup step sees "RTC equals
@@ -69,12 +79,22 @@ The restored time is the time of the last save, so the clock lags by however
 long the cart sat with a dead cell. Fix it on the SET tab whenever you like;
 that confirm updates the backup too.
 
+**Why only year 2000 (mod 4.4).** Up to mod 4.3 the restore also fired when
+the RTC read as invalid or earlier than the stored time, and on the
+BATTERY DRY flag. On cold boots the early read could trip the "earlier"
+test with a good battery, rolling the clock back to the last save. An RTC
+game (Pokemon Crystal) launched after that saw its saved timestamp in the
+future, and `RtcWriteTimeFromDayDelta` (`01:4dxx`) zeroes the game's RTC on
+negative elapsed time, so the game's clock jumped to its stored start offset.
+Soft-reset saves never hit it.
+
 **BATTERY DRY is a canary, not the chip's flag.** `BatteryCheck` (`00:1835`)
 maps pSRAM page `$11` and reads `$A201`, expecting `$88`; anything else
 draws BATTERY / DRY!!!, waits for A, and writes `$88` back. It never reads the
-PCF8563's voltage-low bit. Since one cell backs both the pSRAM and the RTC, a
-lost canary is a reliable "the clock was lost too" signal, and the hook on
-the write-back sets a WRAM flag the boot restore honours unconditionally.
+PCF8563's voltage-low bit. A DRY boot always comes with the clock at 2000,
+but the clock can also reset to 2000 without the canary dying, so the
+restore keys on the year alone. `BatteryDryHook` still sets `$DBFD`, which
+nothing reads any more.
 (An older note in [`psram-save-map.md`](psram-save-map.md) claiming the
 prompt was about the console's AA cells was wrong and has been corrected.)
 
@@ -117,7 +137,7 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 3028 B | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE, 5 LASTLOAD. |
+| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 3501 B | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE, 5 LASTLOAD. |
 | `FastLaunchScan` | `02:4500`, [decomp/src/fastlaunch.c](../decomp/src/fastlaunch.c), 766 B | Now calls `ezcfg` (op LOAD) instead of parsing a file itself; skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:5990`, [decomp/src/flcfg.c](../decomp/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
@@ -155,7 +175,7 @@ no version-specific address.
 | `$DB47` | `RTC_VALID`, 1 when the file held a usable `RTC=` |
 | `$DB48-$DB4E` | `RTC_CUR`, the last RTC read |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
-| `$DBFD` | `DRY_FLAG`, set by `BatteryDryHook` |
+| `$DBFD` | set by `BatteryDryHook`; unused since mod 4.4 |
 | `$DBFE` / `$DBFF` | `FL_PICK`, fast-launch one-shot (unchanged) |
 
 WRAM is cleared at `KernelEntry` before `BatteryCheck`, so the flag is
