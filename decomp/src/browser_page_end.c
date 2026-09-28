@@ -19,6 +19,7 @@ typedef unsigned char u8;
 typedef unsigned int u16;
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
+extern volatile u8 hUiMode;   /* $fffb: 0 = 8px (16 rows), 1 = 12px (10 rows) */
 
 struct BrowserScrollState {
     u8 dirty;
@@ -34,8 +35,8 @@ void browser_page_end(struct BrowserScrollState *st) {
         return;
     }
     rows -= st->base;
-    if (rows > 16) {
-        rows = 16; /* unreachable at this hook; guards a stray caller */
+    if (rows > (hUiMode ? 10 : 16)) {
+        rows = hUiMode ? 10 : 16; /* unreachable at this hook; guards a stray caller */
     }
     last = (u8)rows - 1;
     if (st->sel != last) {

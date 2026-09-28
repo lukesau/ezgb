@@ -88,7 +88,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:47ef` | `f8 5c 4d 44 21 07 00` | `call $5932` + 4 nops | run `FlSetEnterHook` (op ENTER) then replay the displaced prologue |
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
-| `04:5604` | `d6 01` | `d6 03` | cursor clamp 0..1 → 0..3 |
+| `04:5604` | `d6 01` | `d6 04` | cursor clamp 0..1 → 0..4 (row 4 = the `UI:` button, [ui-mode.md](ui-mode.md); was `d6 03` before it) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 
 ### Bank 0 (cave `$04c7-$05b5`)

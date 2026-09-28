@@ -58,8 +58,8 @@ SRC = os.path.join(ROOT, "decomp", "src")
 FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
          "FarCall_07_7739": 0x1963, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}
 REGISTRY = {
-    (0, 0x01e3): dict(src="browser_scroll.c", pins={"DirList": 0x0a43}),
-    (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
+    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43, "hUiMode": 0xfffb}),   # moved from 00:01e3 for the UI mode flag
+    (0, 0x02fb): dict(src="browser_page_end.c", pins={"hUiMode": 0xfffb}),
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
     (0, 0x0460): dict(src="fastlaunch_hook.c",
@@ -68,12 +68,16 @@ REGISTRY = {
                       pins={"FarCallScan": 0x0400, "fastlaunch_do_launch": 0x0420,
                             "BrowserSortAllStub": 0x03d4, "ReadJoypad": 0x3a4a}),
     (0, 0x3d8c): dict(src="browser_scroll_repaint.c",
-                      pins={"browser_scroll_down": 0x01e3, "FarCallDrawDetailBottom": 0x03dc,
+                      pins={"browser_scroll_down": 0x3ed0, "FarCallDrawDetailBottom": 0x03dc, "hUiMode": 0xfffb,
                             "DrawString": 0x08b7, "StoreDrawParams": 0x2791, "DrawNameWithIcon": 0x3ec8}),
-    (0, 0x3ec8): dict(src="browser_icons.c", pins={"DrawString": 0x08b7}),
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
                             "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00}),
+    (2, 0x7500): dict(src="draw12.c",                       # 12x12 browser renderer (docs/font12.md)
+                      pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
+                            "GfxRowTable": 0x2fbb, "Font12": 0x6000, "DiNest": 0x06fd, "EiNest": 0x0706}),
+    (2, 0x7300): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "hUiMode": 0xfffb}),   # far target of the 00:3ec8 stub
+    (2, 0x6000): dict(kind="data"),        # Font12: 12x12 glyph tables (scripts/font12-pack.py)
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (4, 0x5990): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
@@ -182,6 +186,8 @@ class Port:
         """Translate a ROM address of the from-build to the to-build."""
         if (bank, addr) in self.overrides:
             return self.overrides[(bank, addr)]
+        if addr >= 0xfe00:
+            return addr   # OAM / I/O / HRAM: identical in every kernel (hUiMode $fffb, pad latch $fffc/d)
         b = 0 if addr < 0x4000 else bank
         if b != 0 and not 0x4000 <= addr <= 0x7fff:
             return addr
@@ -199,6 +205,8 @@ class Port:
     def xlat_soft(self, bank, addr):
         if (bank, addr) in self.overrides:
             return self.overrides[(bank, addr)]
+        if addr >= 0xfe00:
+            return addr
         if self.injected(bank, addr):
             return addr
         return self.pm.map(bank, addr)

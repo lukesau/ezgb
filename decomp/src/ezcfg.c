@@ -77,6 +77,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
+#define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
 #define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
 #define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
 
@@ -392,13 +393,14 @@ static void cfg_load(void) {
  * stale tail left behind by a shorter rewrite cannot override the record. */
 static void parse_record(u16 br, u8 legacy) {
     u16 p, s, e, eq;
-    u8 seen_fl, seen_rtc, seen_lr;
+    u8 seen_fl, seen_rtc, seen_lr, seen_ui;
 
     if (br > CFG_MAX) br = CFG_MAX;
     CFGBUF[br] = 0;
     seen_fl = 0;
     seen_rtc = 0;
     seen_lr = 0;
+    seen_ui = 0;
     p = 0;
     for (;;) {
         if (p >= br) break;
@@ -432,6 +434,9 @@ static void parse_record(u16 br, u8 legacy) {
             } else if (!seen_lr && key_is(CFGBUF + s, klen, (const u8 *)"lastrom", 7)) {
                 seen_lr = 1;
                 parse_lastrom(CFGBUF + vs, e - vs);
+            } else if (!seen_ui && key_is(CFGBUF + s, klen, (const u8 *)"ui", 2)) {
+                seen_ui = 1;
+                UI_MODE = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
             }
         }
     }
@@ -514,6 +519,7 @@ static u8 cfg_save(void) {
     static const u8 k_fl[8]  = {'F','L','A','U','N','C','H','='};
     static const u8 k_rtc[6] = {'R','T','C','=','2','0'};
     static const u8 k_lr[8]  = {'L','A','S','T','R','O','M','='};
+    static const u8 k_ui[3]  = {'U','I','='};
     u16 n;
     u8 i, r;
 
@@ -545,6 +551,11 @@ static u8 cfg_save(void) {
         CFGBUF[n++] = 0x0d;
         CFGBUF[n++] = 0x0a;
     }
+    for (i = 0; i < 3; i++) CFGBUF[n++] = k_ui[i];
+    if (UI_MODE) CFGBUF[n++] = '1';
+    CFGBUF[n++] = UI_MODE ? '2' : '8';
+    CFGBUF[n++] = 0x0d;
+    CFGBUF[n++] = 0x0a;
 #ifdef EZCFG_RTCRAW
     {
         /* RTCRAW=<7 raw regs> <7 masked regs> <7 stored regs> V<valid> C<cmp>

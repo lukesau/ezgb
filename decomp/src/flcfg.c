@@ -62,6 +62,8 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 
 #define ROW_CHECK 2
 #define ROW_PICK  3
+#define ROW_UI    4          /* UI: 8px / 12px button, row 16 (docs/ui-mode.md) */
+#define UI_MODE  (*(volatile u8 *)0xFFFB)   /* HRAM, read/written by ezcfg too */
 
 static void cfg_load(void);
 static void cfg_save(void);
@@ -89,6 +91,14 @@ u8 flcfg(u8 *frame, u8 op) {
             FL_EN = FL_EN ? 0 : 1;
             cfg_save();
             draw_rows(ROW_CHECK);
+            wait_a_release();
+            SetFpgaPage_B4(0);
+            return 0;
+        }
+        if (frame[0x3d] == ROW_UI) {
+            UI_MODE = UI_MODE ? 0 : 1;
+            cfg_save();
+            draw_rows(ROW_UI);
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;
@@ -150,9 +160,11 @@ static void wait_a_release(void) {
 static void draw_static(void) {
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
     static const u8 rom_label[5] = {'R','O','M',':',0};
+    static const u8 ui_label[4] = {'U','I',':',0};
     StoreDrawParams(3, 0, 0);
     DrawString(fl_label, 12, 0, 9);
     DrawString(rom_label, 4, 0, 11);
+    DrawString(ui_label, 3, 0, 16);
     draw_name();
 }
 
@@ -183,6 +195,8 @@ static void draw_name(void) {
  * the PICK button on row 11 (mirrors the SET button, 04:4906). */
 static void draw_rows(u8 cur) {
     static const u8 pick_str[5] = {'P','I','C','K',0};
+    static const u8 ui8_str[5] = {' ','8','p','x',0};
+    static const u8 ui12_str[5] = {'1','2','p','x',0};
 
     StoreDrawParams(0, 0, 0);
     DrawRect(0x82, 0x48, 0x8a, 0x50, 1);          /* clear box */
@@ -196,5 +210,9 @@ static void draw_rows(u8 cur) {
     if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     DrawRect(0x73, 0x55, 0x9b, 0x61, 1);          /* button box */
     DrawString(pick_str, 4, 15, 11);
+    /* UI button on row 16, same shape as PICK: " 8px" or "12px" */
+    if (cur == ROW_UI) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+    DrawRect(0x73, 0x7d, 0x9b, 0x89, 1);
+    DrawString(UI_MODE ? ui12_str : ui8_str, 4, 15, 16);
     StoreDrawParams(3, 0, 0);
 }

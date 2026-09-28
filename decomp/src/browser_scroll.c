@@ -33,7 +33,8 @@
  * count. Resumes from the persistent DIR object at $c9f5 and never rewinds. */
 extern void DirList(void);
 
-#define ROWS 16 /* visible list rows; matches the sel cap at bank_000.asm:4038 */
+extern volatile unsigned char hUiMode;   /* $fffb: 0 = 8px (16 rows), 1 = 12px (10 rows), docs/ui-mode.md */
+#define ROWS rows                        /* visible list rows, read once per call from the UI mode */
 
 /* Total entries enumerated so far. NOT the directory's true size: it only
  * grows as DirList streams more in. */
@@ -53,6 +54,7 @@ struct BrowserScrollState {
 void browser_scroll_down(struct BrowserScrollState *st) {
     unsigned int base = st->base;
     unsigned char sel = st->sel;
+    unsigned char rows = hUiMode ? 10 : 16;
 
     if (sel + 1 < ROWS) {
         /* Still room on screen. Stock checked sel+1 against the count without
