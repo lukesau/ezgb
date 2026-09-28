@@ -191,8 +191,14 @@ static u8 glyph_index(u8 c) {
  * line is mode 2/3), which is what made a 13-cell row cost ~20k cycles. A
  * batch instead syncs to a fresh HBlank (wait for mode 3, then for mode 0)
  * and writes four rows inside the 51 + 20 cycles that are then guaranteed
- * (56 cycles from the sample to the last write at stride 2), or, in VBlank
- * with LY < 153, writes straight away since a full line of mode 1 remains.
+ * (56 cycles from the sample to the last write at stride 2), or, in VBlank,
+ * writes straight away when LY reads 144..151, so at least one full line of
+ * mode 1 remains. LY is not trusted on its own: during the last VBlank
+ * line the register already reads 0 (the line-153 alias), and a batch
+ * started there ran into line 0's mode 3 and dropped its writes, one plane
+ * of one tile row at a time; that was the streak seen on a real CGB in the
+ * last cell of rows that had been highlighted, and it was caught in SameBoy
+ * with `watch $8000 to $9800 if ([$ff41] & 3) == 3`, every hit at LY 0.
  * Interrupts are off from the sync to the last write so no handler can eat
  * the window; the latency added is under two scanlines. Rows within a batch
  * never cross a tile (a cell starts on tile row 0 or 4 and n is 12 or 8), so
@@ -222,8 +228,11 @@ blit_col1_batch:
 	cp	#1
 	jr	nz, blit_col1_sync
 	ldh	a, (#0xff44)
-	cp	#153
-	jr	c, blit_col1_go
+	cp	#144
+	jr	c, blit_col1_sync
+	cp	#152
+	jr	nc, blit_col1_sync
+	jr	blit_col1_go
 blit_col1_sync:
 	ldh	a, (#0xff41)
 	and	#3
@@ -300,8 +309,11 @@ blit_col2_batch:
 	cp	#1
 	jr	nz, blit_col2_sync
 	ldh	a, (#0xff44)
-	cp	#153
-	jr	c, blit_col2_go
+	cp	#144
+	jr	c, blit_col2_sync
+	cp	#152
+	jr	nc, blit_col2_sync
+	jr	blit_col2_go
 blit_col2_sync:
 	ldh	a, (#0xff41)
 	and	#3

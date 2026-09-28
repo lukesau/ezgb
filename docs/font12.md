@@ -83,10 +83,17 @@ spin before every write caps the rate at one or two writes per scanline,
 because the rest of the line is mode 2/3; a batch instead syncs to a fresh
 HBlank (wait for mode 3, then for mode 0) and writes four rows inside the
 51 + 20 cycles that are then guaranteed, or writes at once during VBlank
-with LY < 153. Interrupts are off from the sync to the last write (under
-two scanlines of added latency). See [vram-write-race.md](vram-write-race.md)
-for why the post-sample budget is only 20 cycles when writing one row at a
-time.
+when LY reads 144..151. That LY range matters: on the last VBlank line the
+register already reads 0 (the line-153 alias), and a first version that
+only asked for LY < 153 started batches there with almost no VBlank left,
+so they ran into line 0's mode 3 and lost writes, one plane of one tile
+row at a time. On a real CGB that showed as thin streaks in the last cell
+of rows the cursor had left (their old content was black, so a dropped
+write stayed visible); SameBoy's CGB model reproduced it and
+`watch $8000 to $9800 if ([$ff41] & 3) == 3` put every hit at LY 0.
+Interrupts are off from the sync to the last write (under two scanlines of
+added latency). See [vram-write-race.md](vram-write-race.md) for why the
+post-sample budget is only 20 cycles when writing one row at a time.
 
 Measured in SameBoy with the debugger's `ticks` (M-cycles per far call into
 `DrawString12`, a 13-cell icon + name row):

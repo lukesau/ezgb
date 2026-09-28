@@ -39,7 +39,7 @@ in the space freed by moving `BrowserScroll`:
 | `ClampBrowserRows` | `00:01fb` | the 17-byte row clamp of `DrawBrowserEntries` (`01:411b`), with the variable |
 | `MarqueeWidth` | `00:020c` | stores 19 or 12 into the marquee's width slot; replaces `ld hl, sp+$0f; ld [hl], n` at `00:0c84` and `00:0c8b` |
 | `MarqueeDraw` | `00:0219` | `jp DrawString` or `jp FarCallDrawString12`; the marquee's draw call at `00:0dd8` calls it |
-| `MarqueeShift` | `00:0222` | pushes the tick shift (1 or 2) in place of `ld a, n; push af` at `00:0cb9` |
+| `MarqueeShift` | `00:0222` | pushes the tick shift (1 or 2) in place of `ld a, n; push af` at `00:0cb9`. It fetches its return address through DE, not HL: the stock code right after the site reads its next argument through HL from the instruction before, and a first version that popped into HL fed the shift routine ROM bytes instead of the tick, so every marquee started scrolled by the field width |
 
 The C shims read the flag directly (`--pin hUiMode=fffb`):
 `browser_scroll.c` (rows, now at `00:3ed0`; its second entry

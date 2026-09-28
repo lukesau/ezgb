@@ -180,6 +180,16 @@ The interior `DrawGlyph_*` labels (`00:2730`..`00:2754`) were removed from
 `1.05e-0731`. Bank 0 is identical in 0918 and the function has no WRAM
 address that differs in 1.04e, so the port is byte-for-byte in both.
 
+## A second trap: LY reads 0 on the last VBlank line
+
+Code that writes freely "because we are in VBlank" must not decide that
+from LY alone. During line 153 the LY register reads 0 after its first few
+dots, while STAT still reports mode 1, so a check of the form "mode 1 and
+LY < 153" passes with almost no VBlank left and the write lands in line 0's
+mode 3. The 12x12 renderer's batch writer had exactly that bug; it now
+requires LY in 144..151 (docs/font12.md). Same symptom as the rest of this
+note, same watchpoint to catch it.
+
 ## Verification
 
 Checked in SameBoy (`--model dmg`): browser, SET tab (boxes, checkboxes,
