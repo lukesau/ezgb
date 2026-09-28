@@ -71,15 +71,28 @@ The two injected C shims followed suit at source level and were re-injected:
 The checkbox outline keeps its stock "dimmed while selected" idea but in light
 gray, which is two ramp steps from the normal black outline instead of one.
 
-## Change 2: icon column on the left, `DIR` tag back on the right
+## Change 2: icon column on the left, no `DIR` tag
 
 Every browser row now starts with one icon glyph in column 0 and the name in
-columns 1 onward, one column narrower than stock (16 for directories, 19 for
-files). Directories keep the stock text `DIR` tag in columns 17-19, drawn in
-the row's ink (stock forced inverse video there; those three
-`call StoreDrawParams` sites, `01:4207`, `01:43f8`, `01:4508` at +8, are
-NOPed and the shim no longer sets it), so the tag reads black on white on a
-normal row and white on black inside the selection bar.
+columns 1-19, 19 wide for directories and files alike. Stock gave
+directories 17 columns and the text `DIR` tag in columns 17-19; the folder
+icon replaces the tag (tester feedback on issue #2), so directory names get
+the whole row.
+
+The tag had two parts, both gone:
+
+- Stock forced inverse video before the tag. Those three
+  `call StoreDrawParams` sites, `01:4207`, `01:43f8`, `01:4508` at +8, are
+  NOPed.
+- The tag draw itself, `DrawString(BrowserDirStr, 3, $11, row)`. Its three
+  `call DrawString` sites, `01:4221` (`DrawBrowserEntries`), `01:4412` and
+  `01:4522` (`DrawBrowserDetail` entry 0 / entry 1), are NOPed; the argument
+  pushes and `add sp, $05` around them stay balanced. The per-row ink reset
+  that follows is kept. `BrowserDirStr` / `BrowserDirStr2` are now
+  unreferenced.
+
+(Mod 4.1-4.3 kept the tag in columns 17-19, drawn in the row's ink, with
+directory names 16 wide.)
 
 ### Glyphs
 
@@ -113,8 +126,8 @@ call a wrapper with the same stack convention instead, so each site is a
 3-byte `call` retarget and no stock code grows. The wrapper picks the glyph
 (folder when `len` is 0, else by extension: `.gb`, `.gbc`, case-insensitive,
 anything else the boxed `?`), draws it at column 0 with `DrawString`, then draws
-the name at column 1 with `len` 16 or `len-1`. It draws in whatever ink the
-row has, so the icon inverts with the selection bar. It lives in the free
+the name at column 1 with `len` 19 (directories) or `len-1` (files, 19).
+It draws in whatever ink the row has, so the icon inverts with the selection bar. It lives in the free
 tail of the `00:3d8c` cave, after `BrowserScrollDownRepaint`.
 
 | Site | Address | Was |
@@ -125,9 +138,10 @@ tail of the `00:3d8c` cave, after `BrowserScrollDownRepaint`.
 | `browser_scroll_repaint.c` dir / file | in the shim | `DrawString(rec, ...)` |
 
 The long-name marquee (`DrawDirEntryLabel`, `00:0be7`) redraws only the name,
-so its field widths moved with it: `00:0c87` `$11` to `$10`, `00:0c8e` `$14`
-to `$13`, and its `DrawString` x at `00:0dcc` `0` to `1`. The icon drawn by
-the row painter stays put.
+so its field widths moved with it: `00:0c87` `$11` to `$13` (directories,
+`$10` in mod 4.1-4.3 while the tag was drawn), `00:0c8e` `$14` to `$13`, and
+its `DrawString` x at `00:0dcc` `0` to `1`. The icon drawn by the row
+painter stays put.
 
 ```sh
 cd decomp

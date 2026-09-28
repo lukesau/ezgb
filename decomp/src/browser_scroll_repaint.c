@@ -17,8 +17,8 @@
  *      finish on base+1.)
  *   2. Rows 13 down to 0 one at a time with the stock drawing primitives,
  *      replicating DrawBrowserEntries' per-row body byte for byte:
- *      dir rows DrawNameWithIcon(name, len 0, col 0) +
- *      "DIR" at col $11 + the stock per-row ink reset (see draw_row); file
+ *      dir rows DrawNameWithIcon(name, len 0, col 0) + the stock per-row
+ *      ink reset (see draw_row; the stock "DIR" tag is gone); file
  *      rows DrawNameWithIcon(name, len $14, col 0). No highlight handling is
  *      needed: DrawBrowserDetail's epilogue leaves ink normal and rows
  *      0..13 are never the selection during a window shift (sel is pinned
@@ -29,9 +29,6 @@
  * frame sp+$0a..$0d, is replicated here (the hook's state pointer is
  * frame sp+$12, so the tick sits at st-8; see browser_scroll_shims.md for
  * the frame map).
- *
- * The "DIR" tag string is duplicated here because BrowserDirStr lives in
- * bank 1 and this code runs with bank 0 + the record's PSRAM bank mapped.
  *
  * Scroll UP is untouched: its new entry appears at the top, which the stock
  * top-down sweep already paints first. In-screen moves (dirty = 2) and the
@@ -64,9 +61,6 @@ extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);   /* 00:3ec8 */
 
 static void draw_row(u16 base, u8 n);
 static void fpga_sram_page(void);
-
-/* Stock DIR tag; the row icon is drawn by DrawNameWithIcon (browser_icons.c). */
-static const u8 dir_tag[] = "DIR";
 
 void browser_scroll_down_repaint(struct BrowserScrollState *st) {
     u8 n;
@@ -101,11 +95,9 @@ static void draw_row(u16 base, u8 n) {
     rec = WIN + ((slot << 8) - slot); /* slot * 255 */
     if (rec[ATTR_OFS] == ATTR_DIR) {
         DrawNameWithIcon(rec, 0, 0, row);
-        /* The DIR tag is drawn in whatever ink the row has (stock forced
-         * inverse video here; see docs/dmg-ui-visibility.md). These rows are
-         * never the selection, so it comes out black on white. The reset is
-         * kept to match stock DrawBrowserEntries' per-row epilogue. */
-        DrawString(dir_tag, 3, 0x11, row);
+        /* No "DIR" tag: the folder icon replaced it and the name spans the
+         * row. The reset is kept to match stock DrawBrowserEntries' per-row
+         * epilogue. */
         StoreDrawParams(3, 0x0000);
     } else {
         DrawNameWithIcon(rec, 0x14, 0, row);

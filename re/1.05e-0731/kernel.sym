@@ -4409,7 +4409,7 @@
 08:7b8d FlPickBanner
 08:7b8d .data:40:8
 00:3d8c BrowserScrollDownRepaint
-00:3d8c .data:13c:8
+00:3d8c .data:12a:8
 00:0490 fastlaunch_boot
 00:0490 .data:1e:8
 00:3ec8 DrawNameWithIcon

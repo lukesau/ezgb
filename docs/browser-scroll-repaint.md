@@ -23,15 +23,15 @@ effect of the stock dirty path (zeroing the marquee tick at frame
    in-screen cursor moves already use.
 2. Rows 13 → 0, one at a time, replicating `DrawBrowserEntries`' per-row body
    with the stock primitives (`DrawString` `00:08b7`, `StoreDrawParams`
-   `00:2791`), **including the per-row ink reset after a DIR tag**.
+   `00:2791`), **including the per-row ink reset after a directory row**.
 
 `StoreDrawParams` is not an (index, value) setter: every call it stores all
 three draw-state bytes (`$d734/$d735/$d723`,
 `decomp/src/store_d734_d735_d723.c`). Stock forced inverse video before the
 `DIR` tag and reset afterwards; since the icon-column change
 ([dmg-ui-visibility.md](dmg-ui-visibility.md)) the name goes through
-`DrawNameWithIcon` and the tag is drawn in the row's current ink, so the shim
-no longer sets it and only keeps the stock `(3, $0000)` reset. No highlight
+`DrawNameWithIcon` and the tag is no longer drawn, so the shim only keeps
+the stock `(3, $0000)` reset. No highlight
 management is needed: the helper's epilogue leaves ink normal, and rows
 0..13 are never selected during a shift (`sel` is pinned at 15).
 
@@ -69,7 +69,7 @@ python3 tools/inject.py src/browser_scroll_repaint.c 1.05e-0731 0 3d8c \
   each hit the `$03dc` shim breakpoint and returned to the input loop with the
   entry count intact.
 - Visually (manual): the new bottom entry paints first and the sweep runs
-  upward, with highlight, DIR tags, and the selection number correct.
+  upward, with highlight, folder rows, and the selection number correct.
 - Ink-reset regression: with a breakpoint after the wrapper returns,
   `$d734/$d735/$d723` read `03 00 00` (the reset state) after every
   window-shift repaint of the directory-heavy test root. Without the reset they
