@@ -66,6 +66,8 @@ The coin cell backs **the RTC and U4's 512 KB save pSRAM**. pSRAM draws far more
 standby current than FRAM, so cell life runs ~1–8 months vs 10+ years for an
 original battery-backed cart, hence the recurring "battery dies in a month"
 complaint. Saves and the `$A300` last-ROM record are lost when the cell dies.
+Early carts shipped U4 with a true-SRAM die (`71GL064A08`); the pin-identical
+SRAM variants are a drop-in fix, see [battery-sram-swap.md](battery-sram-swap.md).
 
 Sources: `tools/S71GL032A.PDF` (U4 datasheet, the one firm reference); GBAtemp
 "how does EZ Flash Junior work" thread (U9 discussion, unverified); our own

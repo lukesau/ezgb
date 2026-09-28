@@ -22,7 +22,8 @@ The reverse engineering is essentially done:
   See [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
   [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
-  [`docs/launch-trace.md`](docs/launch-trace.md).
+  [`docs/launch-trace.md`](docs/launch-trace.md). Why the coin cell dies in a
+  month and the drop-in SRAM fix: [`docs/battery-sram-swap.md`](docs/battery-sram-swap.md).
 - **Code injection works.** You can compile C, place it in verified-free ROM,
   hook it into the kernel, and run it on real hardware and in emulator. The
   features below are built on this. Recipe and free-space map:
