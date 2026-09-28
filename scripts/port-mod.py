@@ -102,6 +102,10 @@ VERSION_TEXT = {
 # there, resolved by reading both disassemblies. (bank, from_addr) -> to_addr.
 OVERRIDES = {
     "1.04e": {
+        # The 8x8 font sheet DrawGlyph indexes (`ld de, $3206`): data, so the
+        # port map cannot align it; 1.04e keeps it at $2e4d. Needed by the
+        # relocated DrawGlyphSafe and the 00:2701 hook window.
+        (0, 0x3206): 0x2e4d,
         # DrawTimeAutosaveScreen_redraw: same entry address; 1.04e opens the
         # loop with `call WaitVBlankFlag` where 1.05e tests its time-set flag.
         (4, 0x48f5): 0x48f5,
@@ -182,6 +186,17 @@ class Port:
         o = off(bank, addr)
         return all(b == 0xff for b in rom[o:o + n])
 
+    def xlat_ram(self, addr, what=""):
+        """A RAM address of the from-build in the to-build: kernel WRAM moves by
+        WRAM_SHIFT (1.04e), everything else ($8000-$bfff, mod buffers below the
+        shift, HRAM, I/O) stays put."""
+        wram = WRAM_SHIFT.get(self.dst_ver)
+        if wram is None or addr < wram["keep_below"] or addr >= 0xe000:
+            return addr
+        if addr >= wram["shift_from"]:
+            return addr + wram["delta"]
+        raise SystemExit(f"error: {what}: ${addr:04x} is inside the WRAM range that has no equivalent in {self.dst_ver}")
+
     def xlat(self, bank, addr, what=""):
         """Translate a ROM address of the from-build to the to-build."""
         if (bank, addr) in self.overrides:
@@ -227,8 +242,23 @@ class Port:
                     self.log.append(f"  {what}+{i:02x}: far-call {tb:02x}:{t:04x} -> {r:04x}")
             elif n == 3 and op in ABS16:
                 t = data[i + 1] | data[i + 2] << 8
+                if 0x8000 <= t < 0xfe00 and op in (0xEA, 0xFA, 0x01, 0x11, 0x21):
+                    # kernel WRAM reference: follows WRAM_SHIFT (1.04e). For
+                    # ld rr,nn a value inside the unmapped gap is kept (it is
+                    # then a constant, not a pointer).
+                    wram = WRAM_SHIFT.get(self.dst_ver)
+                    r = t
+                    if wram and wram["keep_below"] <= t < 0xe000:
+                        if t >= wram["shift_from"]:
+                            r = t + wram["delta"]
+                        # else: inside the unmapped gap; kept as is (a site
+                        # window naming such a variable needs an override)
+                    if r != t:
+                        out[i + 1], out[i + 2] = r & 0xff, r >> 8
+                        self.log.append(f"  {what}+{i:02x}: {op:02x} {t:04x} -> {r:04x} (WRAM)")
+                    continue
                 if t < 0x0100 or t >= 0x8000:
-                    continue  # small constant / RAM / register
+                    continue  # small constant / register
                 if bank == 0 and t >= 0x4000:
                     continue  # bank-0 code naming a ROMX-window register ($4000, $7Fxx)
                 if op in (0x01, 0x11, 0x21, 0x31, 0x08):
@@ -303,9 +333,15 @@ class Port:
         c_path = os.path.join(SRC, spec["src"])
         pins = []
         for sym, a in spec.get("pins", {}).items():
+            csym = sym if sym.startswith("_") else "_" + sym
+            if a >= 0x8000:
+                # RAM pin (kernel WRAM variable, HRAM byte): nothing to verify as
+                # code; kernel WRAM follows WRAM_SHIFT, HRAM and I/O never move.
+                pins.append((csym, self.xlat_ram(a, f"{name} pin {sym}")))
+                continue
             pb = 0 if a < 0x4000 else bank
             self.verify_target(pb, a, f"{name} pin {sym}")
-            pins.append((sym if sym.startswith("_") else "_" + sym, self.xlat(pb, a, f"pin {sym}")))
+            pins.append((csym, self.xlat(pb, a, f"pin {sym}")))
         with tempfile.TemporaryDirectory() as wd:
             ihx, _ = compile_c(c_path, wd, pins=pins, code_origin=addr)
             compiled = parse_ihx(ihx)

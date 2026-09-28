@@ -159,6 +159,7 @@
 00:30db VramCopy
 00:30ea VramCopyStack
 00:3104 DefaultFontData
+00:3206 FontGlyphSheet
 00:3104 .data:912:2
 00:3806 FolderIconGlyphs
 00:3a16 ReadJoypadRaw

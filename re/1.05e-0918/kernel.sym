@@ -159,6 +159,7 @@
 00:30db VramCopy
 00:30ea VramCopyStack
 00:3104 DefaultFontData
+00:3206 FontGlyphSheet
 00:3104 .data:912:2
 00:3806 FolderIconGlyphs
 00:3a16 ReadJoypadRaw
@@ -4462,9 +4463,9 @@
 00:020c .data:d:8
 00:0219 MarqueeDraw
 00:0219 .data:9:8
-00:0222 MarqueeShift
-00:0222 .data:6:8
 00:3ed0 BrowserScroll
 00:3ed0 .data:12f:8
 02:7500 DrawString12
-02:7500 .data:7a7:8
+02:7500 .data:7b3:8
+00:0222 MarqueeShift
+00:0222 .data:7:8
