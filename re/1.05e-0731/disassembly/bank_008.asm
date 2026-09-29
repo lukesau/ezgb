@@ -3131,7 +3131,7 @@ jr_008_7210:
     add sp, $03
     ld hl, $018f
     push hl
-    ld hl, $9f0f
+    ld hl, $9f0a
     push hl
     ld a, $00
     push af
@@ -3204,7 +3204,7 @@ jr_008_728b:
     add sp, $03
     ld hl, $018f
     push hl
-    ld hl, $9f0f
+    ld hl, $9f0a
     push hl
     ld a, $00
     push af
@@ -3277,7 +3277,7 @@ jr_008_7306:
     add sp, $03
     ld hl, $018f
     push hl
-    ld hl, $9f0f
+    ld hl, $9f0a
     push hl
     ld a, $00
     push af
@@ -3684,7 +3684,7 @@ DrawHelpModVersion::
     db $cd, $b7, $08, $e8, $05, $c3, $41, $71
     db $4b, $31, $2e, $30, $35, $65, $2d, $30
     db $37, $33, $31, $4d, $4f, $44, $20, $34
-    db $2e, $37, $20, $20, $20, $67, $69, $74
+    db $2e, $38, $20, $20, $20, $67, $69, $74
     db $68, $75, $62, $2e, $63, $6f, $6d, $2f
     db $6c, $75, $6b, $65, $73, $61, $75, $2f
     db $65, $7a, $67, $62

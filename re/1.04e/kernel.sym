@@ -4381,7 +4381,7 @@
 00:3ed0 BrowserScroll
 00:3ed0 .data:12f:8
 02:7500 DrawString12
-02:7500 .data:7b3:8
+02:7500 .data:7e1:8
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
