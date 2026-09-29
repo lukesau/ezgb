@@ -120,16 +120,35 @@ SKIP_SITES = {
         # (StoreDrawParams + DrawString at $592a); the mod retunes that call's
         # ink for DMG. 1.04e has no such draw, so there is nothing to retune.
         (4, 0x4e49),
+        # RtcWriteTimeFromDayDelta's sign test (the negative-elapsed clamp,
+        # docs/ezgb-cfg.md): the launch-time elapsed-time code is part of
+        # 1.05e's RTC rewrite; 1.04e has no such routine to clamp.
+        (1, 0x4e33),
+    },
+}
+# Injected blocks the target build does not need because their only hook site
+# is in SKIP_SITES. (bank, from_addr) of the block; each needs a reason.
+SKIP_BLOCKS = {
+    "1.04e": {
+        (1, 0x7620),   # RtcNegClampHook, target of the skipped 01:4e33 site
     },
 }
 
 # Free WRAM the mod uses ($D780-$DBFF scratch, flags at $DBFB-$DBFF) is
-# unreferenced in every build; nothing to translate. The kernel's own WRAM
+# unreferenced in every build and never translated (mod_from): the ezcfg C
+# module addresses it through #defines, so its hand-assembled callers must
+# keep the same numbers. (Shifting it too, as 4.5 did, sent every 1.04e hook's
+# op byte to $DBD5 while ezcfg read $DBFC.) The kernel's own WRAM
 # names in kernel.sym are ported by this rule: 1.05e inserted its RTC day
 # tables at $D6A7, so every runtime global from $D6CC up sits 39 bytes lower
 # in 1.04e (docs/PROGRESS.md: $D6CE/$D6D1 -> $D6A7/$D6AA, $D6CC/$D6CD ->
 # $D6A5/$D6A6); names inside the inserted range have no 1.04e equivalent.
-WRAM_SHIFT = {"1.04e": dict(keep_below=0xd6a7, shift_from=0xd6cc, delta=-0x27)}
+WRAM_SHIFT = {"1.04e": dict(keep_below=0xd6a7, shift_from=0xd6cc, delta=-0x27, mod_from=0xd780)}
+
+
+def wram_moves(wram, addr):
+    """True when kernel WRAM at addr sits at addr + delta in the target."""
+    return wram is not None and wram["shift_from"] <= addr < wram["mod_from"]
 
 
 def md5(b):
@@ -191,9 +210,9 @@ class Port:
         WRAM_SHIFT (1.04e), everything else ($8000-$bfff, mod buffers below the
         shift, HRAM, I/O) stays put."""
         wram = WRAM_SHIFT.get(self.dst_ver)
-        if wram is None or addr < wram["keep_below"] or addr >= 0xe000:
+        if wram is None or addr < wram["keep_below"] or addr >= wram["mod_from"]:
             return addr
-        if addr >= wram["shift_from"]:
+        if wram_moves(wram, addr):
             return addr + wram["delta"]
         raise SystemExit(f"error: {what}: ${addr:04x} is inside the WRAM range that has no equivalent in {self.dst_ver}")
 
@@ -248,8 +267,8 @@ class Port:
                     # then a constant, not a pointer).
                     wram = WRAM_SHIFT.get(self.dst_ver)
                     r = t
-                    if wram and wram["keep_below"] <= t < 0xe000:
-                        if t >= wram["shift_from"]:
+                    if wram and wram["keep_below"] <= t < wram["mod_from"]:
+                        if wram_moves(wram, t):
                             r = t + wram["delta"]
                         # else: inside the unmapped gap; kept as is (a site
                         # window naming such a variable needs an override)
@@ -355,10 +374,15 @@ class Port:
         return bytes(out)
 
     def port_blocks(self):
+        self.skipped_blocks = []
         for bank, addr, length, name in self.sym_blocks:
             src_bytes = self.src_mod[off(bank, addr):off(bank, addr) + length]
             if not self.free(self.src_stock, bank, addr, length):
                 continue  # a labelled hook site; handled with the other sites
+            if (bank, addr) in SKIP_BLOCKS.get(self.dst_ver, set()):
+                self.skipped_blocks.append((bank, addr, length, name))
+                self.log.append(f"skipped block {name}@{bank:02x}:{addr:04x}: not needed in {self.dst_ver} (SKIP_BLOCKS)")
+                continue
             if not self.free(self.dst_stock, bank, addr, length):
                 raise SystemExit(f"error: {name} at {bank:02x}:{addr:04x} is not free in {self.dst_ver}")
             spec = REGISTRY.get((bank, addr), {})
@@ -401,7 +425,7 @@ class Port:
         return regions
 
     def port_sites(self):
-        covered = sorted((off(b, a), off(b, a) + n) for b, a, n, _ in self.written)
+        covered = sorted((off(b, a), off(b, a) + n) for b, a, n, _ in self.written + self.skipped_blocks)
         todo = []
         for r0, r1 in self.diff_regions():
             # subtract the injected blocks already written; what is left is a hook site
@@ -481,9 +505,9 @@ class Port:
         WRAM/HRAM ($8000 up) follow WRAM_SHIFT, the same rule for both files."""
         if addr >= 0x8000:
             wram = WRAM_SHIFT.get(self.dst_ver)
-            if wram is None or addr < wram["keep_below"] or addr >= 0xe000:
+            if wram is None or addr < wram["keep_below"] or addr >= wram["mod_from"]:
                 return addr
-            if addr >= wram["shift_from"]:
+            if wram_moves(wram, addr):
                 return addr + wram["delta"]
             return None
         return self.xlat_soft(0 if addr < 0x4000 else bank, addr)
@@ -498,7 +522,7 @@ class Port:
                 continue
             bank, addr, rest = int(m.group(1), 16), int(m.group(2), 16), m.group(3)
             r = self.xlat_any(bank, addr)
-            if r is None:
+            if r is None or (bank, addr) in SKIP_BLOCKS.get(self.dst_ver, set()):
                 dropped.append(line)
                 continue
             out.append(f"{bank:02x}:{r:04x} {rest}")

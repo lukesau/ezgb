@@ -9,12 +9,16 @@
  *   op 0 LOAD     read /EZGB.CFG into the FL_* / RTC_BK* WRAM state
  *                 (falls back to the legacy /FLAUNCH.CFG line-1 format)
  *   op 1 SAVE     rewrite /EZGB.CFG from that WRAM state
- *   op 2 BACKUP   LOAD, read the RTC; if it is valid and later than the
- *                 stored copy, store it and SAVE. Hooked after every
- *                 BACKUPSAVE dump and after a SET-tab TIME SET confirm.
+ *   op 2 BACKUP   LOAD, read the RTC; if it is valid, VL clear and later
+ *                 than the stored copy, store it; SAVE. Hooked after every
+ *                 BACKUPSAVE dump. (Launches do the same, in LASTSAVE.)
  *   op 3 RESTORE  LOAD; if the file holds a time and a settled RTC read
- *                 shows year 2000 (the chip lost power), write the stored
- *                 time back to the RTC. Never overwrites any other reading.
+ *                 looks damaged (year 2000, invalid, VL set, or earlier than
+ *                 RTC=), ask, and on A write the stored time back to the RTC.
+ *                 A normal boot neither waits nor writes.
+ *   op 6 TIMESET  as BACKUP, but the new time always replaces RTC=.
+ *   op 7 RELAUNCH the RTC backup LASTSAVE does, for the START-overlay
+ *                 relaunch and fast launch, which skip LastRomPersist.
  *                 Hooked at boot, right after "Micro SD initial OK!" and
  *                 before the BACKUPSAVE check, so the same boot's dump then
  *                 stamps a sane time rather than the dead clock's.
@@ -70,9 +74,18 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define RTC_BK    ((u8 *)0xDB40)     /* stored time, 7 BCD bytes in register order */
 #define RTC_VALID (*(volatile u8 *)0xDB47)
 #define RTC_CUR   ((u8 *)0xDB48)     /* current RTC read, 7 bytes */
-#define RTC_RAW   ((u8 *)0xDB50)     /* EZCFG_RTCRAW builds: the unmasked register bytes */
-#define DBG_VALID (*(volatile u8 *)0xDB57)  /* EZCFG_RTCRAW: validity bits of the last BACKUP */
-#define DBG_CMP   (*(volatile u8 *)0xDB58)  /* EZCFG_RTCRAW: compare result of the last BACKUP */
+#define RTC_RAW   ((u8 *)0xDB50)     /* the unmasked register bytes of the last read */
+#ifdef EZCFG_RTCLOG
+/* Test builds only (EZGB_DEFINES=EZCFG_RTCLOG, see decomp/tools/sdcc_build.py):
+ * an RTCLOG= trace of every RTC event, see log_add. */
+#define LOG_LEN   (*(volatile u8 *)0xDB4F)  /* RTCLOG= text length, a multiple of LOG_ENT */
+#define LOG_BUF   ((u8 *)0xDB60)     /* RTCLOG= text, newest entry first, LOG_MAX bytes */
+#define LOG_ENT   14                 /* "YYMMDDhhmmssE " */
+#define LOG_MAX   (LOG_ENT * 10)
+#define LOG(ev)   log_add(ev)
+#else
+#define LOG(ev)
+#endif
 #define EZ_OP     (*(volatile u8 *)0xDBFC)
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
@@ -87,6 +100,8 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define OP_RESTORE 3
 #define OP_LASTSAVE 4              /* launch: record the launch path as LASTROM= */
 #define OP_LASTLOAD 5              /* START overlay: validate $A300 copy, else fall back to LASTROM= */
+#define OP_TIMESET 6               /* SET-tab TIME SET confirm: the new time replaces RTC= outright */
+#define OP_RELAUNCH 7              /* START-overlay relaunch / fast launch: RTC backup only */
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
@@ -116,15 +131,23 @@ static void parse_rtc(const u8 *v, u8 len);
 static u8 key_is(const u8 *k, u8 klen, const u8 *lit, u8 litlen);
 static u8 lower(u8 c);
 static void rtc_read(void);
-static void rtc_write(void);
+static void rtc_write(const u8 *src);
+static void backup_take(u8 ev, u8 force);
+static u8 rtc_suspect(void);
 static u8 rtc_valid(const u8 *r);
 static u8 bcd_ok(u8 v, u8 max);
 static signed char rtc_cmp(const u8 *a, const u8 *b);
 static u8 put_bcd(u8 *dst, u8 v);
-static void cfg_backup(void);
+static void cfg_backup(u8 timeset);
+#ifdef EZCFG_RTCLOG
+static void log_add(u8 ev);
+#endif
 static void cfg_restore(void);
 static void rtc_read_settled(void);
-static void restored_notice(void);
+static u8 restore_prompt(u8 why);
+static void put_hex(u8 *dst, u8 v);
+static void put_date(u8 *d, const u8 *r);
+static void put_time(u8 *t, const u8 *r);
 static void parse_lastrom(const u8 *v, u16 len);
 static u8 path_valid(const u8 *p);
 static void lastrom_save(void);
@@ -139,7 +162,17 @@ void ezcfg(void) {
     u8 op = EZ_OP;
     if (op == OP_LOAD) { cfg_load(); return; }
     if (op == OP_SAVE) { cfg_save(); return; }
-    if (op == OP_BACKUP) { cfg_backup(); return; }
+    if (op == OP_BACKUP) { cfg_backup(0); return; }
+    if (op == OP_TIMESET) { cfg_backup(1); return; }
+    if (op == OP_RELAUNCH) {
+        /* The relaunch jumps past LoaderPrepPath/LastRomPersist (so past
+         * LASTSAVE); $c2a6 need not hold the full path yet, so leave LASTROM=
+         * alone and only refresh RTC=. */
+        cfg_load();
+        backup_take('L', 0);
+        cfg_save();
+        return;
+    }
     if (op == OP_LASTSAVE) { lastrom_save(); return; }
     if (op == OP_LASTLOAD) { lastrom_load(); return; }
     cfg_restore();
@@ -179,18 +212,20 @@ static const u8 rtc_mask[7] = {0x7F, 0x7F, 0x3F, 0x3F, 0x07, 0x1F, 0xFF};
 
 static void rtc_read(void) {
     u8 i;
+    u8 v;
     fpga_page(6);
-#ifdef EZCFG_RTCRAW
-    for (i = 0; i < 7; i++) RTC_RAW[i] = RTC_WIN[i];
-#endif
-    for (i = 0; i < 7; i++) RTC_CUR[i] = RTC_WIN[i] & rtc_mask[i];
+    for (i = 0; i < 7; i++) {
+        v = RTC_WIN[i];
+        RTC_RAW[i] = v;
+        RTC_CUR[i] = v & rtc_mask[i];
+    }
     fpga_page(0);
 }
 
-static void rtc_write(void) {
+static void rtc_write(const u8 *src) {
     u8 i;
     fpga_page(6);
-    for (i = 0; i < 7; i++) RTC_WIN[i] = RTC_BK[i];
+    for (i = 0; i < 7; i++) RTC_WIN[i] = src[i];
     fpga_commit_7fd0();
     fpga_page(0);
 }
@@ -228,27 +263,50 @@ static signed char rtc_cmp(const u8 *a, const u8 *b) {
     return 0;
 }
 
-static void cfg_backup(void) {
-    cfg_load();
+/* Read the clock, log it as event ev, and store it as RTC= when it is a
+ * trustworthy time: valid, VL (seconds bit 7, the PCF8563's "supply dipped,
+ * time not guaranteed" flag) clear, and later than the stored copy. force
+ * (TIME SET) stores any valid time: it is the user's explicit value, so a
+ * clock set back from a wrong future date does not leave RTC= stuck there.
+ * The caller saves the file. */
+static void backup_take(u8 ev, u8 force) {
+    u8 i;
     rtc_read();
-#ifdef EZCFG_RTCRAW
-    DBG_VALID = (RTC_VALID ? 1 : 0) | (rtc_valid(RTC_CUR) ? 2 : 0);
-    DBG_CMP = RTC_VALID ? (u8)(rtc_cmp(RTC_CUR, RTC_BK) + 1) : 9;
-    if (!rtc_valid(RTC_CUR) || (RTC_VALID && rtc_cmp(RTC_CUR, RTC_BK) <= 0)) {
-        cfg_save();  /* diagnostic: record what the registers held anyway */
-        return;
-    }
-#else
+    LOG(ev);
     if (!rtc_valid(RTC_CUR)) return;
-    if (RTC_VALID && rtc_cmp(RTC_CUR, RTC_BK) <= 0) return;
-#endif
-    {
-        u8 i;
-        for (i = 0; i < 7; i++) RTC_BK[i] = RTC_CUR[i];
-    }
+    if (!force && ((RTC_RAW[R_SEC] & 0x80) || (RTC_VALID && rtc_cmp(RTC_CUR, RTC_BK) <= 0))) return;
+    for (i = 0; i < 7; i++) RTC_BK[i] = RTC_CUR[i];
     RTC_VALID = 1;
+}
+
+/* After every BACKUPSAVE dump (timeset 0) and TIME SET confirm (timeset 1). */
+static void cfg_backup(u8 timeset) {
+    cfg_load();
+    backup_take(timeset ? 'T' : 'B', timeset);
     cfg_save();
 }
+
+#ifdef EZCFG_RTCLOG
+/* Prepend one fixed-width RTCLOG= entry: the raw registers of the last read
+ * as YYMMDDhhmmss (hex, so flag bits and garbage show as-is) and an event:
+ *   boot, first read suspect (see rtc_suspect): Z year 2000, I invalid,
+ *     V VL flag set, E earlier than RTC=; then after the settle wait:
+ *     S looked fine after all, or Y/N the prompt answered A/B
+ *   L  game launch    B  BACKUPSAVE dump    T  TIME SET confirm
+ * A normal boot logs nothing and does not write the file.
+ * The oldest entries drop off past LOG_MAX. */
+static void log_add(u8 ev) {
+    static const u8 order[6] = {R_YR, R_MON, R_DAY, R_HR, R_MIN, R_SEC};
+    u8 i, n;
+    n = LOG_LEN;
+    if (n > LOG_MAX - LOG_ENT) n = LOG_MAX - LOG_ENT;
+    for (i = n; i != 0; i--) LOG_BUF[i - 1 + LOG_ENT] = LOG_BUF[i - 1];
+    for (i = 0; i < 6; i++) put_hex(LOG_BUF + 2 * i, RTC_RAW[order[i]]);
+    LOG_BUF[12] = ev;
+    LOG_BUF[13] = ' ';
+    LOG_LEN = n + LOG_ENT;
+}
+#endif
 
 /* The FPGA serves the PCF8563 through a register copy it fills over I2C. On a
  * soft reset that copy stays live, but on a cold power-up this hook runs very
@@ -272,51 +330,137 @@ static void rtc_read_settled(void) {
     }
 }
 
-/* Restore only when the clock has reset to year 2000, which is what a PCF8563
- * that lost power comes back as. Any other reading is left alone, valid or
- * not: an unsettled cold-boot read that looked "earlier than stored" used to
- * roll the clock back to the last save, which made the next launch of an RTC
- * game see negative elapsed time and zero the game's clock. The BATTERY DRY
- * flag is not needed as a trigger: a DRY boot always comes with the clock at
- * 2000, while the clock can also reset to 2000 without the canary dying, so
- * the year check covers both. */
+/* Why the last read looks like clock damage, or 0. Checked against a stored
+ * RTC= only, so there is always something to restore:
+ *   Z  year 2000, what a PCF8563 that lost power comes back as
+ *   I  not a valid BCD date/time
+ *   V  VL set: the chip's supply dipped too low to guarantee the time
+ *   E  earlier than RTC=; the backup is refreshed at every launch and dump,
+ *      so the clock stopped or glitched
+ * None of these writes the clock on its own: an unsettled cold-boot read that
+ * looked "earlier than stored" once rolled the clock back automatically, and
+ * the next launch of an RTC game zeroed the game's clock (see the clamp in
+ * docs/ezgb-cfg.md). The user decides in restore_prompt. */
+static u8 rtc_suspect(void) {
+    if (RTC_CUR[R_YR] == 0x00) return 'Z';
+    if (!rtc_valid(RTC_CUR)) return 'I';
+    if (RTC_RAW[R_SEC] & 0x80) return 'V';
+    if (rtc_cmp(RTC_CUR, RTC_BK) < 0) return 'E';
+    return 0;
+}
+
 static void cfg_restore(void) {
+    u8 why;
     cfg_load();
     if (!RTC_VALID) return;
     rtc_read();
-    if (RTC_CUR[R_YR] != 0x00) return;   /* fast path: normal boots never wait */
+    why = rtc_suspect();
+    if (why == 0) return;                /* normal boots never wait or write */
+    LOG(why);
     rtc_read_settled();
-    if (RTC_CUR[R_YR] != 0x00) return;
-    rtc_write();
-    restored_notice();
+    why = rtc_suspect();
+    if (why == 0) {
+        LOG('S');
+    } else if (restore_prompt(why)) {
+        LOG('Y');
+        rtc_write(RTC_BK);
+    } else {
+        LOG('N');
+        /* Keep the chip's time, but rewrite it so VL clears and the prompt
+         * does not return every boot for a time the user accepted. */
+        if (why == 'V') rtc_write(RTC_CUR);
+    }
+#ifdef EZCFG_RTCLOG
+    cfg_save();                          /* record the events */
+#endif
 }
 
-/* The stock BATTERY DRY!!! modal (BatteryCheck, 00:1835), same box, rows and
- * [A]OK button, with our text: wait for A, then for its release so the press
- * cannot carry into the BACKUPSAVE [A]OK prompt that follows, and clear the
- * box. "Micro SD initial OK!" sits on row 0, outside the box. */
-static void restored_notice(void) {
-    static const u8 pad[2]  = {' ', 0};
-    static const u8 l1[11]  = {'T','I','M','E',' ','R','E','S','E','T',0};
-    static const u8 l2[9]   = {'R','E','S','T','O','R','E','D',0};
-    static const u8 l3[8]   = {'F','R','O','M',' ','S','D',0};
-    static const u8 ok[6]   = {'[','A',']','O','K',0};
+/* Two hex digits (the raw BCD nibbles, so a garbage read shows as such). */
+static void put_hex(u8 *dst, u8 v) {
+    u8 h = v >> 4, l = v & 0x0F;
+    dst[0] = h < 10 ? '0' + h : 'A' - 10 + h;
+    dst[1] = l < 10 ? '0' + l : 'A' - 10 + l;
+}
+
+/* A widened copy of the stock BATTERY DRY!!! modal (BatteryCheck, 00:1835):
+ * same colours and button, 13 columns of text from col 4. Shows why, the
+ * chip's settled reading (raw hex, so garbage and the VL bit show as-is) and
+ * the RTC= backup, and asks which to keep:
+ *
+ *   RTC RESET?          Z  (RTC BAD? I, RTC LOW V? V, RTC BEHIND? E)
+ *   CHIP 00-01-01
+ *        00:00:05
+ *   SD   26-09-29
+ *        12:38:24
+ *   A:SD  B:KEEP
+ *
+ * Returns 1 for A (restore RTC=). Waits out the joypad latch and any held
+ * button first (docs/joypad-latch.md: a tap from before the box existed would
+ * answer it unseen), then for the release so the press cannot carry into the
+ * BACKUPSAVE [A]OK prompt that follows, and clears the box. "Micro SD initial
+ * OK!" sits on row 0, outside the box. */
+static void put_date(u8 *d, const u8 *r) {
+    put_hex(d, r[R_YR]);      d[2] = '-';
+    put_hex(d + 3, r[R_MON]); d[5] = '-';
+    put_hex(d + 6, r[R_DAY]);
+}
+
+static void put_time(u8 *t, const u8 *r) {
+    put_hex(t, r[R_HR]);      t[2] = ':';
+    put_hex(t + 3, r[R_MIN]); t[5] = ':';
+    put_hex(t + 6, r[R_SEC]);
+}
+
+static u8 restore_prompt(u8 why) {
+    static const u8 pad[2]    = {' ', 0};
+    static const u8 t_z[11]   = {'R','T','C',' ','R','E','S','E','T','?',0};
+    static const u8 t_i[9]    = {'R','T','C',' ','B','A','D','?',0};
+    static const u8 t_v[11]   = {'R','T','C',' ','L','O','W',' ','V','?',0};
+    static const u8 t_e[12]   = {'R','T','C',' ','B','E','H','I','N','D','?',0};
+    static const u8 btn[13]   = {'A',':','S','D',' ',' ','B',':','K','E','E','P',0};
+    u8 l[13];
+    u8 k, yes;
+    const u8 *title;
+
+    title = why == 'Z' ? t_z : why == 'I' ? t_i : why == 'V' ? t_v : t_e;
+    for (k = 0; title[k]; k++) {}
 
     DrawString(pad, 1, 5, 8);
     StoreDrawParams(0, 3, 0);
-    DrawRect(0x23, 0x25, 0x7d, 0x6c, 1);
-    DrawString(l1, 10, 5, 7);
-    DrawString(l2, 8, 5, 8);
-    DrawString(l3, 7, 5, 9);
+    DrawRect(0x1b, 0x25, 0x8d, 0x6c, 1);
+    DrawString(title, k, 4, 6);
+    for (k = 0; k < 13; k++) l[k] = ' ';
+    l[0] = 'C'; l[1] = 'H'; l[2] = 'I'; l[3] = 'P';
+    put_date(l + 5, RTC_RAW);
+    DrawString(l, 13, 4, 7);
+    for (k = 0; k < 5; k++) l[k] = ' ';
+    put_time(l + 5, RTC_RAW);
+    DrawString(l, 13, 4, 8);
+    l[0] = 'S'; l[1] = 'D';
+    put_date(l + 5, RTC_BK);
+    DrawString(l, 13, 4, 9);
+    l[0] = ' '; l[1] = ' ';
+    put_time(l + 5, RTC_BK);
+    DrawString(l, 13, 4, 10);
     StoreDrawParams(0, 3, 0);
-    DrawRect(0x4e, 0x5d, 0x7b, 0x6a, 1);
-    DrawString(ok, 5, 10, 12);
+    DrawRect(0x1e, 0x5d, 0x83, 0x6a, 1);
+    DrawString(btn, 12, 4, 12);
 
-    while (!(ReadJoypad() & 0x10)) WaitVBlankFlag();   /* A */
-    while (ReadJoypad() & 0x10) WaitVBlankFlag();
+    for (k = 0; k < 8; ) {
+        WaitVBlankFlag();
+        if (ReadJoypad() & 0x30) k = 0; else k++;
+    }
+    for (;;) {
+        WaitVBlankFlag();
+        k = ReadJoypad();
+        if (k & 0x10) { yes = 1; break; }   /* A */
+        if (k & 0x20) { yes = 0; break; }   /* B */
+    }
+    while (ReadJoypad() & 0x30) WaitVBlankFlag();
 
     StoreDrawParams(0, 0, 0);
-    DrawRect(0x23, 0x25, 0x7d, 0x6c, 1);
+    DrawRect(0x1b, 0x25, 0x8d, 0x6c, 1);
+    return yes;
 }
 
 /* ---- file I/O ---- */
@@ -379,6 +523,9 @@ static void cfg_load(void) {
     RTC_VALID = 0;
     LR_VALID = 0;
     LR_PATH[0] = 0;
+#ifdef EZCFG_RTCLOG
+    LOG_LEN = 0;
+#endif
 
     if (open_read(cfg_name, &br)) {
         parse_record(br, 0);
@@ -394,6 +541,9 @@ static void cfg_load(void) {
 static void parse_record(u16 br, u8 legacy) {
     u16 p, s, e, eq;
     u8 seen_fl, seen_rtc, seen_lr, seen_ui;
+#ifdef EZCFG_RTCLOG
+    u8 seen_log = 0;
+#endif
 
     if (br > CFG_MAX) br = CFG_MAX;
     CFGBUF[br] = 0;
@@ -437,6 +587,18 @@ static void parse_record(u16 br, u8 legacy) {
             } else if (!seen_ui && key_is(CFGBUF + s, klen, (const u8 *)"ui", 2)) {
                 seen_ui = 1;
                 UI_MODE = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
+#ifdef EZCFG_RTCLOG
+            } else if (!seen_log && key_is(CFGBUF + s, klen, (const u8 *)"rtclog", 6)) {
+                u16 j, len = e - vs + 1;    /* the trimmed last entry's space */
+                u8 whole = 0;
+                seen_log = 1;
+                if (len > LOG_MAX) len = LOG_MAX;
+                while (whole + LOG_ENT <= len) whole += LOG_ENT;
+                len = whole;
+                for (j = 0; j < len; j++) LOG_BUF[j] = CFGBUF[vs + j];
+                if (len != 0) LOG_BUF[len - 1] = ' ';
+                LOG_LEN = (u8)len;
+#endif
             }
         }
     }
@@ -556,26 +718,11 @@ static u8 cfg_save(void) {
     CFGBUF[n++] = UI_MODE ? '2' : '8';
     CFGBUF[n++] = 0x0d;
     CFGBUF[n++] = 0x0a;
-#ifdef EZCFG_RTCRAW
-    {
-        /* RTCRAW=<7 raw regs> <7 masked regs> <7 stored regs> V<valid> C<cmp>
-         * valid: RTC_VALID before this op | rtc_valid(masked)<<1; cmp: 0/1/2
-         * for RTC earlier/equal/later than stored (9 when nothing stored).
-         * Diagnostic builds only; ignored by the parser. */
-        static const u8 k_raw[7] = {'R','T','C','R','A','W','='};
-        u8 d, j;
-        const u8 *src;
-        for (i = 0; i < 7; i++) CFGBUF[n++] = k_raw[i];
-        for (j = 0; j < 3; j++) {
-            src = j == 0 ? RTC_RAW : j == 1 ? RTC_CUR : RTC_BK;
-            for (i = 0; i < 7; i++) {
-                d = src[i] >> 4;   CFGBUF[n++] = d < 10 ? '0' + d : 'A' + d - 10;
-                d = src[i] & 0x0F; CFGBUF[n++] = d < 10 ? '0' + d : 'A' + d - 10;
-            }
-            CFGBUF[n++] = ' ';
-        }
-        CFGBUF[n++] = 'V'; CFGBUF[n++] = '0' + DBG_VALID;
-        CFGBUF[n++] = 'C'; CFGBUF[n++] = '0' + DBG_CMP;
+#ifdef EZCFG_RTCLOG
+    if (LOG_LEN != 0) {
+        static const u8 k_log[7] = {'R','T','C','L','O','G','='};
+        for (i = 0; i < 7; i++) CFGBUF[n++] = k_log[i];
+        for (i = 0; i < LOG_LEN - 1; i++) CFGBUF[n++] = LOG_BUF[i];
         CFGBUF[n++] = 0x0d;
         CFGBUF[n++] = 0x0a;
     }
@@ -637,6 +784,7 @@ static void lastrom_save(void) {
         LR_PATH[n] = 0;
         LR_VALID = 1;
     }
+    backup_take('L', 0);   /* the file is rewritten anyway: keep RTC= current */
     cfg_save();
 }
 

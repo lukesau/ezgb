@@ -123,6 +123,12 @@ def compile_c(c_path, workdir, peep_path=None, pins=None, explicit_pin_syms=None
     ]
     if peep_path:
         cmd[5:5] = ["--peep-file", peep_path]
+    # Test-only features are compiled in with EZGB_DEFINES, a space-separated
+    # list of macros (e.g. EZGB_DEFINES=EZCFG_RTCLOG for the RTCLOG= trace in
+    # ezcfg.c). Release builds leave it unset. inject.py and port-mod.py both
+    # come through here, so set it for the whole build of a test kernel.
+    for d in os.environ.get("EZGB_DEFINES", "").split():
+        cmd.insert(-3, "-D" + d)
     result = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True)
     if result.returncode != 0:
         print("SDCC compile failed:")
