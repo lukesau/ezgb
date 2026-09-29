@@ -1488,7 +1488,7 @@ DrawTimeAutosaveScreen::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0300
+    ld hl, $0200
     push hl
     ld a, $05
     push af
@@ -1504,16 +1504,16 @@ DrawTimeAutosaveScreen::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0121
+    ld hl, $0119
     push hl
-    ld hl, $9b15
+    ld hl, $9b0d
     push hl
     ld a, $7b
     push af
     inc sp
     call DrawRect
     add sp, $05
-    ld hl, $0310
+    ld hl, $0210
     push hl
     ld a, $03
     push af
@@ -1529,7 +1529,7 @@ DrawTimeAutosaveScreen::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0700
+    ld hl, $0800
     push hl
     ld a, $0a
     push af
@@ -1538,9 +1538,9 @@ DrawTimeAutosaveScreen::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0040
+    ld hl, $0048
     push hl
-    ld hl, $8a38
+    ld hl, $8a40
     push hl
     ld a, $82
     push af
@@ -1566,9 +1566,9 @@ DrawTimeAutosaveScreen_setupDoDrawRect::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $013e
+    ld hl, HeaderSGBFlag
     push hl
-    ld hl, $883a
+    ld hl, $8842
     push hl
     ld a, $84
     push af
@@ -1812,9 +1812,9 @@ DrawTimeAutosaveScreen_hiliteStoreDrawParamsA::
     add sp, $03
 
 DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
-    ld hl, $0121
+    ld hl, $0119
     push hl
-    ld hl, $9b15
+    ld hl, $9b0d
     push hl
     ld a, $7b
     push af
@@ -1826,7 +1826,7 @@ DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
     or [hl]
     jp nz, DrawTimeAutosaveScreen_setStringA
 
-    ld hl, $0310
+    ld hl, $0210
     push hl
     ld a, $03
     push af
@@ -1839,7 +1839,7 @@ DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
 
 
 DrawTimeAutosaveScreen_setStringA::
-    ld hl, $0310
+    ld hl, $0210
     push hl
     ld a, $03
     push af
@@ -1857,9 +1857,9 @@ DrawTimeAutosaveScreen_setStringB::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0140
+    ld hl, HeaderROMSize
     push hl
-    ld hl, $8a38
+    ld hl, $8a40
     push hl
     ld a, $82
     push af
@@ -1868,7 +1868,7 @@ DrawTimeAutosaveScreen_setStringB::
     add sp, $05
     ld hl, sp+$3d
     ld a, [hl]
-    sub $01
+    sub $02
     jp nz, DrawTimeAutosaveScreen_setStringC
 
     jr DrawTimeAutosaveScreen_setStringCPath
@@ -1898,9 +1898,9 @@ DrawTimeAutosaveScreen_setStringD::
     add sp, $03
 
 DrawTimeAutosaveScreen_setStringE::
-    ld hl, $0040
+    ld hl, $0048
     push hl
-    ld hl, $8a38
+    ld hl, $8a40
     push hl
     ld a, $82
     push af
@@ -1926,9 +1926,9 @@ DrawTimeAutosaveScreen_setStringsDonePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $013e
+    ld hl, HeaderSGBFlag
     push hl
-    ld hl, $883a
+    ld hl, $8842
     push hl
     ld a, $84
     push af
@@ -2172,7 +2172,7 @@ DrawTimeAutosaveScreen_field0Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0500
+    ld hl, FarCallScan
     push hl
     ld a, $05
     push af
@@ -2286,7 +2286,7 @@ DrawTimeAutosaveScreen_field1Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0505
+    ld hl, $0405
     push hl
     ld a, $02
     push af
@@ -2294,7 +2294,7 @@ DrawTimeAutosaveScreen_field1Clone::
     push bc
     call DrawString
     add sp, $05
-    ld hl, $0507
+    ld hl, $0407
     push hl
     ld a, $01
     push af
@@ -2409,7 +2409,7 @@ DrawTimeAutosaveScreen_field2Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0508
+    ld hl, $0408
     push hl
     ld a, $02
     push af
@@ -2523,7 +2523,7 @@ DrawTimeAutosaveScreen_field3Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $050b
+    ld hl, $040b
     push hl
     ld a, $02
     push af
@@ -2531,7 +2531,7 @@ DrawTimeAutosaveScreen_field3Clone::
     push bc
     call DrawString
     add sp, $05
-    ld hl, $050d
+    ld hl, $040d
     push hl
     ld a, $01
     push af
@@ -2646,7 +2646,7 @@ DrawTimeAutosaveScreen_field4Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $050e
+    ld hl, $040e
     push hl
     ld a, $02
     push af
@@ -2654,7 +2654,7 @@ DrawTimeAutosaveScreen_field4Clone::
     push bc
     call DrawString
     add sp, $05
-    ld hl, RtcBootHook
+    ld hl, $0410
     push hl
     ld a, $01
     push af
@@ -2769,7 +2769,7 @@ DrawTimeAutosaveScreen_field5Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0511
+    ld hl, $0411
     push hl
     ld a, $02
     push af
@@ -2877,7 +2877,7 @@ DrawTimeAutosaveScreen_savYearClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0500
+    ld hl, FarCallScan
     push hl
     ld a, $04
     push af
@@ -2892,7 +2892,7 @@ DrawTimeAutosaveScreen_savYearClone::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0504
+    ld hl, $0404
     push hl
     ld a, $01
     push af
@@ -2966,7 +2966,7 @@ DrawTimeAutosaveScreen_savMonClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0505
+    ld hl, $0405
     push hl
     ld a, $02
     push af
@@ -2981,7 +2981,7 @@ DrawTimeAutosaveScreen_savMonClone::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0507
+    ld hl, $0407
     push hl
     ld a, $01
     push af
@@ -3055,7 +3055,7 @@ DrawTimeAutosaveScreen_savDayClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0508
+    ld hl, $0408
     push hl
     ld a, $02
     push af
@@ -3135,7 +3135,7 @@ DrawTimeAutosaveScreen_savHrClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $050b
+    ld hl, $040b
     push hl
     ld a, $02
     push af
@@ -3150,7 +3150,7 @@ DrawTimeAutosaveScreen_savHrClone::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $050d
+    ld hl, $040d
     push hl
     ld a, $01
     push af
@@ -3224,7 +3224,7 @@ DrawTimeAutosaveScreen_savMinClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $050e
+    ld hl, $040e
     push hl
     ld a, $02
     push af
@@ -3239,7 +3239,7 @@ DrawTimeAutosaveScreen_savMinClone::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, RtcBootHook
+    ld hl, $0410
     push hl
     ld a, $01
     push af
@@ -3313,7 +3313,7 @@ DrawTimeAutosaveScreen_savSecClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0511
+    ld hl, $0411
     push hl
     ld a, $02
     push af
@@ -3332,7 +3332,7 @@ DrawTimeAutosaveScreen_savSecClone::
     ld [hl], $00
 
 DrawTimeAutosaveScreen_inputLoop::
-    call ReadJoypad
+    call $5f20
     ld c, e
     ld b, $00
     ld a, c
@@ -4439,7 +4439,7 @@ DrawTimeAutosaveScreen_hiliteInc::
     ld a, [hl]
 
 FlSetHiliteClamp::
-    db $d6, $04
+    db $d6, $05
 
     jp nc, DrawTimeAutosaveScreen_redraw
 
@@ -4487,7 +4487,7 @@ DrawTimeAutosaveScreen_exitCheck10Confirm::
     or [hl]
 
 FlSetAHookSite::
-    db $c2, $59, $59
+    db $c2, $30, $5f
 
     ld hl, $0003
     push hl
@@ -4496,9 +4496,9 @@ FlSetAHookSite::
     inc sp
     call StoreDrawParams
     add sp, $03
-    ld hl, $0121
+    ld hl, $0119
     push hl
-    ld hl, $9b15
+    ld hl, $9b0d
     push hl
     ld a, $7b
     push af
@@ -5080,11 +5080,35 @@ FlSetRowsHook::
     db $c5, $cd, $90, $59, $e8, $03, $c3, $f5
     db $48
 
-FlSetADispatch::
-    db $f8, $3d, $7e, $3d, $ca, $c7, $58, $f8
-    db $00, $4d, $44, $3e, $02, $f5, $33, $c5
-    db $cd, $90, $59, $e8, $03, $7b, $b7, $ca
-    db $f5, $48, $c3, $03, $59
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
 
 FlPickCommitFar::
     db $3e, $03, $f5, $33, $21, $00, $00, $e5
@@ -5105,574 +5129,179 @@ FlPickCommitFar::
 
 FlCfg::
     db $f8, $02, $2a, $c6, $3d, $4f, $2a, $ce
-    db $00, $47, $7e, $b7, $20, $1e, $21, $fe
-    db $db, $36, $00, $c5, $cd, $44, $5a, $cd
-    db $21, $5b, $c1, $0a, $f5, $33, $cd, $09
-    db $5c, $33, $af, $f5, $33, $cd, $6e, $46
-    db $33, $1e, $00, $c9, $f8, $04, $7e, $3d
-    db $20, $0a, $0a, $f5, $33, $cd, $09, $5c
-    db $33, $1e, $00, $c9, $f8, $04, $7e, $d6
-    db $02, $20, $5e, $0a, $fe, $02, $20, $26
-    db $fa, $80, $da, $b7, $28, $03, $af, $18
-    db $02, $3e, $01, $ea, $80, $da, $cd, $4c
-    db $5a, $3e, $02, $f5, $33, $cd, $09, $5c
-    db $33, $cd, $19, $5b, $af, $f5, $33, $cd
-    db $6e, $46, $33, $1e, $00, $c9, $fe, $04
+    db $00, $47, $7e, $b7, $20, $2b, $21, $fe
+    db $db, $36, $00, $2e, $38, $36, $00, $2e
+    db $39, $36, $00, $f0, $fa, $2e, $3b, $77
+    db $c5, $cd, $bf, $5a, $cd, $9c, $5b, $c1
+    db $0a, $f5, $33, $cd, $f2, $5d, $33, $af
+    db $f5, $33, $cd, $6e, $46, $33, $1e, $00
+    db $c9, $f8, $04, $7e, $3d, $20, $0a, $0a
+    db $f5, $33, $cd, $f2, $5d, $33, $1e, $00
+    db $c9, $f8, $04, $7e, $d6, $02, $c2, $69
+    db $5a, $0a, $fe, $03, $20, $26, $fa, $80
+    db $da, $b7, $28, $03, $af, $18, $02, $3e
+    db $01, $ea, $80, $da, $cd, $c7, $5a, $3e
+    db $03, $f5, $33, $cd, $f2, $5d, $33, $cd
+    db $94, $5b, $af, $f5, $33, $cd, $6e, $46
+    db $33, $1e, $00, $c9, $fe, $01, $20, $26
+    db $fa, $3a, $db, $b7, $28, $03, $af, $18
+    db $02, $3e, $01, $ea, $3a, $db, $cd, $c7
+    db $5a, $3e, $01, $f5, $33, $cd, $f2, $5d
+    db $33, $cd, $94, $5b, $af, $f5, $33, $cd
+    db $6e, $46, $33, $1e, $00, $c9, $fe, $05
     db $20, $24, $f0, $fb, $b7, $28, $03, $af
-    db $18, $02, $3e, $01, $e0, $fb, $cd, $4c
-    db $5a, $3e, $04, $f5, $33, $cd, $09, $5c
-    db $33, $cd, $19, $5b, $af, $f5, $33, $cd
+    db $18, $02, $3e, $01, $e0, $fb, $cd, $c7
+    db $5a, $3e, $05, $f5, $33, $cd, $f2, $5d
+    db $33, $cd, $94, $5b, $af, $f5, $33, $cd
     db $6e, $46, $33, $1e, $00, $c9, $21, $fe
-    db $db, $36, $01, $cd, $19, $5b, $1e, $01
+    db $db, $36, $01, $cd, $94, $5b, $1e, $01
     db $c9, $f8, $04, $7e, $d6, $03, $20, $06
-    db $cd, $54, $5a, $1e, $00, $c9, $cd, $44
-    db $5a, $1e, $00, $c9, $21, $fc, $db, $36
-    db $00, $c3, $00, $5f, $21, $fc, $db, $36
-    db $01, $c3, $00, $5f, $e8, $fb, $cd, $44
-    db $5a, $0e, $00, $69, $26, $00, $11, $a6
-    db $c2, $19, $7e, $b7, $28, $03, $0c, $18
-    db $f2, $f8, $00, $71, $0e, $00, $69, $26
-    db $00, $11, $a4, $c4, $19, $7e, $b7, $28
-    db $03, $0c, $18, $f2, $f8, $01, $79, $32
-    db $7e, $81, $4f, $7e, $b7, $28, $0d, $5e
-    db $af, $57, $1b, $21, $a6, $c2, $19, $7e
-    db $fe, $2f, $28, $01, $0c, $3e, $78, $91
-    db $38, $74, $0e, $00, $f8, $04, $36, $00
-    db $f8, $04, $7e, $f8, $00, $96, $30, $21
-    db $23, $23, $79, $c6, $82, $22, $3e, $00
-    db $ce, $da, $22, $0c, $3a, $2b, $c6, $a6
-    db $5f, $3e, $00, $ce, $c2, $57, $1a, $5e
-    db $23, $66, $6b, $77, $f8, $04, $34, $18
-    db $d7, $41, $79, $b7, $28, $0d, $af, $59
-    db $57, $1b, $21, $82, $da, $19, $7e, $fe
-    db $2f, $28, $0a, $68, $04, $26, $00, $11
-    db $82, $da, $19, $36, $2f, $0e, $00, $78
-    db $c6, $82, $5f, $3e, $00, $ce, $da, $57
-    db $79, $f8, $01, $96, $30, $0f, $04, $79
-    db $c6, $a4, $6f, $3e, $00, $ce, $c4, $67
-    db $7e, $12, $0c, $18, $e2, $af, $12, $21
-    db $81, $da, $70, $cd, $4c, $5a, $21, $fe
-    db $db, $36, $00, $cd, $19, $5b, $e8, $05
-    db $c9, $cd, $91, $36, $cb, $63, $20, $f9
-    db $c9, $af, $0f, $f5, $af, $3e, $03, $f5
-    db $33, $cd, $d8, $23, $e8, $03, $3e, $09
-    db $f5, $33, $21, $0c, $00, $e5, $11, $64
-    db $5b, $d5, $cd, $b7, $08, $e8, $05, $3e
-    db $0b, $f5, $33, $21, $04, $00, $e5, $11
-    db $71, $5b, $d5, $cd, $b7, $08, $e8, $05
-    db $3e, $10, $f5, $33, $21, $03, $00, $e5
-    db $11, $76, $5b, $d5, $cd, $b7, $08, $e8
-    db $05, $c3, $7a, $5b, $46, $41, $53, $54
-    db $20, $4c, $41, $55, $4e, $43, $48, $3a
-    db $00, $52, $4f, $4d, $3a, $00, $55, $49
-    db $3a, $00, $0e, $00, $69, $26, $00, $11
-    db $10, $db, $19, $36, $00, $0c, $79, $d6
-    db $28, $38, $f1, $fa, $81, $da, $b7, $20
-    db $05, $01, $02, $5c, $18, $1f, $0e, $00
-    db $59, $21, $82, $da, $16, $00, $19, $7e
-    db $b7, $28, $09, $fe, $2f, $20, $02, $4b
-    db $0c, $1c, $18, $ed, $79, $c6, $82, $4f
-    db $3e, $00, $ce, $da, $47, $1e, $00, $7b
-    db $d6, $28, $30, $16, $6b, $26, $00, $09
-    db $56, $7a, $b7, $28, $0d, $7b, $c6, $10
-    db $6f, $3e, $00, $ce, $db, $67, $72, $1c
-    db $18, $e5, $af, $0f, $f5, $af, $3e, $03
-    db $f5, $33, $cd, $d8, $23, $e8, $03, $3e
-    db $0d, $f5, $33, $21, $14, $00, $e5, $11
-    db $10, $db, $d5, $cd, $b7, $08, $e8, $05
-    db $3e, $0e, $f5, $33, $21, $14, $00, $e5
-    db $11, $24, $db, $d5, $cd, $b7, $08, $e8
-    db $05, $c9, $28, $41, $55, $54, $4f, $29
-    db $00, $af, $0f, $f5, $af, $f5, $33, $cd
-    db $d8, $23, $e8, $03, $21, $50, $01, $e5
-    db $21, $48, $8a, $e5, $3e, $82, $f5, $33
-    db $cd, $01, $24, $e8, $05, $f8, $02, $7e
-    db $d6, $02, $20, $10, $af, $67, $2e, $01
-    db $e5, $3e, $01, $f5, $33, $cd, $d8, $23
-    db $e8, $03, $18, $0d, $af, $0f, $f5, $af
+    db $cd, $cf, $5a, $1e, $00, $c9, $f8, $04
+    db $7e, $d6, $05, $20, $3c, $f0, $fa, $4f
+    db $21, $3b, $db, $96, $21, $3b, $db, $71
+    db $fe, $65, $38, $02, $3e, $64, $21, $39
+    db $db, $86, $21, $39, $db, $77, $fa, $39
+    db $db, $2e, $38, $4e, $0c, $0d, $0e, $3c
+    db $28, $02, $0e, $14, $91, $38, $0f, $21
+    db $39, $db, $36, $00, $fa, $38, $db, $3c
+    db $2e, $38, $77, $cd, $20, $5c, $1e, $00
+    db $c9, $cd, $bf, $5a, $1e, $00, $c9, $21
+    db $fc, $db, $36, $00, $c3, $00, $5f, $21
+    db $fc, $db, $36, $01, $c3, $00, $5f, $e8
+    db $fb, $cd, $bf, $5a, $0e, $00, $69, $26
+    db $00, $11, $a6, $c2, $19, $7e, $b7, $28
+    db $03, $0c, $18, $f2, $f8, $00, $71, $0e
+    db $00, $69, $26, $00, $11, $a4, $c4, $19
+    db $7e, $b7, $28, $03, $0c, $18, $f2, $f8
+    db $01, $79, $32, $7e, $81, $4f, $7e, $b7
+    db $28, $0d, $5e, $af, $57, $1b, $21, $a6
+    db $c2, $19, $7e, $fe, $2f, $28, $01, $0c
+    db $3e, $78, $91, $38, $74, $0e, $00, $f8
+    db $04, $36, $00, $f8, $04, $7e, $f8, $00
+    db $96, $30, $21, $23, $23, $79, $c6, $82
+    db $22, $3e, $00, $ce, $da, $22, $0c, $3a
+    db $2b, $c6, $a6, $5f, $3e, $00, $ce, $c2
+    db $57, $1a, $5e, $23, $66, $6b, $77, $f8
+    db $04, $34, $18, $d7, $41, $79, $b7, $28
+    db $0d, $af, $59, $57, $1b, $21, $82, $da
+    db $19, $7e, $fe, $2f, $28, $0a, $68, $04
+    db $26, $00, $11, $82, $da, $19, $36, $2f
+    db $0e, $00, $78, $c6, $82, $5f, $3e, $00
+    db $ce, $da, $57, $79, $f8, $01, $96, $30
+    db $0f, $04, $79, $c6, $a4, $6f, $3e, $00
+    db $ce, $c4, $67, $7e, $12, $0c, $18, $e2
+    db $af, $12, $21, $81, $da, $70, $cd, $c7
+    db $5a, $21, $fe, $db, $36, $00, $cd, $94
+    db $5b, $e8, $05, $c9, $cd, $91, $36, $cb
+    db $63, $20, $f9, $c9, $af, $0f, $f5, $af
     db $3e, $03, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $af, $67, $2e, $50, $e5, $21, $48
-    db $8a, $e5, $3e, $82, $f5, $33, $cd, $01
-    db $24, $e8, $05, $fa, $80, $da, $b7, $28
-    db $1f, $af, $67, $2e, $03, $e5, $3e, $03
-    db $f5, $33, $cd, $d8, $23, $e8, $03, $21
-    db $4e, $01, $e5, $21, $4a, $88, $e5, $3e
-    db $84, $f5, $33, $cd, $01, $24, $e8, $05
-    db $f8, $02, $7e, $d6, $03, $20, $0e, $21
+    db $03, $3e, $06, $f5, $33, $21, $04, $00
+    db $e5, $11, $01, $5c, $d5, $cd, $b7, $08
+    db $e8, $05, $21, $06, $06, $e5, $3e, $02
+    db $f5, $33, $11, $06, $5c, $d5, $cd, $b7
+    db $08, $e8, $05, $21, $0b, $06, $e5, $3e
+    db $05, $f5, $33, $11, $09, $5c, $d5, $cd
+    db $b7, $08, $e8, $05, $3e, $0a, $f5, $33
+    db $21, $0c, $00, $e5, $11, $0f, $5c, $d5
+    db $cd, $b7, $08, $e8, $05, $3e, $0e, $f5
+    db $33, $21, $03, $00, $e5, $11, $1c, $5c
+    db $d5, $cd, $b7, $08, $e8, $05, $c3, $20
+    db $5c, $52, $54, $43, $3a, $00, $53, $44
+    db $00, $4e, $4f, $20, $53, $44, $00, $46
+    db $41, $53, $54, $20, $4c, $41, $55, $4e
+    db $43, $48, $3a, $00, $55, $49, $3a, $00
+    db $e8, $f9, $fa, $81, $da, $b7, $20, $09
+    db $f8, $00, $36, $4f, $23, $36, $5d, $18
+    db $23, $0e, $00, $59, $21, $82, $da, $16
+    db $00, $19, $7e, $b7, $28, $09, $fe, $2f
+    db $20, $02, $4b, $0c, $1c, $18, $ed, $79
+    db $c6, $82, $f5, $f8, $02, $f1, $22, $3e
+    db $00, $ce, $da, $77, $06, $00, $f8, $00
+    db $2a, $80, $5f, $7e, $ce, $00, $57, $1a
+    db $b7, $28, $03, $04, $18, $f0, $f8, $02
+    db $70, $3e, $0a, $90, $38, $37, $21, $38
+    db $db, $36, $00, $0e, $00, $79, $c6, $10
+    db $f5, $f8, $07, $f1, $22, $3e, $00, $ce
+    db $db, $77, $79, $f8, $02, $96, $30, $0c
+    db $2b, $2b, $2a, $81, $5f, $7e, $ce, $00
+    db $57, $1a, $18, $01, $af, $f8, $05, $5e
+    db $23, $66, $6b, $77, $0c, $79, $d6, $0a
+    db $38, $d3, $c3, $30, $5d, $21, $38, $db
+    db $4e, $58, $16, $00, $13, $13, $13, $f8
+    db $03, $7b, $22, $7a, $32, $06, $00, $79
+    db $96, $23, $78, $9e, $50, $cb, $7e, $28
+    db $07, $cb, $7a, $20, $08, $bf, $18, $05
+    db $cb, $7a, $28, $01, $37, $38, $05, $21
+    db $38, $db, $36, $00, $fa, $38, $db, $f8
+    db $05, $77, $f8, $06, $36, $00, $f8, $06
+    db $3a, $c6, $10, $5f, $3e, $00, $ce, $db
+    db $57, $7e, $f8, $02, $96, $30, $12, $2b
+    db $2b, $7e, $f8, $05, $86, $2b, $2b, $2b
+    db $2b, $4f, $7e, $ce, $00, $47, $0a, $18
+    db $02, $3e, $20, $12, $f8, $05, $34, $3a
+    db $2b, $4f, $06, $00, $79, $96, $23, $78
+    db $9e, $50, $cb, $7e, $28, $07, $cb, $7a
+    db $20, $08, $bf, $18, $05, $cb, $7a, $28
+    db $01, $37, $38, $04, $f8, $05, $36, $00
+    db $f8, $06, $34, $7e, $d6, $0a, $38, $ae
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $d8, $23, $e8, $03, $3e, $0c, $f5
+    db $33, $21, $0a, $00, $e5, $11, $10, $db
+    db $d5, $cd, $b7, $08, $e8, $0c, $c9, $28
+    db $41, $55, $54, $4f, $29, $00, $af, $0f
+    db $f5, $af, $f5, $33, $cd, $d8, $23, $e8
+    db $03, $f8, $03, $3a, $4f, $c6, $08, $5f
+    db $2a, $47, $c6, $08, $57, $c5, $d5, $3e
+    db $01, $f5, $33, $7b, $f5, $33, $d5, $33
+    db $3a, $57, $5e, $d5, $cd, $01, $24, $e8
+    db $05, $d1, $c1, $f8, $05, $7e, $b7, $28
+    db $14, $c5, $d5, $af, $67, $2e, $01, $e5
+    db $3e, $01, $f5, $33, $cd, $d8, $23, $e8
+    db $03, $d1, $c1, $18, $11, $c5, $d5, $af
+    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
+    db $d8, $23, $e8, $03, $d1, $c1, $c5, $af
+    db $f5, $33, $7b, $f5, $33, $d5, $33, $f8
+    db $08, $3a, $57, $5e, $d5, $cd, $01, $24
+    db $e8, $05, $c1, $f8, $04, $7e, $b7, $c8
+    db $c5, $af, $67, $2e, $03, $e5, $3e, $03
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $c1
+    db $79, $c6, $06, $57, $78, $c6, $06, $0c
+    db $0c, $58, $1c, $1c, $26, $01, $6a, $e5
+    db $f5, $33, $51, $d5, $cd, $01, $24, $e8
+    db $05, $c9, $f8, $02, $7e, $3d, $3e, $01
+    db $28, $01, $af, $47, $fa, $3a, $db, $d6
+    db $01, $3e, $00, $17, $c5, $c5, $33, $67
+    db $2e, $30, $e5, $3e, $42, $f5, $33, $cd
+    db $56, $5d, $e8, $04, $fa, $3a, $db, $33
+    db $67, $2e, $30, $e5, $3e, $82, $f5, $33
+    db $cd, $56, $5d, $e8, $04, $f8, $02, $7e
+    db $d6, $03, $3e, $01, $28, $01, $af, $21
+    db $80, $da, $46, $f5, $33, $c5, $33, $21
+    db $82, $50, $e5, $cd, $56, $5d, $e8, $04
+    db $f8, $02, $7e, $d6, $04, $20, $0e, $21
     db $03, $00, $e5, $af, $f5, $33, $cd, $d8
     db $23, $e8, $03, $18, $0d, $af, $0f, $f5
     db $af, $3e, $03, $f5, $33, $cd, $d8, $23
-    db $e8, $03, $21, $61, $01, $e5, $21, $55
-    db $9b, $e5, $3e, $73, $f5, $33, $cd, $01
-    db $24, $e8, $05, $21, $0f, $0b, $e5, $3e
-    db $04, $f5, $33, $11, $20, $5d, $d5, $cd
+    db $e8, $03, $21, $69, $01, $e5, $21, $5d
+    db $9b, $e5, $3e, $53, $f5, $33, $cd, $01
+    db $24, $e8, $05, $21, $0b, $0c, $e5, $3e
+    db $08, $f5, $33, $11, $e0, $5e, $d5, $cd
     db $b7, $08, $e8, $05, $f8, $02, $7e, $d6
-    db $04, $20, $0e, $21, $03, $00, $e5, $af
+    db $05, $20, $0e, $21, $03, $00, $e5, $af
     db $f5, $33, $cd, $d8, $23, $e8, $03, $18
     db $0d, $af, $0f, $f5, $af, $3e, $03, $f5
-    db $33, $cd, $d8, $23, $e8, $03, $21, $89
-    db $01, $e5, $21, $7d, $9b, $e5, $3e, $73
+    db $33, $cd, $d8, $23, $e8, $03, $21, $79
+    db $01, $e5, $21, $6d, $9b, $e5, $3e, $73
     db $f5, $33, $cd, $01, $24, $e8, $05, $f0
-    db $fb, $b7, $28, $05, $01, $2a, $5d, $18
-    db $03, $01, $25, $5d, $21, $0f, $10, $e5
+    db $fb, $b7, $28, $05, $01, $ee, $5e, $18
+    db $03, $01, $e9, $5e, $21, $0f, $0e, $e5
     db $3e, $04, $f5, $33, $c5, $cd, $b7, $08
     db $e8, $05, $af, $0f, $f5, $af, $3e, $03
     db $f5, $33, $cd, $d8, $23, $e8, $03, $c9
-    db $50, $49, $43, $4b, $00, $20, $38, $70
-    db $78, $00, $31, $32, $70, $78, $00
+    db $50, $49, $43, $4b, $20, $52, $4f, $4d
+    db $00, $20, $38, $70, $78, $00, $31, $32
+    db $70, $78, $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -5708,52 +5337,17 @@ RtcSetHook::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+SetLoopTickHook::
+    db $3e, $05, $f5, $33, $01, $00, $00, $c5
+    db $cd, $90, $59, $e8, $03, $c3, $91, $36
+
+FlSetADispatch::
+    db $f8, $3d, $7e, $fe, $02, $ca, $c7, $58
+    db $f8, $00, $4d, $44, $3e, $02, $f5, $33
+    db $c5, $cd, $90, $59, $e8, $03, $7b, $b7
+    db $ca, $f5, $48, $c3, $03, $59
+
     rst RST_38
     rst RST_38
     rst RST_38

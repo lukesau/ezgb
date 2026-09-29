@@ -923,13 +923,9 @@ VBlankPadLatch::
     db $f0, $40, $f6, $10, $e0, $40, $3e, $48
     db $e0, $45, $c5, $cd, $16, $3a, $47, $f0
     db $fc, $2f, $a0, $4f, $78, $e0, $fc, $f0
-    db $fd, $b1, $e0, $fd, $c1, $c9
+    db $fd, $b1, $e0, $fd, $f0, $fa, $3c, $e0
+    db $fa, $c1, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -7741,7 +7737,7 @@ ApplyPixelSafe::
     db $77, $c9
 
 ReadJoypadLatched::
-    db $cd, $16, $3a, $5f, $f3, $f0, $fd, $b3
+    db $f3, $cd, $16, $3a, $5f, $f0, $fd, $b3
     db $5f, $af, $e0, $fd, $7b, $e0, $fc, $fb
     db $c9
 
