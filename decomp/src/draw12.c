@@ -200,7 +200,18 @@ static u8 glyph_index(u8 c) {
  * last cell of rows that had been highlighted, and it was caught in SameBoy
  * with `watch $8000 to $9800 if ([$ff41] & 3) == 3`, every hit at LY 0.
  * Interrupts are off from the sync to the last write so no handler can eat
- * the window; the latency added is under two scanlines. Rows within a batch
+ * the window; the latency added is under two scanlines. One exception: a
+ * batch that syncs at the end of the frame would wait for the next mode 3 on
+ * the far side of VBlank with interrupts off, delaying the VBlank callback
+ * that points the BG tile data back at $8000 (the canvas switches to $8800 at
+ * LYC 72), so the top lines of the next frame drew from the wrong tiles: the
+ * tab strip flickered while the 12px list redrew. LY can already read 144
+ * while STAT still says mode 0, so testing for line 143 alone was not enough
+ * (SameBoy: the callback's LCDC write landed at LY 3 right after a batch's
+ * ei). Any sync from LY >= 143 therefore enables interrupts and waits for LY
+ * 145..150 (callback done, VBlank window left) or the next frame, then
+ * starts over; only syncs below line 143 wait for mode 3 with interrupts off,
+ * and there the next mode 3 is at most about a line away. Rows within a batch
  * never cross a tile (a cell starts on tile row 0 or 4 and n is 12 or 8), so
  * the tile-boundary step is taken between batches only. */
 static void blit_col1(const u8 *src, u16 addr, u8 n, u8 xm) __naked {
@@ -234,10 +245,24 @@ blit_col1_batch:
 	jr	nc, blit_col1_sync
 	jr	blit_col1_go
 blit_col1_sync:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_col1_m3
+	ei
+blit_col1_vb:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_col1_batch
+	cp	#145
+	jr	c, blit_col1_vb
+	cp	#151
+	jr	c, blit_col1_batch
+	jr	blit_col1_vb
+blit_col1_m3:
 	ldh	a, (#0xff41)
 	and	#3
 	cp	#3
-	jr	nz, blit_col1_sync
+	jr	nz, blit_col1_m3
 blit_col1_w0:
 	ldh	a, (#0xff41)
 	and	#3
@@ -315,10 +340,24 @@ blit_col2_batch:
 	jr	nc, blit_col2_sync
 	jr	blit_col2_go
 blit_col2_sync:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_col2_m3
+	ei
+blit_col2_vb:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_col2_batch
+	cp	#145
+	jr	c, blit_col2_vb
+	cp	#151
+	jr	c, blit_col2_batch
+	jr	blit_col2_vb
+blit_col2_m3:
 	ldh	a, (#0xff41)
 	and	#3
 	cp	#3
-	jr	nz, blit_col2_sync
+	jr	nz, blit_col2_m3
 blit_col2_w0:
 	ldh	a, (#0xff41)
 	and	#3

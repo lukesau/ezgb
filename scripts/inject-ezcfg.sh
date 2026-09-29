@@ -85,6 +85,13 @@ PY
 # first folder; the stock AUTO SAVE toggle fired several times per press).
 # Move the `di` ahead of the raw read (same 17 bytes).
 python3 tools/patch_bytes.py "$V" 0 2746 cd163a5ff3 f3cd163a5f --apply >/dev/null
+# Tab switch clear: the tab drawer (08:7169) wipes the content area from y 15
+# down, which the slid-up SET button box (y 13..25) straddles, so its top two
+# lines survived onto HELP. Clear from y 10 (the tab underline is y 8..9; both
+# browser layouts start at y 16), in all three per-tab copies of the clear.
+for a in 7222 729d 7318; do
+  python3 tools/patch_bytes.py "$V" 8 "$a" 0f 0a --apply >/dev/null
+done
 # SET cursor rows 0..5 (0 TIME, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 UI)
 python3 tools/patch_bytes.py "$V" 4 5605 04 05 --apply >/dev/null
 # A on the SET tab: FlSetADispatch moved from 04:5959 (full, and its row test

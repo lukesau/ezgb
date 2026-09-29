@@ -92,7 +92,15 @@ of rows the cursor had left (their old content was black, so a dropped
 write stayed visible); SameBoy's CGB model reproduced it and
 `watch $8000 to $9800 if ([$ff41] & 3) == 3` put every hit at LY 0.
 Interrupts are off from the sync to the last write (under two scanlines of
-added latency). See [vram-write-race.md](vram-write-race.md) for why the
+added latency), except near the end of the frame: a sync from LY >= 143
+waited for the next mode 3 on the far side of VBlank with interrupts off, so
+the VBlank callback that points the BG tile data back at `$8000` (the canvas
+uses `$8800` below LYC 72) ran late and the tab strip drew from the wrong
+tiles for a frame: a flicker in the top rows while the list redrew (mod
+4.5-4.7). Such a batch now enables interrupts, waits for LY 145..150 or the
+next frame, and starts over. `watch/w $ff40 if [$ff44] < $0a` (the callback's
+LCDC write landing in the top lines) counted 15 late switches over 60 cursor
+moves before, 0 after, the same as 8px mode. See [vram-write-race.md](vram-write-race.md) for why the
 post-sample budget is only 20 cycles when writing one row at a time.
 
 Measured in SameBoy with the debugger's `ticks` (M-cycles per far call into

@@ -9,7 +9,7 @@ let code = CGKeyCode(UInt16(a[2])!)
 let n = Int(a[3])!
 for _ in 0..<n {
     CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true)!.postToPid(pid)
-    usleep(60000)
+    usleep(250000)   // ~250 ms: shorter presses are sometimes missed
     CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: false)!.postToPid(pid)
     usleep(120000)
 }

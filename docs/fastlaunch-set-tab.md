@@ -34,6 +34,12 @@ highlight tests the cursor against 2 instead of 1 (`04:498c`), and
 room for `cp $02`): row 2 goes to the stock AUTO SAVE toggle (`$58d6`), every
 other row to `flcfg` op A. The dispatch site `04:5632` now reads `c2 30 5f`.
 
+**Tab-switch clear.** The tab drawer (`08:7169`) wipes the content area as
+`DrawRect(0, y0, $9f, $8f)` in three per-tab copies (`08:7222`, `729d`,
+`7318` hold y0). Stock y0 was `$0f`; the slid-up SET button box starts at
+y 13, so its top two lines survived onto HELP. y0 is now `$0a`, just below
+the tab underline (y 8-9); both browser layouts start at y 16.
+
 **Name marquee.** `flcfg` op 5 runs once per pass of the SET input loop:
 its `call ReadJoypad` at `04:5162` goes through `SetLoopTickHook` (`04:5f20`,
 16 B: op 5, then `jp ReadJoypad`). The scroll is paced by `hFrame` (`$fffa`),
