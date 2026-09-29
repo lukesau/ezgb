@@ -27,7 +27,8 @@ stub at `$ff80`): `$fffc` the previous frame's pad state, `$fffd` the latch.
 
 `VBlankCb_Bg8000` (`00:2a5f`), the VBlank callback `EnterGfxMode1` registers
 for every drawn screen, is extended: it becomes `jp VBlankPadLatch`
-(`00:05cf`, 30 bytes), which does its original work (BG tile data back to
+(`00:05cf`, 35 bytes; the last 5, `ldh a,[$fa]; inc a; ldh [$fa],a`, keep
+`hFrame` at `$fffa` counting VBlanks for the SET-tab name marquee), which does its original work (BG tile data back to
 `$8000`, `LYC = $48`) and then:
 
 ```
@@ -48,12 +49,17 @@ for every drawn screen, is extended: it becomes `jp VBlankPadLatch`
 ```
 
 `ReadJoypad` becomes `jp ReadJoypadLatched` (`00:2746`, 17 bytes, in the
-freed old `DrawGlyph` body):
+freed old `DrawGlyph` body). Interrupts are off across the raw read too: the
+VBlank sampler writes P1's select bits, so if it ran between the main loop's
+select and read it left P1 deselected and a held button read as released.
+Mod 4.6 had the `di` after the raw read, and that race was reliable wherever
+code spun on `ReadJoypad` waiting for a release: PICK ROM returned to the
+browser with A still down, which then opened the first folder.
 
 ```
+    di
     call ReadJoypadRaw
     ld e, a
-    di
     ldh a, [$fd]
     or e
     ld e, a                 ; reported = live | latch
@@ -98,7 +104,7 @@ latch the 12px build lost one to three of those presses at 60 ms.
 cd decomp
 python3 tools/inject_bytes.py $V 0 05cf VBlankPadLatch \
     f040f610e0403e48e045c5cd163a47f0fc2fa04f78e0fcf0fdb1e0fdc1c9 --apply
-python3 tools/inject_bytes.py $V 0 2746 ReadJoypadLatched cd163a5ff3f0fdb35fafe0fd7be0fcfbc9 --apply
+python3 tools/inject_bytes.py $V 0 2746 ReadJoypadLatched f3cd163a5ff0fdb35fafe0fd7be0fcfbc9 --apply
 python3 tools/patch_call.py $V 0 2a5f 11 00:05cf --jp --apply
 python3 tools/patch_call.py $V 0 3a4a 5 00:2746 --jp --apply
 ```

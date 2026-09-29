@@ -1,7 +1,8 @@
 # UI mode: 8px or 12px browser, chosen on the SET tab
 
 The 12x12 browser of [font12.md](font12.md) is opt-in. A new `UI:` row on
-the SET tab (row 16, under the ROM line) carries a button that reads `8px`
+the SET tab (row 14 since the SET screen was slid up, see
+[fastlaunch-set-tab.md](fastlaunch-set-tab.md)) carries a button that reads `8px`
 or `12px`; A toggles it, the choice is written to `EZGB.CFG` as `UI=8` or
 `UI=12` ([ezgb-cfg.md](ezgb-cfg.md)) and read back at boot. With no key, or
 no card, the browser is the 8px one, so shipping this changes nothing
@@ -48,9 +49,9 @@ re-pointed), `browser_page_end.c`, `browser_scroll_repaint.c` (rows - 2
 in the bottom-up loop) and `browser_icons.c`, whose 8px branch is the
 pre-12px drawing: icon at column 0, name from column 1, 19 wide.
 
-SET tab: the cursor clamp at `04:5604` allows row 4, `FlSetADispatch`
+SET tab: the cursor clamp at `04:5604` allows row 5 (the UI row, after RTC and PICK ROM), `FlSetADispatch`
 already routes any row but 1 to `flcfg` op A, and `draw_rows` paints the
-new button like PICK (box at `(115,125)-(155,137)`, text at column 15).
+new button like PICK (box at `(115,109)-(155,121)`, text at column 15).
 
 Switching mode and returning to the browser redraws the page from scratch,
 so no stale rows remain from the other layout (the tab switch clears the

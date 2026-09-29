@@ -12,16 +12,36 @@ All addresses are `bank:addr` for 1.05e; banks 0/2/4/8 are byte-identical across
 
 ## What the user sees
 
-The SET tab (SELECT cycles SD → SET → HELP) gains two rows below AUTO SAVE:
+The SET tab (SELECT cycles SD → SET → HELP). The stock rows were slid up one
+row (every row immediate and y pixel of TIME/SET and the date/time digits,
+the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
+row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 
-| Row | Control |
+| Row | Content |
 |---|---|
-| 9  | `FAST LAUNCH:` + a checkbox (like AUTO SAVE). A toggles it and rewrites the file. |
-| 11 | `ROM:` + a `PICK` button. A arms pick mode and drops into the browser. |
-| 13-14 | the chosen ROM's basename, or `(AUTO)` when no explicit path is set. |
+| 2 | `TIME:` + `SET` (stock) |
+| 4 | date and time (stock) |
+| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) |
+| 10 | `FAST LAUNCH:` checkbox |
+| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. |
+| 14 | `UI:` 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
 
-UP/DOWN move a cursor over four rows: 0 TIME SET, 1 AUTO SAVE, 2 FAST LAUNCH,
-3 PICK. SELECT exits the tab; B redraws (both unchanged from stock).
+UP/DOWN move a cursor over six rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
+3 FAST LAUNCH, 4 PICK ROM, 5 UI (clamp `04:5604` `d6 05`). The stock checkbox
+highlight tests the cursor against 2 instead of 1 (`04:498c`), and
+`FlSetADispatch` moved to `04:5f30` (30 B; its old slot at `04:5959` had no
+room for `cp $02`): row 2 goes to the stock AUTO SAVE toggle (`$58d6`), every
+other row to `flcfg` op A. The dispatch site `04:5632` now reads `c2 30 5f`.
+
+**Name marquee.** `flcfg` op 5 runs once per pass of the SET input loop:
+its `call ReadJoypad` at `04:5162` goes through `SetLoopTickHook` (`04:5f20`,
+16 B: op 5, then `jp ReadJoypad`). The scroll is paced by `hFrame` (`$fffa`),
+a VBlank counter added to the joypad latch's callback
+([`joypad-latch.md`](joypad-latch.md)): one character per 20 frames, a
+60-frame hold at the start of the name, 3 blanks between repeats. Counting
+loop passes did not work: a pass is a fraction of a frame on 1.05e and
+exactly one on 1.04e, whose loop waits for VBlank.
 
 **Pick mode:** pressing A on PICK arms a flag and returns to the browser, whose
 tab strip now reads ` PICK A ROM `. Browse normally; pressing A on a `.gb`/`.gbc`

@@ -19,6 +19,8 @@
  *   op 6 TIMESET  as BACKUP, but the new time always replaces RTC=.
  *   op 7 RELAUNCH the RTC backup LASTSAVE does, for the START-overlay
  *                 relaunch and fast launch, which skip LastRomPersist.
+ * RTCSD=0 (SET tab "RTC: NO SD") turns every RTC part off: no boot read or
+ * prompt, and BACKUP, TIMESET and RELAUNCH return before touching the card.
  *                 Hooked at boot, right after "Micro SD initial OK!" and
  *                 before the BACKUPSAVE check, so the same boot's dump then
  *                 stamps a sane time rather than the dead clock's.
@@ -74,6 +76,9 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define RTC_BK    ((u8 *)0xDB40)     /* stored time, 7 BCD bytes in register order */
 #define RTC_VALID (*(volatile u8 *)0xDB47)
 #define RTC_CUR   ((u8 *)0xDB48)     /* current RTC read, 7 bytes */
+#define RTC_OFF   (*(volatile u8 *)0xDB3A)  /* RTCSD=0 ("RTC: NO SD" on the SET tab): no RTC
+                                               * reads, backups or prompt; stays valid in WRAM
+                                               * after any load, so hooks can skip the card */
 #define RTC_RAW   ((u8 *)0xDB50)     /* the unmasked register bytes of the last read */
 #ifdef EZCFG_RTCLOG
 /* Test builds only (EZGB_DEFINES=EZCFG_RTCLOG, see decomp/tools/sdcc_build.py):
@@ -165,6 +170,7 @@ void ezcfg(void) {
     if (op == OP_BACKUP) { cfg_backup(0); return; }
     if (op == OP_TIMESET) { cfg_backup(1); return; }
     if (op == OP_RELAUNCH) {
+        if (RTC_OFF) return;             /* NO SD: leave the card alone */
         /* The relaunch jumps past LoaderPrepPath/LastRomPersist (so past
          * LASTSAVE); $c2a6 need not hold the full path yet, so leave LASTROM=
          * alone and only refresh RTC=. */
@@ -281,6 +287,7 @@ static void backup_take(u8 ev, u8 force) {
 
 /* After every BACKUPSAVE dump (timeset 0) and TIME SET confirm (timeset 1). */
 static void cfg_backup(u8 timeset) {
+    if (RTC_OFF) return;                 /* NO SD: flag from the boot/SET load */
     cfg_load();
     backup_take(timeset ? 'T' : 'B', timeset);
     cfg_save();
@@ -352,7 +359,7 @@ static u8 rtc_suspect(void) {
 static void cfg_restore(void) {
     u8 why;
     cfg_load();
-    if (!RTC_VALID) return;
+    if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */
     rtc_read();
     why = rtc_suspect();
     if (why == 0) return;                /* normal boots never wait or write */
@@ -523,6 +530,7 @@ static void cfg_load(void) {
     RTC_VALID = 0;
     LR_VALID = 0;
     LR_PATH[0] = 0;
+    RTC_OFF = 0;
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -540,7 +548,7 @@ static void cfg_load(void) {
  * stale tail left behind by a shorter rewrite cannot override the record. */
 static void parse_record(u16 br, u8 legacy) {
     u16 p, s, e, eq;
-    u8 seen_fl, seen_rtc, seen_lr, seen_ui;
+    u8 seen_fl, seen_rtc, seen_lr, seen_ui, seen_rs;
 #ifdef EZCFG_RTCLOG
     u8 seen_log = 0;
 #endif
@@ -551,6 +559,7 @@ static void parse_record(u16 br, u8 legacy) {
     seen_rtc = 0;
     seen_lr = 0;
     seen_ui = 0;
+    seen_rs = 0;
     p = 0;
     for (;;) {
         if (p >= br) break;
@@ -587,6 +596,9 @@ static void parse_record(u16 br, u8 legacy) {
             } else if (!seen_ui && key_is(CFGBUF + s, klen, (const u8 *)"ui", 2)) {
                 seen_ui = 1;
                 UI_MODE = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
+            } else if (!seen_rs && key_is(CFGBUF + s, klen, (const u8 *)"rtcsd", 5)) {
+                seen_rs = 1;
+                RTC_OFF = (e > vs && CFGBUF[vs] == '0') ? 1 : 0;
 #ifdef EZCFG_RTCLOG
             } else if (!seen_log && key_is(CFGBUF + s, klen, (const u8 *)"rtclog", 6)) {
                 u16 j, len = e - vs + 1;    /* the trimmed last entry's space */
@@ -718,6 +730,12 @@ static u8 cfg_save(void) {
     CFGBUF[n++] = UI_MODE ? '2' : '8';
     CFGBUF[n++] = 0x0d;
     CFGBUF[n++] = 0x0a;
+    if (RTC_OFF) {
+        static const u8 k_rs[7] = {'R','T','C','S','D','=','0'};
+        for (i = 0; i < 7; i++) CFGBUF[n++] = k_rs[i];
+        CFGBUF[n++] = 0x0d;
+        CFGBUF[n++] = 0x0a;
+    }
 #ifdef EZCFG_RTCLOG
     if (LOG_LEN != 0) {
         static const u8 k_log[7] = {'R','T','C','L','O','G','='};
@@ -784,7 +802,7 @@ static void lastrom_save(void) {
         LR_PATH[n] = 0;
         LR_VALID = 1;
     }
-    backup_take('L', 0);   /* the file is rewritten anyway: keep RTC= current */
+    if (!RTC_OFF) backup_take('L', 0);   /* the file is rewritten anyway: keep RTC= current */
     cfg_save();
 }
 

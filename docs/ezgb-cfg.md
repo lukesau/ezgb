@@ -57,6 +57,13 @@ flag (seconds bit 7: "supply dipped, time not guaranteed") is clear, and it is
 later than the stored copy. TIME SET always stores (see below). A restore
 therefore loses at most the time since the last launch or dump.
 
+**RTC: SD / NO SD (SET tab, `RTCSD=`).** Everything in this section is the
+`SD` setting, the default (no key). `NO SD` (`RTCSD=0`) is for carts where the
+clock does not matter: no clock read or prompt at boot, and the launch, dump,
+TIME SET and relaunch hooks return without touching the card for the RTC. The
+boot still reads `EZGB.CFG` once (it holds the setting); the flag then stays
+in WRAM (`$DB3A`) for the later hooks.
+
 **Restore (boot).** Right after `Micro SD initial OK!` and before the
 `BACKUPSAVE` check, with an `RTC=` on file, the kernel reads the RTC and asks
 whether the reading looks damaged:

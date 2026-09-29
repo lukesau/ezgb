@@ -120,6 +120,7 @@ SKIP_SITES = {
         # (StoreDrawParams + DrawString at $592a); the mod retunes that call's
         # ink for DMG. 1.04e has no such draw, so there is nothing to retune.
         (4, 0x4e49),
+        (4, 0x4e56),   # the same extra draw's row operand (SET slid up one row)
         # RtcWriteTimeFromDayDelta's sign test (the negative-elapsed clamp,
         # docs/ezgb-cfg.md): the launch-time elapsed-time code is part of
         # 1.05e's RTC rewrite; 1.04e has no such routine to clamp.

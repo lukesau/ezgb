@@ -23,12 +23,12 @@ esac
 # 1. Drop the kernel.sym entries of the blocks being re-injected (inject.py
 #    refuses to overwrite in place) and blank their old bytes to $FF so a
 #    smaller re-injection leaves no stale code behind.
-perl -ni -e 'print unless /^(02:4500|02:4a00|04:5990|08:7c00|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610|01:7620|00:0588) /' "$SYM"
+perl -ni -e 'print unless /^(02:4500|02:4a00|04:5990|08:7c00|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610|01:7620|00:0588|04:5f20|04:5f30) /' "$SYM"
 python3 - "$GB" <<'PY'
 import sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
 def off(b,a): return a if b==0 else b*0x4000+(a-0x4000)
-for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x5990,0x4ea),(8,0x7c00,0x120),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x10),(1,0x7620,0x10),(0,0x0588,0x10)):
+for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x5990,0x570),(8,0x7c00,0x120),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x10),(1,0x7620,0x10),(0,0x0588,0x10),(4,0x5f20,0x10),(4,0x5f30,0x20)):
     rom[off(b,a):off(b,a)+n]=b'\xff'*n
 open(p,'wb').write(rom)
 PY
@@ -49,6 +49,74 @@ python3 tools/inject.py src/flcfg.c "$V" 4 5990 FlCfg \
 python3 tools/inject_bytes.py "$V" 4 5f00 FarCallEzCfg cd8d07004a0200c9 --apply
 python3 tools/inject_bytes.py "$V" 4 5f10 RtcSetHook   3e06eafcdbcd005fc3f548 --apply
 python3 tools/patch_call.py   "$V" 4 58d3 3 04:5f10 --jp --apply
+
+# 3b. SET tab layout (docs/fastlaunch-set-tab.md): TIME/SET slid up one row
+#     (3->2), the date/time digits too (5->4, time-edit mode included), AUTO
+#     SAVE and its checkbox down one (7->8) to make room for the RTC row (6),
+#     and the stock "cursor == 1 is AUTO SAVE" highlight test now reads 2.
+#     Row operands are the high byte of `ld hl,$RRCC`; y operands the low byte
+#     of the DrawRect `ld hl` pairs. Each entry is checked against the stock
+#     byte in kernel.gb.orig, so re-running from any earlier layout is safe.
+SETUP="
+  4757:03:02 4786:03:02 4947:03:02 495b:03:02 4e58:03:02
+  4b22:05:04 4baf:05:04 4bbd:05:04 4c4e:05:04 4cdc:05:04 4cea:05:04
+  4d7b:05:04 4d89:05:04 4e1a:05:04 4ecc:05:04 4ee7:05:04 4f4e:05:04
+  4f69:05:04 4fd0:05:04 5041:05:04 505c:05:04 50c3:05:04 50de:05:04 5145:05:04
+  4774:21:19 4778:15:0d 492e:21:19 4932:15:0d 5643:21:19 5647:15:0d
+  47a4:07:08
+  47b4:40:48 47b8:38:40 4978:40:48 497c:38:40 49b3:40:48 49b7:38:40
+  47df:3e:46 47e3:3a:42 49de:3e:46 49e2:3a:42
+  498c:01:02
+"
+python3 - "$GB" "$ROOT/re/$V/kernel.gb.orig" "$SETUP" <<'PY'
+import sys
+p, orig, spec = sys.argv[1], open(sys.argv[2],'rb').read(), sys.argv[3].split()
+rom = bytearray(open(p,'rb').read())
+for e in spec:                                   # bank 4 is identical in 0731 and 0918
+    a, x, y = e.split(':'); o = 4*0x4000 + int(a,16) - 0x4000
+    assert orig[o] == int(x,16), f"04:{a} stock {orig[o]:02x}, expected {x}"
+    rom[o] = int(y,16)
+open(p,'wb').write(rom)
+PY
+# Joypad latch race (docs/joypad-latch.md): ReadJoypadLatched (00:2746) read
+# P1 with interrupts on, so the VBlank sampler could run between its P1
+# select and read and leave P1 deselected: a held button read as released
+# (PICK ROM dropped into the browser with A still down, which then opened the
+# first folder; the stock AUTO SAVE toggle fired several times per press).
+# Move the `di` ahead of the raw read (same 17 bytes).
+python3 tools/patch_bytes.py "$V" 0 2746 cd163a5ff3 f3cd163a5f --apply >/dev/null
+# SET cursor rows 0..5 (0 TIME, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 UI)
+python3 tools/patch_bytes.py "$V" 4 5605 04 05 --apply >/dev/null
+# A on the SET tab: FlSetADispatch moved from 04:5959 (full, and its row test
+# `dec a` could only match 1) to 04:5f30: row 2 -> stock AUTO SAVE toggle
+# ($58d6), any other row -> flcfg op A; E=0 redraw ($48f5), E=1 leave ($5912).
+perl -ni -e 'print unless /^04:(5959|5632) /' "$SYM"
+python3 - "$GB" <<'PY'
+import sys
+p=sys.argv[1]; rom=bytearray(open(p,'rb').read()); o=4*0x4000+0x5959-0x4000
+rom[o:o+0x1d]=b'\xff'*0x1d
+open(p,'wb').write(rom)
+PY
+python3 tools/inject_bytes.py "$V" 4 5f30 FlSetADispatch f83d7efe02cad658f8004d443e02f533c5cd9059e8037bb7caf548c31259 --apply
+python3 tools/inject_bytes.py "$V" 4 5632 FlSetAHookSite c2305f --apply
+# Frame counter for the SET-tab name marquee: VBlankPadLatch (00:05cf, the
+# joypad latch's VBlank callback, docs/joypad-latch.md) gains
+# `ldh a,[$fa]; inc a; ldh [$fa],a` before its `pop bc; ret`, so hFrame
+# ($fffa) counts every VBlank. 30 -> 35 bytes, still clear of $0600.
+perl -ni -e 'print unless /^00:05cf /' "$SYM"
+python3 - "$GB" <<'PY'
+import sys
+p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
+old=bytes.fromhex("f040f610e0403e48e045c5cd163a47f0fc2fa04f78e0fcf0fdb1e0fdc1c9")
+assert rom[0x5cf:0x5cf+30]==old or rom[0x5cf:0x5cf+23]==old[:23], rom[0x5cf:0x5f4].hex()
+rom[0x5cf:0x600]=b'\xff'*(0x600-0x5cf)
+open(p,'wb').write(rom)
+PY
+python3 tools/inject_bytes.py "$V" 0 05cf VBlankPadLatch f040f610e0403e48e045c5cd163a47f0fc2fa04f78e0fcf0fdb1e0fdf0fa3ce0fac1c9 --apply
+# SET input loop's ReadJoypad (04:5162) -> SetLoopTickHook: flcfg op 5 (name
+# marquee tick), then jp ReadJoypad so E reaches the loop as before.
+python3 tools/inject_bytes.py "$V" 4 5f20 SetLoopTickHook 3e05f533010000c5cd9059e803c34a3a --apply
+python3 tools/patch_call.py   "$V" 4 5162 3 04:5f20 --apply
 
 # 4. Bank 8: hide filter (relocated to 7c00; it outgrew the slot before FlPickBanner).
 python3 tools/inject.py src/browser_hide.c "$V" 8 7c00 BrowserHideName --apply
