@@ -793,7 +793,7 @@ DirListHideNameStub::
     db $0a
 
 FlPickHook::
-    db $fa, $d7, $db, $b7, $28, $0a, $cd, $8d
+    db $fa, $fe, $db, $b7, $28, $0a, $cd, $8d
     db $07, $76, $59, $04, $00, $c3, $43, $12
     db $cd, $8d, $07, $0b, $48, $01, $00, $c3
     db $64, $15
@@ -807,14 +807,14 @@ FlPickHook::
     rst RST_38
 
 FlSetExitHook::
-    db $fa, $d7, $db, $b7, $c2, $81, $0f, $f8
+    db $fa, $fe, $db, $b7, $c2, $81, $0f, $f8
     db $0e, $36, $02, $c3, $5b, $12
 
     rst RST_38
     rst RST_38
 
 FlPickCancelHook::
-    db $fa, $d7, $db, $b7, $ca, $92, $16, $c3
+    db $fa, $fe, $db, $b7, $ca, $92, $16, $c3
     db $43, $12
 
     rst RST_38
@@ -833,7 +833,7 @@ FlPickCancelHook::
     rst RST_38
 
 RtcBootHook::
-    db $3e, $03, $ea, $d5, $db, $cd, $8d, $07
+    db $3e, $03, $ea, $fc, $db, $cd, $8d, $07
     db $00, $4a, $02, $00, $3e, $11, $ea, $00
     db $40, $cd, $8d, $07, $e7, $41, $04, $00
     db $c3, $54, $0e
@@ -845,7 +845,7 @@ RtcBootHook::
     rst RST_38
 
 BatteryDryHook::
-    db $3e, $01, $ea, $d6, $db, $01, $01, $a2
+    db $3e, $01, $ea, $fd, $db, $01, $01, $a2
     db $3e, $88, $02, $c9
 
     rst RST_38
@@ -854,8 +854,8 @@ BatteryDryHook::
     rst RST_38
 
 LastRomFallbackHook::
-    db $3e, $05, $ea, $d5, $db, $cd, $8d, $07
-    db $00, $4a, $02, $00, $fa, $d4, $db, $b7
+    db $3e, $05, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $fa, $fb, $db, $b7
     db $c2, $e5, $12, $c3, $83, $13
 
 DirEnterBoundCheck::
@@ -867,21 +867,10 @@ DirEnterBoundCheck::
     db $06, $21, $d0, $16, $c3, $06, $14, $c3
     db $81, $0f
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+RelaunchRtcHook::
+    db $3e, $07, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $c3, $64, $15
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3792,8 +3781,8 @@ LastRomRelaunch::
     ld a, a
     ld [hl], e
     ld [$c300], sp
-    ld h, h
-    dec d
+    adc b
+    dec b
 
 LastRomCheckReturn::
     ld hl, sp+$04

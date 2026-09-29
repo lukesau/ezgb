@@ -3419,8 +3419,11 @@ RtcWriteTimeFromDayDelta::
 
     ld hl, sp+$11
     ld a, [hl]
-    bit 7, a
-    jp z, RtcWriteTimeFromDayDelta_seedC0a0
+    jp $7620
+
+
+    nop
+    nop
 
 RtcWriteTimeFromDayDelta_zeroHms::
     ld hl, sp+$08
@@ -8571,21 +8574,11 @@ LastRomSaveHook::
     db $00, $4a, $02, $00, $e8, $04, $c9
 
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+RtcNegClampHook::
+    db $cb, $7f, $ca, $bb, $50, $af, $f8, $0e
+    db $22, $22, $22, $77, $c3, $bb, $50
+
     rst RST_38
     rst RST_38
     rst RST_38

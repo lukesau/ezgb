@@ -9522,13 +9522,13 @@ BootUnpackWramTables::
     rst RST_38
 
 RtcDumpHook::
-    db $e8, $0b, $3e, $02, $ea, $d5, $db, $cd
+    db $e8, $0b, $3e, $02, $ea, $fc, $db, $cd
     db $8d, $07, $00, $4a, $02, $00, $c9
 
     rst RST_38
 
 LastRomSaveHook::
-    db $3e, $04, $ea, $d5, $db, $cd, $8d, $07
+    db $3e, $04, $ea, $fc, $db, $cd, $8d, $07
     db $00, $4a, $02, $00, $e8, $04, $c9
 
     rst RST_38

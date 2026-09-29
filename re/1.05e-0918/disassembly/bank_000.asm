@@ -867,21 +867,10 @@ DirEnterBoundCheck::
     db $06, $21, $e9, $16, $c3, $12, $14, $c3
     db $8d, $0f
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+RelaunchRtcHook::
+    db $3e, $07, $ea, $fc, $db, $cd, $8d, $07
+    db $00, $4a, $02, $00, $c3, $70, $15
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3799,8 +3788,8 @@ LastRomRelaunch::
     ld a, a
     ld [hl], e
     ld [$c300], sp
-    ld [hl], b
-    dec d
+    adc b
+    dec b
 
 LastRomCheckReturn::
     ld hl, sp+$04

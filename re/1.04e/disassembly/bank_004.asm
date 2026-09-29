@@ -5700,7 +5700,7 @@ FarCallEzCfg::
     rst RST_38
 
 RtcSetHook::
-    db $3e, $02, $ea, $d5, $db, $cd, $00, $5f
+    db $3e, $06, $ea, $fc, $db, $cd, $00, $5f
     db $c3, $f5, $48
 
     rst RST_38
