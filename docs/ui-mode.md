@@ -1,6 +1,6 @@
 # UI mode: 8px or 12px browser, chosen on the SET tab
 
-The 12x12 browser of [font12.md](font12.md) is opt-in. A new `UI:` row on
+The 12px browser of [font12.md](font12.md) is opt-in. A new `UI:` row on
 the SET tab (row 14 since the SET screen was slid up, see
 [fastlaunch-set-tab.md](fastlaunch-set-tab.md)) carries a button that reads `8px`
 or `12px`; A toggles it, the choice is written to `EZGB.CFG` as `UI=8` or
@@ -19,8 +19,8 @@ row-count helpers below are the places that would get a third case.
 | | 8px | 12px |
 |---|---|---|
 | list rows on screen | 16 | 10 |
-| name field | icon + 19 | icon + 12 |
-| marquee width / step | 19 / every 2 ticks | 12 / every 4 ticks |
+| name field | icon + 19 | icon + 15 |
+| marquee width / step | 19 / every 2 ticks | 15 / every 4 ticks |
 | page step (LEFT/RIGHT) | 16 | 10 |
 
 ## Where the mode is consulted
@@ -38,7 +38,7 @@ in the space freed by moving `BrowserScroll`:
 | `UiRowsHL` | `00:01ec` | HL = rows; replaces `ld hl, $0010` at `00:113e`, `00:1185`, `00:11ca` (page step and bound) |
 | `UiRowsMinus1BC` | `00:01f3` | BC = rows - 1; replaces `ld bc, $000f` inside `FarCallDrawDetailBottom` (`00:03e0`) |
 | `ClampBrowserRows` | `00:01fb` | the 17-byte row clamp of `DrawBrowserEntries` (`01:411b`), with the variable |
-| `MarqueeWidth` | `00:020c` | stores 19 or 12 into the marquee's width slot; replaces `ld hl, sp+$0f; ld [hl], n` at `00:0c84` and `00:0c8b` |
+| `MarqueeWidth` | `00:020c` | stores 19 or 15 into the marquee's width slot; replaces `ld hl, sp+$0f; ld [hl], n` at `00:0c84` and `00:0c8b` |
 | `MarqueeDraw` | `00:0219` | `jp DrawString` or `jp FarCallDrawString12`; the marquee's draw call at `00:0dd8` calls it |
 | `MarqueeShift` | `00:0222` | pushes the tick shift (1 or 2) in place of `ld a, n; push af` at `00:0cb9`. It fetches its return address through DE, not HL: the stock code right after the site reads its next argument through HL from the instruction before, and a first version that popped into HL fed the shift routine ROM bytes instead of the tick, so every marquee started scrolled by the field width |
 

@@ -19,7 +19,7 @@
  * upcoming 8px/12px mode switch.
  *
  *   python3 tools/inject.py src/browser_icons.c $V 2 7300 DrawNameWithIconImpl \
- *       --pin DrawString12=5800 --apply
+ *       --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
  */
 
 typedef unsigned char u8;
@@ -37,7 +37,7 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
     (void)far_pad_thunk;
     (void)far_pad_af;
     (void)far_pad_ret;
-    u8 buf[14];
+    u8 buf[17];
 
     (void)x;
     if (len == 0) {
@@ -62,10 +62,9 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
         len--;
     }
     /* One call for icon + name: the 12x12 renderer (docs/font12.md) pairs
-     * cells from column 0, so this keeps the icon and the first letter in
-     * one three-tile pair instead of two partial-tile singles. 13 cells fit
-     * a row, so 12 name characters are copied; the renderer pads with
-     * spaces after the NUL exactly as DrawString does. */
+     * composes the whole row in one buffer from column 0. A row is 16
+     * cells of 10px, the icon and 15 name characters, so 15 are copied; the renderer pads with spaces after the NUL exactly as
+     * DrawString does. */
     if (!hUiMode) {
         /* 8px: icon in column 0, name from column 1, one column narrower
          * than stock (16 for the 17-wide default, 19 for files). */
@@ -74,13 +73,13 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
         return;
     }
     buf[0] = ic;
-    for (i = 0; i < 12; i++) {
+    for (i = 0; i < 15; i++) {
         buf[1 + i] = s[i];
         if (s[i] == 0) {
             break;
         }
     }
-    buf[13] = 0;
+    buf[16] = 0;
     (void)len;
-    DrawString12(0, 0, 0, buf, 13, 0, y);
+    DrawString12(0, 0, 0, buf, 16, 0, y);
 }

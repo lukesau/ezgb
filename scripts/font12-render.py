@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rasterize a TrueType font into the 12x12 ASCII-art glyph sheet
+"""Rasterize a TrueType font into the 10x12 ASCII-art glyph sheet
 (decomp/font12/font12.txt) that scripts/font12-pack.py turns into the
 font12_data.h table used by decomp/src/draw12.c.
 
@@ -13,7 +13,7 @@ Needs Pillow:  python3 -m venv .venv && .venv/bin/pip install pillow
     scripts/font12-render.py [--font /System/Library/Fonts/Menlo.ttc] [--index 1]
                              [--size 14] [--baseline 9] [--bold] [-o decomp/font12/font12.txt]
 
-Cell is 12 wide x 12 tall. The TTF baseline is placed on cell row `--baseline`
+Cells are 10 wide x 12 tall, icons included. The TTF baseline is placed on cell row `--baseline`
 (0-based, default 9): caps occupy rows 0-9 and descenders rows 10-11, with
 anything below row 11 clipped. `--bold` ORs each glyph with a copy shifted one
 pixel right (a 2px stroke reads much better on an unlit DMG screen).
@@ -30,7 +30,9 @@ except ImportError:
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUT = os.path.join(ROOT, "decomp", "font12", "font12.txt")
-W = H = 12
+W = 10
+H = 12
+ICON_W = 10
 CODES = list(range(0x20, 0x80)) + [0xC0, 0xC1, 0xC2, 0xC3, 0xC4]
 ICON_NAMES = {0xC0: "folder", 0xC1: "gb cart", 0xC2: "gbc cart", 0xC3: "unknown file", 0xC4: "sav page"}
 
@@ -57,7 +59,7 @@ def read_existing(path):
                 blocks[cur[0]] = (cur[1], rows)
             cur = (int(m.group(1), 16), line)
             rows = []
-        elif cur is not None and re.fullmatch(r"[.#]{12}", line):
+        elif cur is not None and re.fullmatch(r"[.#]{10}", line):
             rows.append(line)
     if cur is not None:
         blocks[cur[0]] = (cur[1], rows)
@@ -106,8 +108,9 @@ def main():
     existing = read_existing(args.out)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     out = []
-    out.append("# 12x12 glyph sheet for the EZGB browser (decomp/src/draw12.c).")
-    out.append("# '.' = paper, '#' = ink. 12 rows of 12 per glyph, in code order.")
+    out.append("# Glyph sheet for the EZGB 12px browser (decomp/src/draw12.c).")
+    out.append("# '.' = paper, '#' = ink. 12 rows per glyph, in code order: text glyphs")
+    out.append("# ($20-$7F) and the icons ($C0-$C4) are all 10 columns wide (10x12 cells).")
     out.append("# Add the word `keep` to a glyph header to protect it from font12-render.py.")
     out.append(f"# Rendered from {os.path.basename(args.font)} index {args.index} size {args.size} "
                f"baseline {args.baseline}{' bold' if args.bold else ''}.")
@@ -121,7 +124,7 @@ def main():
             kept += 1
         elif code in ICON_NAMES:
             out.append(header_line(code) + " keep")
-            out.extend(["." * W] * H)
+            out.extend(["." * ICON_W] * H)
         else:
             out.append(header_line(code))
             out.extend(render(font, code, args.baseline, args.bold))

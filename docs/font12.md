@@ -1,6 +1,6 @@
-# 12x12 browser font (prototype)
+# 12px browser font (prototype)
 
-Prototype of a larger UI: the file browser's list rows use a 12x12-pixel
+Prototype of a larger UI: the file browser's list rows use a 10x12-pixel
 cell font instead of the kernel's 8x8 tiles. Only the browser list (and its
 long-name marquee) is converted; the tab strip, SET and HELP screens, boxes
 and boot messages still use the stock 8x8 text. Built and tested on
@@ -17,27 +17,32 @@ pixel row, planes in consecutive bytes). `DrawGlyph` (`00:2701`) is a pure
 
 So the canvas is a framebuffer, not a tilemap in the usual sense, and a glyph
 at any pixel position is simply a masked merge into the tiles it overlaps.
-Nothing has to be precomposed: a 12-wide cell at `x = 12*col` straddles two
-tiles (`x & 7` is 0 or 4, so 12 bits plus the shift never exceed 16), a
-12-tall cell straddles two or three tile rows, and each glyph row is shifted
-into place and read-modify-written so the neighbouring cell's pixels in the
+Nothing has to be precomposed: a 10-wide cell at `x = 10*col`
+straddles two tiles (`x & 7` is 0, 2, 4 or 6, so 10 bits plus the shift never
+exceed 16), a 12-tall cell straddles two or three tile rows, and each glyph
+row is shifted into place and merged so the neighbouring cell's pixels in the
 shared tile survive.
 
 ## Geometry
 
 | | stock | this prototype |
 |---|---|---|
-| cell | 8x8 | 12x12 |
-| columns | 20 | 13 (156 px; the 4 px right slack is painted in paper) |
+| cell | 8x8 | 10x12 |
+| columns | 20 | 16 (160 px, no slack) |
 | list rows | 16 (tile rows 2..17) | 10, at `y = 16 + 12*i` under the 16 px tab strip |
-| name field | icon + 19 chars | icon + 12 chars (longer names use the stock marquee) |
+| name field | icon + 19 chars | icon + 15 chars (longer names use the stock marquee) |
 | cap height | 7 px | 10 px (Menlo Bold 13 px, baseline on cell row 9, 1 row of leading, 2 rows of descender) |
+
+The first version used 12x12 cells (13 columns, icon + 12 chars). The ink
+of nearly every glyph is 7 px wide, so 5 px of each cell was padding; 10 px
+cells keep the same glyphs (the sheet lost its blank outer columns, and the
+icons one interior column) and fit three more characters per row.
 
 ## Pieces
 
 | What | Where |
 |---|---|
-| glyph sheet, hand-editable ASCII art | `decomp/font12/font12.txt` (`#` ink, `.` paper; `keep` on a header protects it from the renderer) |
+| glyph sheet, hand-editable ASCII art | `decomp/font12/font12.txt` (`#` ink, `.` paper, 10 columns x 12 rows; `keep` on a header protects it from the renderer) |
 | renderer (TTF -> sheet) | `scripts/font12-render.py` (needs Pillow; defaults Menlo Bold 13, baseline 9) |
 | packer (sheet -> 2424-byte table) | `scripts/font12-pack.py` -> `decomp/font12/font12.bin` |
 | table in ROM | `Font12` at `02:6000`, placed by `scripts/inject-font12.sh` |
@@ -47,15 +52,15 @@ shared tile survive.
 
 Table layout: 101 glyphs (codes `$20`-`$7F`, then the five icons `$C0`-`$C4`
 in the same codes the 8x8 icons use), 24 bytes each: 12 big-endian words,
-leftmost pixel in bit 15, low nibble zero.
+leftmost pixel in bit 15 (bits 15..6), the rest zero.
 
 ### `DrawString12(s, len, col, row)`
 
 Same argument order as `DrawString`, so the stub can replace it by re-pinning.
 `row` is still a tile row: rows >= 2 map to `y = 16 + 12*(row-2)`, so the
-stock painters' `sel + 2` arithmetic is untouched. `len` is capped at the cells
-left on the row, a NUL pads with spaces like `DrawString`, and a string that
-reaches cell 13 also paints the 4 px slack. Ink and paper come from the draw
+stock painters' `sel + 2` arithmetic is untouched. `col` is a 10 px cell,
+0..15. `len` is capped at the cells left on the row and a NUL pads with
+spaces like `DrawString`. Ink and paper come from the draw
 state (`$d734` / `$d735`) so the selection bar inverts as before.
 
 The stub is reached by a `call`, so the trampoline's three words sit between
@@ -65,18 +70,25 @@ the case in `docs/browser-hide-filter.md`, needs two).
 
 ### Blitter
 
-Cells are drawn in aligned pairs where possible: cells 2k and 2k+1 start at
-x = 24k and cover tiles 3k..3k+2 exactly, so the pair is three columns of
-pure writes with no reads or masks. Tile 3k is the first cell's high byte,
-tile 3k+2 the low byte of the second cell taken from a second copy of the
-font with every row pre-shifted right by 4 (`FONT12_SH4`, emitted by the
-packer after the plain table), and the shared middle tile is
-`(first.lo & $F0) | shifted.hi`, composed into a 12-byte buffer once
-(`compose_mid`). An odd starting column draws its first cell alone, and cell
-12 is drawn as a pair with the blank glyph so the 4 px slack comes out in
-paper. `DrawNameWithIcon` now sends icon + name as one 13-cell string so the
-whole browser row is pairs. Single cells (`blit_fast0/4`) and other
-ink/paper pairs (`blit_rows`) keep the older masked read-modify-write loops.
+The fast path (the browser's ink 3 on paper 0 or the inverse, where both bit
+planes hold the same byte) composes the whole string in a WRAM row buffer
+first: one 12-byte column per tile the string touches, up to 240 bytes on the
+stack. Each glyph row is a 16-bit word shifted right by the cell's `x & 7`
+(one unrolled routine per shift, `cell_or0/2/4/6`) and OR'd into the tile the
+cell starts in and the next one, so no tile is ever read back for a cell the
+string owns. A tile the string only partly covers (the marquee starts at cell
+1, 2 px into tile 1, next to the icon) is read from VRAM first
+(`vram_rd_col`, one STAT-checked read per row) and masked to the pixels the
+string does not own, pre-inverted for a highlighted row so the flush's xor
+puts them back. The buffer is then flushed one tile column at a time with
+`blit_col1`: pure writes, four tile rows per batch. Any other ink/paper pair,
+or a caller inside a DiNest section, takes the per-cell masked
+read-modify-write path (`blit_cell` / `blit_rows`, shift 0..7).
+
+The previous 12x12 version drew cells in aligned pairs (two cells = three
+whole tiles) from a second, pre-shifted copy of the font; 10 px cells drift
+across tile boundaries in four phases, so that trick no longer applies and
+the row buffer replaced it.
 
 Each column is written in batches of four tile rows (`blit_col1/2`). A STAT
 spin before every write caps the rate at one or two writes per scanline,
@@ -104,7 +116,7 @@ moves before, 0 after, the same as 8px mode. See [vram-write-race.md](vram-write
 post-sample budget is only 20 cycles when writing one row at a time.
 
 Measured in SameBoy with the debugger's `ticks` (M-cycles per far call into
-`DrawString12`, a 13-cell icon + name row):
+`DrawString12`, a 13-cell icon + name row, 12x12 version):
 
 | build | cycles per row |
 |---|---|
@@ -113,9 +125,10 @@ Measured in SameBoy with the debugger's `ticks` (M-cycles per far call into
 | aligned pairs, HBlank batches | ~16,300 |
 | stock 8x8 `DrawString`, 20 glyphs (~1,026 per glyph) | ~20,500 |
 
-So a 12px row now costs less than a stock row. The remainder is roughly
-half HBlank floor (240 tile rows at four per line) and half C overhead per
-pair; a full-asm pair loop would take another few thousand off.
+The 10 px row-buffer version has not been re-measured. Its flush is the same
+60 batches (20 tile columns, three batches each), and the compose step is
+about 40-60 cycles per glyph row (16 cells x 12 rows), so it should land
+near the pair version.
 
 ### The marquee and the input loop
 
@@ -140,9 +153,9 @@ pattern and less well with this one.
 
 | Site | Change |
 |---|---|
-| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7300`), which calls `DrawString12` with a near call |
+| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7300`), which sends icon + 15 name characters to `DrawString12` with a near call |
 | `DrawDirEntryLabel` marquee `00:0dd8` | `call DrawString` -> `call FarCallDrawString12` |
-| marquee field widths `00:0c87`, `00:0c8e` | `$13` -> `$0c` |
+| marquee field widths `00:0c87`, `00:0c8e` | `$13` -> `$0f` (now the `MarqueeWidth` cave of [ui-mode.md](ui-mode.md), 19 or 15) |
 | `DrawBrowserEntries` row clamp `01:411c`, `01:4128` | `$10` -> `$0a` |
 | page step / bound `00:113f`, `00:1186`, `00:11cb` | `$10` -> `$0a` |
 | `FarCallDrawDetailBottom` `00:03e1` | bottom row `$0f` -> `$09` |
@@ -158,10 +171,11 @@ Rebuild from `decomp/`:
 
 ```sh
 V=1.05e-0731
-python3 tools/inject.py src/draw12.c $V 2 5800 DrawString12 \
+python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \
     --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \
     --pin GfxRowTable=2fbb --pin Font12=6000 --pin DiNest=06fd --pin EiNest=0706 --replace --apply
-python3 tools/inject.py src/browser_icons.c $V 2 7300 DrawNameWithIconImpl --pin DrawString12=5800 --replace --apply
+python3 tools/inject.py src/browser_icons.c $V 2 7300 DrawNameWithIconImpl \
+    --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
 python3 tools/inject_bytes.py $V 0 3ec8 DrawNameWithIcon cd8d0700730200c9 --apply   # once
 ../scripts/inject-font12.sh $V
 ```
@@ -179,8 +193,8 @@ other kernels with the WRAM pins translated.
 - Tearing: the marquee and cursor repaints are visible mid-draw in a 1/60 s
   screenshot (a cell half old, half new). Faster drawing shrinks the window;
   drawing a row into a buffer and copying it in VBlank would remove it.
-- The rest of the UI (tab strip, SET, HELP, boxes) is still 8x8; at 12 px
-  cells the screen is 13x12 and SET / HELP need a re-layout, not a scale.
+- The rest of the UI (tab strip, SET, HELP, boxes) is still 8x8; at 10x12
+  cells the screen is 16x12 and SET / HELP need a re-layout, not a scale.
 - The 12px browser is now opt-in through the `UI:` row on the SET tab
   ([ui-mode.md](ui-mode.md)); the patch table below describes the 12px
   side, and each of those sites now branches on the mode. Ported to 0918;
