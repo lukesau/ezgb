@@ -354,7 +354,7 @@ ClampBrowserRows::
 
 MarqueeWidth::
     db $f0, $fb, $b7, $3e, $13, $28, $02, $3e
-    db $0c, $f8, $11, $77, $c9
+    db $0f, $f8, $11, $77, $c9
 
 MarqueeDraw::
     db $f0, $fb, $b7, $ca, $b7, $08, $c3, $c0
