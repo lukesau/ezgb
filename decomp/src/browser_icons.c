@@ -37,7 +37,7 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
     (void)far_pad_thunk;
     (void)far_pad_af;
     (void)far_pad_ret;
-    u8 buf[17];
+    u8 buf[41];
 
     (void)x;
     if (len == 0) {
@@ -61,10 +61,13 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
         }
         len--;
     }
-    /* One call for icon + name: the 12x12 renderer (docs/font12.md) pairs
-     * composes the whole row in one buffer from column 0. A row is 16
-     * cells of 10px, the icon and 15 name characters, so 15 are copied; the renderer pads with spaces after the NUL exactly as
-     * DrawString does. */
+    /* One call for icon + name: the 12px renderer (docs/font12.md)
+     * composes the whole row in one buffer from column 0. The font is
+     * proportional, so how many characters fit is up to the renderer: it
+     * lays out up to 40 glyphs and stops at the first that would cross the
+     * row's right edge, painting paper after the NUL. 39 characters are
+     * copied, more than the narrowest glyphs can fill the 148 px field
+     * with. */
     if (!hUiMode) {
         /* 8px: icon in column 0, name from column 1, one column narrower
          * than stock (16 for the 17-wide default, 19 for files). */
@@ -73,13 +76,13 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
         return;
     }
     buf[0] = ic;
-    for (i = 0; i < 15; i++) {
+    for (i = 0; i < 39; i++) {
         buf[1 + i] = s[i];
         if (s[i] == 0) {
             break;
         }
     }
-    buf[16] = 0;
+    buf[40] = 0;
     (void)len;
-    DrawString12(0, 0, 0, buf, 16, 0, y);
+    DrawString12(0, 0, 0, buf, 0, 0, y);
 }

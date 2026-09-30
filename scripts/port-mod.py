@@ -73,11 +73,14 @@ REGISTRY = {
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
                             "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00}),
-    (2, 0x7500): dict(src="draw12.c",                       # 12x12 browser renderer (docs/font12.md)
+    (2, 0x7500): dict(src="draw12.c",                       # 12px browser renderer (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
-                            "GfxRowTable": 0x2fbb, "Font12": 0x6000, "DiNest": 0x06fd, "EiNest": 0x0706}),
+                            "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
+                            "DiNest": 0x06fd, "EiNest": 0x0706}),
+    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
     (2, 0x7300): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "hUiMode": 0xfffb}),   # far target of the 00:3ec8 stub
-    (2, 0x6000): dict(kind="data"),        # Font12: 12x12 glyph tables (scripts/font12-pack.py)
+    (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
+    (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (4, 0x5990): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,

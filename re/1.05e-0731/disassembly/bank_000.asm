@@ -353,8 +353,8 @@ ClampBrowserRows::
     db $c9
 
 MarqueeWidth::
-    db $f0, $fb, $b7, $3e, $13, $28, $02, $3e
-    db $0f, $f8, $11, $77, $c9
+    db $f0, $fb, $b7, $20, $18, $3e, $13, $f8
+    db $11, $77, $c9, $00, $00
 
 MarqueeDraw::
     db $f0, $fb, $b7, $ca, $b7, $08, $c3, $c0
@@ -363,54 +363,14 @@ MarqueeDraw::
 MarqueeShift::
     db $d1, $f0, $fb, $3c, $f5, $d5, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+MarqueeWidth12::
+    db $f8, $0a, $2a, $66, $6f, $fa, $a0, $c2
+    db $5f, $fa, $a1, $c2, $57, $19, $11, $a4
+    db $c4, $d5, $3e, $01, $f5, $33, $af, $f5
+    db $33, $e5, $cd, $8d, $07, $00, $71, $02
+    db $00, $e8, $06, $7b, $f8, $10, $be, $3e
+    db $ff, $30, $01, $af, $f8, $11, $77, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

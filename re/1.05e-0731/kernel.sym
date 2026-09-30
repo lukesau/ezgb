@@ -4416,7 +4416,7 @@
 00:2746 ReadJoypadLatched
 00:2746 .data:11:8
 02:7300 DrawNameWithIconImpl
-02:7300 .data:145:8
+02:7300 .data:144:8
 00:3ec8 DrawNameWithIcon
 00:3ec8 .data:8:8
 00:01e3 UiRows
@@ -4434,7 +4434,7 @@
 00:3ed0 BrowserScroll
 00:3ed0 .data:12f:8
 02:7500 DrawString12
-02:7500 .data:765:8
+02:7500 .data:784:8
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
@@ -4475,5 +4475,11 @@
 01:7610 .data:f:8
 01:7620 RtcNegClampHook
 01:7620 .data:f:8
+00:0229 MarqueeWidth12
+00:0229 .data:30:8
 02:6000 Font12
 02:6000 .data:978:8
+02:6978 Font12Metrics
+02:6978 .data:68e:8
+02:7100 Fit12
+02:7100 .data:157:8
