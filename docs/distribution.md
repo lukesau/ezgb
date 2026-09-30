@@ -47,6 +47,21 @@ and `juniorkernel-1.05e-FW5-*` packages. The 1.04e kernel runs on FW4 and FW5
 carts alike (the kernel is loaded from the card at every boot; nothing is
 flashed), so a cart on FW4 needs no updater to use the mod.
 
+### Release assets
+
+A GitHub release carries, for the mod version in `patches/kernel/VERSION`:
+the three `ezgb-mod-N.M-for-<ver>.ips` files, `manifest.json`, and the
+`README.md` that `scripts/make-dist.sh` renders into `dist/mod-N.M/` from
+[`patches/kernel/release-README.md`](../patches/kernel/release-README.md)
+(the version and the stock/modded md5 table filled in). That README is a
+patching guide only: which build you have, which patcher to use, how to
+install and go back. The repo's own README is not attached.
+
+```sh
+gh release create mod-N.M --title mod-N.M --notes-file notes.md \
+    dist/mod-N.M/*.ips patches/kernel/manifest.json dist/mod-N.M/README.md
+```
+
 ## Option B: build from the disassembly
 
 The committed disassembly reassembles the modded kernel directly, with no

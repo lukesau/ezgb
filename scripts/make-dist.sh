@@ -3,6 +3,10 @@
 #
 #   dist/mod-N.M/ezgb-mod-N.M-for-<ver>.ips   the patch (safe to publish)
 #   dist/mod-N.M/ezgb-mod-N.M-for-<ver>.dat   the patched kernel (local only)
+#   dist/mod-N.M/README.md                    patching instructions for the
+#                                             release page, rendered from
+#                                             patches/kernel/release-README.md
+#                                             with the version and md5 table
 #
 # for every version in patches/kernel/manifest.json, N.M being
 # patches/kernel/VERSION. Each .dat is checked against the manifest's
@@ -41,5 +45,12 @@ for v, e in sorted(manifest.items()):
     print(f"  {v}: dat {'ok' if d_ok else 'MISMATCH vs manifest'}, ips {'ok' if i_ok else 'does not reproduce the dat'}")
 if not ok:
     sys.exit("error: dist folder does not match the manifest; rerun kernel-patch.py make / stamp-mod-version.sh")
-print(f"dist/mod-{modver}: {len(manifest)} versions, ips + dat each")
+tmpl = open(os.path.join(root, "patches", "kernel", "release-README.md")).read()
+pkg = {"1.04e": "juniorkernel-1.04e-FW4", "1.05e-0731": "juniorkernel-1.05e-FW5-0731", "1.05e-0918": "juniorkernel-1.05e-FW5-0918"}
+rows = ["| Kernel | Official package | Stock `ezgb.dat` md5 | Modded md5 (after patching) |", "|---|---|---|---|"]
+for v, e in sorted(manifest.items()):
+    rows.append(f"| {v} | `{pkg.get(v, '?')}` | `{e['stock_md5']}` | `{e['patched_md5']}` |")
+readme = tmpl.replace("{MODVER}", modver).replace("{TABLE}", "\n".join(rows))
+open(os.path.join(out, "README.md"), "w").write(readme)
+print(f"dist/mod-{modver}: {len(manifest)} versions, ips + dat each, README.md")
 PY
