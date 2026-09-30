@@ -45,7 +45,7 @@
 00:078d FarCallTrampoline
 00:08b7 DrawString
 00:092a DrawU32Decimal
-00:0989 SdReadRetryCount
+00:0989 FileSystemErrorHang
 00:0a47 DirList
 00:0de8 SdMenuMain
 00:0e77 GotoFileBrowser
@@ -1538,8 +1538,8 @@
 00:0986 DrawU32Decimal_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- SdReadRetryCount ---
-00:099c SdReadRetryCount_errorHang
+; --- FileSystemErrorHang ---
+00:099c FileSystemErrorHang_loop
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- LastRomLoadRecord ---

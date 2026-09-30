@@ -69,7 +69,7 @@ static void probe_body(unsigned char tag);
  *             one that fires when the probe IS ezgb.dat and everything works.
  *   B  $18e2  BatteryCheck_waitA back-edge, reached by construction
  *   S  $0e21  SdMenuMain_initErrorHang
- *   F  $0998  SdReadRetryCount_errorHang
+ *   F  $0998  FileSystemErrorHang_loop
  */
 void probe_from_boot(void)    { probe_body('N'); }   /* N = normal boot path */
 void probe_from_battery(void) { probe_body('B'); }

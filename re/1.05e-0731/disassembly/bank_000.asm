@@ -1747,10 +1747,12 @@ DrawString_epilogueRet::
 
 
 ; [ezgb]
-; DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
-; Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
-; See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).
-; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; ≥$14 → 0; Jump_000_0982 ret.
+; DrawU32Decimal: debug number printer. U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
+; Inc $cc2f; wrap to 0 past $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
+; $cc30/$cc2f are its text column/row; $cc2f is also the row of the boot messages (SdMenuMain,
+; FileSystemErrorHang). No callers in 1.04e or 0731; 0918 calls it only from the unused RtcDebugDump.
+; 1.04e: radix $10, steps $cc30 and carries into $cc2f. See docs/DIFF_1.04e_vs_1.05e.md.
+; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; >$14 → 0; Jump_000_0982 ret.
 
 DrawU32Decimal::
     add sp, -$15
@@ -1817,11 +1819,11 @@ DrawU32Decimal_epilogueRet::
 
 
 ; [ezgb]
-; SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);
-; then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.
+; FileSystemErrorHang: fatal path for FileBrowserEntry (Chdir_B5 / Opendir_B5 failure). DrawString
+; FileSystemErrorStr at col 1, row [$cc2f] (the boot-message row), then infinite loop at $0998.
 ; Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr.
 
-SdReadRetryCount::
+FileSystemErrorHang::
     ld hl, $cc2f
     ld a, [hl]
     push af
@@ -1833,8 +1835,8 @@ SdReadRetryCount::
     call DrawString
     add sp, $05
 
-SdReadRetryCount_errorHang::
-    jp SdReadRetryCount_errorHang
+FileSystemErrorHang_loop::
+    jp FileSystemErrorHang_loop
 
 
     ret
@@ -3021,7 +3023,7 @@ BackupBranchEntry_seedSlashPath::
     ld [de], a
 
 ; [ezgb]
-; FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail SdReadRetryCount. Main browser loop.
+; FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail FileSystemErrorHang. Main browser loop.
 ; Jump_000_0fcd/Jump_000_0ff4: zero $c2a2/$c2a3; memset $c4a4+$c9db; wire $c9f1→$c4a4, $c9f3=$00fe; DirList.
 ; jr_000_1071 redraw: dirty → Jump_000_1089/jr_000_108c (code3 farcall+label) or Jump_000_10b1 (code≥2); Jump_000_10df DrawDirEntryLabel if count≠0 → Jump_000_1107.
 ; Jump_000_1107 Delay+ReadJoypad: $02 jr_000_1128 page-- (Jump_000_114d/Jump_000_1154/Jump_000_115b/Jump_000_116b); $01 jr_000_1175 DirList + Jump_000_1180 page++ (Jump_000_11bf/Jump_000_11d6/Jump_000_11dd).
@@ -3064,7 +3066,7 @@ FileBrowserEntry::
     or a
     jp z, FileBrowserEntry_clearPageIdx
 
-    call SdReadRetryCount
+    call FileSystemErrorHang
 
 FileBrowserEntry_clearPageIdx::
     ld hl, $c2a2
@@ -3088,7 +3090,7 @@ FileBrowserEntry_clearPageIdx::
     or a
     jp z, FileBrowserEntry_memsetWireDirList
 
-    call SdReadRetryCount
+    call FileSystemErrorHang
 
 FileBrowserEntry_memsetWireDirList::
     ld hl, $00ff

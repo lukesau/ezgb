@@ -313,10 +313,12 @@
       "bank": 0,
       "addr": "092a",
       "lines": [
-        "DrawU32Decimal: U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).",
-        "Inc $cc2f; wrap to 0 at $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.",
-        "See docs/DIFF_1.04e_vs_1.05e.md ($cc2f/$cc30 retry/display counters).",
-        "Scratch@sp+$01; CStrLen \u2192 DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; \u2265$14 \u2192 0; Jump_000_0982 ret."
+        "DrawU32Decimal: debug number printer. U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).",
+        "Inc $cc2f; wrap to 0 past $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.",
+        "$cc30/$cc2f are its text column/row; $cc2f is also the row of the boot messages (SdMenuMain,",
+        "FileSystemErrorHang). No callers in 1.04e or 0731; 0918 calls it only from the unused RtcDebugDump.",
+        "1.04e: radix $10, steps $cc30 and carries into $cc2f. See docs/DIFF_1.04e_vs_1.05e.md.",
+        "Scratch@sp+$01; CStrLen \u2192 DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; >$14 \u2192 0; Jump_000_0982 ret."
       ]
     },
     {
@@ -362,7 +364,7 @@
       "bank": 0,
       "addr": "0f8d",
       "lines": [
-        "FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail SdReadRetryCount. Main browser loop.",
+        "FileBrowserEntry: clear $cc2f/$cc30/$c5a4; farcall mount/list; fail FileSystemErrorHang. Main browser loop.",
         "Jump_000_0fcd/Jump_000_0ff4: zero $c2a2/$c2a3; memset $c4a4+$c9db; wire $c9f1\u2192$c4a4, $c9f3=$00fe; DirList.",
         "jr_000_1071 redraw: dirty \u2192 Jump_000_1089/jr_000_108c (code3 farcall+label) or Jump_000_10b1 (code\u22652); Jump_000_10df DrawDirEntryLabel if count\u22600 \u2192 Jump_000_1107.",
         "Jump_000_1107 Delay+ReadJoypad: $02 jr_000_1128 page-- (Jump_000_114d/Jump_000_1154/Jump_000_115b/Jump_000_116b); $01 jr_000_1175 DirList + Jump_000_1180 page++ (Jump_000_11bf/Jump_000_11d6/Jump_000_11dd).",
@@ -2413,8 +2415,8 @@
       "bank": 0,
       "addr": "0985",
       "lines": [
-        "SdReadRetryCount: SD dir-read failure path. DrawString FileSystemErrorStr at ($0100,y);",
-        "then infinite loop at $0998. Reads $cc2f (outer counter from DrawU32Decimal) but discards.",
+        "FileSystemErrorHang: fatal path for FileBrowserEntry (Chdir_B5 / Opendir_B5 failure). DrawString",
+        "FileSystemErrorStr at col 1, row [$cc2f] (the boot-message row), then infinite loop at $0998.",
         "Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr."
       ]
     },
@@ -2732,7 +2734,7 @@
       "bank": 0,
       "addr": "099c",
       "lines": [
-        "FileSystemErrorStr: NUL-term \"File system error!\" for SdReadRetryCount.",
+        "FileSystemErrorStr: NUL-term \"File system error!\" for FileSystemErrorHang.",
         "Marked .text:13 in kernel.sym so MemCmp_B0 at $09af stays instruction-aligned."
       ]
     },

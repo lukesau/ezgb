@@ -49,7 +49,7 @@ which one executed:
 |---|---|---|
 | `B` | `$18e2` | `jp $18d7`, the `BatteryCheck_waitA` back-edge |
 | `S` | `$0e21` | `jp $0e21`, `SdMenuMain_initErrorHang` |
-| `F` | `$0998` | `jp $0998`, `SdReadRetryCount_errorHang` |
+| `F` | `$0998` | `jp $0998`, `FileSystemErrorHang_loop` |
 
 All three are bare 3-byte self-loops with nothing to preserve, reached *after*
 the kernel has drawn text, so rendering is known-good.
