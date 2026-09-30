@@ -92,6 +92,8 @@ Supported bases: `1.04e` (FW4 package), `1.05e-0731` and `1.05e-0918` (FW5).
 The kernel is loaded from the card at every boot, so the 1.04e build also runs
 on an FW5 cart and no firmware updater is ever needed to switch.
 
+[What are the differences between the official kernels and why should I choose one over the other?](docs/kernel-versions.md)
+
 Both include all features above. To pick features individually or hack on
 new ones, use the development flow below.
 
