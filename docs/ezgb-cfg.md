@@ -187,7 +187,7 @@ stored time and the backup decision.
 
 FPGA page `$06` exposes seven BCD bytes at `$A008..$A00E` in PCF8563 register
 order: seconds, minutes, hours, day, weekday, month, year (two digits, 20xx).
-`RtcToDayCount` (`01:4c5e`) reads them; the factory init
+`RtcToDayCount` (`01:4c5e`; `01:4ec9` in 0918) reads them; the factory init
 `InitTimeAutosaveFpga_B4` writes 2019-07-24 11:22:33. Writing is the SET
 tab's recipe (`DrawTimeAutosaveScreen_confirmBcdWrite`, `04:5747`): select
 page 6, store the seven bytes (weekday hardcoded to `$03`), commit with

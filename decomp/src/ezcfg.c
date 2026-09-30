@@ -40,7 +40,7 @@
  *
  * RTC access: FPGA page $06 exposes seven BCD bytes at $A008..$A00E in
  * PCF8563 register order (sec, min, hour, day, weekday, month, year), see
- * RtcToDayCount (01:4c5e). Writing is the SET tab's recipe
+ * RtcToDayCount (01:4c5e; 01:4ec9 in 0918). Writing is the SET tab's recipe
  * (DrawTimeAutosaveScreen_confirmBcdWrite, 04:5747): select page 6, store
  * the seven bytes, commit with $7FD0=1, back to page 0. Both the page select
  * and the commit are the unlock/commit sequence of SetFpgaPage_B4 (04:466e),

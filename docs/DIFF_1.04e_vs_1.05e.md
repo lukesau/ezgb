@@ -19,11 +19,11 @@ Two diff passes, cross-checked against each other:
    Data_XXX_YYYY` address-based names before diffing text), used to sanity-check the byte
    diff and to read change regions as actual instructions rather than raw hex.
 
-Only bank 0 and bank 1 contain real content changes. Every other bank (2-9) is byte-for-byte
-identical content, just relocated: every difference in banks 2-9 is a `call`/`jp` operand
-whose target shifted because bank 0's code grew. Verified exhaustively for banks 2, 5, 7, 8;
-not re-verified for 3/4/6/9, but the pattern is consistent (bank 0 grew, everything
-referencing bank 0 addresses shifts).
+Bank 0 and bank 1 contain most of the real content changes. Banks 2, 5, 7 and 8 are
+identical content, just relocated: every difference is a `call`/`jp` operand whose target
+shifted because bank 0's code grew (verified exhaustively). Banks 3, 4, 6 and 9 were assumed
+to follow the same pattern without being re-verified; they do not, and have small real
+changes of their own (see "Banks 3, 4, 6, 9 changes" below, added 2026-09-29).
 
 ### Pitfall: "shift-noise" inside a bank
 
@@ -46,34 +46,31 @@ relative to its neighbors should be checked for this before being treated as a r
 
 | Offset (old to new) | Size | Status | What it is |
 |---|---|---|---|
-| `0x982` (old only) | -4B | Real | See "Retry-counter change" below |
+| `0x982` (old only) | -4B | Real | See "`DrawU32Decimal` change" below |
 | `0xe89` region | +16B | Real | See "New cached field" below |
 | `0x15d3` region | +13B | Not yet decoded | Small insert, not analyzed in detail yet |
 | `0x1847`-`0x18b3` cluster | net 0 | Shift-noise, not real | Battery-dry-notice function (`Call_000_1835`/`Call_000_181c`), confirmed identical logic; string-pointer operands shifted by the 25 bytes from the two changes above |
-| `0x1a61` | +928B | Real, largest bank-0 change | Confirmed to start exactly at `Call_000_1a7a` (1.05e address), a register-write helper targeting `$7fc0` (bank-select family, see `docs/REGISTERS.md`) that does not exist anywhere in bank 0 of 1.04e (`grep` for `7f00` in `1.04e/disassembly/bank_000.asm` returns zero hits, vs one in 1.05e). `Call_000_1a77` immediately before it (a trivial 3-byte `return 0`-shaped function, confirmed identical in both versions via `decomp/` matching, see `docs/PROGRESS.md`) is unaffected, confirming the insertion boundary. The other ~925 bytes of this insert haven't been read through yet; likely where most of the RTC rewrite and/or turbo-loading logic lives. Priority for follow-up. |
+| `0x1a61` | +928B | Real, largest bank-0 change | Two new routines, neither present in 1.04e: `SetFpgaPage_B0` (`00:1a7a`, 32 bytes; unlock, write the stack-supplied page to `$7fc0`, commit) and `RtcReadPage` (`00:1a9a`, 896 bytes), which the FatFs timestamp code in banks 3, 6 and 9 calls (below). `ReturnZero` (`00:1a77`) immediately before them is identical in both versions, confirming the insertion boundary. |
 | `0x1f0e`-`0x1fa8` cluster | net ~0 | Likely shift-noise | Same shape as the battery-notice cluster (short alternating replace pairs); not individually confirmed but pattern matches the 928-byte shift cascading through subsequent string/address literals |
 | `0x246e`-`0x2479` cluster | net ~0 | Likely shift-noise | Same reasoning as above |
 | `0x379c`-`0x37a0` | -2B | Not yet decoded | Small, near end of bank, not analyzed |
 | end-of-bank padding | -953B | Not real | Less unused filler at the end of the bank because ~953 net bytes of real code were added earlier (25 + 928 = 953, matches exactly) |
 
-### Retry-counter change (`0x982`, confirmed)
+### `DrawU32Decimal` change (`0x982`, confirmed)
 
-`DrawU32Decimal` (`00:092a`; 1.04e notes pointed at the preceding `DrawString`
-epilogue as a locator) tracks two paired counters in WRAM: `$cc30` (an inner
-retry/attempt count) and `$cc2f` (an outer failure count). Logic in 1.04e: increment
-`$cc30` each call; if it reaches 20, reset `$cc30` to 0 and increment `$cc2f`. In
-1.05e, the reset of `$cc30` is kept but the increment of `$cc2f` is removed,
-confirmed by direct byte comparison (the deleted 4 bytes are exactly `ld hl,$cc2f` /
-`inc [hl]`, opcodes `21 2f cc 34`).
+`DrawU32Decimal` (`00:092a`) converts a 32-bit value to text and draws it with `DrawString`
+at the position held in `$cc30`/`$cc2f`, then advances that position. 1.04e converts in
+radix 16 and steps `$cc30`; past 20 it resets `$cc30` to 0 and steps `$cc2f`. 1.05e converts
+in radix 10 and steps `$cc2f` instead, resetting it to 0 past 20. In the byte diff that is
+three `$cc30` operands becoming `$cc2f` and 4 deleted bytes, exactly `ld hl,$cc2f` /
+`inc [hl]` (opcodes `21 2f cc 34`).
 
-`$cc2f` is read elsewhere: the battery-dry notice clears it to 0, and
-`SdReadRetryCount` (right after the retry function) reads `$cc2f` and passes it to
-the UI-draw call, i.e. it's a user-visible counter, plausibly the "Micro SD Initial
-Error!" retry count shown to the user. Removing the "bump the visible counter" step
-while keeping the inner reset is consistent with the changelog's "Supported CGB
-without CPU suffix (Micro SD Initial Error issue)." This is the strongest candidate
-so far for that specific fix, not yet confirmed by tracing what actually calls into
-this counter function or what consumes `$cc2f`'s displayed value.
+It is a debug printer that nothing calls in 1.04e or 1.05e-0731 (its only callers are in the
+unused RTC test routine of 0918, see
+[DIFF_1.05e-0731_vs_0918.md](DIFF_1.05e-0731_vs_0918.md)), so the change has no effect on
+any shipped path. An earlier version of this section read `$cc2f`/`$cc30` as SD retry
+counters and proposed the change as the fix behind the changelog's "Supported CGB without
+CPU suffix (Micro SD Initial Error issue)"; that hypothesis is dropped.
 
 ### New cached field (`0xe89`, confirmed)
 
@@ -122,13 +119,36 @@ backs the **RTC *and* the save PSRAM** (the Jr has no FRAM, see
 BACKUPSAVE pending stamp in PSRAM (`docs/psram-save-map.md`). Do not treat `$AA` alone as proof
 of JEDEC NOR. See `docs/1.05e-instability.md`.
 
+## Banks 3, 4, 6, 9 changes
+
+Net growth +15 / +15 / +35 / +16 bytes.
+
+**Banks 3, 6, 9: FatFs timestamp.** 1.04e stamps directory entries with the constant bytes
+`$00 $00 $21 $46` (FAT time/date `$46210000`, 2015-01-01 00:00), loaded as four `ld a,$xx`
+immediates. 1.05e calls `RtcReadPage` (`00:1a9a`) first, keeps the 32-bit result on the
+stack (+14 bytes) and loads the four bytes from there. Sites, 1.05e addresses: `03:7619`
+(`Fsync_B3_updateDir`), `06:7457` (`Open_B6_createTruncate`, created and modified stamps),
+`09:7801` (`Open_B9`, two stamps). Bank 6 has two further small inserts in `Open_B6`
+(+17 at `06:7532`, +2 at `06:764f`), not decoded here.
+
+**Bank 4: SET-tab TIME / AUTO SAVE screen.** `DrawTimeAutosaveScreen_redraw` (`04:48f5`)
+opens by testing a flag where 1.04e calls `WaitVBlankFlag`;
+`DrawTimeAutosaveScreen_savRedraw` draws one extra string (`SAV`, +30 bytes at `04:4e49`);
+three jump sequences in the field handlers are 5 bytes shorter each
+(`04:545e`, `04:54d5`, `04:54fc`); +3 bytes at `04:566b`.
+
 ## Confirmed vs hypothesis, summary
 
 Confirmed by direct byte/instruction reading:
-- Banks 2-9 have zero logic changes, only relocated call targets.
+- Banks 2, 5, 7, 8 have zero logic changes, only relocated call targets. Banks 3, 6, 9 swap
+  a hard-coded 2015-01-01 FatFs timestamp for a call to `RtcReadPage`; bank 4 has the
+  SET-tab TIME screen edits.
 - The battery-dry-notice function is unchanged logic between versions (shift-noise, not a
   real diff).
-- `$cc2f`/`$cc30` retry-counter logic changed: the outer counter increment was removed.
+- `DrawU32Decimal`, an uncalled debug printer, prints decimal instead of hex and advances
+  its `$cc2f`/`$cc30` position differently.
+- The 928-byte bank-0 insertion is `SetFpgaPage_B0` (`00:1a7a`) plus `RtcReadPage`
+  (`00:1a9a`).
 - A new global (`$d3f6`) was added, caching a struct field that 1.04e reads but never stores.
 - A new register-write function targeting `$7fd4` was added.
 - NOR-flash-shaped write sequences (bank-17 select plus `$A0xx` writes with a JEDEC-style
@@ -138,24 +158,17 @@ Confirmed by direct byte/instruction reading:
 Hypothesis, not yet confirmed:
 - That `$7fd4` and the `$A0xx`/`$A2xx` register family are specifically RTC status/data
   registers (plausible from context and changelog correlation, not proven).
-- That the removed `$cc2f` increment is the fix behind "Micro SD Initial Error" (circumstantial
-  case, not traced).
 - Purpose of the still-undecoded regions: `0x15d3` and `0x379c` (bank 0); `0xa25`, the
   `0xaf1`-`0xc2a` cluster, and `0x2728` (bank 1).
-- The biggest open item: the 928-byte insertion at bank 0 `0x1a61`, the largest contiguous
-  new-code block in either bank, not yet read through. Given its size, this likely contains
-  the bulk of whatever "RTC codes are rewritten" and "turbo loading speed" actually consist
-  of, and should be the next thing read in detail before drawing conclusions about what
-  changed between the two kernels.
 
 ## Next steps
 
-1. Read through the bank-0 `0x1a61` 928-byte insertion in full. It's the largest undocumented
-   change and likely the crux of the RTC/turbo-loading rewrite.
+1. Done: the bank-0 `0x1a61` 928-byte insertion is `SetFpgaPage_B0` plus `RtcReadPage`
+   (see the bank-0 table).
 2. Decode the remaining small undecoded regions (`0x15d3`, `0x379c` in bank 0; `0xa25`,
    `0xaf1`-`0xc2a`, `0x2728` in bank 1) to rule out further shift-noise vs real changes.
 3. Dynamic tracing (SameBoy) on both kernel versions at the confirmed change points
-   (`$cc2f`/`$cc30` retry function, the `$7fd4` register writer, the NOR-flash write
+   (the `$7fd4` register writer, the NOR-flash write
    sequences) would convert several of the above hypotheses into confirmed facts faster than
    continued static reading.
 
@@ -176,7 +189,7 @@ What the port had to translate, all mechanically from the address map:
   `$01e3`–`$0588` and `$3d8c`–`$3fc5`, bank 1 `$7600`, bank 2 `$4380`/`$4500`/
   `$4a00`, bank 4 `$5932`–`$5f1b`, bank 8 `$746b`–`$7cff`); 1.04e has more
   free space than 1.05e everywhere.
-- **Bank 0 targets** shift by `+4` after the retry-counter change (`$0982`),
+- **Bank 0 targets** shift by `+4` after the `DrawU32Decimal` change (`$0982`),
   `-12` after the cached-field insert (`$0e89`), `-25` after `$15d3`, and
   `-953` after the `$1a61` insertion: `StoreDrawParams` `$2791`→`$23d8`,
   `DrawRect` `$27ba`→`$2401`, `ReadJoypad` `$3a4a`→`$3691`, `Strrchr`
@@ -187,7 +200,8 @@ What the port had to translate, all mechanically from the address map:
   `-2734` and `-3119` (the `BackupSaveDump` epilogue `$6738`→`$5b09`).
   The `DrawBrowserDetail`/`DrawBrowserEntries` sites below `$480b` are unmoved.
 - **Bank 4** moves by `-4`, `-12`, `-15` or `-27` depending on the region;
-  banks 2, 5, 7, 8 are identical, banks 3/6/9 only relocate bank-0 operands.
+  banks 2, 5, 7, 8 are identical, banks 3/6/9 relocate bank-0 operands around
+  their timestamp change.
 - **Two sites needed a human decision.** `DrawTimeAutosaveScreen_redraw`
   (`04:48f5`) keeps its address but opens with `call WaitVBlankFlag` in 1.04e
   where 1.05e tests its time-set flag, so the map cannot align it; it is

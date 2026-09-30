@@ -112,6 +112,32 @@ OVERRIDES = {
     },
 }
 
+# Ranges portmap aligns to the wrong copy of duplicated code, resolved by
+# reading both disassemblies. (bank, from_start, from_end) -> delta, from_end
+# exclusive. Unlike OVERRIDES the target holds the same code, so verify_target
+# still checks it.
+REMAP = {
+    "1.05e-0918": {
+        # RtcToDayCount. 0918 put an uncalled 619-byte RTC test screen
+        # (RtcDebugDump, 01:4c5e) in front of it that opens with the same 370
+        # bytes, so the map matches the head of the 0731 routine to the test
+        # screen (+0) and only its tail to the real routine at 01:4ec9 (+619).
+        (1, 0x4c5e, 0x4dd0): 619,
+    },
+}
+
+# Code only the target build has, so there is nothing in the from-build to
+# port: named in the ported kernel.sym, with an optional notes.json block.
+TARGET_ONLY = {
+    "1.05e-0918": [
+        dict(bank=1, addr=0x4c5e, name="RtcDebugDump", lines=[
+            "RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToDayCount's",
+            "first 370 bytes (page $06, BCD-decode $A008..$A00E to the stack, page $03), then DrawU32Decimal of",
+            "12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToDayCount follows.",
+        ]),
+    ],
+}
+
 # Hook sites that patch code the target build does not have. (bank, from_addr)
 # of the site as reported by the tool; each needs a reason.
 SKIP_SITES = {
@@ -191,6 +217,7 @@ class Port:
         cache = os.path.join(tempfile.gettempdir(), "ezgb-portmap")
         self.pm = PortMap(self.src_stock, self.dst_stock, cache_dir=cache)
         self.overrides = OVERRIDES.get(dst_ver, {})
+        self.remap = REMAP.get(dst_ver, {})
         self.log = []
         self.written = []  # (bank, addr, length, what)
         self.sym_blocks = read_sym_blocks(os.path.join(ROOT, "re", src_ver, "kernel.sym"))
@@ -242,6 +269,9 @@ class Port:
             return self.overrides[(bank, addr)]
         if addr >= 0xfe00:
             return addr
+        for (b, lo, hi), delta in self.remap.items():
+            if b == bank and lo <= addr < hi:
+                return addr + delta
         if self.injected(bank, addr):
             return addr
         return self.pm.map(bank, addr)
@@ -527,6 +557,12 @@ class Port:
                 dropped.append(line)
                 continue
             out.append(f"{bank:02x}:{r:04x} {rest}")
+        for t in TARGET_ONLY.get(self.dst_ver, []):
+            # placed in front of the next name up in the same bank
+            after = [(l[:7], i) for i, l in enumerate(out)
+                     if re.match(rf"^{t['bank']:02x}:[0-9a-f]{{4}} (?!\.)", l) and int(l[3:7], 16) > t["addr"]]
+            i = min(after)[1] if after else len(out)
+            out.insert(i, f"{t['bank']:02x}:{t['addr']:04x} {t['name']}")
         return "\n".join(out) + "\n", dropped
 
     def port_notes(self):
@@ -541,6 +577,9 @@ class Port:
             nb = dict(blk)
             nb["addr"] = f"{r:04x}"
             kept.append(nb)
+        for t in TARGET_ONLY.get(self.dst_ver, []):
+            if t.get("lines"):
+                kept.append({"bank": t["bank"], "addr": f"{t['addr']:04x}", "lines": t["lines"]})
         return {"blocks": kept}, dropped
 
 

@@ -493,7 +493,8 @@
 ; Calendar / RTC day-count (bank 1)
 01:48c6 IsLeapYear
 01:4917 DateToDaysSince1970
-01:4c5e RtcToDayCount
+01:4c5e RtcDebugDump
+01:4ec9 RtcToDayCount
 01:5346 RtcReadDaysClearRegs
 01:6280 DrawCardTypeScreen
 01:6513 DrawInfoPanelRect

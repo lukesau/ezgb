@@ -2206,7 +2206,7 @@
     },
     {
       "bank": 1,
-      "addr": "4c5e",
+      "addr": "4ec9",
       "lines": [
         "RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B\u2026",
         "(year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count."
@@ -3459,6 +3459,15 @@
         "$e800. Reasonable inference from control flow and the Memcpy/FarCallTrampoline calls;",
         "exact role and caller not independently confirmed \u2014 named from shape + neighboring",
         "context, not a traced call site."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "4c5e",
+      "lines": [
+        "RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToDayCount's",
+        "first 370 bytes (page $06, BCD-decode $A008..$A00E to the stack, page $03), then DrawU32Decimal of",
+        "12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToDayCount follows."
       ]
     }
   ]

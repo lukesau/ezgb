@@ -17,7 +17,9 @@ before it. This module recovers that correspondence mechanically:
 `PortMap.map(bank, addr)` returns the target address or None when the byte
 lies in code that only one build has. Callers that patch code should still
 compare the bytes at both ends (see port-mod.py), since the alignment is
-statistical, not proven.
+statistical, not proven. Where one build repeats a stretch of code the
+alignment can pick the wrong copy; port-mod.py corrects those ranges by hand
+(REMAP: 0731 01:4c5e-01:4dcf maps +0 here but belongs at +619 in 0918).
 
 Usage:
     scripts/portmap.py <from_ver> <to_ver> [--summary] [BB:AAAA ...]

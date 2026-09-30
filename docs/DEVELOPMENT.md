@@ -211,14 +211,17 @@ How it works (`scripts/portmap.py`, `scripts/port-mod.py`):
   not have are listed in `SKIP_SITES` with a reason (1.04e: one extra SET-tab
   string draw that only 1.05e makes), and addresses the map cannot align are
   pinned in `OVERRIDES` after reading both disassemblies (1.04e: the SET-tab
-  redraw label).
+  redraw label). Where a build repeats code and the map picks the wrong copy,
+  the range is corrected in `REMAP` (0918: `RtcToDayCount` sits behind an
+  uncalled test routine that opens with the same 370 bytes).
 - **Symbols.** `--sym` ports `kernel.sym` and `notes.json` through the same
   map; 1.04e's runtime WRAM sits 39 bytes below 1.05e's from `$D6CC` up
   (`WRAM_SHIFT`), and names inside 1.05e's inserted RTC tables are dropped.
   The WRAM rule applies to both files (before mod 4.4 WRAM notes were
   dropped from `notes.json`), and `notes.json` keeps the target file's
   escaping and trailing newline, so `--sym` is safe on every port and a
-  re-port diffs only what moved.
+  re-port diffs only what moved. Names and notes for code only the target
+  build has come from `TARGET_ONLY` (0918: `RtcDebugDump`).
 
 The tool also warns about stale bytes in free space (old versions of a block
 that were never blanked); blank them in the source build rather than porting

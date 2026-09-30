@@ -2614,10 +2614,11 @@ DateToDaysSince1970_addHms::
 
 
 ; [ezgb]
-; RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
-; (year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count.
+; RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToDayCount's
+; first 370 bytes (page $06, BCD-decode $A008..$A00E to the stack, page $03), then DrawU32Decimal of
+; 12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToDayCount follows.
 
-RtcToDayCount::
+RtcDebugDump::
     add sp, -$11
     ld a, $06
     push af
@@ -3066,7 +3067,11 @@ RtcToDayCount::
     ret
 
 
-Call_001_4ec9:
+; [ezgb]
+; RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
+; (year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count.
+
+RtcToDayCount::
     add sp, -$11
     ld a, $06
     push af
@@ -3367,7 +3372,7 @@ Call_001_4ec9:
 
 RtcWriteTimeFromDayDelta::
     add sp, -$16
-    call Call_001_4ec9
+    call RtcToDayCount
     push hl
     ld hl, sp+$14
     ld [hl], e
@@ -3934,7 +3939,7 @@ RtcWriteTimeFromDayDelta_writeFpga::
 RtcReadDaysClearRegs::
     push af
     push af
-    call Call_001_4ec9
+    call RtcToDayCount
     push hl
     ld hl, sp+$02
     ld [hl], e

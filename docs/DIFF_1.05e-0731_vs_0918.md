@@ -61,26 +61,33 @@ net       +0 file size, +610 bytes of code
 ```
 
 The ~200 remaining two-byte edits are all 16-bit operands pointing at or past
-the insertion, each moved by `+$262`. They are relocations, not logic changes.
+the insertion, each moved by `+$262` (`+$26b` for targets between the insertion
+and the 9 deleted bytes). They are relocations, not logic changes.
 
 The bank's trailing free space paid for it: the 610 displaced bytes were all
-`$ff` filler, so the insertion consumed the bank's remaining headroom exactly.
-**Bank 1 is now full**, worth knowing before planning any injection there.
+`$ff` filler. Bank 1 is not full: stock 0918 still ends in 2,573 bytes of `$ff`
+(`$75f3`-`$7fff`), against 3,183 in 0731.
 
 ### Where the new code went
 
-The two builds are identical up to `$4dcf`, whose last instructions are:
+A byte diff puts the divergence at `$4dd0`: the two builds are identical up to
+`$4dcf`, whose last instructions are:
 
 ```asm
 call SetFpgaPage_B1     ; 01:47a7
 add  sp, $01
 ```
 
-and then diverge. That is **inside `RtcToDayCount` (01:4c5e)**: the new code is
-spliced into the middle of an RTC routine, immediately after an FPGA page
-select.
+In 0731 that is 370 bytes into `RtcToDayCount` (`01:4c5e`), but the new code is
+not spliced into that routine. It is a separate 619-byte routine placed in
+front of it, at `01:4c5e`-`01:4ec8` (`RtcDebugDump` in
+`re/1.05e-0918/kernel.sym`). It opens with the same 370 bytes of clock-reading
+code as `RtcToDayCount`, which is why a byte diff finds the first difference
+370 bytes in. The real `RtcToDayCount` follows at `01:4ec9`, byte for byte the
+0731 routine, and its two callers (`01:505e` in `RtcWriteTimeFromDayDelta`,
+`01:5348` in `RtcReadDaysClearRegs`) were repointed.
 
-What the inserted block does, confirmed from its bytes:
+After the shared opening, the new routine does:
 
 ```asm
 ld   hl, $00bc          ; \  32-bit literal $00BC614E = 12345678
@@ -91,18 +98,17 @@ call DrawU32Decimal     ; 00:092a
 add  sp, $04
 ```
 
-then repeats a pattern of reading successive bytes from a structure
-(offsets +0, +3, +6, +7 …) and writing them into a stack frame, interleaved
-with further `DrawU32Decimal` calls.
+then prints the year, month, day, hour, minute and second it just decoded, each
+with `DrawU32Decimal`, calls `WaitJoypadSelect` (`00:07bc`) and returns.
 
-**Confirmed:** location, size, that it calls `DrawU32Decimal`, and that it is
-reached inline from `RtcToDayCount` after an FPGA page select.
+It is an RTC test screen left in the build, and nothing calls it: no `call` /
+`jp` operand and no `FarCallTrampoline` entry in the ROM targets `01:4c5e`.
+These seven calls are also the only calls to `DrawU32Decimal` in any of the
+three kernels.
 
-**Not established:** its purpose. Drawing the literal `12345678` reads like a
-diagnostic or placeholder rather than a shipping feature, but that is a guess
-from one constant. Nothing calls `$4dd0` as a function: no `call`/`jp` and no
-`FarCallTrampoline` data entry targets it, consistent with it being inline
-code rather than a new routine.
+The 9 deleted bytes are at the end of `RtcWriteTimeFromDayDelta`. 0731 calls
+`SetFpgaPage_B1($00)` twice in a row before returning
+(`3e 00 f5 33 cd a7 47 e8 01`, twice); 0918 drops the redundant second call.
 
 ## The real payload is the FPGA side
 
@@ -123,8 +129,12 @@ established: an XC3S200A bitstream is ~1,196,128 bits ≈ 146 KB, and 163,840 B
 is that plus a wrapper.
 
 The payload is neither raw nor encrypted: entropy is 4.61 bits/byte (random
-would be 8.0), but no Xilinx sync word `AA995566` appears, in normal or
-bit-reversed form. So it is encoded or wrapped in a format not yet identified.
+would be 8.0). The standard Xilinx sync word `AA995566` does not appear, in
+normal or bit-reversed form. This section predates
+[fpga-flash-map.md](fpga-flash-map.md), which found two bitstream sync words
+in each FW5 payload: two images, the second identical between 0731 and 0918
+(the golden / fallback image) and the first 61% different (the active image).
+See that page for the layout.
 
 ## Assessment of the reported claims
 
@@ -135,33 +145,31 @@ cartridge header once at power-on, so SGB features for a *launched* game depend
 on what the cart presents to the console at power-on, an FPGA behaviour, not a
 kernel one. Consistent with the payload being where the change is.
 
-**SD corruption on slow cards: no evidence in the kernel.** The 610 inserted
-bytes are in an RTC routine, not the SD path, and banks 2–9 (which hold the SD
-and FatFs code) are byte-identical. If this fix is real, it is in the FPGA
-payload too.
+**SD corruption on slow cards: no evidence in the kernel.** The inserted
+routine is an uncalled RTC test screen, not the SD path, and banks 2–9 (which
+hold the SD and FatFs code) are byte-identical. If this fix is real, it is in
+the FPGA payload too.
 
-**Overall:** 0918 is essentially the same kernel as 0731 plus one inlined block,
+**Overall:** 0918 is the same kernel as 0731 plus one uncalled debug routine,
 with a substantially different FPGA image. The interesting delta for this
 project is not the kernel.
 
 ## What this means for our work
 
-- Our `re/1.05e-0731` annotations remain valid for 0918, offset by `+$262` for bank-1
-  addresses at or beyond `$4dd0`. `kernel.sym` needs no rework to read the new
-  build.
-- **Bank 1 has no free space left in 0918.** Our injections live in bank 0
-  (`$01e3-$02fa`, `$03cc`), which is unaffected, so `browser_scroll` and
-  `DirListSkipDotLongName` would port across unchanged.
+- Our `re/1.05e-0731` annotations remain valid for 0918, offset in bank 1 by
+  `+619` for `$4c5e`-`$50ce` and `+$262` (610) from `$50d8`.
+- Bank 1 has 2,573 free bytes left in stock 0918 (`$75f3` up). Our injections
+  live in bank 0 (`$01e3-$02fa`, `$03cc`), which is unaffected, so
+  `browser_scroll` and `DirListSkipDotLongName` would port across unchanged.
 - The 0918 kernel's global checksum is `$f8b5` and correct for its own contents,
   unlike our patched build (see `scripts/build-ezgb-dat.sh`).
 
 ## Next steps
 
-- [ ] Identify the payload encoding; the missing sync word is the thread to
-      pull. Compare against the SPI flash dump taken during the cart repair;
-      that dump is a known-good decoded image of the same data.
-- [ ] Determine what the inserted RTC block actually does, and whether
-      `12345678` is a literal or a misread of a pointer pair.
+- [x] Identify the payload layout: done in
+      [fpga-flash-map.md](fpga-flash-map.md) (two images per FW5 payload).
+- [x] Determine what the inserted RTC block does: an uncalled test screen;
+      `12345678` is a literal (see above).
 - [ ] Decide whether to port our two bank-0 patches onto 0918 and run it.
 
 ## Port of the injected features (2026-08-30)
@@ -182,6 +190,9 @@ from the 0731 featured build to 0918 by replaying the byte diff
   `$50d8`; nothing named lived in the 9 deleted bytes), validated by 3-byte
   spot checks (all mismatches were pointer-relocation operands) and by the
   disassembly round-trip (`make` rebuilds the ROM bar the usual header bytes).
+  That remap left the `RtcToDayCount` name on the new routine at `$4c5e`;
+  corrected 2026-09-29 (`RtcDebugDump` at `$4c5e`, `RtcToDayCount` at `$4ec9`,
+  `REMAP` / `TARGET_ONLY` in `scripts/port-mod.py`).
 - SameBoy-verified on the 0918 build: boots to the (sorted, filtered) browser,
   and Start→A relaunch runs the full FPGA config then boots via the no-copy
   path with zero `$7f36` writes. Normal-launch copy path was verified on the
