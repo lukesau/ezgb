@@ -1373,7 +1373,7 @@ glyph 0xC1 icon gb cart keep
 #........#
 #........#
 #........#
-##########
+#########.
 ..........
 
 glyph 0xC2 icon gbc cart keep
