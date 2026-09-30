@@ -16,7 +16,8 @@ Needs Pillow:  python3 -m venv .venv && .venv/bin/pip install pillow
 Cells are 10 wide x 12 tall, icons included. The TTF baseline is placed on cell row `--baseline`
 (0-based, default 9): caps occupy rows 0-9 and descenders rows 10-11, with
 anything below row 11 clipped. `--bold` ORs each glyph with a copy shifted one
-pixel right (a 2px stroke reads much better on an unlit DMG screen).
+pixel right (a 2px stroke reads much better on a stock DMG, the baseline
+every UI choice is checked against).
 """
 import argparse
 import os

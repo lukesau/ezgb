@@ -23,7 +23,9 @@ N: 0 white, 1 light gray, 2 dark gray, 3 black.
 
 Black on dark gray is two adjacent steps of the four-shade ramp. A GBC in
 DMG-compat mode spreads those apart with its auto palette, which is why it
-looks fine there; an unlit DMG screen does not.
+looks fine there; a stock DMG does not. The stock, unmodified DMG is the
+baseline every UI choice in this mod is checked against: it is both the worst
+case and the unmodded case, so anything readable there is readable everywhere.
 
 ## Change 1: selected row is white on black
 
