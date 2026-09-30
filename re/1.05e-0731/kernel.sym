@@ -206,6 +206,8 @@
 00:d733 wTextCursorY
 00:d734 wDrawColor
 00:d735 wDrawColorB
+00:cc2f wDebugTextRow
+00:cc30 wDebugTextCol
 00:cc33 wWToUpperKeys
 00:d00f wWToUpperVals
 00:d3f9 wFileSizeFmtLo

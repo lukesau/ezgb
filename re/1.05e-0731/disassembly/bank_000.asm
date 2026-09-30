@@ -1749,7 +1749,7 @@ DrawString_epilogueRet::
 ; [ezgb]
 ; DrawU32Decimal: debug number printer. U32ToAscii_B0 (radix $0a) then DrawString at ($cc30,$cc2f).
 ; Inc $cc2f; wrap to 0 past $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
-; $cc30/$cc2f are its text column/row; $cc2f is also the row of the boot messages (SdMenuMain,
+; wDebugTextCol/wDebugTextRow ($cc30/$cc2f) are its text cursor; the row is also where the boot messages draw (SdMenuMain,
 ; FileSystemErrorHang). No callers in 1.04e or 0731; 0918 calls it only from the unused RtcDebugDump.
 ; 1.04e: radix $10, steps $cc30 and carries into $cc2f. See docs/DIFF_1.04e_vs_1.05e.md.
 ; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; >$14 → 0; Jump_000_0982 ret.
@@ -1788,11 +1788,11 @@ DrawU32Decimal::
     ld hl, sp+$01
     ld c, l
     ld b, h
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld a, [hl]
     push af
     inc sp
-    ld hl, $cc30
+    ld hl, wDebugTextCol
     ld a, [hl]
     push af
     inc sp
@@ -1803,14 +1803,14 @@ DrawU32Decimal::
     push bc
     call DrawString
     add sp, $05
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     inc [hl]
     ld a, $14
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     sub [hl]
     jp nc, DrawU32Decimal_epilogueRet
 
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld [hl], $00
 
 DrawU32Decimal_epilogueRet::
@@ -1824,7 +1824,7 @@ DrawU32Decimal_epilogueRet::
 ; Jump_000_0998: jp self hang. Orphan ret after; next FileSystemErrorStr.
 
 FileSystemErrorHang::
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld a, [hl]
     push af
     inc sp
@@ -2728,7 +2728,7 @@ SdMenuMain_afterMount::
     or a
     jp z, SdMenuMain_mountOk
 
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld a, [hl]
     push af
     inc sp
@@ -2744,7 +2744,7 @@ SdMenuMain_initErrorHang::
 
 
 SdMenuMain_mountOk::
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld a, [hl]
     push af
     inc sp
@@ -3030,9 +3030,9 @@ BackupBranchEntry_seedSlashPath::
 ; $04/$08 jr_000_11e7/Jump_000_11f6 / jr_000_1200/Jump_000_1223 row; $40 jr_000_122d mode (Jump_000_1238/jr_000_123b/Jump_000_1242/Jump_000_124c/jr_000_124f farcall) → Jump_000_1267/Jump_000_1271/jr_000_1274 or MenuKeyDispatch.
 
 FileBrowserEntry::
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld [hl], $00
-    ld hl, $cc30
+    ld hl, wDebugTextCol
     ld [hl], $00
     ld hl, sp+$0e
     ld [hl], $00
@@ -4701,7 +4701,7 @@ U32ToAscii_B0_writeNul::
 ; Jump_000_18eb: teardown page0, call SdMenuMain. Orphan before BatteryDryPadStr.
 
 BatteryCheck::
-    ld hl, $cc2f
+    ld hl, wDebugTextRow
     ld [hl], $00
     ld bc, $4000
     ld a, $11
