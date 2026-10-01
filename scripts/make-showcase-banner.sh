@@ -5,8 +5,9 @@
 # sd/root/ (scripts/make-sd-image.sh — this is the same card the emulator uses,
 # there is no separate showcase card), boots both the stock and the modded
 # 1.05e-0731 kernel in SameBoy (DMG palette), screenshots the SD / SET / HELP
-# tabs of each, adds a third row with the modded browser in its 12px mode (a
-# copy of the card with UI=12 in EZGB.CFG), and stitches a labeled banner.
+# tabs of each, adds a third row with the same three tabs of the mod in its
+# 12px mode (a copy of the card with UI=12 in EZGB.CFG), and stitches a
+# labeled banner.
 #
 #   ./scripts/make-showcase-banner.sh [output.png]     # default: docs/banner.png
 #
@@ -44,20 +45,17 @@ swiftc -O "$ROOT/scripts/showcase/keys.swift"  -o "$TMP/keys"
 
 # --- capture one kernel's SD / SET / HELP tabs into a 3-panel montage -------
 # Select (SameBoy default = Backspace, macOS keycode 51) cycles the tabs.
-# capture_row <kernel> <out> [card] [width]: with a width, only the SD browser
-# is captured, left-aligned on a black row of that width.
+# capture_row <kernel> <out> [card]
 capture_row() {
-  local kernel="$1" out="$2" card="${3:-$CARD}" only="${4:-}" wid="" i
+  local kernel="$1" out="$2" card="${3:-$CARD}" wid="" i
   SAMEBOY_EZFLASH_JR_IMG="$card" "$SAMEBOY" --model dmg "$kernel" >/dev/null 2>&1 &
   SB_PID=$!
   for i in $(seq 1 40); do sleep 0.5; wid="$("$TMP/winid" | head -1)"; if [ -n "$wid" ]; then break; fi; done
   [ -n "$wid" ] || { echo "error: SameBoy window not found"; return 1; }
   sleep 6                                              # boot + first browser paint
   screencapture -x -o -l "$wid" "$TMP/b.png"
-  if [ -z "$only" ]; then
-    "$TMP/keys" "$SB_PID" 51 1; sleep 2.5; screencapture -x -o -l "$wid" "$TMP/s.png"  # SET (wait for clock)
-    "$TMP/keys" "$SB_PID" 51 1; sleep 1.5; screencapture -x -o -l "$wid" "$TMP/h.png"  # HELP
-  fi
+  "$TMP/keys" "$SB_PID" 51 1; sleep 2.5; screencapture -x -o -l "$wid" "$TMP/s.png"  # SET (wait for clock)
+  "$TMP/keys" "$SB_PID" 51 1; sleep 1.5; screencapture -x -o -l "$wid" "$TMP/h.png"  # HELP
   kill "$SB_PID" 2>/dev/null || true; wait "$SB_PID" 2>/dev/null || true; SB_PID=""
 
   # Crop the SDL chrome: the 160x144 screen fills the window width and sits at the
@@ -67,11 +65,6 @@ capture_row() {
   H="$(sips -g pixelHeight "$TMP/b.png" | awk '/pixelHeight/{print $2}')"
   GBH=$(( W * 144 / 160 )); Y=$(( H - GBH )); crop="${W}x${GBH}+0+${Y}"
   local p
-  if [ -n "$only" ]; then
-    magick "$TMP/b.png" -crop "$crop" +repage -background black -gravity West \
-      -extent "${only}x${GBH}" -bordercolor black -border 0x12 "$out"
-    return
-  fi
   for p in b s h; do magick "$TMP/$p.png" -crop "$crop" +repage "$TMP/c-$p.png"; done
   # Join the three panels with a black gutter (a plain append avoids `montage`'s
   # default filename labels, which need a font and error out under `set -e`).
@@ -99,17 +92,17 @@ echo "capturing mod $KVER mod-$MOD_VER..."
 capture_row "$MOD_KERNEL" "$TMP/row-mod.png"
 RW="$(sips -g pixelWidth "$TMP/row-stock.png" | awk '/pixelWidth/{print $2}')"
 
-# The same card with the 12px browser switched on (UI=12, docs/ui-mode.md).
-echo "capturing mod $KVER mod-$MOD_VER, 12px browser..."
+# The same card with the 12px UI switched on (UI=12, docs/ui-mode.md).
+echo "capturing mod $KVER mod-$MOD_VER, 12px UI..."
 cp "$CARD" "$TMP/card12.img"
 { mtype -i "$TMP/card12.img" ::/EZGB.CFG 2>/dev/null | tr -d '\r' | sed -e 's/ *$//' -e '/^UI=/d' -e '/^$/d'; echo "UI=12"; } \
   | sed 's/$/\r/' > "$TMP/ezgb12.cfg"
 mcopy -o -i "$TMP/card12.img" "$TMP/ezgb12.cfg" ::/EZGB.CFG
-capture_row "$MOD_KERNEL" "$TMP/row-12.png" "$TMP/card12.img" "$RW"
+capture_row "$MOD_KERNEL" "$TMP/row-12.png" "$TMP/card12.img"
 
 label "$TMP/hdr-stock.png" "STOCK" "$KVER"                    "$RW"
 label "$TMP/hdr-mod.png"   "MOD"   "$KVER mod-$MOD_VER"       "$RW"
-label "$TMP/hdr-12.png"    "MOD, 12px browser" "UI: 12px on the SET tab" "$RW"
+label "$TMP/hdr-12.png"    "MOD, 12px UI" "UI: 12px on the SET tab" "$RW"
 magick -size "${RW}x16" xc:black "$TMP/spacer.png"
 
 mkdir -p "$(dirname "$OUT")"

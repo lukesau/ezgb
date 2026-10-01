@@ -598,7 +598,7 @@ DrawBrowserEntries_drawSelSize::
     push af
     inc sp
     push bc
-    call DrawString
+    call $0380
     add sp, $05
     add sp, $20
     ret
@@ -1170,7 +1170,7 @@ DrawBrowserDetail_drawSize::
     push af
     inc sp
     push bc
-    call DrawString
+    call $0380
     add sp, $05
     add sp, $24
     ret
@@ -7754,7 +7754,7 @@ BackupSaveDump_spinnerDot::
     inc sp
     ld hl, $699d
     push hl
-    call DrawString
+    call $0390
     add sp, $05
     jp BackupSaveDump_advance200
 
@@ -7779,7 +7779,7 @@ BackupSaveDump_spinnerDots::
     inc sp
     ld hl, $69a1
     push hl
-    call DrawString
+    call $0390
     add sp, $05
     jp BackupSaveDump_advance200
 
@@ -7792,7 +7792,7 @@ BackupSaveDump_spinnerEllipsis::
     inc sp
     ld hl, $69a5
     push hl
-    call DrawString
+    call $0390
     add sp, $05
 
 BackupSaveDump_advance200::
@@ -8118,17 +8118,22 @@ BackupSavePrompt::
     push af
     push af
     push af
-    ld hl, $0003
-    push hl
+    ld hl, sp+$0e
+    ld a, [hl]
+    push af
+    inc sp
     ld a, $00
     push af
     inc sp
-    call StoreDrawParams
-    add sp, $03
-    ld hl, $016c
-    push hl
-    ld hl, $7d25
-    push hl
+    call FarCallTrampoline
+    nop
+    ld h, b
+    inc b
+    nop
+    add sp, $02
+    jr jr_001_69dc
+
+    nop
     ld a, $23
     push af
     inc sp
@@ -8143,6 +8148,8 @@ BackupSavePrompt::
     push hl
     call DrawString
     add sp, $05
+
+jr_001_69dc:
     ld hl, sp+$12
     ld a, [hl]
     sub $01
@@ -8162,7 +8169,7 @@ BackupSavePrompt_autoDump::
     inc sp
     ld hl, $6b01
     push hl
-    call DrawString
+    call $039d
     add sp, $05
     ld a, $0d
     push af
@@ -8207,16 +8214,21 @@ BackupSavePrompt_autoDump::
 
 
 BackupSavePrompt_drawConfirm::
-    ld hl, $0003
-    push hl
-    ld a, $00
+    ld a, $01
     push af
     inc sp
-    call StoreDrawParams
-    add sp, $03
-    ld hl, $016a
-    push hl
-    ld hl, $505d
+    call FarCallTrampoline
+    nop
+    ld h, b
+    inc b
+    nop
+    inc sp
+    jr BackupSavePrompt_joyLoop
+
+    ld l, d
+    ld bc, $21e5
+    ld e, l
+    ld d, b
     push hl
     ld a, $27
     push af
@@ -8252,7 +8264,7 @@ BackupSavePrompt_drawConfirm::
     add sp, $05
 
 BackupSavePrompt_joyLoop::
-    call ReadJoypad
+    call $0370
     ld c, e
     ld b, $00
     ld a, c
@@ -8270,7 +8282,7 @@ BackupSavePrompt_confirmDump::
     inc sp
     ld hl, $6b01
     push hl
-    call DrawString
+    call $039d
     add sp, $05
     ld a, $0d
     push af

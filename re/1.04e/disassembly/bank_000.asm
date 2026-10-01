@@ -537,20 +537,11 @@ BrowserPageEnd::
     db $23, $23, $7e, $93, $28, $04, $73, $3e
     db $01, $02, $e8, $06, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+LastRomNameStub::
+    db $cd, $8d, $07, $60, $72, $02, $00, $c9
+
+LastRomTickStub::
+    db $21, $00, $00, $e5, $cd, $68
 
 ; [ezgb]
 ; InvalidFarCallTrap: rst $38 trap. Sole caller: FarCall_03_76cc (FatFs f_lseek far-call
@@ -559,87 +550,36 @@ BrowserPageEnd::
 ; reusing the same opcode, not separately reachable).
 
 InvalidFarCallTrap::
+    db $03, $e1, $c3, $91, $36
+
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
+
+TabNum12::
+    db $f0, $fb, $b7, $ca, $b7, $08, $f8, $05
+    db $36, $7c, $c3, $c0, $05
+
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+BkSpinStub::
+    db $3e, $03, $f5, $33, $cd, $8d, $07, $00
+    db $60, $04, $00, $33, $c9
+
+BkSavingStub::
+    db $3e, $02, $f5, $33, $cd, $8d, $07, $00
+    db $60, $04, $00, $33, $c9
+
+SaveStampHook::
+    db $c5, $3e, $08, $ea, $fc, $db, $cd, $8d
+    db $07, $00, $4a, $02, $00, $c1, $fa, $fb
+    db $db, $b7, $ca, $4f, $0f, $c5, $3e, $00
+    db $f5, $33, $c3, $15, $0f
+
     rst RST_38
     rst RST_38
     jp EnterGfxMode1
@@ -2895,10 +2835,11 @@ BackupBranchEntry_openSaverDir::
     ld d, [hl]
     ld a, $00
     ld [de], a
-    push bc
-    ld a, $00
-    push af
-    inc sp
+    jp $03aa
+
+
+    nop
+    nop
     call FarCallTrampoline
     rst RST_20
     ld b, c
@@ -3573,11 +3514,11 @@ MenuKeyDispatch::
 
 LastRomOverlay::
     call FarCallTrampoline
-    push af
-    ld [hl], e
-    ld [$0100], sp
     nop
-    ld b, b
+    ld c, b
+    ld [bc], a
+    nop
+    ld bc, $4000
     ld a, $11
     ld [bc], a
     ld a, $03
@@ -3669,9 +3610,9 @@ LastRomDrawBasename::
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], d
-    ld hl, $0f00
+    ld hl, $0f01
     push hl
-    ld a, $14
+    ld a, $12
     push af
     inc sp
     ld hl, sp+$0b
@@ -3679,11 +3620,11 @@ LastRomDrawBasename::
     ld h, [hl]
     ld l, a
     push hl
-    call DrawString
+    call $0368
     add sp, $05
 
 LastRomInputLoop::
-    call ReadJoypad
+    call $0370
     ld b, e
     ld c, b
     ld hl, sp+$04
@@ -12431,7 +12372,7 @@ BrowserScrollDownRepaint::
     rst RST_38
 
 DrawNameWithIcon::
-    db $cd, $8d, $07, $00, $73, $02, $00, $c9
+    db $cd, $8d, $07, $80, $7e, $02, $00, $c9
 
 BrowserScroll::
     db $e8, $f1, $f8, $11, $2a, $4f, $46, $69
