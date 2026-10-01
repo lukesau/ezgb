@@ -76,7 +76,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 ## Code
 
-- [`../decomp/src/flcfg.c`](../decomp/src/flcfg.c) — bank 4 at `04:5990`, label
+- [`../decomp/src/flcfg.c`](../decomp/src/flcfg.c) — bank 4 at `04:6600`, label
   `FlCfg`. One entry, `u8 flcfg(u8 *frame, u8 op)`, op-selected: 0 ENTER (load +
   draw the rows), 1 ROWS (redraw on cursor move), 2 A (row 2 toggle+save, row 3
   arm pick), 3 PICK (compose path from `$c2a6`+`$c4a4` and save), 4 LOAD (test).
@@ -133,7 +133,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 ## Shims (hand-assembled; see also [`../decomp/src/shims.md`](../decomp/src/shims.md))
 
-`flcfg` is pinned at `$5990`; args are pushed last-first (op via `push af; inc sp`,
+`flcfg` is pinned at `$6600`; args are pushed last-first (op via `push af; inc sp`,
 frame via `push bc`), return in `E`.
 
 - `FlSetEnterHook` `04:5932` (22 B) — **called**, so the frame is at `sp+$02` and
@@ -173,10 +173,10 @@ for each version key, then one `python3 scripts/kernel-patch.py make`.
 ```bash
 cd decomp; V=1.05e-0731
 # bank 4: flcfg (via scripts/inject-ezcfg.sh) + shims + site patches
-python3 tools/inject_bytes.py $V 4 5932 FlSetEnterHook  f8024d443e00f533c5cd9059e803f85e4d44210700c9 --apply
-python3 tools/inject_bytes.py $V 4 5948 FlSetRowsHook   f8004d443e01f533c5cd9059e803c3f548 --apply
-python3 tools/inject_bytes.py $V 4 5959 FlSetADispatch  f83d7e3dcad658f8004d443e02f533c5cd9059e8037bb7caf548c31259 --apply
-python3 tools/inject_bytes.py $V 4 5976 FlPickCommitFar 3e03f533210000e5cd9059e803c9 --apply
+python3 tools/inject_bytes.py $V 4 5932 FlSetEnterHook  f8024d443e00f533c5cd0066e803f85e4d44210700c9 --apply
+python3 tools/inject_bytes.py $V 4 5948 FlSetRowsHook   f8004d443e01f533c5cd0066e803c3f548 --apply
+python3 tools/inject_bytes.py $V 4 5959 FlSetADispatch  f83d7e3dcad658f8004d443e02f533c5cd0066e8037bb7caf548c31259 --apply
+python3 tools/inject_bytes.py $V 4 5976 FlPickCommitFar 3e03f533210000e5cd0066e803c9 --apply
 python3 tools/patch_call.py   $V 4 47ef 7 04:5932 --apply
 python3 tools/patch_call.py   $V 4 5404 3 04:5948 --jp --apply
 python3 tools/patch_call.py   $V 4 560d 3 04:5948 --jp --apply

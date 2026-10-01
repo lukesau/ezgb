@@ -76,18 +76,38 @@ REGISTRY = {
     (2, 0x7500): dict(src="draw12.c",                       # 12px browser renderer (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
                             "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
-                            "DiNest": 0x06fd, "EiNest": 0x0706}),
-    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
-    (2, 0x7300): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "hUiMode": 0xfffb}),   # far target of the 00:3ec8 stub
+                            "DiNest": 0x06fd, "EiNest": 0x0706, "hClip12": 0xfff9}),
+    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978, "hClip12": 0xfff9}),   # proportional layout + kerning; far target of MarqueeWidth12
+    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "hUiMode": 0xfffb}),   # far target of the 00:3ec8 stub
     (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
     (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
-    (4, 0x5990): dict(src="flcfg.c",
+    (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
+                      pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+    (2, 0x7260): dict(src="lastrom_name.c",                 # START overlay name line + marquee, far target of the 00:0368 stub
+                      pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500}),
+    (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
-                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a}),
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70}),
+    (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
+                      pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "hUiMode": 0xfffb, "hClip12": 0xfff9}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43}),
-    (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
+    (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791,
+                                                   "hUiMode": 0xfffb}),
+    (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
+                      pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (8, 0x7c00): dict(src="browser_hide.c", pins={}),
+    (8, 0x7e80): dict(src="msgbox12.c",                     # 12px Reading / Loading / Error boxes (docs/tab-strip12.md)
+                      pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "hClip12": 0xfff9,
+                            "ReadingStr": 0x7374, "LoadingStr": 0x73af, "ErrorFileStr": 0x73ea}),
+    (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
+                      pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+    (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
+                      pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
+                            "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),
     # hand-assembled, with data tails
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
@@ -150,6 +170,7 @@ SKIP_SITES = {
         # ink for DMG. 1.04e has no such draw, so there is nothing to retune.
         (4, 0x4e49),
         (4, 0x4e56),   # the same extra draw's row operand (SET slid up one row)
+        (4, 0x4e62),   # the same extra draw's `call DrawString` (-> SetText, docs/set-pane12.md)
         # RtcWriteTimeFromDayDelta's sign test (the negative-elapsed clamp,
         # docs/ezgb-cfg.md): the launch-time elapsed-time code is part of
         # 1.05e's RTC rewrite; 1.04e has no such routine to clamp.

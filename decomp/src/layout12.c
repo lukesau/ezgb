@@ -40,6 +40,7 @@ typedef unsigned char u8;
 typedef unsigned int u16;
 
 extern const u8 Font12Metrics[];   /* 02:6978, scripts/font12-pack.py */
+extern volatile u8 hClip12;        /* $fff9: right edge for the next layout, 0 = x 160 */
 
 #define M Font12Metrics
 #define M_ADV   0                  /* u8[101] advance */
@@ -54,11 +55,15 @@ static u8 glyph_index(u8 c);
 static u8 kern(u8 a, u8 b);
 
 u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs) {
-    u8 i, x, g, prev, c;
+    u8 i, x, g, prev, c, lim;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
-    x = col ? M[M_ADV + ICON0] : 0;
+    x = col >= 2 ? col : col ? M[M_ADV + ICON0] : 0;   /* >= 2: a pixel x */
+    lim = hClip12;                    /* a caller's right edge (draw12.c), else the row's */
+    if (lim == 0 || lim > ROW_W) {
+        lim = ROW_W;
+    }
     if (len == 0 || len > MAX_GLYPHS) {
         len = MAX_GLYPHS;
     }
@@ -72,7 +77,7 @@ u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs)
         if (prev != 0xFF) {
             x -= kern(prev, g);
         }
-        if (x >= ROW_W || (u8)(x + M[M_W + g]) > ROW_W) {
+        if (x >= lim || (u8)(x + M[M_W + g]) > lim) {
             break;
         }
         xs[i] = x;

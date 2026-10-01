@@ -200,9 +200,9 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE (also backs up the RTC), 5 LASTLOAD, 6 TIMESET. |
+| `EzCfg` | `02:4a00`, [decomp/src/ezcfg.c](../decomp/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE (also backs up the RTC), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)). |
 | `FastLaunchScan` | `02:4500`, [decomp/src/fastlaunch.c](../decomp/src/fastlaunch.c), 766 B | Now calls `ezcfg` (op LOAD) instead of parsing a file itself; skips `ezgb.cfg` in the lone-ROM count. |
-| `FlCfg` | `04:5990`, [decomp/src/flcfg.c](../decomp/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
+| `FlCfg` | `04:6600`, [decomp/src/flcfg.c](../decomp/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
 | `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op BACKUP, then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |

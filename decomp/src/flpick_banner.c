@@ -12,13 +12,17 @@ typedef unsigned char u8;
 
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);  /* 00:08b7 */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);      /* 00:2791 */
+extern volatile u8 hUiMode;                                   /* $fffb: 0 = 8px, 1 = 12px */
+
 
 #define FL_PICK (*(volatile u8 *)0xDBFE)
 
 void flpick_banner(void) {
     static const u8 banner[16] =
         {' ','P','I','C','K',' ','A',' ','R','O','M',' ',' ',' ',' ',0};
-    if (FL_PICK == 0) return;
+    /* the 12px strip draws its own banner (tabstrip12.c): this string is in
+     * bank 8, out of the bank-2 renderer's reach */
+    if (FL_PICK == 0 || hUiMode) return;
     StoreDrawParams(0, 3, 0);
     DrawString(banner, 15, 0, 0);
     StoreDrawParams(3, 0, 0);

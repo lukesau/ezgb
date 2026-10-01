@@ -1,7 +1,7 @@
 /* Browser row icons (docs/dmg-ui-visibility.md "Change 4", docs/font12.md).
  *
- * Bank 2, injected at 02:7300 and reached through the 8-byte far stub that
- * now sits at the old bank-0 address 00:3ec8 (`cd 8d 07 00 73 02 00 c9`), so
+ * Bank 2, injected at 02:7e80 and reached through the 8-byte far stub that
+ * now sits at the old bank-0 address 00:3ec8 (`cd 8d 07 80 7e 02 00 c9`), so
  * the six stock name draws in DrawBrowserEntries / DrawBrowserDetail and
  * the scroll-repaint shim still `call $3ec8` with DrawString's (s, len, x,
  * y) frame. The stub is `call`ed, so FarCallTrampoline's three words sit
@@ -18,7 +18,7 @@
  * trampoline hop per row instead of two, and it leaves bank 0 free for the
  * upcoming 8px/12px mode switch.
  *
- *   python3 tools/inject.py src/browser_icons.c $V 2 7300 DrawNameWithIconImpl \
+ *   python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
  *       --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
  */
 

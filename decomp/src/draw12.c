@@ -10,7 +10,7 @@
  * has its own advance and neighbours kern, so a row holds as many
  * characters as fit in the 148 px right of the icon (about 18 of a typical
  * name, 15 of the widest). Rows are 12px tall under the 16px tab strip, so
- * tile row r >= 2 maps to y = 16 + 12*(r - 2): ten list rows, r = 2..11.
+ * tile row r >= 2 maps to y = 20 + 12*(r - 2): ten list rows, r = 2..11.
  *
  * Nothing is precomposed in ROM. The whole row is composed in a WRAM
  * buffer, one 12-byte column per tile: every glyph row is a 16-bit word
@@ -67,6 +67,7 @@ extern volatile u8 wIntNest;       /* $d6d0 DiNest depth */
 extern const u16 GfxRowTable[];    /* 00:2fbb pixel row -> VRAM address of tile column 0 */
 extern const u8 Font12[];          /* 02:6000, 101 glyphs x 24 bytes (scripts/font12-pack.py) */
 extern const u8 Font12Metrics[];   /* 02:6978, advances first (layout12.c has the layout) */
+extern volatile u8 hClip12;        /* $fff9: right edge of the next draw, 0 = the row's (x 160) */
 extern void DiNest(void);          /* 00:06fd */
 extern void EiNest(void);          /* 00:0706 */
 extern u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs);   /* 02:7100 */
@@ -79,7 +80,7 @@ extern u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs);
 
 #define ROW_W 160
 #define ROW_H 12
-#define STRIP_H 16
+#define STRIP_H 20                 /* 12px tab strip: labels y 0..11, rule y 12 (tabstrip12.c) */
 #define SCREEN_H 144
 #define GLYPH 24
 #define MAX_TILES 20
@@ -100,11 +101,11 @@ static void cell_or5(const u8 *g, u8 *buf) __naked;
 static void cell_or6(const u8 *g, u8 *buf) __naked;
 static void cell_or7(const u8 *g, u8 *buf) __naked;
 static void preserve(u8 *dst, u16 addr, u8 n, u8 keep, u8 xm);
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 ink, u8 paper);
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper);
 static u8 glyph_index(u8 c);
 
 void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 col, u8 row) {
-    u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, cnt, fast;
+    u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, kl, xe, cnt, fast;
     /* one spare column: a glyph ending in tile 19 still ORs its (zero) low
      * byte into "tile 20" */
     u8 buf[(MAX_TILES + 1) * ROW_H];
@@ -116,7 +117,15 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
     (void)far_pad_thunk;
     (void)far_pad_af;
     (void)far_pad_ret;
-    y = (row >= 2) ? (u8)(STRIP_H + (row - 2) * ROW_H) : (u8)(row * 8);
+    /* row >= 18 (past the last tile row) is a pixel y, for callers that
+     * space their rows themselves (the START overlay, lastrom_box.c). It is
+     * rounded down to a multiple of 4: the flush's 4-row batches must not
+     * cross a tile. */
+    if (row >= 18) {
+        y = (u8)(row & 0xFC);
+    } else {
+        y = (row >= 2) ? (u8)(STRIP_H + (row - 2) * ROW_H) : (u8)(row * 8);
+    }
     if (y >= SCREEN_H) {
         return;
     }
@@ -124,9 +133,24 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
     if ((u8)(SCREEN_H - y) < ROW_H) {
         n = (u8)(SCREEN_H - y);
     }
-    x0 = col ? Font12Metrics[M_ADV + ICON0] : 0;
+    /* col 0: x 0 (the icon cell); 1: the name field, an icon's advance in;
+     * >= 2: a pixel x (the tab strip's labels, tabstrip12.c). Same rule in
+     * Fit12. */
+    x0 = col >= 2 ? col : col ? Font12Metrics[M_ADV + ICON0] : 0;
     t0 = (u8)(x0 >> 3);
-    nt = (u8)(MAX_TILES - t0);         /* the row is always painted to x = 160 */
+    /* The row is painted from x0 to its right edge: x 160, or hClip12 when
+     * a caller set one (the SET pane's fields, settext.c). Fit12 reads the
+     * same limit, so no ink crosses it; the last tile keeps its pixels
+     * right of the limit (kl), like the first keeps those left of x0. */
+    xe = hClip12;
+    if (xe == 0 || xe > ROW_W) {
+        xe = ROW_W;
+    }
+    if (xe <= x0) {
+        return;
+    }
+    nt = (u8)((u8)((u8)(xe + 7) >> 3) - t0);
+    kl = (xe & 7) ? (u8)(0xFF >> (xe & 7)) : 0;
     /* the first tile keeps the pixels left of the field (the icon's) */
     kf = (x0 & 7) ? (u8)(0xFF << (8 - (x0 & 7))) : 0;
     addr = ROWTAB[y] + ((u16)t0 << 4);
@@ -161,11 +185,20 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
         }
     }
     if (!fast) {
-        flush_rmw(buf, addr, n, nt, kf, ink, paper);
+        flush_rmw(buf, addr, n, nt, kf, kl, ink, paper);
         return;
     }
     p = buf;
     for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
+        if (kl && i == (u8)(nt - 1)) {
+            /* the last tile's pixels right of the limit: read into the
+             * spare column next to it (the glyphs are composed by now) and
+             * merge; no ink reaches that side of the tile */
+            preserve(p + ROW_H, addr, n, kl, xm);
+            for (x = 0; x < n; x++) {
+                p[x] |= p[ROW_H + x];
+            }
+        }
         blit_col1(p, addr, n, xm);
     }
 }
@@ -187,7 +220,7 @@ static void preserve(u8 *dst, u16 addr, u8 n, u8 keep, u8 xm) {
  * and paper and x is paper's bit; the first tile column keeps its pixels
  * outside the field (kf). Row addresses step by 2 within a tile and by
  * $130 + 2 across a tile boundary, where the low nibble wraps to 0. */
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 ink, u8 paper) {
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper) {
     u8 a0, x0, a1, x1, i, r, keep, v;
     u16 a;
 
@@ -197,6 +230,9 @@ static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 ink, u8 pa
     x1 = (paper & 2) ? 0xFF : 0;
     for (i = 0; i < nt; i++, buf += ROW_H, addr += 16) {
         keep = i ? 0 : kf;
+        if (i == (u8)(nt - 1)) {
+            keep |= kl;
+        }
         a = addr;
         for (r = 0; r < n; r++) {
             v = buf[r];

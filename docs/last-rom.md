@@ -62,6 +62,68 @@ The save hook is at the persist **tail**, not its entry `01:4856`: the path is
 assembled by the `FarCallTrampoline` early in `LastRomPersist`, so hooking the
 entry captured a stale `/`.
 
+## Overlay layout
+
+The stock overlay draws its boxes first and its text afterwards, and the 8x8
+text cells repaint parts of the boxes, on hardware as well as in SameBoy:
+
+- `DrawLastRomButtons` (`08:73f5`) draws the outer box (x 0..159, y 112..143)
+  and two button frames (x 5..81 and 85..155, y 132..142).
+- The basename is `DrawString(name, 20, col 0, row 15)`, and `DrawString`
+  pads an explicit length with spaces, so the whole row is repainted and the
+  outer box loses its sides on that row: a bracket-like stub on each side.
+- The button labels sit on row 17 (y 136..143), over the frames' bottom edge
+  and the outer box's bottom line. Only the column between the labels kept
+  its lines, which read as a bracket rotated by 90 degrees.
+
+The mod replaces the chrome with one closed box holding three text rows: a
+title (`Launch Last ROM?`), the name, and the two button labels. The name
+sits on a solid ink band that spans the box, drawn in paper on ink, and a
+vertical rule separates the two labels. It is drawn
+in the font of the UI mode ([ui-mode.md](ui-mode.md)):
+
+| | 8px | 12px |
+|---|---|---|
+| box | (0,91)-(159,139); the list is cleared from y 88 down | (0,92)-(159,143), flush under list row 5 (the 12px list starts at y 20, [tab-strip12.md](tab-strip12.md)) |
+| title | tile row 12, column 1 | y 96, from x 12 |
+| name | tile row 14, column 1, 18 characters | y 112, from x 12, as many glyphs as end 2 px short of the right side |
+| labels | tile row 16, columns 1 and 11 | y 128, from x 12, one string |
+| name band | y 107..123; vertical rule at x 83 below it | y 109..125; vertical rule at x 79 below it |
+
+The 8x8 painter only draws on tile rows, so the 8px rows sit two tile rows
+apart, and the band fills the name's row and half of the blank rows around it. For the 12px rows
+`DrawString12` takes a pixel y: a `row` argument of 18 or more (past the
+last tile row) is the y itself, rounded down to a multiple of 4 because the
+flush writes in 4-row batches that must not cross a tile
+([font12.md](font12.md)). The band and the rule are solid `DrawRect`s drawn
+after the title and labels, since a text cell or a 12px row repaints all it
+covers; `LastRomName` then draws with ink 0 on paper 3 and restores 3 on 0.
+
+A name that does not fit its field scrolls, with the SET tab's marquee
+behaviour ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)): a one-second
+hold, then one character every 20 frames, repeating after three blanks. In
+12px mode "fits" is the `Fit12` glyph count, and each step lays the window
+out again, so a step is one character wide. The tick runs from the overlay's
+input loop, timed by `hFrame` (`$fffa`); its state is the SET marquee's
+`$DB38`/`$DB39`/`$DB3B` (the two screens are never up together) plus the
+name pointer and length at `$DB3C`..`$DB3E`.
+
+| Site (1.05e; 1.04e in brackets) | Was | Now |
+|---|---|---|
+| `00:12a1` (far-call target in `LastRomOverlay`) | `08:73f5` `DrawLastRomButtons` | `02:4800` `LastRomBox` (`lastrom_box.c`); the stock function is no longer called |
+| `00:131d` (`00:1311`) | `ld hl,$0f00` .. `ld a,$14` | `ld hl,$0f01` .. `ld a,$12`: basename at column 1, 18 characters |
+| `00:132b` | `call DrawString` | `call LastRomNameStub` (`00:0368`), a far stub to `02:7260` `LastRomName` (`lastrom_name.c`): sets the name up and draws it |
+| `00:1330` (`LastRomInputLoop`) | `call ReadJoypad` | `call LastRomTickStub` (`00:0370`): pushes a null name pointer, calls `LastRomNameStub` (the marquee tick), then `jp ReadJoypad` |
+| `ezcfg.c` `lastrom_load` | `DrawString("(none)", 20, 0, 15)` | near call to `LastRomName` |
+
+`DrawString12` paints its row out to x 159, over the box's right side, so
+`LastRomBox` follows its 12px draws with an outline-only `DrawRect` of the box, then the band and the rule; the name's row is ink out to the border, so it needs no repair. For
+the name, `LastRomName` asks `Fit12` for the pen positions and drops
+trailing glyphs that start past x 148, so the ink stops short of the border.
+
+Checked in SameBoy (DMG model, 0731): both modes, a short name, a long one
+scrolling, `(none)`, and B back to the browser (the list is redrawn in full).
+
 `$A300` (bank 17 + rompage `$03`) sits in the same battery-backed cart PSRAM window as save
 meta, so `$A300` is lost if the coin cell dies; see [psram-save-map.md](psram-save-map.md) and
 `hardware-board.md`.

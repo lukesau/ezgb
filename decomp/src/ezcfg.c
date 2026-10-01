@@ -19,6 +19,8 @@
  *   op 6 TIMESET  as BACKUP, but the new time always replaces RTC=.
  *   op 7 RELAUNCH the RTC backup LASTSAVE does, for the START-overlay
  *                 relaunch and fast launch, which skip LastRomPersist.
+ *   op 8 SAVECHK  boot: is the pending-backup stamp's save path plausible?
+ *                 A dead cell leaves garbage there, see savestamp_check.
  * RTCSD=0 (SET tab "RTC: NO SD") turns every RTC part off: no boot read or
  * prompt, and BACKUP, TIMESET and RELAUNCH return before touching the card.
  *                 Hooked at boot, right after "Micro SD initial OK!" and
@@ -98,6 +100,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
 #define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
 #define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
+#define SAVE_PATH   ((u8 *)0xC3A5)   /* kernel: "/SAVER/<name>.sav", boot's copy of the page-$11 stamp */
 
 #define OP_LOAD    0
 #define OP_SAVE    1
@@ -107,6 +110,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define OP_LASTLOAD 5              /* START overlay: validate $A300 copy, else fall back to LASTROM= */
 #define OP_TIMESET 6               /* SET-tab TIME SET confirm: the new time replaces RTC= outright */
 #define OP_RELAUNCH 7              /* START-overlay relaunch / fast launch: RTC backup only */
+#define OP_SAVECHK 8               /* boot: validate the BACKUPSAVE stamp's path before the prompt */
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
@@ -157,11 +161,14 @@ static void parse_lastrom(const u8 *v, u16 len);
 static u8 path_valid(const u8 *p);
 static void lastrom_save(void);
 static void lastrom_load(void);
+static void savestamp_check(void);
 
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);  /* 00:27ba, pixel coords */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);    /* 00:2791 */
+extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row);   /* 02:7500 */
+extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7260, lastrom_name.c */
 
 void ezcfg(void) {
     u8 op = EZ_OP;
@@ -181,6 +188,7 @@ void ezcfg(void) {
     }
     if (op == OP_LASTSAVE) { lastrom_save(); return; }
     if (op == OP_LASTLOAD) { lastrom_load(); return; }
+    if (op == OP_SAVECHK) { savestamp_check(); return; }
     cfg_restore();
 }
 
@@ -389,17 +397,21 @@ static void put_hex(u8 *dst, u8 v) {
     dst[1] = l < 10 ? '0' + l : 'A' - 10 + l;
 }
 
-/* A widened copy of the stock BATTERY DRY!!! modal (BatteryCheck, 00:1835):
- * same colours and button, 13 columns of text from col 4. Shows why, the
- * chip's settled reading (raw hex, so garbage and the VL bit show as-is) and
- * the RTC= backup, and asks which to keep:
+/* The RTC restore prompt, in the look of the START overlay and the
+ * BACKUPSAVE prompt (docs/modal-prompts.md): one box, rules under the title
+ * and above the options, a vertical rule between the options, in the font
+ * of the UI mode. Shows why, the chip's settled reading (raw hex, so garbage
+ * and the VL bit show as-is) and the RTC= backup, and asks which to keep:
  *
  *   RTC RESET?          Z  (RTC BAD? I, RTC LOW V? V, RTC BEHIND? E)
  *   CHIP 00-01-01
  *        00:00:05
  *   SD   26-09-29
  *        12:38:24
- *   A:SD  B:KEEP
+ *   [B]keep | [A]use SD
+ *
+ *   8px   box (0,27)-(159,99); rows 4, 6..9, 11; rules y 43 and 83
+ *   12px  box (0,20)-(159,115); rows at y 24, 44..80, 100; rules y 38 and 95
  *
  * Returns 1 for A (restore RTC=). Waits out the joypad latch and any held
  * button first (docs/joypad-latch.md: a tap from before the box existed would
@@ -418,40 +430,63 @@ static void put_time(u8 *t, const u8 *r) {
     put_hex(t + 6, r[R_SEC]);
 }
 
+/* One piece of prompt text: n characters at (col, row) of the 8x8 grid, or
+ * the 12px row at y12 from x12 (1 = the text margin, x 12; else a pixel x). */
+static void prow(const u8 *s, u8 n, u8 col, u8 row, u8 x12, u8 y12) {
+    if (UI_MODE) DrawString12(0, 0, 0, s, n, x12, y12);
+    else DrawString(s, n, col, row);
+}
+
 static u8 restore_prompt(u8 why) {
     static const u8 pad[2]    = {' ', 0};
     static const u8 t_z[11]   = {'R','T','C',' ','R','E','S','E','T','?',0};
     static const u8 t_i[9]    = {'R','T','C',' ','B','A','D','?',0};
     static const u8 t_v[11]   = {'R','T','C',' ','L','O','W',' ','V','?',0};
     static const u8 t_e[12]   = {'R','T','C',' ','B','E','H','I','N','D','?',0};
-    static const u8 btn[13]   = {'A',':','S','D',' ',' ','B',':','K','E','E','P',0};
-    u8 l[13];
-    u8 k, yes;
+    static const u8 chip_s[5] = {'C','H','I','P',0};
+    static const u8 sd_s[3]   = {'S','D',0};
+    /* "[B]keep" at 0, "[A]use SD" at 10 */
+    static const u8 btn[20]   = {'[','B',']','k','e','e','p',' ',' ',' ',
+                                 '[','A',']','u','s','e',' ','S','D',0};
+    u8 l[9];
+    u8 k, yes, m;
     const u8 *title;
 
     title = why == 'Z' ? t_z : why == 'I' ? t_i : why == 'V' ? t_v : t_e;
     for (k = 0; title[k]; k++) {}
+    m = UI_MODE;
+    l[8] = 0;
 
     DrawString(pad, 1, 5, 8);
-    StoreDrawParams(0, 3, 0);
-    DrawRect(0x1b, 0x25, 0x8d, 0x6c, 1);
-    DrawString(title, k, 4, 6);
-    for (k = 0; k < 13; k++) l[k] = ' ';
-    l[0] = 'C'; l[1] = 'H'; l[2] = 'I'; l[3] = 'P';
-    put_date(l + 5, RTC_RAW);
-    DrawString(l, 13, 4, 7);
-    for (k = 0; k < 5; k++) l[k] = ' ';
-    put_time(l + 5, RTC_RAW);
-    DrawString(l, 13, 4, 8);
-    l[0] = 'S'; l[1] = 'D';
-    put_date(l + 5, RTC_BK);
-    DrawString(l, 13, 4, 9);
-    l[0] = ' '; l[1] = ' ';
-    put_time(l + 5, RTC_BK);
-    DrawString(l, 13, 4, 10);
-    StoreDrawParams(0, 3, 0);
-    DrawRect(0x1e, 0x5d, 0x83, 0x6a, 1);
-    DrawString(btn, 12, 4, 12);
+    StoreDrawParams(0, 0, 0);
+    DrawRect(0, 16, 159, 127, 1);
+    StoreDrawParams(3, 0, 0);
+    if (m) DrawRect(0, 20, 159, 115, 1); else DrawRect(0, 27, 159, 99, 1);
+    prow(title, k, 1, 4, 1, 24);
+    prow(chip_s, 4, 1, 6, 1, 44);
+    put_date(l, RTC_RAW); prow(l, 8, 6, 6, 60, 44);
+    put_time(l, RTC_RAW); prow(l, 8, 6, 7, 60, 56);
+    prow(sd_s, 2, 1, 8, 1, 68);
+    put_date(l, RTC_BK);  prow(l, 8, 6, 8, 60, 68);
+    put_time(l, RTC_BK);  prow(l, 8, 6, 9, 60, 80);
+    if (m) {
+        DrawString12(0, 0, 0, btn, 7, 1, 100);
+        DrawString12(0, 0, 0, btn + 10, 0, 88, 100);   /* right of the rule at x 79 */
+        /* a 12px row runs to x 159, over the box's right side */
+        DrawRect(0, 20, 159, 115, 0);
+        StoreDrawParams(3, 3, 0);
+        DrawRect(0, 38, 159, 38, 1);
+        DrawRect(0, 95, 159, 95, 1);
+        DrawRect(79, 95, 79, 115, 1);
+    } else {
+        DrawString(btn, 7, 1, 11);
+        DrawString(btn + 10, 9, 10, 11);
+        StoreDrawParams(3, 3, 0);
+        DrawRect(0, 43, 159, 43, 1);
+        DrawRect(0, 83, 159, 83, 1);
+        DrawRect(75, 83, 75, 99, 1);
+    }
+    StoreDrawParams(3, 0, 0);
 
     for (k = 0; k < 8; ) {
         WaitVBlankFlag();
@@ -466,7 +501,7 @@ static u8 restore_prompt(u8 why) {
     while (ReadJoypad() & 0x30) WaitVBlankFlag();
 
     StoreDrawParams(0, 0, 0);
-    DrawRect(0x1b, 0x25, 0x8d, 0x6c, 1);
+    DrawRect(0, 16, 159, 127, 1);
     return yes;
 }
 
@@ -821,10 +856,25 @@ static void lastrom_load(void) {
         EZ_RES = 1;
         return;
     }
-    DrawString(none_str, 0x14, 0, 0x0f);  /* the overlay's basename line */
+    LastRomName(0, 0, 0, none_str, 0x12, 1, 0x0f);  /* the overlay's name line, in the UI mode's font */
     for (;;) {
         WaitVBlankFlag();
         if (ReadJoypad() & 0x20) break;   /* B */
     }
     EZ_RES = 0;
+}
+
+/* Boot (SaveStampHook, 00:03aa): the page-$11 stamp said a backup is pending
+ * ($A000 = $AA) and BackupBranchEntry copied its save path to SAVE_PATH.
+ * The stamp is battery-backed like the $A300 record, and without a cell the
+ * flag can survive while the path is garbage, which the prompt then showed
+ * as the save's name (and A would have dumped under it). EZ_RES = 1 only for
+ * what PreLaunchSaveStamp writes: "/SAVER/" + a plausible file name. Touches
+ * no hardware, so the FPGA page is the caller's. */
+static void savestamp_check(void) {
+    static const u8 dir[7] = {'/','S','A','V','E','R','/'};
+    u8 i;
+    EZ_RES = 0;
+    for (i = 0; i < 7; i++) if (SAVE_PATH[i] != dir[i]) return;
+    EZ_RES = path_valid(SAVE_PATH);
 }

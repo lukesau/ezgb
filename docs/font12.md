@@ -5,8 +5,10 @@ font instead of the kernel's 8x8 tiles. Each glyph has its own width and
 neighbouring glyphs kern, the way text is set on modern systems, so a row
 holds about 18 characters of a typical name next to the icon (15 of the
 widest). Only the browser list (and its long-name marquee) is converted;
-the tab strip, SET and HELP screens, boxes and boot messages still use the
-stock 8x8 text. Opt-in through the `UI:` row of the SET tab
+the tab strip ([tab-strip12.md](tab-strip12.md)) and the START overlay
+([last-rom.md](last-rom.md)) the HELP pane and the SET pane ([set-pane12.md](set-pane12.md)) use the
+same font, as do the Reading / Loading / Error boxes; only the boot
+messages and `BATTERY DRY!!!` still use the stock 8x8 text. Opt-in through the `UI:` row of the SET tab
 ([ui-mode.md](ui-mode.md)).
 
 ## How the kernel draws text, and why on-the-fly composition works
@@ -31,7 +33,7 @@ tile survive.
 |---|---|---|
 | glyph | 8x8 cell | proportional: ink width (1..8 px) + 2 px gap, 12 px tall; kerned pairs overlap by up to 2 px |
 | row | 20 columns | icon (12 px advance) + a 148 px name field |
-| list rows | 16 (tile rows 2..17) | 10, at `y = 16 + 12*i` under the 16 px tab strip |
+| list rows | 16 (tile rows 2..17) | 10, at `y = 20 + 12*i` under the 12px tab strip |
 | name field | icon + 19 chars | icon + whatever fits: 15 (`WWWWW…`) to 37 (`.....`) characters, about 18 of a typical name (longer names use the stock marquee) |
 | cap height | 7 px | 10 px (Menlo Bold 13 px, baseline on row 9, 1 row of leading, 2 rows of descender) |
 
@@ -73,10 +75,13 @@ is fixed by `scripts/font12-pack.py`'s docstring and mirrored by the
 ### `DrawString12(s, len, col, row)`
 
 Same argument order as `DrawString`, so the stub can replace it by re-pinning.
-`row` is still a tile row: rows >= 2 map to `y = 16 + 12*(row-2)`, so the
-stock painters' `sel + 2` arithmetic is untouched. `col` is 0 for the icon
-cell (pen at x = 0) and 1 for the name field (pen at x = 12, an icon's
-advance); the row is always painted to x = 160, paper after the last glyph.
+`row` is still a tile row: rows >= 2 map to `y = 20 + 12*(row-2)`, so the
+stock painters' `sel + 2` arithmetic is untouched. A `row` of 18 or more
+is a pixel y instead (rounded down to a multiple of 4, so the 4-row flush
+batches stay inside a tile); the START overlay uses it to space its rows
+([last-rom.md](last-rom.md)). `col` is 0 for the icon
+cell (pen at x = 0), 1 for the name field (pen at x = 12, an icon's
+advance), and 2 or more for a pixel x (the tab strip's labels); the row is always painted to x = 160, paper after the last glyph.
 `len` caps the characters (0: up to the NUL). Ink and paper come from the
 draw state (`$d734` / `$d735`) so the selection bar inverts as before.
 `DrawNameWithIconImpl` hands it the icon code followed by up to 39
@@ -94,7 +99,8 @@ glyph's advance. It returns the number of glyphs placed (at most 40).
 and the marquee cave calls the same function on the raw name to learn
 whether the whole name fits (below).
 
-Advances and kerning come from the glyph shapes, at pack time:
+Advances and kerning come from the glyph shapes, at pack time (the digits
+are the exception, below):
 
 - advance = ink width + 2 px (the gap between two straight stems, `nn`);
   the space advances 5 px, an icon 12 px;
@@ -109,6 +115,14 @@ Advances and kerning come from the glyph shapes, at pack time:
   left with the current sheet), and the matrix is 2 bits per class pair,
   ~1.2 KB instead of 96 x 96 bytes. A lookup is one indexed byte and a
   shift. Space and icons are class 0 on both sides and never kern.
+
+The ten digits are tabular figures: each is drawn in the same 7 px cell of
+the sheet (columns 1..7), is not trimmed to its ink (`1` keeps its side
+bearings), advances 9 px and never kerns on either side. Numbers therefore
+line up in columns (the dates and times of the boot prompts) and a changing
+number (the entry counter in the tab strip) does not shift its neighbours.
+The shapes are hand-drawn (`keep`), squared off with 2 px strokes, and the
+zero is plain, narrower than `O`.
 
 Everything about the spacing is a packer option (`--gap`, `--kmax`,
 `--space`, `--icon-adv`); rerun `scripts/inject-font12.sh` after changing
@@ -230,7 +244,7 @@ pattern and less well with this one.
 
 | Site | Change |
 |---|---|
-| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7300`), which sends icon + up to 39 name characters to `DrawString12` with a near call |
+| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7e80`), which sends icon + up to 39 name characters to `DrawString12` with a near call |
 | `DrawDirEntryLabel` marquee `00:0dd8` | `call DrawString` -> `call FarCallDrawString12` |
 | marquee field widths `00:0c87`, `00:0c8e` | `$13` -> the `MarqueeWidth` cave of [ui-mode.md](ui-mode.md): 19 in 8px mode, else `MarqueeWidth12` (`00:0229`) measures the name with `Fit12` and stores `$FF` (fits) or 0 (scroll) |
 | `DrawBrowserEntries` row clamp `01:411c`, `01:4128` | `$10` -> `$0a` |
@@ -248,14 +262,14 @@ Rebuild from `decomp/`:
 
 ```sh
 V=1.05e-0731
-python3 tools/inject.py src/layout12.c $V 2 7100 Fit12 --pin Font12Metrics=6978 --replace --apply
+python3 tools/inject.py src/layout12.c $V 2 7100 Fit12 --pin Font12Metrics=6978 --pin hClip12=fff9 --replace --apply
 python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \
     --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \
     --pin GfxRowTable=2fbb --pin Font12=6000 --pin Font12Metrics=6978 --pin Fit12=7100 \
-    --pin DiNest=06fd --pin EiNest=0706 --replace --apply
-python3 tools/inject.py src/browser_icons.c $V 2 7300 DrawNameWithIconImpl \
+    --pin DiNest=06fd --pin EiNest=0706 --pin hClip12=fff9 --replace --apply
+python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
     --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
-python3 tools/inject_bytes.py $V 0 3ec8 DrawNameWithIcon cd8d0700730200c9 --apply   # once
+python3 tools/inject_bytes.py $V 0 3ec8 DrawNameWithIcon cd8d07807e0200c9 --apply   # once
 python3 tools/inject_bytes.py $V 0 0229 MarqueeWidth12 \
     f80a2a666ffaa0c25ffaa1c2571911a4c4d53e01f533aff533e5cd8d0700710200e8067bf810be3eff3001aff81177c9 --apply   # once
 python3 tools/patch_bytes.py $V 0 020c f0fbb73e1328023e0ff81177c9 f0fbb720183e13f81177c90000 --apply   # MarqueeWidth: jr nz -> MarqueeWidth12

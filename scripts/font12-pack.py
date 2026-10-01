@@ -35,7 +35,9 @@ is GAP, by at most --kmax pixels (that cap keeps `'.` from stacking). A
 pair whose two glyphs share no ink rows kerns by the cap. Glyphs with the
 same kerning behaviour on a side share a class (like OpenType class
 kerning), which is what makes the matrix ~1 KB instead of 96 x 96 bytes.
-Class 0 on either side means "never kerns" (space, icons).
+Class 0 on either side means "never kerns" (space, icons, digits). The
+ten digits are tabular: one fixed 7 px cell and advance each, untrimmed and
+unkerned, so numbers line up in columns and do not jitter as they change.
 
     scripts/font12-pack.py [-i sheet] [-o bitmaps] [-m metrics]
                            [--gap 2] [--kmax 2] [--space 5] [--icon-adv 12]
@@ -50,6 +52,8 @@ DEFAULT_OUT = os.path.join(ROOT, "decomp", "font12", "font12.bin")
 DEFAULT_METRICS = os.path.join(ROOT, "decomp", "font12", "font12-metrics.bin")
 ORDER = list(range(0x20, 0x80)) + [0xC0, 0xC1, 0xC2, 0xC3, 0xC4]
 ICONS = range(0xC0, 0xC5)
+DIGITS = set(range(0x30, 0x3A))
+DIGIT_X, DIGIT_W = 1, 7       # the digits' cell in the sheet: columns 1..7
 SPACE = 0x20
 ROWS = 12
 SHEET_W = 10
@@ -76,14 +80,20 @@ class Glyph:
         self.code = code
         cols = [i for r in rows for i, ch in enumerate(r) if ch == "#"]
         lo = min(cols) if cols and code not in ICONS else 0
-        self.rows = [r[lo:] + "." * lo for r in rows]
         self.w = (max(cols) - lo + 1) if cols else 0
+        if code in DIGITS:
+            # tabular figures: every digit sits in the same DIGIT_W-wide cell
+            # (sheet columns DIGIT_X ..), so it is not trimmed to its ink
+            # ("1" keeps its side bearings) and all ten share one advance
+            lo, self.w = DIGIT_X, DIGIT_W
+        self.rows = [r[lo:] + "." * lo for r in rows]
         # per row: first and last ink column, None for a blank row
         self.lp = [r.index("#") if "#" in r else None for r in self.rows]
         self.rp = [r.rindex("#") if "#" in r else None for r in self.rows]
 
     def kerns(self):
-        return self.code not in ICONS and self.w > 0
+        # digits never kern, on either side: columns of numbers line up
+        return self.code not in ICONS and self.code not in DIGITS and self.w > 0
 
 
 def kern(a, b, gap, kmax):

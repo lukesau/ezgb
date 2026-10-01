@@ -1,6 +1,6 @@
 /* Fast-launch configuration from the SET tab (docs/fastlaunch-set-tab.md).
  *
- * Bank 4, injected at 04:5990, same bank as DrawTimeAutosaveScreen (04:46f4)
+ * Bank 4, injected at 04:6600, same bank as DrawTimeAutosaveScreen (04:46f4)
  * so the hand-assembled hook shims (04:5932..) reach it with a plain call.
  * The SD file /EZGB.CFG is the single source of truth, read and written by
  * the shared bank-2 module ezcfg.c (docs/ezgb-cfg.md) through the bank-4
@@ -48,6 +48,8 @@ extern void FarCallEzCfg(void);                                     /* 04:5f00 -
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
+extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
+extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 
@@ -94,6 +96,17 @@ static void box(u8 x, u8 y, u8 on, u8 hi);
 u8 flcfg(u8 *frame, u8 op) {
     if (op == 0) {
         FL_PICK = 0;
+        /* re-entered after a UI toggle: the cursor goes back on the UI row,
+         * so A switches straight back for a comparison */
+        if (MQ_POS == 0xFF) {
+            static const u8 set_str[4] = {'S','E','T',0};
+            frame[0x3d] = ROW_UI;
+            /* the stock entry code has just drawn TIME's SET button
+             * highlighted, for the cursor on row 0: draw it plain */
+            StoreDrawParams(3, 0, 0);
+            if (UI_MODE) DrawRect(0x7b, 0x0f, 0x9b, 0x1c, 1); else DrawRect(0x7b, 0x0d, 0x9b, 0x19, 1);
+            SetText(set_str, 3, 16, 2);
+        }
         MQ_POS = 0;
         MQ_TICK = 0;
         MQ_FR = HFRAME;
@@ -125,12 +138,16 @@ u8 flcfg(u8 *frame, u8 op) {
             return 0;
         }
         if (frame[0x3d] == ROW_UI) {
+            /* The whole pane (and the tab strip) is laid out per mode:
+             * redraw the strip, which also clears the pane, and return 2 so
+             * FlSetADispatch re-enters the SET screen from the top. */
             UI_MODE = UI_MODE ? 0 : 1;
             cfg_save();
-            draw_rows(ROW_UI);
+            FarCallMenuTabs(1);
             wait_a_release();
             SetFpgaPage_B4(0);
-            return 0;
+            MQ_POS = 0xFF;                /* op 0 of the re-entry: put the cursor back here */
+            return 2;
         }
         FL_PICK = 1;
         wait_a_release();
@@ -208,11 +225,11 @@ static void draw_static(void) {
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
     static const u8 ui_label[4] = {'U','I',':',0};
     StoreDrawParams(3, 0, 0);
-    DrawString(rtc_label, 4, 0, 6);
-    DrawString(sd_label, 2, 6, 6);
-    DrawString(nosd_label, 5, 11, 6);
-    DrawString(fl_label, 12, 0, 10);
-    DrawString(ui_label, 3, 0, 14);
+    SetText(rtc_label, 4, 0, 6);
+    SetText(sd_label, 2, 6, 6);
+    SetText(nosd_label, 5, 11, 6);
+    SetText(fl_label, 12, 0, 10);
+    SetText(ui_label, 3, 0, 14);
     draw_name();
 }
 
@@ -234,7 +251,9 @@ static void draw_name(void) {
         src = FL_PATH + base;
     }
     for (len = 0; src[len]; len++) {}
-    if (len <= NAME_W) {
+    /* 12px: the field is 80 px, which ten glyphs can overrun; scroll from
+     * ten characters up rather than clip the last one */
+    if (len <= NAME_W && !(UI_MODE && len == NAME_W)) {
         MQ_POS = 0;
         for (i = 0; i < NAME_W; i++) FL_DISP[i] = i < len ? src[i] : 0;
     } else {
@@ -246,7 +265,7 @@ static void draw_name(void) {
         }
     }
     StoreDrawParams(3, 0, 0);
-    DrawString(FL_DISP, NAME_W, 0, 12);
+    SetText(FL_DISP, NAME_W, 0, 12);
 }
 
 /* Checkbox at pixel x, row y/8 (the stock AUTO SAVE sequence, 04:496a, at
@@ -277,10 +296,11 @@ static void draw_rows(u8 cur) {
     box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
 
     if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-    DrawRect(0x53, 0x5d, 0x9b, 0x69, 1);
-    DrawString(pick_str, 8, 11, 12);
+    /* 12px: the box is the text row plus a pixel above and below */
+    if (UI_MODE) DrawRect(0x53, 0x5f, 0x9b, 0x6c, 1); else DrawRect(0x53, 0x5d, 0x9b, 0x69, 1);
+    SetText(pick_str, 8, 11, 12);
     if (cur == ROW_UI) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-    DrawRect(0x73, 0x6d, 0x9b, 0x79, 1);
-    DrawString(UI_MODE ? ui12_str : ui8_str, 4, 15, 14);
+    if (UI_MODE) DrawRect(0x73, 0x6f, 0x9b, 0x7c, 1); else DrawRect(0x73, 0x6d, 0x9b, 0x79, 1);
+    SetText(UI_MODE ? ui12_str : ui8_str, 4, 15, 14);
     StoreDrawParams(3, 0, 0);
 }

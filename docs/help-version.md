@@ -4,7 +4,7 @@ The HELP tab's version screen (`DrawFwVersionScreen`, bank 8) stock-draws
 `ver: FW5 K1.05e` and `www.ezflash.cn`. `DrawHelpModVersion` extends it: it appends the kernel date to the version
 (`K1.05e-0731` / `K1.05e-0918`; plain `K1.04e` on the FW4 kernel, which has
 only one build), collapsing the stock double space to fit,
-adds a `MOD <version>` line, and a two-line `github.com/ lukesau/ezgb` link, so
+adds a `MOD <version>` line, and a two-line GitHub link (`github.com/lukesau/` and `ezgb`, split there so the 12px `g` has nothing under it), so
 a card announces exactly which build it is running.
 
 ## How it hooks
@@ -27,7 +27,7 @@ The version text lives in a fixed 10-byte field `MODSTR` at `08:7aff`, drawn as
 
 The hook is `DrawString(URL)` + `DrawString(K1.05e-<date>)` + `DrawString(MOD)`
 + two `DrawString`s for the GitHub link + `jp $7141`, followed by the four
-strings (`K1.05e-<date>`, the 10-byte `MODSTR`, `github.com/`, `lukesau/ezgb`).
+strings (`K1.05e-<date>`, the 10-byte `MODSTR`, `github.com/lukesau/ezgb`, one 23-byte string drawn as 19 + 4 characters).
 It is injected at `08:7a9c` (bank-8 cave) with `decomp/tools/inject_bytes.py`
 and wired with `patch_call.py "$V" 8 7130 3 08:7a9c --jp`. The exact bytes are
 in the disassembly (`DrawHelpModVersion`); `scripts/stamp-mod-version.sh` writes
