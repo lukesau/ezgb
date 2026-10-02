@@ -140,6 +140,9 @@ image, and reach a cart only through the updater.
 > [!NOTE]
 > **Author's note:** I have two EZ Flash Jr carts myself and run one of each:
 > an FW4 cart with no battery installed, and an FW5 cart with a battery.
+>
+> A cart with no battery must be soft reset with the hardware button built
+> into the cart before powering off to get a reliable save dump.
 
 Things that should not drive the choice:
 
