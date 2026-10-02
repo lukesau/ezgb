@@ -137,6 +137,10 @@ image, and reach a cart only through the updater.
 | `FW4` | 1.04e | It is the kernel EZ Flash shipped for FW4, and the modded 1.04e has run on an FW4 cart. 1.05e on FW4 is untested here: its RTC code drives FPGA registers (`$A018`-`$A01C`, `$7FD4`) that 1.04e never uses, and whether the FW4 image implements them is unknown. |
 | `FW5`, but you have 1.04e | It boots (stock 1.04e is confirmed on an FW5 cart) | You give up RTC-game support and file dates and gain nothing identified. |
 
+> [!NOTE]
+> **Author's note:** I have two EZ Flash Jr carts myself and run one of each:
+> an FW4 cart with no battery installed, and an FW5 cart with a battery.
+
 Things that should not drive the choice:
 
 - **Stability.** EZ Flash called 1.05e/FW5 a release candidate and suggested

@@ -102,7 +102,7 @@ capture_row "$MOD_KERNEL" "$TMP/row-12.png" "$TMP/card12.img"
 
 label "$TMP/hdr-stock.png" "STOCK" "$KVER"                    "$RW"
 label "$TMP/hdr-mod.png"   "MOD"   "$KVER mod-$MOD_VER"       "$RW"
-label "$TMP/hdr-12.png"    "MOD, 12px UI" "UI: 12px on the SET tab" "$RW"
+label "$TMP/hdr-12.png"    "MOD, 12px UI" "" "$RW"
 magick -size "${RW}x16" xc:black "$TMP/spacer.png"
 
 mkdir -p "$(dirname "$OUT")"
