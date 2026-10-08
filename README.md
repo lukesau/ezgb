@@ -4,7 +4,7 @@
 
 The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. Its menu/OS
 firmware (the "kernel") runs on the stock Game Boy CPU (SM83) and, unlike its
-GBA sibling the [EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel),
+GBA sibling the [EZ Flash Omega](https://github.com/ez-flash/omega-de-kernel),
 ships only as a compiled binary with no published source.
 
 This repo reverse-engineers that kernel and adds new features you can compile
@@ -188,6 +188,22 @@ the FW5 packages differ
   [`docs/DIFF_1.05e-0731_vs_0918.md`](docs/DIFF_1.05e-0731_vs_0918.md),
   [`docs/1.05e-instability.md`](docs/1.05e-instability.md).
 - **Methodology:** [`docs/MAPPING.md`](docs/MAPPING.md).
+
+## Credits
+
+- **[daid/ezflashjr](https://github.com/daid/ezflashjr)** by Daid, with
+  contributions from nitro2k01: the cart's register protocol
+  (`doc/Protocol.md`), stage1 dumps, board survey, and archived official
+  firmware. The SameBoy EZ Jr stub's game-launch path is built on its protocol
+  doc, and several hardware docs here start from its findings.
+- **[omega-de-kernel](https://github.com/ez-flash/omega-de-kernel)**: EZ
+  Flash's published GBA kernel source, used to interpret the Jr's register
+  design.
+- **[SameBoy](https://github.com/LIJI32/SameBoy)**,
+  **[mgbdis](https://github.com/mattcurrie/mgbdis)**,
+  **[rgbds](https://github.com/gbdev/rgbds)** and pret's
+  **[gb-asm-tools](https://github.com/pret/gb-asm-tools)**: emulation,
+  disassembly, and assembly.
 
 ## License
 
