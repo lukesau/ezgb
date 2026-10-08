@@ -24,6 +24,12 @@ none of the patches will apply cleanly.
 On macOS or Linux: `md5 ezgb.dat` or `md5sum ezgb.dat`. On Windows:
 `certutil -hashfile ezgb.dat MD5`.
 
+Not sure which kernel to use? The short answer is 1.05e on an FW5 cart and
+1.04e on an FW4 cart (the HELP tab shows which firmware the cart has), but
+the 1.04e build also runs on an FW5 cart, so no firmware updater is ever
+needed to switch. The full comparison:
+[Which official kernel should I choose?](https://github.com/lukesau/ezgb/blob/main/docs/kernel-versions.md)
+
 ## 2. Apply the patch
 
 Any IPS patcher works. Pick the stock `ezgb.dat` as the file to patch and the
