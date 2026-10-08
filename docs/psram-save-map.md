@@ -138,7 +138,7 @@ Add names to `kernel.sym`, add prose to `notes.json`, then run the annotate scri
 ## Full page map & free space
 
 The per-page layout of the whole 512 KB pSRAM (which pages the kernel uses, and
-~7 KB immediately-free in page 17 plus ~344 KB of untouched pages pending a
-hardware probe) is in [psram-page-map.md](psram-page-map.md).
+~7 KB free in page 17 at `$A400`+; every page from `$12` up is browser record
+space that grows with directory size) is in [psram-page-map.md](psram-page-map.md).
 
 Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md), [psram-page-map.md](psram-page-map.md).
