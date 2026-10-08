@@ -14,8 +14,7 @@ into your own cartridge.
 
 Patch the official kernel with the IPS file from the
 [latest release](https://github.com/lukesau/ezgb/releases/latest). Nothing is
-flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on, so
-installing is a file copy and going back is copying the stock file again.
+flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on. Swapping the kernel is as simple as changing a file and is completely reversible.
 
 1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
    your card's root now).
