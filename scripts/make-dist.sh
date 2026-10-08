@@ -7,6 +7,8 @@
 #                                             release page, rendered from
 #                                             patches/kernel/release-README.md
 #                                             with the version and md5 table
+#   dist/mod-N.M/README.txt                   the same as plain text, from
+#                                             patches/kernel/release-README.txt
 #
 # for every version in patches/kernel/manifest.json, N.M being
 # patches/kernel/VERSION. Each .dat is checked against the manifest's
@@ -52,5 +54,11 @@ for v, e in sorted(manifest.items()):
     rows.append(f"| {v} | `{pkg.get(v, '?')}` | `{e['stock_md5']}` | `{e['patched_md5']}` |")
 readme = tmpl.replace("{MODVER}", modver).replace("{TABLE}", "\n".join(rows))
 open(os.path.join(out, "README.md"), "w").write(readme)
-print(f"dist/mod-{modver}: {len(manifest)} versions, ips + dat each, README.md")
+tmpl = open(os.path.join(root, "patches", "kernel", "release-README.txt")).read()
+rows = []
+for v, e in sorted(manifest.items()):
+    rows += [f"  {v}  ({pkg.get(v, '?')})", f"    stock md5:   {e['stock_md5']}", f"    modded md5:  {e['patched_md5']}", ""]
+readme = tmpl.replace("{MODVER}", modver).replace("{TABLE}", "\n".join(rows).rstrip("\n"))
+open(os.path.join(out, "README.txt"), "w", newline="\r\n").write(readme)
+print(f"dist/mod-{modver}: {len(manifest)} versions, ips + dat each, README.md + README.txt")
 PY
