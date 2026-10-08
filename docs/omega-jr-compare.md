@@ -1,6 +1,6 @@
 # EZ Flash Omega DE ↔ Jr comparison
 
-Working notes for using Omega (published [`omega-de-kernel`](https://github.com/ez-flash/omega-de-kernel)
+Working notes for using Omega (published [`omega-de-kernel`](https://github.com/ezflash-team/omega-de-kernel)
 source + a real cart) to help map the Jr kernel. The menu UX on both is closely related;
 how much is shared code vs shared product design is open. Expect some 1:1 features, not a
 line-for-line port (different CPU, bus, and storage models).

@@ -327,7 +327,7 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   (we ship `re/1.05e-0731/kernel.sym`; add `re/1.04e/kernel.sym` to annotate the
   older side). `naming-progress.sh` reads a built `disassembly/game.sym`, so
   `make` the disassembly first.
-- **[omega-de-kernel](https://github.com/ez-flash/omega-de-kernel)**: EZ Flash's
+- **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ Flash's
   own published Omega DE (GBA) kernel source: FPGA register naming, FatFs/UI
   structure, NOR / Mode B boot path. Pair with a real Omega cart for UX
   side-by-side; see [omega-jr-compare.md](omega-jr-compare.md).
