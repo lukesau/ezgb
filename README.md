@@ -10,31 +10,49 @@ ships only as a compiled binary with no published source.
 This repo reverse-engineers that kernel and adds new features you can compile
 into your own cartridge.
 
-## Where the project is
+## Getting the modded kernel
 
-The reverse engineering is essentially done:
+Patch the official kernel with the IPS file from the
+[latest release](https://github.com/lukesau/ezgb/releases/latest). Nothing is
+flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on, so
+installing is a file copy and going back is copying the stock file again.
 
-- **Full disassembly.** Every bank is labeled, and it reassembles to the exact
-  original firmware (both the 1.04e and 1.05e builds; only 3 cosmetic
-  ROM-header bytes differ).
-- **Hardware understood:** the FPGA unlock/command/commit registers, SD sector
-  I/O, bank switching, PSRAM save storage, the board, and the ROM launch path.
-  See [`docs/hardware-board.md`](docs/hardware-board.md),
-  [`docs/REGISTERS.md`](docs/REGISTERS.md),
-  [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
-  [`docs/launch-trace.md`](docs/launch-trace.md). Why the coin cell dies in a
-  month and the drop-in SRAM fix: [`docs/battery-sram-swap.md`](docs/battery-sram-swap.md).
-- **Code injection works.** You can compile C, place it in verified-free ROM,
-  hook it into the kernel, and run it on real hardware and in emulator. The
-  features below are built on this. Recipe and free-space map:
-  [`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
+1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
+   your card's root now).
+2. Download the matching `ezgb-mod-N.M-for-<kernel>.ips` from the release:
 
-## Features you can build in
+   | Kernel | Package | Stock `ezgb.dat` md5 |
+   |---|---|---|
+   | 1.04e | `juniorkernel-1.04e-FW4` | `b8c29fa5a94c37200434e4c72f0cdfea` |
+   | 1.05e-0731 | `juniorkernel-1.05e-FW5-0731` | `91eb7fc67332ef20b5691029181ff748` |
+   | 1.05e-0918 | `juniorkernel-1.05e-FW5-0918` | `5238ac5987d23b68a19d40e43af8c786` |
 
-Self-contained patches against the 1.04e and 1.05e kernels (all three
-official builds). Apply the ones you want,
-produce an `ezgb.dat`, and run it. Each doc has the rationale, wiring, and exact
-commands.
+3. Apply it with any IPS patcher, e.g.
+   [Rom Patcher JS](https://www.marcrobledo.com/RomPatcher.js/) in the
+   browser, Flips, or MultiPatch.
+4. Copy the result to the card root as `ezgb.dat` (keep the stock file to go
+   back). The HELP tab shows `MOD N.M` when it's running.
+
+The release's README has the patched md5s and per-OS patcher notes. The 1.04e
+build also runs on an FW5 cart, so no firmware updater is ever needed to
+switch.
+[Which official kernel should I choose?](docs/kernel-versions.md)
+
+This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
+is not downloadable here. If you have a checkout,
+`python3 scripts/kernel-patch.py apply ezgb.dat` applies the patch from
+[`patches/kernel/`](patches/kernel/) and verifies md5s, and
+`scripts/build-kernel.sh 1.05e-0731 --install` reassembles the same bytes
+from the disassembly with rgbds. Details, checksums, and the copyright
+rationale: [`docs/distribution.md`](docs/distribution.md). To pick features
+individually or hack on new ones, see
+[building from your own dump](#building-a-modded-kernel-from-your-own-dump).
+
+## Features
+
+Every release includes all of these, for the 1.04e and 1.05e kernels (all
+three official builds). Each is also a self-contained patch you can build in on
+its own; each doc has the rationale, wiring, and exact commands.
 
 | Feature | What it does | Doc |
 |---|---|---|
@@ -74,30 +92,24 @@ browser flashing. The cancel button is START (it was B, then SELECT, in earlier 
 cannot be reached at first boot without FPGA firmware changes. Kept as a record,
 not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
 
-## Getting the modded kernel
+## Where the project is
 
-This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
-is not downloadable here, but you don't need one. Two supported routes, both
-producing the same bytes (details, checksums, and the copyright rationale in
-[`docs/distribution.md`](docs/distribution.md)):
+The reverse engineering is essentially done:
 
-- **Patch the official firmware**: take `ezgb.dat` from EZ Flash's official
-  firmware package and apply the IPS from
-  [`patches/kernel/`](patches/kernel/):
-  `python3 scripts/kernel-patch.py apply ezgb.dat` (verifies md5s; any
-  standard IPS tool works too).
-- **Build from the disassembly**:
-  `scripts/build-kernel.sh 1.05e-0731 --install` reassembles the modded
-  kernel with rgbds and verifies its md5.
-
-Supported bases: `1.04e` (FW4 package), `1.05e-0731` and `1.05e-0918` (FW5).
-The kernel is loaded from the card at every boot, so the 1.04e build also runs
-on an FW5 cart and no firmware updater is ever needed to switch.
-
-[What are the differences between the official kernels and why should I choose one over the other?](docs/kernel-versions.md)
-
-Both include all features above. To pick features individually or hack on
-new ones, use the development flow below.
+- **Full disassembly.** Every bank is labeled, and it reassembles to the exact
+  original firmware (both the 1.04e and 1.05e builds; only 3 cosmetic
+  ROM-header bytes differ).
+- **Hardware understood:** the FPGA unlock/command/commit registers, SD sector
+  I/O, bank switching, PSRAM save storage, the board, and the ROM launch path.
+  See [`docs/hardware-board.md`](docs/hardware-board.md),
+  [`docs/REGISTERS.md`](docs/REGISTERS.md),
+  [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
+  [`docs/launch-trace.md`](docs/launch-trace.md). Why the coin cell dies in a
+  month and the drop-in SRAM fix: [`docs/battery-sram-swap.md`](docs/battery-sram-swap.md).
+- **Code injection works.** You can compile C, place it in verified-free ROM,
+  hook it into the kernel, and run it on real hardware and in emulator. The
+  features above are built on this. Recipe and free-space map:
+  [`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
 
 ## Building a modded kernel from your own dump
 
