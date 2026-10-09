@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..b1e5990
+index 0000000..aef1f48
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,958 @@
+@@ -0,0 +1,1026 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -17,14 +17,14 @@ index 0000000..b1e5990
 + *
 + * Everything GB_ezflash_jr_configure() logs runs inside GB_load_rom(), which
 + * the SDL front-end wraps in start_capturing_logs()/end_capturing_logs(true,
-+ * ..., "Warning", ...), so ANY GB_log() there becomes a modal message box
++ * ..., "Warning", ...) — so ANY GB_log() there becomes a modal message box
 + * that has to be dismissed by hand before the emulator will run a single
 + * instruction. That makes scripted/unattended runs (scripts/run-sameboy-debug.py)
 + * hang silently on a dialog nobody is watching.
 + *
 + * Normal startup chatter is not a warning, so it goes to stderr: still on the
 + * same PTY the debug wrapper reads, just not through the popup path. Real
-+ * failures keep using GB_log() precisely BECAUSE it blocks; those are worth
++ * failures keep using GB_log() precisely BECAUSE it blocks — those are worth
 + * interrupting for. */
 +static void ezjr_status(const char *fmt, ...)
 +{
@@ -33,6 +33,25 @@ index 0000000..b1e5990
 +    vfprintf(stderr, fmt, args);
 +    va_end(args);
 +    fflush(stderr);
++}
++
++/* Verbose mode (SAMEBOY_EZFLASH_JR_LOG=1) sends every stub message to
++ * stderr: GB_log only reaches a terminal when the SDL debugger console
++ * started, which it doesn't under a script. Otherwise this is GB_log. */
++static void ezjr_log(GB_gameboy_t *gb, const char *fmt, ...)
++{
++    char buf[512];
++    va_list args;
++    va_start(args, fmt);
++    vsnprintf(buf, sizeof(buf), fmt, args);
++    va_end(args);
++    if (gb->ezflash_jr.log) {
++        fputs(buf, stderr);
++        fflush(stderr);
++    }
++    else {
++        GB_log(gb, "%s", buf);
++    }
 +}
 +
 +/* Observed battery-status window: write $11 to $4000, then read $A201 expect $88.
@@ -66,6 +85,12 @@ index 0000000..b1e5990
 +           gb->rom[0x135] == 'Z' &&
 +           gb->rom[0x136] == 'G' &&
 +           gb->rom[0x137] == 'B';
++}
++
++static bool title_is_stage1(GB_gameboy_t *gb)
++{
++    return gb->rom && gb->rom_size >= 0x150 &&
++           memcmp(gb->rom + 0x134, "BOOTLOADER", 10) == 0;
 +}
 +
 +static bool stub_disabled_by_env(void)
@@ -104,7 +129,7 @@ index 0000000..b1e5990
 +        ezjr_status("EZ Jr stub: soft-patched SD init hang at $%04x -> always success\n", i);
 +        return;
 +    }
-+    GB_log(gb, "EZ Jr stub: SD init hang pattern not found, no soft-patch applied\n");
++    ezjr_log(gb, "EZ Jr stub: SD init hang pattern not found, no soft-patch applied\n");
 +}
 +
 +static bool try_load_img_path(GB_gameboy_t *gb, const char *path)
@@ -160,7 +185,7 @@ index 0000000..b1e5990
 +    /* Walk up from cwd looking for sd/card.img (works from repo root or build/bin/SDL). */
 +    char cwd[512];
 +    if (!getcwd(cwd, sizeof(cwd))) {
-+        GB_log(gb, "EZ Jr stub: no SD image (getcwd failed). Set SAMEBOY_EZFLASH_JR_IMG.\n");
++        ezjr_log(gb, "EZ Jr stub: no SD image (getcwd failed). Set SAMEBOY_EZFLASH_JR_IMG.\n");
 +        return;
 +    }
 +
@@ -180,7 +205,7 @@ index 0000000..b1e5990
 +        *slash = '\0';
 +    }
 +
-+    GB_log(gb, "EZ Jr stub: no SD image found. Put one at sd/card.img or set SAMEBOY_EZFLASH_JR_IMG.\n");
++    ezjr_log(gb, "EZ Jr stub: no SD image found. Put one at sd/card.img or set SAMEBOY_EZFLASH_JR_IMG.\n");
 +}
 +
 +static void flush_sd_image(GB_gameboy_t *gb)
@@ -191,16 +216,16 @@ index 0000000..b1e5990
 +    }
 +    FILE *f = fopen(ez->img_path, "rb+");
 +    if (!f) {
-+        GB_log(gb, "EZ Jr stub: failed to flush SD image to %s\n", ez->img_path);
++        ezjr_log(gb, "EZ Jr stub: failed to flush SD image to %s\n", ez->img_path);
 +        return;
 +    }
 +    if (fwrite(ez->img, 1, ez->img_size, f) != ez->img_size) {
-+        GB_log(gb, "EZ Jr stub: short write flushing SD image\n");
++        ezjr_log(gb, "EZ Jr stub: short write flushing SD image\n");
 +    }
 +    fclose(f);
 +    ez->img_dirty = false;
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr stub: flushed SD image (%zu bytes)\n", ez->img_size);
++        ezjr_log(gb, "EZ Jr stub: flushed SD image (%zu bytes)\n", ez->img_size);
 +    }
 +}
 +
@@ -265,16 +290,16 @@ index 0000000..b1e5990
 +    size_t n = (size_t)EZJR_SRAM_BANKS * EZJR_SRAM_BANK_SIZE;
 +    FILE *f = fopen(ez->psram_path, "wb");
 +    if (!f) {
-+        GB_log(gb, "EZ Jr stub: failed to flush PSRAM to %s\n", ez->psram_path);
++        ezjr_log(gb, "EZ Jr stub: failed to flush PSRAM to %s\n", ez->psram_path);
 +        return;
 +    }
 +    if (fwrite(sram, 1, n, f) != n) {
-+        GB_log(gb, "EZ Jr stub: short write flushing PSRAM\n");
++        ezjr_log(gb, "EZ Jr stub: short write flushing PSRAM\n");
 +    }
 +    fclose(f);
 +    ez->psram_dirty = false;
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr stub: flushed PSRAM (%zu bytes) to %s\n", n, ez->psram_path);
++        ezjr_log(gb, "EZ Jr stub: flushed PSRAM (%zu bytes) to %s\n", n, ez->psram_path);
 +    }
 +}
 +
@@ -365,7 +390,7 @@ index 0000000..b1e5990
 +    }
 +
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr SD: READ LBA=%u count=%u%s\n",
++        ezjr_log(gb, "EZ Jr SD: READ LBA=%u count=%u%s\n",
 +               lba, n, ez->img ? "" : " (no image)");
 +    }
 +}
@@ -392,7 +417,7 @@ index 0000000..b1e5990
 +    ez->sd_regs[4] &= 0x7F;
 +
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr SD: WRITE LBA=%u count=%u%s\n",
++        ezjr_log(gb, "EZ Jr SD: WRITE LBA=%u count=%u%s\n",
 +               lba, n, ez->img ? "" : " (no image)");
 +    }
 +}
@@ -494,7 +519,7 @@ index 0000000..b1e5990
 +    uint32_t word_7e = load_cmd_u32(ez->load_cmd, 0x7E);
 +
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr ROMLOAD: cmd[0]=$%08x size=$%08x meta=$%08x/$%08x mbc=$%02x mask=$%02x%02x\n",
++        ezjr_log(gb, "EZ Jr ROMLOAD: cmd[0]=$%08x size=$%08x meta=$%08x/$%08x mbc=$%02x mask=$%02x%02x\n",
 +               word0, rom_size, word_7d, word_7e, ez->mbc_type,
 +               ez->bank_regs[2], ez->bank_regs[1]);
 +        for (unsigned i = 1; i + 1 < 0x7C && i < 16; i += 2) {
@@ -503,7 +528,7 @@ index 0000000..b1e5990
 +            if (lba == 0 && n == 0) {
 +                break;
 +            }
-+            GB_log(gb, "EZ Jr ROMLOAD:   extent LBA=%u count=%u%s\n",
++            ezjr_log(gb, "EZ Jr ROMLOAD:   extent LBA=%u end=%u%s\n",
 +                   lba, n, n == 0xFFFFFFFFu ? " (tail)" : "");
 +            if (n == 0xFFFFFFFFu) {
 +                break;
@@ -512,11 +537,11 @@ index 0000000..b1e5990
 +    }
 +
 +    if (rom_size == 0 || rom_size > 8u * 1024u * 1024u) {
-+        GB_log(gb, "EZ Jr ROMLOAD: refusing bogus size $%08x\n", rom_size);
++        ezjr_log(gb, "EZ Jr ROMLOAD: refusing bogus size $%08x\n", rom_size);
 +        return false;
 +    }
 +    if (!ez->img) {
-+        GB_log(gb, "EZ Jr ROMLOAD: no SD image\n");
++        ezjr_log(gb, "EZ Jr ROMLOAD: no SD image\n");
 +        return false;
 +    }
 +
@@ -524,16 +549,22 @@ index 0000000..b1e5990
 +    ez->pending_rom = (uint8_t *)malloc(rom_size);
 +    if (!ez->pending_rom) {
 +        ez->pending_rom_size = 0;
-+        GB_log(gb, "EZ Jr ROMLOAD: alloc failed (%u bytes)\n", rom_size);
++        ezjr_log(gb, "EZ Jr ROMLOAD: alloc failed (%u bytes)\n", rom_size);
 +        return false;
 +    }
 +    ez->pending_rom_size = rom_size;
 +    memset(ez->pending_rom, 0xFF, rom_size);
 +
++    /* Each extent's second word is a running total of file sectors up to the
++     * end of that extent, not a count (stage1 main and the kernel's
++     * LaunchSetup never reset their counter; docs/launch-trace.md). */
 +    size_t dest = 0;
++    uint32_t prev_end = 0;
 +    for (unsigned i = 1; i + 1 < 0x7C; i += 2) {
 +        uint32_t lba = load_cmd_u32(ez->load_cmd, i);
-+        uint32_t n = load_cmd_u32(ez->load_cmd, i + 1);
++        uint32_t end = load_cmd_u32(ez->load_cmd, i + 1);
++        uint32_t n = end == 0xFFFFFFFFu ? end : end - prev_end;
++        prev_end = end;
 +        if (n == 0xFFFFFFFFu) {
 +            uint32_t remain_bytes = (uint32_t)(rom_size - dest);
 +            uint32_t remain_secs = (remain_bytes + 511u) / 512u;
@@ -550,7 +581,7 @@ index 0000000..b1e5990
 +    }
 +
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr ROMLOAD: built %zu / %u bytes, title=%.16s\n",
++        ezjr_log(gb, "EZ Jr ROMLOAD: built %zu / %u bytes, title=%.16s\n",
 +               dest, rom_size,
 +               ez->pending_rom_size >= 0x144 ? (char *)(ez->pending_rom + 0x134) : "?");
 +    }
@@ -580,7 +611,7 @@ index 0000000..b1e5990
 +        if (ez->load_ctrl == 0x03) {
 +            ez->load_done = rom_build_pending(gb);
 +            if (!ez->load_done && ez->log) {
-+                GB_log(gb, "EZ Jr ROMLOAD: initiate failed\n");
++                ezjr_log(gb, "EZ Jr ROMLOAD: initiate failed\n");
 +            }
 +        }
 +        else if (ez->load_ctrl == 0x01) {
@@ -597,11 +628,22 @@ index 0000000..b1e5990
 +        if (ez->pending_rom && ez->pending_rom_size) {
 +            ez->pending_boot = true;
 +            if (ez->log) {
-+                GB_log(gb, "EZ Jr ROMLOAD: $7FE0=$80, will boot loaded ROM after this instruction\n");
++                ezjr_log(gb, "EZ Jr ROMLOAD: $7FE0=$80 — will boot loaded ROM after this instruction\n");
 +            }
 +        }
 +        else if (ez->log) {
-+            GB_log(gb, "EZ Jr ROMLOAD: $7FE0=$80 but no pending ROM\n");
++            ezjr_log(gb, "EZ Jr ROMLOAD: $7FE0=$80 but no pending ROM\n");
++        }
++        return;
++    }
++
++    /* stage1 writes $7F31=$00 / $7F32=$80 after the load, then calls $0100. */
++    if (ez->stage1 && ez->last_cmd_addr == 0x7F32 && ez->last_cmd_value == 0x80) {
++        if (ez->pending_rom && ez->pending_rom_size) {
++            ez->pending_swap = true;
++        }
++        else {
++            ezjr_log(gb, "EZ Jr stage1: $7F32=$80 but no loaded ROM\n");
 +        }
 +        return;
 +    }
@@ -611,7 +653,7 @@ index 0000000..b1e5990
 +        return;
 +    }
 +
-+    /* Write path (bank_002): latch count|$80 on $7FB4 then commit, without $7F30=3. */
++    /* Write path (bank_002): latch count|$80 on $7FB4 then commit — no $7F30=3. */
 +    if (ez->last_cmd_addr >= 0x7FB0 && ez->last_cmd_addr <= 0x7FB4) {
 +        if (ez->sd_regs[4] & 0x80) {
 +            sd_do_write(gb);
@@ -622,6 +664,19 @@ index 0000000..b1e5990
 +void GB_ezflash_jr_post_run(GB_gameboy_t *gb)
 +{
 +    GB_ezflash_jr_t *ez = &gb->ezflash_jr;
++    if (ez->enabled && ez->pending_swap) {
++        /* stage1 hand-off: the cart becomes the loaded kernel with the CPU
++         * state untouched. Loading it reconfigures the stub for the kernel
++         * (title EZGB): SD image and PSRAM come back from disk. */
++        uint8_t *rom = ez->pending_rom;
++        size_t rom_size = ez->pending_rom_size;
++        ez->pending_rom = NULL;
++        ez->pending_swap = false;
++        ezjr_status("EZ Jr stage1: hand-off, cart is now the loaded ROM (%zu bytes)\n", rom_size);
++        GB_load_rom_from_buffer(gb, rom, rom_size);
++        free(rom);
++        return;
++    }
 +    if (!ez->enabled || !ez->pending_boot || !ez->pending_rom) {
 +        return;
 +    }
@@ -659,7 +714,7 @@ index 0000000..b1e5990
 +    }
 +
 +    if (log) {
-+        GB_log(gb, "EZ Jr ROMLOAD: $7FE0 boot rom=%zu SRAM_code=$%02x expect=%zu cart_sram_nonzero=%zu mbc=$%02x\n",
++        ezjr_log(gb, "EZ Jr ROMLOAD: $7FE0 boot rom=%zu SRAM_code=$%02x expect=%zu cart_sram_nonzero=%zu mbc=$%02x\n",
 +               rom_size, sram_code, expect, nonzero, mbc_type);
 +    }
 +
@@ -681,12 +736,12 @@ index 0000000..b1e5990
 +    ez->bank_regs[4] = sram_code;
 +    psram_path_from_img(ez);
 +    /* Kernel already wrote page $11 ($AA, bank count, /SAVER/....sav) before
-+     * $7FE0. Keep it so the next kernel boot can flush PSRAM to the SD image. */
++     * $7FE0 — keep it so the next kernel boot can flush PSRAM to the SD image. */
 +    if (cart_sram && expect) {
 +        ez->psram_dirty = true;
 +    }
 +
-+    /* Game MBC RAM aliases the same physical SRAM the kernel filled, as on cart. */
++    /* Same physical SRAM the kernel filled — game MBC RAM is an alias, as on cart. */
 +    if (cart_sram && gb->mbc_ram_size) {
 +        if (gb->mbc_ram && !ez->mbc_ram_is_cart_sram) {
 +            free(gb->mbc_ram);
@@ -694,7 +749,7 @@ index 0000000..b1e5990
 +        gb->mbc_ram = cart_sram;
 +        ez->mbc_ram_is_cart_sram = true;
 +        if (log) {
-+            GB_log(gb, "EZ Jr ROMLOAD: mbc_ram aliases cart_sram (%u bytes), nonzero_prefix=%zu\n",
++            ezjr_log(gb, "EZ Jr ROMLOAD: mbc_ram aliases cart_sram (%u bytes), nonzero_prefix=%zu\n",
 +                   gb->mbc_ram_size, nonzero);
 +        }
 +    }
@@ -741,19 +796,24 @@ index 0000000..b1e5990
 +    GB_ezflash_jr_cleanup(gb);
 +    memset(&gb->ezflash_jr, 0, sizeof(gb->ezflash_jr));
 +
-+    if (!title_is_ezgb(gb) || stub_disabled_by_env()) {
++    bool stage1 = title_is_stage1(gb);
++    if ((!title_is_ezgb(gb) && !stage1) || stub_disabled_by_env()) {
 +        return;
 +    }
 +
 +    gb->ezflash_jr.enabled = true;
++    gb->ezflash_jr.stage1 = stage1;
 +    gb->ezflash_jr.log = verbose_log_enabled();
 +    gb->ezflash_jr.fw_version = EZJR_FW_VERSION;
 +    gb->ezflash_jr.cart_sram = (uint8_t *)calloc(EZJR_SRAM_BANKS, EZJR_SRAM_BANK_SIZE);
 +    if (!gb->ezflash_jr.cart_sram) {
-+        GB_log(gb, "EZ Jr stub: cart SRAM alloc failed\n");
++        ezjr_log(gb, "EZ Jr stub: cart SRAM alloc failed\n");
 +    }
-+    ezjr_status("EZ Jr stub: enabled (title EZGB). Set SAMEBOY_EZFLASH_JR=0 to disable.\n");
-+    soft_patch_sd_init_hang(gb);
++    ezjr_status("EZ Jr stub: enabled (title %s). Set SAMEBOY_EZFLASH_JR=0 to disable.\n",
++                stage1 ? "BOOTLOADER, stage1" : "EZGB");
++    if (!stage1) {
++        soft_patch_sd_init_hang(gb);
++    }
 +    load_sd_image(gb);
 +    psram_path_from_img(&gb->ezflash_jr);
 +    if (gb->ezflash_jr.cart_sram) {
@@ -795,7 +855,7 @@ index 0000000..b1e5990
 +        /* $7FC0 page select is polled continuously on SET (RTC) and the file
 +         * browser; logging it drowns useful SD traffic. */
 +        if (ez->log && ez->last_cmd_addr != 0x7FC0) {
-+            GB_log(gb, "EZ Jr FPGA: commit last=$%04x=$%02x\n",
++            ezjr_log(gb, "EZ Jr FPGA: commit last=$%04x=$%02x\n",
 +                   ez->last_cmd_addr, ez->last_cmd_value);
 +        }
 +        on_fpga_commit(gb);
@@ -825,7 +885,7 @@ index 0000000..b1e5990
 +    }
 +
 +    if (ez->log) {
-+        GB_log(gb, "EZ Jr FPGA: stray write $%04x=$%02x (unlock_step=%u)\n",
++        ezjr_log(gb, "EZ Jr FPGA: stray write $%04x=$%02x (unlock_step=%u)\n",
 +               addr, value, ez->unlock_step);
 +    }
 +}
@@ -927,6 +987,14 @@ index 0000000..b1e5990
 +        return true;
 +    }
 +
++    /* $7F30=$03 maps the read status, not the data: $01 = done, $E1 = busy
++     * (daid Protocol.md). Reads here complete instantly. Serving sector data
++     * instead hung any poll whose sector happened to start with $E1. */
++    if (ez->sd_ctrl == 3 && addr >= 0xA000 && addr <= 0xBFFF) {
++        *out = 0x01;
++        return true;
++    }
++
 +    if (sd_window_active(ez) &&
 +        addr >= EZJR_SD_WINDOW &&
 +        addr < EZJR_SD_WINDOW + EZJR_SD_WINDOW_SIZE) {
@@ -964,10 +1032,10 @@ index 0000000..b1e5990
 +}
 diff --git a/Core/ezflash_jr.h b/Core/ezflash_jr.h
 new file mode 100644
-index 0000000..8de3aa4
+index 0000000..0f5ba14
 --- /dev/null
 +++ b/Core/ezflash_jr.h
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,79 @@
 +#pragma once
 +#include "defs.h"
 +#include <stdbool.h>
@@ -981,7 +1049,8 @@ index 0000000..8de3aa4
 + * Stage 2: RTC page via $7FC0=$06, BCD registers at $A008-$A00E.
 + * Stage 3: cart SRAM banks via $7FC0=$03 (file-list / status cache),
 + *          FW version via $7FC0=$04, ROM-load status via $7F36.
-+ * Stage 4: $7FE0 boot; the game keeps the same cart_sram backing store (like hardware).
++ * Stage 4: $7FE0 boot — game keeps the same cart_sram backing store (like hardware).
++ * Stage 6: stage1 (title BOOTLOADER) loads the kernel and calls $0100 with no reset.
 + * Stage 5: PSRAM on disk (sd/psram.bin) for power-cycle; host .sav suppressed;
 + *          kernel BACKUPSAVE dumps PSRAM to SAVER on next boot after [A]OK.
 + *
@@ -1029,6 +1098,11 @@ index 0000000..8de3aa4
 +    uint8_t *pending_rom;
 +    size_t pending_rom_size;
 +    bool pending_boot;
++    /* Running stage1 (title BOOTLOADER): no SD-init soft-patch, and the loaded
++     * ROM replaces the cart in place (no reset) when stage1 writes $7F32 after
++     * the load, as the FPGA does before stage1 calls $0100. */
++    bool stage1;
++    bool pending_swap;
 +} GB_ezflash_jr_t;
 +
 +#ifdef GB_INTERNAL
@@ -1038,7 +1112,7 @@ index 0000000..8de3aa4
 +internal bool GB_ezflash_jr_write(GB_gameboy_t *gb, uint16_t addr, uint8_t value);
 +/* Returns true if *out was filled by the stub. */
 +internal bool GB_ezflash_jr_read(GB_gameboy_t *gb, uint16_t addr, uint8_t *out);
-+/* Call after GB_clear_running_thread in GB_run to apply pending ROM boot/reset. */
++/* Call after GB_clear_running_thread in GB_run — applies pending ROM boot/reset. */
 +internal void GB_ezflash_jr_post_run(GB_gameboy_t *gb);
 +#endif
 diff --git a/Core/gb.c b/Core/gb.c
