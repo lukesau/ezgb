@@ -1,8 +1,9 @@
 # FPGA bitstream toolchain
 
-How to decode the cart's Spartan-3A (`XC3S200A-4VQG100`) bitstream, and how
-the machine that does it was set up. Findings from using it are in
-[fpga-bitstream.md](fpga-bitstream.md).
+Reference for the tools that decode, trace and patch the cart's Spartan-3A
+(`XC3S200A-4VQG100`) bitstream. Setting them up from nothing, and the
+end-to-end build of an updater, is in [fpga-setup.md](fpga-setup.md).
+Findings from using them are in [fpga-bitstream.md](fpga-bitstream.md).
 
 **This work is local-only.** It lives on the unpushed `bitstream-re` branch.
 Decoded listings, BRAM dumps and anything else derived from EZ Flash's
@@ -15,11 +16,16 @@ bitstream stay in the ignored `fpga/` directory, same policy as the flash dumps
 |---|---|---|
 | **prjcombine** | Open database of the Spartan-3 family bitstream format: every tile, routing mux and logic setting with its exact bit positions. Rust libraries to load it and parse bitstreams | `~/fpga/prjcombine` on the build host |
 | **s3decode** | Our decoder. Walks every tile of a bitstream against the prjcombine database and prints what is configured | [`scripts/fpga/s3decode/`](../scripts/fpga/s3decode/) |
+| **s3patch** | Writes bel attributes (BRAM `DATA`) back into a bitstream, recomputing the CRCs | same crate |
+| **s3trace** | Walks routing back from a bel pin, lists pins, dumps the netlist | same crate |
+| **s3pins** | Package pin to bel pad map | same crate |
 | **ISE 14.7** | Xilinx's toolchain, the last one that supports Spartan-3A. Only needed to *make* bitstreams (baselines, test designs, future fuzzing), not to decode | `~/Xilinx/14.7` on the build host |
 | Scripts | Pull bitstreams out of updaters and flash dumps, rebuild stage1, dump PicoBlaze words, end-to-end smoke test | [`scripts/fpga/`](../scripts/fpga/) |
 
-Decoding needs only prjcombine and s3decode. ISE is for generating the blank
-baseline and for any experiment that builds a design.
+Decoding, tracing and patching need only prjcombine and the four tools in
+`scripts/fpga/s3decode/` (one `cargo build --release` builds all of them).
+ISE is for generating the blank baseline and for any experiment that builds
+a design.
 
 ## Build host
 
@@ -150,9 +156,74 @@ bitgen -w -d blank.ncd blank.bit
   have not.
 - **Test muxes and legacy bels are skipped.** Neither occurs in the claimed-bit
   count for our images, so nothing is hidden by this.
-- **Decode only.** No encoder yet; writing a modified bitstream (for example
-  the stage1 header patch in [fpga-bitstream.md](fpga-bitstream.md)) needs one,
-  plus CRC.
+- **Writes only through `s3patch`.** It changes bel attributes in frames
+  that a plain FDRI run writes. Routing, and anything in a frame reused
+  through MFWR, can't be written yet.
+
+> **Correction (2026-10-09).** This list said "Decode only. No encoder
+> yet", written before `s3patch` existed. `s3patch` (below) writes BRAM
+> contents and recomputes the CRCs, and every updater built so far went
+> through it: the CGB flag, the splash builds and the stage1 rewrite
+> ([fpga-cgb.md](fpga-cgb.md), [fpga-stage1.md](fpga-stage1.md)). The same
+> stale claim was inherited by [fpga-bitstream.md](fpga-bitstream.md) and
+> [hardware-board.md](hardware-board.md), which carry their own notes.
+
+## s3patch
+
+```bash
+./target/release/s3patch --db ~/fpga/prjcombine/databases/spartan3.zstd \
+    slotB.bin slotB-new.bin \
+    --set D0X19Y5.BEL:BRAM:DATA=blobs/D0X19Y5.DATA.bin [--set ...]
+```
+
+| Flag | Meaning |
+|---|---|
+| `input`, `output` | raw config data as `extract-bitstreams.py` writes it |
+| `--set TILE:BELSLOT:ATTR=FILE` | one per attribute, repeatable. The file holds the attribute's bits in `--blob-dir` order (bit *i* = byte `i/8` bit `i%8`). `stage1-to-bram.py` prints the full set for stage1 |
+| `--db`, `--device` | as for s3decode |
+
+For each requested bit it finds the frame bit through the database and the
+byte in the stream's FDRI runs. It refuses a frame that is reused through
+MFWR, recomputes every CRC packet, then re-parses the output and asserts
+that only the requested bits changed and COR1 is untouched. Output:
+
+```
+<n> attribute bits requested, <n> flipped, <n> frame bits differ after re-parse, <n> CRC packets recomputed
+```
+
+A slot B image has two CRC packets.
+
+Patching slot B with its own original BRAM contents reproduces the input
+byte for byte, CRCs included.
+
+## s3trace
+
+```bash
+s3trace --db $DB image.bin --list-pins D0X12Y18          # every bel pin of tiles named D0X12Y18...
+s3trace --db $DB image.bin --from TILE:BEL:PIN --depth 4 # walk back from a bel input
+s3trace --db $DB image.bin --netlist out.jsonl           # whole design as JSON lines
+```
+
+It builds the routing graph from every switch that is on, resolving tile
+wires to physical nodes, then walks back from a bel input to the bel output
+that drives it. A SLICE source prints its LUT truth tables and recurses into
+the LUT inputs to `--depth` (default 3), so a pin's logic cone comes out as
+a tree. Get exact pin names from `--list-pins` before using `--from`.
+
+`--netlist` writes one line per configured bel:
+`{"tile": ..., "bel": ..., "attrs": {...}, "in": {pin: driver}}`. The
+scripts in [`scripts/fpga/netlist/`](../scripts/fpga/netlist/README.md) read
+it; [fpga-version.md](fpga-version.md) and [fpga-design.md](fpga-design.md)
+are built on it.
+
+## s3pins
+
+```bash
+s3pins --db $DB --bond vq100        # package pin <tab> bel pad(s)
+```
+
+`--bond` matches any substring of the package name (case-insensitive);
+`--device` defaults to `xc3s200a`.
 
 ## Pulling a bitstream out of the cart's files
 
