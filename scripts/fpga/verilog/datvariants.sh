@@ -12,7 +12,7 @@ run_one() {
     verilator --binary --timing -j 2 -Wno-fatal -Wno-lint -Wno-style \
         +define+RUN_NS=$RUN +define+GB_START_NS=$START "+define+SD_DAT=$v" \
         '+define+GB_TEST="gb_sdread.vh"' --top-module tb --Mdir $d/obj -o simv \
-        ../s3prims.v ../models.v ../pinmon.v ../tb_pcmap.v ../design_di.v ../tb_full.v > $d/build.log 2>&1
+        ../s3prims.v ../models.v ../pinmon.v ../tb_pcmap.v ../design_io.v ../tb_full.v > $d/build.log 2>&1
     ./$d/obj/simv > $d/run.log 2>&1
     echo "DAT0..3 = ${p//_/ }: $(grep 'gb: sector' $d/run.log | sed 's/.*gb: //' || true) $(grep -c 'sd: read block' $d/run.log) block reads"
 }

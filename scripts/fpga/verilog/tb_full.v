@@ -23,7 +23,7 @@ module tb;
     assign P51 = P27 ? 1'bz : miso;
     // SD card: CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29
 `ifndef SD_DAT
-`define SD_DAT {P29, P30, P25, P34}       // DAT3..DAT0, confirmed by block reads
+`define SD_DAT {P29, P30, P25, P34}       // DAT3..DAT0, confirmed by block reads through the GB window
 `endif
     sd_card #(.IMAGE("card.img")) sd(.CLK(P23), .CMD(P28), .DAT(`SD_DAT));
     // Game Boy bus: A0-A15, D0-D7, /WR on P84. There is no /RD or /CS: the
@@ -46,6 +46,30 @@ module tb;
             gb_a = a; #800; d = gb_q; #150;
         end
     endtask
+    // Memory bus: U9 (game ROM pSRAM, /CE P52) and U4 (save pSRAM, /CE P60)
+    // share the address, data, /WE and byte-lane pins; word address A14 and up
+    // come from the 74HC595 (SRCLK P35, SER P33, RCLK P24). See
+    // docs/fpga-design.md. /OE is not identified yet and is tied active.
+    wire [7:0] bank;
+    hc595 u2(.SRCLK(P35), .SER(P33), .RCLK(P24), .Q(bank));
+    wire [22:0] mem_a = {1'b0, bank, P51, P46, P53, P20, P86, P83, P50, P44, P73, P70, P71, P65, P59, P56};
+    wire [7:0] mem_d = {P64, P41, P57, P49, P48, P72, P77, P78};
+    wire [7:0] u9_q, u4_q;
+    wire u9_oe, u4_oe;
+    psram #(.WORDS(4194304), .NAME("U9")) u9(.A(mem_a), .D(mem_d), .Q(u9_q), .OE(u9_oe),
+        .CE_N(P52), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
+    psram #(.WORDS(262144), .NAME("U4")) u4(.A(mem_a), .D(mem_d), .Q(u4_q), .OE(u4_oe),
+        .CE_N(P60), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
+    // the memories drive only while the FPGA's data pins are tri-stated
+    wire [7:0] mem_q = u9_oe ? u9_q : u4_q;
+    wire fpga_drives_mem = !dut.i_X23Y33_IOI0.t;   // P78's tristate (all eight share it)
+    reg mem_drive = 0;
+`ifdef NO_MEM_READ
+    always #1 mem_drive = 0;
+`else
+    always #1 mem_drive = (u9_oe || u4_oe) && !fpga_drives_mem;
+`endif
+    assign {P64, P41, P57, P49, P48, P72, P77, P78} = mem_drive ? mem_q : 8'hzz;
 `ifdef GB_TEST
 `include `GB_TEST
 `endif
@@ -59,6 +83,9 @@ module tb;
     pullup (P86);
     initial begin
         #(`RUN_NS);
+`ifdef U9_DUMP
+        u9.dump("u9.bin", `U9_DUMP);
+`endif
         pinmon.report;
         $finish;
     end

@@ -254,3 +254,63 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         end
     endtask
 endmodule
+
+// pSRAM die of a NOR+pSRAM MCP (U9: game ROM, U4: saves), 16-bit words with
+// byte lanes, wired as on the Jr: the eight data lines serve both lanes
+// (/LB = even byte, /UB = odd byte). Writes land at the end of the /WE
+// pulse (sampled, like the other monitors, so tri-state nets are safe).
+// Q and OE are for the testbench to gate onto the bus. WORDS is the size
+// in 16-bit words; IMAGE, if set, preloads bytes.
+module psram #(parameter WORDS = 4194304, parameter IMAGE = "", parameter NAME = "psram") (
+    input [22:0] A, input [7:0] D, output [7:0] Q, output OE,
+    input CE_N, WE_N, OE_N, LB_N, UB_N
+);
+    reg [7:0] mem [0:2*WORDS-1];
+    integer i, fd, r, writes = 0;
+    initial begin
+        for (i = 0; i < 2 * WORDS; i = i + 1) mem[i] = 8'hFF;
+        if (IMAGE != "") begin
+            fd = $fopen(IMAGE, "rb");
+            if (fd) begin r = $fread(mem, fd); $fclose(fd); end
+        end
+    end
+    wire [23:0] lo = {A, 1'b0}, hi = {A, 1'b1};
+    wire wr = !CE_N && !WE_N;
+    // the FPGA releases data and address as /WE rises, so keep the values
+    // seen during the pulse and commit them when it ends
+    reg pw = 0, l_lb, l_ub;
+    reg [7:0] l_d;
+    reg [23:0] l_lo, l_hi;
+    always #1 begin
+        if (wr) begin l_d = D; l_lo = lo; l_hi = hi; l_lb = LB_N; l_ub = UB_N; end
+        else if (pw) begin
+            if (!l_lb) mem[l_lo % (2 * WORDS)] = l_d;
+            if (!l_ub) mem[l_hi % (2 * WORDS)] = l_d;
+            writes = writes + 1;
+        end
+        pw = wr;
+    end
+    assign Q = !LB_N ? mem[lo % (2 * WORDS)] : mem[hi % (2 * WORDS)];
+    assign OE = !CE_N && !OE_N && WE_N && !(LB_N && UB_N);
+    task dump(input [8*64-1:0] file, input integer nbytes);
+        integer f, j;
+        begin
+            f = $fopen(file, "wb");
+            for (j = 0; j < nbytes; j = j + 1) $fwrite(f, "%c", mem[j]);
+            $fclose(f);
+            $display("%t %0s: %0d writes, first %0d bytes dumped to %0s", $time, NAME, writes, nbytes, file);
+        end
+    endtask
+endmodule
+
+// 74HC595: shift on the rising edge of SRCLK, copy to Q on the rising edge
+// of RCLK (sampled every 1 ns: the FPGA's pulses are tens of ns wide)
+module hc595 (input SRCLK, SER, RCLK, output reg [7:0] Q = 0);
+    reg [7:0] sr = 0;
+    reg ps = 0, pr = 0;
+    always #1 begin
+        if (SRCLK === 1'b1 && ps !== 1'b1) sr = {sr[6:0], SER === 1'b1};
+        if (RCLK === 1'b1 && pr !== 1'b1) Q = sr;
+        ps = SRCLK; pr = RCLK;
+    end
+endmodule
