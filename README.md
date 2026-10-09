@@ -202,6 +202,15 @@ the FW5 packages differ
   (`doc/Protocol.md`), stage1 dumps, board survey, and archived official
   firmware. The SameBoy EZ Jr stub's game-launch path is built on its protocol
   doc, and several hardware docs here start from its findings.
+- **[prjcombine](https://codeberg.org/prjunnamed/prjcombine)** from the
+  prjunnamed project: genuinely the coolest project ever. It has documented
+  the bitstream formats of a whole run of Xilinx (and other) FPGA families
+  down to the bit, Spartan-3A included, and turned them into databases you
+  can actually program against. Every piece of FPGA work here stands on it:
+  the bitstream decoder and patcher (`scripts/fpga/s3decode`), finding stage1
+  in the BRAMs, reading the PicoBlaze programs out of the bitstream, and
+  writing our own stage1 back in. Without prjcombine, the EZ Flash Jr's
+  firmware would still be an opaque blob. Thank you.
 - **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ
   Flash's published GBA kernel source, used to interpret the Jr's register
   design.
