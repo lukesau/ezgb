@@ -255,7 +255,9 @@ black screen as before. Only filling the erased 64 KB and preserving image A's
 original tail works: the images' heads are interchangeable but their tails are
 not, so the repair must be minimal. This also proves the FPGA boots from address
 0 and does *not* silently fall back to `0x40000`: image B sat intact throughout
-and was never used.
+and was never used. (2026-10-08: on a healthy cart slot B does run on every
+boot, but only because slot A's PicoBlaze firmware hands over to it through
+ICAP; with slot A gone nothing can. See [fpga-picoblaze.md](fpga-picoblaze.md).)
 
 ## The bootstrap ROM is not in the config flash (searched and ruled out)
 

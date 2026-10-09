@@ -12,10 +12,11 @@ dumps are in the ignored `fpga/fw4-decode/`.
 - The whole FW4 image decodes: **0 set bits unexplained** by the database.
 - **stage1 lives in block RAM, proven.** All 32 KB of `stage1.gb` rebuilt from
   the bitstream alone, byte for byte.
-- The design contains **two PicoBlaze soft microcontrollers** with their own
-  programs in BRAM.
-- Slot A and slot B differ by **one PicoBlaze instruction** (likely a version
-  number) plus CRCs.
+- The design contains a **PicoBlaze soft microcontroller** running a 2K
+  program from two BRAMs: SD card, game loader, RTC, config flash, and a
+  licence check tied to the chip's Device DNA ([fpga-picoblaze.md](fpga-picoblaze.md)).
+- Slot A and slot B differ by **one PicoBlaze instruction** plus CRCs: the
+  switch that makes slot A hand over to slot B at boot.
 
 ## Images decoded
 
@@ -72,8 +73,8 @@ From the decode against the blank baseline:
 | X19Y9 | x1 | stage1 bit 6 |
 | X19Y29 | x1 | stage1 bit 7 |
 | X19Y17 | x9 | stage1 `$4000-$47FF`, bytes in order |
-| X3Y25 | x18 | PicoBlaze program |
-| X3Y29 | x18 | PicoBlaze program |
+| X3Y25 | x18 | PicoBlaze program, bank 2 |
+| X3Y29 | x18 | PicoBlaze program, bank 1 |
 
 The other BRAMs have no initial data (unused, or used as RAM at runtime).
 
@@ -97,20 +98,11 @@ That needs an encoder (s3decode is decode-only) and would have to be proven
 over JTAG before going near the flash, but it is no longer blocked on the
 bitstream format.
 
-## Two PicoBlaze programs
+## PicoBlaze
 
-BRAMs X3Y25 and X3Y29 are configured 1K × 18 and hold KCPSM3 (PicoBlaze for
-Spartan-3) programs:
-
-- both start with `3c000` (`DISABLE INTERRUPT`) and have a `JUMP` at `$3FF`,
-  the KCPSM3 interrupt vector;
-- the opcode mix is what PicoBlaze code looks like: `LOAD`, `CALL`, `STORE`,
-  `FETCH`, `OUTPUT`, `RETURN`, conditional `JUMP`.
-
-Not yet disassembled. Likely candidates for what they run are the SD card and
-SPI flash state machines and the `$7Fxx` register interface, which would make
-these the most useful part of the bitstream for the mod: behaviour here is
-software, not fixed logic. `scripts/fpga/picoblaze-words.py` dumps the words.
+BRAMs X3Y29 and X3Y25 are configured 1K × 18 and hold KCPSM3 (PicoBlaze for
+Spartan-3) code. They are two program banks of one processor, switched by an
+output port. Disassembled and annotated in [fpga-picoblaze.md](fpga-picoblaze.md).
 
 ## Slot A vs slot B
 
@@ -124,9 +116,9 @@ slot B   00002   LOAD s0, 02      (= the FW4 updater payload)
 The other 6 of the 8 differing bytes sit in the stream's tail, where the CRC
 packets are (not individually checked). So the 2-byte cluster at
 `+$1982c` that [fpga-flash-map.md](fpga-flash-map.md) grouped with the CRCs is
-this instruction. A version constant is the obvious reading, and would fit the
-kernel's FW-version personality (`$04`, [fpga-personalities.md](fpga-personalities.md)),
-but that link is not checked.
+this instruction. It is the constant that decides whether bank 2 hands over
+to slot B at boot: slot A is the golden image, slot B the active one
+([fpga-picoblaze.md](fpga-picoblaze.md#bank-2-x3y25-flash-dna-licence)).
 
 **Open:** [hardware-board.md](hardware-board.md) records that writing slot B
 wholesale over slot A did not boot, while patching only the erased head did.
@@ -137,8 +129,6 @@ outside the 149,516 bytes matters).
 
 ## Next
 
-- PicoBlaze disassembler, then annotate both programs (start with `OUTPUT`
-  port numbers).
 - Decode the FW5 images (two per updater) and diff 0731 against 0918.
 - Cross-check routing hop by hop against XDL.
 - An encoder with CRC, tested over JTAG on SRAM only.

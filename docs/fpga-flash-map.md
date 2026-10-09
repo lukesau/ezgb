@@ -26,6 +26,7 @@ $40000 ├───────────────────────�
        │   $40000-$40045  header       │  identical head to slot A
 $64832 ├──────────────────────────────┤
        │   erased; 52 B at $70000      │  (slot A's blob has no slot-B twin)
+       │   ($70000 = boot tally)       │
 $7FFFF └──────────────────────────────┘
 ```
 
@@ -77,6 +78,12 @@ The payload's own leading `$26` bytes map onto the slot's `$00000-$00025` region
 begins at slot `+$46`.
 
 ## The $30000 blob is not the bootstrap ROM
+
+**Identified 2026-10-08:** it is a per-chip licence record. The FPGA's
+PicoBlaze reads it as 128-byte records with checksums and checks CRCs over it
+mixed with the chip's Device DNA; without a pass the ROM loader refuses to
+run. The 52 bytes at `$70000` are a boot tally used by the slot A → slot B
+hand-over. See [fpga-picoblaze.md](fpga-picoblaze.md).
 
 Entropy 7.80 bits/byte (8.0 = random). No Nintendo logo under any of the five
 encodings tried for the updaters (plain / bit-reversed / inverted / nibble /
