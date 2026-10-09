@@ -72,8 +72,9 @@ re-parsing the result to prove only the requested bits changed.
 `$040000 + offset`, one 256-byte page at a time through the PicoBlaze's
 flash-update command (the staging header is built at `00:13e9`: loop offset
 `+ $040000`). Checked in the code: no payload checksum, no read-back
-compare, no version gate. It shows the cart's current firmware version for
-display only, waits for A, writes 149,516 bytes and stops. Its payload is
+compare, no version gate. It shows a fixed `Update to ver:4` line (it never
+reads the cart's version, see the correction in
+[fpga-version.md](fpga-version.md)), waits for A, writes 149,516 bytes and stops. Its payload is
 exactly slot B.
 
 So `scripts/fpga/make-updater.py` builds `Update_FW4-cgb.gb`: the stock file

@@ -59,6 +59,37 @@ flip-flop (`X17Y22 SLICE[2]`) clear.
 (`X17Y18 SLICE[0]`, F table `FFDC`, which outputs 1 for it) and one other
 LUT. So the version's 1 reaches D2 alone.
 
+## How the version is stored: as wiring
+
+The same analysis on the two FW5 designs (0731 and 0918) gives constant
+bytes `$00 $01 $05 $E1`: the FW4 set with 5 for 4. The data pins are the
+same pins in all three designs; everything else is placed differently.
+
+| Design | Version-read decode | Its sinks | Byte |
+|---|---|---|---|
+| FW4 | `X12Y18 SLICE[3]` X, LUT `0008` | D2's tree only | `$04` |
+| FW5 0731 | `X9Y23 SLICE[2]` Y, LUT `0400` | D0's tree and D2's tree | `$05` |
+| FW5 0918 | `X9Y21 SLICE[3]` X, LUT `0400` | D0's tree and D2's tree | `$05` |
+
+In each design one LUT decodes "version read" (kernel mode, page 4,
+`$A000-$BFFF`), and the version number is simply **which data bits that
+signal is wired into**: one OR term in each bit that is 1. There is no
+register, ROM cell or flash byte holding the number; it is a constant in
+EZ Flash's HDL that synthesis turned into routing. Each new firmware is a
+complete new design, written whole to slot B by the updater, which is
+why the number changes with no "set version" step anywhere.
+
+What the updater contributes is only text: its screen line
+`Update to ver:4` is a fixed string at `$11D2` (the 16 bytes
+`make-updater.py` relabels). It never reads the cart's version: its only
+`$7FC0` write is in an unreferenced function
+([updater-flash-write.md](updater-flash-write.md)).
+
+> **Correction (2026-10-09).** [fpga-cgb.md](fpga-cgb.md) said the updater
+> "shows the cart's current firmware version for display only". It
+> doesn't: the version on its screen is the fixed `Update to ver:4` label,
+> and nothing in it reads `$7FC0=$04`.
+
 ## Making it 6
 
 6 = `$06` needs the same select on D1. Searched with BDDs:
