@@ -1,0 +1,16 @@
+[package]
+name = "s3decode"
+version = "0.1.0"
+edition = "2024"
+
+# prjcombine pinned to the revision whose databases/spartan3.zstd we decode
+# with; the db is bincode, so the crate and db must come from the same rev.
+[dependencies]
+prjcombine-entity = { git = "https://codeberg.org/prjunnamed/prjcombine", rev = "7ab08a0207716b0417163301580c154d02d1654e", features = ["bitvec", "map", "bincode"] }
+prjcombine-types = { git = "https://codeberg.org/prjunnamed/prjcombine", rev = "7ab08a0207716b0417163301580c154d02d1654e" }
+prjcombine-interconnect = { git = "https://codeberg.org/prjunnamed/prjcombine", rev = "7ab08a0207716b0417163301580c154d02d1654e" }
+prjcombine-virtex2 = { git = "https://codeberg.org/prjunnamed/prjcombine", rev = "7ab08a0207716b0417163301580c154d02d1654e" }
+clap = { version = "4.1", features = ["derive"] }
+
+[profile.release]
+debug = 1
