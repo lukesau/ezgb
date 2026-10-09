@@ -107,6 +107,11 @@ likely (contiguous page) but should be a write/read-back probe if pursued.
   reused), so it is neither free nor idle, and it is only reachable via the same
   brick-risk `$7Fxx` interface. No settings partition.
 
+> **Correction (2026-10-09).** The 71GL032A (U4) is not the game-ROM store.
+> Games go into **U9's 8 MB volatile pSRAM**. U4's NOR die has no known GB-side
+> use, and its 512 KB pSRAM die holds saves and settings. See
+> [nor-reuse.md](nor-reuse.md) and [hardware-board.md](hardware-board.md).
+
 (NOR/hardware detail: [`hardware-board.md`](hardware-board.md),
 [`fpga-flash-map.md`](fpga-flash-map.md).)
 

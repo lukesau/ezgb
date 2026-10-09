@@ -1,5 +1,22 @@
 # NOR reuse: booting the game already in NOR (1.05e)
 
+> **Correction (2026-10-09).** The premise of this page is wrong, and the name
+> stays only because the page is the record. It claimed the launched game is
+> programmed into **U4's 4 MB Spansion NOR**, which is nonvolatile, so the last
+> game would still be there after power-off. In fact the game store is the
+> **8 MB pSRAM die in U9** (Numonyx RD38F3350, datasheet-confirmed), which is
+> volatile. U4 is a NOR + pSRAM package whose 512 KB pSRAM die is the
+> battery-backed save store; neither NOR die has any known GB-side use.
+> Evidence: the 2026-08-30 read-back probe below (exact bytes after a fast
+> power cycle, fade toward `$FF` with longer off-time, clean `$FF` after
+> pulling the cart), plus the chip map in [hardware-board.md](hardware-board.md).
+> Read every "NOR" below that refers to the game as "U9 game pSRAM". The kernel
+> symbols (`RomLoad_ResetIntoRom_B4` etc.) and the `.norreuse-experiment` builds
+> keep their names. Docs that inherited the NOR claim:
+> [omega-jr-compare.md](omega-jr-compare.md) ("Game staging and reuse"),
+> [fastlaunch-config-design.md](fastlaunch-config-design.md) ("NOR: effectively
+> off-limits"), [last-rom.md](last-rom.md) (B-mode paragraph).
+
 > **VERDICT (2026-08-30): dead. The game store is volatile RAM, not NOR.**
 > The read-back probe (below) proved it on hardware: after a full launch, a
 > *fast* power cycle reads back the game's exact bytes; leaving the cart off
