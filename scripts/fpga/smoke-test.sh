@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check the ISE 14.7 + s3decode toolchain end to end (run on ubuntu-desktop).
+# Check the ISE 14.7 + s3decode toolchain end to end (run on the build host).
 #
 #   smoke-test.sh [workdir]
 #

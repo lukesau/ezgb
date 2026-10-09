@@ -23,17 +23,18 @@ baseline and for any experiment that builds a design.
 
 ## Build host
 
-`ubuntu-desktop` (192.168.1.100, `ssh ubuntu-desktop`): Ubuntu 24.04, Xeon
-E5-1680 v2 (8 cores / 16 threads), 62 GB RAM. Moved here from
-`ubuntu-compute`, which is shared now; a copy of ISE and prjcombine is still
-there but nothing uses it.
+The Rust tools and ISE run on a Linux machine, called "the build host" in
+these docs. The current one is Ubuntu 24.04 on a Xeon E5-1680 v2 (8 cores /
+16 threads) with 62 GB RAM; nothing here needs that much. Stage1 and the
+Python scripts run on a second machine (currently macOS). That split is just
+how it is set up now, see [fpga-setup.md](fpga-setup.md).
 
-Everything lives under `~/fpga`:
+Example layout under `~/fpga` (the scripts' defaults assume it):
 
 ```
 ~/fpga/prjcombine/         prjcombine checkout (rev below), built
-~/fpga/s3decode/           s3decode build (same source as scripts/fpga/s3decode, local git, no remote)
-~/fpga/scripts/            copy of scripts/fpga/ (rsync -a --exclude s3decode scripts/fpga/ ubuntu-desktop:~/fpga/scripts/)
+~/fpga/s3decode/           copy of scripts/fpga/s3decode, built
+~/fpga/scripts/            copy of scripts/fpga/ (rsync -a --exclude s3decode scripts/fpga/ <build host>:~/fpga/scripts/)
 ~/fpga/blank/blank.bit     blank-design baseline for diffing
 ~/fpga/smoke/              smoke-test design and outputs
 ~/fpga/cart/               cart bitstream images, decodes, BRAM dumps
@@ -157,8 +158,8 @@ bitgen -w -d blank.ncd blank.bit
 
 ```bash
 scripts/fpga/extract-bitstreams.py juniorkernel-1.04e-FW4/Update_FW4.gb \
-    tools/EN25F40-repaired-v2.bin -o fpga/images/
-scp fpga/images/*.bin ubuntu-desktop:~/fpga/cart/
+    <your flash dump> -o fpga/images/
+scp fpga/images/*.bin <build host>:~/fpga/cart/
 ```
 
 It finds every 32 × `ff` + `aa 99 30 a1` head and cuts 149,516 bytes (one
@@ -240,7 +241,7 @@ What needs it: `xst` and `ngdbuild` run without a licence; `map` fails with
 If you ever get a licence that really is node-locked: FlexLM on Linux reads
 only an interface named `eth0`, and with Ubuntu's predictable names
 (`enp5s0`, `eno1`) `lmutil lmhostid` reports `000000000000`. The fix used on
-ubuntu-compute was renaming an unused real NIC, persistently:
+an earlier build host was renaming an unused real NIC, persistently:
 
 ```
 # /etc/systemd/network/10-flexlm-eth0.link
@@ -250,7 +251,7 @@ MACAddress=<that NIC's MAC>
 Name=eth0
 ```
 
-Not needed on ubuntu-desktop with the `ANY` licence.
+Not needed with an `ANY` licence.
 
 ### Using it
 
@@ -275,11 +276,11 @@ xdl -ncd2xdl top.ncd top.xdl              # placed+routed design as text
 
 **XDL round trip is exact.** `xdl -xdl2ncd` then `bitgen` reproduces the same
 config data byte for byte, and the same XDL gives identical bits on
-ubuntu-compute and ubuntu-desktop. So designs can be written directly as XDL,
+two different machines. So designs can be written directly as XDL,
 skipping synthesis and place-and-route, which is the basis for any fuzzing.
 
-`bitgen` on a small design: ~3.3 s on ubuntu-desktop (~2.2 s on
-ubuntu-compute), single-threaded. With 16 threads that is roughly 15-17k
+`bitgen` on a small design: ~2-3.5 s, single-threaded (3.3 s on the
+current build host). With 16 threads that is roughly 15-17k
 bitstreams an hour.
 
 ## Smoke test
