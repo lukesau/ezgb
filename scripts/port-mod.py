@@ -60,6 +60,7 @@ FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
 REGISTRY = {
     (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43, "hUiMode": 0xfffb}),   # moved from 00:01e3 for the UI mode flag
     (0, 0x02fb): dict(src="browser_page_end.c", pins={"hUiMode": 0xfffb}),
+    (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB palettes + attributes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
     (0, 0x0460): dict(src="fastlaunch_hook.c",
