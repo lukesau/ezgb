@@ -69,6 +69,13 @@ reuse [`launch-trace.md`](launch-trace.md).
 
 ### Game staging and reuse
 
+> **Correction (2026-10-09).** This section says the game is programmed into
+> U4's nonvolatile NOR. It is actually streamed into **U9's 8 MB volatile pSRAM**,
+> which fades off-power, so there is no resident game to reuse after a power
+> cycle. The "PSRAM (U9) holds saves" line below is also wrong: saves are in
+> **U4's 512 KB pSRAM die**. See the correction at the top of
+> [nor-reuse.md](nor-reuse.md) and [hardware-board.md](hardware-board.md).
+
 The launch programs the ROM into the **Spansion 71GL032A NOR** (U4, 4 MB), then
 `$7fe0=$80` soft-resets and boots it. See [hardware-board.md](hardware-board.md).
 That NOR is non-volatile, so the last game persists across power-off.

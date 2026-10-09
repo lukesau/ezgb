@@ -301,6 +301,11 @@ NOR, exists as a dormant, caller-less kernel primitive (`RomLoad_ResetIntoRom_B4
 `04:4180`); an experimental hook makes this overlay's A press use it. See
 [`nor-reuse.md`](nor-reuse.md).
 
+> **Correction (2026-10-09).** The game is not in NOR. It is in **U9's volatile
+> pSRAM**, so after a power cycle there is nothing valid to boot. The hook was
+> reverted on 2026-08-30. See the correction at the top of
+> [`nor-reuse.md`](nor-reuse.md).
+
 ## Open questions / verification TODO
 
 - Live-confirm under SameBoy: break at `$1294` / `$129e`, dump `$A300` and `$c4a4`; break at
