@@ -11,10 +11,15 @@
 ;   for vblank, LCD off (the screen is still blank), load the icon to tiles
 ;   $80-$A9 ($8800, unused by the font at $20-$7F), draw it on map rows 1-7
 ;   above EZ-FLASH (row 8), give it palette 1 on CGB, LCD back on.
-; - Hook D, at the hand-off to the kernel ($4130, the call into the stub
-;   that copies the jump-to-$0100 routine to WRAM): reset every CGB tile
-;   attribute to palette 0, so the kernel doesn't inherit the icon palette
-;   on the cells the icon used. Then continue into the stub.
+; - Hand-off: stage1 copies a routine from $4000 to $D100 (WRAM) that waits
+;   for the FPGA to finish loading the kernel, switches the cart space over
+;   and calls $0100. The copy is extended from $0150 to $0200 bytes so it
+;   also carries HandoffBlank (ROM $4161, runs at $D261), and the routine's
+;   final call $0100 goes there instead: reset every CGB tile attribute to
+;   palette 0 (the kernel knows nothing about attributes) and leave the LCD
+;   off, so the colour icon goes straight to a blank screen and the kernel
+;   turns the LCD on with its own screen. Runs from WRAM with interrupts off
+;   because the cart space is already the kernel.
 ; - No other stage1 code is changed.
 ; Note: GBDK's display-mode dispatcher ($0400) jumps through a 4-entry table
 ; at $01E2; only entry 0 (a ret) exists in stock stage1, entries 1-3 were
@@ -46,8 +51,58 @@ SECTION "hook_a_site", ROM0[$01BA]
 SECTION "hook_c_site", ROM0[$07FC]
     call SplashDraw             ; was: ld hl,$0b5f (the EZ-FLASH string)
 
-SECTION "hook_d_site", ROMX[$4130], BANK[1]
-    call HandoffReset           ; was: call $40ea (copy hand-off to $D100, run it)
+SECTION "handoff_copy_len", ROMX[$40ED], BANK[1]
+    ld hl, $0200                ; was: ld hl,$0150 (bytes copied $4000 -> $D100)
+
+SECTION "handoff_call", ROMX[$40A8], BANK[1]
+    call HandoffBlank           ; was: call $0100 (kernel entry)
+
+DEF HANDOFF_ROM  EQU $4161      ; free $FF filler inside the extended copy
+DEF HANDOFF_WRAM EQU $D100 + HANDOFF_ROM - $4000
+
+SECTION "handoff_code", ROMX[HANDOFF_ROM], BANK[1]
+LOAD "handoff_wram", WRAMX[HANDOFF_WRAM], BANK[1]
+HandoffBlank::
+    di                          ; cart space is the kernel now: no vectors
+    push af                     ; the kernel stores A at entry: hand it the
+    push bc                     ; same registers stock stage1 does
+    push de
+    push hl
+    xor a                       ; CGB mode only (VBK exists): inline test,
+    ldh [rVBK], a               ; the ROM0 helpers are gone at this point
+    ldh a, [rVBK]
+    and 1
+    jr nz, .kernel
+    ldh a, [rLCDC]
+    add a
+    jr nc, .off                 ; LCD already off: no vblank to wait for
+.vblank
+    ldh a, [rLY]
+    cp 144
+    jr nz, .vblank
+.off
+    xor a
+    ldh [rLCDC], a              ; blank; the kernel turns the LCD back on
+    ld a, 1
+    ldh [rVBK], a
+    ld hl, $9800
+    ld bc, $0800
+.attrs
+    xor a
+    ld [hl+], a
+    dec bc
+    ld a, b
+    or c
+    jr nz, .attrs
+    xor a
+    ldh [rVBK], a
+.kernel::
+    pop hl
+    pop de
+    pop bc
+    pop af
+    jp $0100                    ; the kernel entry hook replaced
+ENDL
 
 ; ---- code, in the $FF filler after the boot halt loop ----
 SECTION "splash_code", ROM0[$01E4]
@@ -136,42 +191,6 @@ SplashDraw:
     pop af
     ldh [rLCDC], a
     ld hl, $0b5f                ; the instruction hook C replaced
-    ret
-
-HandoffReset:
-    call ResetAttrs
-    jp $40EA                    ; the call hook D replaced
-
-; CGB: set every tile attribute (VRAM bank 1, both maps) to 0 = palette 0.
-ResetAttrs::
-    call IsCgbMode
-    ret nz
-    ldh a, [rLCDC]
-    push af
-    add a
-    jr nc, .off                 ; LCD already off: no vblank to wait for
-.vblank
-    ldh a, [rLY]
-    cp 144
-    jr nz, .vblank
-.off
-    xor a
-    ldh [rLCDC], a
-    ld a, 1
-    ldh [rVBK], a
-    ld hl, $9800
-    ld bc, $0800
-.attrs
-    xor a
-    ld [hl+], a
-    dec bc
-    ld a, b
-    or c
-    jr nz, .attrs
-    xor a
-    ldh [rVBK], a
-    pop af
-    ldh [rLCDC], a
     ret
 
 ; Write the ICON_W x ICON_H block at (ICON_X, ICON_Y) on map $9800:
