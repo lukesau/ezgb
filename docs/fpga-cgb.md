@@ -118,6 +118,33 @@ still red since it sets no CGB palettes of its own; games launch as before,
 each in the mode its own header asks for. To undo: run the stock
 `Update_FW4.gb`.
 
+## Boot splash (second build)
+
+Replaces the red proof build. Source:
+[`re/fpga-fw4/bootsplash/stage1-splash.asm`](../re/fpga-fw4/bootsplash/stage1-splash.asm),
+overlaid on the stock FW4 stage1 (so slot B goes straight from stock or the
+red build to this one).
+
+- CGB flag `$80` and the greyscale text palette, as before. No red hook.
+- The EZ Flash icon (the two-shape console from the marketing logo), 44×53
+  px, 6×7 tiles, drawn on map rows 1-7 directly above `EZ-FLASH`. CGB:
+  palette 1 = white, orange screen, darkened frames, dark lip. DMG: the same
+  tiles under `BGP $E4` (frames dark grey, screen light grey, lip black).
+- Drawn by a hook at `$07FC`, just before `EZ-FLASH` is printed: stage1's
+  console setup clears VRAM on its first print (`$07F3`), so drawing at the
+  LCD-on hook gets wiped. The hook waits for vblank, switches the LCD off
+  for the copy (the screen is still blank then), and switches it back on.
+- Tiles `$80-$A9` (`$8800`, unused: the font is tiles `$20-$7F`); data in
+  the `$FF` filler at `$39A4` (verified unreferenced), code at `$01E4-$027F`.
+
+Lab and build: `re/fpga-fw4/bootsplash/build.sh` (needs the untracked logo
+PNG and stock stage1 in `fpga/`) builds a standalone `splash.gb` for
+iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts
+the logo. Verified: SameBoy CGB and DMG show the icon above EZ-FLASH;
+slot B patch flips 5,036 bits in the 8 plane BRAMs only; stage1 rebuilt from
+the patched bitstream equals the tested ROM. Installed with
+`Update_FW4-splash.gb` (`make-updater.py`, label `Update: splash`).
+
 ## Next
 
 - An `ezgb.dat` with `CgbInit` (the `cgb-mode` branch, greyscale palette
