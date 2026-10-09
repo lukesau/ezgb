@@ -6,71 +6,58 @@ described in [sgb-boot.md](sgb-boot.md). The idea and most of the background
 come from nitro2k01, who wrote the original SGB Enabler, in
 [issue #5](https://github.com/lukesau/ezgb/issues/5).
 
-## Why the packets are needed at all
+## SGB packets
 
-On a Super Game Boy, the SNES side holds the Game Boy CPU in reset while it
-starts up, then lets it run briefly so the boot ROM can send six packets
-carrying the cartridge header. When the header arrives, the SNES resets the
-Game Boy and listens for it again, possibly a third time. If the header has
-the SGB flag set, the game is allowed to send SGB commands later. If the flag
-is missing, the SNES ignores every later SGB command until it is reset.
+A Super Game Boy only enables SGB features after the Game Boy boot ROM sends
+it the cartridge header as six packets. The SNES resets the Game Boy to make
+that happen, but the Jr holds the reset line, so the header never arrives
+when the SNES is listening. From nitro2k01 in
+[issue #5](https://github.com/lukesau/ezgb/issues/5):
 
-The EZ Flash Jr also drives the Game Boy reset line. It holds the CPU in reset
-while the FPGA loads, releases it, and from then on holds it in run. Both
-sides drive reset badly: the SGB drives it through a 10 kΩ resistor and the
-Jr through 330 Ω, so the Jr always wins. The SNES never manages to reset the
-Game Boy, the boot ROM has already sent its header before the SNES was
-listening, and the SNES waits forever with a black screen.
+> The real issue is that both the SGB and the EZFJr implement their respective reset circuit badly. The good way is a pullup resistor+open drain output. The bad way that both are using is a digital out with a series resistor. SGB is using a 10k resistor and EZFJr a 330 ohm resistor. So EZFJr always wins. The real fix would be to make the FPGA toggle between logic low (reset) and hi-z with weak pullup (run) instead of logic low and logic high. I don't even know if a FPGA pin can really be configured this way. If it can, the SGB could send reset pulses that wouldn't just get absorbed by the cartridge.
 
-The Enabler, and the mod's `SGB BOOT` option, fix this by sending the same six
-packets again from the kernel: four times, with gaps of 192, 64 and 48 frames
-between sets, and 4 frames after every packet. That costs about 6.7 seconds
-on every boot, on every console, which is why it is a checkbox.
+The Enabler, and the mod's `SGB BOOT` option, send the six packets again from
+the kernel: four times, with gaps of 192, 64 and 48 frames between sets and 4
+frames after every packet. That's about 6.7 seconds on every boot, on every
+console. On the gaps:
 
-The gaps were found by testing on NTSC and PAL SNESes with different SD cards.
-They aren't exact requirements. The first gap may only matter for fast SD
-cards, and nitro2k01 suspects that reading the setting already adds enough
-delay that the gaps could be shorter.
+> Those delays are not set in stone, but derived empirically through testing on NTSC and PAL SNESes and different SD cards.
 
-## Two goals that pull against each other
+Our implementation has to satisfy two opposing constraints:
 
-- **On an SGB, send early.** The SNES doesn't turn on the picture, sound or
-  joypad until it has a valid header, and even then there is a further delay.
-  The sooner the packets go out, the sooner the SGB comes up.
-- **Everywhere else, don't wait.** On a DMG, GBC or GBA the packets do nothing,
-  so any time spent sending them is wasted.
+> - Bring-up speed on SGB. Because of the reset issue specific to EZFlash Jr, discussed above, the SGB runs in the background. However the SNES side doesn't bring up joypad input and audio/video output until a valid header is received by the firmware. Even when such a header is received, there's an adfirional delay before audio/video bring-up. For this reason, it's desirable to start sending header data as early as possible to enable system bring-up on SGB for improved user experience.
+> - Minimizing delays on other systems where sending the header data is not necessary, and in fact does nothing at all because these commands are unique to the SGB architecture.
 
 ## Why the kernel can't just detect an SGB
 
-Normally a program can tell which console it's on from the CPU registers the
-boot ROM leaves behind. On the Jr the kernel doesn't start from the boot ROM.
-The stage 1 loader runs first, loads the kernel and jumps to it without a
-reset, and it clears memory along the way. Asking the SGB directly with an
-`MLT_REQ` packet doesn't work either, because the SGB only answers after it
-has received the header. A GBC can probably be recognised by its extra
-registers (the mod's CGB mode already tests `VBK`), but a DMG and an SGB look
-the same at this point.
+> One idea is to detect non-SGB hardware and skip the delays. However the EZFlash Jr hardware loads the kernel from the stage 1 bootloader and doesn't do a system reset. The stage 1 bootloader erases all memory. All the regular detection methods like initial CPU registers are unavailable. Sending `MLT_REQ` packets to detect SGB is not available until SGB bring-up from the header packets, do this can't be done early to prevent the delay. At this point we're working blind and can't know exactly which hardware the code is running on.
+>
+> Perhaps GBC can be detected through undocumented registers, so the delay can be skipped there, but DMG and SGB look identical at this stage so the DMG will have the delay if using the native approach.
+
+The mod's CGB mode already recognises a GBC in CGB mode by testing `VBK`
+([cgb-mode.md](cgb-mode.md)).
 
 ## The idea: send the packets from an interrupt
 
-Send the first set at boot exactly as now, then send the other three in the
-background while the kernel carries on starting up. On an SGB the header
-still goes out early. On everything else the boot is only about 0.4 s
-longer, for the first set. Since the packets are harmless on other consoles,
-the background sends could always run, and the checkbox might not be needed.
+> This would be more complex but the best of both worlds: the kernel could start sending packets early and have a chance of early SGB bring-up, while the boot process is not held up significantly. With a well understood fully disassembled code base, this extra complexity is less of an issue than it was for the original patch.
+>
+> With this method a setting for turning off the sending of packets may not be needed. Trying to send the packets in the background basically has no downside, except increased code complexity and a very small increase in CPU usage. (The bulk of the CPU time in the original patch was delay loops which would be eliminated because this design would be interrupt driven.)
+
+nitro2k01's plan for the first set and the rest:
+
+> - First packet send: I'd suggest doing this directly at the entry point like the original patch. This gives a small initial delay (<1 s) but gives a chance if early SGB bring-up. The packet send code can be identical which means it doesn't rely on interrupts or anything else that's initialized later.
+> - Second and further packets are scheduled in VBlank interrupts. Care should be taken to treat the 4 frame felt after sending a packet slightly differently than the delay between packet sets. It's probably a good idea to suppress joypad reading in this 4 frame delay window to avoid interfering with the SGB packet. However it should be safe to read the joypad normally right *before* a packet send starts, so that there's never more than 4 frames of missed input. It should be completely safe to read joypad normally in the long delays between packet sets
 
 ## Counting frames with VBlank
 
 I first planned to count time with the hardware timer, because the kernel
 turns the LCD off on every screen change and VBlank doesn't fire while it's
-off. nitro2k01 pointed out that this doesn't matter. The SGB only needs each
-gap to be at least as long as the Enabler's. With the LCD off, VBlank counting
-can only make the gaps longer, never shorter. There are two cases:
+off. I asked nitro2k01 about it:
 
-1. **On an SGB**, nobody can press anything until the SGB is up, so there are
-   few screen changes and the timing stays close to the Enabler's.
-2. **On anything else**, screen changes can stretch the gaps, but nothing is
-   listening, so it doesn't matter.
+> I used VBlank as a convenient timing source, and also because I assumed that's where the current kernel would scan for it, as this is customary. I suspect timing doesn't matter so much as long as the *minimum* wait is met. Turning off the LCD should in principle only make the delay longer, never shorter. You can also consider two cases:
+>
+> 1. It's running on SGB. No user input can come through until the SGB has been brought up. Therefore, screen updates are less likely and the timing should stay consistent.
+> 2. It's not running on SGB. Button input and therefore screen updates can happen, but since it's not running on SGB, the timings don't matter at all because nothing is listening to the commands.
 
 So this version counts VBlanks and drops the timer. That also removes the
 `rTAC`/`rIE` changes, the `SetIeReg` risk, and the need to stop a live timer
@@ -228,14 +215,12 @@ the reset pulse, `b`, the sum, the 14 bytes and the stop bit, using
 
 ## Joypad
 
-nitro2k01 gave two rules. Don't drive P1 in the 4 frames after a packet,
-because that can interfere with the SGB receiving it. And make sure skipped
-frames can't turn one press into several: if the "pressed" mask isn't cleared
-while input is skipped, a press on that exact frame can fire three more
-times. Reading the pad right before a packet is fine, and so is reading it
-normally in the long gaps between sets.
+The second bullet of that plan says when not to read the pad. nitro2k01 also
+flagged a bug to avoid:
 
-Both rules are handled by gating `ReadJoypadRaw` (`00:3a16`), which every pad
+> - A bug to watch out for is that the "pressed" button mask should be cleared on the 3 frames where input is not read. Otherwise a button press on that exact frame may trigger 3 additional button presses.
+
+Both are handled by gating `ReadJoypadRaw` (`00:3a16`), which every pad
 read goes through, and returning the last known state while frozen:
 
 ```asm
@@ -260,10 +245,12 @@ those windows in the first ~6 seconds after boot and none after that.
 
 ## Launching a game
 
-A game never sends the header again. So if a game starts on an SGB before all
-the packets are out, the rest must be sent before the handoff. On an SGB
-nobody can press A until the header has gotten through, so this only matters
-for fast launch, which starts a game without any input.
+A game never sends the header again, so if a game starts on an SGB before all
+the packets are out, the rest must be sent before the handoff. nitro2k01:
+
+> Because sending the packets is a "no-op" on non SGB hardware, the kernel could start sending them preemptively and unschedule the remaining SGB packets, if any packets remain to be sent. But in principle, this should not be needed. Alternatively, the setting could guarantee that all packets are sent, even if a ROM is loaded before all packets are sent. This should never happen through user interaction on SGB because button input can't happen until the header packets are successfully sent. Where this distinction might matter is for auto load, which might trigger before the packets are fully sent, and without user input.
+
+In this kernel that case is fast launch, which starts a game without any input.
 
 A hook before the launch farcalls (`MenuDispatchAB_launchFarcalls`,
 `00:1569`; check that fast launch's `LastRomRelaunch` path goes through it
@@ -308,25 +295,21 @@ would be set 1's 0.4 s.
 
 The FPGA's level 1 firmware (stage 1) is now decoded and can be rebuilt (see
 the `bitstream-re` branch), which opens up better fixes than anything the
-kernel can do:
+kernel can do.
 
-- **Let the SGB reset the Game Boy.** If the FPGA released reset by switching
-  its pin to high-impedance with a weak pull-up, instead of driving it high,
-  the SGB's reset pulses would get through and the normal boot sequence would
-  work. It isn't known yet whether that pin can be set up this way.
-- **Pass the boot registers on.** Stage 1 starts from the real boot ROM, so it
-  can save the initial CPU registers and hand them to the kernel at a fixed
-  RAM address. The kernel could then tell an SGB from a DMG and only send the
-  packets on an SGB. The checkbox and this background scheme would become the
-  fallback for carts without that stage 1.
-- **Resetting several times from the cart** to imitate the SGB's sequence
-  would work in theory, but every other console would visibly stall while it
-  resets a few times.
+The first is the fix in the reset-circuit quote at the top: drive the reset
+pin low or high-impedance with a weak pull-up, instead of low or high. It
+isn't known yet whether that pin can be set up this way.
 
-For reference, EZ Flash's 2020 `FW5_forSGB_BETA` firmware only sets the SGB
-flags in stage 1's header (confirmed). As far as nitro2k01 knows it doesn't
-make SGB boot more reliable; you still press the cart's reset button to get
-it to boot on an SGB.
+The other two options, in nitro2k01's words:
+
+> If you wanted to solve SGB reset sequencing from the cartridge side, you'd need multiple well timed reset cycles that match what the SGB would do. This could work in theory, but then every other console will "hesitate" to start as it resets a couple of time before it gets going. Pretty ugly solution for anything that's not a SGB.
+>
+> However, one more option remains, if we allow modification of the stage 1 bootloader. The bootloader could simply store the initial registers, and restore them before the kernel runs. Or the kernel could consult a well specified location in RAM. If SGB is detected this way, or conversely a another console version is detected confidently this way, the kernel could then make an informed decision to send or not send the packages. Everything else, like the setting etc, then becomes a fallback for when the FPGA didn't have a compatible stage 1.
+
+On EZ Flash's 2020 `FW5_forSGB_BETA` firmware:
+
+> I'm not sure about the "forSGB" version. I can try it to make sure. But I think literally the only change is that the stage 1 bootloader has the SGB flags set in the header. (Confirmed.) I don't think it does anything to help SGB boot more consistently. (Unconfirmed.) Rather, you're supposed to press the reset button on the cartridge to make it boot on SGB, and at least you get SGB support when you do this.
 
 ## Still to check
 
