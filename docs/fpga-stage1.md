@@ -147,10 +147,14 @@ same FPGA register sequence, and builds the same load command as stock.
   FRAGMENTED" instead of overflowing.
 
 Verified in SameBoy: boots the kernel on CGB and DMG, shows "EZGB.DAT NOT
-FOUND" and retries on a card without it. The updater
-(`fpga/stage1/Update_FW4-stage1src.gb`, label "Update: src v1") carries
-slot B with the rewrite in its BRAMs, and its slot B decodes back to the
-built stage1 byte for byte. **Not yet run on hardware.**
+FOUND" and retries on a card without it. The updater carries slot B with
+the rewrite in its BRAMs, and its slot B decodes back to the built stage1
+byte for byte.
+
+**Runs on hardware (2026-10-09).** `fpga/load/Update_FW4-stage1src-v2.gb`
+("Update: src v2", the build with the wordmark below) installed on the FW4
+cart and boots the kernel. Every patched-stage1 updater so far, from the CGB
+flag through this rewrite, installed without trouble.
 
 ### Emulator support
 
@@ -174,6 +178,5 @@ it never could before. Changes, in `patches/sameboy` on this branch:
 
 - Name the rest: the console/printf internals, `check_fs`/`pf_mount`
   details, `disk_readp_impl`.
-- Run the rewrite on hardware.
 - Level-1 features on top of the rewrite: read `EZGB.CFG`, pick the kernel,
   fast launch, SGB packets.
