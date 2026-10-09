@@ -72,5 +72,8 @@ Going back
 ----------
 
 Copy the stock ezgb.dat to the card root again. Nothing else on the card or
-the cart is changed by the mod; the settings it writes live in /EZGB.CFG,
-which the stock kernel ignores.
+the cart is changed by the mod. Its settings live in /EZGB.CFG, which the
+stock kernel ignores, except the SGB BOOT checkbox on the SET tab: that one is
+kept in the cart's battery-backed RAM, because it is read before the SD card
+is up. The stock kernel never reads it either, so it does nothing after going
+back. A dead or missing coin cell clears it, which turns SGB BOOT off.
