@@ -4,8 +4,9 @@
 because the console reads the CGB flag from the cart's bootstrap (stage1)
 before any of our code exists. Stage1 is BRAM contents in the FPGA bitstream
 ([fpga-bitstream.md](fpga-bitstream.md)), so the flag is now a data edit. This
-is the first patched cart firmware: built and verified offline, **not yet
-flashed or tested on hardware.** Local-only (`bitstream-re` branch); built
+is the first patched cart firmware: built and verified offline, then
+**installed with the CGB updater and confirmed working on hardware
+(2026-10-08)**: red OSINIT screen on a colour console. Local-only (`bitstream-re` branch); built
 images stay in the ignored `fpga/cgb/`.
 
 ## What the patch does
@@ -63,7 +64,7 @@ prjcombine database to a frame bit, locating it in the stream's FDRI runs,
 refusing frames that are reused via MFWR, recomputing every CRC packet, and
 re-parsing the result to prove only the requested bits changed.
 
-## Installing it (not done yet)
+## Installing it
 
 ### Recommended: the CGB updater
 
