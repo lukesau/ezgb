@@ -1,0 +1,77 @@
+# The FW version byte
+
+The kernel reads the cart's firmware version by writing `$7FC0 = $04` and
+reading any byte in `$A000-$BFFF` (FW4 reads `$04`, FW5 `$05`; the HELP tab
+draws `ver: FW<n>`). The byte comes from the FPGA fabric, not from either
+PicoBlaze program. Found with `s3trace --netlist` and the scripts in
+[`scripts/fpga/netlist/`](../scripts/fpga/netlist/README.md), on the FW4
+slot B design. Local-only (`bitstream-re`).
+
+## The cartridge data bus
+
+24 IO pins are bidirectional: the 16-bit memory bus and the cartridge's 8
+data lines, which are the 8 on the left edge. Each data bit reads its own
+block-RAM output bit, which names them:
+
+| Bit | IOI (`O1` = output to the bus) |
+|---|---|
+| D0 | `X0Y32 IOI[1]` |
+| D1 | `X0Y19 IOI[1]` |
+| D2 | `X0Y19 IOI[0]` |
+| D3 | `X0Y18 IOI[1]` |
+| D4 | `X0Y18 IOI[0]` |
+| D5 | `X0Y15 IOI[1]` |
+| D6 | `X0Y15 IOI[0]` |
+| D7 | `X0Y2 IOI[1]` |
+
+Each output is a small OR-of-terms tree of LUTs, one per-bit F5 mux among
+them (`F5MUX = BX ? G : F`; the other convention gives inconsistent
+results).
+
+## Registers seen from the bus
+
+Grouping flip-flops that latch the data pins by their clock enable gives
+the write registers. Two are needed here:
+
+- **Mode** (`X14Y20 SLICE[0]`/`[1]` YQ, latching D7 and D3, power-on `11`):
+  `11` = stage1, `10` after stage1 writes `$7F32 = $80`, `00` after the
+  kernel writes `$7F31/$7F32 = $00` before a game. Matches the
+  `$7F31`/`$7F32` writes in docs/fpga-stage1.md.
+- **Page** (`$7FC0`): a 4-bit register latching D0-D3; bit 2 is
+  `X14Y19 SLICE[0]` YQ, bit 3 `X14Y18 SLICE[3]` YQ, bits 0/1 in
+  `X13Y16 SLICE[1]`.
+
+Address bits A15/A14/A13 arrive on `X0Y29 IOI[0]`, `X0Y30 IOI[0]`,
+`X0Y30 IOI[1]` (the version read needs them at `1 0 1`).
+
+## Constant bytes
+
+With the data-carrying leaves (block-RAM outputs, data pins) quantified
+out, the bus can only drive a fixed byte for these: in kernel mode `$00`,
+`$01` (SD done), `$E1` (SD busy) and `$04`; in game mode only `$01`. The
+`$04` state is exactly: kernel mode, page = 4, `$A000-$BFFF`, and one more
+flip-flop (`X17Y22 SLICE[2]`) clear.
+
+## Where the 4 comes from
+
+`X12Y18 SLICE[3] X` (LUT `0008`) is the version select: page bit 2 and the
+`$A000` region with page bits 0 and 1 clear. It feeds only D2's F5 mux
+(`X17Y18 SLICE[0]`, F table `FFDC`, which outputs 1 for it) and one other
+LUT. So the version's 1 reaches D2 alone.
+
+## Making it 6
+
+6 = `$06` needs the same select on D1. Searched with BDDs:
+
+- No truth table for any single LUT in D1's tree gives
+  "D1 = old D1 OR version read" in every state.
+- The nearest candidate, `X13Y16 SLICE[0]` (its X feeds D1's F5 mux), is
+  a shared select that also feeds the F5 muxes of D3-D7; editing it changes
+  those bits.
+- D1's F5 mux, `X23Y32 SLICE[1]`, has two **unused inputs** (F1, F2). Routing
+  the version select (`X12Y18 SLICE[3] X`) to one of them, and adding it to
+  that mux's F table (`F000` -> `F3&F4 | F1`), would put the 1 on D1 without
+  touching any other bit. That is one hand-routed net, about 11 columns and
+  14 rows, through switches that are currently off.
+
+So FW6 in the register is a routing edit, not a table edit.
