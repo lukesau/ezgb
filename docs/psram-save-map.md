@@ -54,9 +54,9 @@ On **every ROM launch**, just before handing off to the game, the loader stamps 
 | PSRAM addr | Written | Meaning |
 |---|---|---|
 | `$A000` | `$AA` | Backup pending |
-| `$A001` | auto-save flag | `1` = dump without prompting; else prompt |
-| `$A00F` | bank count | Size of the save region to dump |
-| `$A010`+ | basename | Used to build the `SAVER/<name>.SAV` filename |
+| `$A001` | bank count | Size of the save region to dump, in 8 KB banks (4 for a 32 KB save) |
+| `$A00F` | name length | Bytes of the save path at `$A010` |
+| `$A010`+ | save path | ASCII, e.g. `/SAVER/PKMRED.sav`, used as the dump's filename |
 
 The flag is armed **per launch, not per save-write**: launching a game arms it whether or not
 you create a new in-game save. Consequences:
@@ -73,9 +73,11 @@ you create a new in-game save. Consequences:
 - `[$A000] == $AA` → take the backup branch.
 - anything else → jump straight to the file browser (`Jump_000_0e73` → `$0f5b`).
 
-`$A001` is then read and passed to `BackupSavePrompt` as the auto-save selector: `1` skips the
-`[B]NO`/`[A]OK` prompt and goes straight to `Saving..`; otherwise the prompt waits (A = dump,
-B = skip). It also caches `$A202`→`$d3f6` (RTC) and reads the `$A00F`/`$A010`+ metadata.
+`BackupBranchEntry` (`00:0e76`) reads the AUTO SAVE flag `$A200` (kept in C), caches
+`$A202`→`$d3f6` (RTC), keeps `$A001` (the bank count), clears `$A000`, and copies `$A00F` bytes
+of the path at `$A010` to `$c3a5`. `BackupSavePrompt` gets the bank count as the dump size and
+`$A200` as the auto-save selector: `1` skips the `[B]NO`/`[A]OK` prompt and goes straight to
+`Saving..`; otherwise the prompt waits (A = dump, B = skip).
 
 ### What resets the flag
 
@@ -91,9 +93,9 @@ fires reliably, so arming is more consistent than clearing.
 
 ### Auto-save
 
-The SET-menu "AUTO SAVE:" toggle drives the `$A001` value stamped at launch. Because it's
-captured **at launch time**, a boot's auto-save behavior reflects the setting active when that
-game was last launched. The SET-menu global feeding this stamp is not yet pinned to an address.
+The SET-menu "AUTO SAVE:" toggle writes `$A200` directly (`DrawTimeAutosaveScreen`, `04:58d6`:
+`$4000=$11`, `$7FC0=$03`, `[$A200]` = 0 or 1). The boot branch reads it at the next boot, so
+the setting in effect then decides, not the one when the game was launched.
 
 ### Version parity
 
@@ -112,7 +114,7 @@ Human names live in [re/1.05e-0731/kernel.sym](../re/1.05e-0731/kernel.sym). Blo
 | `KernelEntry` | `00:0150` | C runtime start |
 | `BatteryCheck` | `00:1835` | Page `$11` / `$A201` dry-battery gate |
 | `SdMenuMain` | `00:0de4` | SD init, BACKUPSAVE, file browser |
-| `BackupSavePrompt` | `01:6747` | BACKUPSAVE box; `$A001==1` auto-dumps, else `[B]NO`/`[A]OK` |
+| `BackupSavePrompt` | `01:6747` | BACKUPSAVE box; `$A200==1` auto-dumps, else `[B]NO`/`[A]OK` |
 | `SetFpgaPage_B0` | `00:1a7a` | `$7FC0` page select (bank 0) |
 | `SetFpgaPage_B1` | `01:47a7` | `$7FC0` page select (bank 1) |
 | `RomLoad_InitiatePoll` | `04:4000` | `$7F36=$03` ROM load path |
@@ -140,5 +142,28 @@ Add names to `kernel.sym`, add prose to `notes.json`, then run the annotate scri
 The per-page layout of the whole 512 KB pSRAM (which pages the kernel uses, and
 ~7 KB free in page 17 at `$A400`+; every page from `$12` up is browser record
 space that grows with directory size) is in [psram-page-map.md](psram-page-map.md).
+
+## Compared with daid/ezflashjr
+
+[daid/ezflashjr](https://github.com/daid/ezflashjr) `doc/Protocol.md` ("SRAM"
+section) lists the page `$11` fields too. Checked against the 1.04e/1.05e code
+and a pSRAM dump (2026-10-08):
+
+| Field | Protocol.md | Here |
+|---|---|---|
+| `$A000` | `$AA` = save to back up | agrees |
+| `$A001` | save size in SRAM banks | agrees. This repo's docs and disassembly notes called it the auto-save flag and `$A00F` the bank count until 2026-10-08; the launch stamp (`01:55c2` region) and `BackupBranchEntry` show `$A001` is the size passed to the dump and `$A00F` is the copy length of the path |
+| `$A00F` | length of the save file name | agrees |
+| `$A010`+ | save file name, **in `wchar_t`** | **one byte per character** (ASCII, e.g. `/SAVER/PKMRED.sav`): the launch stamp copies `$A00F` bytes from the ASCII path buffer at `$c3a5`, and the boot branch copies them back the same way |
+| `$A200` | auto-save flag | agrees (written by the SET toggle at `04:58d6`, read into C by `BackupBranchEntry`) |
+| `$A201` | `$88` = cart initialized, else "Battery dry" | agrees (`BatteryCheck`, `00:1835`) |
+| `$A300`+ | last loaded ROM, **in `wchar_t`** | **one byte per character**: `LastRomPersist` (`01:4856`) copies 255 bytes (`$00`..`$FE`), and the dump holds `/PKMRED.GB` as plain ASCII, NUL-terminated ([last-rom.md](last-rom.md)) |
+| `$12`+ | extra RAM, mostly the file list cache | agrees ([psram-page-map.md](psram-page-map.md)) |
+
+The `wchar_t` difference matters for free space: as ASCII the last-ROM record
+ends at `$A3FE`, so `$A400`+ is free (the SGB BOOT record lives there,
+[sgb-boot.md](sgb-boot.md)); as `wchar_t` a 255-character path would run to
+`$A4FD`. Protocol.md may describe an older kernel (its notes predate 1.04e);
+the 1.04e and 1.05e builds are single-byte throughout.
 
 Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md), [psram-page-map.md](psram-page-map.md).

@@ -21,8 +21,8 @@ dumps came from an SD card with small directories.
 | Page | Role | Free? |
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
-| `$10` (16) | Nothing found that writes it; all-zero in both dumps | Probably (unconfirmed) |
-| `$11` (17) | **Meta**: backup-pending `$A000`, autosave `$A001`, backup savename `$A00F`+, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE` | **`$A400`–`$BFFF`** |
+| `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)) | Yes (one FW4 cart) |
+| `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)) | **`$A404`–`$BFFF`** |
 | `$12` and up (18+) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)` | No, grows with directory size |
 | `$3F` (63) | **Sort keys**: `browser_sort.c` uses bank `$FF`, which lands on `$3F` with a 6-bit page latch | No |
 

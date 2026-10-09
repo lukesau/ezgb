@@ -33,7 +33,7 @@ Played MM-DD HH:MM        only when an RTC= backup exists
 - `Played` is the `RTC=` backup ([ezgb-cfg.md](ezgb-cfg.md)), which is
   refreshed at every launch, so at this prompt it is when the game whose
   save is pending was started. Without a valid backup the line is left out.
-- Auto save (`$A001` = 1) shows the same box and goes straight to `Saving`.
+- Auto save (`$A200` = 1) shows the same box and goes straight to `Saving`.
 
 ### Garbage stamp
 

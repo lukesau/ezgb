@@ -110,7 +110,7 @@
       "addr": "5824",
       "lines": [
         "PreLaunchSaveStamp: page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.",
-        "$A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.",
+        "$A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.",
         "Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done \u2192 Jump_001_5657.",
         "Jump_001_5657: if $d3f0 \u2192 $A202=$77 + ROM size@$A210\u201313 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup."
       ]
@@ -355,7 +355,7 @@
       "addr": "0e76",
       "lines": [
         "BackupBranchEntry: save stamp \u2192 SAVER basename, then fall into FileBrowserEntry.",
-        "Read $A202\u2192$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.",
+        "C=$A200 auto-save flag, $A202\u2192$d3f6, $A001 save size in banks, clear $A000, B=$A00F path length.",
         "Jump_000_0ec4: copy $A010.. \u2192 $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.",
         "Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d)."
       ]
