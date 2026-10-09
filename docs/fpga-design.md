@@ -68,12 +68,19 @@ register (`$7F31/$7F32`) and the 4-bit page register (`$7FC0`), both in
 
 The whole design exports to structural Verilog and runs in iverilog
 ([scripts/fpga/verilog/](../scripts/fpga/verilog/README.md)). From power-on,
-the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` reads: the
-bank-2 call at `$3F0`, two debug-UART prints through `dbg_putc` (`$155`),
-then `clear_scratchpad` (`$042`). That checks the slice, LUT RAM, carry,
-BRAM, clock and start-up models against the real design. One correction to
-prjcombine's CLB document found this way: the F5 mux is `BX ? G : F`
-(standard Xilinx `MUXF5`), not `BX ? F : G`.
+the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` and
+`X3Y25.psm` read: the switch to bank 2 at `$3F1`, `bank2_main` (`$1B5`)
+with its Device DNA and flash routines, back to bank 1. That checks the
+slice, LUT RAM, carry, BRAM, clock and start-up models against the real
+design.
+
+> **Correction (2026-10-09).** An earlier version of this section said
+> prjcombine's CLB document has the F5 mux backwards (`BX ? G : F`). It
+> doesn't: `F5 = BX ? F : G` as documented. With the reversed mux the
+> simulated PicoBlaze looped in `clear_scratchpad` and its bank switch did
+> nothing; with the documented one it runs bank 2 as written. The
+> version-byte analysis in [fpga-version.md](fpga-version.md) had used the
+> reversed mux too; see the correction there.
 
 ## Plan
 

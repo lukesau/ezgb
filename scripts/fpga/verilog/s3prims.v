@@ -1,9 +1,8 @@
 // Behavioural models of the Spartan-3A primitives the FW4 netlist uses,
-// written from prjcombine's documentation (docs/src/spartan3/clb.md) with
-// two deliberate departures, both settled by simulation of the real design:
-//   F5 = BX ? G : F          (the doc text says BX ? F : G; Xilinx MUXF5 is
-//                             I0 = F LUT, I1 = G LUT, S = BX)
-//   F5LUT_SWAP selects the matching LUT-RAM write split (see below).
+// written from prjcombine's documentation (docs/src/spartan3/clb.md):
+// F5 = BX ? F : G, and with SLICEWE0USED the F LUT is written when BX = 1.
+// Simulation of the real design confirms the F5 convention: with it the
+// PicoBlaze switches program banks exactly as its code says.
 // Parameters carry the bitstream attributes as strings or bit vectors, in
 // the netlist's encoding (s3trace --netlist). Not a timing model.
 `timescale 1ns/1ps
@@ -45,8 +44,8 @@ module s3_slice #(
     assign DIG = DIG_ALT ? (G_SRL ? SHIFTIN : ALTDIG) : BY;
     wire dif = DIF_ALT ? (F_SRL ? gmc15 : DIG) : BX;
     wire we = SR & (!WE1USED || WE1);
-    // SLICEWE0USED: BX is address bit 4; F holds the BX=0 half, G the BX=1 half
-    wire fwe = we & (!WE0USED || !BX), gwe = we & (!WE0USED || BX);
+    // SLICEWE0USED: BX is address bit 4; F holds the BX=1 half, G the BX=0 half
+    wire fwe = we & (!WE0USED || BX), gwe = we & (!WE0USED || !BX);
     always @(posedge CLK) if (!glbl.GSR) begin
         if (F_SRL && we) fm <= {fm[14:0], dif};
         else if (F_RAM && fwe) fm[ga] <= dif;
@@ -55,7 +54,7 @@ module s3_slice #(
     end
     assign SHIFTOUT = fmc15;
     // wide muxes and carry
-    assign F5 = BX ? go : fo;
+    assign F5 = BX ? fo : go;
     assign FX = BY ? FXINA : FXINB;
     wire cyin = (CYINIT == "CIN") ? CIN : BX;
     wire cy0f = (CY0F == "CONST_0") ? 1'b0 : (CY0F == "CONST_1") ? 1'b1 : (CY0F == "F1") ? F1 :

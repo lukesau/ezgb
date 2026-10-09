@@ -25,8 +25,17 @@ block-RAM output bit, which names them:
 | D7 | `X0Y2 IOI[1]` |
 
 Each output is a small OR-of-terms tree of LUTs, one per-bit F5 mux among
-them (`F5MUX = BX ? G : F`; the other convention gives inconsistent
-results).
+them.
+
+> **Correction (2026-10-09).** This page first said the F5 mux is
+> `BX ? G : F` because only that convention gave clean results in a
+> data-forced-to-0 test. Simulating the whole design proved the opposite:
+> prjcombine's documented `BX ? F : G` is right (the PicoBlaze bank switch
+> fails with the other). Re-run with the correct mux, the constant-byte
+> results below are unchanged (`$00 $01 $04 $E1` for FW4, `$00 $01 $05 $E1`
+> for FW5), and the decode LUTs and their sinks are structural facts. The
+> LUT-edit search in "Making it 6" was run with the wrong mux and is not
+> reliable.
 
 ## Registers seen from the bus
 
@@ -91,6 +100,9 @@ What the updater contributes is only text: its screen line
 > and nothing in it reads `$7FC0=$04`.
 
 ## Making it 6
+
+(Computed with the wrong F5 convention; see the correction above. Kept for
+the record; the routing conclusion needs re-checking before any use.)
 
 6 = `$06` needs the same select on D1. Searched with BDDs:
 

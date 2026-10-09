@@ -21,9 +21,10 @@ cd fw4 && iverilog -g2012 -o tb.vvp -s tb -s glbl ../s3prims.v design.v ../tb_bo
 | `whyx.py` | walk an X back through the design, cell by cell |
 
 Model choices settled by simulation (each documented in `s3prims.v`):
-`F5 = BX ? G : F`; `FF_SR_ENABLE` exists only on SLICEMs (SLICEL flip-flops
-always honour SR); unconfigured BRAM contents are zero; flip-flops and pins
-are held by GSR/GTS until start-up, as on hardware.
+`F5 = BX ? F : G` as prjcombine documents (checked: the PicoBlaze bank
+switch only works with it); `FF_SR_ENABLE` exists only on SLICEMs (SLICEL
+flip-flops always honour SR); unconfigured BRAM contents are zero;
+flip-flops and pins are held by GSR/GTS until start-up, as on hardware.
 
 Not modelled: Device DNA (the licence check reads 0), ICAP, real DCM
 frequencies (the oscillator frequency is unknown; 25 MHz is assumed).
