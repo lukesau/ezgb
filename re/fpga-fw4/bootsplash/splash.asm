@@ -127,7 +127,7 @@ Copy:                           ; hl = src, de = dst, bc = count
 SECTION "data", ROM0
 ; BGR555. 0 screen background, 1 orange screen, 2 frames (darkened), 3 lip
 Palette:
-    dw (28 << 10) | (30 << 5) | 31, $129E, $294A, $14A5   ; off-white paper
+    dw $7FFF, $129E, $294A, $14A5
 IconTiles:
     INCBIN "build/icon.2bpp"
 IconTilesEnd:
