@@ -181,5 +181,8 @@ the hand-off bugs described above).
 ## Next
 
 - An `ezgb.dat` with `CgbInit` (the `cgb-mode` branch, greyscale palette
-  restored) so the kernel looks right in CGB mode.
-- Drop the red hook once proven; keep the greyscale init.
+  restored) so the kernel looks right in CGB mode. Done: part of the mod
+  since 5.3 ([cgb-mode.md](cgb-mode.md)).
+- Drop the red hook once proven; keep the greyscale init. Done in the boot
+  splash build above, and the stage1 rewrite ([fpga-stage1.md](fpga-stage1.md))
+  replaces both.
