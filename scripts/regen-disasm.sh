@@ -31,11 +31,12 @@ run() {
     "$@"
   else
     local log="/tmp/ezgb-regen-$$.log"
-    if "$@" >"$log" 2>&1; then
+    local ec=0
+    "$@" >"$log" 2>&1 || ec=$?
+    if [[ "$ec" -eq 0 ]]; then
       rm -f "$log"
       return 0
     fi
-    local ec=$?
     echo "error: command failed: $*" >&2
     tail -n 40 "$log" >&2
     rm -f "$log"
@@ -44,7 +45,7 @@ run() {
 }
 
 cd "$RE"
-run python3 "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
+run python3 -u "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
 run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
   ann_ec=$?
   if [[ "$ann_ec" -eq 1 ]]; then
