@@ -16,6 +16,8 @@
 /* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
 #define STATUS_ROW 15
 #define DETAIL_ROW 16
+#define VERSION_ROW 17
+#include "version.h"                 /* generated from stage1/VERSION */
 #define HANDOFF ((uint8_t *)0xD000)
 /* Boot screen timing, in frames (60 per second). The whole intro fits in
  * the stock 700 ms pause: EZ-FLASH alone, then the Jr. painted on left to
@@ -88,6 +90,7 @@ void main(void)
     wordmark_paint(JR_STEP);
     wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
     print_center(STATUS_ROW, "LOADING...");
+    print_center(VERSION_ROW, FW_TEXT);
 
     /* keep retrying: the card may still be starting up, or be swapped */
     for (;;) {
