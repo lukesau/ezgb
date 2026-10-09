@@ -11,7 +11,14 @@
 ;   for vblank, LCD off (the screen is still blank), load the icon to tiles
 ;   $80-$A9 ($8800, unused by the font at $20-$7F), draw it on map rows 1-7
 ;   above EZ-FLASH (row 8), give it palette 1 on CGB, LCD back on.
+; - Hook D, at the hand-off to the kernel ($4130, the call into the stub
+;   that copies the jump-to-$0100 routine to WRAM): reset every CGB tile
+;   attribute to palette 0, so the kernel doesn't inherit the icon palette
+;   on the cells the icon used. Then continue into the stub.
 ; - No other stage1 code is changed.
+; Note: GBDK's display-mode dispatcher ($0400) jumps through a 4-entry table
+; at $01E2; only entry 0 (a ret) exists in stock stage1, entries 1-3 were
+; $FF filler (rst $38) and land in this code, so they are evidently unused.
 
 INCLUDE "build/icon.inc"
 
@@ -38,6 +45,9 @@ SECTION "hook_a_site", ROM0[$01BA]
 
 SECTION "hook_c_site", ROM0[$07FC]
     call SplashDraw             ; was: ld hl,$0b5f (the EZ-FLASH string)
+
+SECTION "hook_d_site", ROMX[$4130], BANK[1]
+    call HandoffReset           ; was: call $40ea (copy hand-off to $D100, run it)
 
 ; ---- code, in the $FF filler after the boot halt loop ----
 SECTION "splash_code", ROM0[$01E4]
@@ -126,6 +136,42 @@ SplashDraw:
     pop af
     ldh [rLCDC], a
     ld hl, $0b5f                ; the instruction hook C replaced
+    ret
+
+HandoffReset:
+    call ResetAttrs
+    jp $40EA                    ; the call hook D replaced
+
+; CGB: set every tile attribute (VRAM bank 1, both maps) to 0 = palette 0.
+ResetAttrs::
+    call IsCgbMode
+    ret nz
+    ldh a, [rLCDC]
+    push af
+    add a
+    jr nc, .off                 ; LCD already off: no vblank to wait for
+.vblank
+    ldh a, [rLY]
+    cp 144
+    jr nz, .vblank
+.off
+    xor a
+    ldh [rLCDC], a
+    ld a, 1
+    ldh [rVBK], a
+    ld hl, $9800
+    ld bc, $0800
+.attrs
+    xor a
+    ld [hl+], a
+    dec bc
+    ld a, b
+    or c
+    jr nz, .attrs
+    xor a
+    ldh [rVBK], a
+    pop af
+    ldh [rLCDC], a
     ret
 
 ; Write the ICON_W x ICON_H block at (ICON_X, ICON_Y) on map $9800:

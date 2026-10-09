@@ -134,8 +134,19 @@ red build to this one).
   console setup clears VRAM on its first print (`$07F3`), so drawing at the
   LCD-on hook gets wiped. The hook waits for vblank, switches the LCD off
   for the copy (the screen is still blank then), and switches it back on.
+- At the hand-off to the kernel (`$4130`, the call into the stub that copies
+  the jump-to-`$0100` routine to WRAM), every CGB tile attribute is reset to
+  palette 0. Without this the kernel, which knows nothing about attributes,
+  kept drawing the icon's 42 cells through the icon palette: on hardware a
+  "shadow" over that area in the file browser that redrawing didn't clear
+  (found on the first splash build). Test-only check:
+  [`test-reset.asm`](../re/fpga-fw4/bootsplash/test-reset.asm) runs the
+  reset at `LOADING...` in SameBoy; the icon's screen turns grey.
 - Tiles `$80-$A9` (`$8800`, unused: the font is tiles `$20-$7F`); data in
-  the `$FF` filler at `$39A4` (verified unreferenced), code at `$01E4-$027F`.
+  the `$FF` filler at `$39A4` (verified unreferenced), code at `$01E4-$02AC`.
+  GBDK's display-mode dispatcher (`$0400`) jumps through a 4-entry table at
+  `$01E2` whose entries 1-3 were `$FF` filler (a crash in stock), so they
+  are unused and now land in this code.
 
 Lab and build: `re/fpga-fw4/bootsplash/build.sh` (needs the untracked logo
 PNG and stock stage1 in `fpga/`) builds a standalone `splash.gb` for
@@ -143,7 +154,8 @@ iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts
 the logo. Verified: SameBoy CGB and DMG show the icon above EZ-FLASH;
 slot B patch flips 5,036 bits in the 8 plane BRAMs only; stage1 rebuilt from
 the patched bitstream equals the tested ROM. Installed with
-`Update_FW4-splash.gb` (`make-updater.py`, label `Update: splash`).
+`Update_FW4-splash.gb` (`make-updater.py`, label `Update: splash 2`; the
+first build, label `Update: splash`, lacked the hand-off reset).
 
 ## Next
 
