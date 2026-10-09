@@ -8,6 +8,9 @@ was also confirmed then was **removed 2026-09-07**; the config file and SET tab
 cover its use, see "Removed" below.) The cancel button was B, then SELECT, in earlier revisions and is now
 START (`bit 7,e`), held at power-on. The B and SELECT forms were confirmed
 on hardware (GBC + GBA SP); START is the current default. It is a stock-kernel in-place
+With the from-source stage1 (mod 5.4+), stage1 checks START itself and
+passes a cancel to the kernel through pSRAM ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)),
+so letting go of START once stage1 has seen it is enough.
 hook, not a separate hold-a-button kernel.
 
 Source of truth is `decomp/src/fastlaunch*.c`.

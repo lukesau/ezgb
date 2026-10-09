@@ -4382,7 +4382,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:136c:8
+02:4a00 .data:13a5:8
 02:4500 FastLaunchScan
 02:4500 .data:2fe:8
 04:5f00 FarCallEzCfg

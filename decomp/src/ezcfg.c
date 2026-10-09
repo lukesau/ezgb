@@ -364,8 +364,29 @@ static u8 rtc_suspect(void) {
     return 0;
 }
 
+/* The from-source stage1 (bitstream-re: stage1/src/main.c) writes "S1" to
+ * pSRAM page $11 $A410 when START was held at power-on: the user cancelled
+ * fast launch there, so the kernel must not fast launch either, even with
+ * START released by now. Consumed here, once per boot, by marking
+ * fastlaunch_boot's one-shot flag ($DBFF) as already used. Page $11 is
+ * free from $A400 (docs/psram-page-map.md); RtcBootHook re-selects page
+ * $11 and personality 3 after this op, as before. */
+static void stage1_skip_mark(void) {
+    volatile u8 *mark = (volatile u8 *)0xA410;
+    *(volatile u8 *)0x4000 = 0x11;
+    fpga_page(3);
+    if (mark[0] == 'S' && mark[1] == '1') {
+        mark[0] = 0;
+        mark[1] = 0;
+        *(volatile u8 *)0xDBFF = 1;
+    }
+    *(volatile u8 *)0x4000 = 0;
+    fpga_page(0);
+}
+
 static void cfg_restore(void) {
     u8 why;
+    stage1_skip_mark();
     cfg_load();
     if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */
     rtc_read();
