@@ -166,6 +166,11 @@ red build to this one).
   `$01E2` whose entries 1-3 were `$FF` filler (a crash in stock), so they
   are unused and now land in this code.
 
+Build option: `rgbasm -D NO_HANDOFF_CLEAR` drops the map/tile clear at the
+hand-off (keeps LCD off and the attribute reset), for comparison against a
+kernel that does its own CGB init (`CgbInit`, mod 5.3). Updater label
+`Update: no clear`.
+
 Lab and build: `re/fpga-fw4/bootsplash/build.sh` (needs the untracked logo
 PNG and stock stage1 in `fpga/`) builds a standalone `splash.gb` for
 iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts

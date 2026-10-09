@@ -96,6 +96,7 @@ HandoffBlank::
     xor a
     ldh [rVBK], a
 .clear
+IF !DEF(NO_HANDOFF_CLEAR)       ; build option: rgbasm -D NO_HANDOFF_CLEAR
     ; nothing of the boot screen left for the kernel to show before it
     ; draws: both maps -> tile 0, tile 0 blank in both addressing modes
     ld hl, $9800
@@ -104,6 +105,7 @@ HandoffBlank::
     call .blank_tile
     ld hl, $9000
     call .blank_tile
+ENDC
 .kernel::
     pop hl
     pop de
