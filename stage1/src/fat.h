@@ -15,8 +15,10 @@ enum {
 extern uint32_t file_size;
 
 uint8_t fat_mount(void);
-/* name: 11 bytes, 8.3 directory form ("EZGB    DAT"), root directory only */
-uint8_t fat_find(const char *name);
+/* "/dir/File Name.gb": long or 8.3 names, any case */
+uint8_t fat_open(const char *path);
+void fat_read_first(uint8_t *dst);
+const char *fat_name(void);
 /* The FPGA load command for the file found last (128 u32, docs/fpga-stage1.md) */
 uint8_t fat_load_command(uint32_t *cmd);
 

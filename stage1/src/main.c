@@ -1,10 +1,14 @@
 /* stage1: show the boot screen, find EZGB.DAT on the SD card, have the
  * FPGA load it, enter it at $0100. Same steps as the stock bootstrap
- * (docs/fpga-stage1.md), written from scratch. */
+ * (docs/fpga-stage1.md), written from scratch. With fast launch set in
+ * EZGB.CFG it launches that game instead (game.c), unless SELECT is held,
+ * and boots the kernel whenever that isn't possible. */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
 #include "fat.h"
+#include "cfg.h"
+#include "game.h"
 #include "video.h"
 
 /* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
@@ -27,6 +31,8 @@
 extern const uint8_t handoff_start[], handoff_end[];
 
 static uint32_t load_cmd[128];
+static uint8_t text[512];
+static char launch_path[CFG_PATH_MAX + 1];
 
 static const char *const errors[] = {
     0,
@@ -37,22 +43,42 @@ static const char *const errors[] = {
     "EZGB.DAT FRAGMENTED",
 };
 
-static uint8_t prepare(void)
+/* SELECT held at power-on skips fast launch, as in the kernel */
+static uint8_t select_held(void)
 {
-    uint8_t err;
+    uint8_t i, keys = 0xFF;
 
-    fpga_set(FPGA_SRAM_MAP, 0);
-    err = fat_mount();
-    if (!err)
-        err = fat_find("EZGB    DAT");
-    if (!err)
-        err = fat_load_command(load_cmd);
-    return err;
+    rP1 = 0x10;                         /* buttons */
+    for (i = 0; i < 6; i++)
+        keys = rP1;
+    rP1 = 0x30;
+    return !(keys & 0x04);
+}
+
+/* FLAUNCH= target from EZGB.CFG, opened; 0 when there is none */
+static uint8_t fast_launch_target(void)
+{
+    uint16_t n;
+
+    if (select_held() || fat_open("/EZGB.CFG"))
+        return 0;
+    n = file_size < 512 ? (uint16_t)file_size : 512;
+    fat_read_first(text);
+    if (!cfg_flaunch(text, n, launch_path))
+        return 0;
+    return fat_open(launch_path) == FAT_OK;
+}
+
+static uint8_t kernel(void)
+{
+    uint8_t err = fat_open("/EZGB.DAT");
+
+    return err ? err : fat_load_command(load_cmd);
 }
 
 void main(void)
 {
-    uint8_t err;
+    uint8_t err, tried = 0;
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
@@ -62,7 +88,20 @@ void main(void)
     print_center(STATUS_ROW, "LOADING...");
 
     /* keep retrying: the card may still be starting up, or be swapped */
-    while ((err = prepare())) {
+    for (;;) {
+        fpga_set(FPGA_SRAM_MAP, 0);
+        err = fat_mount();
+        if (!err && !tried) {
+            tried = 1;
+            if (fast_launch_target()) {
+                print_center(DETAIL_ROW, fat_name());
+                game_launch(text);      /* returns only if it can't */
+            }
+        }
+        if (!err)
+            err = kernel();
+        if (!err)
+            break;
         print_center(DETAIL_ROW, errors[err]);
         wait_frames(60);
     }

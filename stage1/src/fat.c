@@ -106,44 +106,187 @@ uint8_t fat_mount(void)
     return FAT_OK;
 }
 
-uint8_t fat_find(const char *name)
-{
-    uint32_t c = root, lba;
-    uint16_t left;
-    const uint8_t *e;
+/* ---- directories ---- */
 
-    if (is_fat32) {
-        lba = cluster_sector(c);
-        left = 1 << csize_shift;
+static uint32_t d_cluster;      /* 0: the FAT16 root, which is not a cluster chain */
+static uint32_t d_lba;
+static uint16_t d_left;         /* sectors left in this cluster (or root) */
+static uint16_t d_off;
+
+static void dir_start(uint32_t c)
+{
+    if (!c && !is_fat32) {
+        d_cluster = 0;
+        d_lba = root;
+        d_left = root_sectors;
     } else {
-        lba = root;
-        left = root_sectors;
+        if (!c)
+            c = root;           /* ".." of a top-level directory */
+        d_cluster = c;
+        d_lba = cluster_sector(c);
+        d_left = 1 << csize_shift;
     }
-    for (;;) {
-        read_sector(lba);
-        for (e = buf; e < buf + 512; e += 32) {
-            if (!e[0])
-                return FAT_NOT_FOUND;
-            /* skip deleted entries, long names, volume labels, directories */
-            if (e[0] != 0xE5 && !(e[11] & 0x18) && !memcmp(e, name, 11)) {
-                file_cluster = ld16(e + 26);
-                if (is_fat32)
-                    file_cluster |= (uint32_t)ld16(e + 20) << 16;
-                file_size = ld32(e + 28);
-                return file_size && file_cluster >= 2 ? FAT_OK : FAT_NOT_FOUND;
-            }
+    d_off = 0;
+}
+
+/* Next 32-byte entry (valid until the next sector read), 0 past the end */
+static const uint8_t *dir_next(void)
+{
+    if (d_off == 512) {
+        d_off = 0;
+        d_lba++;
+        if (!--d_left) {
+            if (!d_cluster)
+                return 0;
+            d_cluster = next_cluster(d_cluster);
+            if (d_cluster < 2 || d_cluster > max_cluster)
+                return 0;
+            d_lba = cluster_sector(d_cluster);
+            d_left = 1 << csize_shift;
         }
-        lba++;
-        if (--left)
-            continue;
-        if (!is_fat32)
-            return FAT_NOT_FOUND;
-        c = next_cluster(c);
-        if (c < 2 || c > max_cluster)
-            return FAT_NOT_FOUND;
-        lba = cluster_sector(c);
-        left = 1 << csize_shift;
     }
+    read_sector(d_lba);
+    d_off += 32;
+    return buf + d_off - 32;
+}
+
+/* ---- names: the long name when one precedes the entry, else NAME.EXT ---- */
+
+#define LFN_MAX 255
+static uint8_t name[LFN_MAX + 1];
+static uint8_t lfn_valid, lfn_sum;
+static const uint8_t lfn_offsets[13] = {1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30};
+
+static uint8_t upper(uint8_t c)
+{
+    return c >= 'a' && c <= 'z' ? c - 32 : c;
+}
+
+static uint8_t short_sum(const uint8_t *e)
+{
+    uint8_t sum = 0, i;
+
+    for (i = 0; i < 11; i++)
+        sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + e[i];
+    return sum;
+}
+
+/* One long-name piece. They come last piece first, 13 UTF-16 units each;
+ * anything outside ASCII becomes '?', which then just fails to match. */
+static void lfn_piece(const uint8_t *e)
+{
+    uint8_t seq = e[0] & 0x1F, i;
+    uint16_t at, ch;
+
+    if (e[0] & 0x40) {
+        lfn_valid = seq && seq * 13 <= LFN_MAX;
+        lfn_sum = e[13];
+        if (lfn_valid)
+            name[seq * 13] = 0;
+    }
+    if (!lfn_valid || e[13] != lfn_sum || !seq)
+        return;
+    at = (seq - 1) * 13;
+    for (i = 0; i < 13; i++) {
+        ch = ld16(e + lfn_offsets[i]);
+        if (!ch) {
+            name[at + i] = 0;
+            return;
+        }
+        name[at + i] = ch < 0x80 ? (uint8_t)ch : '?';
+    }
+}
+
+static void entry_name(const uint8_t *e)
+{
+    uint8_t i, n = 0;
+
+    if (lfn_valid && lfn_sum == short_sum(e))
+        return;                 /* name[] already holds the long name */
+    for (i = 0; i < 8 && e[i] != ' '; i++)
+        name[n++] = e[i];
+    if (e[8] != ' ') {
+        name[n++] = '.';
+        for (i = 8; i < 11 && e[i] != ' '; i++)
+            name[n++] = e[i];
+    }
+    name[n] = 0;
+}
+
+static uint8_t name_is(const char *s, uint8_t len)
+{
+    uint8_t i;
+
+    for (i = 0; i < len; i++)
+        if (!name[i] || upper(name[i]) != upper(s[i]))
+            return 0;
+    return !name[len];
+}
+
+/* Open "/dir/sub/File Name.gb": long or 8.3 names, any case. */
+uint8_t fat_open(const char *path)
+{
+    const uint8_t *e;
+    uint8_t len, last, attr;
+
+    dir_start(0);
+    for (;;) {
+        while (*path == '/')
+            path++;
+        for (len = 0; path[len] && path[len] != '/'; len++)
+            ;
+        if (!len)
+            return FAT_NOT_FOUND;
+        last = !path[len];
+        lfn_valid = 0;
+        for (;;) {
+            e = dir_next();
+            if (!e || !e[0])
+                return FAT_NOT_FOUND;
+            attr = e[11];
+            if (e[0] == 0xE5) {
+                lfn_valid = 0;
+                continue;
+            }
+            if ((attr & 0x3F) == 0x0F) {
+                lfn_piece(e);
+                continue;
+            }
+            if (attr & 0x08) {  /* volume label */
+                lfn_valid = 0;
+                continue;
+            }
+            entry_name(e);
+            lfn_valid = 0;
+            if (name_is(path, len))
+                break;
+        }
+        file_cluster = ld16(e + 26);
+        if (is_fat32)
+            file_cluster |= (uint32_t)ld16(e + 20) << 16;
+        if (last) {
+            if (attr & 0x10)
+                return FAT_NOT_FOUND;
+            file_size = ld32(e + 28);
+            return file_size && file_cluster >= 2 ? FAT_OK : FAT_NOT_FOUND;
+        }
+        if (!(attr & 0x10))
+            return FAT_NOT_FOUND;
+        dir_start(file_cluster);
+        path += len;
+    }
+}
+
+/* The open file's first sector, into dst (not the cache) */
+void fat_read_first(uint8_t *dst)
+{
+    sd_read(cluster_sector(file_cluster), dst);
+}
+
+/* The open file's base name as the directory has it (long name if any) */
+const char *fat_name(void)
+{
+    return (const char *)name;
 }
 
 /* Same table stock stage1 builds: [0] = 0, then {start LBA, end} per

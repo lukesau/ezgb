@@ -20,6 +20,7 @@
 #define rNR52 REG(0xFF26)
 #define rIF   REG(0xFF0F)
 #define rIE   REG(0xFFFF)
+#define rP1   REG(0xFF00)
 
 /* crt0 saves the boot ROM's A here ($11 on a colour console) */
 #define BOOT_A REG(0xFF80)
