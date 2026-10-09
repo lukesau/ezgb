@@ -307,10 +307,6 @@ The other two options, in nitro2k01's words:
 >
 > However, one more option remains, if we allow modification of the stage 1 bootloader. The bootloader could simply store the initial registers, and restore them before the kernel runs. Or the kernel could consult a well specified location in RAM. If SGB is detected this way, or conversely a another console version is detected confidently this way, the kernel could then make an informed decision to send or not send the packages. Everything else, like the setting etc, then becomes a fallback for when the FPGA didn't have a compatible stage 1.
 
-On EZ Flash's 2020 `FW5_forSGB_BETA` firmware:
-
-> I'm not sure about the "forSGB" version. I can try it to make sure. But I think literally the only change is that the stage 1 bootloader has the SGB flags set in the header. (Confirmed.) I don't think it does anything to help SGB boot more consistently. (Unconfirmed.) Rather, you're supposed to press the reset button on the cartridge to make it boot on SGB, and at least you get SGB support when you do this.
-
 ## Still to check
 
 - Does stage 1 leave the boot A value alone, so `$d6c9` is really `$11` on
