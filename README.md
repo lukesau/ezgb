@@ -88,9 +88,13 @@ Boy Color and Game Boy Advance SP): fast launch from a config file (root and
 subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the
 browser flashing. The cancel button is START (it was B, then SELECT, in earlier revisions).
 
-**Tested dead end:** running the kernel in CGB mode (to unlock the GBC IR port)
-cannot be reached at first boot without FPGA firmware changes. Kept as a record,
-not shipped: [`docs/cgb-mode.md`](docs/cgb-mode.md).
+**CGB mode (inactive on real carts):** since mod 5.3 the kernel's header
+declares it CGB-compatible and it sets up a greyscale CGB palette when it runs
+in CGB mode, the first step toward using the GBC IR port. A real Jr still boots
+the kernel in DMG compatibility mode, which can't be changed without FPGA
+firmware changes, so on hardware the code skips itself and nothing changes.
+Emulators that honour `ezgb.dat`'s header run it in CGB mode:
+[`docs/cgb-mode.md`](docs/cgb-mode.md).
 
 ## Where the project is
 
