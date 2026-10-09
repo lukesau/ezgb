@@ -37,6 +37,10 @@ struct Args {
     from: Vec<String>,
     #[arg(long, default_value_t = 3)]
     depth: usize,
+    /// write every configured bel, its attributes and the driver of each
+    /// input pin as JSON lines
+    #[arg(long)]
+    netlist: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -194,6 +198,24 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    if let Some(path) = &args.netlist {
+        use std::io::Write;
+        let mut f = std::io::BufWriter::new(std::fs::File::create(path)?);
+        for ((t, b), pins) in &g.in_pins {
+            let attrs = g.attrs.get(&(t.clone(), b.clone()));
+            let mut ins = vec![];
+            for (pin, &(w, pinv)) in pins {
+                let (src, inv) = resolve(&g, w);
+                let s = match src {
+                    Some(p) => format!("\"{}:{}:{}\"", p.tile, p.bel, p.pin),
+                    None => "null".to_string(),
+                };
+                ins.push(format!("\"{pin}\": [{s}, {}]", (inv ^ pinv) as u8));
+            }
+            let a: Vec<String> = attrs.map(|m| m.iter().map(|(k, v)| format!("\"{k}\": \"{v}\"")).collect()).unwrap_or_default();
+            writeln!(f, "{{\"tile\": \"{t}\", \"bel\": \"{b}\", \"attrs\": {{{}}}, \"in\": {{{}}}}}", a.join(", "), ins.join(", "))?;
+        }
+    }
     for f in &args.from {
         let parts: Vec<&str> = f.splitn(3, ':').collect();
         let [t, b, p] = parts[..] else { return Err("--from TILE:BEL:PIN".into()) };
@@ -204,6 +226,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         trace(&g, w, 1, args.depth, &mut vec![]);
     }
     Ok(())
+}
+
+/// The bel output driving node w through the routing, and whether the path inverts.
+fn resolve<'a>(g: &'a Graph, mut w: WireCoord) -> (Option<&'a Pin>, bool) {
+    let mut inv = false;
+    for _ in 0..300 {
+        if let Some(pins) = g.out_pins.get(&w) {
+            return (pins.first(), inv);
+        }
+        match g.driver.get(&w) {
+            Some(edges) if edges.len() == 1 => {
+                inv ^= edges[0].inv;
+                w = edges[0].src;
+            }
+            _ => return (None, inv),
+        }
+    }
+    (None, inv)
 }
 
 fn trace(g: &Graph, mut w: WireCoord, level: usize, depth: usize, seen: &mut Vec<WireCoord>) {
