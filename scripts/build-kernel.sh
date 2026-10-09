@@ -8,7 +8,10 @@
 #   - rgbfix "corrects" 4 header bytes the real firmware leaves alone:
 #     $0148 (ROM size), $014D (header checksum over the changed $0148), and
 #     $014E-$014F (global checksum, stale in the shipped firmware). Restore
-#     them from kernel.gb.orig when present, else from the built-in table.
+#     $0148 and $014E-$014F from kernel.gb.orig when present, else from the
+#     built-in table, and recompute $014D over the result: the stock value for
+#     a stock header, the right one when the mod changes it (the SGB flags,
+#     scripts/inject-sgb.py).
 #
 # Writes re/<ver>/disassembly/game_trunc.gb and verifies its md5 against
 # patches/kernel/manifest.json. --install copies it to re/<ver>/kernel.gb
@@ -53,14 +56,19 @@ rom = bytearray(open(os.path.join(re_dir, "disassembly", "game.gb"), "rb").read(
 orig_path = os.path.join(re_dir, "kernel.gb.orig")
 if os.path.isfile(orig_path):
     orig = open(orig_path, "rb").read()
-    for i in (0x148, 0x14D, 0x14E, 0x14F):
+    for i in (0x148, 0x14E, 0x14F):
         rom[i] = orig[i]
 elif ver in HEADER:
     for i, b in HEADER[ver].items():
-        rom[i] = b
+        if i != 0x14D:
+            rom[i] = b
 else:
     print(f"warning: no kernel.gb.orig and no header table for {ver}; "
           "leaving rgbfix header bytes (cosmetic only)", file=sys.stderr)
+c = 0
+for b in rom[0x134:0x14D]:
+    c = (c - b - 1) & 0xFF
+rom[0x14D] = c
 
 out = os.path.join(re_dir, "disassembly", "game_trunc.gb")
 open(out, "wb").write(rom)
