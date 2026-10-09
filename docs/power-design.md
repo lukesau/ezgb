@@ -59,9 +59,17 @@ I²C pull-ups get their supply.
 
 ## The power-on chain and where each symptom fits
 
-The Game Boy boot ROM does not wait for the cart. It reads the cart's logo
-whenever its own code reaches that point, so the cart must be serving the
-header by then.
+> **Correction (2026-10-09).** The first version of this page said the boot
+> ROM doesn't wait for the cart. It does: the Jr drives the Game Boy reset
+> line (through 330 Ω, per nitro2k01 in
+> [issue #5](https://github.com/lukesau/ezgb/issues/5), and
+> [sgb-boot.md](sgb-boot.md)) and holds the CPU in reset while the FPGA loads.
+> H2 below is rewritten to match. The race only exists if that hold fails or
+> is released before the cart is ready.
+
+The cart holds the Game Boy CPU in reset while the FPGA loads, then releases
+it. The boot ROM then reads the logo from the cart, so the cart has to be
+serving the header by the time reset is released.
 
 ```
 console 5 V ramps ──► cart 3.3 V / 1.2 V ramp
@@ -69,7 +77,7 @@ console 5 V ramps ──► cart 3.3 V / 1.2 V ramp
                           ├─ Spartan-3A POR, then reads the bitstream from SPI flash (EN25F40)
                           │    FW4: slot A config ─► PicoBlaze bank 2 ─► IPROG ─► slot B config
                           │
-console CPU out of reset ─┼─ boot ROM clears VRAM, then reads logo $0104-$0133 from the cart   ◄── RACE
+cart releases CPU reset ──┼─ boot ROM clears VRAM, then reads logo $0104-$0133 from the cart   ◄── only safe if the hold held
                           │
                           ├─ PicoBlaze reset (fpga-picoblaze.md, X3Y29 $000):
                           │    1. bank 2: SPI flash tally write at $070000, Device DNA, licence read at $030000
@@ -113,25 +121,36 @@ the FPGA is doing POR and configuring.
 - Predicts: scope shows a slower or dented 3.3 V ramp with no cell, and that
   ramp gets better on the immediate retry.
 
-### H2: power-on race against the boot ROM's logo read
+### H2: the reset hold fails or lets go too early
 
-Separate from H1, but H1 makes it worse. The cart has to finish POR plus
-configuration (and on FW4, **two** configurations with the IPROG hand-over in
-between) before the console reads `$0104`. On DMG the boot ROM clears VRAM
-first, roughly 7 M-cycles × 8 KB ≈ 55 ms, then reads the logo. Any extra
-delay on the cart side (a slow ramp, a slow `ConfigRate`, the tally write
-before IPROG) eats that margin. This produces exactly the logo-stage symptoms.
+Separate from H1, but H1 makes it worse. The cart is supposed to keep the CPU
+in reset until it can serve the header. If the CPU starts early, the boot ROM
+reads the logo from a cart that isn't ready, which produces exactly the
+logo-stage symptoms. Ways that could happen:
 
-- Different consoles start their CPUs at different points on the supply ramp
-  and run different boot ROMs, which would explain why the FPGBC is more
-  marginal than the GBA (O7).
+- **Before the FPGA is configured.** Spartan-3A I/O are high-impedance during
+  configuration, with optional weak pull-ups. Unless something else on the
+  board (a pull-down, or a pin left low) holds reset during that time, the
+  hold doesn't exist until the FPGA is up. Find what drives the reset pin
+  (cart-edge pin 30) at power-on.
+- **During the FW4 IPROG hand-over.** Slot A reboots the FPGA into slot B, and
+  all I/O go high-impedance again for the second configuration. If the reset
+  hold drops then, the CPU runs while slot B is still loading.
+- **Weak drive under a sagging rail.** The hold is a 330 Ω series resistor
+  from a 3.3 V output into the console's reset input. With the rail low it may
+  not be held firmly enough.
+
+Notes:
+
+- Consoles differ in how their reset input and supply ramp behave, which
+  could explain why the FPGBC is more marginal than the GBA (O7).
 - Bitstream header values (`fpga-bitstream.md`): `COR1 2f08`, `COR2 89ee`,
-  `CCLK_FREQ 3c0f`. **Decode `CCLK_FREQ` to get the SPI config clock**, then
-  compute config time = bitstream bits / CCLK, ×2 for FW4 slot A then slot B.
-  If that is anywhere near 50 ms, H2 is effectively confirmed on paper.
-- Test: the cart's reset button reconfigures without a power ramp. If reset
-  always succeeds where cold boots fail, the problem is the ramp and the race,
-  not steady-state power.
+  `CCLK_FREQ 3c0f`. Decoding `CCLK_FREQ` gives the config time
+  (bitstream bits / CCLK, ×2 on FW4), which is how long the hold has to last.
+- Test: scope the reset pin together with the 3.3 V rail at power-on, with no
+  cell and with a new cell. The cart's reset button reconfigures without a
+  power ramp. If reset always succeeds where cold boots fail, the ramp is the
+  problem, not steady-state power.
 
 ### H3: flash writes and reads at every power-on, under marginal power
 
@@ -224,9 +243,9 @@ In order of cost:
    boot. Plots how fast the charging-up effect decays.
 5. **Reset button vs power cycle** (H2).
 6. **Scope** the cart 3.3 V and 1.2 V rails, triggered on console 5 V, with no
-   cell vs new cell, first boot vs immediate retry. Add the FPGA DONE pin and
-   cart `/RD` around the `$0104` read if they are reachable. Shows directly
-   whether config finishes before the logo read.
+   cell vs new cell, first boot vs immediate retry. Add the reset pin (cart
+   pin 30), the FPGA DONE pin, and cart `/RD` around the `$0104` read if they
+   are reachable. Shows directly whether reset is held until config finishes.
 7. **Dump the tally sector** `$070000` before and after a test session (H3).
 8. **Load-integrity readback** for no cell vs new cell (H5).
 9. **Decode `CCLK_FREQ 3c0f`** and compute config time (H2, desk work).
