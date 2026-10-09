@@ -1,0 +1,190 @@
+# X3Y25: PicoBlaze bank 2. FW4 slot B / Update_FW4.gb.
+# Only ever entered from bank 1's call_bank2 ($3F0); bank 2's own reset
+# path and interrupt vector never run. Config flash (SPI bit-bang), Device
+# DNA, licence record check, boot tally, fail-safe MultiBoot, flash update.
+
+entry 3F0 bank2_entry
+
+# ---- ports ----
+port in A0 DBG_STATUS
+port out A1 DBG_TX
+port out BF TBL_INDEX
+port in C0 TBL_Q3
+port in C1 TBL_Q2
+port in C2 TBL_Q1
+port in C3 TBL_Q0
+port out C8 BANK_SELECT
+port out D1 ICAP_DATA
+port out D2 ICAP_CTRL
+port out D3 DNA_CTRL
+port in D3 DNA_DOUT
+port out D4 SPI_CTRL
+port in D4 SPI_MISO
+port out D5 SPI_MOSI
+port out F1 FLASH_BUSY
+
+# ---- scratchpad ----
+ram 00 mb_addr_lo
+ram 01 mb_addr_mid
+ram 02 mb_addr_hi
+ram 03 flash_a0
+ram 04 flash_a1
+ram 05 flash_a2
+ram 06 record_error
+ram 0A dna0
+ram 0B dna1
+ram 0C dna2
+ram 0D dna3
+ram 0E dna4
+ram 0F dna5
+ram 10 dna6
+ram 11 dna7
+ram 12 tally_byte
+ram 13 tally_index
+ram 16 want_crc7
+ram 17 want_crc16_hi
+ram 18 want_crc16_lo
+ram 19 verdict_a
+ram 1A verdict_b
+ram 1D spi_shadow
+ram 3E licence_a
+ram 3F licence_b
+
+block 000 Bank 2 reset path: never used (the processor always resets in
+block 000 bank 1). A long delay loop with interrupts off.
+label 000 bank2_reset_unused
+
+block 003 Device DNA (Spartan-3A DNA_PORT). DNA_CTRL bit 0 = CLK,
+block 003 bit 1 = SHIFT, bit 2 = READ; DNA_DOUT bit 0 = DOUT.
+sub 003 dna_idle
+sub 006 dna_read
+note 006 READ: latch the 57-bit DNA
+note 00C 57 bits
+note 01B DNA -> dna0..dna7
+sub 024 dna_clock
+label 029 dead_dump_dna
+note 029 unreached: print the DNA on the debug port
+
+block 031 CRC-16, reflected poly $A001, init $FFFF, over s5 bytes at (s4).
+block 031 Result s7:s6.
+sub 031 crc16
+block 043 CRC-7 (poly x^7+x^3+1, the SD card CRC) over s4 bytes at (s0).
+block 043 Result -> want/compare via scratch $15.
+sub 043 crc7
+sub 05B verdict_a_ok
+sub 05E verdict_b_ok
+sub 061 dbg_putc
+sub 066 delay_tiny
+sub 06A delay_short
+sub 06F delay_med
+sub 074 delay_long
+sub 079 delay_huge
+
+block 07E SPI flash. SPI_CTRL bit 0 = SCK, bit 1 = CS_B (spi_shadow keeps
+block 07E the last value); SPI_MOSI bit 7 = MOSI; SPI_MISO bit 7 = MISO.
+label 07E spi_cmd_tail
+label 083 dead_spi_cmds
+note 089 unreached: $AB release from power-down, $50 EWSR
+sub 098 flash_read_record
+note 098 read 126 bytes from flash_a2:a1:a0 into $1E.. (first 33 kept),
+note 09D running byte sum
+note 0A6 compare the sum with the record's own check byte
+sub 0AA spi_deselect
+sub 0AE spi_xfer
+note 0AE 8 bits MSB first: s2 out, s2 in
+sub 0BC spi_rdsr
+note 0C0 $05 READ STATUS
+sub 0C3 spi_wren
+note 0C7 $06 WRITE ENABLE
+label 0C9 dead_rdid
+note 0CD unreached: $9F READ ID
+sub 0D9 spi_read_start
+note 0DD $03 READ + 24-bit address sC:sB:sA
+sub 0E6 spi_cs_toggle
+sub 0EB flash_sector_erase
+note 0F0 $D8 SECTOR ERASE (64 KB)
+note 0FB wait while WIP
+sub 0FF flash_page_program_start
+note 104 $02 PAGE PROGRAM + address
+sub 10D flash_wait_done
+
+block 115 MultiBoot reboot through ICAP: sync AA99, GENERAL1/2 = next
+block 115 image address (mb_addr), CMD = IPROG ($000E). Used by the slot A
+block 115 image to hand over to slot B.
+sub 115 icap_reboot
+note 116 sync AA 99
+note 11A GENERAL1 = mb_addr_mid:mb_addr_lo
+note 122 GENERAL2 = $03 (read opcode) : mb_addr_hi
+note 12A MODE
+note 132 CMD = IPROG
+sub 140 icap_idle
+note 140 ICAP_CTRL bit 0 = CLK, bits 1-2 = CE_B / WRITE_B
+sub 145 icap_select
+sub 148 icap_clock
+sub 14D icap_write
+
+block 150 Boot tally at flash $070000: find the first non-zero byte.
+block 150 If all 256 are zero, erase the sector and start over.
+block 150 Byte states: FF unused, 01 slot A handed over to slot B,
+block 150 00 slot B booted. A 01 at boot means slot B failed last time.
+sub 150 tally_find
+note 15F all zero: erase $070000
+sub 168 tally_erase
+label 16D dead_tally_full
+
+label 176 bank2_isr_unused
+note 176 never taken: bank 2 runs with interrupts off
+sub 179 record_bad
+
+block 17C Licence check. The record at flash $031100 holds the expected
+block 17C CRCs; both CRCs are computed over the record bytes with the
+block 17C chip's Device DNA mixed in. Pass sets verdict_a/b = F1 / F2.
+sub 17C licence_check
+note 17C DNA (reversed) -> $32-$39
+note 18E CRC-16 over $1E-$39
+note 191 vs want_crc16
+note 195 DNA -> $28-$2F
+note 1A7 CRC-7 over $1E-$2F
+note 1A9 vs want_crc7
+sub 1AC clear_scratchpad
+
+block 1B5 Bank 2 main, called from bank 1 with licence_b = 0 (boot) or
+block 1B5 1 (flash update, kernel command $08). Boot: fail-safe MultiBoot.
+block 1B5 The slot A image (golden, at 0) hands over to slot B when the
+block 1B5 tally byte is clean and slot B looks valid; slot B just marks
+block 1B5 the byte done. Then both run the licence scan.
+sub 1B5 bank2_main
+note 1B7 flash update requested
+note 1B8 slot A image: 01 (hand over to slot B); slot B image: 02 (never)
+label 1BD multiboot_check
+label 1C2 tally_advance
+label 1CA find_slot_b
+note 1CA look for a bitstream sync (AA 99 .. 31 61) at $040000
+label 1F4 slot_b_bad
+note 1F5 debug 44: slot B invalid, boot slot A
+label 1F8 licence_scan
+note 1F9 read Device DNA
+note 1FB records at $030000, 128 bytes each
+note 204 stop at $031500
+note 208 bad record checksum -> record_error = EE
+note 209 the record at $031100 carries the licence CRCs
+label 21E licence_done
+note 221 publish verdict for bank 1, unless any record was bad
+
+block 227 Read one 32-bit table entry: index s5 -> s3:s2:s1:s0.
+sub 227 tbl_read
+block 22F Flash update (kernel command $08). Table entry 0 = flash
+block 22F address; entries 1-$40 = 256 bytes of data. Erases the 64 KB
+block 22F sector when the address is on a sector boundary, then programs
+block 22F one 256-byte page.
+label 22F flash_update
+note 230 FLASH_BUSY on
+note 236 address bits 15:8 == 0: start of a sector, erase it
+note 23F page program at the address
+note 252 FLASH_BUSY off
+
+block 3F0 Bank switch window (identical in bank 1 except $3F3).
+note 3F3 the only instruction bank 1 runs from bank 2
+note 1C0 FF: clean, try slot B. 01: slot B failed last boot, stay here
+note 1E9 tally byte = 01: hand-over in progress
+note 1C6 tally byte = 00
