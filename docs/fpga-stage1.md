@@ -129,7 +129,7 @@ same FPGA register sequence, and builds the same load command as stock.
 
 | | Stock | Rewrite |
 |---|---|---|
-| Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB |
+| Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB at first; 11.1 KB at v4 with fast launch, save backup and the wordmark |
 | SD reads to boot the test card | 366 | 20 |
 | Error handling | message, hang | message, retry every second |
 | CGB | DMG-only header | CGB flag, icon in colour, greys on DMG |
@@ -155,6 +155,20 @@ byte for byte.
 ("Update: src v2", the build with the wordmark below) installed on the FW4
 cart and boots the kernel. Every patched-stage1 updater so far, from the CGB
 flag through this rewrite, installed without trouble.
+
+### Hardware status
+
+All on the one FW4 Jr, each build installed with its own updater
+([fpga-setup.md](fpga-setup.md#9-end-to-end-build-and-install-a-stage1-updater)):
+
+| Build | What it added | On hardware |
+|---|---|---|
+| v2 | the rewrite with the wordmark | confirmed: boots the kernel |
+| v3 | fast launch; START held at power-on cancels it | confirmed: boots Pokemon Red straight from stage1, and START cancels it (the cancel was fixed in v3) |
+| v4 | SELECT save-backup prompt, the `"S1"` skip mark at `$11:$A410`, the `FW6-MOD 1.0` version line | installed, not yet confirmed |
+
+The skip mark only does something with a kernel at mod 5.4 or later, which
+reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
 
 ### Emulator support
 
@@ -217,7 +231,32 @@ battery while a stamp is pending, or any file error. An empty `FLAUNCH=`
 **One consequence:** fast-launching the same game over and over never
 backs its save up to the SD card, because only the kernel does that. The
 save stays safe in pSRAM, and the next boot into the kernel (hold START)
-writes it out. A stage1 save backup would need SD writes; not done.
+writes it out. Since v4, SELECT at power-on can also back it up from stage1
+(below).
+
+### Cancel mark and save backup (v4)
+
+**Cancel mark.** Stage1 writes `"S1"` to pSRAM page `$11` `$A410` when START
+was held at power-on and zeroes it otherwise. A mod 5.4+ kernel clears it
+and skips its own fast launch for that boot, so a cancel made in stage1
+stays cancelled after START is released
+([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
+
+**Save backup** (`stage1/src/backup.c`, the kernel's `BackupSaveDump`,
+`01:643a`, done in place). With SELECT held at power-on:
+
+1. No `$AA` stamp on page `$11`: "NO SAVE TO BACK UP", then boot as usual.
+2. Otherwise it shows the game's name and "BACK UP SAVE? A:YES B:NO". B
+   carries on as if SELECT weren't held.
+3. A, when the save is `/SAVER/...`, has no clock footer, and the file
+   already exists at exactly the stamp's size: pSRAM pages `0..` are written
+   over the file's own clusters, the stamp is cleared, "SAVE BACKED UP".
+   No FAT or directory entry changes.
+4. A, in any other case (no file yet, a different size, an MBC3 clock):
+   "BACKING UP IN THE KERNEL". Stage1 skips its own fast launch and boots
+   the kernel, which backs the stamped save up at boot. A write error
+   ("SAVE ERROR") ends the same way. The kernel isn't sent the skip mark
+   here, only when START was held.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
 in a subdirectory): the FPGA values match the kernel's for that game
@@ -229,7 +268,6 @@ stamp).
 
 - Name the rest: the console/printf internals, `check_fs`/`pf_mount`
   details, `disk_readp_impl`.
-- Fast launch on hardware.
-- A save backup in stage1 (SD writes), so fast launch alone keeps `/SAVER`
-  current.
+- Confirm v4 on hardware: the SELECT backup, the skip mark with a mod 5.4
+  kernel, the version line.
 - The lone-ROM rule (empty `FLAUNCH=`), the kernel picker, SGB packets.
