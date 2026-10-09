@@ -108,6 +108,10 @@ REGISTRY = {
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),
+    # SGB boot unlock (scripts/inject-sgb.py): its only absolute operands are
+    # $0150, the FPGA registers and its own block, the same in every build
+    (0, 0x0020): dict(kind="data"),        # SgbStub
+    (1, 0x7f00): dict(kind="data"),        # SgbUnlock
     # hand-assembled, with data tails
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
@@ -501,6 +505,15 @@ class Port:
             if all(b == 0xff for b in self.src_stock[r0:r1]):
                 self.log.append(f"warning: {bank:02x}:{cpu(bank, r0):04x} {r1 - r0}B of stale bytes in free "
                                 f"space, not in kernel.sym: skipped (blank them in {self.src_ver})")
+                continue
+            if bank == 0 and 0x0104 <= r0 and r1 <= 0x014e:
+                # cartridge header (the SGB flag and licensee, scripts/inject-sgb.py,
+                # and the header checksum over them): data, laid out the same in
+                # every build, so copied as is
+                if self.dst_stock[r0:r1] != self.src_stock[r0:r1]:
+                    raise SystemExit(f"error: header {r0:04x}-{r1:04x} differs in {self.dst_ver}")
+                self.dst[r0:r1] = self.src_mod[r0:r1]
+                self.written.append((0, r0, r1 - r0, f"header<-{r0:04x}"))
                 continue
             base = bank * BANK
             starts = self.starts(bank)

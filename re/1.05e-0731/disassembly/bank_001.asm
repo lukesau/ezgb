@@ -1617,7 +1617,7 @@ FormatFileSize_retDeHl::
 ; (no battery; cart battery is RTC-only). See docs/psram-save-map.md.
 
 SetFpgaPage_B1::
-    ld bc, $7f00
+    ld bc, SgbUnlock
     ld a, $e1
     ld [bc], a
     ld bc, $7f10
@@ -1642,7 +1642,7 @@ SetFpgaPage_B1::
 
 SetFpga7F34_35_B1::
     push af
-    ld bc, $7f00
+    ld bc, SgbUnlock
     ld a, $e1
     ld [bc], a
     ld bc, $7f10
@@ -1691,7 +1691,7 @@ SetFpga7F34_35_B1::
 ; Same shape as SetFpga7FD0_B4. Orphan before LoaderPrepPath.
 
 SetFpga7FD4_B1::
-    ld bc, $7f00
+    ld bc, SgbUnlock
     ld a, $e1
     ld [bc], a
     ld bc, $7f10
@@ -4382,7 +4382,7 @@ BackupOpenSaverPath_failRtcPreLaunch::
 
 ; [ezgb]
 ; PreLaunchSaveStamp: page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
-; $A000=$AA backup-pending, $A001=auto-save, $A00F=save bank count, $A010+=basename from $c3a5.
+; $A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.
 ; Jump_001_561d: copy basename until len@sp+$0b (jr_001_5654 ++idx); done → Jump_001_5657.
 ; Jump_001_5657: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; Jump_001_571c: $4000=0, page $00 ret. Next LaunchSetup.
 
@@ -11014,224 +11014,37 @@ RtcNegClampHook::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+SgbUnlock::
+    db $3e, $11, $ea, $00, $40, $06, $03, $cd
+    db $53, $7f, $21, $00, $a4, $2a, $4f, $2a
+    db $57, $2a, $5f, $66, $af, $ea, $00, $40
+    db $47, $cd, $53, $7f, $79, $fe, $53, $20
+    db $0f, $7a, $fe, $47, $20, $0a, $7b, $fe
+    db $01, $20, $05, $7c, $fe, $fe, $28, $04
+    db $f1, $c3, $50, $01, $cd, $6c, $7f, $16
+    db $c0, $cd, $ce, $7f, $cd, $6c, $7f, $16
+    db $40, $cd, $ce, $7f, $cd, $6c, $7f, $16
+    db $30, $cd, $ce, $7f, $cd, $6c, $7f, $f1
+    db $c3, $50, $01, $3e, $e1, $ea, $00, $7f
+    db $3e, $e2, $ea, $10, $7f, $3e, $e3, $ea
+    db $20, $7f, $78, $ea, $c0, $7f, $3e, $e4
+    db $ea, $f0, $7f, $c9, $11, $04, $01, $06
+    db $f1, $21, $00, $c0, $78, $22, $23, $0e
+    db $0e, $7b, $fe, $50, $3e, $00, $30, $01
+    db $1a, $22, $13, $0d, $20, $f3, $21, $02
+    db $c0, $0e, $0e, $af, $86, $23, $0d, $20
+    db $fb, $ea, $01, $c0, $c5, $d5, $21, $00
+    db $c0, $cd, $a6, $7f, $d1, $c1, $04, $04
+    db $78, $fe, $fd, $20, $cc, $c9, $0e, $00
+    db $af, $e2, $3e, $30, $e2, $06, $10, $1e
+    db $08, $2a, $57, $cb, $42, $3e, $10, $20
+    db $01, $87, $e2, $3e, $30, $e2, $cb, $1a
+    db $1d, $20, $f0, $05, $20, $e9, $3e, $20
+    db $e2, $3e, $30, $e2, $16, $04, $01, $cc
+    db $09, $0b, $78, $b1, $20, $fb, $15, $20
+    db $f5, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

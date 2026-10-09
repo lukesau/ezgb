@@ -26,9 +26,10 @@ row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 | 10 | `FAST LAUNCH:` checkbox |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. |
 | 14 | `UI:` 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
+| 16 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)) |
 
-UP/DOWN move a cursor over six rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
-3 FAST LAUNCH, 4 PICK ROM, 5 UI (clamp `04:5604` `d6 05`). The stock checkbox
+UP/DOWN move a cursor over seven rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
+3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB BOOT (clamp `04:5604` `d6 06`). The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
 `FlSetADispatch` moved to `04:5f30` (30 B; its old slot at `04:5959` had no
 room for `cp $02`): row 2 goes to the stock AUTO SAVE toggle (`$58d6`), every

@@ -3,7 +3,6 @@
 ; See docs/psram-save-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 
-00:0024 .padding:4
 00:0376 InvalidFarCallTrap
 00:0150 KernelEntry
 00:01df HaltLoop
@@ -4508,7 +4507,7 @@
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg
-04:6600 .data:601:8
+04:6600 .data:6c9:8
 04:5f30 FlSetADispatch
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs
@@ -4523,3 +4522,7 @@
 08:7e38 .data:14:8
 00:03aa SaveStampHook
 00:03aa .data:1d:8
+00:0020 SgbStub
+00:0020 .data:9:8
+01:7f00 SgbUnlock
+01:7f00 .data:da:8

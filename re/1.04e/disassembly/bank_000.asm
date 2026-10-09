@@ -41,17 +41,11 @@ RST_18::
     ld b, b
     add b
 
-RST_20::
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-
-    ; padding
-    ds $4, $ff
+SgbStub::
+    db $f5, $3e, $01, $ea, $00, $20, $c3, $00
 
 RST_28::
-    rst RST_38
+    ld a, a
     rst RST_38
     rst RST_38
     rst RST_38
@@ -196,7 +190,7 @@ DrawGlyphSafe::
 
 Boot::
     nop
-    jp KernelEntry
+    jp $0020
 
 
 HeaderLogo::
@@ -211,7 +205,7 @@ HeaderNewLicenseeCode::
     db $00, $00
 
 HeaderSGBFlag::
-    db $00
+    db $03
 
 HeaderCartridgeType::
     db $01
@@ -226,13 +220,13 @@ HeaderDestinationCode::
     db $00
 
 HeaderOldLicenseeCode::
-    db $00
+    db $33
 
 HeaderMaskROMVersion::
     db $01
 
 HeaderComplementCheck::
-    db $bd
+    db $87
 
 HeaderGlobalChecksum::
     db $7a, $ed
@@ -1920,7 +1914,7 @@ DirList_readdir::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -1981,7 +1975,7 @@ DirList_bankSlot::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -2709,7 +2703,7 @@ GotoFileBrowser::
 
 ; [ezgb]
 ; BackupBranchEntry: save stamp → SAVER basename, then fall into FileBrowserEntry.
-; Read $A202→$d3f6, $A001 auto flag, clear $A000, B=$A00F bank count.
+; C=$A200 auto-save flag, $A202→$d3f6, $A001 save size in banks, clear $A000, B=$A00F path length.
 ; Jump_000_0ec4: copy $A010.. → $c3a5 (jr_000_0f05 carry); Jump_000_0f08: NUL-term + Open_B9 SaverDirStr + farcalls.
 ; Jump_000_0f5b: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d).
 
@@ -2841,7 +2835,7 @@ BackupBranchEntry_openSaverDir::
     nop
     nop
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -2896,7 +2890,7 @@ BackupBranchEntry_seedSlashPath::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -2938,7 +2932,7 @@ FileBrowserEntry::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -3096,7 +3090,7 @@ FileBrowserEntry_redrawCode3Farcall::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -3129,7 +3123,7 @@ FileBrowserEntry_redrawCodeGe2::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -3525,7 +3519,7 @@ LastRomOverlay::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -3589,7 +3583,7 @@ LastRomDrawBasename::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -4105,7 +4099,7 @@ MenuDispatchAB_failHang::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -4595,7 +4589,7 @@ BatteryCheck::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop
@@ -4707,7 +4701,7 @@ BatteryCheck_enterSdMenu::
     push af
     inc sp
     call FarCallTrampoline
-    rst RST_20
+    rst SgbStub
     ld b, c
     inc b
     nop

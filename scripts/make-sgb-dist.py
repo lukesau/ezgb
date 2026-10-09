@@ -39,7 +39,7 @@ def assemble():
     """Returns {section name: (rom file offset, bytes)} and the symbol table."""
     with tempfile.TemporaryDirectory() as tmp:
         obj, rom, mapf, sym = (os.path.join(tmp, n) for n in ("s.o", "s.gb", "s.map", "s.sym"))
-        subprocess.run(["rgbasm", "-o", obj, ASM], check=True)
+        subprocess.run(["rgbasm", "-D", "SGB_ALWAYS", "-o", obj, ASM], check=True)
         subprocess.run(["rgblink", "-p", "0xff", "-m", mapf, "-n", sym, "-o", rom, obj], check=True)
         data = open(rom, "rb").read()
         maptxt = open(mapf).read()

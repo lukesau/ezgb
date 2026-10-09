@@ -19,7 +19,8 @@
  *               name + PICK ROM button, UI) with the cursor highlight.
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): redraw the rows.
  *   op 2 A      A pressed with the cursor on a mod row. The checkboxes and UI
- *               toggle and rewrite the file (returns 0 = jp redraw); PICK ROM
+ *               toggle and rewrite the file (returns 0 = jp redraw); SGB BOOT
+ *               toggles its pSRAM record instead (no file); PICK ROM
  *               arms pick mode (returns 1 = leave the SET screen; the bank-0
  *               FlSetExitHook then re-enters the browser).
  *   op 3 PICK   the browser's A-on-ROM hook (bank 0, via FlPickCommitFar):
@@ -31,8 +32,14 @@
  * Layout (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]   8 AUTO SAVE: [ ]
  *   10 FAST LAUNCH: [ ]   12 <name, 10 cols, scrolling> [PICK ROM]   14 UI: [8px]
+ *   16 SGB BOOT: [ ]
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
- * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 UI).
+ * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB).
+ *
+ * SGB BOOT is not in EZGB.CFG: the boot stub (scripts/sgb/sgb_boot.asm) runs
+ * long before the SD card is up, so it reads a record in battery-backed
+ * pSRAM, page $11 at $A400 ('S', 'G', flag, ~flag; docs/psram-page-map.md).
+ * Set it on a DMG/GBC/GBA, then move the cart to the Super Game Boy.
  * NULL for op 3/4/5.
  *
  * ezcfg leaves $7FC0=$00 after its SD I/O. The SET screen rests at $7FC0=$00,
@@ -73,6 +80,9 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 #define ROW_CHECK 3
 #define ROW_PICK  4
 #define ROW_UI    5          /* UI: 8px / 12px button (docs/ui-mode.md) */
+#define ROW_SGB   6          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
+#define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
+#define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define RTC_OFF  (*(volatile u8 *)0xDB3A)   /* RTCSD=0, owned by ezcfg */
 #define MQ_POS   (*(volatile u8 *)0xDB38)   /* name marquee: first shown char */
 #define MQ_TICK  (*(volatile u8 *)0xDB39)   /* ...frames since the last step */
@@ -92,6 +102,8 @@ static void draw_rows(u8 cur);
 static void pick_commit(void);
 static void wait_a_release(void);
 static void box(u8 x, u8 y, u8 on, u8 hi);
+static u8 sgb_get(void);
+static void sgb_set(u8 on);
 
 u8 flcfg(u8 *frame, u8 op) {
     if (op == 0) {
@@ -135,6 +147,12 @@ u8 flcfg(u8 *frame, u8 op) {
             draw_rows(ROW_RTC);
             wait_a_release();
             SetFpgaPage_B4(0);
+            return 0;
+        }
+        if (frame[0x3d] == ROW_SGB) {
+            sgb_set(!sgb_get());
+            draw_rows(ROW_SGB);
+            wait_a_release();
             return 0;
         }
         if (frame[0x3d] == ROW_UI) {
@@ -213,6 +231,30 @@ static void pick_commit(void) {
     wait_a_release();
 }
 
+/* The SGB BOOT record, mapped the way the kernel maps page $11 for its
+ * AUTO SAVE flag (04:58d6): page latch, $7FC0 = $03, access, then both back
+ * to 0, where the SET screen rests. */
+static u8 sgb_get(void) {
+    u8 on;
+    RAM_PAGE = 0x11;
+    SetFpgaPage_B4(3);
+    on = SGB_REC[0] == 'S' && SGB_REC[1] == 'G' && SGB_REC[2] == 1 && SGB_REC[3] == 0xFE;
+    RAM_PAGE = 0;
+    SetFpgaPage_B4(0);
+    return on;
+}
+
+static void sgb_set(u8 on) {
+    RAM_PAGE = 0x11;
+    SetFpgaPage_B4(3);
+    SGB_REC[0] = 'S';
+    SGB_REC[1] = 'G';
+    SGB_REC[2] = on;
+    SGB_REC[3] = ~on;
+    RAM_PAGE = 0;
+    SetFpgaPage_B4(0);
+}
+
 static void wait_a_release(void) {
     while (ReadJoypad() & 0x10) {}
 }
@@ -224,12 +266,14 @@ static void draw_static(void) {
     static const u8 nosd_label[6] = {'N','O',' ','S','D',0};
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
     static const u8 ui_label[4] = {'U','I',':',0};
+    static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
     StoreDrawParams(3, 0, 0);
     SetText(rtc_label, 4, 0, 6);
     SetText(sd_label, 2, 6, 6);
     SetText(nosd_label, 5, 11, 6);
     SetText(fl_label, 12, 0, 10);
     SetText(ui_label, 3, 0, 14);
+    SetText(sgb_label, 9, 0, 16);
     draw_name();
 }
 
@@ -283,7 +327,7 @@ static void box(u8 x, u8 y, u8 on, u8 hi) {
 }
 
 /* RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A switches) and
- * the FAST LAUNCH checkbox (row 10), the PICK ROM button
+ * the FAST LAUNCH (row 10) and SGB BOOT (row 16) checkboxes, the PICK ROM button
  * on row 12 and the UI button on row 14, both shaped like the stock SET
  * button (box 5 px left and 4 px right of the text, 3 px above and 5 below). */
 static void draw_rows(u8 cur) {
@@ -294,6 +338,7 @@ static void draw_rows(u8 cur) {
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
     box(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
     box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
+    box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
 
     if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     /* 12px: the box is the text row plus a pixel above and below */
