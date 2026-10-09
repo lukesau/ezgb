@@ -33,12 +33,12 @@ for c in "$here"/src/*.c "$b/font8.c" "$b/icon.c" "$b/wordmark.c"; do
     sdcc $CFLAGS -c "$c" -o "$o"
     rels="$rels $o"
 done
-for s in crt0 handoff; do
+for s in crt0 handoff game_handoff; do
     sdasgb -plosgff -o "$b/$s.rel" "$here/src/$s.s"
 done
 sdldgb -n -m -w -i "$b/stage1.ihx" -b _HOME=0x0150 -b _CODE=0x0200 -b _DATA=0xC000 \
     -k "$(dirname "$(which sdcc)")/../share/sdcc/lib/sm83" -l sm83 \
-    "$b/crt0.rel" "$b/handoff.rel" $rels
+    "$b/crt0.rel" "$b/handoff.rel" "$b/game_handoff.rel" $rels
 makebin -s 32768 "$b/stage1.ihx" "$b/stage1.raw"
 
 # $0000-$47FF is BRAM; $4800-$7FFF has nothing behind it and must be zero

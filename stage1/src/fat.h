@@ -18,6 +18,7 @@ uint8_t fat_mount(void);
 /* "/dir/File Name.gb": long or 8.3 names, any case */
 uint8_t fat_open(const char *path);
 void fat_read_first(uint8_t *dst);
+uint8_t fat_read(uint32_t sector, uint8_t *dst);
 const char *fat_name(void);
 /* The FPGA load command for the file found last (128 u32, docs/fpga-stage1.md) */
 uint8_t fat_load_command(uint32_t *cmd);

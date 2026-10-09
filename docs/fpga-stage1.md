@@ -174,9 +174,62 @@ it never could before. Changes, in `patches/sameboy` on this branch:
 - `SAMEBOY_EZFLASH_JR_LOG=1` sends the stub's messages to stderr, because
   `GB_log` only reaches a terminal when the debugger console starts.
 
+## Fast launch
+
+With `FLAUNCH=` set in `EZGB.CFG` (and SELECT not held), stage1 launches the
+game itself, without loading the kernel (`stage1/src/game.c`). It copies
+the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
+
+1. `LASTROM`: the full path to pSRAM `$11:$A300`, as `LastRomPersist`
+   (`01:4856`) does.
+2. Header: MBC code from `$0147`, battery and timer flags, ROM mask from
+   `$0148` (raised to cover the file), RAM mask from `$0149`, the header
+   checksum over `$0134-$014C` (`x = x - b - 1`), and the MBC1M logo check
+   at file offset `$40000` (`RomLoaderMain`, `01:5e14`).
+3. Save (`BackupOpenSaverPath`, `01:5163`): `/SAVER/` + the ROM's name with
+   `.gb`/`.gbc` -> `.sav` (lowercase, as the kernel writes it at
+   `01:51bf`). An existing file is copied to pSRAM pages `0..`; with none,
+   the expected size is filled with `$FF`. Then the stamp on page `$11`:
+   `$AA`, size >> 13, path length, path, `$A202 = 0`.
+4. Load command (same table as for the kernel), then `$7FC0=$02`, `$7F37`
+   (MBC, `+$80` with a timer), `$7FD4=$00`, `$7FC4`, `$7FC1/$7FC2`,
+   `$7FC3`.
+5. LCD off, `$7F36=$01` and the command copied in, then from WRAM
+   (`game_handoff.s`): `$7F36=$03`, wait while the status reads 0 or 1,
+   `$7F36=$00`, `$7F31/$7F32 = $00`, ROM bank 1, `$7FE0=$80`.
+
+**The save rule.** While a game runs its save lives only in pSRAM; the
+kernel copies it to `/SAVER` on its next boot when page `$11` holds the
+`$AA` stamp. So stage1 decides from the stamp:
+
+| pSRAM stamp | Stage1 |
+|---|---|
+| none | launches, loading the `.sav` (or `$FF`) and writing the stamp |
+| `$AA`, this game's save path | launches without copying anything: pSRAM already holds the newest save, and the stamp stays armed |
+| `$AA`, another game | boots the kernel, which backs that save up first |
+
+It also boots the kernel instead for anything it can't do exactly the
+kernel's way: a game with a clock (MBC3 timer) whose save needs its RTC
+restored or reset, a target that isn't `.gb`/`.gbc`, a game without a
+battery while a stamp is pending, or any file error. An empty `FLAUNCH=`
+(the kernel's lone-ROM rule) also goes to the kernel.
+
+**One consequence:** fast-launching the same game over and over never
+backs its save up to the SD card, because only the kernel does that. The
+save stays safe in pSRAM, and the next boot into the kernel (hold SELECT)
+writes it out. A stage1 save backup would need SD writes; not done.
+
+Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
+in a subdirectory): the FPGA values match the kernel's for that game
+(`$03 $00 $03 $3F $00 $20`), the game boots, and all four save cases above
+behave (no stamp with and without a `.sav`, same-game stamp, other-game
+stamp).
+
 ## Next
 
 - Name the rest: the console/printf internals, `check_fs`/`pf_mount`
   details, `disk_readp_impl`.
-- Level-1 features on top of the rewrite: read `EZGB.CFG`, pick the kernel,
-  fast launch, SGB packets.
+- Fast launch on hardware.
+- A save backup in stage1 (SD writes), so fast launch alone keeps `/SAVER`
+  current.
+- The lone-ROM rule (empty `FLAUNCH=`), the kernel picker, SGB packets.

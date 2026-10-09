@@ -197,18 +197,21 @@ static void lfn_piece(const uint8_t *e)
     }
 }
 
+/* Short names honour the NT case bits (byte 12: $08 lowercase name, $10
+ * lowercase extension), so "ezgb.dat" reads back as FatFs gives it. */
 static void entry_name(const uint8_t *e)
 {
-    uint8_t i, n = 0;
+    uint8_t i, n = 0, lower = e[12] & 0x08 ? 32 : 0;
 
     if (lfn_valid && lfn_sum == short_sum(e))
         return;                 /* name[] already holds the long name */
     for (i = 0; i < 8 && e[i] != ' '; i++)
-        name[n++] = e[i];
+        name[n++] = e[i] >= 'A' && e[i] <= 'Z' ? e[i] + lower : e[i];
     if (e[8] != ' ') {
         name[n++] = '.';
+        lower = e[12] & 0x10 ? 32 : 0;
         for (i = 8; i < 11 && e[i] != ' '; i++)
-            name[n++] = e[i];
+            name[n++] = e[i] >= 'A' && e[i] <= 'Z' ? e[i] + lower : e[i];
     }
     name[n] = 0;
 }
@@ -277,10 +280,23 @@ uint8_t fat_open(const char *path)
     }
 }
 
-/* The open file's first sector, into dst (not the cache) */
+/* Sector n of the open file into dst (not the cache); 0 past its chain */
+uint8_t fat_read(uint32_t n, uint8_t *dst)
+{
+    uint32_t c = file_cluster, skip = n >> csize_shift;
+
+    while (skip--) {
+        c = next_cluster(c);
+        if (c < 2 || c > max_cluster)
+            return 0;
+    }
+    sd_read(cluster_sector(c) + (n & ((1 << csize_shift) - 1)), dst);
+    return 1;
+}
+
 void fat_read_first(uint8_t *dst)
 {
-    sd_read(cluster_sector(file_cluster), dst);
+    fat_read(0, dst);
 }
 
 /* The open file's base name as the directory has it (long name if any) */

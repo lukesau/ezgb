@@ -95,7 +95,7 @@ void main(void)
             tried = 1;
             if (fast_launch_target()) {
                 print_center(DETAIL_ROW, fat_name());
-                game_launch(text);      /* returns only if it can't */
+                game_launch(launch_path, text);  /* returns only if it can't */
             }
         }
         if (!err)
