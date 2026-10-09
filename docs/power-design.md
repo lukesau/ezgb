@@ -30,12 +30,28 @@ cart running with bad data (see H5).
 
 | Item | Status |
 |---|---|
-| Cart supply | Console VCC on the edge connector: 5 V on DMG/CGB/GBA-in-GB-mode. **FPGBC slot voltage and its level shifting are unverified.** |
+| Cart supply | Console VCC on the edge connector: 5 V on DMG/CGB/GBA-in-GB-mode. **FPGBC slot voltage and its level shifting are unverified**, see below. |
 | 3.3 V rail | Feeds the FPGA VCCO, the LVT162245 shifters (U6/U7), the config flash, and very likely both MCPs. **Regulator part not identified.** |
 | 1.2 V rail | Spartan-3A VCCINT. VCCAUX is 2.5 or 3.3 V (board picks). **Regulator(s) not identified.** |
 | Backup domain | Coin cell (CR2016/CR2032 holder) backs **U4's 512 KB pSRAM die** and the **PCF8563 RTC (U3)**. **The switchover part is not identified.** It could be a diode-OR (e.g. BAT54C), a single diode plus resistor, or the RTC's own supply. This decides most of the hypotheses below. |
 | U9 game pSRAM | Main rail only. Volatile (O5). |
 | Board capacitance | Unknown. The JTAG notes ([hardware-board.md](hardware-board.md)) confirm all rails beep together through decoupling caps when unpowered. That says nothing about bulk capacitance on the backup node. |
+
+### FPGBC cart slot (unverified)
+
+The FPGBC is FPGA-based, and FPGA I/O tops out at 3.3 V, so it has to do
+*something* to talk to 5 V carts. No public schematic or teardown says what,
+and FunnyPlaying notes some flash carts may not work. There are three likely
+designs, and each one hurts the Jr differently:
+
+| FPGBC design | Effect on the Jr |
+|---|---|
+| 5 V slot + level translators (likely) | Two translators in series: the Jr's LVT162245 outputs only reach ~3.3 V, which is marginal against a 5 V-side input threshold (0.65-0.7 × VCC ≈ 3.25-3.5 V). Translator delay also eats bus timing margin. Auto-direction parts (TXS0108-class) are known to misbehave against strong push-pull drivers like LVT. |
+| 5 V slot + series resistors into the FPGA's clamp diodes | Fine for reads from the cart. Writes and the `/RD`/`/WR` levels reach the Jr at 3.3 V, which its 5 V-tolerant inputs accept. Least likely to be the problem. |
+| 3.3 V slot, no translation (cheapest) | The Jr's 3.3 V regulator runs from a ~3.3 V input, so it is in dropout and the rail sits lower. That stacks directly with H1 and H3. |
+
+Test: DMM on cart-edge pin 1 (VCC) with the Jr in the FPGBC, and the high level
+of a data line during a read if a scope is available.
 
 **First job:** trace the coin-cell holder's `+` terminal to whatever it feeds,
 note every diode, resistor and cap on that net, and find out where the RTC's
@@ -228,7 +244,8 @@ In order of cost:
 ## Open questions
 
 - Is the switchover a proper diode-OR, or can the rail charge the cell?
-- FPGBC cart-slot supply voltage and slew rate, compared with DMG/GBA.
+- FPGBC cart-slot supply voltage, slew rate and level translation, compared
+  with DMG/GBA (see "FPGBC cart slot").
 - Does the kernel's `BATTERY` / `DRY!!!` check ([boot-map.md](boot-map.md)
   `Call_000_1835`) read the coin cell or console power? See
   [1.05e-instability.md](1.05e-instability.md), which says console power.
