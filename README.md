@@ -182,6 +182,7 @@ the FW5 packages differ
   [`docs/fpga-bitstream.md`](docs/fpga-bitstream.md),
   [`docs/fpga-picoblaze.md`](docs/fpga-picoblaze.md),
   [`docs/fpga-fw5.md`](docs/fpga-fw5.md),
+  [`docs/fpga-cgb.md`](docs/fpga-cgb.md),
   [`docs/fpga-toolchain.md`](docs/fpga-toolchain.md),
   [`docs/game-slot-access.md`](docs/game-slot-access.md),
   [`docs/psram-save-map.md`](docs/psram-save-map.md).

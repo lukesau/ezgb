@@ -116,6 +116,10 @@ Getting CGB mode at first boot therefore requires changing what the *factory
 bootstrap* presents to the console at power-on. That is FPGA firmware territory,
 the one genuinely brick-risky area, on a layer this project has no dump of.
 
+**Update 2026-10-08:** the bootstrap is now dumped and patchable. It is block
+RAM contents in the FPGA bitstream, and a CGB-flagged build for FW4 slot B is
+in [fpga-cgb.md](fpga-cgb.md) (built and verified offline, not yet flashed).
+
 ## Status of the code on this branch
 
 `CgbInit` itself works and is verified under SameBoy: it is reached from the
