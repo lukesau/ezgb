@@ -179,6 +179,8 @@ the FW5 packages differ
 - **Hardware:** [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
   [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
+  [`docs/fpga-bitstream.md`](docs/fpga-bitstream.md),
+  [`docs/fpga-toolchain.md`](docs/fpga-toolchain.md),
   [`docs/game-slot-access.md`](docs/game-slot-access.md),
   [`docs/psram-save-map.md`](docs/psram-save-map.md).
 - **Boot & launch:** [`docs/boot-map.md`](docs/boot-map.md),
