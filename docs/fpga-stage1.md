@@ -155,7 +155,7 @@ built stage1 byte for byte. **Not yet run on hardware.**
 ### Emulator support
 
 The SameBoy stub (`tools/SameBoy/Core/ezflash_jr.c`) now runs stage1, which
-it never could before. Changes, not yet in `patches/sameboy`:
+it never could before. Changes, in `patches/sameboy` on this branch:
 
 - Enabled for the title `BOOTLOADER` (stage1) as well as `EZGB`. No SD-init
   soft-patch there.
