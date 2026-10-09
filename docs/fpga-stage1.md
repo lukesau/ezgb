@@ -176,7 +176,7 @@ it never could before. Changes, in `patches/sameboy` on this branch:
 
 ## Fast launch
 
-With `FLAUNCH=` set in `EZGB.CFG` (and SELECT not held), stage1 launches the
+With `FLAUNCH=` set in `EZGB.CFG` (and START not held), stage1 launches the
 game itself, without loading the kernel (`stage1/src/game.c`). It copies
 the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
 
@@ -216,7 +216,7 @@ battery while a stamp is pending, or any file error. An empty `FLAUNCH=`
 
 **One consequence:** fast-launching the same game over and over never
 backs its save up to the SD card, because only the kernel does that. The
-save stays safe in pSRAM, and the next boot into the kernel (hold SELECT)
+save stays safe in pSRAM, and the next boot into the kernel (hold START)
 writes it out. A stage1 save backup would need SD writes; not done.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name

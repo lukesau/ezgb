@@ -1,7 +1,7 @@
 /* stage1: show the boot screen, find EZGB.DAT on the SD card, have the
  * FPGA load it, enter it at $0100. Same steps as the stock bootstrap
  * (docs/fpga-stage1.md), written from scratch. With fast launch set in
- * EZGB.CFG it launches that game instead (game.c), unless SELECT is held,
+ * EZGB.CFG it launches that game instead (game.c), unless START is held,
  * and boots the kernel whenever that isn't possible. */
 #include <string.h>
 #include "hw.h"
@@ -43,8 +43,9 @@ static const char *const errors[] = {
     "EZGB.DAT FRAGMENTED",
 };
 
-/* SELECT held at power-on skips fast launch, as in the kernel */
-static uint8_t select_held(void)
+/* START held at power-on skips fast launch, as in the kernel
+ * (fastlaunch_boot.c) */
+static uint8_t start_held(void)
 {
     uint8_t i, keys = 0xFF;
 
@@ -52,7 +53,7 @@ static uint8_t select_held(void)
     for (i = 0; i < 6; i++)
         keys = rP1;
     rP1 = 0x30;
-    return !(keys & 0x04);
+    return !(keys & 0x08);
 }
 
 /* FLAUNCH= target from EZGB.CFG, opened; 0 when there is none */
@@ -60,7 +61,7 @@ static uint8_t fast_launch_target(void)
 {
     uint16_t n;
 
-    if (select_held() || fat_open("/EZGB.CFG"))
+    if (start_held() || fat_open("/EZGB.CFG"))
         return 0;
     n = file_size < 512 ? (uint16_t)file_size : 512;
     fat_read_first(text);
