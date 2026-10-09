@@ -12,7 +12,7 @@ mechanism currently unknown")? The motivating goal was finding whether the
 **There is no separate stage1-write path.** The updater writes exactly one
 nonvolatile target, the SPI config flash, via the `$7FD2` command protocol,
 and its embedded payload is the FPGA bitstream. `stage1` is not carried in the
-updater as data; it is almost certainly **BRAM-initialised inside the
+updater as data; it is **BRAM-initialised inside the
 bitstream**, so writing a new bitstream implicitly ships a new stage1. The
 parallel NOR die is never touched.
 
@@ -69,7 +69,7 @@ external config-flash dump.
   nibble-swapped. FW4 and FW5 stage1 differ by 37%, tracking the 64%-different
   bitstreams.
 
-## Why stage1 is (almost certainly) in the bitstream
+## Why stage1 is in the bitstream
 
 Everything is consistent with stage1 living in FPGA block-RAM, initialised by
 the bitstream:
@@ -88,6 +88,9 @@ Not *proven* (that needs Spartan-3A bitstream-format RE to extract the BRAM
 init and match it to `stage1.gb`), but it is the only hypothesis left standing,
 and it is directly testable if/when the bitstream container is cracked
 ([hardware-board.md](hardware-board.md), [fpga-ace.md](fpga-ace.md)).
+
+**Proven 2026-10-08.** The BRAM init was extracted from the FW4 bitstream and
+rebuilds `stage1.gb` byte for byte ([fpga-bitstream.md](fpga-bitstream.md)).
 
 ## Consequence for "free space"
 

@@ -182,6 +182,11 @@ rev+inv); the only hit is each updater's own header logo at `$0104`. The full
 the best-supported answer; confirming it needs the bitstream format. See the
 search detail and the alternative NOR hypothesis below.
 
+**Proven (b), 2026-10-08.** Decoding the FW4 bitstream recovers stage1 in full:
+`$0000-$3FFF` is eight 16K × 1 block RAMs, one per data bit, and `$4000-$47FF`
+one 2K × 8 BRAM. The rebuilt 32 KB matches `stage1.gb` exactly
+([fpga-bitstream.md](fpga-bitstream.md)).
+
 Note: the ROM-space unlock/commit protocol the kernel and updater share
 ([REGISTERS.md](REGISTERS.md)) is a *separate* interface from SPI configuration:
 reverse engineering the updater teaches the delivery mechanism, not how to author
@@ -226,7 +231,9 @@ Repair-critical view; full layout owned by [fpga-flash-map.md](fpga-flash-map.md
 Each image is `0x24832` bytes including its `FF` preamble; the bitstream proper
 starts 0x46 in. Length ~149,484 bytes matches the XC3S200A's ~146 KB bitstream.
 Images A and B differ in only 8 bytes, all in the tail (CRC-like). The repair
-below relies on the tail being preserved.
+below relies on the tail being preserved. (Decoded 2026-10-08: two of those
+bytes are one PicoBlaze instruction in block RAM, not CRC; the other six are in
+the CRC area. See [fpga-bitstream.md](fpga-bitstream.md).)
 
 ### The repair
 
@@ -300,3 +307,8 @@ FPGA command or a replacement FPGA design ([fpga-ace.md](fpga-ace.md)).
 **Consequence for CGB mode:** the "patch the bootstrap's CGB flag" shortcut is
 dead. The remaining route is a replacement FPGA design (`fpga-ace.md`), serving
 its own bootstrap from BRAM with whatever ROM header it chooses.
+
+**Reopened 2026-10-08.** With stage1's BRAM layout known, header byte `$0143`
+is bit `$143` of each of the eight plane BRAMs, so the shortcut is eight bit
+flips plus a new CRC, not a new design. Needs an encoder and JTAG testing first
+([fpga-bitstream.md](fpga-bitstream.md)).

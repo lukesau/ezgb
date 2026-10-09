@@ -52,6 +52,11 @@ last byte), where a Spartan-3A bitstream carries its CRC / final-CRC and a
 mid-stream frame CRC. Consistent with slots A and B being two builds of the same
 design rather than a byte-for-byte copy.
 
+**Corrected 2026-10-08 by decoding the bitstream** ([fpga-bitstream.md](fpga-bitstream.md)):
+the `+$1982c/d` pair is not a CRC. It is one instruction in a PicoBlaze
+program held in block RAM (`LOAD s0, 01` in slot A, `LOAD s0, 02` in slot B).
+Only the six tail bytes are in the CRC area.
+
 ## What the FW4 updater writes (verified)
 
 `Update_FW4.gb` past its `$8000` GB header is a 149,516-byte payload. Overlaid on
@@ -81,7 +86,9 @@ it does not appear anywhere in `ezgb.dat`. It is a distinct high-entropy payload
 bootstrap ROM.
 
 The bootstrap is also absent from both updaters, and the flash contains no
-plaintext logo/strings anywhere. This leans toward **hypothesis (b)** in
+plaintext logo/strings anywhere. (**Proven 2026-10-08:** stage1 is rebuilt
+byte for byte from BRAM contents decoded out of the bitstream; see
+[fpga-bitstream.md](fpga-bitstream.md).) This leans toward **hypothesis (b)** in
 [hardware-board.md](hardware-board.md): the GB-visible bootstrap is embedded in
 the bitstream as block-RAM initialisation, not stored as a separate ROM image.
 Not yet proven (proving it needs the bitstream format), but hypothesis (a), a
@@ -92,7 +99,14 @@ separate plaintext ROM, has no supporting evidence in the flash image.
 Both slots begin `aa 99 30 a1 00 07 …`. The `aa 99` echoes the Xilinx sync
 prefix, but the standard Spartan-3A `aa 99 55 66` word does **not** appear
 (searched normal and bit-reversed across the whole image). So the body is either
-a non-standard packaging or a wrapped/transformed bitstream. Identifying the
+a non-standard packaging or a wrapped/transformed bitstream.
+
+**Corrected 2026-10-08:** it is standard. A Spartan-3A stream syncs on `aa 99`
+alone, and a stock `bitgen` file for the XC3S200A starts with the same
+32 × `ff`, `aa 99 30 a1`. Each slot is a plain 149,516-byte stream from the
+first `ff` dummy word (flash `$26` / `$40026`), and it decodes completely with
+prjcombine ([fpga-bitstream.md](fpga-bitstream.md)). The original reasoning
+follows for the record. Identifying the
 exact format is the deep, open item; it is not required for the slot map or the
 updater-write map above.
 
