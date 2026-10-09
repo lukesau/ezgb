@@ -21,14 +21,34 @@ module tb;
     wire miso;
     spi_flash #(.IMAGE("flash.hex")) flash(.CS_N(P27), .CLK(P53), .MOSI(P46), .MISO(miso));
     assign P51 = P27 ? 1'bz : miso;
-    // SD card: CLK P23, CMD P28, DAT0-3 (order still being confirmed)
+    // SD card: CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29
 `ifndef SD_DAT
-`define SD_DAT {P29, P25, P30, P34}
+`define SD_DAT {P29, P30, P25, P34}       // DAT3..DAT0, confirmed by block reads
 `endif
     sd_card #(.IMAGE("card.img")) sd(.CLK(P23), .CMD(P28), .DAT(`SD_DAT));
-    // Game Boy idle: address 0, /WR high
-    assign {P7, P6, P5, P4, P21, P39, P68, P82, P99, P98, P97, P94, P93, P90, P89, P88} = 16'h0000;
-    assign P84 = 1'b1;
+    // Game Boy bus: A0-A15, D0-D7, /WR on P84. There is no /RD or /CS: the
+    // FPGA drives D0-D7 from A13-A15 and /WR alone (docs/fpga-design.md).
+    reg [15:0] gb_a = 16'h0000;
+    reg [7:0] gb_d = 8'h00;
+    reg gb_doe = 0, gb_wr_n = 1;
+    assign {P7, P6, P5, P4, P21, P39, P68, P82, P99, P98, P97, P94, P93, P90, P89, P88} = gb_a;
+    assign {P19, P16, P15, P13, P12, P10, P9, P3} = gb_doe ? gb_d : 8'hzz;
+    assign P84 = gb_wr_n;
+    wire [7:0] gb_q = {P19, P16, P15, P13, P12, P10, P9, P3};
+    // one machine cycle each, about 1 us as on a DMG
+    task gb_write(input [15:0] a, input [7:0] d);
+        begin
+            gb_a = a; #200; gb_d = d; gb_doe = 1; #100; gb_wr_n = 0; #450; gb_wr_n = 1; #100; gb_doe = 0; #100;
+        end
+    endtask
+    task gb_read(input [15:0] a, output [7:0] d);
+        begin
+            gb_a = a; #800; d = gb_q; #150;
+        end
+    endtask
+`ifdef GB_TEST
+`include `GB_TEST
+`endif
     pullup (P3); pullup (P9); pullup (P10); pullup (P12); pullup (P13); pullup (P15); pullup (P16);
     pullup (P19); pullup (P20); pullup (P23); pullup (P24); pullup (P25); pullup (P28);
     pullup (P29); pullup (P30); pullup (P31); pullup (P32); pullup (P33); pullup (P34); pullup (P35);
