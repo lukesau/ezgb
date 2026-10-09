@@ -155,6 +155,11 @@ red build to this one).
   copied routine at `LOADING...` in SameBoy: registers identical at entry
   and exit, LCDC 00, and once the test re-enables the LCD the screen is
   blank (only the text stage1 prints afterwards appears), on CGB and DMG.
+- Background colour is an off-white "paper" (`PAPER`, R31 G30 B28) in
+  palette 0 and the icon's palette 1, so the boot screen and the whole
+  kernel UI (which draws through palette 0) sit on off-white with the same
+  dark greys and black. The hardware still shows pure white while the LCD
+  is off (the hand-off blank and the kernel's own init).
 - Tiles `$80-$A9` (`$8800`, unused: the font is tiles `$20-$7F`); data in
   the `$FF` filler at `$39A4` (verified unreferenced), code at `$01E4-$027E` and `$4161-$41B3`.
   GBDK's display-mode dispatcher (`$0400`) jumps through a 4-entry table at
@@ -167,7 +172,7 @@ iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts
 the logo. Verified: SameBoy CGB and DMG show the icon above EZ-FLASH;
 slot B patch flips 5,036 bits in the 8 plane BRAMs only; stage1 rebuilt from
 the patched bitstream equals the tested ROM. Installed with
-`Update_FW4-splash.gb` (`make-updater.py`, label `Update: splash 4`; builds 1-3 had
+`Update_FW4-splash.gb` (`make-updater.py`, label `Update: splash 5`, off-white; builds 1-3 had
 the hand-off bugs described above).
 
 ## Next

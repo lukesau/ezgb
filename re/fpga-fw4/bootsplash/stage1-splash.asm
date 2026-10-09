@@ -40,6 +40,10 @@ DEF ICON_X     EQU 7            ; tile column (centred: 20 - 6 = 14 / 2)
 DEF ICON_Y     EQU 1            ; tile row; stage1 prints EZ-FLASH at row 8
 DEF ICON_TILE  EQU $80          ; first tile number ($8800 in signed mode)
 
+; background colour (BGR555) for stage1 and, through palette 0, the kernel:
+; warm off-white R31 G30 B28. Pure white would be $7FFF.
+DEF PAPER      EQU (28 << 10) | (30 << 5) | 31
+
 ; ---- header ----
 SECTION "cgb_flag", ROM0[$0143]
     db $80                      ; CGB enhanced, still runs on DMG
@@ -242,12 +246,13 @@ DrawIconMap:
 
 ; ---- data, in the $FF filler at the end of the 16 KB bit-plane area ----
 SECTION "splash_data", ROM0[$39A4]
-; BGR555. Palette 0: the old BGP $E4 shades (text). Palette 1: the icon:
+; BGR555. Palette 0: the old BGP $E4 shades with an off-white paper (text,
+; and everything the kernel draws). Palette 1: the icon:
 ; 0 screen background, 1 orange screen, 2 frames (darkened), 3 lip.
 Greys:
-    dw $7FFF, $56B5, $294A, $0000
+    dw PAPER, $56B5, $294A, $0000
 IconPalette:
-    dw $7FFF, $129E, $294A, $14A5
+    dw PAPER, $129E, $294A, $14A5
 IconTiles:
     INCBIN "build/icon.2bpp"
 IconTilesEnd:
