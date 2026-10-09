@@ -70,7 +70,8 @@ Every FPGA register write uses the kernel's unlock sequence: `$7F00=$E1`,
 
 | Offset | Content |
 |---|---|
-| `+$000` | extents: `{u32 file_sector, u32 lba}`, one per contiguous cluster run, first `file_sector` = 0, terminated by `{$FFFFFFFF, 0}` |
+| `+$000` | 0 |
+| `+$004` | extents: `{u32 start LBA, u32 end}`, one per contiguous cluster run. `end` is a running total of file sectors from the start of the file, not a count. The last extent's `end` is `$FFFFFFFF` (rest of the file), and the word after it is 0 |
 | `+$1F0` | file size in bytes |
 | `+$1F4` | 1 |
 | `+$1F8` | sectors per cluster |
@@ -81,9 +82,18 @@ can load something other than the kernel.
 
 - The cluster-chain end marker is chosen from `FsType()`: FAT16 `$FFFF`,
   otherwise FAT32 `$0FFFFFF7`. FAT12 isn't handled.
-- Nothing bounds the extent count. 61 extents plus the terminator fit before
+- Nothing bounds the extent count. 61 extents plus the closing 0 fit before
   `+$1F0`. A more fragmented `EZGB.DAT` corrupts the tail fields, then
   `$C2A0+`, which holds the message pointers and the FATFS pointer.
+
+> **Correction (2026-10-09).** The first version of this page (commit
+> "stage1 disassembly") gave the extents as `{file_sector, lba}`, starting at
+> `+$000`. Wrong: `+$000` is a lone 0 and the pairs are `{lba, end}`. That
+> version also didn't say that `end` is a running total, which is the part that
+> matters. The kernel's `LaunchSetup` builds the same table for games. The
+> kernel-side write-up, including what daid's `Protocol.md`, the SameBoy stub
+> and `norreuse_clamp_extents.c` get wrong, is on main in
+> [launch-trace.md](launch-trace.md#the-load-command-table).
 
 ### The kernel's name
 

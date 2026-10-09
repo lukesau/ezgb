@@ -29,8 +29,9 @@
       "lines": [
         "main(): print EZ-FLASH, delay(700), LOADING; pf_mount; pf_open(\"EZGB.DAT\"); OSINIT;",
         "build the 512-byte load command at $C0A0 from the file's cluster chain; LoadKernel($C0A0).",
-        "Load command: {u32 file_sector, u32 lba} extents from +$000 (first file_sector 0), one per",
-        "contiguous cluster run, terminated by {$FFFFFFFF, 0}; +$1F0 file size in bytes; +$1F4 = 1;",
+        "Load command: +$000 = 0, then {u32 lba, u32 end} extents, one per contiguous cluster run;",
+        "end = running total of file sectors (not a count); last end $FFFFFFFF, then 0;",
+        "+$1F0 file size in bytes; +$1F4 = 1;",
         "+$1F8 sectors per cluster. Room for 61 extents + terminator before +$1F0, and nothing",
         "checks: a more fragmented EZGB.DAT corrupts the tail, then $C2A0+ (messages, FATFS pointer)."
       ]
