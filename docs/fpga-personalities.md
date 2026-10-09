@@ -18,6 +18,15 @@ constant pushed before the call). Register meanings cross-checked against
 | `$05` | 1 | config-flash / fw-update | `RomLoad_ClearCartWindow_B8` (`08:6f98`), which is **dead code** (unreferenced) |
 | `$06` | 7 | RTC registers (BCD, `$Ax08`+) | clock read/set |
 
+> **Later findings (2026-10-09).** Still accurate as a kernel-side map. The
+> FPGA side is now known from the bitstream: `$7FC0` is a 4-bit register in
+> the fabric, and the `$04` version byte is wiring in the design, not a
+> stored value ([fpga-version.md](fpga-version.md)); the config-flash write
+> behind `$05`/`$7FD2` is the PicoBlaze's flash-update command
+> ([fpga-picoblaze.md](fpga-picoblaze.md)); `$02` is the load-command window
+> stage1 also uses ([fpga-stage1.md](fpga-stage1.md)). The full pSRAM page
+> `$11` layout is in [psram-page-map.md](psram-page-map.md).
+
 Only the six documented personalities appear. **No undocumented value, and no
 personality that opens a fresh, general-purpose nonvolatile window** onto the
 parallel NOR die. This is the GB-side counterpart to the updater finding

@@ -1,5 +1,37 @@
 # Running your own logic on the Jr's FPGA
 
+> **Historical (2026-10-09).** This is the original plan, written before the
+> bitstream was decoded. Its premise, that reversing the factory bitstream
+> is out of reach so the way in is a replacement design over JTAG, no
+> longer holds. Current state: [fpga.md](fpga.md) (index),
+> [fpga-bitstream.md](fpga-bitstream.md) (the format, fully decoded),
+> [fpga-picoblaze.md](fpga-picoblaze.md) (how slot A hands over to slot B),
+> [fpga-design.md](fpga-design.md) (the pin map, from the bitstream).
+
+> **Correction (2026-10-09).** Claims below that later work overturned:
+>
+> - *"Reverse engineering the factory bitstream is a research project."*
+>   prjcombine had already done that research. The FW4 and FW5 images
+>   decode completely, and the cart's own bitstream can be edited and
+>   reinstalled with `s3patch` and a relabelled stock updater, no JTAG
+>   needed ([fpga-setup.md](fpga-setup.md)).
+> - *Each slot is "a `$46`-byte container header + an XC3S200A bitstream".*
+>   Each slot is a plain `bitgen` stream starting at flash `$26` / `$40026`
+>   ([fpga-flash-map.md](fpga-flash-map.md)).
+> - *Which slot boots, and the guess that it is Spartan-3A MultiBoot with
+>   fallback.* The FPGA always loads address 0 (`GENERAL1/2` are zero in both
+>   slots). Slot A's PicoBlaze program hands over to slot B through ICAP and
+>   keeps a boot tally at `$70000`, so a slot B that fails to configure leaves
+>   the next power-on on slot A ([fpga-picoblaze.md](fpga-picoblaze.md)). It
+>   is done in firmware, not by the configuration logic.
+> - *FW5's two images as a fallback + active pair.* Neither FW5 image's
+>   PicoBlaze hands over to the other ([fpga-fw5.md](fpga-fw5.md)).
+> - *Boundary scan as the way to the pin map.* Most of the cartridge bus is
+>   now mapped from the bitstream itself ([fpga-design.md](fpga-design.md)).
+>
+> The JTAG notes remain the safe route for anything loaded into the FPGA's
+> SRAM only.
+
 Goal: arbitrary code execution at the *hardware* layer: our own bitstream on
 the cart's Spartan-3A, rather than patched bytes inside EZ Flash's kernel.
 
