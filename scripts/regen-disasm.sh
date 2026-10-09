@@ -46,6 +46,9 @@ run() {
 
 cd "$RE"
 run python3 -u "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
+# mgbdis names the build game.gbc when the header's CGB flag is set ($0143 =
+# $80, docs/cgb-mode.md); everything else here reads game.gb
+perl -pi -e 's/\bgame\.gbc\b/game.gb/g' disassembly/Makefile
 run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
   ann_ec=$?
   if [[ "$ann_ec" -eq 1 ]]; then
