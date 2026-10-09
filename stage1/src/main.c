@@ -7,11 +7,21 @@
 #include "fat.h"
 #include "video.h"
 
-#define TITLE_ROW  9
-#define STATUS_ROW 12
+/* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
+#define STATUS_ROW 15
+#define DETAIL_ROW 16
 #define HANDOFF ((uint8_t *)0xD000)
+/* Boot screen timing, in frames (60 per second). The whole intro fits in
+ * the stock 700 ms pause: EZ-FLASH alone, then the Jr. painted on left to
+ * right, then a hold before LOADING. */
 #ifndef PAUSE_FRAMES
 #define PAUSE_FRAMES 42                 /* ~700 ms, the stock pause */
+#endif
+#ifndef JR_DELAY
+#define JR_DELAY 18                     /* EZ-FLASH alone */
+#endif
+#ifndef JR_STEP
+#define JR_STEP 2                       /* per paint step (4 steps) */
 #endif
 
 extern const uint8_t handoff_start[], handoff_end[];
@@ -46,15 +56,17 @@ void main(void)
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
-    print_center(TITLE_ROW, "EZ-FLASH");
-    wait_frames(PAUSE_FRAMES);
+    wait_frames(JR_DELAY);
+    wordmark_paint(JR_STEP);
+    wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
     print_center(STATUS_ROW, "LOADING...");
 
     /* keep retrying: the card may still be starting up, or be swapped */
     while ((err = prepare())) {
-        print_center(STATUS_ROW, errors[err]);
+        print_center(DETAIL_ROW, errors[err]);
         wait_frames(60);
     }
+    print_center(DETAIL_ROW, "OSINIT...");
 
     fpga_set(FPGA_SRAM_MAP, 2);
     fpga_set(FPGA_LOAD_MAP, 1);

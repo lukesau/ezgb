@@ -22,3 +22,10 @@ Needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
 | `src/video.c` | boot screen: icon, text, CGB palettes |
 | `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |
 | `font/font8.txt` | 8x8 font, `$20-$5A` |
+| `art/ezflash.txt` | EZ-FLASH letters: Arial Bold Italic 22 pt, no antialiasing, E/Z join split by hand |
+| `art/jr.txt` | the brush "Jr.", traced from a photo of the cart label (`scripts/fpga/jr-trace.py`) |
+
+The wordmark is composed by `scripts/fpga/mkwordmark.py` into one tile map
+per step: EZ-FLASH alone, then the Jr. painted on left to right in four steps.
+`main.c` plays them inside the stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so
+the intro costs no boot time.

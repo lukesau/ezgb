@@ -23,9 +23,12 @@ with open(sys.argv[2], "w") as f:
     f.write("};\n")
 PY
 
+python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr.txt"     "$b/wordmark.c" --jr-at 86,4 --pivot 0,0 \
+    --width 16 --height 4 --letters-x 10 --stages 4 ${WORDMARK_FLAGS:---no-halo} > "$b/wordmark.txt"
+
 CFLAGS="-msm83 --opt-code-size --max-allocs-per-node 20000 -I$here/src ${STAGE1_CFLAGS:-}"
 rels=""
-for c in "$here"/src/*.c "$b/font8.c" "$b/icon.c"; do
+for c in "$here"/src/*.c "$b/font8.c" "$b/icon.c" "$b/wordmark.c"; do
     o="$b/$(basename "${c%.c}").rel"
     sdcc $CFLAGS -c "$c" -o "$o"
     rels="$rels $o"
