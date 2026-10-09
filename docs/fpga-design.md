@@ -42,9 +42,15 @@ fan-out of any pin).
 
 The bottom and right edges carry the memory buses (the two NOR+pSRAM
 packages share a 16-bit bus), the SD card, the SPI config flash and the RTC
-(I2C). Not assigned yet; the PicoBlaze port map
-([fpga-picoblaze.md](fpga-picoblaze.md)) and the SD controller's known
-structure are the next anchors. Full list: `scripts/fpga/netlist/pintable.py`.
+(I2C). Assigned so far:
+
+| Function | Pins |
+|---|---|
+| SPI config flash | CS P27, CLK P53, MOSI P46, MISO P51 |
+| SD card | CLK P23, CMD P28, DAT0-3 among P25 P29 P30 P34 (order not yet confirmed) |
+| RTC (I2C) | probably P31/P32 |
+
+Full list: `scripts/fpga/netlist/pintable.py`.
 
 ## Clocks
 
@@ -72,7 +78,34 @@ the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` and
 `X3Y25.psm` read: the switch to bank 2 at `$3F1`, `bank2_main` (`$1B5`)
 with its Device DNA and flash routines, back to bank 1. That checks the
 slice, LUT RAM, carry, BRAM, clock and start-up models against the real
-design.
+design. Verilator runs it about 100 times faster than iverilog.
+
+With the SPI flash and SD card models in `models.v`, the simulated FPGA
+reads the boot tally and licence from flash, then initialises the card:
+CMD0, CMD8, CMD55/ACMD41, CMD2, CMD3, CMD7, CMD16, ACMD6 (4-bit bus),
+CMD13. It then waits for the Game Boy, which the testbench does not drive
+yet. The SD controller is Marek Czerski's OpenCores `sdc_controller`
+(command word at `$04` with the index in bits 13:8, argument at `$00`
+starting the command, command status at `$34`); its registers cross from
+the PicoBlaze's clock (BUFGMUX3) to the SD clock (BUFGMUX6) through 43
+two-flop synchronisers.
+
+What the simulation showed:
+
+- In a SLICEM, `DIF_MUX=BX` / `DIG_MUX=BY` on a LUT that isn't in RAM mode
+  goes with the flip-flop taking BX / BY directly, whatever `DXMUX` /
+  `DYMUX` decode as. In FW4 those are exactly the 51 flip-flops that would
+  otherwise be fed by a constant LUT, the synchronisers among them. Before
+  `netlist2v.py` applied this, every SD command went out with index 0.
+- The firmware races its own status clear. `sd_command` clears `$34`
+  after a command completes, but the clear takes three SD clocks to
+  cross and the next command's first status poll comes after two, so
+  CMD55 reads as complete before it is sent and the ACMD41 written after
+  it is lost. The ACMD41 retry loop covers it at the cost of one ~20 ms
+  delay per boot. The PicoBlaze and the SD divider share a clock, so this
+  should happen on the cart too.
+- CMD7 goes out with RCA `$0200` whatever the card's CMD3 reply says.
+  Not looked into yet.
 
 > **Correction (2026-10-09).** An earlier version of this section said
 > prjcombine's CLB document has the F5 mux backwards (`BX ? G : F`). It
@@ -86,8 +119,9 @@ design.
 
 1. Finish the pin map (`/RD`, `/CS`, console clock; then the memory, SD,
    flash and RTC pins).
-2. ~~Export the netlist as structural Verilog~~ (done, above). Next: an SD
-   card model so the boot can get past `sdc_init`.
+2. ~~Export the netlist as structural Verilog~~ (done, above). SD card
+   model done: the boot gets through card init. Next: confirm the DAT
+   order with block reads.
 3. Simulate Game Boy bus cycles from the kernel's own register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
