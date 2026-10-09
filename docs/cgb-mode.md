@@ -128,12 +128,15 @@ continues into the browser. `scripts/debug/cgb-init.sbd` re-runs that check.
 The code is correct; there is just no way to get the console into CGB mode for
 it to matter on real hardware.
 
-The palette currently in `decomp/src/cgb_init.c` is the **diagnostic** one
-(shade 0 is bright red, deliberately unmistakable). The faithful greyscale ramp
-it replaced is recorded in a comment directly above it. Restore that first if
-this branch is ever revived.
-
-Do not merge this branch. It is kept as the record of a tested dead end.
+**Since mod 5.3** `CgbInit` is part of the mod (`00:0259`, hooked at `$01ba`,
+header `$0143 = $80`), with the real greyscale ramp (`$7fff`, `$56b5`,
+`$294a`, `$0000`) instead of the red diagnostic. On a
+stock cart it stays inactive (the console runs the kernel in DMG
+compatibility mode, so the feature test skips it); in emulators that honour
+ezgb.dat's header the kernel runs in CGB mode with that palette. A bug in
+the old build is fixed on the way: SDCC merged the ramp's two `$00` stores
+into one, so every palette after the first was a byte out (black came out
+cyan).
 
 ## Risk
 

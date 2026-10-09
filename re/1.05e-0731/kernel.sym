@@ -4526,3 +4526,5 @@
 00:0020 .data:9:8
 01:7f00 SgbUnlock
 01:7f00 .data:da:8
+00:0259 CgbInit
+00:0259 .data:6a:8

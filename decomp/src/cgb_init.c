@@ -22,6 +22,12 @@
  *
  * Runs on DMG hardware too, so everything CGB-specific is behind a runtime
  * feature test rather than a build-time assumption.
+ *
+ * When does the kernel actually run in CGB mode? Only when the console's boot
+ * ROM saw a CGB flag. On the cart it reads the factory bootstrap's header,
+ * not ezgb.dat's (docs/cgb-mode.md), so in practice this is for emulators
+ * that run ezgb.dat directly. Everywhere else the feature test fails and
+ * this is just the stock LCD-on.
  */
 
 #define rLCDC (*(volatile unsigned char *)0xff40)
@@ -40,19 +46,6 @@ static void write_shade_ramp(volatile unsigned char *port);
 
 void cgb_init_and_lcd_on(void) {
     unsigned char i;
-
-    /* MBC cart-RAM enable ($0A to $0000-$1FFF, the standard MBC1/MBC5 gate).
-     *
-     * Only meaningful when this image was launched *as a game*: the loader
-     * reads the launched ROM's $0147/$0149 and has the FPGA emulate that MBC
-     * (bank_001.asm:6188+, feeding $7F37), and an emulated MBC keeps
-     * $A000-$BFFF disabled until this write. Both the SD data window and the
-     * PSRAM meta pages live at $A000, which is why a chain-booted kernel fails
-     * SD init *and* the battery check from one cause.
-     *
-     * Booted normally, the FPGA is not emulating an MBC and this is an
-     * ordinary ignored write to ROM space. */
-    *(volatile unsigned char *)0x0000 = 0x0a;
 
     /* Feature-test VBK rather than trusting the saved boot A at $d6c9: on CGB
      * hardware A is $11 even when the console is running in DMG compatibility
@@ -92,23 +85,14 @@ void cgb_init_and_lcd_on(void) {
  * crt0 to copy it at boot), so the data has to live in the instruction
  * stream. */
 static void write_shade_ramp(volatile unsigned char *port) {
-    /* DIAGNOSTIC PALETTE: shade 0 is deliberately bright red, not white.
-     *
-     * The point of this build is to answer one question on real hardware: does
-     * the console's boot ROM ever read ezgb.dat's header, or does the factory
-     * bootstrap's header decide the mode? A faithful greyscale ramp cannot
-     * answer it, because it looks near-identical to the DMG palette the
-     * boot ROM applies when the CGB flag is ignored, so both outcomes render
-     * the same.
-     *
-     * Shade 0 is the UI background, so in CGB mode the whole screen goes red;
-     * shade 3 stays black, keeping text readable. Unmistakable either way.
-     *
-     * Restore the real ramp once the question is settled:
-     *   0xff,0x7f  $7fff white      0xb5,0x56  $56b5 light grey
-     *   0x4a,0x29  $294a dark grey  0x00,0x00  $0000 black          */
-    *port = 0x1f; *port = 0x00; /* $001f BRIGHT RED (BGR555: r=31) */
-    *port = 0xb5; *port = 0x56; /* $56b5 light grey                */
-    *port = 0x4a; *port = 0x29; /* $294a dark grey                 */
-    *port = 0x00; *port = 0x00; /* $0000 black                     */
+    /* SDCC merges two back-to-back `*port = 0x00` stores into one even
+     * through a volatile pointer, which left each ramp a byte short and
+     * shifted every later palette (black came out as $5f00 cyan). Reading
+     * the zero from a volatile local forces both stores. */
+    volatile unsigned char zero = 0;
+
+    *port = 0xff; *port = 0x7f; /* $7fff white           */
+    *port = 0xb5; *port = 0x56; /* $56b5 light grey      */
+    *port = 0x4a; *port = 0x29; /* $294a dark grey       */
+    *port = zero; *port = zero; /* $0000 black           */
 }

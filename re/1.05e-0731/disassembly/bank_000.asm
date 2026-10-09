@@ -199,7 +199,13 @@ HeaderLogo::
     db $bb, $bb, $67, $63, $6e, $0e, $ec, $cc, $dd, $dc, $99, $9f, $bb, $b9, $33, $3e
 
 HeaderTitle::
-    db "EZGB", $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    db "EZGB", $00, $00, $00, $00, $00, $00, $00
+
+HeaderManufacturerCode::
+    db $00, $00, $00, $00
+
+HeaderCGBFlag::
+    db $80
 
 HeaderNewLicenseeCode::
     db $00, $00
@@ -226,7 +232,7 @@ HeaderMaskROMVersion::
     db $01
 
 HeaderComplementCheck::
-    db $87
+    db $07
 
 HeaderGlobalChecksum::
     db $7b, $57
@@ -305,8 +311,8 @@ KernelEntry_copyOamDmaStub::
     ldh [rOBP0], a
     ld a, $1b
     ldh [rOBP1], a
-    ld a, $c0
-    ldh [rLCDC], a
+    call $0259
+    nop
     xor a
     ldh [rIF], a
     ld a, $09
@@ -365,112 +371,22 @@ MarqueeWidth12::
     db $00, $e8, $06, $7b, $f8, $10, $be, $3e
     db $ff, $30, $01, $af, $f8, $11, $77, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+CgbInit::
+    db $af, $e0, $4f, $f0, $4f, $0f, $38, $39
+    db $3e, $01, $e0, $4f, $21, $00, $80, $7d
+    db $b7, $20, $05, $7c, $d6, $a0, $28, $04
+    db $af, $22, $18, $f3, $af, $e0, $4f, $3e
+    db $80, $e0, $68, $3e, $80, $e0, $6a, $0e
+    db $00, $c5, $11, $69, $ff, $d5, $cd, $9f
+    db $02, $e1, $11, $6b, $ff, $d5, $cd, $9f
+    db $02, $e1, $c1, $0c, $79, $d6, $08, $38
+    db $e8, $3e, $c0, $e0, $40, $c9, $3b, $f8
+    db $00, $36, $00, $f8, $03, $2a, $4f, $46
+    db $3e, $ff, $02, $3e, $7f, $02, $3e, $b5
+    db $02, $3e, $56, $02, $3e, $4a, $02, $3e
+    db $29, $02, $f8, $00, $7e, $02, $7e, $02
+    db $33, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
