@@ -178,6 +178,7 @@ the FW5 packages differ
   here to contribute.
 - **Hardware:** [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
+  [`docs/fpga.md`](docs/fpga.md) (FPGA docs index and setup),
   [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
   [`docs/fpga-bitstream.md`](docs/fpga-bitstream.md),
   [`docs/fpga-picoblaze.md`](docs/fpga-picoblaze.md),
