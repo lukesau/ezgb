@@ -63,39 +63,62 @@ prjcombine database to a frame bit, locating it in the stream's FDRI runs,
 refusing frames that are reused via MFWR, recomputing every CRC packet, and
 re-parsing the result to prove only the requested bits changed.
 
-## Flashing (not done)
+## Installing it (not done yet)
 
-Only on **the FW4 cart this dump came from.** The licence record at `$30000`
-is tied to that FPGA's Device DNA ([fpga-picoblaze.md](fpga-picoblaze.md)),
-and the image is FW4. Never write it to the FW5 cart.
+### Recommended: the CGB updater
 
-Why slot B: on power-on the hardware loads slot A, whose PicoBlaze hands over
-to slot B ([fpga-picoblaze.md](fpga-picoblaze.md)). If slot B fails to
-configure, the boot tally byte stays at `01` and the next power-on stays on
-slot A. That covers a broken bitstream. It does not cover a slot B that
-configures fine but misbehaves (say, the kernel failing in CGB mode): slot B
-marks itself booted, so slot A keeps handing over, and recovery means
-rewriting slot B with a programmer (the 2026-08-16 procedure in
-[hardware-board.md](hardware-board.md)).
+`Update_FW4.gb` is a launched game that writes its payload to config flash
+`$040000 + offset`, one 256-byte page at a time through the PicoBlaze's
+flash-update command (the staging header is built at `00:13e9`: loop offset
+`+ $040000`). Checked in the code: no payload checksum, no read-back
+compare, no version gate. It shows the cart's current firmware version for
+display only, waits for A, writes 149,516 bytes and stops. Its payload is
+exactly slot B.
 
-Best practice before writing: read the cart's current flash and splice the
-patched slot B into *that* (it differs from the August dump at least in the
-boot tally), and only program `$40000-$6FFFF`, the three 64 KB sectors that
-hold slot B. Program FLASH only, leave
-STATUS/CFG unchecked.
+So `scripts/fpga/make-updater.py` builds `Update_FW4-cgb.gb`: the stock file
+with the payload replaced by the patched slot B and the on-screen line
+changed to `Update: CGB test`. The updater code is byte-identical to stock;
+only the payload, those 16 label bytes and the global checksum differ.
+SameBoy shows the expected start screen.
 
-What to expect on a colour console: EZ-FLASH / LOADING as normal, then a red
-screen at OSINIT, then the kernel. The stock kernel will boot in CGB mode,
-probably still red since it sets no CGB palettes of its own;
-games launch as before, each in the mode its own header asks for.
+What it touches: config flash `$040000-$064831` (erasing the three 64 KB
+sectors from `$040000`). Not slot A, not the licence record at `$030000`,
+not the boot tally. The bitstream is the same for every cart, so this is
+safe on any cart whose slot A hands over to slot B. The dumped cart's slot A
+does (it is labelled FW5 but its flash held FW4 firmware when dumped; check
+what yours runs now).
+
+Running any updater is the operation [cgb-mode.md](cgb-mode.md) flags as
+brick-risky: a power loss mid-write leaves slot B half written. Slot A's
+fallback covers a slot B that fails to configure (the tally byte stays `01`
+and the next power-on stays on slot A). It does not cover a slot B that
+configures but misbehaves, which then needs the stock `Update_FW4.gb`
+(if the kernel still runs) or a programmer.
+
+### Alternatives
+
+- **Programmer:** the full image `EN25F40-fw4-cgb-slotB.bin` is the
+  `EN25F40-repaired-v2.bin` dump with slot B replaced. A full image belongs
+  only to the cart it was dumped from (licence record, slot A and tally are
+  that cart's); for any other cart, splice slot B into a fresh dump of that
+  cart and program only `$40000-$6FFFF`. FLASH only, STATUS/CFG unchecked.
+- **JTAG:** loads the FPGA's SRAM after power-on, but the console reads the
+  CGB flag during its own power-on, so JTAG alone can't show this patch
+  unless the cart is powered separately before the console starts. Good for
+  everything else (PicoBlaze and loader changes). Always JTAG-load a
+  slot-B-type image (`$1B8 = 02`): a slot A type hands over and reboots into
+  whatever slot B holds.
+
+### What to expect
+
+On a colour console: EZ-FLASH / LOADING as normal, then a red screen at
+OSINIT, then the kernel. The stock kernel will boot in CGB mode, probably
+still red since it sets no CGB palettes of its own; games launch as before,
+each in the mode its own header asks for. To undo: run the stock
+`Update_FW4.gb`.
 
 ## Next
 
 - An `ezgb.dat` with `CgbInit` (the `cgb-mode` branch, greyscale palette
   restored) so the kernel looks right in CGB mode.
 - Drop the red hook once proven; keep the greyscale init.
-- A route that doesn't need a programmer: the FW4 updater writes slot B via
-  the PicoBlaze's flash-update command, so an updater carrying this slot B
-  would do it from the kernel. Not built: running an updater is the one
-  operation [cgb-mode.md](cgb-mode.md) warns can brick, so it needs its own
-  review.
