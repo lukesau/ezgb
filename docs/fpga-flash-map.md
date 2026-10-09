@@ -155,8 +155,8 @@ image with the new img1 bitstream; leave the golden image untouched. The one
 thing this static analysis cannot pin down is which physical slot (`$00000` vs
 `$40000`) holds the active vs golden image after a real FW5 write; that mapping
 needs either the updater's disassembled write routine or a post-update dump
-(Phase 2 / Phase 3 of
-[the FPGA plan](../../.claude/plans/we-can-get-rid-swift-willow.md)).
+(Phase 2 / Phase 3 of the FPGA plan, a private planning note not in the
+repository).
 
 ## How the updater programs the flash (via `$7FD2`)
 
