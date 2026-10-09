@@ -191,6 +191,16 @@ slot-address setup, which decides whether a written image lands at `$00000` or
 overlay + disassembly have not yet fully resolved; a post-update dump would
 close it (Phase 3).
 
+> **Correction (2026-10-09).** Resolved for FW4 from the code: the updater
+> builds each page's staging header at `00:13e9` as loop offset `+ $040000`,
+> so `Update_FW4.gb` always writes slot B and never `$00000`. The write goes
+> through the PicoBlaze's flash-update command
+> ([fpga-picoblaze.md](fpga-picoblaze.md#flash-update-3f--1-kernel-command-08)).
+> The "never run" note above is also out of date: relabelled copies of the
+> FW4 updater carrying patched slot B images have been run on the FW4 cart
+> since 2026-10-08 ([fpga-cgb.md](fpga-cgb.md), [fpga-stage1.md](fpga-stage1.md)).
+> Which slot an FW5 updater writes is still open ([fpga-fw5.md](fpga-fw5.md)).
+
 ## Reproduce
 
 ```bash
