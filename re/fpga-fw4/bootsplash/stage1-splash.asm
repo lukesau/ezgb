@@ -16,9 +16,10 @@
 ;   and calls $0100. The copy is extended from $0150 to $0200 bytes so it
 ;   also carries HandoffBlank (ROM $4161, runs at $D261), and the routine's
 ;   final call $0100 goes there instead: reset every CGB tile attribute to
-;   palette 0 (the kernel knows nothing about attributes) and leave the LCD
-;   off, so the colour icon goes straight to a blank screen and the kernel
-;   turns the LCD on with its own screen. Runs from WRAM with interrupts off
+;   palette 0 (the kernel knows nothing about attributes), clear both maps
+;   and tile 0 so nothing of the boot screen is left in VRAM, and leave the
+;   LCD off. The kernel switches the LCD on before it draws, so without the
+;   clear it showed the old screen (now grey) for a moment. Runs from WRAM with interrupts off
 ;   because the cart space is already the kernel.
 ; - No other stage1 code is changed.
 ; Note: GBDK's display-mode dispatcher ($0400) jumps through a 4-entry table
@@ -68,11 +69,6 @@ HandoffBlank::
     push bc                     ; same registers stock stage1 does
     push de
     push hl
-    xor a                       ; CGB mode only (VBK exists): inline test,
-    ldh [rVBK], a               ; the ROM0 helpers are gone at this point
-    ldh a, [rVBK]
-    and 1
-    jr nz, .kernel
     ldh a, [rLCDC]
     add a
     jr nc, .off                 ; LCD already off: no vblank to wait for
@@ -82,26 +78,52 @@ HandoffBlank::
     jr nz, .vblank
 .off
     xor a
-    ldh [rLCDC], a              ; blank; the kernel turns the LCD back on
-    ld a, 1
+    ldh [rLCDC], a              ; LCD off; the kernel switches it back on
+    ; CGB mode only (VBK exists; inline test, the ROM0 helpers are gone):
+    ; every tile attribute -> palette 0
+    ldh [rVBK], a
+    ldh a, [rVBK]
+    and 1
+    jr nz, .clear
+    inc a
     ldh [rVBK], a
     ld hl, $9800
-    ld bc, $0800
-.attrs
-    xor a
-    ld [hl+], a
-    dec bc
-    ld a, b
-    or c
-    jr nz, .attrs
+    call .clear_maps
     xor a
     ldh [rVBK], a
+.clear
+    ; nothing of the boot screen left for the kernel to show before it
+    ; draws: both maps -> tile 0, tile 0 blank in both addressing modes
+    ld hl, $9800
+    call .clear_maps
+    ld hl, $8000
+    call .blank_tile
+    ld hl, $9000
+    call .blank_tile
 .kernel::
     pop hl
     pop de
     pop bc
     pop af
     jp $0100                    ; the kernel entry hook replaced
+.clear_maps                     ; hl = $9800: zero $9800-$9FFF
+    ld bc, $0800
+.map_byte
+    xor a
+    ld [hl+], a
+    dec bc
+    ld a, b
+    or c
+    jr nz, .map_byte
+    ret
+.blank_tile                     ; zero the 16 bytes at hl
+    xor a
+    ld b, 16
+.tile_byte
+    ld [hl+], a
+    dec b
+    jr nz, .tile_byte
+    ret
 ENDL
 
 ; ---- code, in the $FF filler after the boot halt loop ----
