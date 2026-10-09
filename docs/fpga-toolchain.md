@@ -173,6 +173,7 @@ scripts/fpga/stage1-from-bram.py bram/ -o stage1.gb --ref tools/ezflashjr/stage1
 scripts/fpga/stage1-from-bram.py bram/ --ref <stage1.gb> --discover   # other FW revisions
 scripts/fpga/picoblaze-words.py bram/D0X3Y25.BEL.BRAM > pb-x3y25.txt
 scripts/fpga/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a re/fpga-fw4/X3Y29.notes -o X3Y29.psm
+scripts/fpga/picoblaze-diff.py old/D0X19Y25.BEL.BRAM new/D0X3Y1.BEL.BRAM   # routine-level diff
 ```
 
 ## ISE 14.7

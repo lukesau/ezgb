@@ -139,6 +139,13 @@ So the FW5 package is a real multiboot pair:
   0918. Whatever 0918 adds (the reported SD-card fix and SGB support) is
   entirely inside img1.
 
+**Decoded 2026-10-08** ([fpga-fw5.md](fpga-fw5.md)): the byte-level
+percentages mostly measure place-and-route reshuffling, not design change.
+0918's img1 differs from 0731's in the stage1 SGB header (3 bytes) and the
+PicoBlaze's MBC3 RTC handling. img2 is an older design, but the "golden /
+fallback" role is not supported by the code: unlike FW4's slot A, neither FW5
+image's PicoBlaze hands over to the other, so whichever sits at flash 0 runs.
+
 This also means FW5 replaced FW4's single bitstream with a brand-new two-image
 scheme; FW5's golden image differs from FW4 by 64%, so it is not a carried-over
 copy.
