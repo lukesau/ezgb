@@ -158,3 +158,38 @@ menu idle ($0f8d/$1062)
       FPGA config ($7f37/$7fd4/$7fc*)
       WRAM stub: $7f36=1 → 3 → 0; $7fe0=$80 → boot game
 ```
+
+## The load command table
+
+`LaunchSetup` builds 512 bytes at `$c0a0` and the WRAM stub copies them into
+the `$7f36=$01` window. 128 little-endian u32s:
+
+| Index | Content |
+|---|---|
+| `[0]` | 0 |
+| `[1..]` | extent pairs `{start LBA, end}`, one per contiguous cluster run. The last pair's `end` is `$FFFFFFFF` (rest of the file); the word after it is 0 |
+| `[$7C]` | file size in bytes |
+| `[$7D]` | 1 |
+| `[$7E]` | sectors per cluster |
+
+**`end` is a running total, not a count.** It is the number of file sectors
+up to the end of that extent, counted from the start of the file. The cluster
+counter at `sp+$12` is zeroed once (`01:59dd`, in `LaunchSetup`) before the walk.
+`LaunchSetup_walkClusters` increments it for every cluster, and
+`LaunchSetup_appendCluster` multiplies it by the cluster size (`U32Mul`)
+without ever resetting it. For the first extent the total equals the count,
+so the two readings only differ from the third extent on.
+
+> **Correction (2026-10-09).** daid's `doc/Protocol.md` describes the pairs as
+> "the start sector … and next the amount of sectors to read". Three things
+> follow that reading and are wrong for a file in three or more fragments:
+>
+> - the SameBoy stub (`rom_build_pending` in `Core/ezflash_jr.c`) copies `end`
+>   sectors per extent
+> - `decomp/src/norreuse_clamp_extents.c` subtracts each `end` from the clamp
+>   (an experiment, no longer applied)
+> - the comment at the top of that file
+>
+> The stock stage1 builds the same running-total table for `EZGB.DAT`, so the
+> FPGA side must read it that way. Not yet confirmed from the PicoBlaze
+> loader itself.
