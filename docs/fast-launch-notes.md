@@ -195,8 +195,7 @@ The scan lives in [`../decomp/src/fastlaunch.c`](../decomp/src/fastlaunch.c)
 **Verified under SameBoy** (originally both root triggers) via
 `decomp/src/fastlaunch_scan_test.c` injected into empty bank 2, hooked from
 `FileBrowserEntry_inputLoop` (`00:1107`): a lone-ROM card returned `/PKMRED.GB`
-(the since-removed marker trigger was verified the same way). The verified test
-ROM is preserved at `re/1.05e-0731/kernel.gb.fl-scan-verified`.
+(the since-removed marker trigger was verified the same way).
 
 Possible follow-up: loosen the lone-ROM rule to "exactly one *ROM* file" (ignore
 non-ROM clutter in root) instead of "exactly one real file".

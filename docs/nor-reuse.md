@@ -11,8 +11,7 @@
 > power cycle, fade toward `$FF` with longer off-time, clean `$FF` after
 > pulling the cart), plus the chip map in [hardware-board.md](hardware-board.md).
 > Read every "NOR" below that refers to the game as "U9 game pSRAM". The kernel
-> symbols (`RomLoad_ResetIntoRom_B4` etc.) and the `.norreuse-experiment` builds
-> keep their names. Docs that inherited the NOR claim:
+> symbols (`RomLoad_ResetIntoRom_B4` etc.) keep their names. Docs that inherited the NOR claim:
 > [omega-jr-compare.md](omega-jr-compare.md) ("Game staging and reuse"),
 > [fastlaunch-config-design.md](fastlaunch-config-design.md) ("NOR: effectively
 > off-limits"), [last-rom.md](last-rom.md) (B-mode paragraph).
@@ -108,8 +107,8 @@ unchanged, but at `$1623` call `$41d2` instead of `$448f`.
 
 ## Experimental wiring: Start→A relaunch skips the copy
 
-Applied 2026-08-30 to the featured `re/1.05e-0731/kernel.gb` (pre-patch backup
-`kernel.gb.pre-norreuse`, md5 `670a06a7`; patched build md5 `9e3b067d`). Five
+Applied 2026-08-30 to the featured `re/1.05e-0731/kernel.gb` (pre-patch md5
+`670a06a7`, patched build md5 `9e3b067d`). Five
 patches, `$DBFE` as the one-shot flag (zeroed by the boot WRAM clear):
 
 | Patch | Where | What |
@@ -250,7 +249,6 @@ power drops on residual charge only.
 All wiring (overlay hook, shim, blob repoint, browser-entry clear, probe) was
 reverted; the featured builds are back to fast launch + browser features only
 (0731 = md5 `670a06a7`, the hardware-confirmed build; 0918 = `448e90dd`).
-The experiment builds are preserved as `kernel.gb.norreuse-experiment` beside
-each kernel, and the sources remain in `decomp/src/`
+The sources remain in `decomp/src/`
 (`norreuse_clamp_extents.c`, `nor_probe_draw.c`) with this page and
 [DIFF_1.05e-0731_vs_0918.md](DIFF_1.05e-0731_vs_0918.md) as the record.
