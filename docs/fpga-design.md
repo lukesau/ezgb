@@ -64,13 +64,23 @@ registers plus a few narrow ones. Identified so far: the 2-bit mode
 register (`$7F31/$7F32`) and the 4-bit page register (`$7FC0`), both in
 [fpga-version.md](fpga-version.md).
 
+## Simulation
+
+The whole design exports to structural Verilog and runs in iverilog
+([scripts/fpga/verilog/](../scripts/fpga/verilog/README.md)). From power-on,
+the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` reads: the
+bank-2 call at `$3F0`, two debug-UART prints through `dbg_putc` (`$155`),
+then `clear_scratchpad` (`$042`). That checks the slice, LUT RAM, carry,
+BRAM, clock and start-up models against the real design. One correction to
+prjcombine's CLB document found this way: the F5 mux is `BX ? G : F`
+(standard Xilinx `MUXF5`), not `BX ? F : G`.
+
 ## Plan
 
 1. Finish the pin map (`/RD`, `/CS`, console clock; then the memory, SD,
    flash and RTC pins).
-2. Export the netlist as structural Verilog (LUT4, MUXF5, carry chain,
-   SRL16/RAM16, RAMB16, flip-flops, IO buffers) so yosys can draw and
-   simplify it and iverilog can simulate it.
+2. ~~Export the netlist as structural Verilog~~ (done, above). Next: an SD
+   card model so the boot can get past `sdc_init`.
 3. Simulate Game Boy bus cycles from the kernel's own register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
