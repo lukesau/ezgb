@@ -121,11 +121,59 @@ Dead code, largest first:
 
 The splash ([fpga-cgb.md](fpga-cgb.md)) uses about 900 bytes of the filler.
 
+## Rewrite from source
+
+[`stage1/`](../stage1/README.md) is our own stage1: SDCC C plus two small
+assembly files, no GBDK and no Petit FatFs. It does the same job with the
+same FPGA register sequence, and builds the same load command as stock.
+
+| | Stock | Rewrite |
+|---|---|---|
+| Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB |
+| SD reads to boot the test card | 366 | 20 |
+| Error handling | message, hang | message, retry every second |
+| CGB | DMG-only header | CGB flag, icon in colour, greys on DMG |
+
+- **Reads.** Stock re-reads the FAT sector for every cluster. The rewrite
+  caches one sector, so a chain walk costs one read per FAT sector. The test
+  card is FAT32 with one sector per cluster, which makes `EZGB.DAT` 320
+  clusters: stock takes about 40 seconds there in the emulator.
+- **FAT.** FAT16 and FAT32, MBR or superfloppy, root directory only, 8.3
+  names. FAT12 is refused with a message, as stock does implicitly.
+- **Hand-off.** `src/handoff.s` runs at `$D000`. It is stock's `HandoffPoll`
+  sequence, then the screen clear the splash added. The kernel is entered at
+  `$0100` with A = `$E4`, the value stock leaves in A.
+- **Load command bounds.** A file with more than 61 extents gets "EZGB.DAT
+  FRAGMENTED" instead of overflowing.
+
+Verified in SameBoy: boots the kernel on CGB and DMG, shows "EZGB.DAT NOT
+FOUND" and retries on a card without it. The updater
+(`fpga/stage1/Update_FW4-stage1src.gb`, label "Update: src v1") carries
+slot B with the rewrite in its BRAMs, and its slot B decodes back to the
+built stage1 byte for byte. **Not yet run on hardware.**
+
+### Emulator support
+
+The SameBoy stub (`tools/SameBoy/Core/ezflash_jr.c`) now runs stage1, which
+it never could before. Changes, not yet in `patches/sameboy`:
+
+- Enabled for the title `BOOTLOADER` (stage1) as well as `EZGB`. No SD-init
+  soft-patch there.
+- After stage1's `$7F31`/`$7F32` write, the loaded file replaces the cart
+  without a reset, and CPU state is kept. That is what the FPGA does before
+  stage1 calls `$0100`.
+- `$7F30=$03` reads now return the read status (`$01`, done) instead of
+  sector data. Serving data hung stock stage1 whenever a FAT sector started
+  with `$E1`, the busy value.
+- Extent `end` words are read as running totals
+  ([launch-trace.md](launch-trace.md#the-load-command-table)).
+- `SAMEBOY_EZFLASH_JR_LOG=1` sends the stub's messages to stderr, because
+  `GB_log` only reaches a terminal when the debugger console starts.
+
 ## Next
 
 - Name the rest: the console/printf internals, `check_fs`/`pf_mount`
   details, `disk_readp_impl`.
-- Rewrite stage1 as our own source. It is small: one `main`, Petit FatFs, the
-  GBDK console, and two FPGA routines. A from-source stage1 with no `printf`
-  console and no `pf_read` frees several KB in the same BRAMs, and makes
-  level-1 features ordinary code.
+- Run the rewrite on hardware.
+- Level-1 features on top of the rewrite: read `EZGB.CFG`, pick the kernel,
+  fast launch, SGB packets.
