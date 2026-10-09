@@ -314,3 +314,8 @@ its own bootstrap from BRAM with whatever ROM header it chooses.
 is bit `$143` of each of the eight plane BRAMs, so the shortcut is eight bit
 flips plus a new CRC, not a new design. Needs an encoder and JTAG testing first
 ([fpga-bitstream.md](fpga-bitstream.md)).
+
+> **Correction (2026-10-09).** Done since, without JTAG: `s3patch` writes the
+> BRAM bits and CRCs, and a relabelled stock updater installs the result to
+> slot B. CGB mode at power-on was confirmed on hardware on 2026-10-08
+> ([fpga-cgb.md](fpga-cgb.md)).

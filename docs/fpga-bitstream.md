@@ -98,6 +98,12 @@ That needs an encoder (s3decode is decode-only) and would have to be proven
 over JTAG before going near the flash, but it is no longer blocked on the
 bitstream format.
 
+> **Correction (2026-10-09).** The encoder exists: `s3patch`
+> ([fpga-toolchain.md](fpga-toolchain.md#s3patch)) writes BRAM contents and
+> recomputes the CRCs. The CGB flag was patched with it and installed with
+> an updater, not over JTAG ([fpga-cgb.md](fpga-cgb.md)), and every stage1
+> build since has gone the same way.
+
 ## PicoBlaze
 
 BRAMs X3Y29 and X3Y25 are configured 1K × 18 and hold KCPSM3 (PicoBlaze for
@@ -130,5 +136,8 @@ outside the 149,516 bytes matters).
 ## Next
 
 - Decode the FW5 images (two per updater) and diff 0731 against 0918.
+  Done: [fpga-fw5.md](fpga-fw5.md).
 - Cross-check routing hop by hop against XDL.
-- An encoder with CRC, tested over JTAG on SRAM only.
+- An encoder with CRC, tested over JTAG on SRAM only. Done as `s3patch`
+  for BRAM contents, tested by installing updaters rather than over JTAG
+  (see the correction above).

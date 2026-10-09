@@ -214,10 +214,12 @@ on its contents should work.
 ## Open
 
 - Port `C8` is inferred as a bank select from the code; confirm in the
-  netlist (net tracing is not in s3decode yet).
+  netlist. Net tracing exists now (`s3trace`,
+  [fpga-toolchain.md](fpga-toolchain.md#s3trace)); this hasn't been traced yet.
 - What drives `B9` (RTC refresh) and reads `ED`/`EE`, `E0-E3`, `EF` on the
   GB side; tie each to its `$7Fxx` register.
 - The licence check's exact data layout, and whether the record can be
   regenerated for another chip.
 - The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).
-- Repeat for the FW5 images.
+- Repeat for the FW5 images. Done for bank 1 and bank 2:
+  [fpga-fw5.md](fpga-fw5.md).
