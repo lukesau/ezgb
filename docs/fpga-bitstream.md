@@ -2,7 +2,7 @@
 
 Results of decoding the FW4 bitstream with prjcombine's Spartan-3 database
 (2026-10-08). Tooling and how to reproduce: [fpga-toolchain.md](fpga-toolchain.md).
-Local-only work on the `bitstream-re` branch; the decoded listing and BRAM
+The decoded listing and BRAM
 dumps are in the ignored `fpga/fw4-decode/`.
 
 ## Summary

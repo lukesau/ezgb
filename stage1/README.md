@@ -2,7 +2,7 @@
 
 Our own FW4 bootstrap. It replaces the stock GBDK one in the slot B BRAMs and
 does the same job: show the boot screen, find `EZGB.DAT` on the SD card, have
-the FPGA load it, and enter it at `$0100`. Local-only (`bitstream-re`).
+the FPGA load it, and enter it at `$0100`.
 Design and protocol: [docs/fpga-stage1.md](../docs/fpga-stage1.md).
 
 ```bash

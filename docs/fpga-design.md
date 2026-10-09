@@ -4,7 +4,7 @@ A map of EZ Flash's logic in the XC3S200A, rebuilt from the FW4 slot B
 bitstream with no design files: `s3trace --netlist` (every configured bel
 and the driver of each input pin), `s3pins` (prjcombine's VQ100 bond: package
 pin -> bel pad), and the scripts in `scripts/fpga/netlist/`. Work in progress;
-each section says how sure it is. Local-only (`bitstream-re`).
+each section says how sure it is.
 
 Related: [fpga-version.md](fpga-version.md) (the version byte),
 [fpga-picoblaze.md](fpga-picoblaze.md) (the two programs),

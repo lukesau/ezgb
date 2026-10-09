@@ -7,7 +7,7 @@ into memory, the RTC, the config flash, and a licence check tied to the FPGA's
 Device DNA. Decoding background: [fpga-bitstream.md](fpga-bitstream.md);
 tooling: [fpga-toolchain.md](fpga-toolchain.md).
 
-Local-only (`bitstream-re` branch). The annotated listings are generated into
+The annotated listings are generated into
 the ignored `fpga/` directory; only the annotation files and the tool are
 tracked.
 

@@ -6,7 +6,7 @@ before any of our code exists. Stage1 is BRAM contents in the FPGA bitstream
 ([fpga-bitstream.md](fpga-bitstream.md)), so the flag is now a data edit. This
 is the first patched cart firmware: built and verified offline, then
 **installed with the CGB updater and confirmed working on hardware
-(2026-10-08)**: red OSINIT screen on a colour console. Local-only (`bitstream-re` branch); built
+(2026-10-08)**: red OSINIT screen on a colour console. Built
 images stay in the ignored `fpga/cgb/`.
 
 ## What the patch does

@@ -7,7 +7,8 @@ from 8 one-bit BRAM planes, `$4000-$47FF` from one x9 BRAM, `$4800-$7FFF`
 reads as zeros. Header title `BOOTLOADER`, cart type `$00` (no MBC). Built with
 GBDK, the same toolchain and crt0 as the kernel.
 
-Local-only (`bitstream-re`), like everything derived from the bitstream.
+The stage1 binary itself, like everything built from the bitstream, stays
+in the ignored `fpga/` directory.
 
 ## Workspace
 

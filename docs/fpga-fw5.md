@@ -2,7 +2,7 @@
 
 Decoding of the FW5 updater payloads and what the 0918 update changed
 (2026-10-08). Method and FW4 background: [fpga-bitstream.md](fpga-bitstream.md),
-[fpga-picoblaze.md](fpga-picoblaze.md). Local-only (`bitstream-re` branch);
+[fpga-picoblaze.md](fpga-picoblaze.md). The
 decodes, BRAM dumps and listings are in the ignored `fpga/fw5-decode/`.
 
 ## Images

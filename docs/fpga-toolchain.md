@@ -5,7 +5,6 @@ Reference for the tools that decode, trace and patch the cart's Spartan-3A
 end-to-end build of an updater, is in [fpga-setup.md](fpga-setup.md).
 Findings from using them are in [fpga-bitstream.md](fpga-bitstream.md).
 
-**This work is local-only.** It lives on the unpushed `bitstream-re` branch.
 Decoded listings, BRAM dumps and anything else derived from EZ Flash's
 bitstream stay in the ignored `fpga/` directory, same policy as the flash dumps
 (`fpga/README.md`, itself untracked; the short version is in

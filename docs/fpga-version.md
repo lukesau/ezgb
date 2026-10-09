@@ -5,7 +5,7 @@ reading any byte in `$A000-$BFFF` (FW4 reads `$04`, FW5 `$05`; the HELP tab
 draws `ver: FW<n>`). The byte comes from the FPGA fabric, not from either
 PicoBlaze program. Found with `s3trace --netlist` and the scripts in
 [`scripts/fpga/netlist/`](../scripts/fpga/netlist/README.md), on the FW4
-slot B design. Local-only (`bitstream-re`).
+slot B design.
 
 ## The cartridge data bus
 
