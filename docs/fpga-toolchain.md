@@ -32,7 +32,8 @@ Everything lives under `~/fpga`:
 
 ```
 ~/fpga/prjcombine/         prjcombine checkout (rev below), built
-~/fpga/s3decode/           s3decode build (same source as scripts/fpga/s3decode)
+~/fpga/s3decode/           s3decode build (same source as scripts/fpga/s3decode, local git, no remote)
+~/fpga/scripts/            copy of scripts/fpga/ (rsync -a --exclude s3decode scripts/fpga/ ubuntu-desktop:~/fpga/scripts/)
 ~/fpga/blank/blank.bit     blank-design baseline for diffing
 ~/fpga/smoke/              smoke-test design and outputs
 ~/fpga/cart/               cart bitstream images, decodes, BRAM dumps
@@ -282,7 +283,7 @@ bitstreams an hour.
 ## Smoke test
 
 ```bash
-scripts/fpga/smoke-test.sh [workdir]      # run on the build host
+~/fpga/scripts/smoke-test.sh [workdir]    # on the build host; default workdir ~/fpga/smoke
 ```
 
 Builds a 4-flop test design, checks the XDL round trip is byte-identical and
