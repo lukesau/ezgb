@@ -213,6 +213,16 @@ for (t, b), c in sorted(cells.items()):
     for k in ('FFO_INIT', 'FFT_INIT', 'FFI1_INIT'):
         if k in a:
             P[k.replace('FFI1', 'FFI')] = int(a[k])
+    # register options (latch, SR/REV, SRVAL, sync), same names as the model
+    for k in ('FFO1_LATCH', 'FFO2_LATCH', 'FFT1_LATCH', 'FFT2_LATCH', 'FFI_LATCH',
+              'FFO1_SRVAL', 'FFO2_SRVAL', 'FFT1_SRVAL', 'FFT2_SRVAL', 'FFI1_SRVAL',
+              'FFO_SR_SYNC', 'FFT_SR_SYNC', 'FFI_SR_SYNC'):
+        if k in a:
+            P[k] = int(a[k])
+    for f in ('FFO', 'FFT', 'FFI'):
+        for e in ('SR', 'REV'):
+            if f'{f}_{e}_ENABLE' in a:
+                P[f'{f}_{e}_EN'] = int(a[f'{f}_{e}_ENABLE'])
     for p in ('I', 'IQ1', 'CLKPAD'):
         src = f"{t}:{b}:{p}"
         conns[p] = out_wire(t, b, p) if src in used_out else ''

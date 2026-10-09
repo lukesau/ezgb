@@ -156,24 +156,46 @@ module s3_bram #(
     end
 endmodule
 
-// IO tile: only the paths this design uses (MUX_O/MUX_T = NONE|O1|T1|FFO1|FFO2|FFT1|FFT2,
-// input straight through or registered on ICLK1). Registers clock on the
-// rising edge of OTCLK1/ICLK1 when their enable (OCE/TCE/ICE) is high; the
-// exporter ties an unrouted enable high.
+// One IO-tile register: flip-flop on the rising edge of C, or latch
+// transparent while C is high; SR forces SRVAL and REV forces !SRVAL when
+// enabled (SR wins), asynchronously unless SR_SYNC.
+module s3_iff #(parameter INIT = 1, LATCH = 0, SR_EN = 0, REV_EN = 0, SR_SYNC = 0, SRVAL = 0) (
+    input D, C, CE, SR, REV, output reg Q = INIT
+);
+    wire sr = SR_EN && SR, rev = REV_EN && REV;
+    generate if (LATCH) begin
+        always @* if (glbl.GSR) Q = INIT; else if (sr) Q = SRVAL; else if (rev) Q = !SRVAL; else if (C && CE) Q = D;
+    end else if (SR_SYNC) begin
+        always @(posedge C or posedge glbl.GSR)
+            if (glbl.GSR) Q <= INIT; else if (sr) Q <= SRVAL; else if (rev) Q <= !SRVAL; else if (CE) Q <= D;
+    end else begin
+        always @(posedge C or posedge sr or posedge rev or posedge glbl.GSR)
+            if (glbl.GSR) Q <= INIT; else if (sr) Q <= SRVAL; else if (rev) Q <= !SRVAL; else if (CE) Q <= D;
+    end endgenerate
+endmodule
+
+// IO tile: output and tristate straight from O1/T1 or through the FFO1/FFO2
+// and FFT1/FFT2 registers (clocked by OTCLK1/OTCLK2), input straight through
+// or registered on ICLK1. Register options are the bitstream's: latch mode,
+// SR/REV enables, SRVAL, sync or async. The exporter ties unrouted enables
+// (OCE/TCE/ICE) high.
 module s3_ioi #(parameter MUX_O = "NONE", MUX_T = "NONE", MUX_FFI = "NONE",
-                parameter FFO_INIT = 1, FFT_INIT = 1, FFI_INIT = 1) (
+                parameter FFO_INIT = 1, FFT_INIT = 1, FFI_INIT = 1,
+                parameter FFO1_LATCH = 0, FFO2_LATCH = 0, FFT1_LATCH = 0, FFT2_LATCH = 0, FFI_LATCH = 0,
+                parameter FFO_SR_EN = 0, FFO_REV_EN = 0, FFO_SR_SYNC = 0, FFO1_SRVAL = 1, FFO2_SRVAL = 1,
+                parameter FFT_SR_EN = 0, FFT_REV_EN = 0, FFT_SR_SYNC = 0, FFT1_SRVAL = 1, FFT2_SRVAL = 1,
+                parameter FFI_SR_EN = 0, FFI_REV_EN = 0, FFI_SR_SYNC = 0, FFI1_SRVAL = 1) (
     inout PAD, input O1, O2, T1, T2, OTCLK1, OTCLK2, ICLK1, OCE, TCE, ICE, SR, REV,
     output I, IQ1, CLKPAD
 );
-    reg ffo = FFO_INIT, fft = FFT_INIT, ffi = FFI_INIT;
-    always @(posedge OTCLK1 or posedge glbl.GSR)
-        if (glbl.GSR) begin ffo <= FFO_INIT; fft <= FFT_INIT; end
-        else begin if (OCE) ffo <= O1; if (TCE) fft <= T1; end
-    always @(posedge ICLK1 or posedge glbl.GSR)
-        if (glbl.GSR) ffi <= FFI_INIT;
-        else if (ICE) ffi <= PAD;
-    wire o = (MUX_O == "O1") ? O1 : (MUX_O == "FFO1" || MUX_O == "FFO2") ? ffo : 1'b0;
-    wire t = (MUX_T == "T1") ? T1 : (MUX_T == "FFT1" || MUX_T == "FFT2") ? fft : 1'b1;
+    wire ffo1, ffo2, fft1, fft2, ffi;
+    s3_iff #(FFO_INIT, FFO1_LATCH, FFO_SR_EN, FFO_REV_EN, FFO_SR_SYNC, FFO1_SRVAL) o1(O1, OTCLK1, OCE, SR, REV, ffo1);
+    s3_iff #(FFO_INIT, FFO2_LATCH, FFO_SR_EN, FFO_REV_EN, FFO_SR_SYNC, FFO2_SRVAL) o2(O2, OTCLK2, OCE, SR, REV, ffo2);
+    s3_iff #(FFT_INIT, FFT1_LATCH, FFT_SR_EN, FFT_REV_EN, FFT_SR_SYNC, FFT1_SRVAL) t1(T1, OTCLK1, TCE, SR, REV, fft1);
+    s3_iff #(FFT_INIT, FFT2_LATCH, FFT_SR_EN, FFT_REV_EN, FFT_SR_SYNC, FFT2_SRVAL) t2(T2, OTCLK2, TCE, SR, REV, fft2);
+    s3_iff #(FFI_INIT, FFI_LATCH, FFI_SR_EN, FFI_REV_EN, FFI_SR_SYNC, FFI1_SRVAL) i1(PAD, ICLK1, ICE, SR, REV, ffi);
+    wire o = (MUX_O == "O1") ? O1 : (MUX_O == "FFO1") ? ffo1 : (MUX_O == "FFO2") ? ffo2 : 1'b0;
+    wire t = (MUX_T == "T1") ? T1 : (MUX_T == "FFT1") ? fft1 : (MUX_T == "FFT2") ? fft2 : 1'b1;
     assign PAD = (MUX_O != "NONE" && !t && !glbl.GTS) ? o : 1'bz;
     assign I = PAD, CLKPAD = PAD, IQ1 = ffi;
 endmodule
