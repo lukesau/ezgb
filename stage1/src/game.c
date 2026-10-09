@@ -15,27 +15,14 @@
 #include "fat.h"
 #include "game.h"
 
-#define PAGE_SELECT REG(0x4000)         /* pSRAM page while $7FC0 = 3 */
-#define SRAM ((volatile uint8_t *)0xA000)
-#define STAMP_PAGE 0x11
+#define SRAM PSRAM
+#define STAMP_PAGE PSRAM_META
 #define GAME_HANDOFF ((uint8_t *)0xD000)
 
 extern const uint8_t game_handoff_start[], game_handoff_end[];
 
 static uint32_t cmd[128];
 static char save_path[8 + 255 + 2];
-
-static void sram_map(uint8_t page)
-{
-    PAGE_SELECT = page;
-    fpga_set(FPGA_SRAM_MAP, 3);
-}
-
-static void sram_unmap(void)
-{
-    PAGE_SELECT = 0;
-    fpga_set(FPGA_SRAM_MAP, 0);
-}
 
 /* $0147 -> $7F37 MBC code: 0 none, 1 MBC1, 2 MBC2, 3 MBC3, 4 MBC5, 6 other */
 static uint8_t mbc_code(uint8_t t)
@@ -150,7 +137,7 @@ static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
             fpga_set(FPGA_SRAM_MAP, 0);
             if (!fat_read(off >> 9, buf))
                 return 0;
-            sram_map((uint8_t)(off >> 13));
+            psram_map((uint8_t)(off >> 13));
             n = size - off < 512 ? (uint16_t)(size - off) : 512;
             memcpy((void *)(SRAM + ((uint16_t)off & 0x1FFF)), buf, n);
         }
@@ -159,17 +146,17 @@ static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
             return 0;                   /* clock reset: kernel only */
         size = save_size(code, mbc);
         for (off = 0; off < size; off += 0x2000) {
-            sram_map((uint8_t)(off >> 13));
+            psram_map((uint8_t)(off >> 13));
             memset((void *)SRAM, 0xFF, 0x2000);
         }
     }
-    sram_map(STAMP_PAGE);
+    psram_map(STAMP_PAGE);
     SRAM[0x000] = 0xAA;
     SRAM[0x001] = (uint8_t)(size >> 13);
     SRAM[0x00F] = len;
     memcpy((void *)(SRAM + 0x010), save_path, len);
     SRAM[0x202] = 0x00;
-    sram_unmap();
+    psram_unmap();
     return 1;
 }
 
@@ -201,19 +188,19 @@ void game_launch(const char *path, uint8_t *buf)
     }
 
     /* the stamp decides whether this launch is safe */
-    sram_map(STAMP_PAGE);
+    psram_map(STAMP_PAGE);
     stamped = SRAM[0x000] == 0xAA;
     len = SRAM[0x00F];
     same = stamped && len == strlen(save_path) &&
            !memcmp((const void *)(SRAM + 0x010), save_path, len);
-    sram_unmap();
+    psram_unmap();
     if (stamped && !(battery && same))
         return;                         /* another game's save isn't backed up */
 
     /* LASTROM record, the START overlay's relaunch target */
-    sram_map(STAMP_PAGE);
+    psram_map(STAMP_PAGE);
     memcpy((void *)(SRAM + 0x300), path, strlen(path) + 1);
-    sram_unmap();
+    psram_unmap();
 
     if (battery && !same && !load_save(buf, code_ram, mbc, timer))
         return;

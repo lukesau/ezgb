@@ -2,13 +2,15 @@
  * FPGA load it, enter it at $0100. Same steps as the stock bootstrap
  * (docs/fpga-stage1.md), written from scratch. With fast launch set in
  * EZGB.CFG it launches that game instead (game.c), unless START is held,
- * and boots the kernel whenever that isn't possible. */
+ * and boots the kernel whenever that isn't possible. SELECT at power-on
+ * offers to back up the pending save first (backup.c). */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
 #include "fat.h"
 #include "cfg.h"
 #include "game.h"
+#include "backup.h"
 #include "video.h"
 
 /* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
@@ -43,17 +45,15 @@ static const char *const errors[] = {
     "EZGB.DAT FRAGMENTED",
 };
 
-/* START held at power-on skips fast launch, as in the kernel
- * (fastlaunch_boot.c) */
-static uint8_t start_held(void)
+/* Tell the kernel whether the user cancelled fast launch (PSRAM_SKIP_FL):
+ * set when START is held, cleared otherwise, so a kernel without support
+ * never sees a stale mark. */
+static void mark_skip(uint8_t skip)
 {
-    uint8_t i, keys = 0xFF;
-
-    rP1 = 0x10;                         /* buttons */
-    for (i = 0; i < 6; i++)
-        keys = rP1;
-    rP1 = 0x30;
-    return !(keys & 0x08);
+    psram_map(PSRAM_META);
+    PSRAM[PSRAM_SKIP_FL] = skip ? 'S' : 0;
+    PSRAM[PSRAM_SKIP_FL + 1] = skip ? '1' : 0;
+    psram_unmap();
 }
 
 /* FLAUNCH= target from EZGB.CFG, opened; 0 when there is none */
@@ -61,7 +61,7 @@ static uint8_t fast_launch_target(void)
 {
     uint16_t n;
 
-    if (start_held() || fat_open("/EZGB.CFG"))
+    if (fat_open("/EZGB.CFG"))
         return 0;
     n = file_size < 512 ? (uint16_t)file_size : 512;
     fat_read_first(text);
@@ -79,10 +79,11 @@ static uint8_t kernel(void)
 
 void main(void)
 {
-    uint8_t err, tried = 0;
+    uint8_t err, keys, tried = 0;
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
+    keys = buttons();                   /* as held at power-on */
     wait_frames(JR_DELAY);
     wordmark_paint(JR_STEP);
     wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
@@ -94,7 +95,10 @@ void main(void)
         err = fat_mount();
         if (!err && !tried) {
             tried = 1;
-            if (fast_launch_target()) {
+            mark_skip(keys & BTN_START);
+            if (keys & BTN_SELECT && backup_offer(text))
+                keys |= BTN_START;      /* the kernel backs up instead */
+            if (!(keys & BTN_START) && fast_launch_target()) {
                 print_center(DETAIL_ROW, fat_name());
                 game_launch(launch_path, text);  /* returns only if it can't */
             }

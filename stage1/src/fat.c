@@ -17,6 +17,7 @@ static uint32_t root;           /* FAT16: first root sector, FAT32: root cluster
 static uint16_t root_sectors;   /* FAT16 only */
 static uint32_t max_cluster;
 static uint32_t file_cluster;
+static uint32_t pos_cluster, pos_index;   /* file_lba's cursor */
 uint32_t file_size;
 
 static uint16_t ld16(const uint8_t *p)
@@ -267,6 +268,8 @@ uint8_t fat_open(const char *path)
         file_cluster = ld16(e + 26);
         if (is_fat32)
             file_cluster |= (uint32_t)ld16(e + 20) << 16;
+        pos_cluster = file_cluster;
+        pos_index = 0;
         if (last) {
             if (attr & 0x10)
                 return FAT_NOT_FOUND;
@@ -280,17 +283,51 @@ uint8_t fat_open(const char *path)
     }
 }
 
+/* LBA of sector n of the open file, 0 past its chain. A cursor keeps the
+ * last cluster reached, so reading or writing a file in order walks its
+ * chain once instead of from the start for every sector. */
+static uint32_t file_lba(uint32_t n)
+{
+    uint32_t idx = n >> csize_shift;
+
+    if (idx < pos_index) {
+        pos_cluster = file_cluster;
+        pos_index = 0;
+    }
+    while (pos_index < idx) {
+        pos_cluster = next_cluster(pos_cluster);
+        if (pos_cluster < 2 || pos_cluster > max_cluster) {
+            pos_cluster = file_cluster;
+            pos_index = 0;
+            return 0;
+        }
+        pos_index++;
+    }
+    return cluster_sector(pos_cluster) + (n & ((1 << csize_shift) - 1));
+}
+
 /* Sector n of the open file into dst (not the cache); 0 past its chain */
 uint8_t fat_read(uint32_t n, uint8_t *dst)
 {
-    uint32_t c = file_cluster, skip = n >> csize_shift;
+    uint32_t lba = file_lba(n);
 
-    while (skip--) {
-        c = next_cluster(c);
-        if (c < 2 || c > max_cluster)
-            return 0;
-    }
-    sd_read(cluster_sector(c) + (n & ((1 << csize_shift) - 1)), dst);
+    if (!lba)
+        return 0;
+    sd_read(lba, dst);
+    return 1;
+}
+
+/* Sector n of the open file from src, in place: the file keeps its size and
+ * clusters, so no FAT or directory entry changes. 0 past its chain. */
+uint8_t fat_write(uint32_t n, const uint8_t *src)
+{
+    uint32_t lba = file_lba(n);
+
+    if (!lba)
+        return 0;
+    sd_write(lba, src);
+    if (lba == buf_lba)
+        buf_lba = 0xFFFFFFFF;           /* the cache is stale now */
     return 1;
 }
 
