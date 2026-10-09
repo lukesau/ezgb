@@ -75,19 +75,23 @@ module s3_slice #(
     wire dx = (DXMUX == "X") ? X : BX, dy = (DYMUX == "Y") ? Y : BY;
     reg qx = FFX_INIT, qy = FFY_INIT;
     wire srx = FF_SR_ENABLE & SR, rev = FF_REV_ENABLE & BY;
+    // REV (BY, when FF_REV_ENABLE) sets the opposite of SRVAL; SR wins over it
     generate if (FF_LATCH) begin
         always @* if (glbl.GSR) begin qx = FFX_INIT; qy = FFY_INIT; end
                   else if (srx) begin qx = FFX_SRVAL; qy = FFY_SRVAL; end
+                  else if (rev) begin qx = !FFX_SRVAL; qy = !FFY_SRVAL; end
                   else if (CLK & CE) begin qx = dx; qy = dy; end
     end else if (FF_SR_SYNC) begin
         always @(posedge CLK or posedge glbl.GSR)
             if (glbl.GSR) begin qx <= FFX_INIT; qy <= FFY_INIT; end
             else if (srx) begin qx <= FFX_SRVAL; qy <= FFY_SRVAL; end
+            else if (rev) begin qx <= !FFX_SRVAL; qy <= !FFY_SRVAL; end
             else if (CE) begin qx <= dx; qy <= dy; end
     end else begin
-        always @(posedge CLK or posedge srx or posedge glbl.GSR)
+        always @(posedge CLK or posedge srx or posedge rev or posedge glbl.GSR)
             if (glbl.GSR) begin qx <= FFX_INIT; qy <= FFY_INIT; end
             else if (srx) begin qx <= FFX_SRVAL; qy <= FFY_SRVAL; end
+            else if (rev) begin qx <= !FFX_SRVAL; qy <= !FFY_SRVAL; end
             else if (CE) begin qx <= dx; qy <= dy; end
     end endgenerate
     assign XQ = qx, YQ = qy;
