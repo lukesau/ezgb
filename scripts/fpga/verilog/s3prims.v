@@ -198,6 +198,16 @@ module s3_dcm #(parameter FX_MUL = 2, FX_DIV = 1) (
     end
 endmodule
 
+// DNA_PORT: READ loads the 57-bit Device DNA, SHIFT shifts it out MSB
+// first on CLK (DIN in at the bottom); DOUT is the top bit.
+module s3_dna #(parameter [56:0] DNA = 57'h0) (input CLK, DIN, READ, SHIFT, output DOUT);
+    reg [56:0] sr = DNA;
+    always @(posedge CLK)
+        if (READ) sr <= DNA;
+        else if (SHIFT) sr <= {sr[55:0], DIN};
+    assign DOUT = sr[56];
+endmodule
+
 module s3_stub (output O);
     assign O = 1'b0;
 endmodule

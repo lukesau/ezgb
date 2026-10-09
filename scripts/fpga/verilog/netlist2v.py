@@ -51,7 +51,7 @@ def inp(c, pin, default):
 def bitstr(v):
     return f"16'h{int(v, 2):04X}"
 
-lines = ['`timescale 1ns/1ps', 'module fpga_top(']
+lines = ['`timescale 1ns/1ps', "module fpga_top #(parameter [56:0] DNA = 57'h0) ("]
 ports = sorted(set(pads[k] for k in pads if k in cells), key=lambda p: int(p[1:]))
 lines.append('    ' + ', '.join(f'inout {p}' for p in ports))
 lines.append(');')
@@ -94,8 +94,13 @@ for (x, y), t in sorted(clb.items()):
         sm = s in (0, 2)
         P['SLICEM'] = int(sm)
         if sm:
-            P['F_RAM'] = int(a.get('F_RAM_ENABLE') == '1')
-            P['G_RAM'] = int(a.get('G_RAM_ENABLE') == '1')
+            # LUT modes (prjcombine: RAM_ENABLE turns the LUT into RAM, SHIFT_ENABLE
+            # then picks shift register over dual-port RAM; SHIFT_ENABLE means
+            # nothing while RAM_ENABLE is 0)
+            for L in 'FG':
+                r, sh = a.get(L + '_RAM_ENABLE'), a.get(L + '_SHIFT_ENABLE')
+                if r == '1':
+                    P[L + ('_SRL' if sh == '1' else '_RAM')] = 1
             P['DIF_ALT'] = int(a.get('DIF_MUX', 'ALT') == 'ALT')
             P['DIG_ALT'] = int(a.get('DIG_MUX', 'ALT') == 'ALT')
             P['WE0USED'] = int(a.get('SLICEWE0USED') == '1')
@@ -103,6 +108,15 @@ for (x, y), t in sorted(clb.items()):
         for k in ('FXMUX', 'GYMUX', 'DXMUX', 'DYMUX', 'XBMUX', 'YBMUX', 'CYINIT', 'CY0F', 'CY0G'):
             if k in a:
                 P[k] = f'"{a[k]}"'
+        # In a SLICEM, DIF_MUX=BX / DIG_MUX=BY on a LUT-mode LUT goes with its
+        # flip-flop taking BX / BY directly, whatever DXMUX / DYMUX decode as:
+        # in FW4 these are exactly the 51 flip-flops otherwise fed by a constant
+        # LUT (the wishbone-to-SD synchronisers)
+        if sm:
+            if a.get('DIF_MUX') == 'BX' and 'F_RAM' not in P and 'F_SRL' not in P:
+                P['DXMUX'] = '"BX"'
+            if a.get('DIG_MUX') == 'BY' and 'G_RAM' not in P and 'G_SRL' not in P:
+                P['DYMUX'] = '"BY"'
         P['CYSELF'] = int(a.get('CYSELF', 'CONST_1') == 'CONST_1')
         P['CYSELG'] = int(a.get('CYSELG', 'CONST_1') == 'CONST_1')
         for k in ('FFX_INIT', 'FFY_INIT', 'FFX_SRVAL', 'FFY_SRVAL', 'FF_LATCH', 'FF_SR_SYNC', 'FF_REV_ENABLE'):
@@ -231,7 +245,16 @@ for (t, b), c in sorted(cells.items()):
         mul = int(c['attrs'].get('S3E_CLKFX_MULTIPLY', '00000001'), 2) + 1
         body.append(f"s3_dcm #(.FX_MUL({mul})) i_{name}_dcm (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
 
-# anything else that drives a used pin (ICAP, DNA_PORT): tie to 0
+# Device DNA (value from the testbench: defparam or -P fpga_top...)
+for (t, b), c in sorted(cells.items()):
+    if b == 'DNA_PORT':
+        src = f"{t}:{b}:DOUT"
+        o = out_wire(t, b, 'DOUT') if src in used_out else ''
+        conns = {p: inp(c, p, "1'b0") for p in ('CLK', 'DIN', 'READ', 'SHIFT')}
+        conns['DOUT'] = o
+        body.append("s3_dna #(.DNA(DNA)) i_dna (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
+
+# anything else that drives a used pin (ICAP): tie to 0
 for s in sorted(used_out):
     w = wname(s)
     if not any(d.startswith(f"wire {w};") or d.startswith(f"wire {w} =") for d in decl):
