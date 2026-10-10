@@ -198,7 +198,8 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                 for (k = 0; k < 4; k = k + 1) crc[k] = 0;
                 dat_oe = wide ? 4'hF : 4'h1; dat_o = 4'h0;          // start bit
                 @(negedge CLK);
-                for (i = 0; i < 512; i = i + 1) begin
+                // CMD12 (or a newer CMD18) stops the block where it is, as a card does
+                for (i = 0; i < 512 && reading && g == rgen; i = i + 1) begin
                     if (wide) begin
                         nib = buffer[i][7:4];
                         for (k = 0; k < 4; k = k + 1) crc[k] = crc16_step(crc[k], nib[k]);
@@ -213,10 +214,12 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                         end
                     end
                 end
-                for (k = 15; k >= 0; k = k - 1) begin
-                    dat_o = {crc[3][k], crc[2][k], crc[1][k], crc[0][k]}; @(negedge CLK);
+                if (i == 512) begin
+                    for (k = 15; k >= 0; k = k - 1) begin
+                        dat_o = {crc[3][k], crc[2][k], crc[1][k], crc[0][k]}; @(negedge CLK);
+                    end
+                    dat_o = 4'hF; @(negedge CLK);                    // end bit
                 end
-                dat_o = 4'hF; @(negedge CLK);                        // end bit
                 dat_oe = 0;
                 blk = blk + 1;
                 if (single) reading = 0;

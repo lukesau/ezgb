@@ -123,12 +123,16 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   skips `delay_long` after every SD run (`$23C` / `$222`); FW4's loader
   always waits. Both `$7FD3` and the sum power up 0 and the kernel writes
   `$7FD4=$00`, so stock loads always take the slow path. In simulation,
-  `$7FD4=$11` before a load makes FW5 issue the next `CMD18` 15 µs after
-  `CMD12` instead of 1.1 ms, and the load then stalls with the card
-  streaming, while FW4 is unaffected. The stall is probably the SD model,
-  which starts the next block before the controller has re-armed (a real
-  card adds busy and access time after `CMD12`); what the fast path does on
-  a cart, and whether the delay exists for slow cards, is untested.
+  `$7FD4=$11` before the game launch's load makes FW5 issue each next
+  `CMD18` 15 µs after `CMD12` instead of about 1.1 ms: the 64 KB load
+  finishes in 5.5 ms instead of 10.1 ms (261 status polls against 468), and
+  all 48 reads after the launch are still right. FW4 ignores it. The
+  simulation runs `delay_long` at 1/20 of its real length (`fastboot.py`),
+  so on a cart each skipped delay should be about 20 ms per SD run, roughly
+  0.7 s per MB of ROM with 32 KB runs. Whether every card copes without the
+  pause after `CMD12` is untested; the first attempt here stalled until the
+  SD model was fixed to stop a block mid-way on `CMD12` and to retire a
+  read superseded by a newer `CMD18`, which real cards do.
 
 ## Banking and save RAM (simulated)
 
