@@ -77,7 +77,7 @@ Manual equivalent:
 ```sh
 export SAMEBOY_EZFLASH_JR_IMG="$PWD/sd/card.img"   # optional if cwd walk finds it
 cd tools/SameBoy
-./build/bin/SDL/sameboy -s ../../re/1.05e-0731/kernel.gb
+./build/bin/SDL/sameboy -s ../../re/kernel/1.05e-0731/kernel.gb
 ```
 
 `-s` / `--stop-debugger` breaks before the first instruction. Debugger is also
@@ -186,7 +186,7 @@ so the two readings only differ from the third extent on.
 >
 > - the SameBoy stub (`rom_build_pending` in `Core/ezflash_jr.c`) copies `end`
 >   sectors per extent
-> - `decomp/src/norreuse_clamp_extents.c` subtracts each `end` from the clamp
+> - `kernel/src/norreuse_clamp_extents.c` subtracts each `end` from the clamp
 >   (an experiment, no longer applied)
 > - the comment at the top of that file
 >

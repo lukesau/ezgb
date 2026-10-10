@@ -7,7 +7,7 @@ highest slot ever used. FatFs's dir_read (DirRead_B5, bank 5) skips that whole
 tombstone tail *inside one f_readdir call*, so the kernel's DirList hangs for
 the entire walk the first time it reads past the last live entry. That is the
 one-time multi-second stall seen when scrolling DOWN past the visible page in
-a short directory listing (docs/browser-scroll... / decomp/src/browser_scroll.c).
+a short directory listing (docs/browser-scroll... / kernel/src/browser_scroll.c).
 
 This script reports, for one directory on a card image or raw device:
   - cluster chain length (how big the directory file really is)

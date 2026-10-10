@@ -10,10 +10,10 @@ the research and tooling underneath it work.
 - **RGBDS** (`rgbasm`/`rgblink`/`rgbfix`): assembles the disassembly.
 - **[mgbdis](https://github.com/mattcurrie/mgbdis)**: the disassembler.
 - **[SDCC](https://sdcc.sourceforge.net/)** (4.6.0+ from brew is fine for simple
-  functions): compiles the C for `decomp/` and for injected features.
+  functions): compiles the C for `kernel/` and for injected features.
 - **[SameBoy](https://sameboy.github.io)** with the EZ Jr FPGA stub, for dynamic
   tracing (see [Tools](#tools)).
-- A firmware dump at `re/<version>/kernel.gb` (not tracked; see the README's
+- A firmware dump at `re/kernel/<version>/kernel.gb` (not tracked; see the README's
   copyright note).
 
 `tools/` reference repos are gitignored; re-clone them per the [Tools](#tools)
@@ -22,9 +22,9 @@ section.
 ## Rebuilding a disassembly
 
 ```sh
-cd re/1.05e-0731
-python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # apply kernel.sym names
-../../scripts/annotate-disasm.py 1.05e-0731                      # notes.json + wram.inc
+cd re/kernel/1.05e-0731
+python3 ../../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # apply kernel.sym names
+../../../scripts/annotate-disasm.py 1.05e-0731                      # notes.json + wram.inc
 
 cd disassembly
 make            # requires rgbasm/rgblink/rgbfix (rgbds)
@@ -40,9 +40,9 @@ ROM-header bytes differ; see [REGISTERS.md](REGISTERS.md)).
 
 Persistent annotations live in two files per version:
 
-- [`re/1.05e-0731/kernel.sym`](../re/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
+- [`re/kernel/1.05e-0731/kernel.sym`](../re/kernel/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
   `SdMenuMain`). mgbdis applies these to labels.
-- [`re/1.05e-0731/notes.json`](../re/1.05e-0731/notes.json): comment blocks.
+- [`re/kernel/1.05e-0731/notes.json`](../re/kernel/1.05e-0731/notes.json): comment blocks.
   `annotate-disasm.py` injects them, matching either the assigned name or the
   raw `*_bbb_aaaa` label for still-unnamed addresses.
 
@@ -51,7 +51,7 @@ See [psram-save-map.md](psram-save-map.md) for an example of the note format.
 ## Naming and annotation
 
 The disassembly is 100% labeled. To refine a name or comment, edit
-`re/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
+`re/kernel/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
 
 ```sh
 ./scripts/regen-disasm.sh 1.05e-0731       # after editing kernel.sym / notes.json
@@ -65,12 +65,12 @@ its top target. Rank table only (no body): `doc-symbol-coverage.py --app --top
 Methodology, `bank:addr` translation, and interior-label conventions:
 [MAPPING.md](MAPPING.md).
 
-## Matching decompilation (`decomp/`)
+## Matching decompilation (`kernel/`)
 
 A separate, longer-term effort from `re/`: rewriting the kernel
 function-by-function in C, verified against the original compiled output the
 same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. `re/` is the
-research phase; `decomp/` is the rewrite. Secondary to naming the ASM; see
+research phase; `kernel/` is the rewrite. Secondary to naming the ASM; see
 [PROGRESS.md](PROGRESS.md).
 
 ### Why SDCC / `--sdcccall 0`
@@ -83,21 +83,21 @@ sp+N` (the SM83 has no IX register); callers cleaning up with `add sp, N`; the
 
 Confirmed empirically: `unsigned char return_zero(void) { return 0; }` compiled
 with `sdcc -msm83 --sdcccall 0` produces `1E 00 C9`, matching `Call_000_1a77` in
-the real 1.05e kernel exactly. See `decomp/src/misc.c` and
-`decomp/tools/verify.py`. Modern brew SDCC suffices for simple functions; more
+the real 1.05e kernel exactly. See `kernel/src/misc.c` and
+`kernel/tools/verify.py`. Modern brew SDCC suffices for simple functions; more
 complex ones may expose version-specific codegen differences needing an older
-release (bridge small gaps with a peep file under `decomp/tools/peeps/`).
+release (bridge small gaps with a peep file under `kernel/tools/peeps/`).
 
 ### Workflow
 
-1. Pick a function from `re/1.05e-0731/disassembly/bank_*.asm` (or `1.04e`). Note its
+1. Pick a function from `re/kernel/1.05e-0731/disassembly/bank_*.asm` (or `1.04e`). Note its
    bank and address.
-2. Write equivalent C in `decomp/src/`. One function (or a few closely related)
+2. Write equivalent C in `kernel/src/`. One function (or a few closely related)
    per attempt for easier mismatch isolation.
 3. Verify:
 
    ```sh
-   decomp/tools/verify.py <file.c> <version> <bank> <address_hex> \
+   kernel/tools/verify.py <file.c> <version> <bank> <address_hex> \
        [--peep peep_file] [--pin SYM=ADDR ...] [--pins pins_file]
    ```
 
@@ -114,11 +114,11 @@ absolute target (no stub bytes emitted):
 
 ```sh
 # single pin
-decomp/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
+kernel/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
     --pin install_callback_slot=066c
 
 # or a pins file (matched bank-0 symbols for 1.05e)
-decomp/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
+kernel/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
     --pins tools/pins/1.05e-0731.bank0
 ```
 
@@ -238,8 +238,8 @@ manifest.
 The IPS patches in `patches/kernel/` are how the modded kernel is distributed
 (see [distribution.md](distribution.md)). After changing any injection (and
 regenerating/re-injecting per the feature docs), refresh the IPS and manifest
-from the canonical artifacts (`re/<ver>/kernel.gb.orig` stock →
-`re/<ver>/kernel.gb` modded):
+from the canonical artifacts (`re/kernel/<ver>/kernel.gb.orig` stock →
+`re/kernel/<ver>/kernel.gb` modded):
 
 ```sh
 python3 scripts/kernel-patch.py make    # all versions in the manifest
@@ -281,7 +281,7 @@ patched kernel ready to copy to a card as `ezgb.dat`. Each `.dat` is checked
 against the manifest md5 and each `.ips` is checked to reproduce it. `dist/`
 is gitignored; only the `.ips` files leave the machine. Nothing is staged
 into `sd/root/` any more: `scripts/make-sd-image.sh` copies the chosen
-version's `re/<ver>/kernel.gb` straight into the emulator card image
+version's `re/kernel/<ver>/kernel.gb` straight into the emulator card image
 (`EZGB_KERNEL_VERSION`, default 1.05e-0731).
 
 `make-sd-image.sh` builds the FAT16 card with **mtools** (`brew install
@@ -324,12 +324,12 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   ```
 
   `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
-  (we ship `re/1.05e-0731/kernel.sym`; add `re/1.04e/kernel.sym` to annotate the
+  (we ship `re/kernel/1.05e-0731/kernel.sym`; add `re/kernel/1.04e/kernel.sym` to annotate the
   older side). `naming-progress.sh` reads a built `disassembly/game.sym`, so
   `make` the disassembly first.
 - **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ Flash's
   own published Omega DE (GBA) kernel source: FPGA register naming, FatFs/UI
   structure, NOR / Mode B boot path. Pair with a real Omega cart for UX
   side-by-side; see [omega-jr-compare.md](omega-jr-compare.md).
-- **[SDCC](https://sdcc.sourceforge.net/)**: C compiler for `decomp/` and for
+- **[SDCC](https://sdcc.sourceforge.net/)**: C compiler for `kernel/` and for
   injected features.

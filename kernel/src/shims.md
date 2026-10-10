@@ -15,7 +15,7 @@ db dest_lo, dest_hi, dest_bank, unused   ; 4 bytes, unused is read into A
 ```
 
 SDCC/C has no way to express this, so it's written directly as bytes via
-`decomp/tools/inject_bytes.py`. `FarCallTrampoline` itself lives in bank 0
+`kernel/tools/inject_bytes.py`. `FarCallTrampoline` itself lives in bank 0
 (always mapped) and explicitly saves/restores the ROM bank register, so the
 shim can live in any bank; it doesn't need to be in bank 0 itself, and
 callers in the *same* bank as the shim can reach it with an ordinary `call`.
@@ -59,7 +59,7 @@ epilogues (`Opendir_B5`/`Readdir_B5` both `ret E`), the same as every other
 `FarCall_XX_YYYY` stub in this kernel. Neither shim touches `E` between the
 far-call returning and the shim's own `ret`, so it passes straight through.
 Confirmed this is exactly what SDCC's `--sdcccall 0` expects for an 8-bit C
-return value: `decomp/src/misc.c`'s already-verified `return_zero()` compiles
+return value: `kernel/src/misc.c`'s already-verified `return_zero()` compiles
 to `1E 00 C9` = `LD E, $00` / `RET`: 8-bit returns go in `E`, not `A`. So a
 C prototype like `unsigned char far_opendir_b5(void *dp, const char *path)`
 reads the shim's result correctly with no extra glue.
@@ -124,7 +124,7 @@ Bytes: `3e03f533210000e5cd9059e803c9`
 
 ## FlPickBanner `08:7b8d`
 
-Injected C (`decomp/src/flpick_banner.c`), reached by `jp` from the tab-strip
+Injected C (`kernel/src/flpick_banner.c`), reached by `jp` from the tab-strip
 tail `08:7200` (`jp $7331` → `jp $7b8d`). Draws ` PICK A ROM ` over the tab strip
 while `$DBFE` is set; ends in `ret`, which returns through the tab drawer.
 

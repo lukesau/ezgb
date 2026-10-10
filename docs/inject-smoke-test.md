@@ -29,19 +29,19 @@ region regardless of helper or bank, and the backtrace names the culprit. See
 
 | Piece | Where |
 |---|---|
-| The code | `decomp/src/ezgb_tab_banner.c` |
+| The code | `kernel/src/ezgb_tab_banner.c` |
 | Where it lives | bank 8 `$746b` (`EzgbTabBanner` in `kernel.sym`) |
 | How it runs | bank 8 `$7200`, `jp $7331` → `jp $746b` |
 
 ```sh
-cd decomp
+cd kernel
 python3 tools/inject.py src/ezgb_tab_banner.c 1.05e-0731 8 746b EzgbTabBanner \
     --pin DrawString=08b7 --pin StoreDrawParams=2791 --apply
 python3 tools/patch_call.py 1.05e-0731 8 7200 3 08:746b --jp --apply --regen
 ```
 
 Total ROM footprint: 38 bytes of code + a 3-byte hook. Revert with
-`cp re/1.05e-0731/kernel.gb.orig re/1.05e-0731/kernel.gb`, then drop the two
+`cp re/kernel/1.05e-0731/kernel.gb.orig re/kernel/1.05e-0731/kernel.gb`, then drop the two
 `08:746b` lines from `kernel.sym` and regen.
 
 Verify it fires:

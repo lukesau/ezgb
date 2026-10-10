@@ -161,7 +161,7 @@ in the general loop), and additionally keeps each critical section to at most
 7 cycles after the check; see [font12.md](font12.md).
 
 ```sh
-cd decomp
+cd kernel
 python3 tools/inject_bytes.py $V 0 0094 DrawGlyphSafe \
     21bb2f1600fa33d70707075f191946236668fa32d70707075f191979444d626f29292911063219545d6069fa34d74f1a13d5e52135d76e47afcb4528012fb0cb412001a857afcb4d28012fb0cb492001a85fe1f3f041cb4f20fa7a227b22fbd17de60f20cac9 --apply
 python3 tools/patch_call.py $V 0 2701 100 00:0094 --jp --apply

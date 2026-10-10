@@ -47,7 +47,7 @@ TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def kernel_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.gb")
 
 
 def rom_offset(bank, address):

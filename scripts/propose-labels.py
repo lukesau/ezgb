@@ -59,7 +59,7 @@ def load_sym(path):
 
 
 def iter_functions(version):
-    dis = ROOT / "re" / version / "disassembly"
+    dis = ROOT / "re" / "kernel" / version / "disassembly"
     for path in sorted(dis.glob("bank_*.asm")):
         bank = f"{int(path.stem.split('_')[1], 10):02x}"
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -142,7 +142,7 @@ def propose_callback_wrappers(version, named):
 
 def propose_farcall_thunks(version, named):
     """Decode FarCallTrampoline thunks from ROM bytes."""
-    rom_path = ROOT / "re" / version / "kernel.gb"
+    rom_path = ROOT / "re" / "kernel" / version / "kernel.gb"
     if not rom_path.is_file():
         return []
     rom = rom_path.read_bytes()
@@ -282,7 +282,7 @@ def propose_clones(version, named):
 
 
 def merge_notes(version, proposals):
-    notes_path = ROOT / "re" / version / "notes.json"
+    notes_path = ROOT / "re" / "kernel" / version / "notes.json"
     if notes_path.is_file():
         data = json.loads(notes_path.read_text(encoding="utf-8"))
     else:
@@ -352,7 +352,7 @@ def main():
     args = [a for a in args if a not in {"--apply", "--dry-run"}]
     version = args[0] if args else "1.05e-0731"
 
-    sym_path = ROOT / "re" / version / "kernel.sym"
+    sym_path = ROOT / "re" / "kernel" / version / "kernel.sym"
     named, lines = load_sym(sym_path)
 
     proposals = []
@@ -386,7 +386,7 @@ def main():
         bank, addr = p["key"]
         print(f"  {bank}:{addr} {p['name']:28} [{p['kind']}] {p['reason']}")
 
-    prop_path = ROOT / "re" / version / "label-proposals.txt"
+    prop_path = ROOT / "re" / "kernel" / version / "label-proposals.txt"
     with prop_path.open("w", encoding="utf-8") as f:
         f.write(f"# propose-labels.py {version}: {len(proposals)} proposals\n")
         for p in proposals:

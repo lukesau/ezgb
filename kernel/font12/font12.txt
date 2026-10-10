@@ -1,4 +1,4 @@
-# Glyph sheet for the EZGB 12px browser (decomp/src/draw12.c).
+# Glyph sheet for the EZGB 12px browser (kernel/src/draw12.c).
 # '.' = paper, '#' = ink. 12 rows per glyph, in code order: text glyphs
 # ($20-$7F) and the icons ($C0-$C4) are all 10 columns wide (10x12 cells).
 # Add the word `keep` to a glyph header to protect it from font12-render.py.

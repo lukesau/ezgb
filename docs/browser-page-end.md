@@ -8,7 +8,7 @@ the last visible row, same full-page dirty.
 
 | Piece | Where |
 |---|---|
-| The code | `decomp/src/browser_page_end.c` (`00:02fb`, `BrowserPageEnd`, 65 bytes) |
+| The code | `kernel/src/browser_page_end.c` (`00:02fb`, `BrowserPageEnd`, 65 bytes) |
 | Frame stub | `00:03f4` `BrowserPageEndHook`: `f8 12 e5 cd fb 02 e8 02 c3 ab 16` |
 | Hook | `00:1195` `jp nc, MenuDispatchAB_waitVBlankLoop` → operand repointed to `$03f4` |
 

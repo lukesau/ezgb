@@ -100,7 +100,7 @@ RET_RX = re.compile(r"^\s+reti?\s*$", re.IGNORECASE)
 
 def load_named(version):
     named = {}
-    sym = ROOT / "re" / version / "kernel.sym"
+    sym = ROOT / "re" / "kernel" / version / "kernel.sym"
     if not sym.is_file():
         return named
     for line in sym.read_text(encoding="utf-8").splitlines():
@@ -155,7 +155,7 @@ def scan_call_fanin(version, named=None):
     """Count `call` sites to Call_* or human names (via kernel.sym)."""
     name_to_key = name_to_key_map(named or {})
     counts = collections.Counter()
-    for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
+    for f in glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm")):
         text = Path(f).read_text(encoding="utf-8", errors="ignore")
         for target in CALL_TARGET_RX.findall(text):
             key = resolve_call_target(target, name_to_key)
@@ -338,7 +338,7 @@ def scan_bodies_and_frontier(version, named):
         if name and not name.startswith("."):
             all_name_to_key.setdefault(name, key)
 
-    for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
+    for f in glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm")):
         lines = Path(f).read_text(encoding="utf-8", errors="ignore").splitlines()
         i = 0
         while i < len(lines):
@@ -383,7 +383,7 @@ def scan_bodies_and_frontier(version, named):
 def scan_entry_jumps(version, bodies, jump_keys, named):
     """Jump_ labels that start a new function (after ret, prologue)."""
     entries = set()
-    for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
+    for f in glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm")):
         lines = Path(f).read_text(encoding="utf-8", errors="ignore").splitlines()
         for i, ln in enumerate(lines):
             if not RET_RX.match(ln):
@@ -408,7 +408,7 @@ def scan_entry_jumps(version, bodies, jump_keys, named):
 
 def is_fallthrough_call_label(version, bank, addr_s):
     """True when Call_BBB_AAAA is a mid-function label (prior code is not ret)."""
-    path = ROOT / "re" / version / "disassembly" / f"bank_{int(bank, 16):03x}.asm"
+    path = ROOT / "re" / "kernel" / version / "disassembly" / f"bank_{int(bank, 16):03x}.asm"
     if not path.is_file():
         return False
     label = f"Call_{int(bank, 16):03x}_{addr_s.lower()}:"
@@ -439,7 +439,7 @@ def scan_orphans(version, named):
     orphan_meta = {}  # key -> (path, start_line_idx, end_line_idx)
     name_to_key = {name: key for key, name in named.items()}
 
-    for f in sorted(glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm"))):
+    for f in sorted(glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm"))):
         path = Path(f)
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
         last_key = None
@@ -532,7 +532,7 @@ def scan_interior_debt(version, named, skip_banks=None, only_banks=None):
     spans = named_rom_spans(named)
     debt = []
 
-    for f in glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm")):
+    for f in glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm")):
         path = Path(f)
         m_bank = re.search(r"bank_([0-9a-fA-F]{3})\.asm$", path.name, re.I)
         if not m_bank:

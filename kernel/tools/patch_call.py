@@ -39,7 +39,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 
 
 def kernel_gb_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.gb")
 
 
 def parse_hex(s):

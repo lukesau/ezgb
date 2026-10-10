@@ -10,7 +10,7 @@ Usage:
     inject_bytes.py <version> <bank> <address_hex> <name> <hex_bytes>
                     [--apply] [--regen]
 
-Example (see decomp/src/shims.md for how these bytes were derived):
+Example (see kernel/src/shims.md for how these bytes were derived):
     inject_bytes.py 1.05e-0731 8 4772 FarCallOpendir_B5 \\
         f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply --regen
 """
@@ -28,11 +28,11 @@ NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def kernel_gb_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.gb")
 
 
 def kernel_sym_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.sym")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.sym")
 
 
 def patch_kernel_gb(gb_path, offset, code_bytes):

@@ -48,7 +48,7 @@
  * the glyph bitmaps are a separate raw block at 02:6000 (Font12, 101 glyphs
  * x 12 rows x 2 bytes, left-trimmed, pixels from bit 15) and the metrics
  * at 02:6978 (Font12Metrics), both produced by scripts/font12-pack.py from
- * decomp/font12/font12.txt.
+ * kernel/font12/font12.txt.
  *
  *   python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \\
  *       --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \\

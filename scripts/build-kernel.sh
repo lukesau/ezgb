@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the modded kernel from the committed disassembly. No firmware
-# download is needed, since re/<ver>/disassembly reassembles the full ROM.
+# download is needed, since re/kernel/<ver>/disassembly reassembles the full ROM.
 #
 # Two fixups make the rgbds output byte-identical to the canonical patched
 # kernel (the one inject.py produces from a real dump):
@@ -13,8 +13,8 @@
 #     a stock header, the right one when the mod changes it (the SGB flags,
 #     scripts/inject-sgb.py).
 #
-# Writes re/<ver>/disassembly/game_trunc.gb and verifies its md5 against
-# patches/kernel/manifest.json. --install copies it to re/<ver>/kernel.gb
+# Writes re/kernel/<ver>/disassembly/game_trunc.gb and verifies its md5 against
+# patches/kernel/manifest.json. --install copies it to re/kernel/<ver>/kernel.gb
 # (the path build-ezgb-dat.sh and the SameBoy scripts read).
 #
 # Usage:
@@ -33,7 +33,7 @@ for arg in "$@"; do
   esac
 done
 
-RE="$ROOT/re/$VER"
+RE="$ROOT/re/kernel/$VER"
 if [[ ! -d "$RE/disassembly" ]]; then
   echo "error: no disassembly at $RE/disassembly" >&2
   exit 1

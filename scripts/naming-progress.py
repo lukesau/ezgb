@@ -26,7 +26,7 @@ AUTO_RX = re.compile(
 
 def load_notes_documented(version):
     """Set of (bank, addr) for Jump_/jr_ documented in notes.json."""
-    path = ROOT / "re" / version / "notes.json"
+    path = ROOT / "re" / "kernel" / version / "notes.json"
     out = set()
     if not path.is_file():
         return out
@@ -79,7 +79,7 @@ def main():
         elif re.fullmatch(r"[0-9]+\.[0-9a-zA-Z]+", a):
             version = a
 
-    sym = ROOT / "re" / version / "disassembly" / "game.sym"
+    sym = ROOT / "re" / "kernel" / version / "disassembly" / "game.sym"
     if not sym.is_file():
         print(f"error: {sym} not found; build the disassembly first:", file=sys.stderr)
         print(f"       (cd \"{ROOT}/re/{version}/disassembly\" && make)", file=sys.stderr)

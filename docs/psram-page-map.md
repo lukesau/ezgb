@@ -8,8 +8,8 @@ the `$A000`–`$BFFF` window (8 KB per page). See
 [psram-save-map.md](psram-save-map.md).
 
 Method: static sweep of every `$4000` page-latch write in `kernel.gb`, the
-browser's record addressing (`decomp/src/browser_scroll.c`,
-`decomp/src/browser_sort.c`), plus two real pSRAM dumps (`sd/psram.bin` vs
+browser's record addressing (`kernel/src/browser_scroll.c`,
+`kernel/src/browser_sort.c`), plus two real pSRAM dumps (`sd/psram.bin` vs
 `sd/psram.bin.pre-milestone0`, 64 pages × 8 KB = 512 KB, page N at file offset
 `N*$2000`). The dumps show what the kernel touched in the sessions that made
 them; the code bounds what it *can* touch. Where they disagree, the code wins:

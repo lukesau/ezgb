@@ -5,7 +5,7 @@
 `SetFpgaPage_Bx` family (bank-local copies at `00:1a7a`, `01:47a7`, `04:466e`,
 `04:41e7` "Alt", `08:6e7a`), each taking the value as a stack argument.
 
-Full static sweep of every call site in `re/1.05e-0731/` (values are the
+Full static sweep of every call site in `re/kernel/1.05e-0731/` (values are the
 constant pushed before the call). Register meanings cross-checked against
 [daid/ezflashjr](https://github.com/daid/ezflashjr) `doc/Protocol.md`.
 
@@ -83,7 +83,7 @@ does not currently exist.
 # every $7FC0 value the kernel ever writes (constant before each SetFpgaPage call)
 python3 - <<'PY'
 import re
-d=open('re/1.05e-0731/kernel.gb','rb').read()
+d=open('re/kernel/1.05e-0731/kernel.gb','rb').read()
 E={(0,0x1a7a),(1,0x47a7),(4,0x466e),(8,0x6e7a),(4,0x41e7)}
 from collections import Counter; t=Counter()
 for m in re.finditer(re.escape(bytes([0xcd,0x8d,0x07])),d):

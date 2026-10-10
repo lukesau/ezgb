@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inject persistent comment blocks from re/<version>/notes.json into bank_*.asm.
+"""Inject persistent comment blocks from re/kernel/<version>/notes.json into bank_*.asm.
 
 Comments are marked with '; [ezgb]' so re-running this script replaces prior injections
-without duplicating. Safe to run after mgbdis regen (pair with re/<version>/kernel.sym
+without duplicating. Safe to run after mgbdis regen (pair with re/kernel/<version>/kernel.sym
 for human symbol names).
 
 Usage:
@@ -19,8 +19,14 @@ MARKER = "; [ezgb]"
 ROOT = Path(__file__).resolve().parents[1]
 
 
+
+def vdir(version):
+    """re/<version> (e.g. stage1/fw4) if it exists, else re/kernel/<version>."""
+    p = ROOT / "re" / version
+    return p if p.is_dir() else ROOT / "re" / "kernel" / version
+
 def load_notes(version):
-    path = ROOT / "re" / version / "notes.json"
+    path = vdir(version) / "notes.json"
     if not path.is_file():
         print(f"error: missing {path}", file=sys.stderr)
         sys.exit(1)
@@ -38,7 +44,7 @@ def load_sym_names(version):
     SdMenuMain), so notes must be matched by that human name once assigned.
     """
     names = {}
-    path = ROOT / "re" / version / "kernel.sym"
+    path = vdir(version) / "kernel.sym"
     if not path.is_file():
         return names
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -53,7 +59,7 @@ def load_sym_names(version):
 def load_wram_syms(version):
     """WRAM/HRAM labels from kernel.sym (CPU addr >= $C000)."""
     out = []
-    path = ROOT / "re" / version / "kernel.sym"
+    path = vdir(version) / "kernel.sym"
     if not path.is_file():
         return out
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -205,7 +211,7 @@ def main():
     version = sys.argv[1]
     notes_path, blocks = load_notes(version)
     sym_names = load_sym_names(version)
-    disasm = ROOT / "re" / version / "disassembly"
+    disasm = vdir(version) / "disassembly"
     if not disasm.is_dir():
         print(f"error: missing {disasm}", file=sys.stderr)
         sys.exit(1)

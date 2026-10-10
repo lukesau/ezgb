@@ -22,7 +22,7 @@ ROOTFS="$SD/root"
 ORDER="$SD/ORDER"
 MB="${SD_IMAGE_MB:-64}"
 KVER="${EZGB_KERNEL_VERSION:-1.05e-0731}"
-KERNEL="$ROOT/re/$KVER/kernel.gb"
+KERNEL="$ROOT/re/kernel/$KVER/kernel.gb"
 
 command -v mformat >/dev/null || { echo "error: mtools not found (brew install mtools)" >&2; exit 1; }
 [ -d "$ROOTFS" ] || { echo "error: no $ROOTFS (create it or dump your card there)" >&2; exit 1; }

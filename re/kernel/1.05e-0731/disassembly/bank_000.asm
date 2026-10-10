@@ -235,7 +235,7 @@ HeaderComplementCheck::
     db $07
 
 HeaderGlobalChecksum::
-    db $f8, $b5
+    db $7b, $57
 
 ; [ezgb]
 ; KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.
@@ -327,7 +327,7 @@ KernelEntry_copyOamDmaStub::
     xor a
     ld [$d6d1], a
     ld [$d6d2], a
-    call $6b18
+    call $68b6
     call BatteryCheck
 
 HaltLoop::
@@ -796,7 +796,7 @@ RemoveJoypadCallback::
 ; RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).
 ; Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,
 ; RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*
-; wrappers at $0610–$0628. See decomp/src/register_callback_slots.c.
+; wrappers at $0610–$0628. See kernel/src/register_callback_slots.c.
 
 RegisterVBlankCallback::
     ld hl, wVBlankCallbacks
@@ -2795,8 +2795,8 @@ BackupBranchEntry_openSaverDir::
     ld l, a
     push hl
     call FarCallTrampoline
-    xor c
-    ld l, c
+    ld b, a
+    ld h, a
     ld bc, $e800
     dec b
 
@@ -3972,8 +3972,8 @@ MenuDispatchAB_launchFarcalls::
     ld hl, $c4a4
     push hl
     call FarCallTrampoline
-    halt
-    ld h, b
+    inc d
+    ld e, [hl]
     ld bc, $e800
     ld [bc], a
     ld b, e
@@ -4007,16 +4007,16 @@ MenuDispatchAB_failHang::
     ld hl, $c4a4
     push hl
     call FarCallTrampoline
-    push bc
-    ld d, e
+    ld h, e
+    ld d, c
     ld bc, $e800
     ld b, $21
     and h
     call nz, $cde5
     adc l
     rlca
-    ld [de], a
-    ld e, e
+    or b
+    ld e, b
     ld bc, $e800
     ld [bc], a
     ld a, $02

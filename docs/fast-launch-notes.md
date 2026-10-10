@@ -13,18 +13,18 @@ passes a cancel to the kernel through pSRAM ([psram-page-map.md](psram-page-map.
 so letting go of START once stage1 has seen it is enough.
 hook, not a separate hold-a-button kernel.
 
-Source of truth is `decomp/src/fastlaunch*.c`.
+Source of truth is `kernel/src/fastlaunch*.c`.
 
 ## How it is wired
 
-- **Scan** (`decomp/src/fastlaunch.c`, `FastLaunchScan`, `02:4500`). Writes the
+- **Scan** (`kernel/src/fastlaunch.c`, `FastLaunchScan`, `02:4500`). Writes the
   full ROM path to the fixed WRAM buffer `$c4a4` (no arg crosses the far-call:
   FarCallTrampoline shifts stack args by 6 bytes). Trigger priority: config file,
   then lone ROM. Selects `$7FC0=$00` before every SD
   read and restores `$03` on exit (see the `$7FC0` bug below). Returns an empty
   result on any "nothing to do" outcome, so the kernel boots to the normal
   browser.
-- **Launch** (`decomp/src/fastlaunch_do_launch.c`, `00:0420`). Reuses the kernel's
+- **Launch** (`kernel/src/fastlaunch_do_launch.c`, `00:0420`). Reuses the kernel's
   own `LastRomRelaunch` (`$1344`; see [`last-rom.md`](last-rom.md)) but skips the
   START overlay's `LastRomDrawBasename`, so it replicates the two things that step
   does that the load needs: `SetFpgaPage($00)` (far-call blob `e7 41 04 00` →
@@ -139,7 +139,7 @@ vs the next address after any change. (Bank-0 free ranges:
 
 ## FILINFO / LFN layout (confirmed live)
 
-`decomp/src/fastlaunch_filinfo_probe.c` dumped a real `f_readdir` of the root and
+`kernel/src/fastlaunch_filinfo_probe.c` dumped a real `f_readdir` of the root and
 confirmed the classic FatFs `_USE_LFN` external-buffer layout (also visible in the
 browser's own `FileBrowserEntry_memsetWireDirList`):
 
@@ -162,7 +162,7 @@ From a clean 1.05e `kernel.gb` (browser features may already be applied; fast
 launch is independent of them):
 
 ```bash
-cd decomp
+cd kernel
 # --- bank 2 ---
 # FatFs opendir/readdir shims
 python3 tools/inject_bytes.py 1.05e-0731 2 4380 FarCallOpendir_B5 \
@@ -188,12 +188,12 @@ python3 tools/inject.py src/fastlaunch_boot.c 1.05e-0731 0 0490 fastlaunch_boot 
 python3 tools/inject_bytes.py 1.05e-0731 0 102f FastLaunchHookSite cd9004 --apply --regen
 ```
 
-The scan lives in [`../decomp/src/fastlaunch.c`](../decomp/src/fastlaunch.c)
+The scan lives in [`../kernel/src/fastlaunch.c`](../kernel/src/fastlaunch.c)
 (`fastlaunch_scan`), using the two FatFs shims in
-[`../decomp/src/shims.md`](../decomp/src/shims.md).
+[`../kernel/src/shims.md`](../kernel/src/shims.md).
 
 **Verified under SameBoy** (originally both root triggers) via
-`decomp/src/fastlaunch_scan_test.c` injected into empty bank 2, hooked from
+`kernel/src/fastlaunch_scan_test.c` injected into empty bank 2, hooked from
 `FileBrowserEntry_inputLoop` (`00:1107`): a lone-ROM card returned `/PKMRED.GB`
 (the since-removed marker trigger was verified the same way).
 

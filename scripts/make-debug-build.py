@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build a debug kernel: the mod build plus the debug screen (docs/debug-tab.md).
 
-Release kernels leave the debug screen out. This takes re/<ver>/kernel.gb (the
+Release kernels leave the debug screen out. This takes re/kernel/<ver>/kernel.gb (the
 mod build, untouched) and writes a copy with:
 
-  bank 4      DebugTab (decomp/src/debug_tab.c), compiled for this build
+  bank 4      DebugTab (kernel/src/debug_tab.c), compiled for this build
   bank 0      DbgTabHook: Delay, DrawMenuTabs(3) (clear the pane, keep the
               strip), far-call DebugTab, Delay, back to the browser
   site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
@@ -29,7 +29,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-sys.path.insert(0, os.path.join(ROOT, "decomp", "tools"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 from portmap import PortMap, load_stock  # noqa: E402
 from sdcc_build import compile_c, parse_ihx  # noqa: E402
 
@@ -90,7 +90,7 @@ def main():
     args = ap.parse_args()
     ver = args.version
 
-    rom = bytearray(open(os.path.join(ROOT, "re", ver, "kernel.gb"), "rb").read())
+    rom = bytearray(open(os.path.join(ROOT, "re","kernel", ver, "kernel.gb"), "rb").read())
     if ver == REF:
         a = {k: v[1] for k, v in ADDR.items()}
     else:
@@ -112,7 +112,7 @@ def main():
     pins = [("_" + k, a[k]) for k in ("SetFpgaPage_B4", "DrawString", "StoreDrawParams",
                                       "ReadJoypad", "WaitVBlankFlag")]
     pins.append(("_wBootA", boot_a_addr(rom)))
-    src = os.path.join(ROOT, "decomp", "src", "debug_tab.c")
+    src = os.path.join(ROOT, "kernel", "src", "debug_tab.c")
     def build(origin):
         with tempfile.TemporaryDirectory() as wd:
             ihx, _ = compile_c(src, wd, pins=pins, code_origin=origin)

@@ -1,5 +1,5 @@
 ; Human-readable names for mgbdis (place beside kernel.gb).
-; Regenerate:  cd re/1.05e && mgbdis kernel.gb && ../../scripts/annotate-disasm.py 1.05e
+; Regenerate:  scripts/regen-disasm.sh <version> (re/kernel/<version>)
 ; See docs/psram-save-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 
@@ -232,14 +232,14 @@
 01:402e CStrCat_B1_incSrc
 01:403a CStrCat_B1_afterStore
 01:403d CStrCat_B1_writeNul
-01:5736 BuildSaverBackupPath
-01:5761 BuildSaverBackupPath_outerLoop
-01:579b BuildSaverBackupPath_innerLoop
-01:588a BuildSaverBackupPath_innerNext
-01:58a0 BuildSaverBackupPath_innerContinue
-01:58a3 BuildSaverBackupPath_outerNext
-01:58aa BuildSaverBackupPath_outerContinue
-01:58ad BuildSaverBackupPath_epilogue
+01:5998 BuildSaverBackupPath
+01:59c3 BuildSaverBackupPath_outerLoop
+01:59fd BuildSaverBackupPath_innerLoop
+01:5aec BuildSaverBackupPath_innerNext
+01:5b02 BuildSaverBackupPath_innerContinue
+01:5b05 BuildSaverBackupPath_outerNext
+01:5b0c BuildSaverBackupPath_outerContinue
+01:5b0f BuildSaverBackupPath_epilogue
 01:4048 CStrCmp
 01:40a3 CStrChr
 01:40e3 DrawBrowserEntries
@@ -255,28 +255,28 @@
 01:4856 LastRomPersist
 01:487d LastRomPersistLoop
 01:48b2 LastRomPersistDone
-01:55c2 PreLaunchSaveStamp
-01:58b0 LaunchSetup
-01:5e14 RomLoaderMain
-01:6747 BackupSavePrompt
-01:6894 BackupUiStrings
-01:6894 .text:22
-01:68b6 BootUnpackWramTables
-01:68b6 .code:10
-01:68c6 .data:3e5
-01:6cab .code:6
-01:6cb1 .data:3e5
-01:7096 .code:6
-01:709c .data:1f7
-01:7293 .code:6
-01:7299 .data:bf
-01:7358 .code:6
-01:735e .data:e
-01:736c .code:6
-01:7372 .data:e
-01:7380 .code:6
-01:7386 .data:a
-01:7390 .code:1
+01:5824 PreLaunchSaveStamp
+01:5b12 LaunchSetup
+01:6076 RomLoaderMain
+01:69a9 BackupSavePrompt
+01:6af6 BackupUiStrings
+01:6af6 .text:22
+01:6b18 BootUnpackWramTables
+01:6b18 .code:10
+01:6b28 .data:3e5
+01:6f0d .code:6
+01:6f13 .data:3e5
+01:72f8 .code:6
+01:72fe .data:1f7
+01:74f5 .code:6
+01:74fb .data:bf
+01:75ba .code:6
+01:75c0 .data:e
+01:75ce .code:6
+01:75d4 .data:e
+01:75e2 .code:6
+01:75e8 .data:a
+01:75f2 .code:1
 
 02:4000 SetFpga7F30_B2
 02:4020 SdWindowPeek
@@ -494,50 +494,51 @@
 ; Calendar / RTC day-count (bank 1)
 01:48c6 IsLeapYear
 01:4917 DateToDaysSince1970
-01:4c5e RtcToDayCount
-01:50e4 RtcReadDaysClearRegs
-01:601e DrawCardTypeScreen
-01:62b1 DrawInfoPanelRect
-01:62d0 BootRomInfoMenu
-01:572e SaverDirSlashStr
-01:572e .text:8
-01:625b CardtypeStr
-01:625b .text:a
-01:6265 MbcNoneStr
-01:6265 .text:6
-01:626b Mbc1Str
-01:626b .text:5
-01:6270 Mbc2Str
-01:6270 .text:5
-01:6275 Mbc3Str
-01:6275 .text:5
-01:627a Mbc5Str
-01:627a .text:5
-01:627f Mbc1mStr
-01:627f .text:6
-01:6285 MbcNotStr
-01:6285 .text:4
-01:6289 RomSizeLabelStr
-01:6289 .text:a
-01:6293 SizeKbStr
-01:6293 .text:3
-01:6296 RamSizeLabelStr
-01:6296 .text:a
-01:62a0 BatteryLabelStr
-01:62a0 .text:a
-01:62aa BatteryYesStr
-01:62aa .text:4
-01:62ae BatteryNoStr
-01:62ae .text:3
-01:6424 BootMenuBootStr
-01:6424 .text:5
-01:6429 BootMenuRomInfoStr
-01:6429 .text:9
-01:6432 BootMenuLoadingStr
-01:6432 .text:8
-01:643a BackupSaveDump
-01:4df1 RtcWriteTimeFromDayDelta
-01:5c08 MapCartTypeToUi
+01:4c5e RtcDebugDump
+01:4ec9 RtcToDayCount
+01:5346 RtcReadDaysClearRegs
+01:6280 DrawCardTypeScreen
+01:6513 DrawInfoPanelRect
+01:6532 BootRomInfoMenu
+01:5990 SaverDirSlashStr
+01:5990 .text:8
+01:64bd CardtypeStr
+01:64bd .text:a
+01:64c7 MbcNoneStr
+01:64c7 .text:6
+01:64cd Mbc1Str
+01:64cd .text:5
+01:64d2 Mbc2Str
+01:64d2 .text:5
+01:64d7 Mbc3Str
+01:64d7 .text:5
+01:64dc Mbc5Str
+01:64dc .text:5
+01:64e1 Mbc1mStr
+01:64e1 .text:6
+01:64e7 MbcNotStr
+01:64e7 .text:4
+01:64eb RomSizeLabelStr
+01:64eb .text:a
+01:64f5 SizeKbStr
+01:64f5 .text:3
+01:64f8 RamSizeLabelStr
+01:64f8 .text:a
+01:6502 BatteryLabelStr
+01:6502 .text:a
+01:650c BatteryYesStr
+01:650c .text:4
+01:6510 BatteryNoStr
+01:6510 .text:3
+01:6686 BootMenuBootStr
+01:6686 .text:5
+01:668b BootMenuRomInfoStr
+01:668b .text:9
+01:6694 BootMenuLoadingStr
+01:6694 .text:8
+01:669c BackupSaveDump
+01:505c RtcWriteTimeFromDayDelta
+01:5e6a MapCartTypeToUi
 
 ; Bank0 joypad / mul runtime
 00:07bc WaitJoypadSelect
@@ -588,7 +589,7 @@
 04:592e PathSlashStr_B4
 04:592e .text:2
 08:6fd0 DrawFwVersionScreen
-01:5163 BackupOpenSaverPath
+01:53c5 BackupOpenSaverPath
 00:2a5f VBlankCb_Bg8000
 00:2a6a LycCb_Bg8800
 01:480b SetFpga7FD4_B1
@@ -845,72 +846,72 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupOpenSaverPath ---
-01:51b2 BackupOpenSaverPath_forceSavExt
-01:5233 BackupOpenSaverPath_sizeFromD3eb
-01:523e BackupOpenSaverPath_sizeSkip2k
-01:5241 BackupOpenSaverPath_size2kRtc
-01:5251 BackupOpenSaverPath_size0
-01:525b BackupOpenSaverPath_size2k
-01:526b BackupOpenSaverPath_size20000
-01:527b BackupOpenSaverPath_size10000
-01:528b BackupOpenSaverPath_size8000
-01:5298 BackupOpenSaverPath_openOk
-01:530e BackupOpenSaverPath_rtcFlagSkip
-01:5311 BackupOpenSaverPath_rtcFlagSet
-01:531c BackupOpenSaverPath_afterRtcFlag
-01:5320 BackupOpenSaverPath_readInit
-01:5327 BackupOpenSaverPath_readLoop
-01:53ee BackupOpenSaverPath_rtcMetaRestore
-01:5495 BackupOpenSaverPath_rtcReadDaysClear
-01:54bc BackupOpenSaverPath_closePreLaunch
-01:54d1 BackupOpenSaverPath_failMemsetFf
-01:54e9 BackupOpenSaverPath_failBlankWrite
-01:559a BackupOpenSaverPath_failRtcPreLaunch
+01:5414 BackupOpenSaverPath_forceSavExt
+01:5495 BackupOpenSaverPath_sizeFromD3eb
+01:54a0 BackupOpenSaverPath_sizeSkip2k
+01:54a3 BackupOpenSaverPath_size2kRtc
+01:54b3 BackupOpenSaverPath_size0
+01:54bd BackupOpenSaverPath_size2k
+01:54cd BackupOpenSaverPath_size20000
+01:54dd BackupOpenSaverPath_size10000
+01:54ed BackupOpenSaverPath_size8000
+01:54fa BackupOpenSaverPath_openOk
+01:5570 BackupOpenSaverPath_rtcFlagSkip
+01:5573 BackupOpenSaverPath_rtcFlagSet
+01:557e BackupOpenSaverPath_afterRtcFlag
+01:5582 BackupOpenSaverPath_readInit
+01:5589 BackupOpenSaverPath_readLoop
+01:5650 BackupOpenSaverPath_rtcMetaRestore
+01:56f7 BackupOpenSaverPath_rtcReadDaysClear
+01:571e BackupOpenSaverPath_closePreLaunch
+01:5733 BackupOpenSaverPath_failMemsetFf
+01:574b BackupOpenSaverPath_failBlankWrite
+01:57fc BackupOpenSaverPath_failRtcPreLaunch
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- MapCartTypeToUi ---
-01:5d11 MapCartTypeToUi_bucket0
-01:5d19 MapCartTypeToUi_bucket1
-01:5d21 MapCartTypeToUi_bucket2
-01:5d29 MapCartTypeToUi_bucket3
-01:5d31 MapCartTypeToUi_bucket4
-01:5d39 MapCartTypeToUi_bucket6a
-01:5d41 MapCartTypeToUi_bucket6b
-01:5d46 MapCartTypeToUi_batteryCheck
-01:5daf MapCartTypeToUi_batterySkip
-01:5db2 MapCartTypeToUi_batterySet
-01:5dba MapCartTypeToUi_batteryClear
-01:5dbf MapCartTypeToUi_timerCheck
-01:5dd1 MapCartTypeToUi_timerSkip
-01:5dd4 MapCartTypeToUi_timerSet
-01:5ddc MapCartTypeToUi_timerClear
-01:5de1 MapCartTypeToUi_rumbleCheck
-01:5e06 MapCartTypeToUi_rumbleSet
-01:5e0e MapCartTypeToUi_rumbleClear
-01:5e13 MapCartTypeToUi_ret
+01:5f73 MapCartTypeToUi_bucket0
+01:5f7b MapCartTypeToUi_bucket1
+01:5f83 MapCartTypeToUi_bucket2
+01:5f8b MapCartTypeToUi_bucket3
+01:5f93 MapCartTypeToUi_bucket4
+01:5f9b MapCartTypeToUi_bucket6a
+01:5fa3 MapCartTypeToUi_bucket6b
+01:5fa8 MapCartTypeToUi_batteryCheck
+01:6011 MapCartTypeToUi_batterySkip
+01:6014 MapCartTypeToUi_batterySet
+01:601c MapCartTypeToUi_batteryClear
+01:6021 MapCartTypeToUi_timerCheck
+01:6033 MapCartTypeToUi_timerSkip
+01:6036 MapCartTypeToUi_timerSet
+01:603e MapCartTypeToUi_timerClear
+01:6043 MapCartTypeToUi_rumbleCheck
+01:6068 MapCartTypeToUi_rumbleSet
+01:6070 MapCartTypeToUi_rumbleClear
+01:6075 MapCartTypeToUi_ret
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- DrawCardTypeScreen ---
-01:606c DrawCardTypeScreen_mbcNone
-01:607d DrawCardTypeScreen_mbc1
-01:608e DrawCardTypeScreen_mbc2
-01:609f DrawCardTypeScreen_mbc3
-01:60b0 DrawCardTypeScreen_mbc5
-01:60c1 DrawCardTypeScreen_mbc1m
-01:60d2 DrawCardTypeScreen_mbcNot
-01:60e0 DrawCardTypeScreen_afterMbc
-01:6117 DrawCardTypeScreen_romShiftLoop
-01:611b DrawCardTypeScreen_romShiftDone
-01:619e DrawCardTypeScreen_ram0
-01:61a3 DrawCardTypeScreen_ram8
-01:61a8 DrawCardTypeScreen_ram80
-01:61ad DrawCardTypeScreen_ram20
-01:61af DrawCardTypeScreen_afterRam
-01:622e DrawCardTypeScreen_batteryNo
-01:623f DrawCardTypeScreen_waitJoypad
-01:624d DrawCardTypeScreen_waitA
-01:6250 DrawCardTypeScreen_waitB
-01:6258 DrawCardTypeScreen_epilogueRet
+01:62ce DrawCardTypeScreen_mbcNone
+01:62df DrawCardTypeScreen_mbc1
+01:62f0 DrawCardTypeScreen_mbc2
+01:6301 DrawCardTypeScreen_mbc3
+01:6312 DrawCardTypeScreen_mbc5
+01:6323 DrawCardTypeScreen_mbc1m
+01:6334 DrawCardTypeScreen_mbcNot
+01:6342 DrawCardTypeScreen_afterMbc
+01:6379 DrawCardTypeScreen_romShiftLoop
+01:637d DrawCardTypeScreen_romShiftDone
+01:6400 DrawCardTypeScreen_ram0
+01:6405 DrawCardTypeScreen_ram8
+01:640a DrawCardTypeScreen_ram80
+01:640f DrawCardTypeScreen_ram20
+01:6411 DrawCardTypeScreen_afterRam
+01:6490 DrawCardTypeScreen_batteryNo
+01:64a1 DrawCardTypeScreen_waitJoypad
+01:64af DrawCardTypeScreen_waitA
+01:64b2 DrawCardTypeScreen_waitB
+01:64ba DrawCardTypeScreen_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- DrawBrowserDetail ---
@@ -994,22 +995,22 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BootRomInfoMenu ---
-01:62d9 BootRomInfoMenu_drawPanel
-01:62dc BootRomInfoMenu_hiliteBoot
-01:6328 BootRomInfoMenu_romInfoInk
-01:6364 BootRomInfoMenu_inputLoop
-01:637b BootRomInfoMenu_selDec
-01:6386 BootRomInfoMenu_afterSelDec
-01:6390 BootRomInfoMenu_selInc
-01:63a3 BootRomInfoMenu_afterSelInc
-01:63ad BootRomInfoMenu_confirmA
-01:63b7 BootRomInfoMenu_bootLoading
-01:63ba BootRomInfoMenu_romInfoScreen
-01:63c7 BootRomInfoMenu_checkB
-01:63d1 BootRomInfoMenu_cancelRetFf
-01:63d6 BootRomInfoMenu_delayRedraw
-01:63e2 BootRomInfoMenu_loadingStr
-01:6421 BootRomInfoMenu_epilogueRet
+01:653b BootRomInfoMenu_drawPanel
+01:653e BootRomInfoMenu_hiliteBoot
+01:658a BootRomInfoMenu_romInfoInk
+01:65c6 BootRomInfoMenu_inputLoop
+01:65dd BootRomInfoMenu_selDec
+01:65e8 BootRomInfoMenu_afterSelDec
+01:65f2 BootRomInfoMenu_selInc
+01:6605 BootRomInfoMenu_afterSelInc
+01:660f BootRomInfoMenu_confirmA
+01:6619 BootRomInfoMenu_bootLoading
+01:661c BootRomInfoMenu_romInfoScreen
+01:6629 BootRomInfoMenu_checkB
+01:6633 BootRomInfoMenu_cancelRetFf
+01:6638 BootRomInfoMenu_delayRedraw
+01:6644 BootRomInfoMenu_loadingStr
+01:6683 BootRomInfoMenu_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- FormatFileSize ---
@@ -1031,36 +1032,36 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupSaveDump ---
-01:647b BackupSaveDump_writeLoop
-01:652f BackupSaveDump_spinnerSkipReset
-01:6532 BackupSaveDump_spinnerReset0
-01:6536 BackupSaveDump_spinnerDot
-01:6551 BackupSaveDump_afterDot
-01:655b BackupSaveDump_spinnerSkipDots
-01:655e BackupSaveDump_spinnerDots
-01:6572 BackupSaveDump_spinnerEllipsis
-01:6583 BackupSaveDump_advance200
-01:65a1 BackupSaveDump_checkRtcMagic
-01:65ac BackupSaveDump_skipRtcPack
-01:65af BackupSaveDump_rtcPackWrite
-01:672f BackupSaveDump_close
-01:6738 BackupSaveDump_epilogueRet
+01:66dd BackupSaveDump_writeLoop
+01:6791 BackupSaveDump_spinnerSkipReset
+01:6794 BackupSaveDump_spinnerReset0
+01:6798 BackupSaveDump_spinnerDot
+01:67b3 BackupSaveDump_afterDot
+01:67bd BackupSaveDump_spinnerSkipDots
+01:67c0 BackupSaveDump_spinnerDots
+01:67d4 BackupSaveDump_spinnerEllipsis
+01:67e5 BackupSaveDump_advance200
+01:6803 BackupSaveDump_checkRtcMagic
+01:680e BackupSaveDump_skipRtcPack
+01:6811 BackupSaveDump_rtcPackWrite
+01:6991 BackupSaveDump_close
+01:699a BackupSaveDump_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RomLoaderMain ---
-01:5e56 RomLoaderMain_readHdr
-01:5ec8 RomLoaderMain_checksumLoop
-01:5ef2 RomLoaderMain_checksumCont
-01:5ef5 RomLoaderMain_mapCartType
-01:5f2a RomLoaderMain_skipSizeGate
-01:5f2d RomLoaderMain_sizeGate
-01:5f6a RomLoaderMain_xorFold
-01:5fe5 RomLoaderMain_xorFoldCont
-01:5fe8 RomLoaderMain_cmpMagic
-01:6007 RomLoaderMain_skipMbc1m
-01:600a RomLoaderMain_setMbc1m
-01:600f RomLoaderMain_closeRet
-01:601b RomLoaderMain_failRetFf
+01:60b8 RomLoaderMain_readHdr
+01:612a RomLoaderMain_checksumLoop
+01:6154 RomLoaderMain_checksumCont
+01:6157 RomLoaderMain_mapCartType
+01:618c RomLoaderMain_skipSizeGate
+01:618f RomLoaderMain_sizeGate
+01:61cc RomLoaderMain_xorFold
+01:6247 RomLoaderMain_xorFoldCont
+01:624a RomLoaderMain_cmpMagic
+01:6269 RomLoaderMain_skipMbc1m
+01:626c RomLoaderMain_setMbc1m
+01:6271 RomLoaderMain_closeRet
+01:627d RomLoaderMain_failRetFf
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- DrawBrowserEntries ---
@@ -1106,16 +1107,16 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- LaunchSetup ---
-01:58f9 LaunchSetup_fatTypeCheck
-01:5905 LaunchSetup_skipFat12
-01:5908 LaunchSetup_fat12Limit
-01:5918 LaunchSetup_fatOtherLimit
-01:5925 LaunchSetup_seedClust2Sect
-01:59e4 LaunchSetup_walkClusters
-01:5a2c LaunchSetup_walkCont
-01:5a72 LaunchSetup_appendCluster
-01:5b12 LaunchSetup_eofCheck
-01:5c02 LaunchSetup_epilogueRet
+01:5b5b LaunchSetup_fatTypeCheck
+01:5b67 LaunchSetup_skipFat12
+01:5b6a LaunchSetup_fat12Limit
+01:5b7a LaunchSetup_fatOtherLimit
+01:5b87 LaunchSetup_seedClust2Sect
+01:5c46 LaunchSetup_walkClusters
+01:5c8e LaunchSetup_walkCont
+01:5cd4 LaunchSetup_appendCluster
+01:5d74 LaunchSetup_eofCheck
+01:5e64 LaunchSetup_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- MapCp437 ---
@@ -1157,14 +1158,14 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RtcWriteTimeFromDayDelta ---
-01:4e38 RtcWriteTimeFromDayDelta_zeroHms
-01:4e50 RtcWriteTimeFromDayDelta_seedC0a0
-01:4e94 RtcWriteTimeFromDayDelta_overflowZero
-01:4ea9 RtcWriteTimeFromDayDelta_div60a
-01:4ee0 RtcWriteTimeFromDayDelta_modSec
-01:4f4c RtcWriteTimeFromDayDelta_modMin
-01:4fc6 RtcWriteTimeFromDayDelta_modHr
-01:5063 RtcWriteTimeFromDayDelta_writeFpga
+01:50a3 RtcWriteTimeFromDayDelta_zeroHms
+01:50bb RtcWriteTimeFromDayDelta_seedC0a0
+01:50ff RtcWriteTimeFromDayDelta_overflowZero
+01:5114 RtcWriteTimeFromDayDelta_div60a
+01:514b RtcWriteTimeFromDayDelta_modSec
+01:51b7 RtcWriteTimeFromDayDelta_modMin
+01:5231 RtcWriteTimeFromDayDelta_modHr
+01:52ce RtcWriteTimeFromDayDelta_writeFpga
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- SetFpga7FC4_B4 ---
@@ -1215,13 +1216,13 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupSavePrompt ---
-01:6784 BackupSavePrompt_skipAuto
-01:6787 BackupSavePrompt_autoDump
-01:67d0 BackupSavePrompt_drawConfirm
-01:6821 BackupSavePrompt_joyLoop
-01:682f BackupSavePrompt_confirmDump
-01:6889 BackupSavePrompt_checkB
-01:6891 BackupSavePrompt_epilogueRet
+01:69e6 BackupSavePrompt_skipAuto
+01:69e9 BackupSavePrompt_autoDump
+01:6a32 BackupSavePrompt_drawConfirm
+01:6a83 BackupSavePrompt_joyLoop
+01:6a91 BackupSavePrompt_confirmDump
+01:6aeb BackupSavePrompt_checkB
+01:6af3 BackupSavePrompt_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- DrawDirEntryLabel ---
@@ -1343,11 +1344,11 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- PreLaunchSaveStamp ---
-01:561d PreLaunchSaveStamp_copyBasename
-01:5654 PreLaunchSaveStamp_copyCont
-01:5657 PreLaunchSaveStamp_checkRtc
-01:5716 PreLaunchSaveStamp_clearRtcFlag
-01:571c PreLaunchSaveStamp_epilogue
+01:587f PreLaunchSaveStamp_copyBasename
+01:58b6 PreLaunchSaveStamp_copyCont
+01:58b9 PreLaunchSaveStamp_checkRtc
+01:5978 PreLaunchSaveStamp_clearRtcFlag
+01:597e PreLaunchSaveStamp_epilogue
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RomLoad_ClearCartWindow_B8 ---

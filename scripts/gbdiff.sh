@@ -4,7 +4,7 @@
 #
 # gbdiff annotates each differing region with the nearest preceding symbol read
 # from a "<rom-basename>.sym" file sitting beside each ROM. We ship
-# re/1.05e-0731/kernel.sym, so the newer side gets named; drop a re/1.04e/kernel.sym
+# re/kernel/1.05e-0731/kernel.sym, so the newer side gets named; drop a re/kernel/1.04e/kernel.sym
 # beside the older dump (e.g. a built disassembly/game.sym) to name both sides.
 #
 # Usage:
@@ -15,8 +15,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GBDIFF="${GBASM_TOOLS:-$ROOT/tools/gb-asm-tools}/tools/gbdiff.sh"
 
-A="${1:-$ROOT/re/1.04e/kernel.gb}"
-B="${2:-$ROOT/re/1.05e-0731/kernel.gb}"
+A="${1:-$ROOT/re/kernel/1.04e/kernel.gb}"
+B="${2:-$ROOT/re/kernel/1.05e-0731/kernel.gb}"
 
 if [[ ! -f "$GBDIFF" ]]; then
   echo "error: missing $GBDIFF" >&2

@@ -46,7 +46,7 @@ def main():
     new = bytes.fromhex(args.new)
     if len(expect) != len(new) or not new:
         sys.exit("expect/new must be the same non-zero length")
-    path = os.path.join(ROOT, "re", args.version, "kernel.gb")
+    path = os.path.join(ROOT, "re","kernel", args.version, "kernel.gb")
     rom = bytearray(open(path, "rb").read())
     off = rom_offset(args.bank, args.address)
     cur = bytes(rom[off:off + len(new)])

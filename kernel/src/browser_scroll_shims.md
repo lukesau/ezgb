@@ -64,7 +64,7 @@ to one contiguous 248-byte block, so `browser_scroll_up`'s address is whatever
 the linker placed it at and must be re-checked if that file changes:
 
 ```sh
-sdcc -c -msm83 --sdcccall 0 --no-std-crt0 decomp/src/browser_scroll.c -o bs.rel
+sdcc -c -msm83 --sdcccall 0 --no-std-crt0 kernel/src/browser_scroll.c -o bs.rel
 # link with -b _CODE = 0x01e3, -g_DirList=0x0a43, then grep the .map
 ```
 

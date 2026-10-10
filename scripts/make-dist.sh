@@ -11,7 +11,7 @@
 # for every version in patches/kernel/manifest.json, N.M being
 # patches/kernel/VERSION. Each .dat is checked against the manifest's
 # patched_md5 and each .ips is checked to reproduce it from the stock dump, so
-# a stale re/<ver>/kernel.gb or patch fails loudly instead of shipping.
+# a stale re/kernel/<ver>/kernel.gb or patch fails loudly instead of shipping.
 # dist/ is gitignored; the .ips files are what a GitHub release gets.
 #
 # scripts/stamp-mod-version.sh runs this last, after stamping and rebuilding
@@ -37,7 +37,7 @@ out = os.path.join(root, "dist", f"mod-{modver}")
 ok = True
 for v, e in sorted(manifest.items()):
     dat = open(os.path.join(out, f"ezgb-mod-{modver}-for-{v}.dat"), "rb").read()
-    stock = open(os.path.join(root, "re", v, "kernel.gb.orig"), "rb").read()
+    stock = open(os.path.join(root, "re","kernel", v, "kernel.gb.orig"), "rb").read()
     ips = open(os.path.join(out, f"ezgb-mod-{modver}-for-{v}.ips"), "rb").read()
     d_ok = hashlib.md5(dat).hexdigest() == e["patched_md5"]
     i_ok = kp.apply_ips(stock, ips) == dat

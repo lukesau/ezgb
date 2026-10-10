@@ -77,11 +77,11 @@ def resolve_pins_file(path):
 
 
 def kernel_sym_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.sym")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.sym")
 
 
 def kernel_gb_path(version):
-    return os.path.join(REPO_ROOT, "re", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.gb")
 
 
 def patch_kernel_gb(gb_path, offset, code_bytes):
@@ -95,7 +95,7 @@ def patch_kernel_gb(gb_path, offset, code_bytes):
     kernel.gb is the user's only local copy of the firmware (gitignored,
     not re-derivable from this repo), so the first-ever patch makes a
     kernel.gb.orig backup alongside it if one doesn't already exist, so the
-    pristine dump can always be restored for future decomp/verify.py work
+    pristine dump can always be restored for future kernel/verify.py work
     against the original.
     """
     orig_path = gb_path + ".orig"

@@ -56,7 +56,7 @@ its own; each doc has the rationale, wiring, and exact commands.
 | Feature | What it does | Doc |
 |---|---|---|
 | **Sorted browser** | Directories first, then files, each group alphabetical (case-insensitive), instead of raw FAT order. | [`docs/browser-sort.md`](docs/browser-sort.md) |
-| **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `decomp/src/browser_scroll.c` |
+| **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `kernel/src/browser_scroll.c` |
 | **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
 | **DMG-readable highlight + file icons** | Every highlight (browser selection, tab strip, SET-tab buttons, prompts and Loading boxes) is white on black instead of black on dark gray, which is unreadable on an original Game Boy. The browser selection bar spans the full row, and every row starts with an icon: folder, .gb cart, .gbc cart, .sav page, or a boxed ? for anything else. | [`docs/dmg-ui-visibility.md`](docs/dmg-ui-visibility.md) |
@@ -117,17 +117,17 @@ The reverse engineering is essentially done:
 
 ## Building a modded kernel from your own dump
 
-Drop your firmware dump at `re/1.05e-0731/kernel.gb` (a copy of the
+Drop your firmware dump at `re/kernel/1.05e-0731/kernel.gb` (a copy of the
 `ezgb.dat` from the official firmware package), then:
 
 ```sh
 # 1. Regenerate the disassembly from your dump (one-time per version)
-cd re/1.05e-0731
-python3 ../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../scripts/annotate-disasm.py 1.05e-0731
+cd re/kernel/1.05e-0731
+python3 ../../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
+../../../scripts/annotate-disasm.py 1.05e-0731
 
 # 2. Apply features (example: sorted browser; see each doc for its commands)
-cd ../../decomp
+cd ../../../kernel
 python3 tools/inject.py src/browser_sort.c 1.05e-0731 8 746b BrowserSortAll \
     --pin DirList=0a43 --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \
@@ -141,7 +141,7 @@ scripts/make-sd-image.sh
 scripts/build-ezgb-dat.sh 1.05e-0731
 ```
 
-Injection edits `re/1.05e-0731/kernel.gb` in place, so it becomes the patched
+Injection edits `re/kernel/1.05e-0731/kernel.gb` in place, so it becomes the patched
 artifact. Features are developed against 1.05e-0731 and carried to the other
 two kernels mechanically by `scripts/port-mod.py` (see
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#porting-the-mod-to-another-kernel-build)). Run it in SameBoy (with the EZ Jr FPGA stub, see
@@ -157,7 +157,7 @@ re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731
                   (1.04e and 1.05e-0918 are ports of it: scripts/port-mod.py)
     kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
     notes.json    Persistent comments
-decomp/           Matching C decompilation + injectable feature sources
+kernel/           Matching C decompilation + injectable feature sources
   src/            browser_sort.c, browser_scroll*.c, fastlaunch*.c, cgb_init.c, ...
   tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
 docs/             Findings, feature write-ups, hardware notes

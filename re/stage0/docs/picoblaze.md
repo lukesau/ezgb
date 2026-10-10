@@ -104,7 +104,7 @@ Commands arrive as interrupts; the handler (`isr`, `$395`) reads port `B5`:
 | `$10` | set the RTC from port `B6` |
 | `$08` | run bank 2 in flash-update mode |
 
-The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../1.05e-0731/disassembly/bank_002.asm))
+The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../kernel/1.05e-0731/disassembly/bank_002.asm))
 writes the LBA to `$7FB0-B3` and the count to `$7FB4`, adding `$80` for a
 write, in chunks of up to 4 sectors. FPGA logic between the two turns that
 into ports `B0-B4` and the `B5` command; the mapping is consistent but not

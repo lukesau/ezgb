@@ -1,6 +1,6 @@
 /* EZGB.CFG: key=value lines, CR/LF or LF, keys any case, spaces around key
  * and value trimmed, the first occurrence of a key wins. Same rules as the
- * kernel's parser (decomp/src/ezcfg.c parse_record), FLAUNCH only. */
+ * kernel's parser (kernel/src/ezcfg.c parse_record), FLAUNCH only. */
 #include "cfg.h"
 
 static uint8_t is_key(const uint8_t *k, uint8_t klen)

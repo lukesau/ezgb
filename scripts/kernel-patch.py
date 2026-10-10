@@ -19,7 +19,7 @@ regen then produces N.1, N.2, ...).
 
 Usage:
   # Maintainer: regenerate all patches after changing injections
-  #   diffs re/<ver>/kernel.gb.orig (stock) -> re/<ver>/kernel.gb (modded)
+  #   diffs re/kernel/<ver>/kernel.gb.orig (stock) -> re/kernel/<ver>/kernel.gb (modded)
   scripts/kernel-patch.py make
 
   # User: patch an official ezgb.dat (version auto-detected by md5)
@@ -140,7 +140,7 @@ def apply_ips(base, patch):
 
 def make_one(version):
     """Regenerate one version's IPS + manifest entry; True if the IPS changed."""
-    ver_dir = os.path.join(ROOT, "re", version)
+    ver_dir = os.path.join(ROOT, "re","kernel", version)
     stock_path = os.path.join(ver_dir, "kernel.gb.orig")
     modded_path = os.path.join(ver_dir, "kernel.gb")
     for p, what in ((stock_path, "stock dump"), (modded_path, "modded build")):

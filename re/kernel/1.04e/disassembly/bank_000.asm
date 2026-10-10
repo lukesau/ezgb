@@ -796,7 +796,7 @@ RemoveJoypadCallback::
 ; RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).
 ; Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,
 ; RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*
-; wrappers at $0610–$0628. See decomp/src/register_callback_slots.c.
+; wrappers at $0610–$0628. See kernel/src/register_callback_slots.c.
 
 RegisterVBlankCallback::
     ld hl, wVBlankCallbacks

@@ -38,19 +38,19 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-sys.path.insert(0, os.path.join(ROOT, "decomp", "tools"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 from portmap import PortMap, ABS16, FARCALL, decode, insn_len, tokens, load_stock  # noqa: E402
 from sdcc_build import compile_c, parse_ihx  # noqa: E402
 
 BANK = 0x4000
-SRC = os.path.join(ROOT, "decomp", "src")
+SRC = os.path.join(ROOT, "kernel", "src")
 
 # ---------------------------------------------------------------------------
 # What each injected block is. Keyed by (bank, addr) in the FROM build; the
 # block length comes from that build's kernel.sym `.data` entry. Pins are the
 # FROM-build addresses the C source was linked against (docs/*.md,
 # scripts/inject-ezcfg.sh); the port translates them.
-#   src       C file under decomp/src, recompiled per version
+#   src       C file under kernel/src, recompiled per version
 #   pins      {symbol: from_addr}; bank-0 addresses unless `bank` says otherwise
 #   kind      'asm' (default: relocate operands), 'data' (verbatim)
 #   code_len  first N bytes are code, the rest data (copied verbatim)

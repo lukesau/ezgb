@@ -21,7 +21,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${1:-$ROOT/docs/banner.png}"
 
 KVER="1.05e-0731"                                   # kernel build shown in the banner
-MOD_KERNEL="$ROOT/re/$KVER/kernel.gb"
+MOD_KERNEL="$ROOT/re/kernel/$KVER/kernel.gb"
 STOCK_KERNEL="$ROOT/tools/ezflashjr/official/2020-07-31_FW5_K1.05RC/ezgb.dat"
 SAMEBOY="${SAMEBOY:-$ROOT/tools/SameBoy/build/bin/SDL/sameboy}"
 CARD="$ROOT/sd/card.img"
