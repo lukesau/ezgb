@@ -227,7 +227,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         end
     endtask
     task write_blocks(input single);
-        integer i, k, r; reg [3:0] nib;
+        integer i, k, r; reg [3:0] nib; reg [15:0] wsum;
         begin
             while (writing) begin
                 @(posedge CLK);
@@ -242,7 +242,9 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                 end
                 repeat (17) @(posedge CLK);                          // CRC + end bit
                 r = $fseek(fd, blk * 512, 0);
-                if (VERBOSE) $display("%t sd: write block %0d (not stored)", $time, blk);
+                wsum = 0; for (k = 0; k < 512; k = k + 1) wsum = wsum + buffer[k];
+                if (VERBOSE) $display("%t sd: write block %0d (not stored) first %h %h %h %h last %h sum %h", $time, blk,
+                                      buffer[0], buffer[1], buffer[2], buffer[3], buffer[511], wsum);
                 // CRC status token "010" on DAT0, then a short busy
                 @(negedge CLK); @(negedge CLK);
                 dat_oe = 4'h1; dat_o = 4'hE;                         // start 0

@@ -197,11 +197,18 @@ in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) applies to every type ex
 The ROM bank mask is applied: MBC5 with `$7FC1/$7FC2 = $00F` reads banks
 `$55`, `$AA`, `$FF`, `$1xx` as their low four bits on all three firmwares.
 
-## SD sector reads (simulated)
+## SD sector reads and writes (simulated)
 
 `gb_sdread.vh` (stage1's `sd_read` from the Game Boy side, sector 2052) reads
 back byte for byte on all three. FW5 answers a little sooner: the status
 reads ready after 8 polls against FW4's 12.
+
+`gb_sdwrite.vh` follows the kernel's `DiskWrite_B2` for one sector
+(`$7F30=1` then 3, 512 bytes into the `$A000` window, LBA and `$7FB4=$81`
+in an unlock envelope, poll `$A000`). On all three the card gets `CMD25`
+for the right block with exactly the bytes written (pattern `i*7+3`: first
+`03 0a 11 18`, last `fc`, sum `$FF00`), then `CMD12`; FW5 issues the
+command about 1 µs sooner. This is the path the kernel's save backup uses.
 
 ## The MBC3 clock (simulated)
 
