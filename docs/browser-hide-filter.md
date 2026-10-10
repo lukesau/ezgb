@@ -47,7 +47,7 @@ Three pieces, byte-identical in the 0731 and 0918 featured builds:
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `08:7c00` | `BrowserHideName` ([decomp/src/browser_hide.c](../decomp/src/browser_hide.c), 255 bytes, bank-8 cave after `FlPickBanner`; was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`) |
+| `08:7c00` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 255 bytes, bank-8 cave after `FlPickBanner`; was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`) |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -86,7 +86,7 @@ The check sits before the directory/file split, so it hides junk
 files. Reproduce with:
 
 ```bash
-cd decomp
+cd kernel
 # (since mod 3.0 the first two are done by scripts/inject-ezcfg.sh)
 python3 tools/inject.py src/browser_hide.c 1.05e-0731 8 7c00 BrowserHideName --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 04ae DirListHideNameStub \

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Pack decomp/font12/font12.txt (ASCII-art glyphs, 10 columns x 12 rows) into the two
+"""Pack kernel/font12/font12.txt (ASCII-art glyphs, 10 columns x 12 rows) into the two
 raw tables the 12px browser reads (docs/font12.md):
 
-  decomp/font12/font12.bin          Font12 at 02:6000, the glyph bitmaps
-  decomp/font12/font12-metrics.bin  Font12Metrics at 02:6978, advances,
+  kernel/font12/font12.bin          Font12 at 02:6000, the glyph bitmaps
+  kernel/font12/font12-metrics.bin  Font12Metrics at 02:6978, advances,
                                     ink widths and the class-kerning matrix
 
 Bitmaps: one entry per glyph, in sheet order (codes 0x20-0x7F, then the five
@@ -47,9 +47,9 @@ import os
 import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_IN = os.path.join(ROOT, "decomp", "font12", "font12.txt")
-DEFAULT_OUT = os.path.join(ROOT, "decomp", "font12", "font12.bin")
-DEFAULT_METRICS = os.path.join(ROOT, "decomp", "font12", "font12-metrics.bin")
+DEFAULT_IN = os.path.join(ROOT, "kernel", "font12", "font12.txt")
+DEFAULT_OUT = os.path.join(ROOT, "kernel", "font12", "font12.bin")
+DEFAULT_METRICS = os.path.join(ROOT, "kernel", "font12", "font12-metrics.bin")
 ORDER = list(range(0x20, 0x80)) + [0xC0, 0xC1, 0xC2, 0xC3, 0xC4]
 ICONS = range(0xC0, 0xC5)
 DIGITS = set(range(0x30, 0x3A))

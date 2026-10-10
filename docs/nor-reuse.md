@@ -107,7 +107,7 @@ unchanged, but at `$1623` call `$41d2` instead of `$448f`.
 
 ## Experimental wiring: Start→A relaunch skips the copy
 
-Applied 2026-08-30 to the featured `re/1.05e-0731/kernel.gb` (pre-patch md5
+Applied 2026-08-30 to the featured `re/kernel/1.05e-0731/kernel.gb` (pre-patch md5
 `670a06a7`, patched build md5 `9e3b067d`). Five
 patches, `$DBFE` as the one-shot flag (zeroed by the boot WRAM clear):
 
@@ -121,7 +121,7 @@ patches, `$DBFE` as the one-shot flag (zeroed by the boot WRAM clear):
 **v1 shim (superseded):** flag set → `jp $41d2` (ResetIntoRom, no copy at all),
 else `jp $448f`. **v2 shim (current, 18 B):** flag set → `call
 NorReuseClampExtents` (`04:5960`, from
-[`norreuse_clamp_extents.c`](../decomp/src/norreuse_clamp_extents.c)) then fall
+[`norreuse_clamp_extents.c`](../kernel/src/norreuse_clamp_extents.c)) then fall
 into `jp $448f`: the *stock* copy path runs, but with the command table's
 extent list clamped to the first 512 sectors (256 KB), so the FPGA gets its
 full load cycle while only the prefix is re-streamed. The size/meta fields are
@@ -187,7 +187,7 @@ Hold-START (the fast-launch cancel) and all fast-launch behavior are unchanged i
 Because the kernel *runs from the rom area* as a banked ROM (MBC latch `$2000`
 selects the 16KB bank at `$4000`, kernel = banks 0–9), the store can be read
 directly: no boot, no copy, pure reads. `NorProbeDraw`
-([`nor_probe_draw.c`](../decomp/src/nor_probe_draw.c), `00:3ed4`) draws four
+([`nor_probe_draw.c`](../kernel/src/nor_probe_draw.c), `00:3ed4`) draws four
 lines `BB:XXXXXXXX` (bank number, first 4 bytes of that bank) at rows
 `$0b`–`$0e` when the START overlay opens: banks `09` (control, always the
 kernel's own last bank), `10` (rom area `$28000`, just past the kernel), `16`
@@ -249,6 +249,6 @@ power drops on residual charge only.
 All wiring (overlay hook, shim, blob repoint, browser-entry clear, probe) was
 reverted; the featured builds are back to fast launch + browser features only
 (0731 = md5 `670a06a7`, the hardware-confirmed build; 0918 = `448e90dd`).
-The sources remain in `decomp/src/`
+The sources remain in `kernel/src/`
 (`norreuse_clamp_extents.c`, `nor_probe_draw.c`) with this page and
 [DIFF_1.05e-0731_vs_0918.md](DIFF_1.05e-0731_vs_0918.md) as the record.

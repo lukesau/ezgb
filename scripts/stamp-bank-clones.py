@@ -65,7 +65,7 @@ def stamp_name(base, bank, named, key):
 
 def index_banks(version, named):
     by_body = defaultdict(list)
-    dis = ROOT / "re" / version / "disassembly"
+    dis = ROOT / "re" / "kernel" / version / "disassembly"
     for path in sorted(dis.glob("bank_*.asm")):
         bank = f"{int(path.stem.split('_')[1], 10):02x}"
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -186,7 +186,7 @@ def main():
     dry = "--dry-run" in args
     args = [a for a in args if a != "--dry-run"]
     version = args[0] if args else "1.05e-0731"
-    sym_path = ROOT / "re" / version / "kernel.sym"
+    sym_path = ROOT / "re" / "kernel" / version / "kernel.sym"
 
     named, lines = load_sym(sym_path)
     by_body = index_banks(version, named)

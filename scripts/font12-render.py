@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rasterize a TrueType font into the 10x12 ASCII-art glyph sheet
-(decomp/font12/font12.txt) that scripts/font12-pack.py turns into the
-font12_data.h table used by decomp/src/draw12.c.
+(kernel/font12/font12.txt) that scripts/font12-pack.py turns into the
+font12_data.h table used by kernel/src/draw12.c.
 
 The output is meant to be hand-edited afterwards: each glyph is a 12-line
 block of '.' (paper) and '#' (ink) under a `glyph 0xNN 'c'` header. Re-running
@@ -11,7 +11,7 @@ the word `keep` (the icons, and any letter you have hand-tuned).
 Needs Pillow:  python3 -m venv .venv && .venv/bin/pip install pillow
 
     scripts/font12-render.py [--font /System/Library/Fonts/Menlo.ttc] [--index 1]
-                             [--size 14] [--baseline 9] [--bold] [-o decomp/font12/font12.txt]
+                             [--size 14] [--baseline 9] [--bold] [-o kernel/font12/font12.txt]
 
 Cells are 10 wide x 12 tall, icons included. The TTF baseline is placed on cell row `--baseline`
 (0-based, default 9): caps occupy rows 0-9 and descenders rows 10-11, with
@@ -30,7 +30,7 @@ except ImportError:
     sys.exit("Pillow is required: python3 -m venv .venv && .venv/bin/pip install pillow")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_OUT = os.path.join(ROOT, "decomp", "font12", "font12.txt")
+DEFAULT_OUT = os.path.join(ROOT, "kernel", "font12", "font12.txt")
 W = 10
 H = 12
 ICON_W = 10
@@ -109,7 +109,7 @@ def main():
     existing = read_existing(args.out)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     out = []
-    out.append("# Glyph sheet for the EZGB 12px browser (decomp/src/draw12.c).")
+    out.append("# Glyph sheet for the EZGB 12px browser (kernel/src/draw12.c).")
     out.append("# '.' = paper, '#' = ink. 12 rows per glyph, in code order: text glyphs")
     out.append("# ($20-$7F) and the icons ($C0-$C4) are all 10 columns wide (10x12 cells).")
     out.append("# Add the word `keep` to a glyph header to protect it from font12-render.py.")

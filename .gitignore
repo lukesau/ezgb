@@ -6,48 +6,56 @@ __pycache__/
 
 # EZ Flash's copyrighted firmware binaries, not our work, keep local-only.
 # /ezgb.dat is kept as a guard: nothing reads a root-level kernel any more
-# (use re/<version>/kernel.gb), but a stray dump dropped here must not be committed.
+# (use re/kernel/<version>/kernel.gb), but a stray dump dropped here must not be committed.
 /ezgb.dat
 /juniorkernel-1.04e-FW4/
 /juniorkernel-1.05e-FW5-0731/
 /juniorkernel-1.05e-FW5-0918/
-re/*/kernel.gb
-re/*/kernel.gb.orig
+re/kernel/*/kernel.gb
+re/kernel/*/kernel.gb.orig
 # ...and anything else derived from it: probe builds, chain-boot copies,
 # ezgb.dat drops. A modified kernel still contains EZ Flash's firmware.
-re/*/*.gb
-re/*/*.gbc
-re/*/*.dat
-# Raw mgbdis output of the FW updaters: unannotated, firmware-derived working
-# artifacts for the FPGA-flash analysis (docs/fpga-flash-map.md), kept local.
-# Unlike the kernel disassembly, these are not an annotated RE deliverable.
-/re/updater-fw4/
-/re/updater-fw5-0731/
+re/kernel/*/*.gb
+re/kernel/*/*.gbc
+re/kernel/*/*.dat
+# stock stage1, as stage1-from-bram.py writes it beside each disassembly
+re/stage1/*/kernel.gb
+# The FW updaters themselves (EZ Flash's .gb files) stay local; their
+# disassembly in re/updater/<fw>/ is tracked
+re/updater/*/*.gb
+re/updater/*/disassembly/game.gb
+re/updater/*/disassembly/game.o
+re/updater/*/disassembly/game.map
+re/updater/*/disassembly/game.sym
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
-# depth, and for as long as it existed it silently swallowed decomp/tools/,
+# depth, and for as long as it existed it silently swallowed kernel/tools/,
 # this project's own injection and verification tooling.
 /tools/
 
-# build artifacts from `make` inside re/*/disassembly
-re/*/disassembly/game.gb
-re/*/disassembly/game_trunc.gb
-re/*/disassembly/game.o
-re/*/disassembly/game.map
-re/*/disassembly/game.sym
+# build artifacts from `make` inside the kernel and stage1 disassemblies
+re/kernel/*/disassembly/game.gb
+re/kernel/*/disassembly/game_trunc.gb
+re/kernel/*/disassembly/game.o
+re/kernel/*/disassembly/game.map
+re/kernel/*/disassembly/game.sym
+re/stage1/*/disassembly/game.gb
+re/stage1/*/disassembly/game.o
+re/stage1/*/disassembly/game.map
+re/stage1/*/disassembly/game.sym
 
 # Debugger auto-trace output
 scripts/debug/*.log
 
 # SameBoy run artifacts (battery save, screenshot, debug log) are regenerated
 # locally, not source; the debug log also embeds your local filesystem path.
-re/*/kernel.sav
-re/*/kernel.bmp
-re/*/kernel.log
+re/kernel/*/kernel.sav
+re/kernel/*/kernel.bmp
+re/kernel/*/kernel.log
 
 # Ephemeral propose-labels / packet output
-re/*/label-proposals.txt
+re/kernel/*/label-proposals.txt
 
 # Cart config-flash dumps and repair images. Same policy as the firmware
 # packages: these are EZ Flash's FPGA bitstream, not this project's work, so

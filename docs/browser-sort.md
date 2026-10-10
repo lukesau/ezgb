@@ -38,7 +38,7 @@ Python reference model over 400 randomized directories before injection.
 
 | Piece | Where |
 |---|---|
-| The code | `decomp/src/browser_sort.c` |
+| The code | `kernel/src/browser_sort.c` |
 | Where it lives | bank 8 `$746b` (`BrowserSortAll`, 1585 bytes, cave is 2965) |
 | Bank-0 stub | `$03d4` `BrowserSortAllStub`: `cd 8d 07 6b 74 08 00 c9` (FarCallTrampoline shim) |
 | The hook | `00:102f` in `FileBrowserEntry`: was `call DirList`, now `call $03d4` |
@@ -49,7 +49,7 @@ are latch-gated and never fire after the sort's full enumeration. Reproduce
 with:
 
 ```bash
-cd decomp
+cd kernel
 python3 tools/inject.py src/browser_sort.c 1.05e-0731 8 746b BrowserSortAll \
     --pin DirList=0a43 --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \

@@ -73,13 +73,13 @@ scripts/build-kernel.sh 1.05e-0918 --install  # also copy to re/.../kernel.gb
 scripts/build-kernel.sh 1.04e
 ```
 
-This runs `make` in `re/<ver>/disassembly`, then undoes two rgbds behaviors
+This runs `make` in `re/kernel/<ver>/disassembly`, then undoes two rgbds behaviors
 the shipped firmware doesn't have: it truncates the 256KB-padded output back
 to the real 160KB (10 banks), and restores the 4 header bytes rgbfix
 "corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F` global
 checksum; all are stale in the shipped firmware, and nothing verifies them).
 The result is verified against `patched_md5` in the manifest; `--install`
-puts it at `re/<ver>/kernel.gb`, where the SameBoy scripts expect it;
+puts it at `re/kernel/<ver>/kernel.gb`, where the SameBoy scripts expect it;
 `scripts/make-dist.sh` then lays out `dist/mod-N.M/` with a card-ready
 `ezgb-mod-N.M-for-<ver>.dat` (rename to `ezgb.dat`) and the matching `.ips`
 for every version.

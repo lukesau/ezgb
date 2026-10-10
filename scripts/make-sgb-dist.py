@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the SGB variant of the current mod release (proof of concept).
 
-Takes each re/<ver>/kernel.gb (checked against the manifest's patched_md5),
+Takes each re/kernel/<ver>/kernel.gb (checked against the manifest's patched_md5),
 splices in scripts/sgb/sgb_boot.asm, and writes
 
   dist/mod-N.M-sgb/ezgb-mod-N.M-sgb-for-<ver>.dat
@@ -84,7 +84,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     rows = []
     for v, e in sorted(manifest.items()):
-        rom = bytearray(open(os.path.join(ROOT, "re", v, "kernel.gb"), "rb").read())
+        rom = bytearray(open(os.path.join(ROOT, "re","kernel", v, "kernel.gb"), "rb").read())
         if hashlib.md5(rom).hexdigest() != e["patched_md5"]:
             sys.exit(f"error: re/{v}/kernel.gb is not the mod {modver} build in the manifest")
         if rom[0x100:0x104] != b"\x00\xc3\x50\x01":
@@ -99,7 +99,7 @@ def main():
         rom[MODSTR:MODSTR + 10] = label
         fix_checksums(rom)
 
-        stock = open(os.path.join(ROOT, "re", v, "kernel.gb.orig"), "rb").read()
+        stock = open(os.path.join(ROOT, "re","kernel", v, "kernel.gb.orig"), "rb").read()
         base = f"ezgb-mod-{modver}-sgb-for-{v}"
         dat, ips = os.path.join(out, base + ".dat"), os.path.join(out, base + ".ips")
         open(dat, "wb").write(rom)

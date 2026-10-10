@@ -7,7 +7,7 @@ Everything else is a candidate explanation with a test that would settle it.
 
 Related: [hardware-board.md](hardware-board.md) (chips),
 [battery-sram-swap.md](battery-sram-swap.md) (cell drain),
-[nor-reuse.md](nor-reuse.md) (pSRAM fade), `fpga-picoblaze.md` and
+[nor-reuse.md](nor-reuse.md) (pSRAM fade), [`re/stage0/docs/picoblaze.md`](../re/stage0/docs/picoblaze.md) and
 `fpga-stage1.md` on the `bitstream-re` branch (power-on sequence), and
 [issue #6](https://github.com/lukesau/ezgb/issues/6) (FPGBC + weak cell).
 
@@ -79,7 +79,7 @@ console 5 V ramps ──► cart 3.3 V / 1.2 V ramp
                           │
 cart releases CPU reset ──┼─ boot ROM clears VRAM, then reads logo $0104-$0133 from the cart   ◄── only safe if the hold held
                           │
-                          ├─ PicoBlaze reset (fpga-picoblaze.md, X3Y29 $000):
+                          ├─ PicoBlaze reset (re/stage0/docs/picoblaze.md, X3Y29 $000):
                           │    1. bank 2: SPI flash tally write at $070000, Device DNA, license read at $030000
                           │    2. SD init (CMD0, CMD8, ACMD41 ×255 max, ... 4-bit)
                           │    3. rtc_init: bit-banged I²C to the PCF8563
@@ -144,7 +144,7 @@ Notes:
 
 - Consoles differ in how their reset input and supply ramp behave, which
   could explain why the FPGBC is more marginal than the GBA (O7).
-- Bitstream header values (`fpga-bitstream.md`): `COR1 2f08`, `COR2 89ee`,
+- Bitstream header values ([`re/stage0/docs/bitstream.md`](../re/stage0/docs/bitstream.md)): `COR1 2f08`, `COR2 89ee`,
   `CCLK_FREQ 3c0f`. Decoding `CCLK_FREQ` gives the config time
   (bitstream bits / CCLK, ×2 on FW4), which is how long the hold has to last.
 - Test: scope the reset pin together with the 3.3 V rail at power-on, with no

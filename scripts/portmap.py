@@ -87,9 +87,9 @@ def tokens(data):
 
 
 def rom_path(ver):
-    p = os.path.join(ROOT, "re", ver, "kernel.gb.orig")
+    p = os.path.join(ROOT, "re","kernel", ver, "kernel.gb.orig")
     if not os.path.isfile(p):
-        p = os.path.join(ROOT, "re", ver, "kernel.gb")
+        p = os.path.join(ROOT, "re","kernel", ver, "kernel.gb")
     return p
 
 

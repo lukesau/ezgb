@@ -61,9 +61,9 @@ def ensure_kernel_sym(version):
     missing entirely or was already a symlink from a previous run of this
     script; never touch a real, pre-existing kernel.sym.
     """
-    kernel = os.path.join(ROOT, "re", version, "kernel.gb")
-    sym = os.path.join(ROOT, "re", version, "kernel.sym")
-    game_sym = os.path.join(ROOT, "re", version, "disassembly", "game.sym")
+    kernel = os.path.join(ROOT, "re","kernel", version, "kernel.gb")
+    sym = os.path.join(ROOT, "re","kernel", version, "kernel.sym")
+    game_sym = os.path.join(ROOT, "re","kernel", version, "disassembly", "game.sym")
     if not os.path.isfile(kernel):
         sys.exit(f"error: missing {kernel} (copy ezgb.dat there)")
     if os.path.isfile(sym) and not os.path.islink(sym):

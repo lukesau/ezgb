@@ -99,7 +99,7 @@ units without a CPU suffix. The SD driver, the FatFs code apart from the
 timestamp, and the ROM loader are instruction-for-instruction the same in both
 kernels, so neither item is a kernel change, unless the `$7FD4` write is part
 of one. FW5's FPGA image is a new design (64% different from FW4's, see
-[fpga-flash-map.md](fpga-flash-map.md)), which is where they would be. The
+[flash-map.md](../re/stage0/docs/flash-map.md)), which is where they would be. The
 same goes for the hang at LOADING / OS INIT with slower cards that EZ Flash
 acknowledged in the 1.05e release candidate: the kernel diff gives no reason
 to expect an older `ezgb.dat` to cure it.
@@ -125,7 +125,7 @@ Banks 2-9 are byte-identical.
 So the 0918 kernel does the same thing as the 0731 kernel. What the 0918
 package really changes is the firmware: its updater carries two FPGA images,
 the fallback one identical to 0731's and the active one 61% different
-([fpga-flash-map.md](fpga-flash-map.md)). The improvements reported for 0918
+([flash-map.md](../re/stage0/docs/flash-map.md)). The improvements reported for 0918
 (no SD corruption on slower cards, Super Game Boy support) would be in that
 image, and reach a cart only through the updater.
 

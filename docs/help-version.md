@@ -28,7 +28,7 @@ The version text lives in a fixed 10-byte field `MODSTR` at `08:7aff`, drawn as
 The hook is `DrawString(URL)` + `DrawString(K1.05e-<date>)` + `DrawString(MOD)`
 + two `DrawString`s for the GitHub link + `jp $7141`, followed by the four
 strings (`K1.05e-<date>`, the 10-byte `MODSTR`, `github.com/lukesau/ezgb`, one 23-byte string drawn as 19 + 4 characters).
-It is injected at `08:7a9c` (bank-8 cave) with `decomp/tools/inject_bytes.py`
+It is injected at `08:7a9c` (bank-8 cave) with `kernel/tools/inject_bytes.py`
 and wired with `patch_call.py "$V" 8 7130 3 08:7a9c --jp`. The exact bytes are
 in the disassembly (`DrawHelpModVersion`); `scripts/stamp-mod-version.sh` writes
 the `MODSTR` field.

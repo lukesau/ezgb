@@ -29,9 +29,9 @@ Both kernels are byte-identical in header: title `EZGB`, `$0143`=`$00`,
 
 Byte diff, then `difflib.SequenceMatcher` per bank to separate real edits from
 shift-noise, the pitfall documented in the 1.04e/1.05e diff. Symbol context
-comes from `re/1.05e-0731/kernel.sym`, which is annotated against the 0731 build.
+comes from `re/kernel/1.05e-0731/kernel.sym`, which is annotated against the 0731 build.
 
-A fresh mgbdis disassembly of the new build is at `re/1.05e-0918/`.
+A fresh mgbdis disassembly of the new build is at `re/kernel/1.05e-0918/`.
 
 ## The kernel changed very little
 
@@ -81,7 +81,7 @@ add  sp, $01
 In 0731 that is 370 bytes into `RtcToDayCount` (`01:4c5e`), but the new code is
 not spliced into that routine. It is a separate 619-byte routine placed in
 front of it, at `01:4c5e`-`01:4ec8` (`RtcDebugDump` in
-`re/1.05e-0918/kernel.sym`). It opens with the same 370 bytes of clock-reading
+`re/kernel/1.05e-0918/kernel.sym`). It opens with the same 370 bytes of clock-reading
 code as `RtcToDayCount`, which is why a byte diff finds the first difference
 370 bytes in. The real `RtcToDayCount` follows at `01:4ec9`, byte for byte the
 0731 routine, and its two callers (`01:505e` in `RtcWriteTimeFromDayDelta`,
@@ -131,9 +131,9 @@ is that plus a wrapper.
 The payload is neither raw nor encrypted: entropy is 4.61 bits/byte (random
 would be 8.0). The standard Xilinx sync word `AA995566` does not appear, in
 normal or bit-reversed form. This section predates
-[fpga-flash-map.md](fpga-flash-map.md), which found two bitstream sync words
+[flash-map.md](../re/stage0/docs/flash-map.md), which found two bitstream sync words
 in each FW5 payload: two images, the second identical between 0731 and 0918
-(the golden / fallback image) and the first 61% different (the active image).
+(the fallback image) and the first 61% different (the active image).
 See that page for the layout.
 
 ## Assessment of the reported claims
@@ -156,7 +156,7 @@ project is not the kernel.
 
 ## What this means for our work
 
-- Our `re/1.05e-0731` annotations remain valid for 0918, offset in bank 1 by
+- Our `re/kernel/1.05e-0731` annotations remain valid for 0918, offset in bank 1 by
   `+619` for `$4c5e`-`$50ce` and `+$262` (610) from `$50d8`.
 - Bank 1 has 2,573 free bytes left in stock 0918 (`$75f3` up). Our injections
   live in bank 0 (`$01e3-$02fa`, `$03cc`), which is unaffected, so
@@ -167,7 +167,7 @@ project is not the kernel.
 ## Next steps
 
 - [x] Identify the payload layout: done in
-      [fpga-flash-map.md](fpga-flash-map.md) (two images per FW5 payload).
+      [flash-map.md](../re/stage0/docs/flash-map.md) (two images per FW5 payload).
 - [x] Determine what the inserted RTC block does: an uncalled test screen;
       `12345678` is a literal (see above).
 - [ ] Decide whether to port our two bank-0 patches onto 0918 and run it.
@@ -177,14 +177,14 @@ project is not the kernel.
 All injected features (fast launch, browser sort/scroll/page-end, dotfile
 filter, tab banner, NOR reuse; see [nor-reuse.md](nor-reuse.md)) were ported
 from the 0731 featured build to 0918 by replaying the byte diff
-(`re/1.05e-0731/kernel.gb.orig` → `kernel.gb`) onto the stock 0918 dump:
+(`re/kernel/1.05e-0731/kernel.gb.orig` → `kernel.gb`) onto the stock 0918 dump:
 
 - All 20 diff regions land in bytes that are identical between the two stock
   kernels (none overlap the six relocated bank-0 operands), so the port is
   byte-exact. The only bank-1 reference in any injected code is a far-call to
   `DrawBrowserDetail` (`01:42ba`), below the `$4dd0` insertion and therefore
   unmoved.
-- `re/1.05e-0918/kernel.gb` is the ported featured build (md5 `6cf9bf64`);
+- `re/kernel/1.05e-0918/kernel.gb` is the ported featured build (md5 `6cf9bf64`);
   `kernel.gb.orig` is stock (md5 `5238ac59`). `kernel.sym` / `notes.json`
   were ported with the bank-1 remap (+619 for `$4dd0`–`$50ce`, +610 from
   `$50d8`; nothing named lived in the 9 deleted bytes), validated by 3-byte
@@ -198,5 +198,5 @@ from the 0731 featured build to 0918 by replaying the byte diff
   path with zero `$7f36` writes. Normal-launch copy path was verified on the
   identical 0731 code earlier the same day.
 
-The `re/` folders were renamed to carry the build date (`re/1.05e-0731`,
-`re/1.05e-0918`); the decomp/inject tools accept both as version keys.
+The `re/` folders were renamed to carry the build date (`re/kernel/1.05e-0731`,
+`re/kernel/1.05e-0918`); the kernel/inject tools accept both as version keys.

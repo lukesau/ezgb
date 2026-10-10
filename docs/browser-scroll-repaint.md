@@ -1,6 +1,6 @@
 # Bottom-up repaint on down-scroll (1.05e)
 
-Companion to the continuous-scroll patch (`decomp/src/browser_scroll.c`) and the
+Companion to the continuous-scroll patch (`kernel/src/browser_scroll.c`) and the
 sorted browser ([browser-sort.md](browser-sort.md)).
 
 ## The problem
@@ -11,7 +11,7 @@ the user pressed DOWN, paints last, a visible beat after the press.
 
 ## The fix
 
-`browser_scroll_down_repaint` (`decomp/src/browser_scroll_repaint.c`, cave
+`browser_scroll_down_repaint` (`kernel/src/browser_scroll_repaint.c`, cave
 `00:3d8c`) wraps `browser_scroll_down`. On a window shift it clears `dirty`
 (taking the repaint away from `FileBrowserEntry`), replicates the one side
 effect of the stock dirty path (zeroing the marquee tick at frame
@@ -27,7 +27,7 @@ effect of the stock dirty path (zeroing the marquee tick at frame
 
 `StoreDrawParams` is not an (index, value) setter: every call it stores all
 three draw-state bytes (`$d734/$d735/$d723`,
-`decomp/src/store_d734_d735_d723.c`). Stock forced inverse video before the
+`kernel/src/store_d734_d735_d723.c`). Stock forced inverse video before the
 `DIR` tag and reset afterwards; since the icon-column change
 ([dmg-ui-visibility.md](dmg-ui-visibility.md)) the name goes through
 `DrawNameWithIcon` and the tag is no longer drawn, so the shim only keeps
@@ -53,7 +53,7 @@ top-down sweep already paints first. In-screen moves (dirty=2/3) are stock.
 | Hook | `00:02e0` down stub: call target repointed `$01e3` → `$3d8c` (bytes 4-5) |
 
 ```bash
-cd decomp
+cd kernel
 python3 tools/inject_bytes.py 1.05e-0731 0 03dc FarCallDrawDetailBottom \
     3e02f533010f00c5f8052a666fe5cd8d07ba420100e805c9 --apply
 python3 tools/inject.py src/browser_scroll_repaint.c 1.05e-0731 0 3d8c \

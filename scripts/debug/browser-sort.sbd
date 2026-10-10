@@ -1,4 +1,4 @@
-# Sorted file browser (decomp/src/browser_sort.c).
+# Sorted file browser (kernel/src/browser_sort.c).
 #
 # $102f in FileBrowserEntry was `call DirList`; it is now `call $03d4`
 # (BrowserSortAllStub -> bank 8 BrowserSortAll), which enumerates the whole

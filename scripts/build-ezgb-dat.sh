@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Stage the patched kernel as ezgb.dat, the name the Jr's bootstrap loads.
 #
-# It is a byte-for-byte copy of re/<ver>/kernel.gb, with no rewriting. The kernel
-# is patched in place by decomp/tools/inject*.py, so kernel.gb is already the
+# It is a byte-for-byte copy of re/kernel/<ver>/kernel.gb, with no rewriting. The kernel
+# is patched in place by kernel/tools/inject*.py, so kernel.gb is already the
 # authoritative artifact and this only gives it the name the cart expects.
 #
 # Output is dist/mod-N.M/ezgb-mod-N.M-for-<ver>.dat, N.M being the mod
@@ -35,7 +35,7 @@ for arg in "$@"; do
   esac
 done
 
-SRC="$ROOT/re/$VER/kernel.gb"
+SRC="$ROOT/re/kernel/$VER/kernel.gb"
 MODVER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
 DEST="$ROOT/dist/mod-$MODVER/ezgb-mod-$MODVER-for-$VER.dat"
 

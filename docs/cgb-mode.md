@@ -18,7 +18,7 @@ This change is the prerequisite. It does not add IR.
 | `$0143` | `$00` → `$80` (CGB enhanced, still DMG compatible) |
 | `$014D` | header checksum recomputed. **The boot ROM verifies this one**; a wrong value locks the console up at the logo |
 | `$01ba` | `ld a,$c0 / ldh [rLCDC],a` → `call CgbInit` + `nop` |
-| `00:02fb` | `CgbInit`, 96 bytes, from `decomp/src/cgb_init.c` |
+| `00:02fb` | `CgbInit`, 96 bytes, from `kernel/src/cgb_init.c` |
 
 `$01ba` is the boot LCD-on. Hooking it means the new code runs with the LCD
 still off (the only safe window for a bulk VRAM write), and it performs the
@@ -115,6 +115,10 @@ That is the one genuinely brick-risky operation on this cart, and unlike
 Getting CGB mode at first boot therefore requires changing what the *factory
 bootstrap* presents to the console at power-on. That is FPGA firmware territory,
 the one genuinely brick-risky area, on a layer this project has no dump of.
+
+**Update 2026-10-08:** the bootstrap is now dumped and patchable. It is block
+RAM contents in the FPGA bitstream, and a CGB-flagged build for FW4 slot B is
+in [fpga-cgb.md](fpga-cgb.md), confirmed working on hardware.
 
 ## Status of the code on this branch
 

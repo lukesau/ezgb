@@ -66,7 +66,7 @@ def find_clone_groups(by_name):
 
 def load_bank_auto_labels(version, bank):
     """Set of (addr) with an auto Jump_/jr_ label still in that bank's asm."""
-    path = ROOT / "re" / version / "disassembly" / f"bank_{int(bank, 16):03d}.asm"
+    path = ROOT / "re" / "kernel" / version / "disassembly" / f"bank_{int(bank, 16):03d}.asm"
     out = set()
     if not path.is_file():
         return out
@@ -88,7 +88,7 @@ def main():
         args = args[:i] + args[i + 2:]
     version = args[0] if args else "1.05e-0731"
 
-    sym_path = ROOT / "re" / version / "kernel.sym"
+    sym_path = ROOT / "re" / "kernel" / version / "kernel.sym"
     named, by_name, lines = load_sym(sym_path)
 
     groups = find_clone_groups(by_name)

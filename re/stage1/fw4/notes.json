@@ -1,0 +1,107 @@
+{
+  "blocks": [
+    {
+      "bank": 0,
+      "addr": "01df",
+      "lines": [
+        "crt0 ends here: main() returned; stage1 never gets here in practice (LoadKernel calls the kernel)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "073b",
+      "lines": [
+        "FpgaSetMode(m): FPGA register write $7FC0 = m. Every FPGA register write is the unlock",
+        "sequence $7F00=$E1, $7F10=$E2, $7F20=$E3, then the register, then $7FF0=$E4 (same as the kernel).",
+        "main() sets 0 before mounting the SD card and 2 just before handing the load command over."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0752",
+      "lines": [
+        "BootRomDirect / RunFromWram / PrintBlankLines: unreferenced (dead) user code."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "07f1",
+      "lines": [
+        "main(): print EZ-FLASH, delay(700), LOADING; pf_mount; pf_open(\"EZGB.DAT\"); OSINIT;",
+        "build the 512-byte load command at $C0A0 from the file's cluster chain; LoadKernel($C0A0).",
+        "Load command: +$000 = 0, then {u32 lba, u32 end} extents, one per contiguous cluster run;",
+        "end = running total of file sectors (not a count); last end $FFFFFFFF, then 0;",
+        "+$1F0 file size in bytes; +$1F4 = 1;",
+        "+$1F8 sectors per cluster. Room for 61 extents + terminator before +$1F0, and nothing",
+        "checks: a more fragmented EZGB.DAT corrupts the tail, then $C2A0+ (messages, FATFS pointer)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "083f",
+      "lines": [
+        "pf_open(KernelFileName). KernelFileName at $0B4D is the only place the kernel's name lives."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0885",
+      "lines": [
+        "End marker: FAT16 (FsType()==2) $0000FFFF, else (FAT32) $0FFFFFF7. FAT12 is not handled."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "0be9",
+      "lines": [
+        "disk_readp(buf, lba, ofs, count): Petit FatFs disk hook, far call to disk_readp_impl."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2018",
+      "lines": [
+        "pf_read: linked but never called (1061 bytes of dead code)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "24e3",
+      "lines": [
+        "FpgaSetSdWindow(m): FPGA register $7F30 = m (1 = SD sector window at $A000)."
+      ]
+    },
+    {
+      "bank": 0,
+      "addr": "2586",
+      "lines": [
+        "DiskRead(lba, buf, n): up to 4 sectors per request; LBA bytes go to the FPGA from $7FB0,",
+        "then the sector window at $A000 is polled and copied. Same routine as the kernel's DiskRead_B2."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "4000",
+      "lines": [
+        "HandoffPoll: copied to $D100 by HandoffRun and run from WRAM, because cart space switches",
+        "to the kernel. $7F36=3 starts the load of the command block in the $A000 window; poll $A000 until 1;",
+        "$7F36=0, $7FC0=0, ROM bank 1, $7F31=0, $7F32=$80, then call $0100 (the kernel entry)."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "40ff",
+      "lines": [
+        "LoadKernel(cmd): $7F36=1 maps the 512-byte command window at $A000, copy cmd there,",
+        "then HandoffRun. Called through FarCallTrampoline from main()."
+      ]
+    },
+    {
+      "bank": 1,
+      "addr": "4134",
+      "lines": [
+        "InitMessages: message pointer globals at $C2A0-$C2A7 (called from crt0 before main)."
+      ]
+    }
+  ]
+}

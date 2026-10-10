@@ -1,4 +1,4 @@
-# Continuous browser scrolling (decomp/src/browser_scroll.c).
+# Continuous browser scrolling (kernel/src/browser_scroll.c).
 #
 # $02e0 / $02f0 are the DOWN / UP hook stubs; $01e3 / $0297 are the C bodies
 # they call. Breaking on the stubs proves the patched handlers actually reach

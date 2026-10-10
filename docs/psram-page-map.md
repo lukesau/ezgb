@@ -4,12 +4,12 @@ Which pages of the battery-backed save pSRAM the kernel actually uses, and how
 much is spare for new persistent features. The pSRAM is reached only from the
 kernel via page latch `$4000 = <page>` then `$7FC0 = $03`, read/written through
 the `$A000`–`$BFFF` window (8 KB per page). See
-[fpga-personalities.md](fpga-personalities.md) and
+[personalities.md](../re/stage0/docs/personalities.md) and
 [psram-save-map.md](psram-save-map.md).
 
 Method: static sweep of every `$4000` page-latch write in `kernel.gb`, the
-browser's record addressing (`decomp/src/browser_scroll.c`,
-`decomp/src/browser_sort.c`), plus two real pSRAM dumps (`sd/psram.bin` vs
+browser's record addressing (`kernel/src/browser_scroll.c`,
+`kernel/src/browser_sort.c`), plus two real pSRAM dumps (`sd/psram.bin` vs
 `sd/psram.bin.pre-milestone0`, 64 pages × 8 KB = 512 KB, page N at file offset
 `N*$2000`). The dumps show what the kernel touched in the sessions that made
 them; the code bounds what it *can* touch. Where they disagree, the code wins:
@@ -22,7 +22,7 @@ dumps came from an SD card with small directories.
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
 | `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)) | Yes (one FW4 cart) |
-| `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)) | **`$A404`–`$BFFF`** |
+| `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)); stage1's skip-fast-launch mark `"S1"` at `$A410`–`$A411` (below) | **`$A404`–`$A40F`, `$A412`–`$BFFF`** |
 | `$12` and up (18+) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)` | No, grows with directory size |
 | `$3F` (63) | **Sort keys**: `browser_sort.c` uses bank `$FF`, which lands on `$3F` with a 6-bit page latch | No |
 
@@ -81,3 +81,12 @@ per-game settings. Page `$10` may add 8 KB once probed. All of it dies with the
 coin cell (same limitation as saves); it is convenient persistence, not
 permanent storage. Truly battery-independent storage still needs the parallel
 NOR path that does not exist ([updater-flash-write.md](updater-flash-write.md)).
+
+## Stage1 skip-fast-launch mark (`$11:$A410`)
+
+The from-source stage1 (`bitstream-re` branch, `stage1/`) writes `"S1"` to
+page `$11` `$A410`–`$A411` when START was held at power-on, and zeroes it
+otherwise. The kernel (mod 5.4+, `ezcfg.c` `stage1_skip_mark`, run by
+`RtcBootHook` every boot) clears the mark and sets `fastlaunch_boot`'s
+one-shot flag `$DBFF`, so a fast launch the user canceled in stage1 stays
+canceled even after START is released.

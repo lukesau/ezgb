@@ -105,8 +105,8 @@ state, adjacent to this path but not part of the save-dump flag itself.
 
 ## Key symbols (1.05e)
 
-Human names live in [re/1.05e-0731/kernel.sym](../re/1.05e-0731/kernel.sym). Block comments live in
-[re/1.05e-0731/notes.json](../re/1.05e-0731/notes.json) and are injected by
+Human names live in [re/kernel/1.05e-0731/kernel.sym](../re/kernel/1.05e-0731/kernel.sym). Block comments live in
+[re/kernel/1.05e-0731/notes.json](../re/kernel/1.05e-0731/notes.json) and are injected by
 `scripts/annotate-disasm.py`.
 
 | Symbol | Bank:addr | Role |
@@ -127,9 +127,9 @@ Human names live in [re/1.05e-0731/kernel.sym](../re/1.05e-0731/kernel.sym). Blo
 
 ```sh
 # After updating kernel.gb or editing kernel.sym / notes.json:
-cd re/1.05e-0731
+cd re/kernel/1.05e-0731
 mgbdis kernel.gb                    # reads kernel.sym for names
-../../scripts/annotate-disasm.py 1.05e-0731   # injects ; [ezgb] comment blocks
+../../../scripts/annotate-disasm.py 1.05e-0731   # injects ; [ezgb] comment blocks
 
 cd disassembly && make              # byte-identical round-trip check
 ```

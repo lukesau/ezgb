@@ -8,7 +8,7 @@ scripts/make-debug-build.py 1.05e-0918 --install /Volumes/EZGB_FW4
 ```
 
 That writes `dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat` from
-`re/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
+`re/kernel/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
 copies it to the card as `ezgb.dat`. HELP then reads `MOD N.MDBG`, and SELECT
 on HELP opens the debug screen instead of returning to the browser; SELECT
 there goes on to the browser. The tab strip stays on HELP.
@@ -41,7 +41,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 
 ## Code
 
-`decomp/src/debug_tab.c` (bank 4, `04:7400` when free) and `DbgTabHook`
+`kernel/src/debug_tab.c` (bank 4, `04:7400` when free) and `DbgTabHook`
 (bank 0, `00:0259` when free): delay, `DrawMenuTabs(3)` (clear the pane, keep
 the strip), far-call the screen, delay, `jp FileBrowserEntry`. It replaces
 HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e). Addresses are written for

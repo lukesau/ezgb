@@ -48,15 +48,15 @@ blank columns that made `i`, `l` and `.` look spaced out are gone, and
 
 | What | Where |
 |---|---|
-| glyph sheet, hand-editable ASCII art | `decomp/font12/font12.txt` (`#` ink, `.` paper, 10 columns x 12 rows; `keep` on a header protects it from the renderer) |
+| glyph sheet, hand-editable ASCII art | `kernel/font12/font12.txt` (`#` ink, `.` paper, 10 columns x 12 rows; `keep` on a header protects it from the renderer) |
 | renderer (TTF -> sheet) | `scripts/font12-render.py` (needs Pillow; defaults Menlo Bold 13, baseline 9) |
-| packer (sheet -> bitmaps + metrics) | `scripts/font12-pack.py` -> `decomp/font12/font12.bin` (2424 bytes) and `font12-metrics.bin` (~1.7 KB; `--gap`, `--kmax`, `--space`, `--icon-adv` tune the spacing) |
+| packer (sheet -> bitmaps + metrics) | `scripts/font12-pack.py` -> `kernel/font12/font12.bin` (2424 bytes) and `font12-metrics.bin` (~1.7 KB; `--gap`, `--kmax`, `--space`, `--icon-adv` tune the spacing) |
 | tables in ROM | `Font12` at `02:6000` and `Font12Metrics` at `02:6978`, placed by `scripts/inject-font12.sh` (which refuses a metrics table reaching `02:7100`: `inject_bytes.py` does not notice a block running into the next label) |
-| layout | `decomp/src/layout12.c` -> `Fit12` at `02:7100` |
-| renderer code | `decomp/src/draw12.c` -> `DrawString12` at `02:7500` |
+| layout | `kernel/src/layout12.c` -> `Fit12` at `02:7100` |
+| renderer code | `kernel/src/draw12.c` -> `DrawString12` at `02:7500` |
 | bank-0 far-call stub | `FarCallDrawString12` at `00:05c0` (`cd 8d 07 00 75 02 00 c9`) |
 | marquee fit check | `MarqueeWidth12` cave at `00:0229`, reached from the `MarqueeWidth` cave of [ui-mode.md](ui-mode.md) |
-| byte-level immediates | `decomp/tools/patch_bytes.py` (verifies the old bytes first) |
+| byte-level immediates | `kernel/tools/patch_bytes.py` (verifies the old bytes first) |
 
 Bitmap table: 101 glyphs (codes `$20`-`$7F`, then the five icons `$C0`-`$C4`
 in the same codes the 8x8 icons use), 24 bytes each: 12 big-endian words,
@@ -258,7 +258,7 @@ Note: the two `call DrawString` sites at `00:0e1c` / `00:0e32` are in
 `DrawDirEntryLabel` and `GotoFileBrowser`. They were retargeted by mistake at
 first and put back.
 
-Rebuild from `decomp/`:
+Rebuild from `kernel/`:
 
 ```sh
 V=1.05e-0731

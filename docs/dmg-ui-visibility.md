@@ -120,7 +120,7 @@ leaving it clear gives a 1px gap.
 Caveat: a filename containing bytes `$C0`-`$C3` (Hebrew alef to dalet in
 this font) shows an icon in that position.
 
-### `DrawNameWithIcon` (`00:3ec8`, [decomp/src/browser_icons.c](../decomp/src/browser_icons.c), 254 B)
+### `DrawNameWithIcon` (`00:3ec8`, [kernel/src/browser_icons.c](../kernel/src/browser_icons.c), 254 B)
 
 The six stock name draws are one `DrawString(name, len, 0, row)` each, with
 `len` 0 for directories (the 17-wide default) and `$14` for files. They now
@@ -146,7 +146,7 @@ its `DrawString` x at `00:0dcc` `0` to `1`. The icon drawn by the row
 painter stays put.
 
 ```sh
-cd decomp
+cd kernel
 python3 tools/inject.py src/browser_icons.c $V 0 3ec8 DrawNameWithIcon --pin DrawString=08b7 --apply
 python3 tools/inject.py src/browser_scroll_repaint.c $V 0 3d8c BrowserScrollDownRepaint \
     --pin browser_scroll_down=01e3 --pin FarCallDrawDetailBottom=03dc --pin DrawString=08b7 \

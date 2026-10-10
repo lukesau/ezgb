@@ -63,7 +63,7 @@ def parse_auto_label(label):
 
 def load_note_hints(version, bank, addr):
     """Map (bank, addr) -> hint snippet from parent notes block."""
-    path = ROOT / "re" / version / "notes.json"
+    path = ROOT / "re" / "kernel" / version / "notes.json"
     if not path.is_file():
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -241,7 +241,7 @@ def load_sym(path):
 
 
 def apply_interior_file(version, apply_path):
-    sym_path = ROOT / "re" / version / "kernel.sym"
+    sym_path = ROOT / "re" / "kernel" / version / "kernel.sym"
     named, sym_lines = load_sym(sym_path)
     used_names = set(named.values())
 
@@ -405,7 +405,7 @@ def main():
     hints = load_note_hints(version, bank, addr)
     if hints:
         print("=== NOTES CF (parent block) ===")
-        block_path = ROOT / "re" / version / "notes.json"
+        block_path = ROOT / "re" / "kernel" / version / "notes.json"
         data = json.loads(block_path.read_text(encoding="utf-8"))
         for block in data.get("blocks", []):
             try:

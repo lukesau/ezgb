@@ -1,6 +1,6 @@
 # How the FW4 updater writes flash (and where stage1 comes from)
 
-Static read of `re/updater-fw4/` (the disassembled `Update_FW4.gb`), done to
+Static read of `re/updater/fw4/` (the disassembled `Update_FW4.gb`), done to
 answer: **how does the firmware updater write `stage1`** (the 32 KB factory
 bootstrap, dumped per-FW-version by [daid/ezflashjr](https://github.com/daid/ezflashjr),
 which records only that it "is somehow updated by the firmware updater, exact
@@ -12,7 +12,7 @@ mechanism currently unknown")? The motivating goal was finding whether the
 **There is no separate stage1-write path.** The updater writes exactly one
 nonvolatile target, the SPI config flash, via the `$7FD2` command protocol,
 and its embedded payload is the FPGA bitstream. `stage1` is not carried in the
-updater as data; it is almost certainly **BRAM-initialized inside the
+updater as data; it is **BRAM-initialized inside the
 bitstream**, so writing a new bitstream implicitly ships a new stage1. The
 parallel NOR die is never touched.
 
@@ -28,7 +28,7 @@ what the disassembly covers):
 | 2+ | FPGA bitstream payload | starts `$8020` = `aa 99 30 a1 …` (bitstream sync); entropy climbs |
 
 The payload from `$8020` is the 149 KB bitstream, proven byte-for-byte equal
-to config-flash **slot B** in [fpga-flash-map.md](fpga-flash-map.md). The
+to config-flash **slot B** in [flash-map.md](../re/stage0/docs/flash-map.md). The
 updater is a **launched game**: it runs from the pSRAM game area with its
 payload embedded, and **never reads the SD card** (no `$7F30`/`$7FB0`–`$7FB3`
 access anywhere in banks 0–1).
@@ -49,7 +49,7 @@ The primitives in bank 0 / bank 1:
 | `01:4076` | copies a routine to `$d000` and `call $d000`, running the poll loop from WRAM (the ROM window is busy during the op) |
 
 Parameters are staged before the trigger via `$7F31=$00` / `$7F32=$80` (a
-16-bit `$8000`-shaped operand), matching [fpga-flash-map.md](fpga-flash-map.md).
+16-bit `$8000`-shaped operand), matching [flash-map.md](../re/stage0/docs/flash-map.md).
 This is the same register and handshake documented there, and the same one
 that **bricked a cart when the poll-until-clear was skipped**
 ([game-slot-access.md](game-slot-access.md)). The `$7FD2` target is the SPI
@@ -69,14 +69,14 @@ external config-flash dump.
   nibble-swapped. FW4 and FW5 stage1 differ by 37%, tracking the 64%-different
   bitstreams.
 
-## Why stage1 is (almost certainly) in the bitstream
+## Why stage1 is in the bitstream
 
 Everything is consistent with stage1 living in FPGA block-RAM, initialized by
 the bitstream:
 
 - The updater carries a bitstream and writes only the config flash.
 - The config-flash dump contains no contiguous stage1 under any encoding
-  ([fpga-flash-map.md](fpga-flash-map.md)), which is expected because BRAM
+  ([flash-map.md](../re/stage0/docs/flash-map.md)), which is expected because BRAM
   init is bit-interleaved across bitstream configuration frames, not stored
   as a ROM image.
 - Each FW's stage1 changes in lockstep with a new bitstream.
@@ -87,7 +87,10 @@ the bitstream:
 Not *proven* (that needs Spartan-3A bitstream-format RE to extract the BRAM
 init and match it to `stage1.gb`), but it is the only hypothesis left standing,
 and it is directly testable if/when the bitstream container is cracked
-([hardware-board.md](hardware-board.md), [fpga-ace.md](fpga-ace.md)).
+([hardware-board.md](hardware-board.md), [custom-logic.md](../re/stage0/docs/custom-logic.md)).
+
+**Proven 2026-10-08.** The BRAM init was extracted from the FW4 bitstream and
+rebuilds `stage1.gb` byte for byte ([bitstream.md](../re/stage0/docs/bitstream.md)).
 
 ## Consequence for "free space"
 
@@ -105,12 +108,12 @@ would require an FPGA-side path we have not found (or a replacement design).
 
 ```bash
 # updater writes only $7FD2; no SD, no JEDEC-NOR, personality setter unreferenced
-grep -rn '\$7fd2\|\$7fc0\|\$7fb0\|\$7f30' re/updater-fw4/disassembly/bank_00{0,1}.asm
+grep -rn '\$7fd2\|\$7fc0\|\$7fb0\|\$7f30' re/updater/fw4/disassembly/bank_00{0,1}.asm
 
 # stage1 is not embedded in the updater (any simple encoding)
 python3 - <<'PY'
 s=open('tools/ezflashjr/stage1/FW4/stage1.gb','rb').read()
-u=open('re/updater-fw4/updater.gb','rb').read()
+u=open('re/updater/fw4/updater.gb','rb').read()
 n=s[0x100:0x300]
 enc={'plain':n,'bitrev':bytes(int(f"{x:08b}"[::-1],2) for x in n),
      'invert':bytes(x^0xff for x in n),'nib':bytes(((x<<4)|(x>>4))&0xff for x in n)}

@@ -25,7 +25,7 @@ rebuilding byte-identical to the original.
    SD/FS, browser, loader, PSRAM/RTC, draw.
 8. **Cross-reference a sibling.** pret compares Red↔Yellow↔Crystal; we compare
    Jr↔Omega DE source + live UX ([`omega-jr-compare.md`](omega-jr-compare.md)).
-9. **Decomp is optional and late.** Matching C (`decomp/`) is a side track after
+9. **Decomp is optional and late.** Matching C (`kernel/`) is a side track after
    names exist ([`PROGRESS.md`](PROGRESS.md)).
 
 ## Source of truth in this repo
@@ -35,10 +35,10 @@ Persist through:
 
 | Artifact | Role |
 |---|---|
-| `re/1.05e-0731/kernel.sym` | Human symbol names (`bank:addr Name`); mgbdis applies these |
-| `re/1.05e-0731/notes.json` | Multi-line `; [ezgb]` comment blocks at labels |
+| `re/kernel/1.05e-0731/kernel.sym` | Human symbol names (`bank:addr Name`); mgbdis applies these |
+| `re/kernel/1.05e-0731/notes.json` | Multi-line `; [ezgb]` comment blocks at labels |
 | `docs/*.md` | Traces, hardware maps, subsystem writeups |
-| `decomp/` | Byte-matched C (optional, later) |
+| `kernel/` | Byte-matched C (optional, later) |
 
 Regen after adding sym names (details in [`DEVELOPMENT.md`](DEVELOPMENT.md)):
 
@@ -53,15 +53,15 @@ Regen after adding sym names (details in [`DEVELOPMENT.md`](DEVELOPMENT.md)):
 Tools print `bank:addr` (e.g. `00:27ba`), not a filename.
 
 - **File:** bank is two hex digits; the file is `bank_` + three hex digits +
-  `.asm` under `re/1.05e-0731/disassembly/` (`00` → `bank_000.asm`).
+  `.asm` under `re/kernel/1.05e-0731/disassembly/` (`00` → `bank_000.asm`).
 - **Label:** mgbdis auto-names are `Call_BBB_AAAA` / `Jump_BBB_AAAA` /
   `jr_BBB_AAAA` (`BBB` = bank in three hex, `AAAA` = address in four). `00:27ba`
   → `Call_000_27ba` / `Jump_000_27ba`. Once named in `kernel.sym` and
   regenerated, the label becomes the human name; the address still finds it:
 
   ```sh
-  rg -n "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e-0731/disassembly/bank_000.asm
-  rg -n -A 35 "^Call_000_27ba:|^Jump_000_27ba:" re/1.05e-0731/disassembly/bank_000.asm  # body window
+  rg -n "^Call_000_27ba:|^Jump_000_27ba:" re/kernel/1.05e-0731/disassembly/bank_000.asm
+  rg -n -A 35 "^Call_000_27ba:|^Jump_000_27ba:" re/kernel/1.05e-0731/disassembly/bank_000.asm  # body window
   ```
 
 A label line ending in `:` alone is the definition; an indented `call

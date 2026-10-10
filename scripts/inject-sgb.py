@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inject the SGB boot unlock into re/<ver>/kernel.gb (docs/sgb-boot.md).
+"""Inject the SGB boot unlock into re/kernel/<ver>/kernel.gb (docs/sgb-boot.md).
 
 Assembles scripts/sgb/sgb_boot.asm (the toggle build: it sends only when the
-SET tab's SGB BOOT record in pSRAM is on) and, through decomp/tools:
+SET tab's SGB BOOT record in pSRAM is on) and, through kernel/tools:
 
   00:0020   SgbStub (9 B): push af, map bank 1, jp SgbUnlock
   01:7f00   SgbUnlock and helpers
@@ -23,7 +23,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOOLS = os.path.join(ROOT, "decomp", "tools")
+TOOLS = os.path.join(ROOT, "kernel", "tools")
 ASM = os.path.join(ROOT, "scripts", "sgb", "sgb_boot.asm")
 
 
@@ -43,7 +43,7 @@ def assemble():
 
 
 def tool(*args):
-    subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True, cwd=os.path.join(ROOT, "decomp"))
+    subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True, cwd=os.path.join(ROOT, "kernel"))
 
 
 def main():
@@ -57,7 +57,7 @@ def main():
     tool("patch_bytes.py", ver, "0", "0100", "00c35001", "00c32000", *apply)
     tool("patch_bytes.py", ver, "0", "0146", "00", "03", *apply)
     tool("patch_bytes.py", ver, "0", "014b", "00", "33", *apply)
-    rom = open(os.path.join(ROOT, "re", ver, "kernel.gb"), "rb").read()
+    rom = open(os.path.join(ROOT, "re","kernel", ver, "kernel.gb"), "rb").read()
     hdr = bytearray(rom[0x134:0x14D])
     hdr[0x146 - 0x134] = 0x03
     hdr[0x14B - 0x134] = 0x33

@@ -3,13 +3,13 @@
 
 The C blocks, their addresses and their pins are listed once, in
 scripts/port-mod.py's REGISTRY; block names and lengths come from
-re/<ver>/kernel.sym. This compiles each source at its address and compares the
-result with the bytes in re/<ver>/kernel.gb:
+re/kernel/<ver>/kernel.sym. This compiles each source at its address and compares the
+result with the bytes in re/kernel/<ver>/kernel.gb:
 
     scripts/rebuild-blocks.py              # report; exit 1 if any block is stale
     scripts/rebuild-blocks.py --apply      # re-inject the stale ones in place
 
---apply runs decomp/tools/inject.py --replace for each stale block, so every
+--apply runs kernel/tools/inject.py --replace for each stale block, so every
 rebuild gets the same fit check (no overlap with another kernel.sym entry, new
 bytes only in $FF free space) and kernel.sym length update. Run it before
 porting: a C edit that was never injected is otherwise invisible until a
@@ -28,7 +28,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "decomp", "tools"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 from sdcc_build import compile_c, parse_ihx, rom_offset  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("port_mod", os.path.join(ROOT, "scripts", "port-mod.py"))
@@ -55,8 +55,8 @@ def main():
     ap.add_argument("--apply", action="store_true", help="re-inject stale blocks with inject.py --replace")
     args = ap.parse_args()
 
-    sym_path = os.path.join(ROOT, "re", args.version, "kernel.sym")
-    rom = open(os.path.join(ROOT, "re", args.version, "kernel.gb"), "rb").read()
+    sym_path = os.path.join(ROOT, "re","kernel", args.version, "kernel.sym")
+    rom = open(os.path.join(ROOT, "re","kernel", args.version, "kernel.gb"), "rb").read()
     blocks = {(b, a): (n, name) for b, a, n, name in port_mod.read_sym_blocks(sym_path)}
 
     stale = []
@@ -87,7 +87,7 @@ def main():
                str(bank), f"{addr:04x}", name, "--replace", "--apply"]
         for s, a in entry.get("pins", {}).items():
             cmd += ["--pin", f"{s}={a:04x}"]
-        r = subprocess.run(cmd, cwd=os.path.join(ROOT, "decomp"), capture_output=True, text=True)
+        r = subprocess.run(cmd, cwd=os.path.join(ROOT, "kernel"), capture_output=True, text=True)
         report = [l for l in r.stdout.splitlines() if l.startswith(("Fits", "patched", "error"))]
         print(f"{name}:", *report, sep="\n  ")
         if r.returncode != 0:

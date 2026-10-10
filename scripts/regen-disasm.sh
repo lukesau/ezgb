@@ -16,7 +16,7 @@ if [[ "${2:-}" == "-v" ]] || [[ "${1:-}" == "-v" ]]; then
   [[ "${1:-}" == "-v" ]] && VER="1.05e-0731"
 fi
 
-RE="$ROOT/re/$VER"
+RE="$ROOT/re/kernel/$VER"
 if [[ ! -f "$RE/kernel.gb" ]]; then
   echo "error: missing $RE/kernel.gb" >&2
   exit 1

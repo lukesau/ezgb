@@ -77,7 +77,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 ## Code
 
-- [`../decomp/src/flcfg.c`](../decomp/src/flcfg.c) — bank 4 at `04:6600`, label
+- [`../kernel/src/flcfg.c`](../kernel/src/flcfg.c) — bank 4 at `04:6600`, label
   `FlCfg`. One entry, `u8 flcfg(u8 *frame, u8 op)`, op-selected: 0 ENTER (load +
   draw the rows), 1 ROWS (redraw on cursor move), 2 A (row 2 toggle+save, row 3
   arm pick), 3 PICK (compose path from `$c2a6`+`$c4a4` and save), 4 LOAD (test).
@@ -86,10 +86,10 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
   `00:1941`, `f_write` `00:1963`, `f_close` `00:19a1`) and the kernel FIL at
   `$CA0F`, following the same `WaitVBlankFlag` + `$7FC0=$00` discipline as
   `fastlaunch.c`'s `scan_config` and the kernel's own `BackupSaveDump`.
-- [`../decomp/src/flpick_banner.c`](../decomp/src/flpick_banner.c) — bank 8 at
+- [`../kernel/src/flpick_banner.c`](../kernel/src/flpick_banner.c) — bank 8 at
   `08:7b8d`. Draws the ` PICK A ROM ` banner over the tab strip while pick mode
   is armed.
-- `scan_config` in [`../decomp/src/fastlaunch.c`](../decomp/src/fastlaunch.c) —
+- `scan_config` in [`../kernel/src/fastlaunch.c`](../kernel/src/fastlaunch.c) —
   returns 2 on a leading `#` (disabled).
 
 ### WRAM (all zero at boot)
@@ -132,7 +132,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 |---|---|---|---|
 | `08:7200` | `c3 31 73` | `jp $7b8d` | tab-strip tail → `FlPickBanner` |
 
-## Shims (hand-assembled; see also [`../decomp/src/shims.md`](../decomp/src/shims.md))
+## Shims (hand-assembled; see also [`../kernel/src/shims.md`](../kernel/src/shims.md))
 
 `flcfg` is pinned at `$6600`; args are pushed last-first (op via `push af; inc sp`,
 frame via `push bc`), return in `E`.
@@ -172,7 +172,7 @@ and are listed here as the record of what that script leaves in place; run it
 for each version key, then one `python3 scripts/kernel-patch.py make`.
 
 ```bash
-cd decomp; V=1.05e-0731
+cd kernel; V=1.05e-0731
 # bank 4: flcfg (via scripts/inject-ezcfg.sh) + shims + site patches
 python3 tools/inject_bytes.py $V 4 5932 FlSetEnterHook  f8024d443e00f533c5cd0066e803f85e4d44210700c9 --apply
 python3 tools/inject_bytes.py $V 4 5948 FlSetRowsHook   f8004d443e01f533c5cd0066e803c3f548 --apply

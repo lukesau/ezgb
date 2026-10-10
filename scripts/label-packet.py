@@ -57,7 +57,7 @@ NAMED_CALL_RX = re.compile(r"\bcall\s+([A-Za-z_][\w]*)\b", re.IGNORECASE)
 
 
 def bank_file(version, bank):
-    return ROOT / "re" / version / "disassembly" / f"bank_{int(bank, 16):03x}.asm"
+    return ROOT / "re" / "kernel" / version / "disassembly" / f"bank_{int(bank, 16):03x}.asm"
 
 
 def find_body(version, bank, addr, full_named_span=False):
@@ -166,7 +166,7 @@ def find_callers(version, bank, addr, named, context=6):
         patterns.append(f"call {human}")
         patterns.append(f"jp {human}")
     hits = []
-    for f in sorted(glob.glob(str(ROOT / "re" / version / "disassembly" / "bank_*.asm"))):
+    for f in sorted(glob.glob(str(ROOT / "re" / "kernel" / version / "disassembly" / "bank_*.asm"))):
         lines = Path(f).read_text(encoding="utf-8", errors="ignore").splitlines()
         for i, ln in enumerate(lines):
             low = ln.lower()

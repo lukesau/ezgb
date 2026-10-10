@@ -3,7 +3,7 @@
 
 Read-only forensic helper. Coalesces the many small FF gaps inside a bitstream
 (frame padding) into whole regions, so the two multiboot slots and the extra
-data blobs stand out. See docs/fpga-flash-map.md.
+data blobs stand out. See re/stage0/docs/flash-map.md.
 
 Usage:
     scripts/fpga-flash-map.py <image.bin> [--gap N] [--min N]

@@ -11,8 +11,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 V="${1:?version}"
-SYM="$ROOT/re/$V/kernel.sym"
-GB="$ROOT/re/$V/kernel.gb"
+SYM="$ROOT/re/kernel/$V/kernel.sym"
+GB="$ROOT/re/kernel/$V/kernel.gb"
 
 case "$V" in
   1.05e-0731) DUMP_EPI=6738; CLAMP_SITE=4e33; SEED=504e; NUM1=42ae; NUM2=45a7 ;;   # bank 1 differs per build:
@@ -33,7 +33,7 @@ for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x2600+0x4000,0x600),(8,0x7c
 open(p,'wb').write(rom)
 PY
 
-cd "$ROOT/decomp"
+cd "$ROOT/kernel"
 FATFS="--pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_07_7739=1963 --pin FarCall_03_768f=19a1 --pin WaitVBlankFlag=0688"
 
 # 2. Bank 2: the settings module, then the scan that calls it.
@@ -68,7 +68,7 @@ SETUP="
   47df:3e:46 47e3:3a:42 49de:3e:46 49e2:3a:42
   498c:01:02
 "
-python3 - "$GB" "$ROOT/re/$V/kernel.gb.orig" "$SETUP" <<'PY'
+python3 - "$GB" "$ROOT/re/kernel/$V/kernel.gb.orig" "$SETUP" <<'PY'
 import sys
 p, orig, spec = sys.argv[1], open(sys.argv[2],'rb').read(), sys.argv[3].split()
 rom = bytearray(open(p,'rb').read())
@@ -217,7 +217,7 @@ python3 tools/patch_bytes.py "$V" 1 "$NUM2" cdb708 cd8003 --apply >/dev/null   #
 # name marquee through LastRomTickStub. Bank 1 differs per build, so the
 # sites are found by their stock bytes.
 perl -ni -e 'print unless /^(04:6000|00:0390|00:039d) /' "$SYM"
-python3 - "$GB" "$ROOT/re/$V/kernel.gb.orig" <<'PY'
+python3 - "$GB" "$ROOT/re/kernel/$V/kernel.gb.orig" <<'PY'
 import re, sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read()); orig=open(sys.argv[2],'rb').read()
 rom[4*0x4000+0x2000:4*0x4000+0x2800]=b'\xff'*0x800

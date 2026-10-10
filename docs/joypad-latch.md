@@ -101,7 +101,7 @@ and a single SELECT opens the SET tab once (no double delivery). Before the
 latch the 12px build lost one to three of those presses at 60 ms.
 
 ```sh
-cd decomp
+cd kernel
 python3 tools/inject_bytes.py $V 0 05cf VBlankPadLatch \
     f040f610e0403e48e045c5cd163a47f0fc2fa04f78e0fcf0fdb1e0fdc1c9 --apply
 python3 tools/inject_bytes.py $V 0 2746 ReadJoypadLatched f3cd163a5ff0fdb35fafe0fd7be0fcfbc9 --apply
