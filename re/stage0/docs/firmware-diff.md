@@ -117,6 +117,19 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   banking or save RAM on any of the three, so the sum isn't a ROM or RAM
   base offset.
 
+  **The sum is a fast-load key.** It reaches the PicoBlaze as input port
+  `$BB` (through the input mux). FW5's `cmd_load_rom` reads `$BB` once when
+  a load starts (`$223` in 0918, `$209` in 0731) and, if it is `$11`,
+  skips `delay_long` after every SD run (`$23C` / `$222`); FW4's loader
+  always waits. Both `$7FD3` and the sum power up 0 and the kernel writes
+  `$7FD4=$00`, so stock loads always take the slow path. In simulation,
+  `$7FD4=$11` before a load makes FW5 issue the next `CMD18` 15 µs after
+  `CMD12` instead of 1.1 ms, and the load then stalls with the card
+  streaming, while FW4 is unaffected. The stall is probably the SD model,
+  which starts the next block before the controller has re-armed (a real
+  card adds busy and access time after `CMD12`); what the fast path does on
+  a cart, and whether the delay exists for slow cards, is untested.
+
 ## Banking and save RAM (simulated)
 
 `gb_mbc.vh` with `mbctest.py` runs the kernel's launch writes against
