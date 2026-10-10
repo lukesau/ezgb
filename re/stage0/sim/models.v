@@ -104,6 +104,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     reg [47:0] rx; integer rxn = 0; reg rxing = 0;
     reg [5:0] idx; reg [31:0] arg;
     reg app = 0, wide = 0, reading = 0, writing = 0;
+    integer rgen = 0;    // each CMD17/18 read task stops once a newer one starts
     reg [15:0] rca = 16'h1234;
     reg [31:0] blk;
     event got_cmd;
@@ -173,7 +174,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
             13: r48(13, ST_TRAN);
             16: r48(16, ST_TRAN);
             12: begin reading = 0; writing = 0; r48(12, ST_TRAN); end
-            17, 18: begin r48(idx, ST_TRAN); blk = arg; reading = 1; fork read_blocks(idx == 17); join_none end
+            17, 18: begin r48(idx, ST_TRAN); blk = arg; reading = 1; rgen = rgen + 1; fork read_blocks(idx == 17, rgen); join_none end
             24, 25: begin r48(idx, ST_TRAN); blk = arg; writing = 1; fork write_blocks(idx == 24); join_none end
             default: r48(idx, ST_TRAN);
         endcase
@@ -184,10 +185,12 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     function [15:0] crc16_step(input [15:0] c, input b);
         crc16_step = {c[14:0], 1'b0} ^ ((c[15] ^ b) ? 16'h1021 : 16'h0);
     endfunction
-    task read_blocks(input single);
+    task read_blocks(input single, input integer g);
         integer i, k, r; reg [15:0] crc [0:3]; reg [3:0] nib;
         begin
-            while (reading) begin
+            // a CMD18 right after CMD12: let the previous block finish first
+            while (dat_oe !== 0) @(negedge CLK);
+            while (reading && g == rgen) begin
                 r = $fseek(fd, blk * 512, 0);
                 r = $fread(buffer, fd);
                 if (VERBOSE) $display("%t sd: read block %0d", $time, blk);
