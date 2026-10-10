@@ -41,7 +41,7 @@ What is **proven by our own measurements** (independent of any part number):
 |---|---|---|---|---|
 | **Game ROM** (loaded game) | U9's pSRAM | **~8 MB** (64 Mbit) | Volatile, fades off-power | [nor-reuse.md](nor-reuse.md); loads 64 Mbit ROMs = GB max |
 | **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) | Battery-backed (coin cell) | [psram-page-map.md](psram-page-map.md); 512 KB = 64 pages exactly |
-| **FPGA bitstream** (+ stage1 as BRAM) | SPI flash (`25Q40H`, board revs vary) | 512 KB–2 MB | Nonvolatile | [fpga-flash-map.md](fpga-flash-map.md), [updater-flash-write.md](updater-flash-write.md) |
+| **FPGA bitstream** (+ stage1 as BRAM) | SPI flash (`25Q40H`, board revs vary) | 512 KB–2 MB | Nonvolatile | [flash-map.md](../re/stage0/docs/flash-map.md), [updater-flash-write.md](updater-flash-write.md) |
 | **NOR die of U4** | S29PL032A (datasheet-confirmed) | 4 MB | Nonvolatile | **no GB-side use found** |
 
 The size coincidences pin the pSRAM assignments hard: the game store loads
@@ -58,7 +58,7 @@ that U9 holds ≥ 8 MB pSRAM (by deduction above). Whether it *also* carries a N
 die is speculative. What is certain is only U4's 4 MB NOR, and that **no
 GB-visible firmware path reaches any NOR die**: the `$7FC0` sweep finds no
 personality that maps NOR
-([fpga-personalities.md](fpga-personalities.md)) and the updater writes only the
+([personalities.md](../re/stage0/docs/personalities.md)) and the updater writes only the
 SPI config flash ([updater-flash-write.md](updater-flash-write.md)). Whether the
 NOR is even wired to the FPGA is unknown; it may be dead silicon in the package.
 
@@ -178,14 +178,14 @@ Two possibilities:
 found` under five encodings (plain, bit-reversed, inverted, nibble-swapped,
 rev+inv); the only hit is each updater's own header logo at `$0104`. The full
 512 KB flash dump likewise contains no plaintext bootstrap (see
-[fpga-flash-map.md](fpga-flash-map.md) for its contents). This leaves **(b)** as
+[flash-map.md](../re/stage0/docs/flash-map.md) for its contents). This leaves **(b)** as
 the best-supported answer; confirming it needs the bitstream format. See the
 search detail and the alternative NOR hypothesis below.
 
 **Proven (b), 2026-10-08.** Decoding the FW4 bitstream recovers stage1 in full:
 `$0000-$3FFF` is eight 16K × 1 block RAMs, one per data bit, and `$4000-$47FF`
 one 2K × 8 BRAM. The rebuilt 32 KB matches `stage1.gb` exactly
-([fpga-bitstream.md](fpga-bitstream.md)).
+([bitstream.md](../re/stage0/docs/bitstream.md)).
 
 Note: the ROM-space unlock/commit protocol the kernel and updater share
 ([REGISTERS.md](REGISTERS.md)) is a *separate* interface from SPI configuration:
@@ -219,7 +219,7 @@ contention with the FPGA entirely, and on an already-dead cart costs nothing.
 
 ### Flash layout (512 KB)
 
-Repair-critical view; full layout owned by [fpga-flash-map.md](fpga-flash-map.md).
+Repair-critical view; full layout owned by [flash-map.md](../re/stage0/docs/flash-map.md).
 
 | Range | Contents |
 |---|---|
@@ -233,7 +233,7 @@ starts 0x46 in. Length ~149,484 bytes matches the XC3S200A's ~146 KB bitstream.
 Images A and B differ in only 8 bytes, all in the tail (CRC-like). The repair
 below relies on the tail being preserved. (Decoded 2026-10-08: two of those
 bytes are one PicoBlaze instruction in block RAM, not CRC; the other six are in
-the CRC area. See [fpga-bitstream.md](fpga-bitstream.md).)
+the CRC area. See [bitstream.md](../re/stage0/docs/bitstream.md).)
 
 ### The repair
 
@@ -257,7 +257,7 @@ not, so the repair must be minimal. This also proves the FPGA boots from address
 0 and does *not* silently fall back to `0x40000`: image B sat intact throughout
 and was never used. (2026-10-08: on a healthy cart slot B does run on every
 boot, but only because slot A's PicoBlaze firmware hands over to it through
-ICAP; with slot A gone nothing can. See [fpga-picoblaze.md](fpga-picoblaze.md).)
+ICAP; with slot A gone nothing can. See [picoblaze.md](../re/stage0/docs/picoblaze.md).)
 
 ## The bootstrap ROM is not in the config flash (searched and ruled out)
 
@@ -304,16 +304,16 @@ reserved (nitro2k01's sibling revision even upgrades U4 to the 8 MB
 firmware); or reached only by an FPGA feature/personality not exposed to the GB
 CPU. If it is truly firmware-unused, it is a large nonvolatile store with **no
 known GB-side access path**: the prize, but gated on either an undiscovered
-FPGA command or a replacement FPGA design ([fpga-ace.md](fpga-ace.md)).
+FPGA command or a replacement FPGA design ([custom-logic.md](../re/stage0/docs/custom-logic.md)).
 
 **Consequence for CGB mode:** the "patch the bootstrap's CGB flag" shortcut is
-dead. The remaining route is a replacement FPGA design (`fpga-ace.md`), serving
+dead. The remaining route is a replacement FPGA design ([`re/stage0/docs/custom-logic.md`](../re/stage0/docs/custom-logic.md)), serving
 its own bootstrap from BRAM with whatever ROM header it chooses.
 
 **Reopened 2026-10-08.** With stage1's BRAM layout known, header byte `$0143`
 is bit `$143` of each of the eight plane BRAMs, so the shortcut is eight bit
 flips plus a new CRC, not a new design. Needs an encoder and JTAG testing first
-([fpga-bitstream.md](fpga-bitstream.md)).
+([bitstream.md](../re/stage0/docs/bitstream.md)).
 
 > **Correction (2026-10-09).** Done since, without JTAG: `s3patch` writes the
 > BRAM bits and CRCs, and a relabelled stock updater installs the result to

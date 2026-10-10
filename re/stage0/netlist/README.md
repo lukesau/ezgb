@@ -2,7 +2,7 @@
 
 Python scratch tools over `s3trace --netlist` output (`fw4-netlist.jsonl`,
 kept untracked in `fpga/fw4-decode/netlist/`). Run them from a directory
-holding that file. Findings: [docs/fpga-version.md](../../../docs/fpga-version.md).
+holding that file. Findings: [re/stage0/docs/version-byte.md](../docs/version-byte.md).
 
 | File | What |
 |---|---|

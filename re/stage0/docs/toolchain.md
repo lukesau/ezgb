@@ -2,25 +2,25 @@
 
 Reference for the tools that decode, trace and patch the cart's Spartan-3A
 (`XC3S200A-4VQG100`) bitstream. Setting them up from nothing, and the
-end-to-end build of an updater, is in [fpga-setup.md](fpga-setup.md).
-Findings from using them are in [fpga-bitstream.md](fpga-bitstream.md).
+end-to-end build of an updater, is in [../../../docs/fpga-setup.md](../../../docs/fpga-setup.md).
+Findings from using them are in [bitstream.md](bitstream.md).
 
 Decoded listings, BRAM dumps and anything else derived from EZ Flash's
 bitstream stay in the ignored `fpga/` directory, same policy as the flash dumps
 (`fpga/README.md`, itself untracked; the short version is in
-[fpga-setup.md](fpga-setup.md#10-risk-and-recovery)).
+[../../../docs/fpga-setup.md](../../../docs/fpga-setup.md#10-risk-and-recovery)).
 
 ## The pieces
 
 | Piece | What it does | Where |
 |---|---|---|
 | **prjcombine** | Open database of the Spartan-3 family bitstream format: every tile, routing mux and logic setting with its exact bit positions. Rust libraries to load it and parse bitstreams | `~/fpga/prjcombine` on the build host |
-| **s3decode** | Our decoder. Walks every tile of a bitstream against the prjcombine database and prints what is configured | [`scripts/fpga/s3decode/`](../scripts/fpga/s3decode/) |
+| **s3decode** | Our decoder. Walks every tile of a bitstream against the prjcombine database and prints what is configured | [`scripts/fpga/s3decode/`](../../../scripts/fpga/s3decode/) |
 | **s3patch** | Writes bel attributes (BRAM `DATA`) back into a bitstream, recomputing the CRCs | same crate |
 | **s3trace** | Walks routing back from a bel pin, lists pins, dumps the netlist | same crate |
 | **s3pins** | Package pin to bel pad map | same crate |
 | **ISE 14.7** | Xilinx's toolchain, the last one that supports Spartan-3A. Only needed to *make* bitstreams (baselines, test designs, future fuzzing), not to decode | `~/Xilinx/14.7` on the build host |
-| Scripts | Pull bitstreams out of updaters and flash dumps, rebuild stage1, dump PicoBlaze words, end-to-end smoke test | [`scripts/fpga/`](../scripts/fpga/) |
+| Scripts | Pull bitstreams out of updaters and flash dumps, rebuild stage1, dump PicoBlaze words, end-to-end smoke test | [`scripts/fpga/`](../../../scripts/fpga/) |
 
 Decoding, tracing and patching need only prjcombine and the four tools in
 `scripts/fpga/s3decode/` (one `cargo build --release` builds all of them).
@@ -33,7 +33,7 @@ The Rust tools and ISE run on a Linux machine, called "the build host" in
 these docs. The current one is Ubuntu 24.04 on a Xeon E5-1680 v2 (8 cores /
 16 threads) with 62 GB RAM; nothing here needs that much. Stage1 and the
 Python scripts run on a second machine (currently macOS). That split is just
-how it is set up now, see [fpga-setup.md](fpga-setup.md).
+how it is set up now, see [../../../docs/fpga-setup.md](../../../docs/fpga-setup.md).
 
 Example layout under `~/fpga` (the scripts' defaults assume it):
 
@@ -164,9 +164,9 @@ bitgen -w -d blank.ncd blank.bit
 > yet", written before `s3patch` existed. `s3patch` (below) writes BRAM
 > contents and recomputes the CRCs, and every updater built so far went
 > through it: the CGB flag, the splash builds and the stage1 rewrite
-> ([fpga-cgb.md](fpga-cgb.md), [fpga-stage1.md](fpga-stage1.md)). The same
-> stale claim was inherited by [fpga-bitstream.md](fpga-bitstream.md) and
-> [hardware-board.md](hardware-board.md), which carry their own notes.
+> ([../../../docs/fpga-cgb.md](../../../docs/fpga-cgb.md), [../../../docs/fpga-stage1.md](../../../docs/fpga-stage1.md)). The same
+> stale claim was inherited by [bitstream.md](bitstream.md) and
+> [../../../docs/hardware-board.md](../../../docs/hardware-board.md), which carry their own notes.
 
 ## s3patch
 
@@ -212,8 +212,8 @@ a tree. Get exact pin names from `--list-pins` before using `--from`.
 
 `--netlist` writes one line per configured bel:
 `{"tile": ..., "bel": ..., "attrs": {...}, "in": {pin: driver}}`. The
-scripts in [`scripts/fpga/netlist/`](../scripts/fpga/netlist/README.md) read
-it; [fpga-version.md](fpga-version.md) and [fpga-design.md](fpga-design.md)
+scripts in [`re/stage0/netlist/`](../netlist/README.md) read
+it; [version-byte.md](version-byte.md) and [design.md](design.md)
 are built on it.
 
 ## s3pins
@@ -244,7 +244,7 @@ Then:
 scripts/fpga/stage1-from-bram.py bram/ -o stage1.gb --ref tools/ezflashjr/stage1/FW4/stage1.gb
 scripts/fpga/stage1-from-bram.py bram/ --ref <stage1.gb> --discover   # other FW revisions
 scripts/fpga/picoblaze-words.py bram/D0X3Y25.BEL.BRAM > pb-x3y25.txt
-scripts/fpga/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a re/fpga-fw4/X3Y29.notes -o X3Y29.psm
+scripts/fpga/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a re/stage0/picoblaze/X3Y29.notes -o X3Y29.psm
 scripts/fpga/picoblaze-diff.py old/D0X19Y25.BEL.BRAM new/D0X3Y1.BEL.BRAM   # routine-level diff
 ```
 

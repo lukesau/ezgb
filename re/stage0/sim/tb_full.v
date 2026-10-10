@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 // Full boot: oscillator on P43, config flash on its configuration pins, SD
-// card on the bank-1 SD pins (see docs/fpga-design.md), Game Boy bus idle,
+// card on the bank-1 SD pins (see re/stage0/docs/design.md), Game Boy bus idle,
 // every other pin pulled up. Works under iverilog and Verilator (glbl and
 // the monitors are instantiated here, so tb is the only top).
 //   iverilog -g2012 -s tb s3prims.v models.v pinmon.v tb_pcmap.v design.v tb_full.v
@@ -27,7 +27,7 @@ module tb;
 `endif
     sd_card #(.IMAGE("card.img")) sd(.CLK(P23), .CMD(P28), .DAT(`SD_DAT));
     // Game Boy bus: A0-A15, D0-D7, /WR on P84. There is no /RD or /CS: the
-    // FPGA drives D0-D7 from A13-A15 and /WR alone (docs/fpga-design.md).
+    // FPGA drives D0-D7 from A13-A15 and /WR alone (re/stage0/docs/design.md).
     reg [15:0] gb_a = 16'h0000;
     reg [7:0] gb_d = 8'h00;
     reg gb_doe = 0, gb_wr_n = 1;
@@ -49,7 +49,7 @@ module tb;
     // Memory bus: U9 (game ROM pSRAM, /CE P52) and U4 (save pSRAM, /CE P60)
     // share the address, data, /WE and byte-lane pins; word address A14 and up
     // come from the 74HC595 (SRCLK P35, SER P33, RCLK P24). See
-    // docs/fpga-design.md. /OE is not identified yet and is tied active.
+    // re/stage0/docs/design.md. /OE is not identified yet and is tied active.
     wire [7:0] bank;
     hc595 u2(.SRCLK(P35), .SER(P33), .RCLK(P24), .Q(bank));
     wire [22:0] mem_a = {1'b0, bank, P51, P46, P53, P20, P86, P83, P50, P44, P73, P70, P71, P65, P59, P56};

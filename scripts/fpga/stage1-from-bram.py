@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild the cart's 32 KB stage1 bootstrap from s3decode --blob-dir output.
 
-FW4 layout (proven 2026-10-08, see docs/fpga-bitstream.md):
+FW4 layout (proven 2026-10-08, see re/stage0/docs/bitstream.md):
   $0000-$3FFF  8 BRAMs in x1 mode, one data bit each (16K x 1 bit planes)
   $4000-$47FF  1 BRAM in x9 mode, bytes in address order
   $4800-$7FFF  not stored, reads as $00

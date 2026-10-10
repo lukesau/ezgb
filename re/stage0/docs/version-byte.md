@@ -4,7 +4,7 @@ The kernel reads the cart's firmware version by writing `$7FC0 = $04` and
 reading any byte in `$A000-$BFFF` (FW4 reads `$04`, FW5 `$05`; the HELP tab
 draws `ver: FW<n>`). The byte comes from the FPGA fabric, not from either
 PicoBlaze program. Found with `s3trace --netlist` and the scripts in
-[`scripts/fpga/netlist/`](../scripts/fpga/netlist/README.md), on the FW4
+[`re/stage0/netlist/`](../netlist/README.md), on the FW4
 slot B design.
 
 ## The cartridge data bus
@@ -92,9 +92,9 @@ What the updater contributes is only text: its screen line
 `Update to ver:4` is a fixed string at `$11D2` (the 16 bytes
 `make-updater.py` relabels). It never reads the cart's version: its only
 `$7FC0` write is in an unreferenced function
-([updater-flash-write.md](updater-flash-write.md)).
+([../../../docs/updater-flash-write.md](../../../docs/updater-flash-write.md)).
 
-> **Correction (2026-10-09).** [fpga-cgb.md](fpga-cgb.md) said the updater
+> **Correction (2026-10-09).** [../../../docs/fpga-cgb.md](../../../docs/fpga-cgb.md) said the updater
 > "shows the cart's current firmware version for display only". It
 > doesn't: the version on its screen is the fixed `Update to ver:4` label,
 > and nothing in it reads `$7FC0=$04`.

@@ -2,7 +2,7 @@
 
 `netlist2v.py` turns `s3trace --netlist` output into structural Verilog over
 the behavioural primitives in `s3prims.v`; iverilog then simulates the whole
-FPGA from power-on. Findings: [docs/fpga-design.md](../../../docs/fpga-design.md).
+FPGA from power-on. Findings: [re/stage0/docs/design.md](../docs/design.md).
 
 ```bash
 # on the build host, from ~/fpga/verilog

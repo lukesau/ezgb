@@ -113,7 +113,7 @@ likely (contiguous page) but should be a write/read-back probe if pursued.
 > [nor-reuse.md](nor-reuse.md) and [hardware-board.md](hardware-board.md).
 
 (NOR/hardware detail: [`hardware-board.md`](hardware-board.md),
-[`fpga-flash-map.md`](fpga-flash-map.md).)
+[`re/stage0/docs/flash-map.md`](../re/stage0/docs/flash-map.md).)
 
 ## Contrast
 
@@ -143,7 +143,7 @@ pursued.
 
 ## Sources
 
-Investigated read-only across `docs/hardware-board.md`, `docs/fpga-flash-map.md`,
-`docs/fpga-ace.md`, `docs/game-slot-access.md`, `docs/psram-save-map.md`,
+Investigated read-only across `docs/hardware-board.md`, `re/stage0/docs/flash-map.md`,
+`re/stage0/docs/custom-logic.md`, `docs/game-slot-access.md`, `docs/psram-save-map.md`,
 `docs/last-rom.md`, `docs/omega-jr-compare.md`, `decomp/src/shims.md`,
 `re/1.05e-0731/disassembly/bank_*.asm`, and `re/1.05e-0731/kernel.sym`.

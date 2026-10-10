@@ -3,7 +3,7 @@
 [cgb-mode.md](cgb-mode.md) found that the kernel can never run in CGB mode,
 because the console reads the CGB flag from the cart's bootstrap (stage1)
 before any of our code exists. Stage1 is BRAM contents in the FPGA bitstream
-([fpga-bitstream.md](fpga-bitstream.md)), so the flag is now a data edit. This
+([bitstream.md](../re/stage0/docs/bitstream.md)), so the flag is now a data edit. This
 is the first patched cart firmware: built and verified offline, then
 **installed with the CGB updater and confirmed working on hardware
 (2026-10-08)**: red OSINIT screen on a colour console. Built
@@ -74,7 +74,7 @@ flash-update command (the staging header is built at `00:13e9`: loop offset
 `+ $040000`). Checked in the code: no payload checksum, no read-back
 compare, no version gate. It shows a fixed `Update to ver:4` line (it never
 reads the cart's version, see the correction in
-[fpga-version.md](fpga-version.md)), waits for A, writes 149,516 bytes and stops. Its payload is
+[version-byte.md](../re/stage0/docs/version-byte.md)), waits for A, writes 149,516 bytes and stops. Its payload is
 exactly slot B.
 
 So `scripts/fpga/make-updater.py` builds `Update_FW4-cgb.gb`: the stock file

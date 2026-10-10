@@ -4,8 +4,8 @@ The FW4 bitstream contains one PicoBlaze (Xilinx KCPSM3) soft processor
 running a 2K program held in two block RAMs. It handles everything on the
 cart that is sequential rather than fixed logic: the SD card, loading a game
 into memory, the RTC, the config flash, and a licence check tied to the FPGA's
-Device DNA. Decoding background: [fpga-bitstream.md](fpga-bitstream.md);
-tooling: [fpga-toolchain.md](fpga-toolchain.md).
+Device DNA. Decoding background: [bitstream.md](bitstream.md);
+tooling: [toolchain.md](toolchain.md).
 
 The annotated listings are generated into
 the ignored `fpga/` directory; only the annotation files and the tool are
@@ -15,7 +15,7 @@ tracked.
 
 ```bash
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    -a re/fpga-fw4/X3Y29.notes -o fpga/fw4-decode/picoblaze/X3Y29.psm
+    -a re/stage0/picoblaze/X3Y29.notes -o fpga/fw4-decode/picoblaze/X3Y29.psm
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
     --check fpga/fw4-decode/picoblaze/X3Y29.psm      # -> identical
 ```
@@ -104,7 +104,7 @@ Commands arrive as interrupts; the handler (`isr`, `$395`) reads port `B5`:
 | `$10` | set the RTC from port `B6` |
 | `$08` | run bank 2 in flash-update mode |
 
-The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../re/1.05e-0731/disassembly/bank_002.asm))
+The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../1.05e-0731/disassembly/bank_002.asm))
 writes the LBA to `$7FB0-B3` and the count to `$7FB4`, adding `$80` for a
 write, in chunks of up to 4 sectors. FPGA logic between the two turns that
 into ports `B0-B4` and the `B5` command; the mapping is consistent but not
@@ -170,7 +170,7 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    booted. If slot B fails to come up, the next power-on finds a `01`
    instead of `FF`, skips the hand-over and stays on the golden image, so a
    bad update can't brick the cart. One byte per power-on: the "52 B at
-   `$70000`" in [fpga-flash-map.md](fpga-flash-map.md) are 52 successful
+   `$70000`" in [flash-map.md](flash-map.md) are 52 successful
    slot B boots since the sector was last erased.
 2. **Licence check.** Read the 8 KB block at `$030000` (the flash map's
    "unidentified high-entropy blob") as 128-byte records up to `$031500`,
@@ -190,18 +190,18 @@ slot B's half of the flash.
 Table entry 0 is a flash address; entries 1-`$40` are 256 bytes of data.
 If the address is on a 64 KB boundary the sector is erased first, then the
 page is programmed. Port `F1` is high while it runs. This is the write path
-behind the updater's `$7FD2` command ([updater-flash-write.md](updater-flash-write.md));
+behind the updater's `$7FD2` command ([../../../docs/updater-flash-write.md](../../../docs/updater-flash-write.md));
 the updater's per-block poll matches waiting on this.
 
 ## Slot A vs slot B
 
 The single differing instruction between the two FW4 slots
-([fpga-bitstream.md](fpga-bitstream.md)) is that `$1B8` constant. So the
+([bitstream.md](bitstream.md)) is that `$1B8` constant. So the
 slots are not a spare copy: slot A is the golden image whose only extra job
 is handing over to slot B, and slot B is what normally runs. The FW4 updater
 writes slot B. (Read from code, not tested on hardware.)
 
-This fits [hardware-board.md](hardware-board.md)'s finding from the
+This fits [../../../docs/hardware-board.md](../../../docs/hardware-board.md)'s finding from the
 2026-08-16 recovery that the FPGA does not fall back to `$40000` on its own:
 the hardware always loads address 0, and it is slot A's firmware that hands
 over. With slot A's head erased nothing could reach slot B. On a healthy
@@ -215,11 +215,11 @@ on its contents should work.
 
 - Port `C8` is inferred as a bank select from the code; confirm in the
   netlist. Net tracing exists now (`s3trace`,
-  [fpga-toolchain.md](fpga-toolchain.md#s3trace)); this hasn't been traced yet.
+  [toolchain.md](toolchain.md#s3trace)); this hasn't been traced yet.
 - What drives `B9` (RTC refresh) and reads `ED`/`EE`, `E0-E3`, `EF` on the
   GB side; tie each to its `$7Fxx` register.
 - The licence check's exact data layout, and whether the record can be
   regenerated for another chip.
 - The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).
 - Repeat for the FW5 images. Done for bank 1 and bank 2:
-  [fpga-fw5.md](fpga-fw5.md).
+  [fw5.md](fw5.md).

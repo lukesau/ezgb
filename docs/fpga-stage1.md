@@ -2,7 +2,7 @@
 
 Stage1 is the Game Boy program the cart shows at power-on: EZ-FLASH,
 LOADING, OSINIT, then the kernel. It lives in FPGA BRAM, not in flash
-([fpga-bitstream.md](fpga-bitstream.md)): 32 KB address space, `$0000-$3FFF`
+([bitstream.md](../re/stage0/docs/bitstream.md)): 32 KB address space, `$0000-$3FFF`
 from 8 one-bit BRAM planes, `$4000-$47FF` from one x9 BRAM, `$4800-$7FFF`
 reads as zeros. Header title `BOOTLOADER`, cart type `$00` (no MBC). Built with
 GBDK, the same toolchain and crt0 as the kernel.
@@ -124,7 +124,7 @@ The splash ([fpga-cgb.md](fpga-cgb.md)) uses about 900 bytes of the filler.
 
 ## Rewrite from source
 
-[`stage1/`](../stage1/README.md) is our own stage1: SDCC C plus two small
+[`re/stage1/`](../re/stage1/README.md) is our own stage1: SDCC C plus two small
 assembly files, no GBDK and no Petit FatFs. It does the same job with the
 same FPGA register sequence, and builds the same load command as stock.
 
@@ -192,7 +192,7 @@ it never could before. Changes, in `patches/sameboy` on this branch:
 ## Fast launch
 
 With `FLAUNCH=` set in `EZGB.CFG` (and START not held), stage1 launches the
-game itself, without loading the kernel (`stage1/src/game.c`). It copies
+game itself, without loading the kernel (`re/stage1/src/game.c`). It copies
 the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
 
 1. `LASTROM`: the full path to pSRAM `$11:$A300`, as `LastRomPersist`
@@ -243,7 +243,7 @@ and skips its own fast launch for that boot, so a cancel made in stage1
 stays cancelled after START is released
 ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
 
-**Save backup** (`stage1/src/backup.c`, the kernel's `BackupSaveDump`,
+**Save backup** (`re/stage1/src/backup.c`, the kernel's `BackupSaveDump`,
 `01:643a`, done in place). With SELECT held at power-on:
 
 1. No `$AA` stamp on page `$11`: "NO SAVE TO BACK UP", then boot as usual.

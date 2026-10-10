@@ -14,7 +14,7 @@ import pathlib
 import sys
 
 LAYOUTS = {
-    # bit 0..7 plane BRAMs, then the byte BRAM (see docs/fpga-bitstream.md)
+    # bit 0..7 plane BRAMs, then the byte BRAM (see re/stage0/docs/bitstream.md)
     "fw4": (["D0X19Y5", "D0X19Y21", "D0X19Y25", "D0X3Y13",
              "D0X3Y17", "D0X19Y13", "D0X19Y9", "D0X19Y29"], "D0X19Y17"),
 }

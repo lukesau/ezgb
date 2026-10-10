@@ -1,7 +1,7 @@
 # What's in the cart's FPGA bitstream
 
 Results of decoding the FW4 bitstream with prjcombine's Spartan-3 database
-(2026-10-08). Tooling and how to reproduce: [fpga-toolchain.md](fpga-toolchain.md).
+(2026-10-08). Tooling and how to reproduce: [toolchain.md](toolchain.md).
 The decoded listing and BRAM
 dumps are in the ignored `fpga/fw4-decode/`.
 
@@ -14,7 +14,7 @@ dumps are in the ignored `fpga/fw4-decode/`.
   the bitstream alone, byte for byte.
 - The design contains a **PicoBlaze soft microcontroller** running a 2K
   program from two BRAMs: SD card, game loader, RTC, config flash, and a
-  licence check tied to the chip's Device DNA ([fpga-picoblaze.md](fpga-picoblaze.md)).
+  licence check tied to the chip's Device DNA ([picoblaze.md](picoblaze.md)).
 - Slot A and slot B differ by **one PicoBlaze instruction** plus CRCs: the
   switch that makes slot A hand over to slot B at boot.
 
@@ -30,7 +30,7 @@ parser unchanged.
 
 ## The format is standard
 
-[fpga-flash-map.md](fpga-flash-map.md) read the `aa 99 30 a1` head as a
+[flash-map.md](flash-map.md) read the `aa 99 30 a1` head as a
 non-standard wrapping because the `aa 99 55 66` sync word never appears. That
 was wrong: a Spartan-3A stream syncs on `aa 99` alone, and a stock `bitgen`
 file for this part begins exactly the same way (32 × `ff`, `aa 99`, `30 a1` =
@@ -82,16 +82,16 @@ The other BRAMs have no initial data (unused, or used as RAM at runtime).
 
 `$0000-$3FFF` is stored as eight 16K × 1 memories, one per data bit, which is
 why no byte-oriented or constant-stride search of the flash ever found it
-([hardware-board.md](hardware-board.md)). `$4000-$47FF` is one 2K × 8 BRAM.
+([../../../docs/hardware-board.md](../../../docs/hardware-board.md)). `$4000-$47FF` is one 2K × 8 BRAM.
 `$4800-$7FFF` isn't stored; the reference dump has zeros there.
 
 `scripts/fpga/stage1-from-bram.py` rebuilds all 32 KB and it matches
 `tools/ezflashjr/stage1/FW4/stage1.gb` exactly. This settles the open question
-in [updater-flash-write.md](updater-flash-write.md) and hypothesis (b) in
-[hardware-board.md](hardware-board.md): flashing a new bitstream ships a new
+in [../../../docs/updater-flash-write.md](../../../docs/updater-flash-write.md) and hypothesis (b) in
+[../../../docs/hardware-board.md](../../../docs/hardware-board.md): flashing a new bitstream ships a new
 stage1, with no separate write.
 
-**Consequence for CGB mode** ([cgb-mode.md](cgb-mode.md)): the bootstrap's
+**Consequence for CGB mode** ([../../../docs/cgb-mode.md](../../../docs/cgb-mode.md)): the bootstrap's
 header byte `$0143` is now locatable. It is bit `$143` of each of the eight
 plane BRAMs. Patching it is eight bit flips in known frames plus a new CRC.
 That needs an encoder (s3decode is decode-only) and would have to be proven
@@ -99,16 +99,16 @@ over JTAG before going near the flash, but it is no longer blocked on the
 bitstream format.
 
 > **Correction (2026-10-09).** The encoder exists: `s3patch`
-> ([fpga-toolchain.md](fpga-toolchain.md#s3patch)) writes BRAM contents and
+> ([toolchain.md](toolchain.md#s3patch)) writes BRAM contents and
 > recomputes the CRCs. The CGB flag was patched with it and installed with
-> an updater, not over JTAG ([fpga-cgb.md](fpga-cgb.md)), and every stage1
+> an updater, not over JTAG ([../../../docs/fpga-cgb.md](../../../docs/fpga-cgb.md)), and every stage1
 > build since has gone the same way.
 
 ## PicoBlaze
 
 BRAMs X3Y29 and X3Y25 are configured 1K × 18 and hold KCPSM3 (PicoBlaze for
 Spartan-3) code. They are two program banks of one processor, switched by an
-output port. Disassembled and annotated in [fpga-picoblaze.md](fpga-picoblaze.md).
+output port. Disassembled and annotated in [picoblaze.md](picoblaze.md).
 
 ## Slot A vs slot B
 
@@ -121,12 +121,12 @@ slot B   00002   LOAD s0, 02      (= the FW4 updater payload)
 
 The other 6 of the 8 differing bytes sit in the stream's tail, where the CRC
 packets are (not individually checked). So the 2-byte cluster at
-`+$1982c` that [fpga-flash-map.md](fpga-flash-map.md) grouped with the CRCs is
+`+$1982c` that [flash-map.md](flash-map.md) grouped with the CRCs is
 this instruction. It is the constant that decides whether bank 2 hands over
 to slot B at boot: slot A is the golden image, slot B the active one
-([fpga-picoblaze.md](fpga-picoblaze.md#bank-2-x3y25-flash-dna-licence)).
+([picoblaze.md](picoblaze.md#bank-2-x3y25-flash-dna-licence)).
 
-**Open:** [hardware-board.md](hardware-board.md) records that writing slot B
+**Open:** [../../../docs/hardware-board.md](../../../docs/hardware-board.md) records that writing slot B
 wholesale over slot A did not boot, while patching only the erased head did.
 Both slots decode as complete, valid bitstreams differing only in that word
 and CRC, so the failure isn't explained by their contents. Worth revisiting
@@ -136,7 +136,7 @@ outside the 149,516 bytes matters).
 ## Next
 
 - Decode the FW5 images (two per updater) and diff 0731 against 0918.
-  Done: [fpga-fw5.md](fpga-fw5.md).
+  Done: [fw5.md](fw5.md).
 - Cross-check routing hop by hop against XDL.
 - An encoder with CRC, tested over JTAG on SRAM only. Done as `s3patch`
   for BRAM contents, tested by installing updaters rather than over JTAG

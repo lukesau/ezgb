@@ -3,7 +3,7 @@
 
 Read-only forensic helper for the EZ Flash Jr EN25F40 config flash. The flash
 holds two multiboot slots: A at $00000, B at $40000, each a container header
-followed by an ~146 KB bitstream. See docs/fpga-flash-map.md.
+followed by an ~146 KB bitstream. See re/stage0/docs/flash-map.md.
 
     scripts/fpga-slot-diff.py <image.bin> --slots
         diff slot A against slot B (bitstream span only)

@@ -3,13 +3,13 @@
 A map of EZ Flash's logic in the XC3S200A, rebuilt from the FW4 slot B
 bitstream with no design files: `s3trace --netlist` (every configured bel
 and the driver of each input pin), `s3pins` (prjcombine's VQ100 bond: package
-pin -> bel pad), and the scripts in `scripts/fpga/netlist/`. Work in progress;
+pin -> bel pad), and the scripts in `re/stage0/netlist/`. Work in progress;
 each section says how sure it is.
 
-Related: [fpga-version.md](fpga-version.md) (the version byte),
-[fpga-picoblaze.md](fpga-picoblaze.md) (the two programs),
-[fpga-bitstream.md](fpga-bitstream.md) (format, BRAMs), hardware notes in
-[hardware-board.md](hardware-board.md).
+Related: [version-byte.md](version-byte.md) (the version byte),
+[picoblaze.md](picoblaze.md) (the two programs),
+[bitstream.md](bitstream.md) (format, BRAMs), hardware notes in
+[../../../docs/hardware-board.md](../../../docs/hardware-board.md).
 
 ## Size
 
@@ -29,7 +29,7 @@ an output.
 | A0-A7 | P88 P89 P90 P93 P94 P97 P98 P99 | stage1 BRAM `ADDRA[0-7]` straight from these pins |
 | A8-A10 | P82 P68 P39 | `ADDRA[8-10]` |
 | A11, A12 | P21, P4 | `ADDRA[11]`/`[12]` through one AND gate each, sharing an enable (`X13Y24 SLICE[2]` Y) |
-| A13, A14, A15 | P5, P6, P7 | the version read needs them at `1 0 1` = `$A000-$BFFF` ([fpga-version.md](fpga-version.md)) |
+| A13, A14, A15 | P5, P6, P7 | the version read needs them at `1 0 1` = `$A000-$BFFF` ([version-byte.md](version-byte.md)) |
 | D0-D7 | P3 P9 P10 P12 P13 P15 P16 P19 | bidirectional; each reads back its own BRAM output bit |
 | `/WR` | P84 | clock pad; through a global buffer it clocks the flip-flops that latch D0-D7 (the write registers); a simulated `/WR` pulse writes the registers as the kernel does |
 | `/RESET` | P62 | output; daid's survey traces it to the cart edge |
@@ -59,7 +59,7 @@ packages share a 16-bit bus), the SD card, the SPI config flash and the RTC
 | pSRAM /CE | P52 (U9, game ROM), P60 (U4, saves) |
 | P85 | follows the Game Boy's `/WR` |
 
-Full list: `scripts/fpga/netlist/pintable.py`.
+Full list: `re/stage0/netlist/pintable.py`.
 
 ## Clocks
 
@@ -67,7 +67,7 @@ Full list: `scripts/fpga/netlist/pintable.py`.
 |---|---|---|---|
 | P43 (oscillator) | DCM `X13Y1`: CLK0, CLK2X, CLKFX (x2) | via 4 global buffers | system clocks |
 | `X13Y19 SLICE[2]` YQ (a divided clock) | global `X0Y17` [6] | 661 flip-flops | main logic clock; also driven out on P23 |
-| system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the stage1/kernel/game mode |
+| system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the re/stage1/kernel/game mode |
 | P84 (`/WR`) | global `X13Y33` [0]/[1] | 160 flip-flops | the Game Boy-written registers |
 | system / `X2Y17 SLICE[3]` Y | global `X0Y17` [0], [4] | 196 flip-flops | |
 | `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
@@ -77,12 +77,12 @@ Full list: `scripts/fpga/netlist/pintable.py`.
 Flip-flops that latch D0-D7, grouped by clock enable: about 20 byte-wide
 registers plus a few narrow ones. Identified so far: the 2-bit mode
 register (`$7F31/$7F32`) and the 4-bit page register (`$7FC0`), both in
-[fpga-version.md](fpga-version.md).
+[version-byte.md](version-byte.md).
 
 ## Simulation
 
 The whole design exports to structural Verilog and runs in iverilog
-([scripts/fpga/verilog/](../scripts/fpga/verilog/README.md)). From power-on,
+([re/stage0/sim/](../sim/README.md)). From power-on,
 the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` and
 `X3Y25.psm` read: the switch to bank 2 at `$3F1`, `bank2_main` (`$1B5`)
 with its Device DNA and flash routines, back to bank 1. That checks the
@@ -162,7 +162,7 @@ What the simulation showed:
 > doesn't: `F5 = BX ? F : G` as documented. With the reversed mux the
 > simulated PicoBlaze looped in `clear_scratchpad` and its bank switch did
 > nothing; with the documented one it runs bank 2 as written. The
-> version-byte analysis in [fpga-version.md](fpga-version.md) had used the
+> version-byte analysis in [version-byte.md](version-byte.md) had used the
 > reversed mux too; see the correction there.
 
 ## Plan

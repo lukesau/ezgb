@@ -131,7 +131,7 @@ is that plus a wrapper.
 The payload is neither raw nor encrypted: entropy is 4.61 bits/byte (random
 would be 8.0). The standard Xilinx sync word `AA995566` does not appear, in
 normal or bit-reversed form. This section predates
-[fpga-flash-map.md](fpga-flash-map.md), which found two bitstream sync words
+[flash-map.md](../re/stage0/docs/flash-map.md), which found two bitstream sync words
 in each FW5 payload: two images, the second identical between 0731 and 0918
 (the golden / fallback image) and the first 61% different (the active image).
 See that page for the layout.
@@ -167,7 +167,7 @@ project is not the kernel.
 ## Next steps
 
 - [x] Identify the payload layout: done in
-      [fpga-flash-map.md](fpga-flash-map.md) (two images per FW5 payload).
+      [flash-map.md](../re/stage0/docs/flash-map.md) (two images per FW5 payload).
 - [x] Determine what the inserted RTC block does: an uncalled test screen;
       `12345678` is a literal (see above).
 - [ ] Decide whether to port our two bank-0 patches onto 0918 and run it.

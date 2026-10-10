@@ -17,7 +17,7 @@
 #define STATUS_ROW 15
 #define DETAIL_ROW 16
 #define VERSION_ROW 17
-#include "version.h"                 /* generated from stage1/VERSION */
+#include "version.h"                 /* generated from re/stage1/VERSION */
 #define HANDOFF ((uint8_t *)0xD000)
 /* Boot screen timing, in frames (60 per second). The whole intro fits in
  * the stock 700 ms pause: EZ-FLASH alone, then the Jr. painted on left to

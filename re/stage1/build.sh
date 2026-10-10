@@ -5,7 +5,7 @@
 # Output: fpga/stage1/ (ignored, like every built firmware image).
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
-repo=$(cd "$here/.." && pwd)
+repo=$(cd "$here/../.." && pwd)
 root=${EZGB_ROOT:-$repo}                  # checkout whose fpga/ holds inputs/outputs
 out="$root/fpga/stage1"
 b="$out/build"
@@ -26,7 +26,7 @@ PY
 python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr.txt"     "$b/wordmark.c" --jr-at 86,4 --pivot 0,0 \
     --width 16 --height 4 --letters-x 10 --stages 4 ${WORDMARK_FLAGS:---no-halo} > "$b/wordmark.txt"
 
-# stage1/VERSION: line 1 the firmware number (what the version register
+# re/stage1/VERSION: line 1 the firmware number (what the version register
 # should read), line 2 the mod version; shown as FW6-MOD 1.0
 fw=$(sed -n 1p "$here/VERSION"); mod=$(sed -n 2p "$here/VERSION")
 printf '#define FW_NUMBER %s\n#define FW_TEXT "FW%s-MOD %s"\n' "$fw" "$fw" "$mod" > "$b/version.h"

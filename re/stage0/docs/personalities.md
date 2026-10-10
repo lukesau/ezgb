@@ -21,16 +21,16 @@ constant pushed before the call). Register meanings cross-checked against
 > **Later findings (2026-10-09).** Still accurate as a kernel-side map. The
 > FPGA side is now known from the bitstream: `$7FC0` is a 4-bit register in
 > the fabric, and the `$04` version byte is wiring in the design, not a
-> stored value ([fpga-version.md](fpga-version.md)); the config-flash write
+> stored value ([version-byte.md](version-byte.md)); the config-flash write
 > behind `$05`/`$7FD2` is the PicoBlaze's flash-update command
-> ([fpga-picoblaze.md](fpga-picoblaze.md)); `$02` is the load-command window
-> stage1 also uses ([fpga-stage1.md](fpga-stage1.md)). The full pSRAM page
-> `$11` layout is in [psram-page-map.md](psram-page-map.md).
+> ([picoblaze.md](picoblaze.md)); `$02` is the load-command window
+> stage1 also uses ([../../../docs/fpga-stage1.md](../../../docs/fpga-stage1.md)). The full pSRAM page
+> `$11` layout is in [../../../docs/psram-page-map.md](../../../docs/psram-page-map.md).
 
 Only the six documented personalities appear. **No undocumented value, and no
 personality that opens a fresh, general-purpose nonvolatile window** onto the
 parallel NOR die. This is the GB-side counterpart to the updater finding
-([updater-flash-write.md](updater-flash-write.md)): neither the kernel nor the
+([../../../docs/updater-flash-write.md](../../../docs/updater-flash-write.md)): neither the kernel nor the
 updater exposes a path to the U4 NOR die.
 
 ## `$02` is the game-store personality, and the store is volatile
@@ -40,7 +40,7 @@ updater exposes a path to the U4 NOR die.
 daid notes `$02` is "used during stage1, but SRAM is not accessed afterwards",
 i.e. it arms the FPGA's SD→store path rather than exposing a CPU-readable
 window. The store it targets is the **volatile pSRAM die** (proven in
-[nor-reuse.md](nor-reuse.md)). So `$02` does touch the U4 device, but it
+[../../../docs/nor-reuse.md](../../../docs/nor-reuse.md)). So `$02` does touch the U4 device, but it
 reaches the RAM die, not the NOR die. Whether the NOR die is even selectable on that bus (by a
 different sub-address or chip-enable) is unknown and not reachable through any
 existing `$7FC0` value.
@@ -65,13 +65,13 @@ Every persistent kernel value is in the **battery-backed pSRAM**, page `$11`
 |---|---|
 | `$A200` | **auto-save flag** (`$00`/`$01`): read in `DrawTimeAutosaveScreen` (`04:46f4`); toggled by SELECT (`04:58d6`) |
 | `$A201` | cart-init stamp (`$88`); see `00:4842`, `00:4929` |
-| `$A300` | last-launched ROM full path (255 B), read at `00:12bf`, written at `01:4856` ([last-rom.md](last-rom.md)) |
+| `$A300` | last-launched ROM full path (255 B), read at `00:12bf`, written at `01:4856` ([../../../docs/last-rom.md](../../../docs/last-rom.md)) |
 | save data + file list | other pages of the same pSRAM |
 
 So the auto-save checkbox is "nonvolatile" only as long as the coin cell lasts:
 it lives in the exact same battery-backed pSRAM as saves and the last-ROM
 record, and dies with the battery (the recurring "settings reset when the
-battery drains" complaint, [hardware-board.md](hardware-board.md)). The kernel
+battery drains" complaint, [../../../docs/hardware-board.md](../../../docs/hardware-board.md)). The kernel
 uses **no truly-nonvolatile store for settings**, which is itself evidence
 that no such GB-writable store is available to it. A settings/config store that
 survives a dead battery would need exactly the parallel-NOR access path that

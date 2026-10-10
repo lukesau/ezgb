@@ -28,7 +28,7 @@ what the disassembly covers):
 | 2+ | FPGA bitstream payload | starts `$8020` = `aa 99 30 a1 …` (bitstream sync); entropy climbs |
 
 The payload from `$8020` is the 149 KB bitstream, proven byte-for-byte equal
-to config-flash **slot B** in [fpga-flash-map.md](fpga-flash-map.md). The
+to config-flash **slot B** in [flash-map.md](../re/stage0/docs/flash-map.md). The
 updater is a **launched game**: it runs from the pSRAM game area with its
 payload embedded, and **never reads the SD card** (no `$7F30`/`$7FB0`–`$7FB3`
 access anywhere in banks 0–1).
@@ -49,7 +49,7 @@ The primitives in bank 0 / bank 1:
 | `01:4076` | copies a routine to `$d000` and `call $d000`, running the poll loop from WRAM (the ROM window is busy during the op) |
 
 Parameters are staged before the trigger via `$7F31=$00` / `$7F32=$80` (a
-16-bit `$8000`-shaped operand), matching [fpga-flash-map.md](fpga-flash-map.md).
+16-bit `$8000`-shaped operand), matching [flash-map.md](../re/stage0/docs/flash-map.md).
 This is the same register and handshake documented there, and the same one
 that **bricked a cart when the poll-until-clear was skipped**
 ([game-slot-access.md](game-slot-access.md)). The `$7FD2` target is the SPI
@@ -64,7 +64,7 @@ external config-flash dump.
   `00:153a`, `$7FC0=arg`) is **dead code**: no `call`, no `jp`, and no far-call
   trampoline blob targets it anywhere in the ROM.
 - **No SD access** (self-contained payload).
-- **No separate stage1 image.** `stage1/FW4/stage1.gb` (daid's dump) does not
+- **No separate stage1 image.** `re/stage1/FW4/stage1.gb` (daid's dump) does not
   appear in the updater, whether verbatim, bit-reversed, inverted, or
   nibble-swapped. FW4 and FW5 stage1 differ by 37%, tracking the 64%-different
   bitstreams.
@@ -76,7 +76,7 @@ the bitstream:
 
 - The updater carries a bitstream and writes only the config flash.
 - The config-flash dump contains no contiguous stage1 under any encoding
-  ([fpga-flash-map.md](fpga-flash-map.md)), which is expected because BRAM
+  ([flash-map.md](../re/stage0/docs/flash-map.md)), which is expected because BRAM
   init is bit-interleaved across bitstream configuration frames, not stored
   as a ROM image.
 - Each FW's stage1 changes in lockstep with a new bitstream.
@@ -87,10 +87,10 @@ the bitstream:
 Not *proven* (that needs Spartan-3A bitstream-format RE to extract the BRAM
 init and match it to `stage1.gb`), but it is the only hypothesis left standing,
 and it is directly testable if/when the bitstream container is cracked
-([hardware-board.md](hardware-board.md), [fpga-ace.md](fpga-ace.md)).
+([hardware-board.md](hardware-board.md), [custom-logic.md](../re/stage0/docs/custom-logic.md)).
 
 **Proven 2026-10-08.** The BRAM init was extracted from the FW4 bitstream and
-rebuilds `stage1.gb` byte for byte ([fpga-bitstream.md](fpga-bitstream.md)).
+rebuilds `stage1.gb` byte for byte ([bitstream.md](../re/stage0/docs/bitstream.md)).
 
 ## Consequence for "free space"
 

@@ -3,18 +3,18 @@
 Our own FW4 bootstrap. It replaces the stock GBDK one in the slot B BRAMs and
 does the same job: show the boot screen, find `EZGB.DAT` on the SD card, have
 the FPGA load it, and enter it at `$0100`.
-Design and protocol: [docs/fpga-stage1.md](../docs/fpga-stage1.md).
+Design and protocol: [docs/fpga-stage1.md](../../docs/fpga-stage1.md).
 
 ```bash
-stage1/build.sh                     # -> fpga/stage1/stage1.gb
-STAGE1_CFLAGS=-DPAUSE_FRAMES=250 stage1/build.sh   # long boot screen, for screenshots
-EZGB_ROOT=<checkout> stage1/build.sh               # inputs/outputs in another checkout's fpga/
+re/stage1/build.sh                     # -> fpga/stage1/stage1.gb
+STAGE1_CFLAGS=-DPAUSE_FRAMES=250 re/stage1/build.sh   # long boot screen, for screenshots
+EZGB_ROOT=<checkout> re/stage1/build.sh               # inputs/outputs in another checkout's fpga/
 ```
 
 Needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
 (`fpga/bootsplash/build/icon.2bpp`, from `re/fpga-fw4/bootsplash/build.sh`).
 Setting all of that up, and turning `stage1.gb` into an updater:
-[docs/fpga-setup.md](../docs/fpga-setup.md).
+[docs/fpga-setup.md](../../docs/fpga-setup.md).
 
 ## Version
 
@@ -23,7 +23,7 @@ build turns them into `version.h` and the boot screen shows
 `FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.0`. The firmware
 number is what the cart's version register should read for this build
 (stock FW4 reads 4; making the register itself say 6 is a separate fabric
-change, [docs/fpga-version.md](../docs/fpga-version.md)). The mod version is
+change, [re/stage0/docs/version-byte.md](../stage0/docs/version-byte.md)). The mod version is
 stage1's own, separate from the kernel mod's.
 
 ## Build knobs

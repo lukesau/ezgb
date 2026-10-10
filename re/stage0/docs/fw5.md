@@ -1,8 +1,8 @@
 # FW5 bitstreams: 0731 vs 0918
 
 Decoding of the FW5 updater payloads and what the 0918 update changed
-(2026-10-08). Method and FW4 background: [fpga-bitstream.md](fpga-bitstream.md),
-[fpga-picoblaze.md](fpga-picoblaze.md). The
+(2026-10-08). Method and FW4 background: [bitstream.md](bitstream.md),
+[picoblaze.md](picoblaze.md). The
 decodes, BRAM dumps and listings are in the ignored `fpga/fw5-decode/`.
 
 ## Images
@@ -25,7 +25,7 @@ All four decode completely (0 unclaimed bits). Same chip settings as FW4
 
 Every build is placed and routed from scratch, so the same BRAM content lands
 on different tiles and most routing bits move. That is why
-[fpga-flash-map.md](fpga-flash-map.md) measured 0731 and 0918 as 61% different
+[flash-map.md](flash-map.md) measured 0731 and 0918 as 61% different
 bytes. A tile-by-tile diff is mostly noise; the useful comparisons are by
 content:
 
@@ -66,7 +66,7 @@ header bytes, and are identical to each other:
 That is the whole of "SGB support" on the bootstrap side: the header the
 console reads at power-on now declares SGB features, the same two bytes a
 normal SGB-enhanced cartridge sets. (Same idea as the SGB patch in
-[sgb-boot.md](sgb-boot.md), done in the bitstream instead.)
+[../../../docs/sgb-boot.md](../../../docs/sgb-boot.md), done in the bitstream instead.)
 
 ## PicoBlaze bank 1: MBC3 RTC fixes
 

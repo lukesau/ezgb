@@ -4,7 +4,7 @@ Which pages of the battery-backed save pSRAM the kernel actually uses, and how
 much is spare for new persistent features. The pSRAM is reached only from the
 kernel via page latch `$4000 = <page>` then `$7FC0 = $03`, read/written through
 the `$A000`–`$BFFF` window (8 KB per page). See
-[fpga-personalities.md](fpga-personalities.md) and
+[personalities.md](../re/stage0/docs/personalities.md) and
 [psram-save-map.md](psram-save-map.md).
 
 Method: static sweep of every `$4000` page-latch write in `kernel.gb`, the
@@ -84,7 +84,7 @@ NOR path that does not exist ([updater-flash-write.md](updater-flash-write.md)).
 
 ## Stage1 skip-fast-launch mark (`$11:$A410`)
 
-The from-source stage1 (`bitstream-re` branch, `stage1/`) writes `"S1"` to
+The from-source stage1 (`bitstream-re` branch, `re/stage1/`) writes `"S1"` to
 page `$11` `$A410`–`$A411` when START was held at power-on, and zeroes it
 otherwise. The kernel (mod 5.4+, `ezcfg.c` `stage1_skip_mark`, run by
 `RtcBootHook` every boot) clears the mark and sets `fastlaunch_boot`'s

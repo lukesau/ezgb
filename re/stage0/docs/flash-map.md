@@ -3,10 +3,10 @@
 How the cart's SPI config flash is laid out, derived entirely by static analysis
 of files we hold; no hardware was touched to produce this. The working image is
 `EN25F40-repaired-v2.bin`, the intact **FW4** reconstruction (verified against
-the real chip dump `EN25F40@SOP8.BIN`; see [hardware-board.md](hardware-board.md)).
+the real chip dump `EN25F40@SOP8.BIN`; see [../../../docs/hardware-board.md](../../../docs/hardware-board.md)).
 
-Tools: [`scripts/fpga-flash-map.py`](../scripts/fpga-flash-map.py) (segment map),
-[`scripts/fpga-slot-diff.py`](../scripts/fpga-slot-diff.py) (slot A/B diff and
+Tools: [`scripts/fpga-flash-map.py`](../../../scripts/fpga-flash-map.py) (segment map),
+[`scripts/fpga-slot-diff.py`](../../../scripts/fpga-slot-diff.py) (slot A/B diff and
 updater-payload overlay).
 
 ## Top-level layout
@@ -53,7 +53,7 @@ last byte), where a Spartan-3A bitstream carries its CRC / final-CRC and a
 mid-stream frame CRC. Consistent with slots A and B being two builds of the same
 design rather than a byte-for-byte copy.
 
-**Corrected 2026-10-08 by decoding the bitstream** ([fpga-bitstream.md](fpga-bitstream.md)):
+**Corrected 2026-10-08 by decoding the bitstream** ([bitstream.md](bitstream.md)):
 the `+$1982c/d` pair is not a CRC. It is one instruction in a PicoBlaze
 program held in block RAM (`LOAD s0, 01` in slot A, `LOAD s0, 02` in slot B).
 Only the six tail bytes are in the CRC area.
@@ -83,7 +83,7 @@ begins at slot `+$46`.
 PicoBlaze reads it as 128-byte records with checksums and checks CRCs over it
 mixed with the chip's Device DNA; without a pass the ROM loader refuses to
 run. The 52 bytes at `$70000` are a boot tally used by the slot A → slot B
-hand-over. See [fpga-picoblaze.md](fpga-picoblaze.md).
+hand-over. See [picoblaze.md](picoblaze.md).
 
 Entropy 7.80 bits/byte (8.0 = random). No Nintendo logo under any of the five
 encodings tried for the updaters (plain / bit-reversed / inverted / nibble /
@@ -95,8 +95,8 @@ bootstrap ROM.
 The bootstrap is also absent from both updaters, and the flash contains no
 plaintext logo/strings anywhere. (**Proven 2026-10-08:** stage1 is rebuilt
 byte for byte from BRAM contents decoded out of the bitstream; see
-[fpga-bitstream.md](fpga-bitstream.md).) This leans toward **hypothesis (b)** in
-[hardware-board.md](hardware-board.md): the GB-visible bootstrap is embedded in
+[bitstream.md](bitstream.md).) This leans toward **hypothesis (b)** in
+[../../../docs/hardware-board.md](../../../docs/hardware-board.md): the GB-visible bootstrap is embedded in
 the bitstream as block-RAM initialisation, not stored as a separate ROM image.
 Not yet proven (proving it needs the bitstream format), but hypothesis (a), a
 separate plaintext ROM, has no supporting evidence in the flash image.
@@ -112,7 +112,7 @@ a non-standard packaging or a wrapped/transformed bitstream.
 alone, and a stock `bitgen` file for the XC3S200A starts with the same
 32 × `ff`, `aa 99 30 a1`. Each slot is a plain 149,516-byte stream from the
 first `ff` dummy word (flash `$26` / `$40026`), and it decodes completely with
-prjcombine ([fpga-bitstream.md](fpga-bitstream.md)). The original reasoning
+prjcombine ([bitstream.md](bitstream.md)). The original reasoning
 follows for the record. Identifying the
 exact format is the deep, open item; it is not required for the slot map or the
 updater-write map above.
@@ -139,7 +139,7 @@ So the FW5 package is a real multiboot pair:
   0918. Whatever 0918 adds (the reported SD-card fix and SGB support) is
   entirely inside img1.
 
-**Decoded 2026-10-08** ([fpga-fw5.md](fpga-fw5.md)): the byte-level
+**Decoded 2026-10-08** ([fw5.md](fw5.md)): the byte-level
 percentages mostly measure place-and-route reshuffling, not design change.
 0918's img1 differs from 0731's in the stage1 SGB header (3 bytes) and the
 PicoBlaze's MBC3 RTC handling. img2 is an older design, but the "golden /
@@ -182,7 +182,7 @@ before proceeding, the ready handshake. Parameters are staged first via
 > updater does at `$4013`, leaving a flash erase/program half-finished. `$7FD2`
 > is the config-flash command register; never write it by hand. This
 > disassembly is static only; the updater is never run
-> (see [game-slot-access.md](game-slot-access.md)).
+> (see [../../../docs/game-slot-access.md](../../../docs/game-slot-access.md)).
 
 `re/updater-fw4/` holds the disassembly; the write routine is `Call_000_1252`
 (bit set/clear, no wait) and the polled loop near `$4013`. The physical
@@ -195,11 +195,11 @@ close it (Phase 3).
 > builds each page's staging header at `00:13e9` as loop offset `+ $040000`,
 > so `Update_FW4.gb` always writes slot B and never `$00000`. The write goes
 > through the PicoBlaze's flash-update command
-> ([fpga-picoblaze.md](fpga-picoblaze.md#flash-update-3f--1-kernel-command-08)).
+> ([picoblaze.md](picoblaze.md#flash-update-3f--1-kernel-command-08)).
 > The "never run" note above is also out of date: relabelled copies of the
 > FW4 updater carrying patched slot B images have been run on the FW4 cart
-> since 2026-10-08 ([fpga-cgb.md](fpga-cgb.md), [fpga-stage1.md](fpga-stage1.md)).
-> Which slot an FW5 updater writes is still open ([fpga-fw5.md](fpga-fw5.md)).
+> since 2026-10-08 ([../../../docs/fpga-cgb.md](../../../docs/fpga-cgb.md), [../../../docs/fpga-stage1.md](../../../docs/fpga-stage1.md)).
+> Which slot an FW5 updater writes is still open ([fw5.md](fw5.md)).
 
 ## Reproduce
 
