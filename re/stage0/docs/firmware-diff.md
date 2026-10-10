@@ -76,3 +76,33 @@ same address lines as the ROM bank, so each 8 KB bank uses a 16 KB slot of
 the 512 KB chip. Reads with RAM disabled return `$FF`, and writes land only
 in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) wasn't exercised
 beyond these values; MBC2's `$13` suggests the mask isn't applied there.
+
+The ROM bank mask is applied: MBC5 with `$7FC1/$7FC2 = $00F` reads banks
+`$55`, `$AA`, `$FF`, `$1xx` as their low four bits on all three firmwares.
+
+## SD sector reads (simulated)
+
+`gb_sdread.vh` (stage1's `sd_read` from the Game Boy side, sector 2052) reads
+back byte for byte on all three. FW5 answers a little sooner: the status
+reads ready after 8 polls against FW4's 12.
+
+## The MBC3 clock (simulated)
+
+`models.v` now has a PCF8563 on I2C (time registers in BCD, a tick shortened
+to 3 ms) and `mbctest.py mbc3rtc` launches with `$7F37 = $83` (MBC3, clock
+flag), then latches (`$6000` 0 then 1) and reads registers `$08-$0C` through
+`$A000` several times, 7 ms apart, writes S=`$15` and M=`$42`, and reads
+again. Only SCL=P31, SDA=P32 works (the other order reads `$A5` on FW4 and a
+frozen clock on FW5), which settles the I2C pins.
+
+| | FW4 | FW5-0731 | FW5-0918 |
+|---|---|---|---|
+| what the game sees | the cart's wall clock, converted to binary (here 12:30, day 9) | elapsed time since the launch, starting at 0 | same as 0731 |
+| ticking | yes | yes | yes |
+| game writes S=`$15`, M=`$42` | ignored | taken through plain wrap arithmetic (M `$42` becomes H+1, M 6; S lands at `$20`) | taken as written: S=`$15`, M=`$02` (masked to 6 bits), ticking resumes from there |
+| DH while running | `$01` | `$00` | `$00` |
+| RAM disabled | `$FF` | `$FF` | `$FF` |
+
+The 0918 row matches the routine-level diff in [fw5.md](fw5.md) (writes
+honored, values masked). FW4 has no `$6000` latch register, which fits it
+serving the live clock with no latch semantics.

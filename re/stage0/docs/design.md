@@ -58,7 +58,7 @@ packages share a 16-bit bus), the SD card, the SPI config flash and the RTC
 |---|---|
 | SPI config flash | CS P27, CLK P53, MOSI P46, MISO P51 |
 | SD card | CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29 (order from simulated block reads) |
-| RTC (I2C) | probably P31/P32 |
+| RTC (I2C, PCF8563) | SCL P31, SDA P32 (only order that works in simulation, all three firmwares) |
 | pSRAM word address A0-A10 | P56 P59 P65 P71 P70 P73 P44 P50 P83 P86 P20 |
 | pSRAM word address A11-A13 | P53, P46, P51 (the config flash's CLK, MOSI and MISO, reused once bank 2 has read the flash) |
 | pSRAM upper address | 74HC595: SRCLK P35, SER P33, RCLK P24 |
