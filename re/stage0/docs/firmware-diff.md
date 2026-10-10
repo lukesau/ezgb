@@ -103,6 +103,25 @@ header checksum `$14D = $C4` (FW4 and 0731: `$00`, `$00`, `$FA`), as
 global checksum (`$B32E` against `$8EE3`), so stage1's code changed between
 FW4 and FW5 while its header didn't.
 
+## PicoBlaze bank 1, FW4 to FW5
+
+`picoblaze-diff.py` FW4 (X3Y29) against FW5-0731 (X19Y25): 72 of 78 routines
+identical (bank 2 is identical in every build, [fw5.md](fw5.md)). The FW4
+annotations carry over to both FW5 listings through
+`scripts/fpga/picoblaze-port-notes.py`. What changed:
+
+| FW4 routine | FW5-0731 |
+|---|---|
+| main loop (`$000`) | adds the game clock: when port `$B9` reads 1, count PCF8563 seconds into elapsed S/M/H/day (scratchpad `$33-$36`) and output base + elapsed on ports `$A5-$A9`, with wrap arithmetic and `OR $80` on day overflow |
+| `sd_setup_dma` | the debug `99` + four argument bytes are gone |
+| `cmd_load_rom` | reads port `$BB` (the `$7FD3+$7FD4` key) into scratchpad `$2B` |
+| `load_rom_loop` | skips `delay_long` after each run when that key is `$11` |
+| `rtc_init` | no longer writes PCF8563 control 1 = STOP and the CLKOUT register at boot |
+| `isr` | debug `DD` + command byte on every interrupt; command `$20` (load ROM) also zeroes the elapsed clock; `$10` (set RTC) prints `AA` |
+
+0731 to 0918 then changes only the main loop and the interrupt handler (the
+clock writes, halt and day carry above; table in [fw5.md](fw5.md)).
+
 ## Kernel and game launches (simulated)
 
 Both launch paths run unchanged on all three firmwares, loading from the
