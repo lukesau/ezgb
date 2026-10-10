@@ -1,0 +1,3 @@
+; stage1 (FW5 0918 bootstrap, BRAM contents) symbols for mgbdis.
+; Regenerate: scripts/fpga/stage1-regen.sh stage1/fw5-0918   (docs/fpga-stage1.md)
+; Not annotated yet; FW4 names are in ../fw4/kernel.sym.

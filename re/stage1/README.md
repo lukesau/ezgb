@@ -10,7 +10,7 @@ around it is [re/stage0](../stage0/README.md).
 | Directory | Firmware | Status |
 |---|---|---|
 | [fw4/](fw4/) | FW4 (the Jr carts we test on) | disassembled and annotated; rebuilds byte for byte |
-| `fw5-0918/` | FW5, the 0918 update | to do |
+| [fw5-0918/](fw5-0918/) | FW5, the 0918 update | disassembled, not annotated yet; rebuilds byte for byte |
 
 Each directory holds `kernel.sym` (names and data ranges), `notes.json`
 (comment blocks) and the generated `disassembly/`. The binary itself,
