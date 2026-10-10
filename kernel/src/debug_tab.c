@@ -2,9 +2,9 @@
  *
  * Debug builds only (scripts/make-debug-build.py), bank 4, at 04:7400 when
  * free. SELECT on HELP returns to the browser in a release build; in a
- * debug build DbgTabHook (00:0259) clears the pane first (DrawMenuTabs tab 3:
- * the strip stays on HELP) and far-calls this, which returns on SELECT like
- * the other tabs' loops.
+ * debug build HELP's exit jumps to DbgTabHook, which far-calls this. It
+ * clears the pane first (DrawMenuTabs tab 3: the strip stays on HELP) and
+ * returns on SELECT like the other tabs' loops.
  *
  * The page is a list of 20-column lines, built on the fly from a snapshot
  * (stats, refreshed on entry and after A), and drawn 16 at a time on rows
@@ -38,6 +38,8 @@ extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 *
 extern u8 ReadJoypad(void);                                         /* 00:3a4a: A $10, SELECT $40, UP 4, DOWN 8 */
 extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 extern volatile u8 wBootA;                                          /* KernelEntry's copy of the boot A */
+extern void FarCallTrampoline(void);                                /* 00:078d */
+extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, far */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)
 #define WIN      ((volatile u8 *)0xA000)
@@ -79,6 +81,15 @@ void DebugTab(void) {
     Stats st;
     u8 top = 0, j, held = 0, wait = 0, count;
 
+    __asm
+        ld a, #3                ; DrawMenuTabs(3): clear the pane, keep the strip
+        push af
+        inc sp
+        call _FarCallTrampoline
+        .dw _DrawMenuTabs
+        .db 8, 0
+        add sp, #1
+    __endasm;
     while (ReadJoypad() & PAD_SELECT) {}   /* the press that left HELP */
     snapshot(&st);
     draw(&st, top);

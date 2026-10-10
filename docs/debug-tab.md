@@ -41,9 +41,12 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 
 ## Code
 
-`kernel/src/debug_tab.c` (bank 4, `04:7400` when free) and `DbgTabHook`
-(bank 0, `00:0259` when free): delay, `DrawMenuTabs(3)` (clear the pane, keep
-the strip), far-call the screen, delay, `jp FileBrowserEntry`. It replaces
-HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e). Addresses are written for
+`kernel/src/debug_tab.c` (bank 4, `04:7400` when free, `04:6cca` in mod 5.4)
+and `DbgTabHook` (bank 0, `00:02c4` when free): far-call the screen, delay,
+`jp FileBrowserEntry`. HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e)
+keeps its delay and jumps to the hook instead of the browser, and the screen
+itself starts with `DrawMenuTabs(3)` (clear the pane, keep the strip). That
+keeps the hook at 19 bytes: since `CgbInit` took `00:0259` (mod 5.3), 1.05e's
+largest free run in bank 0 is 31 bytes, and the old 41-byte hook no longer fit. Addresses are written for
 1.05e-0731 and matched into other builds with `scripts/portmap.py`; the script
 checks the exit's bytes before patching.

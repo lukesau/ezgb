@@ -4,11 +4,12 @@
 Release kernels leave the debug screen out. This takes re/kernel/<ver>/kernel.gb (the
 mod build, untouched) and writes a copy with:
 
-  bank 4      DebugTab (kernel/src/debug_tab.c), compiled for this build
-  bank 0      DbgTabHook: Delay, DrawMenuTabs(3) (clear the pane, keep the
-              strip), far-call DebugTab, Delay, back to the browser
+  bank 4      DebugTab (kernel/src/debug_tab.c), compiled for this build;
+              it starts with DrawMenuTabs(3) (clear the pane, keep the strip)
+  bank 0      DbgTabHook: far-call DebugTab, Delay, back to the browser
   site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
-              jp FileBrowserEntry`, 00:1288 in 1.05e) -> jp DbgTabHook
+              jp FileBrowserEntry`, 00:1288 in 1.05e): its Delay stays, the
+              jp goes to DbgTabHook
   HELP text   "MOD N.M" -> "MOD N.MDBG"
 
 so SELECT on HELP opens the debug screen and SELECT there goes to the
@@ -50,7 +51,7 @@ ADDR = {
 }
 MODSTR = (8, 0x7aff)
 DEBUG_AT = (4, 0x7400)      # preferred; any free run in bank 4 will do
-HOOK_LEN = 41
+HOOK_LEN = 19              # fits the 24-31 byte runs 1.05e has left in bank 0
 
 
 def off(bank, addr):
@@ -110,7 +111,8 @@ def main():
 
     # DebugTab, compiled where it will live
     pins = [("_" + k, a[k]) for k in ("SetFpgaPage_B4", "DrawString", "StoreDrawParams",
-                                      "ReadJoypad", "WaitVBlankFlag")]
+                                      "ReadJoypad", "WaitVBlankFlag", "FarCallTrampoline",
+                                      "DrawMenuTabs")]
     pins.append(("_wBootA", boot_a_addr(rom)))
     src = os.path.join(ROOT, "kernel", "src", "debug_tab.c")
     def build(origin):
@@ -128,12 +130,11 @@ def main():
     # DbgTabHook in bank 0
     far = lambda target, bank: b"\xcd" + le(a["FarCallTrampoline"]) + le(target) + bytes((bank, 0))
     delay = b"\x21\x32\x00\xe5\xcd" + le(a["Delay"]) + b"\xe8\x02"
-    hook = (delay + b"\x3e\x03\xf5\x33" + far(a["DrawMenuTabs"], 8) + b"\xe8\x01"
-            + far(dbg, 4) + delay + b"\xc3" + le(a["FileBrowserEntry"]))
+    hook = far(dbg, 4) + delay + b"\xc3" + le(a["FileBrowserEntry"])
     assert len(hook) == HOOK_LEN, len(hook)
-    cave = free_run(rom, 0, HOOK_LEN, prefer=0x0259, lo=0x0150)
+    cave = free_run(rom, 0, HOOK_LEN, prefer=0x02c4, lo=0x0150)
     rom[cave:cave + HOOK_LEN] = hook
-    rom[site:site + 12] = b"\xc3" + le(cave) + b"\x00" * 9
+    rom[site + 9:site + 12] = b"\xc3" + le(cave)
 
     # HELP: "MOD N.M" -> "MOD N.MDBG"
     m = off(*MODSTR)            # the same in every build (stamp-mod-version.sh)
