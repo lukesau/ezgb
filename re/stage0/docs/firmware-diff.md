@@ -54,6 +54,33 @@ flip-flops whose enables are too wide for `regmap.py` to resolve. That fits
 the MBC3 real-time clock work [fw5.md](fw5.md) found in 0918's PicoBlaze
 code; the cone diff is where it gets pinned down.
 
+## Kernel and game launches (simulated)
+
+Both launch paths run unchanged on all three firmwares, loading from the
+simulated SD card through the PicoBlaze loader:
+
+- **Stage1's kernel launch and hand-off** (`gb_kernel.vh`): `ezgb.dat`
+  loads (status `$01` for 1170-1171 polls), and kernel-mode reads after
+  the hand-off match the file at `$0000`, `$0100` and banks 1, 2 and 5.
+- **The kernel's game launch** (`gb_game.vh`, the first 64 KB of Pokemon
+  Red as MBC3): the load takes 468 polls on each, and all 48 reads after
+  the `$7FE0` console reset (header, banks 0-3, bank 0 selecting 1) match
+  the ROM.
+
+So everything that differs between the three sits in the clock handling,
+the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
+
+## FW5's new registers
+
+- **`$6000-$7FFF`** holds the written byte; writing `$01` after `$00`
+  copies the live clock value into the latched copy the game reads (the
+  MBC3 latch). FW4 has no such register and serves the live clock.
+- **`$7FD4`**: a write goes through an 8-bit adder with **`$7FD3`** (carry
+  chain, XOR sum outputs) into a register. Kernel 1.05e writes `$7FD4=$00`
+  on every game launch, right after `$7F37` (the far call to
+  `SetFpga7FD4_B1` at `00:15E6`), and never writes `$7FD3`. What the sum
+  drives is not traced yet.
+
 ## Banking and save RAM (simulated)
 
 `gb_mbc.vh` with `mbctest.py` runs the kernel's launch writes against

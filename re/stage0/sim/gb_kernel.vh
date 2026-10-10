@@ -18,10 +18,7 @@ reg sel;
 always #1 if (tb.P52 === 1'b0) sel = 1;
 task rd(input [15:0] a);
     begin sel = 0; gb_read(a, lq);
-          $display("%t gb: read $%h = %h  (595=%h P51=%b  a=%b b=%b m=%b gate=%b bankreg=%b%b%b%b%b%b%b%b)", $time, a, lq, tb.bank, tb.P51,
-                   tb.dut.n_X11Y22_S3_YQ, tb.dut.n_X18Y8_S2_YQ, tb.dut.n_X17Y22_S2_YQ, tb.dut.n_X12Y23_S1_YQ,
-                   tb.dut.n_X15Y26_S0_XQ, tb.dut.n_X17Y25_S2_XQ, tb.dut.n_X17Y25_S1_XQ, tb.dut.n_X15Y23_S0_XQ,
-                   tb.dut.n_X18Y23_S3_XQ, tb.dut.n_X18Y23_S0_XQ, tb.dut.n_X17Y26_S1_XQ, tb.dut.n_X18Y24_S0_XQ); end
+          $display("%t gb: read $%h = %h  (595=%h P51=%b mem_a=%h)", $time, a, lq, tb.bank, tb.P51, tb.mem_a); end
 endtask
 initial begin
     $readmemh("loadcmd.hex", lcmd);
