@@ -317,6 +317,14 @@ The new stage1 runs from the next power-on.
   record of the damage. A dump holds that cart's own license record, so
   never program one cart's full image onto another; splice slot B into a
   fresh dump of that cart instead.
+- **Recovering slot B without a prior dump.** An updater writes nothing
+  below `$40000`, so after a failed stage1 the cart's slot A and license
+  record are still intact: desolder the flash, read the whole chip (that read
+  is the dump), and program only `$40000-$6FFFF` with a slot B region built
+  from a stock updater: `FF` everywhere, its 149,516-byte payload at offset
+  `$26` (`$40026` in flash). Built that way, the FW4 updater reproduces the
+  FW4 cart's real `$40000-$6FFFF` byte for byte. Leave `$70000` (the boot
+  tally) and everything below `$40000` alone.
 - The FW4 builds here have run on one FW4 Jr; the FW5 build has been
   checked only in simulation (stage1 reads back byte for byte through the
   FW5-0918 design). The FW5 updater writes slot B like FW4's, so the slot A
