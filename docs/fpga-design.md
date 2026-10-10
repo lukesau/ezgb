@@ -51,6 +51,13 @@ packages share a 16-bit bus), the SD card, the SPI config flash and the RTC
 | SPI config flash | CS P27, CLK P53, MOSI P46, MISO P51 |
 | SD card | CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29 (order from simulated block reads) |
 | RTC (I2C) | probably P31/P32 |
+| pSRAM word address A0-A10 | P56 P59 P65 P71 P70 P73 P44 P50 P83 P86 P20 |
+| pSRAM word address A11-A13 | P53, P46, P51 (the config flash's CLK, MOSI and MISO, reused once bank 2 has read the flash) |
+| pSRAM upper address | 74HC595: SRCLK P35, SER P33, RCLK P24 |
+| pSRAM data | eight bidirectional pins, P41 P48 P49 P57 P64 P72 P77 P78 (bit order is a naming choice: the FPGA reads back through the same pins) |
+| pSRAM /LB, /UB, /WE | P37 (even bytes), P36 (odd bytes), P40 |
+| pSRAM /CE | P52 (U9, game ROM), P60 (U4, saves) |
+| P85 | follows the Game Boy's `/WR` |
 
 Full list: `scripts/fpga/netlist/pintable.py`.
 
@@ -92,9 +99,38 @@ reaches the PicoBlaze's interrupt input through a synchroniser
 (`X2Y29 SLICE[0]`); the interrupt handler issues CMD18, and the sector read
 back through the `$A000` window matches the card image byte for byte. Of
 the 24 possible DAT orders only one does (`datvariants.sh` runs them all).
-P30 is input-only, so the FPGA cannot drive DAT2: SD writes cannot use the
-4-bit bus as wired, although the firmware puts the card in 4-bit mode. Not
-looked into yet. The SD controller is Marek Czerski's OpenCores `sdc_controller`
+
+> **Correction (2026-10-09).** This paragraph first said P30 is input-only,
+> so SD writes could not use the 4-bit bus. Wrong: P30 drives through the
+> IO tile's second output register (FFO2/FFT2 on OTCLK2), which the pin
+> table script didn't look at. The IO tile model also ignored latch mode
+> and SR/REV until commit "io tile registers"; the DAT order above held up
+> when the sweep was rerun on the corrected model.
+
+**ROM loads.** With `gb_load.vh`, the GB side runs stage1's kernel launch
+(`$7FC0=2`, the load command through the `$7F36=1` window, `$7F36=3`) and
+the PicoBlaze streams `ezgb.dat` into U9: every byte of the 160 KB file lands
+where it should (`loadcmd.py` builds the command, `memmap.py` works out the
+address map from a capture of the writes). Each byte is one `/WE` pulse with
+`/LB` or `/UB` low. Two findings on the way:
+
+- The FPGA reuses the config flash's CLK, MOSI and MISO pins as pSRAM
+  address lines A11-A13. P51 (MISO, A13) is driven by an IO-tile output
+  latch whose SR and REV inputs carry the bit and its inverse, so the pin
+  follows the address asynchronously.
+- `cmd_load_rom` runs only after bank 2's licence check passes, which
+  needs the Device DNA. The simulation doesn't model the DNA, so
+  `fastboot.py --no-licence` patches the gate out of a sim-only copy of
+  the program.
+
+**Not understood yet: game-mode addressing.** After the kernel handoff
+(`$7FC0=0`, ROM bank 1, `$7F31=0`, `$7F32=$80`), GB reads return pSRAM data
+with the low address bits following the bus, but A14 and the bank number
+don't: P51 stays high and the FPGA reloads the 595 on every access, with
+`$00` after a `$2000` write and `$EB` for any `$4000` access whatever bank
+was written. Possibly no MBC type is set (stage1 doesn't write `$7F37` for
+the kernel), and some 595 outputs may be selects rather than address bits.
+/OE is not identified either; the model ties it active. The SD controller is Marek Czerski's OpenCores `sdc_controller`
 (command word at `$04` with the index in bits 13:8, argument at `$00`
 starting the command, command status at `$34`); its registers cross from
 the PicoBlaze's clock (BUFGMUX3) to the SD clock (BUFGMUX6) through 43
@@ -135,7 +171,8 @@ What the simulation showed:
    flash and RTC pins).
 2. ~~Export the netlist as structural Verilog~~ (done, above). SD card
    model done: the boot gets through card init, and Game Boy-side sector
-   reads work.
+   reads work. pSRAM model done: ROM loads land byte for byte. Next:
+   game-mode addressing (the 595 protocol, MBC registers, /OE).
 3. Simulate Game Boy bus cycles from the kernel's own register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
