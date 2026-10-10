@@ -55,12 +55,10 @@ re/*/label-proposals.txt
 /fpga/
 
 *.bin
-!sd/psram.bin
 
-# Local microSD for the SameBoy EZ Jr FPGA stub.
-# ROMs, saves, and raw card images are copyrighted or personal, so they stay out of git.
-/sd/**
-!/sd/README.md
-!/sd/ORDER
+# Local microSD for the SameBoy EZ Jr FPGA stub: a local dev directory,
+# nothing in it is tracked (card images, ROMs, saves, psram.bin, ORDER).
+# The workflow is in docs/DEVELOPMENT.md.
+/sd/
 
 dist/

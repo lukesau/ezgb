@@ -164,7 +164,7 @@ docs/             Findings, feature write-ups, hardware notes
 scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
 patches/kernel/   IPS patches: stock ezgb.dat -> modded kernel (safe to share)
 patches/sameboy/  EZ Jr FPGA stub as diffs over a pinned SameBoy commit
-sd/               Local microSD image for the emulator     (see sd/README.md)
+sd/               Local microSD image for the emulator     (untracked; see docs/DEVELOPMENT.md)
 fpga/, tools/     FPGA dumps and cloned reference repos     (not tracked)
 ```
 
