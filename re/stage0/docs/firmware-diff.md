@@ -78,8 +78,10 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
 - **`$7FD4`**: a write goes through an 8-bit adder with **`$7FD3`** (carry
   chain, XOR sum outputs) into a register. Kernel 1.05e writes `$7FD4=$00`
   on every game launch, right after `$7F37` (the far call to
-  `SetFpga7FD4_B1` at `00:15E6`), and never writes `$7FD3`. What the sum
-  drives is not traced yet.
+  `SetFpga7FD4_B1` at `00:15E6`), and never writes `$7FD3`. Writing
+  `$7FD4=$05` (and `$7FD3=$03`) before a launch changes nothing in ROM
+  banking or save RAM on any of the three, so the sum isn't a ROM or RAM
+  base offset.
 
 ## Banking and save RAM (simulated)
 
