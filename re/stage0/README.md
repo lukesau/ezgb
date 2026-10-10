@@ -60,6 +60,7 @@ disassembled in [../updater](../updater/README.md).
 |---|---|
 | [picoblaze/](picoblaze/) | annotations for both PicoBlaze programs (`X3Y29` bank 1, `X3Y25` bank 2), merged into the disassembly by `scripts/fpga/picoblaze-dis.py` |
 | [sim/](sim/README.md) | the netlist exported to Verilog, primitive models, SPI flash / SD card / pSRAM models, testbenches, and the scripts that mapped the pins and the pSRAM address bus |
+| [decode/](decode/README.md) | `s3decode` output for every release: each configured tile as text, for diffing releases |
 | [netlist/](netlist/README.md) | research scripts over the `s3trace` netlist (constant bytes, decode paths) |
 
 The bitstream tools themselves (`s3decode`, `s3trace`, `s3patch`, `s3pins`)
