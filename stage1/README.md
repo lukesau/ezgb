@@ -12,9 +12,16 @@ EZGB_ROOT=<checkout> stage1/build.sh               # inputs/outputs in another c
 ```
 
 Needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
-(`fpga/bootsplash/build/icon.2bpp`, from `re/fpga-fw4/bootsplash/build.sh`).
+(`fpga/bootsplash/build/icon.2bpp`, from `stage1/fw4-patches/bootsplash/build.sh`).
 Setting all of that up, and turning `stage1.gb` into an updater:
 [docs/fpga-setup.md](../docs/fpga-setup.md).
+
+[fw4-patches/](fw4-patches/) holds the work that came before the rewrite:
+RGBDS overlays on the stock FW4 stage1 (`stage1-cgb.asm`, the CGB flag
+build in [docs/fpga-cgb.md](../docs/fpga-cgb.md); `test-red-on-error.asm`)
+and the boot splash lab in `bootsplash/`, whose `build.sh` also makes the
+icon tiles this build needs. The stock stage1 itself, disassembled, is in
+[re/stage1](../re/stage1/README.md).
 
 ## Version
 

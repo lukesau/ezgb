@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build stage1 from source: stage1.gb, 32 KB, for the FW4 slot B BRAMs.
 # Needs SDCC (sm83), rgbfix, and the icon tiles from the splash build
-# (fpga/bootsplash/build/icon.2bpp, re/fpga-fw4/bootsplash/build.sh).
+# (fpga/bootsplash/build/icon.2bpp, stage1/fw4-patches/bootsplash/build.sh).
 # Output: fpga/stage1/ (ignored, like every built firmware image).
 set -e
 here=$(cd "$(dirname "$0")" && pwd)

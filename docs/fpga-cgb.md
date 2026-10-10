@@ -11,7 +11,7 @@ images stay in the ignored `fpga/cgb/`.
 
 ## What the patch does
 
-Source: [`re/fpga-fw4/stage1-cgb.asm`](../re/fpga-fw4/stage1-cgb.asm), overlaid
+Source: [`stage1/fw4-patches/stage1-cgb.asm`](../stage1/fw4-patches/stage1-cgb.asm), overlaid
 on the FW4 stage1 with `rgblink -O`.
 
 | Address | Change |
@@ -31,7 +31,7 @@ patched code executes; it is not meant to stay.
 - **SameBoy, CGB model:** EZ-FLASH / LOADING look identical to stock. The
   stub can't take stage1 as far as OSINIT (it stops at "Micro SD initial
   error!" for the stock stage1 too), so a test-only build,
-  [`test-red-on-error.asm`](../re/fpga-fw4/test-red-on-error.asm), also calls
+  [`test-red-on-error.asm`](../stage1/fw4-patches/test-red-on-error.asm), also calls
   the red hook at that message: red background, text readable.
 - **SameBoy, DMG model:** pixel-identical to stock.
 - **Re-encoding check:** patching slot B with its *original* BRAM contents
@@ -48,7 +48,7 @@ patched code executes; it is not meant to stay.
 
 ```bash
 cd fpga/cgb
-rgbasm -o stage1-cgb.o ../../re/fpga-fw4/stage1-cgb.asm
+rgbasm -o stage1-cgb.o ../../stage1/fw4-patches/stage1-cgb.asm
 rgblink -O stage1-fw4.gb -o stage1-cgb.gb stage1-cgb.o     # stage1-fw4.gb: stage1-from-bram.py output
 rgbfix -f h stage1-cgb.gb
 ../../scripts/fpga/stage1-to-bram.py stage1-cgb.gb blobs   # prints the s3patch --set arguments
@@ -122,7 +122,7 @@ each in the mode its own header asks for. To undo: run the stock
 ## Boot splash (second build)
 
 Replaces the red proof build. Source:
-[`re/fpga-fw4/bootsplash/stage1-splash.asm`](../re/fpga-fw4/bootsplash/stage1-splash.asm),
+[`stage1/fw4-patches/bootsplash/stage1-splash.asm`](../stage1/fw4-patches/bootsplash/stage1-splash.asm),
 overlaid on the stock FW4 stage1 (so slot B goes straight from stock or the
 red build to this one).
 
@@ -152,7 +152,7 @@ red build to this one).
   `call $0100` goes there. It runs with interrupts off (the cart space is
   already the kernel) and restores AF/BC/DE/HL so the kernel sees the same
   registers as stock (it stores the entry A). Test-only check:
-  [`test-reset.asm`](../re/fpga-fw4/bootsplash/test-reset.asm) runs the
+  [`test-reset.asm`](../stage1/fw4-patches/bootsplash/test-reset.asm) runs the
   copied routine at `LOADING...` in SameBoy: registers identical at entry
   and exit, LCDC 00, and once the test re-enables the LCD the screen is
   blank (only the text stage1 prints afterwards appears), on CGB and DMG.
@@ -169,7 +169,7 @@ hand-off (keeps LCD off and the attribute reset), for comparison against a
 kernel that does its own CGB init (`CgbInit`, mod 5.3). Updater label
 `Update: no clear`.
 
-Lab and build: `re/fpga-fw4/bootsplash/build.sh` (needs the untracked logo
+Lab and build: `stage1/fw4-patches/bootsplash/build.sh` (needs the untracked logo
 PNG and stock stage1 in `fpga/`) builds a standalone `splash.gb` for
 iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts
 the logo. Verified: SameBoy CGB and DMG show the icon above EZ-FLASH;
