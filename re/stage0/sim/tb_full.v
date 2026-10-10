@@ -42,6 +42,20 @@ module tb;
     always #477 phi = !phi;              // ~1.05 MHz, the Game Boy's bus clock
 `ifdef P61_INV
     assign P61 = !phi;                   // same clock, opposite phase to the bus cycles
+`elsif P61_RD
+    reg rd_n = 0;                        // DMG /RD: low except during a write cycle
+    assign P61 = rd_n;
+`elsif P61_HIGH
+    assign P61 = 1'b1;                   // held high, bus cycles still timed by phi
+`elsif P61_POR
+    // P61 reads the console's /RESET at the cart edge (P62 is the FPGA's
+    // drive of it): low while the console powers up, high from 1 ms
+    reg por_n = 0;
+    initial #1000000 por_n = 1;
+    assign P61 = por_n;
+`elsif P61_CS
+    reg cs_n = 1;                        // DMG /CS: low for $A000-$FFFF accesses
+    assign P61 = cs_n;
 `else
     assign P61 = phi;
 `endif
@@ -51,22 +65,51 @@ module tb;
     pullup (P61);
 `endif
     // one machine cycle each, about 1 us as on a DMG
-`ifndef PHI_ADDR_DELAY
-`define PHI_ADDR_DELAY 0
+`ifdef P61_FREE
+    reg fphi = 0;
+    always #477 fphi = !fphi;
+    assign P61 = fphi;
 `endif
 `ifdef P61_PHI
-    // Bus cycles locked to the clock on P61: address at the rising edge,
-    // data from a quarter in, /WR low through the low half, read data
-    // sampled just before the next rising edge
+    // Bus cycles locked to the clock on P61, timed as a real DMG's cartridge
+    // bus (measured by the Retrode author, forum.retrode.com msg 3139): the
+    // cycle starts at the rising edge, the address changes ~150 ns later,
+    // write data goes out from ~450 ns with /WR low ~480-840 ns while the
+    // clock is low, and reads are sampled in the middle of the low half.
     task gb_write(input [15:0] a, input [7:0] d);
         begin
-            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; #240; gb_d = d; gb_doe = 1;
-            @(negedge phi); #20; gb_wr_n = 0; #400; gb_wr_n = 1; #20; gb_doe = 0;
+            @(posedge phi);
+`ifdef P61_RD
+            #140; rd_n = 1; #10;
+`else
+            #150;
+`endif
+            gb_a = a;
+`ifdef P61_CS
+            #100; cs_n = !(a >= 16'hA000); #200;
+`else
+            #300;
+`endif
+            gb_d = d; gb_doe = 1; #30; gb_wr_n = 0;
+            #360; gb_wr_n = 1; #100; gb_doe = 0;
+`ifdef P61_RD
+            rd_n = 0;
+`endif
+`ifdef P61_CS
+            cs_n = 1;
+`endif
         end
     endtask
     task gb_read(input [15:0] a, output [7:0] d);
         begin
-            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; @(negedge phi); #430; d = gb_q;
+            @(posedge phi); #150; gb_a = a;
+`ifdef P61_CS
+            #100; cs_n = !(a >= 16'hA000);
+`endif
+            @(negedge phi); #230; d = gb_q;
+`ifdef P61_CS
+            #200; cs_n = 1;
+`endif
         end
     endtask
 `else

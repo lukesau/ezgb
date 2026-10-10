@@ -37,8 +37,16 @@ an output.
 There is no `/RD` or `/CS`: the D0-D7 output enable is a function of A13-A15
 and `/WR` alone (LUT `X9Y20 SLICE[0]`), so the FPGA drives the bus for any
 address in its ranges while `/WR` is high. On a DMG `/RD` is low except
-during writes, so this amounts to the same thing. P61 (input, next to
-`/RESET`) is still unplaced.
+during writes, so this amounts to the same thing.
+
+P61 reads the console's `/RESET` at the cart edge, and P62 is the FPGA's
+drive of it (P62's LUT takes P61 as an input). The FPGA registers P61 into
+the `X13Y0` BUFGMUX2 clock domain twice; a falling edge between the two
+copies asynchronously resets the `$7F00/$7F10/$7F20` unlock state machine
+(`X18Y31 SLICE[0]/[3]`, reset by `X12Y21 SLICE[0]`) and other registers.
+It cannot be the bus clock, `/RD` or `/CS`: all three fall during normal
+bus activity, often between the steps of an unlock (stage1's hand-off stub
+unlocks from WRAM), which would make unlocking impossible.
 
 ### Everything else
 
@@ -123,14 +131,33 @@ address map from a capture of the writes). Each byte is one `/WE` pulse with
   `fastboot.py --no-license` patches the gate out of a sim-only copy of
   the program.
 
-**Not understood yet: game-mode addressing.** After the kernel handoff
-(`$7FC0=0`, ROM bank 1, `$7F31=0`, `$7F32=$80`), GB reads return pSRAM data
-with the low address bits following the bus, but A14 and the bank number
-don't: P51 stays high and the FPGA reloads the 595 on every access, with
-`$00` after a `$2000` write and `$EB` for any `$4000` access whatever bank
-was written. Possibly no MBC type is set (stage1 doesn't write `$7F37` for
-the kernel), and some 595 outputs may be selects rather than address bits.
-/OE is not identified either; the model ties it active. The SD controller is Marek Czerski's OpenCores `sdc_controller`
+**Kernel launch.** `gb_kernel.vh` runs stage1's launch and hand-off as
+`stage1/src/handoff.s` does, with bus cycles timed as GB-CTR's Appendix C
+draws them (address just after the cycle starts, `/WR` low in the second
+half, reads sampled in the second half) and P61 low for the first
+millisecond like a console's power-on reset. The load runs to the end
+(status `$01` for about 25 ms, then done) and the PicoBlaze writes the
+whole kernel into U9. One detail for anyone polling the status: right after
+the `$7F36=3` command the `$A000` window floats (`$FF`) for about a cycle
+and a half while the FPGA switches it over; stage1 is past that by the
+time its first poll runs.
+
+**Not understood yet: game-mode reads.** After the hand-off, ROM reads come
+from the pSRAM but at the wrong place: `$0100` returns the kernel's `$4100`.
+Two things are off:
+
+- P51 (word address A13, offset bit 14) is an IO-tile latch whose data is
+  load-counter bit 14 (`X11Y22 SLICE[3]`) or another path (`X18Y8
+  SLICE[2]`). After the load its gate (`X12Y23 SLICE[1]`, a register bit
+  the Game Boy writes from D0) is closed, so P51 holds the 1 the load left
+  behind. Some write the hand-off doesn't make opens it.
+- The ROM bank register (`X18Y24 SLICE[0]` bit 0 ... `X15Y26 SLICE[0]` bit
+  7) takes stage1's `$2000=1` correctly, but later `$2000` writes land with
+  wrong upper bits (2 gives `$D6`, 5 gives `$D7`).
+
+The FPGA reloads the 595 on every change of A14 region; with the register
+wrong, `$4000-$7FFF` reads point past the loaded data. /OE is not
+identified; the model ties it active. The SD controller is Marek Czerski's OpenCores `sdc_controller`
 (command word at `$04` with the index in bits 13:8, argument at `$00`
 starting the command, command status at `$34`); its registers cross from
 the PicoBlaze's clock (BUFGMUX3) to the SD clock (BUFGMUX6) through 43
@@ -171,8 +198,9 @@ What the simulation showed:
    flash and RTC pins).
 2. ~~Export the netlist as structural Verilog~~ (done, above). SD card
    model done: the boot gets through card init, and Game Boy-side sector
-   reads work. pSRAM model done: ROM loads land byte for byte. Next:
-   game-mode addressing (the 595 protocol, MBC registers, /OE).
+   reads work. pSRAM model done: ROM loads land byte for byte, and the
+   kernel launch runs as on hardware. Next: game-mode reads (P51's latch
+   gate, the bank register's upper bits, /OE).
 3. Simulate Game Boy bus cycles from the kernel's own register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
