@@ -17,6 +17,7 @@ bitstream stay in the ignored `fpga/` directory, same policy as the flash dumps
 | **prjcombine** | Open database of the Spartan-3 family bitstream format: every tile, routing mux and logic setting with its exact bit positions. Rust libraries to load it and parse bitstreams | `~/fpga/prjcombine` on the build host |
 | **s3decode** | Our decoder. Walks every tile of a bitstream against the prjcombine database and prints what is configured | [`scripts/fpga/s3decode/`](../../../scripts/fpga/s3decode/) |
 | **s3patch** | Writes bel attributes (BRAM `DATA`) back into a bitstream, recomputing the CRCs | same crate |
+| **s3encode** | The inverse of s3decode: a full feature list back to a bitstream | same crate |
 | **s3trace** | Walks routing back from a bel pin, lists pins, dumps the netlist | same crate |
 | **s3pins** | Package pin to bel pad map | same crate |
 | **ISE 14.7** | Xilinx's toolchain, the last one that supports Spartan-3A. Only needed to *make* bitstreams (baselines, test designs, future fuzzing), not to decode | `~/Xilinx/14.7` on the build host |
@@ -156,9 +157,10 @@ bitgen -w -d blank.ncd blank.bit
   have not.
 - **Test muxes and legacy bels are skipped.** Neither occurs in the claimed-bit
   count for our images, so nothing is hidden by this.
-- **Writes only through `s3patch`.** It changes bel attributes in frames
-  that a plain FDRI run writes. Routing, and anything in a frame reused
-  through MFWR, can't be written yet.
+- **Writes through `s3patch` or `s3encode`.** `s3patch` changes bel
+  attributes in an existing stream. `s3encode` writes a whole stream from a
+  feature list, routing included, in bitgen's uncompressed framing only (no
+  MFWR).
 
 > **Correction (2026-10-09).** This list said "Decode only. No encoder
 > yet", written before `s3patch` existed. `s3patch` (below) writes BRAM
@@ -195,6 +197,34 @@ A slot B image has two CRC packets.
 
 Patching slot B with its own original BRAM contents reproduces the input
 byte for byte, CRCs included.
+
+## s3encode
+
+```bash
+./target/release/s3decode --db $DB slotB.bin --blob-dir blobs > slotB.full.txt
+./target/release/s3encode --db $DB slotB.full.txt out.bin --blob-dir blobs [--check slotB.bin]
+```
+
+The inverse of s3decode. It takes a decode made **without** `--baseline`
+(every feature, not a diff) and the blob directory for the BRAM contents,
+and sets each tile item from its line the way s3decode reads it. An item
+with no line gets all-zero raw bits, which is exactly when s3decode leaves
+it out. A line that matches no item in its tile is an error, so a typo
+can't drop a feature silently. The configuration registers come from the
+`# regs:` block; GLOBAL features must agree with it.
+
+The packet framing is fixed: every cart image we have (FW4 slots A and B,
+FW5 fallback, 0731, 0918, SGB beta) has the same packets outside the frame
+data, namely 16 dummy words, sync, RCRC, the register writes in bitgen's order
+(MASK `$FFCF`), FAR 0, WCFG, one FDRI run of all 540 frames plus a zero
+flush frame, CRC, GRESTORE, DGHIGH, START, MASK `$0085`, CTL0, a second
+CRC (not reset after the first), DESYNC, 16 NOPs.
+
+`--check ORIG` compares the result with ORIG as parsed config bits and
+byte for byte. Every one of these images, and the FW4 updater payload,
+encodes **byte-identical** to the original. Editing one line works as
+expected: setting FW4's version select LUT (`D0X12Y18` `SLICE[3] F`) to zero changes one frame bit plus the
+two CRCs, and decoding the result gives back the edited list.
 
 ## s3trace
 
