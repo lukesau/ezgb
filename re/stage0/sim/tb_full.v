@@ -134,6 +134,9 @@ module tb;
     wire [7:0] mem_d = {P64, P41, P57, P49, P48, P72, P77, P78};
     wire [7:0] u9_q, u4_q;
     wire u9_oe, u4_oe;
+`ifndef RTC_TICK_NS
+`define RTC_TICK_NS 3000000
+`endif
 `ifdef PRELOAD
     // gb_mbc.vh: start from tagged images instead of an SD load
     localparam U9_IMG = "u9.img", U4_IMG = "u4.img";
@@ -159,7 +162,18 @@ module tb;
 `endif
     pullup (P3); pullup (P9); pullup (P10); pullup (P12); pullup (P13); pullup (P15); pullup (P16);
     pullup (P19); pullup (P20); pullup (P23); pullup (P24); pullup (P25); pullup (P28);
+`ifdef RTC
+    // PCF8563 on the I2C pins (+define+RTC_SCL=P31 +define+RTC_SDA=P32 or
+    // the other way round); open drain, pulled high
+    wire rtc_sda_low;
+    pcf8563 #(.TICK_NS(`RTC_TICK_NS)) rtc(.SCL(`RTC_SCL), .SDA(`RTC_SDA), .SDA_LOW(rtc_sda_low));
+    assign `RTC_SDA = rtc_sda_low ? 1'b0 : 1'bz;
+    assign (weak0, weak1) P31 = 1'b1;
+    assign (weak0, weak1) P32 = 1'b1;
+    pullup (P29); pullup (P30); pullup (P33); pullup (P34); pullup (P35);
+`else
     pullup (P29); pullup (P30); pullup (P31); pullup (P32); pullup (P33); pullup (P34); pullup (P35);
+`endif
     pullup (P36); pullup (P37); pullup (P40); pullup (P41); pullup (P44); pullup (P48);
     pullup (P49); pullup (P50); pullup (P52); pullup (P56); pullup (P57);
     pullup (P59); pullup (P60); pullup (P62); pullup (P64); pullup (P65); pullup (P70);

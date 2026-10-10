@@ -8,9 +8,10 @@ read names the physical bank it hit. ROM checks are exact; save-RAM reads
 are reported as (logical bank -> U4 page) for the mapping to be read off."""
 import json, os, sys
 
-CODE = dict(none=0, mbc1=1, mbc2=2, mbc3=3, mbc5=4, mbc1m=5)
-ROMMASK = dict(none=0x001, mbc1=0x07F, mbc2=0x00F, mbc3=0x07F, mbc5=0x1FF, mbc1m=0x03F)
-RAMMASK = dict(none=0, mbc1=3, mbc2=0, mbc3=3, mbc5=0xF, mbc1m=3)
+CODE = dict(none=0, mbc1=1, mbc2=2, mbc3=3, mbc5=4, mbc1m=5, mbc3rtc=0x83, mbc5mask=4)
+ROMMASK = dict(none=0x001, mbc1=0x07F, mbc2=0x00F, mbc3=0x07F, mbc5=0x1FF, mbc1m=0x03F, mbc3rtc=0x07F, mbc5mask=0x00F)
+RAMMASK = dict(none=0, mbc1=3, mbc2=0, mbc3=3, mbc5=0xF, mbc1m=3, mbc3rtc=3, mbc5mask=0xF)
+BASE = dict(mbc3rtc='mbc3', mbc5mask='mbc5')   # variants: RTC flag set, small ROM mask
 
 def rom_tag(b, o):
     return b & 0xFF if o == 0 else b >> 8 if o == 1 else (o ^ (o >> 8) ^ b) & 0xFF
@@ -21,6 +22,7 @@ def ram_tag(p, o):
 class Model:
     """Pan Docs MBC behavior; physical bank = logical & ROM mask"""
     def __init__(s, t):
+        s.mask = ROMMASK[t]; t = BASE.get(t, t)
         s.t, s.lo, s.hi, s.mode, s.ram_en, s.ramb = t, 1, 0, 0, False, 0
     def write(s, a, v):
         t = s.t
@@ -53,7 +55,7 @@ class Model:
             sh = 5 if t == 'mbc1' else 4
             lo = s.lo & (0x1F if t == 'mbc1' else 0xF)
             b = ((s.ramb & 3) << sh if s.mode else 0) if a < 0x4000 else ((s.ramb & 3) << sh) | lo
-        return b & ROMMASK[t]
+        return b & s.mask
     def ram_bank(s):
         if s.t in ('mbc1', 'mbc1m'): return s.ramb & 3 if s.mode else 0
         if s.t == 'mbc2': return 0
@@ -73,10 +75,11 @@ def gen(t, d):
     open(os.path.join(d, 'u9.img'), 'wb').write(u9)
     open(os.path.join(d, 'u4.img'), 'wb').write(u4)
     rm = ROMMASK[t]
+    variant = t; t = BASE.get(t, t)
     ops = []
     W = lambda a, v: ops.append((0, a, v))
     R = lambda a: ops.append((1, a, 0))
-    for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, CODE[t]) + fpga(0x7FC4, RAMMASK[t]) +
+    for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, CODE[variant]) + fpga(0x7FC4, RAMMASK[variant]) +
                  fpga(0x7FC1, rm & 0xFF) + fpga(0x7FC2, rm >> 8) + fpga(0x7FC3, 0x5C)):
         W(a, v)
     for a, v in [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
@@ -98,6 +101,25 @@ def gen(t, d):
         for v in (0, 1, 5, 0xF, 0x13):
             W(0x2100, v); rom_reads()
         W(0x2000, 7); rom_reads()          # A8=0: RAM enable, bank unchanged
+    if variant == 'mbc5mask':
+        for x in (0x05, 0x15, 0x1F, 0xF3):
+            W(0x2000, x); rom_reads()
+    elif variant == 'mbc3rtc':
+        # clock registers $08-$0C through the RAM window, latched by $6000 0->1
+        W(0x0000, 0x0A)
+        def rtc_read():
+            for r_ in range(8, 13):
+                W(0x4000, r_); R(0xA000)
+        rtc_read()
+        for _ in range(3):
+            W(0x6000, 0); W(0x6000, 1); rtc_read()
+            ops.append((3, 7000, 0))              # 7 ms: two RTC_TICK_NS ticks
+        W(0x4000, 8); W(0xA000, 0x15); W(0x4000, 9); W(0xA000, 0x42)
+        W(0x6000, 0); W(0x6000, 1); rtc_read()
+        ops.append((3, 7000, 0))
+        W(0x6000, 0); W(0x6000, 1); rtc_read()
+        W(0x0000, 0x00)
+    if variant in ('mbc5mask', 'mbc3rtc'): pass
     elif t in ('mbc1', 'mbc1m', 'mbc3', 'none'):
         for v in (0, 1, 2, 0x1F, 0x20, 0x21, 0x55, 0x7F):
             W(0x2000, v); rom_reads()
@@ -122,7 +144,7 @@ def gen(t, d):
     for a in (0xA000, 0xA010): R(a)
     with open(os.path.join(d, 'ops.hex'), 'w') as f:
         for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
-    json.dump(dict(type=t), open(os.path.join(d, 'meta.json'), 'w'))
+    json.dump(dict(type=variant), open(os.path.join(d, 'meta.json'), 'w'))
     print(t, len(ops), 'ops')
 
 def check(d):
@@ -145,6 +167,7 @@ def check(d):
                 print(f'ROM ${a:04x} = {v:02x}, want {want:02x} (bank {b:#x}); matches banks {[hex(x) for x in got[:6]]}')
         else:
             ram.append((m.ram_en, m.ram_bank(), a, v))
+            if m.t == 'mbc3' and m.ram_bank() >= 8: print(f'  RTC reg {m.ram_bank():#x} = {v:02x}')
     print(f'{t}: {n} ROM reads, {bad} wrong')
     for en, b, a, v in ram:
         note = ''

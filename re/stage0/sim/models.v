@@ -314,3 +314,64 @@ module hc595 (input SRCLK, SER, RCLK, output reg [7:0] Q = 0);
         ps = SRCLK; pr = RCLK;
     end
 endmodule
+
+// PCF8563 real-time clock on I2C (address $51), sampled every 5 ns. Time
+// registers 2-8 in BCD; the seconds tick every TICK_NS (shortened for
+// simulation). SDA_LOW pulls the shared line low for ACKs and read data.
+module pcf8563 #(parameter TICK_NS = 3000000) (input SCL, input SDA, output reg SDA_LOW = 0);
+    reg [7:0] r [0:15];
+    integer i, bitn = 0, tick = 0;
+    reg ps = 1, pd = 1, active = 0, rd = 0, ack = 0, addr_ok = 0, first = 0, mack = 0;
+    reg [7:0] sh = 0, ptr = 0, tx = 0;
+    reg [3:0] st = 0;                      // 0 idle, 1 address, 2 data in, 3 data out
+    initial begin
+        for (i = 0; i < 16; i = i + 1) r[i] = 0;
+        r[2] = 8'h00; r[3] = 8'h30; r[4] = 8'h12; r[5] = 8'h09; r[6] = 8'h05; r[7] = 8'h10; r[8] = 8'h26;
+    end
+    function [7:0] binc(input [7:0] v); binc = (v[3:0] == 9) ? {v[7:4] + 4'd1, 4'd0} : v + 8'd1; endfunction
+    always #1000 begin
+        tick = tick + 1000;
+        if (tick >= TICK_NS) begin
+            tick = 0;
+            r[2] = binc(r[2] & 8'h7F);
+            if (r[2] == 8'h60) begin r[2] = 0; r[3] = binc(r[3]);
+                if (r[3] == 8'h60) begin r[3] = 0; r[4] = binc(r[4]);
+                    if (r[4] == 8'h24) begin r[4] = 0; r[5] = binc(r[5]); end end end
+        end
+    end
+    wire scl = SCL !== 1'b0, sda = SDA !== 1'b0;
+    always #5 begin
+        if (scl && ps && pd && !sda) begin st = 1; bitn = 0; SDA_LOW = 0; ack = 0; end        // START
+        else if (scl && ps && !pd && sda) begin st = 0; SDA_LOW = 0; end                     // STOP
+        else if (scl && !ps) begin                                                            // SCL rises
+            if (ack) ;                                                                        // ACK clock
+            else if (st == 3) begin
+                if (bitn == 8) begin mack = !sda; end
+            end else if (st == 1 || st == 2) begin sh = {sh[6:0], sda}; bitn = bitn + 1; end
+        end else if (!scl && ps) begin                                                        // SCL falls
+            if (ack) begin
+                ack = 0; SDA_LOW = 0; bitn = 0;
+                if (st == 3) begin tx = r[ptr[3:0]]; ptr = ptr + 1; SDA_LOW = !tx[7]; end
+            end else if ((st == 1 || st == 2) && bitn == 8) begin
+                if (st == 1) begin
+                    if (sh[7:1] == 7'h51) begin ack = 1; SDA_LOW = 1; rd = sh[0]; first = 1;
+                        st = sh[0] ? 3 : 2; end
+                    else st = 0;
+                end else begin
+                    if (first) begin ptr = sh; first = 0; end
+                    else begin r[ptr[3:0]] = sh; ptr = ptr + 1; end
+                    ack = 1; SDA_LOW = 1;
+                end
+                bitn = 0;
+            end else if (st == 3) begin
+                if (bitn < 7) begin bitn = bitn + 1; SDA_LOW = !tx[7 - bitn]; end
+                else if (bitn == 7) begin bitn = 8; SDA_LOW = 0; end                          // master ACK/NACK
+                else begin                                                                    // after master ACK
+                    if (mack) begin tx = r[ptr[3:0]]; ptr = ptr + 1; bitn = 0; SDA_LOW = !tx[7]; end
+                    else begin st = 0; SDA_LOW = 0; end
+                end
+            end
+        end
+        ps = scl; pd = sda;
+    end
+endmodule
