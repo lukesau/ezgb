@@ -134,9 +134,15 @@ module tb;
     wire [7:0] mem_d = {P64, P41, P57, P49, P48, P72, P77, P78};
     wire [7:0] u9_q, u4_q;
     wire u9_oe, u4_oe;
-    psram #(.WORDS(4194304), .NAME("U9")) u9(.A(mem_a), .D(mem_d), .Q(u9_q), .OE(u9_oe),
+`ifdef PRELOAD
+    // gb_mbc.vh: start from tagged images instead of an SD load
+    localparam U9_IMG = "u9.img", U4_IMG = "u4.img";
+`else
+    localparam U9_IMG = "", U4_IMG = "";
+`endif
+    psram #(.WORDS(4194304), .IMAGE(U9_IMG), .NAME("U9")) u9(.A(mem_a), .D(mem_d), .Q(u9_q), .OE(u9_oe),
         .CE_N(P52), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
-    psram #(.WORDS(262144), .NAME("U4")) u4(.A(mem_a), .D(mem_d), .Q(u4_q), .OE(u4_oe),
+    psram #(.WORDS(262144), .IMAGE(U4_IMG), .NAME("U4")) u4(.A(mem_a), .D(mem_d), .Q(u4_q), .OE(u4_oe),
         .CE_N(P60), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
     // the memories drive only while the FPGA's data pins are tri-stated
     wire [7:0] mem_q = u9_oe ? u9_q : u4_q;

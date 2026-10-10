@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""MBC tests for gb_mbc.vh.
+  mbctest.py gen TYPE DIR   write u9.img/u4.img (tagged), ops.hex, meta.json
+  mbctest.py check DIR      compare DIR/game.log with the MBC model
+TYPE: none mbc1 mbc1m mbc2 mbc3 mbc5. Every 16 KB ROM bank starts with its
+number (lo, hi) and every 8 KB page of U4 with its page number and $5A, so a
+read names the physical bank it hit. ROM checks are exact; save-RAM reads
+are reported as (logical bank -> U4 page) for the mapping to be read off."""
+import json, os, sys
+
+CODE = dict(none=0, mbc1=1, mbc2=2, mbc3=3, mbc5=4, mbc1m=5)
+ROMMASK = dict(none=0x001, mbc1=0x07F, mbc2=0x00F, mbc3=0x07F, mbc5=0x1FF, mbc1m=0x03F)
+RAMMASK = dict(none=0, mbc1=3, mbc2=0, mbc3=3, mbc5=0xF, mbc1m=3)
+
+def rom_tag(b, o):
+    return b & 0xFF if o == 0 else b >> 8 if o == 1 else (o ^ (o >> 8) ^ b) & 0xFF
+
+def ram_tag(p, o):
+    return p & 0xFF if o == 0 else 0x5A if o == 1 else (o ^ (o >> 8) ^ p ^ 0x3C) & 0xFF
+
+class Model:
+    """Pan Docs MBC behavior; physical bank = logical & ROM mask"""
+    def __init__(s, t):
+        s.t, s.lo, s.hi, s.mode, s.ram_en, s.ramb = t, 1, 0, 0, False, 0
+    def write(s, a, v):
+        t = s.t
+        if t == 'none': return
+        if t == 'mbc2':
+            if a < 0x4000:
+                if a & 0x100: s.lo = (v & 0xF) or 1
+                else: s.ram_en = (v & 0xF) == 0xA
+            return
+        if a < 0x2000: s.ram_en = (v & 0xF) == 0xA
+        elif a < 0x4000:
+            if t == 'mbc5':
+                if a < 0x3000: s.lo = v
+                else: s.hi = v & 1
+            elif t == 'mbc3': s.lo = (v & 0x7F) or 1
+            elif t == 'mbc1': s.lo = (v & 0x1F) or 1
+            elif t == 'mbc1m': s.lo = (v & 0x1F) or 1
+        elif a < 0x6000:
+            if t == 'mbc5': s.ramb = v & 0xF
+            elif t == 'mbc3': s.ramb = v
+            else: s.ramb = v & 3
+        elif a < 0x8000:
+            if t in ('mbc1', 'mbc1m'): s.mode = v & 1
+    def rom_bank(s, a):
+        t = s.t
+        if t == 'none': b = 0 if a < 0x4000 else 1
+        elif t == 'mbc5': b = 0 if a < 0x4000 else (s.hi << 8) | s.lo
+        elif t in ('mbc2', 'mbc3'): b = 0 if a < 0x4000 else s.lo
+        else:
+            sh = 5 if t == 'mbc1' else 4
+            lo = s.lo & (0x1F if t == 'mbc1' else 0xF)
+            b = ((s.ramb & 3) << sh if s.mode else 0) if a < 0x4000 else ((s.ramb & 3) << sh) | lo
+        return b & ROMMASK[t]
+    def ram_bank(s):
+        if s.t in ('mbc1', 'mbc1m'): return s.ramb & 3 if s.mode else 0
+        if s.t == 'mbc2': return 0
+        return s.ramb
+
+def fpga(r, v):
+    return [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (r, v), (0x7FF0, 0xE4)]
+
+def gen(t, d):
+    os.makedirs(d, exist_ok=True)
+    u9 = bytearray(8 << 20)
+    for b in range(512):
+        u9[b << 14:(b + 1) << 14] = bytes(rom_tag(b, o) for o in range(0x4000))
+    u4 = bytearray(512 << 10)
+    for p in range(64):
+        u4[p << 13:(p + 1) << 13] = bytes(ram_tag(p, o) for o in range(0x2000))
+    open(os.path.join(d, 'u9.img'), 'wb').write(u9)
+    open(os.path.join(d, 'u4.img'), 'wb').write(u4)
+    rm = ROMMASK[t]
+    ops = []
+    W = lambda a, v: ops.append((0, a, v))
+    R = lambda a: ops.append((1, a, 0))
+    for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, CODE[t]) + fpga(0x7FC4, RAMMASK[t]) +
+                 fpga(0x7FC1, rm & 0xFF) + fpga(0x7FC2, rm >> 8) + fpga(0x7FC3, 0x5C)):
+        W(a, v)
+    for a, v in [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
+                 (0x2000, 1), (0x3000, 0), (0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7FE0, 0x80), (0x7FF0, 0xE4)]:
+        W(a, v)
+    ops.append((2, 0, 0))
+    def rom_reads():
+        for a in (0x0000, 0x0001, 0x1235, 0x4000, 0x4001, 0x5A5B, 0x7FFF): R(a)
+    rom_reads()
+    # ROM bank sweeps
+    if t == 'mbc5':
+        for v in (0, 1, 2, 0x55, 0xAA, 0xFF):
+            W(0x2000, v); rom_reads()
+        W(0x3000, 1)
+        for v in (0, 0x23, 0xFF):
+            W(0x2000, v); rom_reads()
+        W(0x3000, 0)
+    elif t == 'mbc2':
+        for v in (0, 1, 5, 0xF, 0x13):
+            W(0x2100, v); rom_reads()
+        W(0x2000, 7); rom_reads()          # A8=0: RAM enable, bank unchanged
+    elif t in ('mbc1', 'mbc1m', 'mbc3', 'none'):
+        for v in (0, 1, 2, 0x1F, 0x20, 0x21, 0x55, 0x7F):
+            W(0x2000, v); rom_reads()
+        if t in ('mbc1', 'mbc1m'):
+            W(0x2000, 0x03)
+            for hi in (1, 2, 3):
+                W(0x4000, hi); rom_reads()
+            W(0x6000, 1); rom_reads()
+            W(0x4000, 2); rom_reads()
+            W(0x6000, 0); W(0x4000, 0); rom_reads()
+    # save RAM: reads before enabling, then per bank read, write, read back
+    for a in (0xA000, 0xA001): R(a)
+    W(0x0000, 0x0A)
+    banks = {'mbc5': range(16), 'mbc3': range(4), 'mbc1': range(4), 'mbc1m': range(4)}.get(t, [0])
+    if t in ('mbc1', 'mbc1m'): W(0x6000, 1)
+    for b in banks:
+        if t not in ('mbc2', 'none'): W(0x4000, b)
+        for a in (0xA000, 0xA001, 0xA123, 0xBFFF): R(a)
+        W(0xA010, 0xC0 | b); R(0xA010)
+    if t in ('mbc1', 'mbc1m'): W(0x6000, 0)
+    W(0x0000, 0x00)
+    for a in (0xA000, 0xA010): R(a)
+    with open(os.path.join(d, 'ops.hex'), 'w') as f:
+        for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
+    json.dump(dict(type=t), open(os.path.join(d, 'meta.json'), 'w'))
+    print(t, len(ops), 'ops')
+
+def check(d):
+    t = json.load(open(os.path.join(d, 'meta.json')))['type']
+    m = Model(t)
+    started, bad, n, ram = False, 0, 0, []
+    for line in open(os.path.join(d, 'game.log')):
+        p = line.split()
+        if not p: continue
+        if p[0] == 'X': started = True; continue
+        if p[0] not in ('W', 'R') or len(p) < 3: continue
+        a, v = int(p[1], 16), int(p[2], 16)
+        if not started: continue
+        if p[0] == 'W': m.write(a, v); continue
+        if a < 0x8000:
+            b = m.rom_bank(a); want = rom_tag(b, a & 0x3FFF); n += 1
+            if v != want:
+                bad += 1
+                got = [x for x in range(512) if rom_tag(x, a & 0x3FFF) == v]
+                print(f'ROM ${a:04x} = {v:02x}, want {want:02x} (bank {b:#x}); matches banks {[hex(x) for x in got[:6]]}')
+        else:
+            ram.append((m.ram_en, m.ram_bank(), a, v))
+    print(f'{t}: {n} ROM reads, {bad} wrong')
+    for en, b, a, v in ram:
+        note = ''
+        if a & 0x1FFF == 0: note = f'U4 page {v}?' if True else ''
+        print(f'  RAM en={int(en)} bank={b:2} ${a:04x} = {v:02x} {note}')
+    out = os.path.join(d, 'u4.out')
+    if os.path.exists(out):
+        u4o, u4i = open(out, 'rb').read(), open(os.path.join(d, 'u4.img'), 'rb').read()
+        diff = [(i, u4i[i], u4o[i]) for i in range(len(u4i)) if u4i[i] != u4o[i]]
+        print(f'  U4 changed at {len(diff)} bytes:', ', '.join(f'{i:#07x} (page {i >> 13}+{i & 0x1FFF:#x}) {o:02x}->{n_:02x}' for i, o, n_ in diff[:24]))
+
+if __name__ == '__main__':
+    if sys.argv[1] == 'gen': gen(sys.argv[2], sys.argv[3])
+    else: check(sys.argv[2])
