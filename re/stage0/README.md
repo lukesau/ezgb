@@ -26,12 +26,19 @@ differ (FW4 against FW5 0731 and 0918 in [docs/fw5.md](docs/fw5.md)).
 Material that belongs to one release goes in a per-release directory, the
 most recent release of each line:
 
-| Release | PicoBlaze annotations | Simulation |
+| Release | PicoBlaze | Simulation |
 |---|---|---|
-| FW4 (slot B) | [picoblaze/fw4/](picoblaze/fw4/) | [sim/](sim/README.md) runs the FW4 design |
-| FW5 0918 | `picoblaze/fw5-0918/`, to do | to do |
+| FW4 slot B | [picoblaze/fw4/](picoblaze/fw4/): both programs annotated (`.notes`) and listed (`.psm`) | [sim/](sim/README.md) runs the FW4 design |
+| FW5 0918 | [picoblaze/fw5-0918/](picoblaze/fw5-0918/): bank 1 listing and port map, not annotated yet | to do |
+| FW5 0731 | [picoblaze/fw5-0731/](picoblaze/fw5-0731/): bank 1 listing and port map | |
+| FW5 slot A | [picoblaze/fw5-slota/](picoblaze/fw5-slota/): bank 1 listing and port map | |
+| FW5 SGB beta | [picoblaze/fw5-sgb-beta/](picoblaze/fw5-sgb-beta/): bank 1 listing and port map | |
 
-The bitstreams themselves are EZ Flash's and stay local, in `fpga/`.
+The listings come from `scripts/fpga/picoblaze-dis.py` over each bitstream's
+program BRAMs (the FW4 ones with `-a` and the `.notes`, and `--check`
+reassembles them to the BRAM contents). The bitstreams themselves are EZ
+Flash's and stay local, in `fpga/`. The updater that writes slot B is
+disassembled in [../updater](../updater/README.md).
 
 ## Docs
 

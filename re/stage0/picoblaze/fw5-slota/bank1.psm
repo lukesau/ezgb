@@ -1,0 +1,1468 @@
+; slot A
+; KCPSM3 (PicoBlaze for Spartan-3), 1K x 18
+; 784 reachable instructions, 75 subroutines
+;
+
+reset:
+    DISABLE INTERRUPT               ; 000 3C000
+    LOAD s2, 00                     ; 001 00200
+    STORE s2, 3F                    ; 002 2E23F
+    CALL sub_3F0                    ; 003 303F0
+    FETCH sF, 3E                    ; 004 06F3E
+    CALL sub_169                    ; 005 30169
+    FETCH sF, 3F                    ; 006 06F3F
+    CALL sub_169                    ; 007 30169
+    CALL sub_056                    ; 008 30056
+    CALL sub_0BB                    ; 009 300BB
+    CALL sub_181                    ; 00A 30181
+    CALL sub_05F                    ; 00B 3005F
+    LOAD sF, B0                     ; 00C 00FB0
+    CALL sub_169                    ; 00D 30169
+    CALL sub_17C                    ; 00E 3017C
+    CALL sub_062                    ; 00F 30062
+    CALL sub_153                    ; 010 30153
+    FETCH s0, 05                    ; 011 06005
+    FETCH s0, 05                    ; 012 06005
+    COMPARE s0, AA                  ; 013 140AA
+    JUMP NZ, L_018                  ; 014 35418
+    LOAD s0, 02                     ; 015 00002
+    STORE s0, 01                    ; 016 2E001
+    JUMP L_018                      ; 017 34018
+L_018:
+    CALL sub_067                    ; 018 30067
+    CALL sub_0A0                    ; 019 300A0
+    CALL sub_15F                    ; 01A 3015F
+    CALL sub_17C                    ; 01B 3017C
+    CALL sub_0A3                    ; 01C 300A3
+    CALL sub_181                    ; 01D 30181
+    CALL sub_153                    ; 01E 30153
+    FETCH s0, 02                    ; 01F 06002
+    STORE s0, 17                    ; 020 2E017
+    FETCH s0, 03                    ; 021 06003
+    STORE s0, 18                    ; 022 2E018
+    LOAD s0, 00                     ; 023 00000
+    CALL sub_0D7                    ; 024 300D7
+    CALL sub_0DD                    ; 025 300DD
+    CALL sub_0A6                    ; 026 300A6
+    LOAD s1, 02                     ; 027 00102
+    LOAD s0, 00                     ; 028 00000
+    CALL sub_0B0                    ; 029 300B0
+    CALL sub_08C                    ; 02A 3008C
+    CALL sub_0AB                    ; 02B 300AB
+    CALL sub_0EA                    ; 02C 300EA
+    CALL sub_091                    ; 02D 30091
+    CALL sub_376                    ; 02E 30376
+    LOAD sF, EE                     ; 02F 00FEE
+    CALL sub_169                    ; 030 30169
+    ENABLE INTERRUPT                ; 031 3C001
+L_032:
+    INPUT s1, B9                    ; 032 041B9
+    COMPARE s1, 01                  ; 033 14101
+    JUMP NZ, L_039                  ; 034 35439
+    LOAD sB, 02                     ; 035 00B02
+    DISABLE INTERRUPT               ; 036 3C000
+    CALL sub_364                    ; 037 30364
+    ENABLE INTERRUPT                ; 038 3C001
+L_039:
+    CALL sub_186                    ; 039 30186
+    LOAD sF, EE                     ; 03A 00FEE
+    CALL sub_169                    ; 03B 30169
+    INPUT s5, AC                    ; 03C 045AC
+    LOAD sF, s5                     ; 03D 01F50
+    CALL sub_169                    ; 03E 30169
+    INPUT s5, AB                    ; 03F 045AB
+    LOAD sF, s5                     ; 040 01F50
+    CALL sub_169                    ; 041 30169
+    INPUT s5, AF                    ; 042 045AF
+    LOAD sF, s5                     ; 043 01F50
+    CALL sub_169                    ; 044 30169
+    INPUT s5, AE                    ; 045 045AE
+    LOAD sF, s5                     ; 046 01F50
+    CALL sub_169                    ; 047 30169
+    INPUT s5, A9                    ; 048 045A9
+    LOAD sF, s5                     ; 049 01F50
+    CALL sub_169                    ; 04A 30169
+    INPUT s5, A8                    ; 04B 045A8
+    LOAD sF, s5                     ; 04C 01F50
+    CALL sub_169                    ; 04D 30169
+    JUMP L_032                      ; 04E 34032
+; $04F-$055: unreached words, kept as data
+ADDRESS 04F
+    ; 04F: 3017C  CALL sub_17C
+    DATA_WORD 3017C
+    ; 050: 00100  LOAD s1, 00
+    DATA_WORD 00100
+    ; 051: 2C1F2  OUTPUT s1, F2
+    DATA_WORD 2C1F2
+    ; 052: 00201  LOAD s2, 01
+    DATA_WORD 00201
+    ; 053: 2C2F2  OUTPUT s2, F2
+    DATA_WORD 2C2F2
+    ; 054: 2C1F2  OUTPUT s1, F2
+    DATA_WORD 2C1F2
+    ; 055: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- sub_056 ---- called from 008
+sub_056:
+    LOAD s6, 00                     ; 056 00600
+    LOAD s4, 00                     ; 057 00400
+L_058:
+    COMPARE s4, 3E                  ; 058 1443E
+    JUMP C, L_05B                   ; 059 3585B
+    JUMP L_05E                      ; 05A 3405E
+L_05B:
+    STORE s6, (s4)                  ; 05B 2F640
+    ADD s4, 01                      ; 05C 18401
+    JUMP L_058                      ; 05D 34058
+L_05E:
+    RETURN                          ; 05E 2A000
+
+; ---- sub_05F ---- called from 00B
+sub_05F:
+    LOAD sC, 00                     ; 05F 00C00
+    LOAD sB, 00                     ; 060 00B00
+    JUMP sub_0B5                    ; 061 340B5
+
+; ---- sub_062 ---- called from 00F
+sub_062:
+    LOAD sC, 08                     ; 062 00C08
+    LOAD sB, 15                     ; 063 00B15
+    LOAD s8, 01                     ; 064 00801
+    LOAD s7, AA                     ; 065 007AA
+    JUMP L_0B7                      ; 066 340B7
+
+; ---- sub_067 ---- called from 018
+sub_067:
+    LOAD s3, FF                     ; 067 003FF
+    STORE s3, 00                    ; 068 2E300
+    LOAD s0, 00                     ; 069 00000
+    STORE s0, 17                    ; 06A 2E017
+    STORE s0, 18                    ; 06B 2E018
+L_06C:
+    CALL sub_08C                    ; 06C 3008C
+    CALL sub_17C                    ; 06D 3017C
+    CALL sub_093                    ; 06E 30093
+    CALL sub_17C                    ; 06F 3017C
+    CALL sub_153                    ; 070 30153
+    FETCH s0, 02                    ; 071 06002
+    TEST s0, 80                     ; 072 12080
+    JUMP NZ, L_07B                  ; 073 3547B
+    FETCH s3, 00                    ; 074 06300
+    SUB s3, 01                      ; 075 1C301
+    STORE s3, 00                    ; 076 2E300
+    COMPARE s3, 00                  ; 077 14300
+    JUMP Z, L_087                   ; 078 35087
+    CALL sub_186                    ; 079 30186
+    JUMP L_06C                      ; 07A 3406C
+L_07B:
+    FETCH s0, 01                    ; 07B 06001
+    COMPARE s0, 02                  ; 07C 14002
+    JUMP Z, L_080                   ; 07D 35080
+    LOAD s0, 01                     ; 07E 00001
+    STORE s0, 01                    ; 07F 2E001
+L_080:
+    FETCH s0, 02                    ; 080 06002
+    TEST s0, 40                     ; 081 12040
+    JUMP Z, L_087                   ; 082 35087
+    LOAD s3, 01                     ; 083 00301
+    LOAD sF, 82                     ; 084 00F82
+    CALL sub_169                    ; 085 30169
+    JUMP L_08A                      ; 086 3408A
+L_087:
+    LOAD sF, 88                     ; 087 00F88
+    CALL sub_169                    ; 088 30169
+    LOAD s3, 00                     ; 089 00300
+L_08A:
+    STORE s3, 06                    ; 08A 2E306
+    RETURN                          ; 08B 2A000
+
+; ---- sub_08C ---- called from 02A, 06C
+sub_08C:
+    LOAD sC, 37                     ; 08C 00C37
+L_08D:
+    LOAD sB, 15                     ; 08D 00B15
+    FETCH sA, 17                    ; 08E 06A17
+    FETCH s9, 18                    ; 08F 06918
+    JUMP L_09C                      ; 090 3409C
+
+; ---- sub_091 ---- called from 02D, 39C
+sub_091:
+    LOAD sC, 0D                     ; 091 00C0D
+    JUMP L_08D                      ; 092 3408D
+
+; ---- sub_093 ---- called from 06E
+sub_093:
+    LOAD sC, 29                     ; 093 00C29
+    LOAD sB, 01                     ; 094 00B01
+    LOAD sA, 00                     ; 095 00A00
+    FETCH s0, 01                    ; 096 06001
+    COMPARE s0, 02                  ; 097 14002
+    JUMP NZ, L_09A                  ; 098 3549A
+    OR sA, 40                       ; 099 0CA40
+L_09A:
+    LOAD sA, 40                     ; 09A 00A40
+    LOAD s9, 30                     ; 09B 00930
+L_09C:
+    LOAD s8, 00                     ; 09C 00800
+    LOAD s7, 00                     ; 09D 00700
+    CALL sub_0FB                    ; 09E 300FB
+    RETURN                          ; 09F 2A000
+
+; ---- sub_0A0 ---- called from 019
+sub_0A0:
+    LOAD sC, 02                     ; 0A0 00C02
+    LOAD sB, 07                     ; 0A1 00B07
+    JUMP sub_0B5                    ; 0A2 340B5
+
+; ---- sub_0A3 ---- called from 01C
+sub_0A3:
+    LOAD sC, 03                     ; 0A3 00C03
+    LOAD sB, 15                     ; 0A4 00B15
+    JUMP sub_0B5                    ; 0A5 340B5
+
+; ---- sub_0A6 ---- called from 026
+sub_0A6:
+    LOAD sC, 07                     ; 0A6 00C07
+    LOAD sB, 15                     ; 0A7 00B15
+    FETCH sA, 17                    ; 0A8 06A17
+    FETCH s9, 18                    ; 0A9 06918
+    JUMP L_09C                      ; 0AA 3409C
+
+; ---- sub_0AB ---- called from 02B
+sub_0AB:
+    LOAD sC, 06                     ; 0AB 00C06
+    LOAD sB, 15                     ; 0AC 00B15
+    LOAD s8, 00                     ; 0AD 00800
+    LOAD s7, 02                     ; 0AE 00702
+    JUMP L_0B7                      ; 0AF 340B7
+
+; ---- sub_0B0 ---- called from 029
+sub_0B0:
+    LOAD sC, 10                     ; 0B0 00C10
+    LOAD sB, 15                     ; 0B1 00B15
+    LOAD s8, s1                     ; 0B2 01810
+    LOAD s7, s0                     ; 0B3 01700
+    JUMP L_0B7                      ; 0B4 340B7
+
+; ---- sub_0B5 ---- called from 1AF
+sub_0B5:
+    LOAD s8, 00                     ; 0B5 00800
+    LOAD s7, 00                     ; 0B6 00700
+L_0B7:
+    LOAD sA, 00                     ; 0B7 00A00
+    LOAD s9, 00                     ; 0B8 00900
+    CALL sub_0FB                    ; 0B9 300FB
+    RETURN                          ; 0BA 2A000
+
+; ---- sub_0BB ---- called from 009
+sub_0BB:
+    CALL sub_0CC                    ; 0BB 300CC
+    CALL sub_0D5                    ; 0BC 300D5
+    CALL sub_0DF                    ; 0BD 300DF
+    CALL sub_0E6                    ; 0BE 300E6
+    CALL sub_0E1                    ; 0BF 300E1
+    CALL sub_0E8                    ; 0C0 300E8
+    LOAD s0, 00                     ; 0C1 00000
+    CALL sub_0D7                    ; 0C2 300D7
+    CALL sub_0F0                    ; 0C3 300F0
+    CALL sub_0C9                    ; 0C4 300C9
+    LOAD s0, 48                     ; 0C5 00048
+    CALL sub_0D7                    ; 0C6 300D7
+    CALL sub_0DD                    ; 0C7 300DD
+    RETURN                          ; 0C8 2A000
+
+; ---- sub_0C9 ---- called from 0C4
+sub_0C9:
+    LOAD sE, 28                     ; 0C9 00E28
+    CALL sub_0F6                    ; 0CA 300F6
+    JUMP L_0EC                      ; 0CB 340EC
+
+; ---- sub_0CC ---- called from 0BB
+sub_0CC:
+    LOAD sE, 20                     ; 0CC 00E20
+    LOAD sD, 00                     ; 0CD 00D00
+    OUTPUT sD, 73                   ; 0CE 2CD73
+    OUTPUT sD, 72                   ; 0CF 2CD72
+    LOAD s1, 00                     ; 0D0 00100
+    OUTPUT s1, 71                   ; 0D1 2C171
+    OUTPUT s1, 70                   ; 0D2 2C170
+    CALL sub_16E                    ; 0D3 3016E
+    RETURN                          ; 0D4 2A000
+
+; ---- sub_0D5 ---- called from 0BC
+sub_0D5:
+    LOAD sE, 18                     ; 0D5 00E18
+    JUMP L_0F2                      ; 0D6 340F2
+
+; ---- sub_0D7 ---- called from 024, 0C2, 0C6
+sub_0D7:
+    LOAD sE, 24                     ; 0D7 00E24
+    CALL sub_0F6                    ; 0D8 300F6
+    LOAD sD, s0                     ; 0D9 01D00
+    OUTPUT sD, 70                   ; 0DA 2CD70
+    CALL sub_16E                    ; 0DB 3016E
+    RETURN                          ; 0DC 2A000
+
+; ---- sub_0DD ---- called from 025, 0C7
+sub_0DD:
+    LOAD sE, 28                     ; 0DD 00E28
+    JUMP L_0F2                      ; 0DE 340F2
+
+; ---- sub_0DF ---- called from 0BD
+sub_0DF:
+    LOAD sE, 38                     ; 0DF 00E38
+    JUMP L_0F2                      ; 0E0 340F2
+
+; ---- sub_0E1 ---- called from 0BF
+sub_0E1:
+    LOAD sE, 34                     ; 0E1 00E34
+    JUMP L_0F2                      ; 0E2 340F2
+
+; ---- sub_0E3 ---- called from 1A9
+sub_0E3:
+    LOAD sE, 40                     ; 0E3 00E40
+    CALL sub_0F6                    ; 0E4 300F6
+    JUMP L_0EC                      ; 0E5 340EC
+
+; ---- sub_0E6 ---- called from 0BE
+sub_0E6:
+    LOAD sE, 40                     ; 0E6 00E40
+    JUMP L_0F2                      ; 0E7 340F2
+
+; ---- sub_0E8 ---- called from 0C0
+sub_0E8:
+    LOAD sE, 3C                     ; 0E8 00E3C
+    JUMP L_0F2                      ; 0E9 340F2
+
+; ---- sub_0EA ---- called from 02C
+sub_0EA:
+    LOAD sE, 1C                     ; 0EA 00E1C
+    CALL sub_0F6                    ; 0EB 300F6
+L_0EC:
+    LOAD s1, 01                     ; 0EC 00101
+    OUTPUT s1, 70                   ; 0ED 2C170
+    CALL sub_16E                    ; 0EE 3016E
+    RETURN                          ; 0EF 2A000
+
+; ---- sub_0F0 ---- called from 0C3
+sub_0F0:
+    LOAD sE, 1C                     ; 0F0 00E1C
+    JUMP L_0F2                      ; 0F1 340F2
+L_0F2:
+    CALL sub_0F6                    ; 0F2 300F6
+    OUTPUT sD, 70                   ; 0F3 2CD70
+    CALL sub_16E                    ; 0F4 3016E
+    RETURN                          ; 0F5 2A000
+
+; ---- sub_0F6 ---- called from 0CA, 0D8, 0E4, 0EB, 0F2, 128
+sub_0F6:
+    LOAD sD, 00                     ; 0F6 00D00
+    OUTPUT sD, 73                   ; 0F7 2CD73
+    OUTPUT sD, 72                   ; 0F8 2CD72
+    OUTPUT sD, 71                   ; 0F9 2CD71
+    RETURN                          ; 0FA 2A000
+
+; ---- sub_0FB ---- called from 09E, 0B9, 1AB
+sub_0FB:
+    LOAD s0, 00                     ; 0FB 00000
+    TEST sB, 01                     ; 0FC 12B01
+    JUMP Z, L_103                   ; 0FD 35103
+    TEST sB, 02                     ; 0FE 12B02
+    JUMP Z, L_102                   ; 0FF 35102
+    OR s0, 02                       ; 100 0C002
+    JUMP L_103                      ; 101 34103
+L_102:
+    OR s0, 01                       ; 102 0C001
+L_103:
+    TEST sB, 08                     ; 103 12B08
+    JUMP Z, L_106                   ; 104 35106
+    OR s0, 04                       ; 105 0C004
+L_106:
+    TEST sB, 04                     ; 106 12B04
+    JUMP Z, L_109                   ; 107 35109
+    OR s0, 08                       ; 108 0C008
+L_109:
+    TEST sB, 10                     ; 109 12B10
+    JUMP Z, L_10C                   ; 10A 3510C
+    OR s0, 10                       ; 10B 0C010
+L_10C:
+    FETCH s1, 19                    ; 10C 06119
+    COMPARE s1, 01                  ; 10D 14101
+    JUMP NZ, L_111                  ; 10E 35511
+    OR s0, 20                       ; 10F 0C020
+    JUMP L_114                      ; 110 34114
+L_111:
+    COMPARE s1, 02                  ; 111 14102
+    JUMP NZ, L_12C                  ; 112 3552C
+    OR s0, 40                       ; 113 0C040
+L_114:
+    LOAD sE, 60                     ; 114 00E60
+    FETCH s1, 1A                    ; 115 0611A
+    OUTPUT s1, 73                   ; 116 2C173
+    FETCH s1, 1B                    ; 117 0611B
+    OUTPUT s1, 72                   ; 118 2C172
+    FETCH s1, 1C                    ; 119 0611C
+    OUTPUT s1, 71                   ; 11A 2C171
+    FETCH s1, 1D                    ; 11B 0611D
+    OUTPUT s1, 70                   ; 11C 2C170
+    CALL sub_16E                    ; 11D 3016E
+    LOAD sE, 44                     ; 11E 00E44
+    LOAD s1, 00                     ; 11F 00100
+    OUTPUT s1, 73                   ; 120 2C173
+    OUTPUT s1, 72                   ; 121 2C172
+    FETCH s1, 1E                    ; 122 0611E
+    OUTPUT s1, 71                   ; 123 2C171
+    FETCH s1, 1F                    ; 124 0611F
+    OUTPUT s1, 70                   ; 125 2C170
+    CALL sub_16E                    ; 126 3016E
+    LOAD sE, 48                     ; 127 00E48
+    CALL sub_0F6                    ; 128 300F6
+    FETCH s1, 20                    ; 129 06120
+    OUTPUT s1, 70                   ; 12A 2C170
+    CALL sub_16E                    ; 12B 3016E
+L_12C:
+    LOAD sE, 04                     ; 12C 00E04
+    OUTPUT sC, 71                   ; 12D 2CC71
+    OUTPUT s0, 70                   ; 12E 2C070
+    CALL sub_16E                    ; 12F 3016E
+    LOAD sE, 00                     ; 130 00E00
+    OUTPUT sA, 73                   ; 131 2CA73
+    OUTPUT s9, 72                   ; 132 2C972
+    OUTPUT s8, 71                   ; 133 2C871
+    OUTPUT s7, 70                   ; 134 2C770
+    CALL sub_16E                    ; 135 3016E
+L_136:
+    LOAD sE, 34                     ; 136 00E34
+    CALL sub_170                    ; 137 30170
+    INPUT s0, 70                    ; 138 04070
+    COMPARE s0, 06                  ; 139 14006
+    JUMP Z, L_13D                   ; 13A 3513D
+    TEST s0, 01                     ; 13B 12001
+    JUMP Z, L_136                   ; 13C 35136
+L_13D:
+    LOAD sE, 34                     ; 13D 00E34
+    LOAD sD, 00                     ; 13E 00D00
+    OUTPUT sD, 70                   ; 13F 2CD70
+    CALL sub_16E                    ; 140 3016E
+    FETCH s1, 19                    ; 141 06119
+    COMPARE s1, 00                  ; 142 14100
+    JUMP Z, L_152                   ; 143 35152
+    LOAD sF, 55                     ; 144 00F55
+    CALL sub_169                    ; 145 30169
+L_146:
+    LOAD sE, 3C                     ; 146 00E3C
+    CALL sub_170                    ; 147 30170
+    INPUT s3, 70                    ; 148 04370
+    TEST s3, 01                     ; 149 12301
+    JUMP Z, L_146                   ; 14A 35146
+    STORE s3, 3D                    ; 14B 2E33D
+    LOAD sE, 3C                     ; 14C 00E3C
+    LOAD sD, 00                     ; 14D 00D00
+    OUTPUT sD, 70                   ; 14E 2CD70
+    CALL sub_16E                    ; 14F 3016E
+    LOAD s1, 00                     ; 150 00100
+    STORE s1, 19                    ; 151 2E119
+L_152:
+    RETURN                          ; 152 2A000
+
+; ---- sub_153 ---- called from 010, 01E, 070, 15F, 39D
+sub_153:
+    LOAD sE, 08                     ; 153 00E08
+    JUMP L_155                      ; 154 34155
+L_155:
+    CALL sub_170                    ; 155 30170
+    INPUT s6, 73                    ; 156 04673
+    STORE s6, 02                    ; 157 2E602
+    INPUT s5, 72                    ; 158 04572
+    STORE s5, 03                    ; 159 2E503
+    INPUT s4, 71                    ; 15A 04471
+    STORE s4, 04                    ; 15B 2E404
+    INPUT s3, 70                    ; 15C 04370
+    STORE s3, 05                    ; 15D 2E305
+    RETURN                          ; 15E 2A000
+
+; ---- sub_15F ---- called from 01A
+sub_15F:
+    CALL sub_153                    ; 15F 30153
+    FETCH s0, 05                    ; 160 06005
+    STORE s0, 16                    ; 161 2E016
+    FETCH s0, 04                    ; 162 06004
+    STORE s0, 15                    ; 163 2E015
+    FETCH s0, 03                    ; 164 06003
+    STORE s0, 14                    ; 165 2E014
+    FETCH s0, 02                    ; 166 06002
+    STORE s0, 13                    ; 167 2E013
+    RETURN                          ; 168 2A000
+
+; ---- sub_169 ---- called from 005, 007, 00D, 030, 03B, 03E, 041, 044, 047, 04A, 04D, 085, 088, 145, 1B2, 1B4
+sub_169:
+    INPUT s0, A0                    ; 169 040A0
+    TEST s0, 04                     ; 16A 12004
+    JUMP NZ, sub_169                ; 16B 35569
+    OUTPUT sF, A1                   ; 16C 2CFA1
+    RETURN                          ; 16D 2A000
+
+; ---- sub_16E ---- called from 0D3, 0DB, 0EE, 0F4, 11D, 126, 12B, 12F, 135, 140, 14F
+sub_16E:
+    OUTPUT sD, (sE)                 ; 16E 2DDE0
+    JUMP sub_170                    ; 16F 34170
+
+; ---- sub_170 ---- called from 137, 147, 155
+sub_170:
+    INPUT sD, (sE)                  ; 170 05DE0
+    TEST sD, 03                     ; 171 12D03
+    JUMP Z, sub_170                 ; 172 35170
+    RETURN                          ; 173 2A000
+; $174-$177: unreached words, kept as data
+ADDRESS 174
+    ; 174: 00003  LOAD s0, 03
+    DATA_WORD 00003
+    ; 175: 1C001  SUB s0, 01
+    DATA_WORD 1C001
+    ; 176: 35575  JUMP NZ, 175
+    DATA_WORD 35575
+    ; 177: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- sub_178 ---- called from 17D
+sub_178:
+    LOAD s0, 0B                     ; 178 0000B
+L_179:
+    SUB s0, 01                      ; 179 1C001
+    JUMP NZ, L_179                  ; 17A 35579
+    RETURN                          ; 17B 2A000
+
+; ---- sub_17C ---- called from 00E, 01B, 06D, 06F, 182
+sub_17C:
+    LOAD s1, 28                     ; 17C 00128
+L_17D:
+    CALL sub_178                    ; 17D 30178
+    SUB s1, 01                      ; 17E 1C101
+    JUMP NZ, L_17D                  ; 17F 3557D
+    RETURN                          ; 180 2A000
+
+; ---- sub_181 ---- called from 00A, 01D, 187
+sub_181:
+    LOAD s2, 19                     ; 181 00219
+L_182:
+    CALL sub_17C                    ; 182 3017C
+    SUB s2, 01                      ; 183 1C201
+    JUMP NZ, L_182                  ; 184 35582
+    RETURN                          ; 185 2A000
+
+; ---- sub_186 ---- called from 039, 079, 1E3
+sub_186:
+    LOAD s3, 14                     ; 186 00314
+L_187:
+    CALL sub_181                    ; 187 30181
+    SUB s3, 01                      ; 188 1C301
+    JUMP NZ, L_187                  ; 189 35587
+    RETURN                          ; 18A 2A000
+; $18B-$194: unreached words, kept as data
+ADDRESS 18B
+    ; 18B: 0030A  LOAD s3, 0A
+    DATA_WORD 0030A
+    ; 18C: 30181  CALL sub_181
+    DATA_WORD 30181
+    ; 18D: 1C301  SUB s3, 01
+    DATA_WORD 1C301
+    ; 18E: 3558C  JUMP NZ, 18C
+    DATA_WORD 3558C
+    ; 18F: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 190: 00419  LOAD s4, 19
+    DATA_WORD 00419
+    ; 191: 30186  CALL sub_186
+    DATA_WORD 30186
+    ; 192: 1C401  SUB s4, 01
+    DATA_WORD 1C401
+    ; 193: 35591  JUMP NZ, 191
+    DATA_WORD 35591
+    ; 194: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- sub_195 ---- called from 1DE, 3A9
+sub_195:
+    LOAD sC, 12                     ; 195 00C12
+    LOAD s1, 01                     ; 196 00101
+L_197:
+    STORE s1, 19                    ; 197 2E119
+    CALL sub_19F                    ; 198 3019F
+    RETURN                          ; 199 2A000
+; $19A-$19A: unreached words, kept as data
+ADDRESS 19A
+    ; 19A: 00C18  LOAD sC, 18
+    DATA_WORD 00C18
+L_19B:
+    LOAD s1, 02                     ; 19B 00102
+    JUMP L_197                      ; 19C 34197
+
+; ---- sub_19D ---- called from 3B0
+sub_19D:
+    LOAD sC, 19                     ; 19D 00C19
+    JUMP L_19B                      ; 19E 3419B
+
+; ---- sub_19F ---- called from 198
+sub_19F:
+    LOAD s1, 00                     ; 19F 00100
+    STORE s1, 1C                    ; 1A0 2E11C
+    STORE s1, 1A                    ; 1A1 2E11A
+    STORE s1, 1B                    ; 1A2 2E11B
+    STORE s1, 1D                    ; 1A3 2E11D
+    LOAD s1, 01                     ; 1A4 00101
+    STORE s1, 1E                    ; 1A5 2E11E
+    LOAD s1, FF                     ; 1A6 001FF
+    STORE s1, 1F                    ; 1A7 2E11F
+    FETCH s1, 20                    ; 1A8 06120
+    CALL sub_0E3                    ; 1A9 300E3
+    LOAD sB, 15                     ; 1AA 00B15
+    CALL sub_0FB                    ; 1AB 300FB
+    RETURN                          ; 1AC 2A000
+
+; ---- sub_1AD ---- called from 1DF, 3A2, 3AA, 3B1
+sub_1AD:
+    LOAD sC, 0C                     ; 1AD 00C0C
+    LOAD sB, 1D                     ; 1AE 00B1D
+    CALL sub_0B5                    ; 1AF 300B5
+    RETURN                          ; 1B0 2A000
+
+; ---- sub_1B1 ---- called from 3B5
+sub_1B1:
+    FETCH sF, 3E                    ; 1B1 06F3E
+    CALL sub_169                    ; 1B2 30169
+    FETCH sF, 3F                    ; 1B3 06F3F
+    CALL sub_169                    ; 1B4 30169
+    FETCH s0, 3E                    ; 1B5 0603E
+    COMPARE s0, F1                  ; 1B6 140F1
+    RETURN NZ                       ; 1B7 2B400
+    FETCH s0, 3F                    ; 1B8 0603F
+    COMPARE s0, F2                  ; 1B9 140F2
+    RETURN NZ                       ; 1BA 2B400
+    LOAD s5, 7E                     ; 1BB 0057E
+    CALL sub_2A3                    ; 1BC 302A3
+    STORE s0, 2A                    ; 1BD 2E02A
+    STORE s1, 31                    ; 1BE 2E131
+    SUB s0, 01                      ; 1BF 1C001
+    STORE s0, 20                    ; 1C0 2E020
+    LOAD s5, 7D                     ; 1C1 0057D
+    CALL sub_2A3                    ; 1C2 302A3
+    COMPARE s0, 01                  ; 1C3 14001
+    JUMP Z, L_1C6                   ; 1C4 351C6
+    RETURN                          ; 1C5 2A000
+L_1C6:
+    LOAD s0, 01                     ; 1C6 00001
+    OUTPUT s0, EF                   ; 1C7 2C0EF
+    INPUT s0, BB                    ; 1C8 040BB
+    STORE s0, 2B                    ; 1C9 2E02B
+    CALL sub_1CE                    ; 1CA 301CE
+    LOAD s0, 00                     ; 1CB 00000
+    OUTPUT s0, EF                   ; 1CC 2C0EF
+    RETURN                          ; 1CD 2A000
+
+; ---- sub_1CE ---- called from 1CA
+sub_1CE:
+    LOAD s0, 00                     ; 1CE 00000
+    STORE s0, 2C                    ; 1CF 2E02C
+    STORE s0, 2D                    ; 1D0 2E02D
+    STORE s0, 2E                    ; 1D1 2E02E
+    STORE s0, 2F                    ; 1D2 2E02F
+    LOAD s1, 00                     ; 1D3 00100
+    STORE s1, 3B                    ; 1D4 2E13B
+L_1D5:
+    FETCH s7, 2F                    ; 1D5 0672F
+    OUTPUT s7, E0                   ; 1D6 2C7E0
+    FETCH s8, 2E                    ; 1D7 0682E
+    OUTPUT s8, E1                   ; 1D8 2C8E1
+    FETCH s9, 2D                    ; 1D9 0692D
+    OUTPUT s9, E2                   ; 1DA 2C9E2
+    FETCH sA, 2C                    ; 1DB 06A2C
+    OUTPUT sA, E3                   ; 1DC 2CAE3
+    CALL sub_2AC                    ; 1DD 302AC
+    CALL sub_195                    ; 1DE 30195
+    CALL sub_1AD                    ; 1DF 301AD
+    FETCH s0, 2B                    ; 1E0 0602B
+    COMPARE s0, 11                  ; 1E1 14011
+    JUMP Z, L_1E4                   ; 1E2 351E4
+    CALL sub_186                    ; 1E3 30186
+L_1E4:
+    FETCH s7, 2F                    ; 1E4 0672F
+    FETCH s8, 2E                    ; 1E5 0682E
+    FETCH s9, 2D                    ; 1E6 0692D
+    FETCH sA, 2C                    ; 1E7 06A2C
+    FETCH s0, 2A                    ; 1E8 0602A
+    FETCH s1, 31                    ; 1E9 06131
+    ADD s7, s0                      ; 1EA 19700
+    ADDCY s8, s1                    ; 1EB 1B810
+    ADDCY s9, 00                    ; 1EC 1A900
+    ADDCY sA, 00                    ; 1ED 1AA00
+    STORE s7, 2F                    ; 1EE 2E72F
+    STORE s8, 2E                    ; 1EF 2E82E
+    STORE s9, 2D                    ; 1F0 2E92D
+    STORE sA, 2C                    ; 1F1 2EA2C
+    LOAD s5, 7C                     ; 1F2 0057C
+    CALL sub_2A3                    ; 1F3 302A3
+    SL0 s7                          ; 1F4 20706
+    SLA s8                          ; 1F5 20800
+    SLA s9                          ; 1F6 20900
+    SLA sA                          ; 1F7 20A00
+    SUB s7, s1                      ; 1F8 1D710
+    SUBCY s8, s2                    ; 1F9 1F820
+    SUBCY s9, s3                    ; 1FA 1F930
+    JUMP C, L_1D5                   ; 1FB 359D5
+    RETURN                          ; 1FC 2A000
+; $1FD-$298: unreached words, kept as data
+ADDRESS 1FD
+    ; 1FD: 041B7  INPUT s1, B7
+    DATA_WORD 041B7
+    ; 1FE: 14100  COMPARE s1, 00
+    DATA_WORD 14100
+    ; 1FF: 351FD  JUMP Z, 1FD
+    DATA_WORD 351FD
+    ; 200: 00FAA  LOAD sF, AA
+    DATA_WORD 00FAA
+    ; 201: 30169  CALL sub_169
+    DATA_WORD 30169
+    ; 202: 00403  LOAD s4, 03
+    DATA_WORD 00403
+    ; 203: 2E420  STORE s4, 20
+    DATA_WORD 2E420
+    ; 204: 00401  LOAD s4, 01
+    DATA_WORD 00401
+    ; 205: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 206: 00400  LOAD s4, 00
+    DATA_WORD 00400
+    ; 207: 2E433  STORE s4, 33
+    DATA_WORD 2E433
+    ; 208: 2E434  STORE s4, 34
+    DATA_WORD 2E434
+    ; 209: 2E435  STORE s4, 35
+    DATA_WORD 2E435
+    ; 20A: 2E436  STORE s4, 36
+    DATA_WORD 2E436
+    ; 20B: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 20C: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 20D: 00100  LOAD s1, 00
+    DATA_WORD 00100
+    ; 20E: 00200  LOAD s2, 00
+    DATA_WORD 00200
+    ; 20F: 06438  FETCH s4, 38
+    DATA_WORD 06438
+    ; 210: 06539  FETCH s5, 39
+    DATA_WORD 06539
+    ; 211: 19410  ADD s4, s1
+    DATA_WORD 19410
+    ; 212: 1B520  ADDCY s5, s2
+    DATA_WORD 1B520
+    ; 213: 2C5E6  OUTPUT s5, E6
+    DATA_WORD 2C5E6
+    ; 214: 2C4E5  OUTPUT s4, E5
+    DATA_WORD 2C4E5
+    ; 215: 2C0E4  OUTPUT s0, E4
+    DATA_WORD 2C0E4
+    ; 216: 00603  LOAD s6, 03
+    DATA_WORD 00603
+    ; 217: 2C6E7  OUTPUT s6, E7
+    DATA_WORD 2C6E7
+    ; 218: 00601  LOAD s6, 01
+    DATA_WORD 00601
+    ; 219: 2C6E7  OUTPUT s6, E7
+    DATA_WORD 2C6E7
+    ; 21A: 18001  ADD s0, 01
+    DATA_WORD 18001
+    ; 21B: 1A100  ADDCY s1, 00
+    DATA_WORD 1A100
+    ; 21C: 14104  COMPARE s1, 04
+    DATA_WORD 14104
+    ; 21D: 3521F  JUMP Z, 21F
+    DATA_WORD 3521F
+    ; 21E: 3420F  JUMP 20F
+    DATA_WORD 3420F
+    ; 21F: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 220: 06733  FETCH s7, 33
+    DATA_WORD 06733
+    ; 221: 06834  FETCH s8, 34
+    DATA_WORD 06834
+    ; 222: 06935  FETCH s9, 35
+    DATA_WORD 06935
+    ; 223: 06A36  FETCH sA, 36
+    DATA_WORD 06A36
+    ; 224: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 225: 3020C  CALL 20C
+    DATA_WORD 3020C
+    ; 226: 06138  FETCH s1, 38
+    DATA_WORD 06138
+    ; 227: 06239  FETCH s2, 39
+    DATA_WORD 06239
+    ; 228: 18104  ADD s1, 04
+    DATA_WORD 18104
+    ; 229: 1A200  ADDCY s2, 00
+    DATA_WORD 1A200
+    ; 22A: 2E138  STORE s1, 38
+    DATA_WORD 2E138
+    ; 22B: 2E239  STORE s2, 39
+    DATA_WORD 2E239
+    ; 22C: 30220  CALL 220
+    DATA_WORD 30220
+    ; 22D: 302AC  CALL sub_2AC
+    DATA_WORD 302AC
+    ; 22E: 14700  COMPARE s7, 00
+    DATA_WORD 14700
+    ; 22F: 35637  JUMP NZ, 237
+    DATA_WORD 35637
+    ; 230: 14800  COMPARE s8, 00
+    DATA_WORD 14800
+    ; 231: 35637  JUMP NZ, 237
+    DATA_WORD 35637
+    ; 232: 14900  COMPARE s9, 00
+    DATA_WORD 14900
+    ; 233: 35637  JUMP NZ, 237
+    DATA_WORD 35637
+    ; 234: 14A00  COMPARE sA, 00
+    DATA_WORD 14A00
+    ; 235: 35637  JUMP NZ, 237
+    DATA_WORD 35637
+    ; 236: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 237: 3019D  CALL sub_19D
+    DATA_WORD 3019D
+    ; 238: 301AD  CALL sub_1AD
+    DATA_WORD 301AD
+    ; 239: 30220  CALL 220
+    DATA_WORD 30220
+    ; 23A: 18704  ADD s7, 04
+    DATA_WORD 18704
+    ; 23B: 1A800  ADDCY s8, 00
+    DATA_WORD 1A800
+    ; 23C: 1A900  ADDCY s9, 00
+    DATA_WORD 1A900
+    ; 23D: 1AA00  ADDCY sA, 00
+    DATA_WORD 1AA00
+    ; 23E: 2E733  STORE s7, 33
+    DATA_WORD 2E733
+    ; 23F: 2E834  STORE s8, 34
+    DATA_WORD 2E834
+    ; 240: 2E935  STORE s9, 35
+    DATA_WORD 2E935
+    ; 241: 2EA36  STORE sA, 36
+    DATA_WORD 2EA36
+    ; 242: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 243: 301FD  CALL 1FD
+    DATA_WORD 301FD
+    ; 244: 2E439  STORE s4, 39
+    DATA_WORD 2E439
+    ; 245: 2E438  STORE s4, 38
+    DATA_WORD 2E438
+    ; 246: 2E437  STORE s4, 37
+    DATA_WORD 2E437
+    ; 247: 001FF  LOAD s1, FF
+    DATA_WORD 001FF
+    ; 248: 2E13B  STORE s1, 3B
+    DATA_WORD 2E13B
+    ; 249: 30225  CALL 225
+    DATA_WORD 30225
+    ; 24A: 0057F  LOAD s5, 7F
+    DATA_WORD 0057F
+    ; 24B: 302A3  CALL sub_2A3
+    DATA_WORD 302A3
+    ; 24C: 20706  SL0 s7
+    DATA_WORD 20706
+    ; 24D: 20800  SLA s8
+    DATA_WORD 20800
+    ; 24E: 20900  SLA s9
+    DATA_WORD 20900
+    ; 24F: 20A00  SLA sA
+    DATA_WORD 20A00
+    ; 250: 1D710  SUB s7, s1
+    DATA_WORD 1D710
+    ; 251: 1F820  SUBCY s8, s2
+    DATA_WORD 1F820
+    ; 252: 1E900  SUBCY s9, 00
+    DATA_WORD 1E900
+    ; 253: 35A49  JUMP C, 249
+    DATA_WORD 35A49
+    ; 254: 00400  LOAD s4, 00
+    DATA_WORD 00400
+    ; 255: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 256: 00FDF  LOAD sF, DF
+    DATA_WORD 00FDF
+    ; 257: 30169  CALL sub_169
+    DATA_WORD 30169
+    ; 258: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 259: 301FD  CALL 1FD
+    DATA_WORD 301FD
+    ; 25A: 2E437  STORE s4, 37
+    DATA_WORD 2E437
+    ; 25B: 2E438  STORE s4, 38
+    DATA_WORD 2E438
+    ; 25C: 00402  LOAD s4, 02
+    DATA_WORD 00402
+    ; 25D: 2E439  STORE s4, 39
+    DATA_WORD 2E439
+    ; 25E: 001F3  LOAD s1, F3
+    DATA_WORD 001F3
+    ; 25F: 2E13B  STORE s1, 3B
+    DATA_WORD 2E13B
+    ; 260: 30225  CALL 225
+    DATA_WORD 30225
+    ; 261: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 262: 00100  LOAD s1, 00
+    DATA_WORD 00100
+    ; 263: 00207  LOAD s2, 07
+    DATA_WORD 00207
+    ; 264: 00300  LOAD s3, 00
+    DATA_WORD 00300
+    ; 265: 20706  SL0 s7
+    DATA_WORD 20706
+    ; 266: 20800  SLA s8
+    DATA_WORD 20800
+    ; 267: 20900  SLA s9
+    DATA_WORD 20900
+    ; 268: 20A00  SLA sA
+    DATA_WORD 20A00
+    ; 269: 1D710  SUB s7, s1
+    DATA_WORD 1D710
+    ; 26A: 1F820  SUBCY s8, s2
+    DATA_WORD 1F820
+    ; 26B: 1E900  SUBCY s9, 00
+    DATA_WORD 1E900
+    ; 26C: 35A60  JUMP C, 260
+    DATA_WORD 35A60
+    ; 26D: 00400  LOAD s4, 00
+    DATA_WORD 00400
+    ; 26E: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 26F: 00FDA  LOAD sF, DA
+    DATA_WORD 00FDA
+    ; 270: 30169  CALL sub_169
+    DATA_WORD 30169
+    ; 271: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 272: 045A2  INPUT s5, A2
+    DATA_WORD 045A2
+    ; 273: 046A3  INPUT s6, A3
+    DATA_WORD 046A3
+    ; 274: 140EF  COMPARE s0, EF
+    DATA_WORD 140EF
+    ; 275: 35678  JUMP NZ, 278
+    DATA_WORD 35678
+    ; 276: 00500  LOAD s5, 00
+    DATA_WORD 00500
+    ; 277: 00600  LOAD s6, 00
+    DATA_WORD 00600
+    ; 278: 00401  LOAD s4, 01
+    DATA_WORD 00401
+    ; 279: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 27A: 2E538  STORE s5, 38
+    DATA_WORD 2E538
+    ; 27B: 2E637  STORE s6, 37
+    DATA_WORD 2E637
+    ; 27C: 00400  LOAD s4, 00
+    DATA_WORD 00400
+    ; 27D: 2C4E6  OUTPUT s4, E6
+    DATA_WORD 2C4E6
+    ; 27E: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 27F: 00100  LOAD s1, 00
+    DATA_WORD 00100
+    ; 280: 00200  LOAD s2, 00
+    DATA_WORD 00200
+    ; 281: 06437  FETCH s4, 37
+    DATA_WORD 06437
+    ; 282: 06538  FETCH s5, 38
+    DATA_WORD 06538
+    ; 283: 19400  ADD s4, s0
+    DATA_WORD 19400
+    ; 284: 1B510  ADDCY s5, s1
+    DATA_WORD 1B510
+    ; 285: 2C5E5  OUTPUT s5, E5
+    DATA_WORD 2C5E5
+    ; 286: 2C4E4  OUTPUT s4, E4
+    DATA_WORD 2C4E4
+    ; 287: 00405  LOAD s4, 05
+    DATA_WORD 00405
+    ; 288: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 289: 00401  LOAD s4, 01
+    DATA_WORD 00401
+    ; 28A: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 28B: 18001  ADD s0, 01
+    DATA_WORD 18001
+    ; 28C: 1A100  ADDCY s1, 00
+    DATA_WORD 1A100
+    ; 28D: 1A200  ADDCY s2, 00
+    DATA_WORD 1A200
+    ; 28E: 146EF  COMPARE s6, EF
+    DATA_WORD 146EF
+    ; 28F: 35293  JUMP Z, 293
+    DATA_WORD 35293
+    ; 290: 14108  COMPARE s1, 08
+    DATA_WORD 14108
+    ; 291: 35296  JUMP Z, 296
+    DATA_WORD 35296
+    ; 292: 34281  JUMP 281
+    DATA_WORD 34281
+    ; 293: 14201  COMPARE s2, 01
+    DATA_WORD 14201
+    ; 294: 35296  JUMP Z, 296
+    DATA_WORD 35296
+    ; 295: 34281  JUMP 281
+    DATA_WORD 34281
+    ; 296: 00400  LOAD s4, 00
+    DATA_WORD 00400
+    ; 297: 2C4E7  OUTPUT s4, E7
+    DATA_WORD 2C4E7
+    ; 298: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- sub_299 ---- called from 2AD, 2BF, 2C6
+sub_299:
+    LOAD s5, s6                     ; 299 01560
+    FETCH s4, 3B                    ; 29A 0643B
+    COMPARE s4, 00                  ; 29B 14400
+    JUMP Z, L_2A2                   ; 29C 352A2
+    COMPARE s4, FF                  ; 29D 144FF
+    JUMP Z, L_2A1                   ; 29E 352A1
+    ADD s5, C0                      ; 29F 185C0
+    RETURN                          ; 2A0 2A000
+L_2A1:
+    ADD s5, 80                      ; 2A1 18580
+L_2A2:
+    RETURN                          ; 2A2 2A000
+
+; ---- sub_2A3 ---- called from 1BC, 1C2, 1F3, 2AE, 2C0, 2C7
+sub_2A3:
+    OUTPUT s5, BF                   ; 2A3 2C5BF
+    LOAD s1, s1                     ; 2A4 01110
+    LOAD s1, s1                     ; 2A5 01110
+    LOAD s1, s1                     ; 2A6 01110
+    INPUT s3, C0                    ; 2A7 043C0
+    INPUT s2, C1                    ; 2A8 042C1
+    INPUT s1, C2                    ; 2A9 041C2
+    INPUT s0, C3                    ; 2AA 040C3
+    RETURN                          ; 2AB 2A000
+
+; ---- sub_2AC ---- called from 1DD
+sub_2AC:
+    LOAD s6, 02                     ; 2AC 00602
+L_2AD:
+    CALL sub_299                    ; 2AD 30299
+    CALL sub_2A3                    ; 2AE 302A3
+    LOAD s4, s7                     ; 2AF 01470
+    SUB s4, s0                      ; 2B0 1D400
+    LOAD s4, s8                     ; 2B1 01480
+    SUBCY s4, s1                    ; 2B2 1F410
+    LOAD s4, s9                     ; 2B3 01490
+    SUBCY s4, s2                    ; 2B4 1F420
+    LOAD s4, sA                     ; 2B5 014A0
+    SUBCY s4, s3                    ; 2B6 1F430
+    JUMP C, L_2BC                   ; 2B7 35ABC
+    COMPARE s6, 7C                  ; 2B8 1467C
+    JUMP Z, L_2BE                   ; 2B9 352BE
+    ADD s6, 02                      ; 2BA 18602
+    JUMP L_2AD                      ; 2BB 342AD
+L_2BC:
+    SUB s6, 02                      ; 2BC 1C602
+    JUMP L_2BF                      ; 2BD 342BF
+L_2BE:
+    LOAD s6, 00                     ; 2BE 00600
+L_2BF:
+    CALL sub_299                    ; 2BF 30299
+    CALL sub_2A3                    ; 2C0 302A3
+    SUB s7, s0                      ; 2C1 1D700
+    SUBCY s8, s1                    ; 2C2 1F810
+    SUBCY s9, s2                    ; 2C3 1F920
+    SUBCY sA, s3                    ; 2C4 1FA30
+    ADD s6, 01                      ; 2C5 18601
+    CALL sub_299                    ; 2C6 30299
+    CALL sub_2A3                    ; 2C7 302A3
+    ADD s7, s0                      ; 2C8 19700
+    ADDCY s8, s1                    ; 2C9 1B810
+    ADDCY s9, s2                    ; 2CA 1B920
+    ADDCY sA, s3                    ; 2CB 1BA30
+    CALL sub_2CE                    ; 2CC 302CE
+    RETURN                          ; 2CD 2A000
+
+; ---- sub_2CE ---- called from 2CC, 2DD
+sub_2CE:
+    FETCH s4, 06                    ; 2CE 06406
+    COMPARE s4, 01                  ; 2CF 14401
+    JUMP Z, L_2D8                   ; 2D0 352D8
+    LOAD sA, s9                     ; 2D1 01A90
+    LOAD s9, s8                     ; 2D2 01980
+    LOAD s8, s7                     ; 2D3 01870
+    SL0 s8                          ; 2D4 20806
+    SLA s9                          ; 2D5 20900
+    SLA sA                          ; 2D6 20A00
+    LOAD s7, 00                     ; 2D7 00700
+L_2D8:
+    RETURN                          ; 2D8 2A000
+
+; ---- sub_2D9 ---- called from 3A8, 3AF
+sub_2D9:
+    INPUT sA, B3                    ; 2D9 04AB3
+    INPUT s9, B2                    ; 2DA 049B2
+    INPUT s8, B1                    ; 2DB 048B1
+    INPUT s7, B0                    ; 2DC 047B0
+    CALL sub_2CE                    ; 2DD 302CE
+    INPUT s1, B4                    ; 2DE 041B4
+    SUB s1, 01                      ; 2DF 1C101
+    STORE s1, 20                    ; 2E0 2E120
+    RETURN                          ; 2E1 2A000
+; $2E2-$2EA: unreached words, kept as data
+ADDRESS 2E2
+    ; 2E2: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 2E3: 2C0E9  OUTPUT s0, E9
+    DATA_WORD 2C0E9
+    ; 2E4: 00001  LOAD s0, 01
+    DATA_WORD 00001
+    ; 2E5: 2C0E9  OUTPUT s0, E9
+    DATA_WORD 2C0E9
+    ; 2E6: 30174  CALL 174
+    DATA_WORD 30174
+    ; 2E7: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 2E8: 2C0E9  OUTPUT s0, E9
+    DATA_WORD 2C0E9
+    ; 2E9: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 2EA: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- sub_2EB ---- called from 33B, 34C
+sub_2EB:
+    LOAD sF, 01                     ; 2EB 00F01
+    OR sF, 02                       ; 2EC 0CF02
+    OUTPUT sF, EC                   ; 2ED 2CFEC
+    RETURN                          ; 2EE 2A000
+
+; ---- sub_2EF ---- called from 33C, 34D, 357
+sub_2EF:
+    CALL sub_323                    ; 2EF 30323
+    CALL sub_31A                    ; 2F0 3031A
+    CALL sub_330                    ; 2F1 30330
+    CALL sub_320                    ; 2F2 30320
+    CALL sub_331                    ; 2F3 30331
+    CALL sub_316                    ; 2F4 30316
+    RETURN                          ; 2F5 2A000
+
+; ---- sub_2F6 ---- called from 34A, 362
+sub_2F6:
+    CALL sub_320                    ; 2F6 30320
+    CALL sub_330                    ; 2F7 30330
+    CALL sub_31A                    ; 2F8 3031A
+    CALL sub_331                    ; 2F9 30331
+    CALL sub_323                    ; 2FA 30323
+    RETURN                          ; 2FB 2A000
+
+; ---- sub_2FC ---- called from 33F, 343, 347, 350, 354, 35A
+sub_2FC:
+    LOAD s1, 80                     ; 2FC 00180
+L_2FD:
+    TEST s5, s1                     ; 2FD 13510
+    JUMP NZ, L_301                  ; 2FE 35701
+    CALL sub_320                    ; 2FF 30320
+    JUMP L_302                      ; 300 34302
+L_301:
+    CALL sub_323                    ; 301 30323
+L_302:
+    CALL sub_30C                    ; 302 3030C
+    SR0 s1                          ; 303 2010E
+    RETURN C                        ; 304 2B800
+    JUMP L_2FD                      ; 305 342FD
+
+; ---- sub_306 ---- called from 35F, 365
+sub_306:
+    LOAD s1, 08                     ; 306 00108
+L_307:
+    CALL sub_326                    ; 307 30326
+    SUB s1, 01                      ; 308 1C101
+    JUMP NZ, L_307                  ; 309 35707
+    RETURN                          ; 30A 2A000
+
+; ---- sub_30B ---- called from 36B
+sub_30B:
+    CALL sub_320                    ; 30B 30320
+
+; ---- sub_30C ---- called from 302
+sub_30C:
+    CALL sub_330                    ; 30C 30330
+    CALL sub_31A                    ; 30D 3031A
+    CALL sub_331                    ; 30E 30331
+    CALL sub_316                    ; 30F 30316
+    RETURN                          ; 310 2A000
+
+; ---- sub_311 ---- called from 361
+sub_311:
+    CALL sub_323                    ; 311 30323
+    JUMP sub_30C                    ; 312 3430C
+
+; ---- sub_313 ---- called from 340, 344, 348, 351, 355, 35B
+sub_313:
+    CALL sub_326                    ; 313 30326
+    TEST s5, 01                     ; 314 12501
+    RETURN                          ; 315 2A000
+
+; ---- sub_316 ---- called from 2F4, 30F, 32E
+sub_316:
+    AND sF, 02                      ; 316 0AF02
+    OUTPUT sF, EC                   ; 317 2CFEC
+    CALL sub_330                    ; 318 30330
+    RETURN                          ; 319 2A000
+
+; ---- sub_31A ---- called from 2F0, 2F8, 30D, 328
+sub_31A:
+    OR sF, 01                       ; 31A 0CF01
+    OUTPUT sF, EC                   ; 31B 2CFEC
+L_31C:
+    INPUT s0, EB                    ; 31C 040EB
+    TEST s0, 01                     ; 31D 12001
+    JUMP Z, L_31C                   ; 31E 3531C
+    RETURN                          ; 31F 2A000
+
+; ---- sub_320 ---- called from 2F2, 2F6, 2FF, 30B
+sub_320:
+    AND sF, 01                      ; 320 0AF01
+    OUTPUT sF, EC                   ; 321 2CFEC
+    RETURN                          ; 322 2A000
+
+; ---- sub_323 ---- called from 2EF, 2FA, 301, 311, 326
+sub_323:
+    OR sF, 02                       ; 323 0CF02
+    OUTPUT sF, EC                   ; 324 2CFEC
+    RETURN                          ; 325 2A000
+
+; ---- sub_326 ---- called from 307, 313
+sub_326:
+    CALL sub_323                    ; 326 30323
+    CALL sub_330                    ; 327 30330
+    CALL sub_31A                    ; 328 3031A
+    CALL sub_333                    ; 329 30333
+    INPUT s0, EB                    ; 32A 040EB
+    TEST s0, 02                     ; 32B 12002
+    SLA s5                          ; 32C 20500
+    CALL sub_333                    ; 32D 30333
+    CALL sub_316                    ; 32E 30316
+    RETURN                          ; 32F 2A000
+
+; ---- sub_330 ---- called from 2F1, 2F7, 30C, 318, 327
+sub_330:
+    CALL sub_336                    ; 330 30336
+
+; ---- sub_331 ---- called from 2F3, 2F9, 30E
+sub_331:
+    CALL sub_336                    ; 331 30336
+    CALL sub_336                    ; 332 30336
+
+; ---- sub_333 ---- called from 329, 32D
+sub_333:
+    CALL sub_336                    ; 333 30336
+    CALL sub_336                    ; 334 30336
+    RETURN                          ; 335 2A000
+
+; ---- sub_336 ---- called from 330, 331, 332, 333, 334
+sub_336:
+    LOAD s0, 01                     ; 336 00001
+L_337:
+    SUB s0, 01                      ; 337 1C001
+    JUMP NZ, L_337                  ; 338 35737
+    RETURN                          ; 339 2A000
+
+; ---- sub_33A ---- called from 37D, 387, 392, 394, 396, 398, 39A
+sub_33A:
+    LOAD sD, 00                     ; 33A 00D00
+
+; ---- sub_33B ---- called from 371, 378, 37B, 385, 38A, 38D, 390
+sub_33B:
+    CALL sub_2EB                    ; 33B 302EB
+    CALL sub_2EF                    ; 33C 302EF
+    LOAD s5, 51                     ; 33D 00551
+    SL0 s5                          ; 33E 20506
+    CALL sub_2FC                    ; 33F 302FC
+    CALL sub_313                    ; 340 30313
+    RETURN C                        ; 341 2B800
+    LOAD s5, sB                     ; 342 015B0
+    CALL sub_2FC                    ; 343 302FC
+    CALL sub_313                    ; 344 30313
+    RETURN C                        ; 345 2B800
+    LOAD s5, sD                     ; 346 015D0
+    CALL sub_2FC                    ; 347 302FC
+    CALL sub_313                    ; 348 30313
+    RETURN C                        ; 349 2B800
+    CALL sub_2F6                    ; 34A 302F6
+    RETURN                          ; 34B 2A000
+
+; ---- sub_34C ---- called from 35E, 364
+sub_34C:
+    CALL sub_2EB                    ; 34C 302EB
+    CALL sub_2EF                    ; 34D 302EF
+    LOAD s5, 51                     ; 34E 00551
+    SL0 s5                          ; 34F 20506
+    CALL sub_2FC                    ; 350 302FC
+    CALL sub_313                    ; 351 30313
+    RETURN C                        ; 352 2B800
+    LOAD s5, sB                     ; 353 015B0
+    CALL sub_2FC                    ; 354 302FC
+    CALL sub_313                    ; 355 30313
+    RETURN C                        ; 356 2B800
+    CALL sub_2EF                    ; 357 302EF
+    LOAD s5, 51                     ; 358 00551
+    SL1 s5                          ; 359 20507
+    CALL sub_2FC                    ; 35A 302FC
+    CALL sub_313                    ; 35B 30313
+    RETURN C                        ; 35C 2B800
+    RETURN                          ; 35D 2A000
+
+; ---- sub_35E ---- called from 37F
+sub_35E:
+    CALL sub_34C                    ; 35E 3034C
+    CALL sub_306                    ; 35F 30306
+    LOAD sD, s5                     ; 360 01D50
+L_361:
+    CALL sub_311                    ; 361 30311
+    CALL sub_2F6                    ; 362 302F6
+    RETURN                          ; 363 2A000
+
+; ---- sub_364 ---- called from 037
+sub_364:
+    CALL sub_34C                    ; 364 3034C
+L_365:
+    CALL sub_306                    ; 365 30306
+    OUTPUT sB, ED                   ; 366 2CBED
+    OUTPUT s5, EE                   ; 367 2C5EE
+    COMPARE sB, 08                  ; 368 14B08
+    JUMP Z, L_361                   ; 369 35361
+    ADD sB, 01                      ; 36A 18B01
+    CALL sub_30B                    ; 36B 3030B
+    JUMP L_365                      ; 36C 34365
+
+; ---- sub_36D ---- called from 3B9
+sub_36D:
+    LOAD sB, 02                     ; 36D 00B02
+L_36E:
+    OUTPUT sB, F0                   ; 36E 2CBF0
+    LOAD s0, s0                     ; 36F 01000
+    INPUT sD, B6                    ; 370 04DB6
+    CALL sub_33B                    ; 371 3033B
+    COMPARE sB, 08                  ; 372 14B08
+    RETURN Z                        ; 373 2B000
+    ADD sB, 01                      ; 374 18B01
+    JUMP L_36E                      ; 375 3436E
+
+; ---- sub_376 ---- called from 02E
+sub_376:
+    LOAD sB, 00                     ; 376 00B00
+    LOAD sD, 20                     ; 377 00D20
+    CALL sub_33B                    ; 378 3033B
+    LOAD sB, 0D                     ; 379 00B0D
+    LOAD sD, 80                     ; 37A 00D80
+    CALL sub_33B                    ; 37B 3033B
+    LOAD sB, 00                     ; 37C 00B00
+    CALL sub_33A                    ; 37D 3033A
+    LOAD sB, 02                     ; 37E 00B02
+    CALL sub_35E                    ; 37F 3035E
+    AND sD, 80                      ; 380 0AD80
+    COMPARE sD, 80                  ; 381 14D80
+    RETURN NZ                       ; 382 2B400
+    LOAD sB, 00                     ; 383 00B00
+    LOAD sD, 20                     ; 384 00D20
+    CALL sub_33B                    ; 385 3033B
+    LOAD sB, 08                     ; 386 00B08
+    CALL sub_33A                    ; 387 3033A
+    LOAD sB, 07                     ; 388 00B07
+    LOAD sD, 01                     ; 389 00D01
+    CALL sub_33B                    ; 38A 3033B
+    LOAD sB, 06                     ; 38B 00B06
+    LOAD sD, 03                     ; 38C 00D03
+    CALL sub_33B                    ; 38D 3033B
+    LOAD sB, 05                     ; 38E 00B05
+    LOAD sD, 01                     ; 38F 00D01
+    CALL sub_33B                    ; 390 3033B
+    LOAD sB, 04                     ; 391 00B04
+    CALL sub_33A                    ; 392 3033A
+    LOAD sB, 03                     ; 393 00B03
+    CALL sub_33A                    ; 394 3033A
+    LOAD sB, 02                     ; 395 00B02
+    CALL sub_33A                    ; 396 3033A
+    LOAD sB, 01                     ; 397 00B01
+    CALL sub_33A                    ; 398 3033A
+    LOAD sB, 00                     ; 399 00B00
+    CALL sub_33A                    ; 39A 3033A
+    RETURN                          ; 39B 2A000
+
+; ---- sub_39C ---- called from 3A7, 3AE
+sub_39C:
+    CALL sub_091                    ; 39C 30091
+    CALL sub_153                    ; 39D 30153
+    FETCH s0, 04                    ; 39E 06004
+    COMPARE s0, 09                  ; 39F 14009
+    JUMP NZ, L_3A2                  ; 3A0 357A2
+    RETURN                          ; 3A1 2A000
+L_3A2:
+    CALL sub_1AD                    ; 3A2 301AD
+    JUMP sub_39C                    ; 3A3 3439C
+L_3A4:
+    INPUT s3, B5                    ; 3A4 043B5
+    COMPARE s3, 80                  ; 3A5 14380
+    JUMP NZ, L_3AC                  ; 3A6 357AC
+    CALL sub_39C                    ; 3A7 3039C
+    CALL sub_2D9                    ; 3A8 302D9
+    CALL sub_195                    ; 3A9 30195
+    CALL sub_1AD                    ; 3AA 301AD
+    JUMP L_3C1                      ; 3AB 343C1
+L_3AC:
+    COMPARE s3, 40                  ; 3AC 14340
+    JUMP NZ, L_3B3                  ; 3AD 357B3
+    CALL sub_39C                    ; 3AE 3039C
+    CALL sub_2D9                    ; 3AF 302D9
+    CALL sub_19D                    ; 3B0 3019D
+    CALL sub_1AD                    ; 3B1 301AD
+    JUMP L_3C1                      ; 3B2 343C1
+L_3B3:
+    COMPARE s3, 20                  ; 3B3 14320
+    JUMP NZ, L_3B7                  ; 3B4 357B7
+    CALL sub_1B1                    ; 3B5 301B1
+    JUMP L_3C1                      ; 3B6 343C1
+L_3B7:
+    COMPARE s3, 10                  ; 3B7 14310
+    JUMP NZ, L_3BB                  ; 3B8 357BB
+    CALL sub_36D                    ; 3B9 3036D
+    JUMP L_3C1                      ; 3BA 343C1
+L_3BB:
+    COMPARE s3, 08                  ; 3BB 14308
+    JUMP NZ, L_3C1                  ; 3BC 357C1
+    LOAD s2, 01                     ; 3BD 00201
+    STORE s2, 3F                    ; 3BE 2E23F
+    CALL sub_3F0                    ; 3BF 303F0
+    JUMP L_3C1                      ; 3C0 343C1
+L_3C1:
+    RETURNI ENABLE                  ; 3C1 38001
+; $3C2-$3EF: 46 unused (zero) words
+ADDRESS 3F0
+
+; ---- sub_3F0 ---- called from 003, 3BF
+sub_3F0:
+    LOAD s0, 01                     ; 3F0 00001
+    OUTPUT s0, C8                   ; 3F1 2C0C8
+    LOAD s0, s0                     ; 3F2 01000
+    LOAD s0, s0                     ; 3F3 01000
+    LOAD s0, 00                     ; 3F4 00000
+    OUTPUT s0, C8                   ; 3F5 2C0C8
+    LOAD s0, s0                     ; 3F6 01000
+    RETURN                          ; 3F7 2A000
+; $3F8-$3FE: 7 unused (zero) words
+ADDRESS 3FF
+int_vector:
+    JUMP L_3A4                      ; 3FF 343A4

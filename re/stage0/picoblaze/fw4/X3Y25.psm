@@ -1,0 +1,916 @@
+; D0X3Y25.BEL.BRAM
+; KCPSM3 (PicoBlaze for Spartan-3), 1K x 18
+; 551 reachable instructions, 35 subroutines
+;
+CONSTANT DBG_STATUS, A0   ; input port
+CONSTANT TBL_Q3, C0   ; input port
+CONSTANT TBL_Q2, C1   ; input port
+CONSTANT TBL_Q1, C2   ; input port
+CONSTANT TBL_Q0, C3   ; input port
+CONSTANT DNA_DOUT, D3   ; input port
+CONSTANT SPI_MISO, D4   ; input port
+CONSTANT DBG_TX, A1   ; output port
+CONSTANT TBL_INDEX, BF   ; output port
+CONSTANT BANK_SELECT, C8   ; output port
+CONSTANT ICAP_DATA, D1   ; output port
+CONSTANT ICAP_CTRL, D2   ; output port
+CONSTANT DNA_CTRL, D3   ; output port
+CONSTANT SPI_CTRL, D4   ; output port
+CONSTANT SPI_MOSI, D5   ; output port
+CONSTANT FLASH_BUSY, F1   ; output port
+CONSTANT mb_addr_lo, 00   ; scratchpad
+CONSTANT mb_addr_mid, 01   ; scratchpad
+CONSTANT mb_addr_hi, 02   ; scratchpad
+CONSTANT flash_a0, 03   ; scratchpad
+CONSTANT flash_a1, 04   ; scratchpad
+CONSTANT flash_a2, 05   ; scratchpad
+CONSTANT record_error, 06   ; scratchpad
+CONSTANT dna0, 0A   ; scratchpad
+CONSTANT dna1, 0B   ; scratchpad
+CONSTANT dna2, 0C   ; scratchpad
+CONSTANT dna3, 0D   ; scratchpad
+CONSTANT dna4, 0E   ; scratchpad
+CONSTANT dna5, 0F   ; scratchpad
+CONSTANT dna6, 10   ; scratchpad
+CONSTANT dna7, 11   ; scratchpad
+CONSTANT tally_byte, 12   ; scratchpad
+CONSTANT tally_index, 13   ; scratchpad
+CONSTANT want_crc7, 16   ; scratchpad
+CONSTANT want_crc16_hi, 17   ; scratchpad
+CONSTANT want_crc16_lo, 18   ; scratchpad
+CONSTANT verdict_a, 19   ; scratchpad
+CONSTANT verdict_b, 1A   ; scratchpad
+CONSTANT spi_shadow, 1D   ; scratchpad
+CONSTANT license_a, 3E   ; scratchpad
+CONSTANT license_b, 3F   ; scratchpad
+
+
+; Bank 2 reset path: never used (the processor always resets in
+; bank 1). A long delay loop with interrupts off.
+bank2_reset_unused:
+    DISABLE INTERRUPT               ; 000 3C000
+L_001:
+    CALL delay_huge                 ; 001 30079
+    JUMP L_001                      ; 002 34001
+
+; Device DNA (Spartan-3A DNA_PORT). DNA_CTRL bit 0 = CLK,
+; bit 1 = SHIFT, bit 2 = READ; DNA_DOUT bit 0 = DOUT.
+
+; ---- dna_idle ---- called from 1F8
+dna_idle:
+    LOAD s0, 00                     ; 003 00000
+    OUTPUT s0, DNA_CTRL             ; 004 2C0D3
+    RETURN                          ; 005 2A000
+
+; ---- dna_read ---- called from 1F9
+dna_read:
+    LOAD s0, 04                     ; 006 00004  READ: latch the 57-bit DNA
+    OUTPUT s0, DNA_CTRL             ; 007 2C0D3
+    CALL dna_clock                  ; 008 30024
+    LOAD s0, 02                     ; 009 00002
+    OUTPUT s0, DNA_CTRL             ; 00A 2C0D3
+    LOAD s3, 00                     ; 00B 00300
+    LOAD s2, 39                     ; 00C 00239  57 bits
+L_00D:
+    INPUT s1, DNA_DOUT              ; 00D 041D3
+    TEST s1, 01                     ; 00E 12101
+    SLA s3                          ; 00F 20300
+    SLA s4                          ; 010 20400
+    SLA s5                          ; 011 20500
+    SLA s6                          ; 012 20600
+    SLA s7                          ; 013 20700
+    SLA s8                          ; 014 20800
+    SLA s9                          ; 015 20900
+    SLA sA                          ; 016 20A00
+    CALL dna_clock                  ; 017 30024
+    SUB s2, 01                      ; 018 1C201
+    JUMP Z, L_01B                   ; 019 3501B
+    JUMP L_00D                      ; 01A 3400D
+L_01B:
+    STORE s3, dna0                  ; 01B 2E30A  DNA -> dna0..dna7
+    STORE s4, dna1                  ; 01C 2E40B
+    STORE s5, dna2                  ; 01D 2E50C
+    STORE s6, dna3                  ; 01E 2E60D
+    STORE s7, dna4                  ; 01F 2E70E
+    STORE s8, dna5                  ; 020 2E80F
+    STORE s9, dna6                  ; 021 2E910
+    STORE sA, dna7                  ; 022 2EA11
+    JUMP dna_idle                   ; 023 34003
+
+; ---- dna_clock ---- called from 008, 017
+dna_clock:
+    XOR s0, 01                      ; 024 0E001
+    OUTPUT s0, DNA_CTRL             ; 025 2C0D3
+    XOR s0, 01                      ; 026 0E001
+    OUTPUT s0, DNA_CTRL             ; 027 2C0D3
+    RETURN                          ; 028 2A000
+; $029-$030: unreached words, kept as data
+ADDRESS 029
+    ; dead_dump_dna:
+    ; 029: 00911  LOAD s9, 11               unreached: print the DNA on the debug port
+    DATA_WORD 00911
+    ; 02A: 07090  FETCH s0, (s9)
+    DATA_WORD 07090
+    ; 02B: 01E00  LOAD sE, s0
+    DATA_WORD 01E00
+    ; 02C: 30061  CALL dbg_putc
+    DATA_WORD 30061
+    ; 02D: 1490A  COMPARE s9, 0A
+    DATA_WORD 1490A
+    ; 02E: 2B000  RETURN Z
+    DATA_WORD 2B000
+    ; 02F: 1C901  SUB s9, 01
+    DATA_WORD 1C901
+    ; 030: 3402A  JUMP 02A
+    DATA_WORD 3402A
+
+; CRC-16, reflected poly $A001, init $FFFF, over s5 bytes at (s4).
+; Result s7:s6.
+
+; ---- crc16 ---- called from 18E
+crc16:
+    LOAD s7, FF                     ; 031 007FF
+    LOAD s6, FF                     ; 032 006FF
+L_033:
+    FETCH s2, (s4)                  ; 033 07240
+    LOAD s3, 00                     ; 034 00300
+    XOR s6, s2                      ; 035 0F620
+L_036:
+    COMPARE s3, 08                  ; 036 14308
+    JUMP Z, L_03F                   ; 037 3503F
+    ADD s3, 01                      ; 038 18301
+    SR0 s7                          ; 039 2070E
+    SRA s6                          ; 03A 20608
+    JUMP NC, L_036                  ; 03B 35C36
+    XOR s7, A0                      ; 03C 0E7A0
+    XOR s6, 01                      ; 03D 0E601
+    JUMP L_036                      ; 03E 34036
+L_03F:
+    ADD s4, 01                      ; 03F 18401
+    SUB s5, 01                      ; 040 1C501
+    JUMP NZ, L_033                  ; 041 35433
+    RETURN                          ; 042 2A000
+
+; CRC-7 (poly x^7+x^3+1, the SD card CRC) over s4 bytes at (s0).
+; Result -> want/compare via scratch $15.
+
+; ---- crc7 ---- called from 1A7
+crc7:
+    LOAD sF, 00                     ; 043 00F00
+L_044:
+    LOAD s1, 08                     ; 044 00108
+    FETCH s2, (s0)                  ; 045 07200
+L_046:
+    SL0 sF                          ; 046 20F06
+    LOAD sE, sF                     ; 047 01EF0
+    XOR sE, s2                      ; 048 0FE20
+    RL sE                           ; 049 20E02
+    AND sE, 01                      ; 04A 0AE01
+    OR sF, sE                       ; 04B 0DFE0
+    RL sE                           ; 04C 20E02
+    RL sE                           ; 04D 20E02
+    RL sE                           ; 04E 20E02
+    XOR sE, sF                      ; 04F 0FEF0
+    AND sE, 08                      ; 050 0AE08
+    AND sF, F7                      ; 051 0AFF7
+    OR sF, sE                       ; 052 0DFE0
+    SL0 s2                          ; 053 20206
+    SUB s1, 01                      ; 054 1C101
+    JUMP NZ, L_046                  ; 055 35446
+    ADD s0, 01                      ; 056 18001
+    SUB s4, 01                      ; 057 1C401
+    JUMP NZ, L_044                  ; 058 35444
+    STORE sF, 15                    ; 059 2EF15
+    RETURN                          ; 05A 2A000
+
+; ---- verdict_a_ok ---- called from 194
+verdict_a_ok:
+    LOAD s0, F1                     ; 05B 000F1
+    STORE s0, verdict_a             ; 05C 2E019
+    RETURN                          ; 05D 2A000
+
+; ---- verdict_b_ok ---- called from 1AA
+verdict_b_ok:
+    LOAD s0, F2                     ; 05E 000F2
+    STORE s0, verdict_b             ; 05F 2E01A
+    RETURN                          ; 060 2A000
+
+; ---- dbg_putc ---- called from 177, 1F6
+dbg_putc:
+    INPUT s0, DBG_STATUS            ; 061 040A0
+    TEST s0, 04                     ; 062 12004
+    JUMP NZ, dbg_putc               ; 063 35461
+    OUTPUT sE, DBG_TX               ; 064 2CEA1
+    RETURN                          ; 065 2A000
+
+; ---- delay_tiny ---- called from 06B
+delay_tiny:
+    LOAD s0, 0B                     ; 066 0000B
+L_067:
+    SUB s0, 01                      ; 067 1C001
+    JUMP NZ, L_067                  ; 068 35467
+    RETURN                          ; 069 2A000
+
+; ---- delay_short ---- called from 070
+delay_short:
+    LOAD s1, 28                     ; 06A 00128
+L_06B:
+    CALL delay_tiny                 ; 06B 30066
+    SUB s1, 01                      ; 06C 1C101
+    JUMP NZ, L_06B                  ; 06D 3546B
+    RETURN                          ; 06E 2A000
+
+; ---- delay_med ---- called from 075
+delay_med:
+    LOAD s2, 19                     ; 06F 00219
+L_070:
+    CALL delay_short                ; 070 3006A
+    SUB s2, 01                      ; 071 1C201
+    JUMP NZ, L_070                  ; 072 35470
+    RETURN                          ; 073 2A000
+
+; ---- delay_long ---- called from 07A
+delay_long:
+    LOAD s3, 14                     ; 074 00314
+L_075:
+    CALL delay_med                  ; 075 3006F
+    SUB s3, 01                      ; 076 1C301
+    JUMP NZ, L_075                  ; 077 35475
+    RETURN                          ; 078 2A000
+
+; ---- delay_huge ---- called from 001, 1BD
+delay_huge:
+    LOAD s4, 32                     ; 079 00432
+L_07A:
+    CALL delay_long                 ; 07A 30074
+    SUB s4, 01                      ; 07B 1C401
+    JUMP NZ, L_07A                  ; 07C 3547A
+    RETURN                          ; 07D 2A000
+
+; SPI flash. SPI_CTRL bit 0 = SCK, bit 1 = CS_B (spi_shadow keeps
+; the last value); SPI_MOSI bit 7 = MOSI; SPI_MISO bit 7 = MISO.
+spi_cmd_tail:
+    CALL spi_xfer                   ; 07E 300AE
+    XOR s0, 02                      ; 07F 0E002
+    OUTPUT s0, SPI_CTRL             ; 080 2C0D4
+    STORE s0, spi_shadow            ; 081 2E01D
+    RETURN                          ; 082 2A000
+; $083-$097: unreached words, kept as data
+ADDRESS 083
+    ; dead_spi_cmds:
+    ; 083: 300AA  CALL spi_deselect
+    DATA_WORD 300AA
+    ; 084: 0E002  XOR s0, 02
+    DATA_WORD 0E002
+    ; 085: 2C0D4  OUTPUT s0, SPI_CTRL
+    DATA_WORD 2C0D4
+    ; 086: 2E01D  STORE s0, spi_shadow
+    DATA_WORD 2E01D
+    ; 087: 012A0  LOAD s2, sA
+    DATA_WORD 012A0
+    ; 088: 3407E  JUMP spi_cmd_tail
+    DATA_WORD 3407E
+    ; 089: 00AAB  LOAD sA, AB               unreached: $AB release from power-down, $50 EWSR
+    DATA_WORD 00AAB
+    ; 08A: 30083  CALL dead_spi_cmds
+    DATA_WORD 30083
+    ; 08B: 00A50  LOAD sA, 50
+    DATA_WORD 00A50
+    ; 08C: 30083  CALL dead_spi_cmds
+    DATA_WORD 30083
+    ; 08D: 300AA  CALL spi_deselect
+    DATA_WORD 300AA
+    ; 08E: 0E002  XOR s0, 02
+    DATA_WORD 0E002
+    ; 08F: 2C0D4  OUTPUT s0, SPI_CTRL
+    DATA_WORD 2C0D4
+    ; 090: 2E01D  STORE s0, spi_shadow
+    DATA_WORD 2E01D
+    ; 091: 00201  LOAD s2, 01
+    DATA_WORD 00201
+    ; 092: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 093: 00200  LOAD s2, 00
+    DATA_WORD 00200
+    ; 094: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 095: 00200  LOAD s2, 00
+    DATA_WORD 00200
+    ; 096: 3007E  CALL spi_cmd_tail
+    DATA_WORD 3007E
+    ; 097: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- flash_read_record ---- called from 206
+flash_read_record:
+    LOAD s7, 7E                     ; 098 0077E  read 126 bytes from flash_a2:a1:a0 into $1E.. (first 33 kept),
+    LOAD s6, 00                     ; 099 00600
+    LOAD s4, 1E                     ; 09A 0041E
+    CALL spi_read_start             ; 09B 300D9
+L_09C:
+    CALL spi_xfer                   ; 09C 300AE
+    ADD s6, s2                      ; 09D 19620  running byte sum
+    COMPARE s4, 3F                  ; 09E 1443F
+    JUMP C, L_0A1                   ; 09F 358A1
+    JUMP L_0A3                      ; 0A0 340A3
+L_0A1:
+    STORE s2, (s4)                  ; 0A1 2F240
+    ADD s4, 01                      ; 0A2 18401
+L_0A3:
+    SUB s7, 01                      ; 0A3 1C701
+    JUMP NZ, L_09C                  ; 0A4 3549C
+    CALL spi_xfer                   ; 0A5 300AE
+    XOR s6, s2                      ; 0A6 0F620  compare the sum with the record's own check byte
+    CALL spi_xfer                   ; 0A7 300AE
+    CALL spi_cs_toggle              ; 0A8 300E6
+    RETURN                          ; 0A9 2A000
+
+; ---- spi_deselect ---- called from 0BC, 0C3, 0D9, 0EC, 100, 1FA
+spi_deselect:
+    LOAD s0, AF                     ; 0AA 000AF
+    OUTPUT s0, SPI_CTRL             ; 0AB 2C0D4
+    STORE s0, spi_shadow            ; 0AC 2E01D
+    RETURN                          ; 0AD 2A000
+
+; ---- spi_xfer ---- called from 07E, 09C, 0A5, 0A7, 0C1, 0DE, 0E0, 0E2, 0E4, 0F1, 0F3, 0F5, 0F7, 105, 107, 109, 10B, 155, 1C7, 1CF, 1D8, 1DE, 1E1, 1EA, 246, 248, 24A, 24C
+spi_xfer:
+    LOAD s1, 08                     ; 0AE 00108  8 bits MSB first: s2 out, s2 in
+    FETCH s0, spi_shadow            ; 0AF 0601D
+L_0B0:
+    OUTPUT s2, SPI_MOSI             ; 0B0 2C2D5
+    XOR s0, 01                      ; 0B1 0E001
+    OUTPUT s0, SPI_CTRL             ; 0B2 2C0D4
+    LOAD s0, s0                     ; 0B3 01000
+    INPUT s3, SPI_MISO              ; 0B4 043D4
+    TEST s3, 80                     ; 0B5 12380
+    SLA s2                          ; 0B6 20200
+    XOR s0, 01                      ; 0B7 0E001
+    OUTPUT s0, SPI_CTRL             ; 0B8 2C0D4
+    SUB s1, 01                      ; 0B9 1C101
+    JUMP NZ, L_0B0                  ; 0BA 354B0
+    RETURN                          ; 0BB 2A000
+
+; ---- spi_rdsr ---- called from 0FB, 111
+spi_rdsr:
+    CALL spi_deselect               ; 0BC 300AA
+    XOR s0, 02                      ; 0BD 0E002
+    OUTPUT s0, SPI_CTRL             ; 0BE 2C0D4
+    STORE s0, spi_shadow            ; 0BF 2E01D
+    LOAD s2, 05                     ; 0C0 00205  $05 READ STATUS
+    CALL spi_xfer                   ; 0C1 300AE
+    JUMP spi_cmd_tail               ; 0C2 3407E
+
+; ---- spi_wren ---- called from 0EB, 0FF
+spi_wren:
+    CALL spi_deselect               ; 0C3 300AA
+    XOR s0, 02                      ; 0C4 0E002
+    OUTPUT s0, SPI_CTRL             ; 0C5 2C0D4
+    STORE s0, spi_shadow            ; 0C6 2E01D
+    LOAD s2, 06                     ; 0C7 00206  $06 WRITE ENABLE
+    JUMP spi_cmd_tail               ; 0C8 3407E
+; $0C9-$0D8: unreached words, kept as data
+ADDRESS 0C9
+    ; dead_rdid:
+    ; 0C9: 300AA  CALL spi_deselect
+    DATA_WORD 300AA
+    ; 0CA: 0E002  XOR s0, 02
+    DATA_WORD 0E002
+    ; 0CB: 2C0D4  OUTPUT s0, SPI_CTRL
+    DATA_WORD 2C0D4
+    ; 0CC: 2E01D  STORE s0, spi_shadow
+    DATA_WORD 2E01D
+    ; 0CD: 0029F  LOAD s2, 9F               unreached: $9F READ ID
+    DATA_WORD 0029F
+    ; 0CE: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 0CF: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 0D0: 01C20  LOAD sC, s2
+    DATA_WORD 01C20
+    ; 0D1: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 0D2: 01B20  LOAD sB, s2
+    DATA_WORD 01B20
+    ; 0D3: 300AE  CALL spi_xfer
+    DATA_WORD 300AE
+    ; 0D4: 01A20  LOAD sA, s2
+    DATA_WORD 01A20
+    ; 0D5: 0E002  XOR s0, 02
+    DATA_WORD 0E002
+    ; 0D6: 2C0D4  OUTPUT s0, SPI_CTRL
+    DATA_WORD 2C0D4
+    ; 0D7: 2E01D  STORE s0, spi_shadow
+    DATA_WORD 2E01D
+    ; 0D8: 2A000  RETURN
+    DATA_WORD 2A000
+
+; ---- spi_read_start ---- called from 09B, 154, 1CE
+spi_read_start:
+    CALL spi_deselect               ; 0D9 300AA
+    XOR s0, 02                      ; 0DA 0E002
+    OUTPUT s0, SPI_CTRL             ; 0DB 2C0D4
+    STORE s0, spi_shadow            ; 0DC 2E01D
+    LOAD s2, 03                     ; 0DD 00203  $03 READ + 24-bit address sC:sB:sA
+    CALL spi_xfer                   ; 0DE 300AE
+    LOAD s2, sC                     ; 0DF 012C0
+    CALL spi_xfer                   ; 0E0 300AE
+    LOAD s2, sB                     ; 0E1 012B0
+    CALL spi_xfer                   ; 0E2 300AE
+    LOAD s2, sA                     ; 0E3 012A0
+    CALL spi_xfer                   ; 0E4 300AE
+    RETURN                          ; 0E5 2A000
+
+; ---- spi_cs_toggle ---- called from 0A8, 156, 1E4, 1F4
+spi_cs_toggle:
+    FETCH s0, spi_shadow            ; 0E6 0601D
+    XOR s0, 02                      ; 0E7 0E002
+    OUTPUT s0, SPI_CTRL             ; 0E8 2C0D4
+    STORE s0, spi_shadow            ; 0E9 2E01D
+    RETURN                          ; 0EA 2A000
+
+; ---- flash_sector_erase ---- called from 16B, 23B
+flash_sector_erase:
+    CALL spi_wren                   ; 0EB 300C3
+    CALL spi_deselect               ; 0EC 300AA
+    XOR s0, 02                      ; 0ED 0E002
+    OUTPUT s0, SPI_CTRL             ; 0EE 2C0D4
+    STORE s0, spi_shadow            ; 0EF 2E01D
+    LOAD s2, D8                     ; 0F0 002D8  $D8 SECTOR ERASE (64 KB)
+    CALL spi_xfer                   ; 0F1 300AE
+    LOAD s2, sC                     ; 0F2 012C0
+    CALL spi_xfer                   ; 0F3 300AE
+    LOAD s2, sB                     ; 0F4 012B0
+    CALL spi_xfer                   ; 0F5 300AE
+    LOAD s2, sA                     ; 0F6 012A0
+    CALL spi_xfer                   ; 0F7 300AE
+    XOR s0, 02                      ; 0F8 0E002
+    OUTPUT s0, SPI_CTRL             ; 0F9 2C0D4
+    STORE s0, spi_shadow            ; 0FA 2E01D
+L_0FB:
+    CALL spi_rdsr                   ; 0FB 300BC  wait while WIP
+    TEST s2, 01                     ; 0FC 12201
+    JUMP NZ, L_0FB                  ; 0FD 354FB
+    RETURN                          ; 0FE 2A000
+
+; ---- flash_page_program_start ---- called from 1C5, 1E8, 23F
+flash_page_program_start:
+    CALL spi_wren                   ; 0FF 300C3
+    CALL spi_deselect               ; 100 300AA
+    XOR s0, 02                      ; 101 0E002
+    OUTPUT s0, SPI_CTRL             ; 102 2C0D4
+    STORE s0, spi_shadow            ; 103 2E01D
+    LOAD s2, 02                     ; 104 00202  $02 PAGE PROGRAM + address
+    CALL spi_xfer                   ; 105 300AE
+    LOAD s2, sC                     ; 106 012C0
+    CALL spi_xfer                   ; 107 300AE
+    LOAD s2, sB                     ; 108 012B0
+    CALL spi_xfer                   ; 109 300AE
+    LOAD s2, sA                     ; 10A 012A0
+    CALL spi_xfer                   ; 10B 300AE
+    RETURN                          ; 10C 2A000
+
+; ---- flash_wait_done ---- called from 1C8, 1EB, 250
+flash_wait_done:
+    FETCH s0, spi_shadow            ; 10D 0601D
+    XOR s0, 02                      ; 10E 0E002
+    OUTPUT s0, SPI_CTRL             ; 10F 2C0D4
+    STORE s0, spi_shadow            ; 110 2E01D
+L_111:
+    CALL spi_rdsr                   ; 111 300BC
+    TEST s2, 01                     ; 112 12201
+    JUMP NZ, L_111                  ; 113 35511
+    RETURN                          ; 114 2A000
+
+; MultiBoot reboot through ICAP: sync AA99, GENERAL1/2 = next
+; image address (mb_addr), CMD = IPROG ($000E). Used by the slot A
+; image to hand over to slot B.
+
+; ---- icap_reboot ---- called from 1F3
+icap_reboot:
+    CALL icap_select                ; 115 30145
+    LOAD s3, AA                     ; 116 003AA  sync AA 99
+    CALL icap_write                 ; 117 3014D
+    LOAD s3, 99                     ; 118 00399
+    CALL icap_write                 ; 119 3014D
+    LOAD s3, 32                     ; 11A 00332  GENERAL1 = mb_addr_mid:mb_addr_lo
+    CALL icap_write                 ; 11B 3014D
+    LOAD s3, 61                     ; 11C 00361
+    CALL icap_write                 ; 11D 3014D
+    FETCH s3, mb_addr_mid           ; 11E 06301
+    CALL icap_write                 ; 11F 3014D
+    FETCH s3, mb_addr_lo            ; 120 06300
+    CALL icap_write                 ; 121 3014D
+    LOAD s3, 32                     ; 122 00332  GENERAL2 = $03 (read opcode) : mb_addr_hi
+    CALL icap_write                 ; 123 3014D
+    LOAD s3, 81                     ; 124 00381
+    CALL icap_write                 ; 125 3014D
+    LOAD s3, 03                     ; 126 00303
+    CALL icap_write                 ; 127 3014D
+    FETCH s3, mb_addr_hi            ; 128 06302
+    CALL icap_write                 ; 129 3014D
+    LOAD s3, 32                     ; 12A 00332  MODE
+    CALL icap_write                 ; 12B 3014D
+    LOAD s3, A1                     ; 12C 003A1
+    CALL icap_write                 ; 12D 3014D
+    LOAD s3, 00                     ; 12E 00300
+    CALL icap_write                 ; 12F 3014D
+    LOAD s3, 4F                     ; 130 0034F
+    CALL icap_write                 ; 131 3014D
+    LOAD s3, 30                     ; 132 00330  CMD = IPROG
+    CALL icap_write                 ; 133 3014D
+    LOAD s3, A1                     ; 134 003A1
+    CALL icap_write                 ; 135 3014D
+    LOAD s3, 00                     ; 136 00300
+    CALL icap_write                 ; 137 3014D
+    LOAD s3, 0E                     ; 138 0030E
+    CALL icap_write                 ; 139 3014D
+    LOAD s3, 20                     ; 13A 00320
+    CALL icap_write                 ; 13B 3014D
+    LOAD s3, 00                     ; 13C 00300
+    CALL icap_write                 ; 13D 3014D
+    CALL icap_idle                  ; 13E 30140
+    RETURN                          ; 13F 2A000
+
+; ---- icap_idle ---- called from 13E, 1F2
+icap_idle:
+    LOAD s0, 06                     ; 140 00006  ICAP_CTRL bit 0 = CLK, bits 1-2 = CE_B / WRITE_B
+    OUTPUT s0, ICAP_CTRL            ; 141 2C0D2
+    CALL icap_clock                 ; 142 30148
+    CALL icap_clock                 ; 143 30148
+    RETURN                          ; 144 2A000
+
+; ---- icap_select ---- called from 115
+icap_select:
+    LOAD s0, 00                     ; 145 00000
+    OUTPUT s0, ICAP_CTRL            ; 146 2C0D2
+    RETURN                          ; 147 2A000
+
+; ---- icap_clock ---- called from 142, 143, 14E
+icap_clock:
+    XOR s0, 01                      ; 148 0E001
+    OUTPUT s0, ICAP_CTRL            ; 149 2C0D2
+    XOR s0, 01                      ; 14A 0E001
+    OUTPUT s0, ICAP_CTRL            ; 14B 2C0D2
+    RETURN                          ; 14C 2A000
+
+; ---- icap_write ---- called from 117, 119, 11B, 11D, 11F, 121, 123, 125, 127, 129, 12B, 12D, 12F, 131, 133, 135, 137, 139, 13B, 13D
+icap_write:
+    OUTPUT s3, ICAP_DATA            ; 14D 2C3D1
+    CALL icap_clock                 ; 14E 30148
+    RETURN                          ; 14F 2A000
+
+; Boot tally at flash $070000: find the first non-zero byte.
+; If all 256 are zero, erase the sector and start over.
+; Byte states: FF unused, 01 slot A handed over to slot B,
+; 00 slot B booted. A 01 at boot means slot B failed last time.
+
+; ---- tally_find ---- called from 1BB, 1BE
+tally_find:
+    LOAD sC, 07                     ; 150 00C07
+    LOAD sB, 00                     ; 151 00B00
+    LOAD sA, 00                     ; 152 00A00
+    LOAD s6, 00                     ; 153 00600
+L_154:
+    CALL spi_read_start             ; 154 300D9
+    CALL spi_xfer                   ; 155 300AE
+    CALL spi_cs_toggle              ; 156 300E6
+    COMPARE s2, 00                  ; 157 14200
+    JUMP NZ, L_165                  ; 158 35565
+    ADD sA, 01                      ; 159 18A01
+    ADDCY sB, 00                    ; 15A 1AB00
+    ADDCY sC, 00                    ; 15B 1AC00
+    ADD s6, 01                      ; 15C 18601
+    COMPARE s6, 00                  ; 15D 14600
+    JUMP NZ, L_154                  ; 15E 35554
+    CALL tally_erase                ; 15F 30168  all zero: erase $070000
+    LOAD s0, FF                     ; 160 000FF
+    STORE s0, tally_byte            ; 161 2E012
+    LOAD s0, 00                     ; 162 00000
+    STORE s0, tally_index           ; 163 2E013
+    RETURN                          ; 164 2A000
+L_165:
+    STORE s2, tally_byte            ; 165 2E212
+    STORE s6, tally_index           ; 166 2E613
+    RETURN                          ; 167 2A000
+
+; ---- tally_erase ---- called from 15F
+tally_erase:
+    LOAD sC, 07                     ; 168 00C07
+    LOAD sB, 00                     ; 169 00B00
+    LOAD sA, 00                     ; 16A 00A00
+    CALL flash_sector_erase         ; 16B 300EB
+    RETURN                          ; 16C 2A000
+; $16D-$175: unreached words, kept as data
+ADDRESS 16D
+    ; dead_tally_full:
+    ; 16D: 06012  FETCH s0, tally_byte
+    DATA_WORD 06012
+    ; 16E: 140FF  COMPARE s0, FF
+    DATA_WORD 140FF
+    ; 16F: 35173  JUMP Z, 173
+    DATA_WORD 35173
+    ; 170: 00000  LOAD s0, 00
+    DATA_WORD 00000
+    ; 171: 2E014  STORE s0, 14
+    DATA_WORD 2E014
+    ; 172: 2A000  RETURN
+    DATA_WORD 2A000
+    ; 173: 00001  LOAD s0, 01
+    DATA_WORD 00001
+    ; 174: 2E014  STORE s0, 14
+    DATA_WORD 2E014
+    ; 175: 2A000  RETURN
+    DATA_WORD 2A000
+bank2_isr_unused:
+    LOAD sE, DD                     ; 176 00EDD  never taken: bank 2 runs with interrupts off
+    CALL dbg_putc                   ; 177 30061
+    RETURNI ENABLE                  ; 178 38001
+
+; ---- record_bad ---- called from 208
+record_bad:
+    LOAD s0, EE                     ; 179 000EE
+    STORE s0, record_error          ; 17A 2E006
+    RETURN                          ; 17B 2A000
+
+; License check. The record at flash $031100 holds the expected
+; CRCs; both CRCs are computed over the record bytes with the
+; chip's Device DNA mixed in. Pass sets verdict_a/b = F1 / F2.
+
+; ---- license_check ---- called from 213
+license_check:
+    FETCH s7, dna0                  ; 17C 0670A  DNA (reversed) -> $32-$39
+    STORE s7, 39                    ; 17D 2E739
+    FETCH s7, dna1                  ; 17E 0670B
+    STORE s7, 38                    ; 17F 2E738
+    FETCH s7, dna2                  ; 180 0670C
+    STORE s7, 37                    ; 181 2E737
+    FETCH s7, dna3                  ; 182 0670D
+    STORE s7, 36                    ; 183 2E736
+    FETCH s7, dna4                  ; 184 0670E
+    STORE s7, 35                    ; 185 2E735
+    FETCH s7, dna5                  ; 186 0670F
+    STORE s7, 34                    ; 187 2E734
+    FETCH s7, dna6                  ; 188 06710
+    STORE s7, 33                    ; 189 2E733
+    FETCH s7, dna7                  ; 18A 06711
+    STORE s7, 32                    ; 18B 2E732
+    LOAD s4, 1E                     ; 18C 0041E
+    LOAD s5, 1C                     ; 18D 0051C
+    CALL crc16                      ; 18E 30031  CRC-16 over $1E-$39
+    FETCH s5, want_crc16_hi         ; 18F 06517
+    FETCH s4, want_crc16_lo         ; 190 06418
+    COMPARE s7, s5                  ; 191 15750  vs want_crc16
+    JUMP NZ, L_195                  ; 192 35595
+    COMPARE s6, s4                  ; 193 15640
+    CALL Z, verdict_a_ok            ; 194 3105B
+L_195:
+    FETCH s7, dna0                  ; 195 0670A  DNA -> $28-$2F
+    STORE s7, 2F                    ; 196 2E72F
+    FETCH s7, dna1                  ; 197 0670B
+    STORE s7, 2E                    ; 198 2E72E
+    FETCH s7, dna2                  ; 199 0670C
+    STORE s7, 2D                    ; 19A 2E72D
+    FETCH s7, dna3                  ; 19B 0670D
+    STORE s7, 2C                    ; 19C 2E72C
+    FETCH s7, dna4                  ; 19D 0670E
+    STORE s7, 2B                    ; 19E 2E72B
+    FETCH s7, dna5                  ; 19F 0670F
+    STORE s7, 2A                    ; 1A0 2E72A
+    FETCH s7, dna6                  ; 1A1 06710
+    STORE s7, 29                    ; 1A2 2E729
+    FETCH s7, dna7                  ; 1A3 06711
+    STORE s7, 28                    ; 1A4 2E728
+    LOAD s0, 1E                     ; 1A5 0001E
+    LOAD s4, 12                     ; 1A6 00412
+    CALL crc7                       ; 1A7 30043  CRC-7 over $1E-$2F
+    FETCH s0, want_crc7             ; 1A8 06016
+    COMPARE s0, sF                  ; 1A9 150F0  vs want_crc7
+    CALL Z, verdict_b_ok            ; 1AA 3105E
+    RETURN                          ; 1AB 2A000
+
+; ---- clear_scratchpad ---- called from 225
+clear_scratchpad:
+    LOAD s6, 00                     ; 1AC 00600
+    LOAD s4, 00                     ; 1AD 00400
+L_1AE:
+    COMPARE s4, 3E                  ; 1AE 1443E
+    JUMP C, L_1B1                   ; 1AF 359B1
+    JUMP L_1B4                      ; 1B0 341B4
+L_1B1:
+    STORE s6, (s4)                  ; 1B1 2F640
+    ADD s4, 01                      ; 1B2 18401
+    JUMP L_1AE                      ; 1B3 341AE
+L_1B4:
+    RETURN                          ; 1B4 2A000
+
+; Bank 2 main, called from bank 1 with license_b = 0 (boot) or
+; 1 (flash update, kernel command $08). Boot: fail-safe MultiBoot.
+; The slot A image (the fallback image, at 0) hands over to slot B when the
+; tally byte is clean and slot B looks valid; slot B just marks
+; the byte done. Then both run the license scan.
+
+; ---- bank2_main ---- called from 3F3
+bank2_main:
+    FETCH s2, license_b             ; 1B5 0623F
+    COMPARE s2, 01                  ; 1B6 14201
+    JUMP Z, flash_update            ; 1B7 3522F  flash update requested
+    LOAD s0, 02                     ; 1B8 00002  slot A image: 01 (hand over to slot B); slot B image: 02 (never)
+    COMPARE s0, 01                  ; 1B9 14001
+    JUMP Z, multiboot_check         ; 1BA 351BD
+    CALL tally_find                 ; 1BB 30150
+    JUMP tally_advance              ; 1BC 341C2
+multiboot_check:
+    CALL delay_huge                 ; 1BD 30079
+    CALL tally_find                 ; 1BE 30150
+    FETCH s0, tally_byte            ; 1BF 06012
+    COMPARE s0, FF                  ; 1C0 140FF  FF: clean, try slot B. 01: slot B failed last boot, stay here
+    JUMP Z, find_slot_b             ; 1C1 351CA
+tally_advance:
+    LOAD sC, 07                     ; 1C2 00C07
+    LOAD sB, 00                     ; 1C3 00B00
+    FETCH sA, tally_index           ; 1C4 06A13
+    CALL flash_page_program_start   ; 1C5 300FF
+    LOAD s2, 00                     ; 1C6 00200  tally byte = 00
+    CALL spi_xfer                   ; 1C7 300AE
+    CALL flash_wait_done            ; 1C8 3010D
+    JUMP license_scan               ; 1C9 341F8
+find_slot_b:
+    LOAD sC, 04                     ; 1CA 00C04  look for a bitstream sync (AA 99 .. 31 61) at $040000
+    LOAD sB, 00                     ; 1CB 00B00
+    LOAD sA, 00                     ; 1CC 00A00
+    LOAD s6, 00                     ; 1CD 00600
+    CALL spi_read_start             ; 1CE 300D9
+L_1CF:
+    CALL spi_xfer                   ; 1CF 300AE
+    COMPARE s2, FF                  ; 1D0 142FF
+    JUMP NZ, L_1D6                  ; 1D1 355D6
+    ADD s6, 01                      ; 1D2 18601
+    COMPARE s6, E0                  ; 1D3 146E0
+    JUMP Z, slot_b_bad              ; 1D4 351F4
+    JUMP L_1CF                      ; 1D5 341CF
+L_1D6:
+    COMPARE s2, AA                  ; 1D6 142AA
+    JUMP NZ, slot_b_bad             ; 1D7 355F4
+    CALL spi_xfer                   ; 1D8 300AE
+    COMPARE s2, 99                  ; 1D9 14299
+    JUMP NZ, slot_b_bad             ; 1DA 355F4
+L_1DB:
+    ADD s6, 01                      ; 1DB 18601
+    COMPARE s6, F8                  ; 1DC 146F8
+    JUMP Z, slot_b_bad              ; 1DD 351F4
+    CALL spi_xfer                   ; 1DE 300AE
+    COMPARE s2, 31                  ; 1DF 14231
+    JUMP NZ, L_1DB                  ; 1E0 355DB
+    CALL spi_xfer                   ; 1E1 300AE
+    COMPARE s2, 61                  ; 1E2 14261
+    JUMP NZ, L_1DB                  ; 1E3 355DB
+    CALL spi_cs_toggle              ; 1E4 300E6
+    LOAD sC, 07                     ; 1E5 00C07
+    LOAD sB, 00                     ; 1E6 00B00
+    FETCH sA, tally_index           ; 1E7 06A13
+    CALL flash_page_program_start   ; 1E8 300FF
+    LOAD s2, 01                     ; 1E9 00201  tally byte = 01: hand-over in progress
+    CALL spi_xfer                   ; 1EA 300AE
+    CALL flash_wait_done            ; 1EB 3010D
+    LOAD s1, 04                     ; 1EC 00104
+    STORE s1, mb_addr_hi            ; 1ED 2E102
+    LOAD s1, 00                     ; 1EE 00100
+    STORE s1, mb_addr_mid           ; 1EF 2E101
+    LOAD s1, 00                     ; 1F0 00100
+    STORE s1, mb_addr_lo            ; 1F1 2E100
+    CALL icap_idle                  ; 1F2 30140
+    CALL icap_reboot                ; 1F3 30115
+slot_b_bad:
+    CALL spi_cs_toggle              ; 1F4 300E6
+    LOAD sE, 44                     ; 1F5 00E44  debug 44: slot B invalid, boot slot A
+    CALL dbg_putc                   ; 1F6 30061
+    JUMP tally_advance              ; 1F7 341C2
+license_scan:
+    CALL dna_idle                   ; 1F8 30003
+    CALL dna_read                   ; 1F9 30006  read Device DNA
+    CALL spi_deselect               ; 1FA 300AA
+    LOAD s0, 03                     ; 1FB 00003  records at $030000, 128 bytes each
+    STORE s0, flash_a2              ; 1FC 2E005
+    LOAD s0, 00                     ; 1FD 00000
+    STORE s0, flash_a1              ; 1FE 2E004
+    LOAD s0, 00                     ; 1FF 00000
+    STORE s0, flash_a0              ; 200 2E003
+L_201:
+    FETCH sC, flash_a2              ; 201 06C05
+    FETCH sB, flash_a1              ; 202 06B04
+    FETCH sA, flash_a0              ; 203 06A03
+    COMPARE sB, 15                  ; 204 14B15  stop at $031500
+    JUMP Z, license_done            ; 205 3521E
+    CALL flash_read_record          ; 206 30098
+    COMPARE s2, s6                  ; 207 15260
+    CALL NZ, record_bad             ; 208 31579  bad record checksum -> record_error = EE
+    COMPARE sB, 11                  ; 209 14B11  the record at $031100 carries the license CRCs
+    JUMP NZ, L_214                  ; 20A 35614
+    COMPARE sA, 00                  ; 20B 14A00
+    JUMP NZ, L_214                  ; 20C 35614
+    FETCH s0, 28                    ; 20D 06028
+    STORE s0, want_crc7             ; 20E 2E016
+    FETCH s0, 32                    ; 20F 06032
+    STORE s0, want_crc16_hi         ; 210 2E017
+    FETCH s0, 33                    ; 211 06033
+    STORE s0, want_crc16_lo         ; 212 2E018
+    CALL license_check              ; 213 3017C
+L_214:
+    FETCH sC, flash_a2              ; 214 06C05
+    FETCH sB, flash_a1              ; 215 06B04
+    FETCH sA, flash_a0              ; 216 06A03
+    ADD sA, 80                      ; 217 18A80
+    ADDCY sB, 00                    ; 218 1AB00
+    ADDCY sC, 00                    ; 219 1AC00
+    STORE sC, flash_a2              ; 21A 2EC05
+    STORE sB, flash_a1              ; 21B 2EB04
+    STORE sA, flash_a0              ; 21C 2EA03
+    JUMP L_201                      ; 21D 34201
+license_done:
+    FETCH s0, record_error          ; 21E 06006
+    COMPARE s0, EE                  ; 21F 140EE
+    JUMP Z, L_226                   ; 220 35226
+    FETCH s0, verdict_a             ; 221 06019  publish verdict for bank 1, unless any record was bad
+    STORE s0, license_a             ; 222 2E03E
+    FETCH s0, verdict_b             ; 223 0601A
+    STORE s0, license_b             ; 224 2E03F
+    CALL clear_scratchpad           ; 225 301AC
+L_226:
+    RETURN                          ; 226 2A000
+
+; Read one 32-bit table entry: index s5 -> s3:s2:s1:s0.
+
+; ---- tbl_read ---- called from 232, 241
+tbl_read:
+    OUTPUT s5, TBL_INDEX            ; 227 2C5BF
+    LOAD s1, s1                     ; 228 01110
+    LOAD s1, s1                     ; 229 01110
+    INPUT s3, TBL_Q3                ; 22A 043C0
+    INPUT s2, TBL_Q2                ; 22B 042C1
+    INPUT s1, TBL_Q1                ; 22C 041C2
+    INPUT s0, TBL_Q0                ; 22D 040C3
+    RETURN                          ; 22E 2A000
+
+; Flash update (kernel command $08). Table entry 0 = flash
+; address; entries 1-$40 = 256 bytes of data. Erases the 64 KB
+; sector when the address is on a sector boundary, then programs
+; one 256-byte page.
+flash_update:
+    LOAD s2, 01                     ; 22F 00201
+    OUTPUT s2, FLASH_BUSY           ; 230 2C2F1  FLASH_BUSY on
+    LOAD s5, 00                     ; 231 00500
+    CALL tbl_read                   ; 232 30227
+    STORE s2, flash_a2              ; 233 2E205
+    STORE s1, flash_a1              ; 234 2E104
+    STORE s0, flash_a0              ; 235 2E003
+    COMPARE s1, 00                  ; 236 14100  address bits 15:8 == 0: start of a sector, erase it
+    JUMP NZ, L_23C                  ; 237 3563C
+    LOAD sC, s2                     ; 238 01C20
+    LOAD sB, s1                     ; 239 01B10
+    LOAD sA, s0                     ; 23A 01A00
+    CALL flash_sector_erase         ; 23B 300EB
+L_23C:
+    FETCH sC, flash_a2              ; 23C 06C05
+    FETCH sB, flash_a1              ; 23D 06B04
+    FETCH sA, flash_a0              ; 23E 06A03
+    CALL flash_page_program_start   ; 23F 300FF  page program at the address
+    LOAD s5, 01                     ; 240 00501
+L_241:
+    CALL tbl_read                   ; 241 30227
+    STORE s3, dna3                  ; 242 2E30D
+    STORE s2, dna2                  ; 243 2E20C
+    STORE s1, dna1                  ; 244 2E10B
+    LOAD s2, s0                     ; 245 01200
+    CALL spi_xfer                   ; 246 300AE
+    FETCH s2, dna1                  ; 247 0620B
+    CALL spi_xfer                   ; 248 300AE
+    FETCH s2, dna2                  ; 249 0620C
+    CALL spi_xfer                   ; 24A 300AE
+    FETCH s2, dna3                  ; 24B 0620D
+    CALL spi_xfer                   ; 24C 300AE
+    ADD s5, 01                      ; 24D 18501
+    COMPARE s5, 41                  ; 24E 14541
+    JUMP NZ, L_241                  ; 24F 35641
+    CALL flash_wait_done            ; 250 3010D
+    LOAD s2, 00                     ; 251 00200
+    OUTPUT s2, FLASH_BUSY           ; 252 2C2F1  FLASH_BUSY off
+    RETURN                          ; 253 2A000
+; $254-$3EF: 412 unused (zero) words
+ADDRESS 3F0
+
+; Bank switch window (identical in bank 1 except $3F3).
+
+; ---- bank2_entry ---- extra entry: no path from reset or interrupt reaches here
+bank2_entry:
+    LOAD s0, 01                     ; 3F0 00001
+    OUTPUT s0, BANK_SELECT          ; 3F1 2C0C8
+    LOAD s0, s0                     ; 3F2 01000
+    CALL bank2_main                 ; 3F3 301B5  the only instruction bank 1 runs from bank 2
+    LOAD s0, 00                     ; 3F4 00000
+    OUTPUT s0, BANK_SELECT          ; 3F5 2C0C8
+    LOAD s0, s0                     ; 3F6 01000
+    RETURN                          ; 3F7 2A000
+; $3F8-$3FE: 7 unused (zero) words
+ADDRESS 3FF
+int_vector:
+    JUMP bank2_isr_unused           ; 3FF 34176

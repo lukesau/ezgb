@@ -1,0 +1,7 @@
+; FW4 updater symbols (stage1-write investigation, 2026-08-30)
+00:124b Fpga7FD2Begin_config_flash_op
+00:1271 Fpga7FD2End
+00:1290 FpgaMapWindow_7F36
+00:12b0 FlashStageBlock_via_window
+00:153a FpgaSetPersonality_7FC0_DEAD
+01:4000 Fpga7FD2BeginAndPollWram

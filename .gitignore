@@ -20,11 +20,13 @@ re/kernel/*/*.gbc
 re/kernel/*/*.dat
 # stock stage1, as stage1-from-bram.py writes it beside each disassembly
 re/stage1/*/kernel.gb
-# Raw mgbdis output of the FW updaters: unannotated, firmware-derived working
-# artifacts for the FPGA-flash analysis (re/stage0/docs/flash-map.md), kept local.
-# Unlike the kernel disassembly, these are not an annotated RE deliverable.
-/re/updater-fw4/
-/re/updater-fw5-0731/
+# The FW updaters themselves (EZ Flash's .gb files) stay local; their
+# disassembly in re/updater/<fw>/ is tracked
+re/updater/*/*.gb
+re/updater/*/disassembly/game.gb
+re/updater/*/disassembly/game.o
+re/updater/*/disassembly/game.map
+re/updater/*/disassembly/game.sym
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
