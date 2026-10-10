@@ -254,8 +254,10 @@ What the simulation showed:
    model done: the boot gets through card init, and Game Boy-side sector
    reads work. pSRAM model done: ROM loads land byte for byte, and the
    kernel launch runs as on hardware. Game launch done: ROM reads land in
-   game mode with MBC3 banking. Next: the other MBC types, `$A000` save RAM
-   in game mode, /OE.
+   game mode with MBC3 banking. All MBC types, save RAM, the MBC3 clock and
+   both launches now run on FW4, FW5-0731 and FW5-0918 alike
+   ([firmware-diff.md](firmware-diff.md)). Next: what FW5's `$7FD3/$7FD4`
+   drive, /OE.
 3. Simulate Game Boy bus cycles from the kernel's own register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
