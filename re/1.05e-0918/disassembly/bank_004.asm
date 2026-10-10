@@ -9,7 +9,7 @@ SECTION "ROM Bank $004", ROMX[$4000], BANK[$4]
 ; ROM load + soft-boot (kernel FPGA path only — not used by launched games).
 ; $7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.
 ; $7FE0=$80: reset into loaded ROM; same PSRAM chip, FPGA emulates game MBC.
-; See docs/psram-save-map.md and sd/README.md.
+; See docs/psram-save-map.md and docs/DEVELOPMENT.md.
 
 
 RomLoad_InitiatePoll::

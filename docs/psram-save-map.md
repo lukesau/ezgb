@@ -35,7 +35,7 @@ SameBoy stub mirrors this: `mbc_ram` aliases `cart_sram` after `$7FE0` soft-rese
 2. **Before launch**: kernel stamps page `$11` (`$AA` = pending backup, savename, bank count).
 3. **After power-up**: if `$AA` still set, `SdMenuMain` offers **BACKUPSAVE** and copies PSRAM to `SAVER/*.SAV` on the SD image.
 
-Details for the emulator workflow: [sd/README.md](../sd/README.md).
+Details for the emulator workflow: [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## BACKUPSAVE flag lifecycle
 

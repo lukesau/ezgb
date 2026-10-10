@@ -2,7 +2,7 @@
 
 How to set up every tool the FPGA work uses, starting from a bare machine,
 and then build and install a stage1 updater end to end. Tool reference
-(every flag, output formats, ISE details): [fpga-toolchain.md](fpga-toolchain.md).
+(every flag, output formats, ISE details): [toolchain.md](../re/stage0/docs/toolchain.md).
 Reading order for the rest: [fpga.md](fpga.md).
 
 Nothing EZ Flash wrote is in this repository. Their updater, bitstreams,
@@ -52,7 +52,7 @@ is bincode-serialised, so a database from another revision won't load, or
 loads wrong. `scripts/fpga/s3decode/Cargo.toml` pins `7ab08a02…`; to move to
 a newer prjcombine, change the rev there and check out the same rev of the
 database together. More in
-[fpga-toolchain.md](fpga-toolchain.md#prjcombine), including building
+[toolchain.md](../re/stage0/docs/toolchain.md#prjcombine), including building
 `prjcombine-cli` to browse the database (optional).
 
 The project's `AGENTS.md` says it does not accept contributions authored by
@@ -80,7 +80,7 @@ from `~/fpga/s3decode`) and `--device` (default `xc3s200a`).
 | `s3trace` | walk routing back from a bel pin (`--from TILE:BEL:PIN --depth N`), list pins (`--list-pins TILE`), or dump the netlist as JSON lines (`--netlist out.jsonl`) |
 | `s3pins` | the package pin map, e.g. `--bond vq100` |
 
-Flags and output formats: [fpga-toolchain.md](fpga-toolchain.md#s3decode).
+Flags and output formats: [toolchain.md](../re/stage0/docs/toolchain.md#s3decode).
 
 ## 5. ISE 14.7 (optional)
 
@@ -88,7 +88,7 @@ Only needed to *make* bitstreams: the blank baseline that `s3decode
 --baseline` diffs against, and the smoke test. Nothing in the updater build
 needs it. Getting it (copied out of AMD's VM appliance), the Ubuntu 24.04
 packages, the free WebPACK licence and how to run it are all in
-[fpga-toolchain.md](fpga-toolchain.md#ise-147). Once it's in place:
+[toolchain.md](../re/stage0/docs/toolchain.md#ise-147). Once it's in place:
 
 ```bash
 rsync -a --exclude s3decode scripts/fpga/ <build host>:~/fpga/scripts/
@@ -105,7 +105,7 @@ On the Game Boy side machine:
 
 | Tool | Version | Used for |
 |---|---|---|
-| SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
+| SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `re/stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
 | RGBDS | 1.x (1.0.1 was used) | `rgbfix` for stage1; `rgbasm`/`rgblink` for the splash lab in `re/fpga-fw4/bootsplash/` and the overlay patches in `re/fpga-fw4/` |
 | Python 3 | standard library only | every script in `scripts/fpga/`; PIL isn't needed |
 | mgbdis | cloned into `tools/mgbdis` | the stock stage1 disassembly (`scripts/fpga/stage1-regen.sh`) |
@@ -140,7 +140,7 @@ Main's version only runs the kernel. On this branch the stub:
 
 | Env var | Meaning |
 |---|---|
-| `SAMEBOY_EZFLASH_JR_IMG` | the SD card image. Default `sd/card.img` (see [sd/README.md](../sd/README.md)) |
+| `SAMEBOY_EZFLASH_JR_IMG` | the SD card image. Default `sd/card.img` (see [DEVELOPMENT.md](DEVELOPMENT.md)) |
 | `SAMEBOY_EZFLASH_JR_LOG=1` | send the stub's messages to stderr |
 | `SAMEBOY_EZFLASH_JR=0` | turn the stub off |
 
@@ -155,10 +155,10 @@ expect them, or adjust the paths.
 | Input | Where to get it | Used by |
 |---|---|---|
 | stock `Update_FW4.gb` | EZ Flash's 1.04e FW4 package (`juniorkernel-1.04e-FW4/`), or `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr). Both copies are the same file | every updater; slot B comes out of it |
-| stock stage1 dumps | daid/ezflashjr `stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
+| stock stage1 dumps | daid/ezflashjr `re/stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
 | your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the licence record, recovery |
 | the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `re/fpga-fw4/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |
-| the cart-label photo (optional) | a photo of the Jr's label, `fpga/bootsplash/cart-label.png` | `jr-trace.py`, only to retrace the committed `stage1/art/jr.txt` |
+| the cart-label photo (optional) | a photo of the Jr's label, `fpga/bootsplash/cart-label.png` | `jr-trace.py`, only to retrace the committed `re/stage1/art/jr.txt` |
 
 ## 9. End to end: build and install a stage1 updater
 
@@ -209,14 +209,14 @@ matches kernel.gb").
 
 ```bash
 re/fpga-fw4/bootsplash/build.sh          # -> fpga/bootsplash/build/icon.2bpp (and the splash lab)
-EZGB_ROOT=<repo> stage1/build.sh         # -> fpga/stage1/stage1.gb
+EZGB_ROOT=<repo> re/stage1/build.sh         # -> fpga/stage1/stage1.gb
 # stage1: 11410 bytes used of 18432
 ```
 
 `EZGB_ROOT` names the checkout whose `fpga/` holds the inputs and outputs. It
 defaults to the checkout `build.sh` is in, so set it when building from a
 second worktree. rgbfix prints "Overwrote a non-zero byte" warnings; they
-are expected. Version and build options: [stage1/README.md](../stage1/README.md).
+are expected. Version and build options: [re/stage1/README.md](../re/stage1/README.md).
 
 **5. Split it into BRAM contents.** Use a relative output directory, because
 the printed `--set` arguments carry that path:
@@ -287,7 +287,7 @@ The new stage1 runs from the next power-on.
 - Slot A is what the FPGA loads at power-on; its PicoBlaze firmware hands
   over to slot B. If slot B fails to come up, a boot tally makes the next
   power-on stay on slot A
-  ([fpga-picoblaze.md](fpga-picoblaze.md#at-boot-3f--0)). That covers a
+  ([picoblaze.md](../re/stage0/docs/picoblaze.md#at-boot-3f--0)). That covers a
   corrupt slot B, not a slot B that configures and then misbehaves.
 - A stage1 that configures but hangs can't run the updater again, because
   the updater is launched from the kernel and stage1 is what loads the
@@ -299,5 +299,5 @@ The new stage1 runs from the next power-on.
   never program one cart's full image onto another; splice slot B into a
   fresh dump of that cart instead.
 - Everything here has run on one FW4 Jr. An FW5 design doesn't hand over
-  from one image to the other ([fpga-fw5.md](fpga-fw5.md)), so check what
+  from one image to the other ([fw5.md](../re/stage0/docs/fw5.md)), so check what
   your cart's slot A is before trusting the fallback.

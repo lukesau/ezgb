@@ -107,7 +107,7 @@ The reverse engineering is essentially done:
   I/O, bank switching, PSRAM save storage, the board, and the ROM launch path.
   See [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
-  [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
+  [`re/stage0/docs/flash-map.md`](re/stage0/docs/flash-map.md),
   [`docs/launch-trace.md`](docs/launch-trace.md). Why the coin cell dies in a
   month and the drop-in SRAM fix: [`docs/battery-sram-swap.md`](docs/battery-sram-swap.md).
 - **Code injection works.** You can compile C, place it in verified-free ROM,
@@ -164,7 +164,7 @@ docs/             Findings, feature write-ups, hardware notes
 scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
 patches/kernel/   IPS patches: stock ezgb.dat -> modded kernel (safe to share)
 patches/sameboy/  EZ Jr FPGA stub as diffs over a pinned SameBoy commit
-sd/               Local microSD image for the emulator     (see sd/README.md)
+sd/               Local microSD image for the emulator     (untracked; see docs/DEVELOPMENT.md)
 fpga/, tools/     FPGA dumps and cloned reference repos     (not tracked)
 ```
 
@@ -183,12 +183,12 @@ the FW5 packages differ
 - **Hardware:** [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
   [`docs/fpga.md`](docs/fpga.md) (FPGA docs index and setup),
-  [`docs/fpga-flash-map.md`](docs/fpga-flash-map.md),
-  [`docs/fpga-bitstream.md`](docs/fpga-bitstream.md),
-  [`docs/fpga-picoblaze.md`](docs/fpga-picoblaze.md),
-  [`docs/fpga-fw5.md`](docs/fpga-fw5.md),
+  [`re/stage0/docs/flash-map.md`](re/stage0/docs/flash-map.md),
+  [`re/stage0/docs/bitstream.md`](re/stage0/docs/bitstream.md),
+  [`re/stage0/docs/picoblaze.md`](re/stage0/docs/picoblaze.md),
+  [`re/stage0/docs/fw5.md`](re/stage0/docs/fw5.md),
   [`docs/fpga-cgb.md`](docs/fpga-cgb.md),
-  [`docs/fpga-toolchain.md`](docs/fpga-toolchain.md),
+  [`re/stage0/docs/toolchain.md`](re/stage0/docs/toolchain.md),
   [`docs/game-slot-access.md`](docs/game-slot-access.md),
   [`docs/psram-save-map.md`](docs/psram-save-map.md).
 - **Boot & launch:** [`docs/boot-map.md`](docs/boot-map.md),
