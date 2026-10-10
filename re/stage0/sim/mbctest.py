@@ -213,6 +213,8 @@ PROBES = {
         ('w', 0x4000, 0x01), ('w', 0xA020, 0x11), ('w', 0x0000, 0x1A), ('r', 0xA020), ('w', 0xA022, 0x22),
         ('w', 0x0000, 0xFA), ('r', 0xA020), ('w', 0x0000, 0x0B), ('r', 0xA020), ('w', 0x1FFF, 0x0A), ('r', 0xA020),
         ('w', 0xA024, 0x44), ('r', 0xA024), ('w', 0x0000, 0x00), ('w', 0xA026, 0x66), ('r', 0xA026), ('w', 0x0000, 0x0A), ('r', 0xA026)]),
+    # all of stage1 off the bus at power-on ($0000-$47FF)
+    'stage1all': dict(nolaunch=True, ops=[('r', a) for a in range(0x0000, 0x4800)]),
     # stage1's header straight off the bus at power-on (no FPGA writes)
     'stage1hdr': dict(nolaunch=True, ops=[('r', a) for a in range(0x100, 0x150)]),
     # kernel mode (no launch): $7FC0=3 save window, $4000 = page 0..63

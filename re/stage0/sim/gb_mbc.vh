@@ -12,18 +12,18 @@
 `ifdef SNAP
 snap snap();
 `endif
-reg [31:0] ops [0:4095];
+reg [31:0] ops [0:32767];
 // P62 drops while the $7FE0 write is still finishing, so latch the fall
 reg rst_seen = 0;
 always #10 if (P62 === 1'b0) rst_seen = 1;
 integer oi;
 reg [7:0] q;
 initial begin
-    for (oi = 0; oi < 4096; oi = oi + 1) ops[oi] = 32'hFFFFFFFF;
+    for (oi = 0; oi < 32768; oi = oi + 1) ops[oi] = 32'hFFFFFFFF;
     $readmemh("ops.hex", ops);
     #(`GB_START_NS);
     rst_seen = 0;
-    for (oi = 0; oi < 4096 && ops[oi] !== 32'hFFFFFFFF; oi = oi + 1) begin
+    for (oi = 0; oi < 32768 && ops[oi] !== 32'hFFFFFFFF; oi = oi + 1) begin
         case (ops[oi][31:24])
             8'h00: begin gb_write(ops[oi][23:8], ops[oi][7:0]); $display("W %h %h", ops[oi][23:8], ops[oi][7:0]); end
             8'h01: begin gb_read(ops[oi][23:8], q); $display("R %h %h   p51=%b 595=%h", ops[oi][23:8], q, P51, bank); end
