@@ -35,7 +35,41 @@ module tb;
     assign {P19, P16, P15, P13, P12, P10, P9, P3} = gb_doe ? gb_d : 8'hzz;
     assign P84 = gb_wr_n;
     wire [7:0] gb_q = {P19, P16, P15, P13, P12, P10, P9, P3};
+    // P61: an input next to /RESET, not placed yet (the cart edge's CLK, /RD
+    // or /CS). Pulled up unless one of these says otherwise.
+`ifdef P61_PHI
+    reg phi = 0;
+    always #477 phi = !phi;              // ~1.05 MHz, the Game Boy's bus clock
+`ifdef P61_INV
+    assign P61 = !phi;                   // same clock, opposite phase to the bus cycles
+`else
+    assign P61 = phi;
+`endif
+`elsif P61_LOW
+    assign P61 = 1'b0;
+`else
+    pullup (P61);
+`endif
     // one machine cycle each, about 1 us as on a DMG
+`ifndef PHI_ADDR_DELAY
+`define PHI_ADDR_DELAY 0
+`endif
+`ifdef P61_PHI
+    // Bus cycles locked to the clock on P61: address at the rising edge,
+    // data from a quarter in, /WR low through the low half, read data
+    // sampled just before the next rising edge
+    task gb_write(input [15:0] a, input [7:0] d);
+        begin
+            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; #240; gb_d = d; gb_doe = 1;
+            @(negedge phi); #20; gb_wr_n = 0; #400; gb_wr_n = 1; #20; gb_doe = 0;
+        end
+    endtask
+    task gb_read(input [15:0] a, output [7:0] d);
+        begin
+            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; @(negedge phi); #430; d = gb_q;
+        end
+    endtask
+`else
     task gb_write(input [15:0] a, input [7:0] d);
         begin
             gb_a = a; #200; gb_d = d; gb_doe = 1; #100; gb_wr_n = 0; #450; gb_wr_n = 1; #100; gb_doe = 0; #100;
@@ -46,6 +80,7 @@ module tb;
             gb_a = a; #800; d = gb_q; #150;
         end
     endtask
+`endif
     // Memory bus: U9 (game ROM pSRAM, /CE P52) and U4 (save pSRAM, /CE P60)
     // share the address, data, /WE and byte-lane pins; word address A14 and up
     // come from the 74HC595 (SRCLK P35, SER P33, RCLK P24). See
@@ -78,7 +113,7 @@ module tb;
     pullup (P29); pullup (P30); pullup (P31); pullup (P32); pullup (P33); pullup (P34); pullup (P35);
     pullup (P36); pullup (P37); pullup (P40); pullup (P41); pullup (P44); pullup (P48);
     pullup (P49); pullup (P50); pullup (P52); pullup (P56); pullup (P57);
-    pullup (P59); pullup (P60); pullup (P61); pullup (P62); pullup (P64); pullup (P65); pullup (P70);
+    pullup (P59); pullup (P60); pullup (P62); pullup (P64); pullup (P65); pullup (P70);
     pullup (P71); pullup (P72); pullup (P73); pullup (P77); pullup (P78); pullup (P83); pullup (P85);
     pullup (P86);
     initial begin
