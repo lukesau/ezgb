@@ -196,7 +196,14 @@ module s3_ioi #(parameter MUX_O = "NONE", MUX_T = "NONE", MUX_FFI = "NONE",
     s3_iff #(FFI_INIT, FFI_LATCH, FFI_SR_EN, FFI_REV_EN, FFI_SR_SYNC, FFI1_SRVAL) i1(PAD, ICLK1, ICE, SR, REV, ffi);
     wire o = (MUX_O == "O1") ? O1 : (MUX_O == "FFO1") ? ffo1 : (MUX_O == "FFO2") ? ffo2 : 1'b0;
     wire t = (MUX_T == "T1") ? T1 : (MUX_T == "FFT1") ? fft1 : (MUX_T == "FFT2") ? fft2 : 1'b1;
-    assign PAD = (MUX_O != "NONE" && !t && !glbl.GTS) ? o : 1'bz;
+    // the output buffer turns on a few ns after T falls (it turns off at
+    // once): without this a write clocked by /WR rising sees the FPGA's own
+    // read data resolved onto the pad together with the console's
+    wire en = MUX_O != "NONE" && !t && !glbl.GTS;
+    reg en_d = 0;
+    always @(posedge en) #3 en_d = en;
+    always @(negedge en) en_d = 0;
+    assign PAD = en_d ? o : 1'bz;
     assign I = PAD, CLKPAD = PAD, IQ1 = ffi;
 endmodule
 

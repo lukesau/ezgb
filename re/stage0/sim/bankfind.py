@@ -2,7 +2,7 @@
 """Find nets in snap.txt that equal a bit of the bank written before each
 snapshot (gb_bank.vh's list), straight or inverted."""
 import collections, sys
-banks = [0x01, 0x02, 0x03, 0x05, 0x0A, 0x15, 0x2C, 0x53]
+banks = [int(x, 16) for x in sys.argv[2].split(',')] if len(sys.argv) > 2 else [0x01, 0x02, 0x03, 0x05, 0x0A, 0x15, 0x2C, 0x53]
 v = collections.defaultdict(dict)
 for line in open(sys.argv[1] if len(sys.argv) > 1 else 'snap.txt'):
     t, n, b = line.split()

@@ -14,6 +14,7 @@
 #include "fpga.h"
 #include "fat.h"
 #include "game.h"
+#include "rtc.h"
 
 #define SRAM PSRAM
 #define STAMP_PAGE PSRAM_META
@@ -119,18 +120,28 @@ static uint8_t make_save_path(const char *rom)
     return 1;
 }
 
-/* .sav (or $FF when there is none) -> pSRAM, then the stamp */
+/* little-endian u32 from a buffer */
+static int32_t get32(const uint8_t *p)
+{
+    return (int32_t)((uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24);
+}
+
+/* .sav (or $FF when there is none) -> pSRAM, the game clock for a timer
+ * cart, then the stamp: BackupOpenSaverPath 01:53c5 and PreLaunchSaveStamp
+ * 01:5824. The clock: a 48-byte footer is advanced by the time since its
+ * launch stamp (rtc.c); no footer or no .sav zeroes it. */
 static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
 {
     uint32_t size, off;
     uint16_t n;
-    uint8_t len = strlen(save_path);
+    uint8_t len = strlen(save_path), footer = 0, i;
+    uint8_t clock[RTC_FIELDS];
+    int32_t stamp = 0, now;
 
     if (fat_open(save_path) == FAT_OK) {
         size = file_size;
-        if ((size & 0x30) == 0x30) {    /* RTC footer */
-            if (timer)
-                return 0;               /* clock restore: kernel only */
+        if ((size & 0x30) == 0x30) {    /* RTC footer after the save data */
+            footer = 1;
             size &= ~0xFFUL;
         }
         for (off = 0; off < size; off += 512) {
@@ -141,9 +152,17 @@ static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
             n = size - off < 512 ? (uint16_t)(size - off) : 512;
             memcpy((void *)(SRAM + ((uint16_t)off & 0x1FFF)), buf, n);
         }
+        if (footer && timer) {
+            /* size is a multiple of 256, so the footer sits in one sector */
+            fpga_set(FPGA_SRAM_MAP, 0);
+            if (!fat_read(size >> 9, buf))
+                return 0;
+            off = size & 0x1FF;
+            for (i = 0; i < RTC_FIELDS; i++)
+                clock[i] = buf[(uint16_t)off + 4 * i];
+            stamp = get32(buf + (uint16_t)off + 40);
+        }
     } else {
-        if (timer)
-            return 0;                   /* clock reset: kernel only */
         size = save_size(code, mbc);
         for (off = 0; off < size; off += 0x2000) {
             psram_map((uint8_t)(off >> 13));
@@ -157,6 +176,33 @@ static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
     memcpy((void *)(SRAM + 0x010), save_path, len);
     SRAM[0x202] = 0x00;
     psram_unmap();
+    if (timer) {
+        now = rtc_now();
+        rtc_advance(clock, footer ? stamp : 0, now);    /* stamp 0: zero */
+        rtc_apply(clock, now);
+    }
+    return 1;
+}
+
+/* pSRAM already holds this game's save: move the kernel's copy of the clock
+ * on from its stamp, as the kernel's dump and next launch would. 0 when
+ * the last launch left no clock record, so the kernel does it instead. */
+static uint8_t resume_clock(void)
+{
+    uint8_t clock[RTC_FIELDS], i, ok;
+    int32_t stamp, now;
+
+    psram_map(STAMP_PAGE);
+    ok = SRAM[0x202] == 0x77;
+    for (i = 0; i < RTC_FIELDS; i++)
+        clock[i] = SRAM[0x220 + i];
+    stamp = get32((const uint8_t *)(SRAM + 0x210));
+    psram_unmap();
+    if (!ok)
+        return 0;
+    now = rtc_now();
+    rtc_advance(clock, stamp, now);
+    rtc_apply(clock, now);
     return 1;
 }
 
@@ -204,6 +250,8 @@ void game_launch(const char *path, uint8_t *buf)
 
     if (battery && !same && !load_save(buf, code_ram, mbc, timer))
         return;
+    if (timer && same && !resume_clock())
+        return;                         /* no clock record: kernel only */
 
     if (fat_open(path) || fat_load_command(cmd))
         return;

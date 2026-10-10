@@ -223,11 +223,37 @@ kernel copies it to `/SAVER` on its next boot when page `$11` holds the
 | `$AA`, this game's save path | launches without copying anything: pSRAM already holds the newest save, and the stamp stays armed |
 | `$AA`, another game | boots the kernel, which backs that save up first |
 
+**Games with a clock** (MBC3 with timer, `$0147` = `$0F`/`$10`) get their
+clock set the kernel's way (`stage1/src/rtc.c`, from `RtcToDayCount`
+`01:4ec9`, `RtcWriteTimeFromDayDelta` `01:505c` and `PreLaunchSaveStamp`
+`01:5824`). The cart serves the game a base clock plus the time since the ROM
+load, so the base must be the saved clock moved on by the time since it was
+saved:
+
+- A `.sav` with the 48-byte footer: S/M/H/DL/DH at +0/+4/+8/+12/+16 and the
+  launch stamp at +40 (the kernel's seconds: the PCF8563's local time as
+  seconds since 1970, minus 8 hours). The clock is advanced by now − stamp
+  with the kernel's carry rules (and the mod's clamp of a negative interval
+  to zero).
+- A `.sav` without a footer, or no `.sav`: the clock starts at zero.
+- pSRAM already holding this game's save: the kernel's copy on page `$11`
+  (`$A220-$A224`, stamp `$A210`, present when `$A202 = $77`) is advanced the
+  same way, which is what the kernel's dump and its next launch would do.
+  Without that record stage1 boots the kernel.
+
+The result goes to the FPGA's clock window (`$7FC0 = 6`, `$A018-$A01C`) and
+to page `$11` (`$A220-$A224`, `$A202 = $77`, `$A210` = now), as the kernel
+leaves them, so the kernel's next `BACKUPSAVE` writes a correct footer.
+
+> **Correction (2026-10-10).** Earlier versions of stage1 left the clock
+> alone when pSRAM already held a clock game's save, so the game ran with
+> whatever the FPGA's clock window held (a wrong time in Pokemon Crystal),
+> and sent clock games with a `.sav` to the kernel otherwise.
+
 It also boots the kernel instead for anything it can't do exactly the
-kernel's way: a game with a clock (MBC3 timer) whose save needs its RTC
-restored or reset, a target that isn't `.gb`/`.gbc`, a game without a
-battery while a stamp is pending, or any file error. An empty `FLAUNCH=`
-(the kernel's lone-ROM rule) also goes to the kernel.
+kernel's way: a target that isn't `.gb`/`.gbc`, a game without a battery
+while a stamp is pending, or any file error. An empty `FLAUNCH=` (the
+kernel's lone-ROM rule) also goes to the kernel.
 
 **One consequence:** fast-launching the same game over and over never
 backs its save up to the SD card, because only the kernel does that. The

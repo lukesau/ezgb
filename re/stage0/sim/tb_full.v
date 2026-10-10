@@ -42,6 +42,20 @@ module tb;
     always #477 phi = !phi;              // ~1.05 MHz, the Game Boy's bus clock
 `ifdef P61_INV
     assign P61 = !phi;                   // same clock, opposite phase to the bus cycles
+`elsif P61_RD
+    reg rd_n = 0;                        // DMG /RD: low except during a write cycle
+    assign P61 = rd_n;
+`elsif P61_HIGH
+    assign P61 = 1'b1;                   // held high, bus cycles still timed by phi
+`elsif P61_POR
+    // P61 reads the console's /RESET at the cart edge (P62 is the FPGA's
+    // drive of it): low while the console powers up, high from 1 ms
+    reg por_n = 0;
+    initial #1000000 por_n = 1;
+    assign P61 = por_n;
+`elsif P61_CS
+    reg cs_n = 1;                        // DMG /CS: low for $A000-$FFFF accesses
+    assign P61 = cs_n;
 `else
     assign P61 = phi;
 `endif
@@ -51,22 +65,51 @@ module tb;
     pullup (P61);
 `endif
     // one machine cycle each, about 1 us as on a DMG
-`ifndef PHI_ADDR_DELAY
-`define PHI_ADDR_DELAY 0
+`ifdef P61_FREE
+    reg fphi = 0;
+    always #477 fphi = !fphi;
+    assign P61 = fphi;
 `endif
 `ifdef P61_PHI
-    // Bus cycles locked to the clock on P61: address at the rising edge,
-    // data from a quarter in, /WR low through the low half, read data
-    // sampled just before the next rising edge
+    // Bus cycles locked to the clock on P61, timed as a real DMG's cartridge
+    // bus (measured by the Retrode author, forum.retrode.com msg 3139): the
+    // cycle starts at the rising edge, the address changes ~150 ns later,
+    // write data goes out from ~450 ns with /WR low ~480-840 ns while the
+    // clock is low, and reads are sampled in the middle of the low half.
     task gb_write(input [15:0] a, input [7:0] d);
         begin
-            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; #240; gb_d = d; gb_doe = 1;
-            @(negedge phi); #20; gb_wr_n = 0; #400; gb_wr_n = 1; #20; gb_doe = 0;
+            @(posedge phi);
+`ifdef P61_RD
+            #140; rd_n = 1; #10;
+`else
+            #150;
+`endif
+            gb_a = a;
+`ifdef P61_CS
+            #100; cs_n = !(a >= 16'hA000); #200;
+`else
+            #300;
+`endif
+            gb_d = d; gb_doe = 1; #30; gb_wr_n = 0;
+            #360; gb_wr_n = 1; #100; gb_doe = 0;
+`ifdef P61_RD
+            rd_n = 0;
+`endif
+`ifdef P61_CS
+            cs_n = 1;
+`endif
         end
     endtask
     task gb_read(input [15:0] a, output [7:0] d);
         begin
-            @(posedge phi); #(`PHI_ADDR_DELAY); gb_a = a; @(negedge phi); #430; d = gb_q;
+            @(posedge phi); #150; gb_a = a;
+`ifdef P61_CS
+            #100; cs_n = !(a >= 16'hA000);
+`endif
+            @(negedge phi); #230; d = gb_q;
+`ifdef P61_CS
+            #200; cs_n = 1;
+`endif
         end
     endtask
 `else
@@ -91,9 +134,18 @@ module tb;
     wire [7:0] mem_d = {P64, P41, P57, P49, P48, P72, P77, P78};
     wire [7:0] u9_q, u4_q;
     wire u9_oe, u4_oe;
-    psram #(.WORDS(4194304), .NAME("U9")) u9(.A(mem_a), .D(mem_d), .Q(u9_q), .OE(u9_oe),
+`ifndef RTC_TICK_NS
+`define RTC_TICK_NS 3000000
+`endif
+`ifdef PRELOAD
+    // gb_mbc.vh: start from tagged images instead of an SD load
+    localparam U9_IMG = "u9.img", U4_IMG = "u4.img";
+`else
+    localparam U9_IMG = "", U4_IMG = "";
+`endif
+    psram #(.WORDS(4194304), .IMAGE(U9_IMG), .NAME("U9")) u9(.A(mem_a), .D(mem_d), .Q(u9_q), .OE(u9_oe),
         .CE_N(P52), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
-    psram #(.WORDS(262144), .NAME("U4")) u4(.A(mem_a), .D(mem_d), .Q(u4_q), .OE(u4_oe),
+    psram #(.WORDS(262144), .IMAGE(U4_IMG), .NAME("U4")) u4(.A(mem_a), .D(mem_d), .Q(u4_q), .OE(u4_oe),
         .CE_N(P60), .WE_N(P40), .OE_N(1'b0), .LB_N(P37), .UB_N(P36));
     // the memories drive only while the FPGA's data pins are tri-stated
     wire [7:0] mem_q = u9_oe ? u9_q : u4_q;
@@ -110,7 +162,18 @@ module tb;
 `endif
     pullup (P3); pullup (P9); pullup (P10); pullup (P12); pullup (P13); pullup (P15); pullup (P16);
     pullup (P19); pullup (P20); pullup (P23); pullup (P24); pullup (P25); pullup (P28);
+`ifdef RTC
+    // PCF8563 on the I2C pins (+define+RTC_SCL=P31 +define+RTC_SDA=P32 or
+    // the other way round); open drain, pulled high
+    wire rtc_sda_low;
+    pcf8563 #(.TICK_NS(`RTC_TICK_NS)) rtc(.SCL(`RTC_SCL), .SDA(`RTC_SDA), .SDA_LOW(rtc_sda_low));
+    assign `RTC_SDA = rtc_sda_low ? 1'b0 : 1'bz;
+    assign (weak0, weak1) P31 = 1'b1;
+    assign (weak0, weak1) P32 = 1'b1;
+    pullup (P29); pullup (P30); pullup (P33); pullup (P34); pullup (P35);
+`else
     pullup (P29); pullup (P30); pullup (P31); pullup (P32); pullup (P33); pullup (P34); pullup (P35);
+`endif
     pullup (P36); pullup (P37); pullup (P40); pullup (P41); pullup (P44); pullup (P48);
     pullup (P49); pullup (P50); pullup (P52); pullup (P56); pullup (P57);
     pullup (P59); pullup (P60); pullup (P62); pullup (P64); pullup (P65); pullup (P70);

@@ -25,6 +25,9 @@ cd fw4 && iverilog -g2012 -o tb.vvp -s tb -s glbl ../s3prims.v design.v ../tb_bo
 | `pinmon.v`, `tb_pcmap.v` | pin activity report; first-execution log of the PicoBlaze PC |
 | `xfirst.py` | first signals to go from known to X in a VCD |
 | `whyx.py` | walk an X back through the design, cell by cell |
+| `gb_game.vh` | GB-side test: the kernel's game launch (MBC type, masks, load, `$7FE0` reset), then header and bank reads checked against `rom.hex`; `+define+SNAP` snapshots the design after each bank write |
+| `cone.py` | print the logic feeding a net, LUT by LUT, down to flip-flops and pins |
+| `regmap.py` | every Game Boy-written flip-flop with the address that enables it and the data bit it takes |
 
 Model choices settled by simulation (each documented in `s3prims.v`):
 `F5 = BX ? F : G` as prjcombine documents (checked: the PicoBlaze bank

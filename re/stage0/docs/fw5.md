@@ -48,6 +48,17 @@ content:
   hands over to the other the way FW4's slot A does; whatever sits at flash 0
   runs. Which image the updater writes to 0 is not known yet (needs an FW5
   flash dump, or reading the updater's write addresses).
+
+  > **Correction (2026-10-10).** The updater's write addresses are now read:
+  > `Update_FW5_*.gb` runs the same write loop as `Update_FW4.gb` (address =
+  > offset + `$040000`, loop bound `$02480C`), so it writes only the image at
+  > `$8000`, 149,516 bytes, to slot B at `$040000`. The second image at
+  > `$2C80C` is not written by that loop. Both images carry `$1B8 = 02`
+  > because both are slot B images; the cart's slot A at flash 0 is whatever
+  > it shipped with, and it is slot A that hands over. So an FW5 cart boots
+  > slot A, then slot B, as FW4 does, and the claim above that "whatever sits
+  > at flash 0 runs" with no hand-over was wrong. An FW5 flash dump would
+  > still confirm what each cart's slot A is.
 - Each image also has three x36 and one x9 BRAM with no initial data (runtime
   RAM), as FW4 does.
 

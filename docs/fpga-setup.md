@@ -257,6 +257,25 @@ scripts/fpga/make-updater.py juniorkernel-1.04e-FW4/Update_FW4.gb \
     fpga/stage1/slotB-stage1.bin fpga/load/Update_FW4-stage1.gb --label "Update: my s1"
 ```
 
+**For an FW5 cart** the same steps work on the FW5-0918 bitstream (the
+image at `$8000` of `Update_FW5_2021-9-18.gb`, `~/fpga/cart/fw5/0918.bin`
+on the build host), with `--layout fw5-0918` in step 5 (its stage1 sits in
+different BRAMs) and the FW5 updater as the base in step 8:
+
+```bash
+cd fpga/stage1
+../../scripts/fpga/stage1-to-bram.py stage1.gb blobs-fw5-0918 --layout fw5-0918 > sets-fw5-0918.txt
+# on the build host: s3patch ... ../fw5/0918.bin 0918-stage1.bin $(cat sets-fw5-0918.txt), then the round trip
+scripts/fpga/make-updater.py juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb \
+    fpga/stage1/0918-stage1.bin fpga/load/Update_FW5-0918-stage1.gb --label "Update: FW5 s1"
+```
+
+The FW5 updater runs the same write loop as FW4's (149,516 bytes to slot B
+at `$040000`, [fw5.md](../re/stage0/docs/fw5.md)); `make-updater.py`
+replaces only its first image and leaves the second, unwritten one alone.
+Our stage1's header doesn't carry 0918's SGB flag bytes, so the bootstrap
+no longer declares SGB support.
+
 The result is the stock updater with the payload at `$8000` replaced and the
 16-byte screen line at `$11D2` relabeled (at most 16 characters), so it
 can't be mistaken for stock. The script also fixes the ROM's global header
@@ -298,6 +317,16 @@ The new stage1 runs from the next power-on.
   record of the damage. A dump holds that cart's own license record, so
   never program one cart's full image onto another; splice slot B into a
   fresh dump of that cart instead.
-- Everything here has run on one FW4 Jr. An FW5 design doesn't hand over
-  from one image to the other ([fw5.md](../re/stage0/docs/fw5.md)), so check what
-  your cart's slot A is before trusting the fallback.
+- **Recovering slot B without a prior dump.** An updater writes nothing
+  below `$40000`, so after a failed stage1 the cart's slot A and license
+  record are still intact: desolder the flash, read the whole chip (that read
+  is the dump), and program only `$40000-$6FFFF` with a slot B region built
+  from a stock updater: `FF` everywhere, its 149,516-byte payload at offset
+  `$26` (`$40026` in flash). Built that way, the FW4 updater reproduces the
+  FW4 cart's real `$40000-$6FFFF` byte for byte. Leave `$70000` (the boot
+  tally) and everything below `$40000` alone.
+- The FW4 builds here have run on one FW4 Jr, and the FW5-0918 build on
+  one FW5 Jr (2026-10-10: boots, fast launch, Pokemon Crystal's clock
+  restored). The FW5 updater writes slot B like FW4's, so the slot A
+  fallback should work the same way, but no FW5 cart's slot A has been
+  dumped yet ([fw5.md](../re/stage0/docs/fw5.md)).

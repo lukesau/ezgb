@@ -104,6 +104,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     reg [47:0] rx; integer rxn = 0; reg rxing = 0;
     reg [5:0] idx; reg [31:0] arg;
     reg app = 0, wide = 0, reading = 0, writing = 0;
+    integer rgen = 0;    // each CMD17/18 read task stops once a newer one starts
     reg [15:0] rca = 16'h1234;
     reg [31:0] blk;
     event got_cmd;
@@ -173,7 +174,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
             13: r48(13, ST_TRAN);
             16: r48(16, ST_TRAN);
             12: begin reading = 0; writing = 0; r48(12, ST_TRAN); end
-            17, 18: begin r48(idx, ST_TRAN); blk = arg; reading = 1; fork read_blocks(idx == 17); join_none end
+            17, 18: begin r48(idx, ST_TRAN); blk = arg; reading = 1; rgen = rgen + 1; fork read_blocks(idx == 17, rgen); join_none end
             24, 25: begin r48(idx, ST_TRAN); blk = arg; writing = 1; fork write_blocks(idx == 24); join_none end
             default: r48(idx, ST_TRAN);
         endcase
@@ -184,10 +185,12 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     function [15:0] crc16_step(input [15:0] c, input b);
         crc16_step = {c[14:0], 1'b0} ^ ((c[15] ^ b) ? 16'h1021 : 16'h0);
     endfunction
-    task read_blocks(input single);
+    task read_blocks(input single, input integer g);
         integer i, k, r; reg [15:0] crc [0:3]; reg [3:0] nib;
         begin
-            while (reading) begin
+            // a CMD18 right after CMD12: let the previous block finish first
+            while (dat_oe !== 0) @(negedge CLK);
+            while (reading && g == rgen) begin
                 r = $fseek(fd, blk * 512, 0);
                 r = $fread(buffer, fd);
                 if (VERBOSE) $display("%t sd: read block %0d", $time, blk);
@@ -195,7 +198,8 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                 for (k = 0; k < 4; k = k + 1) crc[k] = 0;
                 dat_oe = wide ? 4'hF : 4'h1; dat_o = 4'h0;          // start bit
                 @(negedge CLK);
-                for (i = 0; i < 512; i = i + 1) begin
+                // CMD12 (or a newer CMD18) stops the block where it is, as a card does
+                for (i = 0; i < 512 && reading && g == rgen; i = i + 1) begin
                     if (wide) begin
                         nib = buffer[i][7:4];
                         for (k = 0; k < 4; k = k + 1) crc[k] = crc16_step(crc[k], nib[k]);
@@ -210,10 +214,12 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                         end
                     end
                 end
-                for (k = 15; k >= 0; k = k - 1) begin
-                    dat_o = {crc[3][k], crc[2][k], crc[1][k], crc[0][k]}; @(negedge CLK);
+                if (i == 512) begin
+                    for (k = 15; k >= 0; k = k - 1) begin
+                        dat_o = {crc[3][k], crc[2][k], crc[1][k], crc[0][k]}; @(negedge CLK);
+                    end
+                    dat_o = 4'hF; @(negedge CLK);                    // end bit
                 end
-                dat_o = 4'hF; @(negedge CLK);                        // end bit
                 dat_oe = 0;
                 blk = blk + 1;
                 if (single) reading = 0;
@@ -221,7 +227,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         end
     endtask
     task write_blocks(input single);
-        integer i, k, r; reg [3:0] nib;
+        integer i, k, r; reg [3:0] nib; reg [15:0] wsum;
         begin
             while (writing) begin
                 @(posedge CLK);
@@ -236,7 +242,9 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                 end
                 repeat (17) @(posedge CLK);                          // CRC + end bit
                 r = $fseek(fd, blk * 512, 0);
-                if (VERBOSE) $display("%t sd: write block %0d (not stored)", $time, blk);
+                wsum = 0; for (k = 0; k < 512; k = k + 1) wsum = wsum + buffer[k];
+                if (VERBOSE) $display("%t sd: write block %0d (not stored) first %h %h %h %h last %h sum %h", $time, blk,
+                                      buffer[0], buffer[1], buffer[2], buffer[3], buffer[511], wsum);
                 // CRC status token "010" on DAT0, then a short busy
                 @(negedge CLK); @(negedge CLK);
                 dat_oe = 4'h1; dat_o = 4'hE;                         // start 0
@@ -312,5 +320,66 @@ module hc595 (input SRCLK, SER, RCLK, output reg [7:0] Q = 0);
         if (SRCLK === 1'b1 && ps !== 1'b1) sr = {sr[6:0], SER === 1'b1};
         if (RCLK === 1'b1 && pr !== 1'b1) Q = sr;
         ps = SRCLK; pr = RCLK;
+    end
+endmodule
+
+// PCF8563 real-time clock on I2C (address $51), sampled every 5 ns. Time
+// registers 2-8 in BCD; the seconds tick every TICK_NS (shortened for
+// simulation). SDA_LOW pulls the shared line low for ACKs and read data.
+module pcf8563 #(parameter TICK_NS = 3000000) (input SCL, input SDA, output reg SDA_LOW = 0);
+    reg [7:0] r [0:15];
+    integer i, bitn = 0, tick = 0;
+    reg ps = 1, pd = 1, active = 0, rd = 0, ack = 0, addr_ok = 0, first = 0, mack = 0;
+    reg [7:0] sh = 0, ptr = 0, tx = 0;
+    reg [3:0] st = 0;                      // 0 idle, 1 address, 2 data in, 3 data out
+    initial begin
+        for (i = 0; i < 16; i = i + 1) r[i] = 0;
+        r[2] = 8'h00; r[3] = 8'h30; r[4] = 8'h12; r[5] = 8'h09; r[6] = 8'h05; r[7] = 8'h10; r[8] = 8'h26;
+    end
+    function [7:0] binc(input [7:0] v); binc = (v[3:0] == 9) ? {v[7:4] + 4'd1, 4'd0} : v + 8'd1; endfunction
+    always #1000 begin
+        tick = tick + 1000;
+        if (tick >= TICK_NS) begin
+            tick = 0;
+            r[2] = binc(r[2] & 8'h7F);
+            if (r[2] == 8'h60) begin r[2] = 0; r[3] = binc(r[3]);
+                if (r[3] == 8'h60) begin r[3] = 0; r[4] = binc(r[4]);
+                    if (r[4] == 8'h24) begin r[4] = 0; r[5] = binc(r[5]); end end end
+        end
+    end
+    wire scl = SCL !== 1'b0, sda = SDA !== 1'b0;
+    always #5 begin
+        if (scl && ps && pd && !sda) begin st = 1; bitn = 0; SDA_LOW = 0; ack = 0; end        // START
+        else if (scl && ps && !pd && sda) begin st = 0; SDA_LOW = 0; end                     // STOP
+        else if (scl && !ps) begin                                                            // SCL rises
+            if (ack) ;                                                                        // ACK clock
+            else if (st == 3) begin
+                if (bitn == 8) begin mack = !sda; end
+            end else if (st == 1 || st == 2) begin sh = {sh[6:0], sda}; bitn = bitn + 1; end
+        end else if (!scl && ps) begin                                                        // SCL falls
+            if (ack) begin
+                ack = 0; SDA_LOW = 0; bitn = 0;
+                if (st == 3) begin tx = r[ptr[3:0]]; ptr = ptr + 1; SDA_LOW = !tx[7]; end
+            end else if ((st == 1 || st == 2) && bitn == 8) begin
+                if (st == 1) begin
+                    if (sh[7:1] == 7'h51) begin ack = 1; SDA_LOW = 1; rd = sh[0]; first = 1;
+                        st = sh[0] ? 3 : 2; end
+                    else st = 0;
+                end else begin
+                    if (first) begin ptr = sh; first = 0; end
+                    else begin r[ptr[3:0]] = sh; ptr = ptr + 1; end
+                    ack = 1; SDA_LOW = 1;
+                end
+                bitn = 0;
+            end else if (st == 3) begin
+                if (bitn < 7) begin bitn = bitn + 1; SDA_LOW = !tx[7 - bitn]; end
+                else if (bitn == 7) begin bitn = 8; SDA_LOW = 0; end                          // master ACK/NACK
+                else begin                                                                    // after master ACK
+                    if (mack) begin tx = r[ptr[3:0]]; ptr = ptr + 1; bitn = 0; SDA_LOW = !tx[7]; end
+                    else begin st = 0; SDA_LOW = 0; end
+                end
+            end
+        end
+        ps = scl; pd = sda;
     end
 endmodule
