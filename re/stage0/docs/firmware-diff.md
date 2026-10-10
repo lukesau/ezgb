@@ -67,6 +67,27 @@ So the simulation confirms each 0918 change [fw5.md](fw5.md) read out of the
 PicoBlaze code: halt honored, writes taken, day carry as on a real MBC3.
 0731's clock only counts up from the launch.
 
+## Save pages from the kernel
+
+In kernel mode the save pSRAM is reached with `$7FC0 = 3`, a page number
+written to `$4000` and the `$A000-$BFFF` window. Sweeping `$4000` over
+0-63 and `$40`, `$80`, `$FF` (`mbctest.py kwin`) gives the same result on
+all three firmwares:
+
+- **The page latch is 5 bits.** `$4000 = $20-$3F` puts exactly the same
+  address on the memory pins as `$00-$1F`; `$40` and `$80` land on `$00`,
+  `$FF` on `$1F`. No pin carries bit 5, and U4's chip enable is the one
+  asserted in every case.
+- **Only the low byte lane is used**, in kernel mode and for the game's save
+  RAM alike: `$A000+k` lands on U4 byte `page × $4000 + 2k` (with `/LB`
+  only). A page is 8 KB to the Game Boy and spans a 16 KB slot of U4, so
+  the 32 pages use the whole 512 KB part at one byte per word.
+- Game save RAM bank N and kernel page N are the same memory.
+
+The kernel's own page map (`docs/psram-page-map.md`) assumes 64 pages, as
+the emulator does; see the correction there for what a 5-bit latch means
+for the browser's record pages.
+
 ## Kernel and game launches (simulated)
 
 Both launch paths run unchanged on all three firmwares, loading from the

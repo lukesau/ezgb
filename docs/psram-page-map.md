@@ -18,6 +18,21 @@ dumps came from an SD card with small directories.
 
 ## Page map
 
+> **Correction (2026-10-10).** This page assumes a 6-bit page latch and 64
+> pages, as the emulator models it (`EZJR_SRAM_BANKS=64`). Simulating the
+> FPGA designs of FW4, FW5-0731 and FW5-0918
+> ([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
+> says the page latch is **5 bits**: `$4000 = $20-$3F` drives exactly the
+> same memory address as `$00-$1F` (`$FF` lands on `$1F`, not `$3F`), on all
+> three. If the hardware agrees, there are 32 pages, the sort keys share
+> page `$1F` with browser records, and browser records wrap onto page `$00`
+> (game save RAM) once a directory passes 448 entries (`$12 + 448/32 =
+> $20`); from 417 entries they reach `$1F` and collide with the sort keys.
+> Not yet checked on a cart: the debug tab's alias test only compares page
+> `$10` with `$00`, `$01` and `$11`. A `$20`-vs-`$00` alias test would
+> settle it.
+
+
 | Page | Role | Free? |
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
