@@ -325,8 +325,8 @@ The new stage1 runs from the next power-on.
   `$26` (`$40026` in flash). Built that way, the FW4 updater reproduces the
   FW4 cart's real `$40000-$6FFFF` byte for byte. Leave `$70000` (the boot
   tally) and everything below `$40000` alone.
-- The FW4 builds here have run on one FW4 Jr; the FW5 build has been
-  checked only in simulation (stage1 reads back byte for byte through the
-  FW5-0918 design). The FW5 updater writes slot B like FW4's, so the slot A
+- The FW4 builds here have run on one FW4 Jr, and the FW5-0918 build on
+  one FW5 Jr (2026-10-10: boots, fast launch, Pokemon Crystal's clock
+  restored). The FW5 updater writes slot B like FW4's, so the slot A
   fallback should work the same way, but no FW5 cart's slot A has been
   dumped yet ([fw5.md](../re/stage0/docs/fw5.md)).
