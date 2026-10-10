@@ -19,7 +19,7 @@ assert len(s) == 10
 import json
 versions = sorted(json.load(open(f"{root}/patches/kernel/manifest.json")))
 for v in versions:
-    p = f"{root}/re/{v}/kernel.gb"
+    p = f"{root}/re/kernel/{v}/kernel.gb"
     r = bytearray(open(p, 'rb').read())
     o = 8*0x4000 + (0x7aff - 0x4000)
     if r[o:o+10] != s:

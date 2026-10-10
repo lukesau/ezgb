@@ -180,6 +180,10 @@ SKIP_SITES = {
         # docs/ezgb-cfg.md): the launch-time elapsed-time code is part of
         # 1.05e's RTC rewrite; 1.04e has no such routine to clamp.
         (1, 0x4e33),
+        # The launch's $7FD4 value, $11 for FW5's fast load
+        # (re/stage0/docs/firmware-diff.md): 1.05e writes $7FD4 on every game
+        # launch, 1.04e never does, so there is no value to change.
+        (0, 0x15e2),
     },
 }
 # Injected blocks the target build does not need because their only hook site
@@ -240,7 +244,7 @@ class Port:
     def __init__(self, src_ver, dst_ver, verbose=False):
         self.src_ver, self.dst_ver, self.verbose = src_ver, dst_ver, verbose
         self.src_stock = load_stock(src_ver)
-        self.src_mod = open(os.path.join(ROOT, "re", src_ver, "kernel.gb"), "rb").read()
+        self.src_mod = open(os.path.join(ROOT, "re", "kernel", src_ver, "kernel.gb"), "rb").read()
         self.dst_stock = load_stock(dst_ver)
         self.dst = bytearray(self.dst_stock)
         cache = os.path.join(tempfile.gettempdir(), "ezgb-portmap")
@@ -249,9 +253,9 @@ class Port:
         self.remap = REMAP.get(dst_ver, {})
         self.log = []
         self.written = []  # (bank, addr, length, what)
-        self.sym_blocks = read_sym_blocks(os.path.join(ROOT, "re", src_ver, "kernel.sym"))
+        self.sym_blocks = read_sym_blocks(os.path.join(ROOT, "re", "kernel", src_ver, "kernel.sym"))
         self.labels = set()
-        for line in open(os.path.join(ROOT, "re", src_ver, "kernel.sym"), encoding="utf-8"):
+        for line in open(os.path.join(ROOT, "re", "kernel", src_ver, "kernel.sym"), encoding="utf-8"):
             m = re.match(r"^([0-9a-f]{2}):([0-9a-f]{4}) (?!\.data)\S", line)
             if m:
                 self.labels.add((int(m.group(1), 16), int(m.group(2), 16)))
@@ -582,7 +586,7 @@ class Port:
         return self.xlat_soft(0 if addr < 0x4000 else bank, addr)
 
     def port_sym(self):
-        src = os.path.join(ROOT, "re", self.src_ver, "kernel.sym")
+        src = os.path.join(ROOT, "re", "kernel", self.src_ver, "kernel.sym")
         out, dropped = [], []
         for line in open(src, encoding="utf-8").read().splitlines():
             m = re.match(r"^([0-9a-f]{2}):([0-9a-f]{4}) (.*)$", line)
@@ -604,7 +608,7 @@ class Port:
         return "\n".join(out) + "\n", dropped
 
     def port_notes(self):
-        src = os.path.join(ROOT, "re", self.src_ver, "notes.json")
+        src = os.path.join(ROOT, "re", "kernel", self.src_ver, "notes.json")
         notes = json.load(open(src))
         kept, dropped = [], 0
         for blk in notes["blocks"]:
@@ -641,7 +645,7 @@ def main():
           f"{sum(w[2] for w in p.written)} bytes; result md5 {md5(result)}")
 
     if args.check:
-        existing_path = os.path.join(ROOT, "re", args.dst_ver, "kernel.gb")
+        existing_path = os.path.join(ROOT, "re", "kernel", args.dst_ver, "kernel.gb")
         existing = open(existing_path, "rb").read()
         diffs = [i for i in range(len(result)) if result[i] != existing[i]]
         if not diffs:
@@ -660,7 +664,7 @@ def main():
                 i = j + 1
 
     if args.apply:
-        gb = os.path.join(ROOT, "re", args.dst_ver, "kernel.gb")
+        gb = os.path.join(ROOT, "re", "kernel", args.dst_ver, "kernel.gb")
         orig = gb + ".orig"
         if not os.path.isfile(orig):
             cur = open(gb, "rb").read()
@@ -672,12 +676,12 @@ def main():
         print(f"wrote {gb}")
         if args.sym:
             text, dropped = p.port_sym()
-            open(os.path.join(ROOT, "re", args.dst_ver, "kernel.sym"), "w", encoding="utf-8").write(text)
+            open(os.path.join(ROOT, "re", "kernel", args.dst_ver, "kernel.sym"), "w", encoding="utf-8").write(text)
             print(f"wrote kernel.sym ({len(dropped)} entries dropped: no equivalent in {args.dst_ver})")
             for d in dropped[:40]:
                 print("   ", d)
             notes, nd = p.port_notes()
-            notes_path = os.path.join(ROOT, "re", args.dst_ver, "notes.json")
+            notes_path = os.path.join(ROOT, "re", "kernel", args.dst_ver, "notes.json")
             # Keep the target file's existing style (\u escapes or literal
             # UTF-8, trailing newline or not) so a re-port diffs only content.
             prev = open(notes_path, "rb").read() if os.path.exists(notes_path) else b"\n"
