@@ -8,10 +8,11 @@ read names the physical bank it hit. ROM checks are exact; save-RAM reads
 are reported as (logical bank -> U4 page) for the mapping to be read off."""
 import json, os, sys
 
-CODE = dict(none=0, mbc1=1, mbc2=2, mbc3=3, mbc5=4, mbc1m=5, mbc3rtc=0x83, mbc5mask=4)
-ROMMASK = dict(none=0x001, mbc1=0x07F, mbc2=0x00F, mbc3=0x07F, mbc5=0x1FF, mbc1m=0x03F, mbc3rtc=0x07F, mbc5mask=0x00F)
-RAMMASK = dict(none=0, mbc1=3, mbc2=0, mbc3=3, mbc5=0xF, mbc1m=3, mbc3rtc=3, mbc5mask=0xF)
-BASE = dict(mbc3rtc='mbc3', mbc5mask='mbc5')   # variants: RTC flag set, small ROM mask
+CODE = dict(none=0, mbc1=1, mbc2=2, mbc3=3, mbc5=4, mbc1m=5, mbc3rtc=0x83, mbc5mask=4, mbc5d4=4, mbc5d34=4)
+ROMMASK = dict(none=0x001, mbc1=0x07F, mbc2=0x00F, mbc3=0x07F, mbc5=0x1FF, mbc1m=0x03F, mbc3rtc=0x07F, mbc5mask=0x00F, mbc5d4=0x1FF, mbc5d34=0x1FF)
+RAMMASK = dict(none=0, mbc1=3, mbc2=0, mbc3=3, mbc5=0xF, mbc1m=3, mbc3rtc=3, mbc5mask=0xF, mbc5d4=0xF, mbc5d34=0xF)
+BASE = dict(mbc3rtc='mbc3', mbc5mask='mbc5', mbc5d4='mbc5', mbc5d34='mbc5')
+# variants: RTC flag set, small ROM mask, $7FD4 (and $7FD3) written nonzero
 
 def rom_tag(b, o):
     return b & 0xFF if o == 0 else b >> 8 if o == 1 else (o ^ (o >> 8) ^ b) & 0xFF
@@ -80,6 +81,8 @@ def gen(t, d):
     W = lambda a, v: ops.append((0, a, v))
     R = lambda a: ops.append((1, a, 0))
     for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, CODE[variant]) + fpga(0x7FC4, RAMMASK[variant]) +
+                 (fpga(0x7FD3, 0x03) if variant == 'mbc5d34' else []) +
+                 (fpga(0x7FD4, 0x05) if variant in ('mbc5d4', 'mbc5d34') else []) +
                  fpga(0x7FC1, rm & 0xFF) + fpga(0x7FC2, rm >> 8) + fpga(0x7FC3, 0x5C)):
         W(a, v)
     for a, v in [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
