@@ -19,6 +19,15 @@
  * unless its sum and first 16 bytes match page $00, $01 or $11 (an alias
  * would turn that write into lost saves or settings).
  *
+ * B is the page-latch width check (docs/debug-tab.md): does page $20 land
+ * on page $00, and $3F on $1F? The bitstream simulations say the latch is 5
+ * bits. For each pair, interrupts off throughout: read 4 bytes at $BFFC of
+ * the low page and of the high page, write their complement through the
+ * high page, read the low page back, then write both originals back and
+ * check them. ALIAS = the low page took the sentinel, NO ALIAS = it kept
+ * its bytes and the high page held the sentinel, ODD = anything else; !RST
+ * after it means the restore didn't read back.
+ *
  * Then the SGB BOOT record, page $11 $A400-$A403 (docs/sgb-boot.md), and the
  * A register KernelEntry saved at boot (wBootA).
  *
@@ -51,6 +60,7 @@ extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, 
 #define DELAY    24          /* ...after the first */
 
 #define PAD_A      0x10
+#define PAD_B      0x20
 #define PAD_SELECT 0x40
 #define PAD_UP     0x04
 #define PAD_DOWN   0x08
@@ -62,7 +72,14 @@ typedef struct {
     u16 diff;                /* page $10 bytes off the pattern */
     u8 alias;
     u8 rec[4];               /* page $11 $A400.. */
+    u8 wrap[2];              /* B: $20 on $00, $3F on $1F (WRAP_*, 0 = not run) */
 } Stats;
+
+#define WRAP_ALIAS 1
+#define WRAP_NONE  2
+#define WRAP_ODD   3
+#define WRAP_RST   0x80      /* the originals didn't read back */
+#define WRAP_AT    0x1FFC    /* $BFFC: past the end of most games' saves */
 
 static const u8 pages[4] = {0x00, 0x01, 0x10, 0x11};
 
@@ -72,6 +89,7 @@ static void draw(const Stats *st, u8 top);
 static void map(u8 page);
 static void unmap(void);
 static u8 same_start(u8 a, u8 b);
+static u8 wrap_test(u8 lo, u8 hi);
 static u8 pat(u16 i);
 static void hex(u8 *out, u8 v);
 static void dec(u8 *out, u16 v);
@@ -91,6 +109,7 @@ void DebugTab(void) {
         add sp, #1
     __endasm;
     while (ReadJoypad() & PAD_SELECT) {}   /* the press that left HELP */
+    st.wrap[0] = st.wrap[1] = 0;
     snapshot(&st);
     draw(&st, top);
     for (count = 0; line(&st, count, 0); count++) {}
@@ -107,6 +126,13 @@ void DebugTab(void) {
             }
             while (ReadJoypad() & PAD_A) {}
             snapshot(&st);
+            draw(&st, top);
+            continue;
+        }
+        if (j & PAD_B) {
+            st.wrap[0] = wrap_test(0x00, 0x20);
+            st.wrap[1] = wrap_test(0x1F, 0x3F);
+            while (ReadJoypad() & PAD_B) {}
             draw(&st, top);
             continue;
         }
@@ -135,13 +161,17 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
     static const u8 t_bad[4] = {'B','A','D',0};
     static const u8 t_write[20] = {'A',':','W','R','I','T','E',' ','P','1','0',' ','P','A','T','T','E','R','N',0};
     static const u8 t_alias[19] = {'P','1','0',' ','A','L','I','A','S',':','N','O',' ','W','R','I','T','E',0};
+    static const u8 t_wrap[20] = {'B',':','A','L','I','A','S',' ','T','E','S','T',' ','P','2','0','/','3','F',0};
+    static const u8 t_wrapres[3][9] = {
+        {'A','L','I','A','S',0}, {'N','O',' ','A','L','I','A','S',0}, {'O','D','D',0}};
+    static const u8 t_rst[5] = {'!','R','S','T',0};
     static const u8 t_sgb[18] = {'S','G','B',' ','B','O','O','T',' ','P','1','1',':','A','4','0','0',0};
     static const u8 t_on[3] = {'O','N',0};
     static const u8 t_off[4] = {'O','F','F',0};
     static const u8 t_boot[17] = {'B','O','O','T',' ','A',' ','R','E','G','I','S','T','E','R',':',0};
     u8 i;
 
-    if (n > 14) return 0;
+    if (n > 18) return 0;
     if (!out) return 1;
     for (i = 0; i < WIDTH; i++) out[i] = ' ';
     switch (n) {
@@ -172,13 +202,26 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
         else { text(out + 12, t_bad); dec(out + 16, st->diff); }
         break;
     case 8: text(out, st->alias ? t_alias : t_write); break;
-    case 10: text(out, t_sgb); break;
-    case 11:
+    case 10: text(out, t_wrap); break;
+    case 11:                              /* P20=P00:NO ALIAS !RST */
+    case 12: {
+        u8 w = st->wrap[n - 11], lo = (n == 11) ? 0x00 : 0x1F;
+        out[0] = 'P'; hex(out + 1, (u8)(lo + 0x20)); out[3] = '=';
+        out[4] = 'P'; hex(out + 5, lo); out[7] = ':';
+        if (!w) { out[8] = '-'; out[9] = '-'; }
+        else {
+            text(out + 8, t_wrapres[(w & 3) - 1]);
+            if (w & WRAP_RST) text(out + 16, t_rst);
+        }
+        break;
+    }
+    case 14: text(out, t_sgb); break;
+    case 15:
         for (i = 0; i < 4; i++) hex(out + 1 + 2 * i, st->rec[i]);
         text(out + 10, (st->rec[0] == 'S' && st->rec[1] == 'G' && st->rec[2] == 1 && st->rec[3] == 0xFE) ? t_on : t_off);
         break;
-    case 13: text(out, t_boot); break;
-    case 14:
+    case 17: text(out, t_boot); break;
+    case 18:
         hex(out + 1, wBootA);
         break;
     }
@@ -254,6 +297,40 @@ static void map(u8 page) {
 static void unmap(void) {
     RAM_PAGE = 0;
     SetFpgaPage_B4(0);
+}
+
+/* B's check, interrupts off so nothing else sees the latch moved: 4 bytes at
+ * WRAP_AT in page lo and page hi, their complement written through hi, lo
+ * read back, then both originals written back (hi first: if it is lo, its
+ * originals are lo's) and checked. */
+static u8 wrap_test(u8 lo, u8 hi) {
+    u8 a[4], b[4], i, took = 0, kept = 0, held = 0, ok = 1, r;
+    volatile u8 *w = WIN + WRAP_AT;
+
+    __critical {
+        map(lo);
+        for (i = 0; i < 4; i++) a[i] = w[i];
+        map(hi);
+        for (i = 0; i < 4; i++) b[i] = w[i];
+        for (i = 0; i < 4; i++) w[i] = (u8)~a[i];
+        for (i = 0; i < 4; i++) held += w[i] == (u8)~a[i];
+        map(lo);
+        for (i = 0; i < 4; i++) {
+            u8 v = w[i];
+            took += v == (u8)~a[i];
+            kept += v == a[i];
+        }
+        map(hi);
+        for (i = 0; i < 4; i++) w[i] = b[i];
+        map(lo);
+        for (i = 0; i < 4; i++) w[i] = a[i];
+        for (i = 0; i < 4; i++) ok &= w[i] == a[i];
+        map(hi);
+        for (i = 0; i < 4; i++) ok &= w[i] == b[i];
+        unmap();
+    }
+    r = took == 4 ? WRAP_ALIAS : (kept == 4 && held == 4) ? WRAP_NONE : WRAP_ODD;
+    return ok ? r : (u8)(r | WRAP_RST);
 }
 
 /* First 16 bytes of two pages equal (copied through WRAM, one page mapped at
