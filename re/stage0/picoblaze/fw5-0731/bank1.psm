@@ -1,107 +1,192 @@
-; 0731
+; D0X19Y25.BEL.BRAM
 ; KCPSM3 (PicoBlaze for Spartan-3), 1K x 18
 ; 854 reachable instructions, 75 subroutines
 ;
+CONSTANT SDC_Q0, 70   ; input port
+CONSTANT SDC_Q1, 71   ; input port
+CONSTANT SDC_Q2, 72   ; input port
+CONSTANT SDC_Q3, 73   ; input port
+CONSTANT DBG_STATUS, A0   ; input port
+CONSTANT RTC_GAME_S, A5   ; input port
+CONSTANT RTC_GAME_M, A6   ; input port
+CONSTANT RTC_GAME_H, A7   ; input port
+CONSTANT RTC_GAME_DL, A8   ; input port
+CONSTANT RTC_GAME_DH, A9   ; input port
+CONSTANT CMD_LBA0, B0   ; input port
+CONSTANT CMD_LBA1, B1   ; input port
+CONSTANT CMD_LBA2, B2   ; input port
+CONSTANT CMD_LBA3, B3   ; input port
+CONSTANT CMD_COUNT, B4   ; input port
+CONSTANT CMD_OP, B5   ; input port
+CONSTANT RTC_SET_DATA, B6   ; input port
+CONSTANT RTC_WR_DAY, B8   ; input port
+CONSTANT RTC_GAME_LIVE, B9   ; input port
+CONSTANT TBL_Q3, C0   ; input port
+CONSTANT TBL_Q2, C1   ; input port
+CONSTANT TBL_Q1, C2   ; input port
+CONSTANT TBL_Q0, C3   ; input port
+CONSTANT I2C_IN, EB   ; input port
+CONSTANT SDC_D0, 70   ; output port
+CONSTANT SDC_D1, 71   ; output port
+CONSTANT SDC_D2, 72   ; output port
+CONSTANT SDC_D3, 73   ; output port
+CONSTANT DBG_TX, A1   ; output port
+CONSTANT RTC_BASE_S, A5   ; output port
+CONSTANT RTC_BASE_M, A6   ; output port
+CONSTANT RTC_BASE_H, A7   ; output port
+CONSTANT RTC_BASE_DL, A8   ; output port
+CONSTANT RTC_BASE_DH, A9   ; output port
+CONSTANT TBL_INDEX, BF   ; output port
+CONSTANT BANK_SELECT, C8   ; output port
+CONSTANT LOAD_ADDR3, E0   ; output port
+CONSTANT LOAD_ADDR2, E1   ; output port
+CONSTANT LOAD_ADDR1, E2   ; output port
+CONSTANT LOAD_ADDR0, E3   ; output port
+CONSTANT I2C_OUT, EC   ; output port
+CONSTANT RTC_REG_INDEX, ED   ; output port
+CONSTANT RTC_REG_VALUE, EE   ; output port
+CONSTANT LOAD_BUSY, EF   ; output port
+CONSTANT RTC_SET_INDEX, F0   ; output port
+CONSTANT acmd41_tries, 00   ; scratchpad
+CONSTANT sd_version, 01   ; scratchpad
+CONSTANT resp0, 02   ; scratchpad
+CONSTANT resp1, 03   ; scratchpad
+CONSTANT resp2, 04   ; scratchpad
+CONSTANT resp3, 05   ; scratchpad
+CONSTANT sd_is_sdhc, 06   ; scratchpad
+CONSTANT cid0, 13   ; scratchpad
+CONSTANT cid1, 14   ; scratchpad
+CONSTANT cid2, 15   ; scratchpad
+CONSTANT cid3, 16   ; scratchpad
+CONSTANT rca_hi, 17   ; scratchpad
+CONSTANT rca_lo, 18   ; scratchpad
+CONSTANT xfer_dir, 19   ; scratchpad
+CONSTANT dma_addr3, 1A   ; scratchpad
+CONSTANT dma_addr2, 1B   ; scratchpad
+CONSTANT dma_addr1, 1C   ; scratchpad
+CONSTANT dma_addr0, 1D   ; scratchpad
+CONSTANT blksize_hi, 1E   ; scratchpad
+CONSTANT blksize_lo, 1F   ; scratchpad
+CONSTANT blkcount_m1, 20   ; scratchpad
+CONSTANT load_step_lo, 2A   ; scratchpad
+CONSTANT load_pos3, 2C   ; scratchpad
+CONSTANT load_pos2, 2D   ; scratchpad
+CONSTANT load_pos1, 2E   ; scratchpad
+CONSTANT load_pos0, 2F   ; scratchpad
+CONSTANT load_step_hi, 31   ; scratchpad
+CONSTANT rtc_el_s, 33   ; scratchpad
+CONSTANT rtc_el_m, 34   ; scratchpad
+CONSTANT rtc_el_h, 35   ; scratchpad
+CONSTANT rtc_el_day, 36   ; scratchpad
+CONSTANT rtc_last_sec, 37   ; scratchpad
+CONSTANT tbl_mode, 3B   ; scratchpad
+CONSTANT data_status, 3D   ; scratchpad
+CONSTANT license_a, 3E   ; scratchpad
+CONSTANT license_b, 3F   ; scratchpad
 
+
+; Reset. Clear scratchpad, run bank 2 (license check, boot counter),
+; bring the SD card up in native 4-bit mode, init the RTC, then idle
+; with interrupts on. Kernel commands arrive as interrupts (int_vector).
 reset:
     DISABLE INTERRUPT               ; 000 3C000
     LOAD s2, 00                     ; 001 00200
-    STORE s2, 3F                    ; 002 2E23F
-    CALL sub_3F0                    ; 003 303F0
-    FETCH sF, 3E                    ; 004 06F3E
-    CALL sub_1AA                    ; 005 301AA
-    FETCH sF, 3F                    ; 006 06F3F
-    CALL sub_1AA                    ; 007 301AA
-    CALL sub_097                    ; 008 30097
-    CALL sub_0FC                    ; 009 300FC
-    CALL sub_1C2                    ; 00A 301C2
-    CALL sub_0A0                    ; 00B 300A0
-    LOAD sF, B0                     ; 00C 00FB0
-    CALL sub_1AA                    ; 00D 301AA
-    CALL sub_1BD                    ; 00E 301BD
-    CALL sub_0A3                    ; 00F 300A3
-    CALL sub_194                    ; 010 30194
-    FETCH s0, 05                    ; 011 06005
-    FETCH s0, 05                    ; 012 06005
-    COMPARE s0, AA                  ; 013 140AA
+    STORE s2, license_b             ; 002 2E23F  license_b=0 tells bank 2 "boot", not "flash update"
+    CALL call_bank2                 ; 003 303F0  bank 2: Device DNA + license check, boot tally at flash $70000
+    FETCH sF, license_a             ; 004 06F3E  debug: print bank 2's verdict (F1 F2 = licensed)
+    CALL dbg_putc                   ; 005 301AA
+    FETCH sF, license_b             ; 006 06F3F
+    CALL dbg_putc                   ; 007 301AA
+    CALL clear_scratchpad           ; 008 30097  clear scratchpad $00-$3D
+    CALL sdc_init                   ; 009 300FC  controller reset, timeouts, 400 kHz identification clock
+    CALL delay_med                  ; 00A 301C2
+    CALL sd_cmd0                    ; 00B 300A0  CMD0 GO_IDLE_STATE
+    LOAD sF, B0                     ; 00C 00FB0  debug B0: card reset sent
+    CALL dbg_putc                   ; 00D 301AA
+    CALL delay_short                ; 00E 301BD
+    CALL sd_cmd8                    ; 00F 300A3  CMD8 SEND_IF_COND $1AA (2.7-3.6 V, check pattern AA)
+    CALL sdc_read_response          ; 010 30194
+    FETCH s0, resp3                 ; 011 06005
+    FETCH s0, resp3                 ; 012 06005
+    COMPARE s0, AA                  ; 013 140AA  echoed check pattern AA = SD v2 card
     JUMP NZ, L_018                  ; 014 35418
     LOAD s0, 02                     ; 015 00002
-    STORE s0, 01                    ; 016 2E001
+    STORE s0, sd_version            ; 016 2E001
     JUMP L_018                      ; 017 34018
 L_018:
-    CALL sub_0A8                    ; 018 300A8
-    CALL sub_0E1                    ; 019 300E1
-    CALL sub_1A0                    ; 01A 301A0
-    CALL sub_1BD                    ; 01B 301BD
-    CALL sub_0E4                    ; 01C 300E4
-    CALL sub_1C2                    ; 01D 301C2
-    CALL sub_194                    ; 01E 30194
-    FETCH s0, 02                    ; 01F 06002
-    STORE s0, 17                    ; 020 2E017
-    FETCH s0, 03                    ; 021 06003
-    STORE s0, 18                    ; 022 2E018
-    LOAD s0, 00                     ; 023 00000
-    CALL sub_118                    ; 024 30118
-    CALL sub_11E                    ; 025 3011E
-    CALL sub_0E7                    ; 026 300E7
+    CALL sd_acmd41_loop             ; 018 300A8  ACMD41 loop until powered up
+    CALL sd_cmd2                    ; 019 300E1  CMD2 ALL_SEND_CID
+    CALL save_cid                   ; 01A 301A0  keep the CID's last word
+    CALL delay_short                ; 01B 301BD
+    CALL sd_cmd3                    ; 01C 300E4  CMD3 SEND_RELATIVE_ADDR
+    CALL delay_med                  ; 01D 301C2
+    CALL sdc_read_response          ; 01E 30194
+    FETCH s0, resp0                 ; 01F 06002  RCA from the R6 response
+    STORE s0, rca_hi                ; 020 2E017
+    FETCH s0, resp1                 ; 021 06003
+    STORE s0, rca_lo                ; 022 2E018
+    LOAD s0, 00                     ; 023 00000  clock divider 0 = full speed
+    CALL sdc_clock_divider          ; 024 30118
+    CALL sdc_reset_off              ; 025 3011E
+    CALL sd_cmd7                    ; 026 300E7  CMD7 SELECT_CARD
     LOAD s1, 02                     ; 027 00102
     LOAD s0, 00                     ; 028 00000
-    CALL sub_0F1                    ; 029 300F1
-    CALL sub_0CD                    ; 02A 300CD
-    CALL sub_0EC                    ; 02B 300EC
-    CALL sub_12B                    ; 02C 3012B
-    CALL sub_0D2                    ; 02D 300D2
-    CALL sub_31B                    ; 02E 3031B
-    LOAD sF, EE                     ; 02F 00FEE
-    CALL sub_1AA                    ; 030 301AA
+    CALL sd_cmd16                   ; 029 300F1  CMD16 SET_BLOCKLEN 512
+    CALL sd_cmd55                   ; 02A 300CD  CMD55 APP_CMD
+    CALL sd_acmd6_4bit              ; 02B 300EC  ACMD6 SET_BUS_WIDTH 4-bit
+    CALL sdc_bus_4bit               ; 02C 3012B  controller to 4-bit bus
+    CALL sd_cmd13                   ; 02D 300D2  CMD13 SEND_STATUS
+    CALL rtc_init                   ; 02E 3031B  PCF8563 init
+    LOAD sF, EE                     ; 02F 00FEE  debug EE: init done
+    CALL dbg_putc                   ; 030 301AA
     ENABLE INTERRUPT                ; 031 3C001
 L_032:
     LOAD sB, 02                     ; 032 00B02
     DISABLE INTERRUPT               ; 033 3C000
-    CALL sub_309                    ; 034 30309
+    CALL rtc_dump                   ; 034 30309  copy RTC registers 2-8 to ports ED/EE
     ENABLE INTERRUPT                ; 035 3C001
-    INPUT s1, B9                    ; 036 041B9
+    INPUT s1, RTC_GAME_LIVE         ; 036 041B9  1 while a game with a clock runs (FW4: the kernel asks for a refresh)
     COMPARE s1, 01                  ; 037 14101
     JUMP NZ, L_08E                  ; 038 3548E
     LOAD sB, 02                     ; 039 00B02
-    CALL sub_303                    ; 03A 30303
-    FETCH s0, 37                    ; 03B 06037
+    CALL rtc_read                   ; 03A 30303
+    FETCH s0, rtc_last_sec          ; 03B 06037
     COMPARE s0, sD                  ; 03C 150D0
     JUMP Z, L_08E                   ; 03D 3508E
-    STORE sD, 37                    ; 03E 2ED37
-    FETCH s0, 33                    ; 03F 06033
+    STORE sD, rtc_last_sec          ; 03E 2ED37
+    FETCH s0, rtc_el_s              ; 03F 06033
     COMPARE s0, 3B                  ; 040 1403B
     JUMP Z, L_045                   ; 041 35045
     ADD s0, 01                      ; 042 18001
-    STORE s0, 33                    ; 043 2E033
+    STORE s0, rtc_el_s              ; 043 2E033
     JUMP L_05A                      ; 044 3405A
 L_045:
     LOAD s0, 00                     ; 045 00000
-    STORE s0, 33                    ; 046 2E033
-    FETCH s0, 34                    ; 047 06034
+    STORE s0, rtc_el_s              ; 046 2E033
+    FETCH s0, rtc_el_m              ; 047 06034
     COMPARE s0, 3B                  ; 048 1403B
     JUMP Z, L_04D                   ; 049 3504D
     ADD s0, 01                      ; 04A 18001
-    STORE s0, 34                    ; 04B 2E034
+    STORE s0, rtc_el_m              ; 04B 2E034
     JUMP L_05A                      ; 04C 3405A
 L_04D:
     LOAD s0, 00                     ; 04D 00000
-    STORE s0, 34                    ; 04E 2E034
-    FETCH s0, 35                    ; 04F 06035
+    STORE s0, rtc_el_m              ; 04E 2E034
+    FETCH s0, rtc_el_h              ; 04F 06035
     COMPARE s0, 17                  ; 050 14017
     JUMP Z, L_055                   ; 051 35055
     ADD s0, 01                      ; 052 18001
-    STORE s0, 35                    ; 053 2E035
+    STORE s0, rtc_el_h              ; 053 2E035
     JUMP L_05A                      ; 054 3405A
 L_055:
     LOAD s0, 00                     ; 055 00000
-    STORE s0, 35                    ; 056 2E035
-    FETCH s0, 36                    ; 057 06036
+    STORE s0, rtc_el_h              ; 056 2E035
+    FETCH s0, rtc_el_day            ; 057 06036
     ADD s0, 01                      ; 058 18001
-    STORE s0, 36                    ; 059 2E036
+    STORE s0, rtc_el_day            ; 059 2E036
 L_05A:
-    FETCH s5, 33                    ; 05A 06533
-    INPUT s4, A5                    ; 05B 044A5
+    FETCH s5, rtc_el_s              ; 05A 06533
+    INPUT s4, RTC_GAME_S            ; 05B 044A5
     ADD s4, s5                      ; 05C 19450
     LOAD s3, 00                     ; 05D 00300
     LOAD s5, s4                     ; 05E 01540
@@ -110,9 +195,9 @@ L_05A:
     SUB s4, 3C                      ; 061 1C43C
     ADD s3, 01                      ; 062 18301
 L_063:
-    OUTPUT s4, A5                   ; 063 2C4A5
-    FETCH s5, 34                    ; 064 06534
-    INPUT s4, A6                    ; 065 044A6
+    OUTPUT s4, RTC_BASE_S           ; 063 2C4A5
+    FETCH s5, rtc_el_m              ; 064 06534
+    INPUT s4, RTC_GAME_M            ; 065 044A6
     ADD s4, s5                      ; 066 19450
     ADD s4, s3                      ; 067 19430
     LOAD s3, 00                     ; 068 00300
@@ -122,9 +207,9 @@ L_063:
     SUB s4, 3C                      ; 06C 1C43C
     ADD s3, 01                      ; 06D 18301
 L_06E:
-    OUTPUT s4, A6                   ; 06E 2C4A6
-    FETCH s5, 35                    ; 06F 06535
-    INPUT s4, A7                    ; 070 044A7
+    OUTPUT s4, RTC_BASE_M           ; 06E 2C4A6
+    FETCH s5, rtc_el_h              ; 06F 06535
+    INPUT s4, RTC_GAME_H            ; 070 044A7
     ADD s4, s5                      ; 071 19450
     ADD s4, s3                      ; 072 19430
     LOAD s3, 00                     ; 073 00300
@@ -134,36 +219,36 @@ L_06E:
     SUB s4, 18                      ; 077 1C418
     ADD s3, 01                      ; 078 18301
 L_079:
-    OUTPUT s4, A7                   ; 079 2C4A7
-    FETCH s5, 36                    ; 07A 06536
-    INPUT s4, A8                    ; 07B 044A8
+    OUTPUT s4, RTC_BASE_H           ; 079 2C4A7
+    FETCH s5, rtc_el_day            ; 07A 06536
+    INPUT s4, RTC_GAME_DL           ; 07B 044A8
     ADD s4, s5                      ; 07C 19450
     JUMP C, L_081                   ; 07D 35881
     ADD s4, s3                      ; 07E 19430
     JUMP C, L_081                   ; 07F 35881
     JUMP L_08B                      ; 080 3408B
 L_081:
-    OUTPUT s4, A8                   ; 081 2C4A8
-    INPUT s4, A9                    ; 082 044A9
+    OUTPUT s4, RTC_BASE_DL          ; 081 2C4A8
+    INPUT s4, RTC_GAME_DH           ; 082 044A9
     TEST s4, 01                     ; 083 12401
     JUMP Z, L_088                   ; 084 35088
     OR s4, 80                       ; 085 0C480
-    OUTPUT s4, A9                   ; 086 2C4A9
+    OUTPUT s4, RTC_BASE_DH          ; 086 2C4A9
     JUMP L_08E                      ; 087 3408E
 L_088:
     OR s4, 01                       ; 088 0C401
-    OUTPUT s4, A9                   ; 089 2C4A9
+    OUTPUT s4, RTC_BASE_DH          ; 089 2C4A9
     JUMP L_08E                      ; 08A 3408E
 L_08B:
-    OUTPUT s4, A8                   ; 08B 2C4A8
-    INPUT s4, A9                    ; 08C 044A9
-    OUTPUT s4, A9                   ; 08D 2C4A9
+    OUTPUT s4, RTC_BASE_DL          ; 08B 2C4A8
+    INPUT s4, RTC_GAME_DH           ; 08C 044A9
+    OUTPUT s4, RTC_BASE_DH          ; 08D 2C4A9
 L_08E:
-    CALL sub_1C7                    ; 08E 301C7
+    CALL delay_long                 ; 08E 301C7  ~delay
     JUMP L_032                      ; 08F 34032
 ; $090-$096: unreached words, kept as data
 ADDRESS 090
-    ; 090: 301BD  CALL sub_1BD
+    ; 090: 301BD  CALL delay_short
     DATA_WORD 301BD
     ; 091: 00100  LOAD s1, 00
     DATA_WORD 00100
@@ -178,8 +263,8 @@ ADDRESS 090
     ; 096: 2A000  RETURN
     DATA_WORD 2A000
 
-; ---- sub_097 ---- called from 008
-sub_097:
+; ---- clear_scratchpad ---- called from 008
+clear_scratchpad:
     LOAD s6, 00                     ; 097 00600
     LOAD s4, 00                     ; 098 00400
 L_099:
@@ -193,253 +278,258 @@ L_09C:
 L_09F:
     RETURN                          ; 09F 2A000
 
-; ---- sub_0A0 ---- called from 00B
-sub_0A0:
+; ---- sd_cmd0 ---- called from 00B
+sd_cmd0:
     LOAD sC, 00                     ; 0A0 00C00
     LOAD sB, 00                     ; 0A1 00B00
-    JUMP sub_0F6                    ; 0A2 340F6
+    JUMP sd_cmd_noarg               ; 0A2 340F6
 
-; ---- sub_0A3 ---- called from 00F
-sub_0A3:
+; ---- sd_cmd8 ---- called from 00F
+sd_cmd8:
     LOAD sC, 08                     ; 0A3 00C08
     LOAD sB, 15                     ; 0A4 00B15
     LOAD s8, 01                     ; 0A5 00801
     LOAD s7, AA                     ; 0A6 007AA
-    JUMP L_0F8                      ; 0A7 340F8
+    JUMP sd_cmd_arg16               ; 0A7 340F8
 
-; ---- sub_0A8 ---- called from 018
-sub_0A8:
+; ---- sd_acmd41_loop ---- called from 018
+sd_acmd41_loop:
     LOAD s3, FF                     ; 0A8 003FF
-    STORE s3, 00                    ; 0A9 2E300
+    STORE s3, acmd41_tries          ; 0A9 2E300
     LOAD s0, 00                     ; 0AA 00000
-    STORE s0, 17                    ; 0AB 2E017
-    STORE s0, 18                    ; 0AC 2E018
+    STORE s0, rca_hi                ; 0AB 2E017
+    STORE s0, rca_lo                ; 0AC 2E018
 L_0AD:
-    CALL sub_0CD                    ; 0AD 300CD
-    CALL sub_1BD                    ; 0AE 301BD
-    CALL sub_0D4                    ; 0AF 300D4
-    CALL sub_1BD                    ; 0B0 301BD
-    CALL sub_194                    ; 0B1 30194
-    FETCH s0, 02                    ; 0B2 06002
-    TEST s0, 80                     ; 0B3 12080
+    CALL sd_cmd55                   ; 0AD 300CD
+    CALL delay_short                ; 0AE 301BD
+    CALL sd_acmd41                  ; 0AF 300D4
+    CALL delay_short                ; 0B0 301BD
+    CALL sdc_read_response          ; 0B1 30194
+    FETCH s0, resp0                 ; 0B2 06002
+    TEST s0, 80                     ; 0B3 12080  response bit 31 = card powered up
     JUMP NZ, L_0BC                  ; 0B4 354BC
-    FETCH s3, 00                    ; 0B5 06300
+    FETCH s3, acmd41_tries          ; 0B5 06300
     SUB s3, 01                      ; 0B6 1C301
-    STORE s3, 00                    ; 0B7 2E300
+    STORE s3, acmd41_tries          ; 0B7 2E300
     COMPARE s3, 00                  ; 0B8 14300
-    JUMP Z, L_0C8                   ; 0B9 350C8
-    CALL sub_1C7                    ; 0BA 301C7
+    JUMP Z, L_0C8                   ; 0B9 350C8  255 tries then give up (reported as 88)
+    CALL delay_long                 ; 0BA 301C7
     JUMP L_0AD                      ; 0BB 340AD
 L_0BC:
-    FETCH s0, 01                    ; 0BC 06001
+    FETCH s0, sd_version            ; 0BC 06001  card ready
     COMPARE s0, 02                  ; 0BD 14002
     JUMP Z, L_0C1                   ; 0BE 350C1
     LOAD s0, 01                     ; 0BF 00001
-    STORE s0, 01                    ; 0C0 2E001
+    STORE s0, sd_version            ; 0C0 2E001
 L_0C1:
-    FETCH s0, 02                    ; 0C1 06002
-    TEST s0, 40                     ; 0C2 12040
+    FETCH s0, resp0                 ; 0C1 06002
+    TEST s0, 40                     ; 0C2 12040  CCS bit: high capacity
     JUMP Z, L_0C8                   ; 0C3 350C8
     LOAD s3, 01                     ; 0C4 00301
-    LOAD sF, 82                     ; 0C5 00F82
-    CALL sub_1AA                    ; 0C6 301AA
+    LOAD sF, 82                     ; 0C5 00F82  debug 82: SDHC/SDXC
+    CALL dbg_putc                   ; 0C6 301AA
     JUMP L_0CB                      ; 0C7 340CB
 L_0C8:
-    LOAD sF, 88                     ; 0C8 00F88
-    CALL sub_1AA                    ; 0C9 301AA
+    LOAD sF, 88                     ; 0C8 00F88  debug 88: standard capacity, or timed out
+    CALL dbg_putc                   ; 0C9 301AA
     LOAD s3, 00                     ; 0CA 00300
 L_0CB:
-    STORE s3, 06                    ; 0CB 2E306
+    STORE s3, sd_is_sdhc            ; 0CB 2E306
     RETURN                          ; 0CC 2A000
 
-; ---- sub_0CD ---- called from 02A, 0AD
-sub_0CD:
+; ---- sd_cmd55 ---- called from 02A, 0AD
+sd_cmd55:
     LOAD sC, 37                     ; 0CD 00C37
-L_0CE:
+sd_cmd_rca_arg:
     LOAD sB, 15                     ; 0CE 00B15
-    FETCH sA, 17                    ; 0CF 06A17
-    FETCH s9, 18                    ; 0D0 06918
+    FETCH sA, rca_hi                ; 0CF 06A17
+    FETCH s9, rca_lo                ; 0D0 06918
     JUMP L_0DD                      ; 0D1 340DD
 
-; ---- sub_0D2 ---- called from 02D, 33B
-sub_0D2:
+; ---- sd_cmd13 ---- called from 02D, 33B
+sd_cmd13:
     LOAD sC, 0D                     ; 0D2 00C0D
-    JUMP L_0CE                      ; 0D3 340CE
+    JUMP sd_cmd_rca_arg             ; 0D3 340CE
 
-; ---- sub_0D4 ---- called from 0AF
-sub_0D4:
+; ---- sd_acmd41 ---- called from 0AF
+sd_acmd41:
     LOAD sC, 29                     ; 0D4 00C29
     LOAD sB, 01                     ; 0D5 00B01
     LOAD sA, 00                     ; 0D6 00A00
-    FETCH s0, 01                    ; 0D7 06001
+    FETCH s0, sd_version            ; 0D7 06001
     COMPARE s0, 02                  ; 0D8 14002
     JUMP NZ, L_0DB                  ; 0D9 354DB
-    OR sA, 40                       ; 0DA 0CA40
+    OR sA, 40                       ; 0DA 0CA40  HCS only for v2 cards...
 L_0DB:
-    LOAD sA, 40                     ; 0DB 00A40
+    LOAD sA, 40                     ; 0DB 00A40  ...but overwritten here: HCS is always sent
     LOAD s9, 30                     ; 0DC 00930
 L_0DD:
     LOAD s8, 00                     ; 0DD 00800
     LOAD s7, 00                     ; 0DE 00700
-    CALL sub_13C                    ; 0DF 3013C
+    CALL sd_command                 ; 0DF 3013C
     RETURN                          ; 0E0 2A000
 
-; ---- sub_0E1 ---- called from 019
-sub_0E1:
+; ---- sd_cmd2 ---- called from 019
+sd_cmd2:
     LOAD sC, 02                     ; 0E1 00C02
     LOAD sB, 07                     ; 0E2 00B07
-    JUMP sub_0F6                    ; 0E3 340F6
+    JUMP sd_cmd_noarg               ; 0E3 340F6
 
-; ---- sub_0E4 ---- called from 01C
-sub_0E4:
+; ---- sd_cmd3 ---- called from 01C
+sd_cmd3:
     LOAD sC, 03                     ; 0E4 00C03
     LOAD sB, 15                     ; 0E5 00B15
-    JUMP sub_0F6                    ; 0E6 340F6
+    JUMP sd_cmd_noarg               ; 0E6 340F6
 
-; ---- sub_0E7 ---- called from 026
-sub_0E7:
+; ---- sd_cmd7 ---- called from 026
+sd_cmd7:
     LOAD sC, 07                     ; 0E7 00C07
     LOAD sB, 15                     ; 0E8 00B15
-    FETCH sA, 17                    ; 0E9 06A17
-    FETCH s9, 18                    ; 0EA 06918
+    FETCH sA, rca_hi                ; 0E9 06A17
+    FETCH s9, rca_lo                ; 0EA 06918
     JUMP L_0DD                      ; 0EB 340DD
 
-; ---- sub_0EC ---- called from 02B
-sub_0EC:
+; ---- sd_acmd6_4bit ---- called from 02B
+sd_acmd6_4bit:
     LOAD sC, 06                     ; 0EC 00C06
     LOAD sB, 15                     ; 0ED 00B15
     LOAD s8, 00                     ; 0EE 00800
     LOAD s7, 02                     ; 0EF 00702
-    JUMP L_0F8                      ; 0F0 340F8
+    JUMP sd_cmd_arg16               ; 0F0 340F8
 
-; ---- sub_0F1 ---- called from 029
-sub_0F1:
+; ---- sd_cmd16 ---- called from 029
+sd_cmd16:
     LOAD sC, 10                     ; 0F1 00C10
     LOAD sB, 15                     ; 0F2 00B15
     LOAD s8, s1                     ; 0F3 01810
     LOAD s7, s0                     ; 0F4 01700
-    JUMP L_0F8                      ; 0F5 340F8
+    JUMP sd_cmd_arg16               ; 0F5 340F8
 
-; ---- sub_0F6 ---- called from 1F0
-sub_0F6:
+; ---- sd_cmd_noarg ---- called from 1F0
+sd_cmd_noarg:
     LOAD s8, 00                     ; 0F6 00800
     LOAD s7, 00                     ; 0F7 00700
-L_0F8:
+sd_cmd_arg16:
     LOAD sA, 00                     ; 0F8 00A00
     LOAD s9, 00                     ; 0F9 00900
-    CALL sub_13C                    ; 0FA 3013C
+    CALL sd_command                 ; 0FA 3013C
     RETURN                          ; 0FB 2A000
 
-; ---- sub_0FC ---- called from 009
-sub_0FC:
-    CALL sub_10D                    ; 0FC 3010D
-    CALL sub_116                    ; 0FD 30116
-    CALL sub_120                    ; 0FE 30120
-    CALL sub_127                    ; 0FF 30127
-    CALL sub_122                    ; 100 30122
-    CALL sub_129                    ; 101 30129
+; ---- sdc_init ---- called from 009
+sdc_init:
+    CALL sdc_cmd_timeout            ; 0FC 3010D
+    CALL sdc_data_timeout           ; 0FD 30116
+    CALL sdc_cmd_int_enable         ; 0FE 30120
+    CALL sdc_data_int_enable        ; 0FF 30127
+    CALL sdc_cmd_int_status         ; 100 30122
+    CALL sdc_data_int_status        ; 101 30129
     LOAD s0, 00                     ; 102 00000
-    CALL sub_118                    ; 103 30118
-    CALL sub_131                    ; 104 30131
-    CALL sub_10A                    ; 105 3010A
-    LOAD s0, 48                     ; 106 00048
-    CALL sub_118                    ; 107 30118
-    CALL sub_11E                    ; 108 3011E
+    CALL sdc_clock_divider          ; 103 30118
+    CALL sdc_bus_1bit               ; 104 30131
+    CALL sdc_reset_on               ; 105 3010A  software reset on, then off below
+    LOAD s0, 48                     ; 106 00048  divider $48: ~400 kHz from a ~58 MHz clock
+    CALL sdc_clock_divider          ; 107 30118
+    CALL sdc_reset_off              ; 108 3011E
     RETURN                          ; 109 2A000
 
-; ---- sub_10A ---- called from 105
-sub_10A:
+; ---- sdc_reset_on ---- called from 105
+sdc_reset_on:
     LOAD sE, 28                     ; 10A 00E28
-    CALL sub_137                    ; 10B 30137
+    CALL sdc_zero_upper             ; 10B 30137
     JUMP L_12D                      ; 10C 3412D
 
-; ---- sub_10D ---- called from 0FC
-sub_10D:
+; ---- sdc_cmd_timeout ---- called from 0FC
+sdc_cmd_timeout:
     LOAD sE, 20                     ; 10D 00E20
     LOAD sD, 00                     ; 10E 00D00
-    OUTPUT sD, 73                   ; 10F 2CD73
-    OUTPUT sD, 72                   ; 110 2CD72
+    OUTPUT sD, SDC_D3               ; 10F 2CD73
+    OUTPUT sD, SDC_D2               ; 110 2CD72
     LOAD s1, 00                     ; 111 00100
-    OUTPUT s1, 71                   ; 112 2C171
-    OUTPUT s1, 70                   ; 113 2C170
-    CALL sub_1AF                    ; 114 301AF
+    OUTPUT s1, SDC_D1               ; 112 2C171
+    OUTPUT s1, SDC_D0               ; 113 2C170
+    CALL sdc_write_reg              ; 114 301AF
     RETURN                          ; 115 2A000
 
-; ---- sub_116 ---- called from 0FD
-sub_116:
+; ---- sdc_data_timeout ---- called from 0FD
+sdc_data_timeout:
     LOAD sE, 18                     ; 116 00E18
-    JUMP L_133                      ; 117 34133
+    JUMP sdc_write_zero_reg         ; 117 34133
 
-; ---- sub_118 ---- called from 024, 103, 107
-sub_118:
+; ---- sdc_clock_divider ---- called from 024, 103, 107
+sdc_clock_divider:
     LOAD sE, 24                     ; 118 00E24
-    CALL sub_137                    ; 119 30137
+    CALL sdc_zero_upper             ; 119 30137
     LOAD sD, s0                     ; 11A 01D00
-    OUTPUT sD, 70                   ; 11B 2CD70
-    CALL sub_1AF                    ; 11C 301AF
+    OUTPUT sD, SDC_D0               ; 11B 2CD70
+    CALL sdc_write_reg              ; 11C 301AF
     RETURN                          ; 11D 2A000
 
-; ---- sub_11E ---- called from 025, 108
-sub_11E:
+; ---- sdc_reset_off ---- called from 025, 108
+sdc_reset_off:
     LOAD sE, 28                     ; 11E 00E28
-    JUMP L_133                      ; 11F 34133
+    JUMP sdc_write_zero_reg         ; 11F 34133
 
-; ---- sub_120 ---- called from 0FE
-sub_120:
+; ---- sdc_cmd_int_enable ---- called from 0FE
+sdc_cmd_int_enable:
     LOAD sE, 38                     ; 120 00E38
-    JUMP L_133                      ; 121 34133
+    JUMP sdc_write_zero_reg         ; 121 34133
 
-; ---- sub_122 ---- called from 100
-sub_122:
+; ---- sdc_cmd_int_status ---- called from 100
+sdc_cmd_int_status:
     LOAD sE, 34                     ; 122 00E34
-    JUMP L_133                      ; 123 34133
+    JUMP sdc_write_zero_reg         ; 123 34133
 
-; ---- sub_124 ---- called from 1EA
-sub_124:
+; ---- sdc_data_int_enable_on ---- called from 1EA
+sdc_data_int_enable_on:
     LOAD sE, 40                     ; 124 00E40
-    CALL sub_137                    ; 125 30137
+    CALL sdc_zero_upper             ; 125 30137
     JUMP L_12D                      ; 126 3412D
 
-; ---- sub_127 ---- called from 0FF
-sub_127:
+; ---- sdc_data_int_enable ---- called from 0FF
+sdc_data_int_enable:
     LOAD sE, 40                     ; 127 00E40
-    JUMP L_133                      ; 128 34133
+    JUMP sdc_write_zero_reg         ; 128 34133
 
-; ---- sub_129 ---- called from 101
-sub_129:
+; ---- sdc_data_int_status ---- called from 101
+sdc_data_int_status:
     LOAD sE, 3C                     ; 129 00E3C
-    JUMP L_133                      ; 12A 34133
+    JUMP sdc_write_zero_reg         ; 12A 34133
 
-; ---- sub_12B ---- called from 02C
-sub_12B:
+; ---- sdc_bus_4bit ---- called from 02C
+sdc_bus_4bit:
     LOAD sE, 1C                     ; 12B 00E1C
-    CALL sub_137                    ; 12C 30137
+    CALL sdc_zero_upper             ; 12C 30137
 L_12D:
     LOAD s1, 01                     ; 12D 00101
-    OUTPUT s1, 70                   ; 12E 2C170
-    CALL sub_1AF                    ; 12F 301AF
+    OUTPUT s1, SDC_D0               ; 12E 2C170
+    CALL sdc_write_reg              ; 12F 301AF
     RETURN                          ; 130 2A000
 
-; ---- sub_131 ---- called from 104
-sub_131:
+; ---- sdc_bus_1bit ---- called from 104
+sdc_bus_1bit:
     LOAD sE, 1C                     ; 131 00E1C
-    JUMP L_133                      ; 132 34133
-L_133:
-    CALL sub_137                    ; 133 30137
-    OUTPUT sD, 70                   ; 134 2CD70
-    CALL sub_1AF                    ; 135 301AF
+    JUMP sdc_write_zero_reg         ; 132 34133
+sdc_write_zero_reg:
+    CALL sdc_zero_upper             ; 133 30137
+    OUTPUT sD, SDC_D0               ; 134 2CD70
+    CALL sdc_write_reg              ; 135 301AF
     RETURN                          ; 136 2A000
 
-; ---- sub_137 ---- called from 10B, 119, 125, 12C, 133, 169
-sub_137:
+; ---- sdc_zero_upper ---- called from 10B, 119, 125, 12C, 133, 169
+sdc_zero_upper:
     LOAD sD, 00                     ; 137 00D00
-    OUTPUT sD, 73                   ; 138 2CD73
-    OUTPUT sD, 72                   ; 139 2CD72
-    OUTPUT sD, 71                   ; 13A 2CD71
+    OUTPUT sD, SDC_D3               ; 138 2CD73
+    OUTPUT sD, SDC_D2               ; 139 2CD72
+    OUTPUT sD, SDC_D1               ; 13A 2CD71
     RETURN                          ; 13B 2A000
 
-; ---- sub_13C ---- called from 0DF, 0FA, 1EC
-sub_13C:
+; Send an SD command through the controller.
+; sC = command index, sB = response flags (b0 response, b1 136-bit,
+; b2 CRC check, b3 busy, b4 index check), sA:s9:s8:s7 = argument,
+; xfer_dir = 0 none / 1 read / 2 write. Waits for completion.
+
+; ---- sd_command ---- called from 0DF, 0FA, 1EC
+sd_command:
     LOAD s0, 00                     ; 13C 00000
     TEST sB, 01                     ; 13D 12B01
     JUMP Z, L_144                   ; 13E 35144
@@ -462,7 +552,7 @@ L_14A:
     JUMP Z, L_14D                   ; 14B 3514D
     OR s0, 10                       ; 14C 0C010
 L_14D:
-    FETCH s1, 19                    ; 14D 06119
+    FETCH s1, xfer_dir              ; 14D 06119  data transfer? set DMA address, block size, count first
     COMPARE s1, 01                  ; 14E 14101
     JUMP NZ, L_152                  ; 14F 35552
     OR s0, 20                       ; 150 0C020
@@ -472,45 +562,45 @@ L_152:
     JUMP NZ, L_16D                  ; 153 3556D
     OR s0, 40                       ; 154 0C040
 L_155:
-    LOAD sE, 60                     ; 155 00E60
-    FETCH s1, 1A                    ; 156 0611A
-    OUTPUT s1, 73                   ; 157 2C173
-    FETCH s1, 1B                    ; 158 0611B
-    OUTPUT s1, 72                   ; 159 2C172
-    FETCH s1, 1C                    ; 15A 0611C
-    OUTPUT s1, 71                   ; 15B 2C171
-    FETCH s1, 1D                    ; 15C 0611D
-    OUTPUT s1, 70                   ; 15D 2C170
-    CALL sub_1AF                    ; 15E 301AF
-    LOAD sE, 44                     ; 15F 00E44
+    LOAD sE, 60                     ; 155 00E60  reg $60 DMA address
+    FETCH s1, dma_addr3             ; 156 0611A
+    OUTPUT s1, SDC_D3               ; 157 2C173
+    FETCH s1, dma_addr2             ; 158 0611B
+    OUTPUT s1, SDC_D2               ; 159 2C172
+    FETCH s1, dma_addr1             ; 15A 0611C
+    OUTPUT s1, SDC_D1               ; 15B 2C171
+    FETCH s1, dma_addr0             ; 15C 0611D
+    OUTPUT s1, SDC_D0               ; 15D 2C170
+    CALL sdc_write_reg              ; 15E 301AF
+    LOAD sE, 44                     ; 15F 00E44  reg $44 block size - 1
     LOAD s1, 00                     ; 160 00100
-    OUTPUT s1, 73                   ; 161 2C173
-    OUTPUT s1, 72                   ; 162 2C172
-    FETCH s1, 1E                    ; 163 0611E
-    OUTPUT s1, 71                   ; 164 2C171
-    FETCH s1, 1F                    ; 165 0611F
-    OUTPUT s1, 70                   ; 166 2C170
-    CALL sub_1AF                    ; 167 301AF
-    LOAD sE, 48                     ; 168 00E48
-    CALL sub_137                    ; 169 30137
-    FETCH s1, 20                    ; 16A 06120
-    OUTPUT s1, 70                   ; 16B 2C170
-    CALL sub_1AF                    ; 16C 301AF
+    OUTPUT s1, SDC_D3               ; 161 2C173
+    OUTPUT s1, SDC_D2               ; 162 2C172
+    FETCH s1, blksize_hi            ; 163 0611E
+    OUTPUT s1, SDC_D1               ; 164 2C171
+    FETCH s1, blksize_lo            ; 165 0611F
+    OUTPUT s1, SDC_D0               ; 166 2C170
+    CALL sdc_write_reg              ; 167 301AF
+    LOAD sE, 48                     ; 168 00E48  reg $48 block count - 1
+    CALL sdc_zero_upper             ; 169 30137
+    FETCH s1, blkcount_m1           ; 16A 06120
+    OUTPUT s1, SDC_D0               ; 16B 2C170
+    CALL sdc_write_reg              ; 16C 301AF
 L_16D:
-    LOAD sE, 04                     ; 16D 00E04
-    OUTPUT sC, 71                   ; 16E 2CC71
-    OUTPUT s0, 70                   ; 16F 2C070
-    CALL sub_1AF                    ; 170 301AF
-    LOAD sE, 00                     ; 171 00E00
-    OUTPUT sA, 73                   ; 172 2CA73
-    OUTPUT s9, 72                   ; 173 2C972
-    OUTPUT s8, 71                   ; 174 2C871
-    OUTPUT s7, 70                   ; 175 2C770
-    CALL sub_1AF                    ; 176 301AF
+    LOAD sE, 04                     ; 16D 00E04  reg $04 command word
+    OUTPUT sC, SDC_D1               ; 16E 2CC71
+    OUTPUT s0, SDC_D0               ; 16F 2C070
+    CALL sdc_write_reg              ; 170 301AF
+    LOAD sE, 00                     ; 171 00E00  reg $00 argument (starts the command)
+    OUTPUT sA, SDC_D3               ; 172 2CA73
+    OUTPUT s9, SDC_D2               ; 173 2C972
+    OUTPUT s8, SDC_D1               ; 174 2C871
+    OUTPUT s7, SDC_D0               ; 175 2C770
+    CALL sdc_write_reg              ; 176 301AF
 L_177:
-    LOAD sE, 34                     ; 177 00E34
-    CALL sub_1B1                    ; 178 301B1
-    INPUT s0, 70                    ; 179 04070
+    LOAD sE, 34                     ; 177 00E34  reg $34 command event status
+    CALL sdc_wait_ack               ; 178 301B1
+    INPUT s0, SDC_Q0                ; 179 04070
     COMPARE s0, 06                  ; 17A 14006
     JUMP Z, L_17E                   ; 17B 3517E
     TEST s0, 01                     ; 17C 12001
@@ -518,76 +608,82 @@ L_177:
 L_17E:
     LOAD sE, 34                     ; 17E 00E34
     LOAD sD, 00                     ; 17F 00D00
-    OUTPUT sD, 70                   ; 180 2CD70
-    CALL sub_1AF                    ; 181 301AF
-    FETCH s1, 19                    ; 182 06119
+    OUTPUT sD, SDC_D0               ; 180 2CD70
+    CALL sdc_write_reg              ; 181 301AF
+    FETCH s1, xfer_dir              ; 182 06119
     COMPARE s1, 00                  ; 183 14100
     JUMP Z, L_193                   ; 184 35193
-    LOAD sF, 55                     ; 185 00F55
-    CALL sub_1AA                    ; 186 301AA
+    LOAD sF, 55                     ; 185 00F55  debug 55: waiting for data
+    CALL dbg_putc                   ; 186 301AA
 L_187:
-    LOAD sE, 3C                     ; 187 00E3C
-    CALL sub_1B1                    ; 188 301B1
-    INPUT s3, 70                    ; 189 04370
+    LOAD sE, 3C                     ; 187 00E3C  reg $3C data event status
+    CALL sdc_wait_ack               ; 188 301B1
+    INPUT s3, SDC_Q0                ; 189 04370
     TEST s3, 01                     ; 18A 12301
     JUMP Z, L_187                   ; 18B 35187
-    STORE s3, 3D                    ; 18C 2E33D
+    STORE s3, data_status           ; 18C 2E33D
     LOAD sE, 3C                     ; 18D 00E3C
     LOAD sD, 00                     ; 18E 00D00
-    OUTPUT sD, 70                   ; 18F 2CD70
-    CALL sub_1AF                    ; 190 301AF
+    OUTPUT sD, SDC_D0               ; 18F 2CD70
+    CALL sdc_write_reg              ; 190 301AF
     LOAD s1, 00                     ; 191 00100
-    STORE s1, 19                    ; 192 2E119
+    STORE s1, xfer_dir              ; 192 2E119
 L_193:
     RETURN                          ; 193 2A000
 
-; ---- sub_194 ---- called from 010, 01E, 0B1, 1A0, 33C
-sub_194:
+; ---- sdc_read_response ---- called from 010, 01E, 0B1, 1A0, 33C
+sdc_read_response:
     LOAD sE, 08                     ; 194 00E08
     JUMP L_196                      ; 195 34196
 L_196:
-    CALL sub_1B1                    ; 196 301B1
-    INPUT s6, 73                    ; 197 04673
-    STORE s6, 02                    ; 198 2E602
-    INPUT s5, 72                    ; 199 04572
-    STORE s5, 03                    ; 19A 2E503
-    INPUT s4, 71                    ; 19B 04471
-    STORE s4, 04                    ; 19C 2E404
-    INPUT s3, 70                    ; 19D 04370
-    STORE s3, 05                    ; 19E 2E305
+    CALL sdc_wait_ack               ; 196 301B1
+    INPUT s6, SDC_Q3                ; 197 04673
+    STORE s6, resp0                 ; 198 2E602
+    INPUT s5, SDC_Q2                ; 199 04572
+    STORE s5, resp1                 ; 19A 2E503
+    INPUT s4, SDC_Q1                ; 19B 04471
+    STORE s4, resp2                 ; 19C 2E404
+    INPUT s3, SDC_Q0                ; 19D 04370
+    STORE s3, resp3                 ; 19E 2E305
     RETURN                          ; 19F 2A000
 
-; ---- sub_1A0 ---- called from 01A
-sub_1A0:
-    CALL sub_194                    ; 1A0 30194
-    FETCH s0, 05                    ; 1A1 06005
-    STORE s0, 16                    ; 1A2 2E016
-    FETCH s0, 04                    ; 1A3 06004
-    STORE s0, 15                    ; 1A4 2E015
-    FETCH s0, 03                    ; 1A5 06003
-    STORE s0, 14                    ; 1A6 2E014
-    FETCH s0, 02                    ; 1A7 06002
-    STORE s0, 13                    ; 1A8 2E013
+; ---- save_cid ---- called from 01A
+save_cid:
+    CALL sdc_read_response          ; 1A0 30194
+    FETCH s0, resp3                 ; 1A1 06005
+    STORE s0, cid3                  ; 1A2 2E016
+    FETCH s0, resp2                 ; 1A3 06004
+    STORE s0, cid2                  ; 1A4 2E015
+    FETCH s0, resp1                 ; 1A5 06003
+    STORE s0, cid1                  ; 1A6 2E014
+    FETCH s0, resp0                 ; 1A7 06002
+    STORE s0, cid0                  ; 1A8 2E013
     RETURN                          ; 1A9 2A000
 
-; ---- sub_1AA ---- called from 005, 007, 00D, 030, 0C6, 0C9, 186, 1F3, 1F5, 344, 347, 362
-sub_1AA:
-    INPUT s0, A0                    ; 1AA 040A0
+; Debug byte out (sF). Port A0 bit 2 = transmit busy.
+
+; ---- dbg_putc ---- called from 005, 007, 00D, 030, 0C6, 0C9, 186, 1F3, 1F5, 344, 347, 362
+dbg_putc:
+    INPUT s0, DBG_STATUS            ; 1AA 040A0
     TEST s0, 04                     ; 1AB 12004
-    JUMP NZ, sub_1AA                ; 1AC 355AA
-    OUTPUT sF, A1                   ; 1AD 2CFA1
+    JUMP NZ, dbg_putc               ; 1AC 355AA
+    OUTPUT sF, DBG_TX               ; 1AD 2CFA1
     RETURN                          ; 1AE 2A000
 
-; ---- sub_1AF ---- called from 114, 11C, 12F, 135, 15E, 167, 16C, 170, 176, 181, 190
-sub_1AF:
-    OUTPUT sD, (sE)                 ; 1AF 2DDE0
-    JUMP sub_1B1                    ; 1B0 341B1
+; Controller register access: register number in sE, value in
+; sD (low byte; ports 70-73 hold the full word). Polls the register
+; port until an ack bit (0-1) is set.
 
-; ---- sub_1B1 ---- called from 178, 188, 196
-sub_1B1:
+; ---- sdc_write_reg ---- called from 114, 11C, 12F, 135, 15E, 167, 16C, 170, 176, 181, 190
+sdc_write_reg:
+    OUTPUT sD, (sE)                 ; 1AF 2DDE0
+    JUMP sdc_wait_ack               ; 1B0 341B1
+
+; ---- sdc_wait_ack ---- called from 178, 188, 196
+sdc_wait_ack:
     INPUT sD, (sE)                  ; 1B1 05DE0
     TEST sD, 03                     ; 1B2 12D03
-    JUMP Z, sub_1B1                 ; 1B3 351B1
+    JUMP Z, sdc_wait_ack            ; 1B3 351B1
     RETURN                          ; 1B4 2A000
 ; $1B5-$1B8: unreached words, kept as data
 ADDRESS 1B5
@@ -600,37 +696,37 @@ ADDRESS 1B5
     ; 1B8: 2A000  RETURN
     DATA_WORD 2A000
 
-; ---- sub_1B9 ---- called from 1BE
-sub_1B9:
+; ---- delay_tiny ---- called from 1BE
+delay_tiny:
     LOAD s0, 0B                     ; 1B9 0000B
 L_1BA:
     SUB s0, 01                      ; 1BA 1C001
     JUMP NZ, L_1BA                  ; 1BB 355BA
     RETURN                          ; 1BC 2A000
 
-; ---- sub_1BD ---- called from 00E, 01B, 0AE, 0B0, 1C3
-sub_1BD:
+; ---- delay_short ---- called from 00E, 01B, 0AE, 0B0, 1C3
+delay_short:
     LOAD s1, 28                     ; 1BD 00128
 L_1BE:
-    CALL sub_1B9                    ; 1BE 301B9
+    CALL delay_tiny                 ; 1BE 301B9
     SUB s1, 01                      ; 1BF 1C101
     JUMP NZ, L_1BE                  ; 1C0 355BE
     RETURN                          ; 1C1 2A000
 
-; ---- sub_1C2 ---- called from 00A, 01D, 1C8
-sub_1C2:
+; ---- delay_med ---- called from 00A, 01D, 1C8
+delay_med:
     LOAD s2, 19                     ; 1C2 00219
 L_1C3:
-    CALL sub_1BD                    ; 1C3 301BD
+    CALL delay_short                ; 1C3 301BD
     SUB s2, 01                      ; 1C4 1C201
     JUMP NZ, L_1C3                  ; 1C5 355C3
     RETURN                          ; 1C6 2A000
 
-; ---- sub_1C7 ---- called from 08E, 0BA, 224
-sub_1C7:
+; ---- delay_long ---- called from 08E, 0BA, 224
+delay_long:
     LOAD s3, 14                     ; 1C7 00314
 L_1C8:
-    CALL sub_1C2                    ; 1C8 301C2
+    CALL delay_med                  ; 1C8 301C2
     SUB s3, 01                      ; 1C9 1C301
     JUMP NZ, L_1C8                  ; 1CA 355C8
     RETURN                          ; 1CB 2A000
@@ -638,7 +734,7 @@ L_1C8:
 ADDRESS 1CC
     ; 1CC: 0030A  LOAD s3, 0A
     DATA_WORD 0030A
-    ; 1CD: 301C2  CALL sub_1C2
+    ; 1CD: 301C2  CALL delay_med
     DATA_WORD 301C2
     ; 1CE: 1C301  SUB s3, 01
     DATA_WORD 1C301
@@ -648,7 +744,7 @@ ADDRESS 1CC
     DATA_WORD 2A000
     ; 1D1: 00419  LOAD s4, 19
     DATA_WORD 00419
-    ; 1D2: 301C7  CALL sub_1C7
+    ; 1D2: 301C7  CALL delay_long
     DATA_WORD 301C7
     ; 1D3: 1C401  SUB s4, 01
     DATA_WORD 1C401
@@ -657,126 +753,134 @@ ADDRESS 1CC
     ; 1D5: 2A000  RETURN
     DATA_WORD 2A000
 
-; ---- sub_1D6 ---- called from 21F, 34C
-sub_1D6:
-    LOAD sC, 12                     ; 1D6 00C12
+; Multi-block transfers. Argument already in sA..s7.
+
+; ---- sd_read_blocks ---- called from 21F, 34C
+sd_read_blocks:
+    LOAD sC, 12                     ; 1D6 00C12  CMD18 READ_MULTIPLE_BLOCK
     LOAD s1, 01                     ; 1D7 00101
 L_1D8:
-    STORE s1, 19                    ; 1D8 2E119
-    CALL sub_1E0                    ; 1D9 301E0
+    STORE s1, xfer_dir              ; 1D8 2E119
+    CALL sd_setup_dma               ; 1D9 301E0
     RETURN                          ; 1DA 2A000
 ; $1DB-$1DB: unreached words, kept as data
 ADDRESS 1DB
     ; 1DB: 00C18  LOAD sC, 18
     DATA_WORD 00C18
-L_1DC:
+sd_write_blocks_common:
     LOAD s1, 02                     ; 1DC 00102
     JUMP L_1D8                      ; 1DD 341D8
 
-; ---- sub_1DE ---- called from 353
-sub_1DE:
-    LOAD sC, 19                     ; 1DE 00C19
-    JUMP L_1DC                      ; 1DF 341DC
+; ---- sd_write_blocks ---- called from 353
+sd_write_blocks:
+    LOAD sC, 19                     ; 1DE 00C19  CMD25 WRITE_MULTIPLE_BLOCK
+    JUMP sd_write_blocks_common     ; 1DF 341DC
 
-; ---- sub_1E0 ---- called from 1D9
-sub_1E0:
-    LOAD s1, 00                     ; 1E0 00100
-    STORE s1, 1C                    ; 1E1 2E11C
-    STORE s1, 1A                    ; 1E2 2E11A
-    STORE s1, 1B                    ; 1E3 2E11B
-    STORE s1, 1D                    ; 1E4 2E11D
+; ---- sd_setup_dma ---- called from 1D9
+sd_setup_dma:
+    LOAD s1, 00                     ; 1E0 00100  DMA to buffer address 0, 512-byte blocks
+    STORE s1, dma_addr1             ; 1E1 2E11C
+    STORE s1, dma_addr3             ; 1E2 2E11A
+    STORE s1, dma_addr2             ; 1E3 2E11B
+    STORE s1, dma_addr0             ; 1E4 2E11D
     LOAD s1, 01                     ; 1E5 00101
-    STORE s1, 1E                    ; 1E6 2E11E
+    STORE s1, blksize_hi            ; 1E6 2E11E
     LOAD s1, FF                     ; 1E7 001FF
-    STORE s1, 1F                    ; 1E8 2E11F
-    FETCH s1, 20                    ; 1E9 06120
-    CALL sub_124                    ; 1EA 30124
+    STORE s1, blksize_lo            ; 1E8 2E11F
+    FETCH s1, blkcount_m1           ; 1E9 06120
+    CALL sdc_data_int_enable_on     ; 1EA 30124
     LOAD sB, 15                     ; 1EB 00B15
-    CALL sub_13C                    ; 1EC 3013C
+    CALL sd_command                 ; 1EC 3013C
     RETURN                          ; 1ED 2A000
 
-; ---- sub_1EE ---- called from 220, 341, 34D, 354
-sub_1EE:
+; ---- sd_cmd12_stop ---- called from 220, 341, 34D, 354
+sd_cmd12_stop:
     LOAD sC, 0C                     ; 1EE 00C0C
     LOAD sB, 1D                     ; 1EF 00B1D
-    CALL sub_0F6                    ; 1F0 300F6
+    CALL sd_cmd_noarg               ; 1F0 300F6
     RETURN                          ; 1F1 2A000
 
-; ---- sub_1F2 ---- called from 358
-sub_1F2:
-    FETCH sF, 3E                    ; 1F2 06F3E
-    CALL sub_1AA                    ; 1F3 301AA
-    FETCH sF, 3F                    ; 1F4 06F3F
-    CALL sub_1AA                    ; 1F5 301AA
-    FETCH s0, 3E                    ; 1F6 0603E
-    COMPARE s0, F1                  ; 1F7 140F1
+; Kernel command $20: load a ROM file from SD into game memory.
+; The kernel fills a table (TBL_INDEX/TBL_Q*): entries $00-$7B are
+; (file offset, SD address) pairs, $7C the file length, $7D enable,
+; $7E the step per run (blocks, bytes). Refused unless bank 2
+; found a valid license (license_a/b = F1 F2).
+
+; ---- cmd_load_rom ---- called from 358
+cmd_load_rom:
+    FETCH sF, license_a             ; 1F2 06F3E
+    CALL dbg_putc                   ; 1F3 301AA
+    FETCH sF, license_b             ; 1F4 06F3F
+    CALL dbg_putc                   ; 1F5 301AA
+    FETCH s0, license_a             ; 1F6 0603E
+    COMPARE s0, F1                  ; 1F7 140F1  license gate
     RETURN NZ                       ; 1F8 2B400
-    FETCH s0, 3F                    ; 1F9 0603F
+    FETCH s0, license_b             ; 1F9 0603F
     COMPARE s0, F2                  ; 1FA 140F2
     RETURN NZ                       ; 1FB 2B400
-    LOAD s5, 7E                     ; 1FC 0057E
-    CALL sub_248                    ; 1FD 30248
-    STORE s0, 2A                    ; 1FE 2E02A
-    STORE s1, 31                    ; 1FF 2E131
+    LOAD s5, 7E                     ; 1FC 0057E  table $7E: run length
+    CALL tbl_read                   ; 1FD 30248
+    STORE s0, load_step_lo          ; 1FE 2E02A
+    STORE s1, load_step_hi          ; 1FF 2E131
     SUB s0, 01                      ; 200 1C001
-    STORE s0, 20                    ; 201 2E020
-    LOAD s5, 7D                     ; 202 0057D
-    CALL sub_248                    ; 203 30248
+    STORE s0, blkcount_m1           ; 201 2E020
+    LOAD s5, 7D                     ; 202 0057D  table $7D: enable
+    CALL tbl_read                   ; 203 30248
     COMPARE s0, 01                  ; 204 14001
     JUMP Z, L_207                   ; 205 35207
     RETURN                          ; 206 2A000
 L_207:
     LOAD s0, 01                     ; 207 00001
-    OUTPUT s0, EF                   ; 208 2C0EF
+    OUTPUT s0, LOAD_BUSY            ; 208 2C0EF  raise LOAD_BUSY for the kernel
     INPUT s0, BB                    ; 209 040BB
     STORE s0, 2B                    ; 20A 2E02B
-    CALL sub_20F                    ; 20B 3020F
+    CALL load_rom_loop              ; 20B 3020F
     LOAD s0, 00                     ; 20C 00000
-    OUTPUT s0, EF                   ; 20D 2C0EF
+    OUTPUT s0, LOAD_BUSY            ; 20D 2C0EF
     RETURN                          ; 20E 2A000
 
-; ---- sub_20F ---- called from 20B
-sub_20F:
+; ---- load_rom_loop ---- called from 20B
+load_rom_loop:
     LOAD s0, 00                     ; 20F 00000
-    STORE s0, 2C                    ; 210 2E02C
-    STORE s0, 2D                    ; 211 2E02D
-    STORE s0, 2E                    ; 212 2E02E
-    STORE s0, 2F                    ; 213 2E02F
+    STORE s0, load_pos3             ; 210 2E02C
+    STORE s0, load_pos2             ; 211 2E02D
+    STORE s0, load_pos1             ; 212 2E02E
+    STORE s0, load_pos0             ; 213 2E02F
     LOAD s1, 00                     ; 214 00100
-    STORE s1, 3B                    ; 215 2E13B
+    STORE s1, tbl_mode              ; 215 2E13B
 L_216:
-    FETCH s7, 2F                    ; 216 0672F
-    OUTPUT s7, E0                   ; 217 2C7E0
-    FETCH s8, 2E                    ; 218 0682E
-    OUTPUT s8, E1                   ; 219 2C8E1
-    FETCH s9, 2D                    ; 21A 0692D
-    OUTPUT s9, E2                   ; 21B 2C9E2
-    FETCH sA, 2C                    ; 21C 06A2C
-    OUTPUT sA, E3                   ; 21D 2CAE3
-    CALL sub_251                    ; 21E 30251
-    CALL sub_1D6                    ; 21F 301D6
-    CALL sub_1EE                    ; 220 301EE
+    FETCH s7, load_pos0             ; 216 0672F  current destination offset to E0-E3
+    OUTPUT s7, LOAD_ADDR3           ; 217 2C7E0
+    FETCH s8, load_pos1             ; 218 0682E
+    OUTPUT s8, LOAD_ADDR2           ; 219 2C8E1
+    FETCH s9, load_pos2             ; 21A 0692D
+    OUTPUT s9, LOAD_ADDR1           ; 21B 2C9E2
+    FETCH sA, load_pos3             ; 21C 06A2C
+    OUTPUT sA, LOAD_ADDR0           ; 21D 2CAE3
+    CALL extent_lookup              ; 21E 30251  file offset -> SD address
+    CALL sd_read_blocks             ; 21F 301D6
+    CALL sd_cmd12_stop              ; 220 301EE
     FETCH s0, 2B                    ; 221 0602B
     COMPARE s0, 11                  ; 222 14011
     JUMP Z, L_225                   ; 223 35225
-    CALL sub_1C7                    ; 224 301C7
+    CALL delay_long                 ; 224 301C7
 L_225:
-    FETCH s7, 2F                    ; 225 0672F
-    FETCH s8, 2E                    ; 226 0682E
-    FETCH s9, 2D                    ; 227 0692D
-    FETCH sA, 2C                    ; 228 06A2C
-    FETCH s0, 2A                    ; 229 0602A
-    FETCH s1, 31                    ; 22A 06131
+    FETCH s7, load_pos0             ; 225 0672F
+    FETCH s8, load_pos1             ; 226 0682E
+    FETCH s9, load_pos2             ; 227 0692D
+    FETCH sA, load_pos3             ; 228 06A2C
+    FETCH s0, load_step_lo          ; 229 0602A
+    FETCH s1, load_step_hi          ; 22A 06131
     ADD s7, s0                      ; 22B 19700
     ADDCY s8, s1                    ; 22C 1B810
     ADDCY s9, 00                    ; 22D 1A900
     ADDCY sA, 00                    ; 22E 1AA00
-    STORE s7, 2F                    ; 22F 2E72F
-    STORE s8, 2E                    ; 230 2E82E
-    STORE s9, 2D                    ; 231 2E92D
-    STORE sA, 2C                    ; 232 2EA2C
-    LOAD s5, 7C                     ; 233 0057C
-    CALL sub_248                    ; 234 30248
+    STORE s7, load_pos0             ; 22F 2E72F
+    STORE s8, load_pos1             ; 230 2E82E
+    STORE s9, load_pos2             ; 231 2E92D
+    STORE sA, load_pos3             ; 232 2EA2C
+    LOAD s5, 7C                     ; 233 0057C  table $7C: file length
+    CALL tbl_read                   ; 234 30248
     SL0 s7                          ; 235 20706
     SLA s8                          ; 236 20800
     SLA s9                          ; 237 20900
@@ -784,13 +888,15 @@ L_225:
     SUB s7, s1                      ; 239 1D710
     SUBCY s8, s2                    ; 23A 1F820
     SUBCY s9, s3                    ; 23B 1F930
-    JUMP C, L_216                   ; 23C 35A16
+    JUMP C, L_216                   ; 23C 35A16  loop until the whole file is copied
     RETURN                          ; 23D 2A000
 
-; ---- sub_23E ---- called from 252, 264, 26B
-sub_23E:
+; Extent table lookup: table index from s6, offset by tbl_mode.
+
+; ---- tbl_index ---- called from 252, 264, 26B
+tbl_index:
     LOAD s5, s6                     ; 23E 01560
-    FETCH s4, 3B                    ; 23F 0643B
+    FETCH s4, tbl_mode              ; 23F 0643B
     COMPARE s4, 00                  ; 240 14400
     JUMP Z, L_247                   ; 241 35247
     COMPARE s4, FF                  ; 242 144FF
@@ -802,24 +908,29 @@ L_246:
 L_247:
     RETURN                          ; 247 2A000
 
-; ---- sub_248 ---- called from 1FD, 203, 234, 253, 265, 26C
-sub_248:
-    OUTPUT s5, BF                   ; 248 2C5BF
+; Read one 32-bit table entry: index s5 -> s3:s2:s1:s0.
+
+; ---- tbl_read ---- called from 1FD, 203, 234, 253, 265, 26C
+tbl_read:
+    OUTPUT s5, TBL_INDEX            ; 248 2C5BF
     LOAD s1, s1                     ; 249 01110
     LOAD s1, s1                     ; 24A 01110
     LOAD s1, s1                     ; 24B 01110
-    INPUT s3, C0                    ; 24C 043C0
-    INPUT s2, C1                    ; 24D 042C1
-    INPUT s1, C2                    ; 24E 041C2
-    INPUT s0, C3                    ; 24F 040C3
+    INPUT s3, TBL_Q3                ; 24C 043C0
+    INPUT s2, TBL_Q2                ; 24D 042C1
+    INPUT s1, TBL_Q1                ; 24E 041C2
+    INPUT s0, TBL_Q0                ; 24F 040C3
     RETURN                          ; 250 2A000
 
-; ---- sub_251 ---- called from 21E
-sub_251:
+; Find the extent holding file offset sA:s9:s8:s7 (linear scan,
+; 2 entries per extent) and turn it into an SD address.
+
+; ---- extent_lookup ---- called from 21E
+extent_lookup:
     LOAD s6, 02                     ; 251 00602
 L_252:
-    CALL sub_23E                    ; 252 3023E
-    CALL sub_248                    ; 253 30248
+    CALL tbl_index                  ; 252 3023E
+    CALL tbl_read                   ; 253 30248
     LOAD s4, s7                     ; 254 01470
     SUB s4, s0                      ; 255 1D400
     LOAD s4, s8                     ; 256 01480
@@ -839,25 +950,27 @@ L_261:
 L_263:
     LOAD s6, 00                     ; 263 00600
 L_264:
-    CALL sub_23E                    ; 264 3023E
-    CALL sub_248                    ; 265 30248
+    CALL tbl_index                  ; 264 3023E
+    CALL tbl_read                   ; 265 30248
     SUB s7, s0                      ; 266 1D700
     SUBCY s8, s1                    ; 267 1F810
     SUBCY s9, s2                    ; 268 1F920
     SUBCY sA, s3                    ; 269 1FA30
     ADD s6, 01                      ; 26A 18601
-    CALL sub_23E                    ; 26B 3023E
-    CALL sub_248                    ; 26C 30248
+    CALL tbl_index                  ; 26B 3023E
+    CALL tbl_read                   ; 26C 30248
     ADD s7, s0                      ; 26D 19700
     ADDCY s8, s1                    ; 26E 1B810
     ADDCY s9, s2                    ; 26F 1B920
     ADDCY sA, s3                    ; 270 1BA30
-    CALL sub_273                    ; 271 30273
+    CALL sector_to_card_addr        ; 271 30273
     RETURN                          ; 272 2A000
 
-; ---- sub_273 ---- called from 271, 282
-sub_273:
-    FETCH s4, 06                    ; 273 06406
+; SDSC cards are byte-addressed: shift the sector number left 9.
+
+; ---- sector_to_card_addr ---- called from 271, 282
+sector_to_card_addr:
+    FETCH s4, sd_is_sdhc            ; 273 06406
     COMPARE s4, 01                  ; 274 14401
     JUMP Z, L_27D                   ; 275 3527D
     LOAD sA, s9                     ; 276 01A90
@@ -870,16 +983,16 @@ sub_273:
 L_27D:
     RETURN                          ; 27D 2A000
 
-; ---- sub_27E ---- called from 34B, 352
-sub_27E:
-    INPUT sA, B3                    ; 27E 04AB3
-    INPUT s9, B2                    ; 27F 049B2
-    INPUT s8, B1                    ; 280 048B1
-    INPUT s7, B0                    ; 281 047B0
-    CALL sub_273                    ; 282 30273
-    INPUT s1, B4                    ; 283 041B4
+; ---- read_cmd_lba ---- called from 34B, 352
+read_cmd_lba:
+    INPUT sA, CMD_LBA3              ; 27E 04AB3
+    INPUT s9, CMD_LBA2              ; 27F 049B2
+    INPUT s8, CMD_LBA1              ; 280 048B1
+    INPUT s7, CMD_LBA0              ; 281 047B0
+    CALL sector_to_card_addr        ; 282 30273
+    INPUT s1, CMD_COUNT             ; 283 041B4  CMD_COUNT -> block count - 1
     SUB s1, 01                      ; 284 1C101
-    STORE s1, 20                    ; 285 2E120
+    STORE s1, blkcount_m1           ; 285 2E120
     RETURN                          ; 286 2A000
 ; $287-$28F: unreached words, kept as data
 ADDRESS 287
@@ -902,330 +1015,351 @@ ADDRESS 287
     ; 28F: 2A000  RETURN
     DATA_WORD 2A000
 
-; ---- sub_290 ---- called from 2E0, 2F1
-sub_290:
+; Bit-banged I2C. I2C_OUT bit 0 = SCL, bit 1 = SDA (open drain);
+; I2C_IN bit 0 = SCL (clock stretching), bit 1 = SDA.
+
+; ---- i2c_idle ---- called from 2E0, 2F1
+i2c_idle:
     LOAD sF, 01                     ; 290 00F01
     OR sF, 02                       ; 291 0CF02
-    OUTPUT sF, EC                   ; 292 2CFEC
+    OUTPUT sF, I2C_OUT              ; 292 2CFEC
     RETURN                          ; 293 2A000
 
-; ---- sub_294 ---- called from 2E1, 2F2, 2FC
-sub_294:
-    CALL sub_2C8                    ; 294 302C8
-    CALL sub_2BF                    ; 295 302BF
-    CALL sub_2D5                    ; 296 302D5
-    CALL sub_2C5                    ; 297 302C5
-    CALL sub_2D6                    ; 298 302D6
-    CALL sub_2BB                    ; 299 302BB
+; ---- i2c_start ---- called from 2E1, 2F2, 2FC
+i2c_start:
+    CALL i2c_sda_high               ; 294 302C8
+    CALL i2c_scl_high_wait          ; 295 302BF
+    CALL i2c_delay3                 ; 296 302D5
+    CALL i2c_sda_low                ; 297 302C5
+    CALL i2c_delay2                 ; 298 302D6
+    CALL i2c_scl_low                ; 299 302BB
     RETURN                          ; 29A 2A000
 
-; ---- sub_29B ---- called from 2EF, 307
-sub_29B:
-    CALL sub_2C5                    ; 29B 302C5
-    CALL sub_2D5                    ; 29C 302D5
-    CALL sub_2BF                    ; 29D 302BF
-    CALL sub_2D6                    ; 29E 302D6
-    CALL sub_2C8                    ; 29F 302C8
+; ---- i2c_stop ---- called from 2EF, 307
+i2c_stop:
+    CALL i2c_sda_low                ; 29B 302C5
+    CALL i2c_delay3                 ; 29C 302D5
+    CALL i2c_scl_high_wait          ; 29D 302BF
+    CALL i2c_delay2                 ; 29E 302D6
+    CALL i2c_sda_high               ; 29F 302C8
     RETURN                          ; 2A0 2A000
 
-; ---- sub_2A1 ---- called from 2E4, 2E8, 2EC, 2F5, 2F9, 2FF
-sub_2A1:
+; ---- i2c_write_byte ---- called from 2E4, 2E8, 2EC, 2F5, 2F9, 2FF
+i2c_write_byte:
     LOAD s1, 80                     ; 2A1 00180
 L_2A2:
     TEST s5, s1                     ; 2A2 13510
     JUMP NZ, L_2A6                  ; 2A3 356A6
-    CALL sub_2C5                    ; 2A4 302C5
+    CALL i2c_sda_low                ; 2A4 302C5
     JUMP L_2A7                      ; 2A5 342A7
 L_2A6:
-    CALL sub_2C8                    ; 2A6 302C8
+    CALL i2c_sda_high               ; 2A6 302C8
 L_2A7:
-    CALL sub_2B1                    ; 2A7 302B1
+    CALL i2c_clock_pulse            ; 2A7 302B1
     SR0 s1                          ; 2A8 2010E
     RETURN C                        ; 2A9 2B800
     JUMP L_2A2                      ; 2AA 342A2
 
-; ---- sub_2AB ---- called from 304, 30A
-sub_2AB:
+; ---- i2c_read_byte ---- called from 304, 30A
+i2c_read_byte:
     LOAD s1, 08                     ; 2AB 00108
 L_2AC:
-    CALL sub_2CB                    ; 2AC 302CB
+    CALL i2c_read_bit               ; 2AC 302CB
     SUB s1, 01                      ; 2AD 1C101
     JUMP NZ, L_2AC                  ; 2AE 356AC
     RETURN                          ; 2AF 2A000
 
-; ---- sub_2B0 ---- called from 310
-sub_2B0:
-    CALL sub_2C5                    ; 2B0 302C5
+; ---- i2c_ack_low ---- called from 310
+i2c_ack_low:
+    CALL i2c_sda_low                ; 2B0 302C5
 
-; ---- sub_2B1 ---- called from 2A7
-sub_2B1:
-    CALL sub_2D5                    ; 2B1 302D5
-    CALL sub_2BF                    ; 2B2 302BF
-    CALL sub_2D6                    ; 2B3 302D6
-    CALL sub_2BB                    ; 2B4 302BB
+; ---- i2c_clock_pulse ---- called from 2A7
+i2c_clock_pulse:
+    CALL i2c_delay3                 ; 2B1 302D5
+    CALL i2c_scl_high_wait          ; 2B2 302BF
+    CALL i2c_delay2                 ; 2B3 302D6
+    CALL i2c_scl_low                ; 2B4 302BB
     RETURN                          ; 2B5 2A000
 
-; ---- sub_2B6 ---- called from 306
-sub_2B6:
-    CALL sub_2C8                    ; 2B6 302C8
-    JUMP sub_2B1                    ; 2B7 342B1
+; ---- i2c_nack ---- called from 306
+i2c_nack:
+    CALL i2c_sda_high               ; 2B6 302C8
+    JUMP i2c_clock_pulse            ; 2B7 342B1
 
-; ---- sub_2B8 ---- called from 2E5, 2E9, 2ED, 2F6, 2FA, 300
-sub_2B8:
-    CALL sub_2CB                    ; 2B8 302CB
+; ---- i2c_read_ack ---- called from 2E5, 2E9, 2ED, 2F6, 2FA, 300
+i2c_read_ack:
+    CALL i2c_read_bit               ; 2B8 302CB
     TEST s5, 01                     ; 2B9 12501
     RETURN                          ; 2BA 2A000
 
-; ---- sub_2BB ---- called from 299, 2B4, 2D3
-sub_2BB:
+; ---- i2c_scl_low ---- called from 299, 2B4, 2D3
+i2c_scl_low:
     AND sF, 02                      ; 2BB 0AF02
-    OUTPUT sF, EC                   ; 2BC 2CFEC
-    CALL sub_2D5                    ; 2BD 302D5
+    OUTPUT sF, I2C_OUT              ; 2BC 2CFEC
+    CALL i2c_delay3                 ; 2BD 302D5
     RETURN                          ; 2BE 2A000
 
-; ---- sub_2BF ---- called from 295, 29D, 2B2, 2CD
-sub_2BF:
+; ---- i2c_scl_high_wait ---- called from 295, 29D, 2B2, 2CD
+i2c_scl_high_wait:
     OR sF, 01                       ; 2BF 0CF01
-    OUTPUT sF, EC                   ; 2C0 2CFEC
+    OUTPUT sF, I2C_OUT              ; 2C0 2CFEC
 L_2C1:
-    INPUT s0, EB                    ; 2C1 040EB
+    INPUT s0, I2C_IN                ; 2C1 040EB
     TEST s0, 01                     ; 2C2 12001
     JUMP Z, L_2C1                   ; 2C3 352C1
     RETURN                          ; 2C4 2A000
 
-; ---- sub_2C5 ---- called from 297, 29B, 2A4, 2B0
-sub_2C5:
+; ---- i2c_sda_low ---- called from 297, 29B, 2A4, 2B0
+i2c_sda_low:
     AND sF, 01                      ; 2C5 0AF01
-    OUTPUT sF, EC                   ; 2C6 2CFEC
+    OUTPUT sF, I2C_OUT              ; 2C6 2CFEC
     RETURN                          ; 2C7 2A000
 
-; ---- sub_2C8 ---- called from 294, 29F, 2A6, 2B6, 2CB
-sub_2C8:
+; ---- i2c_sda_high ---- called from 294, 29F, 2A6, 2B6, 2CB
+i2c_sda_high:
     OR sF, 02                       ; 2C8 0CF02
-    OUTPUT sF, EC                   ; 2C9 2CFEC
+    OUTPUT sF, I2C_OUT              ; 2C9 2CFEC
     RETURN                          ; 2CA 2A000
 
-; ---- sub_2CB ---- called from 2AC, 2B8
-sub_2CB:
-    CALL sub_2C8                    ; 2CB 302C8
-    CALL sub_2D5                    ; 2CC 302D5
-    CALL sub_2BF                    ; 2CD 302BF
-    CALL sub_2D8                    ; 2CE 302D8
-    INPUT s0, EB                    ; 2CF 040EB
+; ---- i2c_read_bit ---- called from 2AC, 2B8
+i2c_read_bit:
+    CALL i2c_sda_high               ; 2CB 302C8
+    CALL i2c_delay3                 ; 2CC 302D5
+    CALL i2c_scl_high_wait          ; 2CD 302BF
+    CALL i2c_delay                  ; 2CE 302D8
+    INPUT s0, I2C_IN                ; 2CF 040EB
     TEST s0, 02                     ; 2D0 12002
     SLA s5                          ; 2D1 20500
-    CALL sub_2D8                    ; 2D2 302D8
-    CALL sub_2BB                    ; 2D3 302BB
+    CALL i2c_delay                  ; 2D2 302D8
+    CALL i2c_scl_low                ; 2D3 302BB
     RETURN                          ; 2D4 2A000
 
-; ---- sub_2D5 ---- called from 296, 29C, 2B1, 2BD, 2CC
-sub_2D5:
-    CALL sub_2DB                    ; 2D5 302DB
+; ---- i2c_delay3 ---- called from 296, 29C, 2B1, 2BD, 2CC
+i2c_delay3:
+    CALL i2c_tick                   ; 2D5 302DB
 
-; ---- sub_2D6 ---- called from 298, 29E, 2B3
-sub_2D6:
-    CALL sub_2DB                    ; 2D6 302DB
-    CALL sub_2DB                    ; 2D7 302DB
+; ---- i2c_delay2 ---- called from 298, 29E, 2B3
+i2c_delay2:
+    CALL i2c_tick                   ; 2D6 302DB
+    CALL i2c_tick                   ; 2D7 302DB
 
-; ---- sub_2D8 ---- called from 2CE, 2D2
-sub_2D8:
-    CALL sub_2DB                    ; 2D8 302DB
-    CALL sub_2DB                    ; 2D9 302DB
+; ---- i2c_delay ---- called from 2CE, 2D2
+i2c_delay:
+    CALL i2c_tick                   ; 2D8 302DB
+    CALL i2c_tick                   ; 2D9 302DB
     RETURN                          ; 2DA 2A000
 
-; ---- sub_2DB ---- called from 2D5, 2D6, 2D7, 2D8, 2D9
-sub_2DB:
+; ---- i2c_tick ---- called from 2D5, 2D6, 2D7, 2D8, 2D9
+i2c_tick:
     LOAD s0, 01                     ; 2DB 00001
 L_2DC:
     SUB s0, 01                      ; 2DC 1C001
     JUMP NZ, L_2DC                  ; 2DD 356DC
     RETURN                          ; 2DE 2A000
 
-; ---- sub_2DF ---- called from 31C, 326, 331, 333, 335, 337, 339
-sub_2DF:
+; PCF8563 RTC at I2C address $51.
+
+; ---- rtc_write_zero ---- called from 31C, 326, 331, 333, 335, 337, 339
+rtc_write_zero:
     LOAD sD, 00                     ; 2DF 00D00
 
-; ---- sub_2E0 ---- called from 316, 324, 329, 32C, 32F
-sub_2E0:
-    CALL sub_290                    ; 2E0 30290
-    CALL sub_294                    ; 2E1 30294
-    LOAD s5, 51                     ; 2E2 00551
+; ---- rtc_write ---- called from 316, 324, 329, 32C, 32F
+rtc_write:
+    CALL i2c_idle                   ; 2E0 30290
+    CALL i2c_start                  ; 2E1 30294
+    LOAD s5, 51                     ; 2E2 00551  $51 << 1 = write address
     SL0 s5                          ; 2E3 20506
-    CALL sub_2A1                    ; 2E4 302A1
-    CALL sub_2B8                    ; 2E5 302B8
+    CALL i2c_write_byte             ; 2E4 302A1
+    CALL i2c_read_ack               ; 2E5 302B8
     RETURN C                        ; 2E6 2B800
     LOAD s5, sB                     ; 2E7 015B0
-    CALL sub_2A1                    ; 2E8 302A1
-    CALL sub_2B8                    ; 2E9 302B8
+    CALL i2c_write_byte             ; 2E8 302A1
+    CALL i2c_read_ack               ; 2E9 302B8
     RETURN C                        ; 2EA 2B800
     LOAD s5, sD                     ; 2EB 015D0
-    CALL sub_2A1                    ; 2EC 302A1
-    CALL sub_2B8                    ; 2ED 302B8
+    CALL i2c_write_byte             ; 2EC 302A1
+    CALL i2c_read_ack               ; 2ED 302B8
     RETURN C                        ; 2EE 2B800
-    CALL sub_29B                    ; 2EF 3029B
+    CALL i2c_stop                   ; 2EF 3029B
     RETURN                          ; 2F0 2A000
 
-; ---- sub_2F1 ---- called from 303, 309
-sub_2F1:
-    CALL sub_290                    ; 2F1 30290
-    CALL sub_294                    ; 2F2 30294
+; ---- rtc_select_read ---- called from 303, 309
+rtc_select_read:
+    CALL i2c_idle                   ; 2F1 30290
+    CALL i2c_start                  ; 2F2 30294
     LOAD s5, 51                     ; 2F3 00551
     SL0 s5                          ; 2F4 20506
-    CALL sub_2A1                    ; 2F5 302A1
-    CALL sub_2B8                    ; 2F6 302B8
+    CALL i2c_write_byte             ; 2F5 302A1
+    CALL i2c_read_ack               ; 2F6 302B8
     RETURN C                        ; 2F7 2B800
     LOAD s5, sB                     ; 2F8 015B0
-    CALL sub_2A1                    ; 2F9 302A1
-    CALL sub_2B8                    ; 2FA 302B8
+    CALL i2c_write_byte             ; 2F9 302A1
+    CALL i2c_read_ack               ; 2FA 302B8
     RETURN C                        ; 2FB 2B800
-    CALL sub_294                    ; 2FC 30294
-    LOAD s5, 51                     ; 2FD 00551
+    CALL i2c_start                  ; 2FC 30294
+    LOAD s5, 51                     ; 2FD 00551  $51 << 1 | 1 = read address
     SL1 s5                          ; 2FE 20507
-    CALL sub_2A1                    ; 2FF 302A1
-    CALL sub_2B8                    ; 300 302B8
+    CALL i2c_write_byte             ; 2FF 302A1
+    CALL i2c_read_ack               ; 300 302B8
     RETURN C                        ; 301 2B800
     RETURN                          ; 302 2A000
 
-; ---- sub_303 ---- called from 03A, 31E
-sub_303:
-    CALL sub_2F1                    ; 303 302F1
-    CALL sub_2AB                    ; 304 302AB
+; ---- rtc_read ---- called from 03A, 31E
+rtc_read:
+    CALL rtc_select_read            ; 303 302F1
+    CALL i2c_read_byte              ; 304 302AB
     LOAD sD, s5                     ; 305 01D50
 L_306:
-    CALL sub_2B6                    ; 306 302B6
-    CALL sub_29B                    ; 307 3029B
+    CALL i2c_nack                   ; 306 302B6
+    CALL i2c_stop                   ; 307 3029B
     RETURN                          ; 308 2A000
 
-; ---- sub_309 ---- called from 034
-sub_309:
-    CALL sub_2F1                    ; 309 302F1
+; Read RTC registers 2-8 (seconds..years) out to ports ED/EE.
+
+; ---- rtc_dump ---- called from 034
+rtc_dump:
+    CALL rtc_select_read            ; 309 302F1
 L_30A:
-    CALL sub_2AB                    ; 30A 302AB
-    OUTPUT sB, ED                   ; 30B 2CBED
-    OUTPUT s5, EE                   ; 30C 2C5EE
+    CALL i2c_read_byte              ; 30A 302AB
+    OUTPUT sB, RTC_REG_INDEX        ; 30B 2CBED
+    OUTPUT s5, RTC_REG_VALUE        ; 30C 2C5EE
     COMPARE sB, 08                  ; 30D 14B08
     JUMP Z, L_306                   ; 30E 35306
     ADD sB, 01                      ; 30F 18B01
-    CALL sub_2B0                    ; 310 302B0
+    CALL i2c_ack_low                ; 310 302B0
     JUMP L_30A                      ; 311 3430A
 
-; ---- sub_312 ---- called from 363
-sub_312:
+; Kernel command $10: set RTC registers 2-8 from RTC_SET_DATA.
+
+; ---- cmd_set_rtc ---- called from 363
+cmd_set_rtc:
     LOAD sB, 02                     ; 312 00B02
 L_313:
-    OUTPUT sB, F0                   ; 313 2CBF0
+    OUTPUT sB, RTC_SET_INDEX        ; 313 2CBF0
     LOAD s0, s0                     ; 314 01000
-    INPUT sD, B6                    ; 315 04DB6
-    CALL sub_2E0                    ; 316 302E0
+    INPUT sD, RTC_SET_DATA          ; 315 04DB6
+    CALL rtc_write                  ; 316 302E0
     COMPARE sB, 08                  ; 317 14B08
     RETURN Z                        ; 318 2B000
     ADD sB, 01                      ; 319 18B01
     JUMP L_313                      ; 31A 34313
 
-; ---- sub_31B ---- called from 02E
-sub_31B:
+; RTC init. If the seconds register's VL bit says the clock lost
+; power, stop it and load a default date.
+
+; ---- rtc_init ---- called from 02E
+rtc_init:
     LOAD sB, 00                     ; 31B 00B00
-    CALL sub_2DF                    ; 31C 302DF
+    CALL rtc_write_zero             ; 31C 302DF
     LOAD sB, 02                     ; 31D 00B02
-    CALL sub_303                    ; 31E 30303
+    CALL rtc_read                   ; 31E 30303  seconds, bit 7 = VL (clock integrity lost)
     AND sD, 80                      ; 31F 0AD80
     COMPARE sD, 80                  ; 320 14D80
     RETURN NZ                       ; 321 2B400
     LOAD sB, 00                     ; 322 00B00
     LOAD sD, 20                     ; 323 00D20
-    CALL sub_2E0                    ; 324 302E0
-    LOAD sB, 08                     ; 325 00B08
-    CALL sub_2DF                    ; 326 302DF
+    CALL rtc_write                  ; 324 302E0
+    LOAD sB, 08                     ; 325 00B08  years 0
+    CALL rtc_write_zero             ; 326 302DF
     LOAD sB, 07                     ; 327 00B07
-    LOAD sD, 01                     ; 328 00D01
-    CALL sub_2E0                    ; 329 302E0
+    LOAD sD, 01                     ; 328 00D01  month 1
+    CALL rtc_write                  ; 329 302E0
     LOAD sB, 06                     ; 32A 00B06
-    LOAD sD, 03                     ; 32B 00D03
-    CALL sub_2E0                    ; 32C 302E0
+    LOAD sD, 03                     ; 32B 00D03  weekday 3
+    CALL rtc_write                  ; 32C 302E0
     LOAD sB, 05                     ; 32D 00B05
-    LOAD sD, 01                     ; 32E 00D01
-    CALL sub_2E0                    ; 32F 302E0
+    LOAD sD, 01                     ; 32E 00D01  day 1
+    CALL rtc_write                  ; 32F 302E0
     LOAD sB, 04                     ; 330 00B04
-    CALL sub_2DF                    ; 331 302DF
+    CALL rtc_write_zero             ; 331 302DF
     LOAD sB, 03                     ; 332 00B03
-    CALL sub_2DF                    ; 333 302DF
+    CALL rtc_write_zero             ; 333 302DF
     LOAD sB, 02                     ; 334 00B02
-    CALL sub_2DF                    ; 335 302DF
+    CALL rtc_write_zero             ; 335 302DF
     LOAD sB, 01                     ; 336 00B01
-    CALL sub_2DF                    ; 337 302DF
+    CALL rtc_write_zero             ; 337 302DF
     LOAD sB, 00                     ; 338 00B00
-    CALL sub_2DF                    ; 339 302DF
+    CALL rtc_write_zero             ; 339 302DF
     RETURN                          ; 33A 2A000
 
-; ---- sub_33B ---- called from 34A, 351
-sub_33B:
-    CALL sub_0D2                    ; 33B 300D2
-    CALL sub_194                    ; 33C 30194
-    FETCH s0, 04                    ; 33D 06004
-    COMPARE s0, 09                  ; 33E 14009
+; ---- sd_wait_tran ---- called from 34A, 351
+sd_wait_tran:
+    CALL sd_cmd13                   ; 33B 300D2
+    CALL sdc_read_response          ; 33C 30194
+    FETCH s0, resp2                 ; 33D 06004
+    COMPARE s0, 09                  ; 33E 14009  card status byte = $09: TRAN state, ready for data
     JUMP NZ, L_341                  ; 33F 35741
     RETURN                          ; 340 2A000
 L_341:
-    CALL sub_1EE                    ; 341 301EE
-    JUMP sub_33B                    ; 342 3433B
+    CALL sd_cmd12_stop              ; 341 301EE
+    JUMP sd_wait_tran               ; 342 3433B
 L_343:
     LOAD sF, DD                     ; 343 00FDD
-    CALL sub_1AA                    ; 344 301AA
-    INPUT s3, B5                    ; 345 043B5
+    CALL dbg_putc                   ; 344 301AA
+
+; Interrupt: the kernel wrote a command. CMD_OP:
+; $80 read sectors, $40 write sectors, $20 load ROM,
+; $10 set RTC, $08 run bank 2 in flash-update mode.
+isr:
+    INPUT s3, CMD_OP                ; 345 043B5
     LOAD sF, s3                     ; 346 01F30
-    CALL sub_1AA                    ; 347 301AA
+    CALL dbg_putc                   ; 347 301AA
     COMPARE s3, 80                  ; 348 14380
     JUMP NZ, L_34F                  ; 349 3574F
-    CALL sub_33B                    ; 34A 3033B
-    CALL sub_27E                    ; 34B 3027E
-    CALL sub_1D6                    ; 34C 301D6
-    CALL sub_1EE                    ; 34D 301EE
-    JUMP L_36B                      ; 34E 3436B
+    CALL sd_wait_tran               ; 34A 3033B
+    CALL read_cmd_lba               ; 34B 3027E
+    CALL sd_read_blocks             ; 34C 301D6  CMD18 at CMD_LBA, CMD_COUNT blocks
+    CALL sd_cmd12_stop              ; 34D 301EE
+    JUMP isr_done                   ; 34E 3436B
 L_34F:
     COMPARE s3, 40                  ; 34F 14340
     JUMP NZ, L_356                  ; 350 35756
-    CALL sub_33B                    ; 351 3033B
-    CALL sub_27E                    ; 352 3027E
-    CALL sub_1DE                    ; 353 301DE
-    CALL sub_1EE                    ; 354 301EE
-    JUMP L_36B                      ; 355 3436B
+    CALL sd_wait_tran               ; 351 3033B
+    CALL read_cmd_lba               ; 352 3027E
+    CALL sd_write_blocks            ; 353 301DE  CMD25
+    CALL sd_cmd12_stop              ; 354 301EE
+    JUMP isr_done                   ; 355 3436B
 L_356:
     COMPARE s3, 20                  ; 356 14320
     JUMP NZ, L_35F                  ; 357 3575F
-    CALL sub_1F2                    ; 358 301F2
+    CALL cmd_load_rom               ; 358 301F2
     LOAD s4, 00                     ; 359 00400
-    STORE s4, 33                    ; 35A 2E433
-    STORE s4, 34                    ; 35B 2E434
-    STORE s4, 35                    ; 35C 2E435
-    STORE s4, 36                    ; 35D 2E436
-    JUMP L_36B                      ; 35E 3436B
+    STORE s4, rtc_el_s              ; 35A 2E433
+    STORE s4, rtc_el_m              ; 35B 2E434
+    STORE s4, rtc_el_h              ; 35C 2E435
+    STORE s4, rtc_el_day            ; 35D 2E436
+    JUMP isr_done                   ; 35E 3436B
 L_35F:
     COMPARE s3, 10                  ; 35F 14310
     JUMP NZ, L_365                  ; 360 35765
     LOAD sF, AA                     ; 361 00FAA
-    CALL sub_1AA                    ; 362 301AA
-    CALL sub_312                    ; 363 30312
-    JUMP L_36B                      ; 364 3436B
+    CALL dbg_putc                   ; 362 301AA
+    CALL cmd_set_rtc                ; 363 30312
+    JUMP isr_done                   ; 364 3436B
 L_365:
     COMPARE s3, 08                  ; 365 14308
-    JUMP NZ, L_36B                  ; 366 3576B
-    LOAD s2, 01                     ; 367 00201
-    STORE s2, 3F                    ; 368 2E23F
-    CALL sub_3F0                    ; 369 303F0
-    JUMP L_36B                      ; 36A 3436B
-L_36B:
+    JUMP NZ, isr_done               ; 366 3576B
+    LOAD s2, 01                     ; 367 00201  license_b=1 tells bank 2 "flash update"
+    STORE s2, license_b             ; 368 2E23F
+    CALL call_bank2                 ; 369 303F0
+    JUMP isr_done                   ; 36A 3436B
+isr_done:
     RETURNI ENABLE                  ; 36B 38001
 ; $36C-$3EF: 132 unused (zero) words
 ADDRESS 3F0
 
-; ---- sub_3F0 ---- called from 003, 369
-sub_3F0:
+; Switch to bank 2 (X3Y25) and back. The instruction after each
+; OUTPUT is fetched before the switch lands, hence the no-ops;
+; $3F3 in bank 2 is CALL $1B5.
+
+; ---- call_bank2 ---- called from 003, 369
+call_bank2:
     LOAD s0, 01                     ; 3F0 00001
-    OUTPUT s0, C8                   ; 3F1 2C0C8
+    OUTPUT s0, BANK_SELECT          ; 3F1 2C0C8
     LOAD s0, s0                     ; 3F2 01000
-    LOAD s0, s0                     ; 3F3 01000
+    LOAD s0, s0                     ; 3F3 01000  bank 2 executes CALL $1B5 here
     LOAD s0, 00                     ; 3F4 00000
-    OUTPUT s0, C8                   ; 3F5 2C0C8
+    OUTPUT s0, BANK_SELECT          ; 3F5 2C0C8
     LOAD s0, s0                     ; 3F6 01000
     RETURN                          ; 3F7 2A000
 ; $3F8-$3FE: 7 unused (zero) words

@@ -1,0 +1,306 @@
+# carried from X3Y29.notes by picoblaze-port-notes.py; 72 routines identical, 6 matched by similarity, 0 new
+# X3Y29: PicoBlaze bank 1 (main program). FW4 slot B / Update_FW4.gb.
+# SD card (OpenCores sdc_controller over a register bridge), ROM loader,
+# PCF8563 RTC, kernel command dispatch. Bank 2 (X3Y25) is entered at $3F0.
+
+# ---- ports ----
+port out 70 SDC_D0
+port out 71 SDC_D1
+port out 72 SDC_D2
+port out 73 SDC_D3
+port in 70 SDC_Q0
+port in 71 SDC_Q1
+port in 72 SDC_Q2
+port in 73 SDC_Q3
+port in A0 DBG_STATUS
+port out A1 DBG_TX
+port in B0 CMD_LBA0
+port in B1 CMD_LBA1
+port in B2 CMD_LBA2
+port in B3 CMD_LBA3
+port in B4 CMD_COUNT
+port in B5 CMD_OP
+port in B6 RTC_SET_DATA
+port in B9 RTC_GAME_LIVE
+port out BF TBL_INDEX
+port in C0 TBL_Q3
+port in C1 TBL_Q2
+port in C2 TBL_Q1
+port in C3 TBL_Q0
+port out C8 BANK_SELECT
+port out E0 LOAD_ADDR3
+port out E1 LOAD_ADDR2
+port out E2 LOAD_ADDR1
+port out E3 LOAD_ADDR0
+port in EB I2C_IN
+port out EC I2C_OUT
+port out ED RTC_REG_INDEX
+port out EE RTC_REG_VALUE
+port out EF LOAD_BUSY
+port out F0 RTC_SET_INDEX
+
+# ---- scratchpad ----
+ram 00 acmd41_tries
+ram 01 sd_version
+ram 02 resp0
+ram 03 resp1
+ram 04 resp2
+ram 05 resp3
+ram 06 sd_is_sdhc
+ram 13 cid0
+ram 14 cid1
+ram 15 cid2
+ram 16 cid3
+ram 17 rca_hi
+ram 18 rca_lo
+ram 19 xfer_dir
+ram 1A dma_addr3
+ram 1B dma_addr2
+ram 1C dma_addr1
+ram 1D dma_addr0
+ram 1E blksize_hi
+ram 1F blksize_lo
+ram 20 blkcount_m1
+ram 2A load_step_lo
+ram 2C load_pos3
+ram 2D load_pos2
+ram 2E load_pos1
+ram 2F load_pos0
+ram 31 load_step_hi
+ram 3B tbl_mode
+ram 3D data_status
+ram 3E license_a
+ram 3F license_b
+
+# ---- reset ----
+block 000 Reset. Clear scratchpad, run bank 2 (license check, boot counter),
+block 000 bring the SD card up in native 4-bit mode, init the RTC, then idle
+block 000 with interrupts on. Kernel commands arrive as interrupts (int_vector).
+label 000 reset
+note 002 license_b=0 tells bank 2 "boot", not "flash update"
+note 003 bank 2: Device DNA + license check, boot tally at flash $70000
+note 004 debug: print bank 2's verdict (F1 F2 = licensed)
+note 008 clear scratchpad $00-$3D
+note 009 controller reset, timeouts, 400 kHz identification clock
+note 00B CMD0 GO_IDLE_STATE
+note 00C debug B0: card reset sent
+note 00F CMD8 SEND_IF_COND $1AA (2.7-3.6 V, check pattern AA)
+note 013 echoed check pattern AA = SD v2 card
+note 018 ACMD41 loop until powered up
+note 019 CMD2 ALL_SEND_CID
+note 01A keep the CID's last word
+note 01C CMD3 SEND_RELATIVE_ADDR
+note 01F RCA from the R6 response
+note 023 clock divider 0 = full speed
+note 026 CMD7 SELECT_CARD
+note 029 CMD16 SET_BLOCKLEN 512
+note 02A CMD55 APP_CMD
+note 02B ACMD6 SET_BUS_WIDTH 4-bit
+note 02C controller to 4-bit bus
+note 02D CMD13 SEND_STATUS
+note 02E PCF8563 init
+note 02F debug EE: init done
+note 034 copy RTC registers 2-8 to ports ED/EE
+note 08E ~delay
+
+sub 097 clear_scratchpad
+sub 0A0 sd_cmd0
+sub 0A3 sd_cmd8
+sub 0A8 sd_acmd41_loop
+note 0B3 response bit 31 = card powered up
+note 0B9 255 tries then give up (reported as 88)
+note 0BC card ready
+note 0C2 CCS bit: high capacity
+note 0C5 debug 82: SDHC/SDXC
+note 0C8 debug 88: standard capacity, or timed out
+sub 0CD sd_cmd55
+label 0CE sd_cmd_rca_arg
+sub 0D2 sd_cmd13
+sub 0D4 sd_acmd41
+note 0DA HCS only for v2 cards...
+note 0DB ...but overwritten here: HCS is always sent
+sub 0E1 sd_cmd2
+sub 0E4 sd_cmd3
+sub 0E7 sd_cmd7
+sub 0EC sd_acmd6_4bit
+sub 0F1 sd_cmd16
+sub 0F6 sd_cmd_noarg
+label 0F8 sd_cmd_arg16
+sub 0FC sdc_init
+note 105 software reset on, then off below
+note 106 divider $48: ~400 kHz from a ~58 MHz clock
+sub 10A sdc_reset_on
+sub 10D sdc_cmd_timeout
+sub 116 sdc_data_timeout
+sub 118 sdc_clock_divider
+sub 11E sdc_reset_off
+sub 120 sdc_cmd_int_enable
+sub 122 sdc_cmd_int_status
+sub 124 sdc_data_int_enable_on
+sub 127 sdc_data_int_enable
+sub 129 sdc_data_int_status
+sub 12B sdc_bus_4bit
+sub 131 sdc_bus_1bit
+label 133 sdc_write_zero_reg
+sub 137 sdc_zero_upper
+
+block 13C Send an SD command through the controller.
+block 13C sC = command index, sB = response flags (b0 response, b1 136-bit,
+block 13C b2 CRC check, b3 busy, b4 index check), sA:s9:s8:s7 = argument,
+block 13C xfer_dir = 0 none / 1 read / 2 write. Waits for completion.
+sub 13C sd_command
+note 14D data transfer? set DMA address, block size, count first
+note 155 reg $60 DMA address
+note 15F reg $44 block size - 1
+note 168 reg $48 block count - 1
+note 16D reg $04 command word
+note 171 reg $00 argument (starts the command)
+note 177 reg $34 command event status
+note 185 debug 55: waiting for data
+note 187 reg $3C data event status
+
+sub 194 sdc_read_response
+sub 1A0 save_cid
+block 1AA Debug byte out (sF). Port A0 bit 2 = transmit busy.
+sub 1AA dbg_putc
+block 1AF Controller register access: register number in sE, value in
+block 1AF sD (low byte; ports 70-73 hold the full word). Polls the register
+block 1AF port until an ack bit (0-1) is set.
+sub 1AF sdc_write_reg
+sub 1B1 sdc_wait_ack
+sub 1B9 delay_tiny
+sub 1BD delay_short
+sub 1C2 delay_med
+sub 1C7 delay_long
+
+block 1D6 Multi-block transfers. Argument already in sA..s7.
+sub 1D6 sd_read_blocks
+note 1D6 CMD18 READ_MULTIPLE_BLOCK
+label 1DC sd_write_blocks_common
+sub 1DE sd_write_blocks
+note 1DE CMD25 WRITE_MULTIPLE_BLOCK
+sub 1E0 sd_setup_dma
+note 1E0 DMA to buffer address 0, 512-byte blocks
+sub 1EE sd_cmd12_stop
+
+block 1F2 Kernel command $20: load a ROM file from SD into game memory.
+block 1F2 The kernel fills a table (TBL_INDEX/TBL_Q*): entries $00-$7B are
+block 1F2 (file offset, SD address) pairs, $7C the file length, $7D enable,
+block 1F2 $7E the step per run (blocks, bytes). Refused unless bank 2
+block 1F2 found a valid license (license_a/b = F1 F2).
+sub 1F2 cmd_load_rom
+note 1F7 license gate
+note 1FC table $7E: run length
+note 202 table $7D: enable
+note 208 raise LOAD_BUSY for the kernel
+sub 20F load_rom_loop
+note 216 current destination offset to E0-E3
+note 21E file offset -> SD address
+note 233 table $7C: file length
+note 23C loop until the whole file is copied
+
+
+block 23E Extent table lookup: table index from s6, offset by tbl_mode.
+sub 23E tbl_index
+block 248 Read one 32-bit table entry: index s5 -> s3:s2:s1:s0.
+sub 248 tbl_read
+block 251 Find the extent holding file offset sA:s9:s8:s7 (linear scan,
+block 251 2 entries per extent) and turn it into an SD address.
+sub 251 extent_lookup
+block 273 SDSC cards are byte-addressed: shift the sector number left 9.
+sub 273 sector_to_card_addr
+sub 27E read_cmd_lba
+note 283 CMD_COUNT -> block count - 1
+
+block 290 Bit-banged I2C. I2C_OUT bit 0 = SCL, bit 1 = SDA (open drain);
+block 290 I2C_IN bit 0 = SCL (clock stretching), bit 1 = SDA.
+sub 290 i2c_idle
+sub 294 i2c_start
+sub 29B i2c_stop
+sub 2A1 i2c_write_byte
+sub 2AB i2c_read_byte
+sub 2B0 i2c_ack_low
+sub 2B1 i2c_clock_pulse
+sub 2B6 i2c_nack
+sub 2B8 i2c_read_ack
+sub 2BB i2c_scl_low
+sub 2BF i2c_scl_high_wait
+sub 2C5 i2c_sda_low
+sub 2C8 i2c_sda_high
+sub 2CB i2c_read_bit
+sub 2D5 i2c_delay3
+sub 2D6 i2c_delay2
+sub 2D8 i2c_delay
+sub 2DB i2c_tick
+
+block 2DF PCF8563 RTC at I2C address $51.
+sub 2DF rtc_write_zero
+sub 2E0 rtc_write
+note 2E2 $51 << 1 = write address
+sub 2F1 rtc_select_read
+note 2FD $51 << 1 | 1 = read address
+sub 303 rtc_read
+block 309 Read RTC registers 2-8 (seconds..years) out to ports ED/EE.
+sub 309 rtc_dump
+block 312 Kernel command $10: set RTC registers 2-8 from RTC_SET_DATA.
+sub 312 cmd_set_rtc
+block 31B RTC init. If the seconds register's VL bit says the clock lost
+block 31B power, stop it and load a default date.
+sub 31B rtc_init
+note 31E seconds, bit 7 = VL (clock integrity lost)
+note 325 years 0
+note 328 month 1
+note 32B weekday 3
+note 32E day 1
+
+sub 33B sd_wait_tran
+note 33E card status byte = $09: TRAN state, ready for data
+
+block 345 Interrupt: the kernel wrote a command. CMD_OP:
+block 345 $80 read sectors, $40 write sectors, $20 load ROM,
+block 345 $10 set RTC, $08 run bank 2 in flash-update mode.
+label 345 isr
+note 34C CMD18 at CMD_LBA, CMD_COUNT blocks
+note 353 CMD25
+note 367 license_b=1 tells bank 2 "flash update"
+label 36B isr_done
+
+block 3F0 Switch to bank 2 (X3Y25) and back. The instruction after each
+block 3F0 OUTPUT is fetched before the switch lands, hence the no-ops;
+block 3F0 $3F3 in bank 2 is CALL $1B5.
+sub 3F0 call_bank2
+note 3F3 bank 2 executes CALL $1B5 here
+
+# ---- 14 annotations with no counterpart in this build ----
+# label 032 idle
+# label 03B dead_pulse_f2
+# label 160 dead_delay
+# label 177 dead_delays
+# label 186 dead_cmd24
+# note 186 CMD24 WRITE_BLOCK (unused)
+# note 197 debug 99 + the 4 argument bytes
+# label 1EE dead_loader
+# block 1EE Unreached block ($1EE-$289): an older loader using ports B7,
+# block 1EE E4-E7, A2/A3. Nothing calls it.
+# label 2D3 dead_pulse_e9
+# note 369 control 1: STOP
+# note 36C CLKOUT control
+
+# ---- FW5: MBC3 real-time clock (docs/fw5.md) ----
+port in A5 RTC_GAME_S
+port in A6 RTC_GAME_M
+port in A7 RTC_GAME_H
+port in A8 RTC_GAME_DL
+port in A9 RTC_GAME_DH
+port out A5 RTC_BASE_S
+port out A6 RTC_BASE_M
+port out A7 RTC_BASE_H
+port out A8 RTC_BASE_DL
+port out A9 RTC_BASE_DH
+port in B8 RTC_WR_DAY
+ram 33 rtc_el_s
+ram 34 rtc_el_m
+ram 35 rtc_el_h
+ram 36 rtc_el_day
+ram 37 rtc_last_sec
+note 036 1 while a game with a clock runs (FW4: the kernel asks for a refresh)

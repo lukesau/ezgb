@@ -29,8 +29,8 @@ most recent release of each line:
 | Release | PicoBlaze | Simulation |
 |---|---|---|
 | FW4 slot B | [picoblaze/fw4/](picoblaze/fw4/): both programs annotated (`.notes`) and listed (`.psm`) | [sim/](sim/README.md) runs the FW4 design |
-| FW5 0918 | [picoblaze/fw5-0918/](picoblaze/fw5-0918/): bank 1 listing and port map, not annotated yet | to do |
-| FW5 0731 | [picoblaze/fw5-0731/](picoblaze/fw5-0731/): bank 1 listing and port map | |
+| FW5 0918 | [picoblaze/fw5-0918/](picoblaze/fw5-0918/): bank 1 listing, annotations carried from FW4 plus the MBC3 clock code | annotated |
+| FW5 0731 | [picoblaze/fw5-0731/](picoblaze/fw5-0731/): bank 1 listing, annotations carried from FW4 plus the clock ports | annotated |
 | FW5 slot A | [picoblaze/fw5-slota/](picoblaze/fw5-slota/): bank 1 listing and port map | |
 | FW5 SGB beta | [picoblaze/fw5-sgb-beta/](picoblaze/fw5-sgb-beta/): bank 1 listing and port map | |
 
