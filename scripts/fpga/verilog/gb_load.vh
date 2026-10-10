@@ -35,12 +35,25 @@ initial begin
 `define LOAD_NS 26000000
 `endif
     #(`LOAD_NS);
+`ifdef GAME_HANDOFF
+    // a game: stage1's game_handoff.s
     fpga_set(16'h7F36, 0);
     fpga_set(16'h7F31, 0);
     fpga_set(16'h7F32, 0);
     gb_write(16'h2000, 8'h01);
     gb_write(16'h3000, 8'h00);
     fpga_set(16'h7FE0, 8'h80);
+`else
+    // the kernel: stage1's handoff.s ($7F36=0, $7FC0=0, ROM bank 1,
+    // $7F31=0, $7F32=$80, then it jumps to $0100)
+    fpga_set(16'h7F36, 0);
+    fpga_set(16'h7FC0, 0);
+    gb_write(16'h2000, 8'h01);
+    gb_write(16'h3000, 8'h00);
+    gb_write(16'h7F00, 8'hE1); gb_write(16'h7F10, 8'hE2); gb_write(16'h7F20, 8'hE3);
+    gb_write(16'h7F31, 8'h00); gb_write(16'h7F32, 8'h80);
+    gb_write(16'h7FF0, 8'hE4);
+`endif
     #10000;
     $display("%t gb: handed off; reading ROM", $time);
     // read 8 bytes at $0000 and at $4000 under several ROM banks, with the
