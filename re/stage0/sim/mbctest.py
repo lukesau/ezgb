@@ -164,7 +164,63 @@ def gen_d34(d):
     with open(os.path.join(d, 'ops.hex'), 'w') as f:
         for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
 
+PROBES = {
+    # MBC1: RAM bank in mode 0, upper bits under a 5-bit ROM mask
+    'mbc1x': dict(code=1, rom=0x01F, ram=3, ops=[
+        ('w', 0x0000, 0x0A), ('w', 0x6000, 0), ('w', 0x4000, 2), ('r', 0xA000), ('r', 0x4000), ('r', 0x4001), ('r', 0x0000),
+        ('w', 0x2000, 0x05), ('r', 0x4000), ('w', 0x4000, 1), ('r', 0x4000), ('r', 0xA000),
+        ('w', 0x6000, 1), ('r', 0xA000), ('r', 0x0000), ('r', 0x4000), ('w', 0x4000, 3), ('r', 0xA000), ('r', 0x0000), ('r', 0x4000),
+        ('w', 0x6000, 0), ('r', 0xA000), ('r', 0x4000), ('w', 0x2000, 0x20), ('r', 0x4000), ('w', 0x2000, 0x00), ('r', 0x4000)]),
+    # MBC2: bank register width against the mask, bank 0, A8 decode, RAM bytes
+    'mbc2x': dict(code=2, rom=0x00F, ram=0, ops=[
+        ('w', 0x2100, 0x1F), ('r', 0x4000), ('w', 0x2100, 0x10), ('r', 0x4000), ('w', 0x2100, 0x00), ('r', 0x4000),
+        ('w', 0x3100, 0x07), ('r', 0x4000), ('w', 0x2000, 0x0A), ('r', 0xA000), ('w', 0xA001, 0x5C), ('r', 0xA001), ('r', 0xA201),
+        ('w', 0x0100, 0x00), ('r', 0xA000), ('w', 0x0000, 0x00), ('r', 0xA000)]),
+    # MBC5 bank 0 and the 9th bit with a 9-bit mask
+    'mbc5x': dict(code=4, rom=0x1FF, ram=0xF, ops=[
+        ('w', 0x2000, 0x00), ('r', 0x4000), ('w', 0x3000, 0x01), ('r', 0x4000), ('r', 0x4001), ('w', 0x3000, 0x03), ('r', 0x4001),
+        ('w', 0x3000, 0x00), ('w', 0x2000, 0x80), ('r', 0x4000), ('w', 0x4000, 0x10), ('w', 0x0000, 0x0A), ('r', 0xA000)]),
+}
+
+def gen_probe(name, d):
+    os.makedirs(d, exist_ok=True)
+    P = PROBES[name]
+    ops = []
+    for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, P['code']) + fpga(0x7FC4, P['ram']) +
+                 fpga(0x7FC1, P['rom'] & 0xFF) + fpga(0x7FC2, P['rom'] >> 8) + fpga(0x7FC3, 0x5C)):
+        ops.append((0, a, v))
+    for a, v in [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
+                 (0x2000, 1), (0x3000, 0), (0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7FE0, 0x80), (0x7FF0, 0xE4)]:
+        ops.append((0, a, v))
+    ops.append((2, 0, 0))
+    for o in P['ops']:
+        ops.append((0, o[1], o[2]) if o[0] == 'w' else (1, o[1], 0))
+    with open(os.path.join(d, 'ops.hex'), 'w') as f:
+        for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
+    json.dump(dict(type=name, probe=True), open(os.path.join(d, 'meta.json'), 'w'))
+
+def probe_report(d):
+    # each read named by what it hit: ROM bank (from the tag) or U4 page
+    started = False
+    for line in open(os.path.join(d, 'game.log')):
+        p = line.split()
+        if not p: continue
+        if p[0] == 'X': started = True; continue
+        if not started or p[0] not in ('W', 'R') or len(p) < 3: continue
+        a, v = int(p[1], 16), int(p[2], 16)
+        if p[0] == 'W': print(f'  W ${a:04x}={v:02x}'); continue
+        o = a & 0x3FFF
+        if a < 0x8000:
+            banks = [b for b in range(512) if rom_tag(b, o) == v]
+            what = 'bank ' + '/'.join(f'{b:#x}' for b in banks[:2]) if banks else 'no bank'
+        else:
+            o = a & 0x1FFF
+            pages = [q for q in range(64) if ram_tag(q, o) == v]
+            what = ('U4 page ' + '/'.join(str(q) for q in pages[:3])) if pages else 'not a U4 tag'
+        print(f'  R ${a:04x} = {v:02x}  {what}')
+
 def check(d):
+    if json.load(open(os.path.join(d, 'meta.json'))).get('probe'): return probe_report(d)
     t = json.load(open(os.path.join(d, 'meta.json')))['type']
     m = Model(t)
     started, bad, n, ram = False, 0, 0, []
@@ -198,5 +254,6 @@ def check(d):
 
 if __name__ == '__main__':
     if sys.argv[1] == 'gen' and sys.argv[2] == 'd34': gen_d34(sys.argv[3])
+    elif sys.argv[1] == 'gen' and sys.argv[2] in PROBES: gen_probe(sys.argv[2], sys.argv[3])
     elif sys.argv[1] == 'gen': gen(sys.argv[2], sys.argv[3])
     else: check(sys.argv[2])
