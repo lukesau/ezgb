@@ -56,9 +56,19 @@ def name(n):
     n = n.lstrip('~').strip('()')
     return pins.get(n, n.replace('n_', ''))
 
+# the /WR clocks: global buffers fed by P84's clock pad or by logic on P84
+wrpad = [c['CLKPAD'] for k, P, c in inst.values() if k == 's3_ioi' and c.get('PAD') == 'P84']
+wrclk = set()
+for iname, (kind, P, c) in inst.items():
+    if kind != 's3_bufgmux' or not c.get('O'): continue
+    src = c['I0'] if c.get('S', "1'b0") == "1'b0" else c['I1']
+    L = set(); leaves(src, L)
+    if src in wrpad or any(pins.get(x) == 'P84' for x in L) or any(x in wrpad for x in L):
+        wrclk.add(c['O'])
+print('# /WR clocks:', ' '.join(sorted(x.replace('n_', '') for x in wrclk)))
 rows = []
 for iname, (kind, P, c) in inst.items():
-    if kind != 's3_slice' or c.get('CLK') not in ('n_X13Y33c_BUFGMUX0_O', 'n_X13Y33c_BUFGMUX1_O'): continue
+    if kind != 's3_slice' or c.get('CLK') not in wrclk: continue
     for a in 'XY':
         q = c.get(a + 'Q')
         if not q: continue
