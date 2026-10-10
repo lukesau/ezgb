@@ -1,0 +1,68 @@
+P3   O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P4   O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P5   O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P6   O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P7   O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P9   O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P10  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P12  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P13  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P15  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P16  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P19  O=O1    T=T1    o1=logic    t1=logic    in=IQ ICLK1=X13Y33c_BUFGMUX1
+P20  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P21  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P23  O=O1    T=T1    o1=~logic   t1=1'b0     in=-- 
+P24  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P25  O=FFO1  T=FFT1  o1=logic    t1=logic    in=-Q OTCLK1=X0Y17c_BUFGMUX6 FFO_SR_EN=1 FFT_SR_EN=1 FFO_INIT=0 ICLK1=X0Y17c_BUFGMUX6
+P27  O=FFO1  T=T1    o1=logic    t1=1'b0     in=-- OTCLK1=X0Y17c_BUFGMUX0 FFO1_SRVAL=1 FFO_INIT=1
+P28  O=FFO1  T=FFT1  o1=logic    t1=logic    in=-Q OTCLK1=X0Y17c_BUFGMUX6 FFO_SR_EN=1 FFT_SR_EN=1 FFO1_SRVAL=1 FFO_INIT=1 ICLK1=X0Y17c_BUFGMUX6
+P29  O=FFO1  T=FFT1  o1=logic    t1=logic    in=-Q OTCLK1=X0Y17c_BUFGMUX6 FFO_SR_EN=1 FFT_SR_EN=1 FFO_INIT=0 ICLK1=X0Y17c_BUFGMUX6
+P30  O=FFO2  T=FFT2  o1=1'b0     t1=1'b0     in=-Q OTCLK1=~X0Y17c_BUFGMUX0 OTCLK2=X0Y17c_BUFGMUX6 FFO_SR_EN=1 FFT_SR_EN=1 FFO1_SRVAL=1 FFO_INIT=0 ICLK1=X0Y17c_BUFGMUX6
+P31  O=O1    T=FFT1  o1=logic    t1=logic    in=I- OTCLK1=X0Y17c_BUFGMUX0 FFO1_SRVAL=1 FFO_INIT=1
+P32  O=O1    T=FFT1  o1=logic    t1=logic    in=I- OTCLK1=X0Y17c_BUFGMUX0 FFO1_SRVAL=1 FFO_INIT=1
+P33  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P34  O=FFO1  T=FFT1  o1=logic    t1=logic    in=-Q OTCLK1=X0Y17c_BUFGMUX6 FFO_SR_EN=1 FFT_SR_EN=1 FFO_INIT=0 ICLK1=X0Y17c_BUFGMUX6
+P35  O=O1    T=T1    o1=X25Y17c_BUFGMUX7 t1=1'b0     in=-- 
+P36  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P37  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P39  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P40  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P41  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P43  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=-- 
+P44  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P46  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P48  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P49  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P50  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P51  O=FFO1  T=T1    o1=logic    t1=logic    in=I- OTCLK1=~logic FFO1_LATCH=1 FFO_SR_EN=1 FFO_REV_EN=1 FFO_INIT=0
+P52  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P53  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P56  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P57  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P59  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P60  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P61  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=IQ ICLK1=X13Y0c_BUFGMUX2
+P62  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P64  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P65  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P68  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P70  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P71  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P72  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P73  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P77  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P78  O=O1    T=T1    o1=logic    t1=logic    in=I- 
+P82  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P83  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P84  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P85  O=O1    T=T1    o1=logic    t1=1'b0     in=-- 
+P86  O=O1    T=T1    o1=logic    t1=logic    in=-- 
+P88  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P89  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P90  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P93  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P94  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P97  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P98  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 
+P99  O=NONE  T=NONE  o1=1'b0     t1=1'b0     in=I- 

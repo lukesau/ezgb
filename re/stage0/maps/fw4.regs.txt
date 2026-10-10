@@ -1,0 +1,22 @@
+$2xxx                  logic(D0) logic(D0,D5) logic(D1) logic(D1,D6) logic(D2) logic(D3) logic(D4) logic(D7)
+$3xxx                  logic(D0)
+$7FB4                  logic
+$[****]xxx             logic(D0) logic(D0,D5) logic(D1) logic(D1,D6) logic(D2) logic(D3) logic(D4) logic(D7)
+$[001x]xxx             logic(D0) logic(D1) logic(D2) logic(D3)
+$[010x]xxx             D0 D1 D2 D3 D4 D5 D6 D7
+$xx30                  D0 D1
+$xx32                  D3 D7
+$xx36                  D0 D1
+$xx37                  D0 D1 D2 D3 D7
+$xxB0                  D0 D1 D2 D3 D4 D5 D6 D7
+$xxB1                  D0 D1 D2 D3 D4 D5 D6 D7
+$xxB2                  D0 D1 D2 D3 D4 D5 D6 D7
+$xxB3                  D0 D1 D2 D3 D4 D5 D6 D7
+$xxC0                  D0 D1 D2 D3
+$xxC1                  D0 D1 D2 D3 D4 D5 D6 D7
+$xxC2                  D0
+$xxC3                  D0 D1 D2 D3 D4 D5 D6
+$xxC4                  D0 D1 D2 D3
+$xxD2                  D0
+$xxxx                  logic(D0)x4 logic(D0,D1) logic(D0,D1,D2,D3) logic(D0,D1,D2,D3,D4,D5,D6,D7)x14 logic(D1)x2
+CE too wide: 15        D0x8 D1x8 D2x8 D3x8 D4x8 D5x8 D6x8 D7x8
