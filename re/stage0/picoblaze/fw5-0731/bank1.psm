@@ -21,6 +21,7 @@ CONSTANT CMD_OP, B5   ; input port
 CONSTANT RTC_SET_DATA, B6   ; input port
 CONSTANT RTC_WR_DAY, B8   ; input port
 CONSTANT RTC_GAME_LIVE, B9   ; input port
+CONSTANT LOAD_FAST, BB   ; input port
 CONSTANT TBL_Q3, C0   ; input port
 CONSTANT TBL_Q2, C1   ; input port
 CONSTANT TBL_Q1, C2   ; input port
@@ -832,7 +833,7 @@ cmd_load_rom:
 L_207:
     LOAD s0, 01                     ; 207 00001
     OUTPUT s0, LOAD_BUSY            ; 208 2C0EF  raise LOAD_BUSY for the kernel
-    INPUT s0, BB                    ; 209 040BB
+    INPUT s0, LOAD_FAST             ; 209 040BB  FPGA's $7FD3 + $7FD4 (the kernel writes $7FD4=0, $7FD3 stays 0)
     STORE s0, 2B                    ; 20A 2E02B
     CALL load_rom_loop              ; 20B 3020F
     LOAD s0, 00                     ; 20C 00000
@@ -861,7 +862,7 @@ L_216:
     CALL sd_read_blocks             ; 21F 301D6
     CALL sd_cmd12_stop              ; 220 301EE
     FETCH s0, 2B                    ; 221 0602B
-    COMPARE s0, 11                  ; 222 14011
+    COMPARE s0, 11                  ; 222 14011  $11: skip the delay between runs (fast load)
     JUMP Z, L_225                   ; 223 35225
     CALL delay_long                 ; 224 301C7
 L_225:

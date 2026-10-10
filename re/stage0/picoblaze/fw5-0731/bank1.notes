@@ -304,3 +304,6 @@ ram 35 rtc_el_h
 ram 36 rtc_el_day
 ram 37 rtc_last_sec
 note 036 1 while a game with a clock runs (FW4: the kernel asks for a refresh)
+port in BB LOAD_FAST
+note 209 FPGA's $7FD3 + $7FD4 (the kernel writes $7FD4=0, $7FD3 stays 0)
+note 222 $11: skip the delay between runs (fast load)

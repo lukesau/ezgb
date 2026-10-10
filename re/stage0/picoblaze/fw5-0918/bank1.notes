@@ -319,3 +319,6 @@ block 03C PCF8563 seconds and, when they change, carry one second through the
 block 03C elapsed S/M/H/day counters in scratchpad $33-$36.
 label 03C game_clock
 note 03D DH bit 6: clock halted
+port in BB LOAD_FAST
+note 223 FPGA's $7FD3 + $7FD4 (the kernel writes $7FD4=0, $7FD3 stays 0)
+note 23C $11: skip the delay between runs (fast load)

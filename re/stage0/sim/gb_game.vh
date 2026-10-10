@@ -55,6 +55,9 @@ initial begin
     #(`GB_START_NS);
     fpga_set(16'h7FC0, 2);
     fpga_set(16'h7F37, `MBC);
+`ifdef D4
+    fpga_set(16'h7FD4, `D4);          // FW5: $7FD3 + $7FD4 = $11 skips the loader's delay
+`endif
     fpga_set(16'h7FC4, 8'h03);
     fpga_set(16'h7FC1, 8'h3F);
     fpga_set(16'h7FC2, 8'h00);
