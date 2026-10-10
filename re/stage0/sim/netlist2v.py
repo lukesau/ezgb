@@ -208,6 +208,15 @@ for (t, b), c in sorted(cells.items()):
     conns = {'PAD': pin or ''}
     for p in ('O1', 'O2', 'T1', 'T2', 'OTCLK1', 'OTCLK2', 'ICLK1', 'SR', 'REV'):
         conns[p] = inp(c, p, "1'b0")
+    # An output latch's gate reads inverted against the decoded bit. P51's
+    # latch is the only one: its gate is OTCLK1 from the $7FD2 bit, and it
+    # has to be transparent while that bit is 0 or every game-mode ROM read
+    # lands 16KB off (docs/design.md, game-mode reads). The edge-triggered
+    # output registers (SD CMD/DAT, the 595 latch clock) are left as decoded.
+    for p, k in (('OTCLK1', 'FFO1_LATCH'), ('OTCLK2', 'FFO2_LATCH')):
+        s_, inv = c['in'].get(p, [None, 0])
+        if s_ and a.get(k) == '1':
+            conns[p] = wname(s_) if inv else f"~{wname(s_)}"
     for p in ('OCE', 'TCE', 'ICE'):
         conns[p] = inp(c, p, "1'b1")
     for k in ('FFO_INIT', 'FFT_INIT', 'FFI1_INIT'):
