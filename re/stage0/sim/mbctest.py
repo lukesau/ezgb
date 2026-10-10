@@ -191,6 +191,23 @@ PROBES = {
     'mbc5x': dict(code=4, rom=0x1FF, ram=0xF, ops=[
         ('w', 0x2000, 0x00), ('r', 0x4000), ('w', 0x3000, 0x01), ('r', 0x4000), ('r', 0x4001), ('w', 0x3000, 0x03), ('r', 0x4001),
         ('w', 0x3000, 0x00), ('w', 0x2000, 0x80), ('r', 0x4000), ('w', 0x4000, 0x10), ('w', 0x0000, 0x0A), ('r', 0xA000)]),
+    # MBC3 clock: halt bit, DL/DH writes, day overflow (3 ms ticks)
+    'rtcx': dict(code=0x83, rom=0x07F, ram=3, ops=[
+        ('w', 0x0000, 0x0A),
+        ('w', 0x4000, 0x0C), ('w', 0xA000, 0x40),                       # DH: halt
+        ('w', 0x6000, 0), ('w', 0x6000, 1), ('w', 0x4000, 0x08), ('r', 0xA000),
+        ('d', 7000), ('w', 0x6000, 0), ('w', 0x6000, 1), ('r', 0xA000),
+        ('w', 0x4000, 0x0C), ('w', 0xA000, 0x01),                       # DH: run, day bit 8
+        ('w', 0x4000, 0x0B), ('w', 0xA000, 0xFF),                       # DL: day 511
+        ('w', 0x4000, 0x0A), ('w', 0xA000, 0x17),                       # H 23
+        ('w', 0x4000, 0x09), ('w', 0xA000, 0x3B),                       # M 59
+        ('w', 0x4000, 0x08), ('w', 0xA000, 0x3A),                       # S 58
+        ('w', 0x6000, 0), ('w', 0x6000, 1),
+        ('w', 0x4000, 0x08), ('r', 0xA000), ('w', 0x4000, 0x09), ('r', 0xA000), ('w', 0x4000, 0x0A), ('r', 0xA000),
+        ('w', 0x4000, 0x0B), ('r', 0xA000), ('w', 0x4000, 0x0C), ('r', 0xA000),
+        ('d', 10000), ('w', 0x6000, 0), ('w', 0x6000, 1),
+        ('w', 0x4000, 0x08), ('r', 0xA000), ('w', 0x4000, 0x09), ('r', 0xA000), ('w', 0x4000, 0x0A), ('r', 0xA000),
+        ('w', 0x4000, 0x0B), ('r', 0xA000), ('w', 0x4000, 0x0C), ('r', 0xA000)]),
 }
 
 def gen_probe(name, d):
@@ -205,7 +222,7 @@ def gen_probe(name, d):
         ops.append((0, a, v))
     ops.append((2, 0, 0))
     for o in P['ops']:
-        ops.append((0, o[1], o[2]) if o[0] == 'w' else (1, o[1], 0))
+        ops.append((0, o[1], o[2]) if o[0] == 'w' else (3, o[1], 0) if o[0] == 'd' else (1, o[1], 0))
     with open(os.path.join(d, 'ops.hex'), 'w') as f:
         for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
     json.dump(dict(type=name, probe=True), open(os.path.join(d, 'meta.json'), 'w'))
@@ -220,6 +237,8 @@ def probe_report(d):
         if not started or p[0] not in ('W', 'R') or len(p) < 3: continue
         a, v = int(p[1], 16), int(p[2], 16)
         if p[0] == 'W': print(f'  W ${a:04x}={v:02x}'); continue
+        if json.load(open(os.path.join(d, 'meta.json')))['type'].startswith('rtc'):
+            print(f'  R ${a:04x} = {v:02x}'); continue
         o = a & 0x3FFF
         if a < 0x8000:
             banks = [b for b in range(512) if rom_tag(b, o) == v]
