@@ -150,6 +150,20 @@ def gen(t, d):
     json.dump(dict(type=variant), open(os.path.join(d, 'meta.json'), 'w'))
     print(t, len(ops), 'ops')
 
+def gen_d34(d):
+    # $7FD3/$7FD4 probe: snapshot after each write (op 04) for snapdiff
+    os.makedirs(d, exist_ok=True)
+    ops, tag = [], 0
+    def snap():
+        nonlocal tag
+        ops.append((4, 0, tag)); tag += 1
+    snap()
+    for r, v in ((0x7FD4, 0x5A), (0x7FD4, 0xA5), (0x7FD3, 0x11), (0x7FD4, 0x00), (0x7FD3, 0x00), (0x7FD4, 0x01)):
+        for a, x in fpga(r, v): ops.append((0, a, x))
+        snap()
+    with open(os.path.join(d, 'ops.hex'), 'w') as f:
+        for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
+
 def check(d):
     t = json.load(open(os.path.join(d, 'meta.json')))['type']
     m = Model(t)
@@ -183,5 +197,6 @@ def check(d):
         print(f'  U4 changed at {len(diff)} bytes:', ', '.join(f'{i:#07x} (page {i >> 13}+{i & 0x1FFF:#x}) {o:02x}->{n_:02x}' for i, o, n_ in diff[:24]))
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'gen': gen(sys.argv[2], sys.argv[3])
+    if sys.argv[1] == 'gen' and sys.argv[2] == 'd34': gen_d34(sys.argv[3])
+    elif sys.argv[1] == 'gen': gen(sys.argv[2], sys.argv[3])
     else: check(sys.argv[2])
