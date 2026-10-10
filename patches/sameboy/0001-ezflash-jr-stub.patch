@@ -1058,7 +1058,7 @@ index 0000000..0f5ba14
 + */
 +
 +enum {
-+    EZJR_SRAM_BANKS = 64,
++    EZJR_SRAM_BANKS = 32,         /* 5-bit page latch on the cart (docs/psram-page-map.md) */
 +    EZJR_SRAM_BANK_SIZE = 0x2000, /* $A000-$BFFF */
 +};
 +
@@ -1086,7 +1086,7 @@ index 0000000..0f5ba14
 +    char img_path[1024];
 +    /* BCD RTC mirror for page $06: indices 0..6 <=> $A008..$A00E */
 +    uint8_t rtc[7];
-+    /* 64 * 8KB FPGA cart SRAM ($7FC0=$03). Page $11 = status, $12+ = file list.
++    /* 32 * 8KB FPGA cart SRAM ($7FC0=$03). Page $11 = status, $12+ = file list.
 +     * Banks 0..N are the same physical SRAM a launched game sees (battery). */
 +    uint8_t *cart_sram;
 +    uint8_t fw_version;   /* any $Axxx byte while $7FC0=$04 */
