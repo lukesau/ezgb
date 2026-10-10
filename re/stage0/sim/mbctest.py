@@ -208,6 +208,8 @@ PROBES = {
         ('d', 10000), ('w', 0x6000, 0), ('w', 0x6000, 1),
         ('w', 0x4000, 0x08), ('r', 0xA000), ('w', 0x4000, 0x09), ('r', 0xA000), ('w', 0x4000, 0x0A), ('r', 0xA000),
         ('w', 0x4000, 0x0B), ('r', 0xA000), ('w', 0x4000, 0x0C), ('r', 0xA000)]),
+    # stage1's header straight off the bus at power-on (no FPGA writes)
+    'stage1hdr': dict(nolaunch=True, ops=[('r', a) for a in range(0x100, 0x150)]),
     # kernel mode (no launch): $7FC0=3 save window, $4000 = page 0..63
     'kwin': dict(nolaunch=True, ops=[('k', 0x7FC0, 3)] + [x for p_ in list(range(0, 64)) + [0x40, 0x41, 0x80, 0xFF]
              for x in (('w', 0x4000, p_), ('r', 0xA000), ('r', 0xA001), ('r', 0xBFFF))] +
@@ -244,7 +246,7 @@ def probe_report(d):
         if not started or p[0] not in ('W', 'R') or len(p) < 3: continue
         a, v = int(p[1], 16), int(p[2], 16)
         if p[0] == 'W': print(f'  W ${a:04x}={v:02x}'); continue
-        if json.load(open(os.path.join(d, 'meta.json')))['type'].startswith('rtc'):
+        if json.load(open(os.path.join(d, 'meta.json')))['type'].startswith(('rtc', 'stage1')):
             print(f'  R ${a:04x} = {v:02x}'); continue
         o = a & 0x3FFF
         if a < 0x8000:

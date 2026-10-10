@@ -92,6 +92,17 @@ The kernel's own page map (`docs/psram-page-map.md`) assumes 64 pages, as
 the emulator does; see the correction there for what a 5-bit latch means
 for the browser's record pages.
 
+## Stage1's header (simulated)
+
+Reading `$0100-$014F` off the bus at power-on, before any FPGA write
+(`mbctest.py stage1hdr`), gives stage1's header from BRAM on each build.
+All three: title `BOOTLOADER`, cart type `$01`, the Nintendo logo intact.
+FW5-0918 alone has the SGB flag `$146 = $03`, old licensee `$14B = $33` and
+header checksum `$14D = $C4` (FW4 and 0731: `$00`, `$00`, `$FA`), as
+[fw5.md](fw5.md) found in the BRAM dumps. FW4 and 0731 differ only in the
+global checksum (`$B32E` against `$8EE3`), so stage1's code changed between
+FW4 and FW5 while its header didn't.
+
 ## Kernel and game launches (simulated)
 
 Both launch paths run unchanged on all three firmwares, loading from the
