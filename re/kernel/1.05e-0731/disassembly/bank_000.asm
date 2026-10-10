@@ -4046,7 +4046,7 @@ MenuDispatchAB_failHang::
     inc b
     nop
     add sp, $01
-    ld a, $00
+    ld a, $11
     push af
     inc sp
     call FarCallTrampoline
