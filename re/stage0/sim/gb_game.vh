@@ -25,14 +25,12 @@ task rd(input [15:0] a);
     begin gb_read(a, lq);
           want = rom[a < 16'h4000 ? a : {cur_bank[1:0], a[13:0]}];
           nrd = nrd + 1; if (lq !== want) bad = bad + 1;
-          $display("%t gb: read $%h = %h want %h %s (595=%h P51=%b m=%b k=%b mem_a=%h)", $time, a, lq, want,
-                   lq === want ? "ok " : "BAD", tb.bank, tb.P51, tb.dut.n_X17Y22_S2_YQ, tb.dut.n_X14Y20_S0_YQ, tb.mem_a); end
+          $display("%t gb: read $%h = %h want %h %s (595=%h P51=%b mem_a=%h)", $time, a, lq, want,
+                   lq === want ? "ok " : "BAD", tb.bank, tb.P51, tb.mem_a); end
 endtask
 task setbank(input [7:0] b);
     begin gb_write(16'h2000, b); cur_bank = (b == 0) ? 1 : b;
-          $display("%t gb: $2000=%h  bankreg=%b%b%b%b%b%b%b%b", $time, b,
-                   tb.dut.n_X15Y26_S0_XQ, tb.dut.n_X17Y25_S2_XQ, tb.dut.n_X17Y25_S1_XQ, tb.dut.n_X15Y23_S0_XQ,
-                   tb.dut.n_X18Y23_S3_XQ, tb.dut.n_X18Y23_S0_XQ, tb.dut.n_X17Y26_S1_XQ, tb.dut.n_X18Y24_S0_XQ); end
+          $display("%t gb: $2000=%h", $time, b); end
 endtask
 // 595 activity: count shift clocks per latch and the bits shifted
 integer nsh; reg [31:0] shbits; reg p35, p24;
