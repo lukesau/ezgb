@@ -34,7 +34,7 @@ Our implementation has to satisfy two opposing constraints:
 >
 > Perhaps GBC can be detected through undocumented registers, so the delay can be skipped there, but DMG and SGB look identical at this stage so the DMG will have the delay if using the native approach.
 
-The mod's CGB mode already recognises a GBC in CGB mode by testing `VBK`
+The mod's CGB mode already recognizes a GBC in CGB mode by testing `VBK`
 ([cgb-mode.md](cgb-mode.md)).
 
 ## The idea: send the packets from an interrupt

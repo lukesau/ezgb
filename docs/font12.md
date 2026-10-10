@@ -2,7 +2,7 @@
 
 A larger UI for the file browser: its list rows use a proportional 12px-tall
 font instead of the kernel's 8x8 tiles. Each glyph has its own width and
-neighbouring glyphs kern, the way text is set on modern systems, so a row
+neighboring glyphs kern, the way text is set on modern systems, so a row
 holds about 18 characters of a typical name next to the icon (15 of the
 widest). Only the browser list (and its long-name marquee) is converted;
 the tab strip ([tab-strip12.md](tab-strip12.md)) and the START overlay
@@ -24,7 +24,7 @@ at any pixel position is simply a masked merge into the tiles it overlaps.
 Nothing has to be precomposed: a glyph at any `x` straddles two tiles (its
 ink is at most 9 px wide, so 9 bits plus a shift of up to 7 fit a 16-bit
 row), a 12-tall glyph straddles two or three tile rows, and each glyph row
-is shifted into place and merged so the neighbouring pixels in the shared
+is shifted into place and merged so the neighboring pixels in the shared
 tile survive.
 
 ## Geometry
@@ -111,7 +111,7 @@ are the exception, below):
   kern by 2, `Wa` by 1, `rn` by 0. The cap is what stops `'.` from
   stacking, since the two share no ink rows.
 - the pairs are stored as class kerning, as OpenType does it: glyphs with
-  the same kerning behaviour on a side share a class (68 right classes, 65
+  the same kerning behavior on a side share a class (68 right classes, 65
   left with the current sheet), and the matrix is 2 bits per class pair,
   ~1.2 KB instead of 96 x 96 bytes. A lookup is one indexed byte and a
   shift. Space and icons are class 0 on both sides and never kern.
@@ -120,7 +120,7 @@ The ten digits are tabular figures: each is drawn in the same 7 px cell of
 the sheet (columns 1..7), is not trimmed to its ink (`1` keeps its side
 bearings), advances 9 px and never kerns on either side. Numbers therefore
 line up in columns (the dates and times of the boot prompts) and a changing
-number (the entry counter in the tab strip) does not shift its neighbours.
+number (the entry counter in the tab strip) does not shift its neighbors.
 The shapes are hand-drawn (`keep`), squared off with 2 px strokes, and the
 zero is plain, narrower than `O`.
 

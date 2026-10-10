@@ -100,7 +100,7 @@ after the title and labels, since a text cell or a 12px row repaints all it
 covers; `LastRomName` then draws with ink 0 on paper 3 and restores 3 on 0.
 
 A name that does not fit its field scrolls, with the SET tab's marquee
-behaviour ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)): a one-second
+behavior ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)): a one-second
 hold, then one character every 20 frames, repeating after three blanks. In
 12px mode "fits" is the `Fit12` glyph count, and each step lays the window
 out again, so a step is one character wide. The tick runs from the overlay's

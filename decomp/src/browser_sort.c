@@ -18,7 +18,7 @@
  * Phases:
  *  1. Enumerate the whole directory: loop DirList (streams 16 records per
  *     call) until the end-of-directory latch $c5a4 sets. The scroll and
- *     RIGHT-page paths already honour that latch, so they never re-enter
+ *     RIGHT-page paths already honor that latch, so they never re-enter
  *     DirList afterwards and all downstream count checks use the true total.
  *  2. Build one 16-byte key per entry in a scratch PSRAM bank:
  *       [0]    class: 0 directory, 1 file  (record attr $10 vs $20)

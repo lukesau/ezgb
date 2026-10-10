@@ -112,7 +112,7 @@ dump.
 - **The FPGA's register interface is already documented from the kernel side**:
   the unlock/command/commit protocol and the meaning of many `$7Fxx` ports
   (`REGISTERS.md`, `game-slot-access.md`, `fpga-flash-map.md`). This is the
-  single biggest asset: the fully-labelled kernel disassembly *is* the spec for
+  single biggest asset: the fully-labeled kernel disassembly *is* the spec for
   what the FPGA does. A replacement design can reimplement that interface for
   kernel compatibility, or discard it and define its own.
 - **A likely MultiBoot fallback** (see Persistence) that, if confirmed, makes

@@ -47,7 +47,7 @@ LCD-on itself at the end.
    non-zero attribute still renders sanely.
 
 Replicating the old look is a direct translation because the kernel writes
-`BGP` exactly once, at `00:01b0`, with `$E4`, the identity mapping (colour
+`BGP` exactly once, at `00:01b0`, with `$E4`, the identity mapping (color
 index N is simply shade N), and never touches it again. There are no runtime
 palette effects to preserve. (Byte-scanning for `e0 47`/`f0 47` suggests other
 `BGP` writes in banks 3 and 4, but those are false positives: `and $f0`
@@ -59,15 +59,15 @@ Tested on a Game Boy Advance SP with a real Jr. What was proved, in order:
 
 1. **Flipping `$0143` in `ezgb.dat` does nothing.** The kernel booted normally,
    in the usual DMG compatibility palette. Confirmed by comparison against
-   SameBoy running the same image, which honours the flag and came up in the
+   SameBoy running the same image, which honors the flag and came up in the
    diagnostic red. The console's boot ROM never sees `ezgb.dat`'s header: the
    factory bootstrap presents its own at power-on, DMG mode latches in `$FF4C`
    before our code exists, and nothing in software can undo that.
 
-2. **The flag *is* honoured on a game launch.** Loading the same image from the
+2. **The flag *is* honored on a game launch.** Loading the same image from the
    browser as a game produced the red screen. So the launch path is a genuine
    console reset that re-reads the loaded ROM's header, which is why launched
-   GBC games get real colour rather than a compatibility palette.
+   GBC games get real color rather than a compatibility palette.
 
 3. **But a launched kernel has no cart hardware.** It hangs with both
    "Micro SD initial error" and the BATTERY DRY warning, identical to running
@@ -125,10 +125,10 @@ The code is correct; there is just no way to get the console into CGB mode for
 it to matter on real hardware.
 
 **Since mod 5.3** `CgbInit` is part of the mod (`00:0259`, hooked at `$01ba`,
-header `$0143 = $80`), with the real greyscale ramp (`$7fff`, `$56b5`,
+header `$0143 = $80`), with the real grayscale ramp (`$7fff`, `$56b5`,
 `$294a`, `$0000`) instead of the red diagnostic. On a
 stock cart it stays inactive (the console runs the kernel in DMG
-compatibility mode, so the feature test skips it); in emulators that honour
+compatibility mode, so the feature test skips it); in emulators that honor
 ezgb.dat's header the kernel runs in CGB mode with that palette. A bug in
 the old build is fixed on the way: SDCC merged the ramp's two `$00` stores
 into one, so every palette after the first was a byte out (black came out

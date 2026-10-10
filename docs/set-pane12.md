@@ -45,7 +45,7 @@ with **`hClip12`** (`$fff9`) set to the span's end:
   was), and `Fit12` places no glyph that would cross the limit.
 - So a field repaints exactly its span, in the current ink and paper. The
   time-edit highlight is therefore the field's rectangle, and redrawing one
-  field never touches its neighbours, the same contract `DrawString`'s
+  field never touches its neighbors, the same contract `DrawString`'s
   fixed-width cells gave the stock code.
 
 The date row needs columns of fixed width for that, which the tabular

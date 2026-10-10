@@ -1,7 +1,7 @@
 /* Proportional layout for the 12px browser font (docs/font12.md).
  *
  * The glyphs of Font12 have no cells any more: each has an ink width and an
- * advance (ink + gap), and a pair of neighbours may kern, pulling the second
+ * advance (ink + gap), and a pair of neighbors may kern, pulling the second
  * glyph left by up to 2 px where their shapes leave room (T followed by o,
  * r followed by a period). All of that comes from the metrics table
  * scripts/font12-pack.py derives from the glyph sheet (Font12Metrics at

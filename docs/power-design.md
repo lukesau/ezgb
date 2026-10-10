@@ -80,7 +80,7 @@ console 5 V ramps ──► cart 3.3 V / 1.2 V ramp
 cart releases CPU reset ──┼─ boot ROM clears VRAM, then reads logo $0104-$0133 from the cart   ◄── only safe if the hold held
                           │
                           ├─ PicoBlaze reset (fpga-picoblaze.md, X3Y29 $000):
-                          │    1. bank 2: SPI flash tally write at $070000, Device DNA, licence read at $030000
+                          │    1. bank 2: SPI flash tally write at $070000, Device DNA, license read at $030000
                           │    2. SD init (CMD0, CMD8, ACMD41 ×255 max, ... 4-bit)
                           │    3. rtc_init: bit-banged I²C to the PCF8563
                           │    4. interrupts on, service kernel commands
@@ -159,8 +159,8 @@ Bank 2 runs before anything else (`reset` → `call_bank2`):
 - It **programs a tally byte in the config flash at `$070000` on every
   power-on**, and **erases that sector** when all 256 bytes are used. On FW4
   slot A it then reboots into slot B through ICAP.
-- It reads the **licence record at `$030000`** and the Device DNA. If the CRCs
-  don't match, `licence_a/b` ≠ `F1 F2`, and `cmd_load_rom` (`$1AB`) quietly
+- It reads the **license record at `$030000`** and the Device DNA. If the CRCs
+  don't match, `license_a/b` ≠ `F1 F2`, and `cmd_load_rom` (`$1AB`) quietly
   **returns without loading**. Stage1 then waits forever on LOADING. This is
   one concrete way to get a silent level-1 hang: a single bad bit read from
   bit-banged SPI at low voltage.

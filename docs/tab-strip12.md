@@ -58,7 +58,7 @@ The HELP tab's five lines (see [help-version.md](help-version.md)) are drawn
 in the 12px font too: `FW5 K1.05e-0731`, `www.ezflash.cn`,
 `MOD <version>` and the two-line GitHub link (`github.com/lukesau/`, then `ezgb`), from x 4 at y 24, 44, 64, 84
 and 96. The 8px pane's `ver:` label is dropped: with the fixed-width digits
-the labelled line would run to the right edge.
+the labeled line would run to the right edge.
 
 `DrawFwVersionScreen` builds `FW<n>  K1.05e` in a stack buffer and then
 draws; the draw half (`DrawFwVersionScreen_drawChrome`, `08:70e1`) now starts

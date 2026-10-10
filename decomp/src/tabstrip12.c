@@ -62,7 +62,7 @@ void TabStrip12(u16 far_pad_thunk, u16 far_pad_af, u8 tab) {
     }
     if (tab == 0 && FL_PICK) {
         /* SET tab's pick mode (flpick_banner.c draws the 8px one); the entry
-         * number repaints its field in the normal colours afterwards */
+         * number repaints its field in the normal colors afterwards */
         StoreDrawParams(0, 3, 0);
         DrawString12(0, 0, 0, banner, 0, 0, 0);
     } else if (tab != 3) {

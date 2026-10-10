@@ -1,4 +1,4 @@
-/* CGB-mode initialisation, run at boot in place of the stock LCD-on.
+/* CGB-mode initialization, run at boot in place of the stock LCD-on.
  *
  * Hooked over `ld a,$c0 / ldh [rLCDC],a` at 00:01ba (KernelEntry), so it runs
  * with the LCD still off, the only safe window for a bulk VRAM write, and
@@ -6,10 +6,10 @@
  *
  * Why this is needed at all: setting the ROM header's CGB flag ($0143 = $80)
  * makes a Game Boy Color run the kernel in CGB mode, where `BGP`/`OBP` are
- * ignored and colour comes from CGB palette RAM instead. The kernel writes
- * BGP exactly once (`ld a,$e4` at 00:01b0, the identity mapping, so colour
+ * ignored and color comes from CGB palette RAM instead. The kernel writes
+ * BGP exactly once (`ld a,$e4` at 00:01b0, the identity mapping, so color
  * index N is simply shade N) and never touches it again, so replicating the
- * existing look is a direct 4-colour translation with no runtime palette
+ * existing look is a direct 4-color translation with no runtime palette
  * effects to preserve.
  *
  * The other half is the BG attribute map. In CGB mode every tilemap byte has a
@@ -67,7 +67,7 @@ void cgb_init_and_lcd_on(void) {
 
         /* All 8 BG and 8 OBJ palettes get the same ramp, so a stray non-zero
          * attribute byte still renders correctly rather than in garbage
-         * colours. $80 = index 0 with auto-increment. */
+         * colors. $80 = index 0 with auto-increment. */
         rBCPS = 0x80;
         rOCPS = 0x80;
         for (i = 0; i < 8; i++) {
@@ -81,7 +81,7 @@ void cgb_init_and_lcd_on(void) {
 
 /* BGR555, matching the DMG shade ramp BGP=$E4 selects: 0 lightest .. 3 black.
  * Written as literal byte pairs rather than a const array on purpose, since
- * inject.py cannot place initialised statics (they land in _DATA, which has no
+ * inject.py cannot place initialized statics (they land in _DATA, which has no
  * crt0 to copy it at boot), so the data has to live in the instruction
  * stream. */
 static void write_shade_ramp(volatile unsigned char *port) {
@@ -92,7 +92,7 @@ static void write_shade_ramp(volatile unsigned char *port) {
     volatile unsigned char zero = 0;
 
     *port = 0xff; *port = 0x7f; /* $7fff white           */
-    *port = 0xb5; *port = 0x56; /* $56b5 light grey      */
-    *port = 0x4a; *port = 0x29; /* $294a dark grey       */
+    *port = 0xb5; *port = 0x56; /* $56b5 light gray      */
+    *port = 0x4a; *port = 0x29; /* $294a dark gray       */
     *port = zero; *port = zero; /* $0000 black           */
 }

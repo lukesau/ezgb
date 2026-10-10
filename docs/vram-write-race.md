@@ -176,7 +176,7 @@ python3 tools/patch_bytes.py $V 0 26e7 f041cb4f20fa2a572a5f0600 f3cdc8052a57fb2a
 ```
 
 The interior `DrawGlyph_*` labels (`00:2730`..`00:2754`) were removed from
-`kernel.sym`; they labelled code that is now `nop`s. Applied to
+`kernel.sym`; they labeled code that is now `nop`s. Applied to
 `1.05e-0731`. Bank 0 is identical in 0918 and the function has no WRAM
 address that differs in 1.04e, so the port is byte-for-byte in both.
 

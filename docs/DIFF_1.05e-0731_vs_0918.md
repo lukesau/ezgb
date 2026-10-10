@@ -142,7 +142,7 @@ See that page for the layout.
 `$0146` is `$00` in both builds, so the kernel still does not advertise itself
 as SGB-enhanced. That is not evidence against the claim: an SGB reads the
 cartridge header once at power-on, so SGB features for a *launched* game depend
-on what the cart presents to the console at power-on, an FPGA behaviour, not a
+on what the cart presents to the console at power-on, an FPGA behavior, not a
 kernel one. Consistent with the payload being where the change is.
 
 **SD corruption on slow cards: no evidence in the kernel.** The inserted

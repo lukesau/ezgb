@@ -83,7 +83,7 @@ bootstrap ROM.
 The bootstrap is also absent from both updaters, and the flash contains no
 plaintext logo/strings anywhere. This leans toward **hypothesis (b)** in
 [hardware-board.md](hardware-board.md): the GB-visible bootstrap is embedded in
-the bitstream as block-RAM initialisation, not stored as a separate ROM image.
+the bitstream as block-RAM initialization, not stored as a separate ROM image.
 Not yet proven (proving it needs the bitstream format), but hypothesis (a), a
 separate plaintext ROM, has no supporting evidence in the flash image.
 

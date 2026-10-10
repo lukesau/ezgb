@@ -101,7 +101,7 @@ In 1.04e, this address is a bare, already-unlocked single write: `$7ff0 = $e4` (
 commit-only tail of some register operation started elsewhere), then `ret`. In 1.05e, a whole
 new function is inserted directly after that `ret`: a full unlock (`$7f00=e1, $7f10=e2,
 $7f20=e3`), a write of a dynamic (stack-supplied) value to `$7fd4`, then commit (`$7ff0=e4`).
-`$7fd4` is in the same port cluster as `$7fd0`/`$7fd2` already catalogued in `docs/REGISTERS.md`
+`$7fd4` is in the same port cluster as `$7fd0`/`$7fd2` already cataloged in `docs/REGISTERS.md`
 as an enable/disable-shaped register family. This register write capability did not exist in
 1.04e, and correlates with the "RTC codes are rewritten" changelog line.
 

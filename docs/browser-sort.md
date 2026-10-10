@@ -18,7 +18,7 @@ the general `$A000` window mechanism is [psram-save-map.md](psram-save-map.md)),
 and the SM83 would take minutes to bubble-sort records across banks. Instead:
 
 1. **Enumerate everything.** Loop `DirList` (16 records per call) until the
-   end-of-directory latch `$c5a4` sets. Downstream code honours the latch and
+   end-of-directory latch `$c5a4` sets. Downstream code honors the latch and
    the running count at `$c2a2`, so the browser, the continuous-scroll patch
    and RIGHT-paging all work unchanged on the full list.
 2. **Build one 16-byte key per entry** in scratch PSRAM bank `$ff`: class byte
@@ -73,7 +73,7 @@ python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
   too.
 - `EZGB.DAT` can still appear in the listing (under E): the kernel's hide is a
   case-sensitive memcmp against `"ezgb.dat"` and an 8.3-stored copy comes back
-  uppercase from FatFs. Pre-existing stock behaviour, unrelated to the sort.
+  uppercase from FatFs. Pre-existing stock behavior, unrelated to the sort.
 
 ## Verification (SameBoy)
 
