@@ -22,8 +22,7 @@ initial begin
     for (oi = 0; oi < 4096 && ops[oi] !== 32'hFFFFFFFF; oi = oi + 1) begin
         case (ops[oi][31:24])
             8'h00: begin gb_write(ops[oi][23:8], ops[oi][7:0]); $display("W %h %h", ops[oi][23:8], ops[oi][7:0]); end
-            8'h01: begin gb_read(ops[oi][23:8], q); $display("R %h %h   p51=%b d=%b gate=%b 595=%h", ops[oi][23:8], q,
-                   P51, dut.n_X17Y4_S0_X, dut.n_X12Y23_S1_YQ, bank); end
+            8'h01: begin gb_read(ops[oi][23:8], q); $display("R %h %h   p51=%b 595=%h", ops[oi][23:8], q, P51, bank); end
             8'h02: begin wait (rst_seen); wait (P62 === 1'b1); rst_seen = 0; #10000; $display("X reset done"); end
             8'h03: #(ops[oi][23:8] * 1000);
         endcase
