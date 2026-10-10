@@ -208,28 +208,35 @@ PROBES = {
         ('d', 10000), ('w', 0x6000, 0), ('w', 0x6000, 1),
         ('w', 0x4000, 0x08), ('r', 0xA000), ('w', 0x4000, 0x09), ('r', 0xA000), ('w', 0x4000, 0x0A), ('r', 0xA000),
         ('w', 0x4000, 0x0B), ('r', 0xA000), ('w', 0x4000, 0x0C), ('r', 0xA000)]),
+    # kernel mode (no launch): $7FC0=3 save window, $4000 = page 0..63
+    'kwin': dict(nolaunch=True, ops=[('k', 0x7FC0, 3)] + [x for p_ in list(range(0, 64)) + [0x40, 0x41, 0x80, 0xFF]
+             for x in (('w', 0x4000, p_), ('r', 0xA000), ('r', 0xA001), ('r', 0xBFFF))] +
+             [('w', 0x4000, 0x11), ('w', 0xA123, 0x77), ('r', 0xA123), ('w', 0x4000, 0x05), ('w', 0xBFFE, 0x66)]),
 }
 
 def gen_probe(name, d):
     os.makedirs(d, exist_ok=True)
     P = PROBES[name]
     ops = []
-    for a, v in (fpga(0x7FC0, 2) + fpga(0x7F37, P['code']) + fpga(0x7FC4, P['ram']) +
+    for a, v in ([] if P.get('nolaunch') else fpga(0x7FC0, 2) + fpga(0x7F37, P['code']) + fpga(0x7FC4, P['ram']) +
                  fpga(0x7FC1, P['rom'] & 0xFF) + fpga(0x7FC2, P['rom'] >> 8) + fpga(0x7FC3, 0x5C)):
         ops.append((0, a, v))
-    for a, v in [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
+    for a, v in [] if P.get('nolaunch') else [(0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7F31, 0), (0x7F32, 0), (0x7FF0, 0xE4),
                  (0x2000, 1), (0x3000, 0), (0x7F00, 0xE1), (0x7F10, 0xE2), (0x7F20, 0xE3), (0x7FE0, 0x80), (0x7FF0, 0xE4)]:
         ops.append((0, a, v))
-    ops.append((2, 0, 0))
+    if not P.get('nolaunch'): ops.append((2, 0, 0))
     for o in P['ops']:
+        if o[0] == 'k':
+            for a, v in fpga(o[1], o[2]): ops.append((0, a, v))
+            continue
         ops.append((0, o[1], o[2]) if o[0] == 'w' else (3, o[1], 0) if o[0] == 'd' else (1, o[1], 0))
     with open(os.path.join(d, 'ops.hex'), 'w') as f:
         for k, a, v in ops: f.write('%02X%04X%02X\n' % (k, a, v))
-    json.dump(dict(type=name, probe=True), open(os.path.join(d, 'meta.json'), 'w'))
+    json.dump(dict(type=name, probe=True, nolaunch=bool(P.get('nolaunch'))), open(os.path.join(d, 'meta.json'), 'w'))
 
 def probe_report(d):
     # each read named by what it hit: ROM bank (from the tag) or U4 page
-    started = False
+    started = json.load(open(os.path.join(d, 'meta.json'))).get('nolaunch', False)
     for line in open(os.path.join(d, 'game.log')):
         p = line.split()
         if not p: continue
