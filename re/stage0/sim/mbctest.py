@@ -21,17 +21,22 @@ def ram_tag(p, o):
     return p & 0xFF if o == 0 else 0x5A if o == 1 else (o ^ (o >> 8) ^ p ^ 0x3C) & 0xFF
 
 class Model:
-    """Pan Docs MBC behavior; physical bank = logical & ROM mask"""
+    """The cart's MBC behavior as simulated on FW4, FW5-0731 and FW5-0918
+    (identical on all three): Pan Docs MBC1/3/5 except that MBC1 keeps the
+    ROM upper bits and the RAM bank in separate registers ($4000 in mode 0
+    writes the first, in mode 1 the second) and never banks $0000-$3FFF;
+    MBC2 has a 5-bit bank register that the ROM mask doesn't cover and
+    enables RAM only from $0000-$1FFF; MBC1 multicart has no RAM banking.
+    Physical bank = logical & ROM mask, except MBC2."""
     def __init__(s, t):
         s.mask = ROMMASK[t]; t = BASE.get(t, t)
-        s.t, s.lo, s.hi, s.mode, s.ram_en, s.ramb = t, 1, 0, 0, False, 0
+        s.t, s.lo, s.hi, s.mode, s.ram_en, s.ramb, s.romhi = t, 1, 0, 0, False, 0, 0
     def write(s, a, v):
         t = s.t
         if t == 'none': return
         if t == 'mbc2':
-            if a < 0x4000:
-                if a & 0x100: s.lo = (v & 0xF) or 1
-                else: s.ram_en = (v & 0xF) == 0xA
+            if a < 0x2000: s.ram_en = (v & 0xF) == 0xA
+            elif a < 0x4000 and a & 0x100: s.lo = (v & 0x1F) or 1
             return
         if a < 0x2000: s.ram_en = (v & 0xF) == 0xA
         elif a < 0x4000:
@@ -44,6 +49,9 @@ class Model:
         elif a < 0x6000:
             if t == 'mbc5': s.ramb = v & 0xF
             elif t == 'mbc3': s.ramb = v
+            elif t == 'mbc1':
+                if s.mode: s.ramb = v & 3
+                else: s.romhi = v & 3
             else: s.ramb = v & 3
         elif a < 0x8000:
             if t in ('mbc1', 'mbc1m'): s.mode = v & 1
@@ -51,14 +59,17 @@ class Model:
         t = s.t
         if t == 'none': b = 0 if a < 0x4000 else 1
         elif t == 'mbc5': b = 0 if a < 0x4000 else (s.hi << 8) | s.lo
-        elif t in ('mbc2', 'mbc3'): b = 0 if a < 0x4000 else s.lo
+        elif t == 'mbc2': return 0 if a < 0x4000 else s.lo
+        elif t == 'mbc3': b = 0 if a < 0x4000 else s.lo
+        elif t == 'mbc1': b = 0 if a < 0x4000 else (s.romhi << 5) | (s.lo & 0x1F)
         else:
             sh = 5 if t == 'mbc1' else 4
             lo = s.lo & (0x1F if t == 'mbc1' else 0xF)
             b = ((s.ramb & 3) << sh if s.mode else 0) if a < 0x4000 else ((s.ramb & 3) << sh) | lo
         return b & s.mask
     def ram_bank(s):
-        if s.t in ('mbc1', 'mbc1m'): return s.ramb & 3 if s.mode else 0
+        if s.t == 'mbc1m': return 0
+        if s.t == 'mbc1': return s.ramb & 3 if s.mode else 0
         if s.t == 'mbc2': return 0
         return s.ramb
 

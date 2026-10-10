@@ -93,18 +93,21 @@ firmwares give **identical results**:
 
 | Type (`$7F37`) | ROM banking | Save RAM |
 |---|---|---|
-| 0 none | 32 KB fixed, exact | disabled, reads `$FF` |
-| 1 MBC1 | exact in mode 0; mode 1 keeps `$0000-$3FFF` on bank 0, and `$4000` writes in mode 1 don't change the ROM upper bits | banks 0-3 |
-| 2 MBC2 | the bank register takes 5 bits (`$2100=$13` selects bank `$13`, not 3) | one bank, full bytes (not 4-bit) |
-| 3 MBC3 | exact (7-bit bank, 0 selects 1) | banks 0-3 |
-| 4 MBC5 | exact (9-bit bank, 0 selects 0) | banks 0-15 |
-| 5 MBC1 multicart | exact (4-bit low register) | bank 0 only |
+| 0 none | 32 KB fixed | disabled, reads `$FF` |
+| 1 MBC1 | 5-bit low register (0 selects 1); the ROM upper bits and the RAM bank are **separate registers**: a `$4000` write in mode 0 sets the upper bits, in mode 1 the RAM bank, and switching modes doesn't move one into the other. `$0000-$3FFF` is always bank 0 | banks 0-3, used only in mode 1 (bank 0 in mode 0) |
+| 2 MBC2 | **5-bit** bank register at `$2000-$3FFF` with A8=1, not limited by the ROM mask (`$1F` selects `$1F` with mask `$0F`); 0 selects 1 | enabled only from `$0000-$1FFF` (`$2000=$0A` doesn't); full bytes, not 4-bit |
+| 3 MBC3 | 7-bit, 0 selects 1 | banks 0-3; `$08-$0C` select the clock |
+| 4 MBC5 | 9-bit (`$3000` D0 is bit 8, other bits ignored), 0 selects 0 | banks 0-15, masked by `$7FC4` |
+| 5 MBC1 multicart | 4-bit low register, upper bits shifted by 4, mode 1 banks `$0000-$3FFF` with the upper bits | bank 0 only |
+
+`mbctest.py`'s model encodes exactly this, and every simulated read (about
+1000 across 10 test types × 3 firmwares, plus the edge-case probes
+`mbc1x`, `mbc2x`, `mbc5x`) matches it.
 
 Save RAM bank N sits at U4 offset N×`$4000`: the RAM bank goes out on the
 same address lines as the ROM bank, so each 8 KB bank uses a 16 KB slot of
 the 512 KB chip. Reads with RAM disabled return `$FF`, and writes land only
-in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) wasn't exercised
-beyond these values; MBC2's `$13` suggests the mask isn't applied there.
+in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) applies to every type except MBC2.
 
 The ROM bank mask is applied: MBC5 with `$7FC1/$7FC2 = $00F` reads banks
 `$55`, `$AA`, `$FF`, `$1xx` as their low four bits on all three firmwares.
