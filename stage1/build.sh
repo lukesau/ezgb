@@ -40,10 +40,25 @@ done
 for s in crt0 handoff game_handoff; do
     sdasgb -plosgff -o "$b/$s.rel" "$here/src/$s.s"
 done
-sdldgb -n -m -w -i "$b/stage1.ihx" -b _HOME=0x0150 -b _CODE=0x0200 -b _DATA=0xC000 \
+# _HOME, then _INITIALIZER/_GSINIT after it, must end below _CODE. SDCC puts
+# library routines such as the 32-bit divide in _HOME; the check below fails
+# the build if they ever reach _CODE (they did at $0200 once rtc.c came in)
+sdldgb -n -m -w -i "$b/stage1.ihx" -b _HOME=0x0150 -b _CODE=0x0400 -b _DATA=0xC000 \
     -k "$(dirname "$(which sdcc)")/../share/sdcc/lib/sm83" -l sm83 \
     "$b/crt0.rel" "$b/handoff.rel" "$b/game_handoff.rel" $rels
 makebin -s 32768 "$b/stage1.ihx" "$b/stage1.raw"
+
+# no two ROM areas may overlap
+python3 - "$b/stage1.map" <<'PY'
+import re, sys
+m = open(sys.argv[1]).read()
+s = {k: int(v, 16) for v, k in re.findall(r"([0-9A-F]{8})\s+s__(\w+)", m)}
+l = {k: int(v, 16) for v, k in re.findall(r"([0-9A-F]{8})\s+l__(\w+)", m)}
+rom = sorted((s[a], s[a] + l.get(a, 0), a) for a in ("HOME", "CODE", "INITIALIZER", "GSINIT", "GSFINAL") if a in s)
+for (s1, e1, a1), (s2, e2, a2) in zip(rom, rom[1:]):
+    if e1 > s2 and e1 > s1 and e2 > s2:
+        sys.exit(f"stage1 link: _{a1} ({s1:#x}-{e1:#x}) overlaps _{a2} ({s2:#x}-{e2:#x})")
+PY
 
 # $0000-$47FF is BRAM; $4800-$7FFF has nothing behind it and must be zero
 python3 - "$b/stage1.raw" "$out/stage1.gb" <<'PY'
