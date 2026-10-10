@@ -118,18 +118,18 @@ confirmed; resolve it before trusting persistence.** Two facts bear on it:
   bytes, all in the CRC tail), and the FW4 updater payload equals slot **B**
   exactly.
 - The FW5 package instead carries two *genuinely different* images: one
-  byte-identical between 0731 and 0918 (a golden/fallback candidate) and one
+  byte-identical between 0731 and 0918 (a fallback candidate) and one
   that changes (the active image).
 
-That golden+active split is the signature of Spartan-3A **MultiBoot with
-fallback**: on a config CRC failure the FPGA reloads a golden image. If EZ Flash
+That fallback+active split is the signature of Spartan-3A **MultiBoot with
+fallback**: on a config CRC failure the FPGA reloads a fallback image. If EZ Flash
 wired that up, then developing a custom bitstream in the *active* slot is
-self-recovering: a bad image falls back to golden instead of bricking. That
+self-recovering: a bad image falls back to slot A instead of bricking. That
 would make flash persistence far safer than the 2026-08-16 experience. Confirm
 it two ways before relying on it: read the MultiBoot/fallback bits in the
 bitstream's config-option register, and/or deliberately flash a
 known-bad-CRC image to the active slot on a sacrificial cart and see if it
-recovers. Until confirmed, treat flash writes as brick-risky and keep the golden
+recovers. Until confirmed, treat flash writes as brick-risky and keep the fallback
 dump.
 
 ## What we already know that helps

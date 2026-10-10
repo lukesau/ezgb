@@ -123,7 +123,7 @@ The other 6 of the 8 differing bytes sit in the stream's tail, where the CRC
 packets are (not individually checked). So the 2-byte cluster at
 `+$1982c` that [flash-map.md](flash-map.md) grouped with the CRCs is
 this instruction. It is the constant that decides whether bank 2 hands over
-to slot B at boot: slot A is the golden image, slot B the active one
+to slot B at boot: slot A is the fallback image, slot B the active one
 ([picoblaze.md](picoblaze.md#bank-2-x3y25-flash-dna-license)).
 
 **Open:** [../../../docs/hardware-board.md](../../../docs/hardware-board.md) records that writing slot B

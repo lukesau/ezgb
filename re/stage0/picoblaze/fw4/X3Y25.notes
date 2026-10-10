@@ -150,7 +150,7 @@ sub 1AC clear_scratchpad
 
 block 1B5 Bank 2 main, called from bank 1 with license_b = 0 (boot) or
 block 1B5 1 (flash update, kernel command $08). Boot: fail-safe MultiBoot.
-block 1B5 The slot A image (golden, at 0) hands over to slot B when the
+block 1B5 The slot A image (the fallback image, at 0) hands over to slot B when the
 block 1B5 tally byte is clean and slot B looks valid; slot B just marks
 block 1B5 the byte done. Then both run the license scan.
 sub 1B5 bank2_main

@@ -15,9 +15,9 @@ tracked.
 
 ```bash
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    -a re/stage0/picoblaze/fw4/X3Y29.notes -o fpga/fw4-decode/picoblaze/X3Y29.psm
+    -a re/stage0/picoblaze/fw4/X3Y29.notes -o re/stage0/picoblaze/fw4/X3Y29.psm
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    --check fpga/fw4-decode/picoblaze/X3Y29.psm      # -> identical
+    --check re/stage0/picoblaze/fw4/X3Y29.psm      # -> identical
 ```
 
 Same for `X3Y25`. The BRAM files come from `s3decode --blob-dir`.
@@ -163,12 +163,12 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
 
    | Image | `$1B8` | Behavior |
    |---|---|---|
-   | slot A, golden, at flash 0 | `LOAD s0, 01` | if the tally byte is `FF` and `$040000` starts with a sync word, program the byte to `01` and reboot into slot B through ICAP (`AA99`, GENERAL1/2 = `$040000`, `IPROG`); otherwise boot itself (debug `44` if slot B looks invalid) |
+   | slot A, the fallback image, at flash 0 | `LOAD s0, 01` | if the tally byte is `FF` and `$040000` starts with a sync word, program the byte to `01` and reboot into slot B through ICAP (`AA99`, GENERAL1/2 = `$040000`, `IPROG`); otherwise boot itself (debug `44` if slot B looks invalid) |
    | slot B, active, at `$40000` | `LOAD s0, 02` | never hands over; program the tally byte to `00` |
 
    Tally byte states: `FF` unused, `01` slot A handed over, `00` slot B
    booted. If slot B fails to come up, the next power-on finds a `01`
-   instead of `FF`, skips the hand-over and stays on the golden image, so a
+   instead of `FF`, skips the hand-over and stays on the fallback image, so a
    bad update can't brick the cart. One byte per power-on: the "52 B at
    `$70000`" in [flash-map.md](flash-map.md) are 52 successful
    slot B boots since the sector was last erased.
@@ -197,7 +197,7 @@ the updater's per-block poll matches waiting on this.
 
 The single differing instruction between the two FW4 slots
 ([bitstream.md](bitstream.md)) is that `$1B8` constant. So the
-slots are not a spare copy: slot A is the golden image whose only extra job
+slots are not a spare copy: slot A is the fallback image whose only extra job
 is handing over to slot B, and slot B is what normally runs. The FW4 updater
 writes slot B. (Read from code, not tested on hardware.)
 

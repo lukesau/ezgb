@@ -31,7 +31,7 @@ $7FFFF └───────────────────────�
 ```
 
 Two multiboot slots of identical size and container format, `$40000` apart: the
-classic Spartan-3A golden/active pair. The only structural asymmetry is the 8 KB
+classic Spartan-3A fallback/active pair. The only structural asymmetry is the 8 KB
 blob at `$30000`, in slot A's half with no counterpart in slot B's.
 
 ## The two slots are the same bitstream bar 8 bytes
@@ -70,7 +70,7 @@ payload vs slot A: 8 / 149516 bytes differ   ← the same 8 CRC bytes above
 
 **The FW4 payload is slot B, byte-for-byte.** This verifies the overlay method
 before applying it to the FW5 payloads: it reproduces known chip contents
-exactly. Slot A is the pre-existing (older or factory-golden) image the FW4
+exactly. Slot A is the pre-existing (older or factory fallback) image the FW4
 update did not overwrite in this capture.
 
 The payload's own leading `$26` bytes map onto the slot's `$00000-$00025` region
@@ -127,13 +127,13 @@ every image by its sync word:
 ```
 FW5-0731 img1 vs img2            59% differ    two different bitstreams
 FW4      vs FW5-0731 img1/img2   64% differ    FW5 is a new design, not FW4's
-FW5-0731 img2 vs FW5-0918 img2    0% differ    ← golden image, untouched
+FW5-0731 img2 vs FW5-0918 img2    0% differ    ← fallback image, untouched
 FW5-0731 img1 vs FW5-0918 img1   61% differ    ← the active image, rewritten
 ```
 
 So the FW5 package is a real multiboot pair:
 
-- **img2 = golden / fallback**: byte-identical between 0731 and 0918. Never
+- **img2 = fallback**: byte-identical between 0731 and 0918. Never
   rewritten by the 0918 update.
 - **img1 = active / feature**: the only image that differs between 0731 and
   0918. Whatever 0918 adds (the reported SD-card fix and SGB support) is
@@ -142,25 +142,25 @@ So the FW5 package is a real multiboot pair:
 **Decoded 2026-10-08** ([fw5.md](fw5.md)): the byte-level
 percentages mostly measure place-and-route reshuffling, not design change.
 0918's img1 differs from 0731's in the stage1 SGB header (3 bytes) and the
-PicoBlaze's MBC3 RTC handling. img2 is an older design, but the "golden /
-fallback" role is not supported by the code: unlike FW4's slot A, neither FW5
+PicoBlaze's MBC3 RTC handling. img2 is an older design, but the "fallback"
+role is not supported by the code: unlike FW4's slot A, neither FW5
 image's PicoBlaze hands over to the other, so whichever sits at flash 0 runs.
 
 This also means FW5 replaced FW4's single bitstream with a brand-new two-image
-scheme; FW5's golden image differs from FW4 by 64%, so it is not a carried-over
+scheme; FW5's fallback image differs from FW4 by 64%, so it is not a carried-over
 copy.
 
 **What updating 0731 → 0918 does to the flash, predicted:** rewrite the active
-image with the new img1 bitstream; leave the golden image untouched. The one
+image with the new img1 bitstream; leave the fallback image untouched. The one
 thing this static analysis cannot pin down is which physical slot (`$00000` vs
-`$40000`) holds the active vs golden image after a real FW5 write; that mapping
+`$40000`) holds the active vs fallback image after a real FW5 write; that mapping
 needs either the updater's disassembled write routine or a post-update dump
 (Phase 2 / Phase 3 of the FPGA plan, a private planning note not in the
 repository).
 
 ## How the updater programs the flash (via `$7FD2`)
 
-Static disassembly of `Update_FW4.gb`'s code (banks 0–1, in `re/updater-fw4/`)
+Static disassembly of `Update_FW4.gb`'s code (banks 0–1, in `re/updater/fw4/`)
 shows the flash-programming path uses the same FPGA command envelope the kernel
 uses, wrapped around register **`$7FD2`**:
 
@@ -184,7 +184,7 @@ before proceeding, the ready handshake. Parameters are staged first via
 > disassembly is static only; the updater is never run
 > (see [../../../docs/game-slot-access.md](../../../docs/game-slot-access.md)).
 
-`re/updater-fw4/` holds the disassembly; the write routine is `Call_000_1252`
+`re/updater/fw4/` holds the disassembly; the write routine is `Call_000_1252`
 (bit set/clear, no wait) and the polled loop near `$4013`. The physical
 slot-address setup, which decides whether a written image lands at `$00000` or
 `$40000`, is staged through the parameter registers and is the one piece the
