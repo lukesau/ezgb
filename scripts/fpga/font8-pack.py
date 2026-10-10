@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack re/stage1/font/font8.txt into a C array, 8 bytes (1 bpp) per glyph,
+"""Pack stage1/font/font8.txt into a C array, 8 bytes (1 bpp) per glyph,
 for ASCII $20-$5A. Characters the sheet leaves out stay blank.
 
     font8-pack.py font8.txt font8.c

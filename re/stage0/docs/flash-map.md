@@ -79,7 +79,7 @@ begins at slot `+$46`.
 
 ## The $30000 blob is not the bootstrap ROM
 
-**Identified 2026-10-08:** it is a per-chip licence record. The FPGA's
+**Identified 2026-10-08:** it is a per-chip license record. The FPGA's
 PicoBlaze reads it as 128-byte records with checksums and checks CRCs over it
 mixed with the chip's Device DNA; without a pass the ROM loader refuses to
 run. The 52 bytes at `$70000` are a boot tally used by the slot A → slot B
@@ -97,7 +97,7 @@ plaintext logo/strings anywhere. (**Proven 2026-10-08:** stage1 is rebuilt
 byte for byte from BRAM contents decoded out of the bitstream; see
 [bitstream.md](bitstream.md).) This leans toward **hypothesis (b)** in
 [../../../docs/hardware-board.md](../../../docs/hardware-board.md): the GB-visible bootstrap is embedded in
-the bitstream as block-RAM initialisation, not stored as a separate ROM image.
+the bitstream as block-RAM initialization, not stored as a separate ROM image.
 Not yet proven (proving it needs the bitstream format), but hypothesis (a), a
 separate plaintext ROM, has no supporting evidence in the flash image.
 
@@ -196,7 +196,7 @@ close it (Phase 3).
 > so `Update_FW4.gb` always writes slot B and never `$00000`. The write goes
 > through the PicoBlaze's flash-update command
 > ([picoblaze.md](picoblaze.md#flash-update-3f--1-kernel-command-08)).
-> The "never run" note above is also out of date: relabelled copies of the
+> The "never run" note above is also out of date: relabeled copies of the
 > FW4 updater carrying patched slot B images have been run on the FW4 cart
 > since 2026-10-08 ([../../../docs/fpga-cgb.md](../../../docs/fpga-cgb.md), [../../../docs/fpga-stage1.md](../../../docs/fpga-stage1.md)).
 > Which slot an FW5 updater writes is still open ([fw5.md](fw5.md)).

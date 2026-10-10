@@ -101,7 +101,7 @@ directory names 16 wide.)
 `DrawGlyph` reads glyphs straight from the 256-entry 1bpp sheet at `$3206`
 (8 bytes per code, `$3206 + code*8`; CP437-shaped with Hebrew letters in
 `$C0-$DF`). No English UI string uses that block, so five codes were
-repurposed, labelled `FolderIconGlyphs` in `kernel.sym`:
+repurposed, labeled `FolderIconGlyphs` in `kernel.sym`:
 
 | Code | ROM | Glyph |
 |---|---|---|

@@ -8,7 +8,7 @@
  * between its return address and the arguments: three pad parameters.
  *
  * Column 0 gets one icon glyph and the name follows from column 1.
- * Directories are recognised by the stock len 0; files come in with len
+ * Directories are recognized by the stock len 0; files come in with len
  * $14. The icon is drawn in whatever ink the row has, so it inverts with
  * the selection bar. Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart,
  * $C4 .sav page, $C3 boxed "?" for anything else.

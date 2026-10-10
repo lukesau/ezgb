@@ -36,7 +36,7 @@
         .area   _HOME
 init:
         di
-        ldh     (0x80), a               ; BOOT_A: $11 on a colour console
+        ldh     (0x80), a               ; BOOT_A: $11 on a color console
         ld      sp, #0xE000
         xor     a, a
         ldh     (0xFF), a               ; IE
@@ -51,7 +51,7 @@ init:
 
         .area   _GSINIT
 gsinit::
-        ld      hl, #s__DATA            ; zero the uninitialised globals
+        ld      hl, #s__DATA            ; zero the uninitialized globals
         ld      bc, #l__DATA + 0x0101
         xor     a, a
         jr      3$
@@ -60,7 +60,7 @@ gsinit::
         jr      nz, 2$
         dec     b
         jr      nz, 2$
-        ld      de, #s__INITIALIZED     ; copy the initialised ones
+        ld      de, #s__INITIALIZED     ; copy the initialized ones
         ld      hl, #s__INITIALIZER
         ld      bc, #l__INITIALIZER + 0x0101
         jr      5$

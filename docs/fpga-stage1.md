@@ -14,10 +14,10 @@ in the ignored `fpga/` directory.
 
 | Path | What |
 |---|---|
-| `re/stage1-fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
-| `re/stage1-fw4/kernel.sym` | names and `.data` ranges for mgbdis |
-| `re/stage1-fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
-| `re/stage1-fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
+| `re/stage1/fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
+| `re/stage1/fw4/kernel.sym` | names and `.data` ranges for mgbdis |
+| `re/stage1/fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
+| `re/stage1/fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
 | `scripts/fpga/stage1-regen.sh` | regenerate + rebuild + compare |
 | `scripts/fpga/stage1-trace.py` | recursive-descent trace: code vs data, unreached spans |
 
@@ -124,7 +124,7 @@ The splash ([fpga-cgb.md](fpga-cgb.md)) uses about 900 bytes of the filler.
 
 ## Rewrite from source
 
-[`re/stage1/`](../re/stage1/README.md) is our own stage1: SDCC C plus two small
+[`stage1/`](../stage1/README.md) is our own stage1: SDCC C plus two small
 assembly files, no GBDK and no Petit FatFs. It does the same job with the
 same FPGA register sequence, and builds the same load command as stock.
 
@@ -133,7 +133,7 @@ same FPGA register sequence, and builds the same load command as stock.
 | Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB at first; 11.1 KB at v4 with fast launch, save backup and the wordmark |
 | SD reads to boot the test card | 366 | 20 |
 | Error handling | message, hang | message, retry every second |
-| CGB | DMG-only header | CGB flag, icon in colour, greys on DMG |
+| CGB | DMG-only header | CGB flag, icon in color, grays on DMG |
 
 - **Reads.** Stock re-reads the FAT sector for every cluster. The rewrite
   caches one sector, so a chain walk costs one read per FAT sector. The test
@@ -192,7 +192,7 @@ it never could before. Changes, in `patches/sameboy` on this branch:
 ## Fast launch
 
 With `FLAUNCH=` set in `EZGB.CFG` (and START not held), stage1 launches the
-game itself, without loading the kernel (`re/stage1/src/game.c`). It copies
+game itself, without loading the kernel (`stage1/src/game.c`). It copies
 the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
 
 1. `LASTROM`: the full path to pSRAM `$11:$A300`, as `LastRomPersist`
@@ -240,10 +240,10 @@ writes it out. Since v4, SELECT at power-on can also back it up from stage1
 **Cancel mark.** Stage1 writes `"S1"` to pSRAM page `$11` `$A410` when START
 was held at power-on and zeroes it otherwise. A mod 5.4+ kernel clears it
 and skips its own fast launch for that boot, so a cancel made in stage1
-stays cancelled after START is released
+stays canceled after START is released
 ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
 
-**Save backup** (`re/stage1/src/backup.c`, the kernel's `BackupSaveDump`,
+**Save backup** (`stage1/src/backup.c`, the kernel's `BackupSaveDump`,
 `01:643a`, done in place). With SELECT held at power-on:
 
 1. No `$AA` stamp on page `$11`: "NO SAVE TO BACK UP", then boot as usual.

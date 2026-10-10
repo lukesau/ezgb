@@ -80,7 +80,7 @@ def tokens(data):
     for i, n in decode(data):
         op = data[i]
         # fold the far-call blob into a distinct token so its target bytes
-        # (which differ between builds) never desynchronise the decode
+        # (which differ between builds) never desynchronize the decode
         toks.append(0x100 if n == 7 else op)
         starts.append(i)
     return toks, starts

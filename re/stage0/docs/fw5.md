@@ -37,7 +37,7 @@ content:
 
 | Content | FW4 | 2nd image | 0731 | 0918 | sgb-beta |
 |---|---|---|---|---|---|
-| PicoBlaze bank 2 (flash, DNA, licence, MultiBoot) | X3Y25 | X19Y25 | X19Y21 | X3Y5 | X3Y5 |
+| PicoBlaze bank 2 (flash, DNA, license, MultiBoot) | X3Y25 | X19Y25 | X19Y21 | X3Y5 | X3Y5 |
 | PicoBlaze bank 1 | X3Y29 | X19Y29 | X19Y25 | X3Y1 | X3Y1 |
 | stage1 `$4000-$47FF` | X19Y17 | X19Y17 | X3Y17 | X3Y17 | X3Y17 |
 | stage1 `$0000-$3FFF` bit planes | 8 | 8 | 8 | 8 | 8 |
@@ -82,7 +82,7 @@ loop and the interrupt handler changed:
 | | 0731 | sgb-beta | 0918 |
 |---|---|---|---|
 | Game writes S/M/H (`B5` = `$04`/`$02`/`$01`) or DL/DH (`B8` = 1/2) | not handled; the next tick recomputes base + elapsed over it | handled: take the written value, reset that field's elapsed count | same as beta |
-| Halt bit (DH bit 6) | ignored | ignored | honoured, no ticking while set |
+| Halt bit (DH bit 6) | ignored | ignored | honored, no ticking while set |
 | Value ≥ 60 (≥ 24 for H) written | plain wrap arithmetic | same | counts up and masks to 6 (5) bits |
 | Day counter overflow | `OR $80`: carry set, day bit 8 stays set | same | `LOAD $80`: carry set, day bit 8 cleared |
 | PCF8563 polled every loop | yes | yes | only when no game RTC is running |
@@ -90,7 +90,7 @@ loop and the interrupt handler changed:
 
 So the sgb-beta added RTC register writes, and 0918 then fixed halt, range
 and day-carry handling. The halt/range/carry rows are consistent with
-documented MBC3 behaviour, but nothing here was tested against a game.
+documented MBC3 behavior, but nothing here was tested against a game.
 
 The 2nd image's bank 1 is an older design again: 75 of 78 routines shared
 with 0731, a 79-instruction main loop and a different port set (`A8`, `A9`,

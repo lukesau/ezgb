@@ -2,14 +2,14 @@
 
 The Jr's FPGA (a Spartan-3A XC3S200A) work: decoding EZ Flash's bitstream,
 the PicoBlaze firmware inside it, and our own stage1 written to the cart
-through a relabelled stock updater.
+through a relabeled stock updater.
 
 The work splits by boot stage, both under `re/`. **Stage0** is the FPGA's
 own logic: fabric, PicoBlaze and its firmware, bitstream and config flash
 ([re/stage0](../re/stage0/README.md) has the boot chain and an index).
 **Stage1** is the Game Boy program the FPGA serves from block RAM at
-power-on: our source in [re/stage1](../re/stage1/README.md), the stock one
-disassembled in [re/stage1-fw4](../re/stage1-fw4/).
+power-on: our source in [stage1](../stage1/README.md), the stock ones
+disassembled in [re/stage1](../re/stage1/README.md), one directory per release.
 
 ## Reading order
 
@@ -37,5 +37,5 @@ Hardware and flash recovery: [hardware-board.md](hardware-board.md).
 | **slot A** | the bitstream at config flash `$00000`, which the FPGA loads at power-on. On FW4 its only extra job is handing over to slot B; it is the fallback image |
 | **slot B** | the bitstream at `$40000`, the one that normally runs, and the only one an FW4 updater writes |
 | **FW numbers** | EZ Flash's FPGA firmware releases (FW4, FW5), each a complete new design. The cart reports the number through `$7FC0=$04`; the kernel's HELP tab shows it |
-| **mod versions** | our releases. The kernel mod is `MOD n.m` (`patches/kernel/VERSION`); stage1 has its own, shown as `FW<n>-MOD <m>` (`re/stage1/VERSION`) |
+| **mod versions** | our releases. The kernel mod is `MOD n.m` (`patches/kernel/VERSION`); stage1 has its own, shown as `FW<n>-MOD <m>` (`stage1/VERSION`) |
 | **updater** | `Update_FW4.gb`, a program launched from the kernel that writes its payload to slot B. Ours are the stock file with the payload and label swapped |

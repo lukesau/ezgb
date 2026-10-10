@@ -7,7 +7,7 @@ Update_FW4.gb is a launched game: it writes its payload (file offset $8000,
 one 149,516-byte XC3S200A stream) to config flash $040000 page by page via
 the FPGA's flash-update command, with no checksum, read-back or version gate
 (docs/fpga-cgb.md). So a new updater is the stock file with the payload
-swapped. Only slot B is written; slot A and the per-chip licence record at
+swapped. Only slot B is written; slot A and the per-chip license record at
 $030000 are untouched. The label replaces the 16-byte "Update to ver:4 "
 line so the build can't be mistaken for the stock updater. The updater code
 itself is not modified.

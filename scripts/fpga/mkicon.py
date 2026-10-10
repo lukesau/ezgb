@@ -4,7 +4,7 @@
     mkicon.py logo.png OUTDIR [--scale 0.3556] [--split 24]
 
 Box-filters the icon down, classifies every pixel into background, top frame
-grey, bottom frame light grey, orange screen, dark lip, and emits:
+gray, bottom frame light gray, orange screen, dark lip, and emits:
 
   icon.2bpp      tile data (2bpp, 16 bytes/tile, row-major over the icon)
   icon.map       tile indices, one byte per cell, row-major
@@ -12,10 +12,10 @@ grey, bottom frame light grey, orange screen, dark lip, and emits:
   icon.inc       ICON_W/ICON_H (tiles) constants
 
 Rows above --split (pixels, must be a multiple of 8) use palette 0, the
-rest palette 1, so the top and bottom shapes can each have 4 colours.
-Colour indices (one palette; DMG BGP $E4 gives the greys in brackets):
-  0 screen background (white)   1 orange screen (light grey)
-  2 both frames, darkened (dark grey)   3 dark lip (black)
+rest palette 1, so the top and bottom shapes can each have 4 colors.
+Color indices (one palette; DMG BGP $E4 gives the grays in brackets):
+  0 screen background (white)   1 orange screen (light gray)
+  2 both frames, darkened (dark gray)   3 dark lip (black)
 """
 
 import argparse
@@ -84,7 +84,7 @@ def main():
     s = args.scale
     tw, th = round(sw * s), round(sh * s)
     cols, rows = (tw + 7) // 8, (th + 7) // 8
-    ox, oy = (cols * 8 - tw) // 2, 0  # centre horizontally inside the tile grid
+    ox, oy = (cols * 8 - tw) // 2, 0  # center horizontally inside the tile grid
     grid = [["bg"] * (cols * 8) for _ in range(rows * 8)]
     for ty in range(th):
         for tx in range(tw):
@@ -130,7 +130,7 @@ def main():
         mark = "  <- palette split" if y == args.split else ""
         print("".join(GLYPH[k] for k in line) + mark)
     print(f"{tw}x{th} px, {cols}x{rows} tiles, {len(tiles)} bytes of tile data")
-    # sanity: no top-shape colours below the split, no bottom ones above
+    # sanity: no top-shape colors below the split, no bottom ones above
     for y, line in enumerate(grid):
         for k in line:
             if args.split and k != "bg" and ((y < args.split) != (k == "mid")):

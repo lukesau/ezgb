@@ -1,4 +1,4 @@
-// Behavioural models of the Spartan-3A primitives the FW4 netlist uses,
+// Behavioral models of the Spartan-3A primitives the FW4 netlist uses,
 // written from prjcombine's documentation (docs/src/spartan3/clb.md):
 // F5 = BX ? F : G, and with SLICEWE0USED the F LUT is written when BX = 1.
 // Simulation of the real design confirms the F5 convention: with it the
@@ -114,7 +114,7 @@ module s3_bram #(
     reg [0:0] par [0:2047];
     integer k;
     initial begin
-        // the bitstream initialises every BRAM; no blob means all zeros
+        // the bitstream initializes every BRAM; no blob means all zeros
         for (k = 0; k < 16384; k = k + 1) mem[k] = 0;
         for (k = 0; k < 2048; k = k + 1) par[k] = 0;
         if (DATAFILE != "") $readmemb(DATAFILE, mem);

@@ -7,7 +7,7 @@
  *
  * This renderer sets proportional 12px-tall text at arbitrary pixel
  * offsets instead. Fit12 (layout12.c) lays the string out first: each glyph
- * has its own advance and neighbours kern, so a row holds as many
+ * has its own advance and neighbors kern, so a row holds as many
  * characters as fit in the 148 px right of the icon (about 18 of a typical
  * name, 15 of the widest). Rows are 12px tall under the 16px tab strip, so
  * tile row r >= 2 maps to y = 20 + 12*(r - 2): ten list rows, r = 2..11.

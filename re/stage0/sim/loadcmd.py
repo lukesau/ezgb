@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""List a FAT32 card image, or build the re/stage1/kernel load command for one
+"""List a FAT32 card image, or build the stage1/kernel load command for one
 file (docs/fpga-stage1.md): +0 = 0, {start LBA, running end} extents, last
 end $FFFFFFFF then 0, +$1F0 size, +$1F4 1, +$1F8 sectors per cluster.
 usage: loadcmd.py IMAGE                -> list the root and one level down

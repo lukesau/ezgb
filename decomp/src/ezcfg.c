@@ -364,8 +364,8 @@ static u8 rtc_suspect(void) {
     return 0;
 }
 
-/* The from-source stage1 (bitstream-re: re/stage1/src/main.c) writes "S1" to
- * pSRAM page $11 $A410 when START was held at power-on: the user cancelled
+/* The from-source stage1 (bitstream-re: stage1/src/main.c) writes "S1" to
+ * pSRAM page $11 $A410 when START was held at power-on: the user canceled
  * fast launch there, so the kernel must not fast launch either, even with
  * START released by now. Consumed here, once per boot, by marking
  * fastlaunch_boot's one-shot flag ($DBFF) as already used. Page $11 is

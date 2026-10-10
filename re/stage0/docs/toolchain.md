@@ -46,7 +46,7 @@ Example layout under `~/fpga` (the scripts' defaults assume it):
 ~/fpga/cart/               cart bitstream images, decodes, BRAM dumps
 ~/fpga/ise.kdl             prjcombine toolchain config for ISE (only for its fuzzers)
 ~/Xilinx/14.7/ISE_DS/      ISE 14.7
-~/.Xilinx/Xilinx.lic       WebPACK licence
+~/.Xilinx/Xilinx.lic       WebPACK license
 ```
 
 ## prjcombine
@@ -63,7 +63,7 @@ cd ~/fpga/prjcombine && git checkout 7ab08a0207716b0417163301580c154d02d1654e
 cargo build --release -p prjcombine-cli
 ```
 
-**Pin the revision.** The database is bincode-serialised, so the Rust crates
+**Pin the revision.** The database is bincode-serialized, so the Rust crates
 and `databases/spartan3.zstd` must come from the same commit. s3decode's
 `Cargo.toml` pins `7ab08a02…` (2026-09-28); the matching database has sha256
 `fe6dad4f…6eb611`. To move to a newer prjcombine, bump the rev in
@@ -244,7 +244,7 @@ Then:
 scripts/fpga/stage1-from-bram.py bram/ -o stage1.gb --ref tools/ezflashjr/stage1/FW4/stage1.gb
 scripts/fpga/stage1-from-bram.py bram/ --ref <stage1.gb> --discover   # other FW revisions
 scripts/fpga/picoblaze-words.py bram/D0X3Y25.BEL.BRAM > pb-x3y25.txt
-scripts/fpga/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a re/stage0/picoblaze/X3Y29.notes -o X3Y29.psm
+scripts/fpga/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a re/stage0/picoblaze/fw4/X3Y29.notes -o X3Y29.psm
 scripts/fpga/picoblaze-diff.py old/D0X19Y25.BEL.BRAM new/D0X3Y1.BEL.BRAM   # routine-level diff
 ```
 
@@ -273,7 +273,7 @@ sudo umount /mnt/isevm && sudo qemu-nbd -d /dev/nbd0
 21 GB installed. The 16 GB `.vmdk` and the package can be deleted afterwards.
 
 The VM ships a `~/.Xilinx/Xilinx.lic` (System Edition) node-locked to the VM's
-own VirtualBox MAC. Don't reuse it on another machine; get a WebPACK licence
+own VirtualBox MAC. Don't reuse it on another machine; get a WebPACK license
 instead.
 
 ### Ubuntu 24.04 dependencies
@@ -286,16 +286,16 @@ sudo apt-get install ./libtinfo5_*.deb ./libncurses5_*.deb \
     xvfb x11-utils libxtst6 libxi6 libxrender1 libsm6 libxrandr2 libfontconfig1 \
     libglib2.0-0t64 libusb-0.1-4 libusb-1.0-0
 
-# the FlexLM licence tools (lmutil) want the LSB loader
+# the FlexLM license tools (lmutil) want the LSB loader
 sudo ln -s /lib64/ld-linux-x86-64.so.2 /lib64/ld-lsb-x86-64.so.3
 ```
 
 libusb is only for `impact` with a Xilinx cable. Xvfb is only for running a
 GUI tool headless.
 
-### Licence
+### License
 
-Free **ISE WebPACK** licence, which covers Spartan-3A:
+Free **ISE WebPACK** license, which covers Spartan-3A:
 
 1. <https://www.xilinx.com/getlicense> (redirects to AMD Product Licensing), log in.
 2. Create New Licenses → Certificate Based Licenses → tick **ISE WebPACK
@@ -303,13 +303,13 @@ Free **ISE WebPACK** licence, which covers Spartan-3A:
 3. Host ID: the machine's Ethernet MAC, OS Linux 64-bit.
 4. Copy the emailed `Xilinx.lic` to `~/.Xilinx/Xilinx.lic`.
 
-The licence issued on 2026-10-08 came back as `HOSTID=ANY`, so it works on any
+The license issued on 2026-10-08 came back as `HOSTID=ANY`, so it works on any
 machine regardless of what host ID was entered.
 
-What needs it: `xst` and `ngdbuild` run without a licence; `map` fails with
+What needs it: `xst` and `ngdbuild` run without a license; `map` fails with
 `No 'ISE' nor 'WebPack' feature`, so `map`, `par` and `bitgen` need it.
 
-If you ever get a licence that really is node-locked: FlexLM on Linux reads
+If you ever get a license that really is node-locked: FlexLM on Linux reads
 only an interface named `eth0`, and with Ubuntu's predictable names
 (`enp5s0`, `eno1`) `lmutil lmhostid` reports `000000000000`. The fix used on
 an earlier build host was renaming an unused real NIC, persistently:
@@ -322,7 +322,7 @@ MACAddress=<that NIC's MAC>
 Name=eth0
 ```
 
-Not needed with an `ANY` licence.
+Not needed with an `ANY` license.
 
 ### Using it
 

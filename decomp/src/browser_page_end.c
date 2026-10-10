@@ -1,6 +1,6 @@
 /* RIGHT on the last page jumps the cursor to the bottom of the list.
  *
- * Stock behaviour is asymmetric: LEFT on the first page moves the cursor to
+ * Stock behavior is asymmetric: LEFT on the first page moves the cursor to
  * the top (FileBrowserEntry_pageDecGate: base == 0, sel != 0 -> sel = 0,
  * dirty = 1), but RIGHT when the window already shows the tail of the list
  * (base + 16 >= count) just falls out to the wait loop and does nothing.

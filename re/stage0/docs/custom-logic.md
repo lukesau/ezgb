@@ -13,7 +13,7 @@
 > - *"Reverse engineering the factory bitstream is a research project."*
 >   prjcombine had already done that research. The FW4 and FW5 images
 >   decode completely, and the cart's own bitstream can be edited and
->   reinstalled with `s3patch` and a relabelled stock updater, no JTAG
+>   reinstalled with `s3patch` and a relabeled stock updater, no JTAG
 >   needed ([../../../docs/fpga-setup.md](../../../docs/fpga-setup.md)).
 > - *Each slot is "a `$46`-byte container header + an XC3S200A bitstream".*
 >   Each slot is a plain `bitgen` stream starting at flash `$26` / `$40026`
@@ -144,7 +144,7 @@ dump.
 - **The FPGA's register interface is already documented from the kernel side**:
   the unlock/command/commit protocol and the meaning of many `$7Fxx` ports
   (`REGISTERS.md`, `game-slot-access.md`, [`flash-map.md`](flash-map.md)). This is the
-  single biggest asset: the fully-labelled kernel disassembly *is* the spec for
+  single biggest asset: the fully-labeled kernel disassembly *is* the spec for
   what the FPGA does. A replacement design can reimplement that interface for
   kernel compatibility, or discard it and define its own.
 - **A likely MultiBoot fallback** (see Persistence) that, if confirmed, makes

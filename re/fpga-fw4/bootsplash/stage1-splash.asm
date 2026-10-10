@@ -1,10 +1,10 @@
 ; stage1 boot splash (FW4 bootstrap): CGB flag + EZ Flash icon.
 ; Overlay on the stock FW4 stage1 with rgblink -O, then rgbfix -f h.
 ;
-; - Header declares CGB support: a colour console boots stage1 (and the
+; - Header declares CGB support: a color console boots stage1 (and the
 ;   kernel after it) in CGB mode; DMG ignores the flag.
 ; - Hook A, at the boot LCD-on ($01BA), LCD still off: on CGB zero the tile
-;   attributes and load palette 0 (the old BGP $E4 greys, for the text) and
+;   attributes and load palette 0 (the old BGP $E4 grays, for the text) and
 ;   palette 1 (the icon).
 ; - Hook C, just before EZ-FLASH is printed ($07FC): stage1's console setup
 ;   (on its first print, $07F3) clears VRAM, so the icon is drawn here: wait
@@ -19,7 +19,7 @@
 ;   palette 0 (the kernel knows nothing about attributes), clear both maps
 ;   and tile 0 so nothing of the boot screen is left in VRAM, and leave the
 ;   LCD off. The kernel switches the LCD on before it draws, so without the
-;   clear it showed the old screen (now grey) for a moment. Runs from WRAM with interrupts off
+;   clear it showed the old screen (now gray) for a moment. Runs from WRAM with interrupts off
 ;   because the cart space is already the kernel.
 ; - No other stage1 code is changed.
 ; Note: GBDK's display-mode dispatcher ($0400) jumps through a 4-entry table
@@ -36,11 +36,11 @@ DEF rBCPD EQU $FF69
 DEF rOCPS EQU $FF6A
 DEF rOCPD EQU $FF6B
 
-DEF ICON_X     EQU 7            ; tile column (centred: 20 - 6 = 14 / 2)
+DEF ICON_X     EQU 7            ; tile column (centered: 20 - 6 = 14 / 2)
 DEF ICON_Y     EQU 1            ; tile row; stage1 prints EZ-FLASH at row 8
 DEF ICON_TILE  EQU $80          ; first tile number ($8800 in signed mode)
 
-; background colour (BGR555), colour 0 of palettes 0 and 1: plain white
+; background color (BGR555), color 0 of palettes 0 and 1: plain white
 DEF PAPER      EQU $7FFF
 
 ; ---- header ----
@@ -160,10 +160,10 @@ CgbBootInit:
     jr nz, .attrs
     xor a
     ldh [rVBK], a
-    ; BG palette 0 = text greys, palette 1 = icon; OBJ palette 0 greys
+    ; BG palette 0 = text grays, palette 1 = icon; OBJ palette 0 grays
     ld a, $80
     ldh [rBCPS], a
-    ld hl, Greys
+    ld hl, Grays
     ld b, 16
 .bg
     ld a, [hl+]
@@ -172,7 +172,7 @@ CgbBootInit:
     jr nz, .bg
     ld a, $80
     ldh [rOCPS], a
-    ld hl, Greys
+    ld hl, Grays
     ld b, 8
 .obj
     ld a, [hl+]
@@ -249,7 +249,7 @@ DrawIconMap:
 SECTION "splash_data", ROM0[$39A4]
 ; BGR555. Palette 0: the old BGP $E4 shades (text). Palette 1: the icon:
 ; 0 screen background, 1 orange screen, 2 frames (darkened), 3 lip.
-Greys:
+Grays:
     dw PAPER, $56B5, $294A, $0000
 IconPalette:
     dw PAPER, $129E, $294A, $14A5

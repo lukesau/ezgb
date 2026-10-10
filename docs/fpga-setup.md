@@ -48,7 +48,7 @@ The checkout is needed for the database file,
 same revision through cargo.
 
 **The database and the crates must come from the same commit.** The database
-is bincode-serialised, so a database from another revision won't load, or
+is bincode-serialized, so a database from another revision won't load, or
 loads wrong. `scripts/fpga/s3decode/Cargo.toml` pins `7ab08a02…`; to move to
 a newer prjcombine, change the rev there and check out the same rev of the
 database together. More in
@@ -87,7 +87,7 @@ Flags and output formats: [toolchain.md](../re/stage0/docs/toolchain.md#s3decode
 Only needed to *make* bitstreams: the blank baseline that `s3decode
 --baseline` diffs against, and the smoke test. Nothing in the updater build
 needs it. Getting it (copied out of AMD's VM appliance), the Ubuntu 24.04
-packages, the free WebPACK licence and how to run it are all in
+packages, the free WebPACK license and how to run it are all in
 [toolchain.md](../re/stage0/docs/toolchain.md#ise-147). Once it's in place:
 
 ```bash
@@ -105,7 +105,7 @@ On the Game Boy side machine:
 
 | Tool | Version | Used for |
 |---|---|---|
-| SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `re/stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
+| SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
 | RGBDS | 1.x (1.0.1 was used) | `rgbfix` for stage1; `rgbasm`/`rgblink` for the splash lab in `re/fpga-fw4/bootsplash/` and the overlay patches in `re/fpga-fw4/` |
 | Python 3 | standard library only | every script in `scripts/fpga/`; PIL isn't needed |
 | mgbdis | cloned into `tools/mgbdis` | the stock stage1 disassembly (`scripts/fpga/stage1-regen.sh`) |
@@ -155,10 +155,10 @@ expect them, or adjust the paths.
 | Input | Where to get it | Used by |
 |---|---|---|
 | stock `Update_FW4.gb` | EZ Flash's 1.04e FW4 package (`juniorkernel-1.04e-FW4/`), or `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr). Both copies are the same file | every updater; slot B comes out of it |
-| stock stage1 dumps | daid/ezflashjr `re/stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
-| your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the licence record, recovery |
+| stock stage1 dumps | daid/ezflashjr `stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
+| your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the license record, recovery |
 | the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `re/fpga-fw4/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |
-| the cart-label photo (optional) | a photo of the Jr's label, `fpga/bootsplash/cart-label.png` | `jr-trace.py`, only to retrace the committed `re/stage1/art/jr.txt` |
+| the cart-label photo (optional) | a photo of the Jr's label, `fpga/bootsplash/cart-label.png` | `jr-trace.py`, only to retrace the committed `stage1/art/jr.txt` |
 
 ## 9. End to end: build and install a stage1 updater
 
@@ -202,21 +202,21 @@ scripts/fpga/stage1-from-bram.py fpga/fw4-decode/bram -o fpga/cgb/stage1-fw4.gb 
 
 `fpga/cgb/stage1-fw4.gb` is where the splash lab expects stock stage1. To
 regenerate the annotated disassembly of it, copy it to
-`re/stage1-fw4/kernel.gb` and run `scripts/fpga/stage1-regen.sh` ("rebuild
+`re/stage1/fw4/kernel.gb` and run `scripts/fpga/stage1-regen.sh` ("rebuild
 matches kernel.gb").
 
 **4. Build our stage1.** It needs the icon tiles from the splash build first:
 
 ```bash
 re/fpga-fw4/bootsplash/build.sh          # -> fpga/bootsplash/build/icon.2bpp (and the splash lab)
-EZGB_ROOT=<repo> re/stage1/build.sh         # -> fpga/stage1/stage1.gb
+EZGB_ROOT=<repo> stage1/build.sh         # -> fpga/stage1/stage1.gb
 # stage1: 11410 bytes used of 18432
 ```
 
 `EZGB_ROOT` names the checkout whose `fpga/` holds the inputs and outputs. It
 defaults to the checkout `build.sh` is in, so set it when building from a
 second worktree. rgbfix prints "Overwrote a non-zero byte" warnings; they
-are expected. Version and build options: [re/stage1/README.md](../re/stage1/README.md).
+are expected. Version and build options: [stage1/README.md](../stage1/README.md).
 
 **5. Split it into BRAM contents.** Use a relative output directory, because
 the printed `--set` arguments carry that path:
@@ -258,7 +258,7 @@ scripts/fpga/make-updater.py juniorkernel-1.04e-FW4/Update_FW4.gb \
 ```
 
 The result is the stock updater with the payload at `$8000` replaced and the
-16-byte screen line at `$11D2` relabelled (at most 16 characters), so it
+16-byte screen line at `$11D2` relabeled (at most 16 characters), so it
 can't be mistaken for stock. The script also fixes the ROM's global header
 checksum. The updater code is unchanged, and it has no payload checksum,
 read-back or version check, so nothing else needs fixing up.
@@ -283,7 +283,7 @@ The new stage1 runs from the next power-on.
 
 - The updater writes only slot B: config flash `$40026`, 149,516 bytes
   (erasing the three 64 KB sectors from `$40000`). Slot A and the per-chip
-  licence record at `$30000` are untouched.
+  license record at `$30000` are untouched.
 - Slot A is what the FPGA loads at power-on; its PicoBlaze firmware hands
   over to slot B. If slot B fails to come up, a boot tally makes the next
   power-on stay on slot A
@@ -295,7 +295,7 @@ The new stage1 runs from the next power-on.
   of that cart ([hardware-board.md](hardware-board.md)).
 - **Keep every original dump forever**, with a copy off the working machine.
   The as-read dump is the restore source, and for a damaged cart the only
-  record of the damage. A dump holds that cart's own licence record, so
+  record of the damage. A dump holds that cart's own license record, so
   never program one cart's full image onto another; splice slot B into a
   fresh dump of that cart instead.
 - Everything here has run on one FW4 Jr. An FW5 design doesn't hand over

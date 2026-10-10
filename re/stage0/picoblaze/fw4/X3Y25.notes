@@ -1,7 +1,7 @@
 # X3Y25: PicoBlaze bank 2. FW4 slot B / Update_FW4.gb.
 # Only ever entered from bank 1's call_bank2 ($3F0); bank 2's own reset
 # path and interrupt vector never run. Config flash (SPI bit-bang), Device
-# DNA, licence record check, boot tally, fail-safe MultiBoot, flash update.
+# DNA, license record check, boot tally, fail-safe MultiBoot, flash update.
 
 entry 3F0 bank2_entry
 
@@ -47,8 +47,8 @@ ram 18 want_crc16_lo
 ram 19 verdict_a
 ram 1A verdict_b
 ram 1D spi_shadow
-ram 3E licence_a
-ram 3F licence_b
+ram 3E license_a
+ram 3F license_b
 
 block 000 Bank 2 reset path: never used (the processor always resets in
 block 000 bank 1). A long delay loop with interrupts off.
@@ -136,10 +136,10 @@ label 176 bank2_isr_unused
 note 176 never taken: bank 2 runs with interrupts off
 sub 179 record_bad
 
-block 17C Licence check. The record at flash $031100 holds the expected
+block 17C License check. The record at flash $031100 holds the expected
 block 17C CRCs; both CRCs are computed over the record bytes with the
 block 17C chip's Device DNA mixed in. Pass sets verdict_a/b = F1 / F2.
-sub 17C licence_check
+sub 17C license_check
 note 17C DNA (reversed) -> $32-$39
 note 18E CRC-16 over $1E-$39
 note 191 vs want_crc16
@@ -148,11 +148,11 @@ note 1A7 CRC-7 over $1E-$2F
 note 1A9 vs want_crc7
 sub 1AC clear_scratchpad
 
-block 1B5 Bank 2 main, called from bank 1 with licence_b = 0 (boot) or
+block 1B5 Bank 2 main, called from bank 1 with license_b = 0 (boot) or
 block 1B5 1 (flash update, kernel command $08). Boot: fail-safe MultiBoot.
 block 1B5 The slot A image (golden, at 0) hands over to slot B when the
 block 1B5 tally byte is clean and slot B looks valid; slot B just marks
-block 1B5 the byte done. Then both run the licence scan.
+block 1B5 the byte done. Then both run the license scan.
 sub 1B5 bank2_main
 note 1B7 flash update requested
 note 1B8 slot A image: 01 (hand over to slot B); slot B image: 02 (never)
@@ -162,13 +162,13 @@ label 1CA find_slot_b
 note 1CA look for a bitstream sync (AA 99 .. 31 61) at $040000
 label 1F4 slot_b_bad
 note 1F5 debug 44: slot B invalid, boot slot A
-label 1F8 licence_scan
+label 1F8 license_scan
 note 1F9 read Device DNA
 note 1FB records at $030000, 128 bytes each
 note 204 stop at $031500
 note 208 bad record checksum -> record_error = EE
-note 209 the record at $031100 carries the licence CRCs
-label 21E licence_done
+note 209 the record at $031100 carries the license CRCs
+label 21E license_done
 note 221 publish verdict for bank 1, unless any record was bad
 
 block 227 Read one 32-bit table entry: index s5 -> s3:s2:s1:s0.

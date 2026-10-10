@@ -14,8 +14,8 @@ point at --jr-at (pixels, relative to the letters' top left), with a
 letters, like paint over print. --letters-y leaves rows above the letters
 for the part of the Jr. that rises past them.
 
-Colour indices: 0 background, 1 orange, 2 dark orange, 3 letters. On DMG
-(BGP $E4) that is white, light grey, dark grey, black.
+Color indices: 0 background, 1 orange, 2 dark orange, 3 letters. On DMG
+(BGP $E4) that is white, light gray, dark gray, black.
 
 Writes OUT.c: wordmark_tiles (2bpp tiles, deduplicated across all maps)
 and wordmark_maps: --stages + 1 maps of width x height tile numbers
@@ -44,7 +44,7 @@ def main():
     ap.add_argument("--pivot", default="8,0")
     ap.add_argument("--letters-y", type=int, default=0)
     ap.add_argument("--letters-x", type=int, default=None,
-                    help="letters' left edge in the canvas (default: centre the whole mark)")
+                    help="letters' left edge in the canvas (default: center the whole mark)")
     ap.add_argument("--width", type=int, default=14, help="tiles")
     ap.add_argument("--height", type=int, default=3, help="tiles")
     ap.add_argument("--no-halo", action="store_true")

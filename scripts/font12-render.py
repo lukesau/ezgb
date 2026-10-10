@@ -77,7 +77,7 @@ def render(font, code, baseline, bold):
     bb = im.getbbox()
     rows = [[0] * W for _ in range(H)]
     if bb:
-        # horizontal: centre the ink in the cell (1 extra px for the bold shift)
+        # horizontal: center the ink in the cell (1 extra px for the bold shift)
         ink_w = bb[2] - bb[0] + (1 if bold else 0)
         left = max(0, (W - ink_w) // 2)
         for y in range(H):

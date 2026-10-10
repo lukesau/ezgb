@@ -68,16 +68,16 @@ ram 2F load_pos0
 ram 31 load_step_hi
 ram 3B tbl_mode
 ram 3D data_status
-ram 3E licence_a
-ram 3F licence_b
+ram 3E license_a
+ram 3F license_b
 
 # ---- reset ----
-block 000 Reset. Clear scratchpad, run bank 2 (licence check, boot counter),
+block 000 Reset. Clear scratchpad, run bank 2 (license check, boot counter),
 block 000 bring the SD card up in native 4-bit mode, init the RTC, then idle
 block 000 with interrupts on. Kernel commands arrive as interrupts (int_vector).
 label 000 reset
-note 002 licence_b=0 tells bank 2 "boot", not "flash update"
-note 003 bank 2: Device DNA + licence check, boot tally at flash $70000
+note 002 license_b=0 tells bank 2 "boot", not "flash update"
+note 003 bank 2: Device DNA + license check, boot tally at flash $70000
 note 004 debug: print bank 2's verdict (F1 F2 = licensed)
 note 008 clear scratchpad $00-$3D
 note 009 controller reset, timeouts, 400 kHz identification clock
@@ -194,9 +194,9 @@ block 1A7 Kernel command $20: load a ROM file from SD into game memory.
 block 1A7 The kernel fills a table (TBL_INDEX/TBL_Q*): entries $00-$7B are
 block 1A7 (file offset, SD address) pairs, $7C the file length, $7D enable,
 block 1A7 $7E the step per run (blocks, bytes). Refused unless bank 2
-block 1A7 found a valid licence (licence_a/b = F1 F2).
+block 1A7 found a valid license (license_a/b = F1 F2).
 sub 1A7 cmd_load_rom
-note 1AC licence gate
+note 1AC license gate
 note 1B1 table $7E: run length
 note 1B7 table $7D: enable
 note 1BD raise LOAD_BUSY for the kernel
@@ -275,7 +275,7 @@ block 395 $10 set RTC, $08 run bank 2 in flash-update mode.
 label 395 isr
 note 39A CMD18 at CMD_LBA, CMD_COUNT blocks
 note 3A1 CMD25
-note 3AE licence_b=1 tells bank 2 "flash update"
+note 3AE license_b=1 tells bank 2 "flash update"
 label 3B2 isr_done
 
 block 3F0 Switch to bank 2 (X3Y25) and back. The instruction after each

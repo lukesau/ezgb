@@ -67,7 +67,7 @@ Full list: `re/stage0/netlist/pintable.py`.
 |---|---|---|---|
 | P43 (oscillator) | DCM `X13Y1`: CLK0, CLK2X, CLKFX (x2) | via 4 global buffers | system clocks |
 | `X13Y19 SLICE[2]` YQ (a divided clock) | global `X0Y17` [6] | 661 flip-flops | main logic clock; also driven out on P23 |
-| system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the re/stage1/kernel/game mode |
+| system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the stage1/kernel/game mode |
 | P84 (`/WR`) | global `X13Y33` [0]/[1] | 160 flip-flops | the Game Boy-written registers |
 | system / `X2Y17 SLICE[3]` Y | global `X0Y17` [0], [4] | 196 flip-flops | |
 | `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
@@ -90,12 +90,12 @@ slice, LUT RAM, carry, BRAM, clock and start-up models against the real
 design. Verilator runs it about 100 times faster than iverilog.
 
 With the SPI flash and SD card models in `models.v`, the simulated FPGA
-reads the boot tally and licence from flash, then initialises the card:
+reads the boot tally and license from flash, then initializes the card:
 CMD0, CMD8, CMD55/ACMD41, CMD2, CMD3, CMD7, CMD16, ACMD6 (4-bit bus),
 CMD13, then idles with interrupts on. The testbench drives the Game Boy bus
 (`gb_write` / `gb_read` in `tb_full.v`), and `gb_sdread.vh` runs stage1's
 `sd_read`: the `$7FB4` write sets a request flag (`X23Y29 SLICE[1]`), which
-reaches the PicoBlaze's interrupt input through a synchroniser
+reaches the PicoBlaze's interrupt input through a synchronizer
 (`X2Y29 SLICE[0]`); the interrupt handler issues CMD18, and the sector read
 back through the `$A000` window matches the card image byte for byte. Of
 the 24 possible DAT orders only one does (`datvariants.sh` runs them all).
@@ -118,9 +118,9 @@ address map from a capture of the writes). Each byte is one `/WE` pulse with
   address lines A11-A13. P51 (MISO, A13) is driven by an IO-tile output
   latch whose SR and REV inputs carry the bit and its inverse, so the pin
   follows the address asynchronously.
-- `cmd_load_rom` runs only after bank 2's licence check passes, which
+- `cmd_load_rom` runs only after bank 2's license check passes, which
   needs the Device DNA. The simulation doesn't model the DNA, so
-  `fastboot.py --no-licence` patches the gate out of a sim-only copy of
+  `fastboot.py --no-license` patches the gate out of a sim-only copy of
   the program.
 
 **Not understood yet: game-mode addressing.** After the kernel handoff
@@ -134,14 +134,14 @@ the kernel), and some 595 outputs may be selects rather than address bits.
 (command word at `$04` with the index in bits 13:8, argument at `$00`
 starting the command, command status at `$34`); its registers cross from
 the PicoBlaze's clock (BUFGMUX3) to the SD clock (BUFGMUX6) through 43
-two-flop synchronisers.
+two-flop synchronizers.
 
 What the simulation showed:
 
 - In a SLICEM, `DIF_MUX=BX` / `DIG_MUX=BY` on a LUT that isn't in RAM mode
   goes with the flip-flop taking BX / BY directly, whatever `DXMUX` /
   `DYMUX` decode as. In FW4 those are exactly the 51 flip-flops that would
-  otherwise be fed by a constant LUT, the synchronisers among them. Before
+  otherwise be fed by a constant LUT, the synchronizers among them. Before
   `netlist2v.py` applied this, every SD command went out with index 0.
 - The firmware races its own status clear. `sd_command` clears `$34`
   after a command completes, but the clear takes three SD clocks to

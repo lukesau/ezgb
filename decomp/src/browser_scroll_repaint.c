@@ -32,7 +32,7 @@
  *
  * Scroll UP is untouched: its new entry appears at the top, which the stock
  * top-down sweep already paints first. In-screen moves (dirty = 2) and the
- * end-of-list no-op keep stock behaviour too.
+ * end-of-list no-op keep stock behavior too.
  *
  * Wired by retargeting the call in the 00:02e0 stub from browser_scroll_down
  * to this function. Lives in the 00:3d8c cave.

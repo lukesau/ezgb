@@ -1,62 +1,20 @@
-# stage1 from source
+# Stage1, stock
 
-Our own FW4 bootstrap. It replaces the stock GBDK one in the slot B BRAMs and
-does the same job: show the boot screen, find `EZGB.DAT` on the SD card, have
-the FPGA load it, and enter it at `$0100`.
-Design and protocol: [docs/fpga-stage1.md](../../docs/fpga-stage1.md).
+EZ Flash's own stage1 programs, disassembled: the Game Boy code each
+firmware's slot B carries in block RAM (splash, then loading the kernel).
+One directory per firmware release, the most recent of each line, so they
+can be compared. Our replacement, built from source, is
+[stage1/](../../stage1/README.md) at the top of the repo; the FPGA logic
+around it is [re/stage0](../stage0/README.md).
 
-```bash
-re/stage1/build.sh                     # -> fpga/stage1/stage1.gb
-STAGE1_CFLAGS=-DPAUSE_FRAMES=250 re/stage1/build.sh   # long boot screen, for screenshots
-EZGB_ROOT=<checkout> re/stage1/build.sh               # inputs/outputs in another checkout's fpga/
-```
-
-Needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
-(`fpga/bootsplash/build/icon.2bpp`, from `re/fpga-fw4/bootsplash/build.sh`).
-Setting all of that up, and turning `stage1.gb` into an updater:
-[docs/fpga-setup.md](../../docs/fpga-setup.md).
-
-## Version
-
-`VERSION` has two lines: the firmware number, then the mod version. The
-build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.0`. The firmware
-number is what the cart's version register should read for this build
-(stock FW4 reads 4; making the register itself say 6 is a separate fabric
-change, [re/stage0/docs/version-byte.md](../stage0/docs/version-byte.md)). The mod version is
-stage1's own, separate from the kernel mod's.
-
-## Build knobs
-
-| Variable | Default | Effect |
+| Directory | Firmware | Status |
 |---|---|---|
-| `STAGE1_CFLAGS` | empty | extra SDCC flags, e.g. the `-D` options below |
-| `-DPAUSE_FRAMES=<n>` | 42 (~700 ms, the stock pause) | frames from power-on to `LOADING...` |
-| `-DJR_DELAY=<n>` | 18 | frames EZ-FLASH shows alone before the Jr. is painted |
-| `-DJR_STEP=<n>` | 2 | frames per paint step (4 steps) |
-| `WORDMARK_FLAGS` | `--no-halo` | flags passed to `mkwordmark.py` |
-| `EZGB_ROOT` | this checkout | checkout whose `fpga/` holds the icon tiles and gets `fpga/stage1/` |
+| [fw4/](fw4/) | FW4 (the Jr carts we test on) | disassembled and annotated; rebuilds byte for byte |
+| `fw5-0918/` | FW5, the 0918 update | to do |
 
-Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
-
-| File | What |
-|---|---|
-| `src/crt0.s` | entry, WRAM init, interrupts off |
-| `src/main.c` | boot sequence, START/SELECT at power-on, error retry loop |
-| `src/fat.c` | FAT16/FAT32 mount, path lookup, load command, in-place sector writes |
-| `src/fpga.c` | FPGA register writes, SD sector reads and writes, pSRAM pages |
-| `src/cfg.c` | `EZGB.CFG` parser, `FLAUNCH=` only |
-| `src/game.c` | fast launch: the kernel's game launch done from stage1 |
-| `src/backup.c` | SELECT save backup to `/SAVER` |
-| `src/video.c` | boot screen: icon, text, CGB palettes |
-| `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |
-| `src/game_handoff.s` | the same for a fast-launched game |
-| `VERSION` | firmware number and mod version (above) |
-| `font/font8.txt` | 8x8 font, `$20-$5A` |
-| `art/ezflash.txt` | EZ-FLASH letters: Arial Bold Italic 22 pt, no antialiasing, E/Z join split by hand |
-| `art/jr.txt` | the brush "Jr.", traced from a photo of the cart label (`scripts/fpga/jr-trace.py`) |
-
-The wordmark is composed by `scripts/fpga/mkwordmark.py` into one tile map
-per step: EZ-FLASH alone, then the Jr. painted on left to right in four steps.
-`main.c` plays them inside the stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so
-the intro costs no boot time.
+Each directory holds `kernel.sym` (names and data ranges), `notes.json`
+(comment blocks) and the generated `disassembly/`. The binary itself,
+`kernel.gb`, is EZ Flash's and stays local: `scripts/fpga/stage1-from-bram.py`
+writes it from a bitstream's BRAM, and `scripts/fpga/stage1-regen.sh
+stage1/<fw>` regenerates and checks the disassembly. The method is in
+[docs/fpga-stage1.md](../../docs/fpga-stage1.md).

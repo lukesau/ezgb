@@ -136,7 +136,7 @@ def main():
     ap.add_argument("--model", default="cgb",
                     help="SameBoy model (default cgb). Use dmg to emulate an "
                          "original Game Boy; auto-detection would pick dmg from "
-                         "the kernel header and hide all CGB behaviour.")
+                         "the kernel header and hide all CGB behavior.")
     ap.add_argument("--script", default=None,
                     help="debugger init .sbd to preload. Default: none (just boot). "
                          "The launch-path breakpoints (%s) were for mapping the "

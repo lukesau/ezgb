@@ -1,8 +1,8 @@
 ; stage1 CGB proof patch (FW4 bootstrap).
-; Header declares CGB support, so a colour console boots it in CGB mode.
+; Header declares CGB support, so a color console boots it in CGB mode.
 ; Hook A: at the boot LCD-on, clear the CGB tile attributes and load a
-;         greyscale palette, so EZ-FLASH / LOADING look as before.
-; Hook B: when OSINIT... is printed, turn the background colour red.
+;         grayscale palette, so EZ-FLASH / LOADING look as before.
+; Hook B: when OSINIT... is printed, turn the background color red.
 ; Both hooks do nothing unless the console is really in CGB mode.
 
 DEF rLCDC EQU $FF40
@@ -61,7 +61,7 @@ CgbBootInit:
     ; BG palette 0 and OBJ palettes 0/1: the old BGP $E4 shades
     ld a, BCPSF_AUTOINC
     ldh [rBCPS], a
-    ld hl, Greys
+    ld hl, Grays
     ld b, 8
 .bg
     ld a, [hl+]
@@ -70,7 +70,7 @@ CgbBootInit:
     jr nz, .bg
     ld a, OCPSF_AUTOINC
     ldh [rOCPS], a
-    ld hl, Greys
+    ld hl, Grays
     ld b, 16
 .obj
     ld a, [hl+]
@@ -96,7 +96,7 @@ CgbOsinitRed:
     jr c, .into_vblank
     ld a, BCPSF_AUTOINC
     ldh [rBCPS], a
-    ld hl, RedGreys
+    ld hl, RedGrays
     ld b, 8
 .bg
     ld a, [hl+]
@@ -108,8 +108,8 @@ CgbOsinitRed:
     ret
 
 ; BGR555, little endian. Shade 0 = background.
-Greys:
+Grays:
     dw $7FFF, $56B5, $294A, $0000
     dw $7FFF, $56B5, $294A, $0000   ; OBJ palette 1 (read past the end above)
-RedGreys:
+RedGrays:
     dw $001F, $56B5, $294A, $0000

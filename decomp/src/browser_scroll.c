@@ -1,6 +1,6 @@
 /* Continuous scrolling for the file browser's DOWN/UP keys.
  *
- * Stock behaviour: DOWN stops dead at the bottom row (sel == $0f,
+ * Stock behavior: DOWN stops dead at the bottom row (sel == $0f,
  * bank_000.asm:4038) and UP stops at the top. Moving past a screenful is only
  * possible via LEFT/RIGHT, which page by 16 and are undiscoverable. This makes
  * DOWN/UP scroll the window one line at a time instead.
@@ -41,7 +41,7 @@ extern volatile unsigned char hUiMode;   /* $fffb: 0 = 8px (16 rows), 1 = 12px (
 #define ENTRY_COUNT (*(volatile unsigned int *)0xc2a2)
 
 /* Sticky "readdir returned no more entries" latch, set in DirList_failEmpty
- * (bank_000.asm:2588) and cleared once per browser entry. Without honouring
+ * (bank_000.asm:2588) and cleared once per browser entry. Without honoring
  * it, every DOWN press at a true end-of-list would re-run a doomed readdir. */
 #define END_OF_DIR (*(volatile unsigned char *)0xc5a4)
 

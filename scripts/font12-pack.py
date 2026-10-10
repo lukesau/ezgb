@@ -33,7 +33,7 @@ nominal advance, the gap between a's rightmost ink and b's leftmost ink is
 measured row by row, and b is pulled left until the smallest per-row gap
 is GAP, by at most --kmax pixels (that cap keeps `'.` from stacking). A
 pair whose two glyphs share no ink rows kerns by the cap. Glyphs with the
-same kerning behaviour on a side share a class (like OpenType class
+same kerning behavior on a side share a class (like OpenType class
 kerning), which is what makes the matrix ~1 KB instead of 96 x 96 bytes.
 Class 0 on either side means "never kerns" (space, icons, digits). The
 ten digits are tabular: one fixed 7 px cell and advance each, untrimmed and
@@ -117,7 +117,7 @@ def main():
     ap.add_argument("-i", "--input", default=DEFAULT_IN)
     ap.add_argument("-o", "--out", default=DEFAULT_OUT)
     ap.add_argument("-m", "--metrics", default=DEFAULT_METRICS)
-    ap.add_argument("--gap", type=int, default=2, help="pixels between the closest ink of neighbours (default 2)")
+    ap.add_argument("--gap", type=int, default=2, help="pixels between the closest ink of neighbors (default 2)")
     ap.add_argument("--kmax", type=int, default=2, help="largest kern, 0..3 (default 2)")
     ap.add_argument("--space", type=int, default=5, help="advance of the space (default 5)")
     ap.add_argument("--icon-adv", type=int, default=12, help="advance of an icon = start of the name field (default 12)")

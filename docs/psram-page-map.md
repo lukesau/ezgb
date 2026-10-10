@@ -84,9 +84,9 @@ NOR path that does not exist ([updater-flash-write.md](updater-flash-write.md)).
 
 ## Stage1 skip-fast-launch mark (`$11:$A410`)
 
-The from-source stage1 (`bitstream-re` branch, `re/stage1/`) writes `"S1"` to
+The from-source stage1 (`bitstream-re` branch, `stage1/`) writes `"S1"` to
 page `$11` `$A410`–`$A411` when START was held at power-on, and zeroes it
 otherwise. The kernel (mod 5.4+, `ezcfg.c` `stage1_skip_mark`, run by
 `RtcBootHook` every boot) clears the mark and sets `fastlaunch_boot`'s
-one-shot flag `$DBFF`, so a fast launch the user cancelled in stage1 stays
-cancelled even after START is released.
+one-shot flag `$DBFF`, so a fast launch the user canceled in stage1 stays
+canceled even after START is released.

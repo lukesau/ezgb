@@ -14,7 +14,7 @@ dumps are in the ignored `fpga/fw4-decode/`.
   the bitstream alone, byte for byte.
 - The design contains a **PicoBlaze soft microcontroller** running a 2K
   program from two BRAMs: SD card, game loader, RTC, config flash, and a
-  licence check tied to the chip's Device DNA ([picoblaze.md](picoblaze.md)).
+  license check tied to the chip's Device DNA ([picoblaze.md](picoblaze.md)).
 - Slot A and slot B differ by **one PicoBlaze instruction** plus CRCs: the
   switch that makes slot A hand over to slot B at boot.
 
@@ -124,7 +124,7 @@ packets are (not individually checked). So the 2-byte cluster at
 `+$1982c` that [flash-map.md](flash-map.md) grouped with the CRCs is
 this instruction. It is the constant that decides whether bank 2 hands over
 to slot B at boot: slot A is the golden image, slot B the active one
-([picoblaze.md](picoblaze.md#bank-2-x3y25-flash-dna-licence)).
+([picoblaze.md](picoblaze.md#bank-2-x3y25-flash-dna-license)).
 
 **Open:** [../../../docs/hardware-board.md](../../../docs/hardware-board.md) records that writing slot B
 wholesale over slot A did not boot, while patching only the erased head did.

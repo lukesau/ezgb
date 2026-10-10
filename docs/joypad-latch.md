@@ -90,7 +90,7 @@ Side effects worth knowing:
   live sample read as "nothing"; the latch carries the press, so nothing is
   lost.
 - Any screen that uses `ReadJoypad` (SET, HELP, prompts) gets the same
-  behaviour; `WaitJoypadMask` reads `ReadJoypadRaw` directly and is
+  behavior; `WaitJoypadMask` reads `ReadJoypadRaw` directly and is
   unchanged.
 
 ## Verification

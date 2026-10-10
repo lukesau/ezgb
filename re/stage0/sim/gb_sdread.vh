@@ -1,4 +1,4 @@
-// Stage1's sd_read(0) from the Game Boy side (re/stage1/src/fpga.c), once the
+// Stage1's sd_read(0) from the Game Boy side (stage1/src/fpga.c), once the
 // PicoBlaze has finished card init; checks the sector against card.img.
 // +define+GB_TEST=\"gb_sdread.vh\" +define+GB_START_NS=... +define+SD_LBA=...
 `ifndef GB_START_NS

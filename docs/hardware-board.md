@@ -17,7 +17,7 @@ exact strings as approximate; the families are confident.
 | U2 | `74HC595D` (16-pin) | 8-bit shift register, serial in / parallel out with latch | High | I/O expansion: more signals than the FPGA has spare pins for. |
 | Y1 | `24.545 MHz` crystal | - | High | FPGA clock. |
 | Y2 | 32.768 kHz (near RTC) | - | Medium | RTC timebase. |
-| - | Tactile button, centre of board | - | High | Reset button; reboots the cart. Sits right against the shell, so a light press on the plastic over it triggers a reset without opening the case. |
+| - | Tactile button, center of board | - | High | Reset button; reboots the cart. Sits right against the shell, so a light press on the plastic over it triggers a reset without opening the case. |
 | - | `JTAG` header, back edge, 8 pads | - | High | Xilinx JTAG chain (FPGA and/or config flash). |
 
 ## The two big memory chips (U4, U9): memory map
@@ -169,7 +169,7 @@ Two possibilities:
 
 - **(a)** factory-programmed into a region of the config flash that firmware
   updates never rewrite: header bytes plain data, CGB flag a byte patch + checksum.
-- **(b)** embedded in the bitstream as block-RAM initialisation; patching it
+- **(b)** embedded in the bitstream as block-RAM initialization; patching it
   means Spartan-3A bitstream-format reverse engineering. The XC3S200A has
   ~16 × 18 Kbit block RAM ≈ 36 KB, so a 32 KB bootstrap ROM would fit.
 
@@ -272,9 +272,9 @@ Known plaintext available: the 48-byte Nintendo logo (fixed), plus `LOADING`,
 | Logo under constant-stride bit interleaving; 302 strides (1-256 plus powers of two to 4096), both bit orders, inverted; across the whole bitstream, the dense tail, the 8 KB block, and all 512 KB | **nothing** |
 | 8 KB block at `0x30000`: container headers, single-byte XOR, stride search | nothing. All 256 byte values present, entropy 7.799, not a copy of any bitstream region |
 
-So the bootstrap is not plain data here, and if it is BRAM initialisation inside
+So the bootstrap is not plain data here, and if it is BRAM initialization inside
 the bitstream, the interleaving is not a constant stride. This settles the
-(a)/(b) question in favour of **(b)**: patching the bootstrap's CGB flag would
+(a)/(b) question in favor of **(b)**: patching the bootstrap's CGB flag would
 require Spartan-3A bitstream reverse engineering.
 
 **Alternative: it may live in the Spansion NOR (U4), not the config flash.** The
@@ -289,7 +289,7 @@ FW4 updater's write path (see [updater-flash-write.md](updater-flash-write.md))
 found **no separate stage1-write mechanism at all**: the updater writes only the
 SPI config flash via `$7FD2`, its embedded payload is the FPGA bitstream, and
 stage1 is not carried in it under any tested encoding. The clean explanation is
-that stage1 is **BRAM-initialised inside the bitstream**, so flashing a new
+that stage1 is **BRAM-initialized inside the bitstream**, so flashing a new
 bitstream to the SPI config flash implicitly updates stage1 on the next
 power-on, which is exactly daid's "somehow updated, mechanism unknown". This
 also explains why the config-flash dump shows no contiguous stage1 (BRAM init
@@ -316,6 +316,6 @@ flips plus a new CRC, not a new design. Needs an encoder and JTAG testing first
 ([bitstream.md](../re/stage0/docs/bitstream.md)).
 
 > **Correction (2026-10-09).** Done since, without JTAG: `s3patch` writes the
-> BRAM bits and CRCs, and a relabelled stock updater installs the result to
+> BRAM bits and CRCs, and a relabeled stock updater installs the result to
 > slot B. CGB mode at power-on was confirmed on hardware on 2026-10-08
 > ([fpga-cgb.md](fpga-cgb.md)).

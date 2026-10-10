@@ -198,7 +198,7 @@ static void lfn_piece(const uint8_t *e)
     }
 }
 
-/* Short names honour the NT case bits (byte 12: $08 lowercase name, $10
+/* Short names honor the NT case bits (byte 12: $08 lowercase name, $10
  * lowercase extension), so "ezgb.dat" reads back as FatFs gives it. */
 static void entry_name(const uint8_t *e)
 {

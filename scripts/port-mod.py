@@ -387,7 +387,7 @@ class Port:
     def code_equiv(self, bank, a, b):
         """Same instructions; a 16-bit operand may differ when it is RAM (the
         kernel's own WRAM globals move between builds) or when it is a ROM
-        address whose translation is the other side's value (an unlabelled
+        address whose translation is the other side's value (an unlabeled
         pointer that relocate() left alone)."""
         if len(a) != len(b):
             return False
@@ -438,7 +438,7 @@ class Port:
         for bank, addr, length, name in self.sym_blocks:
             src_bytes = self.src_mod[off(bank, addr):off(bank, addr) + length]
             if not self.free(self.src_stock, bank, addr, length):
-                continue  # a labelled hook site; handled with the other sites
+                continue  # a labeled hook site; handled with the other sites
             if (bank, addr) in SKIP_BLOCKS.get(self.dst_ver, set()):
                 self.skipped_blocks.append((bank, addr, length, name))
                 self.log.append(f"skipped block {name}@{bank:02x}:{addr:04x}: not needed in {self.dst_ver} (SKIP_BLOCKS)")

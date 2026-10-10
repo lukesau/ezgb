@@ -12,7 +12,7 @@ mechanism currently unknown")? The motivating goal was finding whether the
 **There is no separate stage1-write path.** The updater writes exactly one
 nonvolatile target, the SPI config flash, via the `$7FD2` command protocol,
 and its embedded payload is the FPGA bitstream. `stage1` is not carried in the
-updater as data; it is **BRAM-initialised inside the
+updater as data; it is **BRAM-initialized inside the
 bitstream**, so writing a new bitstream implicitly ships a new stage1. The
 parallel NOR die is never touched.
 
@@ -64,14 +64,14 @@ external config-flash dump.
   `00:153a`, `$7FC0=arg`) is **dead code**: no `call`, no `jp`, and no far-call
   trampoline blob targets it anywhere in the ROM.
 - **No SD access** (self-contained payload).
-- **No separate stage1 image.** `re/stage1/FW4/stage1.gb` (daid's dump) does not
+- **No separate stage1 image.** `stage1/FW4/stage1.gb` (daid's dump) does not
   appear in the updater, whether verbatim, bit-reversed, inverted, or
   nibble-swapped. FW4 and FW5 stage1 differ by 37%, tracking the 64%-different
   bitstreams.
 
 ## Why stage1 is in the bitstream
 
-Everything is consistent with stage1 living in FPGA block-RAM, initialised by
+Everything is consistent with stage1 living in FPGA block-RAM, initialized by
 the bitstream:
 
 - The updater carries a bitstream and writes only the config flash.

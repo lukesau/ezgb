@@ -3,7 +3,7 @@
 The FW4 bitstream contains one PicoBlaze (Xilinx KCPSM3) soft processor
 running a 2K program held in two block RAMs. It handles everything on the
 cart that is sequential rather than fixed logic: the SD card, loading a game
-into memory, the RTC, the config flash, and a licence check tied to the FPGA's
+into memory, the RTC, the config flash, and a license check tied to the FPGA's
 Device DNA. Decoding background: [bitstream.md](bitstream.md);
 tooling: [toolchain.md](toolchain.md).
 
@@ -15,7 +15,7 @@ tracked.
 
 ```bash
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    -a re/stage0/picoblaze/X3Y29.notes -o fpga/fw4-decode/picoblaze/X3Y29.psm
+    -a re/stage0/picoblaze/fw4/X3Y29.notes -o fpga/fw4-decode/picoblaze/X3Y29.psm
 scripts/fpga/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
     --check fpga/fw4-decode/picoblaze/X3Y29.psm      # -> identical
 ```
@@ -37,7 +37,7 @@ Both listings reassemble identically. Every routine is named.
 | BRAM | Bank | Role |
 |---|---|---|
 | X3Y29 | 1 (boots here) | SD card, game loader, RTC, kernel command dispatch |
-| X3Y25 | 2 | config flash, Device DNA, licence check, boot tally, flash update |
+| X3Y25 | 2 | config flash, Device DNA, license check, boot tally, flash update |
 
 Port `C8` switches which BRAM the processor fetches from. Both banks carry the
 same eight words at `$3F0`:
@@ -121,7 +121,7 @@ into an SD address by scanning the pairs, then `CMD18` for the run and
 `CMD12`. Port `EF` is held high for the whole load, which reads like the busy
 flag the kernel polls.
 
-**It refuses to load unless bank 2's licence check passed** (scratchpad
+**It refuses to load unless bank 2's license check passed** (scratchpad
 `$3E`/`$3F` = `F1 F2`, see below).
 
 ### RTC
@@ -138,9 +138,9 @@ writes them back from `B6`.
 `dbg_putc` waits for `A0` bit 2 to clear and writes a byte to `A1`, which
 looks like a UART or a debug FIFO. Codes: `B0` card reset, `82`/`88` card is
 high/standard capacity (or timed out), `EE` init done, `55` waiting for data,
-`99` + argument per transfer, and at boot the two licence bytes.
+`99` + argument per transfer, and at boot the two license bytes.
 
-## Bank 2 (X3Y25): flash, DNA, licence
+## Bank 2 (X3Y25): flash, DNA, license
 
 Entered from bank 1 at reset (scratchpad `$3F` = 0) and from command `$08`
 (`$3F` = 1).
@@ -161,7 +161,7 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    sector when all are). What happens next depends on which image is
    running, decided by one constant at `$1B8`:
 
-   | Image | `$1B8` | Behaviour |
+   | Image | `$1B8` | Behavior |
    |---|---|---|
    | slot A, golden, at flash 0 | `LOAD s0, 01` | if the tally byte is `FF` and `$040000` starts with a sync word, program the byte to `01` and reboot into slot B through ICAP (`AA99`, GENERAL1/2 = `$040000`, `IPROG`); otherwise boot itself (debug `44` if slot B looks invalid) |
    | slot B, active, at `$40000` | `LOAD s0, 02` | never hands over; program the tally byte to `00` |
@@ -172,7 +172,7 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    bad update can't brick the cart. One byte per power-on: the "52 B at
    `$70000`" in [flash-map.md](flash-map.md) are 52 successful
    slot B boots since the sector was last erased.
-2. **Licence check.** Read the 8 KB block at `$030000` (the flash map's
+2. **License check.** Read the 8 KB block at `$030000` (the flash map's
    "unidentified high-entropy blob") as 128-byte records up to `$031500`,
    each with its own checksum byte. The record at `$031100` also supplies an
    expected CRC-16 (poly `$A001`) and CRC-7 (the SD card CRC). Both are
@@ -180,7 +180,7 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    match sets `F1` and `F2`; if every record checked out, they are copied to
    `$3E`/`$3F` for bank 1.
 
-So the `$30000` block is a per-chip licence record bound to the FPGA's DNA,
+So the `$30000` block is a per-chip license record bound to the FPGA's DNA,
 and without it bank 1 will not load ROMs. That explains why it is absent from
 the updater (it is per-cart, written at the factory) and why it has no twin in
 slot B's half of the flash.
@@ -218,7 +218,7 @@ on its contents should work.
   [toolchain.md](toolchain.md#s3trace)); this hasn't been traced yet.
 - What drives `B9` (RTC refresh) and reads `ED`/`EE`, `E0-E3`, `EF` on the
   GB side; tie each to its `$7Fxx` register.
-- The licence check's exact data layout, and whether the record can be
+- The license check's exact data layout, and whether the record can be
   regenerated for another chip.
 - The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).
 - Repeat for the FW5 images. Done for bank 1 and bank 2:

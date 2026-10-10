@@ -3,7 +3,7 @@
 ; copies $4000-$41FF to $D100 the way the hand-off stub does, turns the
 ; copy's final jp $0100 into ret, runs HandoffBlank from WRAM, records LCDC
 ; as it was left, then switches the LCD back on. Expected on CGB: icon
-; screen grey (attributes reset to palette 0), icon still drawn, $C012 = 00.
+; screen gray (attributes reset to palette 0), icon still drawn, $C012 = 00.
 SECTION "test_site", ROM0[$080E]
     call TestHandoff            ; was: ld hl,$0b6e (the LOADING string)
 SECTION "test_hook", ROM0[$0300]

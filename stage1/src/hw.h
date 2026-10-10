@@ -22,7 +22,7 @@
 #define rIE   REG(0xFFFF)
 #define rP1   REG(0xFF00)
 
-/* crt0 saves the boot ROM's A here ($11 on a colour console) */
+/* crt0 saves the boot ROM's A here ($11 on a color console) */
 #define BOOT_A REG(0xFF80)
 
 /* FPGA registers ($7Fxx, write-only, each write inside unlock/lock) */
@@ -36,7 +36,7 @@
 /* battery-backed pSRAM: page latch at $4000 while $7FC0 = 3 */
 #define PSRAM ((volatile uint8_t *)0xA000)
 #define PSRAM_META 0x11                 /* the kernel's save stamp, LASTROM */
-/* Page $11 $A410-$A411 = "S1": stage1 tells the kernel the user cancelled
+/* Page $11 $A410-$A411 = "S1": stage1 tells the kernel the user canceled
  * fast launch (START held), so the kernel doesn't fast launch either. The
  * kernel clears it (decomp/src/ezcfg.c cfg_load). Free space per
  * docs/psram-page-map.md: the kernel uses $A000-$A316 of page $11. */

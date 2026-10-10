@@ -111,7 +111,7 @@ for (x, y), t in sorted(clb.items()):
         # In a SLICEM, DIF_MUX=BX / DIG_MUX=BY on a LUT-mode LUT goes with its
         # flip-flop taking BX / BY directly, whatever DXMUX / DYMUX decode as:
         # in FW4 these are exactly the 51 flip-flops otherwise fed by a constant
-        # LUT (the wishbone-to-SD synchronisers)
+        # LUT (the wishbone-to-SD synchronizers)
         if sm:
             if a.get('DIF_MUX') == 'BX' and 'F_RAM' not in P and 'F_SRL' not in P:
                 P['DXMUX'] = '"BX"'
@@ -268,7 +268,7 @@ for (t, b), c in sorted(cells.items()):
 for s in sorted(used_out):
     w = wname(s)
     if not any(d.startswith(f"wire {w};") or d.startswith(f"wire {w} =") for d in decl):
-        decl.append(f"wire {w} = 1'b0; // {s} not modelled")
+        decl.append(f"wire {w} = 1'b0; // {s} not modeled")
 
 lines += sorted(set(decl), key=decl.index)
 lines += body

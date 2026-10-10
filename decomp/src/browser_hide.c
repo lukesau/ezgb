@@ -3,7 +3,7 @@
  * Hidden:
  *  - anything whose name starts with '.' (dotfiles, .DS_Store, AppleDouble
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
- *    DirListSkipDotLongName behaviour (docs/browser-hide-filter.md)
+ *    DirListSkipDotLongName behavior (docs/browser-hide-filter.md)
  *  - *.gba (GBA ROMs on a shared card; the Jr can't launch them)
  *  - EZGB.CFG, the settings file (docs/ezgb-cfg.md), and FLAUNCH.CFG, its
  *    pre-2.9 predecessor (a leftover would otherwise clutter the root)
@@ -18,7 +18,7 @@
  * 8.3 names, so those entries never had a long name to test.
  *
  * The check runs before DirList's directory/file split, so a directory named
- * e.g. "Foo.gba" is hidden too, the same deliberate behaviour as the dot
+ * e.g. "Foo.gba" is hidden too, the same deliberate behavior as the dot
  * filter.
  *
  * String literals live in this bank's _CODE and are only read from here, so

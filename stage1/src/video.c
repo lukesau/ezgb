@@ -1,8 +1,8 @@
 /* Boot screen: the EZ Flash icon, a line of title text, a status line.
  * Tiles $20-$5A are the font (tile number = ASCII), tiles $80+ the icon,
  * then the EZ-FLASH Jr. wordmark (scripts/fpga/mkwordmark.py), map $9800
- * with unsigned tile data at $8000. On a colour console the text uses BG
- * palette 0 (greys), the icon palette 1 and the wordmark palette 2. */
+ * with unsigned tile data at $8000. On a color console the text uses BG
+ * palette 0 (grays), the icon palette 1 and the wordmark palette 2. */
 #include <string.h>
 #include "hw.h"
 #include "video.h"
@@ -12,7 +12,7 @@
 #define ICON_X 7
 #define ICON_Y 1
 #define ICON_TILE 0x80
-/* the letters are centred on the screen (canvas x 10 + tile 2 = pixel 26,
+/* the letters are centered on the screen (canvas x 10 + tile 2 = pixel 26,
  * 108 wide); the Jr. hangs off to the right as on the cart label */
 #define MARK_W 16
 #define MARK_H 4
@@ -87,7 +87,7 @@ void video_init(void)
     rBGP = 0xE4;
 
     vram_fill(0x8000, 0, 0x2000);
-    for (n = 0; n < (0x5B - 0x20) * 8; n++) {   /* 1 bpp -> colour 3 */
+    for (n = 0; n < (0x5B - 0x20) * 8; n++) {   /* 1 bpp -> color 3 */
         *dst++ = *src;
         *dst++ = *src++;
     }
