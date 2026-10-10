@@ -208,7 +208,7 @@ since they are plain stores that work from any bank.
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
 | `RtcDumpHook` | `01:7600`, 15 B | `BackupSaveDump` epilogue: `add sp,$0b`, op BACKUP, `ret` |
-| `BrowserHideName` | `08:7c00`, [kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 255 B | Hides `ezgb.cfg` too. Relocated from `08:7a9c` (it outgrew the gap before `FlPickBanner` at `08:7b8d`); `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
+| `BrowserHideName` | `05:7700`, [kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 567 B | Hides `ezgb.cfg` too, and caps directories at 416 entries ([browser-sort.md](browser-sort.md#record-cap)). Relocated from `08:7a9c` and then `08:7c00` as it grew; `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
 
 ### Hook map (stock bytes → patch)
 
@@ -231,6 +231,7 @@ no version-specific address.
 |---|---|
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
+| `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser-sort.md](browser-sort.md#record-cap)) |
 | `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
 | `$DA80` / `$DA81` / `$DA82-$DAF9` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |

@@ -42,15 +42,16 @@ dumps came from an SD card with small directories.
 | Page | Role | Free? |
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
-| `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)). Browser records reach it in directories over 960 entries | Yes, below 961 entries (one FW4 cart) |
+| `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)). Stock browser records reach it in directories over 960 entries | Yes with the mod (one FW4 cart); stock, below 961 entries |
 | `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)); stage1's skip-fast-launch mark `"S1"` at `$A410`–`$A411` (below) | **`$A404`–`$A40F`, `$A412`–`$BFFF`** |
-| `$12`–`$1F` (18–31) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)`. The page is computed unmasked, so past `$1F` it wraps to `$00` | No, grows with directory size |
-| `$1F` (31) | **Sort keys**: `browser_sort.c` uses bank `$FF`, which lands on `$1F` (5-bit latch), the last browser-record page | No |
+| `$12`–`$1E` (18–30) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)`. The mod lists at most 416 entries, so records end at `$1E`. The page is computed unmasked, so in the stock kernel they go on past `$1F` and wrap to `$00` | No, grows with directory size |
+| `$1F` (31) | **Sort keys** (mod): `browser_sort.c`, 16 bytes per entry. Stock: browser records from entry 417 | No |
 
 The browser keeps 32 entries per page and enumerates the whole directory, so a
-directory of N entries fills pages `$12` through `$12 + (N-1)/32`, modulo 32:
-100 entries reach `$15`, 417 reach `$1F` (the sort keys), 449 wrap onto `$00`
-(game save RAM), 961 reach `$10` and 993 reach `$11` (meta). Both dumps show
+directory of N entries fills pages `$12` through `$12 + (N-1)/32`: 100
+entries reach `$15`, 416 fill `$1E`. The mod stops there (below); in the
+stock kernel the page wraps modulo 32, so 417 entries reach `$1F`, 449 wrap
+onto `$00` (game save RAM), 961 reach `$10` and 993 reach `$11` (meta). Both dumps show
 only `$12` (4,163 bytes changed) and `$13` (164 bytes) because the test card's
 largest directory had about 33 entries. Every page from `$12` up is browser space.
 
@@ -70,9 +71,10 @@ nothing of ours is there either. No game can reach it: games see only pages
 both dumps, but nothing proves the save path never reaches a 17th bank.
 Prefer page `$11` `$A400`+ until a probe confirms it.
 
-Both are only safe while no directory has more than 960 entries (992 for page
-`$11`); see below. There is no large free region: everything from `$12` up
-belongs to the browser once a directory is big enough.
+With the stock kernel both are only safe while no directory has more than
+960 entries (992 for page `$11`); the mod never lists more than 416 (below).
+There is no large free region: everything from `$12` up belongs to the
+browser once a directory is big enough.
 
 ## Page-latch width: 5 bits
 
@@ -85,9 +87,9 @@ only), which is how 256 KB of pages fills the 512 KB die; that part is not
 checked on a cart.
 
 The browser computes record pages unmasked. The stock kernel has no cap
-short of EZ Flash's stated 7,000 files, and the mod stops enumerating at
-4,096 (`MAX_ENUM` in `browser_sort.c`), so in both a
-large directory overwrites other pSRAM:
+short of EZ Flash's stated 7,000 files, and until mod 5.6 the mod stopped
+enumerating only at 4,096 (`MAX_ENUM`, chosen for 64 pages), so in both a
+large directory overwrote other pSRAM:
 
 | Directory size | Record page reaches | Overwrites |
 |---|---|---|
@@ -96,8 +98,17 @@ large directory overwrites other pSRAM:
 | 961+ entries | `$10` | the probe page |
 | 993+ entries | `$11` | meta: pending backup, save path, last ROM, the SGB BOOT record |
 
-Not yet reproduced with a real directory on a cart. The SameBoy stub modeled
-64 pages until 2026-10-10 and hid all of this.
+Reproduced in SameBoy once the stub modeled 32 pages: a 521-entry root
+rewrote pages `$00`–`$02`. The stub modeled 64 pages until 2026-10-10 and hid
+all of this.
+
+**Mod 5.6 caps every directory at 416 entries**, records on `$12`–`$1E` and
+sort keys alone on `$1F`. The cap sits in the per-entry hook `DirList` calls
+before each record write, so no caller can get past it; a cut directory
+shows a short notice and is listed in FAT order
+([browser-sort.md](browser-sort.md#record-cap)). The stock kernel is
+unchanged: on stock firmware a directory over 448 entries still overwrites
+saves.
 
 ## Hardware verification
 

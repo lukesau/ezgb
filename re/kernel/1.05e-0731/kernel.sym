@@ -4359,7 +4359,7 @@
 00:02f0 BrowserScrollUpHook
 00:02f0 .data:b:8
 08:746b BrowserSortAll
-08:746b .data:631:8
+08:746b .data:629:8
 00:03d4 BrowserSortAllStub
 00:03d4 .data:8:8
 00:03dc FarCallDrawDetailBottom
@@ -4448,10 +4448,6 @@
 00:05cf .data:23:8
 04:5f20 SetLoopTickHook
 04:5f20 .data:10:8
-08:7c00 BrowserHideName
-08:7c00 .data:ff:8
-00:04ae DirListHideNameStub
-00:04ae .data:19:8
 00:0510 RtcBootHook
 00:0510 .data:1b:8
 00:0530 BatteryDryHook
@@ -4528,3 +4524,7 @@
 01:7f00 .data:da:8
 00:0259 CgbInit
 00:0259 .data:6a:8
+05:7700 BrowserHideName
+05:7700 .data:237:8
+00:04ae DirListHideNameStub
+00:04ae .data:19:8

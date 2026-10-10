@@ -41,13 +41,14 @@ list, so the config file itself can never be picked as a fast-launch target.
 
 ## The patch
 
-Three pieces, byte-identical in the 0731 and 0918 featured builds:
+Three pieces, byte-identical in the 0731 and 0918 featured builds (1.04e is a
+port, so its bank-0 call targets differ):
 
 | Site | What |
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `08:7c00` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 255 bytes, bank-8 cave after `FlPickBanner`; was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`) |
+| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 567 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -57,7 +58,7 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     push bc                ; save the name ptr for DirList_bankSlot
     push bc                ; arg for BrowserHideName
     call FarCallTrampoline
-    db $00, $7c, $08, $00  ; -> 08:7c00 BrowserHideName
+    db $00, $77, $05, $00  ; -> 05:7700 BrowserHideName
     add sp, $02
     pop bc
     ld a, e                ; 1 = hide
@@ -66,7 +67,9 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     jp DirList_bankSlot    ; kept: continue unchanged, BC = name ptr
 ```
 
-`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `EZGB.CFG`, `FLAUNCH.CFG`.
+`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `EZGB.CFG`, `FLAUNCH.CFG`,
+and for any entry past the 416th shown, which also ends the directory
+([browser-sort.md](browser-sort.md#record-cap)).
 (It also hid `*.fastlaunch` until that fast-launch trigger was removed on
 2026-09-07.) Extension and name tests are case-insensitive, since 8.3 short
 names come back uppercase while long names keep the host's casing.
@@ -88,13 +91,15 @@ files. Reproduce with:
 ```bash
 cd kernel
 # (since mod 3.0 the first two are done by scripts/inject-ezcfg.sh)
-python3 tools/inject.py src/browser_hide.c 1.05e-0731 8 7c00 BrowserHideName --apply
+python3 tools/inject.py src/browser_hide.c 1.05e-0731 5 7700 BrowserHideName \
+    --pin DrawString=08b7 --pin FarCallDrawString12=05c0 --pin DrawRect=27ba \
+    --pin StoreDrawParams=2791 --pin Delay=3a93 --pin hUiMode=fffb --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 04ae DirListHideNameStub \
-    200301e4c9c5c5cd8d07007c0800e802c17bb7c2560ac3a30a --apply
+    200301e4c9c5c5cd8d0700770500e802c17bb7c2560ac3a30a --apply
 python3 tools/patch_call.py 1.05e-0731 0 0a9d 3 00:04ae --jp --apply --regen
 ```
 
-(and the same three commands with `1.05e-0918`; the old stub's 8 bytes at
+(the other builds are ports, `scripts/port-mod.py`; the old stub's 8 bytes at
 `00:03cc` were reverted to `$ff` by hand.)
 
 ### Why not filter on the hidden attribute instead

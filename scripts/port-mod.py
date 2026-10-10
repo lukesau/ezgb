@@ -99,7 +99,9 @@ REGISTRY = {
                                                    "hUiMode": 0xfffb}),
     (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
-    (8, 0x7c00): dict(src="browser_hide.c", pins={}),
+    (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
+                      pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
+                            "StoreDrawParams": 0x2791, "Delay": 0x3a93, "hUiMode": 0xfffb}),
     (8, 0x7e80): dict(src="msgbox12.c",                     # 12px Reading / Loading / Error boxes (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "hClip12": 0xfff9,
                             "ReadingStr": 0x7374, "LoadingStr": 0x73af, "ErrorFileStr": 0x73ea}),

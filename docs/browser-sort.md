@@ -39,7 +39,7 @@ Python reference model over 400 randomized directories before injection.
 | Piece | Where |
 |---|---|
 | The code | `kernel/src/browser_sort.c` |
-| Where it lives | bank 8 `$746b` (`BrowserSortAll`, 1585 bytes, cave is 2965) |
+| Where it lives | bank 8 `$746b` (`BrowserSortAll`, 1577 bytes; `DrawHelpModVersion` follows at `$7a9c`, 8 bytes later) |
 | Bank-0 stub | `$03d4` `BrowserSortAllStub`: `cd 8d 07 6b 74 08 00 c9` (FarCallTrampoline shim) |
 | The hook | `00:102f` in `FileBrowserEntry`: was `call DirList`, now `call $03d4` |
 
@@ -59,14 +59,11 @@ python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
 
 ## Choices and caps
 
-- **Scratch bank `$ff`** (same page `$03`): records would only reach it past
-  entry 7584, beyond EZ Flash's stated 7000-file cap. The SameBoy stub masks
-  banks to 6 bits (`$ff`→`$3f`), still clear of records below 1440 entries.
-- **`MAX_SORT` = 512** (512 × 16-byte keys = exactly one 8KB bank). Bigger
-  directories are left in FAT order; a partially sorted list would mislead.
-- **`MAX_ENUM` = 4096**: enumeration stops there and forces the latch, so no
-  later `DirList` can march record banks toward the save pages (the stock
-  kernel would wrap `$4000` past `$ff` on a pathological directory).
+- **Keys on page `$1F`**, the page after the last record page (below).
+  416 keys × 16 bytes = 6.5 KB.
+- **416 entries per directory** (see [Record cap](#record-cap)). A directory
+  that was cut is left in FAT order: a sorted selection of whatever came
+  first on the card would look complete when it is not.
 - Entering a directory now pays full enumeration up front, including the
   end-of-directory dead-tail walk (`scripts/fat-dir-audit.py`). That cost used
   to hide in the first scroll past the last page; the Omega pays it at list time
@@ -74,6 +71,62 @@ python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
 - `EZGB.DAT` can still appear in the listing (under E): the kernel's hide is a
   case-sensitive memcmp against `"ezgb.dat"` and an 8.3-stored copy comes back
   uppercase from FatFs. Pre-existing stock behavior, unrelated to the sort.
+
+## Record cap
+
+Records go to pSRAM page `$12 + (i >> 5)`, computed unmasked by the stock
+`DirList` (`00:0a43`, `DirList_bankSlot`), and the cart keeps only 5 bits of
+the page ([psram-page-map.md](psram-page-map.md)). Past page `$1E` a record
+would land on the sort keys (`$1F`, from entry 417), then on game save RAM
+(`$00`, from 449), the probe page `$10` (961) and the kernel meta `$11`
+(993: pending backup, save path, last ROM, SGB BOOT). Until mod 5.6 the
+only cap was `MAX_ENUM` = 4096, chosen when the latch was thought to be 6
+bits, so a 449-entry directory overwrote the first save page.
+
+Since mod 5.6 the cap is in `BrowserHideName` (`05:7700`,
+[browser-hide-filter.md](browser-hide-filter.md)), which `DirList` calls for
+every entry just before storing it. That puts it in front of every record
+write, from any caller of `DirList`, rather than after a 16-entry batch
+returns. When the count `$c2a2` is already 416 and the entry would be shown:
+
+1. It zeroes the current sector of `DirList`'s FatFs `DIR` (`$c9f5`, `sect`
+   at +`$0e` = `$ca03`), the way FatFs itself marks the end of a directory,
+   and returns "hide". `DirList` reads the next entry, `f_readdir` comes back
+   empty without touching the card, and `DirList` sets the end latch `$c5a4`
+   as on a real end. Nothing more of the directory is read.
+2. It sets `LIST_CUT` (`$DBFA`, cleared by `BrowserSortAll` before it
+   enumerates), so the sort is skipped.
+3. It draws a box over the `Reading...` box and waits about 2 s
+   (`Delay(2000)`) before the browser paints the list:
+
+   ```
+   Too many files.
+   Showing first 416
+   ```
+
+   8px: box (0,51)-(159,84), text on tile rows 7 and 9. 12px: box
+   (0,52)-(159,87), text at y 56 and 72. Both erase the `Reading...` box
+   first.
+
+A hidden entry (dotfile, `*.gba`, ...) past the cap does not end the
+directory, so a folder of exactly 416 games plus macOS sidecars is listed
+whole. The stock kernel has none of this: on stock firmware a directory over
+448 entries still overwrites saves.
+
+Checked in SameBoy with the 32-page stub, on cards with 416, 417 and 520
+entries in a subfolder and 520 in the root, every page compared against a
+seeded `psram` file afterwards:
+
+| Entries | Notice | Listing | Pages written |
+|---|---|---|---|
+| 416 | no | sorted | records `$12`–`$1E`, keys `$1F` |
+| 417, 520 | yes, about 2 s | the first 416 in FAT order; RIGHT ends on entry 416 | records `$12`–`$1E` only |
+| before the cap, 520 in the root | no | | `$00`–`$02` overwritten |
+
+Page `$11` changes by its one cart-init byte (`$A201`) on every boot. At boot
+in the root the notice stays up longer than 2 s: the fast-launch scan and the
+config lookups read the whole root before the list is first painted (in
+SameBoy, whose SD reads are slow, about 20 s).
 
 ## Verification (SameBoy)
 

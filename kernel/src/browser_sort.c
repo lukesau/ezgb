@@ -37,24 +37,19 @@
  *    $A000 + 255 * (idx & $1f), NUL-terminated name at +0 (ApplyBasename),
  *    attr at +$fe. Nothing else lives in a record (the browser's number
  *    field is base+sel+1, not a stored size).
- *  - Scratch keys: same page, bank $ff, which records would only reach past
- *    entry 7584, beyond EZ Flash's stated 7000-file cap, and sorting is
- *    skipped long before that anyway (MAX_SORT). The SameBoy stub masks
- *    banks to 6 bits ($ff -> $3f), still clear of records below 1440
- *    entries, so emulator tests hold too.
- *    Correction (2026-10-10): the cart keeps only 5 bits (debug tab alias
- *    test on FW5, docs/psram-page-map.md). $ff lands on $1f, which records
- *    reach from entry 416, so 417-512 entry directories put keys and
- *    records on the same page, and MAX_ENUM no longer keeps records off
- *    the save pages (they wrap to $00 from entry 448).
+ *  - Keys: same window, page $1f. The cart keeps only 5 bits of the page
+ *    (docs/psram-page-map.md), so records can only use $12-$1e (416
+ *    entries) without meeting the keys and then wrapping onto the game save
+ *    pages; browser_hide.c ends the directory there. 416 keys of 16 bytes
+ *    take 6.5 KB of the page. Until mod 5.6 the keys were at bank $ff
+ *    (also $1f on the cart) and records were capped at 4096 entries.
  *  - Bounce: $c4a4, the 255-byte FatFs LFN buffer, idle once enumeration is
  *    done (next touched when the browser re-enters and rewires it).
  *
- * Caps: directories over MAX_SORT entries are left unsorted (a partial sort
- * would mislead). Enumeration stops at MAX_ENUM and forces the latch so no
- * later DirList call can push record banks toward the save pages. The
- * stock kernel would happily wrap $4000 past $ff on a pathological
- * directory; we refuse earlier.
+ * Cap: browser_hide.c stops a directory at 416 shown entries, whoever calls
+ * DirList, and sets LIST_CUT. A cut listing is left in FAT order: a sorted
+ * selection of whatever came first on the card would look complete when it
+ * is not, while FAT order shows the cut where it is.
  *
  * Cost: entering a directory now pays full enumeration (SD-bound, the cost
  * that used to hide in the first scroll past the last page) plus the sort;
@@ -76,13 +71,12 @@ extern void DirList(void);
 #define BOUNCE ((u8 *)0xc4a4) /* FatFs LFN buffer; idle after enumeration */
 
 #define REC_BANK_BASE 0x12
-#define SCRATCH_BANK 0xff
+#define KEY_PAGE 0x1f      /* the page after the last record page (MAX_RECORDS) */
 #define ATTR_OFS 254
 #define NAME_END 253 /* name bytes 0..252, guard NUL at 253 */
 #define PREFIX_LEN 13
 #define ATTR_DIR 0x10
-#define MAX_SORT 512  /* 512 * 16-byte keys = exactly one 8KB scratch bank */
-#define MAX_ENUM 4096
+#define LIST_CUT (*(volatile u8 *)0xdbfa) /* set by browser_hide.c at its cap */
 
 static volatile u8 *rec_map(u16 idx);
 static volatile u8 *key_map(u16 p);
@@ -103,16 +97,13 @@ void browser_sort_all(void) {
     u16 i;
     u16 end;
 
+    LIST_CUT = 0;
     while (!END_OF_DIR) {
         DirList();
-        if (ENTRY_COUNT >= MAX_ENUM) {
-            END_OF_DIR = 1;
-            break;
-        }
     }
 
     n = ENTRY_COUNT;
-    if (n >= 2 && n <= MAX_SORT) {
+    if (n >= 2 && !LIST_CUT) {
         fpga_sram_page();
         build_keys(n);
         for (i = n >> 1; i > 0; i--) {
@@ -152,7 +143,7 @@ static volatile u8 *rec_map(u16 idx) {
 }
 
 static volatile u8 *key_map(u16 p) {
-    RAM_BANK = SCRATCH_BANK;
+    RAM_BANK = KEY_PAGE;
     return WIN + (p << 4);
 }
 
@@ -202,7 +193,7 @@ static signed char key_cmp(u16 p, u16 q) {
     u8 a;
     u8 b;
 
-    RAM_BANK = SCRATCH_BANK;
+    RAM_BANK = KEY_PAGE;
     kp = WIN + (p << 4);
     kq = WIN + (q << 4);
     for (j = 0; j < 1 + PREFIX_LEN; j++) {
@@ -223,7 +214,7 @@ static void key_swap(u16 p, u16 q) {
     u8 j;
     u8 t;
 
-    RAM_BANK = SCRATCH_BANK;
+    RAM_BANK = KEY_PAGE;
     kp = WIN + (p << 4);
     kq = WIN + (q << 4);
     for (j = 0; j < 16; j++) {

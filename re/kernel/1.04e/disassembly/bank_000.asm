@@ -598,7 +598,7 @@ fastlaunch_boot::
 
 DirListHideNameStub::
     db $20, $03, $01, $e4, $c9, $c5, $c5, $cd
-    db $8d, $07, $00, $7c, $08, $00, $e8, $02
+    db $8d, $07, $00, $77, $05, $00, $e8, $02
     db $c1, $7b, $b7, $c2, $5a, $0a, $c3, $a7
     db $0a
 

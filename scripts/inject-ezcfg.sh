@@ -23,12 +23,12 @@ esac
 # 1. Drop the kernel.sym entries of the blocks being re-injected (inject.py
 #    refuses to overwrite in place) and blank their old bytes to $FF so a
 #    smaller re-injection leaves no stale code behind.
-perl -ni -e 'print unless /^(02:4500|02:4a00|04:6600|08:7c00|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610|01:7620|00:0588|04:5f20|04:5f30) /' "$SYM"
+perl -ni -e 'print unless /^(02:4500|02:4a00|04:6600|08:7c00|05:7700|00:04ae|04:5f00|04:5f10|00:0510|00:0530|00:0540|00:0556|01:7600|01:7610|01:7620|00:0588|04:5f20|04:5f30) /' "$SYM"
 python3 - "$GB" <<'PY'
 import sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
 def off(b,a): return a if b==0 else b*0x4000+(a-0x4000)
-for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x2600+0x4000,0x600),(8,0x7c00,0x120),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x10),(1,0x7620,0x10),(0,0x0588,0x10),(4,0x5f20,0x10),(4,0x5f30,0x20)):
+for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x2600+0x4000,0x600),(8,0x7c00,0x100),(5,0x7700,0x300),(0,0x0540,0x16),(0,0x0556,0x32),(1,0x7610,0x10),(1,0x7620,0x10),(0,0x0588,0x10),(4,0x5f20,0x10),(4,0x5f30,0x20)):
     rom[off(b,a):off(b,a)+n]=b'\xff'*n
 open(p,'wb').write(rom)
 PY
@@ -141,9 +141,11 @@ python3 tools/inject_bytes.py "$V" 0 05cf VBlankPadLatch f040f610e0403e48e045c5c
 python3 tools/inject_bytes.py "$V" 4 5f20 SetLoopTickHook 3e05f533010000c5cd0066e803c34a3a --apply
 python3 tools/patch_call.py   "$V" 4 5162 3 04:5f20 --apply
 
-# 4. Bank 8: hide filter (relocated to 7c00; it outgrew the slot before FlPickBanner).
-python3 tools/inject.py src/browser_hide.c "$V" 8 7c00 BrowserHideName --apply
-python3 tools/inject_bytes.py "$V" 0 04ae DirListHideNameStub 200301e4c9c5c5cd8d07007c0800e802c17bb7c2560ac3a30a --apply
+# 4. Bank 5: hide filter and record cap (08:7c00 until the cap outgrew that slot).
+python3 tools/inject.py src/browser_hide.c "$V" 5 7700 BrowserHideName --pin DrawString=08b7 \
+    --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin Delay=3a93 \
+    --pin hUiMode=fffb --apply
+python3 tools/inject_bytes.py "$V" 0 04ae DirListHideNameStub 200301e4c9c5c5cd8d0700770500e802c17bb7c2560ac3a30a --apply
 
 # 5. Bank 0: boot restore hook + BATTERY DRY flag hook.
 python3 tools/inject_bytes.py "$V" 0 0510 RtcBootHook    3e03eafcdbcd8d07004a02003e11ea0040cd8d07e7410400c3500e --apply
