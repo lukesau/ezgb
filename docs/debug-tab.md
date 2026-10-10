@@ -62,9 +62,16 @@ SameBoy built from a stub older than 2026-10-10 models 64 pages
 - Page `$10` read `BE BF BE BF BF BF BF AE` with only 33 distinct values:
   neither random power-on contents (~250) nor a cleared page. Probably never
   written on this cart and partly faded toward set bits; A was not pressed.
-- The SGB BOOT record read `AA AA AA AA` (`OFF`). Nothing known writes `$AA`
-  there; unexplained.
+- The SGB BOOT record read `AA AA AA AA` (`OFF`): what the cart held there
+  before the setting was ever saved. Turning SGB BOOT on gave `53 47 01 FE`
+  (`ON`), off `53 47 00 FF`, and a reboot kept it, so the record works on the
+  FW5.
 - `BOOT A REGISTER: E4`, as on the FW4 Jr.
+- Page `$10` with the coin cell in: A wrote the pattern, the console was off
+  about 30 minutes, and it read back `OK` on the next boot.
+- With the coin cell pulled for a few minutes the pattern read back `BAD` on
+  the next boot, as on the FW4 Jr. Pulling it also loses game save RAM, the
+  last-ROM record and the SGB setting in pSRAM.
 
 ## Findings (FW4 Jr, GBC, no coin cell, 2026-10-08)
 
