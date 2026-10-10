@@ -49,10 +49,14 @@ The kernel writes `$7FD4` in 1.05e (cataloged in `docs/REGISTERS.md`
 beside `$7FD0`/`$7FD2`); FW4's design doesn't decode it.
 
 Between FW5-0731 and FW5-0918 the register map is the same except for five
-extra flip-flops loaded on every write and a regrouped set of data-path
-flip-flops whose enables are too wide for `regmap.py` to resolve. That fits
-the MBC3 real-time clock work [fw5.md](fw5.md) found in 0918's PicoBlaze
-code; the cone diff is where it gets pinned down.
+flip-flops only 0918 has, plus a regrouped set of data-path flip-flops whose
+enables are too wide for `regmap.py` to resolve. The five are enabled only
+for MBC3 and set on a write to `$A000-$BFFF` (A13-A15) while a given clock
+register is selected through the RAM bank register, then hold: one flag per
+clock register, the "game wrote S/M/H/DL/DH" events that 0918's interrupt
+handler takes from `CMD_OP` `$04/$02/$01` and port `$B8`. 0731's fabric
+never captures clock writes at all, which is why its PicoBlaze can't honor
+them (the clock comparison below).
 
 A second probe (`mbctest.py rtcx`) sets the halt bit, then writes a full
 time of day 511, 23:59:58 and lets it run past midnight:
