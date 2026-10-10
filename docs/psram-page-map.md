@@ -31,21 +31,28 @@ dumps came from an SD card with small directories.
 > Not yet checked on a cart: the debug tab's alias test only compares page
 > `$10` with `$00`, `$01` and `$11`. A `$20`-vs-`$00` alias test would
 > settle it.
+>
+> **Confirmed on hardware (2026-10-10).** The debug tab's B test
+> ([debug-tab.md](debug-tab.md#page-latch-alias-test-b)) on an FW5 cart
+> running 1.05e-0918 (GBC): a write through page `$20` changed page `$00`, and
+> one through `$3F` changed `$1F`. There are 32 pages. The table and the
+> sections below are updated for that.
 
 
 | Page | Role | Free? |
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
-| `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)) | Yes (one FW4 cart) |
+| `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)). Browser records reach it in directories over 960 entries | Yes, below 961 entries (one FW4 cart) |
 | `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)); stage1's skip-fast-launch mark `"S1"` at `$A410`–`$A411` (below) | **`$A404`–`$A40F`, `$A412`–`$BFFF`** |
-| `$12` and up (18+) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)` | No, grows with directory size |
-| `$3F` (63) | **Sort keys**: `browser_sort.c` uses bank `$FF`, which lands on `$3F` with a 6-bit page latch | No |
+| `$12`–`$1F` (18–31) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)`. The page is computed unmasked, so past `$1F` it wraps to `$00` | No, grows with directory size |
+| `$1F` (31) | **Sort keys**: `browser_sort.c` uses bank `$FF`, which lands on `$1F` (5-bit latch), the last browser-record page | No |
 
 The browser keeps 32 entries per page and enumerates the whole directory, so a
-directory of N entries fills pages `$12` through `$12 + (N-1)/32`: 100 entries
-reach `$15`, 1,000 reach about `$31`. Both dumps show only `$12` (4,163 bytes
-changed) and `$13` (164 bytes) because the test card's largest directory had
-about 33 entries. Every page from `$12` up is browser space.
+directory of N entries fills pages `$12` through `$12 + (N-1)/32`, modulo 32:
+100 entries reach `$15`, 417 reach `$1F` (the sort keys), 449 wrap onto `$00`
+(game save RAM), 961 reach `$10` and 993 reach `$11` (meta). Both dumps show
+only `$12` (4,163 bytes changed) and `$13` (164 bytes) because the test card's
+largest directory had about 33 entries. Every page from `$12` up is browser space.
 
 ## Spare space
 
@@ -63,20 +70,34 @@ nothing of ours is there either. No game can reach it: games see only pages
 both dumps, but nothing proves the save path never reaches a 17th bank.
 Prefer page `$11` `$A400`+ until a probe confirms it.
 
-There is no large free region: everything above `$11` belongs to the browser
-once a directory is big enough.
+Both are only safe while no directory has more than 960 entries (992 for page
+`$11`); see below. There is no large free region: everything from `$12` up
+belongs to the browser once a directory is big enough.
 
-## Open: page-latch width
+## Page-latch width: 5 bits
 
-The 64-page / 512 KB size is the U4 pSRAM die
-([hardware-board.md](hardware-board.md)) and the SameBoy stub's model
-(`EZJR_SRAM_BANKS=64`). The browser computes record pages unmasked: the 1,473rd
-entry lands on page `$40`, and EZ Flash's stated 7,000-file cap would reach page `$EC`.
-If the FPGA keeps only 6 bits of the latch, as the stub does, page `$40` aliases
-page `$00`: a directory over 1,472 entries would overwrite game save RAM, and
-one over 2,016 entries would reach the page `$11` meta (including anything we
-store at `$A400`+). Not verified on hardware. A probe would write a sentinel to
-page `$00`, write a different one through page `$40`, and read page `$00` back.
+Only 5 bits of the `$4000` latch reach the pSRAM, so the kernel sees 32 pages
+of 8 KB: simulated on FW4, FW5-0731 and FW5-0918
+([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
+and confirmed on an FW5 cart (2026-10-10, the debug tab's B test). The
+simulation also says each byte takes one 16-bit word of U4 (low byte lane
+only), which is how 256 KB of pages fills the 512 KB die; that part is not
+checked on a cart.
+
+The browser computes record pages unmasked. The stock kernel has no cap
+short of EZ Flash's stated 7,000 files, and the mod stops enumerating at
+4,096 (`MAX_ENUM` in `browser_sort.c`), so in both a
+large directory overwrites other pSRAM:
+
+| Directory size | Record page reaches | Overwrites |
+|---|---|---|
+| 417–512 entries | `$1F` | the mod's sort keys, built on the same page for directories up to 512 entries (`MAX_SORT`) |
+| 449+ entries | `$00`, then up | game save RAM |
+| 961+ entries | `$10` | the probe page |
+| 993+ entries | `$11` | meta: pending backup, save path, last ROM, the SGB BOOT record |
+
+Not yet reproduced with a real directory on a cart. The SameBoy stub modeled
+64 pages until 2026-10-10 and hid all of this.
 
 ## Hardware verification
 
@@ -92,7 +113,8 @@ and read it back on a later boot.
 
 There is a **safe ~7 KB** (page 17 `$A400`–`$BFFF`) for a battery-backed
 config store: feature flags, the SGB boot toggle, a richer last-ROM list,
-per-game settings. Page `$10` may add 8 KB once probed. All of it dies with the
+per-game settings. Page `$10` may add 8 KB once probed. Both are only safe
+while directories stay under 961 entries (above). All of it dies with the
 coin cell (same limitation as saves); it is convenient persistence, not
 permanent storage. Truly battery-independent storage still needs the parallel
 NOR path that does not exist ([updater-flash-write.md](updater-flash-write.md)).

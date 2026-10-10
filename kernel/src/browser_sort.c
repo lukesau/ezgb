@@ -42,6 +42,11 @@
  *    skipped long before that anyway (MAX_SORT). The SameBoy stub masks
  *    banks to 6 bits ($ff -> $3f), still clear of records below 1440
  *    entries, so emulator tests hold too.
+ *    Correction (2026-10-10): the cart keeps only 5 bits (debug tab alias
+ *    test on FW5, docs/psram-page-map.md). $ff lands on $1f, which records
+ *    reach from entry 416, so 417-512 entry directories put keys and
+ *    records on the same page, and MAX_ENUM no longer keeps records off
+ *    the save pages (they wrap to $00 from entry 448).
  *  - Bounce: $c4a4, the 255-byte FatFs LFN buffer, idle once enumeration is
  *    done (next touched when the browser re-enters and rewires it).
  *

@@ -40,7 +40,7 @@ What is **proven by our own measurements** (independent of any part number):
 | Store | Where | Size | Volatile? | Evidence |
 |---|---|---|---|---|
 | **Game ROM** (loaded game) | U9's pSRAM | **~8 MB** (64 Mbit) | Volatile, fades off-power | [nor-reuse.md](nor-reuse.md); loads 64 Mbit ROMs = GB max |
-| **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) | Battery-backed (coin cell) | [psram-page-map.md](psram-page-map.md); 512 KB = 64 pages exactly |
+| **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) die, 256 KB usable | Battery-backed (coin cell) | [psram-page-map.md](psram-page-map.md); 32 pages × 8 KB (correction below) |
 | **FPGA bitstream** (+ stage1 as BRAM) | SPI flash (`25Q40H`, board revs vary) | 512 KB–2 MB | Nonvolatile | [flash-map.md](../re/stage0/docs/flash-map.md), [updater-flash-write.md](updater-flash-write.md) |
 | **NOR die of U4** | S29PL032A (datasheet-confirmed) | 4 MB | Nonvolatile | **no GB-side use found** |
 
@@ -49,6 +49,14 @@ The size coincidences pin the pSRAM assignments hard: the game store loads
 (= U4's datasheet-confirmed 4 Mbit pSRAM die). So EZ-Flash appears to have
 chosen these parts **for their pSRAM** (8 MB fast RAM for the ROM, 512 KB
 battery-backed RAM for saves).
+
+> **Correction (2026-10-10).** "512 KB / 64 pages" above is wrong about the
+> pages. The page latch is 5 bits (simulated on all three firmwares,
+> confirmed on an FW5 cart with the debug tab's alias test), so the kernel
+> sees 32 pages × 8 KB = 256 KB. The simulation says each byte takes one
+> 16-bit word (low byte lane only), which is how 256 KB fills the 512 KB die.
+> The SameBoy stub's 64 pages and [psram-page-map.md](psram-page-map.md)
+> inherited the 64; both are updated.
 
 **What is *not* confirmed:** U9's exact identity and full contents. Its marking
 `3350LLZDQ0` (lowercase-`i`/Intel-era logo) is undocumented: no datasheet turns

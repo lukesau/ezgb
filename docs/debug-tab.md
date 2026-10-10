@@ -33,10 +33,9 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 
 Simulating the FW4, FW5-0731 and FW5-0918 bitstreams found only 5 bits of the
 `$4000` page latch reach the pSRAM: pages `$20-$3F` would be `$00-$1F` again
-(`re/stage0/docs/firmware-diff.md`, "Save pages from the kernel", on the
-`bitstream-re` branch, and the correction in [psram-page-map.md](psram-page-map.md)
-there). B checks that on the cart, for `$20` against `$00` and `$3F` against
-`$1F`, without losing data:
+([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel),
+[psram-page-map.md](psram-page-map.md)). B checks that on the cart, for `$20`
+against `$00` and `$3F` against `$1F`, without losing data:
 
 1. With interrupts off, read the 4 bytes at `$BFFC` (past the end of most
    games' saves) in the low page and in the high page.
@@ -50,8 +49,22 @@ there). B checks that on the cart, for `$20` against `$00` and `$3F` against
 | `ODD` | anything else, e.g. the high page doesn't hold what was written |
 | `!RST` after it | the bytes read back after step 3 differ from the originals |
 
-SameBoy models 64 pages (`EZJR_SRAM_BANKS`), so it shows `NO ALIAS` for both;
-a scratch build with 32 pages shows `ALIAS` for both, and neither shows `!RST`.
+SameBoy built from a stub older than 2026-10-10 models 64 pages
+(`EZJR_SRAM_BANKS`) and shows `NO ALIAS` for both; with 32 pages it shows
+`ALIAS` for both. Neither shows `!RST`.
+
+## Findings (FW5, 1.05e-0918, GBC, 2026-10-10)
+
+- **B: `ALIAS` on both lines**, no `!RST`. The page latch is 5 bits on the
+  cart, as simulated. Reopening the screen afterwards gave the same sums
+  (P00 `94E1`, P01 `450A`, P10 `DC20`, P11 `51D2`), so the test put back
+  what it wrote.
+- Page `$10` read `BE BF BE BF BF BF BF AE` with only 33 distinct values:
+  neither random power-on contents (~250) nor a cleared page. Probably never
+  written on this cart and partly faded toward set bits; A was not pressed.
+- The SGB BOOT record read `AA AA AA AA` (`OFF`). Nothing known writes `$AA`
+  there; unexplained.
+- `BOOT A REGISTER: E4`, as on the FW4 Jr.
 
 ## Findings (FW4 Jr, GBC, no coin cell, 2026-10-08)
 
