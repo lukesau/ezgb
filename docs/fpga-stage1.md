@@ -207,7 +207,8 @@ the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
    the expected size is filled with `$FF`. Then the stamp on page `$11`:
    `$AA`, size >> 13, path length, path, `$A202 = 0`.
 4. Load command (same table as for the kernel), then `$7FC0=$02`, `$7F37`
-   (MBC, `+$80` with a timer), `$7FD4=$00`, `$7FC4`, `$7FC1/$7FC2`,
+   (MBC, `+$80` with a timer), `$7FD4=$11` (the stock kernel writes `$00`;
+   `$11` is FW5's fast load, as in mod 5.5), `$7FC4`, `$7FC1/$7FC2`,
    `$7FC3`.
 5. LCD off, `$7F36=$01` and the command copied in, then from WRAM
    (`game_handoff.s`): `$7F36=$03`, wait while the status reads 0 or 1,

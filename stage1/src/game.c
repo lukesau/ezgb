@@ -258,7 +258,8 @@ void game_launch(const char *path, uint8_t *buf)
     mask = rom_mask(code_rom, banks);
     fpga_set(FPGA_SRAM_MAP, 2);
     fpga_set(0x7F37, mbc | (timer ? 0x80 : 0));
-    fpga_set(0x7FD4, 0);
+    fpga_set(0x7FD4, 0x11);             /* FW5: $7FD3 (0) + $7FD4 = $11 skips the
+                                           loader's pause after each SD read */
     fpga_set(0x7FC4, ram_mask(code_ram, mbc));
     fpga_set(0x7FC1, (uint8_t)mask);
     fpga_set(0x7FC2, (uint8_t)(mask >> 8));
