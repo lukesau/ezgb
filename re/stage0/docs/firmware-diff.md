@@ -54,6 +54,19 @@ flip-flops whose enables are too wide for `regmap.py` to resolve. That fits
 the MBC3 real-time clock work [fw5.md](fw5.md) found in 0918's PicoBlaze
 code; the cone diff is where it gets pinned down.
 
+A second probe (`mbctest.py rtcx`) sets the halt bit, then writes a full
+time of day 511, 23:59:58 and lets it run past midnight:
+
+| | FW4 | FW5-0731 | FW5-0918 |
+|---|---|---|---|
+| DH = `$40` (halt), 7 ms later | still ticking (wall clock) | still ticking (S `$01` to `$04`) | stopped (S stays `$02`) |
+| after writing S `$3A`, M `$3B`, H `$17`, DL `$FF`, DH `$01` | wall clock unchanged | S keeps the elapsed count, M/H/DL read 0, DH `$40` | reads back exactly what was written |
+| 10 ms later | wall clock | DH `$81` with no day overflow | S `$02`, M/H/DL 0, DH `$80`: day 511 rolled to 0, carry set, day bit 8 cleared |
+
+So the simulation confirms each 0918 change [fw5.md](fw5.md) read out of the
+PicoBlaze code: halt honored, writes taken, day carry as on a real MBC3.
+0731's clock only counts up from the launch.
+
 ## Kernel and game launches (simulated)
 
 Both launch paths run unchanged on all three firmwares, loading from the
