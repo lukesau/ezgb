@@ -207,9 +207,9 @@ the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
    the expected size is filled with `$FF`. Then the stamp on page `$11`:
    `$AA`, size >> 13, path length, path, `$A202 = 0`.
 4. Load command (same table as for the kernel), then `$7FC0=$02`, `$7F37`
-   (MBC, `+$80` with a timer), `$7FD4=$11` (the stock kernel writes `$00`;
-   `$11` is FW5's fast load, as in mod 5.5), `$7FC4`, `$7FC1/$7FC2`,
-   `$7FC3`.
+   (MBC, `+$80` with a timer), `$7FD4=$11` on FW5 only (the stock kernel
+   writes `$00`; `$11` is FW5's fast load, as in mod 5.5, and FW4 has no
+   `$7FD4`), `$7FC4`, `$7FC1/$7FC2`, `$7FC3`.
 5. LCD off, `$7F36=$01` and the command copied in, then from WRAM
    (`game_handoff.s`): `$7F36=$03`, wait while the status reads 0 or 1,
    `$7F36=$00`, `$7F31/$7F32 = $00`, ROM bank 1, `$7FE0=$80`.
@@ -224,8 +224,8 @@ kernel copies it to `/SAVER` on its next boot when page `$11` holds the
 | `$AA`, this game's save path | launches without copying anything: pSRAM already holds the newest save, and the stamp stays armed |
 | `$AA`, another game | boots the kernel, which backs that save up first |
 
-**Games with a clock** (MBC3 with timer, `$0147` = `$0F`/`$10`) get their
-clock set the kernel's way (`stage1/src/rtc.c`, from `RtcToDayCount`
+**Games with a clock** (MBC3 with timer, `$0147` = `$0F`/`$10`) on FW5 get
+their clock set the kernel's way (`stage1/src/rtc.c`, from `RtcToDayCount`
 `01:4ec9`, `RtcWriteTimeFromDayDelta` `01:505c` and `PreLaunchSaveStamp`
 `01:5824`). The cart serves the game a base clock plus the time since the ROM
 load, so the base must be the saved clock moved on by the time since it was
@@ -245,6 +245,10 @@ saved:
 The result goes to the FPGA's clock window (`$7FC0 = 6`, `$A018-$A01C`) and
 to page `$11` (`$A220-$A224`, `$A202 = $77`, `$A210` = now), as the kernel
 leaves them, so the kernel's next `BACKUPSAVE` writes a correct footer.
+
+On FW4 stage1 skips all of this, as 1.04e does: FW4 has no game clock and
+1.04e has no code for one. Stage1 tells the two apart by the FW version byte
+(`$7FC0 = 4`, then `$A000` reads 4 or 5, [version-byte.md](../re/stage0/docs/version-byte.md)).
 
 > **Correction (2026-10-10).** Earlier versions of stage1 left the clock
 > alone when pSRAM already held a clock game's save, so the game ran with

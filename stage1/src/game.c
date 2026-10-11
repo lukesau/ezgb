@@ -127,9 +127,10 @@ static int32_t get32(const uint8_t *p)
 }
 
 /* .sav (or $FF when there is none) -> pSRAM, the game clock for a timer
- * cart, then the stamp: BackupOpenSaverPath 01:53c5 and PreLaunchSaveStamp
- * 01:5824. The clock: a 48-byte footer is advanced by the time since its
- * launch stamp (rtc.c); no footer or no .sav zeroes it. */
+ * cart on FW5 (FW4 has no game clock, and 1.04e no code for one), then
+ * the stamp: BackupOpenSaverPath 01:53c5 and PreLaunchSaveStamp 01:5824.
+ * The clock: a 48-byte footer is advanced by the time since its launch
+ * stamp (rtc.c); no footer or no .sav zeroes it. */
 static uint8_t load_save(uint8_t *buf, uint8_t code, uint8_t mbc, uint8_t timer)
 {
     uint32_t size, off;
@@ -209,7 +210,7 @@ static uint8_t resume_clock(void)
 void game_launch(const char *path, uint8_t *buf)
 {
     uint8_t type, code_rom, code_ram, mbc, battery, timer, chk, i;
-    uint8_t stamped, same, len;
+    uint8_t stamped, same, len, fw5;
     uint16_t banks, mask;
     uint32_t acc;
 
@@ -226,6 +227,9 @@ void game_launch(const char *path, uint8_t *buf)
     mbc = mbc_code(type);
     battery = has_battery(type);
     timer = type == 0x0F || type == 0x10;
+    fpga_set(FPGA_SRAM_MAP, 4);         /* version byte: FW4 reads 4, FW5 5 */
+    fw5 = SRAM[0] >= 5;
+    fpga_set(FPGA_SRAM_MAP, 0);
     if (mbc == 1 && banks > 0x20 && fat_read(0x40000 >> 9, buf)) {
         for (acc = 0, i = 0x04; i < 0x34; i++)
             acc = acc << 1 ^ buf[0x100 + i];
@@ -248,9 +252,9 @@ void game_launch(const char *path, uint8_t *buf)
     memcpy((void *)(SRAM + 0x300), path, strlen(path) + 1);
     psram_unmap();
 
-    if (battery && !same && !load_save(buf, code_ram, mbc, timer))
+    if (battery && !same && !load_save(buf, code_ram, mbc, timer && fw5))
         return;
-    if (timer && same && !resume_clock())
+    if (timer && fw5 && same && !resume_clock())
         return;                         /* no clock record: kernel only */
 
     if (fat_open(path) || fat_load_command(cmd))
@@ -258,8 +262,9 @@ void game_launch(const char *path, uint8_t *buf)
     mask = rom_mask(code_rom, banks);
     fpga_set(FPGA_SRAM_MAP, 2);
     fpga_set(0x7F37, mbc | (timer ? 0x80 : 0));
-    fpga_set(0x7FD4, 0x11);             /* FW5: $7FD3 (0) + $7FD4 = $11 skips the
+    if (fw5)                            /* $7FD3 (0) + $7FD4 = $11 skips the
                                            loader's pause after each SD read */
+        fpga_set(0x7FD4, 0x11);
     fpga_set(0x7FC4, ram_mask(code_ram, mbc));
     fpga_set(0x7FC1, (uint8_t)mask);
     fpga_set(0x7FC2, (uint8_t)(mask >> 8));
