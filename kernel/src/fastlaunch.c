@@ -48,6 +48,7 @@ extern void ezcfg(void);                          /* 02:4a00 */
 #define FL_EN    (*(volatile unsigned char *)0xDA80)
 #define FL_PLEN  (*(volatile unsigned char *)0xDA81)
 #define FL_PATH  ((unsigned char *)0xDA82)
+#define CFG_LOADED (*(volatile unsigned char *)0xDBF9)  /* set by ezcfg's load */
 
 /* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
  * $00; the file-record window ($A000, where the browser rests) is $03. */
@@ -57,7 +58,6 @@ extern void ezcfg(void);                          /* 02:4a00 */
 /* Fixed WRAM scratch. */
 #define FNO   ((unsigned char *)0xD780)  /* FILINFO, 26 used */
 #define LFN   ((unsigned char *)0xD7A0)  /* long-name buffer, 256 */
-#define NAME  ((unsigned char *)0xD8D0)  /* last real file's name, 48 */
 #define DIRO  ((unsigned char *)0xD900)  /* the one DIR object, 128 reserved */
 
 #define FNO_ATTRIB  8
@@ -67,7 +67,6 @@ extern void ezcfg(void);                          /* 02:4a00 */
 #define AM_DIR      0x10
 
 #define LFN_SIZE  254
-#define NAME_MAX  48
 
 static unsigned char to_upper(unsigned char c);
 static unsigned char strlen_u(const unsigned char *s);
@@ -101,9 +100,7 @@ static void scan_root(void) {
     unsigned char *result_path = RESULT;
     unsigned char root[2];
     unsigned char realcount;
-    unsigned char last_is_rom;
     const unsigned char *name;
-    unsigned char i, n;
 
     result_path[0] = 0;
 
@@ -123,13 +120,15 @@ static void scan_root(void) {
 
     /* --- Classify the root --- */
     realcount = 0;
-    last_is_rom = 0;
 
     FarCallSetPage(SD_PAGE);
     if (FarCallOpendir_B5(DIRO, root) != 0) return;
     for (;;) {
         readdir_prep();
-        if (FarCallReaddir_B5(DIRO, FNO) != 0) return;
+        if (FarCallReaddir_B5(DIRO, FNO) != 0) {
+            result_path[0] = 0;
+            return;
+        }
         if (is_end()) break;
         if (FNO[FNO_ATTRIB] & AM_DIR) continue;
         name = entry_name();
@@ -138,18 +137,15 @@ static void scan_root(void) {
         if (streq_ci(name, (const unsigned char *)"ezgb.cfg")) continue;
         if (streq_ci(name, (const unsigned char *)"flaunch.cfg")) continue;
 
-        /* A real file: count it and remember it (for the lone-ROM rule). */
-        realcount++;
-        n = strlen_u(name);
-        if (n >= NAME_MAX) n = NAME_MAX - 1;
-        for (i = 0; i < n; i++) NAME[i] = name[i];
-        NAME[n] = 0;
-        last_is_rom = is_rom(NAME);
-    }
-
-    /* --- Decide --- */
-    if (realcount == 1 && last_is_rom) {
-        write_result(result_path, NAME);
+        /* A real file. The first one, if it is a ROM, is staged in RESULT
+         * straight away; a second one rules the lone ROM out, so clear it and
+         * stop instead of reading the rest of a full root on every boot. */
+        if (realcount) {
+            result_path[0] = 0;
+            return;
+        }
+        realcount = 1;
+        if (is_rom(name)) write_result(result_path, name);
     }
 }
 
@@ -170,8 +166,12 @@ static unsigned char scan_config(void) {
     unsigned char *r = RESULT;
     unsigned char i;
 
-    EZ_OP = OP_LOAD;
-    ezcfg();
+    /* The boot RTC check has normally read the file already; reading it
+     * again walks the root a second time (issue #10). */
+    if (!CFG_LOADED) {
+        EZ_OP = OP_LOAD;
+        ezcfg();
+    }
     if (!FL_EN) return 2;             /* disabled: no trigger at all */
     if (FL_PLEN == 0) return 0;
     for (i = 0; i < FL_PLEN; i++) r[i] = FL_PATH[i];

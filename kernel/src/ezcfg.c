@@ -97,6 +97,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
+#define CFG_LOADED (*(volatile u8 *)0xDBF9) /* 1 once cfg_load has run this boot (fast-launch scan reuses it) */
 #define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
 #define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
 #define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
@@ -580,6 +581,7 @@ static void cfg_load(void) {
     static const u8 old_name[13] = {'/','F','L','A','U','N','C','H','.','C','F','G',0};
     u16 br;
 
+    CFG_LOADED = 1;
     FL_EN = 1;
     FL_PLEN = 0;
     FL_PATH[0] = 0;

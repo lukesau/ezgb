@@ -201,7 +201,7 @@ since they are plain stores that work from any bank.
 | Piece | Where | What |
 |---|---|---|
 | `EzCfg` | `02:4a00`, [kernel/src/ezcfg.c](../kernel/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE (also backs up the RTC), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)). |
-| `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 766 B | Now calls `ezcfg` (op LOAD) instead of parsing a file itself; skips `ezgb.cfg` in the lone-ROM count. |
+| `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:6600`, [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
 | `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op BACKUP, then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
@@ -231,6 +231,7 @@ no version-specific address.
 |---|---|
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
+| `$DBF9` | `CFG_LOADED`: set by every config load; the boot fast-launch scan reuses the RTC check's read instead of opening the file again |
 | `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser-sort.md](browser-sort.md#record-cap)) |
 | `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
 | `$DA80` / `$DA81` / `$DA82-$DAF9` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged) |

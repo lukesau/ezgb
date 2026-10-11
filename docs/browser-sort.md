@@ -124,9 +124,12 @@ seeded `psram` file afterwards:
 | before the cap, 520 in the root | no | | `$00`–`$02` overwritten |
 
 Page `$11` changes by its one cart-init byte (`$A201`) on every boot. At boot
-in the root the notice stays up longer than 2 s: the fast-launch scan and the
-config lookups read the whole root before the list is first painted (in
-SameBoy, whose SD reads are slow, about 20 s).
+in the root the notice stays up longer than 2 s: the config lookup and the
+sort's enumeration read the root before the list is first painted (in
+SameBoy, whose SD reads are slow, about 20 s). Since mod 5.8 the fast-launch
+scan stops at the second real file and reuses the boot config read
+([issue 10](https://github.com/lukesau/ezgb/issues/10)); before that it read
+the whole root once more, and the file a second time.
 
 ## Verification (SameBoy)
 
