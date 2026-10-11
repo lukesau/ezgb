@@ -166,6 +166,20 @@ expect them, or adjust the paths.
 machine from `<repo>`. `$DB` on the build host is
 `~/fpga/prjcombine/databases/spartan3.zstd`.
 
+Once steps 1-3 have been done (and the stock slot B images are on the build
+host as `~/fpga/cart/fw4-updater.bin` and `~/fpga/cart/fw5/0918.bin`), one
+script does steps 4-8. It always adds the bank 2 flash read patch
+([flash-dump.md](flash-dump.md)) too: every stage1 updater we build carries it
+from v5 on, so a cart can always dump its config flash from a debug kernel.
+
+```bash
+BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw4 "Update: s1 v5 rd" fpga/load/Update_FW4-stage1-v5.gb
+BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
+```
+
+It stops unless the patched image decodes back to the same stage1 and the
+same bank 2 program. The steps by hand:
+
 **1. Extract slot B** from the stock updater:
 
 ```bash

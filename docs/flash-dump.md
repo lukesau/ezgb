@@ -80,6 +80,11 @@ offset 0), then 1024 read commands of 86 chunks (85 of 6 bytes and one of
 
 ## Build
 
+Since stage1 v5 the patch is part of every stage1 updater:
+`scripts/fpga/build-stage1-updater.sh` applies it with stage1 in one
+s3patch run ([fpga-setup.md](fpga-setup.md#9-end-to-end-build-and-install-a-stage1-updater)).
+By hand, on its own:
+
 ```bash
 # bank 2 BRAM with the patch (FW4 tile X3Y25, FW5-0918 X3Y5; same program)
 cd fpga/flashread
