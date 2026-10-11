@@ -1,9 +1,9 @@
 {
   "fw5-0918": {
     "patch": "ezgb-updater-fw5-0918.ips",
-    "patched_md5": "173f160d8da9dc6861bd7b00ffd703a0",
+    "patched_md5": "914fd4f8f47e71996ff823945e24abcf",
     "size": 331800,
-    "stage1": "1.0",
+    "stage1": "1.5",
     "stock_md5": "dbb1e2abb6bfb396573becfd84903cce"
   }
 }
