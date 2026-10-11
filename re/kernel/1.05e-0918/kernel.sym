@@ -4535,3 +4535,5 @@
 04:5f80 .data:f:8
 04:5f90 FlSetJumpBottom
 04:5f90 .data:10:8
+04:7c00 U32ToAsciiFast
+04:7c00 .data:c2:8

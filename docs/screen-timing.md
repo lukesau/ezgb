@@ -74,3 +74,21 @@ What's left on HELP in 12px is mostly the text (`DrawString12` 178 ms,
 `Fit12` 33 ms) and `FillRect` itself (108 ms). On SET the clock's
 `U32ToAscii` (about 250 ms) and the config read (about 120 ms) remain.
 
+## Clock digits (mod 6.4)
+
+Bank 4's `U32ToAscii` (`04:44f7`), which the SET tab uses for its six clock
+fields, made every digit with a `U32Div` and a `U32Mod` call. Its first four
+bytes are now `jp U32ToAsciiFast` (`04:7c00`,
+[scripts/fastdec/u32dec.asm](../scripts/fastdec/u32dec.asm)): radix 10 and a
+value under 65536, which covers every clock field, are done by subtracting
+powers of ten; anything else runs the original. The output is the same,
+including the original's two-digit minimum (a one-character result gets a
+leading `0`, so the clock reads `09:05:00`): checked in SameBoy by forcing
+0, 7, 42 and 2026 through the seconds field.
+
+| Switch | 8px, 6.3 -> 6.4 | 12px, 6.3 -> 6.4 |
+|---|---|---|
+| SD -> SET | 803 -> 531 ms | 1045 -> 773 ms |
+
+The once-a-second clock redraw while SET is open gets the same saving.
+

@@ -997,8 +997,10 @@ CStrCat_writeNul::
 ; Jump_004_45e8: setup reverse; Jump_004_4605: copy scratch→buf (jr_004_462a) until done → Jump_004_462d NUL; empty → plant "0"; Jump_004_466b epilogue.
 
 U32ToAscii::
-    add sp, -$34
-    ld hl, sp+$13
+    jp $7c00
+
+
+    nop
     ld a, l
     ld d, h
     ld hl, sp+$04
@@ -11072,200 +11074,34 @@ FlCfg::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+U32ToAsciiFast::
+    db $f8, $08, $7e, $fe, $0a, $c2, $bb, $7c
+    db $f8, $04, $2a, $b6, $c2, $bb, $7c, $f8
+    db $06, $2a, $5f, $56, $f8, $02, $2a, $66
+    db $6f, $0e, $00, $06, $30, $7d, $d6, $10
+    db $6f, $7c, $de, $27, $67, $38, $03, $04
+    db $18, $f3, $7d, $c6, $10, $6f, $7c, $ce
+    db $27, $67, $78, $fe, $30, $20, $04, $cb
+    db $41, $28, $04, $12, $13, $0e, $01, $06
+    db $30, $7d, $d6, $e8, $6f, $7c, $de, $03
+    db $67, $38, $03, $04, $18, $f3, $7d, $c6
+    db $e8, $6f, $7c, $ce, $03, $67, $78, $fe
+    db $30, $20, $04, $cb, $41, $28, $04, $12
+    db $13, $0e, $01, $06, $30, $7d, $d6, $64
+    db $6f, $7c, $de, $00, $67, $38, $03, $04
+    db $18, $f3, $7d, $c6, $64, $6f, $7c, $ce
+    db $00, $67, $78, $fe, $30, $20, $04, $cb
+    db $41, $28, $04, $12, $13, $0e, $01, $06
+    db $30, $7d, $d6, $0a, $6f, $7c, $de, $00
+    db $67, $38, $03, $04, $18, $f3, $7d, $c6
+    db $0a, $6f, $7c, $ce, $00, $67, $78, $fe
+    db $30, $20, $04, $cb, $41, $28, $04, $12
+    db $13, $0e, $01, $cb, $41, $20, $04, $3e
+    db $30, $12, $13, $7d, $c6, $30, $12, $13
+    db $af, $12, $c9, $e8, $cc, $f8, $13, $c3
+    db $fb, $44
+
     rst RST_38
     rst RST_38
     rst RST_38

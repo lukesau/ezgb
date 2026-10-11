@@ -121,6 +121,7 @@ REGISTRY = {
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
     (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)
     (4, 0x5f90): dict(),                   # FlSetJumpBottom: RIGHT on the SET tab
+    (4, 0x7c00): dict(),                   # U32ToAsciiFast: decimal fast path (scripts/fastdec/u32dec.asm)
 }
 
 # The 11-byte kernel-version text DrawHelpModVersion draws over the stock
