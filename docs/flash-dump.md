@@ -10,8 +10,11 @@ to the SD card, with no desoldering and no JTAG. Two parts:
   debug builds only, [debug-tab.md](debug-tab.md)) writes `/FLASH.BIN` and
   `/DNA.BIN`.
 
-Status (2026-10-10): simulated end to end on the FW4 design; not yet run on
-a cart.
+Status (2026-10-10): works on the FW4 cart (1.04e mod 5.6 debug build):
+`OK 1024 SECT`. Its slot B in the dump is byte for byte the image the
+updater had just written, and slot A matches the FW5 cart's 2026-08 chip
+dump exactly. The license record and DNA pass bank 2's check when it is
+run in Python (below).
 
 ## Why a patch
 
@@ -106,3 +109,31 @@ FW4 design, `fast/` BRAMs, flash model loaded with the cart dump:
 | 300 chunks from `$030000` and from `$000000` | 1800 bytes each, none differ, ~36 µs per chunk, sequence wrap crossed |
 | DNA, then 300 chunks | `EZDN` back, 1800 bytes, none differ |
 | the same Game Boy code on stock firmware | flash commands: `06`, `02` at `$07FF00` (260 bytes of `$FF`), `05`; no erase |
+
+## FW4 cart dump (2026-10-10)
+
+Kept in the ignored `fpga/dumps/` (`fw4cart-flash.bin`, sha1 `9d9ec477a44a`;
+`fw4cart-dna.bin`). Against the FW5 cart's original chip dump:
+
+| Range | Contents |
+|---|---|
+| `$00000-$2480B` | slot A, identical (both carts shipped the same fallback image) |
+| `$2480C` | 38 bytes, identical: the tail of the last programmed page |
+| `$30000-$31FFF` | license block, different (per chip): 42 records to `$31500`, all checksums good, then data to about `$32000` that the check never reads |
+| `$40000-$6480B` | slot B, our patched image |
+| `$70000` | boot tally: 228 boots since the sector was erased |
+
+DNA (`dna0`..`dna7`): `56 9F CD DE 7F 23 51 01`.
+
+**The license check, run on this record.** Bank 2 reads the record at
+`$031100` into scratchpad `$1E`.., takes the expected CRC-7 from byte 10
+and the expected CRC-16 from bytes 20-21, then overwrites part of that copy
+with the DNA:
+
+- CRC-16 (init `$FFFF`, reflected poly `$A001`) over record bytes 0-19
+  followed by `dna7`..`dna0`: `$CDE0`, matching bytes 20-21.
+- CRC-7 (the SD card CRC) over record bytes 0-9 followed by `dna7`..`dna0`:
+  `$A5`, matching byte 10.
+
+So the binding is two CRCs over a few record bytes and the DNA, not a
+signature.

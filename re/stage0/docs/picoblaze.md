@@ -219,7 +219,10 @@ on its contents should work.
 - What drives `B9` (RTC refresh) and reads `ED`/`EE`, `E0-E3`, `EF` on the
   GB side; tie each to its `$7Fxx` register.
 - The license check's exact data layout, and whether the record can be
-  regenerated for another chip.
+  regenerated for another chip. Layout settled on the FW4 cart's dump
+  (2026-10-10, [flash-dump.md](../../../docs/flash-dump.md#fw4-cart-dump-2026-10-10)):
+  CRC-16 over record bytes 0-19 + DNA against bytes 20-21, CRC-7 over
+  bytes 0-9 + DNA against byte 10, both pass.
 - The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).
 - Repeat for the FW5 images. Done for bank 1 and bank 2:
   [fw5.md](fw5.md).
