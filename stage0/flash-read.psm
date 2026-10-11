@@ -1,0 +1,170 @@
+; Bank 2 (X3Y25) patch: flash read and Device DNA read for the Game Boy.
+;
+; The kernel's flash-update command ($7FD2=1, ISR op $08) lands in
+; bank2_main with license_b = 1. Table entry 0 byte 3 (window $A003)
+; picks the mode; stock updaters leave it 0, so they still program.
+;
+;   $00      stock flash update (unchanged)
+;   'R' $52  read: entry $41 = start address, entry $42 bits 23:0 = chunk count
+;   'D' $44  Device DNA: two chunks, DNA bytes 0-5, then 6-7 and "EZDN"
+;
+; Entry $42 bits 31:24 = the first sequence number (1-$FF). Entries $41
+; and $42 are past what the stock command reads, and the Game Boy sets
+; entry 0 bits 23:0 to $07FF00 with entries 1-$40 all $FF: on stock
+; firmware the same command programs $FF over $07FF00, which changes no
+; bits and erases nothing. "EZDN" tells the Game Boy the patch is there.
+;
+; Each chunk is 6 bytes in RTC registers 2-7 ($7FC0=6: $A008-$A00D),
+; then the sequence byte in register 8 ($A00E). The sequence wraps $FF
+; to 1. The PicoBlaze waits until the Game Boy echoes it into $7FB0
+; (port B0) before the next chunk. The Game Boy picks a first number
+; that differs from $A00E's current value, and sets $7FB0 = 0 first.
+; Interrupts are off for the whole command, so the idle loop's RTC
+; refresh can't step on the registers; it restores the clock after.
+
+CONSTANT TBL_READ, 227
+CONSTANT FLASH_UPDATE, 22F
+CONSTANT SPI_XFER, 0AE
+CONSTANT SPI_READ_START, 0D9
+CONSTANT SPI_CS_TOGGLE, 0E6
+CONSTANT DNA_IDLE, 003
+CONSTANT DNA_READ, 006
+CONSTANT CMD_LBA0, B0
+CONSTANT RTC_REG_INDEX, ED
+CONSTANT RTC_REG_VALUE, EE
+CONSTANT FLASH_BUSY, F1
+CONSTANT dna0, 0A
+CONSTANT license_a, 3E
+CONSTANT license_b, 3F
+CONSTANT buf0, 30             ; 6-byte chunk buffer $30-$35
+CONSTANT buf_end, 36
+CONSTANT seq, 36
+CONSTANT count0, 37           ; chunks left, 24 bits
+CONSTANT count1, 38
+CONSTANT count2, 39
+
+ADDRESS 1B7
+    JUMP Z, fu_dispatch       ; was JUMP Z, flash_update
+
+ADDRESS 254
+fu_dispatch:
+    LOAD s5, 00
+    CALL TBL_READ
+    COMPARE s3, 52
+    JUMP Z, read_mode
+    COMPARE s3, 44
+    JUMP Z, dna_mode
+    JUMP FLASH_UPDATE
+
+read_mode:
+    LOAD s5, 41
+    CALL TBL_READ
+    LOAD sC, s2               ; start address
+    LOAD sB, s1
+    LOAD sA, s0
+    CALL dump_begin
+    STORE s0, count0
+    STORE s1, count1
+    STORE s2, count2
+    CALL SPI_READ_START
+read_chunk:
+    LOAD s4, buf0
+read_byte:
+    CALL SPI_XFER
+    STORE s2, (s4)
+    ADD s4, 01
+    COMPARE s4, buf_end
+    JUMP NZ, read_byte
+    CALL send_chunk
+    FETCH s5, count0
+    FETCH s6, count1
+    FETCH s7, count2
+    SUB s5, 01
+    SUBCY s6, 00
+    SUBCY s7, 00
+    STORE s5, count0
+    STORE s6, count1
+    STORE s7, count2
+    OR s5, s6
+    OR s5, s7
+    JUMP NZ, read_chunk
+    CALL SPI_CS_TOGGLE        ; CS_B back high
+    JUMP dump_end
+
+dna_mode:
+    CALL dump_begin
+    CALL DNA_IDLE
+    CALL DNA_READ
+    LOAD s4, dna0
+    LOAD s5, buf0
+dna_copy:
+    FETCH s0, (s4)
+    STORE s0, (s5)
+    ADD s4, 01
+    ADD s5, 01
+    COMPARE s5, buf_end
+    JUMP NZ, dna_copy
+    CALL send_chunk
+    FETCH s0, 10              ; dna6
+    STORE s0, buf0
+    FETCH s0, 11              ; dna7
+    STORE s0, 31
+    LOAD s0, 45               ; "EZDN": the patch is here
+    STORE s0, 32
+    LOAD s0, 5A
+    STORE s0, 33
+    LOAD s0, 44
+    STORE s0, 34
+    LOAD s0, 4E
+    STORE s0, 35
+    CALL send_chunk
+    JUMP dump_end
+
+; FLASH_BUSY on; entry $42 -> s3 = first sequence number, s2:s1:s0
+dump_begin:
+    LOAD s0, 01
+    OUTPUT s0, FLASH_BUSY
+    LOAD s5, 42
+    CALL TBL_READ
+    STORE s3, seq
+    RETURN
+
+; bank 1 set license_b = 1 to request this command. Put back the F2
+; that the boot check left, when it passed, so ROM loads still work.
+dump_end:
+    FETCH s0, license_a
+    COMPARE s0, F1
+    JUMP NZ, dump_off
+    LOAD s0, F2
+    STORE s0, license_b
+dump_off:
+    LOAD s0, 00
+    OUTPUT s0, FLASH_BUSY
+    RETURN
+
+send_chunk:
+    LOAD s4, buf0
+    LOAD s5, 02
+send_reg:
+    FETCH s1, (s4)
+    OUTPUT s5, RTC_REG_INDEX
+    OUTPUT s1, RTC_REG_VALUE
+    OUTPUT s1, RTC_REG_VALUE    ; again: the register file commits on the next OUTPUT
+    ADD s4, 01
+    ADD s5, 01
+    COMPARE s5, 08
+    JUMP NZ, send_reg
+    FETCH s1, seq
+    OUTPUT s5, RTC_REG_INDEX
+    OUTPUT s1, RTC_REG_VALUE
+    OUTPUT s1, RTC_REG_VALUE    ; again: the register file commits on the next OUTPUT
+wait_ack:
+    INPUT s0, CMD_LBA0
+    COMPARE s0, s1
+    JUMP NZ, wait_ack
+    ADD s1, 01
+    JUMP NZ, seq_ok
+    LOAD s1, 01
+seq_ok:
+    STORE s1, seq
+    RETURN
