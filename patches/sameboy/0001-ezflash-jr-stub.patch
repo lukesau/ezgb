@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..aef1f48
+index 0000000..061d0ab
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1026 @@
+@@ -0,0 +1,1089 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -661,9 +661,72 @@ index 0000000..aef1f48
 +    }
 +}
 +
++/* SAMEBOY_PROFILE_GAP=<file>: a sampling profiler for slow screen changes.
++ * Every 256 T-cycles the bank:PC is counted; at each joypad poll (the
++ * kernel's ReadJoypad, $3A4A) the counts are appended to <file> if the time
++ * since the previous poll was over 1M T-cycles (a screen change), then
++ * cleared. Lines: "gap <T-cycles>", then "<bank>:<pc> <count>". */
++#define PROF_STEP 256
++#define PROF_GAP 1000000
++static void profile_step(GB_gameboy_t *gb)
++{
++    static int state = -1;              /* -1 unknown, 0 off, 1 on */
++    static const char *path;
++    static uint32_t *hist;              /* 256 banks x $4000 ($8000+ in bank 255) */
++    static uint64_t next, last_poll;
++    static struct { char key[96]; uint32_t count; } stacks[4096];
++    static unsigned n_stacks;
++    if (state < 0) {
++        path = getenv("SAMEBOY_PROFILE_GAP");
++        state = path && *path;
++        if (state) hist = calloc(256 * 0x4000, sizeof *hist);
++        if (!hist) state = 0;
++    }
++    if (!state) return;
++    uint64_t now = gb->debugger_ticks;
++    uint16_t pc = gb->pc;
++    while (next <= now) {
++        size_t i = pc < 0x4000 ? pc
++                 : pc < 0x8000 ? (size_t)(gb->mbc_rom_bank & 0xFF) * 0x4000 + (pc - 0x4000)
++                 : (size_t)255 * 0x4000 + (pc & 0x3FFF);
++        hist[i]++;
++        /* call stack: up to 6 return addresses, innermost first */
++        char key[96]; int n = 0;
++        for (int d = (int)gb->backtrace_size - 1, k = 0; d >= 0 && k < 6; d--, k++)
++            n += snprintf(key + n, sizeof key - n, "%s%02x:%04x", k ? "<" : "",
++                          gb->backtrace_returns[d].bank & 0x1F, gb->backtrace_returns[d].addr);
++        key[n] = 0;
++        unsigned j;
++        for (j = 0; j < n_stacks && strcmp(stacks[j].key, key); j++) {}
++        if (j == n_stacks && n_stacks < 4096) { strcpy(stacks[n_stacks].key, key); stacks[n_stacks++].count = 0; }
++        if (j < n_stacks) stacks[j].count++;
++        next += PROF_STEP;
++    }
++    if (pc != 0x3A4A) return;
++    if (now - last_poll > PROF_GAP) {
++        FILE *f = fopen(path, "a");
++        if (f) {
++            fprintf(f, "gap %llu\n", (unsigned long long)(now - last_poll));
++            for (size_t i = 0; i < 256 * 0x4000; i++) {
++                if (!hist[i]) continue;
++                unsigned bank = (unsigned)(i / 0x4000), off = (unsigned)(i % 0x4000);
++                unsigned addr = bank == 0 ? off : bank == 255 ? 0x8000 + off : 0x4000 + off;
++                fprintf(f, "%02x:%04x %u\n", bank == 255 ? 0 : bank, addr, hist[i]);
++            }
++            for (unsigned j = 0; j < n_stacks; j++)
++                fprintf(f, "stack %s %u\n", stacks[j].key, stacks[j].count);
++            fclose(f);
++        }
++    }
++    n_stacks = 0;
++    memset(hist, 0, 256 * 0x4000 * sizeof *hist);
++    last_poll = now;
++}
++
 +void GB_ezflash_jr_post_run(GB_gameboy_t *gb)
 +{
 +    GB_ezflash_jr_t *ez = &gb->ezflash_jr;
++    profile_step(gb);
 +    if (ez->enabled && ez->pending_swap) {
 +        /* stage1 hand-off: the cart becomes the loaded kernel with the CPU
 +         * state untouched. Loading it reconfigures the stub for the kernel
