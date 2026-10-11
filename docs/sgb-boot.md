@@ -34,9 +34,11 @@ dead coin cell turns it off (see below).
 `$7FC0 = $03`), reads the record at `$A400`, and unmaps again. Only
 `'S', 'G', $01, $FE` counts as on; anything else (a cart that never had the
 mod, a dead cell's garbage, a record damaged by decay) boots straight on. It
-first reads and clears stage1's mark at `$A412` (mod 5.7): `"SB"` means our
-stage1 found a Super Game Boy and already sent the packets, so the kernel
-boots straight on without the second 6.7 s
+first reads stage1's mark at `$A412`: `"SB"` or `"SN"` (mod 5.9) means our
+stage1 handles the SGB (it sent the packets, or found no SGB), so the kernel
+boots straight on. On those boots the SET tab shows `SGB BOOT: AUTO` instead
+of the checkbox, and A does nothing there: the box only matters with the
+stock stage1, where the kernel is the first code that can resend the header
 ([fpga-stage1.md](fpga-stage1.md#super-game-boy)). When
 on, it sends the six header packets (commands `$F1`..`$FB`, each the sum of
 its 14 bytes and then 14 bytes of `$0104`-`$014F`, zero past the end) four

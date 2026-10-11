@@ -98,6 +98,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
 #define CFG_LOADED (*(volatile u8 *)0xDBF9) /* 1 once cfg_load has run this boot (fast-launch scan reuses it) */
+#define S1_SGB    (*(volatile u8 *)0xDBF8)  /* 1 when our stage1 handles the SGB (flcfg.c shows SGB BOOT as AUTO) */
 #define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
 #define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
 #define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
@@ -381,6 +382,12 @@ static void stage1_skip_mark(void) {
         mark[1] = 0;
         *(volatile u8 *)0xDBFF = 1;
     }
+    /* $A412 "SB"/"SN": our stage1 handles the SGB (it sent the header
+     * packets or found no SGB), so SGB BOOT is AUTO this boot (flcfg.c) */
+    if (mark[2] == 'S' && (mark[3] == 'B' || mark[3] == 'N'))
+        S1_SGB = 1;
+    mark[2] = 0;
+    mark[3] = 0;
     *(volatile u8 *)0x4000 = 0;
     fpga_page(0);
 }

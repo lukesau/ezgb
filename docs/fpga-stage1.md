@@ -319,16 +319,17 @@ own header, four rounds with the SGB Enabler's 192/64/48 frame gaps, about
 6.7 s, right after the boot screen comes up. Only on an SGB: `crt0.s` keeps
 the boot ROM's A and C in `$FF80`/`$FF81`, and C is `$14` after the SGB and
 SGB2 boot ROMs, `$13` after DMG and Pocket, with A `$11` on color consoles.
-It then leaves `"SB"` at page `$11` `$A412`, and the kernel's `SGB BOOT`
-option ([sgb-boot.md](sgb-boot.md)) skips its own resend on that boot (mod
-5.7+; the kernel clears the mark), so a ticked box costs nothing extra.
+Every boot it leaves `"SB"` (sent) or `"SN"` (no SGB) at page `$11`
+`$A412`. With that mark the kernel never sends the packets itself, and its
+SET tab shows `SGB BOOT: AUTO` instead of the checkbox (mod 5.9,
+[sgb-boot.md](sgb-boot.md)); the box is for the stock stage1.
 
 Checked in SameBoy (`SAMEBOY_SGB_LOG=1` logs every header packet; SameBoy
 itself drops the ones sent after the boot ROM, a real SGB BIOS doesn't):
 SGB and SGB2 get 24 packets from stage1, all checksums good, then boot the
-kernel; DMG, Pocket and CGB get none. With SGB BOOT ticked, stage1 then the
-mod 5.7 kernel sends 24 in all; the kernel alone sends 24 without the mark
-and none with it, clearing it either way. Not yet tried on a real SGB.
+kernel; DMG, Pocket and CGB get none. Through stage1 the mod 5.9 kernel sends
+none and shows AUTO, on DMG and SGB alike; booted without stage1 it shows the
+checkbox. Not yet tried on a real SGB.
 
 The real fix is P62 as an open drain (low only during the `$7FE0` pulse,
 P61 dropped from its drive), which needs a routing edit in the bitstream.

@@ -4382,9 +4382,9 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:13a5:8
+02:4a00 .data:13cd:8
 02:4500 FastLaunchScan
-02:4500 .data:2fe:8
+02:4500 .data:29e:8
 04:5f00 FarCallEzCfg
 04:5f00 .data:8:8
 04:5f10 RtcSetHook
@@ -4448,7 +4448,7 @@
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg
-04:6600 .data:6c9:8
+04:6600 .data:711:8
 04:5f30 FlSetADispatch
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs
@@ -4466,7 +4466,7 @@
 00:0020 SgbStub
 00:0020 .data:9:8
 01:7f00 SgbUnlock
-01:7f00 .data:f1:8
+01:7f00 .data:ef:8
 00:0259 CgbInit
 00:0259 .data:6a:8
 05:7700 BrowserHideName

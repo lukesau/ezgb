@@ -27,7 +27,7 @@ python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr
     --width 16 --height 4 --letters-x 10 --stages 4 ${WORDMARK_FLAGS:---no-halo} > "$b/wordmark.txt"
 
 # stage1/VERSION: line 1 the firmware number (what the version register
-# reads), line 2 the mod version; shown as FW5-MOD 1.6
+# reads), line 2 the mod version; shown as FW5-MOD 1.7
 fw=$(sed -n 1p "$here/VERSION"); mod=$(sed -n 2p "$here/VERSION")
 printf '#define FW_NUMBER %s\n#define FW_TEXT "FW%s-MOD %s"\n' "$fw" "$fw" "$mod" > "$b/version.h"
 CFLAGS="-msm83 --opt-code-size --max-allocs-per-node 20000 -I$here/src -I$b ${STAGE1_CFLAGS:-}"

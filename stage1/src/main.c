@@ -59,13 +59,13 @@ static void mark_skip(uint8_t skip)
     psram_unmap();
 }
 
-/* Tell the kernel stage1 sent the SGB header packets (PSRAM_SGB_SENT), and
- * clear the mark when it didn't */
+/* Tell the kernel this stage1 handles the SGB (PSRAM_SGB_SENT): "SB" when
+ * it sent the header packets, "SN" when there was no SGB to send them to */
 static void mark_sgb(uint8_t sent)
 {
     psram_map(PSRAM_META);
-    PSRAM[PSRAM_SGB_SENT] = sent ? 'S' : 0;
-    PSRAM[PSRAM_SGB_SENT + 1] = sent ? 'B' : 0;
+    PSRAM[PSRAM_SGB_SENT] = 'S';
+    PSRAM[PSRAM_SGB_SENT + 1] = sent ? 'B' : 'N';
     psram_unmap();
 }
 

@@ -83,6 +83,7 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 #define ROW_SGB   6          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
+#define S1_SGB   (*(volatile u8 *)0xDBF8)   /* our stage1 handles the SGB (set by ezcfg at boot) */
 #define RTC_OFF  (*(volatile u8 *)0xDB3A)   /* RTCSD=0, owned by ezcfg */
 #define MQ_POS   (*(volatile u8 *)0xDB38)   /* name marquee: first shown char */
 #define MQ_TICK  (*(volatile u8 *)0xDB39)   /* ...frames since the last step */
@@ -150,6 +151,7 @@ u8 flcfg(u8 *frame, u8 op) {
             return 0;
         }
         if (frame[0x3d] == ROW_SGB) {
+            if (S1_SGB) return 0;       /* AUTO: stage1 does it, nothing to set */
             sgb_set(!sgb_get());
             draw_rows(ROW_SGB);
             wait_a_release();
@@ -327,7 +329,8 @@ static void box(u8 x, u8 y, u8 on, u8 hi) {
 }
 
 /* RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A switches) and
- * the FAST LAUNCH (row 10) and SGB BOOT (row 16) checkboxes, the PICK ROM button
+ * the FAST LAUNCH (row 10) and SGB BOOT (row 16) checkboxes (SGB BOOT reads
+ * AUTO instead when our stage1 handles the SGB), the PICK ROM button
  * on row 12 and the UI button on row 14, both shaped like the stock SET
  * button (box 5 px left and 4 px right of the text, 3 px above and 5 below). */
 static void draw_rows(u8 cur) {
@@ -338,7 +341,15 @@ static void draw_rows(u8 cur) {
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
     box(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
     box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
-    box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
+    if (S1_SGB) {
+        /* our stage1 sends the SGB header itself, only on an SGB, and the
+         * kernel never does: the setting has nothing to decide */
+        static const u8 auto_str[5] = {'A','U','T','O',0};
+        if (cur == ROW_SGB) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+        SetText(auto_str, 4, 12, 16);
+    } else {
+        box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
+    }
 
     if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     /* 12px: the box is the text row plus a pixel above and below */

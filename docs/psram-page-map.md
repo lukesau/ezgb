@@ -43,7 +43,7 @@ dumps came from an SD card with small directories.
 |---|---|---|
 | `$00`–`$0F` (0–15) | **Game save RAM**: the 128 KB MBC-RAM region the running game sees (max 16 banks = MBC5 ceiling). `$FF` when no save. | No |
 | `$10` (16) | Nothing found that writes it; on hardware it held a test pattern across boots and is not an alias of `$00`, `$01` or `$11` ([debug-tab.md](debug-tab.md)). Stock browser records reach it in directories over 960 entries | Yes with the mod (an FW4 Jr, and an FW5 with its coin cell: pattern kept over 30 minutes off); stock, below 961 entries |
-| `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)); stage1's skip-fast-launch mark `"S1"` at `$A410`–`$A411` and SGB mark `"SB"` at `$A412`–`$A413` (below) | **`$A404`–`$A40F`, `$A414`–`$BFFF`** |
+| `$11` (17) | **Meta**: backup-pending `$A000`, save size `$A001`, save path length `$A00F` and path `$A010`+, autosave `$A200`, cart-init canary `$A201`, last-ROM path `$A300`–`$A3FE`; the mod's SGB BOOT record at `$A400`–`$A403` ([sgb-boot.md](sgb-boot.md)); stage1's skip-fast-launch mark `"S1"` at `$A410`–`$A411` and SGB mark `"SB"`/`"SN"` at `$A412`–`$A413` (below) | **`$A404`–`$A40F`, `$A414`–`$BFFF`** |
 | `$12`–`$1E` (18–30) | **Browser records**: entry *i* at page `$12 + (i >> 5)`, offset `255 * (i & $1F)`. The mod lists at most 416 entries, so records end at `$1E`. The page is computed unmasked, so in the stock kernel they go on past `$1F` and wrap to `$00` | No, grows with directory size |
 | `$1F` (31) | **Sort keys** (mod): `browser_sort.c`, 16 bytes per entry. Stock: browser records from entry 417 | No |
 
@@ -141,9 +141,16 @@ canceled even after START is released.
 
 ## Stage1 SGB mark (`$11:$A412`)
 
-Stage1 writes `"SB"` to `$A412`–`$A413` when it found a Super Game Boy and
-sent the header packets itself, and zeroes it otherwise
-([fpga-stage1.md](fpga-stage1.md#super-game-boy)). The kernel's `SgbUnlock`
-(mod 5.7+, [sgb-boot.md](sgb-boot.md)) reads and clears it, and skips its
-own resend when it was set. Clearing it there means a stale mark can't
-outlive a switch back to stock stage1.
+Stage1 writes `$A412`–`$A413` every boot: `"SB"` when it found a Super Game
+Boy and sent the header packets itself, `"SN"` when there was none
+([fpga-stage1.md](fpga-stage1.md#super-game-boy)). Either value says our
+stage1 handles the SGB. The kernel's `SgbUnlock` then never sends
+([sgb-boot.md](sgb-boot.md)), and `ezcfg`'s boot hook (`stage1_skip_mark`)
+sets `S1_SGB` (`$DBF8`) so the SET tab shows SGB BOOT as AUTO, and clears the
+mark, so a stale one can't outlive a switch back to stock stage1.
+
+> **Correction (2026-10-11).** Firmware mod 1.6 and kernel mod 5.7 used
+> `"SB"` only and zeros otherwise, and `SgbUnlock` cleared the mark itself.
+> Since firmware mod 1.7 and kernel mod 5.9 the mark is always written and
+> `ezcfg` clears it. A 1.6 stage1 with a 5.9 kernel still works, but shows
+> the checkbox on boots without an SGB.
