@@ -346,7 +346,7 @@ static void draw_rows(u8 cur) {
          * kernel never does: the setting has nothing to decide */
         static const u8 auto_str[5] = {'A','U','T','O',0};
         if (cur == ROW_SGB) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-        SetText(auto_str, 4, 13, 16);   /* ends where the checkbox ends */
+        SetText(auto_str, 4, 15, 16);   /* right-aligned, like the buttons */
     } else {
         box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
     }
