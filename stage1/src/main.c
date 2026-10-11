@@ -59,6 +59,16 @@ static void mark_skip(uint8_t skip)
     psram_unmap();
 }
 
+/* Tell the kernel stage1 sent the SGB header packets (PSRAM_SGB_SENT), and
+ * clear the mark when it didn't */
+static void mark_sgb(uint8_t sent)
+{
+    psram_map(PSRAM_META);
+    PSRAM[PSRAM_SGB_SENT] = sent ? 'S' : 0;
+    PSRAM[PSRAM_SGB_SENT + 1] = sent ? 'B' : 0;
+    psram_unmap();
+}
+
 /* FLAUNCH= target from EZGB.CFG, opened; 0 when there is none */
 static uint8_t fast_launch_target(void)
 {
@@ -82,12 +92,14 @@ static uint8_t kernel(void)
 
 void main(void)
 {
-    uint8_t err, keys, tried = 0;
+    uint8_t err, keys, sgb, tried = 0;
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
-    if (sgb_detect())
+    sgb = sgb_detect();
+    if (sgb)
         sgb_unlock();                   /* about 6.7 s, on an SGB only */
+    mark_sgb(sgb);
     keys = buttons();                   /* as held at power-on */
     wait_frames(JR_DELAY);
     wordmark_paint(JR_STEP);

@@ -17,7 +17,9 @@
 ; 'S','G',flag,~flag to battery-backed pSRAM page $11 at $A400
 ; (docs/psram-page-map.md), and SgbUnlock sends only when that record reads
 ; back valid with flag 1. Anything else (a dead coin cell's garbage, a cart
-; that never had the mod) boots straight on. Built with -D SGB_ALWAYS (the
+; that never had the mod) boots straight on. So does a boot where our stage1
+; already sent the packets (it found an SGB, stage1/src/sgb.c): it leaves
+; 'S','B' at $A412, which is read and cleared here. Built with -D SGB_ALWAYS (the
 ; mod-5.2-sgb test build, scripts/make-sgb-dist.py) it skips the check.
 ;
 ; scripts/inject-sgb.sh assembles this and injects both sections, points
@@ -28,6 +30,7 @@ DEF wSgbPacket EQU $c000   ; 16 B; KernelEntry clears WRAM after us
 DEF HDR_START  EQU $0104
 DEF HDR_END    EQU $0150   ; packet bytes from here on are 0
 DEF SGB_REC    EQU $a400   ; pSRAM page $11: 'S', 'G', flag, ~flag
+DEF SGB_MARK   EQU $a412   ; pSRAM page $11: 'S', 'B' when stage1 already sent
 
 SECTION "SgbStub", ROM0[$0020]
 SgbStub::
@@ -45,6 +48,20 @@ IF !DEF(SGB_ALWAYS)
     ld [$4000], a
     ld b, $03
     call SgbSetFpgaPage
+    ld hl, SGB_MARK     ; stage1's mark, cleared as it is read
+    ld a, [hl]
+    ld [hl], 0
+    inc hl
+    ld e, [hl]
+    ld [hl], 0
+    cp 'S'
+    jr nz, .record
+    ld a, e
+    cp 'B'
+    jr nz, .record
+    ld c, 0             ; stage1 sent them: fail the record check
+    jr .unmap
+.record
     ld hl, SGB_REC
     ld a, [hl+]
     ld c, a
@@ -53,6 +70,7 @@ IF !DEF(SGB_ALWAYS)
     ld a, [hl+]
     ld e, a
     ld h, [hl]
+.unmap
     xor a
     ld [$4000], a
     ld b, a

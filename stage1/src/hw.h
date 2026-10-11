@@ -43,6 +43,10 @@
  * kernel clears it (kernel/src/ezcfg.c cfg_load). Free space per
  * docs/psram-page-map.md: the kernel uses $A000-$A316 of page $11. */
 #define PSRAM_SKIP_FL 0x410
+/* Page $11 $A412-$A413 = "SB": stage1 found a Super Game Boy and sent the
+ * header packets (sgb.c), so the kernel's SGB BOOT doesn't send them again.
+ * The kernel clears it (scripts/sgb/sgb_boot.asm). */
+#define PSRAM_SGB_SENT 0x412
 
 /* buttons, active high */
 #define BTN_A      0x01

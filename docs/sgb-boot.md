@@ -33,7 +33,11 @@ dead coin cell turns it off (see below).
 `SgbUnlock` maps pSRAM page `$11` the way the kernel does (`$4000 = $11`,
 `$7FC0 = $03`), reads the record at `$A400`, and unmaps again. Only
 `'S', 'G', $01, $FE` counts as on; anything else (a cart that never had the
-mod, a dead cell's garbage, a record damaged by decay) boots straight on. When
+mod, a dead cell's garbage, a record damaged by decay) boots straight on. It
+first reads and clears stage1's mark at `$A412` (mod 5.7): `"SB"` means our
+stage1 found a Super Game Boy and already sent the packets, so the kernel
+boots straight on without the second 6.7 s
+([fpga-stage1.md](fpga-stage1.md#super-game-boy)). When
 on, it sends the six header packets (commands `$F1`..`$FB`, each the sum of
 its 14 bytes and then 14 bytes of `$0104`-`$014F`, zero past the end) four
 times, with the Enabler's 192, 64 and 48 frame gaps and 4 frames after each
