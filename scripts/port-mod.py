@@ -92,6 +92,10 @@ REGISTRY = {
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70}),
+    (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
+                      pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
+                            "FarCallDrawLoadingBox": 0x0483, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "hUiMode": 0xfffb, "hClip12": 0xfff9}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43}),

@@ -555,17 +555,10 @@ fastlaunch_do_launch::
     db $e8, $03, $13, $d5, $d5, $d5, $d5, $d5
     db $c3, $44, $13
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+RomMenuPadTrack::
+    db $f0, $f6, $e0, $f5, $cd, $4a, $3a, $7b
+    db $e0, $f6, $c9
+
     rst RST_38
     rst RST_38
 
@@ -576,14 +569,9 @@ fastlaunch_hook::
     db $c4, $b7, $28, $03, $cd, $20, $04, $21
     db $2d, $00, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+FarCallDrawLoadingBox::
+    db $cd, $8d, $07, $7f, $73, $08, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -681,25 +669,11 @@ RelaunchRtcHook::
     db $3e, $07, $ea, $fc, $db, $cd, $8d, $07
     db $00, $4a, $02, $00, $c3, $70, $15
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+RomMenuHoldStub::
+    db $f8, $06, $e5, $cd, $8d, $07, $00, $5a
+    db $04, $00, $e8, $02, $7b, $b7, $c8, $e1
+    db $c3, $ab, $16
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3107,7 +3081,7 @@ FileBrowserEntry_inputLoop::
     push hl
     call Delay
     add sp, $02
-    call ReadJoypad
+    call $0453
     ld b, e
     ld c, b
     ld hl, sp+$00
@@ -3778,11 +3752,12 @@ MenuDispatchAB_dirToBrowser::
 
 
 MenuDispatchAB_fileOpen::
-    call FarCallTrampoline
-    ld a, a
-    ld [hl], e
-    ld [$3e00], sp
-    rst RST_38
+    call $0597
+    nop
+    nop
+    nop
+    nop
+    ld a, $ff
     push af
     inc sp
     ld hl, $0000

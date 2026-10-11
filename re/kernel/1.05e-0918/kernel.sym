@@ -4537,3 +4537,11 @@
 04:5f90 .data:10:8
 04:7c00 U32ToAsciiFast
 04:7c00 .data:c2:8
+04:5a00 RomMenu
+04:5a00 .data:462:8
+00:0483 FarCallDrawLoadingBox
+00:0483 .data:8:8
+00:0453 RomMenuPadTrack
+00:0453 .data:b:8
+00:0597 RomMenuHoldStub
+00:0597 .data:13:8
