@@ -27,7 +27,7 @@ icon tiles this build needs. The stock stage1 itself, disassembled, is in
 
 `VERSION` has two lines: the firmware number, then the mod version. The
 build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.5`. The firmware
+`FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.6`. The firmware
 number is what the cart's version register should read for this build
 (stock FW4 reads 4; making the register itself say 6 is a separate fabric
 change, [re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)). The mod version is
