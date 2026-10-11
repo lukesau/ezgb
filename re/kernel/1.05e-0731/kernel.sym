@@ -4528,3 +4528,5 @@
 05:7700 .data:237:8
 00:04ae DirListHideNameStub
 00:04ae .data:19:8
+02:6f40 FillRect
+02:6f40 .data:18a:8

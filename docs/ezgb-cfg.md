@@ -231,6 +231,7 @@ no version-specific address.
 |---|---|
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
+| `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |
 | `$DBF9` | `CFG_LOADED`: set by every config load; the boot fast-launch scan reuses the RTC check's read instead of opening the file again |
 | `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser-sort.md](browser-sort.md#record-cap)) |

@@ -118,6 +118,7 @@ REGISTRY = {
     # hand-assembled, with data tails
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
+    (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
 }
 
 # The 11-byte kernel-version text DrawHelpModVersion draws over the stock

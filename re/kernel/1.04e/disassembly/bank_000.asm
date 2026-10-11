@@ -6030,23 +6030,36 @@ DrawRectImpl_drawOutline::
     ld [wDrawColorB], a
 
 DrawRectImpl_fillScan::
-    ld a, [wDrawX0]
-    ld b, a
-    ld a, [wDrawX1]
-    ld d, a
-    ld a, [wDrawY0]
-    ld c, a
-    ld e, a
-    call DrawLine
-    ld a, [wDrawY1]
-    ld b, a
-    ld a, [wDrawY0]
-    cp b
-    jr z, DrawRectImpl_restoreColors
+    call FarCallTrampoline
+    ld b, b
+    ld l, a
+    ld [bc], a
+    nop
+    jr DrawRectImpl_restoreColors
 
-    inc a
-    ld [wDrawY0], a
-    jr DrawRectImpl_fillScan
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
 DrawRectImpl_restoreColors::
     ld a, [wDrawColor]

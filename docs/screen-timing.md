@@ -51,3 +51,26 @@ So the largest single cost is not text but `DrawRect`, the pixel-by-pixel
 rectangle fill under the tab strip and the pane clear, paid on every tab
 switch (and by every other screen that clears with it). The SET tab adds the
 32-bit number formatting of the clock and the config read.
+
+## FillRect (mod 6.2)
+
+`DrawRectImpl_fillScan` (`00:236d`), the per-scanline `DrawLine` loop, is
+now a far call to `FillRect` (`02:6f40`,
+[scripts/fillrect/fillrect.asm](../scripts/fillrect/fillrect.asm)). For op 0,
+the common case, it writes each scanline's two edge tiles under their masks
+and the whole tiles between them in batches of five byte pairs, each batch
+synced to an HBlank the way `draw12.c`'s `blit_col1` is; ops 1-3 keep the
+stock loop. Screens draw pixel for pixel the same (SameBoy screenshots of
+SD, SET and HELP in both UI modes, against mod 6.1; only SET's clock and
+the scrolling fast-launch name differ).
+
+| Switch | 8px, 6.1 -> 6.2 | 12px, 6.1 -> 6.2 |
+|---|---|---|
+| SD -> SET | 1035 -> 803 ms | 1296 -> 1045 ms |
+| SET -> HELP | 503 -> 267 ms | 652 -> 402 ms |
+| HELP -> SD | 1181 -> 858 ms | 1295 -> 968 ms |
+
+What's left on HELP in 12px is mostly the text (`DrawString12` 178 ms,
+`Fit12` 33 ms) and `FillRect` itself (108 ms). On SET the clock's
+`U32ToAscii` (about 250 ms) and the config read (about 120 ms) remain.
+
