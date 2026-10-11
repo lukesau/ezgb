@@ -24,6 +24,17 @@ Usage:
 
   # User: patch an official ezgb.dat (version auto-detected by md5)
   scripts/kernel-patch.py apply ~/Downloads/ezgb.dat -o /Volumes/EZGB/ezgb.dat
+
+The firmware updater gets the same treatment: an IPS from EZ Flash's stock
+updater to ours (our stage1 and the flash read patch in slot B, built by
+scripts/fpga/build-stage1-updater.sh), in patches/updater/ with its own
+manifest.json. stage1/VERSION's mod version is recorded with it.
+
+  # Maintainer: diff the stock updater -> a built one
+  scripts/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v5.gb
+
+  # User: patch the official Update_FW5_2021-9-18.gb
+  scripts/kernel-patch.py updater apply ~/Downloads/Update_FW5_2021-9-18.gb
 """
 import argparse
 import hashlib
@@ -35,6 +46,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATCH_DIR = os.path.join(ROOT, "patches", "kernel")
 MANIFEST = os.path.join(PATCH_DIR, "manifest.json")
 VERSION_FILE = os.path.join(PATCH_DIR, "VERSION")
+UPDATER_DIR = os.path.join(ROOT, "patches", "updater")
+UPDATER_MANIFEST = os.path.join(UPDATER_DIR, "manifest.json")
+STAGE1_VERSION = os.path.join(ROOT, "stage1", "VERSION")
+# the stock updater each firmware's patch applies to
+UPDATER_STOCK = {
+    "fw5-0918": "juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb",
+    "fw4": "juniorkernel-1.04e-FW4/Update_FW4.gb",
+}
 
 # IPS record layout: 3-byte offset, 2-byte size, then `size` bytes.
 # size 0 means RLE: 2-byte run length, 1 byte to repeat.
@@ -55,11 +74,17 @@ def md5(data):
     return hashlib.md5(data).hexdigest()
 
 
-def load_manifest():
-    if not os.path.isfile(MANIFEST):
+def load_manifest(path=MANIFEST):
+    if not os.path.isfile(path):
         return {}
-    with open(MANIFEST) as f:
+    with open(path) as f:
         return json.load(f)
+
+
+def save_manifest(manifest, path=MANIFEST):
+    with open(path, "w") as f:
+        json.dump(manifest, f, indent=2, sort_keys=True)
+        f.write("\n")
 
 
 def read_mod_version():
@@ -174,9 +199,7 @@ def make_one(version):
         "patched_md5": md5(modded),
         "size": len(stock),
     }
-    with open(MANIFEST, "w") as f:
-        json.dump(manifest, f, indent=2, sort_keys=True)
-        f.write("\n")
+    save_manifest(manifest)
     total = sum(l for _, l in runs)
     print(f"wrote {os.path.relpath(patch_path, ROOT)}: {len(runs)} records, "
           f"{total} patched bytes")
@@ -255,6 +278,75 @@ def cmd_apply(args):
     print("Rename to ezgb.dat on the card root to install.")
 
 
+def cmd_updater_make(args):
+    if args.firmware not in UPDATER_STOCK:
+        sys.exit(f"error: unknown firmware {args.firmware!r}; known: "
+                 + ", ".join(sorted(UPDATER_STOCK)))
+    stock_path = os.path.join(ROOT, UPDATER_STOCK[args.firmware])
+    if not os.path.isfile(stock_path):
+        sys.exit(f"error: missing {stock_path} (the stock updater)")
+    stock = open(stock_path, "rb").read()
+    built = open(args.built, "rb").read()
+    if len(stock) != len(built):
+        sys.exit(f"error: size mismatch: stock {len(stock)}, built {len(built)}")
+    if stock == built:
+        sys.exit(f"error: {args.built} is the stock updater, so there is nothing to patch")
+
+    runs = diff_runs(stock, built)
+    os.makedirs(UPDATER_DIR, exist_ok=True)
+    patch_name = f"ezgb-updater-{args.firmware}.ips"
+    patch_path = os.path.join(UPDATER_DIR, patch_name)
+    write_ips(runs, built, patch_path)
+    if apply_ips(stock, open(patch_path, "rb").read()) != built:
+        os.remove(patch_path)
+        sys.exit("error: round-trip failed (patch did not reproduce the built updater)")
+
+    manifest = load_manifest(UPDATER_MANIFEST)
+    manifest[args.firmware] = {
+        "patch": patch_name,
+        "stock_md5": md5(stock),
+        "patched_md5": md5(built),
+        "size": len(stock),
+        "stage1": open(STAGE1_VERSION).read().splitlines()[1].strip(),
+    }
+    save_manifest(manifest, UPDATER_MANIFEST)
+    total = sum(l for _, l in runs)
+    print(f"wrote {os.path.relpath(patch_path, ROOT)}: {len(runs)} records, "
+          f"{total} patched bytes")
+    print(f"  stock   md5 {md5(stock)}")
+    print(f"  patched md5 {md5(built)}")
+
+
+def cmd_updater_apply(args):
+    base = open(args.base, "rb").read()
+    manifest = load_manifest(UPDATER_MANIFEST)
+    if not manifest:
+        sys.exit(f"error: no manifest at {UPDATER_MANIFEST}")
+    base_md5 = md5(base)
+    if any(e["patched_md5"] == base_md5 for e in manifest.values()):
+        sys.exit(f"error: {args.base} is already a patched updater")
+    matches = [f for f, e in manifest.items() if e["stock_md5"] == base_md5]
+    if not matches:
+        known = "\n".join(f"  {e['stock_md5']}  {os.path.basename(UPDATER_STOCK.get(f, f))}"
+                          for f, e in sorted(manifest.items()))
+        sys.exit(f"error: {args.base} (md5 {base_md5}) is not a known stock "
+                 f"updater.\nExpected one of:\n{known}\n"
+                 "Use the updater from the official EZ Flash firmware package.")
+    fw = matches[0]
+    entry = manifest[fw]
+    result = apply_ips(base, open(os.path.join(UPDATER_DIR, entry["patch"]), "rb").read())
+    if md5(result) != entry["patched_md5"]:
+        sys.exit("error: patched output failed md5 verification. "
+                 "The patch and manifest disagree; regenerate the patch")
+    out = args.output or os.path.join(os.path.dirname(os.path.abspath(args.base)),
+                                      f"Update_{fw.upper()}-ezgb.gb")
+    with open(out, "wb") as f:
+        f.write(result)
+    print(f"{fw}: patched OK -> {out}")
+    print(f"  md5 {md5(result)}")
+    print("Copy it to the card, run it from the kernel like a game, press A, then power-cycle.")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -273,6 +365,18 @@ def main():
     app.add_argument("-o", "--output", default=None,
                      help="output path (default: ezgb-patched.dat beside the input)")
     app.set_defaults(func=cmd_apply)
+
+    up = sub.add_parser("updater", help="the firmware updater patch")
+    upsub = up.add_subparsers(dest="updater_cmd", required=True)
+    umk = upsub.add_parser("make", help="diff the stock updater -> a built one into an IPS")
+    umk.add_argument("firmware", help="firmware the updater is for: " + ", ".join(sorted(UPDATER_STOCK)))
+    umk.add_argument("built", help="updater built by scripts/fpga/build-stage1-updater.sh")
+    umk.set_defaults(func=cmd_updater_make)
+    uap = upsub.add_parser("apply", help="apply the IPS to a stock updater")
+    uap.add_argument("base", help="stock updater from the official firmware package")
+    uap.add_argument("-o", "--output", default=None,
+                     help="output path (default: Update_<FW>-ezgb.gb beside the input)")
+    uap.set_defaults(func=cmd_updater_apply)
 
     args = ap.parse_args()
     args.func(args)

@@ -88,3 +88,25 @@ A mismatch against the manifest means either the disassembly has changes the
 patch hasn't picked up yet (the patches are regenerated per
 [DEVELOPMENT.md](DEVELOPMENT.md#regenerating-the-kernel-patches)) or a
 broken build.
+
+## The firmware updater patch
+
+Our slot B (stage1 plus the bank 2 flash read patch) ships the same way: an
+IPS from EZ Flash's stock FW5-0918 updater (`Update_FW5_2021-9-18.gb`) to
+ours, in `patches/updater/` with its own `manifest.json` (stock and patched
+md5s, and the stage1 version from `stage1/VERSION`). It is kept apart from
+`patches/kernel/` so `make-dist.sh` doesn't take it for a kernel.
+
+```sh
+# maintainer: build the updater, then diff it against the stock one
+BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
+scripts/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v5.gb
+
+# user: patch the official updater (md5-checked on both sides)
+scripts/kernel-patch.py updater apply Update_FW5_2021-9-18.gb
+```
+
+The patch carries only bytes that differ from the stock updater: the stage1
+and bank 2 BRAM frames, the screen label, and the bitstream and header
+checksums. Patching is byte-granular, so a changed byte can still hold
+unchanged bits of the stock bank 2 program, as with the kernel patches.
