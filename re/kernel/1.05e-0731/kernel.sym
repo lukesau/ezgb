@@ -4499,7 +4499,7 @@
 02:7e80 DrawNameWithIconImpl
 02:7e80 .data:144:8
 04:6400 SetText
-04:6400 .data:14a:8
+04:6400 .data:162:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg

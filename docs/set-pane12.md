@@ -19,6 +19,7 @@ changes is x, per field:
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..80 (scrolls from 10 characters up); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
 | 14 | `UI:` 0..112; `12px` 120..155 in a box (115,111)-(155,124) |
+| 16 | `SGB BOOT:` 0..128; the checkbox at x 130, or `AUTO` 108..142 in its place when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
 | 16 | `SGB BOOT:` 0..128; checkbox at x 130 |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
