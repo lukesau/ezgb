@@ -168,6 +168,13 @@ All on the one FW4 Jr, each build installed with its own updater
 | v3 | fast launch; START held at power-on cancels it | confirmed: boots Pokemon Red straight from stage1, and START cancels it (the cancel was fixed in v3) |
 | v4 | SELECT save-backup prompt, the `"S1"` skip mark at `$11:$A410`, the `FW6-MOD 1.0` version line | installed, not yet confirmed |
 
+On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
+
+| Build | What it added | On hardware |
+|---|---|---|
+| fast / v5 | MBC3 clock restore, `$7FD4=$11` fast load; v5 gates both on the FW version byte and carries the bank 2 flash read patch | confirmed: Pokemon Crystal fast-launches with the right clock, noticeably faster |
+| mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
+
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
 
