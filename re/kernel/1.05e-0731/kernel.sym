@@ -4525,7 +4525,7 @@
 00:0259 CgbInit
 00:0259 .data:6a:8
 05:7700 BrowserHideName
-05:7700 .data:237:8
+05:7700 .data:262:8
 00:04ae DirListHideNameStub
 00:04ae .data:19:8
 02:6f40 FillRect

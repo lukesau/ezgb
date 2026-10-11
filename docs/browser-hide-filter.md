@@ -8,7 +8,9 @@ clutter get hidden by this patch:
   `.Trashes/`, `.TemporaryItems/`
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
   with an Omega), the settings file (`EZGB.CFG`, see [ezgb-cfg.md](ezgb-cfg.md))
-  and its pre-3.0 predecessor `FLAUNCH.CFG`, plus the stock
+  and its pre-3.0 predecessor `FLAUNCH.CFG`, the kernel's save backup folder
+  `SAVER/` (mod 6.5; save management is planned as a per-ROM option instead
+  of browsing the folder), plus the stock
   kernel's own `ezgb.dat` memcmp
 
 This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
@@ -48,7 +50,7 @@ port, so its bank-0 call targets differ):
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 567 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
+| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 610 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -67,7 +69,7 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     jp DirList_bankSlot    ; kept: continue unchanged, BC = name ptr
 ```
 
-`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `EZGB.CFG`, `FLAUNCH.CFG`,
+`BrowserHideName` returns 1 (hide) for: leading `.`, `*.gba`, `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER`,
 and for any entry past the 416th shown, which also ends the directory
 ([browser-sort.md](browser-sort.md#record-cap)).
 (It also hid `*.fastlaunch` until that fast-launch trigger was removed on

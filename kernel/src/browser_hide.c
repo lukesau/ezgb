@@ -7,6 +7,8 @@
  *  - *.gba (GBA ROMs on a shared card; the Jr can't launch them)
  *  - EZGB.CFG, the settings file (docs/ezgb-cfg.md), and FLAUNCH.CFG, its
  *    pre-2.9 predecessor (a leftover would otherwise clutter the root)
+ *  - SAVER, the kernel's save backup folder (docs/psram-save-map.md); saves
+ *    are meant to be reached from the ROM they belong to, not browsed
  *
  * All extension/name tests are case-insensitive; FAT 8.3 short names come
  * back uppercase while long names keep the host's casing.
@@ -88,6 +90,9 @@ u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
         return 1;
     }
     if (len == 11 && ends_ci(name, len, (const u8 *)"flaunch.cfg", 11)) {
+        return 1;
+    }
+    if (len == 5 && ends_ci(name, len, (const u8 *)"saver", 5)) {
         return 1;
     }
     if (ENTRY_COUNT >= MAX_RECORDS) {
