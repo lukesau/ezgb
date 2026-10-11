@@ -330,7 +330,7 @@ The new stage1 runs from the next power-on.
 - A stage1 that configures but hangs can't run the updater again, because
   the updater is launched from the kernel and stage1 is what loads the
   kernel. Recovery then means an SPI programmer and a known-good flash dump
-  of that cart ([hardware-board.md](hardware-board.md)).
+  of that cart, or JTAG ([hardware-board.md](hardware-board.md#jtag-header-fpga-package-pins)).
 - **Keep every original dump forever**, with a copy off the working machine.
   The as-read dump is the restore source, and for a damaged cart the only
   record of the damage. A dump holds that cart's own license record, so
