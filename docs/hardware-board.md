@@ -248,6 +248,17 @@ the CRC area. See [bitstream.md](../re/stage0/docs/bitstream.md).)
 The failure erased `0x00000-0x0FFFF` (image A's first 64 KB), leaving its tail
 at `0x10000-0x24831` intact. So:
 
+> **Confirmed 2026-10-10.** The raw read of the bricked chip,
+> `EN25F40@SOP8.BIN` (the programmer appends a 272-byte `-Configuration-`
+> trailer to the 512 KB), is `FF` over exactly `$00000-$0FFFF` and identical
+> to the repaired image everywhere else. The erased range held slot A's
+> preamble, its configuration register writes and the first 65 KB of its
+> frame data (logic and routing; the BRAM frames start past `$19000`). The
+> FW4 cart, never bricked, has a slot A identical to the repaired one, so
+> the repair restored the factory bytes exactly
+> ([flash-dump.md](flash-dump.md#fw4-cart-dump-2026-10-10)). Copies of both
+> files: `fpga/dumps/` (ignored).
+
 ```python
 flash[0x00000:0x10000] = flash[0x40000:0x50000]   # image B's head
 # everything else, including image A's own tail, left untouched
