@@ -287,8 +287,13 @@ scripts/fpga/make-updater.py juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb
 The FW5 updater runs the same write loop as FW4's (149,516 bytes to slot B
 at `$040000`, [fw5.md](../re/stage0/docs/fw5.md)); `make-updater.py`
 replaces only its first image and leaves the second, unwritten one alone.
-Our stage1's header doesn't carry 0918's SGB flag bytes, so the bootstrap
-no longer declares SGB support.
+Our stage1's header carries 0918's SGB flag bytes (`$0146 = $03`,
+`$014B = $33`), and on a Super Game Boy stage1 also resends the header
+packets ([fpga-stage1.md](fpga-stage1.md#super-game-boy)).
+
+> **Correction (2026-10-10).** Until then our stage1's header left both
+> bytes `$FF`, so every stage1 updater we built declared no SGB support,
+> one step behind stock 0918.
 
 The result is the stock updater with the payload at `$8000` replaced and the
 16-byte screen line at `$11D2` relabeled (at most 16 characters), so it

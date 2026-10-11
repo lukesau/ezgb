@@ -296,6 +296,33 @@ in a subdirectory): the FPGA values match the kernel's for that game
 behave (no stamp with and without a `.sav`, same-game stamp, other-game
 stamp).
 
+## Super Game Boy
+
+The header bytes alone (`$0146 = $03`, `$014B = $33`, which stock 0918 and
+the 2020 forSGB beta already set) don't make the Jr work on an SGB. P62
+drives the cart `/RESET` push-pull, `P61 & ` the `$7FE0` pulse flip-flop
+with its tristate tied off, through 330 ohms against the SGB's 10k
+(`re/stage0/maps/fw5-0918.pins.txt`; nitro2k01 in
+[issue 5](https://github.com/lukesau/ezgb/issues/5)). The SNES can't hold
+the Game Boy CPU in reset while it starts, so the boot ROM sends its header
+packets before anything listens.
+
+Stage1 sends them again (`stage1/src/sgb.c`): the six packets built from its
+own header, four rounds with the SGB Enabler's 192/64/48 frame gaps, about
+6.7 s, right after the boot screen comes up. Only on an SGB: `crt0.s` keeps
+the boot ROM's A and C in `$FF80`/`$FF81`, and C is `$14` after the SGB and
+SGB2 boot ROMs, `$13` after DMG and Pocket, with A `$11` on color consoles.
+The kernel's `SGB BOOT` option ([sgb-boot.md](sgb-boot.md)) is still there
+and would add a second round of waiting on top.
+
+Checked in SameBoy (`SAMEBOY_SGB_LOG=1` logs every header packet; SameBoy
+itself drops the ones sent after the boot ROM, a real SGB BIOS doesn't):
+SGB and SGB2 get 24 packets from stage1, all checksums good, then boot the
+kernel; DMG, Pocket and CGB get none. Not yet tried on a real SGB.
+
+The real fix is P62 as an open drain (low only during the `$7FE0` pulse,
+P61 dropped from its drive), which needs a routing edit in the bitstream.
+
 ## Next
 
 - Name the rest: the console/printf internals, `check_fs`/`pf_mount`

@@ -37,6 +37,8 @@
 init:
         di
         ldh     (0x80), a               ; BOOT_A: $11 on a color console
+        ld      a, c
+        ldh     (0x81), a               ; BOOT_C: $14 on a Super Game Boy
         ld      sp, #0xE000
         xor     a, a
         ldh     (0xFF), a               ; IE

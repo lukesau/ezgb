@@ -72,4 +72,6 @@ for i in range(0x4800, 0x8000):
 open(sys.argv[2], "wb").write(d)
 print(f"stage1: {used} bytes used of {0x4800}")
 PY
-rgbfix -v -c -t BOOTLOADER -p 0 "$out/stage1.gb"
+# -s -l 0x33: SGB flag and old licensee $33, as stock 0918 (the SGB BIOS
+# ignores a header without both)
+rgbfix -v -c -s -l 0x33 -t BOOTLOADER -p 0 "$out/stage1.gb"

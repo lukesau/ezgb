@@ -30,6 +30,7 @@ git -C "$DEST" add \
   Core/gb.h \
   Core/mbc.c \
   Core/memory.c \
+  Core/sgb.c \
   Makefile
 
 git -C "$DEST" diff --cached > "$OUT"

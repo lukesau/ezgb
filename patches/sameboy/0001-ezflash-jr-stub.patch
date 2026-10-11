@@ -1032,7 +1032,7 @@ index 0000000..aef1f48
 +}
 diff --git a/Core/ezflash_jr.h b/Core/ezflash_jr.h
 new file mode 100644
-index 0000000..0f5ba14
+index 0000000..473eb39
 --- /dev/null
 +++ b/Core/ezflash_jr.h
 @@ -0,0 +1,79 @@
@@ -1217,6 +1217,34 @@ index 79503de..7c8d5a4 100644
      if (gb->cartridge_type->mbc_type == GB_MBC7) {
          write_mbc7_ram(gb, addr, value);
          return;
+diff --git a/Core/sgb.c b/Core/sgb.c
+index 61ad2c5..a226ab6 100644
+--- a/Core/sgb.c
++++ b/Core/sgb.c
+@@ -1,3 +1,5 @@
++#include <stdlib.h>
++#include <stdio.h>
+ #include "gb.h"
+ #include "random.h"
+ #include <math.h>
+@@ -150,6 +152,17 @@ static void command_ready(GB_gameboy_t *gb)
+        0xE content bytes. The last command, FB, is padded with zeros, so information past the header is not sent. */
+     
+     if ((gb->sgb->command[0] & 0xF1) == 0xF1) {
++        /* SAMEBOY_SGB_LOG=1: log every header packet, including the ones sent
++           after the boot ROM (a real SGB BIOS takes those; SameBoy drops them) */
++        if (getenv("SAMEBOY_SGB_LOG")) {
++            uint8_t sum = 0;
++            for (unsigned i = 2; i < 0x10; i++) sum += gb->sgb->command[i];
++            fprintf(stderr, "SGB header packet %02x sum %s%s:", gb->sgb->command[0],
++                    sum == gb->sgb->command[1] ? "ok" : "BAD",
++                    gb->boot_rom_finished ? "" : " (boot ROM)");
++            for (unsigned i = 2; i < 0x10; i++) fprintf(stderr, " %02x", gb->sgb->command[i]);
++            fprintf(stderr, "\n");
++        }
+         if (gb->boot_rom_finished) return;
+         
+         uint8_t checksum = 0;
 diff --git a/Makefile b/Makefile
 index 8ef2e66..d6ab256 100644
 --- a/Makefile

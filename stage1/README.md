@@ -27,7 +27,7 @@ icon tiles this build needs. The stock stage1 itself, disassembled, is in
 
 `VERSION` has two lines: the firmware number, then the mod version. The
 build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.0`. The firmware
+`FW<n>-MOD <m>` on its bottom line, currently `FW6-MOD 1.5`. The firmware
 number is what the cart's version register should read for this build
 (stock FW4 reads 4; making the register itself say 6 is a separate fabric
 change, [re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)). The mod version is
@@ -56,6 +56,7 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 | `src/game.c` | fast launch: the kernel's game launch done from stage1 |
 | `src/backup.c` | SELECT save backup to `/SAVER` |
 | `src/video.c` | boot screen: icon, text, CGB palettes |
+| `src/sgb.c` | Super Game Boy: detection from the boot ROM's registers, header packets resent |
 | `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |
 | `src/game_handoff.s` | the same for a fast-launched game |
 | `VERSION` | firmware number and mod version (above) |

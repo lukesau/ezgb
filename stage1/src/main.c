@@ -12,6 +12,7 @@
 #include "game.h"
 #include "backup.h"
 #include "video.h"
+#include "sgb.h"
 
 /* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
 #define STATUS_ROW 15
@@ -85,6 +86,8 @@ void main(void)
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
+    if (sgb_detect())
+        sgb_unlock();                   /* about 6.7 s, on an SGB only */
     keys = buttons();                   /* as held at power-on */
     wait_frames(JR_DELAY);
     wordmark_paint(JR_STEP);

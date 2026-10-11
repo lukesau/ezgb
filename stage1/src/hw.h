@@ -22,8 +22,10 @@
 #define rIE   REG(0xFFFF)
 #define rP1   REG(0xFF00)
 
-/* crt0 saves the boot ROM's A here ($11 on a color console) */
+/* crt0 saves the boot ROM's A and C here ($11 in A on a color console,
+ * $14 in C on a Super Game Boy) */
 #define BOOT_A REG(0xFF80)
+#define BOOT_C REG(0xFF81)
 
 /* FPGA registers ($7Fxx, write-only, each write inside unlock/lock) */
 #define FPGA_SD_MAP    0x7F30  /* $7F30: 0 off, 1 sector data at $A000, 3 read status */
