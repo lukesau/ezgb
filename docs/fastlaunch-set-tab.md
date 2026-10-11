@@ -29,7 +29,10 @@ row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 | 16 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)) |
 
 UP/DOWN move a cursor over seven rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
-3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB BOOT (clamp `04:5604` `d6 06`). The stock checkbox
+3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB BOOT (clamp `04:5604` `d6 06`).
+RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
+6.3, `scripts/inject-set-jump.py`); while the time is being set they still
+step through its fields. The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
 `FlSetADispatch` moved to `04:5f30` (30 B; its old slot at `04:5959` had no
 room for `cp $02`): row 2 goes to the stock AUTO SAVE toggle (`$58d6`), every
@@ -115,6 +118,8 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:47ef` | `f8 5c 4d 44 21 07 00` | `call $5932` + 4 nops | run `FlSetEnterHook` (op ENTER) then replay the displaced prologue |
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
+| `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 6) |
 | `04:5604` | `d6 01` | `d6 04` | cursor clamp 0..1 → 0..4 (row 4 = the `UI:` button, [ui-mode.md](ui-mode.md); was `d6 03` before it) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

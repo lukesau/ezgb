@@ -4531,3 +4531,7 @@
 00:04ae .data:19:8
 02:6f40 FillRect
 02:6f40 .data:18a:8
+04:5f80 FlSetJumpTop
+04:5f80 .data:f:8
+04:5f90 FlSetJumpBottom
+04:5f90 .data:10:8

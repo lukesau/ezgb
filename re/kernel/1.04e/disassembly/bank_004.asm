@@ -3346,7 +3346,7 @@ DrawTimeAutosaveScreen_inputLoopFieldDec::
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, DrawTimeAutosaveScreen_redraw
+    jp z, $5f80
 
     xor a
     ld hl, sp+$3d
@@ -3389,7 +3389,7 @@ DrawTimeAutosaveScreen_fieldDecWrapFieldInc::
     xor a
     ld hl, sp+$40
     or [hl]
-    jp z, DrawTimeAutosaveScreen_redraw
+    jp z, $5f90
 
     xor a
     ld hl, sp+$3d
@@ -6577,38 +6577,17 @@ FarCallMenuTabs::
 
     rst RST_38
     rst RST_38
+
+FlSetJumpTop::
+    db $f8, $3d, $7e, $b7, $ca, $f5, $48, $36
+    db $00, $23, $36, $01, $c3, $48, $59
+
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+FlSetJumpBottom::
+    db $f8, $3d, $7e, $fe, $06, $ca, $f5, $48
+    db $36, $06, $23, $36, $01, $c3, $48, $59
+
     rst RST_38
     rst RST_38
     rst RST_38
