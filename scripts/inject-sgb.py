@@ -46,14 +46,46 @@ def tool(*args):
     subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True, cwd=os.path.join(ROOT, "kernel"))
 
 
+def offset(bank, addr):
+    return addr if bank == 0 else bank * 0x4000 + addr - 0x4000
+
+
+def put_block(ver, bank, addr, name, data, apply):
+    """inject_bytes.py for a new block; an existing one is overwritten in
+    place (the rest of a longer old block goes back to stock) and its
+    kernel.sym length updated."""
+    vdir = os.path.join(ROOT, "re", "kernel", ver)
+    sym_path = os.path.join(vdir, "kernel.sym")
+    sym = open(sym_path).read()
+    key = f"{bank:02x}:{addr:04x}"
+    m = re.search(rf"^{key} {name}\n{key} \.data:([0-9a-f]+):(\d+)$", sym, re.M)
+    if not m:
+        tool("inject_bytes.py", ver, str(bank), f"{addr:04x}", name, data.hex(), *apply)
+        return
+    old_len = int(m.group(1), 16)
+    rom = open(os.path.join(vdir, "kernel.gb"), "rb").read()
+    stock = open(os.path.join(vdir, "kernel.gb.orig"), "rb").read()
+    off = offset(bank, addr)
+    n = max(old_len, len(data))
+    new = data + stock[off + len(data):off + n]
+    if rom[off:off + n] != new:
+        tool("patch_bytes.py", ver, str(bank), f"{addr:04x}", rom[off:off + n].hex(), new.hex(), *apply)
+    else:
+        print(f"{key} {name}: unchanged")
+    if apply and old_len != len(data):
+        sym = sym[:m.start(1)] + f"{len(data):x}" + sym[m.end(1):]
+        open(sym_path, "w").write(sym)
+        print(f"{key} {name}: kernel.sym length {old_len} -> {len(data)}")
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     ver = sys.argv[1]
     apply = ["--apply"] if "--apply" in sys.argv[2:] else []
     secs = assemble()
-    tool("inject_bytes.py", ver, "0", "0020", "SgbStub", secs["SgbStub"].hex(), *apply)
-    tool("inject_bytes.py", ver, "1", "7f00", "SgbUnlock", secs["SgbBank1"].hex(), *apply)
+    put_block(ver, 0, 0x0020, "SgbStub", secs["SgbStub"], apply)
+    put_block(ver, 1, 0x7f00, "SgbUnlock", secs["SgbBank1"], apply)
     tool("patch_bytes.py", ver, "0", "0100", "00c35001", "00c32000", *apply)
     tool("patch_bytes.py", ver, "0", "0146", "00", "03", *apply)
     tool("patch_bytes.py", ver, "0", "014b", "00", "33", *apply)
