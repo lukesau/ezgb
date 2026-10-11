@@ -31,6 +31,10 @@
  * Then the SGB BOOT record, page $11 $A400-$A403 (docs/sgb-boot.md), and the
  * A register KernelEntry saved at boot (wBootA).
  *
+ * START far-calls FlashDump (flash_dump.c, bank 5), which dumps the SPI
+ * config flash to /FLASH.BIN and the Device DNA to /DNA.BIN, and shows its
+ * results on the last lines.
+ *
  * Page access is the kernel's: $4000 = page, $7FC0 = $03, read through
  * $A000-$BFFF, then $4000 = 0, $7FC0 = 0.
  *
@@ -49,6 +53,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 extern volatile u8 wBootA;                                          /* KernelEntry's copy of the boot A */
 extern void FarCallTrampoline(void);                                /* 00:078d */
 extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, far */
+extern void FlashDump(void);                                        /* flash_dump.c, bank 5, far */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)
 #define WIN      ((volatile u8 *)0xA000)
@@ -64,6 +69,9 @@ extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, 
 #define PAD_SELECT 0x40
 #define PAD_UP     0x04
 #define PAD_DOWN   0x08
+#define PAD_START  0x80
+
+#define FD_RES     ((volatile u8 *)0xD7F0)   /* FlashDump's results, flash_dump.c */
 
 typedef struct {
     u16 sum[4];              /* pages $00, $01, $10, $11 */
@@ -73,7 +81,16 @@ typedef struct {
     u8 alias;
     u8 rec[4];               /* page $11 $A400.. */
     u8 wrap[2];              /* B: $20 on $00, $3F on $1F (WRAP_*, 0 = not run) */
+    u8 dump;                 /* START: DUMP_*, 0 = not run */
+    u8 dump_err;             /* FatFs result for DUMP_SD */
+    u16 dumped;              /* sectors written */
+    u8 dna[8];
 } Stats;
+
+#define DUMP_OK      1       /* FD_RES[0], as flash_dump.c */
+#define DUMP_NOPATCH 2
+#define DUMP_TIMEOUT 3
+#define DUMP_SD      4
 
 #define WRAP_ALIAS 1
 #define WRAP_NONE  2
@@ -110,6 +127,7 @@ void DebugTab(void) {
     __endasm;
     while (ReadJoypad() & PAD_SELECT) {}   /* the press that left HELP */
     st.wrap[0] = st.wrap[1] = 0;
+    st.dump = 0;
     snapshot(&st);
     draw(&st, top);
     for (count = 0; line(&st, count, 0); count++) {}
@@ -133,6 +151,21 @@ void DebugTab(void) {
             st.wrap[0] = wrap_test(0x00, 0x20);
             st.wrap[1] = wrap_test(0x1F, 0x3F);
             while (ReadJoypad() & PAD_B) {}
+            draw(&st, top);
+            continue;
+        }
+        if (j & PAD_START) {
+            __asm
+                call _FarCallTrampoline
+                .dw _FlashDump
+                .db 5, 0
+            __endasm;
+            st.dump = FD_RES[0];
+            st.dump_err = FD_RES[1];
+            st.dumped = FD_RES[2] | FD_RES[3] << 8;
+            for (j = 0; j < 8; j++) st.dna[j] = FD_RES[4 + j];
+            while (ReadJoypad() & PAD_START) {}
+            for (count = 0; line(&st, count, 0); count++) {}
             draw(&st, top);
             continue;
         }
@@ -169,9 +202,14 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
     static const u8 t_on[3] = {'O','N',0};
     static const u8 t_off[4] = {'O','F','F',0};
     static const u8 t_boot[17] = {'B','O','O','T',' ','A',' ','R','E','G','I','S','T','E','R',':',0};
+    static const u8 t_dump[17] = {'S','T','A','R','T',':','D','U','M','P',' ','F','L','A','S','H',0};
+    static const u8 t_dumpres[4][9] = {
+        {'O','K',0}, {'N','O',' ','P','A','T','C','H',0}, {'T','I','M','E','O','U','T',0}, {'S','D',' ','E','R','R',0}};
+    static const u8 t_sect[5] = {'S','E','C','T',0};
+    static const u8 t_dna[5] = {'D','N','A',':',0};
     u8 i;
 
-    if (n > 18) return 0;
+    if (n > 22) return 0;
     if (!out) return 1;
     for (i = 0; i < WIDTH; i++) out[i] = ' ';
     switch (n) {
@@ -223,6 +261,21 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
     case 17: text(out, t_boot); break;
     case 18:
         hex(out + 1, wBootA);
+        break;
+    case 20: text(out, t_dump); break;
+    case 21:                              /* OK 1024 SECT / SD ERR 07 512 SECT */
+        if (!st->dump) { out[1] = '-'; out[2] = '-'; break; }
+        text(out + 1, t_dumpres[st->dump - 1]);
+        if (st->dump == DUMP_SD) hex(out + 8, st->dump_err);
+        if (st->dump == DUMP_OK || st->dump == DUMP_SD) {
+            dec(out + 11, st->dumped);
+            text(out + 16, t_sect);
+        }
+        break;
+    case 22:
+        if (st->dump != DUMP_OK && st->dump != DUMP_SD) break;
+        text(out, t_dna);
+        for (i = 0; i < 8; i++) hex(out + 4 + 2 * i, st->dna[i]);
         break;
     }
     return 1;

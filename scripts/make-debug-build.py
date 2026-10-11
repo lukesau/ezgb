@@ -6,6 +6,8 @@ mod build, untouched) and writes a copy with:
 
   bank 4      DebugTab (kernel/src/debug_tab.c), compiled for this build;
               it starts with DrawMenuTabs(3) (clear the pane, keep the strip)
+  bank 5      FlashDump (kernel/src/flash_dump.c), the config flash dump
+              DebugTab far-calls on START
   bank 0      DbgTabHook: far-call DebugTab, Delay, back to the browser
   site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
               jp FileBrowserEntry`, 00:1288 in 1.05e): its Delay stays, the
@@ -47,10 +49,14 @@ ADDR = {
     "FarCallTrampoline": (0, 0x078d),
     "FileBrowserEntry": (0, 0x0f8d),
     "DrawMenuTabs": (8, 0x7169),
+    "FarCall_06_7309": (0, 0x1926),     # f_open
+    "FarCall_07_7739": (0, 0x1963),     # f_write
+    "FarCall_03_768f": (0, 0x19a1),     # f_close
     "HelpExit": (0, 0x1288),
 }
 MODSTR = (8, 0x7aff)
 DEBUG_AT = (4, 0x7400)      # preferred; any free run in bank 4 will do
+DUMP_BANK = 5               # debug_tab.c far-calls FlashDump in this bank
 HOOK_LEN = 19              # fits the 24-31 byte runs 1.05e has left in bank 0
 
 
@@ -112,13 +118,32 @@ def main():
     # DebugTab, compiled where it will live
     pins = [("_" + k, a[k]) for k in ("SetFpgaPage_B4", "DrawString", "StoreDrawParams",
                                       "ReadJoypad", "WaitVBlankFlag", "FarCallTrampoline",
-                                      "DrawMenuTabs")]
+                                      "DrawMenuTabs", "FarCall_06_7309", "FarCall_07_7739",
+                                      "FarCall_03_768f")]
     pins.append(("_wBootA", boot_a_addr(rom)))
-    src = os.path.join(ROOT, "kernel", "src", "debug_tab.c")
-    def build(origin):
+    pins.append(("_FlashStub", 0xD780))          # flash_dump.c FD_STUB
+
+    def build_at(src, origin):
         with tempfile.TemporaryDirectory() as wd:
             ihx, _ = compile_c(src, wd, pins=pins, code_origin=origin)
             return parse_ihx(ihx)
+
+    def place(src, bank, prefer=None):
+        start = prefer if prefer is not None else BANK
+        code = build_at(src, start)
+        size = max(code) - start + 1
+        at = free_run(rom, bank, size, prefer=prefer)
+        if at != start:
+            code = build_at(src, at)
+        rom[off(bank, at):off(bank, at) + size] = bytes(code[at + i] for i in range(size))
+        return at, size
+
+    # FlashDump first: DebugTab is pinned to it
+    dump_at, dump_size = place(os.path.join(ROOT, "kernel", "src", "flash_dump.c"), DUMP_BANK)
+    pins.append(("_FlashDump", dump_at))
+    src = os.path.join(ROOT, "kernel", "src", "debug_tab.c")
+    def build(origin):
+        return build_at(src, origin)
     code = build(DEBUG_AT[1])
     size = max(code) - DEBUG_AT[1] + 1
     dbg = free_run(rom, 4, size, prefer=DEBUG_AT[1])
@@ -151,6 +176,7 @@ def main():
     print(f"{os.path.relpath(out, ROOT)}  md5 {hashlib.md5(rom).hexdigest()}")
     print(f"  DebugTab 04:{dbg:04x} ({size} B), DbgTabHook 00:{cave:04x}, "
           f"HELP exit 00:{a['HelpExit']:04x}, boot A at ${boot_a_addr(rom):04x}")
+    print(f"  FlashDump {DUMP_BANK:02x}:{dump_at:04x} ({dump_size} B)")
     if args.install:
         dst = os.path.join(args.install, "ezgb.dat")
         shutil.copyfile(out, dst)
