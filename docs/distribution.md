@@ -129,8 +129,10 @@ that file's own patch; the result is hashed again before it can be saved.
 Already-patched files, the FW5 2020-7-31 updater and anything unknown are
 refused. The firmware section stays disabled until the risk notice is
 acknowledged. Hashing needs a secure context, so the page has to be served
-over https. Hosted at `https://lukesau.com/ezgb-patcher/` (the URL the
-release README prints, `PATCHER_URL` in `make-dist.sh`).
+over https. Hosted on GitHub Pages at `https://lukesau.github.io/ezgb/patcher/`
+(`scripts/publish-patcher.sh` builds it onto the `gh-pages` branch and
+pushes; `--hold fw4` keeps a firmware off the page until it has run on a
+cart). The release README prints that URL (`PATCHER_URL` in `make-dist.sh`).
 
 ## Wrong patch
 

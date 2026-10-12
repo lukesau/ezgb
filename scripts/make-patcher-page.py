@@ -15,8 +15,14 @@ Needs the stock files (re/kernel/<ver>/kernel.gb.orig, the juniorkernel-*
 updaters) to compute the hashes, and checks every patch reproduces its
 manifest md5 before writing anything.
 
-    scripts/make-patcher-page.py [out.html]      # default dist/patcher/index.html
+    scripts/make-patcher-page.py [out.html] [--hold fw4]   # default dist/patcher/index.html
+
+--hold <fw> leaves a firmware patch off the page (its stock updater is then
+recognized and refused as still in testing), for publishing the page before
+every firmware build has run on a cart. Hosted on GitHub Pages
+(scripts/publish-patcher.sh).
 """
+import argparse
 import base64
 import hashlib
 import json
@@ -42,7 +48,11 @@ def h(alg, b):
 
 
 def main():
-    out_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "dist", "patcher", "index.html")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("out", nargs="?", default=os.path.join(ROOT, "dist", "patcher", "index.html"))
+    ap.add_argument("--hold", action="append", default=[], choices=sorted(FW), help="leave this firmware off the page")
+    a = ap.parse_args()
+    out_path = a.out
     modver = open(os.path.join(ROOT, "patches", "kernel", "VERSION")).read().strip()
     fwver = open(os.path.join(ROOT, "stage1", "VERSION")).read().split()[1]
     kman = json.load(open(os.path.join(ROOT, "patches", "kernel", "manifest.json")))
@@ -76,6 +86,10 @@ def main():
         if h("md5", stock) != e["stock_md5"] or h("md5", out) != e["patched_md5"]:
             sys.exit(f"error: updater {fw}: patch does not reproduce the manifest md5")
         label, pkg, out_name = FW[fw]
+        if fw in a.hold:
+            add(h("sha256", stock), dict(kind="reject", why=f"this is the {label}. Its firmware mod {fwver} is "
+                                         "still being tested on a cart and is not offered yet."))
+            continue
         pid = "f-" + fw
         patches[pid] = base64.b64encode(ips).decode()
         add(h("sha256", stock), dict(kind="firmware", name=f"the {label}", patch=pid, out256=h("sha256", out),
@@ -95,7 +109,7 @@ def main():
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     open(out_path, "w").write(page)
     print(f"wrote {out_path} ({len(page) // 1024} KB): {len(kman)} kernels, {len(fman)} updaters, "
-          f"{len(known)} known files")
+          f"{len(known)} known files" + (f", held: {', '.join(a.hold)}" if a.hold else ""))
 
 
 if __name__ == "__main__":

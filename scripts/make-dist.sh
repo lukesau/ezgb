@@ -30,7 +30,7 @@ done
 python3 - "$ROOT" "$MODVER" <<'PY'
 import hashlib, json, os, sys
 root, modver = sys.argv[1], sys.argv[2]
-PATCHER_URL = "https://lukesau.com/ezgb-patcher/"   # where dist/patcher/index.html is hosted
+PATCHER_URL = "https://lukesau.github.io/ezgb/patcher/"   # where dist/patcher/index.html is hosted
 sys.path.insert(0, os.path.join(root, "scripts"))
 from importlib import import_module
 kp = import_module("kernel-patch")
