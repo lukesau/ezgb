@@ -136,6 +136,13 @@ over https. Hosted on GitHub Pages at `https://lukesau.github.io/ezgb/patcher/`
 pushes; `--hold fw4` keeps a firmware off the page until it has run on a
 cart). The release README prints that URL (`PATCHER_URL` in `make-dist.sh`).
 
+**Counting patches.** After each patch that passes its output hash check the
+page loads `https://lukesau.com/ezgb/p.gif?k=<patch id>&t=<ms>` (ids
+`k-<kernel>`, `f-<firmware>`): a 42-byte GIF in the lukesau.com webroot repo,
+so every patch is one line in that server's Apache access log and no file
+data leaves the browser. `scripts/patcher-counts.sh [day]` tallies them over
+ssh (the log needs sudo or group `adm`); ids starting `test` are skipped.
+
 ## Wrong patch
 
 An ordinary IPS patcher writes a patch over any file, so every mix-up was
