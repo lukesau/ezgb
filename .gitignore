@@ -65,3 +65,6 @@ re/kernel/*/label-proposals.txt
 /sd/
 
 dist/
+
+# machine-specific scripts that depend on private infrastructure (lukesau.com logs etc.)
+/local/
