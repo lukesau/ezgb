@@ -14,10 +14,9 @@ patcher page, which checks your file before patching it:
 
   {PATCHER_URL}
 
-The firmware mod is not in this folder on purpose. It rewrites the cart's
-bootloader and can brick the cart; the patcher page refuses anything but the
-exact stock updater it was built for, and explains the risk first. Read it
-there before deciding.
+The firmware patches are in this folder too (section 4), but the patcher
+page is the safer way to apply them: it refuses anything but the exact
+stock updater each was built for, and explains the risk first.
 
 
 1. Find your kernel
@@ -85,6 +84,28 @@ the card, where the browser will not list it) so you can go back.
 
 Power on. The HELP tab shows MOD {MODVER} under the kernel version when the
 modded kernel is running.
+
+
+4. Firmware mod {FWVER} (experimental)
+----------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  THIS CAN BRICK YOUR CART. The patched updater rewrites the cart's  !!
+!!  bootloader. A bootloader that runs and then hangs can't be fixed   !!
+!!  with another updater: recovery needs an SPI programmer or JTAG.    !!
+!!  Only flash it if you accept losing the cart.                       !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Apply each patch only to the updater it names, and check both md5s: a
+patch applied to another updater writes a bootloader that fails its CRC
+(the cart then falls back to its original one), but don't rely on that.
+Use a fast microSD card and fresh batteries, install the kernel first,
+launch the patched updater from the browser like a game, press A, and
+don't power off until it says it's done.
+
+{FWTABLE}
+
+Going back from the firmware: run EZ Flash's official updater the same way.
 
 
 Going back

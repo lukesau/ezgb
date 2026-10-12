@@ -98,11 +98,13 @@ its own `manifest.json` (stock and patched md5s, and the stage1 version from
 `stage1/VERSION`). It is kept apart from `patches/kernel/` so `make-dist.sh`
 doesn't take it for a kernel.
 
-**Users never get these IPS files** (since mod 6.9 / firmware 1.9). A
-release folder holds kernel patches only; firmware is handed out through
-the patcher page (below), which patches nothing but the exact stock
-updater. `make-dist.sh` checks both firmware patches against their manifest
-md5 and deletes any firmware `.ips` it finds in the release folder.
+**Released as IPS files since mod 6.9 / firmware 1.9**, named
+`ezgb-firmware-mod-F-for-<fw>.ips`, with their stock and patched md5s in the
+release README behind a brick warning. The patcher page (below) stays the
+recommended route because it patches nothing but the exact stock updater;
+someone using a generic patcher on the wrong updater gets a slot B that
+fails its CRC (see "Wrong patch"). `make-dist.sh` checks both firmware
+patches against their manifest md5 and copies them into the release folder.
 
 ```sh
 # maintainer: build the updater, then diff it against the stock one
