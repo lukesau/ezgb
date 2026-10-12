@@ -153,6 +153,11 @@ void main(void)
         wait_frames(60);
     }
     print_center(DETAIL_ROW, "OSINIT...");
+    /* stock FW5 stage1 hands the FPGA the boot A: the kernel's $7FD4 is
+     * added to it, so a stock kernel's $00 gives the $11 fast-load key on
+     * CGB and GBA, as with stock firmware */
+    if (fw >= 5)
+        fpga_set(0x7FD3, BOOT_A);
 
     fpga_set(FPGA_SRAM_MAP, 2);
     fpga_set(FPGA_LOAD_MAP, 1);

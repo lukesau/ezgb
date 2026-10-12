@@ -1,14 +1,14 @@
 {
   "fw4": {
     "patch": "ezgb-updater-fw4.ips",
-    "patched_md5": "b0a66e32dbe7a4a4d0aa73f0e8a7b9a6",
+    "patched_md5": "8fd40c23b2b23a900c683ea561805711",
     "size": 182284,
     "stage1": "1.9",
     "stock_md5": "261c013fe72f7f8f71cf1977aa2f2e3c"
   },
   "fw5-0918": {
     "patch": "ezgb-updater-fw5-0918.ips",
-    "patched_md5": "dded5d767af6ca50cf54c9f9260366ed",
+    "patched_md5": "a730ebee12aa53d30935e7fe8e6b03df",
     "size": 331800,
     "stage1": "1.9",
     "stock_md5": "dbb1e2abb6bfb396573becfd84903cce"

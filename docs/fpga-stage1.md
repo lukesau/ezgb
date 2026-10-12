@@ -147,6 +147,13 @@ same FPGA register sequence, and builds the same load command as stock.
 - **Hand-off.** `src/handoff.s` runs at `$D000`. It is stock's `HandoffPoll`
   sequence, then the screen clear the splash added. The kernel is entered at
   `$0100` with A = `$E4`, the value stock leaves in A.
+- **Boot A to `$7FD3`.** On FW5 the console's boot `A` goes to `$7FD3`
+  before the hand-off (mod 1.9, 2026-10-12), as stock FW5-0918 stage1 does
+  at `00:07F1`. FW5 adds the kernel's `$7FD4` write to it, so a stock 1.05e
+  kernel's `$00` makes the `$11` fast-load key on CGB and GBA, the same as
+  with stock firmware ([firmware-diff.md](../re/stage0/docs/firmware-diff.md)).
+  Before this a stock kernel loaded slowly on our firmware everywhere.
+  Checked in SameBoy: `$7FD3=$11` on CGB, `$01` on DMG, then the kernel boots.
 - **Load command bounds.** A file with more than 61 extents gets "EZGB.DAT
   FRAGMENTED" instead of overflowing.
 
@@ -220,9 +227,9 @@ the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
    the expected size is filled with `$FF`. Then the stamp on page `$11`:
    `$AA`, size >> 13, path length, path, `$A202 = 0`.
 4. Load command (same table as for the kernel), then `$7FC0=$02`, `$7F37`
-   (MBC, `+$80` with a timer), `$7FD4=$11` on FW5 only (the stock kernel
-   writes `$00`; `$11` is FW5's fast load, as in mod 5.5, and FW4 has no
-   `$7FD4`), `$7FC4`, `$7FC1/$7FC2`, `$7FC3`.
+   (MBC, `+$80` with a timer), `$7FD3=$00` and `$7FD4=$11` on FW5 only
+   (the key is their sum; `$11` is FW5's fast load, as in the modded
+   kernel, and FW4 has neither register), `$7FC4`, `$7FC1/$7FC2`, `$7FC3`.
 5. LCD off, `$7F36=$01` and the command copied in, then from WRAM
    (`game_handoff.s`): `$7F36=$03`, wait while the status reads 0 or 1,
    `$7F36=$00`, `$7F31/$7F32 = $00`, ROM bank 1, `$7FE0=$80`.
