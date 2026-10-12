@@ -22,7 +22,9 @@ which can brick the cart); that one is not offered as a download anywhere
 else.
 
 1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
-   your card's root now).
+   your card's root now). EZ Flash's download page
+   [as archived in March 2021](https://web.archive.org/web/20210303045037/http://www.ezflash.cn/download/) has the 1.04e / FW4 package and the
+   2020-7-31 FW5 release candidate.
 2. Download the matching `ezgb-mod-N.M-for-<kernel>.ips` from the release:
 
    | Kernel | Package | Stock `ezgb.dat` md5 |

@@ -74,7 +74,7 @@ def main():
         patches[pid] = base64.b64encode(ips).decode()
         name = f"kernel {v} ({KPKG[v]})"
         add(h("sha256", stock), dict(kind="kernel", name=name, patch=pid, out256=h("sha256", out), outName="ezgb.dat"))
-        add(h("sha256", out), dict(kind="done", name=f"kernel {v} with mod {modver}"))
+        add(h("sha256", out), dict(kind="done", name=f"kernel {v} with the mod"))
         krows.append(f"<tr><td>{v}</td><td>{KPKG[v]}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
 
     for fw, e in sorted(fman.items()):
@@ -87,14 +87,14 @@ def main():
             sys.exit(f"error: updater {fw}: patch does not reproduce the manifest md5")
         label, pkg, out_name = FW[fw]
         if fw in a.hold:
-            add(h("sha256", stock), dict(kind="reject", why=f"this is the {label}. Its firmware mod {fwver} is "
+            add(h("sha256", stock), dict(kind="reject", why=f"this is the {label}. Its firmware mod is "
                                          "still being tested on a cart and is not offered yet."))
             continue
         pid = "f-" + fw
         patches[pid] = base64.b64encode(ips).decode()
         add(h("sha256", stock), dict(kind="firmware", name=f"the {label}", patch=pid, out256=h("sha256", out),
                                      outName=out_name.format(v=fwver)))
-        add(h("sha256", out), dict(kind="done", name=f"the {label} with firmware mod {fwver}"))
+        add(h("sha256", out), dict(kind="done", name=f"the {label} with the firmware mod"))
         frows.append(f"<tr><td>{os.path.basename(kp.UPDATER_STOCK[fw])}</td><td>{pkg}</td>"
                      f"<td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
 

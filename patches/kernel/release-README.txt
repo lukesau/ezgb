@@ -42,7 +42,11 @@ Not sure which kernel to use? 1.04e is the build EZ Flash still offers for
 download, and it runs on FW4 and FW5 carts alike, so no firmware updater is
 ever needed to switch. EZ Flash took its FW5 packages (1.05e) down after
 users bricked carts updating to them; the 1.05e patches are for people who
-already run FW5 and have that package's ezgb.dat. The full comparison:
+already run FW5 and have that package's ezgb.dat. EZ Flash's download page as
+it was in March 2021, with the 1.04e / FW4 package and the 2020-7-31 FW5
+release candidate, is archived at
+  https://web.archive.org/web/20210303045037/http://www.ezflash.cn/download/
+The full comparison:
 https://github.com/lukesau/ezgb/blob/main/docs/kernel-versions.md
 
 

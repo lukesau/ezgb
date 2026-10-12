@@ -31,10 +31,9 @@ h2 { font-size: 1.2rem; margin: 0 0 8px; }
 p { margin: 0 0 12px; }
 .sub { color: var(--muted); margin-bottom: 24px; }
 section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 0 0 20px; }
-.tag { display: inline-block; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  padding: 2px 8px; border-radius: 99px; margin-left: 8px; vertical-align: 2px; }
-.tag.safe { background: var(--accent); color: var(--accent-ink); }
-.tag.risk { background: var(--warn-line); color: #fff; }
+.tag { margin-left: 8px; }
+.tag.safe { color: var(--accent); }
+.tag.risk { color: var(--warn-line); }
 .warn { background: var(--warn-bg); border: 2px solid var(--warn-line); color: var(--warn-text);
   border-radius: 8px; padding: 14px 16px; margin: 0 0 16px; }
 .warn strong { display: block; font-size: 1.05rem; margin-bottom: 6px; }
@@ -62,8 +61,9 @@ footer { color: var(--muted); font-size: .9rem; }
 <body>
 <main>
 <h1>EZ Flash Jr Patcher</h1>
-<p class="sub">Kernel mod {MODVER} and firmware mod {FWVER} for the EZ Flash Junior, applied in your browser to files from
-EZ Flash's own firmware packages. Each file is checked against the known stock hashes before anything is patched,
+<p class="sub">The kernel mod and firmware mod for the EZ Flash Junior, applied in your browser to files from
+EZ Flash's own firmware packages (EZ Flash's download page, <a href="https://web.archive.org/web/20210303045037/http://www.ezflash.cn/download/">as archived in March 2021</a>, has the
+1.04e / FW4 package and the 2020-7-31 FW5 release candidate). Each file is checked against the known stock hashes before anything is patched,
 and the result is checked again before you can save it. Nothing is uploaded.
 Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ezgb</a>.</p>
 
@@ -74,7 +74,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   <label class="pick" id="kpick"><input type="file" id="kfile">Choose the stock <code>ezgb.dat</code> from your firmware package</label>
   <div class="result" id="kres"></div>
   <p style="margin-top:14px">Then copy the result to the card root as <code>ezgb.dat</code> (keep the stock file to go back).
-  The HELP tab shows <code>MOD {MODVER}</code>. Not sure which kernel to use? 1.04e is the build EZ Flash still distributes
+  The HELP tab shows a <code>MOD</code> line with the mod's version. Not sure which kernel to use? 1.04e is the build EZ Flash still distributes
   and runs on FW4 and FW5 carts alike:
   <a href="https://github.com/lukesau/ezgb/blob/main/docs/kernel-versions.md">kernel comparison</a>.</p>
   <table>
@@ -105,8 +105,8 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   <ol>
     <li>Install the kernel above first.</li>
     <li>Copy the patched updater to the card, launch it from the file browser like a game, and press A.
-    Its screen reads <code>Update: FW4 {FWVER}</code> or <code>Update: mod {FWVER}</code>. Wait until it says it's done.</li>
-    <li>Power off and on. The boot screen's bottom line reads <code>FW4-MOD {FWVER}</code> or <code>FW5-MOD {FWVER}</code>.</li>
+    Wait until it says it's done.</li>
+    <li>Power off and on. The boot screen's bottom line reads <code>FW4-MOD</code> or <code>FW5-MOD</code> and the mod's version.</li>
   </ol>
   <p>Going back: run EZ Flash's official updater for your firmware the same way.</p>
   <table>
@@ -114,8 +114,8 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
     {FROWS}
   </table>
   <p style="margin-top:12px;color:var(--muted);font-size:.9rem">EZ Flash's site no longer offers the FW5 packages
-  for download; the FW5 patch is for people who already have <code>Update_FW5_2021-9-18.gb</code>. The 2020-7-31 FW5
-  updater is not supported.</p>
+  for download, and <code>Update_FW5_2021-9-18.gb</code> isn't on the <a href="https://web.archive.org/web/20210303045037/http://www.ezflash.cn/download/">archived download page</a> either;
+  the FW5 patch is for people who already have it. The 2020-7-31 FW5 updater on that page is not supported.</p>
 </section>
 
 <footer>Hashes are SHA-256 checked in full; SHA-1 is shown because EZ Flash publishes SHA-1 for its packages.</footer>
