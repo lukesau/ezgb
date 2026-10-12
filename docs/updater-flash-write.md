@@ -72,8 +72,9 @@ external config-flash dump.
 > target `3a 15 ff ff` (`00:153a`), which the disassembler decoded as
 > `ld a,[hl-]; dec d; rst $38; rst $38`; the same call with `$00` follows the
 > `$7FD2` wait. The search missed it because it looked for the far-call blob
-> as code, not as the bytes after `call $078d`. Flagged by someone else's
-> EZ-Flash Junior research notes (shared with us, not in the repo).
+> as code, not as the bytes after `call $078d`. Flagged by
+> [fishcu](https://github.com/fishcu)'s EZ-Flash Junior research notes
+> (shared privately).
 > Our own updaters keep EZ Flash's flash loop unchanged, so nothing built on
 > this doc is affected.
 - **No SD access** (self-contained payload).

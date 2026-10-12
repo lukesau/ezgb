@@ -180,8 +180,9 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   > The mod's `SetFpga7FD4_B1` now writes `$7FD3=$00` before `$7FD4`. Our
   > stage1 never wrote `$7FD3`, so a stock kernel lost the CGB fast load on
   > our firmware; it now passes the boot `A` like stock before entering the
-  > kernel, and writes `$7FD3=$00` before its own fast launch. Flagged by someone
-  > else's EZ-Flash Junior research notes (shared with us, not in the repo).
+  > kernel, and writes `$7FD3=$00` before its own fast launch. Flagged by
+  > [fishcu](https://github.com/fishcu)'s EZ-Flash Junior research notes
+  > (shared privately).
 
 ## Banking and save RAM (simulated)
 

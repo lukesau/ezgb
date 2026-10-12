@@ -215,6 +215,10 @@ the FW5 packages differ
   (`doc/Protocol.md`), stage1 dumps, board survey, and archived official
   firmware. The SameBoy EZ Jr stub's game-launch path is built on its protocol
   doc, and several hardware docs here start from its findings.
+- **[fishcu](https://github.com/fishcu)**: shared their own EZ-Flash Junior
+  research notes, which caught stock FW5 stage1's `$7FD3` write (the reason
+  the fast-load key works on CGB with stock firmware, and that mod 5.5 had
+  turned it off), the updater's `$7FC0` writes and stage1's cart type.
 - **[prjcombine](https://codeberg.org/prjunnamed/prjcombine)**: coolest
   project ever. I thought reverse engineering the FPGA bitstream would be a
   research project of its own, but they already did that research.
