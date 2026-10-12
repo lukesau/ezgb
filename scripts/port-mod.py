@@ -88,7 +88,8 @@ REGISTRY = {
     (2, 0x7260): dict(src="lastrom_name.c",                 # START overlay name line + marquee, far target of the 00:0368 stub
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500}),
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500,
+                                              "FarCallPatchGuard": 0x43c0}),
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70}),
@@ -102,7 +103,10 @@ REGISTRY = {
                             "SmSaveOp": 0x6562, "hUiMode": 0xfffb}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
-    (4, 0x73a0): dict(src="save_name.c", pins={}),   # save/backup name parser, far target of SoMatch 01:7d50
+    (4, 0x73a0): dict(src="save_name.c", pins={}),
+    (1, 0x7d70): dict(src="patch_guard.c",                  # wrong-patch guard, far target of FarCallPatchGuard 02:43c0
+                      pins={"GuardSig": 0x5736, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+                            "StoreDrawParams": 0x2791, "WaitVBlankFlag": 0x0688}),   # save/backup name parser, far target of SoMatch 01:7d50
     (9, 0x7cc0): dict(src="fs_unlink.c",                    # f_unlink against bank 9's FatFs internals, far target of SoUnlink 01:765c
                       pins={"FindVolume_B9": 0x76f7, "FollowPath_B9": 0x72c5, "DirSdi_B9": 0x54db,
                             "DirNext_B9": 0x580c, "MoveWindow_B9": 0x437e, "LdClust_B9": 0x5d72,

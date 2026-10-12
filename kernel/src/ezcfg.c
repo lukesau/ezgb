@@ -177,6 +177,7 @@ static u8 as_take(void);
 static void autosave_boot(void);
 
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
+extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d70 patch_guard.c: halts on a cross-patched kernel */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);  /* 00:27ba, pixel coords */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);    /* 00:2791 */
@@ -445,6 +446,7 @@ static void autosave_boot(void) {
 
 static void cfg_restore(void) {
     u8 why;
+    FarCallPatchGuard();                 /* first: a kernel patched for another build must write nothing */
     PAD_HELD |= ReadJoypad();            /* held since power-on: never a press in a prompt */
     stage1_skip_mark();
     cfg_load();
