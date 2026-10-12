@@ -4436,7 +4436,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:13d9:8
+02:4a00 .data:138f:8
 02:4500 FastLaunchScan
 02:4500 .data:2a9:8
 04:5f00 FarCallEzCfg
@@ -4563,3 +4563,5 @@
 04:73a0 .data:2cb:8
 01:7d50 SoMatch
 01:7d50 .data:16:8
+04:5fa0 AutosaveSetHook
+04:5fa0 .data:b:8

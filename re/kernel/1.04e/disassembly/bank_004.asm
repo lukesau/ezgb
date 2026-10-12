@@ -5031,7 +5031,7 @@ DrawTimeAutosaveScreen_toggleA200Apply::
     inc sp
     call SetFpgaPage_B4
     add sp, $01
-    jp DrawTimeAutosaveScreen_redraw
+    jp $5fa0
 
 
 DrawTimeAutosaveScreen_epilogueRet::
@@ -5520,17 +5520,10 @@ FlSetJumpBottom::
     db $f8, $3d, $7e, $fe, $06, $ca, $f5, $48
     db $36, $06, $23, $36, $01, $c3, $48, $59
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+AutosaveSetHook::
+    db $3e, $09, $ea, $fc, $db, $cd, $00, $5f
+    db $c3, $f5, $48
+
     rst RST_38
     rst RST_38
     rst RST_38

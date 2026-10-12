@@ -32,6 +32,7 @@ RTC=2026-09-08 10:15:32
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `UI` | `8` or `12`: which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
+| `AUTOSAVE` | `0` or `1`: the SET tab's AUTO SAVE checkbox (pSRAM `$11:$A200`). Put back when the pSRAM lost power (BATTERY DRY), see "AUTO SAVE backup" below. Missing = not restored. | SET tab (the AUTO SAVE toggle), every launch |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
 
 The firmware rewrites the whole file from its known keys as a fixed one-sector (512-byte)
@@ -56,6 +57,33 @@ A launch or dump stores the reading only when it is valid, the PCF8563's VL
 flag (seconds bit 7: "supply dipped, time not guaranteed") is clear, and it is
 later than the stored copy. TIME SET always stores (see below). A restore
 therefore loses at most the time since the last launch or dump.
+
+**AUTO SAVE backup (mod 6.9).** The AUTO SAVE checkbox lives only in pSRAM
+(`$11:$A200`), so a dead cell turned it off, or into a garbage byte. Every
+toggle now writes `AUTOSAVE=` (`AutosaveSetHook`, op 9; the file is only
+rewritten when the value changed), and every browser launch records it too
+(op 4), so a card that never toggled it gets the key at its next launch. A
+faded `$A200` (neither 0 nor 1) is never recorded.
+
+It is put back only on a BATTERY DRY boot (the `$A201` canary was dead,
+`BatteryDryHook` set `$DBFD`), in op RESTORE right after the file is read
+and before the kernel looks at the pending-backup stamp. The order there is
+the safety rule:
+
+1. `$A000 = 0` first. A DRY boot means the save waiting in pSRAM for
+   `BACKUPSAVE` faded with the canary, so it must never reach the card: no
+   prompt, no dump, with or without AUTO SAVE. The good `.sav` on the card
+   stays, and the next launch loads it. (Before mod 6.9 a stamp that
+   survived the fade still prompted, and A, or AUTO SAVE, dumped the faded
+   save over it.)
+2. Then `$A200 = AUTOSAVE=`, when the file has the key. With the stamp gone
+   this boot has nothing to dump, so the restored setting first acts on a
+   save the next launch wrote.
+
+`SAVECHK` (op 8) also refuses any stamp on a DRY boot, in case the `$A000`
+write did not take. Our stage1 (mod 1.9) checks the same canary before its
+own fast-launch backup and boots the kernel instead
+([fpga-stage1.md](fpga-stage1.md#cancel-mark-and-save-backup-v4)).
 
 **RTC: SD / NO SD (SET tab, `RTCSD=`).** Everything in this section is the
 `SD` setting, the default (no key). `NO SD` (`RTCSD=0`) is for carts where the
@@ -156,8 +184,9 @@ maps pSRAM page `$11` and reads `$A201`, expecting `$88`; anything else
 draws BATTERY / DRY!!!, waits for A, and writes `$88` back. It never reads the
 PCF8563's voltage-low bit. A DRY boot always comes with the clock at 2000,
 but the clock can also reset to 2000 without the canary dying, so the
-restore keys on the year alone. `BatteryDryHook` still sets `$DBFD`, which
-nothing reads any more.
+restore keys on the year alone. `BatteryDryHook` sets `$DBFD`, which the
+RTC restore no longer reads; since mod 6.9 it drops the pending save stamp
+and restores `AUTOSAVE=` (above).
 (An older note in [`psram-save-map.md`](psram-save-map.md) claiming the
 prompt was about the console's AA cells was wrong and has been corrected.)
 
@@ -200,11 +229,12 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [kernel/src/ezcfg.c](../kernel/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE, 4 LASTSAVE (also backs up the RTC), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)). |
+| `EzCfg` | `02:4a00`, [kernel/src/ezcfg.c](../kernel/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
 | `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:6600`, [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
 | `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op BACKUP, then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
+| `AutosaveSetHook` | `04:5fa0`, 11 B | AUTO SAVE toggle tail: op AUTOSAVE, then `jp DrawTimeAutosaveScreen_redraw` |
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
 | `RtcDumpHook` | `01:7600`, 15 B | `BackupSaveDump` epilogue: `add sp,$0b`, op BACKUP, `ret` |
@@ -218,6 +248,7 @@ since they are plain stores that work from any bank.
 | `00:18e5` | `01 01 a2 3e 88 02` (`BatteryCheck_markOk`: `$A201=$88`) | `call $0530` + 3 nop | DRY flag |
 | `01:6738` (0731) / `01:699a` (0918) | `e8 0b c9` (`BackupSaveDump_epilogueRet`) | `jp $7600` | backup after a dump |
 | `04:58d3` | `c3 f5 48` (confirm tail `jp _redraw`) | `jp $5f10` | backup after TIME SET |
+| `04:590f` (1.04e `04:5900`) | `c3 f5 48` (`DrawTimeAutosaveScreen_toggleA200Apply` tail) | `jp $5fa0` | `AUTOSAVE=` after the toggle |
 | `00:1382` (1.04e `00:1376`) | `c3 70 15` (`LastRomRelaunch` tail, `jp $1570`) | `jp $0588` | RTC backup on relaunch / fast launch (op 7), then `jp $1570` |
 
 Banks 0, 2, 4 and 8 are byte-identical across 1.05e-0731 and 1.05e-0918, so
@@ -244,9 +275,10 @@ no version-specific address.
 | `$DB48-$DB4E` | `RTC_CUR`, the last RTC read (masked) |
 | `$DB4F` | `LOG_LEN`, `RTCLOG=` text length |
 | `$DB50-$DB56` | `RTC_RAW`, the last RTC read (raw) |
+| `$DB57` | `AS_SD`, `AUTOSAVE=` from the file: 0 or 1, `$FF` when absent |
 | `$DB60-$DBEB` | `LOG_BUF`, `RTCLOG=` text, 140 B |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
-| `$DBFD` | set by `BatteryDryHook`; unused since mod 4.4 |
+| `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |
 | `$DBFE` / `$DBFF` | `FL_PICK`, fast-launch one-shot (unchanged) |
 
 WRAM is cleared at `KernelEntry` before `BatteryCheck`, so the flag is
@@ -301,9 +333,19 @@ watchpoints on `$DBFC` and `$7FD0`:
   following boot steps were unaffected.
 - **Hide filter.** `EZGB.CFG` is absent from the browser listing.
 
-Not verifiable in the emulator: the stub always serves `$A201=$88`, so the
-BATTERY DRY prompt (and the DRY flag path) never triggers there, and its RTC
-reads always return the host clock, so a restored value cannot be read back.
+- **AUTO SAVE backup (mod 6.9, 0731, DMG model).** A seeded `psram.bin`
+  with a valid stamp for `/SAVER/PKMRED.SAV`, a `$5A` save in pages 0-3,
+  `$A200 = 0`, and `AUTOSAVE=1` on the card, booted with
+  `SAMEBOY_EZFLASH_JR_DRY=1`: BATTERY DRY, then straight to the browser (no
+  prompt), `$A000 = 0`, `$A200 = 1`, the `.sav` byte-identical, and the SET
+  tab showing AUTO SAVE on. Toggling it off wrote `AUTOSAVE=0` with every
+  other line unchanged. Control without DRY (`$A200 = 1`, no key): the
+  same stamp auto-dumped `$5A` over the `.sav`, and the next launch wrote
+  `AUTOSAVE=1`.
+
+The stub serves `$A201=$88` unless `SAMEBOY_EZFLASH_JR_DRY=1` (mod 6.9; the
+stub forces the canary to `$00` instead, so the BATTERY DRY path runs). Its
+RTC reads always return the host clock, so a restored value cannot be read back.
 Banked breakpoints (`$02:$4a00`) did not fire in this harness; watchpoints
 on `$DBFC` were used instead.
 

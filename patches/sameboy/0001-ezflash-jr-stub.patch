@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..061d0ab
+index 0000000..c0b38f2
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1089 @@
+@@ -0,0 +1,1095 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -889,9 +889,15 @@ index 0000000..061d0ab
 +        }
 +        s_psram_exit_gb = gb;
 +        load_psram(gb);
-+        /* Fresh PSRAM (or short read): ensure battery-not-dry magic. */
++        /* Fresh PSRAM (or short read): ensure battery-not-dry magic.
++         * SAMEBOY_EZFLASH_JR_DRY=1 clears it instead, to boot as if the
++         * cell died (the kernel's BATTERY DRY path). */
 +        uint8_t *p11 = gb->ezflash_jr.cart_sram + EZJR_STATUS_BANK * EZJR_SRAM_BANK_SIZE;
-+        if (p11[0x201] != EZJR_STATUS_MAGIC) {
++        const char *dry = getenv("SAMEBOY_EZFLASH_JR_DRY");
++        if (dry && dry[0] == '1') {
++            p11[0x201] = 0x00;
++        }
++        else if (p11[0x201] != EZJR_STATUS_MAGIC) {
 +            p11[0x201] = EZJR_STATUS_MAGIC;
 +        }
 +    }

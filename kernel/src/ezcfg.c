@@ -21,6 +21,8 @@
  *                 relaunch and fast launch, which skip LastRomPersist.
  *   op 8 SAVECHK  boot: is the pending-backup stamp's save path plausible?
  *                 A dead cell leaves garbage there, see savestamp_check.
+ *   op 9 AUTOSAVE SET tab AUTO SAVE toggle: copy $A200 to AUTOSAVE=, which
+ *                 RESTORE puts back after a BATTERY DRY (autosave_boot).
  * RTCSD=0 (SET tab "RTC: NO SD") turns every RTC part off: no boot read or
  * prompt, and BACKUP, TIMESET and RELAUNCH return before touching the card.
  *                 Hooked at boot, right after "Micro SD initial OK!" and
@@ -35,6 +37,8 @@
  *   RTC=2026-09-08 14:33:00       last known good clock (digits are all that
  *                                 matter, split on any
  *                                 punctuation into YYYY MM DD HH MM SS)
+ *   AUTOSAVE=1                    the SET tab's AUTO SAVE ($A200), restored
+ *                                 when the pSRAM lost power
  *
  * The firmware rewrites the whole file from its known keys as a fixed
  * REC_LEN (one-sector) record padded with spaces (this FatFs has no f_truncate), so hand
@@ -82,6 +86,8 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
                                                * reads, backups or prompt; stays valid in WRAM
                                                * after any load, so hooks can skip the card */
 #define RTC_RAW   ((u8 *)0xDB50)     /* the unmasked register bytes of the last read */
+#define AS_SD     (*(volatile u8 *)0xDB57)  /* AUTOSAVE= from the file: 0 or 1, $FF when absent */
+#define BAT_DRY   (*(volatile u8 *)0xDBFD)  /* BatteryDryHook: the page-$11 canary was dead this boot */
 #ifdef EZCFG_RTCLOG
 /* Test builds only (EZGB_DEFINES=EZCFG_RTCLOG, see kernel/tools/sdcc_build.py):
  * an RTCLOG= trace of every RTC event, see log_add. */
@@ -114,6 +120,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define OP_TIMESET 6               /* SET-tab TIME SET confirm: the new time replaces RTC= outright */
 #define OP_RELAUNCH 7              /* START-overlay relaunch / fast launch: RTC backup only */
 #define OP_SAVECHK 8               /* boot: validate the BACKUPSAVE stamp's path before the prompt */
+#define OP_AUTOSAVE 9              /* SET tab AUTO SAVE toggle: $A200 -> AUTOSAVE= */
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
@@ -165,6 +172,9 @@ static u8 path_valid(const u8 *p);
 static void lastrom_save(void);
 static void lastrom_load(void);
 static void savestamp_check(void);
+static volatile u8 *meta_map(void);
+static u8 as_take(void);
+static void autosave_boot(void);
 
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
@@ -192,6 +202,13 @@ void ezcfg(void) {
     if (op == OP_LASTSAVE) { lastrom_save(); return; }
     if (op == OP_LASTLOAD) { lastrom_load(); return; }
     if (op == OP_SAVECHK) { savestamp_check(); return; }
+    if (op == OP_AUTOSAVE) {
+        cfg_load();
+        op = as_take();
+        *(volatile u8 *)0x4000 = 0;      /* as the stock toggle leaves it */
+        if (op) cfg_save();              /* only when AUTOSAVE= changed */
+        return;
+    }
     cfg_restore();
 }
 
@@ -225,6 +242,9 @@ static void sd_prep(void) {
  * the hours/days/weekday registers have unused high bits. The kernel's own
  * readers extract digits nibble by nibble and never see them; a whole-byte
  * BCD check would, so mask them off exactly as the datasheet lays them out. */
+/* Field order of a written date: year, month, day, hour, minute, second. */
+static const u8 rtc_order[6] = {R_YR, R_MON, R_DAY, R_HR, R_MIN, R_SEC};
+
 static const u8 rtc_mask[7] = {0x7F, 0x7F, 0x3F, 0x3F, 0x07, 0x1F, 0xFF};
 
 static void rtc_read(void) {
@@ -269,11 +289,10 @@ static u8 rtc_valid(const u8 *r) {
 /* Lexicographic compare year, month, day, hour, minute, second; BCD bytes
  * order correctly as unsigned within a field. */
 static signed char rtc_cmp(const u8 *a, const u8 *b) {
-    static const u8 order[6] = {R_YR, R_MON, R_DAY, R_HR, R_MIN, R_SEC};
     u8 i, x, y;
     for (i = 0; i < 6; i++) {
-        x = a[order[i]];
-        y = b[order[i]];
+        x = a[rtc_order[i]];
+        y = b[rtc_order[i]];
         if (x < y) return -1;
         if (x > y) return 1;
     }
@@ -314,12 +333,11 @@ static void cfg_backup(u8 timeset) {
  * A normal boot logs nothing and does not write the file.
  * The oldest entries drop off past LOG_MAX. */
 static void log_add(u8 ev) {
-    static const u8 order[6] = {R_YR, R_MON, R_DAY, R_HR, R_MIN, R_SEC};
     u8 i, n;
     n = LOG_LEN;
     if (n > LOG_MAX - LOG_ENT) n = LOG_MAX - LOG_ENT;
     for (i = n; i != 0; i--) LOG_BUF[i - 1 + LOG_ENT] = LOG_BUF[i - 1];
-    for (i = 0; i < 6; i++) put_hex(LOG_BUF + 2 * i, RTC_RAW[order[i]]);
+    for (i = 0; i < 6; i++) put_hex(LOG_BUF + 2 * i, RTC_RAW[rtc_order[i]]);
     LOG_BUF[12] = ev;
     LOG_BUF[13] = ' ';
     LOG_LEN = n + LOG_ENT;
@@ -375,9 +393,7 @@ static u8 rtc_suspect(void) {
  * free from $A400 (docs/psram-page-map.md); RtcBootHook re-selects page
  * $11 and personality 3 after this op, as before. */
 static void stage1_skip_mark(void) {
-    volatile u8 *mark = (volatile u8 *)0xA410;
-    *(volatile u8 *)0x4000 = 0x11;
-    fpga_page(3);
+    volatile u8 *mark = meta_map() + 0x410;
     if (mark[0] == 'S' && mark[1] == '1') {
         mark[0] = 0;
         mark[1] = 0;
@@ -389,7 +405,41 @@ static void stage1_skip_mark(void) {
         S1_SGB = 1;
     mark[2] = 0;
     mark[3] = 0;
-    *(volatile u8 *)0x4000 = 0;
+    fpga_page(0);
+}
+
+/* pSRAM page $11 (the kernel's meta page, docs/psram-page-map.md) at
+ * $A000, as BatteryCheck maps it. The caller selects personality 0 again
+ * when done; $4000 stays $11, which every caller's next step either expects
+ * (RtcBootHook re-asserts it, LastRomPersist had it) or overwrites. */
+static volatile u8 *meta_map(void) {
+    *(volatile u8 *)0x4000 = 0x11;
+    fpga_page(3);
+    return (volatile u8 *)0xA000;
+}
+
+/* AUTOSAVE= := $A200 when that is a real setting (0 or 1; a faded byte is
+ * neither and is never recorded). Returns 1 when the value changed. */
+static u8 as_take(void) {
+    u8 v = meta_map()[0x200];
+    fpga_page(0);
+    if (v > 1 || v == AS_SD) return 0;
+    AS_SD = v;
+    return 1;
+}
+
+/* BATTERY DRY (the page-$11 canary at $A201 was dead, BatteryDryHook):
+ * pSRAM lost power, so the save waiting there for BACKUPSAVE is faded and
+ * must never reach the card. Drop the pending stamp first ($A000 = 0: no
+ * prompt, no dump; the kernel checks it right after this op), and only then
+ * put AUTO SAVE back from AUTOSAVE=, so the restored setting can never
+ * auto-dump a faded save. The next launch loads the .sav from the card. */
+static void autosave_boot(void) {
+    volatile u8 *m;
+    if (!BAT_DRY) return;
+    m = meta_map();
+    m[0x000] = 0;
+    if (AS_SD <= 1) m[0x200] = AS_SD;
     fpga_page(0);
 }
 
@@ -398,6 +448,7 @@ static void cfg_restore(void) {
     PAD_HELD |= ReadJoypad();            /* held since power-on: never a press in a prompt */
     stage1_skip_mark();
     cfg_load();
+    autosave_boot();
     if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */
     rtc_read();
     why = rtc_suspect();
@@ -598,6 +649,7 @@ static void cfg_load(void) {
     LR_VALID = 0;
     LR_PATH[0] = 0;
     RTC_OFF = 0;
+    AS_SD = 0xFF;
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -615,7 +667,7 @@ static void cfg_load(void) {
  * stale tail left behind by a shorter rewrite cannot override the record. */
 static void parse_record(u16 br, u8 legacy) {
     u16 p, s, e, eq;
-    u8 seen_fl, seen_rtc, seen_lr, seen_ui, seen_rs;
+    u8 seen_fl, seen_rtc, seen_lr, seen_ui, seen_rs, seen_as;
 #ifdef EZCFG_RTCLOG
     u8 seen_log = 0;
 #endif
@@ -627,6 +679,7 @@ static void parse_record(u16 br, u8 legacy) {
     seen_lr = 0;
     seen_ui = 0;
     seen_rs = 0;
+    seen_as = 0;
     p = 0;
     for (;;) {
         if (p >= br) break;
@@ -666,6 +719,9 @@ static void parse_record(u16 br, u8 legacy) {
             } else if (!seen_rs && key_is(CFGBUF + s, klen, (const u8 *)"rtcsd", 5)) {
                 seen_rs = 1;
                 RTC_OFF = (e > vs && CFGBUF[vs] == '0') ? 1 : 0;
+            } else if (!seen_as && key_is(CFGBUF + s, klen, (const u8 *)"autosave", 8)) {
+                seen_as = 1;
+                if (e - vs == 1 && (CFGBUF[vs] == '0' || CFGBUF[vs] == '1')) AS_SD = CFGBUF[vs] - '0';
 #ifdef EZCFG_RTCLOG
             } else if (!seen_log && key_is(CFGBUF + s, klen, (const u8 *)"rtclog", 6)) {
                 u16 j, len = e - vs + 1;    /* the trimmed last entry's space */
@@ -755,64 +811,68 @@ static u8 put_bcd(u8 *dst, u8 v) {
 /* Rewrite /EZGB.CFG as a fixed REC_LEN record (space padded past the last
  * line) so a shorter record fully covers a longer old one without
  * f_truncate. Returns FRESULT (0 = ok). */
+/* Copy len bytes to w; returns the end. */
+static u8 *put(u8 *w, const u8 *s, u8 len) {
+    while (len--) *w++ = *s++;
+    return w;
+}
+
+/* A key=value line's end; returns past the CR LF. */
+static u8 *crlf(u8 *w) {
+    *w++ = 0x0d;
+    *w++ = 0x0a;
+    return w;
+}
+
 static u8 cfg_save(void) {
     static const u8 cfg_name[10] = {'/','E','Z','G','B','.','C','F','G',0};
     static const u8 k_fl[8]  = {'F','L','A','U','N','C','H','='};
     static const u8 k_rtc[6] = {'R','T','C','=','2','0'};
+    static const u8 rtc_sep[5] = {'-','-',' ',':',':'};
     static const u8 k_lr[8]  = {'L','A','S','T','R','O','M','='};
     static const u8 k_ui[3]  = {'U','I','='};
-    u16 n;
+    u8 *w;
+    const u8 *q;
     u8 i, r;
 
-    n = 0;
-    for (i = 0; i < 8; i++) CFGBUF[n++] = k_fl[i];
-    if (!FL_EN) CFGBUF[n++] = '#';
-    for (i = 0; i < FL_PLEN; i++) CFGBUF[n++] = FL_PATH[i];
-    CFGBUF[n++] = 0x0d;
-    CFGBUF[n++] = 0x0a;
+    w = put(CFGBUF, k_fl, 8);
+    if (!FL_EN) *w++ = '#';
+    w = crlf(put(w, FL_PATH, FL_PLEN));
     if (RTC_VALID) {
-        for (i = 0; i < 6; i++) CFGBUF[n++] = k_rtc[i];
-        n += put_bcd(CFGBUF + n, RTC_BK[R_YR]);
-        CFGBUF[n++] = '-';
-        n += put_bcd(CFGBUF + n, RTC_BK[R_MON]);
-        CFGBUF[n++] = '-';
-        n += put_bcd(CFGBUF + n, RTC_BK[R_DAY]);
-        CFGBUF[n++] = ' ';
-        n += put_bcd(CFGBUF + n, RTC_BK[R_HR]);
-        CFGBUF[n++] = ':';
-        n += put_bcd(CFGBUF + n, RTC_BK[R_MIN]);
-        CFGBUF[n++] = ':';
-        n += put_bcd(CFGBUF + n, RTC_BK[R_SEC]);
-        CFGBUF[n++] = 0x0d;
-        CFGBUF[n++] = 0x0a;
+        w = put(w, k_rtc, 6);
+        for (i = 0; ; i++) {
+            w += put_bcd(w, RTC_BK[rtc_order[i]]);
+            if (i == 5) break;
+            *w++ = rtc_sep[i];
+        }
+        w = crlf(w);
     }
     if (LR_VALID) {
-        for (i = 0; i < 8; i++) CFGBUF[n++] = k_lr[i];
-        for (i = 0; LR_PATH[i]; i++) CFGBUF[n++] = LR_PATH[i];
-        CFGBUF[n++] = 0x0d;
-        CFGBUF[n++] = 0x0a;
+        w = put(w, k_lr, 8);
+        for (q = LR_PATH; *q; ) *w++ = *q++;
+        w = crlf(w);
     }
-    for (i = 0; i < 3; i++) CFGBUF[n++] = k_ui[i];
-    if (UI_MODE) CFGBUF[n++] = '1';
-    CFGBUF[n++] = UI_MODE ? '2' : '8';
-    CFGBUF[n++] = 0x0d;
-    CFGBUF[n++] = 0x0a;
+    w = put(w, k_ui, 3);
+    if (UI_MODE) *w++ = '1';
+    *w++ = UI_MODE ? '2' : '8';
+    w = crlf(w);
     if (RTC_OFF) {
         static const u8 k_rs[7] = {'R','T','C','S','D','=','0'};
-        for (i = 0; i < 7; i++) CFGBUF[n++] = k_rs[i];
-        CFGBUF[n++] = 0x0d;
-        CFGBUF[n++] = 0x0a;
+        w = crlf(put(w, k_rs, 7));
+    }
+    if (AS_SD <= 1) {
+        static const u8 k_as[9] = {'A','U','T','O','S','A','V','E','='};
+        w = put(w, k_as, 9);
+        *w++ = '0' + AS_SD;
+        w = crlf(w);
     }
 #ifdef EZCFG_RTCLOG
     if (LOG_LEN != 0) {
         static const u8 k_log[7] = {'R','T','C','L','O','G','='};
-        for (i = 0; i < 7; i++) CFGBUF[n++] = k_log[i];
-        for (i = 0; i < LOG_LEN - 1; i++) CFGBUF[n++] = LOG_BUF[i];
-        CFGBUF[n++] = 0x0d;
-        CFGBUF[n++] = 0x0a;
+        w = crlf(put(put(w, k_log, 7), LOG_BUF, LOG_LEN - 1));
     }
 #endif
-    while (n < REC_LEN) CFGBUF[n++] = ' ';
+    while (w < CFGBUF + REC_LEN) *w++ = ' ';
 
     copy_name(cfg_name);
     sd_prep();
@@ -870,6 +930,7 @@ static void lastrom_save(void) {
         LR_VALID = 1;
     }
     if (!RTC_OFF) backup_take('L', 0);   /* the file is rewritten anyway: keep RTC= current */
+    as_take();                           /* and AUTOSAVE=, for a card that never toggled it */
     cfg_save();
 }
 
@@ -907,6 +968,7 @@ static void savestamp_check(void) {
     static const u8 dir[7] = {'/','S','A','V','E','R','/'};
     u8 i;
     EZ_RES = 0;
+    if (BAT_DRY) return;                 /* faded pSRAM: autosave_boot dropped the stamp already */
     for (i = 0; i < 7; i++) if (SAVE_PATH[i] != dir[i]) return;
     EZ_RES = path_valid(SAVE_PATH);
 }

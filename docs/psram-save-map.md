@@ -96,6 +96,9 @@ fires reliably, so arming is more consistent than clearing.
 The SET-menu "AUTO SAVE:" toggle writes `$A200` directly (`DrawTimeAutosaveScreen`, `04:58d6`:
 `$4000=$11`, `$7FC0=$03`, `[$A200]` = 0 or 1). The boot branch reads it at the next boot, so
 the setting in effect then decides, not the one when the game was launched.
+Since mod 6.9 the toggle is also kept as `AUTOSAVE=` in `/EZGB.CFG` and put back after a
+BATTERY DRY, a boot that also drops the pending dump ([ezgb-cfg.md](ezgb-cfg.md) "AUTO SAVE
+backup").
 
 ### Version parity
 

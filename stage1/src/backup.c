@@ -39,6 +39,18 @@ uint8_t backup_offer(uint8_t *buf, uint8_t manual)
     const char *base;
 
     psram_map(PSRAM_META);
+    if (PSRAM[PSRAM_CANARY] != PSRAM_CANARY_OK) {
+        /* BATTERY DRY: never write this save, not even with AUTO SAVE, and
+         * don't fast launch it either; the kernel shows BATTERY DRY and drops
+         * the stamp, and its own fast launch loads the .sav from the card */
+        psram_unmap();
+        if (manual) {
+            say("BATTERY DRY", "NOT BACKED UP");
+            wait_frames(90);
+            say("", "");
+        }
+        return 1;
+    }
     len = PSRAM[0x00F];
     pages = PSRAM[0x001];
     timer = PSRAM[0x202] == 0x77;

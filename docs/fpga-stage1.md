@@ -175,6 +175,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | fast / v5 | MBC3 clock restore, `$7FD4=$11` fast load; v5 gates both on the FW version byte and carries the bank 2 flash read patch | confirmed: Pokemon Crystal fast-launches with the right clock, noticeably faster |
 | mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
 | mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | built (`Update_FW5-0918-mod-1.8.gb`), not yet flashed |
+| mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save | built (`Update_FW5-0918-mod-1.9.gb`), not yet flashed |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -286,6 +287,12 @@ stays canceled after START is released
 `01:643a`, done in place). Offered on every fast-launch boot with a pending
 save (mod 1.8), and on any boot with SELECT held at power-on (v4):
 
+0. The kernel's battery canary (`$A201`) is not `$88` (mod 1.9): the cell
+   died and the pending save faded with it. Nothing is written, even with
+   AUTO SAVE; with SELECT, "BATTERY DRY / NOT BACKED UP". Stage1 skips its
+   fast launch and boots the kernel, which shows BATTERY DRY, drops the
+   stamp, restores AUTO SAVE from `AUTOSAVE=` and then fast-launches with
+   the `.sav` from the card ([ezgb-cfg.md](ezgb-cfg.md) "AUTO SAVE backup").
 1. No `$AA` stamp on page `$11`: with SELECT, "NO SAVE TO BACK UP"; then
    boot as usual.
 2. A save that can't be written in place (not `/SAVER/...`, no file yet, or
@@ -315,6 +322,12 @@ A writes and launches, B launches with the `.sav` untouched; a clock game
 (Red with `$0147` = `$10`) gets the kernel's footer byte for byte and
 launches with MBC `$83`; a pending save with no `.sav` boots the kernel,
 which backs it up, creates the file and fast-launches.
+
+Mod 1.9 checked the same way, with the 0918 mod 6.9 kernel as `ezgb.dat`:
+with `SAMEBOY_EZFLASH_JR_DRY=1`, AUTO SAVE on and a valid stamp over a `$5A`
+save, stage1 booted the kernel, BATTERY DRY came up, and after A the kernel
+fast-launched Pokemon Red with the `.sav` untouched. Without DRY the same
+setup had stage1 write the `$5A` save over the file.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
 in a subdirectory): the FPGA values match the kernel's for that game

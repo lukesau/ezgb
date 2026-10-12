@@ -57,6 +57,12 @@ to the browser, as if no backup were pending; the kernel has already cleared
 Checked in SameBoy (DMG model, all three kernels): a stamp with `$AA` and 231
 printable random bytes boots to the browser; a real stamp still prompts.
 
+A valid path is not enough on a BATTERY DRY boot: the save itself faded
+with the canary. Since mod 6.9 op RESTORE clears `$A000` on such a boot
+before this check runs, and `SAVECHK` refuses any stamp then as well, so a
+dead cell never prompts or dumps (with AUTO SAVE either), see
+[ezgb-cfg.md](ezgb-cfg.md) "AUTO SAVE backup".
+
 `BackupSavePrompt` (`01:6747`) keeps its control flow. Its draws go to
 `BkPrompt(op)` (`bkprompt.c`, `04:6000`):
 
