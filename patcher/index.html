@@ -41,7 +41,8 @@ section { background: var(--panel); border: 1px solid var(--line); border-radius
 label.ack { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 14px; font-weight: 600; }
 label.ack input { margin-top: 4px; width: 18px; height: 18px; flex: none; }
 .pick { display: block; border: 2px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; cursor: pointer; }
-.pick:hover { border-color: var(--accent); }
+.pick:hover, .pick.over { border-color: var(--accent); }
+.pick.over { background: var(--code); }
 .pick.off { opacity: .45; pointer-events: none; }
 .pick input { display: none; }
 .result { margin-top: 14px; font-size: .95rem; }
@@ -71,7 +72,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   on the cart is rewritten. Swapping the kernel is as simple as changing a file and is completely reversible.
   Stock files come from EZ Flash: the 1.04e / FW4 package on their <a href="https://www.ezflash.cn/download/">download page</a> (EZ-FLASH Junior),
   or the <a href="https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip">1.05e FW5 2021-9-18 package</a>.</p>
-  <label class="pick" id="kpick"><input type="file" id="kfile">Choose the stock <code>ezgb.dat</code> from your firmware package</label>
+  <label class="pick" id="kpick"><input type="file" id="kfile">Choose or drop the stock <code>ezgb.dat</code> from your firmware package</label>
   <div class="result" id="kres"></div>
   <p style="margin-top:14px">Then copy the result to the card root as <code>ezgb.dat</code> (keep the stock file to go back).
   The HELP tab shows a <code>MOD</code> line with the mod's version. Not sure which kernel to use? 1.04e is the build EZ Flash still distributes
@@ -101,7 +102,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   <code>FLAUNCH=</code> in <code>/EZGB.CFG</code>, START at power-on cancels), the pending save backed up before a fast launch
   (never when the battery is dead), Super Game Boy detection, and on FW5 the MBC3 game clock and fast loading.</p>
   <label class="ack"><input type="checkbox" id="ack">I understand this rewrites my cart's firmware and can brick it.</label>
-  <label class="pick off" id="fpick"><input type="file" id="ffile" disabled>Choose the stock updater (<code>Update_FW4.gb</code> or <code>Update_FW5_2021-9-18.gb</code>)</label>
+  <label class="pick off" id="fpick"><input type="file" id="ffile" disabled>Choose or drop the stock updater (<code>Update_FW4.gb</code> or <code>Update_FW5_2021-9-18.gb</code>)</label>
   <div class="result" id="fres"></div>
   <p style="margin-top:14px">Installing:</p>
   <ol>
@@ -236,6 +237,25 @@ async function handle(file, want, el) {
     <br><button class="dl" type="button">Save ${k.outName}</button>`);
   el.querySelector("button").onclick = () => save(out, k.outName);
 }
+// Drag and drop: a file dropped on a box goes through the same checks as one
+// chosen with it. The firmware box takes no drops until the risk is
+// acknowledged (.off has pointer-events: none, and its input is disabled).
+function dropZone(pickId, inputId, want, resId) {
+  const pick = document.getElementById(pickId), input = document.getElementById(inputId);
+  pick.addEventListener("dragover", e => { e.preventDefault(); if (!input.disabled) pick.classList.add("over"); });
+  pick.addEventListener("dragleave", e => { if (!pick.contains(e.relatedTarget)) pick.classList.remove("over"); });
+  pick.addEventListener("drop", e => {
+    e.preventDefault();
+    pick.classList.remove("over");
+    const f = e.dataTransfer.files[0];
+    if (f && !input.disabled) handle(f, want, document.getElementById(resId));
+  });
+}
+dropZone("kpick", "kfile", "kernel", "kres");
+dropZone("fpick", "ffile", "firmware", "fres");
+// A file dropped anywhere else must not open in the tab instead of the page.
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
 document.getElementById("kfile").onchange = e => e.target.files[0] && handle(e.target.files[0], "kernel", document.getElementById("kres"));
 document.getElementById("ffile").onchange = e => e.target.files[0] && handle(e.target.files[0], "firmware", document.getElementById("fres"));
 document.getElementById("ack").onchange = e => {
