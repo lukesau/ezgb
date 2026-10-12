@@ -140,8 +140,13 @@ cart). The release README prints that URL (`PATCHER_URL` in `make-dist.sh`).
 page loads `https://lukesau.com/ezgb/p.gif?k=<patch id>&t=<ms>` (ids
 `k-<kernel>`, `f-<firmware>`): a 42-byte GIF in the lukesau.com webroot repo,
 so every patch is one line in that server's Apache access log and no file
-data leaves the browser. `scripts/patcher-counts.sh [day]` tallies them over
-ssh (the log needs sudo or group `adm`); ids starting `test` are skipped.
+data leaves the browser. Apache keeps only 14 daily logs, so a cron job in
+lukesau's crontab on the server (`17 1 * * *`, `~/bin/ezgb-patch-hits`, from
+[scripts/patcher/archive-hits.sh](../scripts/patcher/archive-hits.sh)) merges
+every hit into `~/ezgb-patch-hits.log`, which never rotates.
+`scripts/patcher-counts.sh [day]` tallies that archive plus the live logs
+over ssh (group `adm` reads them); ids starting `test` are skipped.
+`--install` (re)installs the job.
 
 ## Wrong patch
 
