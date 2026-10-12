@@ -99,7 +99,8 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   </div>
   <p>What it adds: a new boot screen, fast launch straight from the bootloader (the game named by
   <code>FLAUNCH=</code> in <code>/EZGB.CFG</code>, START at power-on cancels), the pending save backed up before a fast launch
-  (never when the battery is dead), Super Game Boy detection, and on FW5 the MBC3 game clock and fast loading.</p>
+  (never when the battery is dead), Super Game Boy detection (untested on a real Super Game Boy; it takes over from
+  the kernel's SGB BOOT box, which is tested, so on an SGB use the kernel alone for now), and on FW5 the MBC3 game clock and fast loading.</p>
   <label class="ack"><input type="checkbox" id="ack">I understand this rewrites my cart's firmware and can brick it.</label>
   <label class="pick off" id="fpick"><input type="file" id="ffile" disabled>Choose or drop the stock updater (<code>Update_FW4.gb</code> or <code>Update_FW5_2021-9-18.gb</code>)</label>
   <div class="result" id="fres"></div>

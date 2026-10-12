@@ -69,8 +69,11 @@ assembles the same file with `-D SGB_ALWAYS`.
 
 Checked in SameBoy with a logging build of its SGB core: 24 packets with
 valid checksums when on, none when off, on all three kernels. On a GBC (FW4
-Jr, 1.05e-0918) the checkbox persisted and boots took longer when on. Not yet
-seen on a real Super Game Boy.
+Jr, 1.05e-0918) the checkbox persisted and boots took longer when on.
+**Confirmed on a real Super Game Boy (2026-10-12, mod 6.9):** with the box
+ticked the Jr boots on an SGB. The firmware mod's stage1 SGB detection
+([fpga-stage1.md](fpga-stage1.md#super-game-boy)), which replaces this box
+with AUTO, is still untested on one.
 
 A cart without a coin cell keeps the record for about a minute out of the
 console (the pSRAM's charge holds that long), then loses it and boots normally.

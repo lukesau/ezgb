@@ -378,7 +378,8 @@ itself drops the ones sent after the boot ROM, a real SGB BIOS doesn't):
 SGB and SGB2 get 24 packets from stage1, all checksums good, then boot the
 kernel; DMG, Pocket and CGB get none. Through stage1 the mod 5.9 kernel sends
 none and shows AUTO, on DMG and SGB alike; booted without stage1 it shows the
-checkbox. Not yet tried on a real SGB.
+checkbox. Not yet tried on a real SGB; the kernel's own SGB BOOT box is
+confirmed on one (2026-10-12), but stage1 hides it behind AUTO.
 
 The real fix is P62 as an open drain (low only during the `$7FE0` pulse,
 P61 dropped from its drive), which needs a routing edit in the bitstream.
