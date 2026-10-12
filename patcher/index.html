@@ -64,7 +64,8 @@ footer { color: var(--muted); font-size: .9rem; }
 <main>
 <h1>EZ Flash Jr Patcher</h1>
 <p class="sub">Each file is checked against the known stock hashes before anything is patched,
-and the result is checked again before you can save it. Nothing is uploaded.
+and the result is checked again before you can save it. Nothing is uploaded: a successful patch only loads a
+1x1 image from lukesau.com named after the patch, to count how many are made.
 Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ezgb</a>.</p>
 
 <section id="kernel">
@@ -213,6 +214,12 @@ function applyIps(base, ips) {
   return out;
 }
 function say(el, html) { el.innerHTML = html; }
+// One hit per successful patch: a 1x1 image whose query string names the
+// patch (k-<kernel> or f-<firmware>), tallied from lukesau.com's access log.
+// The timestamp keeps the browser cache from swallowing a repeat. No file data.
+function count(id) {
+  new Image().src = "https://lukesau.com/ezgb/p.gif?k=" + encodeURIComponent(id) + "&t=" + Date.now();
+}
 function save(bytes, name) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
@@ -235,6 +242,7 @@ async function handle(file, want, el) {
   const out = applyIps(buf, b64(PATCH[k.patch]));
   const o256 = await hash("SHA-256", out);
   if (o256 !== k.out256) { say(el, `<span class="bad">Patch check failed</span>; the result did not match. Nothing to save.`); return; }
+  count(k.patch);
   say(el, `<span class="ok">Recognized ${k.name}.</span>${shown}<br>Patched and verified (SHA-256 <span class="hash">${o256}</span>).
     <br><button class="dl" type="button">Save ${k.outName}</button>`);
   el.querySelector("button").onclick = () => save(out, k.outName);
