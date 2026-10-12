@@ -4,8 +4,8 @@ EZ Flash Jr modded kernel, mod {MODVER}
 This folder holds one IPS patch per official kernel build. Applied to the
 ezgb.dat from EZ Flash's own firmware package, each turns it into the modded
 kernel. This is the safe option: no firmware updater is involved. The Jr
-loads ezgb.dat from the microSD card at every power-on, so installing is a
-file copy and going back is copying the stock file again.
+loads ezgb.dat from the microSD card at every power-on. Swapping the kernel
+is as simple as changing a file and is completely reversible.
 
 What the mod adds, and the source, is at https://github.com/lukesau/ezgb
 
