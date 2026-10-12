@@ -6,7 +6,9 @@
 # there is no separate showcase card), boots both the stock and the modded
 # 1.05e-0731 kernel in SameBoy (DMG palette), screenshots the SD / SET / HELP
 # tabs of each, adds a third row with the same three tabs of the mod in its
-# 12px mode (a copy of the card with UI=12 in EZGB.CFG), and stitches a
+# 12px mode (a copy of the card with UI=12 in EZGB.CFG), a fourth with the
+# stage1 firmware mod's boot screens (scripts/showcase/stage1-shots.py: the
+# splash, a pending save being backed up, a fast launch), and stitches a
 # labeled banner.
 #
 #   ./scripts/make-showcase-banner.sh [output.png]     # default: docs/banner.png
@@ -14,7 +16,8 @@
 # macOS only: uses mtools (via make-sd-image.sh), screencapture (needs Screen
 # Recording permission for your terminal), CGWindowList/CGEvent Swift helpers, and
 # ImageMagick (`brew install imagemagick`). The mod version in the label comes from
-# patches/kernel/VERSION; the card's files/order come from sd/root/ and sd/ORDER.
+# patches/kernel/VERSION and stage1/VERSION; the card's files/order come from
+# sd/root/ and sd/ORDER. Stage1 is rebuilt first (stage1/build.sh, SDCC).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,6 +31,8 @@ CARD="$ROOT/sd/card.img"
 FONT="${SHOWCASE_FONT:-/System/Library/Fonts/Menlo.ttc}"
 GREEN='#9bbc0f'                                      # Game Boy pea-green for labels
 MOD_VER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
+FW_NUM="$(sed -n 1p "$ROOT/stage1/VERSION")"
+FW_VER="$(sed -n 2p "$ROOT/stage1/VERSION")"
 
 command -v magick >/dev/null || { echo "error: ImageMagick not found (brew install imagemagick)"; exit 1; }
 [ -f "$SAMEBOY" ] || { echo "error: SameBoy not built at $SAMEBOY (see scripts/setup-sameboy.sh)"; exit 1; }
@@ -50,7 +55,7 @@ capture_row() {
   local kernel="$1" out="$2" card="${3:-$CARD}" wid="" i
   SAMEBOY_EZFLASH_JR_IMG="$card" "$SAMEBOY" --model dmg "$kernel" >/dev/null 2>&1 &
   SB_PID=$!
-  for i in $(seq 1 40); do sleep 0.5; wid="$("$TMP/winid" | head -1)"; if [ -n "$wid" ]; then break; fi; done
+  for i in $(seq 1 40); do sleep 0.5; wid="$("$TMP/winid" "$SB_PID" | head -1)"; if [ -n "$wid" ]; then break; fi; done
   [ -n "$wid" ] || { echo "error: SameBoy window not found"; return 1; }
   sleep 6                                              # boot + first browser paint
   screencapture -x -o -l "$wid" "$TMP/b.png"
@@ -58,19 +63,29 @@ capture_row() {
   "$TMP/keys" "$SB_PID" 51 1; sleep 1.5; screencapture -x -o -l "$wid" "$TMP/h.png"  # HELP
   kill "$SB_PID" 2>/dev/null || true; wait "$SB_PID" 2>/dev/null || true; SB_PID=""
 
+  join_row "$out" "$TMP/b.png" "$TMP/s.png" "$TMP/h.png"
+}
+
+# --- three window captures into one row ------------------------------------
+# join_row <out> <shot> <shot> <shot>
+join_row() {
+  local out="$1"; shift
   # Crop the SDL chrome: the 160x144 screen fills the window width and sits at the
   # bottom, so screen height = W*144/160 and the title bar is whatever's above it.
-  local W H GBH Y crop
-  W="$(sips -g pixelWidth  "$TMP/b.png" | awk '/pixelWidth/{print $2}')"
-  H="$(sips -g pixelHeight "$TMP/b.png" | awk '/pixelHeight/{print $2}')"
+  local W H GBH Y crop p n=0 panels=()
+  W="$(sips -g pixelWidth  "$1" | awk '/pixelWidth/{print $2}')"
+  H="$(sips -g pixelHeight "$1" | awk '/pixelHeight/{print $2}')"
   GBH=$(( W * 144 / 160 )); Y=$(( H - GBH )); crop="${W}x${GBH}+0+${Y}"
-  local p
-  for p in b s h; do magick "$TMP/$p.png" -crop "$crop" +repage "$TMP/c-$p.png"; done
-  # Join the three panels with a black gutter (a plain append avoids `montage`'s
-  # default filename labels, which need a font and error out under `set -e`).
   magick -size "12x${GBH}" xc:black "$TMP/gut.png"
-  magick "$TMP/c-b.png" "$TMP/gut.png" "$TMP/c-s.png" "$TMP/gut.png" "$TMP/c-h.png" \
-    +append -bordercolor black -border 0x12 "$out"
+  for p in "$@"; do
+    n=$((n + 1))
+    magick "$p" -crop "$crop" +repage "$TMP/c-$n.png"
+    [ "$n" -gt 1 ] && panels+=("$TMP/gut.png")
+    panels+=("$TMP/c-$n.png")
+  done
+  # Join the panels with a black gutter (a plain append avoids `montage`'s
+  # default filename labels, which need a font and error out under `set -e`).
+  magick "${panels[@]}" +append -bordercolor black -border 0x12 "$out"
 }
 
 # --- a black label strip: title on the left, version on the right ----------
@@ -100,15 +115,24 @@ cp "$CARD" "$TMP/card12.img"
 mcopy -o -i "$TMP/card12.img" "$TMP/ezgb12.cfg" ::/EZGB.CFG
 capture_row "$MOD_KERNEL" "$TMP/row-12.png" "$TMP/card12.img"
 
+# Stage1, the firmware mod: its screens only last a few frames, so
+# stage1-shots.py holds each one at a debugger breakpoint.
+echo "capturing stage1 FW$FW_NUM-MOD $FW_VER..."
+"$ROOT/stage1/build.sh" >/dev/null 2>&1 || { echo "error: stage1/build.sh failed"; exit 1; }
+python3 "$ROOT/scripts/showcase/stage1-shots.py" "$CARD" "$TMP/stage1" --keys "$TMP/keys" --winid "$TMP/winid"
+join_row "$TMP/row-s1.png" "$TMP/stage1/splash.png" "$TMP/stage1/saving.png" "$TMP/stage1/launch.png"
+
 label "$TMP/hdr-stock.png" "STOCK" "$KVER"                    "$RW"
 label "$TMP/hdr-mod.png"   "MOD"   "$KVER mod-$MOD_VER"       "$RW"
 label "$TMP/hdr-12.png"    "MOD, 12px UI" "" "$RW"
+label "$TMP/hdr-s1.png"    "FIRMWARE MOD" "FW$FW_NUM-0918 mod-$FW_VER" "$RW"
 magick -size "${RW}x16" xc:black "$TMP/spacer.png"
 
 mkdir -p "$(dirname "$OUT")"
 magick "$TMP/hdr-stock.png" "$TMP/row-stock.png" "$TMP/spacer.png" \
        "$TMP/hdr-mod.png"   "$TMP/row-mod.png"   "$TMP/spacer.png" \
-       "$TMP/hdr-12.png"    "$TMP/row-12.png" -append \
+       "$TMP/hdr-12.png"    "$TMP/row-12.png"    "$TMP/spacer.png" \
+       "$TMP/hdr-s1.png"    "$TMP/row-s1.png" -append \
        -bordercolor black -border 16x16 "$OUT"
 
 echo "wrote $OUT ($(sips -g pixelWidth -g pixelHeight "$OUT" | awk '/pixel/{printf "%s ",$2}')px)"
