@@ -2,8 +2,9 @@
  * FPGA load it, enter it at $0100. Same steps as the stock bootstrap
  * (docs/fpga-stage1.md), written from scratch. With fast launch set in
  * EZGB.CFG it launches that game instead (game.c), unless START is held,
- * and boots the kernel whenever that isn't possible. SELECT at power-on
- * offers to back up the pending save first (backup.c). */
+ * and boots the kernel whenever that isn't possible. Before a fast launch
+ * it offers to back up the pending save (backup.c), as the kernel does at
+ * boot; SELECT at power-on asks on a kernel boot too. */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
@@ -92,7 +93,7 @@ static uint8_t kernel(void)
 
 void main(void)
 {
-    uint8_t err, keys, sgb, tried = 0;
+    uint8_t err, keys, sgb, fl, tried = 0;
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
@@ -114,9 +115,16 @@ void main(void)
         if (!err && !tried) {
             tried = 1;
             mark_skip(keys & BTN_START);
-            if (keys & BTN_SELECT && backup_offer(text))
-                keys |= BTN_START;      /* the kernel backs up instead */
-            if (!(keys & BTN_START) && fast_launch_target()) {
+            /* A fast-launch boot never reaches the kernel's BACKUPSAVE, so
+             * stage1 offers the pending save itself; SELECT asks on any boot */
+            fl = !(keys & BTN_START) && fast_launch_target();
+            if ((fl || keys & BTN_SELECT) &&
+                backup_offer(text, keys & BTN_SELECT)) {
+                fl = 0;                 /* the kernel backs up instead */
+                keys |= BTN_START;
+            }
+            print_center(STATUS_ROW, "LOADING...");
+            if (fl && fat_open(launch_path) == FAT_OK) {
                 print_center(DETAIL_ROW, fat_name());
                 game_launch(launch_path, text);  /* returns only if it can't */
             }

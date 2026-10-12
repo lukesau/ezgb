@@ -27,7 +27,7 @@ icon tiles this build needs. The stock stage1 itself, disassembled, is in
 
 `VERSION` has two lines: the firmware number, then the mod version. The
 build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW5-MOD 1.7`. The firmware
+`FW<n>-MOD <m>` on its bottom line, currently `FW5-MOD 1.8`. The firmware
 number is what the cart's version register reads, 5 on the FW5 builds we
 ship. It stays 5 until the register itself can be changed, which is a
 separate fabric change ([re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)).
@@ -49,12 +49,12 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 | File | What |
 |---|---|
 | `src/crt0.s` | entry, WRAM init, interrupts off |
-| `src/main.c` | boot sequence, START/SELECT at power-on, error retry loop |
+| `src/main.c` | boot sequence, START/SELECT at power-on, save backup offer, error retry loop |
 | `src/fat.c` | FAT16/FAT32 mount, path lookup, load command, in-place sector writes |
 | `src/fpga.c` | FPGA register writes, SD sector reads and writes, pSRAM pages |
 | `src/cfg.c` | `EZGB.CFG` parser, `FLAUNCH=` only |
 | `src/game.c` | fast launch: the kernel's game launch done from stage1 |
-| `src/backup.c` | SELECT save backup to `/SAVER` |
+| `src/backup.c` | save backup to `/SAVER` before a fast launch, or on SELECT |
 | `src/video.c` | boot screen: icon, text, CGB palettes |
 | `src/sgb.c` | Super Game Boy: detection from the boot ROM's registers, header packets resent |
 | `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |

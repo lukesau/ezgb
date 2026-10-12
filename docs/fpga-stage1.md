@@ -174,6 +174,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 |---|---|---|
 | fast / v5 | MBC3 clock restore, `$7FD4=$11` fast load; v5 gates both on the FW version byte and carries the bank 2 flash read patch | confirmed: Pokemon Crystal fast-launches with the right clock, noticeably faster |
 | mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
+| mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | built (`Update_FW5-0918-mod-1.8.gb`), not yet flashed |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -267,11 +268,11 @@ kernel's way: a target that isn't `.gb`/`.gbc`, a game without a battery
 while a stamp is pending, or any file error. An empty `FLAUNCH=` (the
 kernel's lone-ROM rule) also goes to the kernel.
 
-**One consequence:** fast-launching the same game over and over never
-backs its save up to the SD card, because only the kernel does that. The
-save stays safe in pSRAM, and the next boot into the kernel (hold START)
-writes it out. Since v4, SELECT at power-on can also back it up from stage1
-(below).
+**Before mod 1.8,** fast-launching the same game over and over never
+backed its save up to the SD card, because only the kernel did that: the
+save stayed safe in pSRAM until the next boot into the kernel (hold START)
+or a SELECT backup. Since mod 1.8 every fast-launch boot with a pending save
+offers the backup itself (below), as the kernel does at boot.
 
 ### Cancel mark and save backup (v4)
 
@@ -282,20 +283,38 @@ stays canceled after START is released
 ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
 
 **Save backup** (`stage1/src/backup.c`, the kernel's `BackupSaveDump`,
-`01:643a`, done in place). With SELECT held at power-on:
+`01:643a`, done in place). Offered on every fast-launch boot with a pending
+save (mod 1.8), and on any boot with SELECT held at power-on (v4):
 
-1. No `$AA` stamp on page `$11`: "NO SAVE TO BACK UP", then boot as usual.
-2. Otherwise it shows the game's name and "BACK UP SAVE? A:YES B:NO". B
-   carries on as if SELECT weren't held.
-3. A, when the save is `/SAVER/...`, has no clock footer, and the file
-   already exists at exactly the stamp's size: pSRAM pages `0..` are written
-   over the file's own clusters, the stamp is cleared, "SAVE BACKED UP".
-   No FAT or directory entry changes.
-4. A, in any other case (no file yet, a different size, an MBC3 clock):
-   "BACKING UP IN THE KERNEL". Stage1 skips its own fast launch and boots
-   the kernel, which backs the stamped save up at boot. A write error
-   ("SAVE ERROR") ends the same way. The kernel isn't sent the skip mark
-   here, only when START was held.
+1. No `$AA` stamp on page `$11`: with SELECT, "NO SAVE TO BACK UP"; then
+   boot as usual.
+2. A save that can't be written in place (not `/SAVER/...`, no file yet, or
+   a file of another size): with SELECT, "BACKING UP IN THE KERNEL"; either
+   way stage1 skips its own fast launch and boots the kernel, which prompts
+   and backs the save up at boot (and then fast-launches). That happens once
+   for a new game: after it the file exists at the right size.
+3. Otherwise it shows the game's name and "BACK UP SAVE? A:YES B:NO", or
+   goes straight to saving when AUTO SAVE is on (`$A200` = 1). B carries
+   on: the stamp stays armed and the game runs from pSRAM as before.
+4. A: pSRAM pages `0..` are written over the file's own clusters. For a
+   clock game (`$A202` = `$77`, file = save + 48 bytes) the footer goes in
+   the sector after them, built the way the kernel's dump builds it
+   (`BackupSaveDump_rtcPackWrite` in 0918's bank 1): the clock at
+   `$A220`-`$A224` at +0/+4/+8/+12/+16 and again at +20..+36 (the latched
+   copies), the launch stamp `$A210`-`$A213` at +40. The stamp is cleared,
+   "SAVE BACKED UP". No FAT or directory entry changes. The fast launch then
+   loads the save it just wrote, as a launch without a stamp does. A write
+   error ("SAVE ERROR") boots the kernel instead.
+
+The kernel isn't sent the skip mark here, only when START was held.
+
+Mod 1.8 checked in SameBoy (`fpga/stage1/stage1.gb`, a `card.img` with
+its `psram.bin`): with AUTO SAVE the `.sav` is rewritten from pSRAM and
+Pokemon Red launches with the stamp re-armed; without it the prompt waits,
+A writes and launches, B launches with the `.sav` untouched; a clock game
+(Red with `$0147` = `$10`) gets the kernel's footer byte for byte and
+launches with MBC `$83`; a pending save with no `.sav` boots the kernel,
+which backs it up, creates the file and fast-launches.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
 in a subdirectory): the FPGA values match the kernel's for that game

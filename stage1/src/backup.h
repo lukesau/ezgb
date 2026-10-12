@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
-/* SELECT at power-on: offer to copy the pending save (the kernel's page
- * $11 stamp) to its /SAVER file. buf: 512 bytes of scratch. Returns 1 when
- * the kernel should handle the backup instead (skip fast launch). */
-uint8_t backup_offer(uint8_t *buf);
+/* Offer to copy the pending save (the kernel's page $11 stamp) to its
+ * /SAVER file, without asking when AUTO SAVE is on. manual: SELECT was held,
+ * so say so when there is nothing to do; otherwise (a fast-launch boot) stay
+ * quiet. buf: 512 bytes of scratch. Returns 1 when the kernel should handle
+ * the backup instead (skip fast launch). */
+uint8_t backup_offer(uint8_t *buf, uint8_t manual);
 
 #endif
