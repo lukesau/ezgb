@@ -49,6 +49,8 @@ extern void ezcfg(void);                          /* 02:4a00 */
 #define FL_PLEN  (*(volatile unsigned char *)0xDA81)
 #define FL_PATH  ((unsigned char *)0xDA82)
 #define CFG_LOADED (*(volatile unsigned char *)0xDBF9)  /* set by ezcfg's load */
+#define PAD_HELD   (*(volatile unsigned char *)0xFFF7)  /* HRAM: held-from-before mask */
+extern unsigned char ReadJoypad(void);           /* 00:3a4a, E = key byte, START = $80 */
 
 /* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
  * $00; the file-record window ($A000, where the browser rests) is $03. */
@@ -103,6 +105,10 @@ static void scan_root(void) {
     const unsigned char *name;
 
     result_path[0] = 0;
+
+    /* Hold START at boot to skip fast launch. A START held since power-on
+     * is in the held mask (armed by the boot RTC check), not the report. */
+    if ((ReadJoypad() | PAD_HELD) & 0x80) return;
 
     /* Highest priority: FLAUNCH= in /EZGB.CFG. 1 = explicit path staged in
      * RESULT; 2 = fast launch DISABLED ('#' on the value): skip the lone-ROM

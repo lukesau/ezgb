@@ -97,6 +97,7 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
+#define PAD_HELD  (*(volatile u8 *)0xFFF7)  /* HRAM: buttons ReadJoypadLatched ignores until released (docs/joypad-latch.md) */
 #define CFG_LOADED (*(volatile u8 *)0xDBF9) /* 1 once cfg_load has run this boot (fast-launch scan reuses it) */
 #define S1_SGB    (*(volatile u8 *)0xDBF8)  /* 1 when our stage1 handles the SGB (flcfg.c shows SGB BOOT as AUTO) */
 #define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
@@ -394,6 +395,7 @@ static void stage1_skip_mark(void) {
 
 static void cfg_restore(void) {
     u8 why;
+    PAD_HELD |= ReadJoypad();            /* held since power-on: never a press in a prompt */
     stage1_skip_mark();
     cfg_load();
     if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */

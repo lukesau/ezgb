@@ -4414,7 +4414,7 @@
 00:2704 ApplyPixelSafe
 00:2704 .data:42:8
 00:2746 ReadJoypadLatched
-00:2746 .data:11:8
+00:2746 .data:1f:8
 00:3ec8 DrawNameWithIcon
 00:3ec8 .data:8:8
 00:01e3 UiRows
@@ -4436,9 +4436,9 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:13cd:8
+02:4a00 .data:13d9:8
 02:4500 FastLaunchScan
-02:4500 .data:29e:8
+02:4500 .data:2a9:8
 04:5f00 FarCallEzCfg
 04:5f00 .data:8:8
 04:5f10 RtcSetHook

@@ -73,7 +73,7 @@ REGISTRY = {
                             "DrawString": 0x08b7, "StoreDrawParams": 0x2791, "DrawNameWithIcon": 0x3ec8}),
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
-                            "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00}),
+                            "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00, "ReadJoypad": 0x3a4a}),
     (2, 0x7500): dict(src="draw12.c",                       # 12px browser renderer (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
                             "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,

@@ -93,6 +93,55 @@ Side effects worth knowing:
   behavior; `WaitJoypadMask` reads `ReadJoypadRaw` directly and is
   unchanged.
 
+## Held buttons: one press, one action (mod 6.8)
+
+The latch fixed lost taps, but `ReadJoypad` still reported a button for as
+long as it was down. Once the SET tab redrew fast enough to poll again
+before a finger came off A, one press toggled a checkbox twice. And a START
+held at power-on (to skip fast launch) was still down at the save prompt
+and in the browser, where it opened the last-ROM overlay.
+
+`ReadJoypadLatched` now keeps a held mask in HRAM `$fff7` (`hPadHeld`):
+buttons that are not reported until they have been let go.
+
+```
+    ...                     ; as above, e = reported, prev := reported
+    push bc
+    ldh a, [$f7]
+    ld b, a                 ; old mask
+    or $f0
+    and e
+    ldh [$f7], a            ; mask = reported & (mask | buttons)
+    ld a, b
+    cpl
+    and e
+    ld e, a                 ; reported &= ~old mask
+    pop bc
+    ei
+    ret
+```
+
+- A, B, SELECT and START are reported once per press: the read that
+  reports one puts it in the mask, and it stays there until a read sees it
+  up. The D-pad is not masked this way, so holding a direction still
+  repeats.
+- Anything down at a screen change is masked too: `cfg_restore` (the boot
+  RTC check, before the BACKUPSAVE and RTC prompts) and `fastlaunch_boot`
+  (every browser entry, after the fast-launch check) do `hPadHeld |=
+  ReadJoypad()`. A START held from power-on, or the A that confirmed a
+  prompt or opened a folder, needs a new press.
+- The fast-launch START check moved into the scan (`fastlaunch.c`) and
+  reads `ReadJoypad() | hPadHeld`, so a START held since boot still skips
+  fast launch. `fastlaunch_boot` became 30 bytes of inline asm to make room
+  for the browser-entry arm.
+- The ROM menu's hold timer reads the live pad at `$fffc`, which the mask
+  does not touch.
+
+The routine grew from 17 to 31 bytes into the `$00` filler after it
+(`00:2746`-`$2764`; 1.04e `00:238d`). HRAM `$fff7` was otherwise unused
+once `KernelEntry` has moved the stack to WRAM (early boot pushes through
+it before the clear).
+
 ## Verification
 
 SameBoy `--model dmg`, 15-entry folder, `keys` at 60 ms and a 25 ms variant:

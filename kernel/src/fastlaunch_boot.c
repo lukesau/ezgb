@@ -18,20 +18,27 @@ extern void fastlaunch_do_launch(void);       /* reuses LastRomRelaunch; no retu
 extern void BrowserSortAllStub(void);         /* 00:03d4, the displaced call (sort/enum) */
 extern unsigned char ReadJoypad(void);        /* 00:3a4a (post-swap key byte in E; START = $80) */
 
-void fastlaunch_boot(void) {
-    unsigned char *c4a4 = (unsigned char *)0xC4A4;
-    unsigned char *flag = (unsigned char *)0xDBFF;
-
-    BrowserSortAllStub();             /* enumerate/sort FIRST (the launch needs its state) */
-
-    if (*flag == 0) {
-        *flag = 1;
-        if ((ReadJoypad() & 0x80) == 0) {   /* hold START at boot to skip fast launch */
-            FarCallScan();            /* scans root, writes the launch path to $c4a4 */
-            if (c4a4[0] != 0) {
-                fastlaunch_do_launch(); /* boots the ROM; never returns */
-            }
-        }
-    }
-    /* no trigger / START held: return -> $1032 -> FileBrowserEntry_redraw paints */
+/* Naked so it fits the 30 bytes before DirListHideNameStub (00:04ae). The
+ * START check lives in the scan (fastlaunch.c). After it, anything still
+ * down (the A that confirmed a prompt or opened this folder) goes into the
+ * held mask, so the browser needs a new press. */
+void fastlaunch_boot(void) __naked {
+    __asm
+        call _BrowserSortAllStub ; enumerate/sort FIRST (the launch needs its state)
+        ld  hl, #0xdbff
+        ld  a, (hl)
+        or  a
+        jr  nz, 00001$        ; already ran this power-on
+        inc (hl)
+        call _FarCallScan     ; START check, then writes the launch path to $c4a4
+        ld  a, (#0xc4a4)
+        or  a
+        jp  nz, _fastlaunch_do_launch ; boots the ROM; never returns
+00001$:
+        call _ReadJoypad      ; E = report
+        ldh a, (#0xf7)        ; PAD_HELD |= report
+        or  e
+        ldh (#0xf7), a
+        ret                   ; -> $1032 -> FileBrowserEntry_redraw paints
+    __endasm;
 }

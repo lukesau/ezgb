@@ -579,10 +579,10 @@ FarCallDrawLoadingBox::
     rst RST_38
 
 fastlaunch_boot::
-    db $cd, $d4, $03, $fa, $ff, $db, $b7, $c0
-    db $21, $ff, $db, $36, $01, $cd, $91, $36
-    db $7b, $07, $d8, $cd, $00, $04, $fa, $a4
-    db $c4, $b7, $c2, $20, $04, $c9
+    db $cd, $d4, $03, $21, $ff, $db, $7e, $b7
+    db $20, $0b, $34, $cd, $00, $04, $fa, $a4
+    db $c4, $b7, $c2, $20, $04, $cd, $91, $36
+    db $f0, $f7, $b3, $e0, $f7, $c9
 
 DirListHideNameStub::
     db $20, $03, $01, $e4, $c9, $c5, $c5, $cd
@@ -6808,23 +6808,9 @@ ApplyPixelSafe::
 
 ReadJoypadLatched::
     db $f3, $cd, $5d, $36, $5f, $f0, $fd, $b3
-    db $5f, $af, $e0, $fd, $7b, $e0, $fc, $fb
-    db $c9
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
+    db $5f, $af, $e0, $fd, $7b, $e0, $fc, $c5
+    db $f0, $f7, $47, $f6, $f0, $a3, $e0, $f7
+    db $78, $2f, $a3, $5f, $c1, $fb, $c9
 
 ; [ezgb]
 ; SetTextCursor: store stack col/row into wTextCursorX/Y ($d732/$d733).
