@@ -86,7 +86,7 @@ uint8_t backup_offer(uint8_t *buf, uint8_t manual)
     base = strrchr(path, '/');
     print_center(NAME_ROW, base ? base + 1 : path);
     if (!autosave) {                    /* AUTO SAVE on the SET tab: no question */
-        say("BACK UP SAVE?", "A:YES   B:NO");
+        say("BACK UP SAVE?", "B:NO   A:YES");    /* B left, A right, as the buttons sit */
         wait_release();
         do
             keys = buttons();

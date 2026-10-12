@@ -167,6 +167,7 @@ All on the one FW4 Jr, each build installed with its own updater
 | v2 | the rewrite with the wordmark | confirmed: boots the kernel |
 | v3 | fast launch; START held at power-on cancels it | confirmed: boots Pokemon Red straight from stage1, and START cancels it (the cancel was fixed in v3) |
 | v4 | SELECT save-backup prompt, the `"S1"` skip mark at `$11:$A410`, the `FW6-MOD 1.0` version line | installed, not yet confirmed |
+| mod 1.9 | the FW4 build of FW5's mod 1.9 below (no game clock or fast load: FW4 has neither) | built (`Update_FW4-mod-1.9.gb`), on the FW4 card, not yet flashed |
 
 On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 
@@ -174,8 +175,8 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 |---|---|---|
 | fast / v5 | MBC3 clock restore, `$7FD4=$11` fast load; v5 gates both on the FW version byte and carries the bank 2 flash read patch | confirmed: Pokemon Crystal fast-launches with the right clock, noticeably faster |
 | mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
-| mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | built (`Update_FW5-0918-mod-1.8.gb`), not yet flashed |
-| mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save | built (`Update_FW5-0918-mod-1.9.gb`), not yet flashed |
+| mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | flashed 2026-10-11; one fast-launch boot with Pokemon Crystal's save pending hung at LOADING... before the name line (not reproduced; START booted the kernel fine) |
+| mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save; the prompt reads `B:NO   A:YES`, as the buttons sit | flashed 2026-10-11 (before the B/A swap): a fast launch with a pending save backed it up and launched |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -300,7 +301,7 @@ save (mod 1.8), and on any boot with SELECT held at power-on (v4):
    way stage1 skips its own fast launch and boots the kernel, which prompts
    and backs the save up at boot (and then fast-launches). That happens once
    for a new game: after it the file exists at the right size.
-3. Otherwise it shows the game's name and "BACK UP SAVE? A:YES B:NO", or
+3. Otherwise it shows the game's name and "BACK UP SAVE? B:NO A:YES", or
    goes straight to saving when AUTO SAVE is on (`$A200` = 1). B carries
    on: the stamp stays armed and the game runs from pSRAM as before.
 4. A: pSRAM pages `0..` are written over the file's own clusters. For a
