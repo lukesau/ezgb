@@ -155,8 +155,12 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   `$BB` (through the input mux). FW5's `cmd_load_rom` reads `$BB` once when
   a load starts (`$223` in 0918, `$209` in 0731) and, if it is `$11`,
   skips `delay_long` after every SD run (`$23C` / `$222`); FW4's loader
-  always waits. Both `$7FD3` and the sum power up 0 and the kernel writes
-  `$7FD4=$00`, so stock loads always take the slow path. In simulation,
+  always waits. Both `$7FD3` and the sum power up 0, but stock FW5-0918
+  stage1 writes the console's boot `A` to `$7FD3` before handing over
+  (`re/stage1/fw5-0918/disassembly/bank_000.asm`, `$07F1`), and the kernel
+  then writes `$7FD4=$00`: the sum is `$11` on CGB and GBA, so stock loads
+  are fast there and slow on DMG, MGB and SGB.
+  In simulation,
   `$7FD4=$11` before the game launch's load makes FW5 issue each next
   `CMD18` 15 µs after `CMD12` instead of about 1.1 ms: the 64 KB load
   finishes in 5.5 ms instead of 10.1 ms (261 status polls against 468), and
@@ -167,6 +171,17 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   pause after `CMD12` is untested; the first attempt here stalled until the
   SD model was fixed to stop a block mid-way on `CMD12` and to retire a
   read superseded by a newer `CMD18`, which real cards do.
+
+  > **Correction (2026-10-12).** This said stock loads are always slow
+  > because nothing writes `$7FD3`, missing stock stage1's `$7FD3` write
+  > (FW5-0918; 0731's stage1 isn't disassembled). Mod 5.5 inherited it:
+  > writing `$7FD4=$11` gave `$22` on CGB, turning off the stock fast load
+  > there, and `$12` on DMG, so with stock stage1 it sped nothing up.
+  > The mod's `SetFpga7FD4_B1` now writes `$7FD3=$00` before `$7FD4`. Our
+  > stage1 never wrote `$7FD3`, so a stock kernel lost the CGB fast load on
+  > our firmware; it now passes the boot `A` like stock before entering the
+  > kernel, and writes `$7FD3=$00` before its own fast launch. Flagged by someone
+  > else's EZ-Flash Junior research notes (shared with us, not in the repo).
 
 ## Banking and save RAM (simulated)
 

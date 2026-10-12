@@ -209,6 +209,9 @@ SKIP_SITES = {
         # (re/stage0/docs/firmware-diff.md): 1.05e writes $7FD4 on every game
         # launch, 1.04e never does, so there is no value to change.
         (0, 0x15e2),
+        # SetFpga7FD4_B1, which the mod has also zero $7FD3 (the stock FW5
+        # stage1 leaves the boot A there): 1.04e has no $7FD4 writer.
+        (1, 0x480b),
     },
 }
 # Injected blocks the target build does not need because their only hook site

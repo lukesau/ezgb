@@ -1688,27 +1688,30 @@ SetFpga7F34_35_B1::
 
 ; [ezgb]
 ; SetFpga7FD4_B1: unlock $7F00/10/20; write stack u8 to $7FD4; commit $7FF0.
-; Same shape as SetFpga7FD0_B4. Orphan before LoaderPrepPath.
+; Mod: zeroes $7FD3 first, since FW5's $7FD4 stores $7FD3 + value and the
+; stock FW5 stage1 leaves the boot A in $7FD3 (re/stage0/docs/firmware-diff.md).
 
 SetFpga7FD4_B1::
-    ld bc, SgbUnlock
-    ld a, $e1
-    ld [bc], a
-    ld bc, $7f10
-    ld a, $e2
-    ld [bc], a
-    ld bc, $7f20
-    ld a, $e3
-    ld [bc], a
-    ld bc, $7fd4
+    ld hl, SgbUnlock
+    ld [hl], $e1
+    ld l, $10
+    ld [hl], $e2
+    ld l, $20
+    ld [hl], $e3
+    ld l, $d3
+    ld [hl], $00
     ld hl, sp+$06
     ld a, [hl]
-    ld [bc], a
-    ld bc, $7ff0
-    ld a, $e4
-    ld [bc], a
+    ld hl, $7fd4
+    ld [hl], a
+    ld l, $f0
+    ld [hl], $e4
     ret
 
+
+    nop
+    nop
+    nop
 
 ; [ezgb]
 ; LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569

@@ -21,6 +21,12 @@ put on your card. The byte-level accounting behind it is in
   support) are **not in the kernel**. They are in the FPGA firmware, which only
   the `Update_FW*.gb` updater changes. Swapping `ezgb.dat` does not give or
   take them.
+- **FW5 loads games from the SD card faster than FW4.** FW5's loader has a
+  fast mode that skips a pause after every SD read. With the stock stage1 and
+  kernel it is on only on CGB and GBA; the modded 1.05e kernels turn it on
+  for every console.
+  FW4 has no fast mode, so an FW4 cart loads at the stock speed whatever
+  kernel it runs. See [Load speed](#load-speed-fw4-vs-fw5).
 
 ## Kernel and firmware are two different things
 
@@ -31,8 +37,14 @@ put on your card. The byte-level accounting behind it is in
 | Risk | None. Copy the old file back to undo | Can brick the cart (EZ Flash's own notes warn about slow cards and weak batteries; see [1.05e-instability.md](1.05e-instability.md)) |
 | Shown on HELP tab as | `K1.04e` / `K1.05e`, a digit hard-coded in the kernel | `FW4` / `FW5`, read from the cart |
 
-Everything on this page is about the kernel. This project never runs or
-modifies the updaters.
+Everything on this page is about the stock kernels and the stock firmware
+that ships alongside them. This project also has a firmware mod that
+replaces the cart's stage1 (the power-on bootstrap) and leaves the rest of
+the FPGA image as stock. It builds for both FW4 and FW5, but the FW4 build
+skips the FW5-only features (game clock, fast load) since the FW4 image has
+no logic for them, and only the FW5-0918 build ships as an updater patch.
+It's covered in [fpga-stage1.md](fpga-stage1.md) and
+[distribution.md](distribution.md), not here.
 
 ## Identity
 
@@ -79,7 +91,21 @@ cart's clock instead.
 
 **One new FPGA register write at launch.** `SetFpga7FD4_B1` (`01:480b`) is
 new, and the launch path calls it with `$00` (`00:15e2`). 1.04e never touches
-`$7FD4`. What the register does is not identified.
+`$7FD4`.
+
+> **Correction (2026-10-10).** This page said what `$7FD4` does was not
+> identified. Simulating the FW5 bitstreams found it: `$7FD3 + $7FD4` is a
+> fast-load key, and FW5's ROM loader skips its pause after every SD read
+> when the key is `$11`. Stock 1.05e writes `$00`, which leaves loading slow.
+> FW4's design doesn't decode `$7FD4` at all. Details in
+> [Load speed](#load-speed-fw4-vs-fw5) and
+> [firmware-diff.md](../re/stage0/docs/firmware-diff.md).
+
+> **Correction (2026-10-12).** The key is the sum `$7FD3 + $7FD4`, and stock
+> FW5-0918 stage1 writes the console's boot `A` to `$7FD3`: `$11` on CGB and
+> GBA. So stock 1.05e's `$00` gives `$11` there and loads are fast; only DMG,
+> MGB and SGB load slowly. Mod 5.5's `$11` made it `$22` on CGB, turning the
+> stock fast load off, until the mod also zeroed `$7FD3` (2026-10-12).
 
 **Small things.**
 
@@ -97,8 +123,10 @@ new, and the launch path calls it with `$00` (`00:15e2`). 1.04e never touches
 loading on CGB and later, and a fix for the "Micro SD Initial Error" on CGB
 units without a CPU suffix. The SD driver, the FatFs code apart from the
 timestamp, and the ROM loader are instruction-for-instruction the same in both
-kernels, so neither item is a kernel change, unless the `$7FD4` write is part
-of one. FW5's FPGA image is a new design (64% different from FW4's, see
+kernels, so neither item is a kernel change. The faster loading is FW5's
+fast-load key (see the corrections above): stock FW5 stage1 sets `$7FD3` to
+the boot `A`, which is `$11` only on CGB and GBA, and the stock kernel adds
+`$00`. FW5's FPGA image is a new design (64% different from FW4's, see
 [flash-map.md](../re/stage0/docs/flash-map.md)), which is where they would be. The
 same goes for the hang at LOADING / OS INIT with slower cards that EZ Flash
 acknowledged in the 1.05e release candidate: the kernel diff gives no reason
@@ -134,8 +162,8 @@ image, and reach a cart only through the updater.
 | Your cart (HELP tab) | Use | Why |
 |---|---|---|
 | `FW5` | 1.05e, either build | RTC games keep time and saves get real dates. 0731 and 0918 do the same thing; take the one from the package you have. |
-| `FW4` | 1.04e | It is the kernel EZ Flash shipped for FW4, and the modded 1.04e has run on an FW4 cart. 1.05e on FW4 is untested here: its RTC code drives FPGA registers (`$A018`-`$A01C`, `$7FD4`) that 1.04e never uses, and whether the FW4 image implements them is unknown. |
-| `FW5`, but you have 1.04e | It boots (stock 1.04e is confirmed on an FW5 cart) | You give up RTC-game support and file dates and gain nothing identified. |
+| `FW4` | 1.04e | It is the kernel EZ Flash shipped for FW4, and the modded 1.04e has run on an FW4 cart. 1.05e on FW4 is untested here: its RTC code drives FPGA registers (`$A018`-`$A01C`, `$7FD4`) that 1.04e never uses, and whether the FW4 image implements them is unknown. Games load slower than on FW5 with the modded 1.05e kernel, and no kernel changes that. |
+| `FW5`, but you have 1.04e | It boots (stock 1.04e is confirmed on an FW5 cart) | You give up RTC-game support, file dates and (with the mod) fast loading, and gain nothing identified. |
 
 > [!NOTE]
 > **Author's note:** I have two EZ Flash Jr carts myself and run one of each:
@@ -144,6 +172,34 @@ image, and reach a cart only through the updater.
 > A cart with no battery must be soft reset with the hardware button built
 > into the cart before powering off to get a reliable save dump.
 
+### Load speed: FW4 vs FW5
+
+Loading a game copies the ROM from the SD card into the cart's pSRAM through
+the FPGA's loader, in runs of SD reads. Both firmwares pause after every run.
+FW5 can skip the pause, FW4 can't:
+
+| Cart | Kernel | Game loads |
+|---|---|---|
+| `FW4` | any | slow path: pause after every SD run |
+| `FW5` | stock 1.05e | fast path on CGB and GBA (stock stage1 leaves `$7FD3=$11` there and the kernel adds `$00`), slow path on DMG, MGB and SGB |
+| `FW5` | 1.04e | slow path: it never writes `$7FD4`, so the sum stays at its power-up 0 |
+| `FW5` | modded 1.05e | fast path: the kernel writes `$7FD3=$00`, `$7FD4=$11` before the load (mod 5.5 wrote only `$7FD4`, which turned the fast path off on CGB and GBA with stock stage1) |
+
+In simulation the fast path loads 64 KB in 5.5 ms against 10.1 ms. On a real
+card the pause is about 20 ms per run, so the saving is roughly 0.7 s per MB
+of ROM (an estimate; it hasn't been timed with a stopwatch). An 8 MB game
+loads several seconds sooner on an FW5 cart with the modded kernel.
+
+Outside of game loads, FW5 is also a little quicker on single sector reads
+(the status reads ready after 8 polls against FW4's 12 in simulation), so the
+browser and save handling are marginally faster too. That difference is small
+next to the loader pause.
+
+An FW4 cart is the same hardware as an FW5 cart; only the FPGA image differs.
+Getting fast loading on FW4 means updating the firmware to FW5 with
+`Update_FW5_*.gb`, with the risk that carries. Load speed up is not supported on
+FW4.
+
 Things that should not drive the choice:
 
 - **Stability.** EZ Flash called 1.05e/FW5 a release candidate and suggested
@@ -151,8 +207,8 @@ Things that should not drive the choice:
   is about flashing the firmware. The kernel file adds RTC handling and
   otherwise runs the same SD, loader and menu code as 1.04e.
 - **Getting FW5 features on an FW4 cart.** A kernel swap cannot do that.
-  RTC-game support on an FW4 cart means updating the firmware, with the risk
-  that carries.
+  RTC-game support and fast loading on an FW4 cart mean updating the
+  firmware, with the risk that carries.
 
 ### With this project's mod
 
@@ -175,5 +231,7 @@ Stock `ezgb.dat` files, md5-verified against the table above, compared on
 stop lining up (`scripts/portmap.py`), and every operand that differs inside
 the matching regions and is not a relocated address or a stack-frame offset.
 The lists of both are short enough to read in full, and each entry is
-accounted for above. Static analysis only: what `$7FD4` does, and how a 1.05e
-kernel behaves on FW4 firmware, would need hardware.
+accounted for above. Static analysis only: how a 1.05e kernel behaves on FW4
+firmware would need hardware. What `$7FD4` does came later (2026-10-10) from
+simulating the FPGA bitstreams, and the fast load it enables has run on an
+FW5 cart.

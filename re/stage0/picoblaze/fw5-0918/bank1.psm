@@ -868,7 +868,7 @@ cmd_load_rom:
 L_221:
     LOAD s0, 01                     ; 221 00001
     OUTPUT s0, LOAD_BUSY            ; 222 2C0EF  raise LOAD_BUSY for the kernel
-    INPUT s0, LOAD_FAST             ; 223 040BB  FPGA's $7FD3 + $7FD4 (the kernel writes $7FD4=0, $7FD3 stays 0)
+    INPUT s0, LOAD_FAST             ; 223 040BB  FPGA's $7FD3 + $7FD4 (stock stage1 writes boot A to $7FD3, the kernel $7FD4=0)
     STORE s0, 2B                    ; 224 2E02B
     CALL load_rom_loop              ; 225 30229
     LOAD s0, 00                     ; 226 00000
