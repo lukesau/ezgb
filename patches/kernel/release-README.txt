@@ -3,11 +3,21 @@ EZ Flash Jr modded kernel, mod {MODVER}
 
 This folder holds one IPS patch per official kernel build. Applied to the
 ezgb.dat from EZ Flash's own firmware package, each turns it into the modded
-kernel. No firmware updater is involved: the Jr loads ezgb.dat from the
-microSD card at every power-on, so installing is a file copy and going back
-is copying the stock file again.
+kernel. This is the safe option: no firmware updater is involved. The Jr
+loads ezgb.dat from the microSD card at every power-on, so installing is a
+file copy and going back is copying the stock file again.
 
 What the mod adds, and the source, is at https://github.com/lukesau/ezgb
+
+The same patches, plus the experimental firmware mod {FWVER}, are also on the
+patcher page, which checks your file before patching it:
+
+  {PATCHER_URL}
+
+The firmware mod is not in this folder on purpose. It rewrites the cart's
+bootloader and can brick the cart; the patcher page refuses anything but the
+exact stock updater it was built for, and explains the risk first. Read it
+there before deciding.
 
 
 1. Find your kernel
@@ -28,10 +38,11 @@ none of the patches will apply cleanly.
   Linux:    md5sum ezgb.dat
   Windows:  certutil -hashfile ezgb.dat MD5
 
-Not sure which kernel to use? The short answer is 1.05e on an FW5 cart and
-1.04e on an FW4 cart (the HELP tab shows which firmware the cart has), but
-the 1.04e build also runs on an FW5 cart, so no firmware updater is ever
-needed to switch. The full comparison:
+Not sure which kernel to use? 1.04e is the build EZ Flash still offers for
+download, and it runs on FW4 and FW5 carts alike, so no firmware updater is
+ever needed to switch. EZ Flash took its FW5 packages (1.05e) down after
+users bricked carts updating to them; the 1.05e patches are for people who
+already run FW5 and have that package's ezgb.dat. The full comparison:
 https://github.com/lukesau/ezgb/blob/main/docs/kernel-versions.md
 
 
@@ -55,6 +66,11 @@ matching .ips as the patch; the result is a new 163,840-byte file.
 
 The patched file's md5 must equal the modded md5 in the list above. If it
 does not, the wrong patch was used or the input was not the stock file.
+
+If a kernel patched with another build's patch is booted anyway, it does not
+start: 1.05e-0731 and 1.05e-0918 stop on a WRONG PATCH screen, and a 1.04e /
+1.05e mix-up shows a blank screen. Neither writes to the card. Copy the stock
+ezgb.dat back and use the patch made for it.
 
 
 3. Install
