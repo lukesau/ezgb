@@ -27,10 +27,13 @@ icon tiles this build needs. The stock stage1 itself, disassembled, is in
 
 `VERSION` has two lines: the firmware number, then the mod version. The
 build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW5-MOD 1.8`. The firmware
-number is what the cart's version register reads, 5 on the FW5 builds we
-ship. It stays 5 until the register itself can be changed, which is a
-separate fabric change ([re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)).
+`FW<n>-MOD <m>` on its bottom line, currently `FW5-MOD 1.9` on an FW5 cart
+and `FW4-MOD 1.9` on an FW4 cart. The FW4 and FW5 updaters carry the same
+stage1, so `<n>` is read at boot from the cart's version register
+(`fw_version()`, 4 or 5), with line 1 of `VERSION` only the fallback for a
+reading outside 1-9. The register stays 4 or 5 until it can be changed
+itself, which is a separate fabric change
+([re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)).
 The mod version is stage1's own, separate from the kernel mod's.
 
 ## Build knobs

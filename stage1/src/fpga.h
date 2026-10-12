@@ -9,5 +9,6 @@ void sd_write(uint32_t lba, const uint8_t *src);
 void psram_map(uint8_t page);
 void psram_unmap(void);
 uint8_t buttons(void);
+uint8_t fw_version(void);
 
 #endif

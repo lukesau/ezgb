@@ -71,6 +71,20 @@ void sd_write(uint32_t lba, const uint8_t *src)
     fpga_set(FPGA_SD_MAP, 0);
 }
 
+/* The cart's firmware version register: with $7FC0 = 4, $A000 reads 4 on
+ * FW4 and 5 on FW5 (re/stage0/docs/version-byte.md). The FW4 and FW5
+ * updaters carry the same stage1, so everything firmware-specific is decided
+ * from this at run time. */
+uint8_t fw_version(void)
+{
+    uint8_t v;
+
+    fpga_set(FPGA_SRAM_MAP, 4);
+    v = PSRAM[0];
+    fpga_set(FPGA_SRAM_MAP, 0);
+    return v;
+}
+
 void psram_map(uint8_t page)
 {
     REG(0x4000) = page;

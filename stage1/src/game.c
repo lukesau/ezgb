@@ -227,9 +227,7 @@ void game_launch(const char *path, uint8_t *buf)
     mbc = mbc_code(type);
     battery = has_battery(type);
     timer = type == 0x0F || type == 0x10;
-    fpga_set(FPGA_SRAM_MAP, 4);         /* version byte: FW4 reads 4, FW5 5 */
-    fw5 = SRAM[0] >= 5;
-    fpga_set(FPGA_SRAM_MAP, 0);
+    fw5 = fw_version() >= 5;            /* FW4 has no game clock or fast load */
     if (mbc == 1 && banks > 0x20 && fat_read(0x40000 >> 9, buf)) {
         for (acc = 0, i = 0x04; i < 0x34; i++)
             acc = acc << 1 ^ buf[0x100 + i];

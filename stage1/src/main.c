@@ -93,7 +93,8 @@ static uint8_t kernel(void)
 
 void main(void)
 {
-    uint8_t err, keys, sgb, fl, tried = 0;
+    uint8_t err, keys, sgb, fl, fw, tried = 0;
+    char fw_text[sizeof FW_TEXT];
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
@@ -106,7 +107,13 @@ void main(void)
     wordmark_paint(JR_STEP);
     wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
     print_center(STATUS_ROW, "LOADING...");
-    print_center(VERSION_ROW, FW_TEXT);
+    /* FW_TEXT is "FW5-MOD <m>"; the digit is what this cart's version
+     * register reads, so the FW4 updater's copy of stage1 says FW4 */
+    memcpy(fw_text, FW_TEXT, sizeof FW_TEXT);
+    fw = fw_version();
+    if (fw >= 1 && fw <= 9)
+        fw_text[2] = '0' + fw;
+    print_center(VERSION_ROW, fw_text);
 
     /* keep retrying: the card may still be starting up, or be swapped */
     for (;;) {

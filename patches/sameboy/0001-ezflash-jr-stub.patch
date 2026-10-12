@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..c0b38f2
+index 0000000..908a863
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1095 @@
+@@ -0,0 +1,1102 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -868,6 +868,13 @@ index 0000000..c0b38f2
 +    gb->ezflash_jr.stage1 = stage1;
 +    gb->ezflash_jr.log = verbose_log_enabled();
 +    gb->ezflash_jr.fw_version = EZJR_FW_VERSION;
++    {
++        /* SAMEBOY_EZFLASH_JR_FW=4 reports an FW4 cart's version byte */
++        const char *fw = getenv("SAMEBOY_EZFLASH_JR_FW");
++        if (fw && fw[0] >= '1' && fw[0] <= '9') {
++            gb->ezflash_jr.fw_version = (uint8_t)(fw[0] - '0');
++        }
++    }
 +    gb->ezflash_jr.cart_sram = (uint8_t *)calloc(EZJR_SRAM_BANKS, EZJR_SRAM_BANK_SIZE);
 +    if (!gb->ezflash_jr.cart_sram) {
 +        ezjr_log(gb, "EZ Jr stub: cart SRAM alloc failed\n");
