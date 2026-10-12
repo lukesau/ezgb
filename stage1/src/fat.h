@@ -10,6 +10,7 @@ enum {
     FAT_NOT_FOUND,
     FAT_BAD_CHAIN,      /* cluster chain leaves the volume */
     FAT_FRAGMENTED,     /* more extents than the load command holds */
+    FAT_GPT,            /* GPT partition table: only MBR (or none) is read */
 };
 
 extern uint32_t file_size;

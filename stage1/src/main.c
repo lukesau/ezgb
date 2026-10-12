@@ -47,6 +47,7 @@ static const char *const errors[] = {
     "EZGB.DAT NOT FOUND",
     "EZGB.DAT DAMAGED",
     "EZGB.DAT FRAGMENTED",
+    "GPT CARD: USE MBR",            /* reformat with an MBR partition table */
 };
 
 /* Tell the kernel whether the user canceled fast launch (PSRAM_SKIP_FL):

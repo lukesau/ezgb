@@ -140,7 +140,10 @@ same FPGA register sequence, and builds the same load command as stock.
   card is FAT32 with one sector per cluster, which makes `EZGB.DAT` 320
   clusters: stock takes about 40 seconds there in the emulator.
 - **FAT.** FAT16 and FAT32, MBR or superfloppy, root directory only, 8.3
-  names. FAT12 is refused with a message, as stock does implicitly.
+  names. FAT12 is refused with a message, as stock does implicitly. A GPT
+  card (MBR entry 1 is the `$EE` protective one) gets "GPT CARD: USE MBR"
+  (mod 1.9): stock and the kernel can't read GPT either, so it is a
+  reformat.
 - **Hand-off.** `src/handoff.s` runs at `$D000`. It is stock's `HandoffPoll`
   sequence, then the screen clear the splash added. The kernel is entered at
   `$0100` with A = `$E4`, the value stock leaves in A.

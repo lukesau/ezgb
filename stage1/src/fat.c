@@ -75,6 +75,8 @@ uint8_t fat_mount(void)
         /* MBR: first partition */
         if (buf[510] != 0x55 || buf[511] != 0xAA)
             return FAT_NO_FS;
+        if (buf[0x1C2] == 0xEE)
+            return FAT_GPT;     /* the protective entry a GPT disk puts here */
         vbr = ld32(buf + 0x1C6);
         read_sector(vbr);
         if (!is_boot_sector())
