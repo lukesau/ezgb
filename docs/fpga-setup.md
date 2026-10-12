@@ -142,6 +142,7 @@ Main's version only runs the kernel. On this branch the stub:
 |---|---|
 | `SAMEBOY_EZFLASH_JR_IMG` | the SD card image. Default `sd/card.img` (see [DEVELOPMENT.md](DEVELOPMENT.md)) |
 | `SAMEBOY_EZFLASH_JR_LOG=1` | send the stub's messages to stderr |
+| `SAMEBOY_EZFLASH_JR_NOCARD=<s>` | every SD read stays busy for the first `s` seconds, as FW4 does with no card, then the card "goes in" |
 | `SAMEBOY_EZFLASH_JR_FW=4` | report version byte 4 (an FW4 cart) instead of 5 |
 | `SAMEBOY_EZFLASH_JR_DRY=1` | clear the pSRAM battery canary (`$11:$A201`) at load, so the boot takes the BATTERY DRY path |
 | `SAMEBOY_EZFLASH_JR=0` | turn the stub off |

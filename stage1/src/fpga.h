@@ -10,5 +10,8 @@ void psram_map(uint8_t page);
 void psram_unmap(void);
 uint8_t buttons(void);
 uint8_t fw_version(void);
+/* main.c: called with 1 when an SD read has been busy for ~2 s (no card,
+ * or one not answering), with 0 once that read completes */
+void sd_wait_notice(uint8_t waiting);
 
 #endif

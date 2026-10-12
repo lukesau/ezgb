@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..908a863
+index 0000000..75850ba
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1102 @@
+@@ -0,0 +1,1109 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -303,6 +303,7 @@ index 0000000..908a863
 +    }
 +}
 +
++static time_t s_nocard_until;
 +static GB_gameboy_t *s_psram_exit_gb;
 +
 +static void psram_flush_at_exit(void)
@@ -870,6 +871,10 @@ index 0000000..908a863
 +    gb->ezflash_jr.fw_version = EZJR_FW_VERSION;
 +    {
 +        /* SAMEBOY_EZFLASH_JR_FW=4 reports an FW4 cart's version byte */
++        const char *nc = getenv("SAMEBOY_EZFLASH_JR_NOCARD");
++        if (nc && atoi(nc) > 0) {
++            s_nocard_until = time(NULL) + atoi(nc);
++        }
 +        const char *fw = getenv("SAMEBOY_EZFLASH_JR_FW");
 +        if (fw && fw[0] >= '1' && fw[0] <= '9') {
 +            gb->ezflash_jr.fw_version = (uint8_t)(fw[0] - '0');
@@ -1067,7 +1072,9 @@ index 0000000..908a863
 +     * (daid Protocol.md). Reads here complete instantly. Serving sector data
 +     * instead hung any poll whose sector happened to start with $E1. */
 +    if (ez->sd_ctrl == 3 && addr >= 0xA000 && addr <= 0xBFFF) {
-+        *out = 0x01;
++        /* SAMEBOY_EZFLASH_JR_NOCARD=<s>: for the first s seconds every read
++         * stays busy, as FW4's PicoBlaze does with no card in the slot */
++        *out = time(NULL) < s_nocard_until ? 0xE1 : 0x01;
 +        return true;
 +    }
 +

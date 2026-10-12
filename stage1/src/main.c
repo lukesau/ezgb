@@ -52,6 +52,14 @@ static const char *const errors[] = {
 /* Tell the kernel whether the user canceled fast launch (PSRAM_SKIP_FL):
  * set when START is held, cleared otherwise, so a kernel without support
  * never sees a stale mark. */
+void sd_wait_notice(uint8_t waiting)
+{
+    if (waiting)
+        print_center(DETAIL_ROW, "INSERT SD CARD");
+    else
+        clear_row(DETAIL_ROW);
+}
+
 static void mark_skip(uint8_t skip)
 {
     psram_map(PSRAM_META);

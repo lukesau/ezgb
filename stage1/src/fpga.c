@@ -25,10 +25,16 @@ void fpga_set(uint16_t reg, uint8_t value)
 
 /* One 512-byte sector into dst. The PicoBlaze does the SD protocol; we set
  * the sector, wait while the status window reads $E1 (busy), then copy the
- * data window. No timeout, like stock. */
+ * data window. No timeout, like stock: FW4's PicoBlaze never finishes a read
+ * with no card in the slot (FW5's gives up, so the mount fails with a
+ * message), and abandoning the read would leave it mid-command. After 64K
+ * polls (about 2 s, far past any real read) sd_wait_notice says so on
+ * screen, and the read carries on waiting. */
 void sd_read(uint32_t lba, uint8_t *dst)
 {
     const uint8_t *b = (const uint8_t *)&lba;
+    uint16_t n = 0;
+    uint8_t shown = 0;
 
     fpga_set(FPGA_SD_MAP, 1);
     unlock();
@@ -40,7 +46,12 @@ void sd_read(uint32_t lba, uint8_t *dst)
     lock();
     fpga_set(FPGA_SD_MAP, 3);
     while (WINDOW[0] == 0xE1)
-        ;
+        if (!++n && !shown) {
+            shown = 1;
+            sd_wait_notice(1);
+        }
+    if (shown)
+        sd_wait_notice(0);
     fpga_set(FPGA_SD_MAP, 1);
     memcpy(dst, (const void *)WINDOW, 512);
     fpga_set(FPGA_SD_MAP, 0);
