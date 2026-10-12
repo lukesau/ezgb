@@ -13,8 +13,9 @@
  *      directory (and the cursor stays where it was)
  *
  * A tap launches when A comes up; holding A for HOLD_FRAMES opens the menu
- * as soon as the hold is reached. Pick mode (FL_PICK) and files that are not
- * .gb/.gbc take the stock path straight away. An A that was already down at
+ * as soon as the hold is reached. A on "Manage saves" runs ManageSaves
+ * (save_mgr.c) and redraws the menu when it returns. Pick mode (FL_PICK)
+ * and files that are not .gb/.gbc take the stock path straight away. An A that was already down at
  * the browser's previous poll (held on from the press that opened a folder)
  * is ignored until it is let go: RomMenuPadTrack (00:0453) wraps the loop's
  * ReadJoypad and keeps the previous and current reports in HRAM.
@@ -37,7 +38,7 @@
  *   python3 tools/inject.py src/rom_menu.c $V 4 5a00 RomMenu \
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin FarCallDrawLoadingBox=0483 \
- *       --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
+ *       --pin ManageSaves=6d11 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
  *       --pin hUiMode=fffb --apply
  */
 
@@ -48,6 +49,7 @@ extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
 extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -> 08:737f */
+extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
@@ -115,10 +117,15 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
             options(sel);
         } else if (f & PAD_B) {
             break;
-        } else if ((f & PAD_A) && sel == 0) {
-            goto open;
+        } else if (f & PAD_A) {
+            if (sel == 0) goto open;
+            /* the record page MenuDispatchAB_bankEntry mapped: entry index
+             * (loop sp+$13 word + sp+$15 byte) / 32 + $12 */
+            ManageSaves((u8)((u16)(*(u16 *)(slot + 0x0f) + slot[0x11]) >> 5) + 0x12);
+            box();
+            options(sel);
+            prev = 0xFF;
         }
-        /* A on "Manage saves": not built yet */
     }
     /* the page repaint only covers rows with entries */
     StoreDrawParams(0, 0, 0);

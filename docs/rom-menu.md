@@ -12,9 +12,10 @@ Options
 ```
 
 UP/DOWN moves the `>`, A on Start launches, and B closes the menu and puts the
-browser back as it was, with the cursor on the same entry. Manage saves is a
-placeholder: A on it does nothing yet. It is where save management goes now
-that `SAVER/` is hidden from the browser ([browser-hide-filter.md](browser-hide-filter.md)).
+browser back as it was, with the cursor on the same entry. A on Manage saves
+opens the save manager ([save-manager.md](save-manager.md)), which replaces
+browsing `SAVER/` now that it is hidden ([browser-hide-filter.md](browser-hide-filter.md)).
+The menu is redrawn when it returns.
 
 Folders still open on press. Pick mode ([fastlaunch-set-tab.md](fastlaunch-set-tab.md))
 and files that are not ROMs take the stock path straight away.
@@ -85,7 +86,7 @@ first.
 | `RomMenuPadTrack` `00:0453` | 11 | `$fff5` := `$fff6`; `ReadJoypad`; `$fff6` := the report. A and E unchanged |
 | `RomMenuHoldStub` `00:0597` | 19 | passes `sp+6` (the loop's `sp+4`, the record offset) to `RomMenu`; E = 0: `ret` into the open path, else drop the return and `jp MenuDispatchAB_waitVBlankLoop` |
 | `FarCallDrawLoadingBox` `00:0483` | 8 | far call to `DrawLoadingBox`, for the C |
-| `RomMenu` `04:5a00` | 1122 | [kernel/src/rom_menu.c](../kernel/src/rom_menu.c) |
+| `RomMenu` `04:5a00` | 1227 | [kernel/src/rom_menu.c](../kernel/src/rom_menu.c) |
 
 ```asm
 RomMenuPadTrack::          ; 00:0453
@@ -130,8 +131,9 @@ python3 tools/patch_call.py $V 0 145f 7 00:0597 --apply --regen
 The other builds are ports (`scripts/port-mod.py`). In 1.04e the stub's loop
 target is `$1692` and the tracker's `ReadJoypad` is `$3691`.
 
-`RomMenu` leaves 158 bytes free before the end of the bank-4 run, so Manage
-saves needs a block of its own.
+`RomMenu` leaves 53 bytes free before the end of the bank-4 run; the save
+manager is its own block (`04:6d11`), near-called with the browser's record
+page so it can put `$4000` back.
 
 ## Testing
 

@@ -94,8 +94,19 @@ REGISTRY = {
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70}),
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
-                            "FarCallDrawLoadingBox": 0x0483, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+                            "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+    (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
+                      pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
+                            "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
+                            "SmSaveOp": 0x6562, "hUiMode": 0xfffb}),
+    (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
+                      pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
+    (4, 0x73a0): dict(src="save_name.c", pins={}),   # save/backup name parser, far target of SoMatch 01:7d50
+    (9, 0x7cc0): dict(src="fs_unlink.c",                    # f_unlink against bank 9's FatFs internals, far target of SoUnlink 01:765c
+                      pins={"FindVolume_B9": 0x76f7, "FollowPath_B9": 0x72c5, "DirSdi_B9": 0x54db,
+                            "DirNext_B9": 0x580c, "MoveWindow_B9": 0x437e, "LdClust_B9": 0x5d72,
+                            "RemoveChain_B9": 0x4f94, "SyncFs_B9": 0x4447}),
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "hUiMode": 0xfffb, "hClip12": 0xfff9}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43}),

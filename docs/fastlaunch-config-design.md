@@ -37,6 +37,11 @@ Mode flags are standard FatFs (`FA_READ=$01`, `FA_WRITE=$02`,
 `FRESULT` returns in `E`. The kernel keeps its own FIL at `$ca0f` (FS_TINY
 shared-window build); the shipped scan reuses it.
 
+> **Correction (2026-10-11).** Not FS_TINY: each FIL has its own 512-byte
+> sector buffer at `+$20`, so a FIL is 544 bytes (`$CA0F`-`$CC2E`). Reusing
+> the kernel's FIL is unaffected; a second FIL needs the full 544. Details in
+> [save-manager.md](save-manager.md).
+
 ### The format and the quiet win
 
 A small text file in root whose contents are a path, e.g. `/Pokemon/Blue.gb`.
