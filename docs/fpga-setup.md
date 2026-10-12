@@ -329,6 +329,13 @@ The new stage1 runs from the next power-on.
   power-on stay on slot A
   ([picoblaze.md](../re/stage0/docs/picoblaze.md#at-boot-3f--0)). That covers a
   corrupt slot B, not a slot B that configures and then misbehaves.
+  Confirmed on the FW4 Jr on 2026-10-12. Two writes in a row left a slot B
+  that didn't configure, one of them a build that had installed fine before.
+  Each time the cart came up on stock FW4, the updater was run again from
+  there, and the next write booted. The updater writes its payload from game
+  RAM without checking it, so a write can go bad through the load from the
+  SD card or through power. EZ Flash's own update notes ask for a fast card
+  and fresh batteries.
 - A stage1 that configures but hangs can't run the updater again, because
   the updater is launched from the kernel and stage1 is what loads the
   kernel. Recovery then means an SPI programmer and a known-good flash dump

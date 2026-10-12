@@ -148,8 +148,10 @@ tested (`scripts/test-patch-mismatch.py`, `--boot` for the kernel runs):
   every stock and correctly patched image passes. The FPGA does not
   configure from a bad CRC, and the boot tally then keeps the cart on its
   slot A ([picoblaze.md](../re/stage0/docs/picoblaze.md#at-boot-3f--0)), so
-  the right updater can be run again. Not exercised on a cart: the fallback
-  is known from the decoded PicoBlaze program.
+  the right updater can be run again. The fallback is confirmed on the FW4
+  Jr (2026-10-12, two bad slot B writes each recovered to stock FW4); no FW5
+  cart's slot A has been dumped yet, so on FW5 it is still inferred from the
+  updater writing the same slot.
 - **Kernel patch on another kernel.** A 1.05e patch on 1.04e, or the
   reverse, halts on an illegal opcode at boot: blank screen, no SD or flash
   write. 1.05e-0731 and 1.05e-0918 differ only in bank 1, so either patched

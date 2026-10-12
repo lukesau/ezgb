@@ -169,7 +169,12 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    Tally byte states: `FF` unused, `01` slot A handed over, `00` slot B
    booted. If slot B fails to come up, the next power-on finds a `01`
    instead of `FF`, skips the hand-over and stays on the fallback image, so a
-   bad update can't brick the cart. One byte per power-on: the "52 B at
+   bad update can't brick the cart. Staying, slot A programs that `01` to
+   `00` too (`tally_advance`), so the power-on after that finds a fresh `FF`
+   and tries slot B again: a failed slot B costs one boot on slot A, never
+   more. **Confirmed on hardware 2026-10-12** (FW4 Jr): two updater runs that
+   left a slot B which did not configure each came up on stock FW4 from
+   slot A, the updater ran again from there, and the third write booted. One byte per power-on: the "52 B at
    `$70000`" in [flash-map.md](flash-map.md) are 52 successful
    slot B boots since the sector was last erased.
 2. **License check.** Read the 8 KB block at `$030000` (the flash map's
