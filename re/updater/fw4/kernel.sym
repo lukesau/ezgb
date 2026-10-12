@@ -3,5 +3,5 @@
 00:1271 Fpga7FD2End
 00:1290 FpgaMapWindow_7F36
 00:12b0 FlashStageBlock_via_window
-00:153a FpgaSetPersonality_7FC0_DEAD
+00:153a FpgaSetPersonality_7FC0
 01:4000 Fpga7FD2BeginAndPollWram

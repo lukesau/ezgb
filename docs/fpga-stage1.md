@@ -4,8 +4,14 @@ Stage1 is the Game Boy program the cart shows at power-on: EZ-FLASH,
 LOADING, OSINIT, then the kernel. It lives in FPGA BRAM, not in flash
 ([bitstream.md](../re/stage0/docs/bitstream.md)): 32 KB address space, `$0000-$3FFF`
 from 8 one-bit BRAM planes, `$4000-$47FF` from one x9 BRAM, `$4800-$7FFF`
-reads as zeros. Header title `BOOTLOADER`, cart type `$00` (no MBC). Built with
+reads as zeros. Header title `BOOTLOADER`, cart type `$01` (MBC1). Built with
 GBDK, the same toolchain and crt0 as the kernel.
+
+> **Correction (2026-10-12).** This said cart type `$00` (no MBC). Byte
+> `$0147` is `$01` in both `re/stage1/fw4/kernel.gb` and
+> `re/stage1/fw5-0918/kernel.gb`. Nothing depends on it: our own stage1
+> (`stage1/build.sh`) never sets the byte (it reads `$FF`) and boots on both
+> carts.
 
 The stage1 binary itself, like everything built from the bitstream, stays
 in the ignored `fpga/` directory.

@@ -60,9 +60,22 @@ external config-flash dump.
 
 - **No parallel-NOR (U4 NOR die) programming.** Zero JEDEC command sequences in
   the real code (no `$AA`→`$55`→`$A0` writes to the `$A000` window; searched
-  banks 0–1). The one generic personality setter (`FpgaSetPersonality`,
-  `00:153a`, `$7FC0=arg`) is **dead code**: no `call`, no `jp`, and no far-call
-  trampoline blob targets it anywhere in the ROM.
+  banks 0–1). The personality setter (`FpgaSetPersonality`, `00:153a`,
+  `$7FC0=arg`) brackets the flash loop with `$7FC0=$05` and `$7FC0=$00` (the
+  correction below); `$05` is the config-flash personality, the same one the
+  kernel's orphan config-flash routine selects.
+
+> **Correction (2026-10-12).** This doc and the FW4 updater's `kernel.sym`
+> (`FpgaSetPersonality_7FC0_DEAD`) called `00:153a` dead code. It is called:
+> `re/updater/fw4/disassembly/bank_000.asm` around line 4566 has
+> `ld a,$05; push af; inc sp; call $078d` followed by the inline far-call
+> target `3a 15 ff ff` (`00:153a`), which the disassembler decoded as
+> `ld a,[hl-]; dec d; rst $38; rst $38`; the same call with `$00` follows the
+> `$7FD2` wait. The search missed it because it looked for the far-call blob
+> as code, not as the bytes after `call $078d`. Flagged by someone else's
+> EZ-Flash Junior research notes (shared with us, not in the repo).
+> Our own updaters keep EZ Flash's flash loop unchanged, so nothing built on
+> this doc is affected.
 - **No SD access** (self-contained payload).
 - **No separate stage1 image.** `stage1/FW4/stage1.gb` (daid's dump) does not
   appear in the updater, whether verbatim, bit-reversed, inverted, or

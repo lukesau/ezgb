@@ -31,9 +31,18 @@ LCD-on itself at the end.
    can never be observed as 0; in CGB mode it reads `$FE`. Everything below is
    behind this test, so the same ROM is correct on DMG hardware.
 
-   The saved boot `A` at `$d6c9` is *not* usable for this: on CGB hardware `A`
-   is `$11` even in DMG compatibility mode, which is exactly the case that must
-   be skipped.
+   The saved boot `A` at `$d6c9` is *not* usable for this: stage1 jumps to the
+   kernel with `A=$E4` (the commit write it just made), so `$d6c9` is `$E4` on
+   every console. Even the console's real boot `A`, which stock FW5 stage1
+   passes to the FPGA as `$7FD3`, would be `$11` on CGB in DMG compatibility
+   mode, which is exactly the case that must be skipped.
+
+   > **Correction (2026-10-12).** This said `A` at `$d6c9` is `$11` on CGB
+   > hardware. It is `$E4` on all hardware ([debug-tab.md](debug-tab.md)'s
+   > `BOOT A REGISTER` readings, [fpga-stage1.md](fpga-stage1.md) on kernel
+   > entry). The conclusion stands;
+   > [sgb-background-send.md](sgb-background-send.md)'s `cp $11` plan
+   > inherited the wrong value.
 
 2. **Zeroes VRAM bank 1** (`$8000-$9FFF`). In CGB mode every tilemap byte has a
    companion attribute byte there selecting palette, tile bank and flips, and

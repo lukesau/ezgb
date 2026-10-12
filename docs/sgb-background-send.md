@@ -122,6 +122,13 @@ waits and later sends. It becomes set 1 followed by `jp $0150`. If `$d6c9`
 really is the boot value, `SgbUnlock` could check A the same way on entry,
 and then GBC and GBA wouldn't pay for set 1 either.
 
+> **Correction (2026-10-12).** `$d6c9` is not the boot value: stage1 enters
+> the kernel with `A=$E4` on every console ([cgb-mode.md](cgb-mode.md)), so
+> `cp $11` above never matches and `SgbUnlock` sees `$E4` too. The console's
+> boot `A` survives only in stock FW5 stage1's write to the FPGA's `$7FD3`,
+> which has no known read-back. A GBC/GBA test here has to be a hardware
+> one, like `CgbInit`'s `VBK` test (which only works in CGB mode).
+
 ### VBlank callback (bank 0, `00:0597`, 17 B)
 
 ```asm
@@ -309,8 +316,8 @@ The other two options, in nitro2k01's words:
 
 ## Still to check
 
-- Does stage 1 leave the boot A value alone, so `$d6c9` is really `$11` on
-  GBC/GBA? Check with the debug build.
+- ~~Does stage 1 leave the boot A value alone?~~ No: `$d6c9` is `$E4`
+  everywhere (the correction under Start).
 - Are `$fff7`-`$fff9` free? Is there a spare VBlank callback slot, and does
   `EnterGfxMode1`, which registers one per screen, keep ours?
 - Does our callback run after every VBlank callback that writes VRAM or OAM?
