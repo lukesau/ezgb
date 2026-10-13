@@ -75,7 +75,7 @@ def main():
         name = f"kernel {v} ({KPKG[v]})"
         add(h("sha256", stock), dict(kind="kernel", name=name, patch=pid, out256=h("sha256", out), outName="ezgb.dat"))
         add(h("sha256", out), dict(kind="done", name=f"kernel {v} with the mod"))
-        krows.append(f"<tr><td>{v}</td><td>{KPKG[v]}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
+        krows.append(f"<tr><td>{v}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
 
     for fw, e in sorted(fman.items()):
         if e["stage1"] != fwver:
@@ -85,7 +85,7 @@ def main():
         out = kp.apply_ips(stock, ips)
         if h("md5", stock) != e["stock_md5"] or h("md5", out) != e["patched_md5"]:
             sys.exit(f"error: updater {fw}: patch does not reproduce the manifest md5")
-        label, pkg, out_name = FW[fw]
+        label, _, out_name = FW[fw]
         if fw in a.hold:
             add(h("sha256", stock), dict(kind="reject", why=f"this is the {label}. Its firmware mod is "
                                          "still being tested on a cart and is not offered yet."))
@@ -95,8 +95,7 @@ def main():
         add(h("sha256", stock), dict(kind="firmware", name=f"the {label}", patch=pid, out256=h("sha256", out),
                                      outName=out_name.format(v=fwver)))
         add(h("sha256", out), dict(kind="done", name=f"the {label} with the firmware mod"))
-        frows.append(f"<tr><td>{os.path.basename(kp.UPDATER_STOCK[fw])}</td><td>{pkg}</td>"
-                     f"<td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
+        frows.append(f"<tr><td>{os.path.basename(kp.UPDATER_STOCK[fw])}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
 
     for rel, why in REJECT.items():
         add(h("sha256", open(os.path.join(ROOT, rel), "rb").read()), dict(kind="reject", why=why))

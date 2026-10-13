@@ -57,31 +57,24 @@ table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 td, th { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; }
 th { color: var(--muted); font-weight: 600; }
 ol { padding-left: 22px; margin: 0 0 12px; }
-footer { color: var(--muted); font-size: .9rem; }
 </style>
 </head>
 <body>
 <main>
 <h1>EZ Flash Jr Patcher</h1>
 <p class="sub">Each file is checked against the known stock hashes before anything is patched,
-and the result is checked again before you can save it. Nothing is uploaded: a successful patch only loads a
-1x1 image from lukesau.com named after the patch, to count how many are made.
+and the result is checked again before you can save it.
 Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ezgb</a>.</p>
 
 <section id="kernel">
   <h2>Kernel <span class="tag safe">Safe option</span></h2>
-  <p>The kernel is the <code>ezgb.dat</code> file on your microSD card. The Jr loads it at every power-on, and nothing
-  on the cart is rewritten. Swapping the kernel is as simple as changing a file and is completely reversible.
+  <p>The kernel is the <code>ezgb.dat</code> file on your microSD card.
   Stock files come from EZ Flash: the 1.04e / FW4 package on their <a href="https://www.ezflash.cn/download/">download page</a> (EZ-FLASH Junior),
   or the <a href="https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip">1.05e FW5 2021-9-18 package</a>.</p>
   <label class="pick" id="kpick"><input type="file" id="kfile">Choose or drop the stock <code>ezgb.dat</code> from your firmware package</label>
   <div class="result" id="kres"></div>
-  <p style="margin-top:14px">Then copy the result to the card root as <code>ezgb.dat</code> (keep the stock file to go back).
-  The HELP tab shows a <code>MOD</code> line with the mod's version. Not sure which kernel to use? 1.04e is the build EZ Flash still distributes
-  and runs on FW4 and FW5 carts alike:
-  <a href="https://github.com/lukesau/ezgb/blob/main/docs/kernel-versions.md">kernel comparison</a>.</p>
   <table>
-    <tr><th>Kernel</th><th>Package</th><th>Stock SHA-1</th></tr>
+    <tr><th>Kernel</th><th>Stock SHA-1</th></tr>
     {KROWS}
   </table>
 </section>
@@ -114,14 +107,13 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   </ol>
   <p>Going back: run EZ Flash's official updater for your firmware the same way.</p>
   <table>
-    <tr><th>Updater</th><th>Package</th><th>Stock SHA-1</th></tr>
+    <tr><th>Updater</th><th>Stock SHA-1</th></tr>
     {FROWS}
   </table>
   <p style="margin-top:12px;color:var(--muted);font-size:.9rem">The FW5 patch needs <code>Update_FW5_2021-9-18.gb</code>
   from the <a href="https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip">2021-9-18 package</a>. The 2020-7-31 FW5 updater is not supported.</p>
 </section>
 
-<footer>Hashes are SHA-256 checked in full; SHA-1 is shown because EZ Flash publishes SHA-1 for its packages.</footer>
 </main>
 
 <script>
