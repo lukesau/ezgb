@@ -90,7 +90,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   <summary><h2>Firmware updater <span class="tag risk">Experimental</span></h2></summary>
   <div class="warn">
     <strong>THIS CAN BRICK YOUR CART.</strong>
-    <p>The patched updater rewrites the bootloader (stage1) in the cart's FPGA flash, as an official firmware update does, with the same risk.
+    <p>All firmware updaters for the EZ Flash Jr, stock or modded, carry a small risk of bricking the cart if the update doesn't go smoothly.
     A bitstream that fails its CRC is caught by the cart's own fallback image, but a bootloader that runs and then hangs
     cannot be fixed with another updater: recovery needs hardware, an SPI programmer on the flash chip or JTAG.
     This firmware has run on one FW4 and one FW5 Jr. Only flash it if you accept losing the cart.</p>
