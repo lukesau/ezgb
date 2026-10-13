@@ -38,6 +38,8 @@ KPKG = {"1.04e": "juniorkernel-1.04e-FW4", "1.05e-0731": "juniorkernel-1.05e-FW5
 FW = {"fw4": ("FW4 updater (Update_FW4.gb)", "juniorkernel-1.04e-FW4", "Update_FW4-mod-{v}.gb"),
       "fw5-0918": ("FW5 2021-9-18 updater (Update_FW5_2021-9-18.gb)", "juniorkernel-1.05e-FW5-0918",
                    "Update_FW5-0918-mod-{v}.gb")}
+# patched but left out of the kernel table: the 0731 package is hard to find now
+KUNLISTED = {"1.05e-0731"}
 REJECT = {"juniorkernel-1.05e-FW5-0731/Update_FW5_7-31.gb":
           "this is EZ Flash's FW5 2020-7-31 updater. The firmware mod is built for the 2021-9-18 FW5 updater "
           "(Update_FW5_2021-9-18.gb) and the FW4 updater (Update_FW4.gb) only."}
@@ -75,7 +77,8 @@ def main():
         name = f"kernel {v} ({KPKG[v]})"
         add(h("sha256", stock), dict(kind="kernel", name=name, patch=pid, out256=h("sha256", out), outName="ezgb.dat"))
         add(h("sha256", out), dict(kind="done", name=f"kernel {v} with the mod"))
-        krows.append(f"<tr><td>{v}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
+        if v not in KUNLISTED:
+            krows.append(f"<tr><td>{v}</td><td><span class=\"hash\">{h('sha1', stock)}</span></td></tr>")
 
     for fw, e in sorted(fman.items()):
         if e["stage1"] != fwver:
