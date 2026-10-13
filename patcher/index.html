@@ -31,7 +31,13 @@ h1 { font-size: 1.7rem; margin: 0 0 4px; }
 h2 { font-size: 1.2rem; margin: 0 0 8px; }
 p { margin: 0 0 12px; }
 .sub { color: var(--muted); margin-bottom: 24px; }
-section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 0 0 20px; }
+section, details.fold { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 0 0 20px; }
+details.fold summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; }
+details.fold summary::-webkit-details-marker { display: none; }
+details.fold summary::before { content: "\25B8"; color: var(--muted); }
+details.fold[open] summary::before { content: "\25BE"; }
+details.fold summary h2 { margin: 0; }
+details.fold[open] summary { margin-bottom: 12px; }
 .tag { margin-left: 8px; }
 .tag.safe { color: var(--accent); }
 .tag.risk { color: var(--warn-line); }
@@ -81,8 +87,8 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   </table>
 </section>
 
-<section id="firmware">
-  <h2>Firmware updater <span class="tag risk">Experimental</span></h2>
+<details class="fold" id="firmware">
+  <summary><h2>Firmware updater <span class="tag risk">Experimental</span></h2></summary>
   <div class="warn">
     <strong>THIS CAN BRICK YOUR CART.</strong>
     <p>The patched updater rewrites the bootloader (stage1) in the cart's FPGA flash, as an official firmware update does.
@@ -91,7 +97,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
     This firmware has run on one FW4 and one FW5 Jr. Only flash it if you accept losing the cart.</p>
     <p>Use a fast, good-quality microSD card and fresh batteries (or a plugged-in, charging console), and do not power off
     while the updater writes. EZ Flash's FW5 is itself a release candidate: on slow SD cards it can halt at
-    LOADING or OS INIT, so with a slow card stick to FW4. If you don't need what the firmware adds, use the kernel above and stop there.</p>
+    LOADING or OS INIT. If you don't need what the firmware adds, use the kernel above and stop there.</p>
   </div>
   <p>What it adds: a new boot screen, fast launch straight from the bootloader (the game named by
   <code>FLAUNCH=</code> in <code>/EZGB.CFG</code>, START at power-on cancels), the pending save backed up before a fast launch
@@ -115,7 +121,7 @@ Source and docs: <a href="https://github.com/lukesau/ezgb">github.com/lukesau/ez
   </table>
   <p style="margin-top:12px;color:var(--muted);font-size:.9rem">The FW5 patch needs <code>Update_FW5_2021-9-18.gb</code>
   from the <a href="https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip">2021-9-18 package</a>. The 2020-7-31 FW5 updater is not supported.</p>
-</section>
+</details>
 
 </main>
 
@@ -260,6 +266,7 @@ window.addEventListener("dragover", e => e.preventDefault());
 window.addEventListener("drop", e => e.preventDefault());
 document.getElementById("kfile").onchange = e => e.target.files[0] && handle(e.target.files[0], "kernel", document.getElementById("kres"));
 document.getElementById("ffile").onchange = e => e.target.files[0] && handle(e.target.files[0], "firmware", document.getElementById("fres"));
+if (location.hash === "#firmware") document.getElementById("firmware").open = true;
 document.getElementById("ack").onchange = e => {
   document.getElementById("ffile").disabled = !e.target.checked;
   document.getElementById("fpick").classList.toggle("off", !e.target.checked);
