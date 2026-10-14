@@ -42,10 +42,10 @@ RST_18::
     add b
 
 SgbStub::
-    db $f5, $3e, $01, $ea, $00, $20, $c3, $00
+    db $f5, $3e, $04, $ea, $00, $20, $c3, $09
 
 RST_28::
-    ld a, a
+    ld a, l
     rst RST_38
     rst RST_38
     rst RST_38
@@ -75,11 +75,11 @@ RST_38::
     rst RST_38
 
 VBlankInterrupt::
-    push hl
-    ld hl, wVBlankCallbacks
-    jp RunCallbackList
+    call $04e1
+    jp $02c3
 
 
+    nop
     rst RST_38
 
 LCDCInterrupt::
@@ -311,7 +311,7 @@ KernelEntry_copyOamDmaStub::
     ldh [rOBP0], a
     ld a, $1b
     ldh [rOBP1], a
-    call $0259
+    call $7f00
     nop
     xor a
     ldh [rIF], a
@@ -387,31 +387,12 @@ CgbInit::
     db $29, $02, $f8, $00, $7e, $02, $7e, $02
     db $33, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+SgbVblTail::
+    db $f5, $f0, $f2, $a7, $28, $11, $f3, $fa
+    db $cf, $d6, $f5, $3e, $04, $ea, $00, $20
+    db $cd, $f4, $7d, $f1, $ea, $00, $20, $f1
+    db $d9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -596,13 +577,8 @@ FlPickHook::
     db $cd, $8d, $07, $2b, $48, $01, $00, $c3
     db $70, $15
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+SgbVblList::
+    db $e5, $21, $d3, $d6, $c3, $67, $00
 
 FlSetExitHook::
     db $fa, $fe, $db, $b7, $c2, $8d, $0f, $f8
@@ -710,20 +686,9 @@ VBlankPadLatch::
     db $fd, $b1, $e0, $fd, $f0, $fa, $3c, $e0
     db $fa, $c1, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+SgbPadGate::
+    db $f0, $f4, $a7, $20, $06, $c5, $3e, $20
+    db $c3, $19, $3a, $f0, $fc, $c9
 
 ; [ezgb]
 ; SetGfxMode: wGfxMode=L; jp 4-byte table at $01e2 (mode&3). Wrappers:
@@ -11083,8 +11048,9 @@ FolderIconGlyphs::
 ; jr_000_3a22: after d-pad nibble ($20 select), swap into B; read face buttons ($10); OR; final swap; P1=$30 idle.
 
 ReadJoypadRaw::
-    push bc
-    ld a, $20
+    jp $05f2
+
+
     ldh [rP1], a
     ldh a, [rP1]
     ldh a, [rP1]

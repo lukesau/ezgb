@@ -11,9 +11,12 @@ the kernel. The mod does the same, behind a SET-tab checkbox.
 ## Using it
 
 On a DMG, GBC or GBA: SET tab, last row, `SGB BOOT:`, A to tick it. Move the
-cart to the Super Game Boy and power on. Every boot with it ticked takes about
-7 seconds longer, on every model, so untick it when the cart goes back to a
-handheld.
+cart to the Super Game Boy and power on. Since mod 7.0 a boot with it ticked
+takes about 0.4 s longer, on every model (it was about 7 s): the rest of the
+header goes out in the background while the kernel starts
+([sgb-background-send.md](sgb-background-send.md)). A fast launch in the
+first few seconds still waits for it, so with fast launch set up, untick the
+box when the cart goes back to a handheld.
 
 The setting is not in `EZGB.CFG`: the packets go out at the very start of the
 boot, long before the SD card is up. It lives in battery-backed pSRAM, so a
@@ -24,8 +27,8 @@ dead coin cell turns it off (see below).
 | Where | What |
 |---|---|
 | `$0100` | `nop; jp SgbStub` instead of `jp KernelEntry` |
-| `00:0020` | `SgbStub`, 9 bytes: `push af`, map ROM bank 1, `jp SgbUnlock` |
-| `01:7f00` | `SgbUnlock`, 218 bytes (`scripts/sgb/sgb_boot.asm`) |
+| `00:0020` | `SgbStub`, 9 bytes: `push af`, map ROM bank 4, `jp SgbUnlock` |
+| `04:7d00` | `SgbUnlock` and the background send, 338 bytes (`scripts/sgb/sgb_boot.asm`); the other hooks are in [sgb-background-send.md](sgb-background-send.md#how-it-works) |
 | `$0146` | SGB flag `$00` -> `$03` |
 | `$014B` | old licensee `$00` -> `$33` (the SGB BIOS ignores a cart without both) |
 | `$014D` | header checksum recomputed |
@@ -41,14 +44,16 @@ of the checkbox, and A does nothing there: the box only matters with the
 stock stage1, where the kernel is the first code that can resend the header
 ([fpga-stage1.md](fpga-stage1.md#super-game-boy)). When
 on, it sends the six header packets (commands `$F1`..`$FB`, each the sum of
-its 14 bytes and then 14 bytes of `$0104`-`$014F`, zero past the end) four
-times, with the Enabler's 192, 64 and 48 frame gaps and 4 frames after each
-packet, then restores A and jumps to `$0150`.
+its 14 bytes and then 14 bytes of `$0104`-`$014F`, zero past the end) once,
+with 4 frames after each packet, then restores A and jumps to `$0150`. The
+other three sets, with the Enabler's 192, 64 and 48 frame gaps, go out from
+the VBlank interrupt (mod 7.0; until then all four were sent here, blocking).
 
 Differences from the Enabler: the packets are built from the live header, so
 their checksums can't go stale (the Enabler's sixth packet carried an old
-global checksum); the waits count CPU cycles instead of halting for VBlank, so
-they don't depend on the LCD being on; A is preserved for KernelEntry.
+global checksum); set 1's waits count CPU cycles instead of halting for
+VBlank, so they don't depend on the LCD being on; A is preserved for
+KernelEntry; only set 1 holds up the boot.
 
 The checkbox is `flcfg.c`'s row 6 (`sgb_get` / `sgb_set`), drawn on row 16 of
 the pane; the cursor clamp at `04:5604` allows it. The record's place in
@@ -56,10 +61,11 @@ pSRAM: [psram-page-map.md](psram-page-map.md).
 
 ## Build
 
-`scripts/inject-sgb.py <ver> --apply` assembles the routine and injects it,
-the stub, the `$0100` jump and the header bytes into `re/kernel/<ver>/kernel.gb`.
-`port-mod.py` carries it between builds (`SgbStub` and `SgbUnlock` are data
-blocks; the header is copied as data). `build-kernel.sh` recomputes `$014D`
+`scripts/inject-sgb.py <ver> --apply` assembles the routines with the kernel
+addresses from `<ver>/kernel.sym` and injects them, the stub, the hook sites,
+the `$0100` jump and the header bytes into `re/kernel/<ver>/kernel.gb`. Run it
+on 1.05e-0731; `port-mod.py` carries it to the other builds (`SgbStub` is a
+data block, the rest are relocated; the header is copied as data). `build-kernel.sh` recomputes `$014D`
 when it rebuilds from the disassembly.
 
 The `mod-5.2-sgb` test release always sends: `scripts/make-sgb-dist.py`
@@ -71,7 +77,8 @@ Checked in SameBoy with a logging build of its SGB core: 24 packets with
 valid checksums when on, none when off, on all three kernels. On a GBC (FW4
 Jr, 1.05e-0918) the checkbox persisted and boots took longer when on.
 **Confirmed on a real Super Game Boy (2026-10-12, mod 6.9):** with the box
-ticked the Jr boots on an SGB. The firmware mod's stage1 SGB detection
+ticked the Jr boots on an SGB. The mod 7.0 background send is checked in
+SameBoy only ([status](sgb-background-send.md#status)). The firmware mod's stage1 SGB detection
 ([fpga-stage1.md](fpga-stage1.md#super-game-boy)), which replaces this box
 with AUTO, is still untested on one.
 

@@ -4465,8 +4465,6 @@
 00:03aa .data:1d:8
 00:0020 SgbStub
 00:0020 .data:9:8
-01:7f00 SgbUnlock
-01:7f00 .data:ef:8
 00:0259 CgbInit
 00:0259 .data:6a:8
 05:7700 BrowserHideName
@@ -4513,3 +4511,13 @@
 02:43c0 .data:8:8
 01:7d70 PatchGuard
 01:7d70 .data:156:8
+00:02c3 SgbVblTail
+00:02c3 .data:19:8
+00:04e1 SgbVblList
+00:04e1 .data:7:8
+00:05f2 SgbPadGate
+00:05f2 .data:e:8
+01:7f00 SgbBootHook
+01:7f00 .data:e:8
+04:7d00 SgbLaunchHook
+04:7d00 .data:152:8

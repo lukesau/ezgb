@@ -130,10 +130,11 @@ REGISTRY = {
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),
-    # SGB boot unlock (scripts/inject-sgb.py): its only absolute operands are
-    # $0150, the FPGA registers and its own block, the same in every build
+    # SGB boot unlock and background send (scripts/inject-sgb.py). SgbStub only
+    # names its own bank-4 entry; SgbVblTail, SgbVblList, SgbPadGate,
+    # SgbBootHook (01:7f00) and SgbLaunchHook (04:7d00, the whole bank-4 part)
+    # are relocated like any hand-assembled block
     (0, 0x0020): dict(kind="data"),        # SgbStub
-    (1, 0x7f00): dict(kind="data"),        # SgbUnlock
     # hand-assembled, with data tails
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
@@ -370,6 +371,8 @@ class Port:
                     continue
                 if t < 0x0100 or t >= 0x8000:
                     continue  # small constant / register
+                if op == 0xEA:
+                    continue  # a store below $8000 is a mapper register ($2000, $4000, $7Fxx)
                 if bank == 0 and t >= 0x4000:
                     continue  # bank-0 code naming a ROMX-window register ($4000, $7Fxx)
                 if op in (0x01, 0x11, 0x21, 0x31, 0x08):

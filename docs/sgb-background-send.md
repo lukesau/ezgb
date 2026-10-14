@@ -1,10 +1,12 @@
 # Sending the SGB header in the background
 
-This is a design sketch, not built or tested. It's written against the
-1.05e-0731 disassembly. What ships today is the `SGB BOOT` checkbox (mod 5.3),
-described in [sgb-boot.md](sgb-boot.md). The idea and most of the background
-come from nitro2k01, who wrote the original SGB Enabler, in
-[issue #5](https://github.com/lukesau/ezgb/issues/5).
+Built in mod 7.0, against the 1.05e-0731 disassembly and ported to 0918 and
+1.04e: with `SGB BOOT` ticked ([sgb-boot.md](sgb-boot.md)) only the first of
+the four header sets blocks the boot (about 0.4 s instead of 6.7 s), and the
+other three go out from the VBlank interrupt. The idea and most of the
+background come from nitro2k01, who wrote the original SGB Enabler, in
+[issue #5](https://github.com/lukesau/ezgb/issues/5). Checked in SameBoy
+(below); not yet tried on a real Super Game Boy.
 
 ## SGB packets
 
@@ -63,162 +65,123 @@ So this version counts VBlanks and drops the timer. That also removes the
 `rTAC`/`rIE` changes, the `SetIeReg` risk, and the need to stop a live timer
 before a game starts.
 
-## How it would work
+## How it works
 
 | Step | When | Cost |
 |---|---|---|
-| Set 1 (6 packets, 4 frames apart) | at `$0100`, blocking, same code as now | ~0.4 s on every boot |
-| Sets 2-4 (18 packets) | counted and sent from a VBlank callback | one packet send per due frame |
+| Set 1 (6 packets, 4 frames apart) | at `$0100`, blocking, before `KernelEntry` | 0.42 s on every boot with the box ticked |
+| Sets 2-4 (18 packets) | one packet per due frame, from the VBlank interrupt | ~3,800 M-cycles per packet, 18 times |
 | Joypad freeze | the 4 frames after each packet | input held at its last state |
-| Fast launch before all 18 are out | send the rest blocking, or drop them | see [Launching a game](#launching-a-game) |
+| A game launch before all 18 are out | the rest is sent blocking first | up to ~6.3 s, only on a fast launch in the first seconds |
 
-A packet is 130 bits. By instruction count `SgbSendPacket`'s bit loop takes
-about 2,500 M-cycles, roughly twice as long as VBlank (~1,140 M-cycles). Any
-VBlank callback that writes VRAM or OAM must run before ours, or the packet
-pushes its writes into the visible part of the frame. The mid-screen LYC
-interrupt at line `$48` is about 8,000 M-cycles away, so it isn't affected.
+The box gates all of it: unticked, nothing is sent and nothing waits, as
+before. nitro2k01 thought the setting might not be needed once the send is in
+the background; it stays so that a cart that never goes near an SGB doesn't
+pay set 1's 0.42 s on every boot. Everything is in [scripts/sgb/sgb_boot.asm](../scripts/sgb/sgb_boot.asm);
+[scripts/inject-sgb.py](../scripts/inject-sgb.py) assembles it with the kernel
+addresses from `kernel.sym` and patches the hook sites, and `port-mod.py`
+carries it to 0918 and 1.04e.
 
-## State (HRAM)
+| Where | What |
+|---|---|
+| `00:0020` `SgbStub` | `$0100` lands here: map bank 4, `jp SgbUnlock` |
+| `04:7d00` `SgbLaunchHook` | the bank-4 block: launch hook, `SgbUnlock` (set 1), `SgbCheck`, the packet sender, `SgbFrame`/`SgbStep`, `SgbFinish` |
+| `01:7f00` `SgbBootHook` | `KernelEntry`'s `call CgbInit` (`00:01ba`): start the count to set 2, then `jp CgbInit` |
+| `00:0040` | VBlank vector: `call SgbVblList` / `jp SgbVblTail` |
+| `00:04e1` `SgbVblList` | the stock vector body (`push hl / ld hl, wVBlankCallbacks / jp RunCallbackList`) |
+| `00:02c3` `SgbVblTail` | after the list: if a step is pending, map bank 4, `SgbFrame`, map back |
+| `00:05f2` `SgbPadGate` | `ReadJoypadRaw` (`00:3a16`) starts with `jp SgbPadGate` |
+| `04:448f` | `RomLoad_CopyCmdWindowPoll_B4` starts with `jp SgbLaunchHook` |
 
-`KernelEntry` clears HRAM, so this is set up after it. The mod already uses
-`$ff80` (OAM DMA stub), `$fffa` hFrame, `$fffb` hUiMode and `$fffc`/`$fffd`
-(pad latch). Proposed, to be checked as unused first:
+Bank 4 holds the bulk because it is the only bank with room at the same
+address in all three kernels (`04:7cc2`, 830 B); bank 1's runs at `$7500` and
+`$7391` are not free in 0918.
+
+### Set 1 and the hand-off to `KernelEntry`
+
+`SgbUnlock` runs `SgbCheck` (the pSRAM record and stage1-mark test from mod
+5.9), sends packets 0-5 with a 4-frame busy-wait after each, and leaves `E = 1`
+(or `E = 0` when it sent nothing) before `jp $0150`. `KernelEntry` clears all
+of WRAM and HRAM, but it doesn't touch `E` before its `call CgbInit` at
+`$01ba` (the same code in all three kernels), so `SgbBootHook` reads it there,
+after the clear: `E = 1` sets `hSgbStep = 1` and `hSgbWait = 192`. `CgbInit`
+then runs as before.
+
+### State (HRAM)
 
 | Addr | Name | Meaning |
 |---|---|---|
-| `$fff7` | `hSgbStep` | next packet, 0-17 for sets 2-4; 18 means all sent |
-| `$fff8` | `hSgbWait` | frames until that packet is due |
-| `$fff9` | `hSgbBusy` | frames of joypad freeze left |
+| `$fff2` | `hSgbStep` | 1-18: next packet of sets 2-4; 19: the last packet's freeze; 0: nothing to do |
+| `$fff3` | `hSgbWait` | frames until that step is due |
+| `$fff4` | `hSgbBusy` | frames of joypad freeze left |
 
-## Code
+Nothing in the kernel or the mod reads or writes `$fff2`-`$fff4`. A cleared
+HRAM means idle, so a boot with the box off never enters `SgbFrame`.
 
-Bank 0 has no free run longer than 31 bytes, so most of this goes in bank 1's
-free space at `01:762f` (2,257 B) next to `SgbUnlock`. The two small bank-0
-pieces fit in the holes at `00:0597` (31 B) and `00:05f2` (14 B).
+> **Correction (2026-10-12).** The sketch proposed `$fff7`-`$fff9`. `$fff7`
+> is `hPadHeld` ([joypad-latch.md](joypad-latch.md), mod 6.8) and `$fff9` is
+> `hClip12` ([set-pane12.md](set-pane12.md)); both were taken before this was
+> built.
 
-### Start (bank 1)
+### VBlank: after the callback list, not in it
 
-`KernelEntry` maps bank 1 (`ld [$2000], 1`) before it calls `CgbInit` at
-`$01ba`, so that call can point straight into bank 1:
+A packet takes about 3,800 M-cycles in SameBoy (it ends around LY 24 when it
+starts in VBlank), more than all of VBlank (~1,140). The callback list does
+time-critical work there: `VBlankCallback`'s OAM DMA and `VBlankCb_Bg8000`
+(`VBlankPadLatch`), which sets LCDC bit 4 for the top of the screen and
+samples the pad. Anything in the list after a packet would land in the
+visible frame.
 
-```asm
-; 00:01ba  call CgbInit  ->  call SgbBootHook
-SgbBootHook::               ; 01:7xxx
-    call CgbInit            ; as before
-    ld a, [$d6c9]           ; boot A, saved by KernelEntry
-    cp $11
-    ret z                   ; GBC/GBA: nothing to send
-    xor a
-    ldh [hSgbStep], a
-    ldh [hSgbBusy], a
-    ld a, 192               ; set 1 already waited 4 frames after its last packet
-    ldh [hSgbWait], a
-    ld bc, SgbVBlankCb
-    jp RegisterVBlankCallback
-```
+> **Correction (2026-10-12).** The sketch registered `SgbVBlankCb` with
+> `RegisterVBlankCallback`. `InstallCallbackSlot` appends, and
+> `EnterGfxMode1` registers `VBlankCb_Bg8000` again on every drawn screen
+> (`EnterGfxMode2` removes it), so a callback registered at boot ends up
+> ahead of it, and the LCDC write would come ~25 lines late on every packet
+> frame.
 
-`SgbUnlock` at `$0100` keeps its first `SgbSendHeader` and drops the three
-waits and later sends. It becomes set 1 followed by `jp $0150`. If `$d6c9`
-really is the boot value, `SgbUnlock` could check A the same way on entry,
-and then GBC and GBA wouldn't pay for set 1 either.
-
-> **Correction (2026-10-12).** `$d6c9` is not the boot value: stage1 enters
-> the kernel with `A=$E4` on every console ([cgb-mode.md](cgb-mode.md)), so
-> `cp $11` above never matches and `SgbUnlock` sees `$E4` too. The console's
-> boot `A` survives only in stock FW5 stage1's write to the FPGA's `$7FD3`,
-> which has no known read-back. A GBC/GBA test here has to be a hardware
-> one, like `CgbInit`'s `VBK` test (which only works in CGB mode).
-
-### VBlank callback (bank 0, `00:0597`, 17 B)
+So the vector runs the list as a subroutine and then the tail:
 
 ```asm
-SgbVBlankCb::               ; call into bank 1, then put the caller's bank back
+; 00:0040
+    call SgbVblList         ; push hl / ld hl, wVBlankCallbacks / jp RunCallbackList
+    jp SgbVblTail           ; RunCallbackList's reti comes back here, IME on
+
+SgbVblTail::                ; 00:02c3
+    push af
+    ldh a, [hSgbStep]
+    and a
+    jr z, .done             ; the usual case: 9 cycles a frame
+    di
     ld a, [wRomBank]
     push af
-    ld a, $01
+    ld a, BANK(SgbFrame)
     ld [$2000], a
     call SgbFrame
     pop af
     ld [$2000], a
-    ret
+.done
+    pop af
+    reti
 ```
 
-`RunCallbackList` already saves AF/BC/DE/HL. One race needs ruling out: main
-code writing `$2000` before `wRomBank`, with the interrupt landing in between.
-Check the order in the far-call trampoline.
+`wIntNest` is shared by `DiNest`/`EiNest` and `RunCallbackList`, so no
+callback re-enables interrupts and the VBlank list always ends in `reti`.
+Main code only writes `$2000` between `DiNest` and `EiNest` (the far-call
+trampoline and its return stub), so whenever VBlank is taken, `wRomBank` is
+the mapped bank.
 
-The callback stays registered after the last packet and just returns.
-Removing it from inside the interrupt isn't safe, because `RunCallbackList`
-is walking the list at that moment.
+Main-code VRAM writes don't care that the interrupt now runs long: since the
+[vram-write-race](vram-write-race.md) fixes every one is a STAT check and the
+write under `di`. `FillRect`'s VBlank batch just waits a frame.
 
-### Per frame (bank 1)
+`SgbFrame` counts the freeze down, decrements `hSgbWait`, and at zero calls
+`SgbStep`, which sends packet `(step - 1) mod 6`, sets `hSgbBusy = 4`, and
+sets the next wait: 4 frames inside a set, 4 + 64 after set 2, 4 + 48 after
+set 3. Step 19 waits out the last packet's freeze and goes to 0.
 
-```asm
-SgbFrame::
-    ldh a, [hSgbBusy]       ; count down the joypad freeze
-    and a
-    jr z, .notBusy
-    dec a
-    ldh [hSgbBusy], a
-.notBusy
-    ldh a, [hSgbStep]
-    cp 18
-    ret nc                  ; all sent
-    ldh a, [hSgbWait]
-    dec a
-    ldh [hSgbWait], a
-    ret nz                  ; not due yet
-
-    ldh a, [hSgbStep]       ; packet index within the set = step % 6
-.mod6
-    cp 6
-    jr c, .gotIdx
-    sub 6
-    jr .mod6
-.gotIdx
-    ld c, a
-    add a, a
-    add a, $f1
-    ld b, a                 ; command $F1 + 2*idx
-    ld a, c                 ; de = $0104 + 14*idx
-    ld e, $04
-.mul
-    and a
-    jr z, .gotPtr
-    ld h, a
-    ld a, e
-    add a, 14
-    ld e, a
-    ld a, h
-    dec a
-    jr .mul
-.gotPtr
-    ld d, $01
-    call SgbStreamPacket    ; no wait afterwards
-    ld a, 4
-    ldh [hSgbBusy], a       ; freeze the joypad for 4 frames
-    ldh a, [hSgbStep]
-    inc a
-    ldh [hSgbStep], a
-    ld c, 4                 ; next packet in the same set
-    cp 6
-    jr nz, .notSet3
-    ld c, 64 + 4
-.notSet3
-    cp 12
-    jr nz, .setWait
-    ld c, 48 + 4
-.setWait
-    ld a, c
-    ldh [hSgbWait], a
-    ret
-```
-
-`SgbStreamPacket` is the per-packet part of `SgbSendHeader` without the
-16-byte WRAM buffer, since `$c000` belongs to the kernel after boot. It sums
-the 14 bytes at `de` (counting anything from `$0150` on as zero), then sends
-the reset pulse, `b`, the sum, the 14 bytes and the stop bit, using
-`SgbSendPacket`'s bit loop. It must not fall through into `SgbWaitFrames`.
+The packets are built from the live header and streamed, without the 16-byte
+WRAM buffer the old `SgbSendHeader` used at `$c000`, which belongs to the
+kernel after boot.
 
 ## Joypad
 
@@ -227,28 +190,29 @@ flagged a bug to avoid:
 
 > - A bug to watch out for is that the "pressed" button mask should be cleared on the 3 frames where input is not read. Otherwise a button press on that exact frame may trigger 3 additional button presses.
 
-Both are handled by gating `ReadJoypadRaw` (`00:3a16`), which every pad
-read goes through, and returning the last known state while frozen:
+Every pad read goes through `ReadJoypadRaw` (`00:3a16`), whose first two
+instructions are now `jp SgbPadGate`:
 
 ```asm
-; 00:3a16  push bc / ld a, $20  ->  jp SgbPadGate
 SgbPadGate::                ; 00:05f2
     ldh a, [hSgbBusy]
     and a
     jr nz, .frozen
     push bc
     ld a, $20
-    jp $3a19                ; ldh [rP1], a and the rest of ReadJoypadRaw
+    jp ReadJoypadRaw + 3    ; ldh [rP1], a and the rest
 .frozen
     ldh a, [$fc]            ; last state the latch saw
     ret
 ```
 
-The frozen value is the same as `$fffc`, so `VBlankPadLatch` sees no new
-presses and the latch at `$fffd` doesn't change. A held button doesn't
-repeat, and a press just before the freeze still gets through. A tap that
-starts and ends inside one 4-frame window (67 ms) is lost. There are 18 of
-those windows in the first ~6 seconds after boot and none after that.
+The frozen value is what `$fffc` already holds, so `VBlankPadLatch` sees no
+new presses and the latch at `$fffd` doesn't change: a held button doesn't
+repeat, and nothing is counted twice. The pad is read live in the frame a
+packet goes out (the list runs before the tail), so inside a set it is read
+once every 4 frames. A tap shorter than 4 frames (67 ms) can fall between
+two reads and be lost. That can only happen during the three ~0.4 s bursts
+of sets 2-4, in the first ~7 s after boot.
 
 ## Launching a game
 
@@ -257,46 +221,42 @@ the packets are out, the rest must be sent before the handoff. nitro2k01:
 
 > Because sending the packets is a "no-op" on non SGB hardware, the kernel could start sending them preemptively and unschedule the remaining SGB packets, if any packets remain to be sent. But in principle, this should not be needed. Alternatively, the setting could guarantee that all packets are sent, even if a ROM is loaded before all packets are sent. This should never happen through user interaction on SGB because button input can't happen until the header packets are successfully sent. Where this distinction might matter is for auto load, which might trigger before the packets are fully sent, and without user input.
 
-In this kernel that case is fast launch, which starts a game without any input.
-
-A hook before the launch farcalls (`MenuDispatchAB_launchFarcalls`,
-`00:1569`; check that fast launch's `LastRomRelaunch` path goes through it
-too) would either send the rest blocking or drop it. `SgbWaitFrames` is a busy
-loop, so it works with the LCD off:
+Every launch (browser, START overlay, fast launch) ends in the single far
+call to `RomLoad_CopyCmdWindowPoll_B4` at `00:1623`, which maps the command
+window, builds the ROM and boots it. Its first instructions (`ld a, $01 /
+push af`) are now `jp SgbLaunchHook`, which calls `SgbFinish` and then does
+those two instructions and jumps back:
 
 ```asm
-SgbFinish::                 ; bank 1
-    ldh a, [hSgbStep]
-    cp 18
-    ret nc                  ; nothing left
-    ; SGB BOOT off: drop the rest (ld a, 18 / ldh [hSgbStep], a / ret)
-    di                      ; keep the VBlank callback out of it
+SgbFinish::
+    call DiNest             ; nothing else drives P1 from here on
 .loop
+    ldh a, [hSgbStep]
+    and a
+    jr z, .done
     ldh a, [hSgbWait]
     ld d, a
-    call SgbWaitFrames
-    ld a, 1
-    ldh [hSgbWait], a       ; SgbFrame counts it to 0 and sends
-    call SgbFrame
-    ldh a, [hSgbStep]
-    cp 18
-    jr c, .loop
-    ei                      ; check IME was on here
-    ret
+    call SgbWaitFrames      ; cycle-counted, works with the LCD off
+    call SgbStep
+    jr .loop
+.done
+    ldh [hSgbBusy], a
+    jp EiNest
 ```
 
-That is where the checkbox could still be useful. The background sends could
-always run, and `SGB BOOT` would only decide whether fast launch waits for
-them. On a DMG with fast launch and the box off, the only change from today
-would be set 1's 0.4 s.
+It waits out the same gaps the background would have, so a fast launch with
+the box on reaches the game at about the same time as before (7.4 s from
+power-on in SameBoy). A launch after sets 2-4 are done costs nothing.
 
 ## Costs
 
-| Console | Boot | Input | Fast launch |
+| Console | Boot, box on | Input | Fast launch, box on |
 |---|---|---|---|
-| SGB | 0.4 s, menu usable once the SNES comes up | 18 short freezes | waits up to ~6.3 s (box on) |
-| DMG | 0.4 s | 18 short freezes | no wait (box off) |
-| GBC / GBA | 0.4 s, or 0 if `SgbUnlock` checks A | none | none |
+| SGB | 0.42 s, menu usable once the SNES comes up | taps under 67 ms can be lost during sets 2-4 | waits for what's left, up to ~6.3 s |
+| DMG / GBC / GBA | 0.42 s | same | same |
+
+With the box off nothing changes from mod 6.9: no packets, no freeze, no
+wait.
 
 ## Fixing it from stage 1 or the FPGA instead
 
@@ -314,23 +274,25 @@ The other two options, in nitro2k01's words:
 >
 > However, one more option remains, if we allow modification of the stage 1 bootloader. The bootloader could simply store the initial registers, and restore them before the kernel runs. Or the kernel could consult a well specified location in RAM. If SGB is detected this way, or conversely a another console version is detected confidently this way, the kernel could then make an informed decision to send or not send the packages. Everything else, like the setting etc, then becomes a fallback for when the FPGA didn't have a compatible stage 1.
 
-## Still to check
+## Status
 
-- ~~Does stage 1 leave the boot A value alone?~~ No: `$d6c9` is `$E4`
-  everywhere (the correction under Start).
-- Are `$fff7`-`$fff9` free? Is there a spare VBlank callback slot, and does
-  `EnterGfxMode1`, which registers one per screen, keep ours?
-- Does our callback run after every VBlank callback that writes VRAM or OAM?
-- Do both launch paths go through `00:1569`?
-- The bank-switch race between `SgbVBlankCb` and the far-call trampoline.
-- How short can the gaps be? With set 1 the only blocking one, the 192-frame
-  gap now overlaps kernel start-up instead of delaying it, and nitro2k01
-  thinks shorter is probably fine.
+Checked in SameBoy, all three kernels, with the SGB core's header log
+(`SAMEBOY_SGB_LOG=1`, which now also prints the emulated time and LY):
 
-## Testing
+- Box on, `--model sgb`: 24 packets, all checksums good. Set 1 at
+  0.47-0.82 s (the boot ROM's own packets end at 0.40 s), set 2 at 4.29 s
+  (192 frames of LCD-on time after set 1, so a little more than 192 real
+  frames), set 3 68 frames after set 2, set 4 52 frames after set 3,
+  4 frames between packets. Background packets end at LY 24-25.
+- Box off: only the boot ROM's packets.
+- Fast launch (`FLAUNCH=/Tetris.gb`), box on: all 18 background packets go
+  out blocking (LCD off) with the same gaps before `$7FE0 = $80`.
+- `--model dmg`, 47-entry root, 20 DOWN taps across sets 3-4: 100 ms taps
+  land on the same row with the box on and off (both runs, 0731 and 1.04e);
+  50 ms taps lose 1-3 with the box on, as expected from the freeze.
 
-In SameBoy's SGB logging build (see [sgb-boot.md](sgb-boot.md)), check for 24
-packets with valid checksums, set gaps at least as long as the Enabler's, no
-tearing on the browser while packets go out, and no doubled presses when
-`scripts/showcase/keys.swift` taps buttons during the first 7 seconds. DMG
-boot time should be stock plus 0.4 s. Then on chunkysteveo's SGB.
+Not yet tried on a real Super Game Boy.
+
+The gaps are still the Enabler's. Now that set 2 overlaps kernel start-up
+instead of delaying it, they could probably be shorter; that needs testing
+on an SGB.
