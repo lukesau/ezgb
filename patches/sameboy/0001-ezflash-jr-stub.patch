@@ -1301,7 +1301,7 @@ index 79503de..7c8d5a4 100644
          write_mbc7_ram(gb, addr, value);
          return;
 diff --git a/Core/sgb.c b/Core/sgb.c
-index 61ad2c5..a226ab6 100644
+index 61ad2c5..b37298a 100644
 --- a/Core/sgb.c
 +++ b/Core/sgb.c
 @@ -1,3 +1,5 @@
@@ -1319,7 +1319,7 @@ index 61ad2c5..a226ab6 100644
 +        if (getenv("SAMEBOY_SGB_LOG")) {
 +            uint8_t sum = 0;
 +            for (unsigned i = 2; i < 0x10; i++) sum += gb->sgb->command[i];
-+            fprintf(stderr, "SGB header packet %02x sum %s%s:", gb->sgb->command[0],
++            fprintf(stderr, "SGB header packet t=%.3f ly=%3u %02x sum %s%s:", gb->debugger_ticks / 4194304.0, gb->current_line, gb->sgb->command[0],
 +                    sum == gb->sgb->command[1] ? "ok" : "BAD",
 +                    gb->boot_rom_finished ? "" : " (boot ROM)");
 +            for (unsigned i = 2; i < 0x10; i++) fprintf(stderr, " %02x", gb->sgb->command[i]);
