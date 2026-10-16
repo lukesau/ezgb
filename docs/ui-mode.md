@@ -45,8 +45,9 @@ in the space freed by moving `BrowserScroll`:
 The C shims read the flag directly (`hUiMode` in `kernel/src/vars.h`, an
 `ldh` from `$FFFB`):
 `browser_scroll.c` (rows, now at `00:3ed0`; its second entry
-`browser_scroll_up` is at `00:3fa0`, called by the up hook at `00:02f0`),
-`browser_page_end.c`, `browser_scroll_repaint.c` (rows - 2
+`browser_scroll_up` is at `00:3fa0`, called by the up hook at `00:02f0`;
+the REGISTRY entry's `exports` makes `scripts/rebuild-blocks.py` stop if it
+moves again), `browser_page_end.c`, `browser_scroll_repaint.c` (rows - 2
 in the bottom-up loop) and `browser_icons.c`, whose 8px branch is the
 pre-12px drawing: icon at column 0, name from column 1, 19 wide.
 

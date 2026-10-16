@@ -15,6 +15,11 @@ bytes only in $FF free space) and kernel.sym length update. Run it before
 porting: a C edit that was never injected is otherwise invisible until a
 release is cut from the old bytes.
 
+A REGISTRY entry's exports ({symbol: address}) lists the entry points other
+than the first that hand-assembled code calls by address. When a size change
+moves one, this stops before injecting anything, since the callers would
+otherwise jump into the middle of the new code.
+
 Only the development base (1.05e-0731) is rebuilt here; port-mod.py carries
 the result to the other kernels.
 """
@@ -23,6 +28,7 @@ import contextlib
 import io
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -37,16 +43,23 @@ spec.loader.exec_module(port_mod)
 
 
 def compile_block(src, bank, addr, pins):
+    """The block's bytes, and the address of each global it defines."""
     pin_list = [(s if s.startswith("_") else "_" + s, a) for s, a in pins.items()]
     with tempfile.TemporaryDirectory() as wd, contextlib.redirect_stdout(io.StringIO()):
         ihx, _ = compile_c(os.path.join(port_mod.SRC, src), wd, pins=pin_list, code_origin=addr)
         compiled = parse_ihx(ihx)
+        # "S _name Def<offset>" in the .rel: offsets within _CODE, the only area
+        defs = {}
+        for line in open(os.path.join(wd, "out.rel")):
+            m = re.match(r"S _(\w+) Def([0-9A-F]+)", line)
+            if m:
+                defs[m.group(1)] = addr + int(m.group(2), 16)
     out = bytearray()
     a = addr
     while a in compiled:
         out.append(compiled[a])
         a += 1
-    return bytes(out)
+    return bytes(out), defs
 
 
 def main():
@@ -60,6 +73,7 @@ def main():
     blocks = {(b, a): (n, name) for b, a, n, name in port_mod.read_sym_blocks(sym_path)}
 
     stale = []
+    moved = []
     for (bank, addr), entry in sorted(port_mod.REGISTRY.items()):
         if "src" not in entry:
             continue                                   # hand-assembled / data blocks
@@ -67,7 +81,11 @@ def main():
         if (bank, addr) not in blocks:
             sys.exit(f"error: REGISTRY block {key} ({entry['src']}) has no kernel.sym .data entry")
         length, name = blocks[(bank, addr)]
-        new = compile_block(entry["src"], bank, addr, entry.get("pins", {}))
+        new, defs = compile_block(entry["src"], bank, addr, entry.get("pins", {}))
+        for sym, want in entry.get("exports", {}).items():
+            if defs.get(sym) != want:
+                moved.append(f"{key} {entry['src']}: {sym} is at ${defs.get(sym, 0):04x}, "
+                              f"exports says ${want:04x}")
         o = rom_offset(bank, addr)
         if new == rom[o:o + length]:
             print(f"  ok     {key} {name:<26} {entry['src']} ({length} bytes)")
@@ -75,6 +93,12 @@ def main():
         print(f"  STALE  {key} {name:<26} {entry['src']} ({length} -> {len(new)} bytes)")
         stale.append((bank, addr, name, entry))
 
+    if moved:
+        print("error: a second entry point moved; hand-assembled code calls it at a fixed address.")
+        print("Re-point those callers (see the REGISTRY entry's comment), then update its exports:")
+        for m in moved:
+            print(f"  {m}")
+        sys.exit(1)
     if not stale:
         print("all C blocks match their sources")
         return

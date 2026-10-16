@@ -58,7 +58,8 @@ SRC = os.path.join(ROOT, "kernel", "src")
 FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
          "FarCall_07_7739": 0x1963, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}
 REGISTRY = {
-    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43}),   # moved from 00:01e3 for the UI mode flag
+    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43},   # moved from 00:01e3 for the UI mode flag
+                      exports={"browser_scroll_up": 0x3fa0}),   # called by BrowserScrollUpHook (00:02f3)
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB palettes + attributes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",

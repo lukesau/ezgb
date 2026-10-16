@@ -60,8 +60,12 @@ f8 12 e5 cd 97 02 e8 02 c3 ab 16      (11 bytes)
 
 Both C entry points come from linking `browser_scroll.c` at `_CODE = 0x01e3`
 and reading the sdld map, not from counting bytes by hand. The file compiles
-to one contiguous 248-byte block, so `browser_scroll_up`'s address is whatever
-the linker placed it at and must be re-checked if that file changes:
+to one contiguous block, so `browser_scroll_up`'s address is whatever
+the linker placed it at and moves whenever `browser_scroll_down` changes size
+(the block is now at `00:3ed0`, `browser_scroll_up` at `00:3fa0`). The
+REGISTRY entry in `scripts/port-mod.py` lists it under `exports`, and
+`scripts/rebuild-blocks.py` stops when it no longer lands there. To find the
+new address by hand:
 
 ```sh
 sdcc -c -msm83 --sdcccall 0 --no-std-crt0 kernel/src/browser_scroll.c -o bs.rel
