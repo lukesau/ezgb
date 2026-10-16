@@ -39,7 +39,7 @@
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin FarCallDrawLoadingBox=0483 \
  *       --pin ManageSaves=6d11 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
- *       --pin hUiMode=fffb --apply
+ *       --apply
  */
 
 #include "types.h"

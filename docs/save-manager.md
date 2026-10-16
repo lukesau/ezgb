@@ -165,7 +165,7 @@ python3 tools/inject.py src/save_name.c $V 4 73a0 SaveNameMatch --apply
 python3 tools/inject.py src/save_mgr.c $V 4 6d11 ManageSaves \
     --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
     --pin LastRomTickStub=0370 --pin DrawString=08b7 --pin DrawRect=27ba \
-    --pin StoreDrawParams=2791 --pin SmSaveOp=6562 --pin hUiMode=fffb --apply
+    --pin StoreDrawParams=2791 --pin SmSaveOp=6562 --apply
 ```
 
 ## Testing

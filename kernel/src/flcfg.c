@@ -99,7 +99,7 @@ u8 flcfg(u8 *frame, u8 op) {
             /* the stock entry code has just drawn TIME's SET button
              * highlighted, for the cursor on row 0: draw it plain */
             StoreDrawParams(3, 0, 0);
-            if (UI_MODE) DrawRect(0x7b, 0x0f, 0x9b, 0x1c, 1); else DrawRect(0x7b, 0x0d, 0x9b, 0x19, 1);
+            if (hUiMode) DrawRect(0x7b, 0x0f, 0x9b, 0x1c, 1); else DrawRect(0x7b, 0x0d, 0x9b, 0x19, 1);
             SetText(set_str, 3, 16, 2);
         }
         MQ_POS = 0;
@@ -143,7 +143,7 @@ u8 flcfg(u8 *frame, u8 op) {
             /* The whole pane (and the tab strip) is laid out per mode:
              * redraw the strip, which also clears the pane, and return 2 so
              * FlSetADispatch re-enters the SET screen from the top. */
-            UI_MODE = UI_MODE ? 0 : 1;
+            hUiMode = hUiMode ? 0 : 1;
             cfg_save();
             FarCallMenuTabs(1);
             wait_a_release();
@@ -281,7 +281,7 @@ static void draw_name(void) {
     for (len = 0; src[len]; len++) {}
     /* 12px: the field is 80 px, which ten glyphs can overrun; scroll from
      * ten characters up rather than clip the last one */
-    if (len <= NAME_W && !(UI_MODE && len == NAME_W)) {
+    if (len <= NAME_W && !(hUiMode && len == NAME_W)) {
         MQ_POS = 0;
         for (i = 0; i < NAME_W; i++) FL_DISP[i] = i < len ? src[i] : 0;
     } else {
@@ -335,10 +335,10 @@ static void draw_rows(u8 cur) {
 
     if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     /* 12px: the box is the text row plus a pixel above and below */
-    if (UI_MODE) DrawRect(0x53, 0x5f, 0x9b, 0x6c, 1); else DrawRect(0x53, 0x5d, 0x9b, 0x69, 1);
+    if (hUiMode) DrawRect(0x53, 0x5f, 0x9b, 0x6c, 1); else DrawRect(0x53, 0x5d, 0x9b, 0x69, 1);
     SetText(pick_str, 8, 11, 12);
     if (cur == ROW_UI) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-    if (UI_MODE) DrawRect(0x73, 0x6f, 0x9b, 0x7c, 1); else DrawRect(0x73, 0x6d, 0x9b, 0x79, 1);
-    SetText(UI_MODE ? ui12_str : ui8_str, 4, 15, 14);
+    if (hUiMode) DrawRect(0x73, 0x6f, 0x9b, 0x7c, 1); else DrawRect(0x73, 0x6d, 0x9b, 0x79, 1);
+    SetText(hUiMode ? ui12_str : ui8_str, 4, 15, 14);
     StoreDrawParams(3, 0, 0);
 }

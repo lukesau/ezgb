@@ -488,7 +488,7 @@ static void put_time(u8 *t, const u8 *r) {
 /* One piece of prompt text: n characters at (col, row) of the 8x8 grid, or
  * the 12px row at y12 from x12 (1 = the text margin, x 12; else a pixel x). */
 static void prow(const u8 *s, u8 n, u8 col, u8 row, u8 x12, u8 y12) {
-    if (UI_MODE) DrawString12(0, 0, 0, s, n, x12, y12);
+    if (hUiMode) DrawString12(0, 0, 0, s, n, x12, y12);
     else DrawString(s, n, col, row);
 }
 
@@ -509,7 +509,7 @@ static u8 restore_prompt(u8 why) {
 
     title = why == 'Z' ? t_z : why == 'I' ? t_i : why == 'V' ? t_v : t_e;
     for (k = 0; title[k]; k++) {}
-    m = UI_MODE;
+    m = hUiMode;
     l[8] = 0;
 
     DrawString(pad, 1, 5, 8);
@@ -688,7 +688,7 @@ static void parse_record(u16 br, u8 legacy) {
                 parse_lastrom(CFGBUF + vs, e - vs);
             } else if (!seen_ui && key_is(CFGBUF + s, klen, (const u8 *)"ui", 2)) {
                 seen_ui = 1;
-                UI_MODE = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
+                hUiMode = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
             } else if (!seen_rs && key_is(CFGBUF + s, klen, (const u8 *)"rtcsd", 5)) {
                 seen_rs = 1;
                 RTC_OFF = (e > vs && CFGBUF[vs] == '0') ? 1 : 0;
@@ -826,8 +826,8 @@ static u8 cfg_save(void) {
         w = crlf(w);
     }
     w = put(w, k_ui, 3);
-    if (UI_MODE) *w++ = '1';
-    *w++ = UI_MODE ? '2' : '8';
+    if (hUiMode) *w++ = '1';
+    *w++ = hUiMode ? '2' : '8';
     w = crlf(w);
     if (RTC_OFF) {
         static const u8 k_rs[7] = {'R','T','C','S','D','=','0'};

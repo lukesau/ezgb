@@ -33,7 +33,7 @@
  *
  *   python3 tools/inject.py src/bkprompt.c $V 4 6000 BkPrompt \
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 --pin DrawString=08b7 \
- *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin hUiMode=fffb --replace --apply
+ *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --replace --apply
  */
 
 #include "types.h"

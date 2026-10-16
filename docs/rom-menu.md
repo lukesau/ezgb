@@ -120,7 +120,7 @@ python3 tools/inject.py src/rom_menu.c $V 4 5a00 RomMenu \
     --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
     --pin LastRomTickStub=0370 --pin FarCallDrawLoadingBox=0483 \
     --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
-    --pin hUiMode=fffb --apply
+    --apply
 python3 tools/inject_bytes.py $V 0 0483 FarCallDrawLoadingBox cd8d077f730800c9 --apply
 python3 tools/inject_bytes.py $V 0 0453 RomMenuPadTrack f0f6e0f5cd4a3a7be0f6c9 --apply
 python3 tools/inject_bytes.py $V 0 0597 RomMenuHoldStub f806e5cd8d07005a0400e8027bb7c8e1c3ab16 --apply

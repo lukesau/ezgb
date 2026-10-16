@@ -58,8 +58,8 @@ SRC = os.path.join(ROOT, "kernel", "src")
 FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
          "FarCall_07_7739": 0x1963, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}
 REGISTRY = {
-    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43, "hUiMode": 0xfffb}),   # moved from 00:01e3 for the UI mode flag
-    (0, 0x02fb): dict(src="browser_page_end.c", pins={"hUiMode": 0xfffb}),
+    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43}),   # moved from 00:01e3 for the UI mode flag
+    (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB palettes + attributes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
@@ -69,7 +69,7 @@ REGISTRY = {
                       pins={"FarCallScan": 0x0400, "fastlaunch_do_launch": 0x0420,
                             "BrowserSortAllStub": 0x03d4, "ReadJoypad": 0x3a4a}),
     (0, 0x3d8c): dict(src="browser_scroll_repaint.c",
-                      pins={"browser_scroll_down": 0x3ed0, "FarCallDrawDetailBottom": 0x03dc, "hUiMode": 0xfffb,
+                      pins={"browser_scroll_down": 0x3ed0, "FarCallDrawDetailBottom": 0x03dc,
                             "DrawString": 0x08b7, "StoreDrawParams": 0x2791, "DrawNameWithIcon": 0x3ec8}),
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
@@ -77,17 +77,17 @@ REGISTRY = {
     (2, 0x7500): dict(src="draw12.c",                       # 12px browser renderer (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
                             "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
-                            "DiNest": 0x06fd, "EiNest": 0x0706, "hClip12": 0xfff9}),
-    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978, "hClip12": 0xfff9}),   # proportional layout + kerning; far target of MarqueeWidth12
-    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "hUiMode": 0xfffb}),   # far target of the 00:3ec8 stub
+                            "DiNest": 0x06fd, "EiNest": 0x0706}),
+    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
+    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7}),   # far target of the 00:3ec8 stub
     (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
     (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
                       pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+                            "StoreDrawParams": 0x2791}),
     (2, 0x7260): dict(src="lastrom_name.c",                 # START overlay name line + marquee, far target of the 00:0368 stub
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+                            "StoreDrawParams": 0x2791}),
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500,
                                               "FarCallPatchGuard": 0x43c0}),
     (4, 0x6600): dict(src="flcfg.c",
@@ -96,11 +96,11 @@ REGISTRY = {
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+                            "StoreDrawParams": 0x2791}),
     (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "SmSaveOp": 0x6562, "hUiMode": 0xfffb}),
+                            "SmSaveOp": 0x6562}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
     (4, 0x73a0): dict(src="save_name.c", pins={}),
@@ -112,21 +112,20 @@ REGISTRY = {
                             "DirNext_B9": 0x580c, "MoveWindow_B9": 0x437e, "LdClust_B9": 0x5d72,
                             "RemoveChain_B9": 0x4f94, "SyncFs_B9": 0x4447}),
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
-                      pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "hUiMode": 0xfffb, "hClip12": 0xfff9}),
+                      pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43}),
-    (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791,
-                                                   "hUiMode": 0xfffb}),
+    (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
     (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "Delay": 0x3a93, "hUiMode": 0xfffb}),
+                            "StoreDrawParams": 0x2791, "Delay": 0x3a93}),
     (8, 0x7e80): dict(src="msgbox12.c",                     # 12px Reading / Loading / Error boxes (docs/tab-strip12.md)
-                      pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "hClip12": 0xfff9,
+                      pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
                             "ReadingStr": 0x7374, "LoadingStr": 0x73af, "ErrorFileStr": 0x73ea}),
     (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
-                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "hUiMode": 0xfffb}),
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),

@@ -30,7 +30,7 @@
  *
  *   python3 tools/inject.py src/settext.c $V 4 6400 SetText \
  *       --pin FarCallDrawString12=05c0 --pin DrawString=08b7 \
- *       --pin hUiMode=fffb --pin hClip12=fff9 --replace --apply
+ *       --replace --apply
  */
 
 #include "types.h"

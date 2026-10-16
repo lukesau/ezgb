@@ -42,10 +42,11 @@ in the space freed by moving `BrowserScroll`:
 | `MarqueeDraw` | `00:0219` | `jp DrawString` or `jp FarCallDrawString12`; the marquee's draw call at `00:0dd8` calls it |
 | `MarqueeShift` | `00:0222` | pushes the tick shift (1 or 2) in place of `ld a, n; push af` at `00:0cb9`. It fetches its return address through DE, not HL: the stock code right after the site reads its next argument through HL from the instruction before, and a first version that popped into HL fed the shift routine ROM bytes instead of the tick, so every marquee started scrolled by the field width |
 
-The C shims read the flag directly (`--pin hUiMode=fffb`):
+The C shims read the flag directly (`hUiMode` in `kernel/src/vars.h`, an
+`ldh` from `$FFFB`):
 `browser_scroll.c` (rows, now at `00:3ed0`; its second entry
-`browser_scroll_up` moved to `00:3fbb` and the up hook at `00:02f0` was
-re-pointed), `browser_page_end.c`, `browser_scroll_repaint.c` (rows - 2
+`browser_scroll_up` is at `00:3fa0`, called by the up hook at `00:02f0`),
+`browser_page_end.c`, `browser_scroll_repaint.c` (rows - 2
 in the bottom-up loop) and `browser_icons.c`, whose 8px branch is the
 pre-12px drawing: icon at column 0, name from column 1, 19 wide.
 

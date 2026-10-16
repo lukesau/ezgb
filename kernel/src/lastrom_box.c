@@ -27,7 +27,7 @@
  *
  *   python3 tools/inject.py src/lastrom_box.c $V 2 4800 LastRomBox \
  *       --pin DrawString12=7500 --pin DrawString=08b7 --pin DrawRect=27ba \
- *       --pin StoreDrawParams=2791 --pin hUiMode=fffb --replace --apply
+ *       --pin StoreDrawParams=2791 --replace --apply
  */
 
 #include "types.h"

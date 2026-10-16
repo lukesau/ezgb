@@ -30,7 +30,7 @@
  *
  *   python3 tools/inject.py src/lastrom_name.c $V 2 7260 LastRomName \
  *       --pin DrawString12=7500 --pin Fit12=7100 --pin DrawString=08b7 \
- *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin hUiMode=fffb --replace --apply
+ *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --replace --apply
  */
 
 #include "types.h"
@@ -61,7 +61,8 @@ void LastRomName(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s
         MQ_POS = 0;
         MQ_TICK = 0;
         MQ_FR = HFRAME;
-        if (hUiMode ? fit(s) >= len : len <= NAME_W) len = 0;
+        if (hUiMode) { if (fit(s) >= len) len = 0; }
+        else if (len <= NAME_W) len = 0;
         LR_LEN = len;
         draw();
         return;

@@ -19,7 +19,7 @@
  * upcoming 8px/12px mode switch.
  *
  *   python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
- *       --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
+ *       --pin DrawString12=7500 --pin DrawString=08b7 --replace --apply
  */
 
 #include "types.h"

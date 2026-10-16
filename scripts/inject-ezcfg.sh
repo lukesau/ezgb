@@ -144,7 +144,7 @@ python3 tools/patch_call.py   "$V" 4 5162 3 04:5f20 --apply
 # 4. Bank 5: hide filter and record cap (08:7c00 until the cap outgrew that slot).
 python3 tools/inject.py src/browser_hide.c "$V" 5 7700 BrowserHideName --pin DrawString=08b7 \
     --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin Delay=3a93 \
-    --pin hUiMode=fffb --apply
+    --apply
 python3 tools/inject_bytes.py "$V" 0 04ae DirListHideNameStub 200301e4c9c5c5cd8d0700770500e802c17bb7c2560ac3a30a --apply
 
 # 5. Bank 0: boot restore hook + BATTERY DRY flag hook.
@@ -241,7 +241,7 @@ for a in spin: put(a, "cdb708", "cd9003")                                       
 open(p,'wb').write(rom)
 PY
 python3 tools/inject.py src/bkprompt.c "$V" 4 6000 BkPrompt --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
-  --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin hUiMode=fffb --apply
+  --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 --apply
 python3 tools/inject_bytes.py "$V" 0 0390 BkSpinStub   3e03f533cd8d070060040033c9 --apply
 python3 tools/inject_bytes.py "$V" 0 039d BkSavingStub 3e02f533cd8d070060040033c9 --apply
 # Save-stamp check (docs/modal-prompts.md "Garbage stamp"): BackupBranchEntry's
@@ -275,7 +275,7 @@ for a in (0x4761,0x4790,0x47ae,0x4951,0x4965,0x4b29,0x4bb6,0x4bc7,0x4c55,0x4ce3,
     rom[B+a:B+a+3]=b"\xcd\x00\x64"
 open(p,'wb').write(rom)
 PY
-python3 tools/inject.py src/settext.c "$V" 4 6400 SetText --pin FarCallDrawString12=05c0 --pin DrawString=08b7 --pin hUiMode=fffb --pin hClip12=fff9 --apply
+python3 tools/inject.py src/settext.c "$V" 4 6400 SetText --pin FarCallDrawString12=05c0 --pin DrawString=08b7 --apply
 python3 tools/inject_bytes.py "$V" 4 5f70 FarCallMenuTabs f8027ef533cd8d076971080033c9 --apply
 # 12px Reading / Loading / Error file boxes (docs/tab-strip12.md "Status
 # boxes"): each stock drawer starts with `jp MsgHook<n>`; 12px calls MsgBox12.
@@ -290,7 +290,7 @@ for a,t in ((0x7344,"c3107e"),(0x737f,"c3247e"),(0x73ba,"c3387e")):
 open(p,'wb').write(rom)
 PY
 python3 tools/inject.py src/msgbox12.c "$V" 8 7e80 MsgBox12 --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
-  --pin hClip12=fff9 --pin ReadingStr=7374 --pin LoadingStr=73af --pin ErrorFileStr=73ea --apply
+  --pin ReadingStr=7374 --pin LoadingStr=73af --pin ErrorFileStr=73ea --apply
 python3 tools/inject_bytes.py "$V" 8 7e10 MsgHookReading f0fbb72006210300c347733e00f533cd807e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e24 MsgHookLoading f0fbb72006210300c382733e01f533cd807e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e38 MsgHookError   f0fbb72006210300c3bd733e02f533cd807e33c9 --apply
@@ -309,7 +309,7 @@ python3 tools/inject.py src/help12.c "$V" 8 7d00 Help12 --pin FarCallDrawString1
   --pin HelpUrlStr=715a --pin HelpKStr=7af4 --pin HelpModStr=7aff --pin HelpGitStr=7b09 --apply
 python3 tools/inject_bytes.py "$V" 8 7b40 HelpHook f0fbb72006210000c3e470f80ce5cd007de1c34171 --apply
 python3 tools/patch_bytes.py "$V" 8 70e1 210000 c3407b --apply >/dev/null
-OVL="--pin DrawString12=7500 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin hUiMode=fffb"
+OVL="--pin DrawString12=7500 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791"
 python3 tools/inject.py src/lastrom_box.c  "$V" 2 4800 LastRomBox  $OVL --apply
 python3 tools/inject.py src/lastrom_name.c "$V" 2 7260 LastRomName $OVL --pin Fit12=7100 --apply
 python3 tools/inject_bytes.py "$V" 0 0368 LastRomNameStub cd8d0760720200c9 --apply

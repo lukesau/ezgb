@@ -45,7 +45,7 @@
  *
  *   python3 tools/inject.py src/browser_hide.c $V 5 7700 BrowserHideName \
  *       --pin DrawString=08b7 --pin FarCallDrawString12=05c0 --pin DrawRect=27ba \
- *       --pin StoreDrawParams=2791 --pin Delay=3a93 --pin hUiMode=fffb --apply
+ *       --pin StoreDrawParams=2791 --pin Delay=3a93 --apply
  */
 
 #include "types.h"

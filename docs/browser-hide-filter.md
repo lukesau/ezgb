@@ -95,7 +95,7 @@ cd kernel
 # (since mod 3.0 the first two are done by scripts/inject-ezcfg.sh)
 python3 tools/inject.py src/browser_hide.c 1.05e-0731 5 7700 BrowserHideName \
     --pin DrawString=08b7 --pin FarCallDrawString12=05c0 --pin DrawRect=27ba \
-    --pin StoreDrawParams=2791 --pin Delay=3a93 --pin hUiMode=fffb --apply
+    --pin StoreDrawParams=2791 --pin Delay=3a93 --apply
 python3 tools/inject_bytes.py 1.05e-0731 0 04ae DirListHideNameStub \
     200301e4c9c5c5cd8d0700770500e802c17bb7c2560ac3a30a --apply
 python3 tools/patch_call.py 1.05e-0731 0 0a9d 3 00:04ae --jp --apply --regen

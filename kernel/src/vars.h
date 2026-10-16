@@ -10,10 +10,9 @@
 /* Set by browser_hide.c when the listing hits its cap, cleared by browser_sort.c. */
 #define LIST_CUT  (*(volatile u8 *)0xDBFA)
 
-/* HRAM. The macros compile to ldh. hUiMode and hClip12 are linker symbols
- * each block pins to $fffb / $fff9, so they compile to a 3-byte ld. */
+/* HRAM, mod-owned and at the same address in every kernel. Constant
+ * addresses in $FF00-$FFFF compile to ldh. */
 #define PAD_HELD  (*(volatile u8 *)0xFFF7)  /* buttons ReadJoypadLatched ignores until released (docs/joypad-latch.md) */
+#define hClip12   (*(volatile u8 *)0xFFF9)  /* right edge of the next 12px draw or layout, 0 = x 160 */
 #define HFRAME    (*(volatile u8 *)0xFFFA)  /* +1 per VBlank (VBlankPadLatch, 00:05cf) */
-#define UI_MODE   (*(volatile u8 *)0xFFFB)  /* same byte as hUiMode */
-extern volatile u8 hUiMode;                 /* $fffb: 0 = 8px (16 rows), 1 = 12px (10 rows), docs/ui-mode.md; cleared at boot */
-extern volatile u8 hClip12;                 /* $fff9: right edge of the next 12px draw or layout, 0 = x 160 */
+#define hUiMode   (*(volatile u8 *)0xFFFB)  /* 0 = 8px (16 rows), 1 = 12px (10 rows), docs/ui-mode.md; cleared at boot */

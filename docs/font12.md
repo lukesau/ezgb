@@ -262,13 +262,13 @@ Rebuild from `kernel/`:
 
 ```sh
 V=1.05e-0731
-python3 tools/inject.py src/layout12.c $V 2 7100 Fit12 --pin Font12Metrics=6978 --pin hClip12=fff9 --replace --apply
+python3 tools/inject.py src/layout12.c $V 2 7100 Fit12 --pin Font12Metrics=6978 --replace --apply
 python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \
     --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \
     --pin GfxRowTable=2fbb --pin Font12=6000 --pin Font12Metrics=6978 --pin Fit12=7100 \
-    --pin DiNest=06fd --pin EiNest=0706 --pin hClip12=fff9 --replace --apply
+    --pin DiNest=06fd --pin EiNest=0706 --replace --apply
 python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
-    --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
+    --pin DrawString12=7500 --pin DrawString=08b7 --replace --apply
 python3 tools/inject_bytes.py $V 0 3ec8 DrawNameWithIcon cd8d07807e0200c9 --apply   # once
 python3 tools/inject_bytes.py $V 0 0229 MarqueeWidth12 \
     f80a2a666ffaa0c25ffaa1c2571911a4c4d53e01f533aff533e5cd8d0700710200e8067bf810be3eff3001aff81177c9 --apply   # once

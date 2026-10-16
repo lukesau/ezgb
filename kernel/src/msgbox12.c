@@ -16,7 +16,7 @@
  *
  *   python3 tools/inject.py src/msgbox12.c $V 8 7e80 MsgBox12 \
  *       --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
- *       --pin hClip12=fff9 --pin ReadingStr=7374 --pin LoadingStr=73af --pin ErrorFileStr=73ea \
+ *       --pin ReadingStr=7374 --pin LoadingStr=73af --pin ErrorFileStr=73ea \
  *       --replace --apply
  */
 
