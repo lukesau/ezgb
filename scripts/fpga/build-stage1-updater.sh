@@ -8,6 +8,7 @@
 # s3patch/s3decode (fpga-setup.md), plus the stock slot B images
 # ~/fpga/cart/fw4-updater.bin and ~/fpga/cart/fw5/0918.bin. Local inputs: the
 # stock bank 2 BRAMs from fpga/fw4-decode/bram and fpga/fw5-decode/bram-0918.
+# Stops first if the host is busy (host-check.sh).
 set -e
 fw=$1; label=$2; out=$3
 [ -n "$fw" ] && [ -n "$label" ] && [ -n "$out" ] || { sed -n 5p "$0"; exit 2; }
@@ -21,6 +22,7 @@ fw5-0918) layout="--layout fw5-0918"; bank2=D0X3Y5; bank2_in=fw5-decode/bram-091
 *)        echo "unknown firmware: $fw" >&2; exit 2 ;;
 esac
 
+"$repo/scripts/fpga/host-check.sh" "$host"
 "$repo/stage1/build.sh" | grep -v "Overwrote"
 w="$repo/fpga/stage1/$fw"
 rm -rf "$w"; mkdir -p "$w"

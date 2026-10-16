@@ -181,7 +181,11 @@ BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw5-0918 "Update: F
 ```
 
 It stops unless the patched image decodes back to the same stage1 and the
-same bank 2 program. The steps by hand:
+same bank 2 program. Before anything else it runs
+`scripts/fpga/host-check.sh <build host>`, which prints the host's load and
+other users' jobs and stops only if the CPU is maxed out (fewer than
+`MIN_IDLE_CORES`, default 2, idle); GPU jobs don't block.
+`HOST_CHECK_FORCE=1` runs anyway. The steps by hand:
 
 **1. Extract slot B** from the stock updater:
 
