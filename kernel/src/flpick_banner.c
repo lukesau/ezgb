@@ -10,11 +10,10 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
-extern volatile u8 hUiMode;                                   /* $fffb: 0 = 8px, 1 = 12px */
 
 
-#define FL_PICK (*(volatile u8 *)0xDBFE)
 
 void flpick_banner(void) {
     static const u8 banner[16] =

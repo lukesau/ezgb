@@ -22,8 +22,8 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
-extern volatile u8 hClip12;                                         /* $fff9: DrawString12's right edge */
 extern const u8 ReadingStr[];      /* 08:7374 "Reading..." */
 extern const u8 LoadingStr[];      /* 08:73af "Loading..." */
 extern const u8 ErrorFileStr[];    /* 08:73ea "Error file" */

@@ -39,6 +39,7 @@
  */
 
 #include "types.h"
+#include "vars.h"
 
 struct BrowserScrollState {
     u8 dirty;
@@ -51,7 +52,6 @@ extern void FarCallDrawDetailBottom(u16 base);                  /* 00:03dc */
 extern void DrawString(volatile const u8 *s, u8 len, u8 col, u8 row); /* 00:08b7 */
 extern void StoreDrawParams(u8 idx, u16 val);                   /* 00:2791 */
 extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);   /* 00:3ec8 */
-extern volatile u8 hUiMode;                                     /* $fffb: 0 = 8px (16 rows), 1 = 12px (10 rows) */
 
 #define RAM_BANK (*(volatile u8 *)0x4000)
 #define WIN ((volatile u8 *)0xa000)

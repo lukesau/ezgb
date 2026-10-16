@@ -35,14 +35,12 @@
 
 #include "types.h"
 #include "draw.h"
-
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
+#include "vars.h"
 
 #include "marquee.h"
 
 #define LR_NAME  (*(const u8 * volatile *)0xDB3C)  /* the name being shown */
 #define LR_LEN   (*(volatile u8 *)0xDB3E)   /* its length when it scrolls, else 0 */
-#define LR_GEO   (*(volatile u8 *)0xDB3F)   /* whose band: 0 START overlay (lastrom_box.c), 1 BACKUPSAVE prompt (bkprompt.c) */
 
 #define NAME_W   18                         /* 8px field, characters */
 

@@ -38,19 +38,17 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
+#include "ezcfg.h"
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
 #define SAVE_PATH ((const u8 *)0xC3A5)      /* kernel: "/SAVER/<name>.sav", from the page-$11 stamp */
-#define RTC_BK    ((const u8 *)0xDB40)      /* ezcfg: the RTC= backup, 7 BCD bytes in register order */
-#define RTC_VALID (*(volatile u8 *)0xDB47)
 #define R_MIN 1
 #define R_HR  2
 #define R_DAY 3
 #define R_MON 5
 #define SPIN      (*(volatile u8 *)0xDB3E)  /* op 3's call counter (LastRomName's length byte, idle during the dump) */
-#define LR_GEO    (*(volatile u8 *)0xDB3F)  /* LastRomName: 0 = START overlay, 1 = this prompt */
 
 static void text(const u8 *s, u8 row8, u8 y12);
 static void frame(void);

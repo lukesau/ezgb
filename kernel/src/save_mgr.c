@@ -28,18 +28,16 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
 extern u8 SmSaveOp(u16 opidx);                                      /* 04:6562 -> SaveOp 01:7670 */
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
 #define NAME_BUF  ((const u8 *)0xC4A4)      /* the ROM's file name */
 #define LABEL     ((const u8 *)0xD750)      /* SO_LABEL's text */
 #define LIVE      ((const u8 *)0xD770)      /* [0] the ROM has a save */
 #define COUNT     (*(volatile u8 *)0xD777)  /* backups listed */
-#define LR_GEO    (*(volatile u8 *)0xDB3F)  /* LastRomName: 1 = the band at row 7 / y 56 */
-#define HFRAME    (*(volatile u8 *)0xFFFA)
 
 #define SO_SCAN    0                        /* save_ops.c */
 #define SO_BACKUP  1

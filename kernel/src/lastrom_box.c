@@ -32,9 +32,7 @@
 
 #include "types.h"
 #include "draw.h"
-
-#define LR_GEO (*(volatile u8 *)0xDB3F)     /* LastRomName's row: 0 = this overlay */
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
+#include "vars.h"
 
 void LastRomBox(u16 far_pad_thunk, u16 far_pad_af) {
     static const u8 title_str[17] = {'L','a','u','n','c','h',' ','L','a','s','t',' ','R','O','M','?',0};

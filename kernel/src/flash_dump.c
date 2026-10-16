@@ -19,6 +19,7 @@
 
 #include "types.h"
 #include "draw.h"
+#include "ezcfg.h"
 
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);        /* f_open  00:1926 */
 extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */
@@ -32,7 +33,6 @@ extern u8 FlashStub(void);                                          /* FD_STUB, 
 #define FD_RES     ((volatile u8 *)0xD7F0)  /* results, 12 bytes */
 #define FD_DNA     (FD_RES + 4)
 #define FD_BUF     ((u8 *)0xD800)    /* one sector, as CFGBUF */
-#define FL_SCR     ((u8 *)0xDB00)    /* file-name bounce: FatFs wants the path in WRAM */
 #define FA_CREATE  0x0A              /* FA_WRITE | FA_CREATE_ALWAYS */
 #define FLASH_SECTORS 1024           /* 512 KB */
 #define FIRST      2                 /* DebugTab's first row */

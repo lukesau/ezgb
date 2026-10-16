@@ -50,13 +50,12 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
 extern void Delay(unsigned int ms);                                 /* 00:3a93, about 1 ms per count */
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
 #define ENTRY_COUNT (*(volatile unsigned int *)0xc2a2)
 #define DIR_SECT (*(volatile unsigned long *)0xca03)   /* DirList's DIR is $c9f5, sect at +$0e */
-#define LIST_CUT (*(volatile u8 *)0xdbfa)              /* browser_sort.c clears it */
 #define MAX_RECORDS 416                                /* pages $12-$1E, 32 each */
 
 /* Entry point is defined first so it lands exactly at the injection address

@@ -24,10 +24,9 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
-
-extern volatile u8 hUiMode;                                 /* $fffb: 0 = 8px, 1 = 12px (docs/ui-mode.md) */
 
 void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
     u8 i, dot, n, e, c1, c2, ic;

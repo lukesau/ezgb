@@ -66,6 +66,8 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
+#include "ezcfg.h"
 
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);        /* f_open  00:1926 */
 extern u8 FarCall_06_779a(u8 *fp, u8 *buf, u16 btr, u16 *br);       /* f_read  00:1941 */
@@ -74,16 +76,7 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 
 #define FIL_OBJ   ((u8 *)0xCA0F)     /* kernel FIL, idle whenever we run */
 #define CFGBUF    ((u8 *)0xD800)     /* 512: file contents / the one-sector record to write */
-#define FL_EN     (*(volatile u8 *)0xDA80)
-#define FL_PLEN   (*(volatile u8 *)0xDA81)
-#define FL_PATH   ((u8 *)0xDA82)     /* NUL-terminated, <= PATH_MAX */
-#define FL_SCR    ((u8 *)0xDB00)     /* file-name bounce, 16 */
-#define RTC_BK    ((u8 *)0xDB40)     /* stored time, 7 BCD bytes in register order */
-#define RTC_VALID (*(volatile u8 *)0xDB47)
 #define RTC_CUR   ((u8 *)0xDB48)     /* current RTC read, 7 bytes */
-#define RTC_OFF   (*(volatile u8 *)0xDB3A)  /* RTCSD=0 ("RTC: NO SD" on the SET tab): no RTC
-                                               * reads, backups or prompt; stays valid in WRAM
-                                               * after any load, so hooks can skip the card */
 #define RTC_RAW   ((u8 *)0xDB50)     /* the unmasked register bytes of the last read */
 #define AS_SD     (*(volatile u8 *)0xDB57)  /* AUTOSAVE= from the file: 0 or 1, $FF when absent */
 #define BAT_DRY   (*(volatile u8 *)0xDBFD)  /* BatteryDryHook: the page-$11 canary was dead this boot */
@@ -98,34 +91,17 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 #else
 #define LOG(ev)
 #endif
-#define EZ_OP     (*(volatile u8 *)0xDBFC)
 #define LR_PATH   ((u8 *)0xDA00)     /* LASTROM= path, NUL-terminated, <= PATH_MAX */
 #define LR_VALID  (*(volatile u8 *)0xDA7F)
 #define EZ_RES    (*(volatile u8 *)0xDBFB)  /* op result for the bank-0/1 stubs */
-#define PAD_HELD  (*(volatile u8 *)0xFFF7)  /* HRAM: buttons ReadJoypadLatched ignores until released (docs/joypad-latch.md) */
-#define CFG_LOADED (*(volatile u8 *)0xDBF9) /* 1 once cfg_load has run this boot (fast-launch scan reuses it) */
-#define S1_SGB    (*(volatile u8 *)0xDBF8)  /* 1 when our stage1 handles the SGB (flcfg.c shows SGB BOOT as AUTO) */
-#define UI_MODE   (*(volatile u8 *)0xFFFB)  /* HRAM: 0 = 8px browser, 1 = 12px (docs/ui-mode.md); cleared at boot */
 #define LAUNCH_PATH ((u8 *)0xC2A6)   /* kernel: assembled launch path (LoaderPrepPath) */
 #define OVL_PATH    ((u8 *)0xC4A4)   /* kernel: START overlay's copy of the $A300 record */
 #define SAVE_PATH   ((u8 *)0xC3A5)   /* kernel: "/SAVER/<name>.sav", boot's copy of the page-$11 stamp */
-
-#define OP_LOAD    0
-#define OP_SAVE    1
-#define OP_BACKUP  2
-#define OP_RESTORE 3
-#define OP_LASTSAVE 4              /* launch: record the launch path as LASTROM= */
-#define OP_LASTLOAD 5              /* START overlay: validate $A300 copy, else fall back to LASTROM= */
-#define OP_TIMESET 6               /* SET-tab TIME SET confirm: the new time replaces RTC= outright */
-#define OP_RELAUNCH 7              /* START-overlay relaunch / fast launch: RTC backup only */
-#define OP_SAVECHK 8               /* boot: validate the BACKUPSAVE stamp's path before the prompt */
-#define OP_AUTOSAVE 9              /* SET tab AUTO SAVE toggle: $A200 -> AUTOSAVE= */
 
 #define FA_READ   0x01
 #define FA_CREATE 0x0A               /* FA_WRITE | FA_CREATE_ALWAYS */
 #define CFG_MAX   REC_LEN            /* CFGBUF[CFG_MAX] is the parser NUL (= LR_PATH[0], cleared before parsing) */
 #define REC_LEN   512                /* one whole sector, see far_write(); content is 286 max */
-#define PATH_MAX  120
 
 #define RTC_WIN   ((volatile u8 *)0xA008)
 #define R_SEC 0

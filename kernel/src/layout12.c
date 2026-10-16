@@ -37,9 +37,9 @@
  */
 
 #include "types.h"
+#include "vars.h"
 
 extern const u8 Font12Metrics[];   /* 02:6978, scripts/font12-pack.py */
-extern volatile u8 hClip12;        /* $fff9: right edge for the next layout, 0 = x 160 */
 
 #define M Font12Metrics
 #define M_ADV   0                  /* u8[101] advance */

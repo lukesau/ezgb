@@ -44,18 +44,15 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
 extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -> 08:737f */
 extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
-#define FL_PICK   (*(volatile u8 *)0xDBFE)  /* SET tab pick mode: A captures the ROM */
-#define LR_GEO    (*(volatile u8 *)0xDB3F)  /* LastRomName: 1 = the BACKUPSAVE band */
 #define REC_BASE  (*(volatile u16 *)0xC2A0) /* the open page's records in the $A000 window */
 #define NAME_BUF  ((u8 *)0xC4A4)            /* 255 bytes, refilled by the open path */
-#define HFRAME    (*(volatile u8 *)0xFFFA)  /* +1 per VBlank */
 #define PAD_LIVE  (*(volatile u8 *)0xFFFC)  /* VBlankPadLatch: last frame's pad */
 #define PAD_PREV  (*(volatile u8 *)0xFFF5)  /* RomMenuPadTrack: the browser's previous report */
 #define PAD_CUR   (*(volatile u8 *)0xFFF6)  /* ...and its latest */

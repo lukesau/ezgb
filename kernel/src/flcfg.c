@@ -50,6 +50,8 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
+#include "ezcfg.h"
 
 extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
@@ -57,19 +59,10 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 
-#define FL_EN    (*(volatile u8 *)0xDA80)
-#define FL_PLEN  (*(volatile u8 *)0xDA81)
-#define FL_PATH  ((u8 *)0xDA82)     /* stored path, NUL-terminated, <= PATH_MAX */
 #define FL_DISP  ((u8 *)0xDB10)     /* 40-byte zero-padded display buffer */
-#define EZ_OP    (*(volatile u8 *)0xDBFC)
-#define FL_PICK  (*(volatile u8 *)0xDBFE)
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
 #define SELNAME  ((u8 *)0xC4A4)     /* browser: selected entry name */
 
-#define OP_LOAD  0
-#define OP_SAVE  1
-
-#define PATH_MAX  120
 #define DISP_LEN  40
 
 #define ROW_RTC   1          /* RTC: SD / NO SD (RTC backup, restore and prompt on or off);
@@ -80,10 +73,7 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 #define ROW_SGB   6          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
-#define S1_SGB   (*(volatile u8 *)0xDBF8)   /* our stage1 handles the SGB (set by ezcfg at boot) */
-#define RTC_OFF  (*(volatile u8 *)0xDB3A)   /* RTCSD=0, owned by ezcfg */
 #define NAME_W   10                         /* name columns left of PICK ROM */
-#define UI_MODE  (*(volatile u8 *)0xFFFB)   /* HRAM, read/written by ezcfg too */
 
 #include "marquee.h"
 

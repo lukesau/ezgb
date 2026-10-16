@@ -58,6 +58,7 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
 /* Kernel symbols, all --pin'd so scripts/port-mod.py can re-pin them for a
  * kernel whose WRAM map differs (1.04e shifts $d6cc and up). */
@@ -67,7 +68,6 @@ extern volatile u8 wIntNest;       /* $d6d0 DiNest depth */
 extern const u16 GfxRowTable[];    /* 00:2fbb pixel row -> VRAM address of tile column 0 */
 extern const u8 Font12[];          /* 02:6000, 101 glyphs x 24 bytes (scripts/font12-pack.py) */
 extern const u8 Font12Metrics[];   /* 02:6978, advances first (layout12.c has the layout) */
-extern volatile u8 hClip12;        /* $fff9: right edge of the next draw, 0 = the row's (x 160) */
 extern void DiNest(void);          /* 00:06fd */
 extern void EiNest(void);          /* 00:0706 */
 

@@ -32,8 +32,8 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
 
-#define FL_PICK (*(volatile u8 *)0xDBFE)   /* SET tab: PICK ROM armed (flcfg.c) */
 #define RULE_Y  12                 /* the strip's rule, 1 px */
 #define LIST_Y  20                 /* first list row (draw12.c STRIP_H) */
 

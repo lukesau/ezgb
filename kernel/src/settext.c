@@ -35,9 +35,7 @@
 
 #include "types.h"
 #include "draw.h"
-
-extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
-extern volatile u8 hClip12;                                         /* $fff9: DrawString12's right edge */
+#include "vars.h"
 
 void SetText(const u8 *s, u8 len, u8 col, u8 row) {
     /* 2026/09/30 17:40:14: x of each of the 19 columns, and the end */

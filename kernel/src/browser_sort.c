@@ -58,6 +58,7 @@
  */
 
 #include "types.h"
+#include "vars.h"
 
 /* Streams the next batch of up to 16 entries into the PSRAM records and
  * advances the count; sets the $c5a4 latch when readdir comes up empty. */
@@ -75,7 +76,6 @@ extern void DirList(void);
 #define NAME_END 253 /* name bytes 0..252, guard NUL at 253 */
 #define PREFIX_LEN 13
 #define ATTR_DIR 0x10
-#define LIST_CUT (*(volatile u8 *)0xdbfa) /* set by browser_hide.c at its cap */
 
 static volatile u8 *rec_map(u16 idx);
 static volatile u8 *key_map(u16 p);

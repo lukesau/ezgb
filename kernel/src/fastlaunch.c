@@ -37,19 +37,16 @@
  * below).
  */
 
+#include "types.h"
+#include "vars.h"
+#include "ezcfg.h"
+
 extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *path);
 extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
 extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page */
 
 /* Shared settings module (same bank, plain call; no stack args, op in WRAM). */
 extern void ezcfg(void);                          /* 02:4a00 */
-#define EZ_OP    (*(volatile unsigned char *)0xDBFC)
-#define OP_LOAD  0
-#define FL_EN    (*(volatile unsigned char *)0xDA80)
-#define FL_PLEN  (*(volatile unsigned char *)0xDA81)
-#define FL_PATH  ((unsigned char *)0xDA82)
-#define CFG_LOADED (*(volatile unsigned char *)0xDBF9)  /* set by ezcfg's load */
-#define PAD_HELD   (*(volatile unsigned char *)0xFFF7)  /* HRAM: held-from-before mask */
 extern unsigned char ReadJoypad(void);           /* 00:3a4a, E = key byte, START = $80 */
 
 /* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
