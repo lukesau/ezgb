@@ -255,10 +255,10 @@ source change.
 ### Mod version
 
 `patches/kernel/VERSION` holds the mod version `N.M`, the version releases
-are tagged with (`mod-N.M`). `make` bumps **M** automatically whenever a
-regen actually changes patch content (an identical regen doesn't bump).
-**N** is bumped by hand when a feature lands: edit the file to `N.0`, and
-the next content-changing regen produces `N.1`.
+are tagged with (`mod-N.M`). It is set by hand when a release is cut, never
+by `make`: edit the file, then run `scripts/stamp-mod-version.sh` to write it
+into the HELP screen. Regens between releases keep the upcoming release's
+number.
 
 ### Release policy
 

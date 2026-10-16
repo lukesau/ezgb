@@ -12,10 +12,8 @@ expected result for each firmware version, so both sides of the patch are
 verified. A patch applied to the wrong base silently produces garbage, and
 IPS itself carries no checksums.
 
-patches/kernel/VERSION holds the mod version ("N.M"). Regenerating the
-patches bumps M automatically when any patch's content changed; N is bumped
-by hand when a feature lands (edit the file, and the next content-changing
-regen then produces N.1, N.2, ...).
+patches/kernel/VERSION holds the mod version ("N.M"). It is only changed by
+hand, when a release is cut; regenerating the patches never touches it.
 
 Usage:
   # Maintainer: regenerate all patches after changing injections
@@ -221,12 +219,9 @@ def cmd_make(args):
         write_mod_version(1, 0)
         print("mod version 1.0 (initialized "
               f"{os.path.relpath(VERSION_FILE, ROOT)})")
-    elif changed:
-        n, m = ver[0], ver[1] + 1
-        write_mod_version(n, m)
-        print(f"mod version {ver[0]}.{ver[1]} -> {n}.{m} (patch content changed)")
     else:
-        print(f"mod version {ver[0]}.{ver[1]} (patch content unchanged, no bump)")
+        state = "changed" if changed else "unchanged"
+        print(f"mod version {ver[0]}.{ver[1]} (patch content {state}; VERSION is set by hand)")
 
 
 def cmd_apply(args):

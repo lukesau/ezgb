@@ -5,9 +5,8 @@
 # number equals patches/kernel/VERSION. Ends by running make-dist.sh, which
 # lays out dist/mod-N.M/ with the .ips and .dat for every version.
 #
-# kernel-patch.py make would otherwise bump M because the stamped bytes change
-# the patch content, so this restores VERSION afterward: the version string is
-# part of the build it names, and re-running with the same VERSION is a no-op.
+# VERSION is set by hand (kernel-patch.py make never changes it); re-running
+# with the same VERSION is a no-op.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
