@@ -177,7 +177,7 @@ corrupted the ROM). Read it before choosing an address.
 ## Porting the mod to another kernel build
 
 Features are written and injected against **1.05e-0731**. The other two
-official kernels (1.05e-0918, 1.04e) are the same program with code inserted
+supported kernels (1.05e-0918, 1.04e) are the same program with code inserted
 or removed in a few places, so the mod is carried over mechanically rather
 than re-injected by hand:
 

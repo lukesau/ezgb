@@ -1,9 +1,13 @@
-# The three official kernels: what differs, and which to use
+# The three supported kernels: what differs, and which to use
 
-EZ Flash published three builds of the Jr kernel (`ezgb.dat`). This page says
-what actually differs between them, read from the binaries, and which one to
-put on your card. The byte-level accounting behind it is in
-[DIFF_1.04e_vs_1.05e.md](DIFF_1.04e_vs_1.05e.md) and
+The mod supports three builds of the Jr kernel (`ezgb.dat`): 1.04e,
+1.05e-0731 and 1.05e-0918. They are not the only kernels EZ Flash released.
+[daid/ezflashjr](https://github.com/daid/ezflashjr/tree/master/official)
+archives the earlier K1.00 to K1.03 releases and a 2020-09-29 FW5 SGB beta
+updater (it does not have 0918), and neither list is known to be complete.
+This page says what actually differs between the three supported builds, read
+from the binaries, and which one to put on your card. The byte-level accounting
+behind it is in [DIFF_1.04e_vs_1.05e.md](DIFF_1.04e_vs_1.05e.md) and
 [DIFF_1.05e-0731_vs_0918.md](DIFF_1.05e-0731_vs_0918.md).
 
 ## Short answer

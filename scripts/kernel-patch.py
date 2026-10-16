@@ -251,7 +251,7 @@ def cmd_apply(args):
                               for v, e in sorted(manifest.items()))
             sys.exit(f"error: {args.base} (md5 {base_md5}) is not a known stock "
                      f"kernel.\nExpected one of:\n{known}\n"
-                     "Use the ezgb.dat from the official EZ Flash firmware package.")
+                     "Use the unmodified ezgb.dat from one of the EZ Flash packages listed above.")
         version = matches[0]
     entry = manifest[version]
 
@@ -261,7 +261,7 @@ def cmd_apply(args):
         sys.exit(f"error: md5 mismatch for {version}\n"
                  f"  expected stock {entry['stock_md5']}\n"
                  f"  got            {base_md5}\n"
-                 "Use the ezgb.dat from the official EZ Flash firmware package.")
+                 f"Use the unmodified ezgb.dat from EZ Flash's {version} package.")
 
     patch_path = os.path.join(PATCH_DIR, entry["patch"])
     result = apply_ips(base, open(patch_path, "rb").read())
@@ -331,7 +331,7 @@ def cmd_updater_apply(args):
                           for f, e in sorted(manifest.items()))
         sys.exit(f"error: {args.base} (md5 {base_md5}) is not a known stock "
                  f"updater.\nExpected one of:\n{known}\n"
-                 "Use the updater from the official EZ Flash firmware package.")
+                 "Use the unmodified updater from one of the EZ Flash packages listed above.")
     fw = matches[0]
     entry = manifest[fw]
     result = apply_ips(base, open(os.path.join(UPDATER_DIR, entry["patch"]), "rb").read())

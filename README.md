@@ -42,7 +42,7 @@ it, since it refuses anything but the exact stock updater.
 The release's README has the patched md5s and per-OS patcher notes. The 1.04e
 build also runs on an FW5 cart, so no firmware updater is ever needed to
 switch.
-[Which official kernel should I choose?](docs/kernel-versions.md)
+[Which kernel should I choose?](docs/kernel-versions.md)
 
 This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
 is not downloadable here. If you have a checkout,
@@ -56,9 +56,9 @@ individually or hack on new ones, see
 
 ## Features
 
-Every release includes all of these, for the 1.04e and 1.05e kernels (all
-three official builds). Each is also a self-contained patch you can build in on
-its own; each doc has the rationale, wiring, and exact commands.
+Every release includes all of these, for the 1.04e and 1.05e kernels (the
+three builds the mod supports). Each is also a self-contained patch you can
+build in on its own; each doc has the rationale, wiring, and exact commands.
 
 | Feature | What it does | Doc |
 |---|---|---|

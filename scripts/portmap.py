@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Map ROM addresses between two stock kernel builds.
 
-The three known kernels (1.04e, 1.05e-0731, 1.05e-0918) are the same program
+The three supported kernels (1.04e, 1.05e-0731, 1.05e-0918) are the same program
 with code inserted or removed in a few places, so almost every function exists
 in all of them at an address that differs only by the size of the insertions
 before it. This module recovers that correspondence mechanically:
