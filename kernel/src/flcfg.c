@@ -85,15 +85,10 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define S1_SGB   (*(volatile u8 *)0xDBF8)   /* our stage1 handles the SGB (set by ezcfg at boot) */
 #define RTC_OFF  (*(volatile u8 *)0xDB3A)   /* RTCSD=0, owned by ezcfg */
-#define MQ_POS   (*(volatile u8 *)0xDB38)   /* name marquee: first shown char */
-#define MQ_TICK  (*(volatile u8 *)0xDB39)   /* ...frames since the last step */
-#define MQ_FR    (*(volatile u8 *)0xDB3B)   /* hFrame at the previous tick */
-#define HFRAME   (*(volatile u8 *)0xFFFA)   /* +1 per VBlank (VBlankPadLatch, 00:05cf) */
 #define NAME_W   10                         /* name columns left of PICK ROM */
-#define MQ_GAP   3                          /* blanks between repeats */
-#define MQ_RATE  20                         /* frames per step (3 chars/s) */
-#define MQ_HOLD  60                         /* ...at the start of the name (1 s) */
 #define UI_MODE  (*(volatile u8 *)0xFFFB)   /* HRAM, read/written by ezcfg too */
+
+#include "marquee.h"
 
 static void cfg_load(void);
 static void cfg_save(void);

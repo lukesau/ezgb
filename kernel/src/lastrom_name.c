@@ -43,18 +43,13 @@ extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba *
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
-#define MQ_POS   (*(volatile u8 *)0xDB38)   /* first shown char (shared with flcfg.c) */
-#define MQ_TICK  (*(volatile u8 *)0xDB39)   /* frames since the last step */
-#define MQ_FR    (*(volatile u8 *)0xDB3B)   /* hFrame at the previous tick */
+#include "marquee.h"
+
 #define LR_NAME  (*(const u8 * volatile *)0xDB3C)  /* the name being shown */
 #define LR_LEN   (*(volatile u8 *)0xDB3E)   /* its length when it scrolls, else 0 */
 #define LR_GEO   (*(volatile u8 *)0xDB3F)   /* whose band: 0 START overlay (lastrom_box.c), 1 BACKUPSAVE prompt (bkprompt.c) */
-#define HFRAME   (*(volatile u8 *)0xFFFA)   /* +1 per VBlank (VBlankPadLatch) */
 
 #define NAME_W   18                         /* 8px field, characters */
-#define MQ_GAP   3                          /* blanks between repeats */
-#define MQ_RATE  20                         /* frames per step (3 chars/s) */
-#define MQ_HOLD  60                         /* ...at the start of the name (1 s) */
 
 static u8 fit(const u8 *s);
 static void draw(void);
