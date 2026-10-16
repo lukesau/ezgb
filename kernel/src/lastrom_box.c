@@ -30,8 +30,7 @@
  *       --pin StoreDrawParams=2791 --pin hUiMode=fffb --replace --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row); /* 02:7500 */
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */

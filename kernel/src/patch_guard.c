@@ -22,7 +22,7 @@
  * and finds other code there.
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern const u8 GuardSig[];                                 /* BuildSaverBackupPath, 01:5736 in 0731 */
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);    /* 00:08b7 */

@@ -39,9 +39,7 @@
  *       --pin RemoveChain_B9=4f94 --pin SyncFs_B9=4447 --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
-typedef unsigned long u32;
+#include "types.h"
 
 extern u8 FindVolume_B9(u8 **rfs, const u8 **path, u8 wmode);
 extern u8 FollowPath_B9(u8 *dp, const u8 *path);

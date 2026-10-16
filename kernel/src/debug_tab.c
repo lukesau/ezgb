@@ -41,8 +41,7 @@
  *   scripts/make-debug-build.py <ver> [--install /Volumes/<card>]
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */

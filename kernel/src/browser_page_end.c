@@ -15,8 +15,7 @@
  * is the visible row count (at most 16) whenever count is nonzero.
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
 extern volatile u8 hUiMode;   /* $fffb: 0 = 8px (16 rows), 1 = 12px (10 rows) */

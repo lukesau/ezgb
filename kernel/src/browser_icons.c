@@ -22,8 +22,7 @@
  *       --pin DrawString12=7500 --pin DrawString=08b7 --pin hUiMode=fffb --replace --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 

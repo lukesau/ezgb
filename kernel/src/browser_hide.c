@@ -48,7 +48,7 @@
  *       --pin StoreDrawParams=2791 --pin Delay=3a93 --pin hUiMode=fffb --apply
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */
 extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */

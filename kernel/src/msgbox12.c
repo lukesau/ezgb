@@ -20,7 +20,7 @@
  *       --replace --apply
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */

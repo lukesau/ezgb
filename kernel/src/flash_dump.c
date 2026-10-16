@@ -17,8 +17,7 @@
  * inject.py-style: the first-defined function is the entry point.
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */

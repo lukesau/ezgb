@@ -52,8 +52,7 @@
  *       --pin SoUnlink=765c --pin SoMatch=7d50 --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);         /* f_open  00:1926 */

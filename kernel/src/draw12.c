@@ -56,8 +56,7 @@
  *       --pin Fit12=7100 --pin DiNest=06fd --pin EiNest=0706 --replace --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 /* Kernel symbols, all --pin'd so scripts/port-mod.py can re-pin them for a
  * kernel whose WRAM map differs (1.04e shifts $d6cc and up). */

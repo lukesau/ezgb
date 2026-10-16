@@ -36,8 +36,7 @@
  *       --pin Font12Metrics=6978 --replace --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern const u8 Font12Metrics[];   /* 02:6978, scripts/font12-pack.py */
 extern volatile u8 hClip12;        /* $fff9: right edge for the next layout, 0 = x 160 */

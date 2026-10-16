@@ -57,8 +57,7 @@
  * each name once. Omega pays the same enumeration price on the GBA.
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 /* Streams the next batch of up to 16 entries into the PSRAM records and
  * advances the count; sets the $c5a4 latch when readdir comes up empty. */

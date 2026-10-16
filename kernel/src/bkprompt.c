@@ -36,8 +36,7 @@
  *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin hUiMode=fffb --replace --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */

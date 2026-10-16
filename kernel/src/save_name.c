@@ -19,8 +19,7 @@
  *   python3 tools/inject.py src/save_name.c $V 4 73a0 SaveNameMatch --apply
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 #define NAME_BUF  ((const u8 *)0xC4A4)
 #define BLEN      (*(volatile u8 *)0xD778)

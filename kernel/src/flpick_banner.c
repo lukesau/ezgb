@@ -8,7 +8,7 @@
  * Columns 16-19 (page number) are drawn later by the list code and survive.
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);  /* 00:08b7 */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);      /* 00:2791 */

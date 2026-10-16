@@ -33,7 +33,7 @@
  *       --pin hUiMode=fffb --pin hClip12=fff9 --replace --apply
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */

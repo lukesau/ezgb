@@ -27,7 +27,7 @@
  *       --pin HelpGitStr=7b09 --replace --apply
  */
 
-typedef unsigned char u8;
+#include "types.h"
 
 extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);                /* 00:2791 */

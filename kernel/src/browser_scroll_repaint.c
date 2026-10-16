@@ -38,8 +38,7 @@
  * to this function. Lives in the 00:3d8c cave.
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 struct BrowserScrollState {
     u8 dirty;

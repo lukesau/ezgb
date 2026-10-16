@@ -48,8 +48,7 @@
  * is released; otherwise the screen we hand over to sees the same press.
  */
 
-typedef unsigned char u8;
-typedef unsigned int u16;
+#include "types.h"
 
 extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
