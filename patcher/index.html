@@ -230,7 +230,7 @@ async function handle(file, want, el) {
   const k = KNOWN[s256];
   const shown = `<br>SHA-1 <span class="hash">${s1}</span>`;
   if (!k) { say(el, `<span class="bad">Unknown file, not patched.</span> It matches none of the stock files this page knows.
-    Use the file from EZ Flash's official package, unmodified.${shown}`); return; }
+    Other EZ Flash releases are not supported; use the unmodified file from a supported package.${shown}`); return; }
   if (k.kind === "done") { say(el, `<span class="bad">Already patched</span>: this is ${k.name}. Nothing to do.${shown}`); return; }
   if (k.kind === "reject") { say(el, `<span class="bad">Not supported</span>: ${k.why}${shown}`); return; }
   if (k.kind !== want) {
