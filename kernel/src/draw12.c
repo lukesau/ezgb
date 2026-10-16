@@ -57,6 +57,7 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 /* Kernel symbols, all --pin'd so scripts/port-mod.py can re-pin them for a
  * kernel whose WRAM map differs (1.04e shifts $d6cc and up). */
@@ -69,7 +70,6 @@ extern const u8 Font12Metrics[];   /* 02:6978, advances first (layout12.c has th
 extern volatile u8 hClip12;        /* $fff9: right edge of the next draw, 0 = the row's (x 160) */
 extern void DiNest(void);          /* 00:06fd */
 extern void EiNest(void);          /* 00:0706 */
-extern u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs);   /* 02:7100 */
 
 #define INK   wDrawColor
 #define PAPER wDrawColorB

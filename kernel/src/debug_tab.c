@@ -42,13 +42,10 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
-extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a: A $10, SELECT $40, UP 4, DOWN 8 */
-extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 extern volatile u8 wBootA;                                          /* KernelEntry's copy of the boot A */
 extern void FarCallTrampoline(void);                                /* 00:078d */
 extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, far */

@@ -43,15 +43,12 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
 extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -> 08:737f */
 extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
-extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
 #define FL_PICK   (*(volatile u8 *)0xDBFE)  /* SET tab pick mode: A captures the ROM */

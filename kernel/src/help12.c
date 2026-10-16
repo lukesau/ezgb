@@ -28,9 +28,8 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);                /* 00:2791 */
 extern const u8 HelpUrlStr[];      /* 08:715a "www.ezflash.cn" */
 extern const u8 HelpKStr[];        /* 08:7af4 kernel text, 11 bytes */
 extern const u8 HelpModStr[];      /* 08:7aff MODSTR, 10 bytes */

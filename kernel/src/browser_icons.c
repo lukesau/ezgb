@@ -23,11 +23,10 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 
-extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row); /* 02:5800 */
-extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7, the stock 8x8 painter */
 extern volatile u8 hUiMode;                                 /* $fffb: 0 = 8px, 1 = 12px (docs/ui-mode.md) */
 
 void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {

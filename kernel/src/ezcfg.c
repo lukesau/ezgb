@@ -65,12 +65,12 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);        /* f_open  00:1926 */
 extern u8 FarCall_06_779a(u8 *fp, u8 *buf, u16 btr, u16 *br);       /* f_read  00:1941 */
 extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */
 extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 00:19a1 */
-extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 
 #define FIL_OBJ   ((u8 *)0xCA0F)     /* kernel FIL, idle whenever we run */
 #define CFGBUF    ((u8 *)0xD800)     /* 512: file contents / the one-sector record to write */
@@ -175,12 +175,8 @@ static volatile u8 *meta_map(void);
 static u8 as_take(void);
 static void autosave_boot(void);
 
-extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);   /* 00:08b7 */
 extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d70 patch_guard.c: halts on a cross-patched kernel */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);  /* 00:27ba, pixel coords */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);    /* 00:2791 */
-extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row);   /* 02:7500 */
 extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7260, lastrom_name.c */
 
 void ezcfg(void) {

@@ -31,11 +31,7 @@
  */
 
 #include "types.h"
-
-extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row); /* 02:7500 */
-extern u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs);                        /* 02:7100 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
+#include "draw.h"
 
 #define FL_PICK (*(volatile u8 *)0xDBFE)   /* SET tab: PICK ROM armed (flcfg.c) */
 #define RULE_Y  12                 /* the strip's rule, 1 px */

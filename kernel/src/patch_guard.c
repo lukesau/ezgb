@@ -23,12 +23,9 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 extern const u8 GuardSig[];                                 /* BuildSaverBackupPath, 01:5736 in 0731 */
-extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);    /* 00:08b7 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);  /* 00:27ba, pixel coords */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);    /* 00:2791 */
-extern void WaitVBlankFlag(void);                           /* 00:0688 */
 
 void patch_guard(void) {
     static const u8 sig[8] = {0xe8, 0xf2, 0x3e, 0x01, 0xf8, 0x14, 0x96, 0x3e};

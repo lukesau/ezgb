@@ -21,10 +21,8 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern volatile u8 hClip12;                                         /* $fff9: DrawString12's right edge */
 extern const u8 ReadingStr[];      /* 08:7374 "Reading..." */
 extern const u8 LoadingStr[];      /* 08:73af "Loading..." */

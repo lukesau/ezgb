@@ -49,14 +49,12 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
 extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
-extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
 extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 
 #define FL_EN    (*(volatile u8 *)0xDA80)

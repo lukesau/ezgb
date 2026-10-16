@@ -18,10 +18,8 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
-extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);        /* f_open  00:1926 */
 extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */
 extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 00:19a1 */

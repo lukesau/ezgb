@@ -53,8 +53,8 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void WaitVBlankFlag(void);                                   /* 00:0688 */
 extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);         /* f_open  00:1926 */
 extern u8 FarCall_06_779a(u8 *fp, u8 *buf, u16 btr, u16 *br);       /* f_read  00:1941 */
 extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */

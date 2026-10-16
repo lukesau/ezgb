@@ -37,12 +37,9 @@
  */
 
 #include "types.h"
+#include "draw.h"
 
-extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
-extern void DrawString(const u8 *s, u8 len, u8 x, u8 y);           /* 00:08b7 */
-extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
-extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
 extern volatile u8 hUiMode;                                         /* $fffb: 0 = 8px, 1 = 12px */
 
 #define SAVE_PATH ((const u8 *)0xC3A5)      /* kernel: "/SAVER/<name>.sav", from the page-$11 stamp */
