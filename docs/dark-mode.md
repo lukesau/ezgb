@@ -14,13 +14,15 @@ DMG mode, every theme but light is the inverted palette.
 | 1 | `DARK` | `$18C6` (49,49,49) | `$254B` (90,82,74) | `$3611` (140,132,107) | `$4AD8` tan (197,181,148) |
 | 2 | `BLACK` | `$0000` | `$18C6` | `$4631` | `$7FFF` white |
 | 3 | `RED` | `$0428` (66,8,8) | `$1CED` | `$4A55` | `$7FFF` |
-| 4 | `GREEN` | `$08C1` (8,49,16) | `$2167` | `$4A92` | `$7FFF` |
-| 5 | `PURPLE` | `$2026` (49,8,66) | `$34EB` | `$5654` | `$7FFF` |
-| 6 | `BLUE` | `$1841` (8,16,49) | `$2D07` | `$5252` | `$7FFF` |
+| 4 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | `$4EB2` | `$7FFF` |
+| 5 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
+| 6 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
 
 Dark is aimed at OLED screens: a dim gray background and a grayish tan ink
 rather than white. The colored themes have white ink, and their two middle
-shades are the background blended 20% and 56% toward white. The darker mid
+shades are the background blended 20% and 56% toward white. Green, purple
+and blue are about half again as bright as red: at red's level the three
+were hard to tell apart on an unlit GBC screen. The darker mid
 shade matters: it is the cursor outline on a SET checkbox, so it has to stand
 off the background.
 
