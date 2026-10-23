@@ -55,6 +55,10 @@
  * sends them itself and its SGB BOOT setting is shown as AUTO. The kernel
  * clears it (kernel/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_SGB_SENT 0x412
+/* Page $11 $A414-$A417: the kernel's UI theme, 'T', 'H', theme, ~theme
+ * (kernel/src/theme.c, docs/dark-mode.md), so the boot screen comes up in
+ * it before the SD card is read. Missing or faded: theme 0, light. */
+#define PSRAM_THEME 0x414
 
 /* buttons, active high */
 #define BTN_A      0x01
