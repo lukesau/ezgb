@@ -25,7 +25,7 @@ row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) |
 | 10 | `FAST LAUNCH:` checkbox |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. |
-| 14 | `UI:` the `THEME` button, `LIGHT` / `DARK` ([`dark-mode.md`](dark-mode.md)), then 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
+| 14 | `UI:` the `THEME` button, `LIGHT`, `DARK` and five colors ([`dark-mode.md`](dark-mode.md)), then 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
 | 16 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)) |
 
 UP/DOWN move a cursor over eight rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
