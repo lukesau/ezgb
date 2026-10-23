@@ -136,7 +136,7 @@ same FPGA register sequence, and builds the same load command as stock.
 
 | | Stock | Rewrite |
 |---|---|---|
-| Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB at first; 11.1 KB at v4 with fast launch, save backup and the wordmark |
+| Size | ~18 KB (8.7 KB live code, 2.3 KB font, 2.8 KB dead) | 5.0 KB at first; 11.1 KB at v4 with fast launch, save backup and the wordmark; 18,259 of the 18,432 bytes at mod 2.0 with file create |
 | SD reads to boot the test card | 366 | 20 |
 | Error handling | message, hang | message, retry every second |
 | CGB | DMG-only header | CGB flag, icon in color, grays on DMG |
@@ -193,7 +193,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
 | mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | flashed 2026-10-11; one fast-launch boot with Pokemon Crystal's save pending hung at LOADING... before the name line (not reproduced; START booted the kernel fine) |
 | mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save; the prompt reads `B:NO   A:YES`, as the buttons sit | flashed 2026-10-11 (before the B/A swap): a fast launch with a pending save backed it up and launched |
-| mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); B at the backup prompt for another game's save drops it and fast-launches, instead of booting the kernel to ask again; released with kernel mod 7.0 | not flashed |
+| mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); B at the backup prompt for another game's save drops it and fast-launches, instead of booting the kernel to ask again; a save with no `/SAVER` file yet is created by stage1; released with kernel mod 7.0 | not flashed |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -317,11 +317,11 @@ save (mod 1.8), and on any boot with SELECT held at power-on (v4):
    the `.sav` from the card ([ezgb-cfg.md](ezgb-cfg.md) "AUTO SAVE backup").
 1. No `$AA` stamp on page `$11`: with SELECT, "NO SAVE TO BACK UP"; then
    boot as usual.
-2. A save that can't be written in place (not `/SAVER/...`, no file yet, or
-   a file of another size): with SELECT, "BACKING UP IN THE KERNEL"; either
-   way stage1 skips its own fast launch and boots the kernel, which prompts
-   and backs the save up at boot (and then fast-launches). That happens once
-   for a new game: after it the file exists at the right size.
+2. A save stage1 can't write (not `/SAVER/...`, or a file of another
+   size): with SELECT, "BACKING UP IN THE KERNEL"; either way stage1 skips
+   its own fast launch and boots the kernel, which prompts and backs the
+   save up at boot (and then fast-launches). Before mod 2.0 a save with no
+   file yet went this way too, once per new game.
 3. Otherwise it shows the game's name and "BACK UP SAVE? B:NO A:YES", or
    goes straight to saving when AUTO SAVE is on (`$A200` = 1). B on the
    fast-launch game's own save carries on: the stamp stays armed and the
@@ -336,9 +336,23 @@ save (mod 1.8), and on any boot with SELECT held at power-on (v4):
    (`BackupSaveDump_rtcPackWrite` in 0918's bank 1): the clock at
    `$A220`-`$A224` at +0/+4/+8/+12/+16 and again at +20..+36 (the latched
    copies), the launch stamp `$A210`-`$A213` at +40. The stamp is cleared,
-   "SAVE BACKED UP". No FAT or directory entry changes. The fast launch then
+   "SAVE BACKED UP". No FAT or directory entry changes, unless the file
+   wasn't there (below). The fast launch then
    loads the save it just wrote, as a launch without a stamp does. A write
    error ("SAVE ERROR") boots the kernel instead.
+
+**No file yet** (mod 2.0). After A, `fat_create` (`stage1/src/fat.c`)
+makes the file before the write: a long-name entry with a FatFs-style
+short name (up to 6 characters, `~1`-`~9`, first one free), a free run of
+directory entries in `/SAVER`, the clusters chained in both FATs (counted
+first, so a full card changes nothing), the FAT32 FSInfo free count lowered
+to match, and the PCF8563's date and time on FW5 (1980-01-01 on FW4). It
+fails, and stage1 boots the kernel ("BACKING UP IN THE KERNEL", so the
+kernel asks again), when `/SAVER` is missing, the name isn't plain ASCII,
+an empty file of that name is already there, `/SAVER` has no free run of
+entries (stage1 doesn't grow a directory), or the card is full. The free
+cluster search starts at cluster 2, which is slow only on a nearly full
+card.
 
 The kernel isn't sent the skip mark here, only when START was held.
 
@@ -361,6 +375,14 @@ with a pending stamp for `/SAVER/Kirby.sav`. B launched Pokemon Red from
 stage1 with `Kirby.sav` untouched (the build before booted `ezgb.dat`); A
 wrote `Kirby.sav` from pSRAM and launched; B on Pokemon Red's own stamp still
 launched with its `.sav` untouched.
+Its file creation, on the FAT32 test card (512-byte clusters) and a FAT16
+one: `Kirby.sav` created and written (`KIRBY~1`, today's date from the stub's
+clock), `Pokemon Blue Version.sav` as `POKEMO~2` next to `POKEMO~1` with a
+two-entry long name, a clock game at save + 48 bytes, and a missing
+`Pokemon Red.sav` created then loaded back by the fast launch. `fsck_msdos`
+is clean on all of them (FSInfo included), and the 0918 kernel's
+BACKUPSAVE then overwrote stage1's `Kirby.sav` in place, without a
+duplicate entry.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
 in a subdirectory): the FPGA values match the kernel's for that game

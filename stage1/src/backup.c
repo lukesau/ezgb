@@ -2,15 +2,15 @@
  * place: pSRAM pages 0.. are written over the existing /SAVER file along
  * its own clusters, then for a clock game ($A202 = $77) the 48-byte footer
  * the kernel appends: the clock at $A220-$A224 twice (registers, latched
- * copies) and the launch stamp $A210-$A213 at +40. The file must already
- * exist at exactly that size, so no FAT or directory entry changes;
- * anything else (no file yet, a different size) is left to the kernel,
- * which creates and truncates files. */
+ * copies) and the launch stamp $A210-$A213 at +40. A file that isn't there
+ * yet is created at that size (fat_create); one of another size is left to
+ * the kernel, which truncates files. */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
 #include "fat.h"
 #include "video.h"
+#include "rtc.h"
 #include "backup.h"
 
 #define NAME_ROW   14
@@ -33,9 +33,9 @@ static void wait_release(void)
 
 uint8_t backup_offer(uint8_t *buf, uint8_t manual, const char *keep)
 {
-    uint8_t len, pages, timer, autosave, keys, i;
+    uint8_t len, pages, timer, autosave, keys, i, create;
     uint8_t footer[9];
-    uint32_t size, off;
+    uint32_t size, off, total;
     const char *base;
 
     psram_map(PSRAM_META);
@@ -72,10 +72,11 @@ uint8_t backup_offer(uint8_t *buf, uint8_t manual, const char *keep)
         footer[5 + i] = PSRAM[0x210 + i];
     psram_unmap();
     size = (uint32_t)pages << 13;
+    total = size + (timer ? 48 : 0);
 
-    /* only what can be written in place; the kernel prompts for the rest */
-    if (memcmp(path, "/SAVER/", 7) || !size || fat_open(path) ||
-        file_size != size + (timer ? 48 : 0)) {
+    /* a new file, or one written in place; the kernel prompts for the rest */
+    create = fat_open(path) != FAT_OK;
+    if (memcmp(path, "/SAVER/", 7) || !size || (!create && file_size != total)) {
         if (manual) {
             say("BACKING UP IN", "THE KERNEL");
             wait_frames(60);
@@ -106,6 +107,11 @@ uint8_t backup_offer(uint8_t *buf, uint8_t manual, const char *keep)
         }
     }
     say("SAVING...", "");
+    if (create && fat_create(path, total, fw_version() >= 5 ? rtc_fat_time() : 0x00210000UL)) {
+        say("BACKING UP IN", "THE KERNEL");     /* the kernel asks again */
+        wait_frames(60);
+        return 1;
+    }
     for (off = 0; off < size; off += 512) {
         psram_map((uint8_t)(off >> 13));
         memcpy(buf, (const void *)(PSRAM + ((uint16_t)off & 0x1FFF)), 512);

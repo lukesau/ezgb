@@ -46,6 +46,19 @@ int32_t rtc_now(void)
     days += d - 1;
     return (int32_t)(((days * 24 + h) * 60 + m) * 60 + s) - 28800;
 }
+
+uint32_t rtc_fat_time(void)
+{
+    uint16_t date, time;
+
+    fpga_set(FPGA_SRAM_MAP, 6);
+    time = (uint16_t)bcd(WINDOW[0x0A] & 0x3F) << 11 | (uint16_t)bcd(WINDOW[0x09] & 0x7F) << 5 |
+           bcd(WINDOW[0x08] & 0x7F) >> 1;
+    date = (uint16_t)(bcd(WINDOW[0x0E]) + 20) << 9 | (uint16_t)bcd(WINDOW[0x0D] & 0x1F) << 5 |
+           bcd(WINDOW[0x0B] & 0x3F);
+    fpga_set(FPGA_SRAM_MAP, 0);
+    return (uint32_t)date << 16 | time;
+}
 #endif
 
 void rtc_advance(uint8_t *f, int32_t stamp, int32_t now)

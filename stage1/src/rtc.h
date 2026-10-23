@@ -10,6 +10,9 @@
  * 01:4ec9): local date/time as seconds since 1970, minus 8 hours. */
 int32_t rtc_now(void);
 
+/* The PCF8563's date and time as a FAT timestamp: date << 16 | time */
+uint32_t rtc_fat_time(void);
+
 /* The game clock now: saved fields advanced by now - stamp
  * (RtcWriteTimeFromDayDelta, 01:505c, with the mod's negative clamp).
  * stamp 0 zeroes the clock. f is updated in place. */

@@ -53,7 +53,7 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 |---|---|
 | `src/crt0.s` | entry, WRAM init, interrupts off |
 | `src/main.c` | boot sequence, START/SELECT at power-on, save backup offer, error retry loop |
-| `src/fat.c` | FAT16/FAT32 mount, path lookup, load command, in-place sector writes |
+| `src/fat.c` | FAT16/FAT32 mount, path lookup, load command, in-place sector writes, file create |
 | `src/fpga.c` | FPGA register writes, SD sector reads and writes, pSRAM pages |
 | `src/cfg.c` | `EZGB.CFG` parser, `FLAUNCH=` only |
 | `src/game.c` | fast launch: the kernel's game launch done from stage1 |
