@@ -62,7 +62,8 @@ REGISTRY = {
                       exports={"browser_scroll_up": 0x3fa0}),   # called by BrowserScrollUpHook (00:02f3)
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
-    (2, 0x43d0): dict(src="theme.c", pins={}),      # UI theme palettes and pSRAM mark (docs/dark-mode.md)
+    (2, 0x43d0): dict(src="theme.c", pins={"theme_ramps": 0x4960}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
+    (2, 0x4960): dict(src="theme_ramps.c", pins={}),   # UI theme colors, data only
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
     (0, 0x0460): dict(src="fastlaunch_hook.c",

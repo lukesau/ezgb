@@ -9,12 +9,13 @@
 #define FL_PICK   (*(volatile u8 *)0xDBFE)
 /* Set by browser_hide.c when the listing hits its cap, cleared by browser_sort.c. */
 #define LIST_CUT  (*(volatile u8 *)0xDBFA)
-/* UI theme (docs/dark-mode.md): 0 light, 1 dark. THEME= in EZGB.CFG, mirrored
- * to pSRAM page $11 $A414 for the next boot's first frame (theme.c). Every
- * theme past 0 is a dark one: on a DMG it is the inverted palette, on a
- * color console its own ramp. */
+/* UI theme (docs/dark-mode.md): 0 light, 1 dark, 2.. black, red, green,
+ * purple, blue. THEME= in EZGB.CFG, mirrored to pSRAM page $11 $A414 for the
+ * next boot's first frame (theme.c). Every theme past 0 is a dark one: on a
+ * DMG it is the inverted palette, on a color console its row of
+ * theme_ramps.c. */
 #define THEME     (*(volatile u8 *)0xDB58)
-#define THEME_COUNT 2
+#define THEME_COUNT 7
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */

@@ -11,16 +11,18 @@
  *            'T', 'H', theme, ~theme. A missing or faded mark is theme 0.
  *   runtime  once THEME holds the file's value: ezcfg's boot restore (a
  *            near call) and the SET tab (FarCallTheme_B4, 04:5990). The
- *            mark is rewritten from THEME, so the next boot (and our
- *            stage1's boot screen) starts in it.
+ *            mark is rewritten from THEME, and the theme's four colors are
+ *            copied after it ($A418-$A41F), so the next boot starts in it:
+ *            our stage1 builds its boot screen palettes from that copy and
+ *            keeps no theme table of its own.
  *
  * Either way it then sets the palette registers: BGP/OBP0/OBP1 on every
  * console (the CGB ignores them in CGB mode, a DMG has nothing else), and on
- * a CGB in CGB mode the theme's ramp in all 8 BG and 8 OBJ palettes, so a
- * stray non-zero attribute still draws in the theme (cgb_init.c zeroes
- * them). Theme 0 is the stock look: BGP $E4, OBP0 $E4, OBP1 $1B, the ramp
- * cgb_init.c used to write. Every other theme is a dark one, which on a DMG
- * is the inverted palette and on a color console its own ramp.
+ * a CGB in CGB mode the theme's ramp (theme_ramps.c, 02:4960) in all 8 BG
+ * and 8 OBJ palettes, so a stray non-zero attribute still draws in the
+ * theme (cgb_init.c zeroes them). Theme 0 is the stock look: BGP $E4, OBP0
+ * $E4, OBP1 $1B, the ramp cgb_init.c used to write. Every other theme is a
+ * dark one, which on a DMG is the inverted palette.
  *
  * Palette RAM is locked while the LCD draws a line (mode 3). At boot the LCD
  * is off; at run time every byte is written by index and read back, both in
@@ -40,22 +42,16 @@
 #define rOCPS ((volatile u8 *)0xff6a)   /* +1 = OCPD */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
-#define MARK     ((volatile u8 *)0xA414)   /* page $11: 'T', 'H', theme, ~theme */
+#define MARK     ((volatile u8 *)0xA414)   /* page $11: 'T', 'H', theme, ~theme, then its ramp */
+
+extern const u8 theme_ramps[THEME_COUNT][8];  /* 02:4960, theme_ramps.c */
 
 static void fpga_page(u8 page);
 static void write_ramp(volatile u8 *sel, const u8 *ramp);
 
-/* BGR555, little endian: what color index 0..3 of every tile draws as, per
- * theme. Dark is made for OLED screens: a black background, so those pixels
- * stay off, and a dim, grayish tan ink rather than white. */
-static const u8 ramps[THEME_COUNT][8] = {
-    {0xff, 0x7f, 0xb5, 0x56, 0x4a, 0x29, 0x00, 0x00},   /* light: $7fff $56b5 $294a $0000 */
-    {0x00, 0x00, 0xe8, 0x18, 0x11, 0x36, 0xd8, 0x4a},   /* dark:  $0000 $18e8 $3611 $4ad8 */
-};
-
 void theme(void) {
     volatile u8 *m = MARK;
-    u8 t;
+    u8 t, i;
 
     RAM_PAGE = 0x11;
     fpga_page(3);
@@ -68,6 +64,7 @@ void theme(void) {
         m[1] = 'H';
         m[2] = t;
         m[3] = ~t;
+        for (i = 0; i < 8; i++) m[4 + i] = theme_ramps[t][i];
     }
     RAM_PAGE = 0;
     fpga_page(0);
@@ -80,8 +77,8 @@ void theme(void) {
     /* CGB mode only: VBK reads back $ff otherwise (cgb_init.c) */
     rVBK = 0;
     if (rVBK & 1) return;
-    write_ramp(rBCPS, ramps[t]);
-    write_ramp(rOCPS, ramps[t]);
+    write_ramp(rBCPS, theme_ramps[t]);
+    write_ramp(rOCPS, theme_ramps[t]);
 }
 
 /* SetFpgaPage_B4 inlined, as in ezcfg.c */

@@ -4580,6 +4580,8 @@
 04:5990 FarCallTheme_B4
 04:5990 .data:8:8
 04:7670 ThemeRow
-04:7670 .data:102:8
+04:7670 .data:129:8
 02:43d0 Theme
-02:43d0 .data:10d:8
+02:43d0 .data:126:8
+02:4960 ThemeRamps
+02:4960 .data:38:8
