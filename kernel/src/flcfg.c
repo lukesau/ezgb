@@ -16,10 +16,10 @@
  *
  *   op 0 ENTER  SET prologue: cancel any pending pick, load the file, draw
  *               the mod rows (RTC SD / NO SD, the FAST LAUNCH checkbox, the ROM
- *               name + PICK ROM button, UI) with the cursor highlight.
+ *               name + PICK ROM button, THEME and UI) with the cursor highlight.
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): redraw the rows.
- *   op 2 A      A pressed with the cursor on a mod row. The checkboxes and UI
- *               toggle and rewrite the file (returns 0 = jp redraw); SGB BOOT
+ *   op 2 A      A pressed with the cursor on a mod row. The checkboxes, THEME
+ *               and UI toggle and rewrite the file (returns 0 = jp redraw); SGB BOOT
  *               toggles its pSRAM record instead (no file); PICK ROM
  *               arms pick mode (returns 1 = leave the SET screen; the bank-0
  *               FlSetExitHook then re-enters the browser).
@@ -31,10 +31,11 @@
  *
  * Layout (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]   8 AUTO SAVE: [ ]
- *   10 FAST LAUNCH: [ ]   12 <name, 10 cols, scrolling> [PICK ROM]   14 UI: [8px]
- *   16 SGB BOOT: [ ]
+ *   10 FAST LAUNCH: [ ]   12 <name, 10 cols, scrolling> [PICK ROM]
+ *   14 UI: [LIGHT] [8px]   16 SGB BOOT: [ ]
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
- * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB).
+ * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 THEME, 6 UI,
+ * 7 SGB).
  *
  * SGB BOOT is not in EZGB.CFG: the boot stub (scripts/sgb/sgb_boot.asm) runs
  * long before the SD card is up, so it reads a record in battery-backed
@@ -58,6 +59,7 @@ extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: 
 extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
+extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40-byte zero-padded display buffer */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -69,8 +71,9 @@ extern u8 ReadJoypad(void);                                         /* 00:3a4a, 
                               * row 2 is the stock AUTO SAVE, which never reaches flcfg */
 #define ROW_CHECK 3
 #define ROW_PICK  4
-#define ROW_UI    5          /* UI: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_SGB   6          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
+#define ROW_THEME 5          /* THEME button, left on the UI row (theme_row.c, docs/dark-mode.md) */
+#define ROW_UI    6          /* UI: 8px / 12px button (docs/ui-mode.md) */
+#define ROW_SGB   7          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define NAME_W   10                         /* name columns left of PICK ROM */
@@ -85,6 +88,7 @@ static void draw_rows(u8 cur);
 static void pick_commit(void);
 static void wait_a_release(void);
 static void box(u8 x, u8 y, u8 on, u8 hi);
+static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static u8 sgb_get(void);
 static void sgb_set(u8 on);
 
@@ -98,8 +102,7 @@ u8 flcfg(u8 *frame, u8 op) {
             frame[0x3d] = ROW_UI;
             /* the stock entry code has just drawn TIME's SET button
              * highlighted, for the cursor on row 0: draw it plain */
-            StoreDrawParams(3, 0, 0);
-            if (hUiMode) DrawRect(0x7b, 0x0f, 0x9b, 0x1c, 1); else DrawRect(0x7b, 0x0d, 0x9b, 0x19, 1);
+            button(0, 0x7b, 0x0d, 0x9b, 0x19);
             SetText(set_str, 3, 16, 2);
         }
         MQ_POS = 0;
@@ -116,18 +119,15 @@ u8 flcfg(u8 *frame, u8 op) {
         return 0;
     }
     if (op == 2) {
-        if (frame[0x3d] == ROW_CHECK) {
-            FL_EN = FL_EN ? 0 : 1;
-            cfg_save();
-            draw_rows(ROW_CHECK);
-            wait_a_release();
-            SetFpgaPage_B4(0);
-            return 0;
-        }
-        if (frame[0x3d] == ROW_RTC) {
-            RTC_OFF = RTC_OFF ? 0 : 1;
-            cfg_save();
-            draw_rows(ROW_RTC);
+        u8 row = frame[0x3d];
+        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME) {
+            if (row == ROW_THEME) {
+                ThemeRow(2);            /* saves, sets the palettes, redraws itself */
+            } else {
+                if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1; else RTC_OFF = RTC_OFF ? 0 : 1;
+                cfg_save();
+                draw_rows(row);
+            }
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;
@@ -310,10 +310,22 @@ static void box(u8 x, u8 y, u8 on, u8 hi) {
     }
 }
 
+/* A button's box, given in 8px coordinates, in the ink its text then uses:
+ * highlighted when the cursor is on it. 12px: the box is the text row plus
+ * a pixel above and below, 2 px lower at the top and 3 at the bottom. */
+static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
+    if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+    if (hUiMode) {
+        y0 += 2;
+        y1 += 3;
+    }
+    DrawRect(x0, y0, x1, y1, 1);
+}
+
 /* RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A switches) and
  * the FAST LAUNCH (row 10) and SGB BOOT (row 16) checkboxes (SGB BOOT reads
  * AUTO instead when our stage1 handles the SGB), the PICK ROM button
- * on row 12 and the UI button on row 14, both shaped like the stock SET
+ * on row 12, the THEME (theme_row.c) and UI buttons on row 14, all shaped like the stock SET
  * button (box 5 px left and 4 px right of the text, 3 px above and 5 below). */
 static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
@@ -333,12 +345,10 @@ static void draw_rows(u8 cur) {
         box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
     }
 
-    if (cur == ROW_PICK) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-    /* 12px: the box is the text row plus a pixel above and below */
-    if (hUiMode) DrawRect(0x53, 0x5f, 0x9b, 0x6c, 1); else DrawRect(0x53, 0x5d, 0x9b, 0x69, 1);
+    button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);
-    if (cur == ROW_UI) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-    if (hUiMode) DrawRect(0x73, 0x6f, 0x9b, 0x7c, 1); else DrawRect(0x73, 0x6d, 0x9b, 0x79, 1);
+    ThemeRow(cur == ROW_THEME);
+    button(cur == ROW_UI, 0x73, 0x6d, 0x9b, 0x79);
     SetText(hUiMode ? ui12_str : ui8_str, 4, 15, 14);
     StoreDrawParams(3, 0, 0);
 }

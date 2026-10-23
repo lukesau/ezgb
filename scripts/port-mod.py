@@ -61,7 +61,8 @@ REGISTRY = {
     (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43},   # moved from 00:01e3 for the UI mode flag
                       exports={"browser_scroll_up": 0x3fa0}),   # called by BrowserScrollUpHook (00:02f3)
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
-    (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB palettes + attributes at boot LCD-on (docs/cgb-mode.md)
+    (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
+    (2, 0x43d0): dict(src="theme.c", pins={}),      # UI theme palettes and pSRAM mark (docs/dark-mode.md)
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
     (0, 0x0460): dict(src="fastlaunch_hook.c",
@@ -90,10 +91,14 @@ REGISTRY = {
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791}),
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500,
-                                              "FarCallPatchGuard": 0x43c0}),
+                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0}),
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
-                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70}),
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
+                            "ThemeRow": 0x7670}),
+    (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by FlCfg (docs/dark-mode.md)
+                      pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
+                            "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,

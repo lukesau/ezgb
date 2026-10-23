@@ -39,6 +39,8 @@
  *                                 punctuation into YYYY MM DD HH MM SS)
  *   AUTOSAVE=1                    the SET tab's AUTO SAVE ($A200), restored
  *                                 when the pSRAM lost power
+ *   THEME=1                       UI theme number (vars.h): 0 light, 1 dark;
+ *                                 written only when it is not 0
  *
  * The firmware rewrites the whole file from its known keys as a fixed
  * REC_LEN (one-sector) record padded with spaces (this FatFs has no f_truncate), so hand
@@ -152,6 +154,7 @@ static u8 as_take(void);
 static void autosave_boot(void);
 
 extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d70 patch_guard.c: halts on a cross-patched kernel */
+extern void theme(void);                                    /* 02:43d0 theme.c: palettes + pSRAM mark from THEME */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
 extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7260, lastrom_name.c */
 
@@ -421,6 +424,7 @@ static void cfg_restore(void) {
     PAD_HELD |= ReadJoypad();            /* held since power-on: never a press in a prompt */
     stage1_skip_mark();
     cfg_load();
+    theme();                             /* THEME= wins over the mark the boot screen used */
     autosave_boot();
     if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */
     rtc_read();
@@ -623,6 +627,7 @@ static void cfg_load(void) {
     LR_PATH[0] = 0;
     RTC_OFF = 0;
     AS_SD = 0xFF;
+    THEME = 0;
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -635,24 +640,32 @@ static void cfg_load(void) {
     if (open_read(old_name, &br)) parse_record(br, 1);
 }
 
+/* The keys parse_record knows, as length-prefixed lowercase names, in the
+ * order of its switch. The key's bit in `seen` is 1 << its index. */
+static const u8 cfg_keys[] = {
+    7, 'f','l','a','u','n','c','h',
+    3, 'r','t','c',
+    7, 'l','a','s','t','r','o','m',
+    2, 'u','i',
+    5, 'r','t','c','s','d',
+    8, 'a','u','t','o','s','a','v','e',
+    5, 't','h','e','m','e',
+#ifdef EZCFG_RTCLOG
+    6, 'r','t','c','l','o','g',
+#endif
+    0
+};
+
 /* Walk CFGBUF[0..br) line by line. legacy=1: the first line is the FLAUNCH
  * value itself (no key). Only the first occurrence of each key counts, so a
  * stale tail left behind by a shorter rewrite cannot override the record. */
 static void parse_record(u16 br, u8 legacy) {
     u16 p, s, e, eq;
-    u8 seen_fl, seen_rtc, seen_lr, seen_ui, seen_rs, seen_as;
-#ifdef EZCFG_RTCLOG
-    u8 seen_log = 0;
-#endif
+    u8 seen;
 
     if (br > CFG_MAX) br = CFG_MAX;
     CFGBUF[br] = 0;
-    seen_fl = 0;
-    seen_rtc = 0;
-    seen_lr = 0;
-    seen_ui = 0;
-    seen_rs = 0;
-    seen_as = 0;
+    seen = 0;
     p = 0;
     for (;;) {
         if (p >= br) break;
@@ -675,37 +688,57 @@ static void parse_record(u16 br, u8 legacy) {
         {
             u8 klen = (u8)(eq - s);
             u16 vs = eq + 1;
+            const u8 *v, *k;
+            u16 vlen;
+            u8 d, idx, bit;          /* d: a one-digit value, else $FF */
             while (klen != 0 && CFGBUF[s + klen - 1] == ' ') klen--;
             while (vs < e && CFGBUF[vs] == ' ') vs++;
-            if (!seen_fl && key_is(CFGBUF + s, klen, (const u8 *)"flaunch", 7)) {
-                seen_fl = 1;
-                parse_flaunch(CFGBUF + vs, (u8)(e - vs));
-            } else if (!seen_rtc && key_is(CFGBUF + s, klen, (const u8 *)"rtc", 3)) {
-                seen_rtc = 1;
-                parse_rtc(CFGBUF + vs, (u8)(e - vs));
-            } else if (!seen_lr && key_is(CFGBUF + s, klen, (const u8 *)"lastrom", 7)) {
-                seen_lr = 1;
-                parse_lastrom(CFGBUF + vs, e - vs);
-            } else if (!seen_ui && key_is(CFGBUF + s, klen, (const u8 *)"ui", 2)) {
-                seen_ui = 1;
-                hUiMode = (e - vs >= 2 && CFGBUF[vs] == '1' && CFGBUF[vs + 1] == '2') ? 1 : 0;
-            } else if (!seen_rs && key_is(CFGBUF + s, klen, (const u8 *)"rtcsd", 5)) {
-                seen_rs = 1;
-                RTC_OFF = (e > vs && CFGBUF[vs] == '0') ? 1 : 0;
-            } else if (!seen_as && key_is(CFGBUF + s, klen, (const u8 *)"autosave", 8)) {
-                seen_as = 1;
-                if (e - vs == 1 && (CFGBUF[vs] == '0' || CFGBUF[vs] == '1')) AS_SD = CFGBUF[vs] - '0';
+            v = CFGBUF + vs;
+            vlen = e - vs;
+            d = vlen == 1 ? v[0] - '0' : 0xFF;
+            idx = 0;
+            bit = 1;
+            for (k = cfg_keys; *k; k += *k + 1) {
+                if (key_is(CFGBUF + s, klen, k + 1, *k)) break;
+                idx++;
+                bit <<= 1;
+            }
+            if (*k == 0 || (seen & bit)) continue;    /* unknown, or not the first */
+            seen |= bit;
+            switch (idx) {
+            case 0:
+                parse_flaunch(v, (u8)vlen);
+                break;
+            case 1:
+                parse_rtc(v, (u8)vlen);
+                break;
+            case 2:
+                parse_lastrom(v, vlen);
+                break;
+            case 3:
+                hUiMode = (vlen >= 2 && v[0] == '1' && v[1] == '2') ? 1 : 0;
+                break;
+            case 4:
+                RTC_OFF = (vlen != 0 && v[0] == '0') ? 1 : 0;
+                break;
+            case 5:
+                if (d <= 1) AS_SD = d;
+                break;
+            case 6:
+                if (d < THEME_COUNT) THEME = d;
+                break;
 #ifdef EZCFG_RTCLOG
-            } else if (!seen_log && key_is(CFGBUF + s, klen, (const u8 *)"rtclog", 6)) {
-                u16 j, len = e - vs + 1;    /* the trimmed last entry's space */
+            case 7: {
+                u16 j, len = vlen + 1;    /* the trimmed last entry's space */
                 u8 whole = 0;
-                seen_log = 1;
                 if (len > LOG_MAX) len = LOG_MAX;
                 while (whole + LOG_ENT <= len) whole += LOG_ENT;
                 len = whole;
-                for (j = 0; j < len; j++) LOG_BUF[j] = CFGBUF[vs + j];
+                for (j = 0; j < len; j++) LOG_BUF[j] = v[j];
                 if (len != 0) LOG_BUF[len - 1] = ' ';
                 LOG_LEN = (u8)len;
+                break;
+            }
 #endif
             }
         }
@@ -837,6 +870,12 @@ static u8 cfg_save(void) {
         static const u8 k_as[9] = {'A','U','T','O','S','A','V','E','='};
         w = put(w, k_as, 9);
         *w++ = '0' + AS_SD;
+        w = crlf(w);
+    }
+    if (THEME != 0 && THEME < THEME_COUNT) {
+        static const u8 k_th[6] = {'T','H','E','M','E','='};
+        w = put(w, k_th, 6);
+        *w++ = '0' + THEME;
         w = crlf(w);
     }
 #ifdef EZCFG_RTCLOG

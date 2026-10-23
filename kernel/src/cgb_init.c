@@ -32,21 +32,17 @@
 
 #define rLCDC (*(volatile unsigned char *)0xff40)
 #define rVBK  (*(volatile unsigned char *)0xff4f)
-#define rBCPS (*(volatile unsigned char *)0xff68)
-#define rBCPD (*(volatile unsigned char *)0xff69)
-#define rOCPS (*(volatile unsigned char *)0xff6a)
-#define rOCPD (*(volatile unsigned char *)0xff6b)
 
 #define LCDC_ON 0xc0 /* the value the stock boot wrote (bank_000.asm:401) */
 
-/* Defined below, not here: SDCC emits functions in definition order, and
- * inject.py extracts one contiguous run starting at the link origin, so the
- * entry point the hook jumps to has to be the first function in the file. */
-static void write_shade_ramp(volatile unsigned char *port);
+/* 02:43d0, theme.c: the palettes, DMG and CGB, in the theme of the pSRAM
+ * mark (docs/dark-mode.md). A literal address, not a pin: the port map
+ * would read a bank-0 pin above $4000 as bank-1 code, and injected
+ * addresses are the same in every kernel. */
+#define THEME_FN ((void (*)(void))0x43d0)
+#define rROMB (*(volatile unsigned char *)0x2000)
 
 void cgb_init_and_lcd_on(void) {
-    unsigned char i;
-
     /* Feature-test VBK rather than trusting the saved boot A at $d6c9: on CGB
      * hardware A is $11 even when the console is running in DMG compatibility
      * mode, where the CGB registers are locked out and this whole block must
@@ -64,35 +60,17 @@ void cgb_init_and_lcd_on(void) {
             *v = 0;
         }
         rVBK = 0;
-
-        /* All 8 BG and 8 OBJ palettes get the same ramp, so a stray non-zero
-         * attribute byte still renders correctly rather than in garbage
-         * colors. $80 = index 0 with auto-increment. */
-        rBCPS = 0x80;
-        rOCPS = 0x80;
-        for (i = 0; i < 8; i++) {
-            write_shade_ramp(&rBCPD);
-            write_shade_ramp(&rOCPD);
-        }
     }
 
+    /* BGP/OBP on every console, and on a CGB all 8 BG and 8 OBJ palettes,
+     * so a stray non-zero attribute byte still renders in the theme rather
+     * than in garbage colors */
+    /* KernelEntry has bank 1 mapped (wRomBank). Interrupts are still off
+     * (IE is 0), so map bank 2 by hand rather than through
+     * FarCallTrampoline, whose EiNest would turn them on early. */
+    rROMB = 2;
+    THEME_FN();
+    rROMB = 1;
+
     rLCDC = LCDC_ON;
-}
-
-/* BGR555, matching the DMG shade ramp BGP=$E4 selects: 0 lightest .. 3 black.
- * Written as literal byte pairs rather than a const array on purpose, since
- * inject.py cannot place initialized statics (they land in _DATA, which has no
- * crt0 to copy it at boot), so the data has to live in the instruction
- * stream. */
-static void write_shade_ramp(volatile unsigned char *port) {
-    /* SDCC merges two back-to-back `*port = 0x00` stores into one even
-     * through a volatile pointer, which left each ramp a byte short and
-     * shifted every later palette (black came out as $5f00 cyan). Reading
-     * the zero from a volatile local forces both stores. */
-    volatile unsigned char zero = 0;
-
-    *port = 0xff; *port = 0x7f; /* $7fff white           */
-    *port = 0xb5; *port = 0x56; /* $56b5 light gray      */
-    *port = 0x4a; *port = 0x29; /* $294a dark gray       */
-    *port = zero; *port = zero; /* $0000 black           */
 }
