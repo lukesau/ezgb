@@ -21,7 +21,10 @@
  * paper on a solid ink band, a rule above the options and one between them.
  * The name is the basename of the SAVER path the boot code copied to $c3a5;
  * LastRomName (lastrom_name.c) draws and scrolls it, with LR_GEO = 1
- * selecting this box's row.
+ * selecting this box's row. The "Played" line is LastRomName's second line
+ * (LR_GEO = 2): "Played Oct 23 14:05" is one character over the 8px row, so
+ * it scrolls there. Its text sits in FL_DISP, the SET tab's draw buffer,
+ * since the marquee reads it again at every step.
  *
  *   8px   box (0,35)-(159,99); title, name, info, options on tile rows 5,
  *         7, 9, 11; band y 51..67; rule y 83, vertical at x 83
@@ -44,20 +47,22 @@
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 
 #define SAVE_PATH ((const u8 *)0xC3A5)      /* kernel: "/SAVER/<name>.sav", from the page-$11 stamp */
-#define R_MIN 1
-#define R_HR  2
+#define PLAYED    ((u8 *)0xDB10)            /* the "Played" line: FL_DISP, idle off the SET tab */
 #define R_DAY 3
 #define R_MON 5
 #define SPIN      (*(volatile u8 *)0xDB3E)  /* op 3's call counter (LastRomName's length byte, idle during the dump) */
 
 static void text(const u8 *s, u8 row8, u8 y12);
 static void frame(void);
-static void hex2(u8 *dst, u8 v);
 
 /* The entry point stays the first function in the file. */
 void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
     static const u8 title_str[14] = {'B','a','c','k',' ','u','p',' ','s','a','v','e','?',0};
-    static const u8 played_str[8] = {'P','l','a','y','e','d',' ',0};
+    static const u8 played_str[20] = {'P','l','a','y','e','d',' ','M','m','m',' ',
+                                      'd','d',' ','h','h',':','m','m',0};
+    static const u8 month_str[36] = {'J','a','n','F','e','b','M','a','r','A','p','r',
+                                     'M','a','y','J','u','n','J','u','l','A','u','g',
+                                     'S','e','p','O','c','t','N','o','v','D','e','c'};
     static const u8 opt_str[20]   = {'[','B',']','s','k','i','p',' ',' ',' ',' ',' ',
                                      '[','A',']','s','a','v','e',0};
     static const u8 saving_str[10] = {'S','a','v','i','n','g','.','.','.',0};
@@ -73,17 +78,6 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
         StoreDrawParams(3, 0, 0);
         if (hUiMode) DrawRect(0, 36, 159, 103, 1); else DrawRect(0, 35, 159, 99, 1);
         text(title_str, 5, 40);
-        /* "Played MM-DD HH:MM": the RTC= backup (ezcfg.c), refreshed at every
-         * launch, so at this prompt it is when the game was started. Left
-         * out when there is no backup. */
-        if (RTC_VALID) {
-            for (i = 0; i < 7; i++) buf[i] = played_str[i];
-            hex2(buf + 7, RTC_BK[R_MON]);  buf[9] = '-';
-            hex2(buf + 10, RTC_BK[R_DAY]); buf[12] = ' ';
-            hex2(buf + 13, RTC_BK[R_HR]);  buf[15] = ':';
-            hex2(buf + 16, RTC_BK[R_MIN]); buf[18] = 0;
-            text(buf, 9, 72);
-        }
         frame();
         StoreDrawParams(3, 3, 0);
         if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
@@ -91,6 +85,23 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
         for (p = SAVE_PATH; *p; p++) if (*p == '/') name = p + 1;
         LR_GEO = 1;
         LastRomNameStub(name);
+        /* "Played Oct 23 14:05": the RTC= backup (ezcfg.c), refreshed at
+         * every launch, so at this prompt it is when the game was started.
+         * Left out when there is no backup. */
+        if (RTC_VALID) {
+            for (i = 0; i < 20; i++) PLAYED[i] = played_str[i];
+            i = RTC_BK[R_MON];
+            if (i & 0x10) i -= 6;             /* BCD 10-12 */
+            p = month_str + (u8)(i * 3 - 3);
+            PLAYED[7] = p[0]; PLAYED[8] = p[1]; PLAYED[9] = p[2];
+            /* day, hour, minute: registers 3, 2, 1 at 11, 14, 17 */
+            for (p = RTC_BK + R_DAY, i = 11; i < 20; p--, i += 3) {
+                PLAYED[i] = (u8)('0' + (*p >> 4));
+                PLAYED[i + 1] = (u8)('0' + (*p & 0x0F));
+            }
+            LR_GEO = 2;
+            LastRomNameStub(PLAYED);
+        }
         return;
     }
     if (op == 3) {
@@ -151,10 +162,4 @@ static void frame(void) {
     if (hUiMode) DrawRect(0, 36, 159, 103, 0); else DrawRect(0, 35, 159, 99, 0);
     StoreDrawParams(3, 3, 0);
     if (hUiMode) DrawRect(0, 85, 159, 85, 1); else DrawRect(0, 83, 159, 83, 1);
-}
-
-/* Two BCD digits. */
-static void hex2(u8 *dst, u8 v) {
-    dst[0] = (u8)('0' + (v >> 4));
-    dst[1] = (u8)('0' + (v & 0x0F));
 }

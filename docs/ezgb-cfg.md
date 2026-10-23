@@ -269,13 +269,14 @@ no version-specific address.
 | `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
 | `$DA80` / `$DA81` / `$DA82-$DAF9` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |
-| `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged) |
+| `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged); off the SET tab, the BACKUPSAVE prompt's `Played` line text ([modal-prompts.md](modal-prompts.md)) |
 | `$DB40-$DB46` | `RTC_BK`, stored time, 7 BCD bytes in register order |
 | `$DB47` | `RTC_VALID`, 1 when the file held a usable `RTC=` |
 | `$DB48-$DB4E` | `RTC_CUR`, the last RTC read (masked) |
 | `$DB4F` | `LOG_LEN`, `RTCLOG=` text length |
 | `$DB50-$DB56` | `RTC_RAW`, the last RTC read (raw) |
 | `$DB57` | `AS_SD`, `AUTOSAVE=` from the file: 0 or 1, `$FF` when absent |
+| `$DB58-$DB5F` | `LastRomName`'s second marquee line, `$DB38-$DB3F` laid out again ([last-rom.md](last-rom.md)) |
 | `$DB60-$DBEB` | `LOG_BUF`, `RTCLOG=` text, 140 B |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
 | `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |

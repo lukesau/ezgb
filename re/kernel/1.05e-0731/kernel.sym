@@ -4485,7 +4485,7 @@
 08:7b40 HelpHook
 08:7b40 .data:15:8
 04:6000 BkPrompt
-04:6000 .data:3e7:8
+04:6000 .data:3f7:8
 00:0390 BkSpinStub
 00:0390 .data:d:8
 00:039d BkSavingStub
@@ -4495,7 +4495,7 @@
 02:6978 Font12Metrics
 02:6978 .data:5b9:8
 02:7260 LastRomName
-02:7260 .data:214:8
+02:7260 .data:27b:8
 02:7e80 DrawNameWithIconImpl
 02:7e80 .data:143:8
 04:6400 SetText

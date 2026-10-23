@@ -28,6 +28,14 @@
  * bytes (MQ_*: the SET tab resets them on entry and is never on screen with
  * the overlay) plus the name pointer and length at $DB3C.
  *
+ * A second line scrolls the same way: the BACKUPSAVE prompt's "Played"
+ * line (bkprompt.c), set up with LR_GEO = 2 and drawn in ink on paper on
+ * the box's info row. Its state is a copy of the first line's bytes $20
+ * higher ($DB58-$DB5F: position, tick, frame stamp, pointer, length and
+ * LR_GEO, all but RTC_OFF), which swap() trades in around the same set-up,
+ * tick and draw code. Every other set-up (LR_GEO 0 or 1) clears its length,
+ * so it never outlives the prompt.
+ *
  *   python3 tools/inject.py src/lastrom_name.c $V 2 7260 LastRomName \
  *       --pin DrawString12=7500 --pin Fit12=7100 --pin DrawString=08b7 \
  *       --pin DrawRect=27ba --pin StoreDrawParams=2791 --replace --apply
@@ -42,21 +50,27 @@
 #define LR_NAME  (*(const u8 * volatile *)0xDB3C)  /* the name being shown */
 #define LR_LEN   (*(volatile u8 *)0xDB3E)   /* its length when it scrolls, else 0 */
 
+#define LR2_LEN  (*(volatile u8 *)0xDB5E)   /* the second line's LR_LEN */
+
 #define NAME_W   18                         /* 8px field, characters */
 
+static void tick(void);
+static void swap(void);
 static u8 fit(const u8 *s);
 static void draw(void);
 
 /* The entry point stays the first function in the file: the far stub
  * jumps to the block's first byte. */
 void LastRomName(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s) {
-    u8 len, f, d;
+    u8 len;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
     (void)far_pad_ret;
     if (s) {
-        for (len = 0; len < 254 && s[len]; len++) {}
+        /* the second line: its state in the first line's place */
+        if (LR_GEO == 2) { LR_GEO = 1; swap(); LR_GEO = 2; } else LR2_LEN = 0;
+        for (len = 0; len < 252 && s[len]; len++) {}   /* len + MQ_GAP stays a byte */
         LR_NAME = s;
         MQ_POS = 0;
         MQ_TICK = 0;
@@ -65,8 +79,16 @@ void LastRomName(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s
         else if (len <= NAME_W) len = 0;
         LR_LEN = len;
         draw();
+        if (LR_GEO == 2) swap();
         return;
     }
+    tick();
+    if (LR2_LEN) { swap(); tick(); swap(); }
+}
+
+static void tick(void) {
+    u8 len, f, d;
+
     len = LR_LEN;
     if (len == 0) return;
     f = HFRAME;
@@ -76,8 +98,19 @@ void LastRomName(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s
     MQ_TICK += d;
     if (MQ_TICK >= (MQ_POS == 0 ? MQ_HOLD : MQ_RATE)) {
         MQ_TICK = 0;
-        if (++MQ_POS >= len + MQ_GAP) MQ_POS = 0;
+        if (++MQ_POS >= (u8)(len + MQ_GAP)) MQ_POS = 0;
         draw();
+    }
+}
+
+/* Trade the two lines' state: $DB38-$DB3F and $DB58-$DB5F, all but RTC_OFF. */
+static void swap(void) {
+    u8 *a = (u8 *)0xDB38;
+    u8 i, t;
+
+    for (i = 0; i < 8; i++, a++) {
+        if (i == 2) continue;
+        t = *a; *a = a[0x20]; a[0x20] = t;
     }
 }
 
@@ -90,9 +123,11 @@ static u8 fit(const u8 *s) {
 }
 
 static void draw(void) {
+    /* tile row by LR_GEO; the 12px row is at 8x that y */
+    static const u8 row8[3] = {14, 7, 9};
     u8 buf[40];
     const u8 *s = LR_NAME;
-    u8 i, k, len = LR_LEN;
+    u8 i, k, g, len = LR_LEN;
 
     if (len == 0) {
         for (i = 0; i < 39 && s[i]; i++) buf[i] = s[i];
@@ -101,18 +136,22 @@ static void draw(void) {
         k = MQ_POS;
         for (i = 0; i < 39; i++) {
             buf[i] = k < len ? s[k] : ' ';
-            if (++k >= len + MQ_GAP) k = 0;
+            if (++k >= (u8)(len + MQ_GAP)) k = 0;
         }
         buf[39] = 0;
     }
-    StoreDrawParams(0, 3, 0);             /* paper on ink: the row is LastRomBox's band */
+    /* the name in paper on ink (its row is LastRomBox's band), the second
+     * line in ink on paper */
+    g = row8[LR_GEO];
+    k = LR_GEO == 2 ? 3 : 0;
+    StoreDrawParams(k, k ^ 3, 0);
     if (!hUiMode) {
-        DrawString(buf, NAME_W, 1, LR_GEO ? 7 : 14);
+        DrawString(buf, NAME_W, 1, g);
         StoreDrawParams(3, 0, 0);
         return;
     }
     i = fit(buf);
     if (i == 0) i = 1;
-    DrawString12(0, 0, 0, buf, i, 1, LR_GEO ? 56 : 112);
+    DrawString12(0, 0, 0, buf, i, 1, (u8)(g << 3));
     StoreDrawParams(3, 0, 0);
 }

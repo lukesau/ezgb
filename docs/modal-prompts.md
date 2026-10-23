@@ -15,7 +15,7 @@ Stock: a black box reading `BACKUPSAVE`, `[B]NO` / `[A]OK`. Now:
 ```
 Back up save?
 <save file name>          paper on an ink band; scrolls when too long
-Played MM-DD HH:MM        only when an RTC= backup exists
+Played Oct 23 14:05       only when an RTC= backup exists; scrolls in 8px
 [B]skip | [A]save         "Saving." / ".." / "..." while the dump runs
 ```
 
@@ -33,6 +33,10 @@ Played MM-DD HH:MM        only when an RTC= backup exists
 - `Played` is the `RTC=` backup ([ezgb-cfg.md](ezgb-cfg.md)), which is
   refreshed at every launch, so at this prompt it is when the game whose
   save is pending was started. Without a valid backup the line is left out.
+  The date is month name and day (`Oct 03`, no year) rather than `MM-DD`;
+  the line is 19 characters, one over the 8px row, so it is `LastRomName`'s
+  second marquee line (`LR_GEO` = 2, text in `FL_DISP`) and scrolls like
+  the name. In 12px it usually fits and stays still.
 - Auto save (`$A200` = 1) shows the same box and goes straight to `Saving`.
 
 ### Garbage stamp

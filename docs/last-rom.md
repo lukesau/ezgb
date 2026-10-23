@@ -106,7 +106,11 @@ hold, then one character every 20 frames, repeating after three blanks. In
 out again, so a step is one character wide. The tick runs from the overlay's
 input loop, timed by `hFrame` (`$fffa`); its state is the SET marquee's
 `$DB38`/`$DB39`/`$DB3B` (the two screens are never up together) plus the
-name pointer and length at `$DB3C`..`$DB3E`.
+name pointer and length at `$DB3C`..`$DB3E`. A second line, the
+BACKUPSAVE prompt's `Played` line ([modal-prompts.md](modal-prompts.md)),
+keeps the same bytes at `$DB58-$DB5F` (`LR_GEO` included, `RTC_OFF` left
+out); `LastRomName` swaps them into place around the shared set-up, tick and
+draw code, and every other set-up clears that line's length.
 
 | Site (1.05e; 1.04e in brackets) | Was | Now |
 |---|---|---|
