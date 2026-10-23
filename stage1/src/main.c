@@ -135,10 +135,8 @@ void main(void)
              * stage1 offers the pending save itself; SELECT asks on any boot */
             fl = !(keys & BTN_START) && fast_launch_target();
             if ((fl || keys & BTN_SELECT) &&
-                backup_offer(text, keys & BTN_SELECT)) {
+                backup_offer(text, keys & BTN_SELECT, fl ? game_save_path() : 0))
                 fl = 0;                 /* the kernel backs up instead */
-                keys |= BTN_START;
-            }
             print_center(STATUS_ROW, "LOADING...");
             if (fl && fat_open(launch_path) == FAT_OK) {
                 print_center(DETAIL_ROW, fat_name());

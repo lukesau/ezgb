@@ -120,6 +120,11 @@ static uint8_t make_save_path(const char *rom)
     return 1;
 }
 
+const char *game_save_path(void)
+{
+    return make_save_path(fat_name()) ? save_path : 0;
+}
+
 /* little-endian u32 from a buffer */
 static int32_t get32(const uint8_t *p)
 {

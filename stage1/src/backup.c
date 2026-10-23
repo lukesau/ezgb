@@ -31,7 +31,7 @@ static void wait_release(void)
         ;
 }
 
-uint8_t backup_offer(uint8_t *buf, uint8_t manual)
+uint8_t backup_offer(uint8_t *buf, uint8_t manual, const char *keep)
 {
     uint8_t len, pages, timer, autosave, keys, i;
     uint8_t footer[9];
@@ -93,6 +93,13 @@ uint8_t backup_offer(uint8_t *buf, uint8_t manual)
         while (!(keys & (BTN_A | BTN_B)));
         wait_release();
         if (keys & BTN_B) {
+            /* not the fast-launch game's: skipped for good, as the kernel's
+             * [B] skip does, so the kernel doesn't ask again */
+            if (keep && strcmp(path, keep)) {
+                psram_map(PSRAM_META);
+                PSRAM[0x000] = 0;
+                psram_unmap();
+            }
             say("", "");
             clear_row(NAME_ROW);
             return 0;

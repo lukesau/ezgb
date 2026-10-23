@@ -193,7 +193,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | mod 1.6 | SGB detection and header resend, the `"SB"` mark at `$11:$A412`, SGB header bytes, the `FW5-MOD 1.6` version line | flashed 2026-10-11: boots, shows `FW5-MOD 1.6`; not yet on a Super Game Boy |
 | mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | flashed 2026-10-11; one fast-launch boot with Pokemon Crystal's save pending hung at LOADING... before the name line (not reproduced; START booted the kernel fine) |
 | mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save; the prompt reads `B:NO   A:YES`, as the buttons sit | flashed 2026-10-11 (before the B/A swap): a fast launch with a pending save backed it up and launched |
-| mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); released with kernel mod 7.0 | not flashed |
+| mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); B at the backup prompt for another game's save drops it and fast-launches, instead of booting the kernel to ask again; released with kernel mod 7.0 | not flashed |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -250,6 +250,10 @@ kernel copies it to `/SAVER` on its next boot when page `$11` holds the
 | none | launches, loading the `.sav` (or `$FF`) and writing the stamp |
 | `$AA`, this game's save path | launches without copying anything: pSRAM already holds the newest save, and the stamp stays armed |
 | `$AA`, another game | boots the kernel, which backs that save up first |
+
+Since mod 2.0 the backup prompt (below) settles another game's stamp before
+this check, by writing it (A) or dropping it (B), so the launch sees no stamp
+and the kernel row only comes up when stage1 can't write that save itself.
 
 **Games with a clock** (MBC3 with timer, `$0147` = `$0F`/`$10`) on FW5 get
 their clock set the kernel's way (`stage1/src/rtc.c`, from `RtcToDayCount`
@@ -319,8 +323,13 @@ save (mod 1.8), and on any boot with SELECT held at power-on (v4):
    and backs the save up at boot (and then fast-launches). That happens once
    for a new game: after it the file exists at the right size.
 3. Otherwise it shows the game's name and "BACK UP SAVE? B:NO A:YES", or
-   goes straight to saving when AUTO SAVE is on (`$A200` = 1). B carries
-   on: the stamp stays armed and the game runs from pSRAM as before.
+   goes straight to saving when AUTO SAVE is on (`$A200` = 1). B on the
+   fast-launch game's own save carries on: the stamp stays armed and the
+   game runs from pSRAM as before. B on another game's save (mod 2.0) drops
+   its stamp, as the kernel's `[B]skip` does, and stage1 fast-launches
+   without the kernel asking again; before 2.0 the stamp stayed, stage1
+   booted the kernel, and the kernel asked a second time. With SELECT and
+   no fast launch, B leaves the stamp for the kernel.
 4. A: pSRAM pages `0..` are written over the file's own clusters. For a
    clock game (`$A202` = `$77`, file = save + 48 bytes) the footer goes in
    the sector after them, built the way the kernel's dump builds it
@@ -346,6 +355,12 @@ with `SAMEBOY_EZFLASH_JR_DRY=1`, AUTO SAVE on and a valid stamp over a `$5A`
 save, stage1 booted the kernel, BATTERY DRY came up, and after A the kernel
 fast-launched Pokemon Red with the `.sav` untouched. Without DRY the same
 setup had stage1 write the `$5A` save over the file.
+
+Mod 2.0's other-game B checked the same way: `FLAUNCH=/Pokemon/Pokemon Red.gb`
+with a pending stamp for `/SAVER/Kirby.sav`. B launched Pokemon Red from
+stage1 with `Kirby.sav` untouched (the build before booted `ezgb.dat`); A
+wrote `Kirby.sav` from pSRAM and launched; B on Pokemon Red's own stamp still
+launched with its `.sav` untouched.
 
 Verified in SameBoy with Pokemon Red (`/Pokemon/Pokemon Red.gb`, long name
 in a subdirectory): the FPGA values match the kernel's for that game
