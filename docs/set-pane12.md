@@ -18,7 +18,7 @@ changes is x, per field:
 | 6 | `RTC:` 0..44, `SD` 44..66, `NO SD` 86..130; the checkboxes stay at x 66 and 130 |
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..80 (scrolls from 10 characters up); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
-| 14 | `UI:` 0..112; `12px` 120..155 in a box (115,111)-(155,124) |
+| 14 | `UI:` 0..112; `LIGHT` / `DARK` from 53 to at most 107 in a box (48,111)-(108,124), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)); `12px` 120..155 in a box (115,111)-(155,124) |
 | 16 | `SGB BOOT:` 0..128; the checkbox at x 130, or `AUTO` 120..155, right-aligned like the buttons, when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with

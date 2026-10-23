@@ -53,7 +53,9 @@ LCD-on itself at the end.
 
 3. **Writes the shade ramp** to all 8 BG and 8 OBJ palettes (`$7FFF` white,
    `$56B5` light, `$294A` dark, `$0000` black). All eight so that a stray
-   non-zero attribute still renders sanely.
+   non-zero attribute still renders sanely. Since dark mode this is the
+   theme's ramp, written by `Theme` (`02:43d0`), which `CgbInit` calls with
+   bank 2 mapped by hand ([dark-mode.md](dark-mode.md)).
 
 Replicating the old look is a direct translation because the kernel writes
 `BGP` exactly once, at `00:01b0`, with `$E4`, the identity mapping (color

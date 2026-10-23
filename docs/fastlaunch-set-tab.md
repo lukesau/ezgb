@@ -25,11 +25,11 @@ row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) |
 | 10 | `FAST LAUNCH:` checkbox |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. |
-| 14 | `UI:` 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
+| 14 | `UI:` the `THEME` button, `LIGHT` / `DARK` ([`dark-mode.md`](dark-mode.md)), then 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
 | 16 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)) |
 
-UP/DOWN move a cursor over seven rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
-3 FAST LAUNCH, 4 PICK ROM, 5 UI, 6 SGB BOOT (clamp `04:5604` `d6 06`).
+UP/DOWN move a cursor over eight rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
+3 FAST LAUNCH, 4 PICK ROM, 5 THEME, 6 UI, 7 SGB BOOT (clamp `04:5604` `d6 07`).
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
 step through its fields. The stock checkbox
@@ -119,8 +119,8 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 6) |
-| `04:5604` | `d6 01` | `d6 04` | cursor clamp 0..1 → 0..4 (row 4 = the `UI:` button, [ui-mode.md](ui-mode.md); was `d6 03` before it) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 7) |
+| `04:5604` | `d6 01` | `d6 07` | cursor clamp 0..1 → 0..7 (row 7 = SGB BOOT; `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 
 ### Bank 0 (cave `$04c7-$05b5`)
