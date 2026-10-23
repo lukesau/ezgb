@@ -3,8 +3,8 @@
  * then the EZ-FLASH Jr. wordmark (scripts/fpga/mkwordmark.py), map $9800
  * with unsigned tile data at $8000. On a color console the text uses BG
  * palette 0 (grays), the icon palette 1 and the wordmark palette 2. The
- * colors are the kernel's UI theme (docs/dark-mode.md), from the mark it
- * leaves in pSRAM. */
+ * colors are the kernel's UI theme (docs/dark-mode.md), from the mark and
+ * colors it leaves in pSRAM. */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
@@ -30,35 +30,37 @@ extern const uint8_t wordmark_tiles[];
 extern const uint8_t wordmark_stages;
 extern const uint8_t wordmark_maps[][MARK_W * MARK_H];
 
-#define THEMES 2                        /* kernel/src/vars.h THEME_COUNT */
-
-/* BGR555, per theme: palette 0 = the shades for text, palette 1 = the
- * icon: background, orange screen, frames, lip (stage1-splash.asm),
- * palette 2 = the wordmark: background, brush orange, dark orange, letters.
- * Theme 0 is light, 1 dark (the kernel's ramps in kernel/src/theme.c). */
-static const uint16_t palettes[THEMES][12] = {
-    {
-        0x7FFF, 0x56B5, 0x294A, 0x0000,
-        0x7FFF, 0x129E, 0x294A, 0x14A5,
-        0x7FFF, 0x15F9, 0x0932, 0x0000,
-    },
-    {
-        0x0000, 0x18E8, 0x3611, 0x4AD8,
-        0x0000, 0x129E, 0x3611, 0x4AD8,
-        0x0000, 0x15F9, 0x0932, 0x4AD8,
-    },
+/* BGR555: palette 0 = the shades for text, palette 1 = the icon:
+ * background, orange screen, frames, lip (stage1-splash.asm), palette 2 =
+ * the wordmark: background, brush orange, dark orange, letters */
+static const uint16_t palettes[12] = {
+    0x7FFF, 0x56B5, 0x294A, 0x0000,
+    0x7FFF, 0x129E, 0x294A, 0x14A5,
+    0x7FFF, 0x15F9, 0x0932, 0x0000,
 };
 
-/* The theme mark (PSRAM_THEME), 0 when it is missing or faded */
-static uint8_t theme(void)
+/* The boot screen palettes in the kernel's UI theme (docs/dark-mode.md),
+ * into pal; returns the theme. The kernel leaves its mark, 'T', 'H', theme,
+ * ~theme, then the theme's four colors, so this needs no table of its own.
+ * A dark theme takes the background and ink of every palette, the text's
+ * two middle shades and the icon's frames from those colors; the orange
+ * stays. Missing or faded mark: theme 0, the palettes above. */
+static uint8_t theme(uint8_t *pal)
 {
-    uint8_t t;
+    volatile uint8_t *m = PSRAM + PSRAM_THEME;
+    uint8_t i, k, t;
 
+    memcpy(pal, palettes, sizeof palettes);
     psram_map(PSRAM_META);
-    t = PSRAM[PSRAM_THEME + 2];
-    if (PSRAM[PSRAM_THEME] != 'T' || PSRAM[PSRAM_THEME + 1] != 'H' ||
-        t >= THEMES || PSRAM[PSRAM_THEME + 3] != (uint8_t)~t)
+    t = m[2];
+    if (m[0] != 'T' || m[1] != 'H' || m[3] != (uint8_t)~t)
         t = 0;
+    if (t)
+        for (i = 0; i < sizeof palettes; i++) {
+            k = i & 7;          /* byte k of color k / 2 */
+            if (k < 2 || k > 5 || i < 8 || i == 12 || i == 13)
+                pal[i] = m[4 + k];
+        }
     psram_unmap();
     return t;
 }
@@ -97,7 +99,8 @@ void video_init(void)
 {
     const uint8_t *src = font8;
     uint8_t *dst = (uint8_t *)(0x8000 + 0x20 * 16);
-    uint8_t i, t = theme();
+    uint8_t pal[sizeof palettes];
+    uint8_t i, t = theme(pal);
     uint16_t n;
 
     /* the boot ROM leaves the LCD on: off at vblank */
@@ -132,9 +135,8 @@ void video_init(void)
         wordmark_map_draw(1);
         rVBK = 0;
         rBCPS = 0x80;
-        src = (const uint8_t *)palettes[t];
-        for (i = 0; i < sizeof palettes[0]; i++)
-            rBCPD = *src++;
+        for (i = 0; i < sizeof pal; i++)
+            rBCPD = pal[i];
     }
     rLCDC = 0x91;                       /* on, BG tiles $8000, map $9800 */
 }
