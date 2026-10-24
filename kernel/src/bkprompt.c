@@ -75,11 +75,11 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
     if (op == 0) {
         StoreDrawParams(0, 0, 0);
         DrawRect(0, 32, 159, 107, 1);
-        StoreDrawParams(3, 0, 0);
+        PopupDrawParams(3, 0);
         if (hUiMode) DrawRect(0, 36, 159, 103, 1); else DrawRect(0, 35, 159, 99, 1);
         text(title_str, 5, 40);
         frame();
-        StoreDrawParams(3, 3, 0);
+        PopupDrawParams(3, 3);
         if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
         name = SAVE_PATH;
         for (p = SAVE_PATH; *p; p++) if (*p == '/') name = p + 1;
@@ -114,20 +114,20 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
         for (op = 0; op < 6; op++) buf[op] = saving_str[op];
         while (i--) buf[op++] = '.';
         buf[op] = 0;
-        StoreDrawParams(3, 0, 0);
+        PopupDrawParams(3, 0);
         text(buf, 11, 88);
         if (hUiMode) DrawRect(0, 36, 159, 103, 0);
         return;
     }
     /* the options row: clear it (op 2 replaces op 1's text and rule) */
-    StoreDrawParams(0, 0, 0);
+    PopupDrawParams(0, 0);
     if (hUiMode) DrawRect(1, 86, 158, 102, 1); else DrawRect(1, 84, 158, 98, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (op == 2) {
         SPIN = 0;
         text(saving_str, 11, 88);
         frame();
-        StoreDrawParams(3, 0, 0);
+        PopupDrawParams(3, 0);
         return;
     }
     if (hUiMode) {
@@ -138,7 +138,7 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
     }
     frame();
     if (hUiMode) DrawRect(79, 85, 79, 103, 1); else DrawRect(83, 83, 83, 99, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
 }
 
 /* One text row: tile row row8 from column 1, or the 12px row at y12 from x 12. */
@@ -158,8 +158,8 @@ static void text(const u8 *s, u8 row8, u8 y12) {
 /* What a text row repaints: the box outline (a 12px row runs to x 159) and
  * the rule above the options. Leaves ink 3 on ink 3 selected. */
 static void frame(void) {
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 36, 159, 103, 0); else DrawRect(0, 35, 159, 99, 0);
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     if (hUiMode) DrawRect(0, 85, 159, 85, 1); else DrawRect(0, 83, 159, 83, 1);
 }

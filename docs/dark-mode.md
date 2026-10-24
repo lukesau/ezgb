@@ -61,6 +61,7 @@ OK!`. Stage1 picks it up on the next power-on.
 | `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; 160 bytes of room. |
 | `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
 | `EzCfg` | `02:4a00` | Parses and writes `THEME=`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
+| `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
 | `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 290 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
 
 `THEME` is WRAM `$DB58` (vars.h), cleared at boot with the rest of WRAM.
@@ -80,6 +81,32 @@ a row between PICK ROM and UI: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH,
 `d6 07`, and RIGHT (`FlSetJumpBottom`, `04:5f90`) goes to row 7
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)). A on THEME changes the
 whole screen at once; from the last theme it wraps to light.
+
+### Popups
+
+The status boxes (`Reading...`, `Loading...`, `Error file`), the START
+overlay, the BACKUPSAVE and RTC prompts, the ROM menu, the save manager and
+the too-many-files notice are drawn in colors 0 and 3 like everything else,
+so in a dark theme a popup came out as the background itself (a black box on
+black) and a status box as a white one. In a dark theme they now use a
+lighter shade of the background with white text:
+
+- `PopupDrawParams(ink, paper)` (`00:0290`,
+  [popup_params.c](../kernel/src/popup_params.c), 37 B, in the room
+  `CgbInit` left) is `StoreDrawParams(ink, paper, 0)`, except that in any
+  theme past 0 color 0 becomes color 1: the background blended 20% toward
+  white. Each popup's drawing goes through it; erasing a popup back to the
+  screen still calls `StoreDrawParams`. Every one of those blocks got
+  smaller, since the call takes one argument less.
+- The status boxes draw white on color 1 in a dark theme (ink 0 on paper 3,
+  stock, in light). `MsgBox12` now draws them in both UI modes: the
+  `jr nz` in `MsgHookReading` / `Loading` / `Error` (`08:7e13`, `7e27`,
+  `7e3b`) is a `jr`, so 8px no longer runs the stock drawer.
+- The name band and a selected row stay a white bar; their text, color 0 on
+  3, becomes color 1 on white.
+
+Light is unchanged. On a DMG, where a dark theme is the inverted palette,
+color 1 is the dark gray, so a popup is white text on dark gray.
 
 ## Stage1
 

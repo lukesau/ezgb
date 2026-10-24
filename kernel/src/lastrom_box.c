@@ -47,22 +47,22 @@ void LastRomBox(u16 far_pad_thunk, u16 far_pad_af) {
     StoreDrawParams(0, 0, 0);
     if (!hUiMode) {
         DrawRect(0, 88, 159, 143, 1);
-        StoreDrawParams(3, 0, 0);
+        PopupDrawParams(3, 0);
         DrawRect(0, 91, 159, 139, 1);
         DrawString(title_str, 16, 1, 12);
         DrawString(btn_str, 9, 1, 16);
         DrawString(btn_str + 12, 8, 11, 16);
-        StoreDrawParams(3, 3, 0);
+        PopupDrawParams(3, 3);
         DrawRect(0, 107, 159, 123, 1);
         DrawRect(83, 123, 83, 139, 1);
         return;
     }
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     DrawRect(0, 92, 159, 143, 1);
     DrawString12(0, 0, 0, title_str, 0, 1, 96);
     DrawString12(0, 0, 0, btn_str, 0, 1, 128);
     DrawRect(0, 92, 159, 143, 0);
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     DrawRect(0, 109, 159, 125, 1);
     DrawRect(79, 125, 79, 143, 1);
 }

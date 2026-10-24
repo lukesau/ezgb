@@ -144,14 +144,14 @@ static void draw(void) {
      * line in ink on paper */
     g = row8[LR_GEO];
     k = LR_GEO == 2 ? 3 : 0;
-    StoreDrawParams(k, k ^ 3, 0);
+    PopupDrawParams(k, k ^ 3);
     if (!hUiMode) {
         DrawString(buf, NAME_W, 1, g);
-        StoreDrawParams(3, 0, 0);
+        PopupDrawParams(3, 0);
         return;
     }
     i = fit(buf);
     if (i == 0) i = 1;
     DrawString12(0, 0, 0, buf, i, 1, (u8)(g << 3));
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
 }

@@ -10,6 +10,9 @@
 extern void DrawString(const u8 *s, u8 len, u8 col, u8 row);        /* 00:08b7 */
 /* Ink, paper and op for the next draw (wDrawColor/wDrawColorB/wDrawOp). */
 extern void StoreDrawParams(u8 color, u8 colorB, u8 op);            /* 00:2791 */
+/* StoreDrawParams(ink, paper, 0) for popups: in a dark theme color 0 is
+ * drawn as 1, a lighter shade of the background (popup_params.c). */
+extern void PopupDrawParams(u8 ink, u8 paper);                      /* 00:0290 */
 /* Filled rectangle, pixel coords. */
 extern void DrawRect(u8 x0, u8 y0, u8 x1, u8 y1, u8 fill);          /* 00:27ba */
 /* Halt until the next VBlank; returns at once with the LCD off. */

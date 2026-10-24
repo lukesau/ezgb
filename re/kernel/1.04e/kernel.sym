@@ -4382,7 +4382,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:1321:8
+02:4a00 .data:130b:8
 02:4500 FastLaunchScan
 02:4500 .data:2a9:8
 04:5f00 FarCallEzCfg
@@ -4418,7 +4418,7 @@
 00:0368 LastRomNameStub
 00:0368 .data:8:8
 02:4800 LastRomBox
-02:4800 .data:15b:8
+02:4800 .data:145:8
 02:5e00 TabStrip12
 02:5e00 .data:19c:8
 08:7b20 TabStripHook
@@ -4430,7 +4430,7 @@
 08:7b40 HelpHook
 08:7b40 .data:15:8
 04:6000 BkPrompt
-04:6000 .data:3f7:8
+04:6000 .data:3ca:8
 00:0390 BkSpinStub
 00:0390 .data:d:8
 00:039d BkSavingStub
@@ -4440,7 +4440,7 @@
 02:6978 Font12Metrics
 02:6978 .data:5b9:8
 02:7260 LastRomName
-02:7260 .data:27b:8
+02:7260 .data:26e:8
 02:7e80 DrawNameWithIconImpl
 02:7e80 .data:143:8
 04:6400 SetText
@@ -4454,7 +4454,7 @@
 04:5f70 FarCallMenuTabs
 04:5f70 .data:e:8
 08:7e80 MsgBox12
-08:7e80 .data:84:8
+08:7e80 .data:a9:8
 08:7e10 MsgHookReading
 08:7e10 .data:14:8
 08:7e24 MsgHookLoading
@@ -4468,7 +4468,7 @@
 00:0259 CgbInit
 00:0259 .data:31:8
 05:7700 BrowserHideName
-05:7700 .data:25f:8
+05:7700 .data:25a:8
 00:04ae DirListHideNameStub
 00:04ae .data:19:8
 02:6f40 FillRect
@@ -4480,7 +4480,7 @@
 04:7c00 U32ToAsciiFast
 04:7c00 .data:c2:8
 04:5a00 RomMenu
-04:5a00 .data:4c3:8
+04:5a00 .data:4a3:8
 00:0483 FarCallDrawLoadingBox
 00:0483 .data:8:8
 00:0453 RomMenuPadTrack
@@ -4488,7 +4488,7 @@
 00:0597 RomMenuHoldStub
 00:0597 .data:13:8
 04:6d11 ManageSaves
-04:6d11 .data:681:8
+04:6d11 .data:645:8
 04:6562 SmSaveOp
 04:6562 .data:10:8
 01:7630 SoOpendir
@@ -4529,3 +4529,5 @@
 02:43d0 .data:126:8
 02:4960 ThemeRamps
 02:4960 .data:30:8
+00:0290 PopupDrawParams
+00:0290 .data:25:8

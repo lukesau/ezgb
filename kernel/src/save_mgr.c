@@ -173,10 +173,10 @@ static u8 choose(u8 idx) {
 static void draw_box(void) {
     StoreDrawParams(0, 0, 0);
     DrawRect(0, 32, 159, 143, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 36, 159, 143, 1); else DrawRect(0, 35, 159, 139, 1);
     frame();
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
     LR_GEO = 1;
     LastRomNameStub(NAME_BUF);
@@ -208,16 +208,16 @@ static void draw_list(u8 mode, u8 sel, u8 top) {
             e = LABEL;
         }
         y = hUiMode ? 72 + r * 12 : 72 + r * 8;
-        if (i == sel) StoreDrawParams(3, 3, 0); else StoreDrawParams(0, 0, 0);
+        if (i == sel) PopupDrawParams(3, 3); else PopupDrawParams(0, 0);
         DrawRect(1, y, 158, y + h - 1, 1);
-        if (i == sel) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+        if (i == sel) PopupDrawParams(0, 3); else PopupDrawParams(3, 0);
         text(e, 9 + r, y);
     }
     frame();
 }
 
 static void title(const u8 *s) {
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     text(s, 5, 40);
     frame();
 }
@@ -232,9 +232,9 @@ static void buttons(u8 confirm) {
     const u8 *a = confirm ? yes_str : ok_str;
     u8 i;
 
-    StoreDrawParams(0, 0, 0);
+    PopupDrawParams(0, 0);
     if (hUiMode) DrawRect(1, 124, 158, 142, 1); else DrawRect(1, 124, 158, 138, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     text(confirm ? no_str : back_str, 16, 128);
     if (hUiMode) {
         for (i = 0; i < 8 && a[i]; i++) buf[i] = a[i];
@@ -264,10 +264,10 @@ static void text(const u8 *s, u8 row8, u8 y12) {
 /* The outline (a 12px row runs to x 159), the rule above the buttons and
  * the one between them. Leaves ink 3 on paper. */
 static void frame(void) {
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 36, 159, 143, 0); else DrawRect(0, 35, 159, 139, 0);
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     DrawRect(0, 123, 159, 123, 1);
     if (hUiMode) DrawRect(79, 123, 79, 143, 1); else DrawRect(83, 123, 83, 139, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
 }

@@ -386,43 +386,14 @@ CgbInit::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+PopupDrawParams::
+    db $fa, $58, $db, $b7, $28, $10, $f8, $02
+    db $7e, $b7, $20, $02, $36, $01, $f8, $03
+    db $7e, $b7, $20, $02, $36, $01, $af, $f5
+    db $33, $f8, $04, $3a, $57, $5e, $d5, $cd
+    db $91, $27, $e8, $03, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

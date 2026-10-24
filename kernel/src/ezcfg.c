@@ -519,7 +519,7 @@ static u8 restore_prompt(u8 why) {
     DrawString(pad, 1, 5, 8);
     StoreDrawParams(0, 0, 0);
     DrawRect(0, 16, 159, 127, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (m) DrawRect(0, 20, 159, 115, 1); else DrawRect(0, 27, 159, 99, 1);
     prow(title, k, 1, 4, 1, 24);
     prow(chip_s, 4, 1, 6, 1, 44);
@@ -533,19 +533,19 @@ static u8 restore_prompt(u8 why) {
         DrawString12(0, 0, 0, btn + 10, 0, 88, 100);   /* right of the rule at x 79 */
         /* a 12px row runs to x 159, over the box's right side */
         DrawRect(0, 20, 159, 115, 0);
-        StoreDrawParams(3, 3, 0);
+        PopupDrawParams(3, 3);
         DrawRect(0, 38, 159, 38, 1);
         DrawRect(0, 95, 159, 95, 1);
         DrawRect(79, 95, 79, 115, 1);
     } else {
         DrawString(btn, 7, 1, 11);
         DrawString(btn + 10, 9, 10, 11);
-        StoreDrawParams(3, 3, 0);
+        PopupDrawParams(3, 3);
         DrawRect(0, 43, 159, 43, 1);
         DrawRect(0, 83, 159, 83, 1);
         DrawRect(75, 83, 75, 99, 1);
     }
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
 
     for (k = 0; k < 8; ) {
         WaitVBlankFlag();

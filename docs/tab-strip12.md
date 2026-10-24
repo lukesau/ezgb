@@ -76,11 +76,13 @@ runs in bank 2.
 `Reading...`, `Loading...` and `Error file` are three copies of one stock
 drawer in bank 8 (`08:7344`, `737f`, `73ba`): ink 0 on paper 3, a filled box
 (35,37)-(125,108), ten characters at column 5 of tile row 8. Each now starts
-with `jp MsgHook<n>` (`08:7e10` / `7e24` / `7e38`): 8px replays the displaced
-load and runs the stock code; 12px calls `MsgBox12(n)` (`msgbox12.c`,
-`08:7e80`), which draws the same box and the same string on the 12px row at
-y 64 from x 44, clipped at the box's right side (`hClip12`,
-[set-pane12.md](set-pane12.md)).
+with `jp MsgHook<n>` (`08:7e10` / `7e24` / `7e38`), which calls
+`MsgBox12(n)` (`msgbox12.c`, `08:7e80`): in 8px the stock box and string, in
+12px the same box and the same string on the 12px row at y 64 from x 44,
+clipped at the box's right side (`hClip12`, [set-pane12.md](set-pane12.md)).
+Until dark mode, 8px replayed the displaced load and ran the stock code; it
+now goes through `MsgBox12` for the theme's popup colors
+([dark-mode.md](dark-mode.md)).
 
 Still 8x8 in 12px mode: the boot messages (`Micro SD initial OK!` and the
 SD error texts) and `BATTERY DRY!!!`.

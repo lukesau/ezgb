@@ -129,7 +129,7 @@ static u8 ends_ci(const u8 *name, u8 len, const u8 *suf, u8 suf_len) {
 static void cut_notice(void) {
     StoreDrawParams(0, 0, 0);
     DrawRect(35, 37, 125, 108, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 52, 159, 87, 1); else DrawRect(0, 51, 159, 84, 1);
     notice_line((const u8 *)"Too many files.", 7, 56);
     notice_line((const u8 *)"Showing first 416", 9, 72);

@@ -161,7 +161,7 @@ static void box(void) {
 
     StoreDrawParams(0, 0, 0);
     if (hUiMode) DrawRect(0, 32, 159, 123, 1); else DrawRect(0, 32, 159, 119, 1);
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 36, 159, 119, 1); else DrawRect(0, 35, 159, 115, 1);
     text(title_str, 5, 40);
     if (hUiMode) {
@@ -173,7 +173,7 @@ static void box(void) {
         DrawString(ok_str, 5, 11, 13);
     }
     frame();
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
     LR_GEO = 1;
     LastRomNameStub(NAME_BUF);
@@ -186,7 +186,7 @@ static void options(u8 sel) {
     u8 buf[15];
     u8 i;
 
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     for (i = 0; i < 8; i++) buf[i] = start_str[i];
     if (sel == 0) buf[0] = '>';
     text(buf, 9, 72);
@@ -213,9 +213,9 @@ static void text(const u8 *s, u8 row8, u8 y12) {
 /* What a text row repaints: the box outline (a 12px row runs to x 159), the
  * rule above the buttons and the one between them. Leaves ink 3 on paper. */
 static void frame(void) {
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
     if (hUiMode) DrawRect(0, 36, 159, 119, 0); else DrawRect(0, 35, 159, 115, 0);
-    StoreDrawParams(3, 3, 0);
+    PopupDrawParams(3, 3);
     if (hUiMode) {
         DrawRect(0, 101, 159, 101, 1);
         DrawRect(79, 101, 79, 119, 1);
@@ -223,5 +223,5 @@ static void frame(void) {
         DrawRect(0, 99, 159, 99, 1);
         DrawRect(83, 99, 83, 115, 1);
     }
-    StoreDrawParams(3, 0, 0);
+    PopupDrawParams(3, 0);
 }

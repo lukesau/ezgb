@@ -4140,17 +4140,17 @@ Help12::
     rst RST_38
 
 MsgHookReading::
-    db $f0, $fb, $b7, $20, $06, $21, $03, $00
+    db $f0, $fb, $b7, $18, $06, $21, $03, $00
     db $c3, $47, $73, $3e, $00, $f5, $33, $cd
     db $80, $7e, $33, $c9
 
 MsgHookLoading::
-    db $f0, $fb, $b7, $20, $06, $21, $03, $00
+    db $f0, $fb, $b7, $18, $06, $21, $03, $00
     db $c3, $82, $73, $3e, $01, $f5, $33, $cd
     db $80, $7e, $33, $c9
 
 MsgHookError::
-    db $f0, $fb, $b7, $20, $06, $21, $03, $00
+    db $f0, $fb, $b7, $18, $06, $21, $03, $00
     db $c3, $bd, $73, $3e, $02, $f5, $33, $cd
     db $80, $7e, $33, $c9
 
@@ -4217,52 +4217,20 @@ MsgBox12::
     db $0e, $7e, $d6, $0a, $30, $14, $2b, $2b
     db $2a, $23, $86, $2b, $5f, $7e, $ce, $00
     db $57, $1a, $b7, $28, $05, $23, $02, $34
-    db $18, $d9, $af, $02, $21, $03, $00, $e5
+    db $18, $d9, $af, $02, $fa, $58, $db, $b7
+    db $28, $0a, $21, $03, $00, $e5, $cd, $90
+    db $02, $e1, $18, $0c, $21, $03, $00, $e5
     db $af, $f5, $33, $cd, $91, $27, $e8, $03
     db $21, $6c, $01, $e5, $21, $25, $7d, $e5
     db $3e, $23, $f5, $33, $cd, $ba, $27, $e8
-    db $05, $3e, $7d, $e0, $f9, $21, $00, $00
-    db $39, $11, $2c, $42, $d5, $af, $f5, $33
-    db $e5, $cd, $c0, $05, $e8, $05, $af, $e0
-    db $f9, $e8, $0f, $c9
+    db $05, $f0, $fb, $21, $00, $00, $39, $b7
+    db $20, $10, $11, $05, $08, $d5, $3e, $0a
+    db $f5, $33, $e5, $cd, $b7, $08, $e8, $05
+    db $18, $14, $3e, $7d, $e0, $f9, $11, $2c
+    db $42, $d5, $af, $f5, $33, $e5, $cd, $c0
+    db $05, $e8, $05, $af, $e0, $f9, $e8, $0f
+    db $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

@@ -62,6 +62,7 @@ REGISTRY = {
                       exports={"browser_scroll_up": 0x3fa0}),   # called by BrowserScrollUpHook (00:02f3)
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
+    (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/dark-mode.md)
     (2, 0x43d0): dict(src="theme.c", pins={"theme_ramps": 0x4960}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
     (2, 0x4960): dict(src="theme_ramps.c", pins={}),   # UI theme colors, data only
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
@@ -87,12 +88,12 @@ REGISTRY = {
     (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
                       pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791}),
+                            "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (2, 0x7260): dict(src="lastrom_name.c",                 # START overlay name line + marquee, far target of the 00:0368 stub
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791}),
+                            "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500,
-                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0}),
+                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290}),
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
@@ -103,11 +104,11 @@ REGISTRY = {
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791}),
+                            "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "SmSaveOp": 0x6562}),
+                            "SmSaveOp": 0x6562, "PopupDrawParams": 0x0290}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
     (4, 0x73a0): dict(src="save_name.c", pins={}),
@@ -126,13 +127,13 @@ REGISTRY = {
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "Delay": 0x3a93}),
+                            "StoreDrawParams": 0x2791, "Delay": 0x3a93, "PopupDrawParams": 0x0290}),
     (8, 0x7e80): dict(src="msgbox12.c",                     # 12px Reading / Loading / Error boxes (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "ReadingStr": 0x7374, "LoadingStr": 0x73af, "ErrorFileStr": 0x73ea}),
+                            "ReadingStr": 0x7374, "LoadingStr": 0x73af, "ErrorFileStr": 0x73ea, "PopupDrawParams": 0x0290, "DrawString": 0x08b7}),
     (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
-                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),
