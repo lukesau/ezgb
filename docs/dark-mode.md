@@ -2,8 +2,8 @@
 
 [Issue #11](https://github.com/lukesau/ezgb/issues/11). The SET tab has a
 `THEME` button on the `UI:` row that cycles the browser, every kernel screen
-and our stage1's boot screen through seven themes: light (the stock look),
-dark, and five colored ones. On a DMG, or anything else running the kernel in
+and our stage1's boot screen through six themes: light (the stock look),
+dark, and four colored ones. On a DMG, or anything else running the kernel in
 DMG mode, every theme but light is the inverted palette.
 
 ## The themes
@@ -11,16 +11,17 @@ DMG mode, every theme but light is the inverted palette.
 | # | Button | Background | Darker mid | Lighter mid | Ink |
 |---|---|---|---|---|---|
 | 0 | `LIGHT` | `$7FFF` white | `$56B5` | `$294A` | `$0000` black |
-| 1 | `DARK` | `$18C6` (49,49,49) | `$254B` (90,82,74) | `$3611` (140,132,107) | `$4AD8` tan (197,181,148) |
-| 2 | `BLACK` | `$0000` | `$18C6` | `$4631` | `$7FFF` white |
-| 3 | `RED` | `$0428` (66,8,8) | `$1CED` | `$4A55` | `$7FFF` |
-| 4 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | `$4EB2` | `$7FFF` |
-| 5 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
-| 6 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
+| 1 | `DARK` | `$0000` black | `$18C6` | `$4631` | `$7FFF` white |
+| 2 | `RED` | `$0428` (66,8,8) | `$1CED` | `$4A55` | `$7FFF` |
+| 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | `$4EB2` | `$7FFF` |
+| 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
+| 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
 
-Dark is aimed at OLED screens: a dim gray background and a grayish tan ink
-rather than white. The colored themes have white ink, and their two middle
-shades are the background blended 20% and 56% toward white. Green, purple
+Dark is pure black with white ink, what the issue asked for on an OLED
+screen: those pixels stay off. (A dim gray background with a tan ink was
+tried first; the requester preferred plain black and white.) Every theme past
+0 has white ink, and its two middle shades are the background blended 20% and
+56% toward white. Green, purple
 and blue are about half again as bright as red: at red's level the three
 were hard to tell apart on an unlit GBC screen. The darker mid
 shade matters: it is the cursor outline on a SET checkbox, so it has to stand
@@ -57,10 +58,10 @@ OK!`. Stage1 picks it up on the next power-on.
 | Block | Address | Does |
 |---|---|---|
 | `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 294 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and on a CGB in CGB mode the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. |
-| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 56 B | The colors, data only, 8 bytes per theme; 160 bytes of room. |
+| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; 160 bytes of room. |
 | `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
 | `EzCfg` | `02:4a00` | Parses and writes `THEME=`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
-| `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 297 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
+| `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 290 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
 
 `THEME` is WRAM `$DB58` (vars.h), cleared at boot with the rest of WRAM.
 

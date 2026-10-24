@@ -31,7 +31,6 @@ void ThemeRow(u8 op) {
     static const u8 names[THEME_COUNT][7] = {
         {' ','L','I','G','H','T',0},
         {' ',' ','D','A','R','K',0},
-        {' ','B','L','A','C','K',0},
         {' ',' ',' ','R','E','D',0},
         {' ','G','R','E','E','N',0},
         {'P','U','R','P','L','E',0},
