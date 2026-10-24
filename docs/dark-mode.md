@@ -64,7 +64,11 @@ OK!`. Stage1 picks it up on the next power-on.
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
 | `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 290 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
 
-`THEME` is WRAM `$DB58` (vars.h), cleared at boot with the rest of WRAM.
+`THEME` is WRAM `$DBF7` (vars.h), cleared at boot with the rest of WRAM.
+(It was `$DB58` at first, which is `LastRomName`'s copy of the second
+marquee line's state: the BACKUPSAVE prompt's `Played` line overwrote it,
+so the rest of that prompt drew in light-theme colors, black paper and a
+stray white column on the dark box.)
 
 Bank 1 would have been the natural home (mapped at boot), but its free space
 starts at `$7391` in 0731, `$75F3` in 0918 and `$672A` in 1.04e, and the mod

@@ -14,7 +14,7 @@
  * next boot's first frame (theme.c). Every theme past 0 is a dark one: on a
  * DMG it is the inverted palette, on a color console its row of
  * theme_ramps.c. */
-#define THEME     (*(volatile u8 *)0xDB58)
+#define THEME     (*(volatile u8 *)0xDBF7)
 #define THEME_COUNT 6
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
