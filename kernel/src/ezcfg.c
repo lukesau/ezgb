@@ -628,6 +628,7 @@ static void cfg_load(void) {
     RTC_OFF = 0;
     AS_SD = 0xFF;
     THEME = 0;
+    TAGS_HIDE = 0;
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -641,7 +642,9 @@ static void cfg_load(void) {
 }
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the
- * order of its switch. The key's bit in `seen` is 1 << its index. */
+ * order of its switch. The key's bit in `seen` is 1 << its index (eight
+ * keys; the test-build RTCLOG key past them has no bit, so only its
+ * first-occurrence rule is lost). */
 static const u8 cfg_keys[] = {
     7, 'f','l','a','u','n','c','h',
     3, 'r','t','c',
@@ -650,6 +653,7 @@ static const u8 cfg_keys[] = {
     5, 'r','t','c','s','d',
     8, 'a','u','t','o','s','a','v','e',
     5, 't','h','e','m','e',
+    4, 't','a','g','s',
 #ifdef EZCFG_RTCLOG
     6, 'r','t','c','l','o','g',
 #endif
@@ -727,8 +731,11 @@ static void parse_record(u16 br, u8 legacy) {
             case 6:
                 if (d < THEME_COUNT) THEME = d;
                 break;
+            case 7:
+                TAGS_HIDE = (vlen != 0 && v[0] == '0') ? 1 : 0;
+                break;
 #ifdef EZCFG_RTCLOG
-            case 7: {
+            case 8: {
                 u16 j, len = vlen + 1;    /* the trimmed last entry's space */
                 u8 whole = 0;
                 if (len > LOG_MAX) len = LOG_MAX;
@@ -877,6 +884,10 @@ static u8 cfg_save(void) {
         w = put(w, k_th, 6);
         *w++ = '0' + THEME;
         w = crlf(w);
+    }
+    if (TAGS_HIDE) {
+        static const u8 k_tg[6] = {'T','A','G','S','=','0'};
+        w = crlf(put(w, k_tg, 6));
     }
 #ifdef EZCFG_RTCLOG
     if (LOG_LEN != 0) {

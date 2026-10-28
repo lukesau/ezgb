@@ -135,7 +135,7 @@ target of its own; `f_unlink` has to live in bank 9.
 |---|---|---|
 | `ManageSaves` `04:6d11` | 1678 | [kernel/src/save_mgr.c](../kernel/src/save_mgr.c): the screens, near-called by `RomMenu` |
 | `SaveNameMatch` `04:73a0` | 715 | [kernel/src/save_name.c](../kernel/src/save_name.c): `<base>.sav` or a backup's name |
-| `SmSaveOp` `04:6562` | 16 | far stub to `SaveOp` |
+| `SmSaveOp` `04:65f0` | 16 | far stub to `SaveOp` |
 | `SaveOp` `01:7670` | 1750 | [kernel/src/save_ops.c](../kernel/src/save_ops.c): scan, copy, back up, restore, delete, labels |
 | `SoOpendir` `01:7630`, `SoReaddir` `01:7646` | 22, 22 | far stubs to `Opendir_B5` (`05:73dd`) and `Readdir_B5` (`05:7576`), the bank-2 `FarCallOpendir_B5`'s bytes |
 | `SoUnlink` `01:765c` | 16 | far stub to `FsUnlink` |
@@ -148,7 +148,7 @@ data at `01:7391`, which 0731 and 1.04e leave free.
 ```sh
 cd kernel
 V=1.05e-0731
-python3 tools/inject_bytes.py $V 4 6562 SmSaveOp f8022a666fe5cd8d0770760100e802c9 --apply
+python3 tools/inject_bytes.py $V 4 65f0 SmSaveOp f8022a666fe5cd8d0770760100e802c9 --apply
 python3 tools/inject_bytes.py $V 1 7630 SoOpendir f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply
 python3 tools/inject_bytes.py $V 1 7646 SoReaddir f8042a666fe5f8042a666fe5cd8d0776750500e804c9 --apply
 python3 tools/inject_bytes.py $V 1 765c SoUnlink f8022a666fe5cd8d07c07c0900e802c9 --apply
@@ -165,7 +165,7 @@ python3 tools/inject.py src/save_name.c $V 4 73a0 SaveNameMatch --apply
 python3 tools/inject.py src/save_mgr.c $V 4 6d11 ManageSaves \
     --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
     --pin LastRomTickStub=0370 --pin DrawString=08b7 --pin DrawRect=27ba \
-    --pin StoreDrawParams=2791 --pin SmSaveOp=6562 --apply
+    --pin StoreDrawParams=2791 --pin SmSaveOp=65f0 --apply
 ```
 
 ## Testing

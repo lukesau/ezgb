@@ -4,7 +4,7 @@
  * is pressed on "Manage saves", with the browser's record page. The ROM's
  * file name is at $c4a4 (RomMenu copied it there). The file work (listing
  * /SAVER, copies, delete, the list labels) is SaveOp in bank 1 (save_ops.c),
- * reached through SmSaveOp (04:6562) with an op and a list index.
+ * reached through SmSaveOp (04:65f0) with an op and a list index.
  *
  *   Saves                  "Working...", then "Done" or "Error"
  *   <ROM name>             LastRomName's band (LR_GEO = 1)
@@ -23,7 +23,7 @@
  *   python3 tools/inject.py src/save_mgr.c $V 4 6d11 ManageSaves \
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin DrawString=08b7 --pin DrawRect=27ba \
- *       --pin StoreDrawParams=2791 --pin SmSaveOp=6562 --apply
+ *       --pin StoreDrawParams=2791 --pin SmSaveOp=65f0 --apply
  */
 
 #include "types.h"
@@ -32,7 +32,7 @@
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
-extern u8 SmSaveOp(u16 opidx);                                      /* 04:6562 -> SaveOp 01:7670 */
+extern u8 SmSaveOp(u16 opidx);                                      /* 04:65f0 -> SaveOp 01:7670 */
 
 #define NAME_BUF  ((const u8 *)0xC4A4)      /* the ROM's file name */
 #define LABEL     ((const u8 *)0xD750)      /* SO_LABEL's text */

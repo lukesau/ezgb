@@ -16,6 +16,12 @@
  * theme_ramps.c. */
 #define THEME     (*(volatile u8 *)0xDBF7)
 #define THEME_COUNT 6
+/* Browser names without their tags (docs/browser-tags.md): TAGS=0 in
+ * EZGB.CFG, the SET tab's TAGS checkbox off. tagtrim.c, browser_icons.c. */
+#define TAGS_HIDE (*(volatile u8 *)0xDBF6)
+/* Set by TagLen when it cut the name it measured, for TagCat (tagtrim.c).
+ * Past FL_PATH's end ($DAFA); $DBF0-$DBF5 are FillRect's scratch. */
+#define TAG_CUT   (*(volatile u8 *)0xDAFF)
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */

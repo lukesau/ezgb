@@ -83,7 +83,9 @@ REGISTRY = {
                             "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
                             "DiNest": 0x06fd, "EiNest": 0x0706}),
     (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
-    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7}),   # far target of the 00:3ec8 stub
+    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
+    (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser-tags.md): TagCat is the far target of 00:0d69
+                      exports={"TagLen": 0x7a55}),              # far target of FarCallTagLen (00:0408)
     (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
     (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
@@ -97,7 +99,10 @@ REGISTRY = {
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x7670}),
+                            "ThemeRow": 0x7670, "SgbTagsRow": 0x77a0}),
+    (4, 0x77a0): dict(src="sgbtags_row.c",                  # SET tab SGB BOOT + TAGS boxes, near-called by FlCfg (docs/browser-tags.md)
+                      pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400,
+                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba}),
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by FlCfg (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),
@@ -108,7 +113,7 @@ REGISTRY = {
     (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "SmSaveOp": 0x6562, "PopupDrawParams": 0x0290}),
+                            "SmSaveOp": 0x65f0, "PopupDrawParams": 0x0290}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
     (4, 0x73a0): dict(src="save_name.c", pins={}),

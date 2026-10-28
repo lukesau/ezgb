@@ -527,14 +527,9 @@ BrowserPageEndHook::
 FarCallScan::
     db $cd, $8d, $07, $00, $45, $02, $00, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+FarCallTagLen::
+    db $cd, $8d, $07, $55, $7a, $05, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -2186,7 +2181,7 @@ DrawDirEntryLabel_bankShift::
     ld c, l
     ld b, h
     push bc
-    call CStrLen
+    call $0408
     add sp, $02
     ld b, d
     ld c, e
@@ -2386,9 +2381,10 @@ DrawDirEntryLabel_drawEllipsis::
     push hl
     call FarCallTrampoline
     nop
-    ld b, b
-    ld bc, $e800
-    inc b
+    ld a, d
+    dec b
+    nop
+    add sp, $04
     ld hl, $c4a4
     push hl
     call CStrLen

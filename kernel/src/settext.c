@@ -22,9 +22,9 @@
  *   row 8, 10   labels 0..128 (the checkbox is at x 130)
  *   row 12  col 0 the fast-launch name 0..80   col 11 "PICK ROM" 88..155
  *   row 14  col 0 "UI:" 0..112   col 15 "12px" 120..155
- *   row 16  col 0 "SGB BOOT:" 0..128   col 15 "AUTO" 120..155, right-aligned
- *           like the buttons, in place of the checkbox when our stage1
- *           handles the SGB
+ *   row 16  col 0 "SGB BOOT:" 0..66 (the checkbox is at x 74), or "SGB:"
+ *           with col 5 "AUTO" 34..86 when our stage1 handles the SGB;
+ *           col 11 "TAGS:" 86..130 (checkbox at x 130)
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
  *
@@ -70,7 +70,9 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         if (col) { x = 120; end = 155; } else { end = 112; }
         break;
     case 16:
-        if (col) { x = 120; end = 155; }
+        if (col == 0) { end = 66; }
+        else if (col == 5) { x = 34; end = 86; }
+        else { x = 86; end = 130; }
         break;
     }
     if (len == 0 || len > 23) len = 23;

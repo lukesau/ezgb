@@ -33,6 +33,7 @@ RTC=2026-09-08 10:15:32
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `UI` | `8` or `12`: which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
 | `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing = light. | SET tab (`THEME` button) |
+| `TAGS` | `0`: the browser hides the tags in ROM file names (the SET tab's `TAGS:` box unticked), see [browser-tags.md](browser-tags.md). Written only as `TAGS=0`. Missing = full names. | SET tab (`TAGS:` checkbox) |
 | `AUTOSAVE` | `0` or `1`: the SET tab's AUTO SAVE checkbox (pSRAM `$11:$A200`). Put back when the pSRAM lost power (BATTERY DRY), see "AUTO SAVE backup" below. Missing = not restored. | SET tab (the AUTO SAVE toggle), every launch |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
 
@@ -264,12 +265,14 @@ no version-specific address.
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
 | `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
+| `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser-tags.md](browser-tags.md)) |
 | `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([dark-mode.md](dark-mode.md)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |
 | `$DBF9` | `CFG_LOADED`: set by every config load; the boot fast-launch scan reuses the RTC check's read instead of opening the file again |
 | `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser-sort.md](browser-sort.md#record-cap)) |
 | `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
-| `$DA80` / `$DA81` / `$DA82-$DAF9` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged) |
+| `$DA80` / `$DA81` / `$DA82-$DAFA` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged; 120 characters and the NUL) |
+| `$DAFF` | `TAG_CUT`: the marquee's "this name was cut" flag between `TagLen` and `TagCat` ([browser-tags.md](browser-tags.md)) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |
 | `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged); off the SET tab, the BACKUPSAVE prompt's `Played` line text ([modal-prompts.md](modal-prompts.md)) |
 | `$DB40-$DB46` | `RTC_BK`, stored time, 7 BCD bytes in register order |

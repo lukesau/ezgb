@@ -1,6 +1,6 @@
 /* Save manager file work: list, back up, restore, delete (docs/save-manager.md).
  *
- * Bank 1, injected at 01:7670. Far target of SmSaveOp (04:6562), which the
+ * Bank 1, injected at 01:7670. Far target of SmSaveOp (04:65f0), which the
  * save manager's screens (save_mgr.c, bank 4) call with an op and a list
  * index packed in one word, op in the high byte:
  *

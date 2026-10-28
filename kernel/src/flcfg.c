@@ -32,10 +32,10 @@
  * Layout (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]   8 AUTO SAVE: [ ]
  *   10 FAST LAUNCH: [ ]   12 <name, 10 cols, scrolling> [PICK ROM]
- *   14 UI: [LIGHT] [8px]   16 SGB BOOT: [ ]
+ *   14 UI: [LIGHT] [8px]   16 SGB BOOT: [ ]  TAGS: [x]
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 THEME, 6 UI,
- * 7 SGB).
+ * 7 SGB BOOT, 8 TAGS).
  *
  * SGB BOOT is not in EZGB.CFG: the boot stub (scripts/sgb/sgb_boot.asm) runs
  * long before the SD card is up, so it reads a record in battery-backed
@@ -60,6 +60,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
+extern void SgbTagsRow(u8 op);                                      /* 04:77a0, sgbtags_row.c: the SGB BOOT and TAGS boxes */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40-byte zero-padded display buffer */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -73,9 +74,8 @@ extern void ThemeRow(u8 op);                                        /* 04:7670, 
 #define ROW_PICK  4
 #define ROW_THEME 5          /* THEME button, left on the UI row (theme_row.c, docs/dark-mode.md) */
 #define ROW_UI    6          /* UI: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_SGB   7          /* SGB BOOT: checkbox, a pSRAM record (sgb_get/sgb_set) */
-#define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
-#define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
+#define ROW_SGB   7          /* SGB BOOT: checkbox, a pSRAM record (sgbtags_row.c) */
+#define ROW_TAGS  8          /* TAGS: checkbox, right of SGB BOOT: off hides ROM name tags (docs/browser-tags.md) */
 #define NAME_W   10                         /* name columns left of PICK ROM */
 
 #include "marquee.h"
@@ -89,8 +89,6 @@ static void pick_commit(void);
 static void wait_a_release(void);
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
-static u8 sgb_get(void);
-static void sgb_set(u8 on);
 
 u8 flcfg(u8 *frame, u8 op) {
     if (op == 0) {
@@ -132,11 +130,10 @@ u8 flcfg(u8 *frame, u8 op) {
             SetFpgaPage_B4(0);
             return 0;
         }
-        if (frame[0x3d] == ROW_SGB) {
-            if (S1_SGB) return 0;       /* AUTO: stage1 does it, nothing to set */
-            sgb_set(!sgb_get());
-            draw_rows(ROW_SGB);
+        if (row == ROW_SGB || row == ROW_TAGS) {
+            SgbTagsRow(row == ROW_SGB ? 3 : 4);   /* toggles, saves, redraws itself */
             wait_a_release();
+            SetFpgaPage_B4(0);
             return 0;
         }
         if (frame[0x3d] == ROW_UI) {
@@ -215,30 +212,6 @@ static void pick_commit(void) {
     wait_a_release();
 }
 
-/* The SGB BOOT record, mapped the way the kernel maps page $11 for its
- * AUTO SAVE flag (04:58d6): page latch, $7FC0 = $03, access, then both back
- * to 0, where the SET screen rests. */
-static u8 sgb_get(void) {
-    u8 on;
-    RAM_PAGE = 0x11;
-    SetFpgaPage_B4(3);
-    on = SGB_REC[0] == 'S' && SGB_REC[1] == 'G' && SGB_REC[2] == 1 && SGB_REC[3] == 0xFE;
-    RAM_PAGE = 0;
-    SetFpgaPage_B4(0);
-    return on;
-}
-
-static void sgb_set(u8 on) {
-    RAM_PAGE = 0x11;
-    SetFpgaPage_B4(3);
-    SGB_REC[0] = 'S';
-    SGB_REC[1] = 'G';
-    SGB_REC[2] = on;
-    SGB_REC[3] = ~on;
-    RAM_PAGE = 0;
-    SetFpgaPage_B4(0);
-}
-
 static void wait_a_release(void) {
     while (ReadJoypad() & 0x10) {}
 }
@@ -250,14 +223,13 @@ static void draw_static(void) {
     static const u8 nosd_label[6] = {'N','O',' ','S','D',0};
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
     static const u8 ui_label[4] = {'U','I',':',0};
-    static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
     StoreDrawParams(3, 0, 0);
     SetText(rtc_label, 4, 0, 6);
     SetText(sd_label, 2, 6, 6);
     SetText(nosd_label, 5, 11, 6);
     SetText(fl_label, 12, 0, 10);
     SetText(ui_label, 3, 0, 14);
-    SetText(sgb_label, 9, 0, 16);
+    SgbTagsRow(5);                    /* the SGB BOOT and TAGS labels */
     draw_name();
 }
 
@@ -323,8 +295,7 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
 }
 
 /* RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A switches) and
- * the FAST LAUNCH (row 10) and SGB BOOT (row 16) checkboxes (SGB BOOT reads
- * AUTO instead when our stage1 handles the SGB), the PICK ROM button
+ * the FAST LAUNCH (row 10) checkboxes, row 16's two (sgbtags_row.c), the PICK ROM button
  * on row 12, the THEME (theme_row.c) and UI buttons on row 14, all shaped like the stock SET
  * button (box 5 px left and 4 px right of the text, 3 px above and 5 below). */
 static void draw_rows(u8 cur) {
@@ -335,15 +306,7 @@ static void draw_rows(u8 cur) {
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
     box(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
     box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
-    if (S1_SGB) {
-        /* our stage1 sends the SGB header itself, only on an SGB, and the
-         * kernel never does: the setting has nothing to decide */
-        static const u8 auto_str[5] = {'A','U','T','O',0};
-        if (cur == ROW_SGB) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-        SetText(auto_str, 4, 15, 16);   /* right-aligned, like the buttons */
-    } else {
-        box(0x82, 0x80, sgb_get(), cur == ROW_SGB);
-    }
+    SgbTagsRow(cur == ROW_SGB ? 1 : cur == ROW_TAGS ? 2 : 0);
 
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);

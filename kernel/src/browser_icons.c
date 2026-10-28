@@ -18,18 +18,27 @@
  * trampoline hop per row instead of two, and it leaves bank 0 free for the
  * upcoming 8px/12px mode switch.
  *
+ * With the TAGS checkbox off a file's name is cut where TagLen (tagtrim.c,
+ * docs/browser-tags.md) says: the row is drawn from a NUL-terminated copy
+ * in both modes.
+ *
  *   python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
- *       --pin DrawString12=7500 --pin DrawString=08b7 --replace --apply
+ *       --pin DrawString12=7500 --pin DrawString=08b7 --pin FarCallTagLen=0408 --replace --apply
  */
 
 #include "types.h"
 #include "draw.h"
 #include "vars.h"
 
+/* 00:0408 -> TagLen (tagtrim.c, bank 5). The called stub and the trampoline
+ * put three words between the argument and the callee, which TagLen's
+ * three pads account for: pass only the name. */
+extern u16 FarCallTagLen(const u8 *s);
+
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 
 void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
-    u8 i, dot, n, e, c1, c2, ic;
+    u8 i, dot, n, e, c1, c2, ic, lim;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
@@ -37,10 +46,13 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
     u8 buf[41];
 
     (void)x;
+    lim = 39;
     if (len == 0) {
         ic = 0xC0;                       /* folder */
         len = 19;
     } else {
+        n = (u8)FarCallTagLen(s);        /* the name's length as drawn */
+        if (n < lim) lim = n;
         dot = 0xFF;
         for (i = 0; i < 254 && s[i]; i++) if (s[i] == '.') dot = i;
         n = i;
@@ -64,22 +76,19 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
      * lays out up to 40 glyphs and stops at the first that would cross the
      * row's right edge, painting paper after the NUL. 39 characters are
      * copied, more than the narrowest glyphs can fill the 148 px field
-     * with. */
+     * with. The copy is zero-padded: DrawString (8px) draws its len cells
+     * whatever the string holds, so a shorter name must not leave stale
+     * bytes behind its NUL. */
+    buf[0] = ic;
+    for (i = 0; i < lim && s[i]; i++) buf[1 + i] = s[i];
+    for (; i < 40; i++) buf[1 + i] = 0;
     if (!hUiMode) {
         /* 8px: icon in column 0, name from column 1, one column narrower
          * than stock (16 for the 17-wide default, 19 for files). */
         DrawString(&ic, 1, 0, y);
-        DrawString(s, len, 1, y);
+        DrawString(buf + 1, len, 1, y);
         return;
     }
-    buf[0] = ic;
-    for (i = 0; i < 39; i++) {
-        buf[1 + i] = s[i];
-        if (s[i] == 0) {
-            break;
-        }
-    }
-    buf[40] = 0;
     (void)len;
     DrawString12(0, 0, 0, buf, 0, 0, y);
 }

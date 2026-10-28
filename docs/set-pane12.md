@@ -19,7 +19,7 @@ changes is x, per field:
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..80 (scrolls from 10 characters up); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
 | 14 | `UI:` 0..112; the theme name from 45 to at most 107 in a box (40,111)-(108,124), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)); `12px` 120..155 in a box (115,111)-(155,124) |
-| 16 | `SGB BOOT:` 0..128; the checkbox at x 130, or `AUTO` 120..155, right-aligned like the buttons, when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
+| 16 | `SGB BOOT:` 0..66 with its checkbox at x 68 (74 in 8px), or `SGB:` with `AUTO` 34..86 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)); `TAGS:` 86..130 with its checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above

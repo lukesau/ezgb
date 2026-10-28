@@ -81,7 +81,8 @@ The `UI:` row (row 14) holds two buttons: `THEME` and the 8px/12px one. The
 theme name is right-aligned in columns 7-12 in 8px; in 12px it starts at
 x 45 in a box (40,111)-(108,124), wide enough for `PURPLE`. The cursor gains
 a row between PICK ROM and UI: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH,
-4 PICK ROM, 5 THEME, 6 UI, 7 SGB BOOT. The clamp at `04:5604` is now
+4 PICK ROM, 5 THEME, 6 UI, 7 SGB BOOT (8 TAGS since
+[browser-tags.md](browser-tags.md)). The clamp at `04:5604` was
 `d6 07`, and RIGHT (`FlSetJumpBottom`, `04:5f90`) goes to row 7
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)). A on THEME changes the
 whole screen at once; from the last theme it wraps to light.

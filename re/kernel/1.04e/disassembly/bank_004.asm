@@ -2412,7 +2412,7 @@ DrawTimeAutosaveScreen_field2Clone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0408
+    ld hl, FarCallTagLen
     push hl
     ld a, $02
     push af
@@ -3058,7 +3058,7 @@ DrawTimeAutosaveScreen_savDayClone::
     ld hl, sp+$41
     ld c, l
     ld b, h
-    ld hl, $0408
+    ld hl, FarCallTagLen
     push hl
     ld a, $02
     push af
@@ -4442,7 +4442,7 @@ DrawTimeAutosaveScreen_hiliteInc::
     ld a, [hl]
 
 FlSetHiliteClamp::
-    db $d6, $07
+    db $d6, $08
 
     jp nc, DrawTimeAutosaveScreen_redraw
 
@@ -5825,48 +5825,172 @@ SetText::
     db $e8, $e5, $f0, $fb, $4f, $b7, $20, $17
     db $f8, $21, $3a, $57, $3a, $5f, $d5, $3a
     db $2b, $f5, $33, $2a, $5f, $56, $d5, $cd
-    db $b7, $08, $e8, $05, $c3, $49, $65, $f8
+    db $b7, $08, $e8, $05, $c3, $5e, $65, $f8
     db $18, $af, $22, $36, $80, $f8, $21, $7e
     db $d6, $02, $28, $27, $f8, $21, $7e, $d6
-    db $04, $28, $36, $f8, $21, $7e, $d6, $06
-    db $28, $4d, $f8, $21, $7e, $d6, $0c, $28
-    db $6b, $f8, $21, $7e, $d6, $0e, $28, $79
-    db $f8, $21, $7e, $d6, $10, $ca, $d6, $64
-    db $c3, $e3, $64, $f8, $20, $7e, $b7, $28
+    db $04, $28, $37, $f8, $21, $7e, $d6, $06
+    db $28, $4e, $f8, $21, $7e, $d6, $0c, $28
+    db $6c, $f8, $21, $7e, $d6, $0e, $28, $7a
+    db $f8, $21, $7e, $d6, $10, $ca, $d7, $64
+    db $c3, $fa, $64, $f8, $20, $7e, $b7, $28
     db $0a, $f8, $18, $3e, $7f, $22, $36, $9b
-    db $c3, $e3, $64, $f8, $19, $36, $78, $18
-    db $7a, $01, $4c, $65, $79, $f8, $20, $86
-    db $5f, $78, $ce, $00, $57, $1a, $f8, $18
-    db $77, $f8, $20, $3a, $86, $6f, $26, $00
-    db $09, $7e, $f8, $19, $77, $18, $5c, $f8
+    db $c3, $fa, $64, $f8, $19, $36, $78, $c3
+    db $fa, $64, $01, $61, $65, $79, $f8, $20
+    db $86, $5f, $78, $ce, $00, $57, $1a, $f8
+    db $18, $77, $f8, $20, $3a, $86, $6f, $26
+    db $00, $09, $7e, $f8, $19, $77, $18, $72
+    db $f8, $20, $7e, $b7, $20, $06, $f8, $19
+    db $36, $2c, $18, $66, $f8, $20, $7e, $d6
+    db $06, $20, $09, $f8, $18, $3e, $2c, $22
+    db $36, $42, $18, $56, $f8, $18, $3e, $56
+    db $22, $36, $82, $18, $4d, $f8, $20, $7e
+    db $b7, $28, $09, $f8, $18, $3e, $58, $22
+    db $36, $9b, $18, $3e, $f8, $19, $36, $50
+    db $18, $38, $f8, $20, $7e, $b7, $28, $09
+    db $f8, $18, $3e, $78, $22, $36, $9b, $18
+    db $29, $f8, $19, $36, $70, $18, $23, $f8
     db $20, $7e, $b7, $20, $06, $f8, $19, $36
-    db $2c, $18, $50, $f8, $20, $7e, $d6, $06
-    db $20, $09, $f8, $18, $3e, $2c, $22, $36
-    db $42, $18, $40, $f8, $18, $3e, $56, $22
-    db $36, $82, $18, $37, $f8, $20, $7e, $b7
-    db $28, $09, $f8, $18, $3e, $58, $22, $36
-    db $9b, $18, $28, $f8, $19, $36, $50, $18
-    db $22, $f8, $20, $7e, $b7, $28, $09, $f8
-    db $18, $3e, $78, $22, $36, $9b, $18, $13
-    db $f8, $19, $36, $70, $18, $0d, $f8, $20
-    db $7e, $b7, $28, $07, $f8, $18, $3e, $78
-    db $22, $36, $9b, $f8, $1f, $7e, $b7, $28
-    db $05, $3e, $17, $96, $30, $04, $f8, $1f
-    db $36, $17, $f8, $1a, $36, $00, $f8, $1a
-    db $5e, $16, $00, $21, $00, $00, $39, $19
-    db $4d, $44, $f8, $1a, $7e, $f8, $1f, $96
-    db $30, $19, $2b, $2b, $7e, $f8, $1a, $86
-    db $23, $23, $23, $23, $5f, $7e, $ce, $00
-    db $57, $1a, $b7, $28, $06, $02, $f8, $1a
-    db $34, $18, $d3, $af, $02, $f8, $19, $7e
-    db $e0, $f9, $f8, $21, $7e, $87, $87, $87
-    db $c6, $02, $21, $00, $00, $39, $4d, $44
-    db $f5, $33, $f8, $19, $66, $2e, $00, $e5
-    db $c5, $cd, $c0, $05, $e8, $05, $af, $e0
-    db $f9, $e8, $1b, $c9, $00, $09, $12, $1b
-    db $24, $2c, $35, $3e, $46, $4f, $58, $5e
-    db $67, $70, $76, $7f, $88, $8e, $97, $a0
+    db $42, $18, $17, $f8, $20, $7e, $d6, $05
+    db $20, $09, $f8, $18, $3e, $22, $22, $36
+    db $56, $18, $07, $f8, $18, $3e, $56, $22
+    db $36, $82, $f8, $1f, $7e, $b7, $28, $05
+    db $3e, $17, $96, $30, $04, $f8, $1f, $36
+    db $17, $f8, $1a, $36, $00, $f8, $1a, $5e
+    db $16, $00, $21, $00, $00, $39, $19, $4d
+    db $44, $f8, $1a, $7e, $f8, $1f, $96, $30
+    db $19, $2b, $2b, $7e, $f8, $1a, $86, $23
+    db $23, $23, $23, $5f, $7e, $ce, $00, $57
+    db $1a, $b7, $28, $06, $02, $f8, $1a, $34
+    db $18, $d3, $af, $02, $f8, $19, $7e, $e0
+    db $f9, $f8, $21, $7e, $87, $87, $87, $c6
+    db $02, $f5, $33, $f8, $19, $66, $2e, $00
+    db $e5, $21, $03, $00, $39, $e5, $cd, $c0
+    db $05, $e8, $05, $af, $e0, $f9, $e8, $1b
+    db $c9, $00, $09, $12, $1b, $24, $2c, $35
+    db $3e, $46, $4f, $58, $5e, $67, $70, $76
+    db $7f, $88, $8e, $97, $a0
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
 
@@ -5874,167 +5998,24 @@ SmSaveOp::
     db $f8, $02, $2a, $66, $6f, $e5, $cd, $8d
     db $07, $70, $76, $01, $00, $e8, $02, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-
 FlCfg::
     db $f8, $02, $2a, $c6, $3d, $4f, $2a, $ce
     db $00, $47, $7e, $b7, $20, $58, $21, $fe
     db $db, $36, $00, $2e, $38, $6e, $2c, $20
     db $26, $3e, $06, $02, $c5, $21, $9b, $19
     db $e5, $21, $7b, $0d, $e5, $af, $f5, $33
-    db $cd, $6a, $6b, $e8, $05, $21, $10, $02
-    db $e5, $3e, $03, $f5, $33, $11, $9f, $67
+    db $cd, $ec, $6a, $e8, $05, $21, $10, $02
+    db $e5, $3e, $03, $f5, $33, $11, $a2, $67
     db $d5, $cd, $00, $64, $e8, $05, $c1, $21
     db $38, $db, $36, $00, $2e, $39, $36, $00
-    db $f0, $fa, $2e, $3b, $77, $c5, $cd, $a3
-    db $67, $cd, $ee, $68, $c1, $0a, $f5, $33
-    db $cd, $b0, $6b, $33, $af, $f5, $33, $cd
+    db $f0, $fa, $2e, $3b, $77, $c5, $cd, $a6
+    db $67, $cd, $83, $68, $c1, $0a, $f5, $33
+    db $cd, $32, $6b, $33, $af, $f5, $33, $cd
     db $6e, $46, $33, $1e, $00, $c9, $f8, $04
     db $7e, $3d, $20, $0a, $0a, $f5, $33, $cd
-    db $b0, $6b, $33, $1e, $00, $c9, $f8, $04
-    db $7e, $d6, $02, $c2, $49, $67, $0a, $6f
-    db $45, $78, $d6, $03, $3e, $01, $28, $01
+    db $32, $6b, $33, $1e, $00, $c9, $f8, $04
+    db $7e, $d6, $02, $c2, $4c, $67, $0a, $57
+    db $42, $78, $d6, $03, $3e, $01, $28, $01
     db $af, $4f, $78, $d6, $05, $3e, $01, $28
     db $01, $af, $5f, $79, $b7, $20, $08, $78
     db $3d, $28, $04, $7b, $b7, $28, $46, $7b
@@ -6044,205 +6025,373 @@ FlCfg::
     db $18, $02, $3e, $01, $ea, $80, $da, $18
     db $0e, $fa, $3a, $db, $b7, $28, $03, $af
     db $18, $02, $3e, $01, $ea, $3a, $db, $c5
-    db $cd, $ab, $67, $33, $cd, $b0, $6b, $33
-    db $cd, $e6, $68, $af, $f5, $33, $cd, $6e
-    db $46, $33, $1e, $00, $c9, $7d, $d6, $07
-    db $20, $26, $fa, $f8, $db, $b7, $28, $03
-    db $1e, $00, $c9, $cd, $78, $68, $7b, $d6
-    db $01, $3e, $00, $17, $f5, $33, $cd, $b7
-    db $68, $33, $3e, $07, $f5, $33, $cd, $b0
-    db $6b, $33, $cd, $e6, $68, $1e, $00, $c9
-    db $7d, $d6, $06, $20, $29, $f0, $fb, $b7
-    db $28, $03, $af, $18, $02, $3e, $01, $e0
-    db $fb, $cd, $ab, $67, $3e, $01, $f5, $33
-    db $cd, $70, $5f, $33, $cd, $e6, $68, $af
-    db $f5, $33, $cd, $6e, $46, $33, $21, $38
-    db $db, $36, $ff, $1e, $02, $c9, $21, $fe
-    db $db, $36, $01, $cd, $e6, $68, $1e, $01
-    db $c9, $f8, $04, $7e, $d6, $03, $20, $06
-    db $cd, $b3, $67, $1e, $00, $c9, $f8, $04
-    db $7e, $d6, $05, $20, $3c, $f0, $fa, $4f
-    db $21, $3b, $db, $96, $21, $3b, $db, $71
-    db $fe, $65, $38, $02, $3e, $64, $21, $39
-    db $db, $86, $21, $39, $db, $77, $fa, $39
-    db $db, $2e, $38, $4e, $0c, $0d, $0e, $3c
-    db $28, $02, $0e, $14, $91, $38, $0f, $21
-    db $39, $db, $36, $00, $fa, $38, $db, $3c
-    db $2e, $38, $77, $cd, $8d, $69, $1e, $00
-    db $c9, $cd, $a3, $67, $1e, $00, $c9, $53
-    db $45, $54, $00, $21, $fc, $db, $36, $00
-    db $c3, $00, $5f, $21, $fc, $db, $36, $01
-    db $c3, $00, $5f, $e8, $fb, $cd, $a3, $67
-    db $0e, $00, $69, $26, $00, $11, $a6, $c2
-    db $19, $7e, $b7, $28, $03, $0c, $18, $f2
-    db $f8, $00, $71, $0e, $00, $69, $26, $00
-    db $11, $a4, $c4, $19, $7e, $b7, $28, $03
-    db $0c, $18, $f2, $f8, $01, $79, $32, $7e
-    db $81, $4f, $7e, $b7, $28, $0d, $5e, $af
-    db $57, $1b, $21, $a6, $c2, $19, $7e, $fe
-    db $2f, $28, $01, $0c, $3e, $78, $91, $38
-    db $74, $0e, $00, $f8, $04, $36, $00, $f8
-    db $04, $7e, $f8, $00, $96, $30, $21, $23
-    db $23, $79, $c6, $82, $22, $3e, $00, $ce
-    db $da, $22, $0c, $3a, $2b, $c6, $a6, $5f
-    db $3e, $00, $ce, $c2, $57, $1a, $5e, $23
-    db $66, $6b, $77, $f8, $04, $34, $18, $d7
-    db $41, $79, $b7, $28, $0d, $af, $59, $57
-    db $1b, $21, $82, $da, $19, $7e, $fe, $2f
-    db $28, $0a, $68, $04, $26, $00, $11, $82
-    db $da, $19, $36, $2f, $0e, $00, $78, $c6
-    db $82, $5f, $3e, $00, $ce, $da, $57, $79
-    db $f8, $01, $96, $30, $0f, $04, $79, $c6
-    db $a4, $6f, $3e, $00, $ce, $c4, $67, $7e
-    db $12, $0c, $18, $e2, $af, $12, $21, $81
-    db $da, $70, $cd, $ab, $67, $21, $fe, $db
-    db $36, $00, $cd, $e6, $68, $e8, $05, $c9
-    db $21, $00, $40, $36, $11, $3e, $03, $f5
-    db $33, $cd, $6e, $46, $33, $fa, $00, $a4
-    db $fe, $53, $20, $15, $fa, $01, $a4, $fe
-    db $47, $20, $0e, $21, $02, $a4, $4e, $0d
-    db $20, $07, $fa, $03, $a4, $fe, $fe, $28
-    db $04, $0e, $00, $18, $02, $0e, $01, $21
-    db $00, $40, $36, $00, $c5, $af, $f5, $33
-    db $cd, $6e, $46, $33, $c1, $59, $c9, $21
-    db $00, $40, $36, $11, $3e, $03, $f5, $33
-    db $cd, $6e, $46, $33, $21, $00, $a4, $36
-    db $53, $2e, $01, $36, $47, $11, $02, $a4
-    db $f8, $02, $7e, $12, $7e, $2f, $ea, $03
-    db $a4, $21, $00, $40, $36, $00, $af, $f5
-    db $33, $cd, $6e, $46, $33, $c9, $cd, $91
-    db $36, $cb, $63, $20, $f9, $c9, $af, $0f
-    db $f5, $af, $3e, $03, $f5, $33, $cd, $d8
-    db $23, $e8, $03, $3e, $06, $f5, $33, $21
-    db $04, $00, $e5, $11, $64, $69, $d5, $cd
-    db $00, $64, $e8, $05, $21, $06, $06, $e5
-    db $3e, $02, $f5, $33, $11, $69, $69, $d5
-    db $cd, $00, $64, $e8, $05, $21, $0b, $06
-    db $e5, $3e, $05, $f5, $33, $11, $6c, $69
-    db $d5, $cd, $00, $64, $e8, $05, $3e, $0a
-    db $f5, $33, $21, $0c, $00, $e5, $11, $72
-    db $69, $d5, $cd, $00, $64, $e8, $05, $3e
-    db $0e, $f5, $33, $21, $03, $00, $e5, $11
-    db $7f, $69, $d5, $cd, $00, $64, $e8, $05
-    db $3e, $10, $f5, $33, $21, $09, $00, $e5
-    db $11, $83, $69, $d5, $cd, $00, $64, $e8
-    db $05, $c3, $8d, $69, $52, $54, $43, $3a
-    db $00, $53, $44, $00, $4e, $4f, $20, $53
-    db $44, $00, $46, $41, $53, $54, $20, $4c
-    db $41, $55, $4e, $43, $48, $3a, $00, $55
-    db $49, $3a, $00, $53, $47, $42, $20, $42
-    db $4f, $4f, $54, $3a, $00, $e8, $f9, $fa
-    db $81, $da, $b7, $20, $09, $f8, $00, $36
-    db $c7, $23, $36, $6a, $18, $23, $0e, $00
-    db $59, $21, $82, $da, $16, $00, $19, $7e
-    db $b7, $28, $09, $fe, $2f, $20, $02, $4b
-    db $0c, $1c, $18, $ed, $79, $c6, $82, $f5
-    db $f8, $02, $f1, $22, $3e, $00, $ce, $da
-    db $77, $0e, $00, $f8, $00, $2a, $81, $5f
-    db $7e, $ce, $00, $57, $1a, $b7, $28, $03
-    db $0c, $18, $f0, $f8, $02, $71, $3e, $0a
-    db $91, $38, $41, $f0, $fb, $b7, $28, $05
-    db $79, $d6, $0a, $28, $37, $21, $38, $db
-    db $36, $00, $0e, $00, $79, $c6, $10, $f5
-    db $f8, $07, $f1, $22, $3e, $00, $ce, $db
-    db $77, $79, $f8, $02, $96, $30, $0c, $2b
-    db $2b, $2a, $81, $5f, $7e, $ce, $00, $57
-    db $1a, $18, $01, $af, $f8, $05, $5e, $23
-    db $66, $6b, $77, $0c, $79, $d6, $0a, $38
-    db $d3, $c3, $a8, $6a, $21, $38, $db, $4e
-    db $f8, $02, $2a, $5f, $16, $00, $13, $13
-    db $13, $7b, $22, $7a, $32, $06, $00, $79
-    db $96, $23, $78, $9e, $50, $cb, $7e, $28
-    db $07, $cb, $7a, $20, $08, $bf, $18, $05
-    db $cb, $7a, $28, $01, $37, $38, $05, $21
-    db $38, $db, $36, $00, $fa, $38, $db, $f8
-    db $05, $77, $f8, $06, $36, $00, $f8, $06
-    db $3a, $c6, $10, $5f, $3e, $00, $ce, $db
-    db $57, $7e, $f8, $02, $96, $30, $12, $2b
-    db $2b, $7e, $f8, $05, $86, $2b, $2b, $2b
-    db $2b, $4f, $7e, $ce, $00, $47, $0a, $18
-    db $02, $3e, $20, $12, $f8, $05, $34, $3a
-    db $2b, $4f, $06, $00, $79, $96, $23, $78
-    db $9e, $50, $cb, $7e, $28, $07, $cb, $7a
-    db $20, $08, $bf, $18, $05, $cb, $7a, $28
-    db $01, $37, $38, $04, $f8, $05, $36, $00
-    db $f8, $06, $34, $7e, $d6, $0a, $38, $ae
-    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
-    db $cd, $d8, $23, $e8, $03, $3e, $0c, $f5
-    db $33, $21, $0a, $00, $e5, $11, $10, $db
-    db $d5, $cd, $00, $64, $e8, $0c, $c9, $28
-    db $41, $55, $54, $4f, $29, $00, $af, $0f
-    db $f5, $af, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $f8, $03, $3a, $4f, $c6, $08, $5f
-    db $2a, $47, $c6, $08, $57, $c5, $d5, $3e
-    db $01, $f5, $33, $7b, $f5, $33, $d5, $33
-    db $3a, $57, $5e, $d5, $cd, $01, $24, $e8
-    db $05, $d1, $c1, $f8, $05, $7e, $b7, $28
-    db $14, $c5, $d5, $af, $67, $2e, $01, $e5
-    db $3e, $01, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $d1, $c1, $18, $11, $c5, $d5, $af
-    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
-    db $d8, $23, $e8, $03, $d1, $c1, $c5, $af
-    db $f5, $33, $7b, $f5, $33, $d5, $33, $f8
-    db $08, $3a, $57, $5e, $d5, $cd, $01, $24
-    db $e8, $05, $c1, $f8, $04, $7e, $b7, $c8
-    db $c5, $af, $67, $2e, $03, $e5, $3e, $03
-    db $f5, $33, $cd, $d8, $23, $e8, $03, $c1
-    db $79, $c6, $06, $57, $78, $c6, $06, $0c
-    db $0c, $58, $1c, $1c, $26, $01, $6a, $e5
-    db $f5, $33, $51, $d5, $cd, $01, $24, $e8
-    db $05, $c9, $f8, $02, $7e, $b7, $28, $0e
-    db $21, $03, $00, $e5, $af, $f5, $33, $cd
-    db $d8, $23, $e8, $03, $18, $0d, $af, $0f
-    db $f5, $af, $3e, $03, $f5, $33, $cd, $d8
-    db $23, $e8, $03, $f0, $fb, $b7, $28, $0b
-    db $f8, $04, $7e, $c6, $02, $22, $23, $7e
-    db $c6, $03, $77, $3e, $01, $f5, $33, $f8
-    db $07, $3a, $57, $3a, $5f, $d5, $3a, $57
-    db $5e, $d5, $cd, $01, $24, $e8, $05, $c9
-    db $f8, $02, $7e, $3d, $3e, $01, $28, $01
-    db $af, $47, $fa, $3a, $db, $d6, $01, $3e
-    db $00, $17, $c5, $c5, $33, $67, $2e, $30
-    db $e5, $3e, $42, $f5, $33, $cd, $ce, $6a
-    db $e8, $04, $fa, $3a, $db, $33, $67, $2e
-    db $30, $e5, $3e, $82, $f5, $33, $cd, $ce
-    db $6a, $e8, $04, $f8, $02, $7e, $d6, $03
-    db $3e, $01, $28, $01, $af, $21, $80, $da
-    db $46, $f5, $33, $c5, $33, $21, $82, $50
-    db $e5, $cd, $ce, $6a, $e8, $04, $21, $f8
-    db $db, $4e, $f8, $02, $7e, $d6, $07, $3e
-    db $01, $28, $01, $af, $47, $79, $b7, $28
-    db $32, $78, $b7, $28, $0e, $21, $03, $00
-    db $e5, $af, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $18, $0d, $af, $0f, $f5, $af, $3e
+    db $cd, $ae, $67, $33, $cd, $32, $6b, $33
+    db $cd, $7b, $68, $af, $f5, $33, $cd, $6e
+    db $46, $33, $1e, $00, $c9, $78, $d6, $07
+    db $3e, $01, $28, $01, $af, $4f, $b7, $20
+    db $05, $78, $d6, $08, $20, $1d, $79, $b7
+    db $28, $04, $06, $03, $18, $02, $06, $04
+    db $c5, $33, $cd, $a0, $77, $33, $cd, $7b
+    db $68, $af, $f5, $33, $cd, $6e, $46, $33
+    db $1e, $00, $c9, $7a, $d6, $06, $20, $29
+    db $f0, $fb, $b7, $28, $03, $af, $18, $02
+    db $3e, $01, $e0, $fb, $cd, $ae, $67, $3e
+    db $01, $f5, $33, $cd, $70, $5f, $33, $cd
+    db $7b, $68, $af, $f5, $33, $cd, $6e, $46
+    db $33, $21, $38, $db, $36, $ff, $1e, $02
+    db $c9, $21, $fe, $db, $36, $01, $cd, $7b
+    db $68, $1e, $01, $c9, $f8, $04, $7e, $d6
+    db $03, $20, $06, $cd, $b6, $67, $1e, $00
+    db $c9, $f8, $04, $7e, $d6, $05, $20, $3c
+    db $f0, $fa, $4f, $21, $3b, $db, $96, $21
+    db $3b, $db, $71, $fe, $65, $38, $02, $3e
+    db $64, $21, $39, $db, $86, $21, $39, $db
+    db $77, $fa, $39, $db, $2e, $38, $4e, $0c
+    db $0d, $0e, $3c, $28, $02, $0e, $14, $91
+    db $38, $0f, $21, $39, $db, $36, $00, $fa
+    db $38, $db, $3c, $2e, $38, $77, $cd, $0f
+    db $69, $1e, $00, $c9, $cd, $a6, $67, $1e
+    db $00, $c9, $53, $45, $54, $00, $21, $fc
+    db $db, $36, $00, $c3, $00, $5f, $21, $fc
+    db $db, $36, $01, $c3, $00, $5f, $e8, $fb
+    db $cd, $a6, $67, $0e, $00, $69, $26, $00
+    db $11, $a6, $c2, $19, $7e, $b7, $28, $03
+    db $0c, $18, $f2, $f8, $00, $71, $0e, $00
+    db $69, $26, $00, $11, $a4, $c4, $19, $7e
+    db $b7, $28, $03, $0c, $18, $f2, $f8, $01
+    db $79, $32, $7e, $81, $4f, $7e, $b7, $28
+    db $0d, $5e, $af, $57, $1b, $21, $a6, $c2
+    db $19, $7e, $fe, $2f, $28, $01, $0c, $3e
+    db $78, $91, $38, $74, $0e, $00, $f8, $04
+    db $36, $00, $f8, $04, $7e, $f8, $00, $96
+    db $30, $21, $23, $23, $79, $c6, $82, $22
+    db $3e, $00, $ce, $da, $22, $0c, $3a, $2b
+    db $c6, $a6, $5f, $3e, $00, $ce, $c2, $57
+    db $1a, $5e, $23, $66, $6b, $77, $f8, $04
+    db $34, $18, $d7, $41, $79, $b7, $28, $0d
+    db $af, $59, $57, $1b, $21, $82, $da, $19
+    db $7e, $fe, $2f, $28, $0a, $68, $04, $26
+    db $00, $11, $82, $da, $19, $36, $2f, $0e
+    db $00, $78, $c6, $82, $5f, $3e, $00, $ce
+    db $da, $57, $79, $f8, $01, $96, $30, $0f
+    db $04, $79, $c6, $a4, $6f, $3e, $00, $ce
+    db $c4, $67, $7e, $12, $0c, $18, $e2, $af
+    db $12, $21, $81, $da, $70, $cd, $ae, $67
+    db $21, $fe, $db, $36, $00, $cd, $7b, $68
+    db $e8, $05, $c9, $cd, $91, $36, $cb, $63
+    db $20, $f9, $c9, $af, $0f, $f5, $af, $3e
     db $03, $f5, $33, $cd, $d8, $23, $e8, $03
-    db $21, $0f, $10, $e5, $3e, $04, $f5, $33
-    db $11, $f5, $6c, $d5, $cd, $00, $64, $e8
-    db $05, $18, $13, $c5, $cd, $78, $68, $7b
-    db $33, $67, $2e, $80, $e5, $3e, $82, $f5
-    db $33, $cd, $ce, $6a, $e8, $04, $f8, $02
-    db $7e, $d6, $04, $3e, $01, $28, $01, $af
-    db $26, $69, $e5, $33, $26, $9b, $e5, $33
-    db $26, $5d, $e5, $33, $26, $53, $e5, $33
-    db $f5, $33, $cd, $6a, $6b, $e8, $05, $21
-    db $0b, $0c, $e5, $3e, $08, $f5, $33, $11
-    db $e2, $6c, $d5, $cd, $00, $64, $e8, $05
-    db $f8, $02, $7e, $d6, $05, $3e, $01, $28
-    db $01, $af, $f5, $33, $cd, $70, $76, $33
-    db $f8, $02, $7e, $d6, $06, $3e, $01, $28
-    db $01, $af, $26, $79, $e5, $33, $26, $9b
-    db $e5, $33, $26, $6d, $e5, $33, $26, $73
-    db $e5, $33, $f5, $33, $cd, $6a, $6b, $e8
-    db $05, $f0, $fb, $b7, $28, $05, $01, $f0
-    db $6c, $18, $03, $01, $eb, $6c, $21, $0f
-    db $0e, $e5, $3e, $04, $f5, $33, $c5, $cd
-    db $00, $64, $e8, $05, $af, $0f, $f5, $af
+    db $3e, $06, $f5, $33, $21, $04, $00, $e5
+    db $11, $f0, $68, $d5, $cd, $00, $64, $e8
+    db $05, $21, $06, $06, $e5, $3e, $02, $f5
+    db $33, $11, $f5, $68, $d5, $cd, $00, $64
+    db $e8, $05, $21, $0b, $06, $e5, $3e, $05
+    db $f5, $33, $11, $f8, $68, $d5, $cd, $00
+    db $64, $e8, $05, $3e, $0a, $f5, $33, $21
+    db $0c, $00, $e5, $11, $fe, $68, $d5, $cd
+    db $00, $64, $e8, $05, $3e, $0e, $f5, $33
+    db $21, $03, $00, $e5, $11, $0b, $69, $d5
+    db $cd, $00, $64, $e8, $05, $3e, $05, $f5
+    db $33, $cd, $a0, $77, $33, $c3, $0f, $69
+    db $52, $54, $43, $3a, $00, $53, $44, $00
+    db $4e, $4f, $20, $53, $44, $00, $46, $41
+    db $53, $54, $20, $4c, $41, $55, $4e, $43
+    db $48, $3a, $00, $55, $49, $3a, $00, $e8
+    db $f9, $fa, $81, $da, $b7, $20, $09, $f8
+    db $00, $36, $49, $23, $36, $6a, $18, $23
+    db $0e, $00, $59, $21, $82, $da, $16, $00
+    db $19, $7e, $b7, $28, $09, $fe, $2f, $20
+    db $02, $4b, $0c, $1c, $18, $ed, $79, $c6
+    db $82, $f5, $f8, $02, $f1, $22, $3e, $00
+    db $ce, $da, $77, $0e, $00, $f8, $00, $2a
+    db $81, $5f, $7e, $ce, $00, $57, $1a, $b7
+    db $28, $03, $0c, $18, $f0, $f8, $02, $71
+    db $3e, $0a, $91, $38, $41, $f0, $fb, $b7
+    db $28, $05, $79, $d6, $0a, $28, $37, $21
+    db $38, $db, $36, $00, $0e, $00, $79, $c6
+    db $10, $f5, $f8, $07, $f1, $22, $3e, $00
+    db $ce, $db, $77, $79, $f8, $02, $96, $30
+    db $0c, $2b, $2b, $2a, $81, $5f, $7e, $ce
+    db $00, $57, $1a, $18, $01, $af, $f8, $05
+    db $5e, $23, $66, $6b, $77, $0c, $79, $d6
+    db $0a, $38, $d3, $c3, $2a, $6a, $21, $38
+    db $db, $4e, $f8, $02, $2a, $5f, $16, $00
+    db $13, $13, $13, $7b, $22, $7a, $32, $06
+    db $00, $79, $96, $23, $78, $9e, $50, $cb
+    db $7e, $28, $07, $cb, $7a, $20, $08, $bf
+    db $18, $05, $cb, $7a, $28, $01, $37, $38
+    db $05, $21, $38, $db, $36, $00, $fa, $38
+    db $db, $f8, $05, $77, $f8, $06, $36, $00
+    db $f8, $06, $3a, $c6, $10, $5f, $3e, $00
+    db $ce, $db, $57, $7e, $f8, $02, $96, $30
+    db $12, $2b, $2b, $7e, $f8, $05, $86, $2b
+    db $2b, $2b, $2b, $4f, $7e, $ce, $00, $47
+    db $0a, $18, $02, $3e, $20, $12, $f8, $05
+    db $34, $3a, $2b, $4f, $06, $00, $79, $96
+    db $23, $78, $9e, $50, $cb, $7e, $28, $07
+    db $cb, $7a, $20, $08, $bf, $18, $05, $cb
+    db $7a, $28, $01, $37, $38, $04, $f8, $05
+    db $36, $00, $f8, $06, $34, $7e, $d6, $0a
+    db $38, $ae, $af, $0f, $f5, $af, $3e, $03
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $3e
+    db $0c, $f5, $33, $21, $0a, $00, $e5, $11
+    db $10, $db, $d5, $cd, $00, $64, $e8, $0c
+    db $c9, $28, $41, $55, $54, $4f, $29, $00
+    db $af, $0f, $f5, $af, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $f8, $03, $3a, $4f, $c6
+    db $08, $5f, $2a, $47, $c6, $08, $57, $c5
+    db $d5, $3e, $01, $f5, $33, $7b, $f5, $33
+    db $d5, $33, $3a, $57, $5e, $d5, $cd, $01
+    db $24, $e8, $05, $d1, $c1, $f8, $05, $7e
+    db $b7, $28, $14, $c5, $d5, $af, $67, $2e
+    db $01, $e5, $3e, $01, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $d1, $c1, $18, $11, $c5
+    db $d5, $af, $0f, $f5, $af, $3e, $03, $f5
+    db $33, $cd, $d8, $23, $e8, $03, $d1, $c1
+    db $c5, $af, $f5, $33, $7b, $f5, $33, $d5
+    db $33, $f8, $08, $3a, $57, $5e, $d5, $cd
+    db $01, $24, $e8, $05, $c1, $f8, $04, $7e
+    db $b7, $c8, $c5, $af, $67, $2e, $03, $e5
     db $3e, $03, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $c9, $50, $49, $43, $4b, $20, $52
-    db $4f, $4d, $00, $20, $38, $70, $78, $00
-    db $31, $32, $70, $78, $00, $41, $55, $54
-    db $4f, $00
+    db $03, $c1, $79, $c6, $06, $57, $78, $c6
+    db $06, $0c, $0c, $58, $1c, $1c, $26, $01
+    db $6a, $e5, $f5, $33, $51, $d5, $cd, $01
+    db $24, $e8, $05, $c9, $f8, $02, $7e, $b7
+    db $28, $0e, $21, $03, $00, $e5, $af, $f5
+    db $33, $cd, $d8, $23, $e8, $03, $18, $0d
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $d8, $23, $e8, $03, $f0, $fb, $b7
+    db $28, $0b, $f8, $04, $7e, $c6, $02, $22
+    db $23, $7e, $c6, $03, $77, $3e, $01, $f5
+    db $33, $f8, $07, $3a, $57, $3a, $5f, $d5
+    db $3a, $57, $5e, $d5, $cd, $01, $24, $e8
+    db $05, $c9, $f8, $02, $7e, $3d, $3e, $01
+    db $28, $01, $af, $47, $fa, $3a, $db, $d6
+    db $01, $3e, $00, $17, $c5, $c5, $33, $67
+    db $2e, $30, $e5, $3e, $42, $f5, $33, $cd
+    db $50, $6a, $e8, $04, $fa, $3a, $db, $33
+    db $67, $2e, $30, $e5, $3e, $82, $f5, $33
+    db $cd, $50, $6a, $e8, $04, $f8, $02, $7e
+    db $d6, $03, $3e, $01, $28, $01, $af, $21
+    db $80, $da, $46, $f5, $33, $c5, $33, $21
+    db $82, $50, $e5, $cd, $50, $6a, $e8, $04
+    db $f8, $02, $7e, $d6, $07, $20, $04, $3e
+    db $01, $18, $0a, $f8, $02, $7e, $d6, $08
+    db $3e, $02, $28, $01, $af, $f5, $33, $cd
+    db $a0, $77, $33, $f8, $02, $7e, $d6, $04
+    db $3e, $01, $28, $01, $af, $26, $69, $e5
+    db $33, $26, $9b, $e5, $33, $26, $5d, $e5
+    db $33, $26, $53, $e5, $33, $f5, $33, $cd
+    db $ec, $6a, $e8, $05, $21, $0b, $0c, $e5
+    db $3e, $08, $f5, $33, $11, $27, $6c, $d5
+    db $cd, $00, $64, $e8, $05, $f8, $02, $7e
+    db $d6, $05, $3e, $01, $28, $01, $af, $f5
+    db $33, $cd, $70, $76, $33, $f8, $02, $7e
+    db $d6, $06, $3e, $01, $28, $01, $af, $26
+    db $79, $e5, $33, $26, $9b, $e5, $33, $26
+    db $6d, $e5, $33, $26, $73, $e5, $33, $f5
+    db $33, $cd, $ec, $6a, $e8, $05, $f0, $fb
+    db $b7, $28, $05, $01, $35, $6c, $18, $03
+    db $01, $30, $6c, $21, $0f, $0e, $e5, $3e
+    db $04, $f5, $33, $c5, $cd, $00, $64, $e8
+    db $05, $af, $0f, $f5, $af, $3e, $03, $f5
+    db $33, $cd, $d8, $23, $e8, $03, $c9, $50
+    db $49, $43, $4b, $20, $52, $4f, $4d, $00
+    db $20, $38, $70, $78, $00, $31, $32, $70
+    db $78, $00
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -6268,7 +6417,7 @@ FlCfg::
     rst RST_38
 
 ManageSaves::
-    db $e8, $fa, $af, $0f, $f5, $cd, $62, $65
+    db $e8, $fa, $af, $0f, $f5, $cd, $f0, $65
     db $e1, $cd, $9e, $6f, $11, $c6, $6e, $d5
     db $cd, $6a, $71, $e1, $af, $f5, $33, $cd
     db $84, $71, $33, $f8, $05, $36, $00, $f8
@@ -6307,8 +6456,8 @@ ManageSaves::
     db $f8, $06, $66, $2e, $00, $e5, $cd, $28
     db $70, $e8, $03, $f8, $00, $36, $ff, $c3
     db $4f, $6d, $c5, $11, $f1, $6e, $d5, $cd
-    db $6a, $71, $e1, $cd, $62, $65, $e1, $d5
-    db $af, $0f, $f5, $cd, $62, $65, $e1, $d1
+    db $6a, $71, $e1, $cd, $f0, $65, $e1, $d5
+    db $af, $0f, $f5, $cd, $f0, $65, $e1, $d1
     db $7b, $b7, $28, $09, $f8, $04, $36, $fc
     db $23, $36, $6e, $18, $07, $f8, $04, $36
     db $01, $23, $36, $6f, $f8, $04, $2a, $4f
@@ -6321,7 +6470,7 @@ ManageSaves::
     db $20, $9f, $e5, $af, $f5, $33, $cd, $01
     db $24, $e8, $05, $af, $0f, $f5, $af, $3e
     db $03, $f5, $33, $cd, $d8, $23, $e8, $03
-    db $f8, $08, $4e, $06, $05, $c5, $cd, $62
+    db $f8, $08, $4e, $06, $05, $c5, $cd, $f0
     db $65, $e1, $e8, $06, $c9, $53, $61, $76
     db $65, $73, $00, $52, $65, $73, $74, $6f
     db $72, $65, $20, $74, $68, $69, $73, $20
@@ -6339,7 +6488,7 @@ ManageSaves::
     db $18, $06, $cb, $6b, $28, $ed, $1e, $00
     db $33, $c9, $3b, $f8, $00, $36, $ff, $06
     db $00, $f8, $03, $5e, $16, $04, $c5, $d5
-    db $cd, $62, $65, $e1, $11, $50, $d7, $d5
+    db $cd, $f0, $65, $e1, $11, $50, $d7, $d5
     db $cd, $6a, $71, $e1, $af, $0f, $f5, $af
     db $3e, $01, $f5, $33, $cd, $28, $70, $e8
     db $03, $c1, $f8, $00, $c5, $e5, $cd, $07
@@ -6382,7 +6531,7 @@ ManageSaves::
     db $23, $36, $41, $23, $36, $71, $18, $21
     db $f8, $03, $36, $4e, $23, $36, $71, $18
     db $18, $fa, $77, $d7, $f8, $02, $96, $38
-    db $10, $4e, $0d, $06, $04, $c5, $cd, $62
+    db $10, $4e, $0d, $06, $04, $c5, $cd, $f0
     db $65, $e1, $f8, $03, $3e, $50, $22, $36
     db $d7, $f0, $fb, $f8, $05, $4e, $b7, $28
     db $09, $79, $87, $81, $87, $87, $c6, $48
@@ -6696,591 +6845,83 @@ ThemeRow::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+SgbTagsRow::
+    db $f8, $02, $7e, $d6, $05, $20, $48, $0f
+    db $f5, $af, $3e, $03, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $fa, $f8, $db, $b7, $28
+    db $13, $3e, $10, $f5, $33, $21, $04, $00
+    db $e5, $11, $cf, $78, $d5, $cd, $00, $64
+    db $e8, $05, $18, $11, $3e, $10, $f5, $33
+    db $21, $09, $00, $e5, $11, $c5, $78, $d5
+    db $cd, $00, $64, $e8, $05, $21, $0b, $10
+    db $e5, $3e, $05, $f5, $33, $11, $d4, $78
+    db $d5, $cd, $00, $64, $e8, $05, $c9, $f8
+    db $02, $7e, $d6, $03, $20, $1a, $fa, $f8
+    db $db, $b7, $c0, $cd, $7b, $79, $7b, $d6
+    db $01, $3e, $00, $17, $f5, $33, $cd, $ba
+    db $79, $33, $f8, $02, $36, $01, $18, $21
+    db $f8, $02, $7e, $d6, $04, $20, $1a, $fa
+    db $f6, $db, $b7, $28, $03, $af, $18, $02
+    db $3e, $01, $21, $f6, $db, $77, $2e, $fc
+    db $36, $01, $cd, $00, $5f, $f8, $02, $36
+    db $02, $21, $f8, $db, $4e, $f8, $02, $7e
+    db $3d, $3e, $01, $28, $01, $af, $47, $79
+    db $b7, $28, $32, $78, $b7, $28, $0e, $21
+    db $03, $00, $e5, $af, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $18, $0d, $af, $0f, $f5
+    db $af, $3e, $03, $f5, $33, $cd, $d8, $23
+    db $e8, $03, $21, $05, $10, $e5, $3e, $04
+    db $f5, $33, $11, $da, $78, $d5, $cd, $00
+    db $64, $e8, $05, $18, $20, $c5, $cd, $7b
+    db $79, $4b, $f1, $47, $f0, $fb, $b7, $3e
+    db $44, $20, $02, $3e, $4a, $c5, $33, $61
+    db $e5, $33, $26, $80, $e5, $33, $f5, $33
+    db $cd, $df, $78, $e8, $04, $f8, $02, $7e
+    db $d6, $02, $3e, $01, $28, $01, $af, $47
+    db $fa, $f6, $db, $d6, $01, $3e, $00, $17
+    db $c5, $33, $67, $2e, $80, $e5, $3e, $82
+    db $f5, $33, $cd, $df, $78, $e8, $04, $af
+    db $0f, $f5, $af, $3e, $03, $f5, $33, $cd
+    db $d8, $23, $e8, $03, $c9, $53, $47, $42
+    db $20, $42, $4f, $4f, $54, $3a, $00, $53
+    db $47, $42, $3a, $00, $54, $41, $47, $53
+    db $3a, $00, $41, $55, $54, $4f, $00, $af
+    db $0f, $f5, $af, $f5, $33, $cd, $d8, $23
+    db $e8, $03, $f8, $03, $3a, $4f, $c6, $08
+    db $5f, $2a, $47, $c6, $08, $57, $c5, $d5
+    db $3e, $01, $f5, $33, $7b, $f5, $33, $d5
+    db $33, $3a, $57, $5e, $d5, $cd, $01, $24
+    db $e8, $05, $d1, $c1, $f8, $05, $7e, $b7
+    db $28, $14, $c5, $d5, $af, $67, $2e, $01
+    db $e5, $3e, $01, $f5, $33, $cd, $d8, $23
+    db $e8, $03, $d1, $c1, $18, $11, $c5, $d5
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $d8, $23, $e8, $03, $d1, $c1, $c5
+    db $af, $f5, $33, $7b, $f5, $33, $d5, $33
+    db $f8, $08, $3a, $57, $5e, $d5, $cd, $01
+    db $24, $e8, $05, $c1, $f8, $04, $7e, $b7
+    db $c8, $c5, $af, $67, $2e, $03, $e5, $3e
+    db $03, $f5, $33, $cd, $d8, $23, $e8, $03
+    db $c1, $79, $c6, $06, $57, $78, $c6, $06
+    db $0c, $0c, $58, $1c, $1c, $26, $01, $6a
+    db $e5, $f5, $33, $51, $d5, $cd, $01, $24
+    db $e8, $05, $c9, $21, $00, $40, $36, $11
+    db $3e, $03, $f5, $33, $cd, $6e, $46, $33
+    db $fa, $00, $a4, $fe, $53, $20, $15, $fa
+    db $01, $a4, $fe, $47, $20, $0e, $21, $02
+    db $a4, $4e, $0d, $20, $07, $fa, $03, $a4
+    db $fe, $fe, $28, $04, $0e, $00, $18, $02
+    db $0e, $01, $21, $00, $40, $36, $00, $c5
+    db $af, $f5, $33, $cd, $6e, $46, $33, $c1
+    db $59, $c9, $21, $00, $40, $36, $11, $3e
+    db $03, $f5, $33, $cd, $6e, $46, $33, $21
+    db $00, $a4, $36, $53, $2e, $01, $36, $47
+    db $11, $02, $a4, $f8, $02, $7e, $12, $7e
+    db $2f, $ea, $03, $a4, $21, $00, $40, $36
+    db $00, $af, $f5, $33, $cd, $6e, $46, $33
+    db $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
