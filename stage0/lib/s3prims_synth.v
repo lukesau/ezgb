@@ -153,6 +153,10 @@ endmodule
 module s3_dna #(parameter [56:0] DNA = 57'h0) (input CLK, DIN, READ, SHIFT, output DOUT);
 endmodule
 
+(* blackbox *)
+module s3_icap (input CLK, CE, WRITE, input [7:0] I, output [7:0] O);
+endmodule
+
 module s3_stub (output O);
     assign O = 1'b0;
 endmodule

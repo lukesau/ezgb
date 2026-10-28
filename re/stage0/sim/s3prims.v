@@ -241,6 +241,12 @@ module s3_dna #(parameter [56:0] DNA = 57'h0) (input CLK, DIN, READ, SHIFT, outp
     assign DOUT = sr[56];
 endmodule
 
+// ICAP: the configuration access port. The writes go to the configuration
+// logic, which is not modeled; the readback reads as 0.
+module s3_icap (input CLK, CE, WRITE, input [7:0] I, output [7:0] O);
+    assign O = 8'h00;
+endmodule
+
 module s3_stub (output O);
     assign O = 1'b0;
 endmodule

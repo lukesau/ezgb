@@ -50,6 +50,7 @@ OUTPINS = {
     's3_bufgmux': ('O',),
     's3_dcm': ('CLK0', 'CLK2X', 'CLKFX', 'LOCKED', 'STATUS'),
     's3_dna': ('DOUT',),
+    's3_icap': ('O',),
 }
 INOUT = {'s3_ioi': ('PAD',)}
 NET = re.compile(r'\b(n_\w+|d_\w+|b_\w+|bo_\w+|dcm_status_\w+|P\d+)\b')
