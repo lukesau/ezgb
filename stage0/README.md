@@ -137,13 +137,23 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_cmd_serial` | 1,333 | the SD command line: OpenCores `sd_cmd_serial_host` (LGPL, kept in the module), 358 flip-flops, 975 LUTs and muxes, most of them the 32-bit counter's compares and the response buffer's indexed writes | equivalent, 361 signals, under stated invariants (proven); 3 mutants |
 | `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants (proven); 2 mutants |
 | `sd_data_serial` | 1,347 | OpenCores `sd_data_serial_host`: the DAT lines, the four CRC16s, the 14-bit transfer counter, the receive word and its write enable; 174 flip-flops | equivalent, 180 signals, under stated invariants (proven); 28 mutants, all caught |
-| `sd_data_master` | 107 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the command-with-data trigger; 30 flip-flops | equivalent, 35 signals, under stated invariants (proven); 12 mutants, all caught |
+| `sd_data_master` | 123 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the data interrupt status register, the command-with-data trigger; 35 flip-flops | equivalent, 40 signals, under stated invariants (proven); 18 mutants, all caught |
 | `sd_clock_divider` | 53 | OpenCores `sd_clock_divider` on the mode clock, with the divider register's two sync stages; 25 flip-flops | equivalent, 25 signals; 4 mutants, all caught |
 | `sd_crossings` | 404 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 401 flip-flops | equivalent; 5 mutants, all caught |
 
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
+
+Correction (2026-10-28): the `sd_data_master` block was first written and
+proven without the source's data interrupt status register, and its notes
+said the synthesis had dropped it as unread. It had not: the five flags
+(CC, EI, CTE, CCRCE, CFE) sit at `X11Y15`..`X12Y17`, reset by the software
+reset and by the data interrupt reset pulse, and the Game Boy side reads
+them. They turned up in the carve of the FIFOs and are in the data master
+block now, with the CRC result and the interrupt reset as its inputs; the
+crossings paragraph below inherits the fix (the third toggle's status
+register exists).
 
 Coverage: 4,030 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
@@ -187,12 +197,14 @@ pad is input only.
 What the data master settled: the synthesis merged it with the transfer
 trigger (`sd_data_xfer_trig`) and kept both FSMs' source codes; the
 timeout is 8 bits (`DATA_TIMEOUT_W`); the data interrupt status register
-is gone, nothing reads it, and with it the CRC result; the command start
-reaches the trigger as the two sync taps of the source's monostable
+is the source's, each flag a flip-flop enabled by "set or reset" with the
+inverted reset as its data (missed at first, see the correction above);
+the command start reaches the trigger as the two sync taps of the source's monostable
 crossing; the command master's `int_status_cc` and `cmd_int_n` LUTs feed
 the trigger, so they stay in that block. The buffer flags it watches
-(`tx_fifo_full`, `tx_fifo_empty`, `rx_fifo_full`) are EZ Flash's own, and
-`tx_fifo_full` is a Game Boy-domain register read without a synchronizer.
+(`tx_fifo_full`, `tx_fifo_empty`, `rx_fifo_full`) come from the source's
+own FIFOs (below), and `tx_fifo_full` is a Game Boy-domain register read
+without a synchronizer, as in the source.
 
 What the divider and the crossings settled: the SD clock is the source's
 divider on the mode clock, with no reset anywhere (the controller's
