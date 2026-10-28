@@ -119,8 +119,9 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `unlock` | 23 | the `$7F00/$7F10/$7F20` unlock state machine that gates the `$7Fxx` registers | equivalent |
 | `picoblaze` | 425 | the KCPSM3 soft CPU with EZ Flash's two-bank instruction register: 108 flip-flops, all 68 LUT RAMs (register file, 31-deep stack, 64-byte scratchpad) | equivalent, 1,213 signals |
 | `sd_cmd_serial` | 1,333 | the SD command line: OpenCores `sd_cmd_serial_host` (LGPL, kept in the module), 358 flip-flops, 975 LUTs and muxes, most of them the 32-bit counter's compares and the response buffer's indexed writes | equivalent, 361 signals, under stated invariants |
+| `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants |
 
-Coverage: 1,781 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
+Coverage: 2,119 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -139,12 +140,15 @@ apart from what synthesis did to it; the Wishbone side lives in the mode
 clock domain and crosses into the SD clock domain through the source's
 two-flop synchronizers; `cmd_dat_reg` is the pad's input register and
 `cmd_out_o`/`cmd_oe_o` are registered again in the pad's output cells.
+The command master's timeout register and watchdog are 16 bits (the
+register file never sets the upper byte), and its busy input is the DAT0
+pad inverted: the card holds DAT0 low while busy.
 
 ## Next
 
-- The rest of the SD controller: `sd_cmd_master`, `sd_data_serial_host`
-  (the four CRC16s are its signature), `sd_data_master`, the clock
-  divider and the register crossings, all with the source in hand.
+- The rest of the SD controller: `sd_data_serial_host` (the four CRC16s
+  are its signature), `sd_data_master`, the clock divider and the
+  register crossings, all with the source in hand.
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
