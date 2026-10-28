@@ -403,7 +403,7 @@ def carve(d, name, cells, names, whole_slices=False):
                 out.append(rn(d.inst[c][1]))
                 continue
             conns = ', '.join(f'.{k}({v})' for k, v in cl.ins.items())
-            outs = ', '.join(f'.{p}({v})' for p, v in zip(OUTS[cl.kind], cl.outs))
+            outs = ', '.join(f'.{p}({v if v in d.live_nets else ""})' for p, v in zip(OUTS[cl.kind], cl.outs))
             out.append(rn(f"{cl.kind} {fmt_params(cl.params)}{c.replace('.', '_')} ({conns}, {outs});"))
     out.append('endmodule')
     info = dict(inputs=[rn(n) for n in inputs], outputs=[rn(n) for n in outputs], inouts=[rn(n) for n in inouts],
