@@ -337,10 +337,13 @@ six bits of the destination go through here; the rest select the pSRAM
 page elsewhere.
 
 What the controller settled: the page above A13 is byte-address bits
-22:15, computed from the access and the registers (the $2000 and $3000
-ROM bank in kernel mode and the MBC logic's 9-bit bank in game mode for
-U9, the $4000 register or that bank for the save RAM on U4), registered
-twice on the fast clock, sampled on the falling edge when it holds still,
+22:15, one 9-bit bank vector read one bit apart by the two chips: for
+U9 the ROM bank ($2000 with $3000's bit on top) at 16 KB a bank, for U4
+the save page ($4000 in kernel mode, the MBC logic's bank in game mode)
+one bit higher, since the save window is 8 KB wide in a 16 KB page; the
+MBC1 multicart folds its RAM bits into bits 1:5 of a $4000-$7FFF
+access, and the loader's address replaces the whole vector while it
+runs. The page is registered twice on the fast clock, sampled on the falling edge when it holds still,
 and when it differs from the last value sent, shifted MSB first into the
 74HC595 over eight clocks and latched; a bank of all ones in game mode
 and the header checksum address $x14D are special cases, the latter
@@ -376,7 +379,6 @@ which is how `sd_mem_path` makes them.
 
 ## Next
 
-- A readable body for the page muxes of `psram_ctrl`.
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
 - The PicoBlaze's peripherals outside its clock domain: the I2C output
   register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and

@@ -163,43 +163,35 @@ module psram_ctrl (
     wire a13_gb_sel = !n_save & a13_gb & n_rom | n_save & a13_latch & n_rom;
     assign mem_a_gb[13] = a13_gb_sel | !hi_n_win1 & pg15_gb & !chk_sel;
 
-    // the save page's bits 2:7 (bank_4000 in kernel mode, mbc_bank in game mode, the
-    // multicart's RAM bits in its mode) and the ROM bank's bits 1:7, per address bit
-    wire sv2 = n_rom & game_n_save & a15 | type_grp & game_n_save & a15;
-    wire sv2b = sv2 | a14 & mbc1m_ram[1] & mbc1m_lo & !a15 | mbc_bank[2] & game_bank_sel;
-    wire bit16_g = bank_4000[2] ? (kernel_4000_sel | sv2b | rom_hi_sel & rom_bank[1]) : (sv2b | rom_hi_sel & rom_bank[1]);
-    wire sv3 = mbc1m_lo & (mbc1m_ram[2] & !a15 & a14) | game_bank_sel & mbc_bank[3];
-    wire bit17_g = bank_4000[3] ? (kernel_4000_sel | sv3 | rom_bank[2] & rom_hi_sel) : (sv3 | rom_bank[2] & rom_hi_sel);
-    wire sv4 = (!a15 & a14 & mbc1m_ram[3]) & mbc1m_lo | game_bank_sel & mbc_bank[4];
-    wire bit18_g = bank_4000[4] ? (sv4 | kernel_4000_sel | rom_hi_sel & rom_bank[3]) : (sv4 | rom_bank[3] & rom_hi_sel);
-    wire sv5 = mbc1m_lo & mbc1m_a14 | mbc_bank[5] & game_bank_sel;
-    wire bit19_g = bank_4000[5] ? (sv5 | kernel_4000_sel | rom_hi_sel & rom_bank[4]) : (sv5 | rom_hi_sel & rom_bank[4]);
-    wire sv6 = mbc1m_a14b & mbc1m_lo | game_bank_sel & mbc_bank[6];
-    wire bit20_g = bank_4000[6] ? (kernel_4000_sel | sv6 | rom_bank[5] & rom_hi_sel) : (sv6 | rom_bank[5] & rom_hi_sel);
-    wire sv7 = kernel_4000_sel & bank_4000[7] | game_bank_sel & mbc_bank[7];
-    wire bit21_g = sv7 | rom_bank[6] & rom_hi_sel;
-    wire n_bank8 = n_4000 | !rom_bank8 | hi_n_win1 | chk_sel;
-    wire bit22_g = is_mbc5 & game_n_save & !n_bank8 | kernel_n_loadwin & !mode32_b3 & !n_bank8;
+    // ---- the bank bits
+    //
+    // bank_bit[k] is what the access puts on byte-address bit 15+k when it
+    // reaches U4 (the save window is paged by 16 KB and 8 KB wide, so the
+    // page starts at bit 14 with bank0_sel on A13) and on bit 14+k when it
+    // reaches U9 (ROM bank N at N x 16 KB, bit 14 being rom_bank[0] on A13
+    // through pg15_gb): the same vector, read one bit apart. The save page
+    // is bank_4000 in kernel mode and mbc_bank in game mode; the ROM bank
+    // is rom_bank with $3000's bit on top; the MBC1 multicart folds its
+    // RAM bits into bits 1:5 of a $4000-$7FFF access.
+    wire mbc1m_hi_rom = mbc1m_lo & a14 & !a15;
+    wire [8:0] bank_bit;
+    assign bank_bit[0] = pg15_gb;
+    assign bank_bit[1] = kernel_4000_sel & bank_4000[2] | game_bank_sel & mbc_bank[2] | rom_hi_sel & rom_bank[1]
+                       | mbc1m_hi_rom & mbc1m_ram[1];       // the LUT also ORs in a game-mode term the page register never loads
+    assign bank_bit[2] = kernel_4000_sel & bank_4000[3] | game_bank_sel & mbc_bank[3] | rom_hi_sel & rom_bank[2] | mbc1m_hi_rom & mbc1m_ram[2];
+    assign bank_bit[3] = kernel_4000_sel & bank_4000[4] | game_bank_sel & mbc_bank[4] | rom_hi_sel & rom_bank[3] | mbc1m_hi_rom & mbc1m_ram[3];
+    assign bank_bit[4] = kernel_4000_sel & bank_4000[5] | game_bank_sel & mbc_bank[5] | rom_hi_sel & rom_bank[4] | mbc1m_lo & mbc1m_a14;
+    assign bank_bit[5] = kernel_4000_sel & bank_4000[6] | game_bank_sel & mbc_bank[6] | rom_hi_sel & rom_bank[5] | mbc1m_lo & mbc1m_a14b;
+    assign bank_bit[6] = kernel_4000_sel & bank_4000[7] | game_bank_sel & mbc_bank[7] | rom_hi_sel & rom_bank[6];
+    assign bank_bit[7] = rom_hi_sel & rom_bank[7];
+    wire bank8_sel = !n_4000 & rom_bank8 & !hi_n_win1 & !chk_sel;          // $4000-$7FFF on U9 with $3000 bit 0 set
+    assign bank_bit[8] = bank8_sel & (is_mbc5 & game_n_save | kernel_n_loadwin & !mode32_b3);
 
     // ---- the page, bits 22:15: the loader's address while it runs, else the access's
     wire ld = load_busy_2x;
-    wire [7:0] page_d_next;
-    assign page_d_next[0] = mem_ce9_n ? (wbm_adr_o[15] & ld | !ld & pg15_gb | ld & load_addr[6])
-                                      : (wbm_adr_o[15] & ld | !ld & bit16_g | ld & load_addr[6]);
-    assign page_d_next[1] = mem_ce9_n ? (load_addr[7] & bit16_g | ld & wbm_adr_o[16] | bit16_g & !ld | load_addr[7] & ld)
-                                      : (load_addr[7] & bit17_g | ld & wbm_adr_o[16] | bit17_g & !ld | load_addr[7] & ld);
-    assign page_d_next[2] = mem_ce9_n ? (bit17_g & !ld | ld & wbm_adr_o[17] | ld & load_addr[8])
-                                      : (!ld & bit18_g | ld & wbm_adr_o[17] | ld & load_addr[8]);
-    assign page_d_next[3] = mem_ce9_n ? (!ld & bit18_g | ld & wbm_adr_o[18] | ld & load_addr[9])
-                                      : (!ld & bit19_g | ld & wbm_adr_o[18] | ld & load_addr[9]);
-    assign page_d_next[4] = mem_ce9_n ? (!ld & bit19_g | ld & wbm_adr_o[19] | ld & load_addr[10])
-                                      : (bit20_g & wbm_adr_o[19] | ld & load_addr[10] | bit20_g & !ld | wbm_adr_o[19] & ld);
-    assign page_d_next[5] = mem_ce9_n ? (!ld & bit20_g | ld & wbm_adr_o[20] | ld & load_addr[11])
-                                      : (!ld & bit21_g | ld & wbm_adr_o[20] | ld & load_addr[11]);
-    assign page_d_next[6] = ld ? (load_addr[12] | wbm_adr_o[21])
-                               : (mem_ce9_n & bit21_g | rom_bank[7] & !mem_ce9_n & rom_hi_sel);
-    assign page_d_next[7] = ld ? (load_addr[13] | wbm_adr_o[22])
-                               : (bit22_g & !mem_ce9_n | mem_ce9_n & rom_hi_sel & rom_bank[7]);
+    wire [7:0] gb_page = mem_ce9_n ? bank_bit[7:0] : bank_bit[8:1];
+    wire [7:0] sd_page = wbm_adr_o[22:15] | load_addr[13:6];
+    wire [7:0] page_d_next = ld ? sd_page : gb_page;
     wire page_ce = kernel_b3_lo | !n_save | ld | !mem_ce9_n;
 
     reg [7:0] page_d, page_q, page_n, page_s;
