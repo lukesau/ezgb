@@ -94,6 +94,14 @@ cell after the instance path (`X7Y26_S0_F.m regs0.sy`), which is how the
 proof matches the contents. A `pc[3]`-style name in the block file makes
 a vector port.
 
+What the proof does not see: the structural passes compare next-state
+and output functions, so a module clocked on the other edge, or from
+another clock, proves the same (`picoblaze_ports` keeps `in_port` on the
+falling edge because the carve says so, not because the proof would
+notice), and a register's power-up value is not checked either. Those two
+come from the block file and the bels, and a mutant that changes only them
+passes.
+
 ## Setup
 
 Everything runs on this machine. The cart bitstreams are EZ Flash's and
@@ -143,6 +151,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_crossings` | 414 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 411 flip-flops | equivalent, 411 signals; 7 mutants, all caught |
 | `sd_controller_wb` | 531 | the register file: OpenCores `sd_controller_wb` (its 2013 revision) on the mode clock, written and read by the PicoBlaze's SD ports: the registers the crossings carry, the read mux, the three write-pulse edge detects, the data interrupt; 183 flip-flops | equivalent, 183 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 | `sd_fifo_filler` | 189 | the mode-clock side of the two data FIFOs and the Wishbone master between them and memory: OpenCores `sd_fifo_filler` (the FIFO halves Usselmann's), the 21-bit address counter, and EZ Flash's three-cycle acknowledge; 59 flip-flops | equivalent, 62 signals; 13 mutants, all caught (a fourteenth was no mutant) |
+| `picoblaze_ports` | 393 | EZ Flash's own: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -167,7 +176,7 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 4,847 of 6,529 live cells in eleven blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
+Coverage: 5,240 of 6,529 live cells in twelve blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
 RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -289,16 +298,32 @@ clear synchronizer's asynchronous set became a plain data input of the
 constant-0 LUT it is tied to. `en_rx_i`/`en_tx_i` are the data master's
 registers read straight from the SD clock domain, as in the source.
 
+What the ports settled: the firmware's port map (re/stage0/docs/picoblaze.md)
+is the hardware's, write for write and read for read, including the
+bank select on C8 that the notes had only inferred. Writes land one cycle
+after the strobe, while port_id and out_port still hold. The SD bridge is
+EZ Flash's own: INPUT from a port below A0 loads that address and starts
+a Wishbone read, OUTPUT to 70 starts a write and the OUTPUT after it names
+the register, the strobe is set with the address and held until the
+acknowledge, the read data is captured into 32 registers that 70-73 read,
+and reading the selected register's port returns the done flag in bits
+1:0, the ack the firmware polls for. The loader's address is 14 bits,
+staged by E0 and E1 and committed by E3 (E2 is unused); the table index
+is 7 bits into block RAM X3Y21, whose other port the Game Boy writes. B9
+reads a constant 1, so the RTC refresh in the idle loop runs always; D1
+reads the ICAP output bit-reversed. The I2C output register (EC) and the
+ICAP writes (D1, D2) are not in the PicoBlaze's clock domain and are
+elsewhere.
+
 ## Next
 
 - The memory side of an SD transfer: the 2 KB buffer X3Y5's Game Boy
   port (its address from the cartridge bus, its data to the pads) and
   the pSRAM path in the memory clock domain that takes the filler's
   address, write enable and data.
-- The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
-  reads and writes (the in_port mux, port C8's bank bit, the interrupt
-  source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
-  neighbors.
+- The PicoBlaze's peripherals outside its clock domain: the I2C output
+  register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and
+  the Device DNA port's wiring, the interrupt source at `X23Y29_S1`.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
 - The `$7Fxx` register file and the Game Boy bus decode around `unlock`.
