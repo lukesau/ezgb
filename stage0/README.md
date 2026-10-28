@@ -154,7 +154,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `picoblaze_ports` | 393 | EZ Flash's own: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
 | `sd_mem_path` | 131 | EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
 | `psram_ctrl` | 185 | EZ Flash's own: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
-| `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer, the stage1 bit planes, the $7Fxx registers, the header checksum, the pSRAM's data and the RTC values, and the bus's output enable; no flip-flops, a transcription with its boundary and main decode terms named | equivalent, 13 outputs; 6 mutants, all caught |
+| `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -354,23 +354,29 @@ what the kernel calls them, and the proof does not rest on the names.
 The P51 output latch (A13 during a load) is a latch and stays outside.
 
 What the data bus settled: the FPGA drives D0-D7 whenever /WR is high
-except at $C000-$DFFF, as the simulation had found. The sector buffer
-reads through its window gated by the $7FB4 flag and $7F30 bit 1, and
-bit 0 reads 1 while the loader runs, which is the status the kernel
-polls. In kernel mode with $7F32 bit 3 set, $0000-$7FFF reads stage1
-from block RAM bit planes, one bit per RAM, or bytes from block RAM
-X19Y17 one page up. The $7Fxx registers read back; in game mode the
-header checksum register answers at $014D instead of the pSRAM. The
-seven RTC values the PicoBlaze sends read back by the low address bits
-in kernel mode and by the MBC3 register select in game mode, through a
-small adder chain. This block is a transcription: its ports and main
-decode terms are named and it proves, but its body is the LUTs as
-placed, to be folded into cases in a later pass.
+except at $C000-$DFFF, as the simulation had found. A read returns, in
+order: $01 while the loader runs (the status the kernel polls); in the
+sector buffer window, $E1 until the $7FB4 command has been taken, $01
+while $7F30 bit 1 is set, else the buffer's byte; in kernel mode with
+$7F32 bit 3 set, below $8000, stage1 from block RAM bit planes, one bit
+per RAM, or bytes from block RAM X19Y17 one page up; $04 at $7FC0=4 and
+the flash writer's busy flag at $7FC0=5; in the register window ($7FC0
+6, 7 or 8 and up in kernel mode, the bank register at all ones with RAM
+enabled in game mode) the seven RTC values the PicoBlaze sends: at
+offsets $08-$0E in kernel mode (seconds, minutes, hours, days, weekday,
+month, year; $FF elsewhere in the window) and in game mode the MBC3
+way, by the value written to $4000, with $08-$0B converted from the
+PCF8563's BCD to binary by the small adder chain, $0C a constant 1 for
+the day counter's high byte, anything else $FF; the header checksum
+register at $014D in game mode, its bit 7 straight from the data pad's
+input register; and the pSRAM's data pins otherwise. The module is
+written as that precedence of cases. Its proof takes the window
+decode's three stages as consistent with the address and mode bits,
+which is how `sd_mem_path` makes them.
 
 ## Next
 
-- A readable body for `gb_data_out` (the RTC read path as a case) and
-  for the page muxes of `psram_ctrl`.
+- A readable body for the page muxes of `psram_ctrl`.
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
 - The PicoBlaze's peripherals outside its clock domain: the I2C output
   register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and
