@@ -153,6 +153,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_fifo_filler` | 189 | the mode-clock side of the two data FIFOs and the Wishbone master between them and memory: OpenCores `sd_fifo_filler` (the FIFO halves Usselmann's), the 21-bit address counter, and EZ Flash's three-cycle acknowledge; 59 flip-flops | equivalent, 62 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 | `picoblaze_ports` | 393 | EZ Flash's own: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
 | `sd_mem_path` | 131 | EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
+| `psram_ctrl` | 185 | EZ Flash's own: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -177,7 +178,7 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 5,371 of 6,529 live cells in thirteen blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
+Coverage: 5,556 of 6,529 live cells in fourteen blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
 RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -334,13 +335,29 @@ data pins carry the byte; otherwise both carry the Game Boy's own. Only
 six bits of the destination go through here; the rest select the pSRAM
 page elsewhere.
 
+What the controller settled: the page above A13 is byte-address bits
+22:15, computed from the access and the registers (the $2000 and $3000
+ROM bank in kernel mode and the MBC logic's 9-bit bank in game mode for
+U9, the $4000 register or that bank for the save RAM on U4), registered
+twice on the fast clock, sampled on the falling edge when it holds still,
+and when it differs from the last value sent, shifted MSB first into the
+74HC595 over eight clocks and latched; a bank of all ones in game mode
+and the header checksum address $x14D are special cases, the latter
+served from a register. The chip selects: U9 for $0000-$7FFF (and the
+$7FC0=1 window), U4 for the save window, neither during a load or a
+config-flash operation, when the address pins are tristated. The write
+enable, /LB and /UB follow /WR and A0 for the Game Boy and the byte
+sequencer during a load. The MBC1 multicart keeps four registers of its
+own. The game-mode registers are named by how they are written, not by
+what the kernel calls them, and the proof does not rest on the names.
+The P51 output latch (A13 during a load) is a latch and stays outside.
+
 ## Next
 
-- The pSRAM controller proper: the address translation for Game Boy
-  accesses on the fast clock (the `mem_a_gb` side of the pad muxes), the
-  byte strobes and chip selects that take the sequencer's counter, the
-  page register, and the data bus output mux that returns X3Y5's read
-  data and the pSRAM's to the Game Boy.
+- The Game Boy data bus output mux: what the console reads back ($7Fxx
+  registers, X3Y5, the pSRAM's data, the PicoBlaze's RTC values) and its
+  output enable; purely combinational, about 210 LUTs.
+- The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
 - The PicoBlaze's peripherals outside its clock domain: the I2C output
   register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and
   the Device DNA port's wiring, the interrupt source at `X23Y29_S1`.
