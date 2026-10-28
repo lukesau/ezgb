@@ -110,6 +110,15 @@ write, in chunks of up to 4 sectors. FPGA logic between the two turns that
 into ports `B0-B4` and the `B5` command; the mapping is consistent but not
 one-to-one.
 
+The FPGA side of that is `stage0/rtl/pb_periph.v` (proven 2026-10-28):
+each `B5` bit is the rising edge of one request flag, synchronized into
+the 2x clock (`$7FB4` bit 7 clear or set for read or write, `$7F36` bit 1
+for the load, `$7FD0` bit 0 for the RTC set, `$7FD2` bit 0 for the flash
+mode); any edge raises the interrupt, and the bits hold until the next
+one. The flags clear on the lock write (`$7FF0=$E4`) that `DiskRead_B2`
+and `DiskWrite_B2` issue right after every command, so each command is a
+fresh edge.
+
 ### ROM loader (command `$20`)
 
 The kernel fills a 128-entry table of 32-bit words, read through

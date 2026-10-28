@@ -83,8 +83,8 @@ register in the readable module; the combinational logic between them is
 rewritten freely. That is also what layer 3 needs, since a register that
 does not exist in the bitstream cannot be placed.
 
-Block RAMs, the DCM, the Device DNA port and the IO tiles are not
-decomposed: blocks are cut at them, their pins become block ports, and the
+Block RAMs, the DCMs, the Device DNA port, the ICAP and the IO tiles are
+not decomposed: blocks are cut at them, their pins become block ports, and the
 readable design will instantiate the same primitives.
 
 LUT RAM is kept cell for cell too. `lib/s3bels.v` has the shapes a design
@@ -156,6 +156,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `psram_ctrl` | 185 | EZ Flash's own: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
 | `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
 | `gb_regs` | 358 | EZ Flash's own: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart's own), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
+| `pb_periph` | 43 | EZ Flash's own: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -180,9 +181,14 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 6,116 of 6,529 live cells in sixteen blocks (3,224 LUTs, 2,335 flip-flops, 68 LUT
-RAMs, 928 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
-buffers, DCM and DNA port).
+Coverage: 6,159 of 6,543 live cells in seventeen blocks. The design's
+live cells are 3,024 LUTs, 2,135 flip-flops, 68 LUT RAMs, 919 muxes, 283
+carry XORs, 16 block RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the
+DNA port and the ICAP (the ICAP was added to the design model with the
+peripherals block: `netlist2v.py` had tied its readback to 0 and dropped
+its inputs, so the twelve registers that drive it were dead and
+uncounted). Unclaimed slice cells: 130 LUTs, 91 flip-flops, 49 muxes, 16
+carry XORs.
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
 instruction, the ALU as three partial-result registers OR-ed together, the
@@ -319,6 +325,14 @@ reads the ICAP output bit-reversed. The I2C output register (EC) and the
 ICAP writes (D1, D2) are not in the PicoBlaze's clock domain and are
 elsewhere.
 
+> **Correction (2026-10-28, with the peripherals block).** The last
+> sentence was wrong: both are on the processor clock. The EC register is
+> the SCL and SDA pads' tristate flip-flops in their IO tiles, which the
+> block decomposition never sees, and the D1/D2 registers were invisible
+> because the design model had no ICAP primitive, so nothing read them
+> and they were pruned as dead. The Next list and the memory note
+> inherited the error; `pb_periph` below has the facts.
+
 What the memory path settled: the 2 KB buffer (X3Y5) is at $A000-$BFFF in
 kernel mode when $7FC0's low nibble is 0 and $7F30 bit 0 is set (the bit
 the kernel writes before sector reads and writes), with the Game Boy's
@@ -422,13 +436,41 @@ shared decodes (the address terms from `gb_data_out`, `unlock` and
 `psram_ctrl`, the type terms from `psram_ctrl`) as the functions those
 blocks make of the bus and of this block's own type register.
 
+What the peripherals block settled: the ICAP is bit-banged like the SPI
+flash. OUTPUT to D1 loads its eight data bits (bit-reversed, out_port
+bit 7 on I[0], the order the readback on D1 undoes), OUTPUT to D2 its
+clock, CE and WRITE in bits 0-2, each a plain register on the processor
+clock wired to the primitive. The I2C lines are open drain: an OUTPUT to
+EC clocks out_port bits 0 and 1 into the SCL and SDA pads' tristate
+flip-flops, and the pads drive 0 when enabled. The SPI flash shares the
+pSRAM address pins: SCK rides on A11 (P53) and MOSI on A12 (P46) whenever
+$7FD2's flash bit is set or neither pSRAM is selected, the address
+otherwise, and that address is U9's word address (byte bit 12 on A11,
+A13 or the bank's bit 0 on A12) or U4's byte address (bits 11 and 12
+through the window remap), the same split the lower pins make in the
+not-yet-claimed muxes beside them. The Device DNA port has no logic of
+its own: its four inputs are port D3's bits straight from the ports
+block. The interrupt source lives on the 2x clock: five request flags
+from `gb_regs` (sector read and write from $7FB4, the ROM load from
+$7F36, the RTC set from $7FD0, the flash mode from $7FD2) go through
+two-stage synchronizers, and a rising edge of any of them sets the
+interrupt and loads port B5's bits 7:3 with which flags rose (read,
+write, load, RTC set, flash), the mapping the firmware notes had only
+observed. The core's acknowledge clears the interrupt synchronously and
+wins over a request in the same cycle. Only a rising edge counts, so a
+flag that is already set raises nothing until something clears it; the
+lock write ($7FF0=$E4) that the kernel issues right after every command
+(`DiskRead_B2`, `DiskWrite_B2`) is what does that.
+
 ## Next
 
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
-- The PicoBlaze's peripherals outside its clock domain: the I2C output
-  register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and
-  the Device DNA port's wiring, the interrupt source at `X23Y29_S1`.
+- The RTC bridge, the last of the PicoBlaze's peripherals: the 2x-domain
+  copies of port EE's values that the register window reads (49
+  flip-flops at X23-X24) and the port B6 mux over the RTC set registers.
+- The soft reset: the 16-bit counter on the inverted 2x clock that the
+  $7FE0 request starts, driving `reset_drive` into `psram_ctrl`.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
-- The 2x-domain bus state: the pad input registers' copies and what
-  reads them.
+- The 2x-domain bus state: the pad input registers' copies, the window
+  remap (`adr_pass`) and the lower address pins' word/byte muxes.

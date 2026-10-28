@@ -95,7 +95,7 @@ the low address byte, after the `$7F00/$7F10/$7F20` unlock
 | `$7F36` | 0-1 | load window (1) / start load (3) |
 | `$7F37` | 0-3, 7 | MBC type (0 none, 1 MBC1, 2 MBC2, 3 MBC3, 4 MBC5, 5 MBC1 multicart); bit 7 RTC |
 | `$7FB0-$7FB3` | 8 each | LBA for sector reads |
-| `$7FB4` | none | sector command; the write itself raises the PicoBlaze interrupt |
+| `$7FB4` | 7 | sector command, bit 7 set for a write; the write sets the read or write request flag, whose rising edge raises the PicoBlaze interrupt (`stage0/rtl/pb_periph.v`) |
 | `$7FC0` | 0-3 | page for the `$A000` window |
 | `$7FC1`, `$7FC2` | 8, 1 | ROM bank mask (9 bits) |
 | `$7FC3` | 8 | header checksum |
