@@ -37,7 +37,16 @@ log=$exp/blocks/${blk}_equiv.log
 # sides; everything else hierarchical is hidden
 hide='rename -hide w:*.*'
 grep -q 'select -set keep' "${ref%.v}.ys" && hide='rename -hide w:*.* @keep %d'
-yosys -q -l "$log" -p "
+# A readable module may state reachable-state invariants with assume() under
+# `ifdef FORMAL (a one-hot state, a bounded counter). Then every matched
+# pair is proved by temporal induction with those assumptions in force: the
+# two designs are equivalent on every state the invariants allow. The
+# invariants are not proven here; they must be true of the hardware, and
+# the module says why. Without assumptions the structural passes
+# (equiv_simple, equiv_induct) must prove everything on their own.
+formal=''
+grep -q 'ifdef FORMAL' "$rtl" && formal='-formal'
+prelude="
 read_verilog -sv $top/stage0/lib/s3bels.v
 read_verilog -sv $ref
 prep -flatten -top ${blk}_ref
@@ -51,7 +60,7 @@ opt_clean
 rename -top gold
 design -stash gold
 read_verilog -sv $top/stage0/lib/s3bels.v
-read_verilog -sv $rtl
+read_verilog -sv $formal $rtl
 prep -flatten -top $blk
 async2sync
 opt_clean
@@ -67,7 +76,22 @@ design -copy-from gate -as gate gate
 equiv_make gold gate equiv
 hierarchy -top equiv
 opt_clean
+"
+if [ -z "$formal" ]; then
+    yosys -q -l "$log" -p "$prelude
 equiv_simple -seq 4
 equiv_induct -seq 4
 equiv_status -assert
 " && echo "$blk: equivalent" || { echo "$blk: NOT proven, see $log" >&2; exit 1; }
+else
+    # pass 1 lists the matched pairs (all unproven before any pass runs);
+    # pass 2 proves them all together under the assumptions
+    yosys -q -l "$log" -p "$prelude
+equiv_status
+" || { echo "$blk: setup failed, see $log" >&2; exit 1; }
+    proves=$(grep -E '^\s+Unproven' "$log" | sed -E 's/.*\$[0-9]+: //; s/ \[/[/g' | awk '{printf "-prove %s %s ", $1, $2}')
+    n=$(grep -cE '^\s+Unproven' "$log")
+    yosys -q -l "$log" -p "$prelude
+sat -verify -tempinduct -set-assumes -seq 1 -maxsteps 8 $proves equiv
+" && echo "$blk: equivalent ($n signals, under the module's assumptions)" || { echo "$blk: NOT proven, see $log" >&2; exit 1; }
+fi
