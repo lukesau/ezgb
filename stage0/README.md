@@ -142,7 +142,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_fifos` | 71 | the SD-clock side of the two data FIFOs: Usselmann's `generic_fifo_dc_gray` as `sd_fifo_filler` instantiates it (rx written by the data host, tx read by it): binary and gray pointers, the other side's gray pointer synchronized, full and empty, the reset and clear synchronizers; 34 flip-flops | equivalent, 36 signals; 12 of 14 mutants caught, the other two remove the clear chain, which the reset chain makes redundant |
 | `sd_crossings` | 414 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 411 flip-flops | equivalent, 411 signals; 7 mutants, all caught |
 | `sd_controller_wb` | 531 | the register file: OpenCores `sd_controller_wb` (its 2013 revision) on the mode clock, written and read by the PicoBlaze's SD ports: the registers the crossings carry, the read mux, the three write-pulse edge detects, the data interrupt; 183 flip-flops | equivalent, 183 signals; 13 mutants, all caught (a fourteenth was no mutant) |
-
+| `sd_fifo_filler` | 189 | the mode-clock side of the two data FIFOs and the Wishbone master between them and memory: OpenCores `sd_fifo_filler` (the FIFO halves Usselmann's), the 21-bit address counter, and EZ Flash's three-cycle acknowledge; 59 flip-flops | equivalent, 62 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -157,7 +157,17 @@ block now, with the CRC result and the interrupt reset as its inputs; the
 crossings paragraph below inherits the fix (the third toggle's status
 register exists).
 
-Coverage: 4,658 of 6,529 live cells in ten blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
+Correction (2026-10-28, later that day): the FIFOs paragraph first said
+the FIFOs came "minus the filler's Wishbone master, whose place the Game
+Boy side takes". The master is there, on the mode clock, with its address
+counter, its read handshake and the FIFO halves it drives (the
+`sd_fifo_filler` block); what it talks to is a slave of EZ Flash's own, a
+2 KB block RAM (X3Y5) that the Game Boy bus reads and writes on its
+other port, and the pSRAM path in the memory clock domain, which takes
+the same address. The Game Boy never touches the FIFOs. The FIFOs and
+filler paragraphs below are as corrected.
+
+Coverage: 4,847 of 6,529 live cells in eleven blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
 RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -227,8 +237,8 @@ register file (below).
 What the FIFOs settled: the buffers around the data host are not EZ
 Flash's own but the source's `sd_fifo_filler` FIFOs, two instances of
 the OpenCores `generic_fifo_dc_gray` with `aw` 4 (16 words of 32 bits:
-block RAMs X3Y1 for rx and X3Y9 for tx), minus the filler's Wishbone
-master, whose place the Game Boy side takes. Each side has a 5-bit
+block RAMs X3Y1 for rx and X3Y9 for tx), with the filler's Wishbone
+master on their other side (the filler paragraph). Each side has a 5-bit
 binary pointer for its memory port and a gray copy latched by the same
 enable (the top bit is one register for both), takes the other side's
 gray pointer through one flip-flop, and computes its flag as the source
@@ -239,9 +249,8 @@ clear between transfers; its two-stage release synchronizer survives
 (merged for the two FIFOs), and so does the clear synchronizer with
 `clr` tied to 0, as a two-cycle clear after configuration that the reset
 chain covers anyway. The level outputs and their registers are gone. The
-Game Boy side (the other two pointer pairs, X13Y14..X16Y10 and
-X16Y5..X17Y7, their flags, and the Game Boy's reads and writes of the
-RAMs) belongs with the register file.
+mode-clock side (the other two pointer pairs, X13Y14..X16Y10 and
+X16Y5..X17Y7, and their flags) is in the filler block.
 
 What the register file settled: it is the source's `sd_controller_wb` at
 its 2013 revision, which writes the registers without byte enables and
@@ -261,9 +270,31 @@ with one more register behind it (`X15Y19_S2`, outside the block). The
 `dma_addr` register is the full 32 bits: bits 1:0 cross as the byte
 alignment and bits 22:2 are the FIFO filler's start address.
 
+What the filler settled: the source's `sd_fifo_filler` is all there on
+the mode clock, less its Wishbone data path, which is the block RAMs'
+own: `wbm_cyc_o`, `wbm_stb_o` and `wbm_we_o` as the source has them, the
+`fifo_rd_reg`/`fifo_rd_ack` handshake that spaces the rx FIFO's reads,
+and the address counter, 21 bits (`wbm_adr_o[22:2]`, the word address;
+nothing reads the bits above 22), loaded from `dma_addr` while no
+transfer runs and stepped by one word per acknowledge. The acknowledge
+is EZ Flash's: a two-bit counter that answers every strobe on its third
+cycle, so each word takes three mode cycles. The rx FIFO's read port
+(X3Y1) writes the 2 KB buffer X3Y5 at that address, and X3Y5's other read
+feeds the tx FIFO's write port (X3Y9); the pSRAM path takes the address
+and write enable into the memory clock domain through registers outside
+the block. The FIFO halves are the source's read and write sides as on
+the SD side (pointer pairs, one-stage sync, flags "now or after this
+access", the reset synchronizer on the SD side's FIFO reset), and the
+clear synchronizer's asynchronous set became a plain data input of the
+constant-0 LUT it is tied to. `en_rx_i`/`en_tx_i` are the data master's
+registers read straight from the SD clock domain, as in the source.
+
 ## Next
 
-- The Game Boy side of the two data FIFOs.
+- The memory side of an SD transfer: the 2 KB buffer X3Y5's Game Boy
+  port (its address from the cartridge bus, its data to the pads) and
+  the pSRAM path in the memory clock domain that takes the filler's
+  address, write enable and data.
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
