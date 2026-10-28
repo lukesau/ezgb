@@ -138,12 +138,14 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants (proven); 2 mutants |
 | `sd_data_serial` | 1,347 | OpenCores `sd_data_serial_host`: the DAT lines, the four CRC16s, the 14-bit transfer counter, the receive word and its write enable; 174 flip-flops | equivalent, 180 signals, under stated invariants (proven); 28 mutants, all caught |
 | `sd_data_master` | 107 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the command-with-data trigger; 30 flip-flops | equivalent, 35 signals, under stated invariants (proven); 12 mutants, all caught |
+| `sd_clock_divider` | 53 | OpenCores `sd_clock_divider` on the mode clock, with the divider register's two sync stages; 25 flip-flops | equivalent, 25 signals; 4 mutants, all caught |
+| `sd_crossings` | 404 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 401 flip-flops | equivalent; 5 mutants, all caught |
 
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
 
-Coverage: 3,573 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
+Coverage: 4,030 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -192,12 +194,27 @@ the trigger, so they stay in that block. The buffer flags it watches
 (`tx_fifo_full`, `tx_fifo_empty`, `rx_fifo_full`) are EZ Flash's own, and
 `tx_fifo_full` is a Game Boy-domain register read without a synchronizer.
 
+What the divider and the crossings settled: the SD clock is the source's
+divider on the mode clock, with no reset anywhere (the controller's
+`wb_rst` is tied off throughout), toggling every `divider + 1` cycles into
+the clock buffer and the SD CLK pad. The registers cross into the SD
+domain without resets, some in the source's two stages (argument, block
+count, data timeout) and the rest in one (command, command timeout, block
+size, bus width, byte alignment, software reset); the command's bits 7:5
+do not cross at all (7 is unused, 6:5 go to the data master's trigger).
+The responses and the command interrupt status cross back in two stages.
+The three write pulses cross as the source's toggles, each flipped by a
+rising-edge detect in the register file (two mode-domain flags), and the
+third of them is the data interrupt reset, whose status register no
+longer exists. The mode-domain sources of all of these (`*_m`) are the
+register file, not yet carved.
+
 ## Next
 
-- The rest of the SD controller: the clock divider and the register
-  crossings, with the source in hand; then EZ Flash's own buffer logic
-  around the data host (the address counters, the buffer flags, the
-  status registers that watch the data master's timeout and flags).
+- EZ Flash's own buffer logic around the data host (the address
+  counters, the buffer flags, the status registers that watch the data
+  master's timeout and flags), and the register file the crossings read
+  (the `*_m` registers, the PicoBlaze's SD ports).
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
