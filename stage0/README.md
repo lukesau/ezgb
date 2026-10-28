@@ -60,7 +60,22 @@ past its end, and the proof covers all states. So a module may state
 reachable-state invariants with `assume()` under `` `ifdef FORMAL`` (the
 state is one-hot, the counter is bounded per state), and `equiv.sh` then
 proves every matched signal by temporal induction with those assumptions
-in force. The invariants are not proven; the module says why they hold.
+in force.
+
+The invariants have to be true of the hardware, and a wrong one fails
+silently: the proof says nothing about the states it excludes, and the
+run still reports "equivalent". Writing `sd_data_serial`, a wrong code
+for one FSM state hid that whole state from the proof, and a bound that
+was off by one hid another; mutants in those states passed. So `equiv.sh`
+has a third pass that turns the assumptions into assertions and proves
+them on the reference itself, from its reset state and by induction. That
+needs them written inductively (what they allow at one step must imply
+them at the next): the data host's crc_c assumption, for one, tracks the
+counter exactly through the CRC window. Assumptions about inputs (a
+constant-0 LUT another block owns) can't be proven and are labeled
+`env_…`, which the pass leaves as assumptions. The other check on a proof
+is mutation: a module with one thing wrong in each state must fail, and
+the blocks table says how many such mutants each block was tried with.
 
 The rule that makes this work: **the readable design keeps the hardware's
 registers one for one.** Every flip-flop in the bitstream has a named
@@ -99,6 +114,7 @@ scripts/fpga/export-netlist.sh fpga/cart/fw4-updater.bin fpga/fw4
 python3 scripts/fpga/carve.py fpga/fw4/design.v stage0/blocks/unlock.blk --stub   # port skeleton for a new block
 python3 scripts/fpga/carve.py fpga/fw4/design.v --cone n_X18Y31_S0_XQ            # bels driving a net
 python3 scripts/fpga/carve.py fpga/fw4/design.v --coverage stage0/blocks/*.blk    # what no block claims yet
+python3 scripts/fpga/dumpblk.py fpga/fw4/design.v stage0/blocks/unlock.blk          # the block's equations, with its names
 scripts/fpga/equiv.sh unlock                                                      # the proof
 ```
 
@@ -118,10 +134,15 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 |---|---|---|---|
 | `unlock` | 23 | the `$7F00/$7F10/$7F20` unlock state machine that gates the `$7Fxx` registers | equivalent |
 | `picoblaze` | 425 | the KCPSM3 soft CPU with EZ Flash's two-bank instruction register: 108 flip-flops, all 68 LUT RAMs (register file, 31-deep stack, 64-byte scratchpad) | equivalent, 1,213 signals |
-| `sd_cmd_serial` | 1,333 | the SD command line: OpenCores `sd_cmd_serial_host` (LGPL, kept in the module), 358 flip-flops, 975 LUTs and muxes, most of them the 32-bit counter's compares and the response buffer's indexed writes | equivalent, 361 signals, under stated invariants |
-| `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants |
+| `sd_cmd_serial` | 1,333 | the SD command line: OpenCores `sd_cmd_serial_host` (LGPL, kept in the module), 358 flip-flops, 975 LUTs and muxes, most of them the 32-bit counter's compares and the response buffer's indexed writes | equivalent, 361 signals, under stated invariants (proven); 3 mutants |
+| `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants (proven); 2 mutants |
+| `sd_data_serial` | 1,347 | OpenCores `sd_data_serial_host`: the DAT lines, the four CRC16s, the 14-bit transfer counter, the receive word and its write enable; 174 flip-flops | equivalent, 180 signals, under stated invariants (proven); 28 mutants, all caught |
 
-Coverage: 2,119 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
+The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
+the hardware hands IDLE a 5 for one cycle, so that one state was outside
+the proof until the invariant was corrected (2026-10-27).
+
+Coverage: 3,466 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -144,11 +165,27 @@ The command master's timeout register and watchdog are 16 bits (the
 register file never sets the upper byte), and its busy input is the DAT0
 pad inverted: the card holds DAT0 low while busy.
 
+What the data host settled: it is the source at revision bf94521b (2013:
+the abort from every state, a three-bit crc_status), built with
+`BLKSIZE_W` 10 and `BLKCNT_W` 8, so the transfer counter is 14 bits and
+the block count 8. The synthesis made its FSM binary (IDLE 000, WRITE_DAT
+001, WRITE_CRC 101, WRITE_BUSY 010, READ_WAIT 100, READ_DAT 011), kept
+only the two bits of `blksize_reg` the byte-alignment update reads, and
+dropped their reset. One thing is not in the source: in 4-bit mode the
+cycle count is `((blksize | 4) << 1) + 2`, as if bit 2 of the block size
+were always set; harmless for the sizes used (8n - 1 bytes), origin
+unknown. Around the block: `data_in` is the transmit buffer's read port
+(block RAM X3Y9) and `data_out` feeds the receive buffer's write port
+(X3Y1) directly, `we` is that RAM's write enable, and `rd`/`we` step EZ
+Flash's own address counters; the DAT pads take the next values of
+`DAT_dat_o` and `DAT_oe_o` into their own output registers, and the DAT2
+pad is input only.
+
 ## Next
 
-- The rest of the SD controller: `sd_data_serial_host` (the four CRC16s
-  are its signature), `sd_data_master`, the clock divider and the
-  register crossings, all with the source in hand.
+- The rest of the SD controller: `sd_data_master`, the clock divider and
+  the register crossings, all with the source in hand; then EZ Flash's
+  buffer address counters around the data host.
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
