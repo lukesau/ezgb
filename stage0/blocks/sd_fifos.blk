@@ -1,0 +1,127 @@
+# the two data FIFOs' SD-clock side: OpenCores generic_fifo_dc_gray (sd_fifo_filler's two instances), pointers, gray copies and flags; the memories are the BRAMs X3Y1 and X3Y9
+[cells]
+X10Y14_S0.F
+X10Y14_S0.G
+X10Y14_S2.F
+X10Y14_S2.FFX
+X10Y14_S3.F
+X10Y14_S3.FFX
+X10Y14_S3.G
+X10Y6_S0.F
+X10Y6_S0.FFX
+X11Y14_S0.F
+X11Y14_S0.FFX
+X11Y14_S0.G
+X11Y14_S2.F
+X11Y14_S2.G
+X11Y14_S3.FFX
+X11Y14_S3.FFY
+X11Y5_S0.FFY
+X11Y5_S1.F
+X11Y5_S1.FFX
+X11Y5_S1.G
+X11Y5_S2.F
+X11Y5_S2.G
+X11Y5_S3.F
+X11Y5_S3.FFX
+X11Y6_S3.F
+X11Y6_S3.FFX
+X11Y7_S0.F
+X11Y7_S0.FFX
+X11Y7_S0.FFY
+X12Y14_S0.FFX
+X12Y14_S0.FFY
+X12Y14_S1.F
+X12Y14_S1.FFY
+X12Y14_S2.FFY
+X12Y14_S3.F
+X12Y14_S3.FFX
+X12Y14_S3.FFY
+X12Y14_S3.G
+X12Y15_S2.F
+X12Y15_S2.FFX
+X12Y5_S1.F
+X12Y5_S1.G
+X12Y5_S2.F
+X12Y5_S2.F5
+X12Y5_S2.FFX
+X12Y5_S2.FFY
+X12Y5_S2.G
+X12Y5_S3.F
+X12Y5_S3.G
+X12Y6_S0.FFY
+X12Y6_S2.FFX
+X12Y6_S2.FFY
+X12Y9_S2.F
+X16Y5_S0.F
+X1Y5_S2.FFX
+X1Y5_S3.FFY
+X1Y6_S0.G
+X2Y5_S0.F
+X2Y5_S0.FFX
+X2Y5_S0.FFY
+X2Y5_S1.F
+X2Y5_S1.FFX
+X8Y1_S3.F
+X8Y1_S3.FFX
+X8Y2_S1.F
+X8Y2_S1.FFX
+X9Y14_S1.F
+X9Y14_S1.FFX
+X9Y7_S1.F
+X9Y7_S1.FFX
+X9Y7_S1.FFY
+[names]
+# SD-clock side of the two gray FIFOs (sd_fifo_filler's generic_fifo_dc_gray0 = rx, written by the data host; ..._gray1 = tx, read by it)
+n_X9Y7_S1_YQ               rx_wp_bin[0]
+n_X8Y1_S3_XQ               rx_wp_bin[1]
+n_X9Y7_S1_XQ               rx_wp_bin[2]
+n_X8Y2_S1_XQ               rx_wp_bin[3]
+n_X11Y5_S1_XQ              rx_wp_bin[4]
+n_X11Y7_S0_YQ              rx_wp_gray[0]
+n_X10Y6_S0_XQ              rx_wp_gray[1]
+n_X11Y7_S0_XQ              rx_wp_gray[2]
+n_X11Y5_S3_XQ              rx_wp_gray[3]
+n_X12Y6_S0_YQ              rx_rp_s[0]
+n_X11Y5_S0_YQ              rx_rp_s[1]
+n_X12Y5_S2_YQ              rx_rp_s[2]
+n_X12Y6_S2_XQ              rx_rp_s[3]
+n_X12Y6_S2_YQ              rx_rp_s[4]
+n_X12Y5_S2_XQ              rx_full
+n_X2Y5_S0_YQ               tx_rp_bin[0]
+n_X11Y6_S3_XQ              tx_rp_bin[1]
+n_X2Y5_S1_XQ               tx_rp_bin[2]
+n_X2Y5_S0_XQ               tx_rp_bin[3]
+n_X10Y14_S3_XQ             tx_rp_bin[4]
+n_X12Y14_S3_XQ             tx_rp_gray[0]
+n_X9Y14_S1_XQ              tx_rp_gray[1]
+n_X12Y14_S3_YQ             tx_rp_gray[2]
+n_X10Y14_S2_XQ             tx_rp_gray[3]
+n_X11Y14_S3_XQ             tx_wp_s[0]
+n_X11Y14_S3_YQ             tx_wp_s[1]
+n_X12Y14_S0_XQ             tx_wp_s[2]
+n_X12Y15_S2_XQ             tx_wp_s[3]
+n_X12Y14_S0_YQ             tx_wp_s[4]
+n_X11Y14_S0_XQ             tx_empty
+n_X12Y14_S2_YQ             rst_r
+n_X12Y14_S1_YQ             rst
+n_X1Y5_S2_XQ               clr_r
+n_X1Y5_S3_YQ               clr
+n_X12Y15_S2_X              fifo_rst
+n_X1Y6_S0_Y                gnd
+# inputs
+n_X10Y6_S1_XQ              we
+n_X11Y7_S3_XQ              rd
+n_X11Y17_S0_YQ             soft_rst
+n_X11Y15_S0_XQ             start_tx_fifo_i
+n_X10Y15_S2_XQ             start_rx_fifo_i
+n_X17Y6_S0_XQ              rx_rp_gray_m[0]
+n_X17Y5_S0_XQ              rx_rp_gray_m[1]
+n_X17Y5_S0_YQ              rx_rp_gray_m[2]
+n_X17Y7_S2_YQ              rx_rp_gray_m[3]
+n_X17Y6_S0_YQ              rx_rp_gray_m[4]
+n_X16Y10_S3_YQ             tx_wp_gray_m[0]
+n_X13Y14_S2_XQ             tx_wp_gray_m[1]
+n_X13Y14_S2_YQ             tx_wp_gray_m[2]
+n_X14Y13_S2_XQ             tx_wp_gray_m[3]
+n_X14Y13_S2_YQ             tx_wp_gray_m[4]

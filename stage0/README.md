@@ -139,6 +139,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_data_serial` | 1,347 | OpenCores `sd_data_serial_host`: the DAT lines, the four CRC16s, the 14-bit transfer counter, the receive word and its write enable; 174 flip-flops | equivalent, 180 signals, under stated invariants (proven); 28 mutants, all caught |
 | `sd_data_master` | 123 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the data interrupt status register, the command-with-data trigger; 35 flip-flops | equivalent, 40 signals, under stated invariants (proven); 18 mutants, all caught |
 | `sd_clock_divider` | 53 | OpenCores `sd_clock_divider` on the mode clock, with the divider register's two sync stages; 25 flip-flops | equivalent, 25 signals; 4 mutants, all caught |
+| `sd_fifos` | 71 | the SD-clock side of the two data FIFOs: Usselmann's `generic_fifo_dc_gray` as `sd_fifo_filler` instantiates it (rx written by the data host, tx read by it): binary and gray pointers, the other side's gray pointer synchronized, full and empty, the reset and clear synchronizers; 34 flip-flops | equivalent, 36 signals; 12 of 14 mutants caught, the other two remove the clear chain, which the reset chain makes redundant |
 | `sd_crossings` | 404 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 401 flip-flops | equivalent; 5 mutants, all caught |
 
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
@@ -155,8 +156,8 @@ block now, with the CRC result and the interrupt reset as its inputs; the
 crossings paragraph below inherits the fix (the third toggle's status
 register exists).
 
-Coverage: 4,030 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
-RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
+Coverage: 4,117 of 6,529 live cells (3,051 LUTs, 2,161 flip-flops, 68 LUT
+RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
@@ -189,8 +190,8 @@ cycle count is `((blksize | 4) << 1) + 2`, as if bit 2 of the block size
 were always set; harmless for the sizes used (8n - 1 bytes), origin
 unknown. Around the block: `data_in` is the transmit buffer's read port
 (block RAM X3Y9) and `data_out` feeds the receive buffer's write port
-(X3Y1) directly, `we` is that RAM's write enable, and `rd`/`we` step EZ
-Flash's own address counters; the DAT pads take the next values of
+(X3Y1) directly, `we` is that RAM's write enable, and `rd`/`we` step the
+FIFOs' pointers; the DAT pads take the next values of
 `DAT_dat_o` and `DAT_oe_o` into their own output registers, and the DAT2
 pad is input only.
 
@@ -217,16 +218,33 @@ do not cross at all (7 is unused, 6:5 go to the data master's trigger).
 The responses and the command interrupt status cross back in two stages.
 The three write pulses cross as the source's toggles, each flipped by a
 rising-edge detect in the register file (two mode-domain flags), and the
-third of them is the data interrupt reset, whose status register no
-longer exists. The mode-domain sources of all of these (`*_m`) are the
+third of them is the data interrupt reset, for the status register in
+the data master block. The mode-domain sources of all of these (`*_m`) are the
 register file, not yet carved.
+
+What the FIFOs settled: the buffers around the data host are not EZ
+Flash's own but the source's `sd_fifo_filler` FIFOs, two instances of
+the OpenCores `generic_fifo_dc_gray` with `aw` 4 (16 words of 32 bits:
+block RAMs X3Y1 for rx and X3Y9 for tx), minus the filler's Wishbone
+master, whose place the Game Boy side takes. Each side has a 5-bit
+binary pointer for its memory port and a gray copy latched by the same
+enable (the top bit is one register for both), takes the other side's
+gray pointer through one flip-flop, and computes its flag as the source
+does: full from the binary pointers with the top bit inverted, empty
+from the gray ones, each "now, or after this access". The FIFO reset is
+the filler's: software reset or no transfer started, so the pointers
+clear between transfers; its two-stage release synchronizer survives
+(merged for the two FIFOs), and so does the clear synchronizer with
+`clr` tied to 0, as a two-cycle clear after configuration that the reset
+chain covers anyway. The level outputs and their registers are gone. The
+Game Boy side (the other two pointer pairs, X13Y14..X16Y10 and
+X16Y5..X17Y7, their flags, and the Game Boy's reads and writes of the
+RAMs) belongs with the register file.
 
 ## Next
 
-- EZ Flash's own buffer logic around the data host (the address
-  counters, the buffer flags, the status registers that watch the data
-  master's timeout and flags), and the register file the crossings read
-  (the `*_m` registers, the PicoBlaze's SD ports).
+- The register file the crossings read (the `*_m` registers, the
+  PicoBlaze's SD ports) and the Game Boy side of the two data FIFOs.
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
