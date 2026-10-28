@@ -15,8 +15,8 @@
 //   - $7FC0 = 4 reads $04, $7FC0 = 5 reads the flash writer's busy flag
 //   - the register window ($7FC0 = 6, 7 or 8 and up in kernel mode; in
 //     game mode the bank register at all ones with RAM enabled): the
-//     seven RTC values the PicoBlaze sends (2x-domain copies of its port
-//     EE writes, in port ED order) at offsets $08-$0E in kernel mode,
+//     seven RTC values the PicoBlaze sends (the RTC bridge's 2x-domain
+//     copies of its port EE writes) at offsets $08-$0E in kernel mode,
 //     $FF elsewhere in it; in game mode the MBC3 way, by the value
 //     written to $4000: $08-$0B give seconds, minutes, hours and days
 //     converted from the PCF8563's BCD to binary, $0C the day counter's
@@ -57,7 +57,7 @@ module gb_data_out (
     input load_busy_2x,             // port EF
     input [8:8] mbc_bank,           // the RAM enable
     input pg15_gb_q,
-    input [7:0] rtc_v0, rtc_v1, rtc_v2, rtc_v3, rtc_v4, rtc_v5, rtc_v6,
+    input [7:0] rtc_sec, rtc_min, rtc_hour, rtc_day, rtc_wday, rtc_month, rtc_year,   // the RTC bridge's copies of the PicoBlaze's readings
     input [7:0] rtc_sel,            // the MBC3 RTC register select
     input win_en, win_en1,          // $7F30 bits 0 and 1
     input win_kernel, win_sel,      // the window decode's stages (sd_mem_path)
@@ -93,28 +93,28 @@ module gb_data_out (
     wire [7:0] mem_or_chk = chk_rd ? chk_byte : mem_byte;
     wire [7:0] status = !cmd_b4_flag ? 8'he1 : win_en1 ? 8'h01 : buf_q;
 
-    // the RTC window: port ED order 2..8 is weekday(v0) day(v1) month(v2) hour(v3) second(v4) year(v5) minute(v6)
+    // the RTC window in kernel mode: the seven readings at offsets $08-$0E
     function [7:0] bcd2bin(input [7:0] v);
         bcd2bin = {4'd0, v[7:4]} * 8'd10 + {4'd0, v[3:0]};
     endfunction
     wire rtc_win_k = adr_014d_lo & !a6;                   // offsets $08-$0F
     reg [7:0] rtc_k;
     always @* case ({a2, a1, a0})
-        3'd0: rtc_k = rtc_v4;       // seconds
-        3'd1: rtc_k = rtc_v6;       // minutes
-        3'd2: rtc_k = rtc_v3;       // hours
-        3'd3: rtc_k = rtc_v1;       // days
-        3'd4: rtc_k = rtc_v0;       // weekday
-        3'd5: rtc_k = rtc_v2;       // month
-        3'd6: rtc_k = rtc_v5;       // year
+        3'd0: rtc_k = rtc_sec;       // seconds
+        3'd1: rtc_k = rtc_min;       // minutes
+        3'd2: rtc_k = rtc_hour;       // hours
+        3'd3: rtc_k = rtc_day;       // days
+        3'd4: rtc_k = rtc_wday;       // weekday
+        3'd5: rtc_k = rtc_month;       // month
+        3'd6: rtc_k = rtc_year;       // year
         default: rtc_k = 8'hff;
     endcase
     reg [7:0] rtc_g;
     always @* case (rtc_sel)
-        8'h08: rtc_g = bcd2bin(rtc_v4);
-        8'h09: rtc_g = bcd2bin(rtc_v6);
-        8'h0a: rtc_g = bcd2bin(rtc_v3);
-        8'h0b: rtc_g = bcd2bin(rtc_v1);
+        8'h08: rtc_g = bcd2bin(rtc_sec);
+        8'h09: rtc_g = bcd2bin(rtc_min);
+        8'h0a: rtc_g = bcd2bin(rtc_hour);
+        8'h0b: rtc_g = bcd2bin(rtc_day);
         8'h0c: rtc_g = 8'h01;
         default: rtc_g = 8'hff;
     endcase

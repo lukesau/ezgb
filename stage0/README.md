@@ -157,6 +157,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
 | `gb_regs` | 358 | EZ Flash's own: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart's own), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
 | `pb_periph` | 43 | EZ Flash's own: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
+| `rtc_bridge` | 147 | EZ Flash's own: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -181,13 +182,13 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 6,159 of 6,543 live cells in seventeen blocks. The design's
+Coverage: 6,306 of 6,543 live cells in eighteen blocks. The design's
 live cells are 3,024 LUTs, 2,135 flip-flops, 68 LUT RAMs, 919 muxes, 283
 carry XORs, 16 block RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the
 DNA port and the ICAP (the ICAP was added to the design model with the
 peripherals block: `netlist2v.py` had tied its readback to 0 and dropped
 its inputs, so the twelve registers that drive it were dead and
-uncounted). Unclaimed slice cells: 130 LUTs, 91 flip-flops, 49 muxes, 16
+uncounted). Unclaimed slice cells: 64 LUTs, 27 flip-flops, 16 muxes, 16
 carry XORs.
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
@@ -462,12 +463,23 @@ flag that is already set raises nothing until something clears it; the
 lock write ($7FF0=$E4) that the kernel issues right after every command
 (`DiskRead_B2`, `DiskWrite_B2`) is what does that.
 
+What the RTC bridge settled: the seven readings the register window
+serves are plain copies on the 2x clock, one per PCF8563 register (2
+seconds, 3 minutes, 4 hours, 5 days, 6 weekdays, 7 months, 8 years; the
+data bus block's inputs are now named after them instead of by
+position). A copy loads the port EE register whenever any OUTPUT's
+strobe comes while port ED holds its index, so in the firmware's loop
+(OUTPUT index to ED, OUTPUT value to EE, then the I2C acknowledge's
+OUTPUTs) the EE write's own strobe first loads the previous reading and
+the acknowledge's first OUTPUT loads the right one, a few processor
+cycles later. The RTC set path is the mirror: port F0 selects one of the
+seven $A008-$A00E registers, a registered mux on the 2x clock follows it
+one cycle later (the firmware's NOP between OUTPUT F0 and INPUT B6 is
+for that), and indices outside 2-8 hold the last value.
+
 ## Next
 
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
-- The RTC bridge, the last of the PicoBlaze's peripherals: the 2x-domain
-  copies of port EE's values that the register window reads (49
-  flip-flops at X23-X24) and the port B6 mux over the RTC set registers.
 - The soft reset: the 16-bit counter on the inverted 2x clock that the
   $7FE0 request starts, driving `reset_drive` into `psram_ctrl`.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to

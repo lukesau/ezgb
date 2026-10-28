@@ -141,6 +141,10 @@ it checks the VL bit and, if the clock lost power, stops it and loads a
 default date. Whenever port `B9` reads 1 the idle loop copies registers 2-8
 (seconds to years) out as index/value pairs on `ED`/`EE`; command `$10`
 writes them back from `B6`.
+The FPGA side is `stage0/rtl/rtc_bridge.v` (proven 2026-10-28): a copy
+per register on the 2x clock, loaded from `EE` by the next OUTPUT's
+strobe while `ED` holds its index, and a registered mux over the seven
+RTC set registers that `F0` selects for `B6`.
 
 ### Debug output
 
