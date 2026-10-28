@@ -33,6 +33,10 @@ mkdir -p "$exp/blocks"
 ref=$exp/blocks/${blk}_ref.v
 python3 "$here/carve.py" "$exp/design.v" "$blkfile" -o "$ref"
 log=$exp/blocks/${blk}_equiv.log
+# LUT RAM contents named in the block file keep their (dotted) names on both
+# sides; everything else hierarchical is hidden
+hide='rename -hide w:*.*'
+grep -q 'select -set keep' "${ref%.v}.ys" && hide='rename -hide w:*.* @keep %d'
 yosys -q -l "$log" -p "
 read_verilog -sv $top/stage0/lib/s3bels.v
 read_verilog -sv $ref
@@ -42,7 +46,7 @@ opt_clean
 cd ${blk}_ref
 script ${ref%.v}.ys
 cd ..
-rename -hide w:*.*
+$hide
 opt_clean
 rename -top gold
 design -stash gold
@@ -51,7 +55,10 @@ read_verilog -sv $rtl
 prep -flatten -top $blk
 async2sync
 opt_clean
-rename -hide w:*.*
+cd $blk
+script ${ref%.v}_gate.ys
+cd ..
+$hide
 opt_clean
 rename -top gate
 design -stash gate

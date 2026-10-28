@@ -22,6 +22,9 @@ A block file names bels and gives boundary nets and registers readable names:
     *                   # every live slice bel
     [names]
     n_X18Y31_S0_XQ  unlocked      # a net of the design -> its name in the block
+    n_X2Y25_S1_XQ   pc[0]         # pc[i] names make a vector port / wire
+    X7Y26_S0_F.m    regs0.sy      # a LUT RAM's contents -> the readable
+                                  # module's s3_ram16 instance path
     P84             wr_n
 
 stage0/blocks/common.names holds [names] shared by every block (pins,
@@ -380,9 +383,38 @@ def carve(d, name, cells, names, whole_slices=False):
     order = {k: i for i, k in enumerate(names)}
     for lst in (inputs, outputs, inouts):
         lst.sort(key=lambda n: (order.get(n, len(order)), n))
+    # names like pc[3] make a vector; a vector with any bit read outside is an
+    # output as a whole (its other bits go out too)
+    vec = {}
+    for n, v in ren.items():
+        m = re.fullmatch(r'(\w+)\[(\d+)\]', v)
+        if m:
+            vec.setdefault(m.group(1), {})[int(m.group(2))] = n
+    for base, bits in vec.items():
+        kinds = {('input' if n in inputs else 'output' if n in outputs else 'inout' if n in inouts else 'internal') for n in bits.values()}
+        if 'input' in kinds and kinds - {'input'}:
+            sys.exit(f"{name}: vector {base} has bits driven on both sides of the block")
+        if 'output' in kinds:
+            for n in bits.values():
+                if n in internal:
+                    internal.remove(n); outputs.append(n)
+    done = set()
+    def decls(kind, nets):
+        res = []
+        for n in nets:
+            m = re.fullmatch(r'(\w+)\[(\d+)\]', ren.get(n, ''))
+            if m:
+                if m.group(1) in done:
+                    continue
+                done.add(m.group(1))
+                res.append(f"{kind} [{max(vec[m.group(1)])}:{min(vec[m.group(1)])}] {m.group(1)}")
+            else:
+                res.append(f"{kind} {rn(n)}")
+        return res
     out = [f"// {name}_ref: carved from the exported design by scripts/fpga/carve.py; do not edit",
            f"module {name}_ref ("]
-    plist = [f"input {rn(n)}" for n in inputs] + [f"output {rn(n)}" for n in outputs] + [f"inout {rn(n)}" for n in inouts]
+    pdecls = (decls('input', inputs), decls('output', outputs), decls('inout', inouts))
+    plist = pdecls[0] + pdecls[1] + pdecls[2]
     out.append('    ' + ',\n    '.join(plist))
     out.append(');')
     for n, expr in consts.items():
@@ -393,7 +425,7 @@ def carve(d, name, cells, names, whole_slices=False):
         if n in d.decl and re.search(r'\[\d+:\d+\]', d.decl[n]):
             out.append(rn(d.decl[n]))
         else:
-            out.append(f"wire {rn(n)};")
+            out.extend(f"{x};" for x in decls('wire', [n]))
     if not whole_slices:
         for net, expr in owned.items():
             if net in internal or net in outputs:
@@ -415,10 +447,14 @@ def carve(d, name, cells, names, whole_slices=False):
             out.append(rn(f"{cl.kind} {fmt_params(cl.params)}{c.replace('.', '_')} ({conns}, {outs});"))
     out.append('endmodule')
     rams = [c for c in cells if d.cells[c].kind in ('s3_ram16', 's3_srl16')]
-    info = dict(inputs=[rn(n) for n in inputs], outputs=[rn(n) for n in outputs], inouts=[rn(n) for n in inouts],
+    # the contents take the readable module's own name for them, <cell>.m,
+    # on both sides (a flattened instance already owns the bare cell name)
+    keep = ('select -set keep ' + ' '.join(f"w:\\{v}.m" for v in ramnames.values()) + '\n') if ramnames else ''
+    info = dict(inputs=pdecls[0], outputs=pdecls[1], inouts=pdecls[2],
                 regs=[(r, ren.get(r), bel) for r, bel in regs], unnamed=unnamed, internal=internal, consts=consts,
                 cells=cells, rams=[(c.replace('.', '_') + '.m', ramnames.get(c.replace('.', '_') + '.m')) for c in rams],
-                renames='\n'.join(f"rename \\{k} \\{v}" for k, v in ramnames.items()) + '\n')
+                renames='\n'.join(f"rename \\{k} \\{v}.m" for k, v in ramnames.items()) + '\n' + keep,
+                gate_renames=keep)
     return '\n'.join(out) + '\n', info
 
 
@@ -428,11 +464,13 @@ OUTS = {'s3_lut4': ('O',), 's3_ram16': ('O', 'MC15'), 's3_srl16': ('O', 'MC15'),
 
 def stub(name, desc, info):
     out = [f"// {name}: {desc}" if desc else f"// {name}", f"module {name} ("]
-    plist = [f"input {n}" for n in info['inputs']] + [f"output {n}" for n in info['outputs']] + [f"inout {n}" for n in info['inouts']]
+    plist = info['inputs'] + info['outputs'] + info['inouts']
     out.append('    ' + ',\n    '.join(plist))
     out.append(');')
     for r, nm, bel in info['regs']:
         out.append(f"    reg {nm or r};  // {bel}")
+    for r, nm in info['rams']:
+        out.append(f"    // LUT RAM {r} -> {nm or '(unnamed)'}")
     out.append('endmodule')
     return '\n'.join(out) + '\n'
 
@@ -506,6 +544,7 @@ def main():
     if a.out:
         open(a.out, 'w').write(text)
         open(re.sub(r'\.v$', '', a.out) + '.ys', 'w').write(info['renames'])
+        open(re.sub(r'\.v$', '', a.out) + '_gate.ys', 'w').write(info['gate_renames'])
     else:
         sys.stdout.write(text)
     err = sys.stderr

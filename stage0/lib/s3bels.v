@@ -57,3 +57,39 @@ endmodule
 module s3_xorcy (input LI, CI, output O);
     assign O = LI ^ CI;
 endmodule
+
+// The LUT RAM shapes a design builds from the 16x1 cells, named so a
+// readable module can keep the hardware's cells one for one: a block file
+// names each hardware cell after the instance path here (regs0.sy,
+// stack3.hi, scratch5.q2), and equiv.sh matches the contents by that name.
+
+// 16x1 dual port: the G LUT reads and writes at A, the F LUT reads at
+// DPRA and is written at A alongside it.
+module s3_ram16x1d #(parameter [15:0] INIT = 16'h0000) (
+    input [3:0] A, DPRA, input WE, CLK, D, output SPO, DPO
+);
+    s3_ram16 #(.INIT(INIT)) sx (.RA(A), .WA(A), .WE(WE), .CLK(CLK), .D(D), .O(SPO), .MC15());
+    s3_ram16 #(.INIT(INIT)) sy (.RA(DPRA), .WA(A), .WE(WE), .CLK(CLK), .D(D), .O(DPO), .MC15());
+endmodule
+
+// 32x1 single port: two cells, A[4] picks the high one (the F5 mux)
+module s3_ram32x1s #(parameter [31:0] INIT = 32'h0) (
+    input [4:0] A, input WE, CLK, D, output O
+);
+    wire lo_o, hi_o;
+    s3_ram16 #(.INIT(INIT[15:0])) lo (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & !A[4]), .CLK(CLK), .D(D), .O(lo_o), .MC15());
+    s3_ram16 #(.INIT(INIT[31:16])) hi (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & A[4]), .CLK(CLK), .D(D), .O(hi_o), .MC15());
+    assign O = A[4] ? hi_o : lo_o;
+endmodule
+
+// 64x1 single port: four cells, A[5:4] picks one (F5 then FX muxes)
+module s3_ram64x1s #(parameter [63:0] INIT = 64'h0) (
+    input [5:0] A, input WE, CLK, D, output O
+);
+    wire [3:0] q;
+    s3_ram16 #(.INIT(INIT[15:0]))  q0 (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & A[5:4] == 2'd0), .CLK(CLK), .D(D), .O(q[0]), .MC15());
+    s3_ram16 #(.INIT(INIT[31:16])) q1 (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & A[5:4] == 2'd1), .CLK(CLK), .D(D), .O(q[1]), .MC15());
+    s3_ram16 #(.INIT(INIT[47:32])) q2 (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & A[5:4] == 2'd2), .CLK(CLK), .D(D), .O(q[2]), .MC15());
+    s3_ram16 #(.INIT(INIT[63:48])) q3 (.RA(A[3:0]), .WA(A[3:0]), .WE(WE & A[5:4] == 2'd3), .CLK(CLK), .D(D), .O(q[3]), .MC15());
+    assign O = q[A[5:4]];
+endmodule
