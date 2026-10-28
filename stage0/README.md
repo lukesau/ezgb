@@ -137,12 +137,13 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_cmd_serial` | 1,333 | the SD command line: OpenCores `sd_cmd_serial_host` (LGPL, kept in the module), 358 flip-flops, 975 LUTs and muxes, most of them the 32-bit counter's compares and the response buffer's indexed writes | equivalent, 361 signals, under stated invariants (proven); 3 mutants |
 | `sd_cmd_master` | 338 | OpenCores `sd_cmd_master`: the command and argument latch, the 16-bit timeout watchdog, the response and interrupt-status registers; 205 flip-flops | equivalent, 212 signals, under stated invariants (proven); 2 mutants |
 | `sd_data_serial` | 1,347 | OpenCores `sd_data_serial_host`: the DAT lines, the four CRC16s, the 14-bit transfer counter, the receive word and its write enable; 174 flip-flops | equivalent, 180 signals, under stated invariants (proven); 28 mutants, all caught |
+| `sd_data_master` | 107 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the command-with-data trigger; 30 flip-flops | equivalent, 35 signals, under stated invariants (proven); 12 mutants, all caught |
 
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
 
-Coverage: 3,466 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
+Coverage: 3,573 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -181,11 +182,22 @@ Flash's own address counters; the DAT pads take the next values of
 `DAT_dat_o` and `DAT_oe_o` into their own output registers, and the DAT2
 pad is input only.
 
+What the data master settled: the synthesis merged it with the transfer
+trigger (`sd_data_xfer_trig`) and kept both FSMs' source codes; the
+timeout is 8 bits (`DATA_TIMEOUT_W`); the data interrupt status register
+is gone, nothing reads it, and with it the CRC result; the command start
+reaches the trigger as the two sync taps of the source's monostable
+crossing; the command master's `int_status_cc` and `cmd_int_n` LUTs feed
+the trigger, so they stay in that block. The buffer flags it watches
+(`tx_fifo_full`, `tx_fifo_empty`, `rx_fifo_full`) are EZ Flash's own, and
+`tx_fifo_full` is a Game Boy-domain register read without a synchronizer.
+
 ## Next
 
-- The rest of the SD controller: `sd_data_master`, the clock divider and
-  the register crossings, all with the source in hand; then EZ Flash's
-  buffer address counters around the data host.
+- The rest of the SD controller: the clock divider and the register
+  crossings, with the source in hand; then EZ Flash's own buffer logic
+  around the data host (the address counters, the buffer flags, the
+  status registers that watch the data master's timeout and flags).
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
