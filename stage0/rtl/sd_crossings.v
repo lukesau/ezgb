@@ -18,7 +18,7 @@
 //     source (argument, block count, data timeout) and the rest in one
 //     (command, command timeout, block size, bus width, byte alignment,
 //     software reset); back into the mode domain the responses and the
-//     command interrupt status cross in two
+//     two interrupt status registers cross in two
 //   - the command register's bits 7:5 do not cross: 7 is unused and 6:5
 //     (CMD_WITH_DATA) go to the data master's trigger separately, so the
 //     command crosses as its index (13:8) and its checks (4:0)
@@ -27,8 +27,9 @@
 //     two; the pulse that flips each toggle is one mode-domain flag ANDed
 //     with the inverse of another (a rising-edge detect in the register
 //     file), which arrive here as <pulse>_m[1] and <pulse>_m[0]
-//   - the data interrupt status is gone from the design, but its reset
-//     pulse's crossing is still here (data_int_rst, named by elimination)
+//   - the data interrupt status crosses back in two stages like the
+//     command's (the first write of this block missed it, with the status
+//     register itself; see the README's correction of 2026-10-28)
 //
 // Block: stage0/blocks/sd_crossings.blk.
 
@@ -56,6 +57,7 @@ module sd_crossings (
     input [31:0] response_2_i,
     input [31:8] response_3_i,
     input [4:0] cmd_int_status_i,
+    input [4:0] data_int_status_i,
     // SD domain out
     output reg [31:0] argument_i,
     output reg [5:0] cmd_index_i,
@@ -76,7 +78,8 @@ module sd_crossings (
     output reg [31:0] response_1_m,
     output reg [31:0] response_2_m,
     output reg [31:8] response_3_m,
-    output reg [4:0] cmd_int_status_m
+    output reg [4:0] cmd_int_status_m,
+    output reg [4:0] data_int_status_m
 );
     // ---- into the SD domain
     reg [31:0] argument_s1;
@@ -111,12 +114,13 @@ module sd_crossings (
     // ---- back into the mode domain
     reg [31:0] response_0_s1, response_1_s1, response_2_s1;
     reg [31:8] response_3_s1;
-    reg [4:0] cmd_int_status_s1;
+    reg [4:0] cmd_int_status_s1, data_int_status_s1;
     always @(posedge clk_mode) begin
         response_0_s1 <= response_0_i;           response_0_m <= response_0_s1;
         response_1_s1 <= response_1_i;           response_1_m <= response_1_s1;
         response_2_s1 <= response_2_i;           response_2_m <= response_2_s1;
         response_3_s1 <= response_3_i;           response_3_m <= response_3_s1;
         cmd_int_status_s1 <= cmd_int_status_i;   cmd_int_status_m <= cmd_int_status_s1;
+        data_int_status_s1 <= data_int_status_i; data_int_status_m <= data_int_status_s1;
     end
 endmodule

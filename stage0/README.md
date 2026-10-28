@@ -140,7 +140,8 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_data_master` | 123 | OpenCores `sd_data_master` with `sd_data_xfer_trig`: starts and stops the data host, the 8-bit timeout watchdog, the data interrupt status register, the command-with-data trigger; 35 flip-flops | equivalent, 40 signals, under stated invariants (proven); 18 mutants, all caught |
 | `sd_clock_divider` | 53 | OpenCores `sd_clock_divider` on the mode clock, with the divider register's two sync stages; 25 flip-flops | equivalent, 25 signals; 4 mutants, all caught |
 | `sd_fifos` | 71 | the SD-clock side of the two data FIFOs: Usselmann's `generic_fifo_dc_gray` as `sd_fifo_filler` instantiates it (rx written by the data host, tx read by it): binary and gray pointers, the other side's gray pointer synchronized, full and empty, the reset and clear synchronizers; 34 flip-flops | equivalent, 36 signals; 12 of 14 mutants caught, the other two remove the clear chain, which the reset chain makes redundant |
-| `sd_crossings` | 404 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 401 flip-flops | equivalent; 5 mutants, all caught |
+| `sd_crossings` | 414 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 411 flip-flops | equivalent, 411 signals; 7 mutants, all caught |
+| `sd_controller_wb` | 531 | the register file: OpenCores `sd_controller_wb` (its 2013 revision) on the mode clock, written and read by the PicoBlaze's SD ports: the registers the crossings carry, the read mux, the three write-pulse edge detects, the data interrupt; 183 flip-flops | equivalent, 183 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
@@ -156,7 +157,7 @@ block now, with the CRC result and the interrupt reset as its inputs; the
 crossings paragraph below inherits the fix (the third toggle's status
 register exists).
 
-Coverage: 4,117 of 6,529 live cells (3,051 LUTs, 2,161 flip-flops, 68 LUT
+Coverage: 4,658 of 6,529 live cells in ten blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
 RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -215,12 +216,13 @@ domain without resets, some in the source's two stages (argument, block
 count, data timeout) and the rest in one (command, command timeout, block
 size, bus width, byte alignment, software reset); the command's bits 7:5
 do not cross at all (7 is unused, 6:5 go to the data master's trigger).
-The responses and the command interrupt status cross back in two stages.
+The responses and the two interrupt status registers cross back in two
+stages.
 The three write pulses cross as the source's toggles, each flipped by a
 rising-edge detect in the register file (two mode-domain flags), and the
 third of them is the data interrupt reset, for the status register in
 the data master block. The mode-domain sources of all of these (`*_m`) are the
-register file, not yet carved.
+register file (below).
 
 What the FIFOs settled: the buffers around the data host are not EZ
 Flash's own but the source's `sd_fifo_filler` FIFOs, two instances of
@@ -241,10 +243,27 @@ Game Boy side (the other two pointer pairs, X13Y14..X16Y10 and
 X16Y5..X17Y7, their flags, and the Game Boy's reads and writes of the
 RAMs) belongs with the register file.
 
+What the register file settled: it is the source's `sd_controller_wb` at
+its 2013 revision, which writes the registers without byte enables and
+whose read mux zero-extends each register and holds on an undecoded
+address (the 2019 revision clears the output first; the hardware holds).
+Its Wishbone master is the PicoBlaze: four port registers hold the data
+word, one the address, one the strobe (`stb & cyc` in one) and one the
+write flag, all in the PicoBlaze's clock domain and read from the mode
+domain without synchronizers. The widths are EZ Flash's (`sd_defines.h`
+edited: command timeout 16, data timeout 8, block size 10, block count
+8); the voltage register still reads 3300 and the capabilities 0; there
+is no reset, so the block size's reset value of 511 is gone. The three
+write pulses go through the top level's `sd_edge_detect` instances (two
+registers each, the crossings' `<pulse>_m[1:0]`). The source's `int_cmd`
+is gone, unused; its `int_data` is kept in a register of EZ Flash's own,
+with one more register behind it (`X15Y19_S2`, outside the block). The
+`dma_addr` register is the full 32 bits: bits 1:0 cross as the byte
+alignment and bits 22:2 are the FIFO filler's start address.
+
 ## Next
 
-- The register file the crossings read (the `*_m` registers, the
-  PicoBlaze's SD ports) and the Game Boy side of the two data FIFOs.
+- The Game Boy side of the two data FIFOs.
 - The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
   reads and writes (the in_port mux, port C8's bank bit, the interrupt
   source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its

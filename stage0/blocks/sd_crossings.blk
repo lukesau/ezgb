@@ -404,6 +404,16 @@ X13Y18_S1.FFY
 X16Y16_S1.FFX
 X15Y15_S3.FFX
 X14Y15_S2.FFY
+X14Y14_S2.FFY
+X16Y14_S3.FFY
+X15Y15_S0.FFX
+X15Y15_S2.FFY
+X15Y15_S3.FFY
+X15Y15_S1.FFX
+X16Y15_S0.FFY
+X14Y15_S0.FFY
+X15Y14_S2.FFX
+X15Y14_S2.FFY
 [names]
 n_X15Y18_S2_YQ             cmd_with_data_m[0]
 n_X10Y17_S0_YQ             cmd_with_data_i[0]
@@ -1028,3 +1038,18 @@ n_X16Y16_S1_XQ             cmd_int_status_m[3]
 n_X15Y15_S3_XQ             cmd_int_status_s1[4]
 b_X15Y15_S3_F              cmd_int_status_i[4]
 n_X14Y15_S2_YQ             cmd_int_status_m[4]
+n_X11Y15_S3_XQ             data_int_status_i[0]
+n_X12Y15_S3_YQ             data_int_status_i[1]
+n_X12Y16_S3_YQ             data_int_status_i[2]
+n_X12Y15_S0_YQ             data_int_status_i[3]
+n_X12Y17_S3_YQ             data_int_status_i[4]
+n_X14Y14_S2_YQ             data_int_status_s1[0]
+n_X16Y14_S3_YQ             data_int_status_s1[1]
+n_X15Y15_S0_XQ             data_int_status_s1[2]
+n_X15Y15_S2_YQ             data_int_status_s1[3]
+n_X15Y15_S3_YQ             data_int_status_s1[4]
+n_X15Y15_S1_XQ             data_int_status_m[0]
+n_X16Y15_S0_YQ             data_int_status_m[1]
+n_X14Y15_S0_YQ             data_int_status_m[2]
+n_X15Y14_S2_XQ             data_int_status_m[3]
+n_X15Y14_S2_YQ             data_int_status_m[4]
