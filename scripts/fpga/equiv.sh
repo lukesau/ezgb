@@ -14,6 +14,13 @@
 # tried by induction (equiv_induct). equiv_status -assert fails the run if
 # anything stays unproven.
 #
+# A module that states reachable-state invariants (assume() under `ifdef
+# FORMAL) is proved instead by temporal induction with them in force, in
+# three passes: list the matched pairs, prove them all together under the
+# assumptions, then prove the assumptions themselves on the reference (from
+# its reset state, by induction). Assumptions labeled env_* are about inputs
+# and stay assumptions in that last pass.
+#
 # yosys matches a net only under its canonical name, and after flattening
 # that is often the primitive's own hierarchical alias (X18Y31_S0_FFX.Q)
 # rather than the block's name for it, so hierarchical names are hidden
@@ -94,4 +101,16 @@ equiv_status
     yosys -q -l "$log" -p "$prelude
 sat -verify -tempinduct -set-assumes -seq 1 -maxsteps 8 $proves equiv
 " && echo "$blk: equivalent ($n signals, under the module's assumptions)" || { echo "$blk: NOT proven, see $log" >&2; exit 1; }
+    # pass 3: the assumptions must be true of the hardware, or the proof
+    # silently says nothing about the states a wrong one excludes. They read
+    # the matched nets, which carry the reference's values, so proving them as
+    # assertions from the reference's reset state (the bels' INIT values) by
+    # temporal induction shows that the reference never leaves the assumed
+    # states. This needs the assumptions to be inductive: what they allow at
+    # one step must imply them at the next.
+    invlog=${log%.log}_inv.log
+    yosys -q -l "$invlog" -p "$prelude
+chformal -assume2assert t:\$assume c:env_* %d
+sat -verify -tempinduct -set-assumes -prove-asserts -seq 1 -maxsteps ${INVSTEPS:-8} equiv
+" && echo "$blk: assumptions hold (from reset, by induction)" || { echo "$blk: assumptions NOT proven inductive, see $invlog" >&2; exit 1; }
 fi

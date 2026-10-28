@@ -168,28 +168,34 @@ module sd_cmd_serial (
             if (read_done) crc_ok <= crc_in == crc;
         end
 `ifdef FORMAL
-    // What the proof may assume about the hardware's reachable states: the
-    // state is one-hot (the FSM starts in INIT and moves one token), and the
-    // counter stays within what each state can reach: INIT counts to 4 and
-    // IDLE clears it (IDLE can still hold the 4 for a cycle), SETUP follows
-    // IDLE, WRITE counts to 48 and hands over 49, READ_WAIT holds that 49
-    // for a cycle and then 1, READ counts to resp_len + 8 (at most 135) and
-    // hands over 136, FINISH_WO sees 49. resp_idx counts at most 120
-    // response bits. The proof checks these at reset only; outside these
-    // states the synthesized logic and this module may differ (an index
-    // past the end of a buffer, say).
+    // What the proof may assume about the hardware's reachable states. The
+    // proof script also proves these hold, from reset and by induction, so
+    // they are written inductively: what they allow at one step implies
+    // them at the next.
+    //
+    //   - the state is one-hot: the FSM starts in INIT and moves one token
+    //   - the counter per state: INIT counts to 4 and hands IDLE a 5, which
+    //     IDLE clears; SETUP follows IDLE with 0; WRITE counts to 48 and
+    //     hands over 49; READ_WAIT holds that 49 for a cycle and then 1;
+    //     READ counts from 1 to at most resp_len + 8 (135) and hands over
+    //     up to 136; FINISH_WO sees 49
+    //   - resp_idx: cleared by IDLE, so 0 until READ, where it counts the
+    //     response bits taken after the first eight (so at most counter - 8),
+    //     up to 120
     always @* begin
         assume ((st_init + st_idle + st_setup + st_write + st_read_wait + st_read + st_finish_wr + st_finish_wo) == 4'd1);
         assume (counter >= 0);
         if (st_init)      assume (counter <= 4);
-        if (st_idle)      assume (counter <= 4);
+        if (st_idle)      assume (counter <= 5);
         if (st_setup)     assume (counter == 0);
         if (st_write)     assume (counter <= 48);
         if (st_read_wait) assume (counter == 49 || counter == 1);
-        if (st_read)      assume (counter >= 1 && counter <= 136);
+        if (st_read)      assume (counter >= 1 && counter <= 135);
         if (st_finish_wr) assume (counter <= 136);
         if (st_finish_wo) assume (counter == 49);
         assume (resp_idx <= 7'd120);
+        if (st_setup || st_write || st_read_wait) assume (resp_idx == 0);
+        if (st_read) assume (counter >= 8 ? resp_idx <= counter - 8 : resp_idx == 0);
     end
 `endif
 endmodule
