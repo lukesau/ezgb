@@ -20,15 +20,24 @@ printf '# every live slice bel\n[cells]\n*\n' > "$out/all.blk"
 python3 "$here/carve.py" "$exp/design.v" "$out/all.blk" --slices -o "$out/all_slices.v" 2>/dev/null
 python3 "$here/carve.py" "$exp/design.v" "$out/all.blk" -o "$out/all_bels.v" 2>/dev/null
 # LUT RAM contents: bels name them <slice>_F.m / _G.m, the slice model
-# <slice>.fm / .gm; equiv_add pairs them in the miter
+# <slice>.fm / .gm; both get the same public name so they match. Then every
+# hierarchical name is hidden: yosys matches a net only under its canonical
+# name, and the primitives' own aliases would otherwise win.
 grep -oE ' X[0-9]+Y[0-9]+_S[0-3]_[FG] \(\.RA' "$out/all_bels.v" \
-    | perl -ne '/ (X\d+Y\d+_S\d)_([FG]) /; printf "equiv_add \\i_%s.%sm_gold \\%s_%s.m_gate\n", $1, lc $2, $1, $2' > "$out/adds.ys"
+    | perl -ne '/ (X\d+Y\d+_S\d)_([FG]) /; printf "rename \\i_%s.%sm \\ram_%s_%s\n", $1, lc $2, $1, $2' > "$out/ren_gold.ys"
+grep -oE ' X[0-9]+Y[0-9]+_S[0-3]_[FG] \(\.RA' "$out/all_bels.v" \
+    | perl -ne '/ (X\d+Y\d+_S\d)_([FG]) /; printf "rename \\%s_%s.m \\ram_%s_%s\n", $1, $2, $1, $2' > "$out/ren_gate.ys"
 lib=$top/stage0/lib
 yosys -q -l "$out/check.log" -p "
 read_verilog -sv $lib/s3prims_synth.v
 read_verilog -sv $out/all_slices.v
 prep -flatten -top all_ref
 async2sync
+opt_clean
+cd all_ref
+script $out/ren_gold.ys
+cd ..
+rename -hide w:*.*
 opt_clean
 rename -top gold
 design -stash gold
@@ -37,15 +46,17 @@ read_verilog -sv $out/all_bels.v
 prep -flatten -top all_ref
 async2sync
 opt_clean
+cd all_ref
+script $out/ren_gate.ys
+cd ..
+rename -hide w:*.*
+opt_clean
 rename -top gate
 design -stash gate
 design -copy-from gold -as gold gold
 design -copy-from gate -as gate gate
 equiv_make gold gate equiv
 hierarchy -top equiv
-cd equiv
-script $out/adds.ys
-cd ..
 opt_clean
 equiv_simple -seq 3
 equiv_induct -seq 3

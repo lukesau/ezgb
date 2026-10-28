@@ -44,6 +44,13 @@ leaves is tried by induction. The check must reject a broken module to
 mean anything: three mutants of `unlock` (an address off by one, the lock
 data ignored, a feedback term dropped) all fail it.
 
+One yosys detail matters: it matches a net only under its canonical name,
+and after flattening that is often the primitive's own hierarchical alias
+(`X18Y31_S0_FFX.Q`) rather than the block's name for it, in which case it
+silently makes no check cell for that net. The scripts hide every
+hierarchical name before matching, so the block file's names are the ones
+that count. Unmatched state can only make a proof fail, never pass.
+
 The rule that makes this work: **the readable design keeps the hardware's
 registers one for one.** Every flip-flop in the bitstream has a named
 register in the readable module; the combinational logic between them is
@@ -80,11 +87,12 @@ scripts/fpga/equiv.sh unlock                                                    
 ## Checking the decomposition itself
 
 The bel decomposition is checked against the exporter's slice model, which
-the simulations validated against the cart: a block of every live slice
-bel is carved twice, as whole `s3_slice` instances (`--slices`, over
-`lib/s3prims_synth.v`, the simulation primitives without their
-start-up and delay modeling) and as bels, and the two are matched net for
-net. See the status below for where that stands.
+the simulations validated against the cart: `scripts/fpga/check-bels.sh`
+carves a block of every live slice bel twice, as whole `s3_slice`
+instances (`--slices`, over `lib/s3prims_synth.v`, the simulation
+primitives without their start-up and delay modeling) and as bels, and
+matches the two net for net: every flip-flop, LUT RAM and LUT output. For
+FW4 that is 4,883 matched signals, all proven (about five minutes).
 
 ## Blocks
 

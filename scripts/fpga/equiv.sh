@@ -13,6 +13,12 @@
 # function is proved equal by SAT (equiv_simple), and what that leaves is
 # tried by induction (equiv_induct). equiv_status -assert fails the run if
 # anything stays unproven.
+#
+# yosys matches a net only under its canonical name, and after flattening
+# that is often the primitive's own hierarchical alias (X18Y31_S0_FFX.Q)
+# rather than the block's name for it, so hierarchical names are hidden
+# before matching. LUT RAM contents named in the block file are renamed
+# first (carve.py writes the rename script next to the reference).
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
@@ -33,12 +39,19 @@ read_verilog -sv $ref
 prep -flatten -top ${blk}_ref
 async2sync
 opt_clean
+cd ${blk}_ref
+script ${ref%.v}.ys
+cd ..
+rename -hide w:*.*
+opt_clean
 rename -top gold
 design -stash gold
 read_verilog -sv $top/stage0/lib/s3bels.v
 read_verilog -sv $rtl
 prep -flatten -top $blk
 async2sync
+opt_clean
+rename -hide w:*.*
 opt_clean
 rename -top gate
 design -stash gate

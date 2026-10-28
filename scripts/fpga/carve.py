@@ -298,7 +298,10 @@ def expand_cell(spec, d, path):
         return [spec if spec in d.cells else 'i_' + spec]
     bels = [f"{spec}.{b}" for b in BELS if f"{spec}.{b}" in d.live_cells]
     if not bels:
-        sys.exit(f"{path}: {spec} is not a live slice or a cell of the design")
+        if any(c.startswith(spec + '.') for c in d.cells):
+            print(f"{path}: {spec} has no live bels, skipped", file=sys.stderr)
+            return []
+        sys.exit(f"{path}: {spec} is not a slice or a cell of the design")
     return bels
 
 
@@ -365,6 +368,11 @@ def carve(d, name, cells, names, whole_slices=False):
     regs = [(cl.outs[0], cl.name) for c in cells for cl in [d.cells[c]] if cl.kind == 's3_ff']
     regs += [(n, cl.name) for c in cells for cl in [d.cells[c]] if cl.kind == 's3_ioi' for n in cl.outs if n.endswith('_IQ1')]
     ren = {k: v for k, v in names.items() if k in inside_drive | inside_read}
+    # LUT RAM contents: "<slice>_F.m name" renames the reg of that bel (a
+    # yosys rename, since the name lives inside the primitive)
+    ramnames = {k: v for k, v in names.items()
+                if k.endswith('.m') and k[:-2].replace('_F', '.F').replace('_G', '.G') in cellset
+                and d.cells[k[:-2].replace('_F', '.F').replace('_G', '.G')].kind == 's3_ram16'}
     sub = re.compile(r'\b(' + '|'.join(re.escape(k) for k in ren) + r')\b') if ren else None
     rn = (lambda s: sub.sub(lambda m: ren[m.group(1)], s)) if sub else (lambda s: s)
     unnamed = [n for n in inputs + outputs + inouts if n not in ren]
@@ -406,9 +414,11 @@ def carve(d, name, cells, names, whole_slices=False):
             outs = ', '.join(f'.{p}({v if v in d.live_nets else ""})' for p, v in zip(OUTS[cl.kind], cl.outs))
             out.append(rn(f"{cl.kind} {fmt_params(cl.params)}{c.replace('.', '_')} ({conns}, {outs});"))
     out.append('endmodule')
+    rams = [c for c in cells if d.cells[c].kind in ('s3_ram16', 's3_srl16')]
     info = dict(inputs=[rn(n) for n in inputs], outputs=[rn(n) for n in outputs], inouts=[rn(n) for n in inouts],
                 regs=[(r, ren.get(r), bel) for r, bel in regs], unnamed=unnamed, internal=internal, consts=consts,
-                cells=cells)
+                cells=cells, rams=[(c.replace('.', '_') + '.m', ramnames.get(c.replace('.', '_') + '.m')) for c in rams],
+                renames='\n'.join(f"rename \\{k} \\{v}" for k, v in ramnames.items()) + '\n')
     return '\n'.join(out) + '\n', info
 
 
@@ -495,6 +505,7 @@ def main():
         return
     if a.out:
         open(a.out, 'w').write(text)
+        open(re.sub(r'\.v$', '', a.out) + '.ys', 'w').write(info['renames'])
     else:
         sys.stdout.write(text)
     err = sys.stderr
@@ -513,6 +524,11 @@ def main():
         print("unnamed registers (name them in [names] so equiv can match them):", file=err)
         for r, bel in un:
             print(f"  {r:28s} {bel}", file=err)
+    unr = [r for r, nm in info['rams'] if not nm]
+    if unr:
+        print("unnamed LUT RAM contents (name them in [names], e.g. 'X3Y1_S0_F.m stack_lo'):", file=err)
+        for r in unr:
+            print(f"  {r}", file=err)
 
 
 if __name__ == '__main__':
