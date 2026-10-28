@@ -1,0 +1,82 @@
+# Names shared by every block: the design's pad and clock nets, and the
+# few register bits the whole design keys on. Pins per re/stage0/docs/design.md.
+# A pad's input net is n_<tile>_IOI<k>_I (n_..._IQ1 when registered in
+# the IO tile, n_..._CLKPAD from a clock pad).
+
+# Game Boy cartridge bus
+n_X12Y33_IOI1_I   a0
+n_X12Y33_IOI0_I   a1
+n_X11Y33_IOI0_I   a2
+n_X5Y33_IOI1_I    a3
+n_X5Y33_IOI0_I    a4
+n_X1Y33_IOI2_I    a5
+n_X1Y33_IOI1_I    a6
+n_X1Y33_IOI0_I    a7
+n_X13Y33_IOI2_I   a8
+n_X25Y28_IOI0_I   a9
+n_X11Y0_IOI2_I    a10
+n_X0Y1_IOI1_I     a11
+n_X0Y32_IOI0_I    a12
+n_X0Y30_IOI1_I    a13
+n_X0Y30_IOI0_I    a14
+n_X0Y29_IOI0_I    a15
+n_X0Y32_IOI1_I    d0
+n_X0Y19_IOI1_I    d1
+n_X0Y19_IOI0_I    d2
+n_X0Y18_IOI1_I    d3
+n_X0Y18_IOI0_I    d4
+n_X0Y15_IOI1_I    d5
+n_X0Y15_IOI0_I    d6
+n_X0Y2_IOI1_I     d7
+n_X0Y32_IOI1_IQ1  d0_q
+n_X0Y19_IOI1_IQ1  d1_q
+n_X0Y19_IOI0_IQ1  d2_q
+n_X0Y18_IOI1_IQ1  d3_q
+n_X0Y18_IOI0_IQ1  d4_q
+n_X0Y15_IOI1_IQ1  d5_q
+n_X0Y15_IOI0_IQ1  d6_q
+n_X0Y2_IOI1_IQ1   d7_q
+n_X14Y33_IOI0_I       wr_n
+n_X14Y33_IOI0_CLKPAD  wr_n_pad
+n_X25Y15_IOI0_I   gb_reset_n
+n_X25Y15_IOI0_IQ1 gb_reset_n_q
+
+# SPI config flash, SD card, RTC
+n_X24Y0_IOI0_I    flash_miso
+n_X3Y0_IOI0_IQ1   sd_cmd_q
+n_X8Y0_IOI0_IQ1   sd_dat0_q
+n_X1Y0_IOI1_IQ1   sd_dat1_q
+n_X5Y0_IOI0_IQ1   sd_dat2_q
+n_X3Y0_IOI1_IQ1   sd_dat3_q
+n_X5Y0_IOI1_I     rtc_scl
+n_X6Y0_IOI0_I     rtc_sda
+
+# pSRAM data bus (bit order is a naming choice, see design.md)
+n_X12Y0_IOI1_I    mem_d0
+n_X20Y0_IOI0_I    mem_d1
+n_X20Y0_IOI1_I    mem_d2
+n_X25Y3_IOI1_I    mem_d3
+n_X25Y18_IOI0_I   mem_d4
+n_X25Y31_IOI0_I   mem_d5
+n_X23Y33_IOI1_I   mem_d6
+n_X23Y33_IOI0_I   mem_d7
+
+# Clocks (global buffers)
+n_X13Y0_IOI0_CLKPAD    osc
+n_X13Y1_DCM_CLK0       dcm_clk0
+n_X13Y1_DCM_CLK2X      dcm_clk2x
+n_X13Y1_DCM_CLKFX      dcm_clkfx
+n_X13Y33c_BUFGMUX0_O   clk_wr_a
+n_X13Y33c_BUFGMUX1_O   clk_wr_b
+n_X0Y17c_BUFGMUX0_O    clk_pb      # the PicoBlaze and its program BRAMs (163 slices)
+n_X13Y33c_BUFGMUX3_O   clk_mode    # 2x clock in kernel mode, X13Y25_S2.G in game mode (391 slices)
+n_X0Y17c_BUFGMUX6_O    clk_sd      # X13Y19_S2 divider; the SD clock, also out on P23 (661 slices)
+n_X0Y17c_BUFGMUX4_O    clk_sys4    # fx clock in kernel mode, X2Y17_S3.G in game mode (15 slices)
+n_X13Y0c_BUFGMUX0_O    clk_dcm0
+n_X13Y0c_BUFGMUX1_O    clk_dcm1
+n_X13Y0c_BUFGMUX2_O    clk_2x
+n_X13Y0c_BUFGMUX3_O    clk_fx
+n_X25Y17c_BUFGMUX7_O   clk_mem
+
+# Mode bits read all over the design
+n_X14Y20_S0_YQ    kernel_mode

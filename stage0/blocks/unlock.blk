@@ -1,0 +1,32 @@
+# the $7F00/$7F10/$7F20 unlock state machine that gates the $7Fxx registers
+[cells]
+X18Y31_S0.F
+X18Y31_S0.G
+X18Y31_S0.F5
+X18Y31_S0.FFX
+X18Y31_S3.F
+X18Y31_S3.G
+X18Y31_S3.FFX
+X2Y31_S3.G
+X8Y25_S1.G
+X7Y31_S1.G
+X14Y27_S2.F
+X14Y27_S2.G
+X14Y27_S2.F5
+X8Y32_S3.F
+X8Y32_S3.G
+X8Y32_S0.F
+X8Y32_S2.F
+X8Y32_S2.G
+X17Y32_S2.F
+X17Y32_S2.G
+X17Y32_S2.F5
+X7Y31_S2.F
+X7Y31_S2.G
+[names]
+n_X18Y31_S3_XQ  key_e1        # set by $E1 at $xx00, the first key
+n_X18Y31_S0_XQ  unlocked
+n_X12Y21_S0_Y   rst           # console reset, registered (X12Y21_S0.G)
+n_X24Y28_S3_Y   a1a0_zero     # !a1 & !a0, shared decode term (X24Y28_S3.G)
+n_X8Y32_S3_Y    a542_zero     # !a5 & !a4 & !a2, also read by X8Y32_S1
+n_X14Y27_S2_X   d_key_pattern # data is 111 00 xxx, also read by X2Y31_S3.F
