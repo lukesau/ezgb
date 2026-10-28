@@ -61,6 +61,13 @@ Block RAMs, the DCM, the Device DNA port and the IO tiles are not
 decomposed: blocks are cut at them, their pins become block ports, and the
 readable design will instantiate the same primitives.
 
+LUT RAM is kept cell for cell too. `lib/s3bels.v` has the shapes a design
+builds from 16x1 cells (`s3_ram16x1d`, `s3_ram32x1s`, `s3_ram64x1s`); the
+readable module instantiates them, and the block file names each hardware
+cell after the instance path (`X7Y26_S0_F.m regs0.sy`), which is how the
+proof matches the contents. A `pc[3]`-style name in the block file makes
+a vector port.
+
 ## Setup
 
 Everything runs on this machine. The cart bitstreams are EZ Flash's and
@@ -99,18 +106,27 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | Block | Bels | What | Proof |
 |---|---|---|---|
 | `unlock` | 23 | the `$7F00/$7F10/$7F20` unlock state machine that gates the `$7Fxx` registers | equivalent |
+| `picoblaze` | 425 | the KCPSM3 soft CPU with EZ Flash's two-bank instruction register: 108 flip-flops, all 68 LUT RAMs (register file, 31-deep stack, 64-byte scratchpad) | equivalent, 1,213 signals |
 
-Coverage: 23 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
+Coverage: 448 of 6,529 live cells (3,004 LUTs, 2,122 flip-flops, 68 LUT
 RAMs, 916 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
+What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
+instruction, the ALU as three partial-result registers OR-ed together, the
+stack pointer counting up and down across the two phases), the
+instruction register in front of it is clocked on the falling edge and
+picks bank 1 or 2 by the port C8 bit, in_port arrives through eight
+falling-edge registers outside the block, and the interface is otherwise
+KCPSM3's own: pc, port_id, out_port, read/write strobes, interrupt and
+its ack.
+
 ## Next
 
-- The PicoBlaze (KCPSM3): the program counter is the ten flip-flops in
-  `X2Y25_S1`, `X2Y25_S3`, `X2Y26_S1`, `X2Y26_S3`, `X2Y27_S1` (address of
-  both program BRAMs), and all 68 LUT RAMs in the design are its register
-  file, stack and scratchpad. KCPSM3 has a published structure, so it is
-  the block to prove the method on at size before EZ Flash's own logic.
-- Marek Czerski's `sdc_controller` (OpenCores), likewise with a published
-  source to compare against.
+- The PicoBlaze's ports: the `$7Fxx`-side and peripheral registers it
+  reads and writes (the in_port mux, port C8's bank bit, the interrupt
+  source at `X23Y29_S1`), which the carve of `picoblaze` leaves as its
+  neighbors.
+- Marek Czerski's `sdc_controller` (OpenCores), with a published source to
+  compare against.
 - The `$7Fxx` register file and the Game Boy bus decode around `unlock`.
