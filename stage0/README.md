@@ -152,6 +152,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_controller_wb` | 531 | the register file: OpenCores `sd_controller_wb` (its 2013 revision) on the mode clock, written and read by the PicoBlaze's SD ports: the registers the crossings carry, the read mux, the three write-pulse edge detects, the data interrupt; 183 flip-flops | equivalent, 183 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 | `sd_fifo_filler` | 189 | the mode-clock side of the two data FIFOs and the Wishbone master between them and memory: OpenCores `sd_fifo_filler` (the FIFO halves Usselmann's), the 21-bit address counter, and EZ Flash's three-cycle acknowledge; 59 flip-flops | equivalent, 62 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 | `picoblaze_ports` | 393 | EZ Flash's own: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
+| `sd_mem_path` | 131 | EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -176,7 +177,7 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 5,240 of 6,529 live cells in twelve blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
+Coverage: 5,371 of 6,529 live cells in thirteen blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
 RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
@@ -315,12 +316,31 @@ reads the ICAP output bit-reversed. The I2C output register (EC) and the
 ICAP writes (D1, D2) are not in the PicoBlaze's clock domain and are
 elsewhere.
 
+What the memory path settled: the 2 KB buffer (X3Y5) is at $A000-$BFFF in
+kernel mode when $7FC0's low nibble is 0 and $7F30 bit 0 is set (the bit
+the kernel writes before sector reads and writes), with the Game Boy's
+address and data pads on the port directly and a write on /WR low. The
+ROM load path is separate from the buffer: every word the filler takes
+from the rx FIFO is latched with the filler's address into the memory
+clock, a rising edge of the filler's write enable starts a 16-cycle
+counter on the system clock, and that counter presents the word as four
+bytes, top byte first, each with a strobe low for its first two cycles;
+the counter's upper bits and the strobe go out to the pSRAM control
+logic, which is not carved yet. On the pins, while the loader runs (port
+EF, through its 2x-domain copy), the pSRAM word address is the filler's
+word address ORed with the loader's destination in 512-byte units (not
+added: a run must not cross into the bits the destination sets), and the
+data pins carry the byte; otherwise both carry the Game Boy's own. Only
+six bits of the destination go through here; the rest select the pSRAM
+page elsewhere.
+
 ## Next
 
-- The memory side of an SD transfer: the 2 KB buffer X3Y5's Game Boy
-  port (its address from the cartridge bus, its data to the pads) and
-  the pSRAM path in the memory clock domain that takes the filler's
-  address, write enable and data.
+- The pSRAM controller proper: the address translation for Game Boy
+  accesses on the fast clock (the `mem_a_gb` side of the pad muxes), the
+  byte strobes and chip selects that take the sequencer's counter, the
+  page register, and the data bus output mux that returns X3Y5's read
+  data and the pSRAM's to the Game Boy.
 - The PicoBlaze's peripherals outside its clock domain: the I2C output
   register (port EC), the ICAP writes (D1, D2), the SPI flash's clock and
   the Device DNA port's wiring, the interrupt source at `X23Y29_S1`.
