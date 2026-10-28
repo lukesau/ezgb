@@ -695,3 +695,7 @@ n_X12Y26_S2_YQ             wr_q
 n_X8Y28_S1_XQ              write_strobe
 n_X11Y28_S1_Y              wr_ec_ef
 n_X8Y23_S0_Y               wr_d4
+# port decodes the peripherals block reads
+n_X9Y25_S0_X               pid_cd_lo
+n_X10Y22_S0_Y              pid_cd_2_3
+n_X10Y21_S1_Y              pid_lo_01

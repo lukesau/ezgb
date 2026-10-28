@@ -88,7 +88,10 @@ module picoblaze_ports (
     output reg [3:0] rtc_set_index,
     output reg flash_busy,
     output wr_d4,                   // the write to D4, for the SPI flash's clock outside the block
-    output wr_ec_ef,                // a write to EC-EF, for the I2C output register outside the block
+    output wr_ec_ef,                // a write to EC-EF, for the I2C output enable in pb_periph
+    output pid_cd_lo,               // port_id in C0-C3 or D0-D3, pid_cd_2_3 with bit 1 set, pid_lo_01 bits 1:0 == 01:
+    output pid_cd_2_3,              //   the decodes pb_periph's ICAP writes (D1, D2) share
+    output pid_lo_01,
     output gnd                      // a constant-0 LUT the block RAM X3Y1 and two pads share
 );
     assign gnd = 1'b0;
@@ -110,6 +113,9 @@ module picoblaze_ports (
 
     assign wr_d4 = wr_q & (port_id == 8'hd4);
     assign wr_ec_ef = wr_q & (port_id[7:2] == 6'b111011);
+    assign pid_cd_lo = port_id[7] & port_id[6] & !port_id[5] & !port_id[3] & !port_id[2];
+    assign pid_cd_2_3 = pid_cd_lo & port_id[1];
+    assign pid_lo_01 = port_id[0] & !port_id[1];
 
     // ---- the port registers
     reg [7:0] load_addr_lo;
