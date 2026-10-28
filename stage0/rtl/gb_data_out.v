@@ -4,9 +4,10 @@
 // What a read returns, in order of precedence:
 //
 //   - $01 while the loader runs (port EF): the status the kernel polls
-//   - in the sector buffer window ($7FC0 = 0 at $A000-$BFFF): $E1 until
-//     the $7FB4 command has been taken, $01 while $7F30 bit 1 is set,
-//     else the buffer's byte (block RAM X3Y5)
+//   - in the sector buffer window ($7FC0 = 0 at $A000-$BFFF): $E1 from
+//     the $7FB4 write until the transfer's data interrupt (the flag in
+//     gb_regs), $01 while $7F30 bit 1 is set, else the buffer's byte
+//     (block RAM X3Y5)
 //   - in kernel mode with $7F32 bit 3 set, below $8000: the stage1
 //     program from block RAM bit planes, one bit per RAM, or bytes from
 //     block RAM X19Y17 one page up (the page bits that choose are the
@@ -49,7 +50,7 @@ module gb_data_out (
     input [7:0] brom_q,             // block RAM X19Y17
     input buf_en,                   // the sector buffer window (sd_mem_path)
     input [7:0] buf_q,              // block RAM X3Y5
-    input cmd_b4_flag,              // the $7FB4 command flag
+    input cmd_b4_flag,              // cleared by the $7FB4 write, set by the data interrupt
     input flash_busy,               // port F1
     input [6:0] hdr_chk,            // $7FC3 bits 6:0
     input kernel_b3_lo,             // kernel mode, $7F32 bit 3, below $8000

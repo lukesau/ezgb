@@ -48,7 +48,7 @@ module psram_ctrl (
     input byte_we_n,                // the SD byte sequencer (sd_mem_path)
     input [3:2] cnt,
     input flash_op,                 // $7FD2 bit 0
-    input gm_wr_d0,                 // bit 0 of the last game-mode write
+    input mbc1_mode,                // the MBC1 mode bit, $6000-$7FFF (gb_regs)
     input gnd1,                     // a constant-0 LUT in the data host block
     input [13:6] load_addr,         // the loader's destination, upper bits
     input load_busy_2x,             // port EF, 2x-domain copy
@@ -126,7 +126,7 @@ module psram_ctrl (
     assign type_lo = mbc_type[0] | mbc_type[1];
     assign type_grp = mbc_type[3] | mbc_type[1] & mbc_type[2] | !mbc_type[1] & !mbc_type[0] & !mbc_type[2];   // 0, 6, 7 or 8 up
     assign game_mbc1m = !kernel_mode & !n_mbc1 & mbc_type[2];                       // MBC1 multicart, in game mode
-    wire n_ram_or_mbc1_mode0 = n_ram_win | !gm_wr_d0 & !n_mbc1 & !mbc_type[2];
+    wire n_ram_or_mbc1_mode0 = n_ram_win | !mbc1_mode & !n_mbc1 & !mbc_type[2];
     wire game_n_save = n_ram_win & !kernel_mode | !kernel_mode & bank_lo_ones & bank_hi_ones;
     wire game_n_save_or_b3 = game_n_save | mode32_b3 & !a15 & kernel_mode;
     wire mbc_banked = !mbc_type[2] & !mbc_type[3] & game_n_save & type_lo | mbc_type[2] & !mbc_type[3] & game_n_save & !type_lo;   // types 1-4

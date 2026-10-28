@@ -227,7 +227,7 @@ n_X0Y2_IOI1_I              d7
 n_X12Y23_S1_YQ             flash_op
 n_X24Y15_S0_Y              gb_reset_drive
 n_X25Y15_IOI0_I            gb_reset_n
-n_X18Y30_S2_XQ             gm_wr_d0
+n_X18Y30_S2_XQ             mbc1_mode
 n_X15Y18_S0_X              gnd1
 n_X17Y7_S0_Y               gnd1
 n_X14Y20_S0_YQ             kernel_mode

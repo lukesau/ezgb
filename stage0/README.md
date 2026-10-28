@@ -155,6 +155,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_mem_path` | 131 | EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
 | `psram_ctrl` | 185 | EZ Flash's own: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
 | `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
+| `gb_regs` | 358 | EZ Flash's own: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart's own), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -179,8 +180,8 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 5,758 of 6,529 live cells in fifteen blocks (3,051 LUTs, 2,161 flip-flops, 68 LUT
-RAMs, 917 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
+Coverage: 6,116 of 6,529 live cells in sixteen blocks (3,224 LUTs, 2,335 flip-flops, 68 LUT
+RAMs, 928 muxes, 283 carry XORs, and the 16 BRAMs, 68 IO tiles, 24 clock
 buffers, DCM and DNA port).
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
@@ -352,9 +353,17 @@ $7FC0=1 window), U4 for the save window, neither during a load or a
 config-flash operation, when the address pins are tristated. The write
 enable, /LB and /UB follow /WR and A0 for the Game Boy and the byte
 sequencer during a load. The MBC1 multicart keeps four registers of its
-own. The game-mode registers are named by how they are written, not by
-what the kernel calls them, and the proof does not rest on the names.
-The P51 output latch (A13 during a load) is a latch and stays outside.
+own. The game-mode registers were first named by how they are written,
+not by what the kernel calls them; the register block below settles
+what they are. The P51 output latch (A13 during a load) is a latch and
+stays outside.
+
+Correction (2026-10-28, with the register block): the controller's
+input `gm_wr_d0` was described as bit 0 of the last game-mode write. It
+is the MBC1 mode bit, written only at $6000-$7FFF when the type is MBC1
+or the multicart, and is now `mbc1_mode` in both blocks; the
+controller's use of it (mode 0 keeps the save window on page 0) was
+right.
 
 What the data bus settled: the FPGA drives D0-D7 whenever /WR is high
 except at $C000-$DFFF, as the simulation had found. A read returns, in
@@ -377,6 +386,42 @@ written as that precedence of cases. Its proof takes the window
 decode's three stages as consistent with the address and mode bits,
 which is how `sd_mem_path` makes them.
 
+Correction (2026-10-28, with the register block): the buffer window's
+$E1 lasts from the $7FB4 write until the transfer's data interrupt, not
+"until the command has been taken": the flag the $7FB4 write clears is
+set again by the interrupt, asynchronously. The data bus module's
+comment says so now.
+
+What the register block settled: the register map in
+re/stage0/docs/design.md is the hardware's, bit for bit, and a few
+registers it did not have are the four flag bits: $7FB4's bit 7 is kept
+as the command's direction (two flip-flops, read and write), $7FD0 bit
+0 is the RTC set's go and $7FE0 bit 7 the soft reset request, and the
+lock write ($7FF0=$E4) clears all four. Every $7Fxx write goes through
+the unlock state; most are also blocked for the one cycle after /RESET
+falls (`rst`), when the mode registers ($7F32's two bits, $7F30 bit 0,
+$7FC0, the MBC1 mode and high bits, the multicart's bits) are reset
+through the slices' asynchronous SR, the first block where that
+mattered to the proof. The bank registers: in kernel mode $2000-$2FFF
+is the ROM bank, $3000-$3FFF its bit 8, $4000-$5FFF the $4000 register,
+and offsets $A008-$A00E of the register window take the seven RTC
+values to set, in the order the window reads them back. In game mode
+the writes go through the MBC the type names: MBC1 takes five bank bits
+at $2000-$3FFF and two at $4000-$5FFF (kept in `mbc1_hi`, folded into
+the bank in mode 0, the RAM bank in mode 1), the mode at $6000-$7FFF;
+MBC2 takes four bits at $2100-$21FF unmasked; MBC3 seven bits unmasked,
+and at $4000-$5FFF the RAM bank ($00-$03) or the RTC select ($08-$0C),
+which sets the bank register to all ones for the data bus's register
+window; MBC5 eight bits at $2000-$2FFF, bit 8 at $3000-$3FFF and four
+RAM bank bits; the multicart has its own four-bit $2000 register and
+three bits derived from the MBC1 ones, and the plain ROM bank holds.
+The ROM bank mask ($7FC1/$7FC2) applies to MBC1 and MBC5 only, the RAM
+bank mask ($7FC4) to all three RAM banks. The RAM enable is $0A written
+to $0000-$1FFF for types 1-5 (MBC2 with A8 clear). Its proof takes the
+shared decodes (the address terms from `gb_data_out`, `unlock` and
+`psram_ctrl`, the type terms from `psram_ctrl`) as the functions those
+blocks make of the bus and of this block's own type register.
+
 ## Next
 
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
@@ -385,4 +430,5 @@ which is how `sd_mem_path` makes them.
   the Device DNA port's wiring, the interrupt source at `X23Y29_S1`.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
-- The `$7Fxx` register file and the Game Boy bus decode around `unlock`.
+- The 2x-domain bus state: the pad input registers' copies and what
+  reads them.
