@@ -59,8 +59,9 @@ Source of truth is `kernel/src/fastlaunch*.c`.
    the only trigger that may point **anywhere**, including subfolders
    (`/Pokemon/Blue.gb`); the launch glue traverses into the directory. The other
    one is root-only.
-2. **Lone ROM.** If root holds exactly one real file (ignoring the kernel
-   `ezgb.dat`, `EZGB.CFG`, `FLAUNCH.CFG`, dot-files, and macOS junk; directories don't count)
+2. **Lone ROM.** If root holds exactly one real file (ignoring the kernels, any
+   `*.dat` ([kernel-picker.md](kernel-picker.md); before mod 7.0 only `ezgb.dat`),
+   `EZGB.CFG`, `FLAUNCH.CFG`, dot-files, and macOS junk; directories don't count)
    and it is a `.gb`/`.gbc`, launch it. No configuration needed.
 
 The lone-ROM scan is root-only by design: one `f_opendir`/`f_readdir` pass,

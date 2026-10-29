@@ -5,6 +5,9 @@
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
  *    DirListSkipDotLongName behavior (docs/browser-hide-filter.md)
  *  - *.gba (GBA ROMs on a shared card; the Jr can't launch them)
+ *  - *.dat, the kernels: the stock browser hides ezgb.dat by that one name,
+ *    but with a kernel picker in stage1 (docs/kernel-picker.md) a card can
+ *    carry several, under any name
  *  - EZGB.CFG, the settings file (docs/ezgb-cfg.md), and FLAUNCH.CFG, its
  *    pre-2.9 predecessor (a leftover would otherwise clutter the root)
  *  - SAVER, the kernel's save backup folder (docs/psram-save-map.md); saves
@@ -80,6 +83,9 @@ u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
     for (len = 0; name[len] && len < 253; len++) {
     }
     if (ends_ci(name, len, (const u8 *)".gba", 4)) {
+        return 1;
+    }
+    if (ends_ci(name, len, (const u8 *)".dat", 4)) {
         return 1;
     }
     if (len == 8 && ends_ci(name, len, (const u8 *)"ezgb.cfg", 8)) {

@@ -18,7 +18,7 @@ patch it yourself with the IPS file from the
 [latest release](https://github.com/lukesau/ezgb/releases/latest). Nothing is
 flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on. Swapping the kernel is as simple as changing a file and is completely reversible.
 Both also have the experimental firmware mod (a new bootloader with fast
-launch, which can brick the cart); the patcher page is the safer way to apply
+launch and a kernel picker, which can brick the cart); the patcher page is the safer way to apply
 it, since it refuses anything but the exact stock updater.
 
 1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
@@ -76,7 +76,7 @@ build in on its own; each doc has the rationale, wiring, and exact commands.
 | **No streak artifacts** | The stock text drawer checks the LCD mode with interrupts enabled, so now and then a pixel row of one tile is dropped: the thin one-tile streaks (or an underline under a letter of `Reading...`) that stay until the tile is redrawn. Every VRAM write is now made inside a short interrupt-free window right after the check, in both the 8px and 12px browsers. | [`docs/vram-write-race.md`](docs/vram-write-race.md) |
 | **Path overflow guard** | Entering a directory whose full path would overflow the browser's 255-byte path buffer (and corrupt the save-file path) is a no-op instead. | [`docs/path-length.md`](docs/path-length.md) |
 | **Version on HELP tab** | The HELP screen shows the kernel date (`K1.05e-0731`), the mod version (`MOD 5.0`), and a `github.com/lukesau/ezgb` link, so you can tell which build a card is running. Stamp it with `scripts/stamp-mod-version.sh`. | — |
-| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, the settings file (`EZGB.CFG`, plus a leftover `FLAUNCH.CFG`) and the `SAVER` save backup folder from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
+| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, every kernel on the card (`*.dat`, for the firmware mod's kernel picker), the settings file (`EZGB.CFG`, plus a leftover `FLAUNCH.CFG`) and the `SAVER` save backup folder from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
 | **Hold A for options** | Holding A on a ROM for half a second opens a menu for it: Start, or Manage saves. A tap launches when A comes up, so a launch is otherwise unchanged. | [`docs/rom-menu.md`](docs/rom-menu.md) |
 | **Manage saves** | From the hold-A menu: back up a ROM's save on the cart, named after its last-modified time (`/SAVER/Tetris 2026-10-10 14-32.sav`, with ` (2)`, ` (3)` when the time repeats, as it does on a cart whose clock reset), restore any backup, and delete backups. Restoring backs up the current save first. | [`docs/save-manager.md`](docs/save-manager.md) |
 | **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named by `FLAUNCH=` in `/EZGB.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. **Hold START on boot (fast launch check happens after save prompt, if applicable) to skip fast launch and boot to the browser instead.** | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
@@ -89,8 +89,8 @@ build in on its own; each doc has the rationale, wiring, and exact commands.
 Once built, **fast launch is driven entirely from the card** (no rebuild to
 change what boots), in priority order: a `FLAUNCH=` line in the `/EZGB.CFG`
 text file naming the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else the
-root's only ROM. Anything else boots to the normal browser. Folders, `ezgb.dat`,
-and dot-files/macOS junk are ignored. A leading `#` on the `FLAUNCH=` value
+root's only ROM. Anything else boots to the normal browser. Folders, kernels
+(`*.dat`), and dot-files/macOS junk are ignored. A leading `#` on the `FLAUNCH=` value
 disables fast launch entirely (every trigger skipped) while
 keeping the path for later. **Hold START at power-on to skip fast launch and go to
 the browser.** You can also configure all of this **from the cart's SET tab** (a

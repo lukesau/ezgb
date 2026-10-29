@@ -7,8 +7,8 @@
  *      Parsed by the shared bank-2 module ezcfg.c (docs/ezgb-cfg.md), which
  *      also reads a legacy /FLAUNCH.CFG when EZGB.CFG is missing.
  *   2. Lone ROM: if the SD root holds exactly one real file (ignoring the
- *      kernel ezgb.dat, EZGB.CFG / FLAUNCH.CFG, dot-files, and macOS junk)
- *      and it is a .gb/.gbc, launch it.
+ *      kernels, any *.dat (docs/kernel-picker.md), EZGB.CFG / FLAUNCH.CFG,
+ *      dot-files, and macOS junk) and it is a .gb/.gbc, launch it.
  *
  * The config file takes priority. (An earlier "<name>.fastlaunch" marker-file
  * trigger was dropped 2026-09-07; the SET tab + config file replace it.) On
@@ -74,6 +74,7 @@ static unsigned char is_end(void);
 static void readdir_prep(void);
 static unsigned char streq_ci(const unsigned char *a, const unsigned char *b);
 static unsigned char is_rom(const unsigned char *name);
+static unsigned char is_dat(const unsigned char *name);
 static void write_result(unsigned char *result_path, const unsigned char *name);
 static void scan_root(void);
 static unsigned char scan_config(void);
@@ -136,7 +137,7 @@ static void scan_root(void) {
         if (FNO[FNO_ATTRIB] & AM_DIR) continue;
         name = entry_name();
         if (name[0] == '.') continue;                 /* dot-files / macOS junk */
-        if (streq_ci(name, (const unsigned char *)"ezgb.dat")) continue;
+        if (is_dat(name)) continue;                   /* the kernels */
         if (streq_ci(name, (const unsigned char *)"ezgb.cfg")) continue;
         if (streq_ci(name, (const unsigned char *)"flaunch.cfg")) continue;
 
@@ -221,6 +222,12 @@ static void readdir_prep(void) {
 }
 
 /* True if name ends in ".gb" or ".gbc" (case-insensitive). */
+/* *.dat, any case: the kernels (docs/kernel-picker.md) */
+static unsigned char is_dat(const unsigned char *name) {
+    unsigned char len = strlen_u(name);
+    return len > 4 && streq_ci(name + len - 4, (const unsigned char *)".dat");
+}
+
 static unsigned char is_rom(const unsigned char *name) {
     unsigned char len = strlen_u(name);
     const unsigned char *ext;
