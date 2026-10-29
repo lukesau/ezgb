@@ -524,12 +524,40 @@ gate; it keeps the decoded gate polarity (transparent while the flash
 bit is 1) where the generator inverts the IO tile's, and the hardware
 check design.md owes for that polarity covers both.
 
+## The top level
+
+`scripts/fpga/mktop.py` stitches the blocks into `rtl/fw4_top.v`: a
+module `fw4_logic` that instantiates the twenty-two blocks and has as
+ports the nets crossing between the slice logic and everything else, and
+`fw4_top`, which wraps it with the 114 primitives (block RAMs, IO tiles,
+clock buffers, DCMs, DNA port, ICAP) copied from design.v as wired there,
+under the pads as ports. Blocks connect to each other by the design's net
+names, so a block's names only have to suit that block.
+
+`scripts/fpga/prove-top.sh` proves it against design.v in two steps that
+compose with the block proofs and the bel check:
+
+- `wiring`: a block of every live slice bel, carved flat, against
+  `fw4_logic` over name-free carved references of the blocks. The same
+  cells on both sides; what it proves is the stitching. 7,282 signals,
+  about a minute.
+- `rtl`: `fw4_logic` over the named references (what equiv.sh proves each
+  readable module against) against `fw4_logic` over the readable modules,
+  flattened with the same hierarchy so every register matches under its
+  path. 4,314 signals: 4,184 by the structural passes, the other 130
+  (127 in `sd_cmd_serial`) by temporal induction under the modules'
+  invariants, and then every invariant, the env_ ones included since
+  their inputs are other blocks' outputs here, proven on the reference
+  from reset by induction. About three and a half minutes.
+
+With check-bels.sh (design.v's slices equal their bels) that chain makes
+`fw4_top` equivalent to design.v: its primitives are design.v's lines,
+byte for byte.
+
 ## Next
 
-- A top level: the twenty-two blocks instantiated together with the
-  primitives (block RAMs, IO tiles, clock buffers, DCM, DNA port, ICAP)
-  as design.v wires them, proved against design.v as a whole or run in
-  re/stage0/sim's testbench in its place.
+- Run `fw4_top` in re/stage0/sim's testbench in design.v's place: the
+  same primitives, the readable logic.
 - The P51 latch gate polarity, a hardware check, for the IO tile's latch
   and the slice latch both.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
