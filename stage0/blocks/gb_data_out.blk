@@ -215,8 +215,8 @@ n_X12Y5_S0_Y               adr_014d
 n_X1Y17_S1_Y               adr_014d_lo
 n_X12Y20_S1_Y              bank_hi_ones
 n_X13Y21_S1_Y              bank_lo_ones
-n_X13Y24_S2_XQ             bank_q_a
-n_X14Y14_S1_YQ             bank_q_b
+n_X13Y24_S2_XQ             a12_pass_q
+n_X14Y14_S1_YQ             a11_pass_q
 n_X19Y13_BRAM_DOA_0        boot_q_x19y13
 n_X19Y21_BRAM_DOA_0        boot_q_x19y21
 n_X19Y25_BRAM_DOA_0        boot_q_x19y25

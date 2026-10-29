@@ -45,7 +45,7 @@ module gb_data_out (
     input adr_014d,                 // the address is $x14D (psram_ctrl)
     input adr_014d_lo,              // its bits 7:3 match: the RTC window's offsets
     input bank_hi_ones, bank_lo_ones,   // the game-mode bank register is all ones
-    input bank_q_a, bank_q_b,
+    input a12_pass_q, a11_pass_q,   // a12 and a11 after the window remap, registered (gb_bus)
     input boot_q_x19y13, boot_q_x19y21, boot_q_x19y25, boot_q_x19y29, boot_q_x19y5, boot_q_x19y9, boot_q_x3y13, boot_q_x3y17,
     input [7:0] brom_q,             // block RAM X19Y17
     input buf_en,                   // the sector buffer window (sd_mem_path)
@@ -83,7 +83,7 @@ module gb_data_out (
     wire win4 = win_kernel & (win_mode == 4'b0100);
     wire win5 = win_kernel & (win_mode == 4'b0101);
     wire chk_rd = !kernel_mode & adr_014d & !a15;
-    wire brom_sel = pg15_gb_q & !bank_q_a & !bank_q_b & !a13_gb_q;
+    wire brom_sel = pg15_gb_q & !a12_pass_q & !a11_pass_q & !a13_gb_q;
 
     // ---- the bytes
     wire [7:0] boot_planes = {boot_q_x19y29, boot_q_x19y9, boot_q_x19y13, boot_q_x3y17, boot_q_x3y13, boot_q_x19y25, boot_q_x19y21, boot_q_x19y5};

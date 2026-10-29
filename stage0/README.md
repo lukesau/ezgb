@@ -159,6 +159,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `pb_periph` | 43 | EZ Flash's own: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
 | `rtc_bridge` | 147 | EZ Flash's own: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
 | `soft_reset` | 74 | EZ Flash's own: the console reset a $7FE0 write starts: the request synchronized into the 2x clock, its rising edge clearing a 16-bit counter on the inverted 2x clock and the reset drive, which returns when the counter saturates; 19 flip-flops | equivalent, 19 registers; 7 of 8 mutants caught, the one that passes changes the drive's initial value, which the proof does not see (below) |
+| `gb_bus` | 28 | EZ Flash's own: the Game Boy bus's state in the 2x domain and its address on the pSRAM pins: the registered page bits, busy flag, /RESET and data-interrupt copies, the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, the data pads' input register enable; 7 flip-flops | equivalent, 26 signals, under the assumption that two controller terms arriving under two nets are one signal; 11 of 12 mutants caught, the one that passes changes an initial value |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -183,13 +184,16 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 6,380 of 6,543 live cells in nineteen blocks. The design's
+Coverage: 6,408 of 6,543 live cells in twenty blocks. The design's
 live cells are 3,024 LUTs, 2,135 flip-flops, 68 LUT RAMs, 919 muxes, 283
 carry XORs, 16 block RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the
 DNA port and the ICAP (the ICAP was added to the design model with the
 peripherals block: `netlist2v.py` had tied its readback to 0 and dropped
 its inputs, so the twelve registers that drive it were dead and
-uncounted). Unclaimed slice cells: 40 LUTs, 8 flip-flops, 1 mux.
+uncounted). Unclaimed slice cells: 20 LUTs and the P51 latch: five
+clock-related LUTs (the clock buffers' selects, the write-strobe clock's
+term, the DCM's reset) and fifteen constants tying block RAM, pad and
+buffer pins.
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
 instruction, the ALU as three partial-result registers OR-ed together, the
@@ -486,10 +490,30 @@ low for 65536 falling edges of the 2x clock. `psram_ctrl` ANDs it with
 the console's own /RESET onto P62. The drive starts high, an initial
 value the structural proof cannot check.
 
+What the bus block settled: the four page bits the data bus block's
+stage1 read uses are copies of the controller's pg15 and A13 terms and
+of the remapped A12 and A11, registered on the 2x clock while that read
+is enabled, so the earlier `bank_q_a`/`bank_q_b` are a12_pass_q and
+a11_pass_q now. The window remap clears address bits 11 and 12 in kernel
+mode at $8000 and above except in the loader's table window ($A000 with
+$7FC0 = 2 and $7F36 bit 0) and in window modes 1 and 3 there. The lower
+address pins A1-A10 carry the next address bit up for a U9 (word) access
+and the bit itself for U4's byte address, A10's being the remapped A11,
+which completes the word/byte split the peripherals block found on A11
+and A12. The byte ROM X19Y17 reads when the stage1 read is enabled, the
+page bit is set and the remapped A11-A13 are 0; the eight bit-plane
+block RAMs read when the page bit is clear; the table block RAM X3Y21 is
+enabled in its window and written there on /WR. The data pads' input
+registers, which hold the sector count and command bit for port B4 and
+the checksum register's bit 7, clock on the $7FB4 write. The /RESET
+copy starts high, an initial value the proof cannot see.
+
 ## Next
 
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
+- The clocks and ties: the clock buffers' selects (`X2Y20_S2.G`,
+  `X12Y15_S0.F`, `X24Y19_S2.G`), the write-strobe clock's term
+  (`X17Y31_S0.G`), the DCM's reset (`X17Y1_S0.G`) and the fifteen
+  constant LUTs on block RAM, pad and buffer pins.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
-- The 2x-domain bus state: the pad input registers' copies, the window
-  remap (`adr_pass`) and the lower address pins' word/byte muxes.
