@@ -554,10 +554,21 @@ With check-bels.sh (design.v's slices equal their bels) that chain makes
 `fw4_top` equivalent to design.v: its primitives are design.v's lines,
 byte for byte.
 
+`fw4_top` also runs in re/stage0/sim's testbench in design.v's place
+(`re/stage0/sim/topsim.sh`, verilator): a full boot with the flash and
+SD card models and stage1's sector read through the window at 31 ms.
+The two runs agree in every event: the same 885 PicoBlaze first
+executions in the same order, the same 98 flash and 17 SD card
+transactions, the same sector matching card.img byte for byte, the
+same pins toggling the same number of times. The one difference is
+that the readable top runs 20 ns ahead from the second event on: the
+slice model holds its flip-flops at their INIT values under GSR for the
+first 100 ns of start-up, the readable registers start from their
+initial values at time 0. The readable top also simulates a quarter
+faster.
+
 ## Next
 
-- Run `fw4_top` in re/stage0/sim's testbench in design.v's place: the
-  same primitives, the readable logic.
 - The P51 latch gate polarity, a hardware check, for the IO tile's latch
   and the slice latch both.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
