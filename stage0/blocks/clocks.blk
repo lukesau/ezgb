@@ -1,0 +1,51 @@
+# the clocks and ties, EZ Flash's own: the PicoBlaze clock's gate, the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR | A15 term the $7Fxx write clock takes, and the fifteen constant-0 LUTs tying block RAM, clock buffer, DCM and other blocks' pins
+[cells]
+X12Y15_S0.F
+X17Y1_S0.G
+X17Y1_S3.G
+X17Y31_S0.G
+X18Y8_S2.G
+X23Y29_S1.G
+X24Y16_S2.F
+X24Y19_S2.F
+X24Y19_S2.G
+X24Y24_S0.G
+X2Y17_S3.G
+X2Y19_S1.F
+X2Y20_S2.G
+X2Y31_S2.F
+X7Y32_S0.G
+X7Y4_S0.F
+X7Y9_S3.F
+X8Y11_S2.F
+X9Y15_S3.F
+X9Y8_S0.F
+[names]
+n_X14Y20_S0_YQ             kernel_mode
+n_X13Y20_S2_YQ             rtc_flag
+n_X16Y9_S0_YQ              sh_run
+n_X23Y9_S0_YQ              sh_done
+n_X13Y0c_BUFGMUX3_O        clk_fx
+n_X13Y1_DCM_LOCKED         dcm_locked
+n_X13Y1_DCM_STATUS_2       dcm_status2
+n_X2Y20_S2_Y               pb_clk_run
+n_X12Y15_S0_X              sh_clk_run
+n_X17Y1_S0_Y               dcm_rst
+n_X17Y31_S0_Y              wr_a15_n
+n_X24Y19_S2_Y              clk_fx_n
+# the constants, by what they tie
+n_X2Y17_S3_Y               gnd[0]
+n_X2Y19_S1_X               gnd[1]
+n_X2Y31_S2_X               gnd[2]
+n_X7Y4_S0_X                gnd[3]
+n_X7Y9_S3_X                gnd[4]
+n_X7Y32_S0_Y               gnd[5]
+n_X8Y11_S2_X               gnd[6]
+n_X9Y8_S0_X                gnd[7]
+n_X9Y15_S3_X               gnd[8]
+n_X17Y1_S3_Y               gnd[9]
+n_X18Y8_S2_Y               gnd[10]
+n_X23Y29_S1_Y              gnd[11]
+n_X24Y16_S2_X              gnd[12]
+n_X24Y19_S2_X              gnd[13]
+n_X24Y24_S0_Y              gnd[14]

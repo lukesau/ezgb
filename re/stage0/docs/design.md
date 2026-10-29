@@ -77,7 +77,7 @@ Full list: `re/stage0/netlist/pintable.py`.
 | `X13Y19 SLICE[2]` YQ (a divided clock) | global `X0Y17` [6] | 661 flip-flops | main logic clock; also driven out on P23 |
 | system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the stage1/kernel/game mode |
 | P84 (`/WR`) | global `X13Y33` [0]/[1] | 160 flip-flops | the Game Boy-written registers |
-| system / `X2Y17 SLICE[3]` Y | global `X0Y17` [0], [4] | 196 flip-flops | |
+| CLK2X or a constant 0, by kernel mode or the RTC flag (`$7F37` bit 7); CLKFX or 0, by kernel mode | global `X0Y17` [0], [4] | 196 flip-flops | [0] the PicoBlaze and its ports, [4] the ROM load's byte sequencer: both gated off in a plain game (`stage0/rtl/clocks.v`) |
 | `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
 
 ## Registers written by the Game Boy

@@ -160,6 +160,8 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `rtc_bridge` | 147 | EZ Flash's own: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
 | `soft_reset` | 74 | EZ Flash's own: the console reset a $7FE0 write starts: the request synchronized into the 2x clock, its rising edge clearing a 16-bit counter on the inverted 2x clock and the reset drive, which returns when the counter saturates; 19 flip-flops | equivalent, 19 registers; 7 of 8 mutants caught, the one that passes changes the drive's initial value, which the proof does not see (below) |
 | `gb_bus` | 28 | EZ Flash's own: the Game Boy bus's state in the 2x domain and its address on the pSRAM pins: the registered page bits, busy flag, /RESET and data-interrupt copies, the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, the data pads' input register enable; 7 flip-flops | equivalent, 26 signals, under the assumption that two controller terms arriving under two nets are one signal; 11 of 12 mutants caught, the one that passes changes an initial value |
+| `clocks` | 20 | EZ Flash's own: the PicoBlaze clock's gate (kernel mode or the RTC flag), the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR \| A15 term the $7Fxx write clock takes, and fifteen constant-0 LUTs on block RAM, clock buffer, DCM and other blocks' pins | equivalent; 6 mutants, all caught |
+| `p51_latch` | 1 | the one slice latch: a second latch of the pSRAM A13 mux beside P51's IO-tile output latch, gated by $7FD2 bit 0 and forced to the loader's A13 while a load runs | equivalent; 4 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -184,16 +186,15 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 6,408 of 6,543 live cells in twenty blocks. The design's
+Coverage: 6,429 of 6,543 live cells in twenty-two blocks: every slice
+cell. The 114 others are the primitives the blocks are cut at (16 block
+RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the DNA port and the ICAP). The design's
 live cells are 3,024 LUTs, 2,135 flip-flops, 68 LUT RAMs, 919 muxes, 283
 carry XORs, 16 block RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the
 DNA port and the ICAP (the ICAP was added to the design model with the
 peripherals block: `netlist2v.py` had tied its readback to 0 and dropped
 its inputs, so the twelve registers that drive it were dead and
-uncounted). Unclaimed slice cells: 20 LUTs and the P51 latch: five
-clock-related LUTs (the clock buffers' selects, the write-strobe clock's
-term, the DCM's reset) and fifteen constants tying block RAM, pad and
-buffer pins.
+uncounted).
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
 instruction, the ALU as three partial-result registers OR-ed together, the
@@ -508,12 +509,28 @@ registers, which hold the sector count and command bit for port B4 and
 the checksum register's bit 7, clock on the $7FB4 write. The /RESET
 copy starts high, an initial value the proof cannot see.
 
+What the last two blocks settled: the PicoBlaze's clock is the system
+clock gated by a LUT, on in kernel mode and in game mode only when the
+RTC flag ($7F37 bit 7) is set, so the processor stands still in a plain
+game; the ROM load's byte sequencer clock is the fx clock gated by
+kernel mode at its buffer directly. The 74HC595's shift clock on P35 is
+the inverted fx clock while the controller's serializer runs. The DCM
+resets itself while its CLKFX has stopped and it is unlocked. The $7Fxx
+write clock is /WR | A15 and the other write clock the /WR pad itself.
+The fifteen constant LUTs tie block RAM, clock buffer and DCM pins and a
+few inputs of other blocks. The one slice latch is a second latch of
+the A13 mux beside P51's IO-tile latch, with the same set, clear and
+gate; it keeps the decoded gate polarity (transparent while the flash
+bit is 1) where the generator inverts the IO tile's, and the hardware
+check design.md owes for that polarity covers both.
+
 ## Next
 
-- The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
-- The clocks and ties: the clock buffers' selects (`X2Y20_S2.G`,
-  `X12Y15_S0.F`, `X24Y19_S2.G`), the write-strobe clock's term
-  (`X17Y31_S0.G`), the DCM's reset (`X17Y1_S0.G`) and the fifteen
-  constant LUTs on block RAM, pad and buffer pins.
+- A top level: the twenty-two blocks instantiated together with the
+  primitives (block RAMs, IO tiles, clock buffers, DCM, DNA port, ICAP)
+  as design.v wires them, proved against design.v as a whole or run in
+  re/stage0/sim's testbench in its place.
+- The P51 latch gate polarity, a hardware check, for the IO tile's latch
+  and the slice latch both.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
