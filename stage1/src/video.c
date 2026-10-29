@@ -24,11 +24,11 @@
 #define MARK_TILE (ICON_TILE + ICON_W * ICON_H)
 
 extern const uint8_t font8[];
-extern const uint8_t icon_tiles[ICON_W * ICON_H * 16];
-extern const uint8_t wordmark_tile_count;
-extern const uint8_t wordmark_tiles[];
+extern const uint8_t icon_tiles[];                        /* packed */
+extern const uint8_t wordmark_tiles[];                    /* packed */
 extern const uint8_t wordmark_stages;
-extern const uint8_t wordmark_maps[][MARK_W * MARK_H];
+extern const uint8_t wordmark_maps[2][MARK_W * MARK_H];   /* letters alone, whole mark */
+extern const uint8_t wordmark_cuts[];                      /* paint step tile columns */
 
 /* BGR555: palette 0 = the shades for text, palette 1 = the icon:
  * background, orange screen, frames, lip (stage1-splash.asm), palette 2 =
@@ -70,6 +70,24 @@ static uint8_t cgb;
 static void vram_fill(uint16_t dst, uint8_t value, uint16_t n)
 {
     memset((void *)dst, value, n);
+}
+
+/* Tile data packed by scripts/fpga/packbits.py: a control byte c, then c
+ * literal bytes (c < $80) or the next byte c - $7D times; 0 ends. LCD off. */
+static void unpack(uint8_t *dst, const uint8_t *src)
+{
+    uint8_t c, v;
+
+    while ((c = *src++)) {
+        if (c & 0x80) {
+            v = *src++;
+            for (c -= 0x7D; c; c--)
+                *dst++ = v;
+        } else {
+            for (; c; c--)
+                *dst++ = *src++;
+        }
+    }
 }
 
 static void icon_map(uint8_t first)
@@ -121,9 +139,9 @@ void video_init(void)
         *dst++ = *src;
         *dst++ = *src++;
     }
-    memcpy((void *)(0x8000 + ICON_TILE * 16), icon_tiles, sizeof icon_tiles);
+    unpack((uint8_t *)(0x8000 + ICON_TILE * 16), icon_tiles);
     icon_map(ICON_TILE);
-    memcpy((void *)(0x8000 + MARK_TILE * 16), wordmark_tiles, wordmark_tile_count * 16);
+    unpack((uint8_t *)(0x8000 + MARK_TILE * 16), wordmark_tiles);
     wordmark_map_draw(0);
 
     rVBK = 0;
@@ -149,19 +167,17 @@ static void put(uint8_t *p, uint8_t c)
     *p = c;
 }
 
-/* LCD on: the Jr. painted on, one map per step (mkwordmark.py --stages) */
+/* LCD on: the Jr. painted on over the letters, a run of tile columns of the
+ * whole mark per step (mkwordmark.py --stages) */
 void wordmark_paint(uint8_t frames_per_step)
 {
     uint8_t step, x, y;
-    uint8_t *p;
-    const uint8_t *m;
 
-    for (step = 1; step <= wordmark_stages; step++) {
-        p = (uint8_t *)(0x9800 + MARK_Y * 32 + MARK_X);
-        m = wordmark_maps[step];
-        for (y = 0; y < MARK_H; y++, p += 32)
-            for (x = 0; x < MARK_W; x++, m++)
-                put(p + x, MARK_TILE + *m);
+    for (step = 0; step < wordmark_stages; step++) {
+        for (x = wordmark_cuts[step]; x < wordmark_cuts[step + 1]; x++)
+            for (y = 0; y < MARK_H; y++)
+                put((uint8_t *)(0x9800 + (MARK_Y + y) * 32 + MARK_X + x),
+                    MARK_TILE + wordmark_maps[1][y * MARK_W + x]);
         wait_frames(frames_per_step);
     }
 }

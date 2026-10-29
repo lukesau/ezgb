@@ -12,15 +12,15 @@ b="$out/build"
 mkdir -p "$b"
 
 python3 "$repo/scripts/fpga/font8-pack.py" "$here/font/font8.txt" "$b/font8.c"
-python3 - "$root/fpga/bootsplash/build/icon.2bpp" "$b/icon.c" <<'PY'
+python3 - "$root/fpga/bootsplash/build/icon.2bpp" "$b/icon.c" "$repo/scripts/fpga" <<'PY'
 import sys
+sys.path.insert(0, sys.argv[3])
+from packbits import pack, c_array
 data = open(sys.argv[1], "rb").read()
 assert len(data) == 6 * 7 * 16, len(data)
 with open(sys.argv[2], "w") as f:
-    f.write("#include <stdint.h>\nconst uint8_t icon_tiles[%d] = {\n" % len(data))
-    for i in range(0, len(data), 16):
-        f.write("    " + ", ".join("0x%02X" % x for x in data[i:i + 16]) + ",\n")
-    f.write("};\n")
+    f.write("/* the boot icon's 42 tiles, packed (scripts/fpga/packbits.py) */\n#include <stdint.h>\n")
+    f.write(c_array("icon_tiles", pack(data)))
 PY
 
 python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr.txt"     "$b/wordmark.c" --jr-at 86,4 --pivot 0,0 \
