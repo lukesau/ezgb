@@ -1,0 +1,99 @@
+# the soft reset, EZ Flash's own: the $7FE0 request's rising edge, synchronized into the 2x clock, clears a 16-bit counter on the inverted 2x clock and drops the console reset drive, which comes back when the counter saturates (65536 cycles)
+[cells]
+X13Y5_S1.FFX
+X13Y5_S1.FFY
+X13Y5_S3.FFX
+X13Y5_S3.FFY
+X13Y6_S1.FFX
+X13Y6_S1.FFY
+X13Y6_S3.FFX
+X13Y6_S3.FFY
+X13Y7_S1.FFX
+X13Y7_S1.FFY
+X13Y7_S3.FFX
+X13Y7_S3.FFY
+X13Y8_S1.FFX
+X13Y8_S1.FFY
+X13Y8_S2.FFY
+X13Y8_S3.FFX
+X13Y8_S3.FFY
+X14Y15_S3.FFY
+X1Y3_S3.FFY
+X12Y15_S3.G
+X12Y6_S0.F
+X12Y7_S0.F
+X12Y8_S0.F
+X12Y8_S0.G
+X12Y8_S2.F
+X13Y5_S1.CYF
+X13Y5_S1.CYG
+X13Y5_S1.F
+X13Y5_S1.G
+X13Y5_S1.XORF
+X13Y5_S1.XORG
+X13Y5_S3.CYF
+X13Y5_S3.CYG
+X13Y5_S3.F
+X13Y5_S3.G
+X13Y5_S3.XORF
+X13Y5_S3.XORG
+X13Y6_S0.F
+X13Y6_S0.G
+X13Y6_S1.CYF
+X13Y6_S1.CYG
+X13Y6_S1.F
+X13Y6_S1.G
+X13Y6_S1.XORF
+X13Y6_S1.XORG
+X13Y6_S3.CYF
+X13Y6_S3.CYG
+X13Y6_S3.F
+X13Y6_S3.G
+X13Y6_S3.XORF
+X13Y6_S3.XORG
+X13Y7_S1.CYF
+X13Y7_S1.CYG
+X13Y7_S1.F
+X13Y7_S1.G
+X13Y7_S1.XORF
+X13Y7_S1.XORG
+X13Y7_S3.CYF
+X13Y7_S3.CYG
+X13Y7_S3.F
+X13Y7_S3.G
+X13Y7_S3.XORF
+X13Y7_S3.XORG
+X13Y8_S1.CYF
+X13Y8_S1.CYG
+X13Y8_S1.F
+X13Y8_S1.G
+X13Y8_S1.XORF
+X13Y8_S1.XORG
+X13Y8_S3.CYF
+X13Y8_S3.F
+X13Y8_S3.G
+X13Y8_S3.XORF
+X13Y8_S3.XORG
+[names]
+n_X13Y0c_BUFGMUX2_O        clk_2x
+n_X17Y32_S1_XQ             reset_req
+n_X14Y15_S3_YQ             req_s1
+n_X1Y3_S3_YQ               req_s2
+n_X12Y15_S3_Y              start
+n_X13Y8_S2_YQ              reset_drive
+n_X13Y5_S1_XQ              cnt[0]
+n_X13Y5_S1_YQ              cnt[1]
+n_X13Y5_S3_XQ              cnt[2]
+n_X13Y5_S3_YQ              cnt[3]
+n_X13Y6_S1_XQ              cnt[4]
+n_X13Y6_S1_YQ              cnt[5]
+n_X13Y6_S3_XQ              cnt[6]
+n_X13Y6_S3_YQ              cnt[7]
+n_X13Y7_S1_XQ              cnt[8]
+n_X13Y7_S1_YQ              cnt[9]
+n_X13Y7_S3_XQ              cnt[10]
+n_X13Y7_S3_YQ              cnt[11]
+n_X13Y8_S1_XQ              cnt[12]
+n_X13Y8_S1_YQ              cnt[13]
+n_X13Y8_S3_XQ              cnt[14]
+n_X13Y8_S3_YQ              cnt[15]

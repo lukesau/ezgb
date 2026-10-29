@@ -166,8 +166,8 @@ time its first poll runs.
 with the first 64 KB of Pokemon Red: `$7FC0=2`, the MBC type to `$7F37`,
 the RAM bank mask to `$7FC4`, the ROM bank mask to `$7FC1/$7FC2`, the header
 checksum to `$7FC3`, the load, `$7F36=0`, `$7F31/$7F32=0`, `$2000=1`,
-`$3000=0`, then `$7FE0=$80`, which holds P62 low for 65536 fast clocks to
-reset the console. After the reset, the header and banks 0-3 read back byte
+`$3000=0`, then `$7FE0=$80`, which holds P62 low for 65536 cycles of the
+`X13Y0` BUFGMUX2 clock to reset the console (`stage0/rtl/soft_reset.v`). After the reset, the header and banks 0-3 read back byte
 for byte, including MBC3's bank 0 selecting bank 1 (48 reads, none wrong).
 What it takes:
 

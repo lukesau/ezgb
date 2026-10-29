@@ -158,6 +158,7 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `gb_regs` | 358 | EZ Flash's own: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart's own), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
 | `pb_periph` | 43 | EZ Flash's own: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
 | `rtc_bridge` | 147 | EZ Flash's own: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
+| `soft_reset` | 74 | EZ Flash's own: the console reset a $7FE0 write starts: the request synchronized into the 2x clock, its rising edge clearing a 16-bit counter on the inverted 2x clock and the reset drive, which returns when the counter saturates; 19 flip-flops | equivalent, 19 registers; 7 of 8 mutants caught, the one that passes changes the drive's initial value, which the proof does not see (below) |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
 the proof until the invariant was corrected (2026-10-27).
@@ -182,14 +183,13 @@ other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
 filler paragraphs below are as corrected.
 
-Coverage: 6,306 of 6,543 live cells in eighteen blocks. The design's
+Coverage: 6,380 of 6,543 live cells in nineteen blocks. The design's
 live cells are 3,024 LUTs, 2,135 flip-flops, 68 LUT RAMs, 919 muxes, 283
 carry XORs, 16 block RAMs, 68 IO tiles, 24 clock buffers, the DCMs, the
 DNA port and the ICAP (the ICAP was added to the design model with the
 peripherals block: `netlist2v.py` had tied its readback to 0 and dropped
 its inputs, so the twelve registers that drive it were dead and
-uncounted). Unclaimed slice cells: 64 LUTs, 27 flip-flops, 16 muxes, 16
-carry XORs.
+uncounted). Unclaimed slice cells: 40 LUTs, 8 flip-flops, 1 mux.
 
 What the PicoBlaze block settled: the core is stock KCPSM3 (two cycles per
 instruction, the ALU as three partial-result registers OR-ed together, the
@@ -477,11 +477,18 @@ seven $A008-$A00E registers, a registered mux on the 2x clock follows it
 one cycle later (the firmware's NOP between OUTPUT F0 and INPUT B6 is
 for that), and indices outside 2-8 hold the last value.
 
+What the soft reset block settled: the $7FE0 request flag goes through
+a two-stage synchronizer on the 2x clock, and its rising edge
+asynchronously clears a 16-bit counter on the inverted 2x clock together
+with the reset drive. The counter counts up to $FFFF and stops there,
+and the cycle after it arrives the drive is set again, so the drive is
+low for 65536 falling edges of the 2x clock. `psram_ctrl` ANDs it with
+the console's own /RESET onto P62. The drive starts high, an initial
+value the structural proof cannot check.
+
 ## Next
 
 - The P51 output latch (X17Y4_S0.FFX), the one latch in the design.
-- The soft reset: the 16-bit counter on the inverted 2x clock that the
-  $7FE0 request starts, driving `reset_drive` into `psram_ctrl`.
 - Marek Czerski's `sdc_controller` (OpenCores), with a published source to
   compare against.
 - The 2x-domain bus state: the pad input registers' copies, the window
