@@ -557,15 +557,17 @@ byte for byte.
 `fw4_top` also runs in re/stage0/sim's testbench in design.v's place
 (`re/stage0/sim/topsim.sh`, verilator): a full boot with the flash and
 SD card models and stage1's sector read through the window at 31 ms.
-The two runs agree in every event: the same 885 PicoBlaze first
-executions in the same order, the same 98 flash and 17 SD card
-transactions, the same sector matching card.img byte for byte, the
-same pins toggling the same number of times. The one difference is
-that the readable top runs 20 ns ahead from the second event on: the
-slice model holds its flip-flops at their INIT values under GSR for the
-first 100 ns of start-up, the readable registers start from their
-initial values at time 0. The readable top also simulates a quarter
-faster.
+The two logs are identical line for line, timestamps included: 1,003
+timed events, among them 885 PicoBlaze first executions, 98 flash and
+17 SD card transactions, the sector matching card.img byte for byte,
+and the same pins toggling the same number of times. One allowance
+makes that so: the design.v run is built with `NO_SLICE_GSR`
+(`re/stage0/sim/s3prims.v`), which lets the slice model's flip-flops
+start from their INIT values at time 0 as the readable registers do,
+instead of holding them under GSR for the first 100 ns of start-up.
+Without it the readable top runs a constant 20 ns ahead from the second
+event on, and nothing else differs. The readable top also simulates a
+quarter faster.
 
 ## Next
 

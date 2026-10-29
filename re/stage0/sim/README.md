@@ -28,13 +28,15 @@ cd fw4 && iverilog -g2012 -o tb.vvp -s tb -s glbl ../s3prims.v design.v ../tb_bo
 | `gb_game.vh` | GB-side test: the kernel's game launch (MBC type, masks, load, `$7FE0` reset), then header and bank reads checked against `rom.hex`; `+define+SNAP` snapshots the design after each bank write |
 | `cone.py` | print the logic feeding a net, LUT by LUT, down to flip-flops and pins |
 | `regmap.py` | every Game Boy-written flip-flop with the address that enables it and the data bit it takes |
-| `topsim.sh`, `topcompare.py` | the testbench over design.v and over the readable top (`stage0/rtl/fw4_top.v`) side by side, and what differs between the two runs |
+| `topsim.sh`, `topcompare.py` | the testbench over design.v (built with `NO_SLICE_GSR`, see below) and over the readable top (`stage0/rtl/fw4_top.v`) side by side; the logs are expected to match line for line |
 
 Model choices settled by simulation (each documented in `s3prims.v`):
 `F5 = BX ? F : G` as prjcombine documents (checked: the PicoBlaze bank
 switch only works with it); `FF_SR_ENABLE` exists only on SLICEMs (SLICEL
 flip-flops always honor SR); unconfigured BRAM contents are zero;
-flip-flops and pins are held by GSR/GTS until start-up, as on hardware;
+flip-flops and pins are held by GSR/GTS until start-up, as on hardware
+(`+define+NO_SLICE_GSR` exempts the slice flip-flops, for the comparison
+with the readable top, whose registers have no such hold);
 REV (BY) sets a flip-flop to the opposite of SRVAL, SR winning (KCPSM3's
 interrupt vector depends on it); in a SLICEM, `DIF_MUX=BX` / `DIG_MUX=BY` on
 a LUT-mode LUT means the flip-flop takes BX / BY directly.
