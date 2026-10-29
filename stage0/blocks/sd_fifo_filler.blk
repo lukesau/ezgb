@@ -1,0 +1,302 @@
+# the two data FIFOs' Wishbone side and the master that empties and fills them: OpenCores sd_fifo_filler on the mode clock, with EZ Flash's three-cycle acknowledge; the memories are the BRAMs X3Y1 and X3Y9, the slave the BRAM X3Y5 (a 2 KB buffer the Game Boy bus reads) and the pSRAM path
+[cells]
+X13Y13_S2.FFX
+X13Y13_S2.FFY
+X13Y14_S2.FFX
+X13Y14_S2.FFY
+X13Y15_S2.FFY
+X13Y16_S2.FFY
+X14Y13_S0.FFX
+X14Y13_S0.FFY
+X14Y13_S1.FFX
+X14Y13_S2.FFX
+X14Y13_S2.FFY
+X14Y13_S3.FFY
+X15Y13_S3.FFY
+X15Y7_S2.FFX
+X16Y10_S0.FFX
+X16Y10_S0.FFY
+X16Y10_S2.FFX
+X16Y10_S2.FFY
+X16Y10_S3.FFX
+X16Y10_S3.FFY
+X16Y11_S1.FFY
+X16Y11_S2.FFY
+X16Y12_S0.FFX
+X16Y12_S0.FFY
+X16Y13_S1.FFY
+X16Y13_S2.FFX
+X16Y13_S2.FFY
+X16Y14_S1.FFY
+X16Y5_S2.FFY
+X16Y6_S0.FFX
+X16Y6_S1.FFY
+X16Y6_S2.FFX
+X16Y6_S3.FFX
+X16Y9_S2.FFX
+X16Y9_S2.FFY
+X17Y11_S0.FFY
+X17Y12_S1.FFY
+X17Y12_S2.FFX
+X17Y12_S2.FFY
+X17Y12_S3.FFX
+X17Y12_S3.FFY
+X17Y13_S0.FFX
+X17Y13_S1.FFX
+X17Y14_S0.FFX
+X17Y2_S1.FFY
+X17Y3_S0.FFX
+X17Y3_S3.FFY
+X17Y5_S0.FFX
+X17Y5_S0.FFY
+X17Y6_S0.FFX
+X17Y6_S0.FFY
+X17Y6_S1.FFY
+X17Y6_S2.FFX
+X17Y6_S2.FFY
+X17Y6_S3.FFX
+X17Y7_S0.FFY
+X17Y7_S2.FFY
+X18Y7_S0.FFX
+X18Y9_S0.FFY
+X10Y7_S1.F
+X11Y13_S0.F
+X11Y13_S0.G
+X12Y13_S0.F
+X12Y13_S0.G
+X12Y13_S2.F
+X12Y13_S2.G
+X12Y13_S3.F
+X12Y7_S2.F
+X13Y13_S0.F
+X13Y13_S0.G
+X13Y13_S2.F
+X13Y13_S2.F5
+X13Y13_S2.G
+X13Y14_S2.F
+X13Y14_S2.G
+X14Y13_S0.F
+X14Y13_S0.G
+X14Y13_S2.F
+X14Y13_S2.G
+X15Y7_S2.F
+X16Y10_S0.F
+X16Y10_S0.G
+X16Y10_S1.CYF
+X16Y10_S1.CYG
+X16Y10_S1.F
+X16Y10_S1.G
+X16Y10_S1.XORF
+X16Y10_S1.XORG
+X16Y10_S2.F
+X16Y10_S2.G
+X16Y10_S3.CYF
+X16Y10_S3.CYG
+X16Y10_S3.F
+X16Y10_S3.G
+X16Y10_S3.XORF
+X16Y10_S3.XORG
+X16Y11_S1.CYF
+X16Y11_S1.CYG
+X16Y11_S1.F
+X16Y11_S1.G
+X16Y11_S1.XORF
+X16Y11_S1.XORG
+X16Y11_S3.CYF
+X16Y11_S3.CYG
+X16Y11_S3.F
+X16Y11_S3.G
+X16Y11_S3.XORF
+X16Y11_S3.XORG
+X16Y12_S0.F
+X16Y12_S0.G
+X16Y12_S1.CYF
+X16Y12_S1.CYG
+X16Y12_S1.F
+X16Y12_S1.G
+X16Y12_S1.XORF
+X16Y12_S1.XORG
+X16Y12_S3.CYF
+X16Y12_S3.CYG
+X16Y12_S3.F
+X16Y12_S3.G
+X16Y12_S3.XORF
+X16Y12_S3.XORG
+X16Y13_S1.CYF
+X16Y13_S1.CYG
+X16Y13_S1.F
+X16Y13_S1.G
+X16Y13_S1.XORF
+X16Y13_S1.XORG
+X16Y13_S2.F
+X16Y13_S2.G
+X16Y13_S3.CYF
+X16Y13_S3.CYG
+X16Y13_S3.F
+X16Y13_S3.G
+X16Y13_S3.XORF
+X16Y13_S3.XORG
+X16Y14_S1.F
+X16Y14_S1.G
+X16Y14_S1.XORF
+X16Y6_S0.F
+X16Y6_S0.G
+X16Y6_S1.G
+X16Y6_S2.F
+X16Y6_S3.F
+X16Y7_S0.F
+X16Y7_S0.F5
+X16Y7_S0.G
+X16Y7_S3.F
+X16Y7_S3.G
+X16Y9_S1.CYF
+X16Y9_S1.CYG
+X16Y9_S1.F
+X16Y9_S1.G
+X16Y9_S1.XORF
+X16Y9_S1.XORG
+X16Y9_S2.F
+X16Y9_S2.G
+X16Y9_S3.CYF
+X16Y9_S3.CYG
+X16Y9_S3.F
+X16Y9_S3.G
+X16Y9_S3.XORF
+X16Y9_S3.XORG
+X17Y11_S0.G
+X17Y12_S1.G
+X17Y12_S2.F
+X17Y12_S2.G
+X17Y12_S3.F
+X17Y12_S3.G
+X17Y13_S0.F
+X17Y13_S1.F
+X17Y13_S2.G
+X17Y14_S0.F
+X17Y2_S1.G
+X17Y3_S0.F
+X17Y3_S3.G
+X17Y5_S0.F
+X17Y5_S0.G
+X17Y5_S1.G
+X17Y6_S0.F
+X17Y6_S0.G
+X17Y6_S1.G
+X17Y6_S2.F
+X17Y6_S2.G
+X17Y6_S3.F
+X17Y6_S3.G
+X17Y7_S2.F
+X17Y7_S2.G
+X18Y9_S0.G
+[names]
+n_X16Y6_S1_YQ              ack_cnt[0]
+n_X16Y6_S2_XQ              ack_cnt[1]
+n_X16Y11_S2_YQ             clr
+n_X16Y11_S1_YQ             clr_r
+n_X15Y10_S2_YQ             dma_addr_m[0]
+n_X23Y14_S3_YQ             dma_addr_m[1]
+n_X24Y15_S1_YQ             dma_addr_m[2]
+n_X23Y9_S2_YQ              dma_addr_m[3]
+n_X18Y10_S1_YQ             dma_addr_m[4]
+n_X23Y13_S0_YQ             dma_addr_m[5]
+n_X24Y20_S1_YQ             dma_addr_m[6]
+n_X24Y11_S2_YQ             dma_addr_m[7]
+n_X23Y14_S1_YQ             dma_addr_m[8]
+n_X17Y20_S3_YQ             dma_addr_m[9]
+n_X18Y21_S2_YQ             dma_addr_m[10]
+n_X18Y16_S2_XQ             dma_addr_m[11]
+n_X16Y12_S1_YQ             dma_addr_m[12]
+n_X18Y17_S0_YQ             dma_addr_m[13]
+n_X18Y16_S2_YQ             dma_addr_m[14]
+n_X18Y20_S3_YQ             dma_addr_m[15]
+n_X14Y12_S2_YQ             dma_addr_m[16]
+n_X24Y21_S1_YQ             dma_addr_m[17]
+n_X18Y15_S3_YQ             dma_addr_m[18]
+n_X15Y18_S0_YQ             dma_addr_m[19]
+n_X18Y23_S2_XQ             dma_addr_m[20]
+n_X17Y20_S3_XQ             dma_addr_m[21]
+n_X16Y15_S3_YQ             dma_addr_m[22]
+n_X17Y28_S2_YQ             dma_addr_m[23]
+n_X14Y22_S0_YQ             dma_addr_m[24]
+n_X18Y25_S2_YQ             dma_addr_m[25]
+n_X15Y25_S0_YQ             dma_addr_m[26]
+n_X16Y25_S0_YQ             dma_addr_m[27]
+n_X17Y24_S0_YQ             dma_addr_m[28]
+n_X18Y23_S2_YQ             dma_addr_m[29]
+n_X15Y25_S0_XQ             dma_addr_m[30]
+n_X16Y25_S1_YQ             dma_addr_m[31]
+n_X16Y6_S0_XQ              fifo_rd_ack
+n_X16Y6_S3_XQ              fifo_rd_reg
+n_X12Y15_S2_X              fifo_rst
+n_X15Y13_S3_YQ             rst
+n_X14Y13_S3_YQ             rst_r
+n_X17Y6_S3_XQ              rx_empty
+n_X16Y5_S2_YQ              rx_rp_bin[0]
+n_X17Y2_S1_YQ              rx_rp_bin[1]
+n_X17Y3_S0_XQ              rx_rp_bin[2]
+n_X17Y3_S3_YQ              rx_rp_bin[3]
+n_X17Y6_S0_XQ              rx_rp_gray_m[0]
+n_X17Y5_S0_XQ              rx_rp_gray_m[1]
+n_X17Y5_S0_YQ              rx_rp_gray_m[2]
+n_X17Y7_S2_YQ              rx_rp_gray_m[3]
+n_X17Y6_S0_YQ              rx_rp_gray_m[4]
+n_X11Y5_S1_XQ rx_wp_gray_i[4]
+n_X11Y7_S0_YQ rx_wp_gray_i[0]
+n_X10Y6_S0_XQ rx_wp_gray_i[1]
+n_X11Y7_S0_XQ rx_wp_gray_i[2]
+n_X11Y5_S3_XQ rx_wp_gray_i[3]
+n_X17Y6_S1_YQ              rx_wp_s[0]
+n_X17Y6_S2_XQ              rx_wp_s[1]
+n_X17Y7_S0_YQ              rx_wp_s[2]
+n_X18Y7_S0_XQ              rx_wp_s[3]
+n_X17Y6_S2_YQ              rx_wp_s[4]
+n_X11Y17_S0_YQ             soft_rst
+n_X10Y15_S2_XQ             start_rx_fifo_i
+n_X11Y15_S0_XQ             start_tx_fifo_i
+n_X13Y13_S2_XQ             tx_fifo_full_i
+n_X10Y14_S3_XQ tx_rp_gray_i[4]
+n_X12Y14_S3_XQ tx_rp_gray_i[0]
+n_X9Y14_S1_XQ tx_rp_gray_i[1]
+n_X12Y14_S3_YQ tx_rp_gray_i[2]
+n_X10Y14_S2_XQ tx_rp_gray_i[3]
+n_X14Y13_S1_XQ             tx_rp_s[0]
+n_X13Y13_S2_YQ             tx_rp_s[1]
+n_X13Y16_S2_YQ             tx_rp_s[2]
+n_X13Y15_S2_YQ             tx_rp_s[3]
+n_X16Y13_S1_YQ             tx_rp_s[4]
+n_X16Y10_S3_XQ             tx_wp_bin[0]
+n_X14Y13_S0_XQ             tx_wp_bin[1]
+n_X14Y13_S0_YQ             tx_wp_bin[2]
+n_X15Y7_S2_XQ              tx_wp_bin[3]
+n_X16Y10_S3_YQ             tx_wp_gray_m[0]
+n_X13Y14_S2_XQ             tx_wp_gray_m[1]
+n_X13Y14_S2_YQ             tx_wp_gray_m[2]
+n_X14Y13_S2_XQ             tx_wp_gray_m[3]
+n_X14Y13_S2_YQ             tx_wp_gray_m[4]
+n_X16Y9_S2_XQ              wbm_adr_o[2]
+n_X16Y9_S2_YQ              wbm_adr_o[3]
+n_X17Y14_S0_XQ             wbm_adr_o[4]
+n_X18Y9_S0_YQ              wbm_adr_o[5]
+n_X17Y12_S1_YQ             wbm_adr_o[6]
+n_X16Y10_S2_XQ             wbm_adr_o[7]
+n_X17Y11_S0_YQ             wbm_adr_o[8]
+n_X16Y10_S2_YQ             wbm_adr_o[9]
+n_X17Y12_S2_XQ             wbm_adr_o[10]
+n_X16Y10_S0_XQ             wbm_adr_o[11]
+n_X16Y10_S0_YQ             wbm_adr_o[12]
+n_X17Y12_S2_YQ             wbm_adr_o[13]
+n_X17Y12_S3_XQ             wbm_adr_o[14]
+n_X17Y12_S3_YQ             wbm_adr_o[15]
+n_X16Y12_S0_XQ             wbm_adr_o[16]
+n_X16Y12_S0_YQ             wbm_adr_o[17]
+n_X17Y13_S1_XQ             wbm_adr_o[18]
+n_X16Y13_S2_YQ             wbm_adr_o[19]
+n_X16Y13_S2_XQ             wbm_adr_o[20]
+n_X17Y13_S0_XQ             wbm_adr_o[21]
+n_X16Y14_S1_YQ             wbm_adr_o[22]
+b_X10Y7_S1_F               wbm_we_o
+n_X10Y7_S1_X               wbm_we_x
+n_X17Y7_S0_Y               gnd1_i
+n_X12Y7_S2_X               tx_we
+n_X16Y11_S0_X              clr_i

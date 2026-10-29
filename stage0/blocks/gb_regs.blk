@@ -1,0 +1,584 @@
+# the $7Fxx register file and the bank registers, EZ Flash's own: every register the Game Boy writes, in the two write-strobe clock domains (clk_wr_a for $0000-$7FFF, clk_wr_b for $7Fxx), with the address decode after the unlock and the MBC logic that loads the bank registers in game mode
+[cells]
+X10Y19_S1.FFX
+X10Y19_S1.FFY
+X11Y22_S2.FFY
+X12Y21_S2.FFX
+X12Y22_S1.FFX
+X12Y23_S1.FFY
+X12Y23_S3.FFY
+X12Y24_S1.FFY
+X12Y24_S3.FFY
+X12Y25_S3.FFY
+X12Y26_S1.FFY
+X12Y26_S3.FFY
+X12Y27_S1.FFY
+X12Y28_S1.FFY
+X12Y28_S3.FFY
+X13Y15_S1.FFY
+X13Y16_S1.FFX
+X13Y16_S1.FFY
+X13Y17_S1.FFY
+X13Y17_S3.FFY
+X13Y18_S0.FFY
+X13Y18_S2.FFY
+X13Y18_S3.FFX
+X13Y19_S0.FFY
+X13Y19_S1.FFY
+X13Y19_S3.FFY
+X13Y20_S0.FFY
+X13Y20_S1.FFX
+X13Y20_S1.FFY
+X13Y20_S2.FFY
+X13Y20_S3.FFX
+X13Y20_S3.FFY
+X13Y21_S0.FFX
+X13Y21_S1.FFX
+X13Y21_S1.FFY
+X13Y21_S2.FFX
+X13Y21_S3.FFX
+X13Y22_S1.FFX
+X13Y22_S2.FFY
+X13Y22_S3.FFY
+X13Y23_S1.FFY
+X13Y23_S2.FFX
+X13Y24_S1.FFY
+X13Y24_S3.FFY
+X13Y25_S1.FFY
+X13Y25_S3.FFY
+X13Y26_S3.FFY
+X13Y27_S0.FFY
+X13Y27_S1.FFY
+X13Y27_S3.FFY
+X13Y28_S0.FFY
+X13Y28_S1.FFY
+X13Y28_S2.FFY
+X13Y28_S3.FFY
+X14Y17_S0.FFY
+X14Y17_S1.FFY
+X14Y17_S3.FFX
+X14Y17_S3.FFY
+X14Y18_S0.FFY
+X14Y18_S1.FFY
+X14Y18_S3.FFY
+X14Y19_S0.FFY
+X14Y19_S2.FFY
+X14Y20_S0.FFY
+X14Y20_S1.FFY
+X14Y20_S3.FFX
+X14Y20_S3.FFY
+X14Y21_S1.FFY
+X14Y21_S3.FFY
+X14Y22_S2.FFY
+X14Y22_S3.FFY
+X14Y25_S3.FFY
+X14Y26_S3.FFY
+X14Y27_S0.FFY
+X14Y28_S0.FFY
+X14Y28_S2.FFX
+X15Y17_S0.FFY
+X15Y18_S1.FFX
+X15Y18_S1.FFY
+X15Y18_S3.FFY
+X15Y19_S1.FFX
+X15Y19_S1.FFY
+X15Y19_S3.FFX
+X15Y19_S3.FFY
+X15Y20_S1.FFY
+X15Y20_S2.FFY
+X15Y21_S0.FFX
+X15Y21_S1.FFX
+X15Y21_S1.FFY
+X15Y21_S3.FFX
+X15Y21_S3.FFY
+X15Y22_S2.FFY
+X15Y22_S3.FFX
+X15Y22_S3.FFY
+X15Y23_S0.FFX
+X15Y23_S2.FFX
+X15Y25_S2.FFY
+X15Y26_S0.FFX
+X15Y26_S1.FFY
+X15Y26_S3.FFY
+X15Y27_S2.FFY
+X15Y28_S0.FFY
+X15Y28_S1.FFY
+X15Y28_S2.FFY
+X15Y6_S0.FFY
+X16Y20_S0.FFY
+X16Y20_S2.FFY
+X16Y23_S1.FFX
+X16Y23_S1.FFY
+X16Y23_S3.FFY
+X16Y24_S0.FFY
+X16Y27_S1.FFY
+X16Y27_S3.FFY
+X16Y28_S1.FFX
+X16Y28_S2.FFX
+X16Y5_S0.FFY
+X17Y18_S0.FFY
+X17Y18_S1.FFY
+X17Y18_S2.FFY
+X17Y18_S3.FFY
+X17Y19_S0.FFY
+X17Y23_S1.FFY
+X17Y23_S2.FFY
+X17Y25_S1.FFX
+X17Y25_S2.FFX
+X17Y26_S1.FFX
+X17Y28_S0.FFY
+X17Y28_S1.FFY
+X17Y29_S0.FFY
+X17Y29_S2.FFX
+X17Y32_S0.FFY
+X17Y32_S1.FFX
+X18Y15_S2.FFX
+X18Y18_S0.FFY
+X18Y18_S2.FFY
+X18Y23_S0.FFX
+X18Y23_S3.FFX
+X18Y24_S0.FFX
+X18Y26_S0.FFX
+X18Y26_S1.FFY
+X18Y27_S2.FFY
+X18Y28_S0.FFY
+X18Y28_S2.FFX
+X18Y28_S2.FFY
+X18Y28_S3.FFY
+X18Y29_S0.FFX
+X18Y29_S1.FFX
+X18Y30_S0.FFY
+X18Y30_S1.FFY
+X18Y30_S2.FFX
+X18Y30_S3.FFX
+X18Y31_S2.FFY
+X18Y32_S1.FFY
+X18Y32_S2.FFX
+X18Y4_S2.FFY
+X18Y5_S3.FFY
+X1Y32_S0.FFX
+X1Y32_S0.FFY
+X1Y32_S2.FFY
+X23Y17_S1.FFY
+X23Y18_S0.FFY
+X23Y18_S2.FFY
+X23Y21_S0.FFY
+X23Y28_S0.FFY
+X23Y28_S1.FFY
+X23Y28_S2.FFX
+X23Y28_S3.FFX
+X23Y29_S2.FFX
+X23Y29_S3.FFY
+X23Y30_S1.FFY
+X23Y31_S0.FFY
+X23Y31_S1.FFY
+X23Y31_S3.FFY
+X9Y25_S1.FFY
+X10Y21_S2.F
+X10Y21_S2.G
+X10Y23_S1.F
+X10Y23_S1.G
+X11Y18_S0.F
+X11Y19_S2.F
+X11Y20_S1.F
+X11Y20_S1.G
+X11Y20_S2.G
+X11Y21_S2.G
+X11Y21_S3.F
+X11Y21_S3.G
+X11Y22_S0.G
+X12Y18_S2.G
+X12Y19_S0.G
+X12Y20_S2.F
+X12Y21_S0.F
+X12Y21_S0.G
+X12Y21_S1.G
+X12Y21_S2.F
+X12Y21_S2.G
+X12Y21_S3.G
+X12Y22_S1.F
+X12Y24_S0.F
+X12Y24_S0.G
+X13Y18_S3.F
+X13Y18_S3.G
+X13Y21_S0.F
+X13Y21_S0.G
+X13Y21_S2.F
+X13Y21_S2.G
+X13Y21_S3.F
+X13Y21_S3.G
+X13Y22_S1.F
+X13Y22_S3.F
+X13Y23_S1.F
+X13Y23_S1.G
+X13Y23_S2.F
+X13Y23_S3.F
+X13Y23_S3.G
+X14Y28_S2.F
+X15Y21_S0.F
+X15Y21_S0.G
+X15Y23_S0.F
+X15Y23_S2.F
+X15Y23_S2.G
+X15Y24_S0.F
+X15Y25_S0.F
+X15Y25_S0.G
+X15Y26_S0.F
+X15Y26_S0.G
+X16Y24_S3.F
+X16Y24_S3.F5
+X16Y24_S3.G
+X16Y25_S0.F
+X16Y25_S0.G
+X16Y25_S2.F
+X16Y25_S2.G
+X16Y26_S2.F
+X16Y26_S2.G
+X16Y28_S1.F
+X16Y28_S2.F
+X17Y25_S0.F
+X17Y25_S0.G
+X17Y25_S1.F
+X17Y25_S1.G
+X17Y25_S2.F
+X17Y25_S2.G
+X17Y25_S3.F
+X17Y26_S1.F
+X17Y26_S1.G
+X17Y28_S1.F
+X17Y28_S1.G
+X17Y28_S2.F
+X17Y28_S2.G
+X17Y29_S2.F
+X17Y29_S2.G
+X17Y30_S3.F
+X17Y30_S3.F5
+X17Y30_S3.G
+X17Y32_S1.F
+X17Y32_S1.G
+X18Y15_S2.F
+X18Y15_S2.G
+X18Y23_S0.F
+X18Y23_S3.F
+X18Y24_S0.F
+X18Y24_S3.F
+X18Y24_S3.G
+X18Y25_S0.F
+X18Y25_S0.G
+X18Y25_S1.F
+X18Y25_S1.G
+X18Y25_S2.F
+X18Y25_S3.F
+X18Y26_S0.F
+X18Y26_S2.F
+X18Y26_S2.G
+X18Y27_S2.F
+X18Y27_S2.F5
+X18Y27_S2.G
+X18Y28_S2.F
+X18Y28_S2.G
+X18Y29_S0.F
+X18Y29_S0.G
+X18Y29_S1.F
+X18Y29_S1.F5
+X18Y29_S1.G
+X18Y29_S2.F
+X18Y29_S2.G
+X18Y29_S3.F
+X18Y30_S0.F
+X18Y30_S0.G
+X18Y30_S2.F
+X18Y30_S2.G
+X18Y30_S3.F
+X18Y30_S3.F5
+X18Y30_S3.G
+X18Y31_S2.F
+X18Y32_S0.F
+X18Y32_S0.F5
+X18Y32_S0.G
+X18Y32_S2.F
+X18Y32_S2.G
+X1Y17_S1.F
+X23Y25_S2.F
+X23Y26_S0.F
+X23Y26_S0.G
+X23Y26_S2.F
+X23Y26_S2.F5
+X23Y26_S2.G
+X23Y28_S1.F
+X23Y28_S2.F
+X23Y28_S2.G
+X23Y28_S3.F
+X23Y28_S3.G
+X23Y29_S0.F
+X23Y29_S0.F5
+X23Y29_S0.G
+X23Y29_S2.F
+X23Y29_S2.F5
+X23Y29_S2.G
+X23Y29_S3.G
+X23Y30_S0.F
+X23Y30_S0.F5
+X23Y30_S0.G
+X23Y30_S1.F
+X23Y30_S1.G
+X23Y30_S3.F
+X23Y30_S3.G
+X23Y32_S0.F
+X23Y32_S0.F5
+X23Y32_S0.G
+X23Y32_S2.F
+X2Y31_S3.F
+X2Y32_S0.G
+X7Y20_S1.G
+X7Y23_S1.G
+X7Y24_S1.G
+X7Y24_S2.F
+X7Y25_S1.G
+X7Y25_S3.F
+X7Y25_S3.G
+X7Y32_S0.F
+X8Y17_S0.G
+X8Y19_S1.F
+X8Y19_S1.G
+X8Y20_S1.G
+X8Y23_S2.F
+X8Y23_S2.G
+X8Y23_S3.F
+X8Y23_S3.G
+X8Y24_S3.G
+X8Y25_S0.F
+X8Y25_S0.G
+X8Y25_S1.F
+X8Y25_S3.G
+X8Y26_S1.F
+X8Y29_S1.G
+X8Y29_S3.F
+X8Y29_S3.G
+X9Y22_S0.G
+X9Y22_S2.G
+X9Y26_S2.G
+[names]
+n_X12Y33_IOI1_I            a0
+n_X12Y33_IOI0_I            a1
+n_X11Y0_IOI2_I             a10
+n_X0Y1_IOI1_I              a11
+n_X0Y32_IOI0_I             a12
+n_X0Y30_IOI1_I             a13
+n_X0Y30_IOI0_I             a14
+n_X0Y29_IOI0_I             a15
+n_X24Y28_S3_Y              a1a0_zero
+n_X11Y33_IOI0_I            a2
+n_X5Y33_IOI1_I             a3
+n_X5Y33_IOI0_I             a4
+n_X1Y33_IOI2_I             a5
+n_X1Y33_IOI1_I             a6
+n_X1Y33_IOI0_I             a7
+n_X13Y33_IOI2_I            a8
+n_X25Y28_IOI0_I            a9
+n_X1Y17_S1_Y               adr_014d_lo
+n_X15Y20_S2_YQ             bank_4000[0]
+n_X15Y17_S0_YQ             bank_4000[1]
+n_X16Y23_S1_XQ             bank_4000[2]
+n_X14Y21_S3_YQ             bank_4000[3]
+n_X11Y22_S2_YQ             bank_4000[4]
+n_X16Y23_S3_YQ             bank_4000[5]
+n_X17Y23_S2_YQ             bank_4000[6]
+n_X16Y23_S1_YQ             bank_4000[7]
+n_X13Y33c_BUFGMUX0_O       clk_wr_a
+n_X13Y33c_BUFGMUX1_O       clk_wr_b
+n_X13Y19_S0_YQ             cmd_b4_flag
+n_X12Y25_S3_YQ             cmd_lba0_i[0]
+n_X15Y22_S3_XQ             cmd_lba0_i[1]
+n_X13Y27_S0_YQ             cmd_lba0_i[2]
+n_X16Y20_S2_YQ             cmd_lba0_i[3]
+n_X15Y20_S1_YQ             cmd_lba0_i[4]
+n_X15Y22_S3_YQ             cmd_lba0_i[5]
+n_X14Y20_S3_XQ             cmd_lba0_i[6]
+n_X14Y20_S3_YQ             cmd_lba0_i[7]
+n_X12Y24_S3_YQ             cmd_lba1_i[0]
+n_X13Y26_S3_YQ             cmd_lba1_i[1]
+n_X16Y24_S0_YQ             cmd_lba1_i[2]
+n_X15Y21_S1_XQ             cmd_lba1_i[3]
+n_X15Y19_S1_XQ             cmd_lba1_i[4]
+n_X14Y22_S2_YQ             cmd_lba1_i[5]
+n_X15Y19_S1_YQ             cmd_lba1_i[6]
+n_X15Y21_S1_YQ             cmd_lba1_i[7]
+n_X13Y25_S3_YQ             cmd_lba2_i[0]
+n_X13Y22_S3_YQ             cmd_lba2_i[1]
+n_X14Y27_S0_YQ             cmd_lba2_i[2]
+n_X16Y27_S3_YQ             cmd_lba2_i[3]
+n_X14Y21_S1_YQ             cmd_lba2_i[4]
+n_X15Y25_S2_YQ             cmd_lba2_i[5]
+n_X15Y19_S3_XQ             cmd_lba2_i[6]
+n_X15Y19_S3_YQ             cmd_lba2_i[7]
+n_X12Y26_S1_YQ             cmd_lba3_i[0]
+n_X13Y24_S3_YQ             cmd_lba3_i[1]
+n_X14Y26_S3_YQ             cmd_lba3_i[2]
+n_X18Y27_S2_YQ             cmd_lba3_i[3]
+n_X15Y21_S3_YQ             cmd_lba3_i[4]
+n_X14Y25_S3_YQ             cmd_lba3_i[5]
+n_X16Y20_S0_YQ             cmd_lba3_i[6]
+n_X15Y21_S3_XQ             cmd_lba3_i[7]
+n_X0Y32_IOI1_I             d0
+n_X0Y19_IOI1_I             d1
+n_X0Y19_IOI0_I             d2
+n_X0Y18_IOI1_I             d3
+n_X0Y18_IOI0_I             d4
+n_X0Y15_IOI1_I             d5
+n_X0Y15_IOI0_I             d6
+n_X0Y2_IOI1_I              d7
+n_X14Y27_S2_X              d_key_pattern
+n_X23Y21_S1_Y              dec_x23y21_s1
+n_X12Y23_S1_YQ             flash_op
+n_X23Y29_S1_X              game_mbc1m
+n_X25Y15_IOI0_IQ1          gb_reset_n_q
+n_X18Y30_S2_XQ             mbc1_mode
+n_X23Y20_S3_Y              gnd2
+n_X23Y28_S0_YQ             hdr_chk[0]
+n_X15Y28_S0_YQ             hdr_chk[1]
+n_X23Y31_S3_YQ             hdr_chk[2]
+n_X18Y5_S3_YQ              hdr_chk[3]
+n_X16Y5_S0_YQ              hdr_chk[4]
+n_X18Y4_S2_YQ              hdr_chk[5]
+n_X15Y6_S0_YQ              hdr_chk[6]
+n_X15Y14_S1_XQ             int_data
+n_X8Y26_S1_Y               is_mbc5
+n_X14Y20_S0_YQ             kernel_mode
+n_X18Y31_S3_XQ             key_e1
+n_X13Y19_S1_YQ             load_win
+n_X23Y29_S2_XQ             mbc1m_hi[0]
+n_X18Y29_S1_XQ             mbc1m_hi[1]
+n_X18Y29_S0_XQ             mbc1m_mode
+n_X23Y28_S2_XQ             mbc1m_ram[0]
+n_X16Y28_S2_XQ             mbc1m_ram[1]
+n_X14Y28_S2_XQ             mbc1m_ram[2]
+n_X23Y28_S3_XQ             mbc1m_ram[3]
+n_X18Y30_S3_XQ             mbc1m_sel
+n_X15Y21_S0_XQ             mbc_bank[0]
+n_X13Y21_S2_XQ             mbc_bank[1]
+n_X13Y21_S3_XQ             mbc_bank[2]
+n_X13Y21_S0_XQ             mbc_bank[3]
+n_X12Y22_S1_XQ             mbc_bank[4]
+n_X13Y23_S2_XQ             mbc_bank[5]
+n_X13Y22_S1_XQ             mbc_bank[6]
+n_X12Y21_S2_XQ             mbc_bank[7]
+n_X15Y23_S2_XQ             mbc_bank[8]
+n_X16Y27_S1_YQ             mbc_type[0]
+n_X12Y27_S1_YQ             mbc_type[1]
+n_X13Y27_S1_YQ             mbc_type[2]
+n_X18Y28_S3_YQ             mbc_type[3]
+n_X14Y20_S1_YQ             mode32_b3
+n_X23Y30_S2_X              n_4000
+n_X8Y24_S1_Y               n_mbc1
+n_X13Y18_S3_XQ             cmd_read
+n_X17Y32_S1_XQ             reset_req
+n_X18Y15_S2_XQ             cmd_write
+n_X18Y32_S2_XQ             rtc_set_go
+n_X12Y23_S3_YQ             load_start
+n_X13Y20_S2_YQ             rtc_flag
+n_X18Y28_S2_XQ             rom_mask[0]
+n_X17Y28_S0_YQ             rom_mask[1]
+n_X14Y28_S0_YQ             rom_mask[2]
+n_X23Y28_S1_YQ             rom_mask[3]
+n_X17Y29_S0_YQ             rom_mask[4]
+n_X18Y28_S2_YQ             rom_mask[5]
+n_X17Y28_S1_YQ             rom_mask[6]
+n_X15Y26_S3_YQ             rom_mask[7]
+n_X18Y26_S1_YQ             rom_mask8
+n_X13Y21_S1_XQ             ram_mask[0]
+n_X13Y22_S2_YQ             ram_mask[1]
+n_X13Y21_S1_YQ             ram_mask[2]
+n_X13Y23_S1_YQ             ram_mask[3]
+n_X23Y31_S1_YQ             rtc_set_sec[0]
+n_X13Y20_S0_YQ             rtc_set_sec[1]
+n_X12Y28_S1_YQ             rtc_set_sec[2]
+n_X23Y18_S0_YQ             rtc_set_sec[3]
+n_X15Y18_S1_XQ             rtc_set_sec[4]
+n_X13Y24_S1_YQ             rtc_set_sec[5]
+n_X15Y18_S1_YQ             rtc_set_sec[6]
+n_X14Y19_S2_YQ             rtc_set_sec[7]
+n_X23Y31_S0_YQ             rtc_set_min[0]
+n_X13Y20_S3_XQ             rtc_set_min[1]
+n_X12Y28_S3_YQ             rtc_set_min[2]
+n_X23Y18_S2_YQ             rtc_set_min[3]
+n_X14Y17_S3_XQ             rtc_set_min[4]
+n_X12Y24_S1_YQ             rtc_set_min[5]
+n_X14Y17_S3_YQ             rtc_set_min[6]
+n_X13Y20_S3_YQ             rtc_set_min[7]
+n_X17Y32_S0_YQ             rtc_set_hour[0]
+n_X15Y28_S1_YQ             rtc_set_hour[1]
+n_X15Y26_S1_YQ             rtc_set_hour[2]
+n_X13Y17_S1_YQ             rtc_set_hour[3]
+n_X13Y18_S0_YQ             rtc_set_hour[4]
+n_X18Y28_S0_YQ             rtc_set_hour[5]
+n_X13Y17_S3_YQ             rtc_set_hour[6]
+n_X14Y22_S3_YQ             rtc_set_hour[7]
+n_X18Y32_S1_YQ             rtc_set_day[0]
+n_X18Y31_S2_YQ             rtc_set_day[1]
+n_X15Y27_S2_YQ             rtc_set_day[2]
+n_X14Y17_S0_YQ             rtc_set_day[3]
+n_X14Y18_S0_YQ             rtc_set_day[4]
+n_X15Y28_S2_YQ             rtc_set_day[5]
+n_X15Y18_S3_YQ             rtc_set_day[6]
+n_X15Y22_S2_YQ             rtc_set_day[7]
+n_X13Y28_S1_YQ             rtc_set_wday[0]
+n_X18Y30_S1_YQ             rtc_set_wday[1]
+n_X13Y25_S1_YQ             rtc_set_wday[2]
+n_X23Y17_S1_YQ             rtc_set_wday[3]
+n_X13Y20_S1_XQ             rtc_set_wday[4]
+n_X18Y18_S0_YQ             rtc_set_wday[5]
+n_X14Y17_S1_YQ             rtc_set_wday[6]
+n_X13Y20_S1_YQ             rtc_set_wday[7]
+n_X13Y28_S3_YQ             rtc_set_month[0]
+n_X18Y30_S0_YQ             rtc_set_month[1]
+n_X9Y25_S1_YQ              rtc_set_month[2]
+n_X23Y21_S0_YQ             rtc_set_month[3]
+n_X10Y19_S1_XQ             rtc_set_month[4]
+n_X17Y18_S2_YQ             rtc_set_month[5]
+n_X13Y18_S2_YQ             rtc_set_month[6]
+n_X10Y19_S1_YQ             rtc_set_month[7]
+n_X12Y26_S3_YQ             rtc_set_year[0]
+n_X13Y28_S0_YQ             rtc_set_year[1]
+n_X13Y27_S3_YQ             rtc_set_year[2]
+n_X14Y18_S1_YQ             rtc_set_year[3]
+n_X1Y32_S2_YQ              rtc_set_year[4]
+n_X13Y28_S2_YQ             rtc_set_year[5]
+n_X1Y32_S0_XQ              rtc_set_year[6]
+n_X1Y32_S0_YQ              rtc_set_year[7]
+n_X14Y22_S2_X              reg_dec
+n_X18Y24_S0_XQ             rom_bank[0]
+n_X17Y26_S1_XQ             rom_bank[1]
+n_X18Y23_S0_XQ             rom_bank[2]
+n_X18Y23_S3_XQ             rom_bank[3]
+n_X15Y23_S0_XQ             rom_bank[4]
+n_X17Y25_S1_XQ             rom_bank[5]
+n_X17Y25_S2_XQ             rom_bank[6]
+n_X15Y26_S0_XQ             rom_bank[7]
+n_X18Y26_S0_XQ             rom_bank8
+n_X12Y21_S0_Y              rst
+n_X23Y29_S3_YQ             rtc_sel[0]
+n_X17Y23_S1_YQ             rtc_sel[1]
+n_X23Y30_S1_YQ             rtc_sel[2]
+n_X17Y18_S0_YQ             rtc_sel[3]
+n_X17Y18_S1_YQ             rtc_sel[4]
+n_X18Y18_S2_YQ             rtc_sel[5]
+n_X17Y19_S0_YQ             rtc_sel[6]
+n_X17Y18_S3_YQ             rtc_sel[7]
+n_X15Y24_S0_Y              type_grp
+n_X24Y25_S3_X              type_lo
+n_X18Y31_S0_XQ             unlocked
+n_X15Y22_S2_Y              win_a000
+n_X13Y19_S3_YQ             win_en
+n_X13Y15_S1_YQ             win_en1
+n_X13Y16_S1_XQ             win_mode[0]
+n_X13Y16_S1_YQ             win_mode[1]
+n_X14Y19_S0_YQ             win_mode[2]
+n_X14Y18_S3_YQ             win_mode[3]
+n_X16Y28_S1_XQ             mbc1_hi[0]
+n_X17Y29_S2_XQ             mbc1_hi[1]
+n_X18Y24_S1_YQ             gb_reset_n_q2
+n_X15Y19_S2_YQ             int_data_q
+n_X16Y25_S0_X              wr_7fc3
+n_X8Y25_S0_X               dec_7f3x
+n_X9Y22_S2_Y               dec_x9y22_s2

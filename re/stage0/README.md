@@ -19,6 +19,10 @@ at the top of the repo, the stock ones disassembled are in [re/stage1](../stage1
 
 Slots A and B are both stage0: two hardware configurations of the same chip.
 
+Our own readable version of the design, proven block by block against the
+netlist extracted here, lives in [stage0/](../../stage0/README.md) at the
+top of the repo.
+
 ## Versions
 
 The docs below cover every firmware release we have, comparing where they

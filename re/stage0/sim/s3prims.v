@@ -10,9 +10,21 @@
 // Start-up, as in Xilinx's own simulation libraries: GSR holds every
 // flip-flop at its INIT value and GTS keeps every pin undriven until the
 // configuration start-up sequence releases them.
+//
+// NO_SLICE_GSR drops the hold for the slice flip-flops only (GSR_SLICE
+// below): they then start from their INIT values at time 0, as the
+// readable blocks' registers do, which puts a design.v run on the same
+// timestamps as a stage0/rtl/fw4_top.v run (re/stage0/sim/topsim.sh).
+// Not a physical start-up, the pads and block RAMs still hold: for that
+// comparison only.
 module glbl;
     reg GSR = 1, GTS = 1;
     initial begin #100 GSR = 0; #20 GTS = 0; end
+`ifdef NO_SLICE_GSR
+    wire GSR_SLICE = 1'b0;
+`else
+    wire GSR_SLICE = GSR;
+`endif
 endmodule
 
 module s3_slice #(
@@ -46,7 +58,7 @@ module s3_slice #(
     wire we = SR & (!WE1USED || WE1);
     // SLICEWE0USED: BX is address bit 4; F holds the BX=1 half, G the BX=0 half
     wire fwe = we & (!WE0USED || BX), gwe = we & (!WE0USED || !BX);
-    always @(posedge CLK) if (!glbl.GSR) begin
+    always @(posedge CLK) if (!glbl.GSR_SLICE) begin
         if (F_SRL && we) fm <= {fm[14:0], dif};
         else if (F_RAM && fwe) fm[ga] <= dif;
         if (G_SRL && we) gm <= {gm[14:0], DIG};
@@ -77,19 +89,19 @@ module s3_slice #(
     wire srx = FF_SR_ENABLE & SR, rev = FF_REV_ENABLE & BY;
     // REV (BY, when FF_REV_ENABLE) sets the opposite of SRVAL; SR wins over it
     generate if (FF_LATCH) begin
-        always @* if (glbl.GSR) begin qx = FFX_INIT; qy = FFY_INIT; end
+        always @* if (glbl.GSR_SLICE) begin qx = FFX_INIT; qy = FFY_INIT; end
                   else if (srx) begin qx = FFX_SRVAL; qy = FFY_SRVAL; end
                   else if (rev) begin qx = !FFX_SRVAL; qy = !FFY_SRVAL; end
                   else if (CLK & CE) begin qx = dx; qy = dy; end
     end else if (FF_SR_SYNC) begin
-        always @(posedge CLK or posedge glbl.GSR)
-            if (glbl.GSR) begin qx <= FFX_INIT; qy <= FFY_INIT; end
+        always @(posedge CLK or posedge glbl.GSR_SLICE)
+            if (glbl.GSR_SLICE) begin qx <= FFX_INIT; qy <= FFY_INIT; end
             else if (srx) begin qx <= FFX_SRVAL; qy <= FFY_SRVAL; end
             else if (rev) begin qx <= !FFX_SRVAL; qy <= !FFY_SRVAL; end
             else if (CE) begin qx <= dx; qy <= dy; end
     end else begin
-        always @(posedge CLK or posedge srx or posedge rev or posedge glbl.GSR)
-            if (glbl.GSR) begin qx <= FFX_INIT; qy <= FFY_INIT; end
+        always @(posedge CLK or posedge srx or posedge rev or posedge glbl.GSR_SLICE)
+            if (glbl.GSR_SLICE) begin qx <= FFX_INIT; qy <= FFY_INIT; end
             else if (srx) begin qx <= FFX_SRVAL; qy <= FFY_SRVAL; end
             else if (rev) begin qx <= !FFX_SRVAL; qy <= !FFY_SRVAL; end
             else if (CE) begin qx <= dx; qy <= dy; end
@@ -239,6 +251,12 @@ module s3_dna #(parameter [56:0] DNA = 57'h0) (input CLK, DIN, READ, SHIFT, outp
         if (READ) sr <= DNA;
         else if (SHIFT) sr <= {sr[55:0], DIN};
     assign DOUT = sr[56];
+endmodule
+
+// ICAP: the configuration access port. The writes go to the configuration
+// logic, which is not modeled; the readback reads as 0.
+module s3_icap (input CLK, CE, WRITE, input [7:0] I, output [7:0] O);
+    assign O = 8'h00;
 endmodule
 
 module s3_stub (output O);

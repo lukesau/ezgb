@@ -1,0 +1,9 @@
+# the one slice latch in the design: a second latch of the pSRAM A13 mux beside P51's IO-tile output latch, gated by the flash operation bit and forced to the loader's A13 while a load runs
+[cells]
+X17Y4_S0.FFX
+[names]
+n_X12Y23_S1_YQ             flash_op
+b_X17Y4_S0_F5              mem_a13_b
+n_X17Y8_S0_Y               mem_a13_sd
+n_X18Y8_S0_Y               mem_a13_sd_n
+n_X17Y4_S0_XQ              a13_latch

@@ -273,7 +273,22 @@ for (t, b), c in sorted(cells.items()):
         conns['DOUT'] = o
         body.append("s3_dna #(.DNA(DNA)) i_dna (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
 
-# anything else that drives a used pin (ICAP): tie to 0
+# ICAP: the configuration port the firmware writes for MultiBoot (bank 2's
+# IPROG); its readback is not modeled (O reads as 0)
+for (t, b), c in sorted(cells.items()):
+    if b == 'ICAP':
+        o = f"icap_o"
+        decl.append(f"wire [7:0] {o};")
+        for i in range(8):
+            src = f"{t}:{b}:O[{i}]"
+            if src in used_out:
+                decl.append(f"wire {wname(src)} = {o}[{i}];")
+        conns = {p: inp(c, p, "1'b0") for p in ('CLK', 'CE', 'WRITE')}
+        conns['I'] = '{' + ', '.join(inp(c, f'I[{i}]', "1'b0") for i in range(7, -1, -1)) + '}'
+        conns['O'] = o
+        body.append("s3_icap i_icap (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
+
+# anything else that drives a used pin: tie to 0
 for s in sorted(used_out):
     w = wname(s)
     if not any(d.startswith(f"wire {w};") or d.startswith(f"wire {w} =") for d in decl):

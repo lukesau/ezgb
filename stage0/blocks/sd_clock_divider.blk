@@ -1,0 +1,90 @@
+# the SD clock divider: OpenCores sd_clock_divider on the mode clock, with the divider register's two sync stages
+[cells]
+X13Y19_S2.FFY
+X15Y24_S1.FFX
+X15Y24_S1.FFY
+X15Y24_S3.FFX
+X15Y24_S3.FFY
+X15Y25_S1.FFX
+X15Y25_S1.FFY
+X15Y25_S3.FFX
+X15Y25_S3.FFY
+X15Y23_S1.FFX
+X15Y23_S3.FFY
+X15Y24_S2.FFY
+X16Y26_S2.FFY
+X17Y30_S0.FFY
+X24Y16_S2.FFY
+X24Y17_S3.FFX
+X24Y18_S3.FFY
+X14Y23_S3.FFX
+X16Y22_S2.FFY
+X23Y21_S2.FFY
+X18Y23_S1.FFX
+X17Y31_S0.FFY
+X24Y16_S3.FFY
+X24Y17_S2.FFX
+X24Y18_S0.FFY
+X15Y25_S2.F
+X15Y25_S2.G
+X11Y26_S0.G
+X13Y23_S2.G
+X12Y26_S0.F
+X15Y25_S3.XORG
+X15Y25_S3.G
+X15Y25_S3.CYF
+X15Y25_S1.CYG
+X15Y25_S1.G
+X15Y25_S1.CYF
+X15Y24_S3.CYG
+X15Y24_S3.CYF
+X15Y24_S3.F
+X15Y24_S1.CYG
+X15Y24_S1.G
+X15Y24_S1.CYF
+X15Y24_S1.F
+X15Y24_S3.G
+X15Y25_S1.F
+X15Y25_S3.F
+X15Y25_S3.XORF
+X15Y25_S1.XORG
+X15Y25_S1.XORF
+X15Y24_S3.XORG
+X15Y24_S3.XORF
+X15Y24_S1.XORG
+X15Y24_S1.XORF
+[names]
+n_X15Y24_S1_XQ             clock_div[0]
+n_X15Y24_S1_YQ             clock_div[1]
+n_X15Y24_S3_XQ             clock_div[2]
+n_X15Y24_S3_YQ             clock_div[3]
+n_X15Y25_S1_XQ             clock_div[4]
+n_X15Y25_S1_YQ             clock_div[5]
+n_X15Y25_S3_XQ             clock_div[6]
+n_X15Y25_S3_YQ             clock_div[7]
+n_X15Y23_S1_XQ             divider_s2[3]
+n_X14Y23_S3_XQ             divider_s1[3]
+n_X17Y19_S1_YQ             divider_reg[3]
+n_X15Y23_S3_YQ             divider_s2[2]
+n_X16Y22_S2_YQ             divider_s1[2]
+n_X16Y20_S1_YQ             divider_reg[2]
+n_X15Y24_S2_YQ             divider_s2[7]
+n_X23Y21_S2_YQ             divider_s1[7]
+n_X23Y19_S3_YQ             divider_reg[7]
+n_X16Y26_S2_YQ             divider_s2[6]
+n_X18Y23_S1_XQ             divider_s1[6]
+n_X23Y20_S1_YQ             divider_reg[6]
+n_X17Y30_S0_YQ             divider_s2[1]
+n_X17Y31_S0_YQ             divider_s1[1]
+n_X23Y19_S3_XQ             divider_reg[1]
+n_X24Y16_S2_YQ             divider_s2[0]
+n_X24Y16_S3_YQ             divider_s1[0]
+n_X23Y16_S1_YQ             divider_reg[0]
+n_X24Y17_S3_XQ             divider_s2[5]
+n_X24Y17_S2_XQ             divider_s1[5]
+n_X24Y17_S1_YQ             divider_reg[5]
+n_X24Y18_S3_YQ             divider_s2[4]
+n_X24Y18_S0_YQ             divider_s1[4]
+n_X24Y18_S2_YQ             divider_reg[4]
+n_X13Y19_S2_YQ             sd_clk
+n_X15Y18_S0_X              gnd_i

@@ -1,0 +1,377 @@
+# the pSRAM controller, EZ Flash's own: the page (upper address) for Game Boy accesses from the bank registers and the MBC state, its pipeline into the fast clock and the 74HC595 serializer that drives the address pins above A13, the byte strobes, write enable and chip selects, and the address pads' tristate; the P51 output latch (X17Y4_S0.FFX) is left out, being a latch
+[cells]
+X15Y14_S0.FFX
+X15Y14_S3.FFX
+X16Y14_S0.FFX
+X16Y14_S0.FFY
+X16Y17_S0.FFX
+X16Y18_S2.FFX
+X16Y19_S0.FFX
+X16Y5_S3.FFY
+X16Y9_S0.FFY
+X17Y10_S2.FFY
+X17Y13_S3.FFX
+X17Y3_S2.FFY
+X17Y7_S1.FFY
+X18Y11_S0.FFX
+X18Y11_S0.FFY
+X18Y11_S2.FFY
+X18Y11_S3.FFY
+X18Y12_S1.FFX
+X18Y12_S1.FFY
+X18Y13_S0.FFY
+X18Y13_S1.FFY
+X18Y4_S1.FFY
+X18Y4_S3.FFY
+X18Y6_S0.FFY
+X23Y10_S0.FFY
+X23Y10_S2.FFY
+X23Y4_S0.FFY
+X23Y4_S3.FFX
+X23Y4_S3.FFY
+X23Y5_S1.FFY
+X23Y5_S3.FFY
+X23Y6_S1.FFY
+X23Y6_S3.FFY
+X23Y8_S1.FFY
+X23Y9_S0.FFY
+X23Y9_S1.FFY
+X24Y11_S0.FFY
+X24Y5_S0.FFY
+X10Y18_S1.F
+X11Y18_S0.G
+X11Y22_S0.F
+X11Y22_S1.G
+X12Y13_S1.F
+X12Y13_S1.G
+X12Y17_S3.F
+X12Y18_S2.F
+X12Y19_S0.F
+X12Y19_S2.F
+X12Y20_S1.F
+X12Y20_S1.G
+X12Y21_S3.F
+X12Y5_S0.F
+X12Y5_S0.G
+X13Y16_S2.F
+X13Y16_S2.F5
+X13Y16_S2.G
+X13Y17_S2.F
+X13Y17_S2.G
+X13Y18_S0.F
+X13Y18_S0.G
+X13Y18_S2.F
+X13Y19_S0.F
+X13Y21_S1.G
+X13Y24_S0.F
+X13Y24_S0.G
+X14Y19_S3.G
+X14Y21_S2.F
+X14Y21_S2.G
+X14Y23_S0.F
+X14Y23_S0.G
+X14Y23_S2.F
+X14Y23_S2.G
+X14Y25_S0.F
+X14Y25_S0.G
+X15Y14_S0.F
+X15Y14_S0.F5
+X15Y14_S0.G
+X15Y14_S3.F
+X15Y14_S3.F5
+X15Y14_S3.G
+X15Y22_S2.F
+X15Y24_S0.G
+X16Y14_S0.F
+X16Y14_S0.F5
+X16Y14_S0.G
+X16Y17_S0.F
+X16Y17_S0.F5
+X16Y17_S0.G
+X16Y18_S2.F
+X16Y18_S2.F5
+X16Y18_S2.G
+X16Y19_S0.F
+X16Y19_S0.F5
+X16Y19_S0.G
+X16Y21_S2.F
+X16Y21_S2.G
+X16Y23_S1.F
+X16Y23_S1.G
+X16Y23_S2.F
+X16Y23_S2.F5
+X16Y23_S2.G
+X16Y23_S3.F
+X16Y23_S3.F5
+X16Y23_S3.G
+X17Y10_S1.G
+X17Y10_S2.G
+X17Y13_S3.F
+X17Y13_S3.F5
+X17Y13_S3.G
+X17Y18_S1.F
+X17Y19_S3.F
+X17Y19_S3.G
+X17Y23_S0.F
+X17Y23_S0.G
+X17Y23_S2.F
+X17Y23_S2.F5
+X17Y23_S2.G
+X17Y23_S3.F
+X17Y24_S0.F
+X17Y24_S0.G
+X17Y24_S3.F
+X17Y24_S3.G
+X17Y31_S0.F
+X17Y4_S0.G
+X18Y10_S2.F
+X18Y10_S2.G
+X18Y11_S0.F
+X18Y11_S0.G
+X18Y12_S1.F
+X18Y12_S1.F5
+X18Y12_S1.G
+X18Y12_S3.F
+X18Y12_S3.F5
+X18Y12_S3.G
+X18Y13_S1.G
+X18Y13_S2.G
+X18Y14_S2.F
+X18Y14_S2.G
+X18Y21_S2.F
+X18Y21_S2.F5
+X18Y21_S2.G
+X18Y22_S1.F
+X18Y22_S1.F5
+X18Y22_S1.G
+X18Y23_S2.F
+X18Y23_S2.G
+X18Y24_S1.F
+X18Y24_S1.G
+X18Y26_S0.G
+X18Y29_S3.G
+X18Y30_S1.F
+X18Y9_S2.G
+X1Y17_S1.G
+X23Y10_S0.G
+X23Y21_S1.F
+X23Y22_S2.F
+X23Y28_S0.F
+X23Y28_S0.F5
+X23Y28_S0.G
+X23Y29_S1.F
+X23Y29_S3.F
+X23Y30_S2.F
+X23Y3_S1.F
+X23Y3_S1.F5
+X23Y3_S1.FX
+X23Y3_S1.G
+X23Y3_S3.F
+X23Y3_S3.F5
+X23Y3_S3.G
+X23Y4_S0.F
+X23Y4_S0.G
+X23Y4_S1.F
+X23Y4_S3.F
+X23Y7_S2.F
+X23Y9_S0.G
+X24Y11_S0.G
+X24Y15_S0.G
+X24Y25_S3.F
+X24Y8_S2.G
+X24Y9_S0.F
+X24Y9_S0.F5
+X24Y9_S0.G
+X8Y24_S1.F
+X8Y24_S1.G
+X8Y26_S1.G
+[names]
+n_X12Y33_IOI1_I            a0
+n_X12Y33_IOI0_I            a1
+n_X11Y0_IOI2_I             a10
+n_X0Y1_IOI1_I              a11
+n_X0Y32_IOI0_I             a12
+n_X0Y30_IOI1_I             a13
+n_X17Y4_S0_XQ              a13_latch
+n_X0Y30_IOI0_I             a14
+n_X0Y29_IOI0_I             a15
+n_X11Y33_IOI0_I            a2
+n_X5Y33_IOI1_I             a3
+n_X5Y33_IOI0_I             a4
+n_X1Y33_IOI2_I             a5
+n_X1Y33_IOI1_I             a6
+n_X1Y33_IOI0_I             a7
+n_X13Y33_IOI2_I            a8
+n_X25Y28_IOI0_I            a9
+n_X15Y20_S2_YQ             bank_4000[0]
+n_X15Y17_S0_YQ             bank_4000[1]
+n_X16Y23_S1_XQ             bank_4000[2]
+n_X14Y21_S3_YQ             bank_4000[3]
+n_X11Y22_S2_YQ             bank_4000[4]
+n_X16Y23_S3_YQ             bank_4000[5]
+n_X17Y23_S2_YQ             bank_4000[6]
+n_X16Y23_S1_YQ             bank_4000[7]
+n_X8Y15_S2_YQ              byte_we_n
+n_X9Y15_S1_YQ              cnt[0]
+n_X8Y15_S0_XQ              cnt[1]
+n_X8Y15_S0_YQ              cnt[2]
+n_X8Y15_S3_XQ              cnt[3]
+n_X0Y32_IOI1_I             d0
+n_X0Y19_IOI1_I             d1
+n_X0Y19_IOI0_I             d2
+n_X0Y18_IOI1_I             d3
+n_X0Y18_IOI0_I             d4
+n_X0Y15_IOI1_I             d5
+n_X0Y15_IOI0_I             d6
+n_X0Y2_IOI1_I              d7
+n_X12Y23_S1_YQ             flash_op
+n_X24Y15_S0_Y              gb_reset_drive
+n_X25Y15_IOI0_I            gb_reset_n
+n_X18Y30_S2_XQ             mbc1_mode
+n_X15Y18_S0_X              gnd1
+n_X17Y7_S0_Y               gnd1
+n_X14Y20_S0_YQ             kernel_mode
+n_X11Y21_S1_YQ             load_addr[6]
+n_X12Y20_S3_XQ             load_addr[7]
+n_X12Y20_S3_YQ             load_addr[8]
+n_X10Y23_S3_YQ             load_addr[9]
+n_X11Y23_S1_XQ             load_addr[10]
+n_X11Y21_S0_YQ             load_addr[11]
+n_X11Y26_S0_YQ             load_addr[12]
+n_X11Y23_S1_YQ             load_addr[13]
+n_X17Y22_S2_YQ             load_busy_2x
+n_X13Y19_S1_YQ             load_win
+n_X23Y29_S2_XQ             mbc1m_hi[0]
+n_X18Y29_S1_XQ             mbc1m_hi[1]
+n_X18Y29_S0_XQ             mbc1m_mode
+n_X23Y28_S2_XQ             mbc1m_ram[0]
+n_X16Y28_S2_XQ             mbc1m_ram[1]
+n_X14Y28_S2_XQ             mbc1m_ram[2]
+n_X23Y28_S3_XQ             mbc1m_ram[3]
+n_X18Y30_S3_XQ             mbc1m_sel
+n_X15Y21_S0_XQ             mbc_bank[0]
+n_X13Y21_S2_XQ             mbc_bank[1]
+n_X13Y21_S3_XQ             mbc_bank[2]
+n_X13Y21_S0_XQ             mbc_bank[3]
+n_X12Y22_S1_XQ             mbc_bank[4]
+n_X13Y23_S2_XQ             mbc_bank[5]
+n_X13Y22_S1_XQ             mbc_bank[6]
+n_X12Y21_S2_XQ             mbc_bank[7]
+n_X15Y23_S2_XQ             mbc_bank[8]
+n_X16Y27_S1_YQ             mbc_type[0]
+n_X12Y27_S1_YQ             mbc_type[1]
+n_X13Y27_S1_YQ             mbc_type[2]
+n_X18Y28_S3_YQ             mbc_type[3]
+n_X18Y12_S3_X              mem_a0
+b_X17Y4_S0_F5              mem_a13_b
+n_X17Y8_S0_Y               mem_a13_sd
+n_X18Y8_S0_Y               mem_a13_sd_n
+n_X24Y8_S2_Y               mem_a13_t
+n_X14Y19_S3_Y              mem_a_t
+n_X17Y18_S1_X              mem_ce4_n
+n_X18Y11_S0_Y              mem_ce9_n
+n_X12Y13_S1_X              mem_lb_n
+n_X13Y16_S2_X              mem_ub_n
+n_X14Y21_S2_X              mem_we_n
+n_X14Y20_S1_YQ             mode32_b3
+n_X17Y31_S0_X              p85
+n_X15Y14_S0_XQ             page_d[0]
+n_X15Y14_S3_XQ             page_d[1]
+n_X16Y14_S0_XQ             page_d[2]
+n_X18Y12_S1_XQ             page_d[3]
+n_X17Y13_S3_XQ             page_d[4]
+n_X16Y17_S0_XQ             page_d[5]
+n_X16Y18_S2_XQ             page_d[6]
+n_X16Y19_S0_XQ             page_d[7]
+n_X17Y7_S1_YQ              page_n[0]
+n_X23Y6_S1_YQ              page_n[1]
+n_X23Y10_S0_YQ             page_n[2]
+n_X18Y4_S3_YQ              page_n[3]
+n_X23Y8_S1_YQ              page_n[4]
+n_X23Y6_S3_YQ              page_n[5]
+n_X23Y10_S2_YQ             page_n[6]
+n_X18Y6_S0_YQ              page_n[7]
+n_X18Y11_S2_YQ             page_q[0]
+n_X18Y11_S3_YQ             page_q[1]
+n_X16Y14_S0_YQ             page_q[2]
+n_X18Y13_S1_YQ             page_q[3]
+n_X18Y12_S1_YQ             page_q[4]
+n_X18Y13_S0_YQ             page_q[5]
+n_X18Y11_S0_XQ             page_q[6]
+n_X18Y11_S0_YQ             page_q[7]
+n_X18Y4_S1_YQ              page_s[0]
+n_X23Y5_S3_YQ              page_s[1]
+n_X24Y5_S0_YQ              page_s[2]
+n_X17Y3_S2_YQ              page_s[3]
+n_X23Y4_S3_XQ              page_s[4]
+n_X23Y4_S3_YQ              page_s[5]
+n_X23Y4_S0_YQ              page_s[6]
+n_X16Y5_S3_YQ              page_s[7]
+n_X13Y8_S2_YQ              reset_drive
+n_X18Y24_S0_XQ             rom_bank[0]
+n_X17Y26_S1_XQ             rom_bank[1]
+n_X18Y23_S0_XQ             rom_bank[2]
+n_X18Y23_S3_XQ             rom_bank[3]
+n_X15Y23_S0_XQ             rom_bank[4]
+n_X17Y25_S1_XQ             rom_bank[5]
+n_X17Y25_S2_XQ             rom_bank[6]
+n_X15Y26_S0_XQ             rom_bank[7]
+n_X18Y26_S0_XQ             rom_bank8
+n_X23Y9_S1_YQ              sh_cnt[0]
+n_X17Y10_S2_YQ             sh_cnt[1]
+n_X24Y11_S0_YQ             sh_cnt[2]
+n_X23Y9_S0_YQ              sh_done
+n_X16Y9_S0_YQ              sh_run
+n_X23Y5_S1_YQ              sh_start
+n_X24Y9_S0_X               sr_rclk
+n_X18Y9_S2_Y               sr_ser
+n_X16Y9_S2_XQ              wbm_adr_o[2]
+n_X16Y9_S2_YQ              wbm_adr_o[3]
+n_X17Y14_S0_XQ             wbm_adr_o[4]
+n_X18Y9_S0_YQ              wbm_adr_o[5]
+n_X17Y12_S1_YQ             wbm_adr_o[6]
+n_X16Y10_S2_XQ             wbm_adr_o[7]
+n_X17Y11_S0_YQ             wbm_adr_o[8]
+n_X16Y10_S2_YQ             wbm_adr_o[9]
+n_X17Y12_S2_XQ             wbm_adr_o[10]
+n_X16Y10_S0_XQ             wbm_adr_o[11]
+n_X16Y10_S0_YQ             wbm_adr_o[12]
+n_X17Y12_S2_YQ             wbm_adr_o[13]
+n_X17Y12_S3_XQ             wbm_adr_o[14]
+n_X17Y12_S3_YQ             wbm_adr_o[15]
+n_X16Y12_S0_XQ             wbm_adr_o[16]
+n_X16Y12_S0_YQ             wbm_adr_o[17]
+n_X17Y13_S1_XQ             wbm_adr_o[18]
+n_X16Y13_S2_YQ             wbm_adr_o[19]
+n_X16Y13_S2_XQ             wbm_adr_o[20]
+n_X17Y13_S0_XQ             wbm_adr_o[21]
+n_X16Y14_S1_YQ             wbm_adr_o[22]
+n_X15Y22_S2_Y              win_a000
+n_X13Y16_S1_XQ             win_mode[0]
+n_X13Y16_S1_YQ             win_mode[1]
+n_X14Y19_S0_YQ             win_mode[2]
+n_X14Y18_S3_YQ             win_mode[3]
+n_X10Y18_S3_X              win_sel
+n_X14Y33_IOI0_I            wr_n
+b_X13Y17_S2_F              pg15_gb_b
+n_X13Y17_S2_X              pg15_gb
+b_X17Y4_S0_G               mem_a_gb[13]
+b_X18Y14_S2_G              a13_gb_b
+n_X18Y14_S2_Y              a13_gb
+n_X11Y18_S0_Y              kernel_b3_lo
+n_X12Y20_S1_Y              bank_hi_ones
+n_X12Y5_S0_X               chk_sel
+n_X12Y5_S0_Y               adr_014d
+n_X13Y18_S0_X              hi_n_win1
+n_X13Y21_S1_Y              bank_lo_ones
+n_X14Y23_S0_X              n_save
+n_X14Y23_S2_X              bank0_sel
+n_X15Y24_S0_Y              type_grp
+n_X17Y19_S3_X              a13_sel
+n_X17Y19_S3_Y              n_rom
+n_X1Y17_S1_Y               adr_014d_lo
+n_X23Y29_S1_X              game_mbc1m
+n_X23Y30_S2_X              n_4000
+n_X24Y25_S3_X              type_lo
+n_X8Y24_S1_Y               n_mbc1
+n_X8Y26_S1_Y               is_mbc5

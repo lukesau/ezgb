@@ -1,0 +1,84 @@
+# the Game Boy bus's state in the 2x domain and its address on the pSRAM pins, EZ Flash's own: the registered copies the other blocks read (the boot page bits, the loader's busy flag, /RESET's second stage, the data interrupt's first stage), the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, and the data pads' input register enable (the $7FB4 write)
+[cells]
+X13Y17_S2.FFX
+X13Y24_S2.FFX
+X14Y14_S1.FFY
+X15Y19_S2.FFY
+X17Y22_S2.FFY
+X18Y14_S2.FFY
+X18Y24_S1.FFY
+X10Y18_S2.F
+X12Y18_S1.G
+X13Y17_S0.G
+X13Y24_S2.F
+X13Y24_S2.G
+X14Y14_S1.G
+X14Y25_S2.G
+X16Y9_S0.F
+X16Y9_S0.F5
+X16Y9_S0.G
+X17Y11_S2.G
+X18Y10_S0.G
+X18Y7_S2.G
+X23Y20_S0.G
+X23Y23_S3.G
+X23Y24_S0.G
+X23Y9_S2.G
+X24Y10_S0.G
+X24Y13_S2.G
+X9Y18_S3.G
+X9Y22_S2.F
+[names]
+n_X13Y0c_BUFGMUX2_O        clk_2x
+n_X13Y33c_BUFGMUX3_O       clk_mode
+# the window and mode registers (gb_regs) and shared decodes
+n_X13Y16_S1_XQ             win_mode[0]
+n_X13Y16_S1_YQ             win_mode[1]
+n_X14Y19_S0_YQ             win_mode[2]
+n_X14Y18_S3_YQ             win_mode[3]
+n_X13Y19_S1_YQ             load_win
+n_X14Y20_S0_YQ             kernel_mode
+n_X8Y25_S0_X               dec_7f3x
+n_X9Y22_S2_Y               dec_x9y22_s2
+n_X24Y28_S3_Y              a1a0_zero
+n_X10Y18_S3_X              win_sel
+n_X15Y22_S2_Y              win_a000
+# the pSRAM controller's terms
+n_X11Y18_S0_Y              kernel_b3_lo
+n_X12Y5_S0_X               chk_sel
+n_X13Y18_S0_X              hi_n_win1
+n_X13Y17_S2_X              pg15_gb
+b_X13Y17_S2_F              pg15_gb_b
+n_X18Y14_S2_Y              a13_gb
+b_X18Y14_S2_G              a13_gb_b
+# the other copied signals
+n_X10Y22_S1_YQ             load_busy
+n_X15Y14_S1_XQ             int_data
+# the copies
+n_X13Y17_S2_XQ             pg15_gb_q
+n_X13Y24_S2_XQ             a12_pass_q
+n_X14Y14_S1_YQ             a11_pass_q
+n_X18Y14_S2_YQ             a13_gb_q
+n_X17Y22_S2_YQ             load_busy_2x
+n_X18Y24_S1_YQ             gb_reset_n_q2
+n_X15Y19_S2_YQ             int_data_q
+# the decodes and the address pins
+n_X9Y18_S3_Y               win13_n
+n_X10Y18_S2_X              tbl_win
+n_X13Y24_S2_Y              adr_pass
+n_X13Y24_S2_X              a12_pass
+n_X14Y14_S1_Y              a11_pass
+n_X16Y9_S0_X               brom_en
+n_X17Y11_S2_Y              plane_en
+n_X12Y18_S1_Y              tbl_we
+n_X9Y22_S2_X               wr_7fb4
+b_X24Y10_S0_G              mem_a_gb[1]
+b_X23Y9_S2_G               mem_a_gb[2]
+b_X23Y24_S0_G              mem_a_gb[3]
+b_X24Y13_S2_G              mem_a_gb[4]
+b_X23Y20_S0_G              mem_a_gb[5]
+b_X18Y7_S2_G               mem_a_gb[6]
+b_X18Y10_S0_G              mem_a_gb[7]
+b_X23Y23_S3_G              mem_a_gb[8]
+b_X14Y25_S2_G              mem_a_gb[9]
+b_X13Y17_S0_G              mem_a_gb[10]

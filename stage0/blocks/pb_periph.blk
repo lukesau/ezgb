@@ -1,0 +1,119 @@
+# the PicoBlaze's peripherals outside its ports block, EZ Flash's own: the ICAP write registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI on the pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five request flags from gb_regs synchronized, their rising edges setting the interrupt and the command bits)
+[cells]
+X10Y21_S2.FFX
+X10Y21_S2.FFY
+X10Y23_S1.FFX
+X10Y23_S1.FFY
+X11Y22_S1.FFX
+X11Y22_S1.FFY
+X12Y18_S2.FFX
+X12Y18_S2.FFY
+X12Y19_S3.FFX
+X12Y19_S3.FFY
+X13Y23_S0.FFY
+X16Y23_S0.FFY
+X23Y11_S2.FFX
+X23Y12_S0.FFX
+X23Y12_S1.FFY
+X23Y12_S2.FFY
+X23Y13_S3.FFY
+X23Y15_S1.FFY
+X23Y18_S1.FFX
+X23Y18_S3.FFY
+X23Y19_S1.FFY
+X23Y22_S3.FFX
+X23Y29_S1.FFY
+X24Y14_S0.FFY
+X24Y14_S1.FFY
+X24Y29_S3.FFY
+X9Y22_S2.FFY
+X12Y20_S3.G
+X14Y19_S1.F
+X14Y19_S1.F5
+X14Y19_S1.G
+X15Y17_S0.F
+X15Y17_S0.F5
+X15Y17_S0.G
+X23Y11_S2.F
+X23Y12_S0.F
+X23Y13_S2.F
+X23Y13_S2.G
+X23Y15_S1.G
+X23Y18_S1.F
+X23Y22_S3.F
+X8Y22_S0.F
+X8Y23_S0.F
+[names]
+n_X0Y17c_BUFGMUX0_O        clk_pb
+n_X13Y0c_BUFGMUX2_O        clk_2x
+# the PicoBlaze and its ports block
+n_X10Y25_S0_XQ             port_id[0]
+n_X11Y28_S3_XQ             port_id[1]
+n_X10Y26_S3_YQ             port_id[4]
+n_X7Y26_S0_YQ              out_port[0]
+n_X8Y27_S2_YQ              out_port[1]
+n_X8Y28_S2_YQ              out_port[2]
+n_X8Y28_S0_YQ              out_port[3]
+n_X8Y26_S2_YQ              out_port[4]
+n_X8Y26_S0_YQ              out_port[5]
+n_X8Y27_S0_YQ              out_port[6]
+n_X7Y28_S0_YQ              out_port[7]
+n_X12Y26_S2_YQ             wr_q
+n_X11Y28_S1_Y              wr_ec_ef
+n_X9Y25_S0_X               pid_cd_lo
+n_X10Y22_S0_Y              pid_cd_2_3
+n_X10Y21_S1_Y              pid_lo_01
+n_X1Y30_S2_YQ              int_ack
+n_X1Y17_S0_YQ              spi_ctrl
+n_X11Y25_S3_YQ             spi_mosi
+# the request flags (gb_regs)
+n_X12Y23_S1_YQ             flash_op
+n_X12Y23_S3_YQ             load_start
+n_X13Y18_S3_XQ             cmd_read
+n_X18Y15_S2_XQ             cmd_write
+n_X18Y32_S2_XQ             rtc_set_go
+# the pSRAM controller's address terms
+n_X14Y23_S0_X              n_save
+n_X14Y23_S2_X              bank0_sel
+n_X17Y19_S3_X              a13_sel
+n_X17Y19_S3_Y              n_rom
+n_X0Y32_IOI0_I             a12
+n_X13Y24_S2_Y              adr_pass
+n_X13Y24_S2_X              a12_pass
+n_X14Y14_S1_Y              a11_pass
+# the ICAP's inputs
+n_X9Y22_S2_YQ              icap_clk
+n_X10Y23_S1_XQ             icap_ce
+n_X10Y23_S1_YQ             icap_write
+n_X11Y22_S1_XQ             icap_i[0]
+n_X12Y19_S3_XQ             icap_i[1]
+n_X10Y21_S2_XQ             icap_i[2]
+n_X11Y22_S1_YQ             icap_i[3]
+n_X12Y18_S2_XQ             icap_i[4]
+n_X12Y18_S2_YQ             icap_i[5]
+n_X10Y21_S2_YQ             icap_i[6]
+n_X12Y19_S3_YQ             icap_i[7]
+n_X8Y22_S0_X               wr_ec
+n_X8Y23_S0_X               wr_d2
+n_X12Y20_S3_Y              wr_d1
+# the interrupt source
+n_X13Y23_S0_YQ             load_start_s1
+n_X16Y23_S0_YQ             load_start_s2
+n_X23Y13_S3_YQ             flash_op_s1
+n_X23Y12_S1_YQ             flash_op_s2
+n_X23Y18_S3_YQ             cmd_write_s1
+n_X23Y12_S2_YQ             cmd_write_s2
+n_X23Y19_S1_YQ             cmd_read_s1
+n_X24Y14_S0_YQ             cmd_read_s2
+n_X24Y29_S3_YQ             rtc_set_s1
+n_X24Y14_S1_YQ             rtc_set_s2
+n_X23Y13_S2_X              req_any
+n_X23Y11_S2_XQ             cmd_op_i[3]
+n_X23Y15_S1_YQ             cmd_op_i[4]
+n_X23Y22_S3_XQ             cmd_op_i[5]
+n_X23Y12_S0_XQ             cmd_op_i[6]
+n_X23Y18_S1_XQ             cmd_op_i[7]
+n_X23Y29_S1_YQ             interrupt
+# the address pins
+n_X15Y17_S0_X              mem_a_gb[11]
+n_X14Y19_S1_X              mem_a_gb[12]

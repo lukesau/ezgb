@@ -77,7 +77,7 @@ Full list: `re/stage0/netlist/pintable.py`.
 | `X13Y19 SLICE[2]` YQ (a divided clock) | global `X0Y17` [6] | 661 flip-flops | main logic clock; also driven out on P23 |
 | system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the stage1/kernel/game mode |
 | P84 (`/WR`) | global `X13Y33` [0]/[1] | 160 flip-flops | the Game Boy-written registers |
-| system / `X2Y17 SLICE[3]` Y | global `X0Y17` [0], [4] | 196 flip-flops | |
+| CLK2X or a constant 0, by kernel mode or the RTC flag (`$7F37` bit 7); CLKFX or 0, by kernel mode | global `X0Y17` [0], [4] | 196 flip-flops | [0] the PicoBlaze and its ports, [4] the ROM load's byte sequencer: both gated off in a plain game (`stage0/rtl/clocks.v`) |
 | `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
 
 ## Registers written by the Game Boy
@@ -95,7 +95,7 @@ the low address byte, after the `$7F00/$7F10/$7F20` unlock
 | `$7F36` | 0-1 | load window (1) / start load (3) |
 | `$7F37` | 0-3, 7 | MBC type (0 none, 1 MBC1, 2 MBC2, 3 MBC3, 4 MBC5, 5 MBC1 multicart); bit 7 RTC |
 | `$7FB0-$7FB3` | 8 each | LBA for sector reads |
-| `$7FB4` | none | sector command; the write itself raises the PicoBlaze interrupt |
+| `$7FB4` | 7 | sector command, bit 7 set for a write; the write sets the read or write request flag, whose rising edge raises the PicoBlaze interrupt (`stage0/rtl/pb_periph.v`) |
 | `$7FC0` | 0-3 | page for the `$A000` window |
 | `$7FC1`, `$7FC2` | 8, 1 | ROM bank mask (9 bits) |
 | `$7FC3` | 8 | header checksum |
@@ -166,8 +166,8 @@ time its first poll runs.
 with the first 64 KB of Pokemon Red: `$7FC0=2`, the MBC type to `$7F37`,
 the RAM bank mask to `$7FC4`, the ROM bank mask to `$7FC1/$7FC2`, the header
 checksum to `$7FC3`, the load, `$7F36=0`, `$7F31/$7F32=0`, `$2000=1`,
-`$3000=0`, then `$7FE0=$80`, which holds P62 low for 65536 fast clocks to
-reset the console. After the reset, the header and banks 0-3 read back byte
+`$3000=0`, then `$7FE0=$80`, which holds P62 low for 65536 cycles of the
+`X13Y0` BUFGMUX2 clock to reset the console (`stage0/rtl/soft_reset.v`). After the reset, the header and banks 0-3 read back byte
 for byte, including MBC3's bank 0 selecting bank 1 (48 reads, none wrong).
 What it takes:
 
