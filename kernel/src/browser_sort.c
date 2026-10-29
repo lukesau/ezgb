@@ -2,7 +2,7 @@
  * case-insensitive name order.
  *
  * The stock kernel lists entries in raw FAT directory order (readdir order),
- * so a reorganized card shows folders scrambled. EZ Flash's own Omega DE
+ * so a reorganized card shows folders scrambled. EZ Flash's Omega DE
  * kernel solves this by enumerating the whole directory up front and sorting
  * (Sort_folder/Sort_file in omega-de-kernel ezkernelnew.c: bubble sort +
  * strcmp over two arrays, folders drawn before files). The Jr kernel never

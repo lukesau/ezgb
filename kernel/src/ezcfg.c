@@ -211,7 +211,7 @@ static void sd_prep(void) {
 
 /* PCF8563 time registers carry flag/unused bits above the BCD digits:
  * seconds bit 7 is VL (voltage low), months bit 7 is the century flag, and
- * the hours/days/weekday registers have unused high bits. The kernel's own
+ * the hours/days/weekday registers have unused high bits. The kernel's
  * readers extract digits nibble by nibble and never see them; a whole-byte
  * BCD check would, so mask them off exactly as the datasheet lays them out. */
 /* Field order of a written date: year, month, day, hour, minute, second. */
@@ -597,7 +597,7 @@ static u8 open_read(const u8 *name, u16 *br) {
  * never reached the card). Splitting the write into two partial calls did
  * not work either (the second call restarted the sector). So the record is
  * exactly one sector, REC_LEN = 512, written in one call at offset 0: that is
- * FatFs's direct whole-sector path, the same one the kernel's own save dumps
+ * FatFs's direct whole-sector path, the same one the kernel's save dumps
  * take, and it never touches the 8-bit copy. Reads use the same whole-sector
  * call (see open_read). */
 static u8 far_write(const u8 *buf, u16 len) {

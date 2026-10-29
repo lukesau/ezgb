@@ -1,4 +1,4 @@
-// The pSRAM controller, EZ Flash's own: what decides which chip a Game Boy
+// The pSRAM controller, written by EZ Flash: what decides which chip a Game Boy
 // access reaches, the page (the address above A13) that access gets from
 // the bank registers and the MBC state, the pipeline that carries the page
 // into the fast clock and the serializer that shifts it into the 74HC595

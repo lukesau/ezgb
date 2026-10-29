@@ -1,4 +1,4 @@
-// The RTC bridge, EZ Flash's own, on the 2x clock: the real-time clock's
+// The RTC bridge, written by EZ Flash, on the 2x clock: the real-time clock's
 // values pass between the PicoBlaze, which talks to the PCF8563, and the
 // Game Boy, which reads and sets them through the register window, and
 // this block holds both directions' copies.
@@ -8,7 +8,7 @@
 //     Any OUTPUT instruction's strobe while ED holds index k loads the
 //     EE register into the copy for k, so a copy takes its value on the
 //     OUTPUT after the EE write (the first of the I2C acknowledge's), and
-//     the EE write's own strobe loads the previous reading into it for a
+//     the EE write's strobe loads the previous reading into it for a
 //     moment. The copies are what the data bus block serves at offsets
 //     $08-$0E of the register window
 //   - the set values: command $10 (cmd_set_rtc) writes each index 2-8 to

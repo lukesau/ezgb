@@ -1,5 +1,5 @@
 // The Game Boy bus's state in the 2x domain and its address on the pSRAM
-// pins, EZ Flash's own. What is here:
+// pins, written by EZ Flash. What is here:
 //
 //   - the copies: four page bits the data bus block's stage1 read uses
 //     (the controller's pg15 and A13 terms and the remapped A12 and A11),

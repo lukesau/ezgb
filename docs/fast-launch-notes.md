@@ -38,10 +38,10 @@ Source of truth is `kernel/src/fastlaunch*.c`.
   paints/browses. The post-paint variant `fastlaunch_hook.c` (`00:0460`, over
   `$110B`) is an alternative; wire only one at a time. The active build uses the
   pre-paint hook and leaves `$110B` as the original `21 2d 00`.
-- **Config read** uses the ready-made bank-0 FatFs thunks and the kernel's own FIL
+- **Config read** uses the ready-made bank-0 FatFs thunks and the kernel's FIL
   at `$ca0f` (free while the browser is idle): `FarCall_06_7309` (f_open,
   `00:1926`), `FarCall_06_779a` (f_read, `00:1941`), `FarCall_03_768f` (f_close,
-  `00:19a1`). Matches the kernel's own f_open setup: `WaitVBlankFlag` (`00:0688`)
+  `00:19a1`). Matches the kernel's f_open setup: `WaitVBlankFlag` (`00:0688`)
   then `SetFpgaPage($00)` before the call.
 - **Shims:** `FarCallScan` (`00:0400`), `FarCallOpendir_B5` / `FarCallReaddir_B5`
   (`02:4380` / `02:4396`), `FarCallSetPage` (`02:43ac`).
@@ -99,7 +99,7 @@ map, and shim listings: [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).
   nested ROM.
 - **Path must be in WRAM.** `f_open` runs in bank 6, so a path pointer into a
   bank-2 ROM const reads the wrong bank. `scan_config` copies the name into WRAM
-  (`CFGBUF`) before calling, as the kernel's own opens do (`/SAVER/...`).
+  (`CFGBUF`) before calling, as the kernel's opens do (`/SAVER/...`).
 
 ## Bug fixed: FPGA personality ($7FC0) around SD reads
 
@@ -141,7 +141,7 @@ vs the next address after any change. (Bank-0 free ranges:
 
 `kernel/src/fastlaunch_filinfo_probe.c` dumped a real `f_readdir` of the root and
 confirmed the classic FatFs `_USE_LFN` external-buffer layout (also visible in the
-browser's own `FileBrowserEntry_memsetWireDirList`):
+browser's `FileBrowserEntry_memsetWireDirList`):
 
 | Offset | Field |
 |---|---|

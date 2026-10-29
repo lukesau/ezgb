@@ -7,7 +7,7 @@
 # the tab row, where EzgbTabBanner's marker gets clobbered a moment after it
 # is drawn.
 #
-# The banner's own glyphs also match this filter; tell them apart by the
+# The banner's glyphs also match this filter; tell them apart by the
 # backtrace (ours has EzgbTabBanner in it), not by the hit order.
 breakpoint $2701 if ([$d733] == 0) && ([$d732] >= $10)
 continue

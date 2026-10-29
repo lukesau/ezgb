@@ -1,5 +1,5 @@
 # X3Y25: PicoBlaze bank 2. FW4 slot B / Update_FW4.gb.
-# Only ever entered from bank 1's call_bank2 ($3F0); bank 2's own reset
+# Only ever entered from bank 1's call_bank2 ($3F0); bank 2's reset
 # path and interrupt vector never run. Config flash (SPI bit-bang), Device
 # DNA, license record check, boot tally, fail-safe MultiBoot, flash update.
 
@@ -88,7 +88,7 @@ note 089 unreached: $AB release from power-down, $50 EWSR
 sub 098 flash_read_record
 note 098 read 126 bytes from flash_a2:a1:a0 into $1E.. (first 33 kept),
 note 09D running byte sum
-note 0A6 compare the sum with the record's own check byte
+note 0A6 compare the sum with the record's check byte
 sub 0AA spi_deselect
 sub 0AE spi_xfer
 note 0AE 8 bits MSB first: s2 out, s2 in

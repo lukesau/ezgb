@@ -280,7 +280,7 @@ Checked in SameBoy, all three kernels, with the SGB core's header log
 (`SAMEBOY_SGB_LOG=1`, which now also prints the emulated time and LY):
 
 - Box on, `--model sgb`: 24 packets, all checksums good. Set 1 at
-  0.47-0.82 s (the boot ROM's own packets end at 0.40 s), set 2 at 4.29 s
+  0.47-0.82 s (the boot ROM's packets end at 0.40 s), set 2 at 4.29 s
   (192 frames of LCD-on time after set 1, so a little more than 192 real
   frames), set 3 68 frames after set 2, set 4 52 frames after set 3,
   4 frames between packets. Background packets end at LY 24-25.

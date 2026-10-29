@@ -20,7 +20,7 @@ SDCC/C has no way to express this, so it's written directly as bytes via
 shim can live in any bank; it doesn't need to be in bank 0 itself, and
 callers in the *same* bank as the shim can reach it with an ordinary `call`.
 
-Both shims follow the exact pattern of the kernel's own existing
+Both shims follow the exact pattern of the kernel's existing
 `FarCall_06_7309` (bank 0, calls `Open_B6`): read each incoming stack arg,
 re-push it in the same order the far target expects, `call
 FarCallTrampoline` with the embedded target, clean up the re-pushed bytes,
@@ -57,7 +57,7 @@ Bytes: `f8042a666fe5f8042a666fe5cd8d0776750500e804c9` (22 bytes)
 Both far-called functions leave FatFs's `FRESULT` in `E` per their own
 epilogues (`Opendir_B5`/`Readdir_B5` both `ret E`), the same as every other
 `FarCall_XX_YYYY` stub in this kernel. Neither shim touches `E` between the
-far-call returning and the shim's own `ret`, so it passes straight through.
+far-call returning and the shim's `ret`, so it passes straight through.
 Confirmed this is exactly what SDCC's `--sdcccall 0` expects for an 8-bit C
 return value: `kernel/src/misc.c`'s already-verified `return_zero()` compiles
 to `1E 00 C9` = `LD E, $00` / `RET`: 8-bit returns go in `E`, not `A`. So a

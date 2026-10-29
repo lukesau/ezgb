@@ -1,4 +1,4 @@
-# the clocks and ties, EZ Flash's own: the PicoBlaze clock's gate, the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR | A15 term the $7Fxx write clock takes, and the fifteen constant-0 LUTs tying block RAM, clock buffer, DCM and other blocks' pins
+# the clocks and ties, written by EZ Flash: the PicoBlaze clock's gate, the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR | A15 term the $7Fxx write clock takes, and the fifteen constant-0 LUTs tying block RAM, clock buffer, DCM and other blocks' pins
 [cells]
 X12Y15_S0.F
 X17Y1_S0.G

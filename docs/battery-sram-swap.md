@@ -14,7 +14,7 @@ This was first worked out by **moon_rabbit** in the GBAtemp thread
 (Oct-Dec 2022): they identified the SRAM-to-pSRAM change, wrote the
 "80 = pSRAM, 08 = SRAM" rule of thumb, performed the swap
 (`71PL032J80` to `71PL032J08`), and reported a year-plus of battery life after
-it. EZ-Flash's own reply in the sibling thread
+it. EZ-Flash's reply in the sibling thread
 [EZ Flash Jr battery drains quickly](https://gbatemp.net/threads/ez-flash-jr-battery-drains-quickly.617501/)
 confirms the design intent: the cell powers "both the RTC chip and the SRAM"
 and is expected to last "usually around 1 year". This page adds the datasheet

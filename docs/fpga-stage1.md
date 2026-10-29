@@ -324,13 +324,13 @@ save (mod 1.8), and on any boot with SELECT held at power-on (v4):
    file yet went this way too, once per new game.
 3. Otherwise it shows the game's name and "BACK UP SAVE? B:NO A:YES", or
    goes straight to saving when AUTO SAVE is on (`$A200` = 1). B on the
-   fast-launch game's own save carries on: the stamp stays armed and the
+   fast-launch game's save carries on: the stamp stays armed and the
    game runs from pSRAM as before. B on another game's save (mod 2.0) drops
    its stamp, as the kernel's `[B]skip` does, and stage1 fast-launches
    without the kernel asking again; before 2.0 the stamp stayed, stage1
    booted the kernel, and the kernel asked a second time. With SELECT and
    no fast launch, B leaves the stamp for the kernel.
-4. A: pSRAM pages `0..` are written over the file's own clusters. For a
+4. A: pSRAM pages `0..` are written over the file's clusters. For a
    clock game (`$A202` = `$77`, file = save + 48 bytes) the footer goes in
    the sector after them, built the way the kernel's dump builds it
    (`BackupSaveDump_rtcPackWrite` in 0918's bank 1): the clock at
@@ -373,7 +373,7 @@ setup had stage1 write the `$5A` save over the file.
 Mod 2.0's other-game B checked the same way: `FLAUNCH=/Pokemon/Pokemon Red.gb`
 with a pending stamp for `/SAVER/Kirby.sav`. B launched Pokemon Red from
 stage1 with `Kirby.sav` untouched (the build before booted `ezgb.dat`); A
-wrote `Kirby.sav` from pSRAM and launched; B on Pokemon Red's own stamp still
+wrote `Kirby.sav` from pSRAM and launched; B on Pokemon Red's stamp still
 launched with its `.sav` untouched.
 Its file creation, on the FAT32 test card (512-byte clusters) and a FAT16
 one: `Kirby.sav` created and written (`KIRBY~1`, today's date from the stub's
@@ -416,7 +416,7 @@ itself drops the ones sent after the boot ROM, a real SGB BIOS doesn't):
 SGB and SGB2 get 24 packets from stage1, all checksums good, then boot the
 kernel; DMG, Pocket and CGB get none. Through stage1 the mod 5.9 kernel sends
 none and shows AUTO, on DMG and SGB alike; booted without stage1 it shows the
-checkbox. Not yet tried on a real SGB; the kernel's own SGB BOOT box is
+checkbox. Not yet tried on a real SGB; the kernel's SGB BOOT box is
 confirmed on one (2026-10-12), but stage1 hides it behind AUTO.
 
 The real fix is P62 as an open drain (low only during the `$7FE0` pulse,

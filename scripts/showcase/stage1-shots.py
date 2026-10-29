@@ -2,7 +2,7 @@
 """Screenshot stage1's boot screens for the README banner.
 
 Stage1 moves through its screens in a few frames, so this drives SameBoy's
-debugger over a PTY and stops at stage1's own functions (addresses from the
+debugger over a PTY and stops at stage1's functions (addresses from the
 link map, fpga/stage1/build/stage1.map) to hold each screen for a capture:
 
   splash.png    first fat_mount: the wordmark, LOADING... and the version

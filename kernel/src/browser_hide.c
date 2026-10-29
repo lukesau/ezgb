@@ -68,7 +68,7 @@ static void notice_line(const u8 *s, u8 row8, u8 y12);
 /* Reached only via FarCallTrampoline, which pushes three words (restore
  * thunk $07ae, saved bank AF, real return) between the caller's pushed args
  * and the jump, so a far callee finds its first real arg at sp+6, not sp+2
- * (the kernel's own far targets read theirs there too, e.g. Opendir_B5).
+ * (the kernel's far targets read theirs there too, e.g. Opendir_B5).
  * The two pad params soak up those trampoline words; never read them. */
 u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
                      const u8 *name) {

@@ -1,4 +1,4 @@
-# the soft reset, EZ Flash's own: the $7FE0 request's rising edge, synchronized into the 2x clock, clears a 16-bit counter on the inverted 2x clock and drops the console reset drive, which comes back when the counter saturates (65536 cycles)
+# the soft reset, written by EZ Flash: the $7FE0 request's rising edge, synchronized into the 2x clock, clears a 16-bit counter on the inverted 2x clock and drops the console reset drive, which comes back when the counter saturates (65536 cycles)
 [cells]
 X13Y5_S1.FFX
 X13Y5_S1.FFY

@@ -38,7 +38,7 @@ behind it is in [DIFF_1.04e_vs_1.05e.md](DIFF_1.04e_vs_1.05e.md) and
 |---|---|---|
 | What it is | The menu program, `ezgb.dat` on the card root | The FPGA image inside the cart |
 | How it changes | Copy a file. Loaded from the card at every power-on, nothing is flashed | Run `Update_FW*.gb` as a game, which rewrites the cart's config flash |
-| Risk | None. Copy the old file back to undo | Can brick the cart (EZ Flash's own notes warn about slow cards and weak batteries; see [1.05e-instability.md](1.05e-instability.md)) |
+| Risk | None. Copy the old file back to undo | Can brick the cart (EZ Flash's notes warn about slow cards and weak batteries; see [1.05e-instability.md](1.05e-instability.md)) |
 | Shown on HELP tab as | `K1.04e` / `K1.05e`, a digit hard-coded in the kernel | `FW4` / `FW5`, read from the cart |
 
 Everything on this page is about the stock kernels and the stock firmware

@@ -22,7 +22,7 @@
 # and stay assumptions in that last pass.
 #
 # yosys matches a net only under its canonical name, and after flattening
-# that is often the primitive's own hierarchical alias (X18Y31_S0_FFX.Q)
+# that is often the primitive's hierarchical alias (X18Y31_S0_FFX.Q)
 # rather than the block's name for it, so hierarchical names are hidden
 # before matching. LUT RAM contents named in the block file are renamed
 # first (carve.py writes the rename script next to the reference).

@@ -1,4 +1,4 @@
-# the pSRAM controller, EZ Flash's own: the page (upper address) for Game Boy accesses from the bank registers and the MBC state, its pipeline into the fast clock and the 74HC595 serializer that drives the address pins above A13, the byte strobes, write enable and chip selects, and the address pads' tristate; the P51 output latch (X17Y4_S0.FFX) is left out, being a latch
+# the pSRAM controller, written by EZ Flash: the page (upper address) for Game Boy accesses from the bank registers and the MBC state, its pipeline into the fast clock and the 74HC595 serializer that drives the address pins above A13, the byte strobes, write enable and chip selects, and the address pads' tristate; the P51 output latch (X17Y4_S0.FFX) is left out, being a latch
 [cells]
 X15Y14_S0.FFX
 X15Y14_S3.FFX

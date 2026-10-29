@@ -2,7 +2,7 @@
  * inside FileBrowserEntry_inputLoop. By the time the browser reaches its idle
  * input loop the card is mounted, listed and drawn, so the scan runs in a
  * settled state and a no-launch outcome just lets the loop continue (unlike an
- * earlier hook before the browser's own DirList, which left FatFs in a state
+ * earlier hook before the browser's DirList, which left FatFs in a state
  * that crashed the browser).
  *
  * A WRAM flag at $DBFF (cleared to 0 at boot) makes it fire only on the first

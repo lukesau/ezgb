@@ -227,7 +227,7 @@ SKIP_BLOCKS = {
 # unreferenced in every build and never translated (mod_from): the ezcfg C
 # module addresses it through #defines, so its hand-assembled callers must
 # keep the same numbers. (Shifting it too, as 4.5 did, sent every 1.04e hook's
-# op byte to $DBD5 while ezcfg read $DBFC.) The kernel's own WRAM
+# op byte to $DBD5 while ezcfg read $DBFC.) The kernel's WRAM
 # names in kernel.sym are ported by this rule: 1.05e inserted its RTC day
 # tables at $D6A7, so every runtime global from $D6CC up sits 39 bytes lower
 # in 1.04e (docs/PROGRESS.md: $D6CE/$D6D1 -> $D6A7/$D6AA, $D6CC/$D6CD ->
@@ -421,7 +421,7 @@ class Port:
 
     def code_equiv(self, bank, a, b):
         """Same instructions; a 16-bit operand may differ when it is RAM (the
-        kernel's own WRAM globals move between builds) or when it is a ROM
+        kernel's WRAM globals move between builds) or when it is a ROM
         address whose translation is the other side's value (an unlabeled
         pointer that relocate() left alone)."""
         if len(a) != len(b):

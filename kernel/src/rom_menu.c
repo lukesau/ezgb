@@ -134,7 +134,7 @@ open:
     return 0;
 }
 
-/* Does the name end in .gb or .gbc, any case? (the open path's own test) */
+/* Does the name end in .gb or .gbc, any case? (the open path's test) */
 static u8 is_rom(const u8 *s) {
     const u8 *dot = 0;
     u8 i;

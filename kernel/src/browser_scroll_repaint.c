@@ -24,7 +24,7 @@
  *      0..13 are never the selection during a window shift (sel is pinned
  *      at 15).
  *
- * dirty is then cleared so FileBrowserEntry's own redraw does nothing; the
+ * dirty is then cleared so FileBrowserEntry's redraw does nothing; the
  * one side effect of its dirty!=0 path, zeroing the 32-bit marquee tick at
  * frame sp+$0a..$0d, is replicated here (the hook's state pointer is
  * frame sp+$12, so the tick sits at st-8; see browser_scroll_shims.md for

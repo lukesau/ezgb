@@ -45,7 +45,7 @@ mean anything: three mutants of `unlock` (an address off by one, the lock
 data ignored, a feedback term dropped) all fail it.
 
 One yosys detail matters: it matches a net only under its canonical name,
-and after flattening that is often the primitive's own hierarchical alias
+and after flattening that is often the primitive's hierarchical alias
 (`X18Y31_S0_FFX.Q`) rather than the block's name for it, in which case it
 silently makes no check cell for that net. The scripts hide every
 hierarchical name before matching, so the block file's names are the ones
@@ -151,16 +151,16 @@ FW4 that is 4,883 matched signals, all proven (about five minutes).
 | `sd_crossings` | 414 | the controller's `bistable_domain_cross` / `monostable_domain_cross` instances: every register and pulse synchronizer between the mode and SD clock domains; 411 flip-flops | equivalent, 411 signals; 7 mutants, all caught |
 | `sd_controller_wb` | 531 | the register file: OpenCores `sd_controller_wb` (its 2013 revision) on the mode clock, written and read by the PicoBlaze's SD ports: the registers the crossings carry, the read mux, the three write-pulse edge detects, the data interrupt; 183 flip-flops | equivalent, 183 signals; 13 mutants, all caught (a fourteenth was no mutant) |
 | `sd_fifo_filler` | 189 | the mode-clock side of the two data FIFOs and the Wishbone master between them and memory: OpenCores `sd_fifo_filler` (the FIFO halves Usselmann's), the 21-bit address counter, and EZ Flash's three-cycle acknowledge; 59 flip-flops | equivalent, 62 signals; 13 mutants, all caught (a fourteenth was no mutant) |
-| `picoblaze_ports` | 393 | EZ Flash's own: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
-| `sd_mem_path` | 131 | EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
-| `psram_ctrl` | 185 | EZ Flash's own: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
-| `gb_data_out` | 202 | EZ Flash's own: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
-| `gb_regs` | 358 | EZ Flash's own: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart's own), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
-| `pb_periph` | 43 | EZ Flash's own: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
-| `rtc_bridge` | 147 | EZ Flash's own: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
-| `soft_reset` | 74 | EZ Flash's own: the console reset a $7FE0 write starts: the request synchronized into the 2x clock, its rising edge clearing a 16-bit counter on the inverted 2x clock and the reset drive, which returns when the counter saturates; 19 flip-flops | equivalent, 19 registers; 7 of 8 mutants caught, the one that passes changes the drive's initial value, which the proof does not see (below) |
-| `gb_bus` | 28 | EZ Flash's own: the Game Boy bus's state in the 2x domain and its address on the pSRAM pins: the registered page bits, busy flag, /RESET and data-interrupt copies, the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, the data pads' input register enable; 7 flip-flops | equivalent, 26 signals, under the assumption that two controller terms arriving under two nets are one signal; 11 of 12 mutants caught, the one that passes changes an initial value |
-| `clocks` | 20 | EZ Flash's own: the PicoBlaze clock's gate (kernel mode or the RTC flag), the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR \| A15 term the $7Fxx write clock takes, and fifteen constant-0 LUTs on block RAM, clock buffer, DCM and other blocks' pins | equivalent; 6 mutants, all caught |
+| `picoblaze_ports` | 393 | written by EZ Flash: the registers the PicoBlaze's OUTPUT instructions write (the SD data word, the loader's address and table index, the bank bit, DNA, SPI and RTC bits), the in_port mux its INPUT instructions read, the bridge to the SD register file, and the reset synchronizer; 150 flip-flops | equivalent, 153 signals; 15 of 18 mutants caught: one removes a hold term for a state the bridge never reaches, the other two change what the proof does not see (below) |
+| `sd_mem_path` | 131 | written by EZ Flash: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000), the rx word and the filler's address latched into the memory clock, the 16-cycle byte sequencer on the system clock that writes a word into the pSRAM, and the SD side of the pSRAM address and data pad muxes; 61 flip-flops | equivalent, 91 signals; 14 mutants, all caught |
+| `psram_ctrl` | 185 | written by EZ Flash: the pSRAM controller: which chip a Game Boy access reaches and the page it gets from the bank registers and the MBC state, the page's pipeline into the fast clock and the 74HC595 serializer behind the address pins, the byte strobes, write enable, chip selects and address tristate; 38 flip-flops | equivalent, 125 signals; 12 of 14 mutants caught: one changes the clock edge the proof does not see, the other drops a term a save access makes redundant |
+| `gb_data_out` | 202 | written by EZ Flash: the Game Boy data bus output: the sector buffer and its status, the stage1 bit planes, the RTC window in kernel mode and the MBC3 RTC registers in game mode (BCD to binary), the header checksum, the pSRAM's data, and the bus's output enable; no flip-flops | equivalent, 12 signals, under stated input assumptions (the window decode's stages are consistent); 15 mutants, all caught |
+| `gb_regs` | 358 | written by EZ Flash: every register the Game Boy writes: the `$7Fxx` registers after the unlock (the mode bits, the window, the MBC type, the bank masks, the header checksum, the sector command and its flag, the loader's, flash writer's, RTC set's and soft reset's bits), the bank registers (plain in kernel mode; through the MBC the type names in game mode: MBC1, MBC2, MBC3, MBC5, the MBC1 multicart variant), the MBC3 RTC select and the seven RTC values to set; 174 flip-flops in the two write-strobe domains | equivalent, 178 signals, under stated input assumptions (the shared address and type decodes are what their blocks make them); 20 mutants, all caught |
+| `pb_periph` | 43 | written by EZ Flash: the PicoBlaze's peripherals outside its ports block: the ICAP's eleven driver registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI muxed onto pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five Game Boy request flags synchronized, their rising edges setting the interrupt and the port B5 command bits); 27 flip-flops | equivalent, 33 signals, under stated input assumptions (two port decodes, the remapped A12); 16 mutants, all caught |
+| `rtc_bridge` | 147 | written by EZ Flash: the RTC bridge on the 2x clock: the seven copies of the PicoBlaze's PCF8563 readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window serves, and the registered port B6 mux over the seven RTC set registers the Game Boy wrote, selected by port F0; 64 flip-flops | equivalent, 64 registers; 10 mutants, all caught |
+| `soft_reset` | 74 | written by EZ Flash: the console reset a $7FE0 write starts: the request synchronized into the 2x clock, its rising edge clearing a 16-bit counter on the inverted 2x clock and the reset drive, which returns when the counter saturates; 19 flip-flops | equivalent, 19 registers; 7 of 8 mutants caught, the one that passes changes the drive's initial value, which the proof does not see (below) |
+| `gb_bus` | 28 | written by EZ Flash: the Game Boy bus's state in the 2x domain and its address on the pSRAM pins: the registered page bits, busy flag, /RESET and data-interrupt copies, the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, the data pads' input register enable; 7 flip-flops | equivalent, 26 signals, under the assumption that two controller terms arriving under two nets are one signal; 11 of 12 mutants caught, the one that passes changes an initial value |
+| `clocks` | 20 | written by EZ Flash: the PicoBlaze clock's gate (kernel mode or the RTC flag), the 74HC595 shift clock's gate and inverted source, the DCM's reset, the /WR \| A15 term the $7Fxx write clock takes, and fifteen constant-0 LUTs on block RAM, clock buffer, DCM and other blocks' pins | equivalent; 6 mutants, all caught |
 | `p51_latch` | 1 | the one slice latch: a second latch of the pSRAM A13 mux beside P51's IO-tile output latch, gated by $7FD2 bit 0 and forced to the loader's A13 while a load runs | equivalent; 4 mutants, all caught |
 The `sd_cmd_serial` proof was first made with an IDLE counter bound of 4;
 the hardware hands IDLE a 5 for one cycle, so that one state was outside
@@ -180,7 +180,7 @@ Correction (2026-10-28, later that day): the FIFOs paragraph first said
 the FIFOs came "minus the filler's Wishbone master, whose place the Game
 Boy side takes". The master is there, on the mode clock, with its address
 counter, its read handshake and the FIFO halves it drives (the
-`sd_fifo_filler` block); what it talks to is a slave of EZ Flash's own, a
+`sd_fifo_filler` block); what it talks to is a slave EZ Flash wrote, a
 2 KB block RAM (X3Y5) that the Game Boy bus reads and writes on its
 other port, and the pSRAM path in the memory clock domain, which takes
 the same address. The Game Boy never touches the FIFOs. The FIFOs and
@@ -202,7 +202,7 @@ stack pointer counting up and down across the two phases), the
 instruction register in front of it is clocked on the falling edge and
 picks bank 1 or 2 by the port C8 bit, in_port arrives through eight
 falling-edge registers outside the block, and the interface is otherwise
-KCPSM3's own: pc, port_id, out_port, read/write strobes, interrupt and
+KCPSM3's: pc, port_id, out_port, read/write strobes, interrupt and
 its ack.
 
 What the SD block settled: the controller is Czerski's 2013 version
@@ -260,7 +260,7 @@ the data master block. The mode-domain sources of all of these (`*_m`) are the
 register file (below).
 
 What the FIFOs settled: the buffers around the data host are not EZ
-Flash's own but the source's `sd_fifo_filler` FIFOs, two instances of
+Flash's but the source's `sd_fifo_filler` FIFOs, two instances of
 the OpenCores `generic_fifo_dc_gray` with `aw` 4 (16 words of 32 bits:
 block RAMs X3Y1 for rx and X3Y9 for tx), with the filler's Wishbone
 master on their other side (the filler paragraph). Each side has a 5-bit
@@ -290,7 +290,7 @@ edited: command timeout 16, data timeout 8, block size 10, block count
 is no reset, so the block size's reset value of 511 is gone. The three
 write pulses go through the top level's `sd_edge_detect` instances (two
 registers each, the crossings' `<pulse>_m[1:0]`). The source's `int_cmd`
-is gone, unused; its `int_data` is kept in a register of EZ Flash's own,
+is gone, unused; its `int_data` is kept in a register EZ Flash added,
 with one more register behind it (`X15Y19_S2`, outside the block). The
 `dma_addr` register is the full 32 bits: bits 1:0 cross as the byte
 alignment and bits 22:2 are the FIFO filler's start address.
@@ -318,7 +318,7 @@ What the ports settled: the firmware's port map (re/stage0/docs/picoblaze.md)
 is the hardware's, write for write and read for read, including the
 bank select on C8 that the notes had only inferred. Writes land one cycle
 after the strobe, while port_id and out_port still hold. The SD bridge is
-EZ Flash's own: INPUT from a port below A0 loads that address and starts
+written by EZ Flash: INPUT from a port below A0 loads that address and starts
 a Wishbone read, OUTPUT to 70 starts a write and the OUTPUT after it names
 the register, the strobe is set with the address and held until the
 acknowledge, the read data is captured into 32 registers that 70-73 read,
@@ -353,7 +353,7 @@ logic, which is not carved yet. On the pins, while the loader runs (port
 EF, through its 2x-domain copy), the pSRAM word address is the filler's
 word address ORed with the loader's destination in 512-byte units (not
 added: a run must not cross into the bits the destination sets), and the
-data pins carry the byte; otherwise both carry the Game Boy's own. Only
+data pins carry the byte; otherwise both carry the Game Boy's. Only
 six bits of the destination go through here; the rest select the pSRAM
 page elsewhere.
 
@@ -440,7 +440,7 @@ bank mask ($7FC4) to all three RAM banks. The RAM enable is $0A written
 to $0000-$1FFF for types 1-5 (MBC2 with A8 clear). Its proof takes the
 shared decodes (the address terms from `gb_data_out`, `unlock` and
 `psram_ctrl`, the type terms from `psram_ctrl`) as the functions those
-blocks make of the bus and of this block's own type register.
+blocks make of the bus and of this block's type register.
 
 What the peripherals block settled: the ICAP is bit-banged like the SPI
 flash. OUTPUT to D1 loads its eight data bits (bit-reversed, out_port
@@ -475,7 +475,7 @@ data bus block's inputs are now named after them instead of by
 position). A copy loads the port EE register whenever any OUTPUT's
 strobe comes while port ED holds its index, so in the firmware's loop
 (OUTPUT index to ED, OUTPUT value to EE, then the I2C acknowledge's
-OUTPUTs) the EE write's own strobe first loads the previous reading and
+OUTPUTs) the EE write's strobe first loads the previous reading and
 the acknowledge's first OUTPUT loads the right one, a few processor
 cycles later. The RTC set path is the mirror: port F0 selects one of the
 seven $A008-$A00E registers, a registered mux on the 2x clock follows it
@@ -488,7 +488,7 @@ asynchronously clears a 16-bit counter on the inverted 2x clock together
 with the reset drive. The counter counts up to $FFFF and stops there,
 and the cycle after it arrives the drive is set again, so the drive is
 low for 65536 falling edges of the 2x clock. `psram_ctrl` ANDs it with
-the console's own /RESET onto P62. The drive starts high, an initial
+the console's /RESET onto P62. The drive starts high, an initial
 value the structural proof cannot check.
 
 What the bus block settled: the four page bits the data bus block's

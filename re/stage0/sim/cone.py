@@ -26,7 +26,7 @@ for m in re.finditer(r'(s3_\w+)\s*(#\((.*?)\))?\s*(i_\w+)\s*\((.*?)\);', src, re
     if kind == 's3_ioi':
         pins[conns['I']] = conns['PAD']
     if kind == 's3_slice':
-        # outputs left unconnected still feed the slice's own flip-flops
+        # outputs left unconnected still feed the slice's flip-flops
         for p in ('X', 'Y'):
             driver.setdefault('n_' + name[2:] + '_' + p, (name, p))
 

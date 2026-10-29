@@ -3,7 +3,7 @@ EZ Flash Jr mod {MODVER}: kernel and firmware patches
 
 This folder holds one IPS patch per supported kernel build (1.04e,
 1.05e-0731 and 1.05e-0918; EZ Flash released other builds, which the mod
-does not cover). Applied to the ezgb.dat from EZ Flash's own firmware
+does not cover). Applied to the ezgb.dat from EZ Flash's firmware
 package, each turns it into the modded kernel. This is the safe option: no
 firmware updater is involved. The Jr loads ezgb.dat from the microSD card at
 every power-on. Swapping the kernel is as simple as changing a file and is

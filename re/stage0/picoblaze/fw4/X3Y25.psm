@@ -320,7 +320,7 @@ L_0A3:
     SUB s7, 01                      ; 0A3 1C701
     JUMP NZ, L_09C                  ; 0A4 3549C
     CALL spi_xfer                   ; 0A5 300AE
-    XOR s6, s2                      ; 0A6 0F620  compare the sum with the record's own check byte
+    XOR s6, s2                      ; 0A6 0F620  compare the sum with the record's check byte
     CALL spi_xfer                   ; 0A7 300AE
     CALL spi_cs_toggle              ; 0A8 300E6
     RETURN                          ; 0A9 2A000

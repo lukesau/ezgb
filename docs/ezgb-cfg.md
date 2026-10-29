@@ -285,7 +285,7 @@ no version-specific address.
 WRAM is cleared at `KernelEntry` before `BatteryCheck`, so the flag is
 reliably 0 on a boot without the prompt. None of these addresses are
 referenced by the stock kernel (`$D780-$D980` was already the fast-launch
-scratch window; the kernel's own variables top out near `$D73B`).
+scratch window; the kernel's variables top out near `$D73B`).
 
 ### SD I/O discipline
 
@@ -295,7 +295,7 @@ As in every earlier feature: `WaitVBlankFlag` + `$7FC0=$00` before `f_open`,
 their own personality (the boot hook replays the kernel's `SetFpgaPage(3)`,
 the SET tab rests at 0, the browser sets its pages on entry). The FIL at
 `$CA0F` is idle at all three hook points (before the backup branch, after the
-dump's own `f_close`, on the SET tab).
+dump's `f_close`, on the SET tab).
 
 ## Reproduce
 

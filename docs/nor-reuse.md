@@ -190,7 +190,7 @@ directly: no boot, no copy, pure reads. `NorProbeDraw`
 ([`nor_probe_draw.c`](../kernel/src/nor_probe_draw.c), `00:3ed4`) draws four
 lines `BB:XXXXXXXX` (bank number, first 4 bytes of that bank) at rows
 `$0b`–`$0e` when the START overlay opens: banks `09` (control, always the
-kernel's own last bank), `10` (rom area `$28000`, just past the kernel), `16`
+kernel's last bank), `10` (rom area `$28000`, just past the kernel), `16`
 (`$40000`, past v2's copy window), `32` (`$80000`, deep tail). One-shot hook
 over the overlay input loop's `call ReadJoypad` at `00:1330` →
 `NorProbeOverlayHook` (`00:04cc`), flag `$DBFD`, cleared with `$DBFE` on

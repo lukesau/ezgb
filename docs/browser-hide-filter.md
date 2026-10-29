@@ -11,7 +11,7 @@ clutter get hidden by this patch:
   and its pre-3.0 predecessor `FLAUNCH.CFG`, the kernel's save backup folder
   `SAVER/` (mod 6.5; save management is planned as a per-ROM option instead
   of browsing the folder), plus the stock
-  kernel's own `ezgb.dat` memcmp
+  kernel's `ezgb.dat` memcmp
 
 This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
 8 bytes at `00:03cc`, added 2026-08-19); those bytes are `$ff` again.
@@ -79,7 +79,7 @@ names come back uppercase while long names keep the host's casing.
 **Far-call gotcha:** `FarCallTrampoline` pushes three words (restore thunk
 `$07ae`, saved-bank AF, real return) between the caller's pushed args and the
 jump, so a far-called function finds its first arg at `sp+6`, not `sp+2`.
-The kernel's own far targets are all compiled that way (e.g. `Opendir_B5`
+The kernel's far targets are all compiled that way (e.g. `Opendir_B5`
 reads its first arg at frame+6). SDCC compiles a normal function to read
 `sp+2`, so `browser_hide_name` declares two dummy leading params to soak up
 the trampoline words. Any future injected C that receives stack args via

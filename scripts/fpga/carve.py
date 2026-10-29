@@ -28,7 +28,7 @@ A block file names bels and gives boundary nets and registers readable names:
     P84             wr_n
 
 stage0/blocks/common.names holds [names] shared by every block (pins,
-clocks, mode bits); a block's own names win.
+clocks, mode bits); a block's names win.
 
 The module `<block>_ref` keeps the block's bels as they are in the design,
 renamed; nets crossing the boundary become ports (direction from where they
@@ -422,7 +422,7 @@ def carve(d, name, cells, names, whole_slices=False):
         out.append(f"// {rn(n)}: driven by {expr} in the design (not modeled there)")
     for n in internal:
         if whole_slices and n.startswith('b_'):
-            continue  # the bel decomposition's own nets: the slice drives its outputs itself
+            continue  # the bel decomposition's nets: the slice drives its outputs itself
         if n in d.decl and re.search(r'\[\d+:\d+\]', d.decl[n]):
             out.append(rn(d.decl[n]))
         else:
@@ -448,7 +448,7 @@ def carve(d, name, cells, names, whole_slices=False):
             out.append(rn(f"{cl.kind} {fmt_params(cl.params)}{c.replace('.', '_')} ({conns}, {outs});"))
     out.append('endmodule')
     rams = [c for c in cells if d.cells[c].kind in ('s3_ram16', 's3_srl16')]
-    # the contents take the readable module's own name for them, <cell>.m,
+    # the contents take the readable module's name for them, <cell>.m,
     # on both sides (a flattened instance already owns the bare cell name)
     keep = ('select -set keep ' + ' '.join(f"w:\\{v}.m" for v in ramnames.values()) + '\n') if ramnames else ''
     info = dict(inputs=pdecls[0], outputs=pdecls[1], inouts=pdecls[2],

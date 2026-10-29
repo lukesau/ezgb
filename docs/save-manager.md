@@ -73,7 +73,7 @@ has none (it reads `fs` and `clst` only, and its caller pops 6 bytes).
 **FSInfo.** This kernel's mount starts `free_clust` at 0 instead of
 reading the FAT32 FSInfo sector. Any allocation underflows it to
 `$FFFFFFFF`, which `sync_fs` writes as "unset", and hosts recount; the
-kernel's own save dumps leave the card that way. But a free with no
+kernel's save dumps leave the card that way. But a free with no
 allocation earlier in the boot counts up from 0: the first delete wrote 65
 (clusters freed by a 32 KB save) as the card's free space, which a host
 could believe. `FsUnlink` sets `free_clust` to `$FFFFFFFF` and flags FSInfo
@@ -174,7 +174,7 @@ SameBoy `--model dmg`, 0731, the `sd/` card plus a `/SAVER/Tetris.sav` of
 32,816 bytes (32 KB + a 48-byte footer) dated 2026-10-10 14:32:
 
 - Back up twice: `Tetris 2026-10-10 14-32.sav` and `Tetris 2026-10-10 14-32 (2).sav`,
-  each byte-identical to the save, listed newest first; the save's own date
+  each byte-identical to the save, listed newest first; the save's date
   unchanged
 - Replace the save on the card with different contents dated 2026-10-11
   12:00, restore `26-10-10 14:32`: `Tetris.sav` is byte-identical to the
@@ -195,7 +195,7 @@ Delete, after the split into banks 1, 4 and 9:
 - 0918, one run: back up, restore the 12:00 backup, delete the ` (2)` backup
   the restore made. The save holds the 12:00 contents, `14-32` the old save,
   `12-00` unchanged, ` (2)` gone; `fsck_msdos`: FSInfo "unset" plus the test
-  image's own volume-label warning, which the untouched card has too
+  image's volume-label warning, which the untouched card has too
 
 SameBoy's SD stub is slow at writes: a 32 KB copy takes about 40 seconds
 there.

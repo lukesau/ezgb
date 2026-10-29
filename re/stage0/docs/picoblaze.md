@@ -56,7 +56,7 @@ same eight words at `$3F0`:
 So a `CALL $3F0` in bank 1 runs bank 2's `$1B5` and comes back. The no-ops
 cover the one-instruction fetch delay. Evidence beyond the shared window:
 both banks use the same ports and the same scratchpad bytes (each reads values
-the other writes), bank 2's own reset path is a dead delay loop, and bank 2's
+the other writes), bank 2's reset path is a dead delay loop, and bank 2's
 interrupt vector is a stub, because the processor only ever resets in bank 1
 and only enters bank 2 with interrupts off.
 

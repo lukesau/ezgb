@@ -31,7 +31,7 @@ Hardware and flash recovery: [hardware-board.md](hardware-board.md).
 
 | Term | Meaning |
 |---|---|
-| **stage0** | the FPGA's own logic once a bitstream is loaded: fabric, PicoBlaze and its firmware. Slots A and B are both stage0 ([re/stage0](../re/stage0/README.md)) |
+| **stage0** | the FPGA's logic once a bitstream is loaded: fabric, PicoBlaze and its firmware. Slots A and B are both stage0 ([re/stage0](../re/stage0/README.md)) |
 | **stage1** (level 1) | the Game Boy program the cart shows at power-on (EZ-FLASH, LOADING), which loads the kernel. It lives in FPGA block RAM, so it ships inside the bitstream |
 | **kernel** (`ezgb.dat`) | the menu/file browser on the SD card that stage1 loads. The kernel mod in the rest of this repo patches it |
 | **slot A** | the bitstream at config flash `$00000`, which the FPGA loads at power-on. On FW4 its only extra job is handing over to slot B; it is the fallback image |

@@ -1,4 +1,4 @@
-# the Game Boy bus's state in the 2x domain and its address on the pSRAM pins, EZ Flash's own: the registered copies the other blocks read (the boot page bits, the loader's busy flag, /RESET's second stage, the data interrupt's first stage), the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, and the data pads' input register enable (the $7FB4 write)
+# the Game Boy bus's state in the 2x domain and its address on the pSRAM pins, written by EZ Flash: the registered copies the other blocks read (the boot page bits, the loader's busy flag, /RESET's second stage, the data interrupt's first stage), the window remap that clears A11 and A12 in kernel mode above $8000, the lower address pins' word/byte muxes, the stage1 and table block RAMs' port enables, and the data pads' input register enable (the $7FB4 write)
 [cells]
 X13Y17_S2.FFX
 X13Y24_S2.FFX

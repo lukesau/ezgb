@@ -73,7 +73,7 @@ before applying it to the FW5 payloads: it reproduces known chip contents
 exactly. Slot A is the pre-existing (older or factory fallback) image the FW4
 update did not overwrite in this capture.
 
-The payload's own leading `$26` bytes map onto the slot's `$00000-$00025` region
+The payload's leading `$26` bytes map onto the slot's `$00000-$00025` region
 (the container header before the `$46` bitstream start); the bitstream body
 begins at slot `+$46`.
 

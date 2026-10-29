@@ -203,7 +203,7 @@ def check_fit(text, rom, bank, address, size, old_len):
         sys.exit(1)
     for lo, hi, label in sym_extents(text, bank):
         if lo == address:
-            continue                      # this block's own label/.data entry
+            continue                      # this block's label/.data entry
         if lo < end and hi > address:
             print(f"error: {size} bytes at {bank:02x}:{address:04x}..{end - 1:04x} "
                   f"would overwrite kernel.sym entry {bank:02x}:{lo:04x} {label}")

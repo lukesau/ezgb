@@ -60,7 +60,7 @@ battery-backed RAM for saves).
 
 **What is *not* confirmed:** U9's exact identity and full contents. Its marking
 `3350LLZDQ0` (lowercase-`i`/Intel-era logo) is undocumented: no datasheet turns
-up for it (web search + the forum's own links are dead), and the forum's
+up for it (web search + the forum's links are dead), and the forum's
 `RD38F3350` guess can't be verified, so it is **not** asserted here. We know only
 that U9 holds ≥ 8 MB pSRAM (by deduction above). Whether it *also* carries a NOR
 die is speculative. What is certain is only U4's 4 MB NOR, and that **no
@@ -157,7 +157,7 @@ consequences:
 
 1. **The FPGA image is in a commodity, fully documented part.** SPI NOR with a
    standard command set, SOIC-8 package a test clip fits, readable/writable with
-   a ~$5 CH341A-class programmer independent of the cart's own update path.
+   a ~$5 CH341A-class programmer independent of the cart's update path.
 2. **It can be backed up.** A full 512 KB dump taken (and verified) before any
    modification is a complete restore image, turning FPGA work from brick risk
    into recoverable.
@@ -184,7 +184,7 @@ Two possibilities:
 **The bootstrap is not present in either firmware updater** (`Update_FW5_7-31.gb`,
 `Update_FW4.gb`), searched for the Nintendo logo, `ezgb.dat`, `LOADING`, `not
 found` under five encodings (plain, bit-reversed, inverted, nibble-swapped,
-rev+inv); the only hit is each updater's own header logo at `$0104`. The full
+rev+inv); the only hit is each updater's header logo at `$0104`. The full
 512 KB flash dump likewise contains no plaintext bootstrap (see
 [flash-map.md](../re/stage0/docs/flash-map.md) for its contents). This leaves **(b)** as
 the best-supported answer; confirming it needs the bitstream format. See the
@@ -261,7 +261,7 @@ at `0x10000-0x24831` intact. So:
 
 ```python
 flash[0x00000:0x10000] = flash[0x40000:0x50000]   # image B's head
-# everything else, including image A's own tail, left untouched
+# everything else, including image A's tail, left untouched
 ```
 
 Program the whole 512 KB, **FLASH region only, leave STATUS/CFG unchecked**

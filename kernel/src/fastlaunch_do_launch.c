@@ -1,4 +1,4 @@
-/* Launch the full path staged in $c4a4 by reusing the kernel's own
+/* Launch the full path staged in $c4a4 by reusing the kernel's
  * LastRomRelaunch (bank 0 $1344) verbatim, the exact sequence the START
  * overlay runs to relaunch the last ROM, which is proven to load and boot an
  * arbitrary path.

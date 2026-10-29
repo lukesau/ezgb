@@ -1,4 +1,4 @@
-// The Game Boy's registers, EZ Flash's own: everything the console writes
+// The Game Boy's registers, written by EZ Flash: everything the console writes
 // into the FPGA, in the two write-strobe clock domains. clk_wr_b is the
 // strobe for the $7Fxx registers, which take a write only while the unlock
 // sequence has been written (the unlock block's state); clk_wr_a is the
@@ -16,7 +16,7 @@
 //          4 MBC5, 5 MBC1 multicart), bit 7 the RTC flag
 //   $7FC1  the ROM bank mask, $7FC2 bit 0 its ninth bit, $7FC4 bits 3:0
 //          the RAM bank mask, $7FC3 the header checksum the game reads at
-//          $014D (bit 7 is served from the data pad's own register)
+//          $014D (bit 7 is served from the data pad's register)
 //   $7FB0-B3  the sector address, $7FB4 the sector count with bit 7 for a
 //          write; $7FB4 also clears the command flag that the data
 //          interrupt sets again when the transfer is done
@@ -267,7 +267,7 @@ module gb_regs (
 
 `ifdef FORMAL
     // The shared decodes arrive from the blocks that make them, from the
-    // address, the data and this block's own type register. Stated as
+    // address, the data and this block's type register. Stated as
     // input assumptions.
     always @* begin
         env_a1a0_zero:      assume (a1a0_zero == (!a0 & !a1));

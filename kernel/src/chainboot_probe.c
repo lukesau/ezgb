@@ -153,7 +153,7 @@ static void probe_body(unsigned char tag) {
      * the kernel sets around FatFs calls. */
     /* Cart-SRAM personality with a real page latched. Page $11 is the meta
      * page: BatteryCheck expects $A201 == $88 there (docs/psram-save-map.md),
-     * so this row is the method's own validation: if it does not read $88 in
+     * so this row is the method's validation: if it does not read $88 in
      * OS mode, the sequence is still wrong. */
     survey(0xc0, 0x03, 0x11, 0x00, 11);
     survey(0xc0, 0x03, 0x12, 0x00, 12);   /* file-list scratch page */

@@ -88,7 +88,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
   plain `call`. Uses the bank-0 FatFs thunks (`f_open` `00:1926`, `f_read`
   `00:1941`, `f_write` `00:1963`, `f_close` `00:19a1`) and the kernel FIL at
   `$CA0F`, following the same `WaitVBlankFlag` + `$7FC0=$00` discipline as
-  `fastlaunch.c`'s `scan_config` and the kernel's own `BackupSaveDump`.
+  `fastlaunch.c`'s `scan_config` and the kernel's `BackupSaveDump`.
 - [`../kernel/src/flpick_banner.c`](../kernel/src/flpick_banner.c) — bank 8 at
   `08:7b8d`. Draws the ` PICK A ROM ` banner over the tab strip while pick mode
   is armed.

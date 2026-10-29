@@ -1,6 +1,6 @@
 # Stage1, stock
 
-EZ Flash's own stage1 programs, disassembled: the Game Boy code each
+EZ Flash's stage1 programs, disassembled: the Game Boy code each
 firmware's slot B carries in block RAM (splash, then loading the kernel).
 One directory per firmware release, the most recent of each line, so they
 can be compared. Our replacement, built from source, is

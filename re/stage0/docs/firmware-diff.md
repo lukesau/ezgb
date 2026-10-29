@@ -88,7 +88,7 @@ all three firmwares:
   the 32 pages use the whole 512 KB part at one byte per word.
 - Game save RAM bank N and kernel page N are the same memory.
 
-The kernel's own page map (`docs/psram-page-map.md`) assumes 64 pages, as
+The kernel's page map (`docs/psram-page-map.md`) assumes 64 pages, as
 the emulator does; see the correction there for what a 5-bit latch means
 for the browser's record pages.
 

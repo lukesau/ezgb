@@ -339,7 +339,7 @@ The new stage1 runs from the next power-on.
   Each time the cart came up on stock FW4, the updater was run again from
   there, and the next write booted. The updater writes its payload from game
   RAM without checking it, so a write can go bad through the load from the
-  SD card or through power. EZ Flash's own update notes ask for a fast card
+  SD card or through power. EZ Flash's update notes ask for a fast card
   and fresh batteries.
 - A stage1 that configures but hangs can't run the updater again, because
   the updater is launched from the kernel and stage1 is what loads the
@@ -347,7 +347,7 @@ The new stage1 runs from the next power-on.
   of that cart, or JTAG ([hardware-board.md](hardware-board.md#jtag-header-fpga-package-pins)).
 - **Keep every original dump forever**, with a copy off the working machine.
   The as-read dump is the restore source, and for a damaged cart the only
-  record of the damage. A dump holds that cart's own license record, so
+  record of the damage. A dump holds that cart's license record, so
   never program one cart's full image onto another; splice slot B into a
   fresh dump of that cart instead.
 - **Recovering slot B without a prior dump.** An updater writes nothing

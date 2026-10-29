@@ -29,7 +29,7 @@ re/updater/*/disassembly/game.sym
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
 # depth, and for as long as it existed it silently swallowed kernel/tools/,
-# this project's own injection and verification tooling.
+# this project's injection and verification tooling.
 /tools/
 
 # build artifacts from `make` inside the kernel and stage1 disassemblies

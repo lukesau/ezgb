@@ -19,7 +19,7 @@
 //   - cmd_buff[39] is a constant 0 from the command master, so the buffer
 //     is 39 bits; resp_buff[127:126], the response's start and
 //     transmission bits, are never read and were dropped
-//   - cmd_dat_reg is the pad's own input register (cmd_dat_q here), and
+//   - cmd_dat_reg is the pad's input register (cmd_dat_q here), and
 //     cmd_out_o / cmd_oe_o are registered again in the pad's output cells,
 //     from the same next values this module keeps in its own copies
 //     (cmd_out_next, cmd_oe_next)

@@ -1,4 +1,4 @@
-# the PicoBlaze's peripherals outside its ports block, EZ Flash's own: the ICAP write registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI on the pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five request flags from gb_regs synchronized, their rising edges setting the interrupt and the command bits)
+# the PicoBlaze's peripherals outside its ports block, written by EZ Flash: the ICAP write registers and the I2C output enable on the processor clock, the SPI flash's clock and MOSI on the pSRAM address pins A11 and A12, and the interrupt source on the 2x clock (five request flags from gb_regs synchronized, their rising edges setting the interrupt and the command bits)
 [cells]
 X10Y21_S2.FFX
 X10Y21_S2.FFY

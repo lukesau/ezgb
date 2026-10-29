@@ -1,4 +1,4 @@
-// The clocks and ties, EZ Flash's own: the few LUTs that sit on clock
+// The clocks and ties, written by EZ Flash: the few LUTs that sit on clock
 // buffers, the DCM and constant pins. Combinational only.
 //
 //   - pb_clk_run gates the PicoBlaze's clock: global buffer X0Y17 [0]

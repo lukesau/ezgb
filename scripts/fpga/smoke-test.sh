@@ -20,7 +20,7 @@ echo "verilog work top.v" > top.prj
 printf 'run\n-ifn top.prj\n-ifmt mixed\n-top top\n-ofn top.ngc\n-ofmt NGC\n-p %s\n' $part > top.xst
 
 # settings64.sh treats $1 as the install dir, so pass it explicitly or it
-# picks up this script's own argument
+# picks up this script's argument
 set +u
 source "$ise/settings64.sh" "$ise" > /dev/null
 set -u

@@ -2,7 +2,7 @@
  *
  * Bank 8, injected at 08:7b8d and reached by `jp` from the tail of the
  * tab-strip drawer's SD arm (08:7200, stock `jp $7331` = bare ret; stack is
- * balanced there, so this function's own ret ends DrawMenuTabs). That drawer
+ * balanced there, so this function's ret ends DrawMenuTabs). That drawer
  * runs on every FileBrowserEntry, so while the SET tab's PICK mode is armed
  * ($DBFE != 0) the tab strip reads " PICK A ROM " instead of SD/SET/HELP.
  * Columns 16-19 (page number) are drawn later by the list code and survive.

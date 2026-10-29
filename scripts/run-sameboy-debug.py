@@ -55,7 +55,7 @@ def ensure_kernel_sym(version):
     source of truth for mgbdis, not a disposable build artifact, so it must
     never be deleted or overwritten here. Addresses in it match kernel.gb
     directly (regen-disasm.sh keeps the rebuilt ROM byte-identical), so it's
-    already valid for SameBoy's own symbol display as-is.
+    already valid for SameBoy's symbol display as-is.
 
     Only auto-manage the file (symlink it to disassembly/game.sym) when it's
     missing entirely or was already a symlink from a previous run of this

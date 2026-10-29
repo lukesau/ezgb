@@ -1,4 +1,4 @@
-# the RTC bridge, EZ Flash's own, on the 2x clock: the seven copies of the PicoBlaze's RTC readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window reads, and the port B6 mux over the RTC set registers the Game Boy wrote, selected by port F0
+# the RTC bridge, written by EZ Flash, on the 2x clock: the seven copies of the PicoBlaze's RTC readings (port ED index, port EE value, loaded on the next OUTPUT strobe) that the register window reads, and the port B6 mux over the RTC set registers the Game Boy wrote, selected by port F0
 [cells]
 X12Y25_S1.FFY
 X14Y21_S0.FFX

@@ -162,7 +162,7 @@ the `$7F36=3` command the `$A000` window floats (`$FF`) for about a cycle
 and a half while the FPGA switches it over; stage1 is past that by the
 time its first poll runs.
 
-**Game launch.** `gb_game.vh` runs the kernel's own launch (1.04e bank 4)
+**Game launch.** `gb_game.vh` runs the kernel's launch (1.04e bank 4)
 with the first 64 KB of Pokemon Red: `$7FC0=2`, the MBC type to `$7F37`,
 the RAM bank mask to `$7FC4`, the ROM bank mask to `$7FC1/$7FC2`, the header
 checksum to `$7FC3`, the load, `$7F36=0`, `$7F31/$7F32=0`, `$2000=1`,
@@ -258,7 +258,7 @@ What the simulation showed:
    both launches now run on FW4, FW5-0731 and FW5-0918 alike
    ([firmware-diff.md](firmware-diff.md)). Next: what FW5's `$7FD3/$7FD4`
    drive, /OE.
-3. Simulate Game Boy bus cycles from the kernel's own register sequences
+3. Simulate Game Boy bus cycles from the kernel's register sequences
    and watch each block respond.
 4. Name the blocks from their anchors: the `$7Fxx` register file and its
    unlock sequence, the PicoBlaze (KCPSM3) and its port decode, the SD

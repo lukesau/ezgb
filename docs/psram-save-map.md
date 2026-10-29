@@ -12,7 +12,7 @@ for the 64-page / 512 KB map); the *game* ROM lives in a separate, larger pSRAM 
 detail: [hardware-board.md](hardware-board.md). The kernel's `BATTERY` / `DRY!!!` notice is
 about **this** cell: `BatteryCheck` (`00:1835`) reads a canary byte at page `$11` `$A201`
 (expect `$88`) and re-stamps it after the prompt, so it fires exactly when the pSRAM (and
-the RTC, on the same cell) lost power. It never reads the RTC chip's own voltage-low flag.
+the RTC, on the same cell) lost power. It never reads the RTC chip's voltage-low flag.
 The RTC backup feature ([ezgb-cfg.md](ezgb-cfg.md)) hooks that re-stamp.
 
 ## Two bus personalities, one PSRAM chip

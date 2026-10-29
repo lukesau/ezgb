@@ -1,4 +1,4 @@
-# the $7Fxx register file and the bank registers, EZ Flash's own: every register the Game Boy writes, in the two write-strobe clock domains (clk_wr_a for $0000-$7FFF, clk_wr_b for $7Fxx), with the address decode after the unlock and the MBC logic that loads the bank registers in game mode
+# the $7Fxx register file and the bank registers, written by EZ Flash: every register the Game Boy writes, in the two write-strobe clock domains (clk_wr_a for $0000-$7FFF, clk_wr_b for $7Fxx), with the address decode after the unlock and the MBC logic that loads the bank registers in game mode
 [cells]
 X10Y19_S1.FFX
 X10Y19_S1.FFY

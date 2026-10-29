@@ -2,7 +2,7 @@
 """Compare the design.v and fw4_top runs of the testbench (topsim.sh), from
 base/run.log and top/run.log in the current directory. With the base run
 built under NO_SLICE_GSR the two logs are expected to match line for line,
-timestamps included; verilator's own summary lines (walltime, speed) are
+timestamps included; verilator's summary lines (walltime, speed) are
 ignored. Prints the first differences otherwise, and the time offset if
 the event sequence is the same but shifted."""
 import re, sys, difflib

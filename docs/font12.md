@@ -148,7 +148,7 @@ the character leaving the field (a pixel-precise marquee would need the
 stock routine's copy-from-offset replaced by a pixel offset).
 
 The stub is reached by a `call`, so the trampoline's three words sit between
-the stub's own return address and the arguments: the first argument is at
+the stub's return address and the arguments: the first argument is at
 **sp+8**, hence three pad parameters (an inline `call FarCallTrampoline` stub,
 the case in `docs/browser-hide-filter.md`, needs two).
 

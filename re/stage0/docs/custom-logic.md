@@ -12,7 +12,7 @@
 >
 > - *"Reverse engineering the factory bitstream is a research project."*
 >   prjcombine had already done that research. The FW4 and FW5 images
->   decode completely, and the cart's own bitstream can be edited and
+>   decode completely, and the cart's bitstream can be edited and
 >   reinstalled with `s3patch` and a relabeled stock updater, no JTAG
 >   needed ([../../../docs/fpga-setup.md](../../../docs/fpga-setup.md)).
 > - *Each slot is "a `$46`-byte container header + an XC3S200A bitstream".*

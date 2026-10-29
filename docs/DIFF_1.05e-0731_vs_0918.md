@@ -120,7 +120,7 @@ The updater is where the substantive change is:
 | banks 2–11 (`$08000-$2ffff`) | 163,840 B | 91,495 bytes differ (~56%) |
 
 That payload region is **not** the kernel: `ezgb.dat` is not embedded verbatim
-anywhere in the updater, and the kernel's own diff is only 10,134 bytes, far
+anywhere in the updater, and the kernel's diff is only 10,134 bytes, far
 short of 91,495. A ~56% byte difference across a region is the signature of
 replacing high-entropy data wholesale.
 

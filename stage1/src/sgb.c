@@ -44,7 +44,7 @@ static void send_packet(void)
 }
 
 /* the six header packets, $F1 ... $FB: [cmd][sum of the 14 data bytes]
- * [14 bytes of stage1's own header] */
+ * [stage1's 14-byte header] */
 static void send_header(void)
 {
     const uint8_t *src = (const uint8_t *)HDR_START;

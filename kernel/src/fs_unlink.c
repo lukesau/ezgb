@@ -1,7 +1,7 @@
 /* f_unlink for the kernel's FatFs, which was built without it
  * (docs/save-manager.md "Delete").
  *
- * Bank 9, injected at 09:7cc0, next to the bank's own copy of the FatFs
+ * Bank 9, injected at 09:7cc0, next to the bank's copy of the FatFs
  * internals, which it calls directly: this is R0.10's f_unlink and
  * dir_remove written against the kernel's structures, with only regular
  * files allowed (no directories, nothing read-only). Far target of the

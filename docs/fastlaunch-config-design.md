@@ -33,7 +33,7 @@ pins the label and calls it (no hand-assembled shim):
 | `f_close` | `FarCall_03_768f` `00:19a1` | `Close_B3` `03:768f` | (FIL*) |
 
 Mode flags are standard FatFs (`FA_READ=$01`, `FA_WRITE=$02`,
-`FA_OPEN_ALWAYS=$10`, etc.), verified against the kernel's own save code. The
+`FA_OPEN_ALWAYS=$10`, etc.), verified against the kernel's save code. The
 `FRESULT` returns in `E`. The kernel keeps its own FIL at `$ca0f` (FS_TINY
 shared-window build); the shipped scan reuses it.
 

@@ -1,4 +1,4 @@
-# the memory side of an SD transfer, EZ Flash's own: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000 in kernel mode), the rx word and the filler's address latched into the memory clock, the system-clock byte sequencer that writes the word into the pSRAM, and the SD side of the pSRAM address and data pad muxes
+# the memory side of an SD transfer, written by EZ Flash: block RAM X3Y5's Game Boy port (the 2 KB sector buffer at $A000 in kernel mode), the rx word and the filler's address latched into the memory clock, the system-clock byte sequencer that writes the word into the pSRAM, and the SD side of the pSRAM address and data pad muxes
 [cells]
 X10Y7_S0.FFY
 X10Y7_S1.FFX

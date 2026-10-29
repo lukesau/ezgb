@@ -1,4 +1,4 @@
-// The PicoBlaze's peripherals outside its ports block, EZ Flash's own.
+// The PicoBlaze's peripherals outside its ports block, written by EZ Flash.
 // Four things, in two clock domains:
 //
 //   - the ICAP writes, on the processor clock: OUTPUT to D1 loads the

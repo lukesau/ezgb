@@ -1,4 +1,4 @@
-// The PicoBlaze's ports, EZ Flash's own: what its OUTPUT instructions write
+// The PicoBlaze's ports, written by EZ Flash: what its OUTPUT instructions write
 // and its INPUT instructions read, and the bridge between it and the SD
 // controller's Wishbone register file. The firmware's port map is in
 // re/stage0/docs/picoblaze.md; the port numbers below are its.

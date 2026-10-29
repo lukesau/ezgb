@@ -85,7 +85,7 @@ Side effects worth knowing:
 - A press made while the loop is busy (a page repaint, a directory read,
   the marquee) is delivered when the loop next reads, instead of being lost.
   That also means a tap during "Reading..." acts afterwards.
-- The ISR's own `ReadJoypadRaw` can interrupt the loop's in the few cycles
+- The ISR's `ReadJoypadRaw` can interrupt the loop's in the few cycles
   between selecting a button group and reading it, which makes that one
   live sample read as "nothing"; the latch carries the press, so nothing is
   lost.

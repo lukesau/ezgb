@@ -1,4 +1,4 @@
-// The Game Boy data bus output, EZ Flash's own: what the console reads
+// The Game Boy data bus output, written by EZ Flash: what the console reads
 // back on D0-D7 and when the FPGA drives them. Combinational only.
 //
 // What a read returns, in order of precedence:

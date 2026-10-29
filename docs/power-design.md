@@ -33,7 +33,7 @@ cart running with bad data (see H5).
 | Cart supply | Console VCC on the edge connector: 5 V on DMG/CGB/GBA-in-GB-mode. **FPGBC slot voltage and its level shifting are unverified**, see below. |
 | 3.3 V rail | Feeds the FPGA VCCO, the LVT162245 shifters (U6/U7), the config flash, and very likely both MCPs. **Regulator part not identified.** |
 | 1.2 V rail | Spartan-3A VCCINT. VCCAUX is 2.5 or 3.3 V (board picks). **Regulator(s) not identified.** |
-| Backup domain | Coin cell (CR2016/CR2032 holder) backs **U4's 512 KB pSRAM die** and the **PCF8563 RTC (U3)**. **The switchover part is not identified.** It could be a diode-OR (e.g. BAT54C), a single diode plus resistor, or the RTC's own supply. This decides most of the hypotheses below. |
+| Backup domain | Coin cell (CR2016/CR2032 holder) backs **U4's 512 KB pSRAM die** and the **PCF8563 RTC (U3)**. **The switchover part is not identified.** It could be a diode-OR (e.g. BAT54C), a single diode plus resistor, or the RTC's supply. This decides most of the hypotheses below. |
 | U9 game pSRAM | Main rail only. Volatile (O5). |
 | Board capacitance | Unknown. The JTAG notes ([hardware-board.md](hardware-board.md)) confirm all rails beep together through decoupling caps when unpowered. That says nothing about bulk capacitance on the backup node. |
 
@@ -193,7 +193,7 @@ default date.
 - Test: find the pull-up supply (first job above). If it is the backup node,
   check the SCL level during a failing boot.
 - Note that `sdc_wait_ack` (`$15C`) is also unbounded. It relies on the SD
-  controller's own timeouts to raise an event. An SD card that browns out
+  controller's timeouts to raise an event. An SD card that browns out
   during init (cards draw big inrush at ACMD41) may or may not trip them.
 
 ### H5: marginal U9 pSRAM writes during the kernel/game load

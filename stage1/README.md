@@ -34,7 +34,7 @@ stage1, so `<n>` is read at boot from the cart's version register
 reading outside 1-9. The register stays 4 or 5 until it can be changed
 itself, which is a separate fabric change
 ([re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)).
-The mod version is stage1's own, separate from the kernel mod's.
+stage1 has its own mod version, separate from the kernel mod's.
 
 ## Build knobs
 

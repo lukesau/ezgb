@@ -10,7 +10,7 @@
 > on every console tried.
 >
 > The most likely cause is that the probe **initiated a config-flash operation
-> and aborted it**. `$7FD2 = $01` is a trigger; the kernel's own routine
+> and aborted it**. `$7FD2 = $01` is a trigger; the kernel's routine
 > (`Fpga7FD2WaitClear_B8`) writes `$01`, then **polls `$A000` until it reads
 > zero**, and only then writes `$00`. The probe sampled once and immediately
 > wrote `$00`, cutting the operation off mid-flight.

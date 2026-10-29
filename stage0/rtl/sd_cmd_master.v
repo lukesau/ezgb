@@ -22,7 +22,7 @@
 //   - busy_i is the DAT0 pad's input register, inverted (the data host
 //     derives sd_data_busy from DAT0 the same way)
 //   - int_status_o is gated by the IDLE state as in the source; cmd_int_n
-//     is a LUT of EZ Flash's own, low while a command is complete or in
+//     is a LUT EZ Flash added, low while a command is complete or in
 //     error, that shares the block
 //
 // Block: stage0/blocks/sd_cmd_master.blk.

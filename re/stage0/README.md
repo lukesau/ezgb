@@ -1,4 +1,4 @@
-# Stage0: the FPGA's own logic
+# Stage0: the FPGA's logic
 
 Everything here is about the hardware the XC3S200A becomes once it has
 loaded a bitstream: the fabric (bus decode, the `$7Fxx` register file, the

@@ -1,4 +1,4 @@
-// The memory side of an SD transfer, EZ Flash's own. Two things meet here:
+// The memory side of an SD transfer, written by EZ Flash. Two things meet here:
 //
 //   - block RAM X3Y5's Game Boy port: the 2 KB sector buffer the FIFO
 //     filler writes and reads, mapped at $A000-$BFFF in kernel mode when
@@ -11,7 +11,7 @@
 //     then presents it as four bytes, top byte first, with a byte strobe;
 //     the pad muxes put the latched address and the byte on the pSRAM
 //     pins while the loader runs (port EF, through its 2x-domain copy),
-//     and the Game Boy's own address and data otherwise
+//     and the Game Boy's address and data otherwise
 //
 // The address on the pins is the filler's word address ORed with the
 // loader's destination (load_addr, in 512-byte units, on bits 14:9): not
@@ -52,7 +52,7 @@ module sd_mem_path (
     output win_sel,
     // the pSRAM pins
     output [13:1] mem_a,
-    output mem_a13_b,               // mem_a[13] again, on the mux's own net: a register outside takes it
+    output mem_a13_b,               // mem_a[13] again, on the mux's net: a register outside takes it
     output mem_a13_sd,              // the loader's A13 and its inverse, for the page logic
     output mem_a13_sd_n,
     output mem_d0_o, mem_d1_o, mem_d2_o, mem_d3_o, mem_d4_o, mem_d5_o, mem_d6_o, mem_d7_o,

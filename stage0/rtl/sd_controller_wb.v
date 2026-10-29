@@ -31,8 +31,8 @@
 //     the PicoBlaze side; wb_sel_i is all ones
 //   - the voltage register still reads 3300 and the capabilities 0
 //   - the source's int_cmd is unused and gone; its int_data (the OR of the
-//     data interrupt status and enable) is kept in a register of EZ
-//     Flash's own
+//     data interrupt status and enable) is kept in a register EZ
+//     Flash added
 //   - the three write pulses go through the top level's sd_edge_detect
 //     instances, two registers each: the crossings block names them
 //     <pulse>_m[1] (the source's sig_reg[0]) and <pulse>_m[0] (sig_reg[1])

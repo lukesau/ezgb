@@ -1,4 +1,4 @@
-// The soft reset, EZ Flash's own: how a $7FE0 write resets the console.
+// The soft reset, written by EZ Flash: how a $7FE0 write resets the console.
 //
 // The request flag the Game Boy sets ($7FE0 bit 7, gb_regs, cleared again
 // by the lock write) goes through a two-stage synchronizer on the 2x
@@ -7,7 +7,7 @@
 // up until it saturates at $FFFF, where it stops; the cycle after it
 // gets there the drive is set again. So the drive is low for 65536
 // falling edges of the 2x clock after the request. The controller ANDs
-// the drive with the console's own /RESET onto P62 (psram_ctrl's
+// the drive with the console's /RESET onto P62 (psram_ctrl's
 // gb_reset_drive), which is how the kernel restarts the console into a
 // game it has loaded. The drive starts high.
 //

@@ -55,7 +55,7 @@ the three `ezgb-mod-N.M-for-<ver>.ips` files, `manifest.json`, and the
 [`patches/kernel/release-README.txt`](../patches/kernel/release-README.txt)
 (the version and the stock/modded md5 table filled in). That README is a
 patching guide only: which build you have, which patcher to use, how to
-install and go back. The repo's own README is not attached.
+install and go back. The repo's README is not attached.
 
 ```sh
 gh release create mod-N.M --title mod-N.M --notes-file notes.md \
@@ -127,7 +127,7 @@ self-contained page (template `scripts/patcher/patcher.html`) with every
 kernel and firmware patch inlined. It runs entirely in the browser: the
 chosen file is hashed (SHA-256, with SHA-1 shown because EZ Flash publishes
 SHA-1) and patched only when it is a stock file the page knows, always with
-that file's own patch; the result is hashed again before it can be saved.
+that file's patch; the result is hashed again before it can be saved.
 Already-patched files, the FW5 2020-7-31 updater and anything unknown are
 refused. The firmware section stays disabled until the risk notice is
 acknowledged. Hashing needs a secure context, so the page has to be served
