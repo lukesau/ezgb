@@ -92,6 +92,7 @@ module picoblaze_ports (
     output pid_cd_lo,               // port_id in C0-C3 or D0-D3, pid_cd_2_3 with bit 1 set, pid_lo_01 bits 1:0 == 01:
     output pid_cd_2_3,              //   the decodes pb_periph's ICAP writes (D1, D2) share
     output pid_lo_01,
+    output reg wr_q,                // write_strobe one cycle later, the peripherals' write timing
     output gnd                      // a constant-0 LUT the block RAM X3Y1 and two pads share
 );
     assign gnd = 1'b0;
@@ -105,7 +106,7 @@ module picoblaze_ports (
     end
 
     // ---- the strobes, one cycle later
-    reg rd_q, wr_q;
+    reg rd_q;
     always @(posedge clk_pb) begin
         rd_q <= read_strobe;
         wr_q <= write_strobe;

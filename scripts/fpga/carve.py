@@ -452,6 +452,7 @@ def carve(d, name, cells, names, whole_slices=False):
     # on both sides (a flattened instance already owns the bare cell name)
     keep = ('select -set keep ' + ' '.join(f"w:\\{v}.m" for v in ramnames.values()) + '\n') if ramnames else ''
     info = dict(inputs=pdecls[0], outputs=pdecls[1], inouts=pdecls[2],
+                in_nets=inputs, out_nets=outputs, inout_nets=inouts, ren=ren, vec=vec,
                 regs=[(r, ren.get(r), bel) for r, bel in regs], unnamed=unnamed, internal=internal, consts=consts,
                 cells=cells, rams=[(c.replace('.', '_') + '.m', ramnames.get(c.replace('.', '_') + '.m')) for c in rams],
                 renames='\n'.join(f"rename \\{k} \\{v}.m" for k, v in ramnames.items()) + '\n' + keep,
