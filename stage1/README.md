@@ -52,13 +52,13 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 | File | What |
 |---|---|
 | `src/crt0.s` | entry, WRAM init, interrupts off |
-| `src/main.c` | boot sequence, START/SELECT at power-on, save backup offer, error retry loop |
-| `src/fat.c` | FAT16/FAT32 mount, path lookup, load command, in-place sector writes, file create |
+| `src/main.c` | boot sequence, START/SELECT at power-on, save backup offer, kernel picker ([docs/kernel-picker.md](../docs/kernel-picker.md)), error retry loop |
+| `src/fat.c` | FAT16/FAT32 mount, path lookup, root scan for the kernels, load command, in-place sector writes, file create |
 | `src/fpga.c` | FPGA register writes, SD sector reads and writes, pSRAM pages |
 | `src/cfg.c` | `EZGB.CFG` parser, `FLAUNCH=` only |
 | `src/game.c` | fast launch: the kernel's game launch done from stage1 |
 | `src/backup.c` | save backup to `/SAVER` before a fast launch, or on SELECT |
-| `src/video.c` | boot screen: icon, text, CGB palettes |
+| `src/video.c` | boot screen: icon and wordmark tiles unpacked into VRAM, text, CGB palettes |
 | `src/sgb.c` | Super Game Boy: detection from the boot ROM's registers, header packets resent |
 | `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |
 | `src/game_handoff.s` | the same for a fast-launched game |
@@ -67,7 +67,10 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 | `art/ezflash.txt` | EZ-FLASH letters: Arial Bold Italic 22 pt, no antialiasing, E/Z join split by hand |
 | `art/jr.txt` | the brush "Jr.", traced from a photo of the cart label (`scripts/fpga/jr-trace.py`) |
 
-The wordmark is composed by `scripts/fpga/mkwordmark.py` into one tile map
-per step: EZ-FLASH alone, then the Jr. painted on left to right in four steps.
-`main.c` plays them inside the stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so
-the intro costs no boot time.
+The wordmark is composed by `scripts/fpga/mkwordmark.py` into two tile maps,
+EZ-FLASH alone and the whole mark, plus the tile columns at which the Jr. is
+painted on left to right in four steps. `main.c` plays the steps inside the
+stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so the intro costs no boot time.
+The icon and wordmark tiles are run-length packed (`scripts/fpga/packbits.py`,
+about 400 bytes saved) and unpacked into VRAM at boot; BRAM is nearly full,
+see the space notes in [docs/kernel-picker.md](../docs/kernel-picker.md).

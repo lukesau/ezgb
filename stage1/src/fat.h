@@ -27,5 +27,16 @@ const char *fat_name(void);
 uint8_t fat_create(const char *path, uint32_t size, uint32_t when);
 /* The FPGA load command for the file found last (128 u32, docs/fpga-stage1.md) */
 uint8_t fat_load_command(uint32_t *cmd);
+/* The root's *.dat files, the kernels: up to max of them into list,
+ * KERNEL_ENTRY bytes each (bytes 20-31 of the directory entry: cluster and
+ * size, then at +12 the name in capitals cut to KERNEL_NAME characters,
+ * 0-terminated), in directory order. Returns how many; kernel_default is
+ * the index of EZGB.DAT, 0 when it isn't among them. fat_select(list, i)
+ * then opens the i-th. */
+#define KERNEL_NAME 19
+#define KERNEL_ENTRY 32
+extern uint8_t kernel_default;
+uint8_t fat_scan_dat(uint8_t *list, uint8_t max);
+void fat_select(const uint8_t *list, uint8_t i);
 
 #endif

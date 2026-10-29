@@ -252,6 +252,46 @@ static uint8_t name_is(const char *s, uint8_t len)
     return !name[len];
 }
 
+/* The next file or directory of the directory being walked, with name[]
+ * its name; 0 at the end. Deleted entries and the volume label are passed
+ * over, long-name pieces collected. */
+static const uint8_t *dir_entry(void)
+{
+    const uint8_t *e;
+    uint8_t attr;
+
+    lfn_valid = 0;
+    for (;;) {
+        e = dir_next();
+        if (!e || !e[0])
+            return 0;
+        attr = e[11];
+        if (e[0] == 0xE5) {
+            lfn_valid = 0;
+            continue;
+        }
+        if ((attr & 0x3F) == 0x0F) {
+            lfn_piece(e);
+            continue;
+        }
+        if (attr & 0x08) {  /* volume label */
+            lfn_valid = 0;
+            continue;
+        }
+        entry_name(e);
+        return e;
+    }
+}
+
+static uint32_t entry_cluster(const uint8_t *e)
+{
+    uint32_t c = ld16(e + 26);
+
+    if (is_fat32)
+        c |= (uint32_t)ld16(e + 20) << 16;
+    return c;
+}
+
 /* Find the first n characters of "/dir/sub/name": the entry's attributes,
  * or $FF when it isn't there. file_cluster and file_size are the entry's. */
 static uint8_t lookup(const char *path, uint8_t n)
@@ -269,32 +309,13 @@ static uint8_t lookup(const char *path, uint8_t n)
             ;
         if (!len)
             return 0xFF;
-        lfn_valid = 0;
-        for (;;) {
-            e = dir_next();
-            if (!e || !e[0])
+        do {
+            e = dir_entry();
+            if (!e)
                 return 0xFF;
-            attr = e[11];
-            if (e[0] == 0xE5) {
-                lfn_valid = 0;
-                continue;
-            }
-            if ((attr & 0x3F) == 0x0F) {
-                lfn_piece(e);
-                continue;
-            }
-            if (attr & 0x08) {  /* volume label */
-                lfn_valid = 0;
-                continue;
-            }
-            entry_name(e);
-            lfn_valid = 0;
-            if (name_is(path, len))
-                break;
-        }
-        file_cluster = ld16(e + 26);
-        if (is_fat32)
-            file_cluster |= (uint32_t)ld16(e + 20) << 16;
+        } while (!name_is(path, len));
+        attr = e[11];
+        file_cluster = entry_cluster(e);
         pos_cluster = file_cluster;
         pos_index = 0;
         file_size = ld32(e + 28);
@@ -423,6 +444,49 @@ static void st32(uint8_t *p, uint32_t v)
 {
     st16(p, (uint16_t)v);
     st16(p + 2, (uint16_t)(v >> 16));
+}
+
+/* ---- the kernels ---- */
+
+uint8_t kernel_default;
+
+/* Root-directory files named *.dat (fat.h): the 8.3 extension is DAT and
+ * the name ends in a three-letter extension (so not .data). Directories,
+ * dot names (the ._ezgb.dat sidecars macOS writes) and empty files (no
+ * first cluster) pass. */
+uint8_t fat_scan_dat(uint8_t *list, uint8_t max)
+{
+    const uint8_t *e;
+    uint8_t n = 0, i;
+
+    kernel_default = 0;
+    dir_start(0);
+    while (n < max && (e = dir_entry())) {
+        if (e[11] & 0x10 || name[0] == '.' ||
+            e[8] != 'D' || e[9] != 'A' || e[10] != 'T')
+            continue;
+        i = strlen((const char *)name);
+        if (name[i - 4] != '.' || !(e[26] | e[27] | e[20] | e[21]))
+            continue;
+        if (name_is("EZGB.DAT", 8))
+            kernel_default = n;
+        memcpy(list, e + 20, 12);       /* cluster and size as the entry has them */
+        for (i = 0; i < KERNEL_NAME && name[i]; i++)
+            list[12 + i] = upper(name[i]);
+        list[12 + i] = 0;
+        list += KERNEL_ENTRY;
+        n++;
+    }
+    return n;
+}
+
+void fat_select(const uint8_t *list, uint8_t i)
+{
+    while (i--)
+        list += KERNEL_ENTRY;
+    file_cluster = pos_cluster = entry_cluster(list - 20);
+    pos_index = 0;
+    file_size = ld32(list + 8);
 }
 
 static void fat_set(uint32_t c, uint32_t v)

@@ -61,10 +61,14 @@
  * is read. Missing or faded: theme 0, light. */
 #define PSRAM_THEME 0x414
 
-/* buttons, active high */
+/* buttons() bits, active high */
 #define BTN_A      0x01
 #define BTN_B      0x02
 #define BTN_SELECT 0x04
 #define BTN_START  0x08
+#define BTN_RIGHT  0x10
+#define BTN_LEFT   0x20
+#define BTN_UP     0x40
+#define BTN_DOWN   0x80
 
 #endif

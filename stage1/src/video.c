@@ -191,17 +191,23 @@ void clear_row(uint8_t row)
         put(p + x, 0);
 }
 
-void print_center(uint8_t row, const char *s)
+/* Text from column col of a row, in capitals: the font has no lower case */
+void print_at(uint8_t row, uint8_t col, const char *s)
 {
-    uint8_t *p = (uint8_t *)(0x9800 + row * 32 + (20 - strlen(s)) / 2);
+    uint8_t *p = (uint8_t *)(0x9800 + row * 32 + col);
     char c;
 
-    clear_row(row);
     while ((c = *s++)) {
         if (c >= 'a' && c <= 'z')
             c -= 32;
         put(p++, (uint8_t)c);
     }
+}
+
+void print_center(uint8_t row, const char *s)
+{
+    clear_row(row);
+    print_at(row, (20 - strlen(s)) / 2, s);
 }
 
 void wait_frames(uint8_t n)

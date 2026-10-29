@@ -1,10 +1,12 @@
-/* stage1: show the boot screen, find EZGB.DAT on the SD card, have the
- * FPGA load it, enter it at $0100. Same steps as the stock bootstrap
- * (docs/fpga-stage1.md), written from scratch. With fast launch set in
- * EZGB.CFG it launches that game instead (game.c), unless START is held,
- * and boots the kernel whenever that isn't possible. Before a fast launch
- * it offers to back up the pending save (backup.c), as the kernel does at
- * boot; SELECT at power-on asks on a kernel boot too. */
+/* stage1: show the boot screen, find the kernel (EZGB.DAT) on the SD card,
+ * have the FPGA load it, enter it at $0100. Same steps as the stock
+ * bootstrap (docs/fpga-stage1.md), written from scratch. With fast launch
+ * set in EZGB.CFG it launches that game instead (game.c), unless START is
+ * held, and boots the kernel whenever that isn't possible. Before a fast
+ * launch it offers to back up the pending save (backup.c), as the kernel
+ * does at boot; SELECT at power-on asks on a kernel boot too. With more
+ * than one *.dat file in the card's root it asks which kernel to boot
+ * (docs/kernel-picker.md). */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"
@@ -19,6 +21,8 @@
 #define STATUS_ROW 15
 #define DETAIL_ROW 16
 #define VERSION_ROW 17
+#define PICK_ROW 13                  /* CHOOSE A KERNEL; the kernels on the rows below */
+#define KERNELS_MAX 4                /* rows 14-17 */
 #include "version.h"                 /* generated from stage1/VERSION */
 #define HANDOFF ((uint8_t *)0xD000)
 /* Boot screen timing, in frames (60 per second). The whole intro fits in
@@ -39,14 +43,16 @@ extern const uint8_t handoff_start[], handoff_end[];
 static uint32_t load_cmd[128];
 static uint8_t text[512];
 static char launch_path[CFG_PATH_MAX + 1];
+static char fw_text[sizeof FW_TEXT];    /* "FW5-MOD <m>", the version line */
+static const char loading[] = "LOADING...";
 
 static const char *const errors[] = {
     0,
     "SD CARD ERROR",
     "FAT12 NOT SUPPORTED",
-    "EZGB.DAT NOT FOUND",
-    "EZGB.DAT DAMAGED",
-    "EZGB.DAT FRAGMENTED",
+    "EZGB.DAT NOT FOUND",           /* no *.dat in the root at all */
+    "KERNEL DAMAGED",
+    "KERNEL FRAGMENTED",
     "GPT CARD: USE MBR",            /* reformat with an MBR partition table */
 };
 
@@ -93,17 +99,68 @@ static uint8_t fast_launch_target(void)
     return fat_open(launch_path) == FAT_OK;
 }
 
+/* Which of the n kernels listed in text[] to boot: their names under a
+ * title, a cursor moved with UP and DOWN (wrapping), A or START to pick.
+ * The cursor starts on EZGB.DAT, the name a stock stage1 boots, when it is
+ * one of them. The five rows under the wordmark are the list's; LOADING...
+ * and the version line come back after. */
+static void clear_list(void)
+{
+    uint8_t i;
+
+    for (i = PICK_ROW; i <= VERSION_ROW; i++)
+        clear_row(i);
+}
+
+static uint8_t pick_kernel(uint8_t n)
+{
+    uint8_t i, cur = kernel_default, keys;
+    const char *name = (const char *)text + 12;
+
+    clear_list();
+    print_center(PICK_ROW, "CHOOSE A KERNEL");
+    for (i = 0; i < n; i++, name += KERNEL_ENTRY)
+        print_at(PICK_ROW + 1 + i, 1, name);
+    wait_release();
+    for (;;) {
+        print_at(PICK_ROW + 1 + cur, 0, ">");
+        do
+            keys = buttons();
+        while (!keys);
+        wait_release();
+        if (keys & (BTN_A | BTN_START))
+            break;
+        print_at(PICK_ROW + 1 + cur, 0, " ");
+        if (keys & BTN_UP)
+            cur += n - 1;
+        else if (keys & BTN_DOWN)
+            cur++;
+        if (cur >= n)
+            cur -= n;
+    }
+    clear_list();
+    print_center(STATUS_ROW, loading);
+    print_center(VERSION_ROW, fw_text);
+    return cur;
+}
+
+/* The kernel's load command: the root's one *.dat file, or the one picked
+ * from up to four. A failed load comes back here, so another can be picked. */
 static uint8_t kernel(void)
 {
-    uint8_t err = fat_open("/EZGB.DAT");
+    uint8_t n = fat_scan_dat(text, KERNELS_MAX), which = 0;
 
-    return err ? err : fat_load_command(load_cmd);
+    if (!n)
+        return FAT_NOT_FOUND;
+    if (n > 1)
+        which = pick_kernel(n);
+    fat_select(text, which);
+    return fat_load_command(load_cmd);
 }
 
 void main(void)
 {
     uint8_t err, keys, sgb, fl, fw, tried = 0;
-    char fw_text[sizeof FW_TEXT];
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
@@ -115,7 +172,7 @@ void main(void)
     wait_frames(JR_DELAY);
     wordmark_paint(JR_STEP);
     wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
-    print_center(STATUS_ROW, "LOADING...");
+    print_center(STATUS_ROW, loading);
     /* FW_TEXT is "FW5-MOD <m>"; the digit is what this cart's version
      * register reads, so the FW4 updater's copy of stage1 says FW4 */
     memcpy(fw_text, FW_TEXT, sizeof FW_TEXT);
@@ -137,7 +194,7 @@ void main(void)
             if ((fl || keys & BTN_SELECT) &&
                 backup_offer(text, keys & BTN_SELECT, fl ? game_save_path() : 0))
                 fl = 0;                 /* the kernel backs up instead */
-            print_center(STATUS_ROW, "LOADING...");
+            print_center(STATUS_ROW, loading);
             if (fl && fat_open(launch_path) == FAT_OK) {
                 print_center(DETAIL_ROW, fat_name());
                 game_launch(launch_path, text);  /* returns only if it can't */

@@ -25,11 +25,6 @@ static void say(const char *a, const char *b)
     print_center(KEYS_ROW, b);
 }
 
-static void wait_release(void)
-{
-    while (buttons())
-        ;
-}
 
 uint8_t backup_offer(uint8_t *buf, uint8_t manual, const char *keep)
 {

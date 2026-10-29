@@ -108,13 +108,23 @@ void psram_unmap(void)
     fpga_set(FPGA_SRAM_MAP, 0);
 }
 
+/* The buttons in the low nibble, the d-pad in the high one (hw.h BTN_*) */
 uint8_t buttons(void)
 {
-    uint8_t i, keys = 0xFF;
+    uint8_t i, keys = 0xFF, pad = 0xFF;
 
     REG(0xFF00) = 0x10;                 /* select the button row */
     for (i = 0; i < 6; i++)
         keys = REG(0xFF00);
+    REG(0xFF00) = 0x20;                 /* the d-pad row */
+    for (i = 0; i < 6; i++)
+        pad = REG(0xFF00);
     REG(0xFF00) = 0x30;
-    return ~keys & 0x0F;
+    return (~keys & 0x0F) | (uint8_t)(~pad << 4);
+}
+
+void wait_release(void)
+{
+    while (buttons())
+        ;
 }
