@@ -27,7 +27,8 @@
  *               compose $c2a6 + '/' + $c4a4, rewrite the file, disarm.
  *   op 4 LOAD   test hook only.
  *   op 5 TICK   once per pass of the SET input loop (SetLoopTickHook,
- *               04:5f20, on its ReadJoypad call): scroll the ROM name.
+ *               04:5f20, on its ReadJoypad call): scroll the ROM name,
+ *               then read the pad with a D-pad key repeat and return it.
  *
  * Layout (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]   8 AUTO SAVE: [ ]
@@ -77,6 +78,12 @@ extern void SgbTagsRow(u8 op);                                      /* 04:77a0, 
 #define ROW_SGB   7          /* SGB BOOT: checkbox, a pSRAM record (sgbtags_row.c) */
 #define ROW_TAGS  8          /* TAGS: checkbox, right of SGB BOOT: off hides ROM name tags (docs/browser-tags.md) */
 #define NAME_W   10                         /* name columns left of PICK ROM */
+
+#define HPADLATCH (*(volatile u8 *)0xFFFD)  /* VBlankPadLatch: buttons pressed since the last read */
+#define RP_DIR   (*(volatile u8 *)0xDBEC)   /* D-pad bits of the held direction, 0 = none */
+#define RP_LEFT  (*(volatile u8 *)0xDBED)   /* frames until it repeats */
+#define RP_DELAY 24                         /* first repeat after 0.4 s held */
+#define RP_RATE  6                          /* then 10 steps a second */
 
 #include "marquee.h"
 
@@ -160,7 +167,7 @@ u8 flcfg(u8 *frame, u8 op) {
         /* Paced in frames, not loop passes: a pass takes anything from a
          * fraction of a frame (1.05e) to exactly one (1.04e waits for VBlank
          * each pass), so count the VBlank interrupt's frame counter. */
-        u8 f = HFRAME, d = f - MQ_FR;
+        u8 f = HFRAME, d = f - MQ_FR, fresh, pad, dir;
         MQ_FR = f;
         if (d > 100) d = 100;             /* MQ_TICK stays below 256 */
         MQ_TICK += d;
@@ -169,7 +176,27 @@ u8 flcfg(u8 *frame, u8 op) {
             MQ_POS++;
             draw_name();          /* wraps MQ_POS, redraws only when it scrolls */
         }
-        return 0;
+        /* The loop's pad read, with a key repeat on the D-pad. ReadJoypad
+         * reports a held direction on every pass, and a pass is a fraction
+         * of a frame, so a tap moved the cursor or a time field two or three
+         * steps. A direction now acts once, then again after RP_DELAY frames
+         * held, then every RP_RATE. A new edge in the latch (released and
+         * pressed again between two reads) counts as a new press. */
+        fresh = HPADLATCH;
+        pad = ReadJoypad();
+        dir = pad & 0x0F;
+        if (dir == 0) {
+            RP_DIR = 0;
+        } else if (dir != RP_DIR || (fresh & dir)) {
+            RP_DIR = dir;
+            RP_LEFT = RP_DELAY;
+        } else if (RP_LEFT > d) {
+            RP_LEFT -= d;
+            pad &= 0xF0;
+        } else {
+            RP_LEFT = RP_RATE;
+        }
+        return pad;
     }
     cfg_load();
     return 0;

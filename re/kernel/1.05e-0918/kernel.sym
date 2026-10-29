@@ -4504,7 +4504,7 @@
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg
-04:6600 .data:63a:8
+04:6600 .data:6a1:8
 04:5f30 FlSetADispatch
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs

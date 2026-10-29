@@ -138,8 +138,9 @@ open(p,'wb').write(rom)
 PY
 python3 tools/inject_bytes.py "$V" 0 05cf VBlankPadLatch f040f610e0403e48e045c5cd163a47f0fc2fa04f78e0fcf0fdb1e0fdf0fa3ce0fac1c9 --apply
 # SET input loop's ReadJoypad (04:5162) -> SetLoopTickHook: flcfg op 5 (name
-# marquee tick), then jp ReadJoypad so E reaches the loop as before.
-python3 tools/inject_bytes.py "$V" 4 5f20 SetLoopTickHook 3e05f533010000c5cd0066e803c34a3a --apply
+# marquee tick and the pad read with D-pad key repeat), which returns the pad
+# in E for the loop as ReadJoypad did.
+python3 tools/inject_bytes.py "$V" 4 5f20 SetLoopTickHook 3e05f533010000c5cd0066e803c9 --apply
 python3 tools/patch_call.py   "$V" 4 5162 3 04:5f20 --apply
 
 # 4. Bank 5: hide filter and record cap (08:7c00 until the cap outgrew that slot).

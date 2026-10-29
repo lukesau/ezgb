@@ -283,6 +283,7 @@ no version-specific address.
 | `$DB57` | `AS_SD`, `AUTOSAVE=` from the file: 0 or 1, `$FF` when absent |
 | `$DB58-$DB5F` | `LastRomName`'s second marquee line, `$DB38-$DB3F` laid out again ([last-rom.md](last-rom.md)) |
 | `$DB60-$DBEB` | `LOG_BUF`, `RTCLOG=` text, 140 B |
+| `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [joypad-latch.md](joypad-latch.md#set-tab-d-pad-repeat)) |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
 | `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |
 | `$DBFE` / `$DBFF` | `FL_PICK`, fast-launch one-shot (unchanged) |

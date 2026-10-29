@@ -142,6 +142,27 @@ The routine grew from 17 to 31 bytes into the `$00` filler after it
 once `KernelEntry` has moved the stack to WRAM (early boot pushes through
 it before the clear).
 
+## SET tab D-pad repeat
+
+The SET input loop acts on a direction on every pass, and on 1.05e a pass
+is a fraction of a frame, so a short tap moved the cursor or a time field
+two or three steps (UP/DOWN on a value and LEFT/RIGHT between fields
+alike). Its `ReadJoypad` call already goes through `SetLoopTickHook`
+(`04:5f20`) for the name marquee; flcfg op 5 now also does the read and
+returns the pad in E, and the hook ends in `ret` instead of `jp
+ReadJoypad`.
+
+A direction acts once, then after 24 frames held (0.4 s), then every 6
+(10 a second), counted on `hFrame`. WRAM `$DBEC` holds the direction's bits
+and `$DBED` the frames left until it repeats. A new edge in the latch
+(`$fffd`, peeked before the read) is a new press even when the same
+direction is still down at the read, so a quick re-tap during a redraw
+is not swallowed as part of a hold. A, B, SELECT and START pass through
+unchanged.
+
+Checked in SameBoy (DMG, 0918): three 120 ms RIGHT taps move three
+fields, four 50 ms UP taps add 4 to the hour, a 1 s hold adds 7.
+
 ## Verification
 
 SameBoy `--model dmg`, 15-entry folder, `keys` at 60 ms and a 25 ms variant:

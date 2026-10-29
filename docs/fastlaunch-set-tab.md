@@ -46,7 +46,8 @@ the tab underline (y 8-9); both browser layouts start at y 16.
 
 **Name marquee.** `flcfg` op 5 runs once per pass of the SET input loop:
 its `call ReadJoypad` at `04:5162` goes through `SetLoopTickHook` (`04:5f20`,
-16 B: op 5, then `jp ReadJoypad`). The scroll is paced by `hFrame` (`$fffa`),
+14 B: op 5, then `ret`; op 5 does the pad read itself, with the D-pad
+repeat in [`joypad-latch.md`](joypad-latch.md#set-tab-d-pad-repeat)). The scroll is paced by `hFrame` (`$fffa`),
 a VBlank counter added to the joypad latch's callback
 ([`joypad-latch.md`](joypad-latch.md)): one character per 20 frames, a
 60-frame hold at the start of the name, 3 blanks between repeats. Counting
