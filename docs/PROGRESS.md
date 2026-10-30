@@ -1,36 +1,63 @@
 # Decompilation progress
 
-One entry per matched function. "Purpose" is marked unconfirmed until the calling context is
-actually understood, not just the literal behavior.
+The stock 1.05e-0731 kernel builds from source in [`decomp/`](../decomp/README.md),
+byte-identical to stock (`make -C decomp` checks the md5). Ranges there come
+from real source; the rest is still disassembly.
 
-| Function | Bank | 1.05e addr | 1.04e addr | Source | Purpose | Status |
-|---|---|---|---|---|---|---|
-| `Call_000_062e`…`0646` | 0 | `$062e`–`$064b` | `$062e`–`$064b` (list bases differ) | `kernel/src/register_callback_slots.c` | Load HL = callback-list base, `jp` installer; BC = fn ptr | Matched 1.05e (`__naked` + `--pin install_callback_slot=066c`). 1.04e lists at `$D6AC`…`$D6EC` |
-| `Call_000_064c` | 0 | `$064c` | `$064c` | `kernel/src/remove_callback_slot.c` | Find BC in uint16 list at HL; clear slot and compact tail | Matched, both versions (`__naked` register ABI) |
-| `Jump_000_066c` | 0 | `$066c` | `$066c` | `kernel/src/install_callback_slot.c` | Walk uint16 list at HL; store BC in first free slot | Matched, both versions (`__naked` register ABI; stack-ABI C is semantically equivalent but not byte-identical) |
-| `$0677` (anon) | 0 | `$0677` | `$0677` (WRAM differs) | `kernel/src/vblank_callback.c` | VBlank cb: ++`$D6D1` word, `call $FF80` OAM DMA, set `$D6CE` | Matched 1.05e (`__naked`). 1.04e uses `$D6AA` / `$D6A7` |
-| `Call_000_0688` | 0 | `$0688` | `$0688` (flag `$D6A7`) | `kernel/src/wait_vblank_flag.c` | Wait (halt) until VBlank sets `$D6CE`; no-op if LCD off | Matched 1.05e (`__naked`). 1.04e uses `$D6A7` |
-| `Call_000_069f` | 0 | `$069f` | `$069f` | `kernel/src/lcd_off.c` | Wait for safe LY window, clear LCDC bit 7 (LCD off); no-op if already off | Matched, both versions (SDCC 4.6 + `tools/peeps/lcd_off.def`) |
-| `$06b6` (anon) | 0 | `$06b6` | `$06b6` | `kernel/src/oam_dma_stub.c` | OAM DMA template: DMA from `$C000`, wait `$28`; boot copies to `$FF80` | Matched, both versions (`__naked`) |
-| `$06c0` (anon) | 0 | `$06c0` | `$06c0` (WRAM differs) | `kernel/src/serial_callback.c` | Serial IRQ cb: `$D6CD` state machine on rSB/rSC | Matched 1.05e (`__naked`). 1.04e uses `$D6A6` / `$D6A5` |
-| `Call_000_1a77` | 0 | `$1a77` | `$1a5e` | `kernel/src/misc.c` (`return_zero`) | Unconfirmed, called from bank_003, bank_007, bank_009, context not yet examined | Matched, both versions |
-| `Call_000_2765` | 0 | `$2765` | n/a (WRAM targets differ in 1.04e) | `kernel/src/store_d732_d733.c` | Likely set text cursor col/row (`$D732`/`$D733`); fed by `Call_000_08b7`, advanced by `Call_000_20f4` | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_pair_store.def`) |
-| `Call_000_2791` | 0 | `$2791` | n/a | `kernel/src/store_d734_d735_d723.c` | Store draw params `$D734`/`$D735`/`$D723`; called widely before tile/string helpers | Matched 1.05e (SDCC 4.6 + `tools/peeps/abs_triple_store.def`) |
+> **Correction (2026-10-30).** This page used to list 15 bank-0 functions as
+> "matched" C in `kernel/src/` (`register_callback_slots.c`,
+> `remove_callback_slot.c`, `install_callback_slot.c`, `vblank_callback.c`,
+> `wait_vblank_flag.c`, `lcd_off.c`, `oam_dma_stub.c`, `serial_callback.c`,
+> `store_d732_d733.c`, `store_d734_d735_d723.c`). None of them is compiled C:
+> they are hand-written GBDK library assembly (`crt0.s`: `.add_int`,
+> `.remove_int`, `.vbl`, `.wait_vbl_done`, `.display_off`, the OAM DMA
+> template, `.serial_IO`; `drawing.s`: `_gotogxy` at `$2765`, `_color` at
+> `$2791`). No SDCC version produces them; the peep files in
+> `kernel/tools/peeps/` only forced the bytes. Those C files still work as
+> injectable equivalents, but they are not decomp. Only `return_zero`
+> (`$1a77`, `1E 00 C9`) may be compiled C.
 
-Total matched: 15 functions (counting 5 wrappers separately), 220 bytes.
+| Range | Source | Status |
+|---|---|---|
+| `00:0000`-`01e3` | `decomp/gbdk/crt0.s` (GBDK 2.96a + EZ Flash changes) | Matched |
+| `00:0600`-`07bc` | `decomp/gbdk/crt0.s` `_HOME` area | Matched |
 
-Secondary to naming the live disassembly; see `docs/omega-jr-compare.md` for current project
-priorities.
+## Toolchain findings
 
-## Notes
+**GBDK.** Bank 0 is a GBDK 2.x program's: `crt0.s` from GBDK 2.96a (the
+same file as GBDK-2020 3.0.1) with EZ Flash's changes listed in
+[`decomp/gbdk/README.md`](../decomp/gbdk/README.md), then other GBDK library
+modules (`drawing.s` at least) further up bank 0.
 
-- `Call_000_2765` / `Call_000_2791` need abs-pair / abs-triple peepholes: modern SDCC emits
-  `ld de,#abs` / `(de),a` where the kernel used `ld (#abs),a` (and `(hl+)` between loads).
-  Same C source; peep restores the historical shape. Pass the peep file as verify's optional
-  5th arg.
-- `Call_000_069f` needs `tools/peeps/lcd_off.def`: modern SDCC uses `bit 7,a` / `sub` /
-  `res 7,a` where the kernel used `add a,a` / `cp` / `and $7f`.
-- `Jump_000_066c` / `Call_000_064c` / wrappers use HL+BC register ABI (boot passes
-  `ld bc, handler` then `call` wrapper). `__naked` for that convention; wrappers use
-  `extern` + `--pin install_callback_slot=066c` (see `tools/pins/1.05e-0731.bank0`).
-  `$062e`–`$06c0` boot IRQ/setup stretch is matched on 1.05e.
+**FatFs.** The FatFs in banks 3, 5, 6, 7 and 9 is **R0.11a**, not R0.10:
+the CP437 upper-case table (`ExCvt`, at `09:4082`, inside what `kernel.sym`
+calls `MemCpy16_B9`) has the R0.11a values (index 2 `$45`, index `$2d`
+`$AD`); `move_window` invalidates the window on a read error (R0.10c+);
+`dir_find` resets `lfn_idx` at its start (gone in R0.12). Each bank holds its
+own copy of `ff.c`, cut to the API that bank uses: 9 `f_open`/`f_unlink`
+(plus code writing a `..` entry, likely `f_mkdir`, inside the `Open_B9`
+range), 6 `f_read`, 7 `f_write`, 5 `f_mount` and the directory calls, 3
+`f_sync`/`f_lseek`/`f_close`. `ffconf.h`, from the code:
+
+| Option | Value | Evidence |
+|---|---|---|
+| `_FS_READONLY`, `_FS_MINIMIZE` | 0, 0 | write and directory functions present |
+| `_USE_LFN`, `_MAX_LFN` | 1, 255 | DIR `lfn`/`lfn_idx` at `$16`/`$18`; `create_name` compares with 255; no 512-byte stack buffer |
+| `_CODE_PAGE` | 437 | the `ExCvt` table |
+| `_FS_RPATH` | 2 | `f_getcwd`; FATFS `cdir` before `n_fatent` (`$16`) |
+| `_WORD_ACCESS` | 1 | `LD_WORD` as two plain byte loads through a pointer |
+| `_FS_TINY`, `_USE_FASTSEEK` | 0, 0 | FIL buffer at `$20` in `f_read`/`f_write`, nothing at `$22`; `f_lseek` never reads `$20` |
+| `_FS_LOCK`, `_FS_REENTRANT` | 0, 0 | no lock helpers; struct offsets leave no room |
+| `_MAX_SS`, `_VOLUMES` | 512, 1 (assumed) | no `ssize` field |
+
+**Compiler (open).** The compiled C uses SDCC's gbz80 prologue rule
+`(--opt-code-size && frame <= 8) || frame <= 4` for `push af`/`dec sp`
+frames, which SDCC dropped in September 2013. Scored against 33 bank-9 FatFs
+functions, the closest builds are SDCC trunk from mid-January to March 2012
+(3.1.2-3.1.4 development) with `--opt-code-size`: mean byte similarity 0.59
+against 0.41-0.48 for the 3.2-3.7 releases and 0.31 for GBDK-2020's. No
+function matches byte for byte; the ROM mixes `ld c,(hl)`/`inc hl`/
+`ld b,(hl)` with `ld a,(hl+)` and keeps dead `ld c,a` temps, which no build of
+the 90 gbz80 codegen commits from November 2011 to March 2012 reproduces.
+Either EZ Flash used a patched SDCC or edited the FatFs source in ways that
+move the code.

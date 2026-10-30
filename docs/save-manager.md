@@ -61,11 +61,14 @@ that bank's copy of the FatFs internals and calling them directly
 `dir_next`, `remove_chain`, `sync_fs`), so the FAT is changed by the same
 code that writes the saves. Directories and read-only files are refused.
 
+> **Correction (2026-10-30).** The FatFs here was called R0.10; it is R0.11a
+> (same struct layout), see [PROGRESS.md](PROGRESS.md#toolchain-findings).
+
 The structures come from `Open_B9`, which is really `f_mkdir` (it calls
 `get_fattime` first and turns `FR_OK` from `follow_path` into `FR_EXIST`):
 a 26-byte DIR with `fn` at `+$14` (a 12-byte stack buffer) and `lfn` at
 `+$16` (`LfnBuf`, `$C5A9`), and a FATFS with `wflag` `+4`, `fsi_flag` `+5`,
-`free_clust` `+$0e` and `winsect` `+$2e` (R0.10 with `_FS_RPATH`). Each
+`free_clust` `+$0e` and `winsect` `+$2e` (FatFs with `_FS_RPATH`). Each
 internal's argument size matches the `add sp` after its calls in bank 9.
 The bank's annotation gives `RemoveChain_B9` a third `pclst` argument; it
 has none (it reads `fs` and `clst` only, and its caller pops 6 bytes).

@@ -169,7 +169,8 @@ re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731
                   (1.04e and 1.05e-0918 are ports of it: scripts/port-mod.py)
     kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
     notes.json    Persistent comments
-kernel/           Matching C decompilation + injectable feature sources
+decomp/           Stock kernel from source: disassembly + GBDK/C sources, md5-checked
+kernel/           Injectable feature sources (C) and the inject tooling
   src/            browser_sort.c, browser_scroll*.c, fastlaunch*.c, cgb_init.c, ...
   tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
 docs/             Findings, feature write-ups, hardware notes

@@ -65,13 +65,20 @@ its top target. Rank table only (no body): `doc-symbol-coverage.py --app --top
 Methodology, `bank:addr` translation, and interior-label conventions:
 [MAPPING.md](MAPPING.md).
 
-## Matching decompilation (`kernel/`)
+## Matching decompilation (`decomp/`)
 
 A separate, longer-term effort from `re/`: rewriting the kernel
-function-by-function in C, verified against the original compiled output the
+function-by-function from source, verified against the stock kernel the
 same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. `re/` is the
-research phase; `kernel/` is the rewrite. Secondary to naming the ASM; see
+research phase on the modded kernel; [`decomp/`](../decomp/README.md) is a
+stock build that replaces disassembly with source one routine at a time and
+fails unless it stays byte-identical. Status and toolchain findings (GBDK
+`crt0.s`, FatFs R0.11a and its config, the compiler search):
 [PROGRESS.md](PROGRESS.md).
+
+`kernel/tools/verify.py` below predates `decomp/`: it diffs one function's
+bytes and is still handy for experiments, but bank 0's GBDK library routines
+are assembly, not C, and SDCC 4.6 is not the kernel's compiler.
 
 ### Why SDCC / `--sdcccall 0`
 
