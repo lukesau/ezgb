@@ -56,8 +56,9 @@ global checksum); set 1's waits count CPU cycles instead of halting for
 VBlank, so they don't depend on the LCD being on; A is preserved for
 KernelEntry; only set 1 holds up the boot.
 
-The checkbox is `flcfg.c`'s row 6 (`sgb_get` / `sgb_set`), drawn on row 16 of
-the pane; the cursor clamp at `04:5604` allows it. The record's place in
+The checkbox is cursor row 5, on row 14 of the SET tab's first page, drawn
+and toggled by `SetPage` (`setpage.c`, `sgb_get` / `sgb_set`;
+[fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The record's place in
 pSRAM: [psram-page-map.md](psram-page-map.md).
 
 ## Build

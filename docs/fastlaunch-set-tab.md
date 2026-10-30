@@ -17,22 +17,51 @@ row (every row immediate and y pixel of TIME/SET and the date/time digits,
 the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 
-| Row | Content |
-|---|---|
-| 2 | `TIME:` + `SET` (stock) |
-| 4 | date and time (stock) |
-| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) |
-| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) |
-| 10 | `FAST LAUNCH:` checkbox |
-| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. |
-| 14 | `UI:` the `THEME` button, `LIGHT`, `DARK` and five colors ([`dark-mode.md`](dark-mode.md)), then 8px / 12px ([`ui-mode.md`](ui-mode.md)) |
-| 16 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), then the `TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`); both drawn by `SgbTagsRow` (`04:77a0`, [`../kernel/src/sgbtags_row.c`](../kernel/src/sgbtags_row.c)) |
+The pane has two pages; row 16 of each switches to the other.
 
-UP/DOWN move a cursor over nine rows: 0 TIME SET, 1 RTC, 2 AUTO SAVE,
-3 FAST LAUNCH, 4 PICK ROM, 5 THEME, 6 UI, 7 SGB BOOT, 8 TAGS (clamp `04:5604` `d6 08`).
+| Row | Page 1 | Page 2 (the UI settings) |
+|---|---|---|
+| 2 | `TIME:` + `SET` (stock) | `THEME:` button, `LIGHT`, `DARK` and four colors ([`dark-mode.md`](dark-mode.md)) |
+| 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
+| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | |
+| 10 | `FAST LAUNCH:` checkbox | |
+| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | |
+| 14 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | |
+| 16 | `1/2` and a `NEXT >` button | a `< PREV` button and `2/2` |
+
+UP/DOWN move a cursor over the page's rows. Its numbers run on across the
+pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB
+BOOT, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 PREV on page 2 (clamp
+`04:5604` `d6 0a`, and `flcfg` op ROWS keeps the cursor on its page).
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
-step through its fields. The stock checkbox
+step through its fields.
+
+### Pages
+
+A on NEXT or PREV flips `SET_PAGE` (WRAM `$DBEE`), clears the pane and
+enters the SET screen again from the top, as the UI toggle does
+(`FlSetADispatch`'s return 2), with the cursor on the other page's
+NEXT/PREV (`SET_RE`, `$DBEF`, the cursor row + 1), so A flips straight
+back. Leaving the tab ends on page 1: the screen's exit (`04:5912`,
+`add sp,$6a; ret`) goes through `SetExitHook` (`04:5fb0`), which clears
+`SET_PAGE` first.
+
+Page 2 is drawn over the stock screen, which keeps running under it: the
+clock still ticks and its fields are redrawn every second. Two things keep
+the stock rows off it. `SetText`, which all the stock text goes through,
+draws nothing while `SET_PAGE` is exactly 1; `flcfg` sets bit 7 for as long
+as it runs, so its own text (and `SetPage`'s and `ThemeRow`'s) still draws.
+The stock boxes (the SET button, AUTO SAVE's checkbox) are drawn only when
+the screen's dirty flag (`sp+$3e`) is set after a cursor move; op ROWS
+clears it on page 2. The entry code draws those boxes once before op ENTER,
+which clears the pane again on page 2.
+
+Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:77a0`,
+[`../kernel/src/setpage.c`](../kernel/src/setpage.c), 1087 B), near-called
+by `flcfg`, which had no room for them; it replaced `SgbTagsRow`, which
+held the SGB BOOT and TAGS boxes when they shared row 16. The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
 `FlSetADispatch` moved to `04:5f30` (30 B; its old slot at `04:5959` had no
 room for `cp $02`): row 2 goes to the stock AUTO SAVE toggle (`$58d6`), every
@@ -120,8 +149,9 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 7) |
-| `04:5604` | `d6 01` | `d6 08` | cursor clamp 0..1 → 0..8 (row 8 = TAGS, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 10, which op ROWS turns into NEXT on page 1) |
+| `04:5604` | `d6 01` | `d6 0a` | cursor clamp 0..1 → 0..10, both pages (`d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`af ea ee db e8 6a c9`: clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 
 ### Bank 0 (cave `$04c7-$05b5`)

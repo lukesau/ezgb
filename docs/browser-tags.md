@@ -43,6 +43,11 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 
 ## SET tab
 
+> Since 2026-10-30 the checkbox is on the SET tab's second page, row 6,
+> cursor row 9, drawn by `SetPage` (`04:77a0`, `setpage.c`), which replaced
+> `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The
+> rest of this section is how it was first built.
+
 The `TAGS:` checkbox shares row 16 with `SGB BOOT:` and is cursor row 8
 (clamp `04:5604` `d6 08`, [fastlaunch-set-tab.md](fastlaunch-set-tab.md)).
 Ticked means the tags are shown. The row's two boxes are drawn and toggled by

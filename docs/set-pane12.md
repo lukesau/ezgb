@@ -18,8 +18,16 @@ changes is x, per field:
 | 6 | `RTC:` 0..44, `SD` 44..66, `NO SD` 86..130; the checkboxes stay at x 66 and 130 |
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..80 (scrolls from 10 characters up); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
-| 14 | `UI:` 0..112; the theme name from 45 to at most 107 in a box (40,111)-(108,124), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)); `12px` 120..155 in a box (115,111)-(155,124) |
-| 16 | `SGB BOOT:` 0..66 with its checkbox at x 68 (74 in 8px), or `SGB:` with `AUTO` 34..86 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)); `TAGS:` 86..130 with its checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
+| 14 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
+| 16 | the page row: `< PREV` 8..64 in a box (3,127)-(65,140), `1/2` 70..97, `NEXT >` 104..155 in a box (99,127)-(155,140) |
+
+Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
+
+| Row | 12px fields (x span) |
+|---|---|
+| 2 | `THEME:` 0..84; the theme name from 91 in a box (86,15)-(155,28), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)) |
+| 4 | `FONT:` 0..112; `12px` 120..155 in a box (115,31)-(155,44) |
+| 6 | `TAGS:` 0..128, checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above

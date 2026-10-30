@@ -6,7 +6,9 @@ the SET tab (row 14 since the SET screen was slid up, see
 or `12px`; A toggles it, the choice is written to `EZGB.CFG` as `UI=8` or
 `UI=12` ([ezgb-cfg.md](ezgb-cfg.md)) and read back at boot. With no key, or
 no card, the browser is the 8px one, so shipping this changes nothing
-visible until the user opts in. The VRAM-race fix
+visible until the user opts in. Since 2026-10-30 the button is the `FONT:`
+row of the SET tab's second page
+([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The VRAM-race fix
 ([vram-write-race.md](vram-write-race.md)) and the joypad latch
 ([joypad-latch.md](joypad-latch.md)) apply in both modes.
 
