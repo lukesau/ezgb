@@ -82,7 +82,7 @@ reset:
     FETCH sF, license_b             ; 006 06F3F
     CALL dbg_putc                   ; 007 30155
     CALL clear_scratchpad           ; 008 30042  clear scratchpad $00-$3D
-    CALL sdc_init                   ; 009 300A7  controller reset, timeouts, 400 kHz identification clock
+    CALL sdc_init                   ; 009 300A7  controller reset, timeouts, 336 kHz identification clock
     CALL delay_med                  ; 00A 3016D
     CALL sd_cmd0                    ; 00B 3004B  CMD0 GO_IDLE_STATE
     LOAD sF, B0                     ; 00C 00FB0  debug B0: card reset sent
@@ -317,7 +317,7 @@ sdc_init:
     CALL sdc_clock_divider          ; 0AE 300C3
     CALL sdc_bus_1bit               ; 0AF 300DC
     CALL sdc_reset_on               ; 0B0 300B5  software reset on, then off below
-    LOAD s0, 48                     ; 0B1 00048  divider $48: ~400 kHz from a ~58 MHz clock
+    LOAD s0, 48                     ; 0B1 00048  divider $48: 336 kHz (CLK2X 49.09 MHz / 146)
     CALL sdc_clock_divider          ; 0B2 300C3
     CALL sdc_reset_off              ; 0B3 300C9
     RETURN                          ; 0B4 2A000

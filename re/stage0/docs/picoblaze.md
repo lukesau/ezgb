@@ -76,13 +76,21 @@ an indirect `OUTPUT sD, (sE)` selects register `sE`, then polls it for an ack.
 | `08` | response |
 | `18` / `20` | data / command timeout |
 | `1C` | bus width (0 = 1-bit, 1 = 4-bit) |
-| `24` | clock divider (`$48` during identification ≈ 400 kHz, implying a ~58 MHz clock; 0 afterwards) |
+| `24` | clock divider: SD clock = CLK2X (49.09 MHz) / (2 × (div + 1)); `$48` during identification = 336 kHz, 0 afterwards = 24.545 MHz |
 | `28` | software reset |
 | `34` / `38` | command event status / enable |
 | `3C` / `40` | data event status / enable |
 | `44` | block size − 1 |
 | `48` | block count − 1 |
 | `60` | DMA address (always 0: the sector buffer) |
+
+> **Correction (2026-10-29).** The divider row said `$48` gives about
+> 400 kHz and inferred a ~58 MHz controller clock from that. The netlist
+> says otherwise: the divider runs on the DCM's CLK2X of the 24.545 MHz
+> crystal (Y1), so divider 0 is 24.545 MHz, inside SD default speed, on FW4
+> and FW5-0918 alike (FW5's faster CLKFX doesn't reach the SD clock).
+> [sd-error-recovery.md](../../../docs/sd-error-recovery.md) inherited the
+> 58 MHz figure and is corrected too.
 
 Bring-up at reset, in **native SD mode, 4-bit bus** (not SPI mode):
 `CMD0`, `CMD8 $1AA`, `CMD55`+`ACMD41` until ready, `CMD2`, `CMD3`, `CMD7`,

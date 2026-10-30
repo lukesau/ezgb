@@ -81,7 +81,7 @@ note 002 license_b=0 tells bank 2 "boot", not "flash update"
 note 003 bank 2: Device DNA + license check, boot tally at flash $70000
 note 004 debug: print bank 2's verdict (F1 F2 = licensed)
 note 008 clear scratchpad $00-$3D
-note 009 controller reset, timeouts, 400 kHz identification clock
+note 009 controller reset, timeouts, 336 kHz identification clock
 note 00B CMD0 GO_IDLE_STATE
 note 00C debug B0: card reset sent
 note 00F CMD8 SEND_IF_COND $1AA (2.7-3.6 V, check pattern AA)
@@ -130,7 +130,7 @@ sub 110 sd_cmd_noarg
 label 112 sd_cmd_arg16
 sub 116 sdc_init
 note 11F software reset on, then off below
-note 120 divider $48: ~400 kHz from a ~58 MHz clock
+note 120 divider $48: 336 kHz (CLK2X 49.09 MHz / 146)
 sub 124 sdc_reset_on
 sub 127 sdc_cmd_timeout
 sub 130 sdc_data_timeout
