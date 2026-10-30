@@ -16,7 +16,8 @@
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
  *   op 3  A on TAGS: toggle TAGS_HIDE, save EZGB.CFG, redraw it highlighted
- *   op 4  clear the pane (y 10 down, below the tab strip's rule)
+ *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
+ *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
  *   op 5  SGB BOOT's label
  *   op 6  SGB BOOT's box
  *   op 7  A on SGB BOOT: toggle the pSRAM record (nothing when AUTO), redraw
@@ -86,7 +87,7 @@ void SetPage(u8 op, u8 cur) {
         box(0x82, 0x30, !TAGS_HIDE, 1);
     } else if (op == 4) {
         StoreDrawParams(0, 0, 0);
-        DrawRect(0, 0x0a, 0x9f, 0x8f, 1);
+        DrawRect(0, 0x0d, 0x9f, 0x8f, 1);   /* under the 12px rule (y 12) too */
     } else if (op == 5) {
         static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
         static const u8 sgb_short[5] = {'S','G','B',':',0};
