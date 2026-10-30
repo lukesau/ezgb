@@ -87,6 +87,21 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         if (fd == 0) $display("sd: cannot open %s", IMAGE);
     end
 
+    // Fault injection (docs/sd-error-recovery.md), all off by default:
+    // +SD_BAD_READS=n   the next n read blocks go out with a wrong CRC16
+    // +SD_BAD_WRITES=n  the next n written blocks get the CRC-error token
+    // +SD_DROP_CMD=i +SD_DROP_N=n  the next n CMDi get no response
+    integer bad_reads = 0, bad_writes = 0, drop_cmd = -1, drop_n = 0;
+    initial begin
+        if ($value$plusargs("SD_BAD_READS=%d", bad_reads)) $display("sd: %0d bad read block(s) armed", bad_reads);
+        if ($value$plusargs("SD_BAD_WRITES=%d", bad_writes)) $display("sd: %0d bad write block(s) armed", bad_writes);
+        if ($value$plusargs("SD_DROP_CMD=%d", drop_cmd)) begin
+            drop_n = 1;
+            if ($value$plusargs("SD_DROP_N=%d", drop_n)) ;
+            $display("sd: dropping the next %0d CMD%0d response(s)", drop_n, drop_cmd);
+        end
+    end
+
     function [6:0] crc7(input [39:0] d);
         integer i; reg [6:0] c; reg b;
         begin
@@ -155,7 +170,11 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
 
     always @(got_cmd) begin
         if (VERBOSE) $display("%t sd: %sCMD%0d arg %h", $time, app ? "A" : "", idx, arg);
-        if (app && idx == 55) r48(55, ST_APP);         // CMD55 again: still CMD55
+        if (!app && idx == drop_cmd && drop_n > 0) begin
+            drop_n = drop_n - 1;
+            $display("%t sd: CMD%0d dropped (fault)", $time, idx);
+        end
+        else if (app && idx == 55) r48(55, ST_APP);    // CMD55 again: still CMD55
         else if (app) begin
             app = 0;
             case (idx)
@@ -214,6 +233,11 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                         end
                     end
                 end
+                if (i == 512 && bad_reads > 0) begin
+                    bad_reads = bad_reads - 1;
+                    crc[0] = ~crc[0];
+                    $display("%t sd: read block %0d sent with a bad CRC (fault)", $time, blk);
+                end
                 if (i == 512) begin
                     for (k = 15; k >= 0; k = k - 1) begin
                         dat_o = {crc[3][k], crc[2][k], crc[1][k], crc[0][k]}; @(negedge CLK);
@@ -245,13 +269,15 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
                 wsum = 0; for (k = 0; k < 512; k = k + 1) wsum = wsum + buffer[k];
                 if (VERBOSE) $display("%t sd: write block %0d (not stored) first %h %h %h %h last %h sum %h", $time, blk,
                                       buffer[0], buffer[1], buffer[2], buffer[3], buffer[511], wsum);
-                // CRC status token "010" on DAT0, then a short busy
+                // CRC status token "010" on DAT0 ("101" = CRC error), then a short busy
+                if (bad_writes > 0) $display("%t sd: write block %0d answered with a CRC error (fault)", $time, blk);
                 @(negedge CLK); @(negedge CLK);
                 dat_oe = 4'h1; dat_o = 4'hE;                         // start 0
-                @(negedge CLK); dat_o = 4'hE;                        // 0
-                @(negedge CLK); dat_o = 4'hF;                        // 1
-                @(negedge CLK); dat_o = 4'hE;                        // 0
+                @(negedge CLK); dat_o = bad_writes > 0 ? 4'hF : 4'hE;    // 0 (1)
+                @(negedge CLK); dat_o = bad_writes > 0 ? 4'hE : 4'hF;    // 1 (0)
+                @(negedge CLK); dat_o = bad_writes > 0 ? 4'hF : 4'hE;    // 0 (1)
                 @(negedge CLK); dat_o = 4'hF;                        // end 1
+                if (bad_writes > 0) bad_writes = bad_writes - 1;
                 @(negedge CLK); dat_o = 4'hE;                        // busy
                 repeat (8) @(negedge CLK);
                 dat_o = 4'hF; @(negedge CLK); dat_oe = 0;
