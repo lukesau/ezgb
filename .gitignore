@@ -68,3 +68,6 @@ dist/
 
 # machine-specific scripts that depend on private infrastructure (lukesau.com logs etc.)
 /local/
+
+# decomp build output (generated includes, the built stock kernel)
+decomp/build/
