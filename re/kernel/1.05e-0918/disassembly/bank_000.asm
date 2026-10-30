@@ -454,7 +454,7 @@ BrowserPageEnd::
     rst RST_38
 
 LastRomNameStub::
-    db $cd, $8d, $07, $60, $72, $02, $00, $c9
+    db $cd, $8d, $07, $58, $5d, $02, $00, $c9
 
 LastRomTickStub::
     db $21, $00, $00, $e5, $cd, $68
@@ -530,14 +530,9 @@ FarCallScan::
 FarCallTagLen::
     db $cd, $8d, $07, $55, $7a, $05, $00, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+FarCallMarquee::
+    db $cd, $8d, $07, $60, $72, $02, $00, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

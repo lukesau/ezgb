@@ -1689,7 +1689,7 @@ EzCfg::
     db $4a, $33, $21, $fb, $db, $36, $01, $c9
     db $21, $01, $0f, $e5, $3e, $12, $f5, $33
     db $11, $1a, $5d, $d5, $af, $0f, $f5, $af
-    db $0f, $f5, $af, $0f, $f5, $cd, $60, $72
+    db $0f, $f5, $af, $0f, $f5, $cd, $58, $5d
     db $e8, $0b, $cd, $88, $06, $cd, $91, $36
     db $cb, $6b, $28, $f6, $21, $fb, $db, $36
     db $00, $c9, $28, $6e, $6f, $6e, $65, $29
@@ -1701,172 +1701,29 @@ EzCfg::
     db $cd, $ee, $5b, $e1, $7b, $ea, $fb, $db
     db $c9, $2f, $53, $41, $56, $45, $52, $2f
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+LastRomName::
+    db $f8, $09, $3a, $b6, $20, $24, $21, $c2
+    db $db, $3e, $d0, $22, $36, $db, $2e, $ce
+    db $36, $01, $cd, $60, $72, $21, $da, $db
+    db $2a, $b6, $c8, $21, $c2, $db, $3e, $da
+    db $22, $36, $db, $2e, $ce, $36, $01, $c3
+    db $60, $72, $fa, $3f, $db, $fe, $02, $20
+    db $0a, $cd, $e9, $5d, $21, $d9, $db, $36
+    db $83, $18, $0a, $21, $da, $db, $af, $22
+    db $77, $2e, $d9, $36, $8c, $11, $d0, $db
+    db $f8, $08, $2a, $12, $13, $7e, $12, $21
+    db $d6, $db, $36, $08, $2e, $d7, $36, $97
+    db $f0, $fb, $b7, $28, $08, $2e, $d6, $36
+    db $0c, $2e, $d7, $36, $9c, $01, $e6, $5d
+    db $21, $3f, $db, $6e, $26, $00, $09, $7e
+    db $87, $87, $87, $21, $d8, $db, $77, $2e
+    db $c2, $3e, $d0, $22, $36, $db, $2e, $ce
+    db $36, $00, $cd, $60, $72, $fa, $3f, $db
+    db $fe, $02, $ca, $e9, $5d, $c9, $0e, $07
+    db $09, $0e, $0a, $11, $d0, $db, $1a, $47
+    db $21, $0a, $00, $19, $7e, $12, $70, $0d
+    db $13, $79, $b7, $20, $f1, $c9
+
     rst RST_38
     rst RST_38
 
@@ -2737,86 +2594,123 @@ Fit12::
     rst RST_38
     rst RST_38
 
-LastRomName::
-    db $f8, $09, $3a, $b6, $28, $7b, $fa, $3f
-    db $db, $fe, $02, $20, $0f, $21, $3f, $db
-    db $36, $01, $cd, $48, $73, $21, $3f, $db
-    db $36, $02, $18, $05, $21, $5e, $db, $36
-    db $00, $0e, $00, $79, $d6, $fc, $30, $10
-    db $f8, $08, $2a, $81, $5f, $7e, $ce, $00
-    db $57, $1a, $b7, $28, $03, $0c, $18, $eb
-    db $41, $11, $3c, $db, $f8, $08, $2a, $12
-    db $13, $7e, $12, $21, $38, $db, $36, $00
-    db $2e, $39, $36, $00, $f0, $fa, $2e, $3b
-    db $77, $f0, $fb, $b7, $28, $14, $c5, $f8
-    db $0a, $2a, $5f, $56, $d5, $cd, $63, $73
-    db $e1, $7b, $c1, $91, $38, $0b, $06, $00
-    db $18, $07, $3e, $12, $91, $38, $02, $06
-    db $00, $21, $3e, $db, $70, $cd, $99, $73
-    db $fa, $3f, $db, $fe, $02, $ca, $48, $73
-    db $c9, $cd, $f2, $72, $fa, $5e, $db, $b7
-    db $c8, $cd, $48, $73, $cd, $f2, $72, $c3
-    db $48, $73, $3b, $fa, $3e, $db, $f8, $00
-    db $77, $b7, $28, $4a, $f0, $fa, $4f, $21
-    db $3b, $db, $96, $21, $3b, $db, $71, $fe
-    db $65, $38, $02, $3e, $64, $21, $39, $db
-    db $86, $21, $39, $db, $77, $fa, $39, $db
-    db $2e, $38, $4e, $0c, $0d, $0e, $3c, $28
-    db $02, $0e, $14, $91, $38, $20, $21, $39
-    db $db, $36, $00, $2e, $38, $4e, $0c, $21
-    db $38, $db, $71, $f8, $00, $7e, $c6, $03
-    db $5f, $79, $93, $38, $05, $21, $38, $db
-    db $36, $00, $33, $c3, $99, $73, $33, $c9
-    db $0e, $00, $11, $38, $db, $79, $d6, $02
-    db $28, $09, $1a, $47, $21, $20, $00, $19
-    db $7e, $12, $70, $0c, $13, $79, $d6, $08
-    db $38, $eb, $c9, $e8, $d8, $21, $00, $00
-    db $39, $e5, $af, $3c, $f5, $f8, $2e, $2a
-    db $5f, $56, $d5, $af, $0f, $f5, $af, $0f
-    db $f5, $cd, $00, $71, $e8, $0a, $3e, $01
-    db $93, $30, $13, $4b, $0d, $79, $07, $9f
-    db $47, $21, $00, $00, $39, $09, $7e, $fe
-    db $95, $38, $03, $1d, $18, $e8, $e8, $28
-    db $c9, $e8, $d1, $11, $3c, $db, $1a, $f8
-    db $28, $22, $13, $1a, $77, $21, $3e, $db
-    db $4e, $79, $b7, $20, $4c, $f8, $2e, $36
-    db $00, $f8, $2e, $5e, $16, $00, $21, $00
-    db $00, $39, $19, $e5, $7d, $f8, $2c, $77
-    db $e1, $7c, $f8, $2b, $77, $f8, $2e, $7e
-    db $d6, $27, $30, $24, $f8, $28, $7e, $f8
-    db $2e, $86, $2b, $2b, $32, $2b, $2b, $7e
-    db $ce, $00, $f8, $2d, $32, $2a, $5f, $56
-    db $1a, $b7, $28, $0c, $f8, $2a, $5e, $23
-    db $66, $6b, $77, $f8, $2e, $34, $18, $c1
-    db $f8, $2a, $2a, $66, $6f, $36, $00, $18
-    db $56, $21, $38, $db, $46, $f8, $2e, $36
-    db $00, $f8, $2e, $5e, $16, $00, $21, $00
-    db $00, $39, $19, $e5, $7d, $f8, $2c, $77
-    db $e1, $7c, $f8, $2b, $77, $78, $91, $30
-    db $16, $f8, $28, $2a, $23, $23, $23, $80
-    db $32, $2b, $2b, $7e, $ce, $00, $f8, $2d
-    db $32, $2a, $5f, $56, $1a, $18, $02, $3e
-    db $20, $f8, $2a, $5e, $23, $66, $6b, $77
-    db $04, $79, $c6, $03, $5f, $78, $93, $38
-    db $02, $06, $00, $f8, $2e, $34, $7e, $d6
-    db $27, $38, $b6, $f8, $27, $36, $00, $21
-    db $3f, $db, $6e, $26, $00, $11, $cb, $74
-    db $19, $4e, $fa, $3f, $db, $fe, $02, $20
-    db $04, $06, $03, $18, $02, $06, $00, $78
-    db $ee, $03, $c5, $f5, $33, $c5, $33, $cd
-    db $90, $02, $e1, $c1, $f0, $fb, $b7, $20
-    db $1a, $f8, $00, $51, $1e, $01, $d5, $3e
-    db $12, $f5, $33, $e5, $cd, $b7, $08, $e8
-    db $05, $21, $03, $00, $e5, $cd, $90, $02
-    db $e1, $18, $35, $f8, $00, $5d, $54, $c5
-    db $d5, $d5, $cd, $63, $73, $e1, $7b, $d1
-    db $c1, $47, $b7, $20, $02, $06, $01, $79
-    db $87, $87, $87, $67, $2e, $01, $e5, $c5
-    db $33, $d5, $af, $0f, $f5, $af, $0f, $f5
-    db $af, $0f, $f5, $cd, $00, $75, $e8, $0b
-    db $21, $03, $00, $e5, $cd, $90, $02, $e1
-    db $e8, $2f, $c9, $0e, $07, $09
+Marquee::
+    db $e8, $d6, $21, $ce, $db, $4e, $21, $c2
+    db $db, $2a, $66, $6f, $c5, $e5, $11, $c4
+    db $db, $d5, $cd, $70, $74, $e8, $04, $c1
+    db $79, $b7, $c2, $17, $73, $f8, $29, $36
+    db $00, $f8, $29, $7e, $d6, $fc, $30, $13
+    db $21, $c4, $db, $2a, $46, $f8, $29, $86
+    db $4f, $30, $01, $04, $0a, $b7, $28, $03
+    db $34, $18, $e6, $11, $c6, $db, $f8, $29
+    db $7e, $12, $21, $c7, $db, $36, $00, $2e
+    db $c8, $36, $00, $f0, $fa, $2e, $c9, $77
+    db $fa, $cd, $db, $cb, $f7, $2e, $cd, $77
+    db $f0, $fb, $4f, $fa, $cb, $db, $3c, $f8
+    db $28, $77, $79, $b7, $28, $34, $7e, $e0
+    db $f9, $fa, $ca, $db, $21, $c4, $db, $4e
+    db $23, $46, $21, $00, $00, $39, $e5, $67
+    db $2e, $00, $e5, $c5, $af, $0f, $f5, $af
+    db $0f, $f5, $cd, $00, $71, $e8, $0a, $7b
+    db $f8, $29, $96, $38, $08, $fa, $cd, $db
+    db $cb, $b7, $ea, $cd, $db, $af, $e0, $f9
+    db $18, $18, $21, $ca, $db, $4e, $f8, $28
+    db $2a, $91, $cb, $37, $07, $e6, $1f, $96
+    db $38, $08, $fa, $cd, $db, $cb, $b7, $ea
+    db $cd, $db, $cd, $7c, $73, $18, $54, $0d
+    db $20, $4e, $f0, $fa, $4f, $21, $c9, $db
+    db $96, $21, $c9, $db, $71, $2e, $cd, $cb
+    db $76, $28, $40, $fe, $65, $38, $02, $3e
+    db $64, $21, $c8, $db, $86, $21, $c8, $db
+    db $77, $fa, $c8, $db, $2e, $c7, $4e, $0c
+    db $0d, $0e, $3c, $28, $02, $0e, $14, $91
+    db $38, $21, $21, $c8, $db, $36, $00, $2e
+    db $c7, $4e, $0c, $21, $c7, $db, $71, $fa
+    db $c6, $db, $c6, $03, $47, $79, $90, $38
+    db $02, $36, $00, $cd, $7c, $73, $18, $03
+    db $cd, $7c, $73, $21, $c2, $db, $2a, $4f
+    db $46, $11, $c4, $db, $d5, $c5, $cd, $70
+    db $74, $e8, $2e, $c9, $e8, $d0, $21, $00
+    db $00, $39, $4d, $44, $11, $c4, $db, $1a
+    db $f8, $28, $22, $13, $1a, $77, $fa, $c7
+    db $db, $f8, $2c, $77, $fa, $c6, $db, $f8
+    db $2a, $77, $f8, $2b, $36, $00, $fa, $cd
+    db $db, $cb, $77, $28, $06, $f8, $2a, $2a
+    db $c6, $03, $77, $f8, $2d, $3e, $27, $22
+    db $79, $22, $70, $f8, $2e, $2a, $5f, $3a
+    db $57, $34, $20, $02, $23, $34, $f8, $2c
+    db $3a, $2b, $96, $30, $11, $2b, $2b, $7e
+    db $f8, $2c, $86, $2b, $2b, $2b, $4f, $7e
+    db $ce, $00, $47, $0a, $18, $02, $3e, $20
+    db $12, $f8, $2c, $34, $3a, $96, $20, $04
+    db $f8, $2c, $36, $00, $f8, $2d, $35, $7e
+    db $20, $c9, $23, $2a, $66, $6f, $36, $00
+    db $21, $cd, $db, $4e, $79, $0f, $0f, $e6
+    db $03, $47, $79, $e6, $03, $c5, $33, $f5
+    db $33, $cd, $84, $74, $e1, $f0, $fb, $4f
+    db $fa, $cb, $db, $3c, $0c, $0d, $28, $28
+    db $e0, $f9, $fa, $cc, $db, $21, $ca, $db
+    db $46, $f5, $33, $c5, $33, $af, $f5, $33
+    db $21, $03, $00, $39, $e5, $af, $0f, $f5
+    db $af, $0f, $f5, $af, $0f, $f5, $cd, $00
+    db $75, $e8, $0b, $af, $e0, $f9, $18, $2d
+    db $21, $cc, $db, $4e, $cb, $39, $cb, $39
+    db $cb, $39, $21, $ca, $db, $6e, $5d, $cb
+    db $3b, $cb, $3b, $cb, $3b, $95, $cb, $37
+    db $07, $e6, $1f, $61, $e5, $33, $63, $e5
+    db $33, $f5, $33, $21, $03, $00, $39, $e5
+    db $cd, $b7, $08, $e8, $05, $21, $03, $00
+    db $e5, $cd, $84, $74, $e1, $e8, $30, $c9
+    db $f8, $04, $2a, $4f, $46, $f8, $02, $2a
+    db $5f, $56, $2e, $0a, $0a, $03, $12, $13
+    db $2d, $20, $f9, $c9, $fa, $cd, $db, $07
+    db $30, $0b, $f8, $03, $3a, $57, $5e, $d5
+    db $cd, $90, $02, $e1, $c9, $af, $f5, $33
+    db $f8, $04, $3a, $57, $5e, $d5, $cd, $d8
+    db $23, $e8, $03, $c9
 
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
