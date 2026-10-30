@@ -4577,7 +4577,7 @@
 04:7670 ThemeRow
 04:7670 .data:fe:8
 02:43d0 Theme
-02:43d0 .data:12b:8
+02:43d0 .data:128:8
 02:4960 ThemeRamps
 02:4960 .data:30:8
 00:0290 PopupDrawParams
