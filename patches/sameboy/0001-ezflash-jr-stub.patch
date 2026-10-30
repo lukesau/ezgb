@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..75850ba
+index 0000000..5285c18
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1109 @@
+@@ -0,0 +1,1115 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -440,6 +440,12 @@ index 0000000..75850ba
 +    ez->rtc[2] = bin_to_bcd((unsigned)tm->tm_hour);
 +    ez->rtc[3] = bin_to_bcd((unsigned)tm->tm_mday);
 +    ez->rtc[4] = bin_to_bcd((unsigned)tm->tm_wday);
++    /* SAMEBOY_EZFLASH_JR_SDSLOW=1: weekday 7, as the FW5 SD recovery patch
++     * reports once it has dropped to half speed (docs/sd-error-recovery.md) */
++    const char *slow = getenv("SAMEBOY_EZFLASH_JR_SDSLOW");
++    if (slow && slow[0] == '1') {
++        ez->rtc[4] = 7;
++    }
 +    ez->rtc[5] = bin_to_bcd((unsigned)tm->tm_mon + 1);
 +    ez->rtc[6] = bin_to_bcd((unsigned)((tm->tm_year + 1900) % 100));
 +}

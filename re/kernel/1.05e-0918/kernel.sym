@@ -4482,7 +4482,7 @@
 00:0380 TabNum12
 00:0380 .data:d:8
 08:7d00 Help12
-08:7d00 .data:103:8
+08:7d00 .data:10c:8
 08:7b40 HelpHook
 08:7b40 .data:15:8
 04:6000 BkPrompt
@@ -4593,3 +4593,7 @@
 04:65f0 .data:10:8
 04:77a0 SgbTagsRow
 04:77a0 .data:249:8
+08:7c00 HelpSd
+08:7c00 .data:91:8
+08:7cc0 HelpSdHook
+08:7cc0 .data:b:8

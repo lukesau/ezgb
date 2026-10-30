@@ -141,7 +141,9 @@ REGISTRY = {
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
-                            "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09}),
+                            "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09, "HelpSd": 0x7c00}),
+    (8, 0x7c00): dict(src="help_sd.c",                      # SD speed line on both HELP panes (docs/sd-error-recovery.md)
+                      pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
     # SGB boot unlock and background send (scripts/inject-sgb.py). SgbStub only
     # names its own bank-4 entry; SgbVblTail, SgbVblList, SgbPadGate,
     # SgbBootHook (01:7f00) and SgbLaunchHook (04:7d00, the whole bank-4 part)
@@ -149,6 +151,7 @@ REGISTRY = {
     (0, 0x0020): dict(kind="data"),        # SgbStub
     # hand-assembled, with data tails
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
+    (8, 0x7cc0): dict(),                   # HelpSdHook: HelpSd(0), then the 8px HELP wait loop
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
     (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)

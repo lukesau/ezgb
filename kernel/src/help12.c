@@ -24,7 +24,7 @@
  *   python3 tools/inject.py src/help12.c $V 8 7d00 Help12 \
  *       --pin FarCallDrawString12=05c0 --pin StoreDrawParams=2791 \
  *       --pin HelpUrlStr=715a --pin HelpKStr=7af4 --pin HelpModStr=7aff \
- *       --pin HelpGitStr=7b09 --replace --apply
+ *       --pin HelpGitStr=7b09 --pin HelpSd=7c00 --replace --apply
  */
 
 #include "types.h"
@@ -34,6 +34,7 @@ extern const u8 HelpUrlStr[];      /* 08:715a "www.ezflash.cn" */
 extern const u8 HelpKStr[];        /* 08:7af4 kernel text, 11 bytes */
 extern const u8 HelpModStr[];      /* 08:7aff MODSTR, 10 bytes */
 extern const u8 HelpGitStr[];      /* 08:7b09 "github.com/lukesau/ezgb", 23 bytes */
+extern void HelpSd(u8 big);         /* 08:7c00, help_sd.c: the SD speed line */
 
 #define X0 4
 
@@ -58,6 +59,7 @@ void Help12(const u8 *fw) {
     line(HelpModStr, 10, 64);
     line(HelpGitStr, 19, 84);          /* "github.com/lukesau/" */
     line(HelpGitStr + 19, 4, 96);      /* "ezgb": nothing under the first row's g */
+    HelpSd(1);
 }
 
 static void line(const u8 *s, u8 n, u8 y) {
