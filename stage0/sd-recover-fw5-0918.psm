@@ -1,0 +1,156 @@
+; Bank 1 (FW5-0918, D0X3Y1) patch: SD error exit, retry and clock fallback.
+; docs/sd-error-recovery.md has the why; addresses are from
+; re/stage0/picoblaze/fw5-0918/bank1.psm.
+;
+; Stock waits forever on a data CRC or buffer error (the data master sets
+; EI without CC, and sd_command waits for CC alone) and on a command the
+; card never answers (both timeouts 0 = off). Here:
+;
+;   - the command timeout is $FFFF SD clocks, so a lost response ends
+;   - the data wait ends on EI too, or after SPIN_HI * 65536 polls
+;   - sector reads and writes (ISR $80/$40) are redone up to 4 times,
+;     the ROM loader's run until it reads clean
+;   - the first error soft-resets the controller, drops the SD clock to
+;     divider 1 (half speed) and clears the fast-load key for the rest of
+;     the session
+;   - after the drop, the idle loop's RTC copy reports weekday 7, which a
+;     PCF8563 never holds (0-6; FW5 keeps only those three bits of the copy),
+;     for the kernel's HELP pane to read at $A00C
+
+CONSTANT SDC_Q0, 70
+CONSTANT RTC_REG_VALUE, EE
+CONSTANT sd_slow, 07          ; scratchpad, unused by bank 1 and bank 2
+CONSTANT sd_tries, 08
+CONSTANT fast_key, 2B         ; cmd_load_rom's copy of the $7FD3+$7FD4 key
+CONSTANT data_status, 3D
+CONSTANT SPIN_HI, 08          ; data wait limit, units of 65536 polls (~0.76 us each: ~400 ms)
+
+CONSTANT SDC_RESET_ON, 124
+CONSTANT SDC_CLOCK_DIVIDER, 132
+CONSTANT SDC_RESET_OFF, 138
+CONSTANT DATA_POLL, 1A1       ; L_1A1: read the data event status
+CONSTANT DATA_DONE, 1A6       ; L_1A6: store data_status, clear it, return
+CONSTANT SD_CMD12_STOP, 208
+CONSTANT LOAD_RUN, 230        ; L_230: output the run's destination, read it
+CONSTANT LOAD_NEXT, 23B       ; L_23B: fast-key check, next run
+CONSTANT SD_WAIT_TRAN, 355
+CONSTANT ISR_READ, 36D        ; ISR $80 from sd_wait_tran
+CONSTANT ISR_WRITE, 374       ; ISR $40 from sd_wait_tran
+CONSTANT ISR_DONE, 3A3
+
+; sdc_cmd_timeout: low half of the command timeout $0000 -> $FFFF
+ADDRESS 12B
+    LOAD s1, FF               ; was LOAD s1, 00
+
+; sd_command, after a data command: the debug "55" putc becomes the spin
+; counter's reset, and the wait loop's exit goes through data_wait
+ADDRESS 19F
+    LOAD s4, 00               ; was LOAD sF, 55
+    CALL dw_init              ; was CALL dbg_putc
+ADDRESS 1A5
+    JUMP data_wait            ; was JUMP Z, L_1A1
+
+; load_rom_loop: check the run before the fast-key check
+ADDRESS 23A
+    JUMP ld_tail              ; was CALL sd_cmd12_stop
+
+; rtc_dump: the weekday goes out through wday_out
+ADDRESS 326
+    CALL wday_out             ; was OUTPUT s5, RTC_REG_VALUE
+
+; ISR $80 / $40 tails
+ADDRESS 370
+    JUMP rd_tail              ; was CALL sd_cmd12_stop
+ADDRESS 377
+    JUMP wr_tail              ; was CALL sd_cmd12_stop
+
+ADDRESS 3A4
+; s3 = data event status. s4/sB/sC count polls: sB/sC held the command
+; word and s4 is clobbered by sector_to_card_addr on every path.
+data_wait:
+    TEST s3, 03               ; CC or EI
+    JUMP NZ, DATA_DONE
+    ADD s4, 01
+    ADDCY sB, 00
+    ADDCY sC, 00
+    COMPARE sC, SPIN_HI
+    JUMP NZ, DATA_POLL
+    LOAD s3, 02               ; gave up: report it as EI
+    JUMP DATA_DONE
+
+dw_init:
+    LOAD sB, 00
+    LOAD sC, 00
+    RETURN
+
+; Soft reset the masters (the register file keeps the divider, bus width
+; and enables), halve the SD clock, keep delay_long between loader runs,
+; and get the card back to tran.
+sd_recover:
+    CALL SDC_RESET_ON
+    CALL SDC_RESET_OFF
+    LOAD s0, 01
+    CALL SDC_CLOCK_DIVIDER
+    LOAD s0, 01
+    STORE s0, sd_slow
+    LOAD s0, 00
+    STORE s0, fast_key
+    CALL SD_CMD12_STOP
+    CALL SD_WAIT_TRAN
+    RETURN
+
+rd_tail:
+    CALL SD_CMD12_STOP
+    CALL xfer_check
+    JUMP Z, ISR_DONE
+    JUMP ISR_READ
+
+wr_tail:
+    CALL SD_CMD12_STOP
+    CALL xfer_check
+    JUMP Z, ISR_DONE
+    JUMP ISR_WRITE
+
+; Z: done (clean, or the fifth failure); NZ: recovered, go again.
+; sd_tries is back at 0 whenever this returns Z. The flag goes in s4, not
+; s3: the ISR doesn't save registers, and stock leaves s3 = data_status
+; ($01) here, which ends the idle loop's interrupted delay_long at once (a
+; 0 would make it 256 passes and stall the RTC refresh).
+xfer_check:
+    FETCH s3, data_status
+    TEST s3, 02
+    JUMP Z, xc_done
+    FETCH s4, sd_tries
+    ADD s4, 01
+    STORE s4, sd_tries
+    COMPARE s4, 05
+    JUMP Z, xc_done
+    CALL sd_recover
+    LOAD s4, 01
+    OR s4, 00                 ; NZ
+    RETURN
+xc_done:
+    AND s4, 00                ; Z
+    STORE s4, sd_tries
+    RETURN
+
+ld_tail:
+    CALL SD_CMD12_STOP
+    FETCH s0, data_status
+    TEST s0, 02
+    JUMP Z, LOAD_NEXT
+    CALL sd_recover
+    JUMP LOAD_RUN
+
+; s5 = the register just read, sB its index. s2 is free here (the I2C
+; routines use s0, s1, s5, sB, sD, sF).
+wday_out:
+    COMPARE sB, 06
+    JUMP NZ, wo_out
+    FETCH s2, sd_slow
+    COMPARE s2, 00
+    JUMP Z, wo_out
+    LOAD s5, 07               ; weekday 7: dropped to half speed
+wo_out:
+    OUTPUT s5, RTC_REG_VALUE
+    RETURN
