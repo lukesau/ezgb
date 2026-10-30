@@ -46,9 +46,10 @@ void cgb_init_and_lcd_on(void) {
     /* Feature-test VBK rather than trusting the saved boot A at $d6c9: on CGB
      * hardware A is $11 even when the console is running in DMG compatibility
      * mode, where the CGB registers are locked out and this whole block must
-     * be skipped. A writable VBK is the thing that actually distinguishes
-     * "really in CGB mode": in DMG mode $ff4f reads back $ff, so bit 0 can
-     * never be observed as 0. Writes to it there are harmless no-ops. */
+     * be skipped. A DMG reads $ff4f back as $ff, but a CGB in DMG
+     * compatibility mode reads back what was written (docs/cgb-mode.md), so
+     * this also clears bank 1 there, which is harmless: compat mode never
+     * shows it. Theme (theme.c) does not rely on this test. */
     rVBK = 0;
     if ((rVBK & 1) == 0) {
         unsigned char *v;

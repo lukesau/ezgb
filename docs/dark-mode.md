@@ -99,7 +99,7 @@ OK!`. Stage1 picks it up on the next power-on.
 
 | Block | Address | Does |
 |---|---|---|
-| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 299 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and on a CGB in CGB mode the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. |
+| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 296 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. A byte that still reads back wrong after 8 tries ends the ramp: palette RAM only takes writes in CGB mode. |
 | `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; custom has no row. |
 | `ThemeCustom` | `02:4990`, [theme_pick.c](../kernel/src/theme_pick.c), 48 B | `FarCallColors` (8 B), ezcfg's stub to `ThemeColors`, then `theme_ramp` (`02:4998`): the colors for `Theme`, a `ThemeRamps` row or, for custom, `CUST_RAMP`, which it loads from the mark at boot. |
 | `ThemeColors` | `05:7b50`, [theme_colors.c](../kernel/src/theme_colors.c), 289 B | Asm. Op 0 parses `COLORS=` into `CUST_RGB` and builds `CUST_RAMP`; op 1 writes the `THEME=` and `COLORS=` lines on a save. |
@@ -108,6 +108,18 @@ OK!`. Stage1 picks it up on the next power-on.
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
 | `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 254 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping, past custom without `COLORS=`), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
 | `ThemeNames` | `04:7f20`, [theme_names.c](../kernel/src/theme_names.c), 49 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh. |
+
+> **Correction (2026-10-30).** `Theme` used to write the ramp only when
+> `VBK` read back bit 0 clear, taken from `CgbInit` as the CGB-mode test, and
+> retried each byte until it read back. On a GBC running the kernel in DMG
+> compatibility mode (stock stage1, which has no CGB flag) `VBK` reads back
+> what was written, so the test passed, palette RAM ignored the writes, and
+> the retry never ended: the 7.0 kernel hung before its first frame with a
+> blank screen, on hardware (a GBC-family console on stock FW4) and in
+> SameBoy with the header's CGB flag cleared. The retries are capped at 8
+> and the `VBK` test is gone; the 7.0 release's patches were replaced in
+> place with the fix. [cgb-mode.md](cgb-mode.md)'s claim that `VBK` reads
+> `$FF` in DMG compatibility mode was wrong the same way.
 
 `THEME` is WRAM `$DBF7` (vars.h), cleared at boot with the rest of WRAM.
 Custom adds `CUST_RGB` (`$DBE4`-`$DBE9`, the colors as read), `CUST_OK`

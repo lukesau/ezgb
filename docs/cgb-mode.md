@@ -37,6 +37,14 @@ LCD-on itself at the end.
    passes to the FPGA as `$7FD3`, would be `$11` on CGB in DMG compatibility
    mode, which is exactly the case that must be skipped.
 
+   > **Correction (2026-10-30).** `VBK` does not read `$FF` in DMG
+   > compatibility mode: on a GBC booted from a cart without the CGB flag
+   > (stock stage1) it reads back what was written, in SameBoy and on
+   > hardware, so this test passes there. Here that only zeroes VRAM bank 1,
+   > which compat mode never displays. `Theme`
+   > ([dark-mode.md](dark-mode.md#kernel)) inherited the test for its palette
+   > writes and hung on it in 7.0; it no longer uses it.
+
    > **Correction (2026-10-12).** This said `A` at `$d6c9` is `$11` on CGB
    > hardware. It is `$E4` on all hardware ([debug-tab.md](debug-tab.md)'s
    > `BOOT A REGISTER` readings, [fpga-stage1.md](fpga-stage1.md) on kernel

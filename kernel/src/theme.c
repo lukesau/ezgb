@@ -40,7 +40,6 @@
 #define rBGP  (*(volatile u8 *)0xff47)
 #define rOBP0 (*(volatile u8 *)0xff48)
 #define rOBP1 (*(volatile u8 *)0xff49)
-#define rVBK  (*(volatile u8 *)0xff4f)
 #define rBCPS ((volatile u8 *)0xff68)   /* +1 = BCPD */
 #define rOCPS ((volatile u8 *)0xff6a)   /* +1 = OCPD */
 
@@ -75,13 +74,13 @@ void theme(void) {
     RAM_PAGE = 0;
     fpga_page(0);
 
-    rBGP = t ? 0x1b : 0xe4;
-    rOBP0 = t ? 0x1b : 0xe4;
-    rOBP1 = t ? 0xe4 : 0x1b;
+    i = t ? 0x1b : 0xe4;
+    rBGP = i;
+    rOBP0 = i;
+    rOBP1 = ~i;
 
-    /* CGB mode only: VBK reads back $ff otherwise (cgb_init.c) */
-    rVBK = 0;
-    if (rVBK & 1) return;
+    /* the color palettes take only in CGB mode: anywhere else write_ramp
+     * finds them locked and gives up */
     write_ramp(rBCPS, r);
     write_ramp(rOCPS, r);
 }
@@ -95,12 +94,18 @@ static void fpga_page(u8 page) {
     *(volatile u8 *)0x7FF0 = 0xE4;
 }
 
-/* All 8 palettes behind sel (BCPS or OCPS) get the ramp. */
+/* All 8 palettes behind sel (BCPS or OCPS) get the ramp. A byte that
+ * still reads back wrong after 8 tries means there is no palette RAM to
+ * write: a DMG, or a CGB running the kernel in DMG compatibility mode
+ * (stock stage1), where VBK still reads back what was written, so it can't
+ * tell the modes apart. Give up and leave the console to BGP/OBP. */
 static void write_ramp(volatile u8 *sel, const u8 *ramp) {
-    u8 i, c;
+    u8 i, c, n;
     for (i = 0; i < 64; i++) {
         c = ramp[i & 7];
+        n = 8;
         do {
+            if (!n--) return;
             sel[0] = i;
             while (rSTAT & 2) {}
             sel[1] = c;
