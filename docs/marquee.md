@@ -12,7 +12,7 @@ its own way (a character count, or `Fit12` with a hand-picked trim).
 | User | Instance | Field (8px / 12px) | Colors |
 |---|---|---|---|
 | SET page 1, fast-launch name ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)) | `MQ_A` | x 0..79 on row 12 (ten cells) / the same span, y 96 | ink 3 on paper 0 |
-| SET page 2, tag example ([browser-tags.md](browser-tags.md)) | `MQ_A` | x 32..159 on row 8 / x 28..159, y 64 | ink 3 on paper 0 |
+| SET page 2, tag example ([browser-tags.md](browser-tags.md)) | `MQ_A` | x 0..159 on row 8 / the same span, y 64 | ink 3 on paper 0 |
 | START overlay name, BACKUPSAVE prompt name ([last-rom.md](last-rom.md)) | `MQ_A` | x 8..151 (18 cells) / x 12..156 | popup paper 3 on ink 0, the band |
 | BACKUPSAVE prompt `Played` line ([modal-prompts.md](modal-prompts.md)) | `MQ_B` | as above, on its row | popup ink 3 on paper 0 |
 

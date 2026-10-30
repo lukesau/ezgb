@@ -24,7 +24,7 @@ The pane has two pages; row 16 of each switches to the other.
 | 2 | `TIME:` + `SET` (stock) | `THEME:` button, `LIGHT`, `DARK` and four colors ([`dark-mode.md`](dark-mode.md)) |
 | 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SHOW NAME TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
-| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `Ex:` and an example name, scrolling: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
 | 10 | `FAST LAUNCH:` checkbox | |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | |
 | 14 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | |

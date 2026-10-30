@@ -37,7 +37,7 @@
  *           12 <name, 10 cols, scrolling> [PICK ROM]   14 SGB BOOT: [ ]
  *           16 1/2 [NEXT >]
  *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 SHOW NAME TAGS: [x]
- *           8 Ex: <name, scrolling>   16 [< PREV] 2/2               (setpage.c)
+ *           8 <example name, scrolling>   16 [< PREV] 2/2               (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB BOOT,
  * 6 NEXT; 7 THEME, 8 UI, 9 TAGS, 10 PREV). The stock clamp lets the cursor

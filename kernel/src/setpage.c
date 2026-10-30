@@ -7,7 +7,7 @@
  *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 7
  *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
  *   row 6   SHOW NAME TAGS:  [x]   cursor row 9 (docs/browser-tags.md)
- *   row 8   Ex: Game Title (USA)..  the example name, scrolling (tagexample.c)
+ *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
  *   row 16  [< PREV]  2/2        cursor row 10
  *
  * and page 1 ends in SGB BOOT on row 14 (cursor row 5) and `1/2 [NEXT >]`

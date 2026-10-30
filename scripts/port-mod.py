@@ -111,7 +111,7 @@ REGISTRY = {
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60}),
     (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
-                      pins={"SetText": 0x6400, "StoreDrawParams": 0x2791, "FarCallMarquee": 0x0410}),
+                      pins={"FarCallMarquee": 0x0410}),
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0,
