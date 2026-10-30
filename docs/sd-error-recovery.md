@@ -41,7 +41,7 @@ against ×3) only clocks the 595. FW5's one SD speed-up is the fast-load key
 
 ## What the patch does
 
-68 words: 8 replaced in place, 60 new at `$3A4-$3DF` (of the 76 free
+75 words: 9 replaced in place, 66 new at `$3A4-$3E5` (of the 76 free
 there; `$3F0-$3F7` is the bank-switch window and stays untouched). Two
 scratchpad bytes unused by bank 1 and bank 2 (stock and
 `stage0/flash-read.psm`): `$07` `sd_slow`, `$08` `sd_tries`.
@@ -51,6 +51,7 @@ scratchpad bytes unused by bank 1 and bank 2 (stock and
 | `$12B` (`sdc_cmd_timeout`) | `LOAD s1, 00` | `LOAD s1, FF`: command timeout `$FFFF` SD clocks (2.7 ms) |
 | `$19F-$1A0` | debug `55` putc | `LOAD s4, 00`, `CALL dw_init`: zero the spin count |
 | `$1A5` | `JUMP Z, L_1A1` | `JUMP data_wait` |
+| `$224` (`cmd_load_rom`) | `STORE s0, 2B` | `CALL key_store`: the fast-load key, or 0 after the drop |
 | `$23A` (loader) | `CALL sd_cmd12_stop` | `JUMP ld_tail` |
 | `$326` (`rtc_dump`) | `OUTPUT s5, EE` | `CALL wday_out` |
 | `$370` / `$377` (ISR `$80` / `$40`) | `CALL sd_cmd12_stop` | `JUMP rd_tail` / `wr_tail` |
@@ -70,7 +71,17 @@ slow card's programming time is never cut short. The poll count lives in
 divider 1 (12.27 MHz), set `sd_slow`, clear the fast-load key (scratchpad
 `$2B`, so loads pause after each run again, as on FW4), then `CMD12` and
 `sd_wait_tran` to put the card back in tran. Both changes stay until
-power-off; the first error costs one retry and later ones none.
+power-off; the first error costs one retry and later ones none. The divider
+stays by itself, but `cmd_load_rom` reads the key from the FPGA into `$2B`
+at the start of every load, so `key_store` (at `$224`) stores 0 instead
+whenever `sd_slow` is set.
+
+> **Correction (2026-10-30).** The first build cleared `$2B` only in
+> `sd_recover`, which lasts for the load that failed: the next load read
+> `$7FD3+$7FD4` again and ran fast at half clock, stage1's fast launch
+> (`game.c` writes `$7FD4=$11` right before it) included. Fixed with
+> `key_store`; the earlier claim that the key stayed off until power-off
+> was wrong for that build.
 
 **Retry.** Sector reads and writes (`rd_tail`/`wr_tail` → `xfer_check`):
 on `EI` in `data_status`, recover and go back to `$36D`/`$374`
@@ -114,6 +125,7 @@ weekday in kernel mode. The SD model's fault plusargs (`models.v`):
 | dropped CMD13 (during init) | command timeout after 2.7 ms, init carries on, full speed |
 | dropped CMD18 | command timeout, then the ~400 ms spin, recover, retry: read right at 433 ms, weekday `07` |
 | dropped CMD25 | the same for the write (done at 434 ms), read-back right, weekday `07` |
+| one bad read, then a ROM load with `$7FD3=0`, `$7FD4=$11` (`gb_sdload.vh`) | the load stores the key as 0 and pauses after all 8 runs, data byte-exact, weekday `07`; clean, the same load stores `$11` and never pauses; the first build took the fast path |
 | five bad reads / five bad writes | exactly five attempts, then the GB waits on `$E1` (the give-up, see Open) |
 
 The test's first version waited for the write as `gb_sdwrite.vh` does

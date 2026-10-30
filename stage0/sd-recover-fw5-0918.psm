@@ -11,8 +11,8 @@
 ;   - sector reads and writes (ISR $80/$40) are redone up to 4 times,
 ;     the ROM loader's run until it reads clean
 ;   - the first error soft-resets the controller, drops the SD clock to
-;     divider 1 (half speed) and clears the fast-load key for the rest of
-;     the session
+;     divider 1 (half speed) and clears the fast-load key, for the rest of
+;     the session: every later load stores the key as 0 (key_store)
 ;   - after the drop, the idle loop's RTC copy reports weekday 7, which a
 ;     PCF8563 never holds (0-6; FW5 keeps only those three bits of the copy),
 ;     for the kernel's HELP pane to read at $A00C
@@ -49,6 +49,11 @@ ADDRESS 19F
     CALL dw_init              ; was CALL dbg_putc
 ADDRESS 1A5
     JUMP data_wait            ; was JUMP Z, L_1A1
+
+; cmd_load_rom: the fast-load key is read from the FPGA on every load, so
+; after the drop it goes through key_store, which keeps it 0
+ADDRESS 224
+    CALL key_store            ; was STORE s0, 2B
 
 ; load_rom_loop: check the run before the fast-key check
 ADDRESS 23A
@@ -141,6 +146,17 @@ ld_tail:
     JUMP Z, LOAD_NEXT
     CALL sd_recover
     JUMP LOAD_RUN
+
+; s0 = the key cmd_load_rom just read from the FPGA. s1 is free: it was
+; stored at $219 and load_rom_loop sets it before reading it.
+key_store:
+    FETCH s1, sd_slow
+    COMPARE s1, 00
+    JUMP Z, ks_out
+    LOAD s0, 00               ; half speed: no fast load
+ks_out:
+    STORE s0, fast_key
+    RETURN
 
 ; s5 = the register just read, sB its index. s2 is free here (the I2C
 ; routines use s0, s1, s5, sB, sD, sF).

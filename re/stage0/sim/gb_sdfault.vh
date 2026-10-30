@@ -24,7 +24,7 @@ endtask
 integer n_dump = 0, n_w7 = 0, n_gc = 0;
 always @(tb.dut.`PC_BRAM.ADDRA[13:4]) begin
     if (tb.dut.`PC_BRAM.ADDRA[13:4] == 10'h323) begin n_dump = n_dump + 1; $display("%t gb: rtc_dump", $time); end
-    if (tb.dut.`PC_BRAM.ADDRA[13:4] == 10'h3dd) n_w7 = n_w7 + 1;
+    if (tb.dut.`PC_BRAM.ADDRA[13:4] == 10'h3e3) n_w7 = n_w7 + 1;
     if (tb.dut.`PC_BRAM.ADDRA[13:4] == 10'h03c && n_gc < 3) begin n_gc = n_gc + 1; $display("%t gb: game_clock", $time); end
 end
 integer n_pc;
