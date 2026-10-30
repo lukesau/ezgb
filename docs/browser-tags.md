@@ -3,8 +3,8 @@
 A ROM set names its files after a convention: No-Intro writes
 `Tetris (World) (Rev 1).gb`, GoodTools `Tetris (W) (V1.1) [!].gb`. The tags
 say which dump this is, which the browser's 19 columns (or the 12px row)
-would rather spend on the title. With the `TAGS:` box on the SET tab
-unticked (`TAGS=0` in `EZGB.CFG`, [ezgb-cfg.md](ezgb-cfg.md)) the browser
+would rather spend on the title. With the `SHOW NAME TAGS:` box on the
+SET tab unticked (`TAGS=0` in `EZGB.CFG`, [ezgb-cfg.md](ezgb-cfg.md)) the browser
 shows `Tetris` for either. The default is the full name, as before.
 
 ## The rule
@@ -44,9 +44,16 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 ## SET tab
 
 > Since 2026-10-30 the checkbox is on the SET tab's second page, row 6,
-> cursor row 9, drawn by `SetPage` (`04:77a0`, `setpage.c`), which replaced
-> `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The
-> rest of this section is how it was first built.
+> cursor row 9, drawn by `SetPage` (`04:7792`, `setpage.c`), which replaced
+> `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). Its
+> label is `SHOW NAME TAGS:`, and row 8 under it shows an example name the
+> way the browser will draw it: `Ex: Game Title (USA) (Rev 1) [!].gb`
+> ticked, `Ex: Game Title.gb` unticked. The name fills the row after `Ex:`
+> (16 cells in 8px, 23 characters clipped at the screen's edge in 12px) and
+> scrolls in the shared marquee's `MQ_A` like page 1's fast-launch name
+> ([marquee.md](marquee.md); `TagExample`, `04:7e60`, `tagexample.c`,
+> 182 B, copies the name to WRAM and starts it, flcfg's op TICK steps it). The rest of this section is how it was first
+> built.
 
 The `TAGS:` checkbox shares row 16 with `SGB BOOT:` and is cursor row 8
 (clamp `04:5604` `d6 08`, [fastlaunch-set-tab.md](fastlaunch-set-tab.md)).

@@ -1,12 +1,13 @@
 /* SET tab rows flcfg.c has no room for (docs/fastlaunch-set-tab.md "Pages"):
  * page 1's SGB BOOT row, page 2, and both pages' page row.
  *
- * Bank 4, injected at 04:77a0, near-called by flcfg.c (04:6600). Page 2
+ * Bank 4, injected at 04:7792, near-called by flcfg.c (04:6600). Page 2
  * holds the UI settings:
  *
  *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 7
  *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
- *   row 6   TAGS:        [x]     cursor row 9 (docs/browser-tags.md)
+ *   row 6   SHOW NAME TAGS:  [x]   cursor row 9 (docs/browser-tags.md)
+ *   row 8   Ex: Game Title (USA)..  the example name, scrolling (tagexample.c)
  *   row 16  [< PREV]  2/2        cursor row 10
  *
  * and page 1 ends in SGB BOOT on row 14 (cursor row 5) and `1/2 [NEXT >]`
@@ -44,6 +45,7 @@ extern void FarCallEzCfg(void);                                     /* 04:5f00 -
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c */
+extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
@@ -66,10 +68,11 @@ void SetPage(u8 op, u8 cur) {
     if (op == 0) {
         static const u8 theme_label[7] = {'T','H','E','M','E',':',0};
         static const u8 font_label[6] = {'F','O','N','T',':',0};
-        static const u8 tags_label[6] = {'T','A','G','S',':',0};
+        static const u8 tags_label[16] = {'S','H','O','W',' ','N','A','M','E',' ','T','A','G','S',':',0};
         SetText(theme_label, 6, 0, 2);
         SetText(font_label, 5, 0, 4);
-        SetText(tags_label, 5, 0, 6);
+        SetText(tags_label, 15, 0, 6);
+        TagExample();                       /* row 8, scrolling */
     } else if (op == 1) {
         static const u8 ui8_str[5] = {' ','8','p','x',0};
         static const u8 ui12_str[5] = {'1','2','p','x',0};
@@ -85,6 +88,7 @@ void SetPage(u8 op, u8 cur) {
         EZ_OP = OP_SAVE;
         FarCallEzCfg();
         box(0x82, 0x30, !TAGS_HIDE, 1);
+        TagExample();                       /* the other name, from its start */
     } else if (op == 4) {
         StoreDrawParams(0, 0, 0);
         DrawRect(0, 0x0d, 0x9f, 0x8f, 1);   /* under the 12px rule (y 12) too */
@@ -119,21 +123,16 @@ void SetPage(u8 op, u8 cur) {
 static void page_row(u8 hi) {
     static const u8 next_str[7] = {'N','E','X','T',' ','>',0};
     static const u8 prev_str[7] = {'<',' ','P','R','E','V',0};
-    u8 num[4];
-    num[1] = '/';
-    num[2] = '2';
-    num[3] = 0;
+    static const u8 nums[8] = {'1','/','2',0,'2','/','2',0};
     if (SET_PAGE & 1) {
-        num[0] = '2';
         button(hi, 0x03, 0x7d, hUiMode ? 0x41 : 0x3b, 0x89);   /* 12px "< PREV" is wider */
         SetText(prev_str, 6, 1, 16);
     } else {
-        num[0] = '1';
         button(hi, 0x63, 0x7d, 0x9b, 0x89);
         SetText(next_str, 6, 13, 16);
     }
     StoreDrawParams(3, 0, 0);
-    SetText(num, 3, 9, 16);
+    SetText(nums + ((SET_PAGE & 1) << 2), 3, 9, 16);
 }
 
 /* Checkbox at pixel x, y (flcfg.c's): clear, outline (highlighted when the
