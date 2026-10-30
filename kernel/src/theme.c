@@ -9,6 +9,8 @@
  *            not read yet (CFG_LOADED is 0, WRAM was just cleared), so THEME
  *            comes from the pSRAM mark the last run left: page $11 $A414,
  *            'T', 'H', theme, ~theme. A missing or faded mark is theme 0.
+ *            A custom theme takes its colors from the mark too
+ *            (theme_pick.c).
  *   runtime  once THEME holds the file's value: ezcfg's boot restore (a
  *            near call) and the SET tab (FarCallTheme_B4, 04:5990). The
  *            mark is rewritten from THEME, and the theme's four colors are
@@ -18,7 +20,8 @@
  *
  * Either way it then sets the palette registers: BGP/OBP0/OBP1 on every
  * console (the CGB ignores them in CGB mode, a DMG has nothing else), and on
- * a CGB in CGB mode the theme's ramp (theme_ramps.c, 02:4960) in all 8 BG
+ * a CGB in CGB mode the theme's ramp (theme_ramps.c, 02:4960, or custom's
+ * COLORS=, through theme_ramp in theme_pick.c) in all 8 BG
  * and 8 OBJ palettes, so a stray non-zero attribute still draws in the
  * theme (cgb_init.c zeroes them). Theme 0 is the stock look: BGP $E4, OBP0
  * $E4, OBP1 $1B, the ramp cgb_init.c used to write. Every other theme is a
@@ -44,13 +47,14 @@
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define MARK     ((volatile u8 *)0xA414)   /* page $11: 'T', 'H', theme, ~theme, then its ramp */
 
-extern const u8 theme_ramps[THEME_COUNT][8];  /* 02:4960, theme_ramps.c */
+extern const u8 *theme_ramp(void);    /* 02:4998, theme_pick.c: the colors, with the mark mapped */
 
 static void fpga_page(u8 page);
 static void write_ramp(volatile u8 *sel, const u8 *ramp);
 
 void theme(void) {
     volatile u8 *m = MARK;
+    const u8 *r;
     u8 t, i;
 
     RAM_PAGE = 0x11;
@@ -58,18 +62,19 @@ void theme(void) {
     if (!CFG_LOADED) {
         t = m[2];
         THEME = (m[0] == 'T' && m[1] == 'H' && t < THEME_COUNT && m[3] == (u8)~t) ? t : 0;
-    } else {
-        t = THEME;
+    }
+    r = theme_ramp();
+    t = THEME;
+    if (CFG_LOADED) {
         m[0] = 'T';
         m[1] = 'H';
         m[2] = t;
         m[3] = ~t;
-        for (i = 0; i < 8; i++) m[4 + i] = theme_ramps[t][i];
+        for (i = 0; i < 8; i++) m[4 + i] = r[i];
     }
     RAM_PAGE = 0;
     fpga_page(0);
 
-    t = THEME;
     rBGP = t ? 0x1b : 0xe4;
     rOBP0 = t ? 0x1b : 0xe4;
     rOBP1 = t ? 0xe4 : 0x1b;
@@ -77,8 +82,8 @@ void theme(void) {
     /* CGB mode only: VBK reads back $ff otherwise (cgb_init.c) */
     rVBK = 0;
     if (rVBK & 1) return;
-    write_ramp(rBCPS, theme_ramps[t]);
-    write_ramp(rOCPS, theme_ramps[t]);
+    write_ramp(rBCPS, r);
+    write_ramp(rOCPS, r);
 }
 
 /* SetFpgaPage_B4 inlined, as in ezcfg.c */

@@ -63,8 +63,12 @@ REGISTRY = {
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/dark-mode.md)
-    (2, 0x43d0): dict(src="theme.c", pins={"theme_ramps": 0x4960}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
+    (2, 0x43d0): dict(src="theme.c", pins={"theme_ramp": 0x4998}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
     (2, 0x4960): dict(src="theme_ramps.c", pins={}),   # UI theme colors, data only
+    (2, 0x4990): dict(src="theme_pick.c",                   # custom theme: FarCallColors stub, theme_ramp for theme.c
+                      pins={"FarCallTrampoline": 0x078d, "theme_ramps": 0x4960},
+                      exports={"theme_ramp": 0x4998}),
+    (5, 0x7b50): dict(src="theme_colors.c", pins={}),       # COLORS= parse and THEME=/COLORS= lines, far target of FarCallColors
     (0, 0x0420): dict(src="fastlaunch_do_launch.c",
                       pins={"FarCallTrampoline": 0x078d, "Strrchr": 0x2c42, "LastRomRelaunch": 0x1344}),
     (0, 0x0460): dict(src="fastlaunch_hook.c",
@@ -97,7 +101,8 @@ REGISTRY = {
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x5d58, "DrawString12": 0x7500,
-                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290}),
+                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290,
+                                              "FarCallColors": 0x4990}),
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
@@ -109,7 +114,10 @@ REGISTRY = {
                       pins={"SetText": 0x6400, "StoreDrawParams": 0x2791, "FarCallMarquee": 0x0410}),
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
-                            "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),
+                            "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0,
+                            "theme_names": 0x7f20}),
+    (4, 0x7f20): dict(src="theme_names.c", pins={}),        # THEME button names, data only
+
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,

@@ -32,7 +32,8 @@ RTC=2026-09-08 10:15:32
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `UI` | `8` or `12`: which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
-| `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing = light. | SET tab (`THEME` button) |
+| `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
+| `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB` (the first 12 hex digits count, so `#` and spaces are fine), see [dark-mode.md](dark-mode.md#custom). Written back as read. | by hand only |
 | `TAGS` | `0`: the browser hides the tags in ROM file names (the SET tab's `SHOW NAME TAGS:` box unticked), see [browser-tags.md](browser-tags.md). Written only as `TAGS=0`. Missing = full names. | SET tab (`SHOW NAME TAGS:` checkbox) |
 | `AUTOSAVE` | `0` or `1`: the SET tab's AUTO SAVE checkbox (pSRAM `$11:$A200`). Put back when the pSRAM lost power (BATTERY DRY), see "AUTO SAVE backup" below. Missing = not restored. | SET tab (the AUTO SAVE toggle), every launch |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
@@ -281,9 +282,10 @@ no version-specific address.
 | `$DB4F` | `LOG_LEN`, `RTCLOG=` text length |
 | `$DB50-$DB56` | `RTC_RAW`, the last RTC read (raw) |
 | `$DB57` | `AS_SD`, `AUTOSAVE=` from the file: 0 or 1, `$FF` when absent |
-| `$DB58-$DB5F` | free since 2026-10-30 (was `LastRomName`'s second marquee line) |
+| `$DB58-$DB5F` | `CUST_RAMP`, the custom theme's four colors (free since 2026-10-30 until then; was `LastRomName`'s second marquee line) |
 | `$DB60-$DBC1` | `LOG_BUF`, `RTCLOG=` text, 98 B (7 entries; 140 B until 2026-10-30), test builds only |
 | `$DBC2-$DBE3` | the shared marquee: `MQ_ARG`, its work copy, `MQ_OPS`, `MQ_A`, `MQ_B` ([marquee.md](marquee.md)) |
+| `$DBE4-$DBE9` / `$DBEA` | `CUST_RGB`, `COLORS=` as read / `CUST_OK`, 1 once it was valid ([dark-mode.md](dark-mode.md#custom)) |
 | `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [joypad-latch.md](joypad-latch.md#set-tab-d-pad-repeat)) |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
 | `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |

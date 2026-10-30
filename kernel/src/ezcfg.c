@@ -41,6 +41,7 @@
  *                                 when the pSRAM lost power
  *   THEME=1                       UI theme number (vars.h): 0 light, 1 dark;
  *                                 written only when it is not 0
+ *   COLORS=102030,E0F0FF          the custom theme's background and ink
  *
  * The firmware rewrites the whole file from its known keys as a fixed
  * REC_LEN (one-sector) record padded with spaces (this FatFs has no f_truncate), so hand
@@ -155,6 +156,7 @@ static void autosave_boot(void);
 
 extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d70 patch_guard.c: halts on a cross-patched kernel */
 extern void theme(void);                                    /* 02:43d0 theme.c: palettes + pSRAM mark from THEME */
+extern u8 *FarCallColors(u8 op, u8 *p, u8 len);             /* 02:4990 -> 05:7b50 theme_colors.c: COLORS=, THEME= */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
 extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7260, lastrom_name.c */
 
@@ -617,6 +619,7 @@ static void cfg_load(void) {
     static const u8 cfg_name[10] = {'/','E','Z','G','B','.','C','F','G',0};
     static const u8 old_name[13] = {'/','F','L','A','U','N','C','H','.','C','F','G',0};
     u16 br;
+    u8 legacy;
 
     CFG_LOADED = 1;
     FL_EN = 1;
@@ -633,18 +636,22 @@ static void cfg_load(void) {
     LOG_LEN = 0;
 #endif
 
-    if (open_read(cfg_name, &br)) {
-        parse_record(br, 0);
-        return;
+    legacy = 0;
+    if (!open_read(cfg_name, &br)) {
+        /* Legacy: /FLAUNCH.CFG, line 1 = "[#]path". Migrated on the next SAVE. */
+        if (!open_read(old_name, &br)) return;
+        legacy = 1;
     }
-    /* Legacy: /FLAUNCH.CFG, line 1 = "[#]path". Migrated on the next SAVE. */
-    if (open_read(old_name, &br)) parse_record(br, 1);
+    parse_record(br, legacy);
+    /* not one digit, past the last theme, or custom without COLORS=
+     * (theme_colors.c), wherever that is in the file: light */
+    if (THEME >= (u8)(THEME_CUSTOM + CUST_OK)) THEME = 0;
 }
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the
  * order of its switch. The key's bit in `seen` is 1 << its index (eight
- * keys; the test-build RTCLOG key past them has no bit, so only its
- * first-occurrence rule is lost). */
+ * keys; COLORS and the test-build RTCLOG key past them have no bit, so only
+ * their first-occurrence rule is lost). */
 static const u8 cfg_keys[] = {
     7, 'f','l','a','u','n','c','h',
     3, 'r','t','c',
@@ -654,6 +661,7 @@ static const u8 cfg_keys[] = {
     8, 'a','u','t','o','s','a','v','e',
     5, 't','h','e','m','e',
     4, 't','a','g','s',
+    6, 'c','o','l','o','r','s',
 #ifdef EZCFG_RTCLOG
     6, 'r','t','c','l','o','g',
 #endif
@@ -729,13 +737,16 @@ static void parse_record(u16 br, u8 legacy) {
                 if (d <= 1) AS_SD = d;
                 break;
             case 6:
-                if (d < THEME_COUNT) THEME = d;
+                THEME = d;               /* checked in cfg_load */
                 break;
             case 7:
                 TAGS_HIDE = (vlen != 0 && v[0] == '0') ? 1 : 0;
                 break;
+            case 8:
+                FarCallColors(0, (u8 *)v, (u8)vlen);
+                break;
 #ifdef EZCFG_RTCLOG
-            case 8: {
+            case 9: {
                 u16 j, len = vlen + 1;    /* the trimmed last entry's space */
                 u8 whole = 0;
                 if (len > LOG_MAX) len = LOG_MAX;
@@ -879,12 +890,7 @@ static u8 cfg_save(void) {
         *w++ = '0' + AS_SD;
         w = crlf(w);
     }
-    if (THEME != 0 && THEME < THEME_COUNT) {
-        static const u8 k_th[6] = {'T','H','E','M','E','='};
-        w = put(w, k_th, 6);
-        *w++ = '0' + THEME;
-        w = crlf(w);
-    }
+    w = FarCallColors(1, w, 0);          /* THEME= and COLORS= (theme_colors.c) */
     if (TAGS_HIDE) {
         static const u8 k_tg[6] = {'T','A','G','S','=','0'};
         w = crlf(put(w, k_tg, 6));

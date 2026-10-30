@@ -7,12 +7,14 @@
  * with white ink. Every theme past 0 has white ink, and its two middle
  * shades are the background blended 20% and 56% toward white. Green, purple
  * and blue are brighter than red so the three stay apart on an unlit GBC
- * screen. On a DMG every theme past 0 is the inverted palette (theme.c). */
+ * screen. On a DMG every theme past 0 is the inverted palette (theme.c).
+ * Custom, the last theme, has no row: its colors come from COLORS=
+ * (theme_colors.c). */
 
 #include "types.h"
 #include "vars.h"
 
-const u8 theme_ramps[THEME_COUNT][8] = {
+const u8 theme_ramps[THEME_CUSTOM][8] = {
     {0xff, 0x7f, 0xb5, 0x56, 0x4a, 0x29, 0x00, 0x00},   /* LIGHT  $7fff $56b5 $294a $0000, stock */
     {0x00, 0x00, 0xc6, 0x18, 0x31, 0x46, 0xff, 0x7f},   /* DARK   $0000 $18c6 $4631 $7fff */
     {0x28, 0x04, 0xed, 0x1c, 0x55, 0x4a, 0xff, 0x7f},   /* RED    $0428 $1ced $4a55 $7fff */

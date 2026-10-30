@@ -3,8 +3,10 @@
 [Issue #11](https://github.com/lukesau/ezgb/issues/11). The SET tab has a
 `THEME` button on the `UI:` row that cycles the browser, every kernel screen
 and our stage1's boot screen through six themes: light (the stock look),
-dark, and four colored ones. On a DMG, or anything else running the kernel in
-DMG mode, every theme but light is the inverted palette.
+dark, and four colored ones, plus a seventh, custom, whose two colors are set
+by hand in `EZGB.CFG` (see [Custom](#custom)). On a DMG, or anything else
+running the kernel in DMG mode, every theme but light is the inverted
+palette.
 
 ## The themes
 
@@ -16,6 +18,7 @@ DMG mode, every theme but light is the inverted palette.
 | 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | `$4EB2` | `$7FFF` |
 | 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
 | 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
+| 6 | `CUSTOM` | `COLORS=` | 3/16 toward ink | 9/16 toward ink | `COLORS=` |
 
 Dark is pure black with white ink, what the issue asked for on an OLED
 screen: those pixels stay off. (A dim gray background with a tan ink was
@@ -35,13 +38,52 @@ that row goes to all 8 BG and 8 OBJ palettes. On a DMG, light is `BGP`,
 `OBP0`, `OBP1` = `$E4`, `$E4`, `$1B` (stock) and every other theme
 `$1B`, `$1B`, `$E4`.
 
+## Custom
+
+Since 2026-10-30. One line in `EZGB.CFG` sets the background and the ink
+(text), in web hex, the format every color picker gives:
+
+```
+THEME=6
+COLORS=1E2A44,F2D7A0
+```
+
+- The value is read as its first 12 hex digits, so `#1E2A44, #F2D7A0` and
+  lower case work too. Fewer than 12 and the line is ignored. The kernel
+  writes it back as `RRGGBB,RRGGBB`, the 8-bit values as read.
+- The console has 5 bits per channel (BGR555, `$7FFF` style, which nobody
+  can type), so each channel keeps its top 5 bits: `1E2A44` draws as
+  `$20A3`.
+- The two middle shades are the background moved 3/16 and 9/16 of the way to
+  the ink, about where the built-in dark themes have theirs. Any pair works,
+  light or dark: the popups draw on the first middle shade either way.
+- `CUSTOM` is in the SET tab's `THEME` cycle only when the file has a valid
+  `COLORS=` line; without one, `THEME=6` is light and the button goes from
+  BLUE to LIGHT. The two lines can be in either order.
+- On a DMG it is the inverted palette like every other theme past 0, and
+  stage1's boot screen (which already reads the colors from the mark) needs
+  no change.
+- Colors on an unlit GBC screen come out much paler and less saturated than
+  on a computer screen; pick by trying them on the console.
+
+The code is three small blocks, since ezcfg and theme.c had almost no
+room. `ThemeColors` (bank 5, asm: SDCC made 610 bytes of the C) parses the
+line, builds the four colors and writes both `THEME=` and `COLORS=` on a
+save (moving the `THEME=` write there made room for the rest in ezcfg).
+`ThemeCustom` (bank 2) is ezcfg's far stub to it and `theme_ramp`, which
+`Theme` calls for the colors: it cannot far-call, since the boot runs it
+with interrupts off. Each middle shade is four halving steps,
+`acc = (acc + (bit ? ink : bg)) / 2` over the weight's bits from the low
+end, which needs no multiply.
+
 ## Where the setting lives
 
 Two copies, because the first frames are drawn before the SD card is read:
 
 - **`EZGB.CFG` `THEME=<n>`**, the source of truth ([ezgb-cfg.md](ezgb-cfg.md)).
   Written only when the theme is not 0. A number rather than a name: a key
-  with a parsed word value did not fit ezcfg's slot.
+  with a parsed word value did not fit ezcfg's slot. `COLORS=` holds the
+  custom theme's two colors.
 - **pSRAM page `$11` `$A414`–`$A41F`**: `'T'`, `'H'`, theme, `~theme`, then
   the theme's four colors ([psram-page-map.md](psram-page-map.md)). The
   kernel rewrites it every time it applies the file's theme; the next boot's
@@ -57,14 +99,19 @@ OK!`. Stage1 picks it up on the next power-on.
 
 | Block | Address | Does |
 |---|---|---|
-| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 294 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and on a CGB in CGB mode the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. |
-| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; 160 bytes of room. |
+| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 299 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and on a CGB in CGB mode the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. |
+| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; custom has no row. |
+| `ThemeCustom` | `02:4990`, [theme_pick.c](../kernel/src/theme_pick.c), 48 B | `FarCallColors` (8 B), ezcfg's stub to `ThemeColors`, then `theme_ramp` (`02:4998`): the colors for `Theme`, a `ThemeRamps` row or, for custom, `CUST_RAMP`, which it loads from the mark at boot. |
+| `ThemeColors` | `05:7b50`, [theme_colors.c](../kernel/src/theme_colors.c), 289 B | Asm. Op 0 parses `COLORS=` into `CUST_RGB` and builds `CUST_RAMP`; op 1 writes the `THEME=` and `COLORS=` lines on a save. |
 | `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
-| `EzCfg` | `02:4a00` | Parses and writes `THEME=`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
+| `EzCfg` | `02:4a00` | Parses `THEME=` (light unless it is one digit naming a theme, and custom only with a valid `COLORS=`) and hands `COLORS=` and the save's two theme lines to `ThemeColors`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
-| `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 290 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
+| `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 254 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping, past custom without `COLORS=`), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
+| `ThemeNames` | `04:7f20`, [theme_names.c](../kernel/src/theme_names.c), 49 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh. |
 
 `THEME` is WRAM `$DBF7` (vars.h), cleared at boot with the rest of WRAM.
+Custom adds `CUST_RGB` (`$DBE4`-`$DBE9`, the colors as read), `CUST_OK`
+(`$DBEA`) and `CUST_RAMP` (`$DB58`-`$DB5F`, the four colors).
 (It was `$DB58` at first, which is `LastRomName`'s copy of the second
 marquee line's state: the BACKUPSAVE prompt's `Played` line overwrote it,
 so the rest of that prompt drew in light-theme colors, black paper and a
@@ -137,15 +184,20 @@ never writes `BGP`.
 
 ## Adding a theme
 
-1. `THEME_COUNT` in [vars.h](../kernel/src/vars.h) (at most 10: `THEME=` is
-   one digit).
-2. A row in [theme_ramps.c](../kernel/src/theme_ramps.c).
-3. A name, six characters wide, in `ThemeRow`'s `names`
-   ([theme_row.c](../kernel/src/theme_row.c)). The button steps through them
-   in order.
+Custom stays the last theme, so a new one takes its number and pushes it up
+one: a card with `THEME=` set to custom then needs that line changed.
 
-Then re-inject the three blocks and `EzCfg` (it compares against
-`THEME_COUNT`), port and regenerate the patches. Stage1 and DMG need nothing.
+1. `THEME_COUNT` and `THEME_CUSTOM` in [vars.h](../kernel/src/vars.h) (at
+   most 10 themes: `THEME=` is one digit), and the two literal `6`/`7`
+   compares in [theme_pick.c](../kernel/src/theme_pick.c) and
+   [theme_colors.c](../kernel/src/theme_colors.c) (asm).
+2. A row in [theme_ramps.c](../kernel/src/theme_ramps.c).
+3. A name, six characters wide, before `CUSTOM` in
+   [theme_names.c](../kernel/src/theme_names.c). The button steps through
+   them in order.
+
+Then re-inject the blocks and `EzCfg` (it compares against `THEME_CUSTOM`),
+port and regenerate the patches. Stage1 and DMG need nothing.
 
 ## Testing
 
@@ -154,3 +206,11 @@ SameBoy, `--model cgb` and `--model dmg`, all three kernels: every theme from
 the file winning over a stale mark, the SET button stepping and wrapping
 from BLUE to LIGHT (which drops `THEME=` from the file), and stage1's boot
 screen from the pSRAM the kernel wrote. Not yet tested on hardware.
+
+Custom (2026-10-30), SameBoy: on 0731, `COLORS=` before and after `THEME=6`,
+with `#` and spaces, in 8px and 12px (the 12px `CUSTOM` fits its box), the
+START overlay, `--model dmg` (inverted), the saved file and the mark's
+colors, the kernel's first boot frames in the mark's custom colors while the
+file said light, an 11-digit `COLORS=` (light, and the button skipping
+custom); a boot and the SET page on 0918 and 1.04e. Not tested on hardware
+or with stage1's boot screen.

@@ -10,12 +10,20 @@
 /* Set by browser_hide.c when the listing hits its cap, cleared by browser_sort.c. */
 #define LIST_CUT  (*(volatile u8 *)0xDBFA)
 /* UI theme (docs/dark-mode.md): 0 light, 1 dark, 2.. red, green, purple,
- * blue. THEME= in EZGB.CFG, mirrored to pSRAM page $11 $A414 for the
- * next boot's first frame (theme.c). Every theme past 0 is a dark one: on a
- * DMG it is the inverted palette, on a color console its row of
- * theme_ramps.c. */
+ * blue, 6 custom. THEME= in EZGB.CFG, mirrored to pSRAM page $11 $A414 for
+ * the next boot's first frame (theme.c). Every theme past 0 is a dark one:
+ * on a DMG it is the inverted palette, on a color console its row of
+ * theme_ramps.c, or for custom the colors of COLORS= (theme_colors.c). */
 #define THEME     (*(volatile u8 *)0xDBF7)
-#define THEME_COUNT 6
+#define THEME_COUNT 7
+#define THEME_CUSTOM 6             /* the last; theme_ramps.c has no row for it */
+/* COLORS=RRGGBB,RRGGBB (theme_colors.c): the background and ink as read,
+ * 1 once a valid line was read, and the four colors the custom theme draws
+ * in (BGR555, as a theme_ramps.c row). CUST_RAMP is also loaded from the
+ * pSRAM mark at boot, before the file is read. */
+#define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
+#define CUST_OK   (*(volatile u8 *)0xDBEA)
+#define CUST_RAMP ((u8 *)0xDB58)   /* 8 */
 /* Browser names without their tags (docs/browser-tags.md): TAGS=0 in
  * EZGB.CFG, the SET tab's TAGS checkbox off. tagtrim.c, browser_icons.c. */
 #define TAGS_HIDE (*(volatile u8 *)0xDBF6)

@@ -6,9 +6,9 @@
  *
  *   op 0  draw it plain
  *   op 1  draw it highlighted (the cursor is on it)
- *   op 2  A: the next theme, wrapping; save EZGB.CFG, set the palettes and
- *         the pSRAM mark (theme.c, through FarCallTheme_B4), draw it
- *         highlighted
+ *   op 2  A: the next theme, wrapping, past CUSTOM when EZGB.CFG has no
+ *         valid COLORS=; save EZGB.CFG, set the palettes and the pSRAM
+ *         mark (theme.c, through FarCallTheme_B4), draw it highlighted
  *
  * Shaped like the other SET buttons: 8px, the text right-aligned in columns
  * 13-18 with the box 5 px left and 4 px right of it, 3 px above and 5 below;
@@ -24,24 +24,17 @@
 
 extern void FarCallEzCfg(void);         /* 04:5f00 -> ezcfg (02:4a00) */
 extern void FarCallTheme_B4(void);      /* 04:5990 -> theme (02:43d0) */
+extern const u8 theme_names[THEME_COUNT][7];  /* 04:7f20, theme_names.c */
 
 void ThemeRow(u8 op) {
-    /* by theme number (theme_ramps.c), six wide so a shorter name covers
-     * a longer one */
-    static const u8 names[THEME_COUNT][7] = {
-        {' ','L','I','G','H','T',0},
-        {' ',' ','D','A','R','K',0},
-        {' ',' ',' ','R','E','D',0},
-        {' ','G','R','E','E','N',0},
-        {'P','U','R','P','L','E',0},
-        {' ',' ','B','L','U','E',0},
-    };
     const u8 *n;
     u8 buf[7];
     u8 i;
 
     if (op == 2) {
-        THEME = (u8)(THEME + 1) < THEME_COUNT ? THEME + 1 : 0;
+        i = THEME + 1;
+        if (i == THEME_CUSTOM && !CUST_OK) i = THEME_COUNT;
+        THEME = i < THEME_COUNT ? i : 0;
         EZ_OP = OP_SAVE;
         FarCallEzCfg();
         FarCallTheme_B4();
@@ -51,7 +44,7 @@ void ThemeRow(u8 op) {
         DrawRect(0x56, 0x0f, 0x9b, 0x1c, 1);
         /* DrawString12 runs in bank 2: the text goes on the stack. It
          * repaints the whole field, so the 8px padding is left out. */
-        n = names[THEME];
+        n = theme_names[THEME];
         while (*n == ' ') n++;
         for (i = 0; (buf[i] = n[i]) != 0; i++) {}
         hClip12 = 0x9a;
@@ -59,7 +52,7 @@ void ThemeRow(u8 op) {
         hClip12 = 0;
     } else {
         DrawRect(0x63, 0x0d, 0x9b, 0x19, 1);
-        DrawString(names[THEME], 6, 13, 2);
+        DrawString(theme_names[THEME], 6, 13, 2);
     }
     StoreDrawParams(3, 0, 0);
 }
