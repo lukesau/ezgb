@@ -4435,7 +4435,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:1358:8
+02:4a00 .data:134d:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4575,9 +4575,9 @@
 04:5990 FarCallTheme_B4
 04:5990 .data:8:8
 04:7670 ThemeRow
-04:7670 .data:122:8
+04:7670 .data:fe:8
 02:43d0 Theme
-02:43d0 .data:126:8
+02:43d0 .data:12b:8
 02:4960 ThemeRamps
 02:4960 .data:30:8
 00:0290 PopupDrawParams
@@ -4604,3 +4604,9 @@
 02:5d58 .data:a6:8
 00:0410 FarCallMarquee
 00:0410 .data:8:8
+02:4990 ThemeCustom
+02:4990 .data:30:8
+05:7b50 ThemeColors
+05:7b50 .data:121:8
+04:7f20 ThemeNames
+04:7f20 .data:31:8

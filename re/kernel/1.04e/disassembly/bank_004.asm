@@ -20,7 +20,7 @@ RomLoad_InitiatePoll::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f36
@@ -56,7 +56,7 @@ RomLoad_InitiatePoll::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f36
@@ -71,7 +71,7 @@ RomLoad_InitiatePoll::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f31
@@ -95,7 +95,7 @@ RomLoad_InitiatePoll::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
 
@@ -206,7 +206,7 @@ SetFpga7F34_35_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld hl, sp+$00
@@ -254,7 +254,7 @@ SetRomLoadCtrl_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f36
@@ -278,7 +278,7 @@ SetFpga7F37_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f37
@@ -303,7 +303,7 @@ RomLoad_ResetIntoRom_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7f31
@@ -327,7 +327,7 @@ RomLoad_ResetIntoRom_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fe0
@@ -373,7 +373,7 @@ SetFpgaPageAlt_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fc0
@@ -716,7 +716,7 @@ SetFpgaRomSize_B4_unlockWriteCommit::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fc1
@@ -732,7 +732,7 @@ SetFpgaRomSize_B4_unlockWriteCommit::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     dec hl
@@ -846,7 +846,7 @@ SetFpga7FC4_B4_unlockWriteCommit::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fc4
@@ -871,7 +871,7 @@ SetFpga7FC3_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fc3
@@ -1336,7 +1336,7 @@ SetFpgaPage_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fc0
@@ -1360,7 +1360,7 @@ SetFpga7FD0_B4::
     ld bc, $7f10
     ld a, $e2
     ld [bc], a
-    ld bc, $7f20
+    ld bc, ThemeNames
     ld a, $e3
     ld [bc], a
     ld bc, $7fd0
@@ -6796,42 +6796,74 @@ SaveNameMatch::
 
 ThemeRow::
     db $e8, $f6, $f8, $0c, $7e, $d6, $02, $20
-    db $1f, $fa, $f7, $db, $3c, $d6, $06, $30
-    db $07, $fa, $f7, $db, $3c, $4f, $18, $02
-    db $0e, $00, $21, $f7, $db, $71, $2e, $fc
-    db $36, $01, $cd, $00, $5f, $cd, $90, $59
-    db $f8, $0c, $7e, $b7, $28, $0e, $21, $03
-    db $00, $e5, $af, $f5, $33, $cd, $d8, $23
-    db $e8, $03, $18, $0d, $af, $0f, $f5, $af
-    db $3e, $03, $f5, $33, $cd, $d8, $23, $e8
-    db $03, $f0, $fb, $b7, $28, $6d, $21, $1c
-    db $01, $e5, $21, $0f, $9b, $e5, $3e, $56
-    db $f5, $33, $cd, $01, $24, $e8, $05, $21
-    db $f7, $db, $4e, $06, $00, $69, $60, $29
-    db $09, $29, $09, $11, $68, $77, $19, $4d
-    db $44, $0a, $fe, $20, $20, $03, $03, $18
-    db $f8, $f8, $07, $79, $22, $78, $22, $36
-    db $00, $f8, $09, $5e, $16, $00, $21, $00
-    db $00, $39, $19, $4d, $44, $f8, $07, $2a
-    db $23, $86, $2b, $5f, $7e, $ce, $00, $57
-    db $1a, $02, $b7, $28, $04, $23, $34, $18
-    db $e0, $3e, $9a, $e0, $f9, $21, $00, $00
-    db $39, $11, $5b, $12, $d5, $af, $f5, $33
-    db $e5, $cd, $c0, $05, $e8, $05, $af, $e0
-    db $f9, $18, $2f, $21, $19, $01, $e5, $21
-    db $0d, $9b, $e5, $3e, $63, $f5, $33, $cd
-    db $01, $24, $e8, $05, $21, $f7, $db, $4e
-    db $06, $00, $69, $60, $29, $09, $29, $09
-    db $11, $68, $77, $19, $11, $0d, $02, $d5
-    db $3e, $06, $f5, $33, $e5, $cd, $b7, $08
-    db $e8, $05, $af, $0f, $f5, $af, $3e, $03
-    db $f5, $33, $cd, $d8, $23, $e8, $0d, $c9
-    db $20, $4c, $49, $47, $48, $54, $00, $20
-    db $20, $44, $41, $52, $4b, $00, $20, $20
-    db $20, $52, $45, $44, $00, $20, $47, $52
-    db $45, $45, $4e, $00, $50, $55, $52, $50
-    db $4c, $45, $00, $20, $20, $42, $4c, $55
-    db $45, $00
+    db $25, $fa, $f7, $db, $3c, $fe, $06, $20
+    db $0a, $21, $ea, $db, $4e, $0c, $0d, $20
+    db $02, $3e, $07, $fe, $07, $38, $01, $af
+    db $21, $f7, $db, $77, $2e, $fc, $36, $01
+    db $cd, $00, $5f, $cd, $90, $59, $f8, $0c
+    db $7e, $b7, $28, $0e, $21, $03, $00, $e5
+    db $af, $f5, $33, $cd, $d8, $23, $e8, $03
+    db $18, $0d, $af, $0f, $f5, $af, $3e, $03
+    db $f5, $33, $cd, $d8, $23, $e8, $03, $f0
+    db $fb, $b7, $28, $6d, $21, $1c, $01, $e5
+    db $21, $0f, $9b, $e5, $3e, $56, $f5, $33
+    db $cd, $01, $24, $e8, $05, $21, $f7, $db
+    db $4e, $06, $00, $69, $60, $29, $09, $29
+    db $09, $11, $20, $7f, $19, $4d, $44, $0a
+    db $fe, $20, $20, $03, $03, $18, $f8, $f8
+    db $07, $79, $22, $78, $22, $36, $00, $f8
+    db $09, $5e, $16, $00, $21, $00, $00, $39
+    db $19, $4d, $44, $f8, $07, $2a, $23, $86
+    db $2b, $5f, $7e, $ce, $00, $57, $1a, $02
+    db $b7, $28, $04, $23, $34, $18, $e0, $3e
+    db $9a, $e0, $f9, $21, $00, $00, $39, $11
+    db $5b, $12, $d5, $af, $f5, $33, $e5, $cd
+    db $c0, $05, $e8, $05, $af, $e0, $f9, $18
+    db $2f, $21, $19, $01, $e5, $21, $0d, $9b
+    db $e5, $3e, $63, $f5, $33, $cd, $01, $24
+    db $e8, $05, $21, $f7, $db, $4e, $06, $00
+    db $69, $60, $29, $09, $29, $09, $11, $20
+    db $7f, $19, $11, $0d, $02, $d5, $3e, $06
+    db $f5, $33, $e5, $cd, $b7, $08, $e8, $05
+    db $af, $0f, $f5, $af, $3e, $03, $f5, $33
+    db $cd, $d8, $23, $e8, $0d, $c9
+
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
+    rst RST_38
 
 SetPage::
     db $af, $0f, $f5, $af, $3e, $03, $f5, $33
@@ -7192,55 +7224,16 @@ TagExample::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+ThemeNames::
+    db $20, $4c, $49, $47, $48, $54, $00, $20
+    db $20, $44, $41, $52, $4b, $00, $20, $20
+    db $20, $52, $45, $44, $00, $20, $47, $52
+    db $45, $45, $4e, $00, $50, $55, $52, $50
+    db $4c, $45, $00, $20, $20, $42, $4c, $55
+    db $45, $00, $43, $55, $53, $54, $4f, $4d
+    db $00
+
     rst RST_38
     rst RST_38
     rst RST_38
