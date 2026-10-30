@@ -50,7 +50,7 @@ extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -
 #define PLAYED    ((u8 *)0xDB10)            /* the "Played" line: FL_DISP, idle off the SET tab */
 #define R_DAY 3
 #define R_MON 5
-#define SPIN      (*(volatile u8 *)0xDB3E)  /* op 3's call counter (LastRomName's length byte, idle during the dump) */
+#define SPIN      (*(volatile u8 *)0xDB3E)  /* op 3's call counter (free since the marquee moved to marquee.h's bytes) */
 
 static void text(const u8 *s, u8 row8, u8 y12);
 static void frame(void);

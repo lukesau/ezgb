@@ -17,7 +17,7 @@ changes is x, per field:
 | 4 | date and time: digits 9 px, `/` 8, `:` 6, the blank 6, 160 px in all |
 | 6 | `RTC:` 0..44, `SD` 44..66, `NO SD` 86..130; the checkboxes stay at x 66 and 130 |
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
-| 12 | fast-launch name 0..80 (scrolls from 10 characters up); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
+| 12 | fast-launch name 0..79 (scrolls when its glyphs do not fit, [marquee.md](marquee.md)); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
 | 14 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
 | 16 | the page row: `< PREV` 8..64 in a box (3,127)-(65,140), `1/2` 70..97, `NEXT >` 104..155 in a box (99,127)-(155,140) |
 
@@ -27,7 +27,8 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 |---|---|
 | 2 | `THEME:` 0..84; the theme name from 91 in a box (86,15)-(155,28), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)) |
 | 4 | `FONT:` 0..112; `12px` 120..155 in a box (115,31)-(155,44) |
-| 6 | `TAGS:` 0..128, checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
+| 6 | `SHOW NAME TAGS:` 0..128, checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
+| 8 | `Ex:` 0..26, the scrolling example name from col 4 at 28..159 ([browser-tags.md](browser-tags.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above
@@ -87,6 +88,8 @@ the two layouts can be compared.
 
 To make room for the larger `DrawString12`, `LastRomName` moved to `02:7260`
 and `DrawNameWithIconImpl` to `02:7e80` (their bank-0 stubs follow).
+`02:7260` is the shared marquee's since 2026-10-30, and `LastRomName` is at
+`02:5d58` ([marquee.md](marquee.md)).
 
 Checked in SameBoy (DMG model, 0731): the pane in both modes, every cursor
 row, time-edit mode with a field highlighted and changed, the name marquee,

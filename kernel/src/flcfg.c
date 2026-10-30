@@ -36,8 +36,8 @@
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
  *           12 <name, 10 cols, scrolling> [PICK ROM]   14 SGB BOOT: [ ]
  *           16 1/2 [NEXT >]
- *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 TAGS: [x]
- *           16 [< PREV] 2/2               (setpage.c)
+ *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 SHOW NAME TAGS: [x]
+ *           8 Ex: <name, scrolling>   16 [< PREV] 2/2               (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB BOOT,
  * 6 NEXT; 7 THEME, 8 UI, 9 TAGS, 10 PREV). The stock clamp lets the cursor
@@ -68,9 +68,9 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
-extern void SetPage(u8 op, u8 cur);                                 /* 04:77a0, setpage.c: SGB BOOT, page 2, the page row */
+extern void SetPage(u8 op, u8 cur);                                 /* 04:7792, setpage.c: SGB BOOT, page 2, the page row */
 
-#define FL_DISP  ((u8 *)0xDB10)     /* 40-byte zero-padded display buffer */
+#define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
 #define SELNAME  ((u8 *)0xC4A4)     /* browser: selected entry name */
 
@@ -84,10 +84,10 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:77a0, 
 #define ROW_NEXT  6          /* page 1's last row */
 #define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
 #define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  9          /* TAGS: checkbox: off hides ROM name tags (docs/browser-tags.md) */
+#define ROW_TAGS  9          /* SHOW NAME TAGS: checkbox: off hides ROM name tags (docs/browser-tags.md) */
 #define ROW_PREV  10         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
-#define NAME_W   10                         /* name columns left of PICK ROM */
+#define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
 #define HPADLATCH (*(volatile u8 *)0xFFFD)  /* VBlankPadLatch: buttons pressed since the last read */
 #define RP_DIR   (*(volatile u8 *)0xDBEC)   /* D-pad bits of the held direction, 0 = none */
@@ -131,9 +131,6 @@ static u8 flcfg_op(u8 *frame, u8 op) {
              * page 1 draws SET plain */
             SetPage(PAGE2 ? 4 : 8, 0);
         }
-        MQ_POS = 0;
-        MQ_TICK = 0;
-        MQ_FR = HFRAME;
         cfg_load();
         draw_static();
         draw_rows(frame[0x3d]);
@@ -204,15 +201,10 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         /* Paced in frames, not loop passes: a pass takes anything from a
          * fraction of a frame (1.05e) to exactly one (1.04e waits for VBlank
          * each pass), so count the VBlank interrupt's frame counter. */
-        u8 f = HFRAME, d = f - MQ_FR, fresh, pad, dir;
-        MQ_FR = f;
-        if (d > 100) d = 100;             /* MQ_TICK stays below 256 */
-        if (!PAGE2) MQ_TICK += d;         /* the name is on page 1 */
-        if (MQ_TICK >= (MQ_POS == 0 ? MQ_HOLD : MQ_RATE)) {
-            MQ_TICK = 0;
-            MQ_POS++;
-            draw_name();          /* wraps MQ_POS, redraws only when it scrolls */
-        }
+        u8 d = HFRAME - MQ_A->fr, fresh, pad, dir;
+        if (d > 100) d = 100;
+        /* the name on screen: page 1's, or page 2's tag example */
+        MQ_RUN(FarCallMarquee, MQ_A, MQ_STEP);
         /* The loop's pad read, with a key repeat on the D-pad. ReadJoypad
          * reports a held direction on every pass, and a pass is a fraction
          * of a frame, so a tap moved the cursor or a time field two or three
@@ -299,39 +291,28 @@ static void draw_static(void) {
     draw_name();
 }
 
-/* Basename of FL_PATH (or "(AUTO)" when there is no explicit path) in the
- * NAME_W columns left of the PICK ROM button on row 12. A longer name scrolls
- * continuously, cursor or not: MQ_POS is the first character shown, the text
- * repeats after MQ_GAP blanks, and op TICK advances it. DrawString renders
- * NUL as a space up to len, so the window always overwrites what was there. */
+/* Basename of FL_PATH (or "(AUTO)" when there is no explicit path) left of
+ * the PICK ROM button on row 12, in the shared marquee (marquee.c): a name
+ * that does not fit scrolls, cursor or not, and op TICK steps it. The
+ * marquee runs in bank 2, so "(AUTO)" is copied to FL_DISP first. */
 static void draw_name(void) {
     static const u8 auto_str[7] = {'(','A','U','T','O',')',0};
-    const u8 *src;
-    u8 i, k, len, base;
+    const u8 *src = FL_DISP;
+    u8 i, base;
 
     if (FL_PLEN == 0) {
-        src = auto_str;
+        for (i = 0; i < 7; i++) FL_DISP[i] = auto_str[i];
     } else {
         base = 0;
         for (i = 0; FL_PATH[i]; i++) if (FL_PATH[i] == '/') base = i + 1;
         src = FL_PATH + base;
     }
-    for (len = 0; src[len]; len++) {}
-    /* 12px: the field is 80 px, which ten glyphs can overrun; scroll from
-     * ten characters up rather than clip the last one */
-    if (len <= NAME_W && !(hUiMode && len == NAME_W)) {
-        MQ_POS = 0;
-        for (i = 0; i < NAME_W; i++) FL_DISP[i] = i < len ? src[i] : 0;
-    } else {
-        if (MQ_POS >= len + MQ_GAP) MQ_POS = 0;
-        k = MQ_POS;
-        for (i = 0; i < NAME_W; i++) {
-            FL_DISP[i] = k < len ? src[k] : ' ';
-            if (++k >= len + MQ_GAP) k = 0;
-        }
-    }
-    StoreDrawParams(3, 0, 0);
-    SetText(FL_DISP, NAME_W, 0, 12);
+    MQ_A->s = src;
+    MQ_A->x0 = 0;
+    MQ_A->x1 = NAME_X1;
+    MQ_A->y = 12 * 8;
+    MQ_A->attr = 3;
+    MQ_RUN(FarCallMarquee, MQ_A, MQ_START);
 }
 
 /* Checkbox at pixel x, row y/8 (the stock AUTO SAVE sequence, 04:496a, at

@@ -23,8 +23,8 @@ The pane has two pages; row 16 of each switches to the other.
 |---|---|---|
 | 2 | `TIME:` + `SET` (stock) | `THEME:` button, `LIGHT`, `DARK` and four colors ([`dark-mode.md`](dark-mode.md)) |
 | 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
-| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
-| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | |
+| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SHOW NAME TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `Ex:` and an example name, scrolling: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
 | 10 | `FAST LAUNCH:` checkbox | |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | |
 | 14 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | |
@@ -58,8 +58,9 @@ the screen's dirty flag (`sp+$3e`) is set after a cursor move; op ROWS
 clears it on page 2. The entry code draws those boxes once before op ENTER,
 which clears the pane again on page 2.
 
-Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:77a0`,
-[`../kernel/src/setpage.c`](../kernel/src/setpage.c), 1087 B), near-called
+Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:7792`,
+[`../kernel/src/setpage.c`](../kernel/src/setpage.c), 1130 B; at `04:77a0` until it outgrew the slot before
+`U32ToAsciiFast`, now starting in the free bytes after `ThemeRow`), near-called
 by `flcfg`, which had no room for them; it replaced `SgbTagsRow`, which
 held the SGB BOOT and TAGS boxes when they shared row 16. The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
@@ -73,7 +74,10 @@ other row to `flcfg` op A. The dispatch site `04:5632` now reads `c2 30 5f`.
 y 13, so its top two lines survived onto HELP. y0 is now `$0a`, just below
 the tab underline (y 8-9); both browser layouts start at y 16.
 
-**Name marquee.** `flcfg` op 5 runs once per pass of the SET input loop:
+**Name marquee.** Since 2026-10-30 the name (and page 2's tag example) is
+the shared marquee's `MQ_A`, run through `FarCallMarquee`
+([marquee.md](marquee.md)); op 5 calls its `MQ_STEP`, and the pacing below
+is unchanged. `flcfg` op 5 runs once per pass of the SET input loop:
 its `call ReadJoypad` at `04:5162` goes through `SetLoopTickHook` (`04:5f20`,
 14 B: op 5, then `ret`; op 5 does the pad read itself, with the D-pad
 repeat in [`joypad-latch.md`](joypad-latch.md#set-tab-d-pad-repeat)). The scroll is paced by `hFrame` (`$fffa`),

@@ -37,7 +37,7 @@ cd "$ROOT/kernel"
 FATFS="--pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_07_7739=1963 --pin FarCall_03_768f=19a1 --pin WaitVBlankFlag=0688"
 
 # 2. Bank 2: the settings module, then the scan that calls it.
-python3 tools/inject.py src/ezcfg.c "$V" 2 4a00 EzCfg $FATFS --pin DrawString=08b7 --pin ReadJoypad=3a4a --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin LastRomName=7260 --pin DrawString12=7500 --apply
+python3 tools/inject.py src/ezcfg.c "$V" 2 4a00 EzCfg $FATFS --pin DrawString=08b7 --pin ReadJoypad=3a4a --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin LastRomName=5d58 --pin DrawString12=7500 --apply
 python3 tools/inject.py src/fastlaunch.c "$V" 2 4500 FastLaunchScan \
   --pin FarCallOpendir_B5=4380 --pin FarCallReaddir_B5=4396 --pin FarCallSetPage=43ac \
   --pin ezcfg=4a00 --apply
@@ -46,7 +46,7 @@ python3 tools/inject.py src/fastlaunch.c "$V" 2 4500 FastLaunchScan \
 python3 tools/inject.py src/flcfg.c "$V" 4 6600 FlCfg \
   --pin FarCallEzCfg=5f00 --pin SetFpgaPage_B4=466e --pin DrawString=08b7 \
   --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin ReadJoypad=3a4a --pin SetText=6400 --pin FarCallMenuTabs=5f70 \
-  --pin ThemeRow=7670 --pin SetPage=77a0 --apply
+  --pin ThemeRow=7670 --pin SetPage=7792 --pin FarCallMarquee=0410 --apply
 python3 tools/inject_bytes.py "$V" 4 5f00 FarCallEzCfg cd8d07004a0200c9 --apply
 python3 tools/inject_bytes.py "$V" 4 5f10 RtcSetHook   3e06eafcdbcd005fc3f548 --apply
 python3 tools/patch_call.py   "$V" 4 58d3 3 04:5f10 --jp --apply
@@ -188,11 +188,11 @@ PY
 # LastRomInputLoop's `call ReadJoypad` (00:1330) goes through LastRomTickStub,
 # which runs LastRomName's marquee tick (s = 0) first. ezcfg only pins
 # LastRomName's address, so the order against step 2 does not matter.
-perl -ni -e 'print unless /^(02:4800|02:7260|00:0368|00:0370) /' "$SYM"
+perl -ni -e 'print unless /^(02:4800|02:7260|02:5d58|00:0368|00:0370|00:0410) /' "$SYM"
 python3 - "$GB" <<'PY'
 import sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
-for o,n in ((2*0x4000+0x0800,0x200),(2*0x4000+0x3260,0x260),(0x0368,0x13)):
+for o,n in ((2*0x4000+0x0800,0x200),(2*0x4000+0x3260,0x260),(2*0x4000+0x1d58,0xa8),(0x0368,0x13),(0x0410,8)):
     rom[o:o+n]=b'\xff'*n
 open(p,'wb').write(rom)
 PY
@@ -313,8 +313,10 @@ python3 tools/inject_bytes.py "$V" 8 7b40 HelpHook f0fbb72006210000c3e470f80ce5c
 python3 tools/patch_bytes.py "$V" 8 70e1 210000 c3407b --apply >/dev/null
 OVL="--pin DrawString12=7500 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791"
 python3 tools/inject.py src/lastrom_box.c  "$V" 2 4800 LastRomBox  $OVL --apply
-python3 tools/inject.py src/lastrom_name.c "$V" 2 7260 LastRomName $OVL --pin Fit12=7100 --apply
-python3 tools/inject_bytes.py "$V" 0 0368 LastRomNameStub cd8d0760720200c9 --apply
+python3 tools/inject.py src/marquee.c "$V" 2 7260 Marquee $OVL --pin Fit12=7100 --pin PopupDrawParams=0290 --apply
+python3 tools/inject_bytes.py "$V" 0 0410 FarCallMarquee cd8d0760720200c9 --apply
+python3 tools/inject.py src/lastrom_name.c "$V" 2 5d58 LastRomName --pin Marquee=7260 --apply
+python3 tools/inject_bytes.py "$V" 0 0368 LastRomNameStub cd8d07585d0200c9 --apply
 python3 tools/inject_bytes.py "$V" 0 0370 LastRomTickStub 210000e5cd6803e1c34a3a --apply   # push s=0; call stub; pop; jp ReadJoypad
 python3 tools/patch_bytes.py "$V" 0 12a1 f5730800 00480200 --apply >/dev/null   # far target 08:73f5 -> 02:4800
 python3 tools/patch_bytes.py "$V" 0 131d 21000fe53e14 21010fe53e12 --apply >/dev/null

@@ -91,18 +91,22 @@ REGISTRY = {
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
                       pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x7260): dict(src="lastrom_name.c",                 # START overlay name line + marquee, far target of the 00:0368 stub
-                      pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7, "DrawRect": 0x27ba,
+    (2, 0x5d58): dict(src="lastrom_name.c",                 # START overlay name lines, far target of the 00:0368 stub
+                      pins={"Marquee": 0x7260}),
+    (2, 0x7260): dict(src="marquee.c",                      # shared scrolling text, far target of FarCallMarquee (00:0410) (docs/marquee.md)
+                      pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7260, "DrawString12": 0x7500,
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x5d58, "DrawString12": 0x7500,
                                               "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290}),
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x7670, "SetPage": 0x77a0}),
-    (4, 0x77a0): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
+                            "ThemeRow": 0x7670, "SetPage": 0x7792, "FarCallMarquee": 0x0410}),
+    (4, 0x7792): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
-                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba}),
+                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60}),
+    (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
+                      pins={"SetText": 0x6400, "StoreDrawParams": 0x2791, "FarCallMarquee": 0x0410}),
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),

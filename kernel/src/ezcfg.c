@@ -88,7 +88,7 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 #define LOG_LEN   (*(volatile u8 *)0xDB4F)  /* RTCLOG= text length, a multiple of LOG_ENT */
 #define LOG_BUF   ((u8 *)0xDB60)     /* RTCLOG= text, newest entry first, LOG_MAX bytes */
 #define LOG_ENT   14                 /* "YYMMDDhhmmssE " */
-#define LOG_MAX   (LOG_ENT * 10)
+#define LOG_MAX   (LOG_ENT * 7)    /* $DB60-$DBC1: the marquee (marquee.h) has $DBC2-$DBE3 */
 #define LOG(ev)   log_add(ev)
 #else
 #define LOG(ev)

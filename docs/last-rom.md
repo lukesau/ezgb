@@ -99,6 +99,14 @@ flush writes in 4-row batches that must not cross a tile
 after the title and labels, since a text cell or a 12px row repaints all it
 covers; `LastRomName` then draws with ink 0 on paper 3 and restores 3 on 0.
 
+> Since 2026-10-30 the scrolling below is the shared marquee's
+> ([marquee.md](marquee.md)): `LastRomName` (now `02:5d58`, 167 B) only
+> sets the field up (8px x 8..151, 12px x 12..156) and runs `MQ_A` and, for
+> the `Played` line, `MQ_B` (`$DBD0`, `$DBDA`). The `$DB38`/`$DB58` state,
+> the swap of the second line's bytes and the x 148 trim below are gone; the
+> 12px field ends at x 156 instead, which keeps the ink as far from the
+> border. The rest of this section is how it was first built.
+
 A name that does not fit its field scrolls, with the SET tab's marquee
 behavior ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)): a one-second
 hold, then one character every 20 frames, repeating after three blanks. In
@@ -116,7 +124,7 @@ draw code, and every other set-up clears that line's length.
 |---|---|---|
 | `00:12a1` (far-call target in `LastRomOverlay`) | `08:73f5` `DrawLastRomButtons` | `02:4800` `LastRomBox` (`lastrom_box.c`); the stock function is no longer called |
 | `00:131d` (`00:1311`) | `ld hl,$0f00` .. `ld a,$14` | `ld hl,$0f01` .. `ld a,$12`: basename at column 1, 18 characters |
-| `00:132b` | `call DrawString` | `call LastRomNameStub` (`00:0368`), a far stub to `02:7260` `LastRomName` (`lastrom_name.c`): sets the name up and draws it |
+| `00:132b` | `call DrawString` | `call LastRomNameStub` (`00:0368`), a far stub to `02:7260` `LastRomName` (`lastrom_name.c`; `02:5d58` since 2026-10-30): sets the name up and draws it |
 | `00:1330` (`LastRomInputLoop`) | `call ReadJoypad` | `call LastRomTickStub` (`00:0370`): pushes a null name pointer, calls `LastRomNameStub` (the marquee tick), then `jp ReadJoypad` |
 | `ezcfg.c` `lastrom_load` | `DrawString("(none)", 20, 0, 15)` | near call to `LastRomName` |
 
