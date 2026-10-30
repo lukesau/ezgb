@@ -46,7 +46,7 @@ python3 tools/inject.py src/fastlaunch.c "$V" 2 4500 FastLaunchScan \
 python3 tools/inject.py src/flcfg.c "$V" 4 6600 FlCfg \
   --pin FarCallEzCfg=5f00 --pin SetFpgaPage_B4=466e --pin DrawString=08b7 \
   --pin DrawRect=27ba --pin StoreDrawParams=2791 --pin ReadJoypad=3a4a --pin SetText=6400 --pin FarCallMenuTabs=5f70 \
-  --pin ThemeRow=7670 --pin SgbTagsRow=77a0 --apply
+  --pin ThemeRow=7670 --pin SetPage=77a0 --apply
 python3 tools/inject_bytes.py "$V" 4 5f00 FarCallEzCfg cd8d07004a0200c9 --apply
 python3 tools/inject_bytes.py "$V" 4 5f10 RtcSetHook   3e06eafcdbcd005fc3f548 --apply
 python3 tools/patch_call.py   "$V" 4 58d3 3 04:5f10 --jp --apply

@@ -99,11 +99,11 @@ REGISTRY = {
     (4, 0x6600): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x7670, "SgbTagsRow": 0x77a0}),
-    (4, 0x77a0): dict(src="sgbtags_row.c",                  # SET tab SGB BOOT + TAGS boxes, near-called by FlCfg (docs/browser-tags.md)
-                      pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400,
+                            "ThemeRow": 0x7670, "SetPage": 0x77a0}),
+    (4, 0x77a0): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
+                      pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba}),
-    (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by FlCfg (docs/dark-mode.md)
+    (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
@@ -156,6 +156,7 @@ REGISTRY = {
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
     (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)
     (4, 0x5f90): dict(),                   # FlSetJumpBottom: RIGHT on the SET tab
+    (4, 0x5fb0): dict(),                   # SetExitHook: SET screen exit clears SET_PAGE
     (4, 0x7c00): dict(),                   # U32ToAsciiFast: decimal fast path (scripts/fastdec/u32dec.asm)
 }
 

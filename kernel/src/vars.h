@@ -22,6 +22,14 @@
 /* Set by TagLen when it cut the name it measured, for TagCat (tagtrim.c).
  * Past FL_PATH's end ($DAFA); $DBF0-$DBF5 are FillRect's scratch. */
 #define TAG_CUT   (*(volatile u8 *)0xDAFF)
+/* SET tab page (flcfg.c, setpage.c): bit 0 = page 2, bit 7 = flcfg is
+ * drawing. SetText draws nothing while it is exactly 1, which keeps the
+ * stock rows (TIME, the date, AUTO SAVE) off page 2. Cleared when the SET
+ * screen exits (SetExitHook, 04:5fb0). */
+#define SET_PAGE  (*(volatile u8 *)0xDBEE)
+/* SET tab re-entry (flcfg.c): the cursor row + 1 to put the cursor on when
+ * the screen is entered again after a page or UI mode switch, 0 = none. */
+#define SET_RE    (*(volatile u8 *)0xDBEF)
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */

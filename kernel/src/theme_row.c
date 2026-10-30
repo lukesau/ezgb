@@ -1,8 +1,8 @@
 /* SET tab THEME button (docs/dark-mode.md).
  *
- * Bank 4, injected at 04:7670, near-called by flcfg.c (04:6600), which has
- * no room left for it. The button sits on row 14 between the UI: label and
- * the 8px/12px button, and is cursor row 5 (flcfg.c ROW_THEME):
+ * Bank 4, injected at 04:7670, near-called by setpage.c (04:7a00). The
+ * button sits on row 2 of the SET tab's second page, after THEME:, and is
+ * cursor row 7 (flcfg.c ROW_THEME):
  *
  *   op 0  draw it plain
  *   op 1  draw it highlighted (the cursor is on it)
@@ -11,10 +11,10 @@
  *         highlighted
  *
  * Shaped like the other SET buttons: 8px, the text right-aligned in columns
- * 7-12 with the box 5 px left and 4 px right of it, 3 px above and 5 below;
+ * 13-18 with the box 5 px left and 4 px right of it, 3 px above and 5 below;
  * 12px, the text row plus a pixel above and below (docs/set-pane12.md), and
- * wider to the left, since 12px PURPLE is about 60 px: box x 40..108, text
- * from x 45.
+ * wider to the left, since 12px PURPLE is about 60 px: box x 86..155, text
+ * from x 91.
  */
 
 #include "types.h"
@@ -48,18 +48,18 @@ void ThemeRow(u8 op) {
     }
     if (op) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     if (hUiMode) {
-        DrawRect(0x28, 0x6f, 0x6c, 0x7c, 1);
+        DrawRect(0x56, 0x0f, 0x9b, 0x1c, 1);
         /* DrawString12 runs in bank 2: the text goes on the stack. It
          * repaints the whole field, so the 8px padding is left out. */
         n = names[THEME];
         while (*n == ' ') n++;
         for (i = 0; (buf[i] = n[i]) != 0; i++) {}
-        hClip12 = 0x6b;
-        FarCallDrawString12(buf, 0, 0x2d, 14 * 8 + 2);
+        hClip12 = 0x9a;
+        FarCallDrawString12(buf, 0, 0x5b, 2 * 8 + 2);
         hClip12 = 0;
     } else {
-        DrawRect(0x33, 0x6d, 0x6c, 0x79, 1);
-        DrawString(names[THEME], 6, 7, 14);
+        DrawRect(0x63, 0x0d, 0x9b, 0x19, 1);
+        DrawString(names[THEME], 6, 13, 2);
     }
     StoreDrawParams(3, 0, 0);
 }

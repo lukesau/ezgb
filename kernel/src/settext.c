@@ -21,10 +21,15 @@
  *   row 6   col 0 "RTC:" 0..44   col 6 "SD" 44..66   col 11 "NO SD" 86..130
  *   row 8, 10   labels 0..128 (the checkbox is at x 130)
  *   row 12  col 0 the fast-launch name 0..80   col 11 "PICK ROM" 88..155
- *   row 14  col 0 "UI:" 0..112   col 15 "12px" 120..155
- *   row 16  col 0 "SGB BOOT:" 0..66 (the checkbox is at x 74), or "SGB:"
- *           with col 5 "AUTO" 34..86 when our stage1 handles the SGB;
- *           col 11 "TAGS:" 86..130 (checkbox at x 130)
+ *   row 14  col 0 "SGB BOOT:" 0..128 (checkbox at x 130), or col 13 "AUTO"
+ *           120..155 when our stage1 handles the SGB
+ *   row 16  the page row: col 1 "< PREV" 8..64, col 9 "1/2" 70..97,
+ *           col 13 "NEXT >" 104..155
+ *
+ * Page 2 (setpage.c, SET_PAGE bit 0): row 2 "THEME:" 0..84 (its button
+ * follows), row 4 col 0 "FONT:" 0..112 and col 15 "12px" 120..155, row 6
+ * "TAGS:" 0..128. While SET_PAGE is exactly 1 (page 2, and the caller is the
+ * stock screen, not flcfg) nothing is drawn.
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
  *
@@ -44,13 +49,23 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
     u8 buf[24];
     u8 i, x, end;
 
+    if (SET_PAGE == 1) return;          /* page 2: the stock rows are not on it */
     if (!hUiMode) {
         DrawString(s, len, col, row);
         return;
     }
     x = 0;
     end = 128;
-    switch (row) {
+    if (row == 16) {
+        /* the page row, both pages */
+        if (col == 1) { x = 8; end = 64; }
+        else if (col == 9) { x = 70; end = 97; }
+        else { x = 104; end = 155; }
+    } else if (SET_PAGE & 1) {
+        /* page 2 (setpage.c): THEME: (its button from x 86), FONT: 12px, TAGS: */
+        if (row == 2) end = 84;
+        else if (row == 4) { if (col) { x = 120; end = 155; } else { end = 112; } }
+    } else switch (row) {
     case 2:
         if (col) { x = 127; end = 155; } else { end = 120; }
         break;
@@ -67,12 +82,7 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         if (col) { x = 88; end = 155; } else { end = 80; }
         break;
     case 14:
-        if (col) { x = 120; end = 155; } else { end = 112; }
-        break;
-    case 16:
-        if (col == 0) { end = 66; }
-        else if (col == 5) { x = 34; end = 86; }
-        else { x = 86; end = 130; }
+        if (col) { x = 120; end = 155; }
         break;
     }
     if (len == 0 || len > 23) len = 23;

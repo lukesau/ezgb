@@ -4500,11 +4500,11 @@
 02:7e80 DrawNameWithIconImpl
 02:7e80 .data:172:8
 04:6400 SetText
-04:6400 .data:175:8
+04:6400 .data:1b4:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg
-04:6600 .data:6a1:8
+04:6600 .data:6da:8
 04:5f30 FlSetADispatch
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs
@@ -4591,9 +4591,11 @@
 00:0408 .data:8:8
 04:65f0 SmSaveOp
 04:65f0 .data:10:8
-04:77a0 SgbTagsRow
-04:77a0 .data:249:8
+04:77a0 SetPage
+04:77a0 .data:43f:8
 08:7c00 HelpSd
 08:7c00 .data:91:8
 08:7cc0 HelpSdHook
 08:7cc0 .data:b:8
+04:5fb0 SetExitHook
+04:5fb0 .data:7:8
