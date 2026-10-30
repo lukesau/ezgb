@@ -3699,7 +3699,7 @@ DrawHelpModVersion::
     db $13, $f5, $33, $21, $09, $7b, $e5, $cd
     db $b7, $08, $e8, $05, $21, $00, $0a, $e5
     db $3e, $04, $f5, $33, $21, $1c, $7b, $e5
-    db $cd, $b7, $08, $e8, $05, $c3, $41, $71
+    db $cd, $b7, $08, $e8, $05, $c3, $c0, $7c
     db $4b, $31, $2e, $30, $34, $65, $20, $20
     db $20, $20, $20, $4d, $4f, $44, $20, $37
     db $2e, $30, $20, $20, $20, $67, $69, $74
@@ -3833,6 +3833,28 @@ FlPickBanner::
     rst RST_38
     rst RST_38
     rst RST_38
+
+HelpSd::
+    db $e8, $f1, $3e, $06, $f5, $33, $cd, $77
+    db $7c, $33, $fa, $0c, $a0, $e6, $07, $4f
+    db $c5, $af, $f5, $33, $cd, $77, $7c, $33
+    db $c1, $79, $d6, $07, $20, $48, $f8, $11
+    db $7e, $b7, $28, $31, $0e, $00, $59, $16
+    db $00, $21, $00, $00, $39, $19, $5d, $54
+    db $21, $69, $7c, $06, $00, $09, $7e, $12
+    db $0c, $79, $d6, $0e, $38, $e8, $f8, $0e
+    db $36, $00, $21, $00, $00, $39, $11, $04
+    db $74, $d5, $af, $f5, $33, $e5, $cd, $c0
+    db $05, $e8, $05, $18, $11, $3e, $0c, $f5
+    db $33, $21, $0e, $00, $e5, $11, $69, $7c
+    db $d5, $cd, $b7, $08, $e8, $05, $e8, $0f
+    db $c9, $53, $44, $20, $53, $50, $45, $45
+    db $44, $3a, $20, $48, $41, $4c, $46, $21
+    db $00, $7f, $36, $e1, $2e, $10, $36, $e2
+    db $2e, $20, $36, $e3, $11, $c0, $7f, $f8
+    db $02, $7e, $12, $21, $f0, $7f, $36, $e4
+    db $c9
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -3880,162 +3902,11 @@ FlPickBanner::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+HelpSdHook::
+    db $af, $f5, $33, $cd, $00, $7c, $e8, $01
+    db $c3, $41, $71
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -4107,33 +3978,25 @@ Help12::
     db $19, $36, $00, $21, $00, $00, $39, $11
     db $04, $18, $d5, $af, $f5, $33, $e5, $cd
     db $c0, $05, $e8, $05, $21, $0e, $2c, $e5
-    db $11, $5a, $71, $d5, $cd, $b1, $7d, $e8
+    db $11, $5a, $71, $d5, $cd, $ba, $7d, $e8
     db $04, $21, $0a, $40, $e5, $11, $ff, $7a
-    db $d5, $cd, $b1, $7d, $e8, $04, $21, $13
-    db $54, $e5, $11, $09, $7b, $d5, $cd, $b1
+    db $d5, $cd, $ba, $7d, $e8, $04, $21, $13
+    db $54, $e5, $11, $09, $7b, $d5, $cd, $ba
     db $7d, $e8, $04, $21, $04, $60, $e5, $11
-    db $1c, $7b, $d5, $cd, $b1, $7d, $e8, $1c
-    db $c9, $e8, $eb, $f8, $14, $36, $00, $f8
-    db $14, $7e, $f8, $19, $96, $30, $22, $f8
-    db $14, $5e, $16, $00, $21, $00, $00, $39
-    db $19, $4d, $44, $f8, $17, $7e, $f8, $14
-    db $86, $23, $23, $23, $23, $5f, $7e, $ce
-    db $00, $57, $1a, $02, $f8, $14, $34, $18
-    db $d6, $f8, $19, $5e, $16, $00, $21, $00
-    db $00, $39, $19, $4d, $44, $af, $02, $f8
-    db $1a, $66, $2e, $04, $e5, $af, $f5, $33
-    db $21, $03, $00, $39, $e5, $cd, $c0, $05
-    db $e8, $1a, $c9
+    db $1c, $7b, $d5, $cd, $ba, $7d, $e8, $04
+    db $3e, $01, $f5, $33, $cd, $00, $7c, $e8
+    db $19, $c9, $e8, $eb, $f8, $14, $36, $00
+    db $f8, $14, $7e, $f8, $19, $96, $30, $22
+    db $f8, $14, $5e, $16, $00, $21, $00, $00
+    db $39, $19, $4d, $44, $f8, $17, $7e, $f8
+    db $14, $86, $23, $23, $23, $23, $5f, $7e
+    db $ce, $00, $57, $1a, $02, $f8, $14, $34
+    db $18, $d6, $f8, $19, $5e, $16, $00, $21
+    db $00, $00, $39, $19, $4d, $44, $af, $02
+    db $f8, $1a, $66, $2e, $04, $e5, $af, $f5
+    db $33, $21, $03, $00, $39, $e5, $cd, $c0
+    db $05, $e8, $1a, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
