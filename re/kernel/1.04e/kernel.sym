@@ -4442,7 +4442,7 @@
 02:7e80 DrawNameWithIconImpl
 02:7e80 .data:172:8
 04:6400 SetText
-04:6400 .data:1c2:8
+04:6400 .data:1b4:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:6600 FlCfg
@@ -4542,7 +4542,7 @@
 04:5fb0 SetExitHook
 04:5fb0 .data:7:8
 04:7e60 TagExample
-04:7e60 .data:b6:8
+04:7e60 .data:8b:8
 02:7260 Marquee
 02:7260 .data:244:8
 02:5d58 LastRomName
