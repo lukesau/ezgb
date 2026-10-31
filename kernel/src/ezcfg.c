@@ -42,6 +42,8 @@
  *   THEME=1                       UI theme number (vars.h): 0 light, 1 dark;
  *                                 written only when it is not 0
  *   COLORS=102030,E0F0FF          the custom theme's background and ink
+ *   BOOTROM=1                     every launch resets through the boot ROM
+ *                                 (no jump to $0100, skip_boot.asm)
  *
  * The firmware rewrites the whole file from its known keys as a fixed
  * REC_LEN (one-sector) record padded with spaces (this FatFs has no f_truncate), so hand
@@ -650,8 +652,8 @@ static void cfg_load(void) {
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the
  * order of its switch. The key's bit in `seen` is 1 << its index (eight
- * keys; COLORS and the test-build RTCLOG key past them have no bit, so only
- * their first-occurrence rule is lost). */
+ * keys; COLORS, BOOTROM and the test-build RTCLOG key past them have no
+ * bit, so only their first-occurrence rule is lost). */
 static const u8 cfg_keys[] = {
     7, 'f','l','a','u','n','c','h',
     3, 'r','t','c',
@@ -662,6 +664,7 @@ static const u8 cfg_keys[] = {
     5, 't','h','e','m','e',
     4, 't','a','g','s',
     6, 'c','o','l','o','r','s',
+    7, 'b','o','o','t','r','o','m',
 #ifdef EZCFG_RTCLOG
     6, 'r','t','c','l','o','g',
 #endif
@@ -742,11 +745,11 @@ static void parse_record(u16 br, u8 legacy) {
             case 7:
                 TAGS_HIDE = (vlen != 0 && v[0] == '0') ? 1 : 0;
                 break;
-            case 8:
-                FarCallColors(0, (u8 *)v, (u8)vlen);
+            default:                                     /* 8 COLORS=, 9 BOOTROM= */
+                FarCallColors(idx, (u8 *)v, (u8)vlen);
                 break;
 #ifdef EZCFG_RTCLOG
-            case 9: {
+            case 10: {
                 u16 j, len = vlen + 1;    /* the trimmed last entry's space */
                 u8 whole = 0;
                 if (len > LOG_MAX) len = LOG_MAX;

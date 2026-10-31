@@ -24,6 +24,9 @@
 #define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
 #define CUST_OK   (*(volatile u8 *)0xDBEA)
 #define CUST_RAMP ((u8 *)0xDB58)   /* 8 */
+/* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
+ * boot ROM, never the jump to $0100 (scripts/skipboot/skip_boot.asm). */
+#define BOOT_RESET (*(volatile u8 *)0xDBEB)
 /* Browser names without their tags (docs/browser-tags.md): TAGS=0 in
  * EZGB.CFG, the SET tab's TAGS checkbox off. tagtrim.c, browser_icons.c. */
 #define TAGS_HIDE (*(volatile u8 *)0xDBF6)

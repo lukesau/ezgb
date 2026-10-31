@@ -4436,7 +4436,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:134d:8
+02:4a00 .data:1355:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4608,6 +4608,8 @@
 02:4990 ThemeCustom
 02:4990 .data:30:8
 05:7b50 ThemeColors
-05:7b50 .data:121:8
+05:7b50 .data:14f:8
 04:7f20 ThemeNames
 04:7f20 .data:31:8
+04:6be6 SkipBootPrep
+04:6be6 .data:e1:8

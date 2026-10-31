@@ -8,9 +8,13 @@
  *   op 0  parse the value at p, len bytes: 12 hex digits, any other byte
  *         ('#', ',', spaces) skipped. All 12 set CUST_RGB, CUST_OK and
  *         CUST_RAMP; fewer change nothing.
- *   op 1  write the theme lines at p for ezcfg's cfg_save: THEME= unless
- *         the theme is light, COLORS= if a valid one was read; returns
- *         past them
+ *   op 1  write the lines at p for ezcfg's cfg_save: BOOTROM=1 if set,
+ *         THEME= unless the theme is light, COLORS= if a valid one was
+ *         read; returns past them
+ *   op 9  parse BOOTROM= at p: "1" sets BOOT_RESET, anything else clears it
+ *
+ * ezcfg passes its key index as the op, so COLORS= arrives as op 8, which
+ * takes the op 0 path.
  *
  * The middle shades are the background moved 3/16 and 9/16 of the way to
  * the ink, about where every built-in dark theme has them. Each is four
@@ -36,6 +40,8 @@ u8 *colors(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 *p, u8 len) __naked
 	ld	d, (hl)
 	inc	hl
 	ld	c, (hl)
+	cp	#9
+	jr	z, 30$
 	dec	a
 	jr	z, 20$
 
@@ -117,9 +123,31 @@ u8 *colors(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 *p, u8 len) __naked
 	add	sp, #6
 	ret
 
-	; op 1: THEME=n (unless light) and COLORS=RRGGBB,RRGGBB (if read)
-	; at de, CR LF each; returns past them
+	; op 9: BOOTROM=, len c at de
+30$:
+	ld	b, #0
+	dec	c
+	jr	nz, 31$
+	ld	a, (de)
+	cp	#0x31			; '1'
+	jr	nz, 31$
+	inc	b
+31$:
+	ld	a, b
+	ld	(#0xdbeb), a		; BOOT_RESET
+	ret
+
+	; op 1: BOOTROM=1 (if set), THEME=n (unless light) and
+	; COLORS=RRGGBB,RRGGBB (if read) at de, CR LF each; returns past them
 20$:
+	ld	a, (#0xdbeb)		; BOOT_RESET
+	or	a
+	jr	z, 21$
+	ld	hl, #43$
+	ld	b, #9
+	call	28$
+	call	29$
+21$:
 	ld	a, (#0xdbf7)		; THEME
 	or	a
 	jr	z, 22$
@@ -186,6 +214,7 @@ u8 *colors(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 *p, u8 len) __naked
 40$:	.db	0x00, 0x03, 0x09, 0x1f	; bg, 3/16, 9/16, ink
 41$:	.ascii	"COLORS="
 42$:	.ascii	"THEME="
+43$:	.ascii	"BOOTROM=1"
 
 	; one channel, hl = its CUST_RGB byte, c = the weight; keeps bc, de, hl
 50$:
