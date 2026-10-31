@@ -92,7 +92,6 @@ extern void EiNest(void);          /* 00:0706 */
 
 static void blit_col1(const u8 *src, u16 addr, u8 n, u8 xm) __naked;
 static void fill0(u8 *p, u8 n4) __naked;
-static void vram_rd_col(u16 addr, u8 *dst, u8 n) __naked;
 static void vram_rmw2(u16 addr, u8 keep, u8 v0, u8 v1) __naked;
 static void cell_or0(const u8 *g, u8 *buf) __naked;
 static void cell_or1(const u8 *g, u8 *buf) __naked;
@@ -102,7 +101,6 @@ static void cell_or4(const u8 *g, u8 *buf) __naked;
 static void cell_or5(const u8 *g, u8 *buf) __naked;
 static void cell_or6(const u8 *g, u8 *buf) __naked;
 static void cell_or7(const u8 *g, u8 *buf) __naked;
-static void preserve(u8 *dst, u16 addr, u8 n, u8 keep, u8 xm);
 static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper);
 static u8 glyph_index(u8 c);
 
@@ -169,9 +167,6 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
         if (n == 0) {
             return;
         }
-        if (kf) {
-            preserve(buf, addr, n, kf, xm);   /* before the glyphs OR into that column */
-        }
     }
     cnt = Fit12(0, 0, s, len, col, xs);
     for (i = 0; i < cnt; i++) {
@@ -193,30 +188,20 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
         flush_rmw(buf, addr, n, nt, kf, kl, ink, paper);
         return;
     }
+    /* A tile the field only partly covers (the first one with kf, the last
+     * with kl) keeps the pixels outside it, which may be any of the four
+     * colors (DV's lime, index 1, beside a tab label: docs/dark-mode.md),
+     * so it goes through the per-plane read-modify-write; the whole tiles
+     * between take the fast both-planes copy. Until 2026-10-31 the edge
+     * tiles kept only plane 0 and came back as color 0 or 3. */
     p = buf;
     for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
-        if (kl && i == (u8)(nt - 1)) {
-            /* the last tile's pixels right of the limit: read into the
-             * spare column next to it (the glyphs are composed by now) and
-             * merge; no ink reaches that side of the tile */
-            preserve(p + ROW_H, addr, n, kl, xm);
-            for (x = 0; x < n; x++) {
-                p[x] |= p[ROW_H + x];
-            }
+        x = (u8)((i ? 0 : kf) | (i == (u8)(nt - 1) ? kl : 0));
+        if (x) {
+            flush_rmw(p, addr, n, 1, x, 0, ink, paper);
+        } else {
+            blit_col1(p, addr, n, xm);
         }
-        blit_col1(p, addr, n, xm);
-    }
-}
-
-/* Read the old plane-0 bytes of one tile column into dst, then keep only
- * the pixels outside the string (keep mask), pre-inverted for a
- * highlighted row so the flush's xor puts them back. */
-static void preserve(u8 *dst, u16 addr, u8 n, u8 keep, u8 xm) {
-    u8 r;
-
-    vram_rd_col(addr, dst, n);
-    for (r = 0; r < n; r++) {
-        dst[r] = (u8)((dst[r] ^ xm) & keep);
     }
 }
 
@@ -393,51 +378,6 @@ static void cell_or7(const u8 *g, u8 *buf) __naked {
     (void)g; (void)buf;
     __asm
 	CELL_OR	7
-    __endasm;
-}
-
-/* Plane-0 bytes of n tile rows of one tile column, starting at VRAM addr,
- * into dst. Each read sits in its own di .. ei window right after a STAT
- * check (mode 3 would return $FF). Rows advance by 2 within a tile and by
- * $130 + 2 across a tile boundary, where the address' low nibble wraps to
- * 0.  Frame (sdcccall 0): +2 addr  +4 dst  +6 n. */
-static void vram_rd_col(u16 addr, u8 *dst, u8 n) __naked {
-    (void)addr; (void)dst; (void)n;
-    __asm
-	ldhl	sp, #6
-	ld	b, (hl)
-	ldhl	sp, #2
-	ld	a, (hl+)
-	ld	e, a
-	ld	d, (hl)
-	ldhl	sp, #4
-	ld	a, (hl+)
-	ld	h, (hl)
-	ld	l, a
-vram_rd_col_row:
-	di
-vram_rd_col_wait:
-	ldh	a, (#0xff41)
-	bit	1, a
-	jr	nz, vram_rd_col_wait
-	ld	a, (de)
-	ei
-	ld	(hl+), a
-	inc	de
-	inc	de
-	ld	a, e
-	and	#0x0F
-	jr	nz, vram_rd_col_next
-	ld	a, e
-	add	#0x30
-	ld	e, a
-	ld	a, d
-	adc	#1
-	ld	d, a
-vram_rd_col_next:
-	dec	b
-	jr	nz, vram_rd_col_row
-	ret
     __endasm;
 }
 

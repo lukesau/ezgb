@@ -307,6 +307,18 @@ fork: its letters are the 8px font's size in a 12 px line, so a row holds
 about 26 characters to set 0's 18. Bank 10 has room for about two more sets
 after these two (each is about 3 to 4 KB), and banks 11 to 15 are empty.
 
+## Edge tiles
+
+The fast path (white on black or black on white, outside an interrupt)
+writes one byte to both planes of a tile row. A tile the field covers only
+partly, the first one when x0 is not on a tile boundary and the last one when
+`hClip12` cuts the row, keeps the pixels outside the field. Until 2026-10-31
+the fast path read back only plane 0 for those and wrote it to both planes,
+which is right only while every pixel is color 0 or 3: DV's lime (color 1)
+next to a label came back white. Edge tiles now go through the per-plane
+read-modify-write the generic flush uses; whole tiles keep the fast copy, so
+a list row (x 0 to 160) costs what it did.
+
 ## Next
 
 - Input: done, see [joypad-latch.md](joypad-latch.md): a VBlank sampler
