@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..5285c18
+index 0000000..abd5478
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1115 @@
+@@ -0,0 +1,1141 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -631,6 +631,17 @@ index 0000000..5285c18
 +        return;
 +    }
 +
++    /* The kernel's launch writes $7F31/$7F32=$00 after the load: game mode. */
++    if (!ez->stage1 && ez->last_cmd_addr == 0x7F32 && !(ez->last_cmd_value & 0x80) &&
++        ez->pending_rom && ez->pending_rom_size) {
++        ez->pending_boot = true;
++        ez->boot_no_reset = true;
++        if (ez->log) {
++            ezjr_log(gb, "EZ Jr ROMLOAD: $7F32=$%02x, cart is now the loaded ROM\n", ez->last_cmd_value);
++        }
++        return;
++    }
++
 +    if (ez->last_cmd_addr == 0x7FE0 && ez->last_cmd_value == 0x80) {
 +        if (ez->pending_rom && ez->pending_rom_size) {
 +            ez->pending_boot = true;
@@ -747,9 +758,16 @@ index 0000000..5285c18
 +        free(rom);
 +        return;
 +    }
++    if (ez->enabled && ez->pending_reset) {
++        ez->pending_reset = false;
++        ezjr_status("EZ Jr ROMLOAD: $7FE0=$80, reset into the game\n");
++        GB_reset(gb);
++        return;
++    }
 +    if (!ez->enabled || !ez->pending_boot || !ez->pending_rom) {
 +        return;
 +    }
++    bool no_reset = ez->boot_no_reset;
 +
 +    uint8_t *rom = ez->pending_rom;
 +    size_t rom_size = ez->pending_rom_size;
@@ -824,6 +842,10 @@ index 0000000..5285c18
 +        }
 +    }
 +
++    if (no_reset) {
++        ez->reset_armed = true;
++        return;
++    }
 +    GB_reset(gb);
 +}
 +
@@ -996,6 +1018,10 @@ index 0000000..5285c18
 +    /* Launched game: FPGA command window is gone; $7Fxx is MBC3 RTC latch
 +     * territory. Swallowing it blanked Pokemon after soft-reset. */
 +    if (ez->game_mode) {
++        if (ez->reset_armed && addr == 0x7FE0 && value == 0x80) {
++            ez->reset_armed = false;
++            ez->pending_reset = true;
++        }
 +        return false;
 +    }
 +
@@ -1121,10 +1147,10 @@ index 0000000..5285c18
 +}
 diff --git a/Core/ezflash_jr.h b/Core/ezflash_jr.h
 new file mode 100644
-index 0000000..473eb39
+index 0000000..bad5bae
 --- /dev/null
 +++ b/Core/ezflash_jr.h
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,85 @@
 +#pragma once
 +#include "defs.h"
 +#include <stdbool.h>
@@ -1192,6 +1218,12 @@ index 0000000..473eb39
 +     * the load, as the FPGA does before stage1 calls $0100. */
 +    bool stage1;
 +    bool pending_swap;
++    /* Kernel launch: the cart becomes the game when $7F32 bit 7 is cleared,
++     * as on the FPGA, with no reset. A later $7FE0=$80 then resets into it
++     * (reset_armed, pending_reset); a jump to $0100 skips the boot ROM. */
++    bool boot_no_reset;
++    bool reset_armed;
++    bool pending_reset;
 +} GB_ezflash_jr_t;
 +
 +#ifdef GB_INTERNAL
