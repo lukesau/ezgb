@@ -108,7 +108,7 @@ REGISTRY = {
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x6000, "DrawString12": 0x7500,
-                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290,
+                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290, "FarCallPlayLoad": 0x60b0,
                                               "FarCallColors": 0x4990}),
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
@@ -116,7 +116,8 @@ REGISTRY = {
                             "ThemeRow": 0x7670, "SetPage": 0x6610, "FarCallMarquee": 0x0410}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
-                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51}),
+                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
+                            "FarCallPlaySync_B4": 0x7792}),
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
     (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
                       pins={"FarCallMarquee": 0x0410}),
@@ -152,6 +153,11 @@ REGISTRY = {
                       pins={"FarCallTrampoline": 0x078d, "PlayKeys": 0x7cd2},
                       exports={"PlayMark": 0x7f31}),
     (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
+    (11, 0x4700): dict(src="play_file.c",                   # stars and plays mirrored in /.ezgbplays (docs/stars.md)
+                      pins={"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941, "FarCall_07_7739": 0x1963,
+                            "FarCall_03_76cc": 0x1985, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688,
+                            "FarCallTrampoline": 0x078d},
+                      exports={"PlaySync": 0x47af, "StarToggleSync": 0x491e}),
                       exports={"PlayKeys": 0x7cd2, "StarQuery": 0x7d92, "StarToggle": 0x7db8}),
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
     (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)

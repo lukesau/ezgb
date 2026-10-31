@@ -49,6 +49,7 @@ extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, 
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c */
 extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
 extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, rec_flag.c: a pSRAM checkbox */
+extern void FarCallPlaySync_B4(void);                               /* 04:7792 -> 0B:47af play_file.c: the setting to the card */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
@@ -92,7 +93,9 @@ void SetPage(u8 op, u8 cur) {
     } else if (op == 2) {
         page_row(cur == ROW_NEXT);
     } else if (op == 3 && cur == ROW_SORT) {
-        box(0x82, 0x50, RecFlag(SORT_REC, 'O', 1), 1);
+        u8 on = RecFlag(SORT_REC, 'O', 1);
+        FarCallPlaySync_B4();               /* /.ezgbplays keeps it (docs/stars.md) */
+        box(0x82, 0x50, on, 1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         EZ_OP = OP_SAVE;
