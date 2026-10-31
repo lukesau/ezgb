@@ -76,13 +76,20 @@ runs in bank 2.
 `Reading...`, `Loading...` and `Error file` are three copies of one stock
 drawer in bank 8 (`08:7344`, `737f`, `73ba`): ink 0 on paper 3, a filled box
 (35,37)-(125,108), ten characters at column 5 of tile row 8. Each now starts
-with `jp MsgHook<n>` (`08:7e10` / `7e24` / `7e38`), which calls
-`MsgBox12(n)` (`msgbox12.c`, `08:7e80`): in 8px the stock box and string, in
-12px the same box and the same string on the 12px row at y 64 from x 44,
-clipped at the box's right side (`hClip12`, [set-pane12.md](set-pane12.md)).
-Until dark mode, 8px replayed the displaced load and ran the stock code; it
-now goes through `MsgBox12` for the theme's popup colors
-([dark-mode.md](dark-mode.md)).
+with `jp MsgHook<n>` (`08:7e10` / `7e24` / `7e38`), which calls `MsgBoxFar`
+(`08:7e4c`), a far stub to `MsgBox(n)` ([msgbox.c](../kernel/src/msgbox.c),
+`0B:4B00`), in both UI modes and every theme.
+
+Since 2026-10-31 the box is smaller, after davidesqalv's ezgb-dv fork: ten
+characters need little room, so it is 96 px wide (x 32..127) and only as tall
+as the text plus a margin, y 52..87 in 12px (the text on the 12px row at
+y 64 from x 44, clipped at the box's right side by `hClip12`,
+[set-pane12.md](set-pane12.md)) and y 54..81 in 8px (the stock string, tile
+row 8). Its frame is his too: a 2 px outer line, a 1 px gap and a 1 px inner
+line in the text's color, the outer corners rounded off in color 0. The
+strings are copied into the block, since bank 8's are out of reach from bank
+11. Until then the box was `MsgBox12` (`msgbox12.c`, `08:7e80`), the stock
+size.
 
 Still 8x8 in 12px mode: the boot messages (`Micro SD initial OK!` and the
 SD error texts) and `BATTERY DRY!!!`.

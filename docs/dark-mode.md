@@ -173,7 +173,7 @@ lighter shade of the background with white text:
   screen still calls `StoreDrawParams`. Every one of those blocks got
   smaller, since the call takes one argument less.
 - The status boxes draw white on color 1 in a dark theme (ink 0 on paper 3,
-  stock, in light). `MsgBox12` now draws them in both UI modes: the
+  stock, in light). `MsgBox` (msgbox.c) draws them in both UI modes: the
   `jr nz` in `MsgHookReading` / `Loading` / `Error` (`08:7e13`, `7e27`,
   `7e3b`) is a `jr`, so 8px no longer runs the stock drawer.
 - The name band and a selected row stay a white bar; their text, color 0 on

@@ -4440,8 +4440,6 @@
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs
 04:5f70 .data:e:8
-08:7e80 MsgBox12
-08:7e80 .data:a9:8
 08:7e10 MsgHookReading
 08:7e10 .data:14:8
 08:7e24 MsgHookLoading
@@ -4592,3 +4590,7 @@
 01:7ec6 .data:11:8
 00:3fe4 DvParams
 00:3fe4 .data:1b:8
+0b:4b00 MsgBox
+0b:4b00 .data:195:8
+08:7e4c MsgBoxFar
+08:7e4c .data:8:8

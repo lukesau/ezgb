@@ -279,9 +279,10 @@ open(p,'wb').write(rom)
 PY
 python3 tools/inject.py src/settext.c "$V" 4 6400 SetText --pin FarCallDrawString12=05c0 --pin DrawString=08b7 --apply
 python3 tools/inject_bytes.py "$V" 4 5f70 FarCallMenuTabs f8027ef533cd8d076971080033c9 --apply
-# 12px Reading / Loading / Error file boxes (docs/tab-strip12.md "Status
-# boxes"): each stock drawer starts with `jp MsgHook<n>`; 12px calls MsgBox12.
-perl -ni -e 'print unless /^(08:7e80|08:7e10|08:7e24|08:7e38) /' "$SYM"
+# Reading / Loading / Error file boxes (docs/tab-strip12.md "Status boxes"):
+# each stock drawer starts with `jp MsgHook<n>`, which far-calls MsgBox
+# (msgbox.c, bank 11) through MsgBoxFar in both UI modes.
+perl -ni -e 'print unless /^(08:7e10|08:7e24|08:7e38|08:7e4c|0b:4b00) /' "$SYM"
 python3 - "$GB" <<'PY'
 import sys
 p=sys.argv[1]; rom=bytearray(open(p,'rb').read()); B=8*0x4000-0x4000
@@ -291,11 +292,12 @@ for a,t in ((0x7344,"c3107e"),(0x737f,"c3247e"),(0x73ba,"c3387e")):
     rom[B+a:B+a+3]=bytes.fromhex(t)
 open(p,'wb').write(rom)
 PY
-python3 tools/inject.py src/msgbox12.c "$V" 8 7e80 MsgBox12 --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
-  --pin ReadingStr=7374 --pin LoadingStr=73af --pin ErrorFileStr=73ea --apply
-python3 tools/inject_bytes.py "$V" 8 7e10 MsgHookReading f0fbb72006210300c347733e00f533cd807e33c9 --apply
-python3 tools/inject_bytes.py "$V" 8 7e24 MsgHookLoading f0fbb72006210300c382733e01f533cd807e33c9 --apply
-python3 tools/inject_bytes.py "$V" 8 7e38 MsgHookError   f0fbb72006210300c3bd733e02f533cd807e33c9 --apply
+python3 tools/inject.py src/msgbox.c "$V" 11 4b00 MsgBox --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
+  --pin PopupDrawParams=0290 --pin DrawString=08b7 --apply
+python3 tools/inject_bytes.py "$V" 8 7e4c MsgBoxFar cd8d07004b0b00c9 --apply
+python3 tools/inject_bytes.py "$V" 8 7e10 MsgHookReading f0fbb71806210300c347733e00f533cd4c7e33c9 --apply
+python3 tools/inject_bytes.py "$V" 8 7e24 MsgHookLoading f0fbb71806210300c382733e01f533cd4c7e33c9 --apply
+python3 tools/inject_bytes.py "$V" 8 7e38 MsgHookError   f0fbb71806210300c3bd733e02f533cd4c7e33c9 --apply
 # 12px HELP pane (docs/tab-strip12.md): DrawFwVersionScreen_drawChrome
 # (08:70e1) starts with `jp HelpHook`; 12px calls Help12 with the stock
 # version buffer, then jumps to the stock wait loop.
