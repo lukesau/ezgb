@@ -9,18 +9,18 @@
 #define FL_PICK   (*(volatile u8 *)0xDBFE)
 /* Set by browser_hide.c when the listing hits its cap, cleared by browser_sort.c. */
 #define LIST_CUT  (*(volatile u8 *)0xDBFA)
-/* UI theme (docs/dark-mode.md): 0 light, 1 dark, 7 DV. 2..6 were red,
- * green, purple, blue and custom until 2026-10-31; a card that still says
- * one of them gets dark (ezcfg.c, theme_pick.c). THEME= in EZGB.CFG,
- * mirrored to pSRAM page $11 $A414 for the next boot's first frame
- * (theme.c). On a color console in CGB mode a theme is its row of
- * theme_ramps.c; on a DMG, or a CGB in compatibility mode (stock stage1),
- * dark is the inverted palette and DV BGP $27. */
+/* UI theme (docs/dark-mode.md): 0 light, 1 dark, 2.. red, green, purple,
+ * blue, 6 custom, 7 DV; the SET button steps light, dark, DV, then red ..
+ * custom. THEME= in EZGB.CFG, mirrored to pSRAM page $11 $A414 for the next
+ * boot's first frame (theme.c). On a color console in CGB mode a theme is
+ * its row of theme_ramps.c, custom the colors of COLORS= (theme_colors.c),
+ * DV dv_ramp (theme_pick.c); on a DMG, or a CGB in compatibility mode (stock
+ * stage1), DV is BGP $27 and every other theme past 0 the inverted palette. */
 #define THEME     (*(volatile u8 *)0xDBF7)
 #define THEME_COUNT 8
-#define THEME_CUSTOM 6             /* retired, kept for the numbers */
-/* DV, after the retired numbers so light and dark stay as they are in
- * EZGB.CFG: the homage to davidesqalv's ezgb-dv fork, its 12px glyph set
+#define THEME_CUSTOM 6             /* theme_ramps.c has no row for it */
+/* DV, after custom so the earlier numbers stay as they are in EZGB.CFG: the
+ * homage to davidesqalv's ezgb-dv fork, its 12px glyph set
  * (glyph set 1, docs/font12.md), black, lime, blue and white, the selection
  * bar and accents in lime (StoreDrawParams' DV remap, dv_params.c). */
 #define THEME_DV  7

@@ -2,15 +2,16 @@
 
 [Issue #11](https://github.com/lukesau/ezgb/issues/11). The SET tab has a
 `THEME` button that cycles the browser, every kernel screen and our stage1's
-boot screen through three themes: light (the stock look), dark, and DV (see
-[DV](#dv)). Light and dark are the DMG baseline: on a DMG, or anything else
-running the kernel in DMG mode, light is the stock palette and dark the
-inverted one. DV is designed for backlit and OLED screens.
+boot screen through light (the stock look), dark, DV (see [DV](#dv)), four
+colored ones, and custom, whose two colors are set by hand in `EZGB.CFG`
+(see [Custom](#custom)), in that order. Light and dark are the DMG baseline:
+on a DMG, or anything else running the kernel in DMG mode, light is the stock
+palette and every other theme but DV the inverted one. DV and the colored
+themes are for backlit and OLED screens.
 
-> Since 2026-10-31 there are only these three. Red, green, purple, blue and
-> custom (themes 2 to 6, with `COLORS=`) were removed; a card whose
-> `EZGB.CFG` still says `THEME=2` to `6` gets dark, and a `COLORS=` line is
-> kept but unused. Their rows below are history.
+> For part of 2026-10-31 only light, dark and DV were left; the colored ones
+> and custom came back the same day, after DV on the button and with their
+> old numbers (2 to 6), so a card's `THEME=` means what it did.
 
 ## The themes
 
@@ -45,7 +46,7 @@ that row goes to all 8 BG and 8 OBJ palettes. On a DMG, light is `BGP`,
 
 ## Custom
 
-Removed on 2026-10-31 (see the top). Since 2026-10-30 until then. One line in `EZGB.CFG` sets the background and the ink
+Since 2026-10-30. One line in `EZGB.CFG` sets the background and the ink
 (text), in web hex, the format every color picker gives:
 
 ```
@@ -204,8 +205,10 @@ never writes `BGP`.
 Theme 7, an homage to davidesqalv's
 [ezgb-dv](https://github.com/davidesqalv/ezgb-dv) fork: its 12px glyph set
 (Tamzen 6x12 and his icons, glyph set 1, [font12.md](font12.md#glyph-sets))
-and its colors. The button steps light, dark, DV; DV keeps 7 so the numbers
-already in people's `EZGB.CFG` keep their meaning.
+and its colors. The button steps light, dark, DV, red, green, purple, blue,
+custom; DV keeps number 7 so the numbers already in people's `EZGB.CFG` keep
+their meaning. Its colors are `dv_ramp` in
+[theme_pick.c](../kernel/src/theme_pick.c), which `theme_ramp` returns for 7.
 
 **Colors.** Black, lime `#7BFF31`, blue `#0063C5` and white, as color indices
 0 to 3. The kernel draws normal text white on black (ink 3, paper 0) and
@@ -257,12 +260,12 @@ meaning.
    `THEME=` is one digit), and the literal `THEME_COUNT` compare in
    [theme_colors.c](../kernel/src/theme_colors.c) (asm).
 2. Its colors in [theme_pick.c](../kernel/src/theme_pick.c)'s `theme_ramp`
-   (asm): a row of [theme_ramps.c](../kernel/src/theme_ramps.c) can only be
-   added before custom's number, so a later theme maps to a row there, as DV
-   does.
+   (asm): [theme_ramps.c](../kernel/src/theme_ramps.c)'s rows end at custom's
+   number, so a later theme gets its own row, as DV's `dv_ramp` is.
 3. A name, six characters wide, at the end of
-   [theme_names.c](../kernel/src/theme_names.c). The button steps through
-   them in order.
+   [theme_names.c](../kernel/src/theme_names.c), and its place in the
+   button's order in [theme_row.c](../kernel/src/theme_row.c) (light, dark,
+   DV, red .. custom), which is not the number order.
 4. Its own glyph set, if any: a sheet, a set in `scripts/inject-font12.sh`,
    and the set's choice in `draw12.c` and `layout12.c`.
 

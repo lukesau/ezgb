@@ -6916,10 +6916,14 @@ SaveNameMatch::
 
 ThemeRow::
     db $e8, $f6, $f8, $0c, $7e, $d6, $02, $20
-    db $22, $fa, $f7, $db, $b7, $20, $04, $3e
-    db $01, $18, $0a, $21, $f7, $db, $4e, $0d
-    db $3e, $07, $28, $01, $af, $21, $f7, $db
-    db $77, $2e, $fc, $36, $01, $cd, $00, $5f
+    db $42, $21, $f7, $db, $4e, $0d, $20, $04
+    db $0e, $07, $18, $10, $fa, $f7, $db, $fe
+    db $07, $20, $04, $0e, $02, $18, $05, $fa
+    db $f7, $db, $3c, $4f, $79, $d6, $07, $20
+    db $07, $21, $f7, $db, $46, $05, $20, $0b
+    db $79, $d6, $06, $20, $08, $fa, $ea, $db
+    db $b7, $20, $02, $0e, $00, $21, $f7, $db
+    db $71, $2e, $fc, $36, $01, $cd, $00, $5f
     db $cd, $90, $59, $f8, $0c, $7e, $b7, $28
     db $0e, $21, $03, $00, $e5, $af, $f5, $33
     db $cd, $91, $27, $e8, $03, $18, $0d, $af
@@ -6948,38 +6952,6 @@ ThemeRow::
     db $af, $3e, $03, $f5, $33, $cd, $91, $27
     db $e8, $0d, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
