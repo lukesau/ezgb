@@ -35,6 +35,10 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BANK = 0x4000
+# The modded kernel is 16 banks; stock dumps are 10. Banks 10-15 are empty in
+# every stock build, so a stock image is padded with $FF (free space) to this
+# size and they map one to one (docs/kernel-size.md).
+KERNEL_BANKS = 16
 FARCALL = b"\xcd\x8d\x07"  # call FarCallTrampoline (00:078d, same in all builds)
 
 # SM83 instruction lengths. Everything not listed is 1 byte; CB-prefixed are 2.
@@ -94,7 +98,8 @@ def rom_path(ver):
 
 
 def load_stock(ver):
-    return open(rom_path(ver), "rb").read()
+    data = open(rom_path(ver), "rb").read()
+    return data + b"\xff" * (KERNEL_BANKS * BANK - len(data))
 
 
 def cpu_addr(bank, off):

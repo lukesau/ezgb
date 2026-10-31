@@ -4,7 +4,8 @@
 #
 # Two fixups make the rgbds output byte-identical to the canonical patched
 # kernel (the one inject.py produces from a real dump):
-#   - rgbfix pads the 160KB (10-bank) ROM to 256KB; truncate it back.
+#   - rgbfix pads the ROM to a power of two; the kernel is 16 banks, 256KB
+#     (docs/kernel-size.md), so take exactly that.
 #   - rgbfix "corrects" 4 header bytes the real firmware leaves alone:
 #     $0148 (ROM size), $014D (header checksum over the changed $0148), and
 #     $014E-$014F (global checksum, stale in the shipped firmware). Restore
@@ -44,7 +45,7 @@ python3 - "$VER" "$RE" "$ROOT" <<'PY'
 import hashlib, json, os, sys
 ver, re_dir, root = sys.argv[1], sys.argv[2], sys.argv[3]
 
-SIZE = 163840
+SIZE = 262144
 # version -> shipped values of the 4 bytes rgbfix rewrites
 HEADER = {
     "1.05e-0731": {0x148: 0x00, 0x14D: 0xBD, 0x14E: 0x7B, 0x14F: 0x57},

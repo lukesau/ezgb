@@ -133,7 +133,8 @@ async function hash(alg, buf) {
   return Array.from(h, b => b.toString(16).padStart(2, "0")).join("");
 }
 // IPS: "PATCH", records of 3-byte offset + 2-byte size + data (size 0 = RLE:
-// 2-byte count + 1 byte), "EOF". Our patches never change the file size.
+// 2-byte count + 1 byte), "EOF". Kernel patches grow the file from 10 banks
+// to 16 (docs/kernel-size.md); a record past the end extends it.
 function applyIps(base, ips) {
   const t = String.fromCharCode(...ips.slice(0, 5));
   if (t !== "PATCH") throw new Error("not an IPS patch");

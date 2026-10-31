@@ -62,6 +62,9 @@ IPS_FOOTER = b"EOF"
 # the format demands it.)
 EOF_OFFSET = 0x454F46
 MAX_RECORD = 0xFFFF
+# A run of at least this many equal bytes goes out as one RLE record (the
+# kernel's empty banks past the stock image: docs/kernel-size.md).
+RLE_MIN = 16
 # Join diff runs separated by up to this many equal bytes. 0 = exact diffs
 # only: a couple more records, but the patch then contains not a single byte
 # of the stock firmware, only code this project wrote.
@@ -126,13 +129,32 @@ def write_ips(runs, new, path):
             if offset == EOF_OFFSET:
                 offset -= 1
                 length += 1
-            while length > 0:
-                chunk = min(length, MAX_RECORD)
+            end = offset + length
+            while offset < end:
+                rep = offset
+                while rep < end and rep - offset < MAX_RECORD and new[rep] == new[offset]:
+                    rep += 1
+                if rep - offset >= RLE_MIN:
+                    f.write(offset.to_bytes(3, "big"))
+                    f.write((0).to_bytes(2, "big"))
+                    f.write((rep - offset).to_bytes(2, "big"))
+                    f.write(new[offset:offset + 1])
+                    offset = rep
+                    continue
+                # literal bytes up to the next long run
+                lit = offset
+                while lit < end and lit - offset < MAX_RECORD:
+                    r = lit
+                    while r < end and r - lit < RLE_MIN and new[r] == new[lit]:
+                        r += 1
+                    if r - lit >= RLE_MIN:
+                        break
+                    lit = r
+                lit = min(lit, offset + MAX_RECORD)
                 f.write(offset.to_bytes(3, "big"))
-                f.write(chunk.to_bytes(2, "big"))
-                f.write(new[offset:offset + chunk])
-                offset += chunk
-                length -= chunk
+                f.write((lit - offset).to_bytes(2, "big"))
+                f.write(new[offset:lit])
+                offset = lit
         f.write(IPS_FOOTER)
 
 
@@ -171,12 +193,14 @@ def make_one(version):
             sys.exit(f"error: missing {p} ({what})")
     stock = open(stock_path, "rb").read()
     modded = open(modded_path, "rb").read()
-    if len(stock) != len(modded):
-        sys.exit(f"error: size mismatch: stock {len(stock)}, modded {len(modded)}")
+    if len(modded) < len(stock):
+        sys.exit(f"error: modded kernel ({len(modded)}) is smaller than stock ({len(stock)})")
     if stock == modded:
         sys.exit("error: kernel.gb is identical to kernel.gb.orig, so there is nothing to patch")
 
-    runs = diff_runs(stock, modded)
+    # The modded kernel is longer (docs/kernel-size.md). Applying an IPS grows
+    # the file with zeros, so diff against stock padded the same way.
+    runs = diff_runs(stock + bytes(len(modded) - len(stock)), modded)
     os.makedirs(PATCH_DIR, exist_ok=True)
     patch_name = f"ezgb-{version}.ips"
     patch_path = os.path.join(PATCH_DIR, patch_name)
@@ -196,6 +220,7 @@ def make_one(version):
         "stock_md5": md5(stock),
         "patched_md5": md5(modded),
         "size": len(stock),
+        "patched_size": len(modded),
     }
     save_manifest(manifest)
     total = sum(l for _, l in runs)
