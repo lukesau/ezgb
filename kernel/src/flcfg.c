@@ -165,11 +165,13 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         }
         if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME) {
             if (row == ROW_THEME) {
+                u8 was = (u8)(THEME == THEME_DV);
                 ThemeRow(2);            /* saves, sets the palettes, redraws itself */
-                /* a theme with one font (AUTO, DV's 12px glyph set): the
-                 * pane is laid out again in it, as the FONT button does */
-                if (THEME == THEME_DV && !hUiMode) {
-                    hUiMode = 1;
+                /* onto or off DV, whose glyph set is its own (12px only,
+                 * AUTO): the tab strip and the pane are drawn again in the
+                 * new glyphs, as the FONT button does */
+                if ((u8)(THEME == THEME_DV) != was) {
+                    if (!was) hUiMode = 1;
                     goto relayout;
                 }
             } else {

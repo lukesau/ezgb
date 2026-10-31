@@ -4581,6 +4581,6 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:635:8
+04:6d19 .data:648:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
