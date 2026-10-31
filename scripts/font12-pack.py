@@ -76,12 +76,16 @@ def parse(path):
 class Glyph:
     """One glyph's trimmed rows and the per-row ink extents the kerning uses."""
 
-    def __init__(self, code, rows):
+    def __init__(self, code, rows, mono=0):
         self.code = code
+        self.mono = mono
         cols = [i for r in rows for i, ch in enumerate(r) if ch == "#"]
         lo = min(cols) if cols and code not in ICONS else 0
         self.w = (max(cols) - lo + 1) if cols else 0
-        if code in DIGITS:
+        if mono and code not in ICONS:
+            # fixed width: the sheet's cell as drawn, no trimming
+            lo, self.w = 0, mono
+        elif code in DIGITS:
             # tabular figures: every digit sits in the same DIGIT_W-wide cell
             # (sheet columns DIGIT_X ..), so it is not trimmed to its ink
             # ("1" keeps its side bearings) and all ten share one advance
@@ -93,7 +97,7 @@ class Glyph:
 
     def kerns(self):
         # digits never kern, on either side: columns of numbers line up
-        return self.code not in ICONS and self.code not in DIGITS and self.w > 0
+        return not self.mono and self.code not in ICONS and self.code not in DIGITS and self.w > 0
 
 
 def kern(a, b, gap, kmax):
@@ -121,6 +125,8 @@ def main():
     ap.add_argument("--kmax", type=int, default=2, help="largest kern, 0..3 (default 2)")
     ap.add_argument("--space", type=int, default=5, help="advance of the space (default 5)")
     ap.add_argument("--icon-adv", type=int, default=12, help="advance of an icon = start of the name field (default 12)")
+    ap.add_argument("--mono", type=int, default=0, metavar="N",
+                    help="fixed width: every text glyph is the sheet's first N columns, advance N, no kerning")
     args = ap.parse_args()
     if not 0 <= args.kmax <= 3:
         raise SystemExit("--kmax must be 0..3 (2-bit matrix entries)")
@@ -130,7 +136,7 @@ def main():
         rows = blocks.get(code)
         if rows is None or len(rows) != ROWS:
             raise SystemExit(f"glyph 0x{code:02X}: expected {ROWS} rows, found {0 if rows is None else len(rows)}")
-        glyphs.append(Glyph(code, rows))
+        glyphs.append(Glyph(code, rows, args.mono))
     widest = max(g.w for g in glyphs if g.code not in ICONS)
     if widest > 9:
         raise SystemExit(f"a text glyph is {widest} px wide; at most 9 fit a 16-bit row at every shift")
@@ -153,6 +159,8 @@ def main():
     for g in glyphs:
         if g.code in ICONS:
             adv.append(args.icon_adv)
+        elif args.mono:
+            adv.append(args.mono)
         elif g.code == SPACE:
             adv.append(args.space)
         else:
