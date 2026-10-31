@@ -137,8 +137,10 @@ pushes; `--hold fw4` keeps a firmware off the page until it has run on a
 cart). The release README prints that URL (`PATCHER_URL` in `make-dist.sh`).
 
 **Counting patches.** After each patch that passes its output hash check the
-page loads `https://lukesau.com/ezgb/p.gif?k=<patch id>&t=<ms>` (ids
-`k-<kernel>`, `f-<firmware>`), a 1x1 GIF on lukesau.com, so each patch is one
+page loads `https://lukesau.com/ezgb/p.gif?k=<patch id>&v=<mod version>&t=<ms>`
+(ids `k-<kernel>`, `f-<firmware>`; `v` is the kernel mod version or the
+firmware mod version, sent since 2026-10-30, so earlier hits are mod 6.9 and
+firmware 1.9), a 1x1 GIF on lukesau.com, so each patch is one
 hit in that server's access log. No file data leaves the browser. The tally
 is kept on that server and isn't part of this repository.
 
