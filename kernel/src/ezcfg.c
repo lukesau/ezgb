@@ -649,6 +649,8 @@ static void cfg_load(void) {
      * (theme_colors.c), wherever that is in the file: light. DV comes after
      * custom (vars.h) and needs nothing. */
     if (THEME >= (u8)(THEME_CUSTOM + CUST_OK) && THEME != THEME_DV) THEME = 0;
+    /* AUTO: DV's glyph set is 12px only, whatever UI= says */
+    if (THEME == THEME_DV) hUiMode = 1;
 }
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the

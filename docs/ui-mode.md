@@ -8,7 +8,8 @@ or `12px`; A toggles it, the choice is written to `EZGB.CFG` as `UI=8` or
 no card, the browser is the 8px one, so shipping this changes nothing
 visible until the user opts in. Since 2026-10-30 the button is the `FONT:`
 row of the SET tab's second page
-([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The VRAM-race fix
+([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)); with the DV theme it
+reads `AUTO` and the mode is 12px ([dark-mode.md](dark-mode.md#dv)). The VRAM-race fix
 ([vram-write-race.md](vram-write-race.md)) and the joypad latch
 ([joypad-latch.md](joypad-latch.md)) apply in both modes.
 

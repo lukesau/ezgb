@@ -1,7 +1,9 @@
 /* Fast-launch configuration from the SET tab (docs/fastlaunch-set-tab.md).
  *
- * Bank 4, injected at 04:6600, same bank as DrawTimeAutosaveScreen (04:46f4)
- * so the hand-assembled hook shims (04:5932..) reach it with a plain call.
+ * Bank 4, injected at 04:6d19, same bank as DrawTimeAutosaveScreen (04:46f4)
+ * so the hand-assembled hook shims (04:5932..) reach it with a plain call to
+ * 04:6600, where it was until 2026-10-31 and a `jp` to here (FlCfgJump) now
+ * stands: AUTO needed room, which moving ManageSaves to bank 11 made.
  * The SD file /EZGB.CFG is the single source of truth, read and written by
  * the shared bank-2 module ezcfg.c (docs/ezgb-cfg.md) through the bank-4
  * FarCallEzCfg shim (04:5f00); this file only owns the FL_* WRAM state and
@@ -164,6 +166,12 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME) {
             if (row == ROW_THEME) {
                 ThemeRow(2);            /* saves, sets the palettes, redraws itself */
+                /* a theme with one font (AUTO, DV's 12px glyph set): the
+                 * pane is laid out again in it, as the FONT button does */
+                if (THEME == THEME_DV && !hUiMode) {
+                    hUiMode = 1;
+                    goto relayout;
+                }
             } else {
                 if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1; else RTC_OFF = RTC_OFF ? 0 : 1;
                 cfg_save();
@@ -180,15 +188,21 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             return 0;
         }
         if (frame[0x3d] == ROW_UI) {
+            /* AUTO: the theme decides the font (DV is 12px only) */
+            if (THEME == THEME_DV) {
+                wait_a_release();
+                return 0;
+            }
             /* The whole pane (and the tab strip) is laid out per mode:
              * redraw the strip, which also clears the pane, and return 2 so
              * FlSetADispatch re-enters the SET screen from the top. */
             hUiMode = hUiMode ? 0 : 1;
+relayout:
             cfg_save();
             FarCallMenuTabs(1);
             wait_a_release();
             SetFpgaPage_B4(0);
-            SET_RE = ROW_UI + 1;          /* op 0 of the re-entry: put the cursor back here */
+            SET_RE = frame[0x3d] + 1;     /* op 0 of the re-entry: put the cursor back here */
             return 2;
         }
         FL_PICK = 1;
@@ -352,7 +366,14 @@ static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
 
     if (PAGE2) {
+        static const u8 auto_str[5] = {'A','U','T','O',0};
         SetPage(1, cur);
+        if (THEME == THEME_DV) {
+            /* the FONT button says AUTO: the theme has one font */
+            if (cur == ROW_UI) StoreDrawParams(0, 3, 0);
+            SetText(auto_str, 4, 15, 4);
+            StoreDrawParams(3, 0, 0);
+        }
         return;
     }
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */

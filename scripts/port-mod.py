@@ -110,7 +110,7 @@ REGISTRY = {
     (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x6000, "DrawString12": 0x7500,
                                               "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290,
                                               "FarCallColors": 0x4990}),
-    (4, 0x6600): dict(src="flcfg.c",
+    (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
                             "ThemeRow": 0x7670, "SetPage": 0x7792, "FarCallMarquee": 0x0410}),
@@ -131,10 +131,10 @@ REGISTRY = {
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290,
                             "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0}),
-    (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
+    (11, 0x4010): dict(src="save_mgr.c",                    # Manage saves screens, far target of the 04:6d11 stub RomMenu calls (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "SmSaveOp": 0x65f0, "PopupDrawParams": 0x0290}),
+                            "SmSaveOp": 0x4000, "PopupDrawParams": 0x0290}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
     (4, 0x73a0): dict(src="save_name.c", pins={}),

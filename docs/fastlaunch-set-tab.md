@@ -114,8 +114,9 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 ## Code
 
-- [`../kernel/src/flcfg.c`](../kernel/src/flcfg.c) — bank 4 at `04:6600`, label
-  `FlCfg`. One entry, `u8 flcfg(u8 *frame, u8 op)`, op-selected: 0 ENTER (load +
+- [`../kernel/src/flcfg.c`](../kernel/src/flcfg.c) — bank 4 at `04:6d19` (at
+  `04:6600` until 2026-10-31; a `jp` there, `FlCfgJump`, keeps the hook
+  shims' calls), label `FlCfg`. One entry, `u8 flcfg(u8 *frame, u8 op)`, op-selected: 0 ENTER (load +
   draw the rows), 1 ROWS (redraw on cursor move), 2 A (row 2 toggle+save, row 3
   arm pick), 3 PICK (compose path from `$c2a6`+`$c4a4` and save), 4 LOAD (test).
   Same bank as `DrawTimeAutosaveScreen` (`04:46f4`), so the shims reach it with a

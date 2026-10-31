@@ -136,9 +136,10 @@ target of its own; `f_unlink` has to live in bank 9.
 
 | Block | Size | What |
 |---|---|---|
-| `ManageSaves` `04:6d11` | 1678 | [kernel/src/save_mgr.c](../kernel/src/save_mgr.c): the screens, near-called by `RomMenu` |
+| `ManageSavesImpl` `0B:4010` | 1605 | [kernel/src/save_mgr.c](../kernel/src/save_mgr.c): the screens, far-called by `RomMenu` through `ManageSaves`, an 8-byte stub at `04:6d11` where the block was until 2026-10-31 (bank 4 needed the room for the SET tab) |
+| `SmSaveOpB11` `0B:4000` | 16 | the same bytes as `SmSaveOp`, for the screens in bank 11 |
 | `SaveNameMatch` `04:73a0` | 715 | [kernel/src/save_name.c](../kernel/src/save_name.c): `<base>.sav` or a backup's name |
-| `SmSaveOp` `04:65f0` | 16 | far stub to `SaveOp` |
+| `SmSaveOp` `04:65f0` | 16 | far stub to `SaveOp` (no caller in bank 4 since the move; kept) |
 | `SaveOp` `01:7670` | 1750 | [kernel/src/save_ops.c](../kernel/src/save_ops.c): scan, copy, back up, restore, delete, labels |
 | `SoOpendir` `01:7630`, `SoReaddir` `01:7646` | 22, 22 | far stubs to `Opendir_B5` (`05:73dd`) and `Readdir_B5` (`05:7576`), the bank-2 `FarCallOpendir_B5`'s bytes |
 | `SoUnlink` `01:765c` | 16 | far stub to `FsUnlink` |

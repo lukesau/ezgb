@@ -5,1627 +5,213 @@
 
 SECTION "ROM Bank $00b", ROMX[$4000], BANK[$b]
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+SmSaveOpB11::
+    db $f8, $02, $2a, $66, $6f, $e5, $cd, $8d
+    db $07, $70, $76, $01, $00, $e8, $02, $c9
+
+ManageSavesImpl::
+    db $e8, $fa, $af, $0f, $f5, $cd, $00, $40
+    db $e1, $cd, $9d, $42, $11, $c5, $41, $d5
+    db $cd, $69, $44, $e1, $af, $f5, $33, $cd
+    db $83, $44, $33, $f8, $05, $36, $00, $f8
+    db $01, $36, $00, $f0, $fb, $b7, $3e, $04
+    db $20, $02, $3e, $06, $f8, $02, $77, $af
+    db $0f, $f5, $af, $f5, $33, $cd, $27, $43
+    db $e8, $03, $f8, $00, $36, $ff, $f8, $00
+    db $e5, $cd, $06, $42, $e1, $f8, $04, $73
+    db $7e, $e6, $20, $c2, $90, $41, $f8, $04
+    db $7e, $e6, $0c, $28, $65, $f8, $04, $7e
+    db $e6, $04, $28, $08, $f8, $05, $7e, $b7
+    db $28, $02, $35, $7e, $f8, $04, $7e, $e6
+    db $08, $28, $0b, $21, $77, $d7, $4e, $f8
+    db $05, $7e, $91, $30, $01, $34, $f8, $05
+    db $7e, $f8, $01, $96, $30, $06, $f8, $05
+    db $7e, $f8, $01, $77, $f8, $01, $2a, $4f
+    db $06, $00, $5e, $16, $00, $7b, $81, $4f
+    db $7a, $88, $47, $f8, $05, $3a, $2b, $22
+    db $af, $32, $2a, $91, $7e, $98, $38, $08
+    db $23, $7e, $f8, $02, $96, $2b, $3c, $77
+    db $f8, $01, $7e, $f5, $33, $f8, $06, $66
+    db $2e, $00, $e5, $cd, $27, $43, $e8, $03
+    db $18, $84, $f8, $04, $7e, $e6, $10, $ca
+    db $4e, $40, $f8, $05, $4e, $0d, $7e, $b7
+    db $20, $0b, $fa, $70, $d7, $b7, $ca, $4e
+    db $40, $06, $01, $18, $5d, $c5, $79, $f5
+    db $33, $cd, $3a, $42, $33, $7b, $c1, $47
+    db $b7, $28, $2c, $d6, $02, $20, $05, $11
+    db $cb, $41, $18, $03, $11, $de, $41, $c5
+    db $d5, $cd, $69, $44, $e1, $3e, $01, $f5
+    db $33, $cd, $83, $44, $33, $cd, $1e, $42
+    db $7b, $c1, $b7, $20, $01, $47, $c5, $af
+    db $f5, $33, $cd, $83, $44, $33, $c1, $78
+    db $b7, $20, $1f, $11, $c5, $41, $d5, $cd
+    db $69, $44, $e1, $f8, $01, $7e, $f5, $33
+    db $f8, $06, $66, $2e, $00, $e5, $cd, $27
+    db $43, $e8, $03, $f8, $00, $36, $ff, $c3
+    db $4e, $40, $c5, $11, $f0, $41, $d5, $cd
+    db $69, $44, $e1, $cd, $00, $40, $e1, $d5
+    db $af, $0f, $f5, $cd, $00, $40, $e1, $d1
+    db $7b, $b7, $28, $09, $f8, $04, $36, $fb
+    db $23, $36, $41, $18, $07, $f8, $04, $36
+    db $00, $23, $36, $42, $f8, $04, $2a, $4f
+    db $46, $c5, $cd, $69, $44, $e1, $f8, $05
+    db $36, $00, $f8, $01, $36, $00, $af, $0f
+    db $f5, $af, $f5, $33, $cd, $27, $43, $e8
+    db $03, $f8, $00, $36, $ff, $c3, $4e, $40
+    db $af, $0f, $f5, $af, $f5, $33, $cd, $d8
+    db $23, $e8, $03, $21, $8f, $01, $e5, $21
+    db $20, $9f, $e5, $af, $f5, $33, $cd, $01
+    db $24, $e8, $05, $af, $0f, $f5, $af, $3e
+    db $03, $f5, $33, $cd, $d8, $23, $e8, $03
+    db $f8, $0e, $4e, $06, $05, $c5, $cd, $00
+    db $40, $e1, $e8, $06, $c9, $53, $61, $76
+    db $65, $73, $00, $52, $65, $73, $74, $6f
+    db $72, $65, $20, $74, $68, $69, $73, $20
+    db $73, $61, $76, $65, $3f, $00, $44, $65
+    db $6c, $65, $74, $65, $20, $74, $68, $69
+    db $73, $20, $73, $61, $76, $65, $3f, $00
+    db $57, $6f, $72, $6b, $69, $6e, $67, $2e
+    db $2e, $2e, $00, $44, $6f, $6e, $65, $00
+    db $45, $72, $72, $6f, $72, $00, $f0, $fa
+    db $4f, $f0, $fa, $91, $28, $fb, $cd, $70
+    db $03, $53, $f8, $02, $2a, $4f, $46, $0a
+    db $2f, $a2, $5f, $7a, $02, $c9, $3b, $f8
+    db $00, $36, $ff, $f8, $00, $e5, $cd, $06
+    db $42, $e1, $cb, $63, $28, $04, $1e, $01
+    db $18, $06, $cb, $6b, $28, $ed, $1e, $00
+    db $33, $c9, $3b, $f8, $00, $36, $ff, $06
+    db $00, $f8, $03, $5e, $16, $04, $c5, $d5
+    db $cd, $00, $40, $e1, $11, $50, $d7, $d5
+    db $cd, $69, $44, $e1, $af, $0f, $f5, $af
+    db $3e, $01, $f5, $33, $cd, $27, $43, $e8
+    db $03, $c1, $f8, $00, $c5, $e5, $cd, $06
+    db $42, $e1, $7b, $c1, $cb, $6f, $28, $04
+    db $1e, $00, $18, $27, $cb, $67, $28, $0c
+    db $78, $b7, $28, $04, $1e, $03, $18, $1b
+    db $1e, $02, $18, $17, $e6, $0c, $28, $da
+    db $78, $ee, $01, $47, $c5, $af, $f5, $33
+    db $0e, $01, $c5, $cd, $27, $43, $e8, $03
+    db $c1, $18, $c7, $33, $c9, $af, $0f, $f5
+    db $af, $f5, $33, $cd, $d8, $23, $e8, $03
+    db $21, $8f, $01, $e5, $21, $20, $9f, $e5
+    db $af, $f5, $33, $cd, $01, $24, $e8, $05
+    db $21, $03, $00, $e5, $cd, $90, $02, $e1
+    db $f0, $fb, $b7, $28, $12, $21, $8f, $01
+    db $e5, $21, $24, $9f, $e5, $af, $f5, $33
+    db $cd, $01, $24, $e8, $05, $18, $10, $21
+    db $8b, $01, $e5, $21, $23, $9f, $e5, $af
+    db $f5, $33, $cd, $01, $24, $e8, $05, $cd
+    db $dc, $45, $21, $03, $03, $e5, $cd, $90
+    db $02, $e1, $f0, $fb, $b7, $28, $12, $21
+    db $45, $01, $e5, $21, $35, $9f, $e5, $af
+    db $f5, $33, $cd, $01, $24, $e8, $05, $18
+    db $10, $21, $43, $01, $e5, $21, $33, $9f
+    db $e5, $af, $f5, $33, $cd, $01, $24, $e8
+    db $05, $21, $3f, $db, $36, $01, $11, $a4
+    db $c4, $d5, $cd, $68, $03, $e1, $c9, $e8
+    db $fa, $f0, $fb, $b7, $3e, $04, $20, $02
+    db $3e, $06, $f8, $00, $77, $f0, $fb, $b7
+    db $3e, $0c, $20, $02, $3e, $08, $f8, $01
+    db $77, $f8, $05, $36, $00, $f8, $05, $7e
+    db $f8, $00, $96, $d2, $3a, $44, $f8, $0a
+    db $7e, $f8, $05, $86, $f8, $02, $22, $36
+    db $68, $23, $36, $44, $f8, $08, $7e, $b7
+    db $28, $1a, $f8, $02, $7e, $d6, $02, $30
+    db $48, $7e, $b7, $28, $05, $01, $61, $44
+    db $18, $03, $01, $59, $44, $f8, $03, $79
+    db $22, $70, $18, $35, $f8, $02, $7e, $b7
+    db $20, $17, $fa, $70, $d7, $b7, $28, $08
+    db $23, $36, $40, $23, $36, $44, $18, $21
+    db $f8, $03, $36, $4d, $23, $36, $44, $18
+    db $18, $fa, $77, $d7, $f8, $02, $96, $38
+    db $10, $4e, $0d, $06, $04, $c5, $cd, $00
+    db $40, $e1, $f8, $03, $3e, $50, $22, $36
+    db $d7, $f0, $fb, $f8, $05, $4e, $b7, $28
+    db $09, $79, $87, $81, $87, $87, $c6, $48
+    db $18, $06, $79, $87, $87, $87, $c6, $48
+    db $4f, $f8, $09, $7e, $f8, $02, $96, $3e
+    db $01, $28, $01, $af, $47, $b7, $28, $0c
+    db $c5, $21, $03, $03, $e5, $cd, $90, $02
+    db $e1, $c1, $18, $09, $c5, $af, $0f, $f5
+    db $cd, $90, $02, $e1, $c1, $f8, $01, $79
+    db $86, $3d, $c5, $26, $01, $e5, $33, $67
+    db $2e, $9e, $e5, $61, $2e, $01, $e5, $cd
+    db $01, $24, $e8, $05, $c1, $78, $b7, $28
+    db $0c, $c5, $21, $00, $03, $e5, $cd, $90
+    db $02, $e1, $c1, $18, $0a, $c5, $21, $03
+    db $00, $e5, $cd, $90, $02, $e1, $c1, $f8
+    db $05, $7e, $c6, $09, $61, $e5, $33, $f5
+    db $33, $f8, $05, $2a, $5f, $56, $d5, $cd
+    db $76, $45, $e8, $04, $f8, $05, $34, $c3
+    db $45, $43, $cd, $dc, $45, $e8, $06, $c9
+    db $42, $61, $63, $6b, $20, $75, $70, $20
+    db $73, $61, $76, $65, $00, $4e, $6f, $20
+    db $73, $61, $76, $65, $20, $79, $65, $74
+    db $00, $52, $65, $73, $74, $6f, $72, $65
+    db $00, $44, $65, $6c, $65, $74, $65, $00
+    db $00, $21, $03, $00, $e5, $cd, $90, $02
+    db $e1, $21, $05, $28, $e5, $f8, $04, $2a
+    db $5f, $56, $d5, $cd, $76, $45, $e8, $04
+    db $c3, $dc, $45, $e8, $f4, $f8, $0e, $7e
+    db $b7, $28, $05, $01, $6f, $45, $18, $03
+    db $01, $63, $45, $f8, $08, $79, $22, $70
+    db $af, $0f, $f5, $cd, $90, $02, $e1, $f0
+    db $fb, $b7, $28, $13, $21, $8e, $01, $e5
+    db $21, $7c, $9e, $e5, $3e, $01, $f5, $33
+    db $cd, $01, $24, $e8, $05, $18, $11, $21
+    db $8a, $01, $e5, $21, $7c, $9e, $e5, $3e
+    db $01, $f5, $33, $cd, $01, $24, $e8, $05
+    db $21, $03, $00, $e5, $cd, $90, $02, $e1
+    db $f8, $0e, $7e, $b7, $28, $05, $01, $69
+    db $45, $18, $03, $01, $5b, $45, $21, $10
+    db $80, $e5, $c5, $cd, $76, $45, $e8, $04
+    db $f0, $fb, $b7, $28, $49, $0e, $00, $59
+    db $16, $00, $21, $00, $00, $39, $19, $e5
+    db $7d, $f8, $0c, $77, $e1, $7c, $f8, $0b
+    db $77, $79, $d6, $08, $30, $16, $f8, $08
+    db $2a, $81, $5f, $7e, $ce, $00, $57, $1a
+    db $b7, $28, $09, $23, $5e, $23, $66, $6b
+    db $77, $0c, $18, $d3, $f8, $0a, $2a, $66
+    db $6f, $36, $00, $21, $00, $00, $39, $11
+    db $56, $80, $d5, $af, $f5, $33, $e5, $cd
+    db $c0, $05, $e8, $05, $18, $1f, $f8, $0e
+    db $7e, $b7, $3e, $06, $20, $02, $3e, $05
+    db $26, $10, $e5, $33, $26, $0b, $e5, $33
+    db $f5, $33, $f8, $0b, $2a, $5f, $56, $d5
+    db $cd, $b7, $08, $e8, $05, $cd, $dc, $45
+    db $e8, $0c, $c9, $5b, $42, $5d, $62, $61
+    db $63, $6b, $00, $5b, $41, $5d, $6f, $6b
+    db $00, $5b, $42, $5d, $6e, $6f, $00, $5b
+    db $41, $5d, $79, $65, $73, $00, $e8, $e7
+    db $f0, $fb, $b7, $20, $17, $f8, $1d, $3a
+    db $2b, $57, $1e, $01, $d5, $3e, $12, $f5
+    db $33, $2a, $5f, $56, $d5, $cd, $b7, $08
+    db $e8, $05, $18, $45, $f8, $18, $36, $00
+    db $f8, $18, $5e, $16, $00, $21, $00, $00
+    db $39, $19, $5d, $54, $f8, $18, $7e, $d6
+    db $17, $30, $19, $f8, $1b, $7e, $f8, $18
+    db $86, $23, $23, $23, $23, $4f, $7e, $ce
+    db $00, $47, $0a, $b7, $28, $06, $12, $f8
+    db $18, $34, $18, $d4, $af, $12, $f8, $1e
+    db $66, $2e, $01, $e5, $af, $f5, $33, $21
+    db $03, $00, $39, $e5, $cd, $c0, $05, $e8
+    db $05, $e8, $19, $c9, $21, $03, $00, $e5
+    db $cd, $90, $02, $e1, $f0, $fb, $b7, $28
+    db $12, $21, $8f, $00, $e5, $21, $24, $9f
+    db $e5, $af, $f5, $33, $cd, $01, $24, $e8
+    db $05, $18, $10, $21, $8b, $00, $e5, $21
+    db $23, $9f, $e5, $af, $f5, $33, $cd, $01
+    db $24, $e8, $05, $21, $03, $03, $e5, $cd
+    db $90, $02, $e1, $21, $7b, $01, $e5, $21
+    db $7b, $9f, $e5, $af, $f5, $33, $cd, $01
+    db $24, $e8, $05, $f0, $fb, $b7, $28, $13
+    db $21, $8f, $01, $e5, $21, $7b, $4f, $e5
+    db $3e, $4f, $f5, $33, $cd, $01, $24, $e8
+    db $05, $18, $11, $21, $8b, $01, $e5, $21
+    db $7b, $53, $e5, $3e, $53, $f5, $33, $cd
+    db $01, $24, $e8, $05, $21, $03, $00, $e5
+    db $cd, $90, $02, $e1, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

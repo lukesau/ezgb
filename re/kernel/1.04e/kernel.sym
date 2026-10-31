@@ -4381,7 +4381,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:135c:8
+02:4a00 .data:1368:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4436,8 +4436,6 @@
 04:6400 .data:1b4:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
-04:6600 FlCfg
-04:6600 .data:5e4:8
 04:5f30 FlSetADispatch
 04:5f30 .data:24:8
 04:5f70 FarCallMenuTabs
@@ -4476,8 +4474,6 @@
 00:0453 .data:b:8
 00:0597 RomMenuHoldStub
 00:0597 .data:13:8
-04:6d11 ManageSaves
-04:6d11 .data:645:8
 01:7630 SoOpendir
 01:7630 .data:16:8
 01:7646 SoReaddir
@@ -4578,3 +4574,13 @@
 02:6000 .data:a6:8
 04:7eeb ThemeNames
 04:7eeb .data:38:8
+0b:4000 SmSaveOpB11
+0b:4000 .data:10:8
+0b:4010 ManageSavesImpl
+0b:4010 .data:645:8
+04:6d11 ManageSaves
+04:6d11 .data:8:8
+04:6d19 FlCfg
+04:6d19 .data:635:8
+04:6600 FlCfgJump
+04:6600 .data:3:8

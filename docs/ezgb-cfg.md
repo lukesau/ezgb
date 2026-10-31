@@ -235,7 +235,7 @@ since they are plain stores that work from any bank.
 |---|---|---|
 | `EzCfg` | `02:4a00`, [kernel/src/ezcfg.c](../kernel/src/ezcfg.c), 4386 B release, 4988 B with `EZCFG_RTCLOG` (slot `02:4a00-5fff`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
 | `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
-| `FlCfg` | `04:6600`, [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
+| `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
 | `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op BACKUP, then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
 | `AutosaveSetHook` | `04:5fa0`, 11 B | AUTO SAVE toggle tail: op AUTOSAVE, then `jp DrawTimeAutosaveScreen_redraw` |

@@ -135,8 +135,9 @@ The other builds are ports (`scripts/port-mod.py`). In 1.04e the stub's loop
 target is `$1692` and the tracker's `ReadJoypad` is `$3691`.
 
 `RomMenu` leaves 53 bytes free before the end of the bank-4 run; the save
-manager is its own block (`04:6d11`), near-called with the browser's record
-page so it can put `$4000` back.
+manager is its own block (`0B:4010` since 2026-10-31, through a far stub at
+its old address `04:6d11`), called with the browser's record page so it can
+put `$4000` back.
 
 ## Testing
 

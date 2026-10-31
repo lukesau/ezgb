@@ -204,8 +204,14 @@ It comes after custom so the numbers already in people's `EZGB.CFG` keep
 their meaning; the button steps light, dark, red, green, purple, blue,
 custom (when `COLORS=` is set), DV. Its colors are dark's for now
 (`theme_ramp` maps 7 to row 1); his black, lime, blue and white, with the
-selection bar and icons in their own shades, come with the color work. In
-8px mode it is the dark theme: the glyph set is 12px only.
+selection bar and icons in their own shades, come with the color work.
+
+DV's glyph set is 12px only, so the theme decides the font: the SET tab's
+FONT button reads `AUTO` while DV is on and A on it does nothing. Stepping
+the THEME button onto DV in 8px mode switches to 12px and lays the pane out
+again (saved as `UI=12`), and a card whose `EZGB.CFG` says `THEME=7` with
+`UI=8` comes up in 12px anyway (`cfg_load`). Leaving DV keeps 12px; FONT
+switches back as before. Any later theme with one font can do the same.
 
 ## Adding a theme
 

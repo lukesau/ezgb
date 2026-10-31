@@ -1,10 +1,13 @@
 /* Manage saves: the screens (docs/save-manager.md).
  *
- * Bank 4, injected at 04:6d11, near-called from RomMenu (rom_menu.c) when A
- * is pressed on "Manage saves", with the browser's record page. The ROM's
- * file name is at $c4a4 (RomMenu copied it there). The file work (listing
- * /SAVER, copies, delete, the list labels) is SaveOp in bank 1 (save_ops.c),
- * reached through SmSaveOp (04:65f0) with an op and a list index.
+ * Bank 11, injected at 0B:4010 (04:6d11 until 2026-10-31, when the SET tab
+ * needed bank 4's room), far-called from RomMenu (rom_menu.c) through the
+ * stub at its old address, ManageSaves (04:6d11), when A is pressed on
+ * "Manage saves", with the browser's record page. The ROM's file name is at
+ * $c4a4 (RomMenu copied it there). The file work (listing /SAVER, copies,
+ * delete, the list labels) is SaveOp in bank 1 (save_ops.c), reached through
+ * SmSaveOpB11 (0B:4000, a copy of bank 4's SmSaveOp) with an op and a list
+ * index.
  *
  *   Saves                  "Working...", then "Done" or "Error"
  *   <ROM name>             LastRomName's band (LR_GEO = 1)
@@ -20,10 +23,10 @@
  *   12px  box (0,36)-(159,143); title y 40, band y 53..69, list rows at
  *         y 72, 84, 96, 108, rule y 123, buttons y 128, vertical x 79
  *
- *   python3 tools/inject.py src/save_mgr.c $V 4 6d11 ManageSaves \
+ *   python3 tools/inject.py src/save_mgr.c $V 11 4010 ManageSavesImpl \
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin DrawString=08b7 --pin DrawRect=27ba \
- *       --pin StoreDrawParams=2791 --pin SmSaveOp=65f0 --apply
+ *       --pin StoreDrawParams=2791 --pin SmSaveOp=4000 --apply
  */
 
 #include "types.h"
@@ -32,7 +35,7 @@
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
-extern u8 SmSaveOp(u16 opidx);                                      /* 04:65f0 -> SaveOp 01:7670 */
+extern u8 SmSaveOp(u16 opidx);                                      /* 0B:4000 -> SaveOp 01:7670 */
 
 #define NAME_BUF  ((const u8 *)0xC4A4)      /* the ROM's file name */
 #define LABEL     ((const u8 *)0xD750)      /* SO_LABEL's text */
@@ -61,8 +64,9 @@ static void buttons(u8 confirm);
 static void text(const u8 *s, u8 row8, u8 y12);
 static void frame(void);
 
-/* The entry point stays the first function in the file. Near-called. */
-void ManageSaves(u8 page) {
+/* The entry point stays the first function in the file. Reached through the
+ * `call`ed stub at 04:6d11: three pad parameters. */
+void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
     static const u8 saves_str[6]  = {'S','a','v','e','s',0};
     static const u8 rest_str[19]  = {'R','e','s','t','o','r','e',' ','t','h','i','s',' ','s','a','v','e','?',0};
     static const u8 del_str[18]   = {'D','e','l','e','t','e',' ','t','h','i','s',' ','s','a','v','e','?',0};
@@ -71,6 +75,9 @@ void ManageSaves(u8 page) {
     static const u8 err_str[6]    = {'E','r','r','o','r',0};
     u8 f, prev, sel, top, rows, ok, act;
 
+    (void)far_pad_thunk;
+    (void)far_pad_af;
+    (void)far_pad_ret;
     SmSaveOp(SO_SCAN << 8);
     draw_box();
     title(saves_str);
