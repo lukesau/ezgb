@@ -90,7 +90,7 @@ the two layouts can be compared.
 To make room for the larger `DrawString12`, `LastRomName` moved to `02:7260`
 and `DrawNameWithIconImpl` to `02:7e80`, now `02:7e00` (their bank-0 stubs follow).
 `02:7260` is the shared marquee's since 2026-10-30, and `LastRomName` is at
-`02:5d58` ([marquee.md](marquee.md)).
+`02:6000` (`02:5d58` until 2026-10-31, [marquee.md](marquee.md)).
 
 Checked in SameBoy (DMG model, 0731): the pane in both modes, every cursor
 row, time-edit mode with a field highlighted and changed, the name marquee,

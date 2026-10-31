@@ -19,6 +19,7 @@ palette.
 | 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
 | 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
 | 6 | `CUSTOM` | `COLORS=` | 3/16 toward ink | 9/16 toward ink | `COLORS=` |
+| 7 | `DV` | dark's, for now | | | |
 
 Dark is pure black with white ink, what the issue asked for on an OLED
 screen: those pixels stay off. (A dim gray background with a tan ink was
@@ -107,7 +108,7 @@ OK!`. Stage1 picks it up on the next power-on.
 | `EzCfg` | `02:4a00` | Parses `THEME=` (light unless it is one digit naming a theme, and custom only with a valid `COLORS=`) and hands `COLORS=` and the save's two theme lines to `ThemeColors`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
 | `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 254 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping, past custom without `COLORS=`), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
-| `ThemeNames` | `04:7f20`, [theme_names.c](../kernel/src/theme_names.c), 49 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh. |
+| `ThemeNames` | `04:7eeb`, [theme_names.c](../kernel/src/theme_names.c), 56 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh (at `04:7f20` until DV made eight). |
 
 > **Correction (2026-10-30).** `Theme` used to write the ramp only when
 > `VBK` read back bit 0 clear, taken from `CgbInit` as the CGB-mode test, and
@@ -194,22 +195,39 @@ palettes, and stage1's fast launch is the same launch
 ([game.c](../stage1/src/game.c)). To confirm on hardware with a game that
 never writes `BGP`.
 
+## DV
+
+Theme 7, an homage to davidesqalv's
+[ezgb-dv](https://github.com/davidesqalv/ezgb-dv) fork: its 12px glyph set
+(Tamzen 6x12 and his icons, glyph set 1, [font12.md](font12.md#glyph-sets)).
+It comes after custom so the numbers already in people's `EZGB.CFG` keep
+their meaning; the button steps light, dark, red, green, purple, blue,
+custom (when `COLORS=` is set), DV. Its colors are dark's for now
+(`theme_ramp` maps 7 to row 1); his black, lime, blue and white, with the
+selection bar and icons in their own shades, come with the color work. In
+8px mode it is the dark theme: the glyph set is 12px only.
+
 ## Adding a theme
 
-Custom stays the last theme, so a new one takes its number and pushes it up
-one: a card with `THEME=` set to custom then needs that line changed.
+A new theme goes after DV, so the numbers in people's `EZGB.CFG` keep their
+meaning.
 
-1. `THEME_COUNT` and `THEME_CUSTOM` in [vars.h](../kernel/src/vars.h) (at
-   most 10 themes: `THEME=` is one digit), and the two literal `6`/`7`
-   compares in [theme_pick.c](../kernel/src/theme_pick.c) and
+1. `THEME_COUNT` in [vars.h](../kernel/src/vars.h) (at most 10 themes:
+   `THEME=` is one digit), and the literal `THEME_COUNT` compare in
    [theme_colors.c](../kernel/src/theme_colors.c) (asm).
-2. A row in [theme_ramps.c](../kernel/src/theme_ramps.c).
-3. A name, six characters wide, before `CUSTOM` in
+2. Its colors in [theme_pick.c](../kernel/src/theme_pick.c)'s `theme_ramp`
+   (asm): a row of [theme_ramps.c](../kernel/src/theme_ramps.c) can only be
+   added before custom's number, so a later theme maps to a row there, as DV
+   does.
+3. A name, six characters wide, at the end of
    [theme_names.c](../kernel/src/theme_names.c). The button steps through
    them in order.
+4. Its own glyph set, if any: a sheet, a set in `scripts/inject-font12.sh`,
+   and the set's choice in `draw12.c` and `layout12.c`.
 
-Then re-inject the blocks and `EzCfg` (it compares against `THEME_CUSTOM`),
-port and regenerate the patches. Stage1 and DMG need nothing.
+Then re-inject the blocks and `EzCfg` (its `THEME=` check lets custom
+through only with `COLORS=`, and lets DV through), port and regenerate the
+patches. Stage1 and DMG need nothing.
 
 ## Testing
 

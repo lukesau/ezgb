@@ -93,7 +93,9 @@ are free again (`bkprompt.c` still borrows `$DB3E` as its dump counter).
 The 12px renderer (`Fit12`, `DrawString12`) is in bank 2, so `Marquee` is
 too: a bank-4 marquee would make two far calls back to bank 2 for every
 redraw. It took `LastRomName`'s slot at `02:7260`, and `LastRomName`, now a
-167-byte set-up and tick, moved to `02:5d58`, after `EzCfg`; its stub
+167-byte set-up and tick, moved to `02:5d58`, after `EzCfg` (and on 2026-10-31
+to `02:6000`, freed when the 12px engine went to bank 10, so `EzCfg` could
+grow); its stub
 `LastRomNameStub` (`00:0368`) and `ezcfg`'s near call follow it.
 
 ## Checked

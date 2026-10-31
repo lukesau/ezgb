@@ -1,7 +1,8 @@
 /* START overlay name line and its marquee (docs/last-rom.md "Overlay layout").
  *
- * Bank 2, injected at 02:5d58 and reached through the 8-byte far stub
- * LastRomNameStub (00:0368, `cd 8d 07 58 5d 02 00 c9`). The stub is
+ * Bank 2, injected at 02:6000 (02:5d58 until ezcfg needed the room, 2026-10-31)
+ * and reached through the 8-byte far stub
+ * LastRomNameStub (00:0368, `cd 8d 07 00 60 02 00 c9`). The stub is
  * `call`ed: three pad parameters. Two callers:
  *
  *   LastRomDrawBasename's `call DrawString` (00:132b) now calls the stub
@@ -26,7 +27,7 @@
  * outlives the prompt. Every other set-up (LR_GEO 0 or 1) clears
  * MQ_B's text, so it never outlives the prompt.
  *
- *   python3 tools/inject.py src/lastrom_name.c $V 2 5d58 LastRomName \
+ *   python3 tools/inject.py src/lastrom_name.c $V 2 6000 LastRomName \
  *       --pin Marquee=7260 --replace --apply
  */
 

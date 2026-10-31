@@ -23,25 +23,25 @@
  * a character cap; 0 means up to the NUL. Never more than MAX_GLYPHS are
  * placed (xs[] is that big in every caller).
  *
- * The far entry has two pad parameters: MarqueeWidth12 reaches it through an
- * inline `call FarCallTrampoline`, so the trampoline's two words sit between
- * the cave's return address and the arguments (docs/browser-hide-filter.md);
- * draw12.c near-calls it with two dummies. The count comes back in E.
+ * The far entry has two pad parameters: the shim at the old address, Fit12
+ * (02:7100, fit12_shim.c), copies the string to its stack and calls this
+ * through an inline `call FarCallTrampoline`, so the trampoline's two words
+ * sit between the return address and the arguments; draw12.c near-calls it
+ * with two dummies. The count comes back in E.
  *
- * Bank 2, injected at 02:7100 (must stay the first definition in the file;
- * the metrics table below it grows with the kerning classes, so it starts
- * at a round address well past the table's end):
+ * Bank 10, injected at 0A:4A00 (must stay the first definition in the file),
+ * beside DrawString12Impl and the glyph sets (docs/font12.md):
  *
- *   python3 tools/inject.py src/layout12.c $V 2 7100 Fit12 \\
- *       --pin Font12Metrics=6978 --replace --apply
+ *   python3 tools/inject.py src/layout12.c $V 10 4a00 Fit12Impl \\
+ *       --pin Font12Metrics=5580 --pin Font12DvMetrics=6680 --apply
  */
 
 #include "types.h"
 #include "vars.h"
 
-extern const u8 Font12Metrics[];   /* 02:6978, scripts/font12-pack.py */
+extern const u8 Font12Metrics[];   /* 0A:5580, scripts/font12-pack.py */
+extern const u8 Font12DvMetrics[]; /* 0A:6680, the DV theme's glyph set */
 
-#define M Font12Metrics
 #define M_ADV   0                  /* u8[101] advance */
 #define M_W     101                /* u8[101] ink width */
 #define M_LCOL  202                /* u8[101] left kerning class = matrix column */
@@ -51,10 +51,13 @@ extern const u8 Font12Metrics[];   /* 02:6978, scripts/font12-pack.py */
 #define MAX_GLYPHS 40
 
 static u8 glyph_index(u8 c);
-static u8 kern(u8 a, u8 b);
+static u8 kern(const u8 *M, u8 a, u8 b);
 
 u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs) {
     u8 i, x, g, prev, c, lim;
+    /* the glyph set's metrics: the DV theme has its own (draw12.c picks the
+     * bitmaps the same way) */
+    const u8 *M = THEME == THEME_DV ? Font12DvMetrics : Font12Metrics;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
@@ -74,7 +77,7 @@ u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs)
         }
         g = glyph_index(c);
         if (prev != 0xFF) {
-            x -= kern(prev, g);
+            x -= kern(M, prev, g);
         }
         if (x >= lim || (u8)(x + M[M_W + g]) > lim) {
             break;
@@ -88,7 +91,7 @@ u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs)
 
 /* Pixels glyph b moves left when it follows glyph a: the 2-bit entry at
  * (a's right class row, b's left class column). Class 0 never kerns. */
-static u8 kern(u8 a, u8 b) {
+static u8 kern(const u8 *M, u8 a, u8 b) {
     u8 l = M[M_LCOL + b];
     u16 r;
 

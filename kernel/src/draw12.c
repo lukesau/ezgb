@@ -37,23 +37,25 @@
  * order so the bank-0 far-call stub FarCallDrawString12 (00:05c0) can be
  * dropped in for DrawString by re-pinning. col is 0 for the icon cell and 1
  * for the name field (x = 12, an icon's advance; see Fit12); len caps the
- * characters, 0 meaning up to the NUL. It is reached through
- * FarCallTrampoline from a stub that is itself `call`ed, so the
- * trampoline's three words sit between the stub's return address and the
- * arguments: the first real argument is at sp+8, hence the three pad
- * parameters (an inline `call FarCallTrampoline` stub would need only two,
- * docs/browser-hide-filter.md).
+ * characters, 0 meaning up to the NUL. It is reached only from the shim at
+ * the old address, DrawString12 (02:7500, draw12_shim.c), which copies the
+ * string to its stack and calls this through an inline
+ * `call FarCallTrampoline`: the trampoline's two words sit between the
+ * return address and the arguments, hence the two pad parameters.
  *
- * Bank 2, injected at 02:7500 (must stay the first definition in the file);
- * the glyph bitmaps are a separate raw block at 02:6000 (Font12, 101 glyphs
- * x 12 rows x 2 bytes, left-trimmed, pixels from bit 15) and the metrics
- * at 02:6978 (Font12Metrics), both produced by scripts/font12-pack.py from
+ * Bank 10, injected at 0A:4000 (must stay the first definition in the file),
+ * since 2026-10-31: the kernel grew to 16 banks (docs/kernel-size.md) and the
+ * glyph sets live beside the engine (docs/font12.md). The glyph bitmaps are a
+ * separate raw block at 0A:4C00 (Font12, 101 glyphs x 12 rows x 2 bytes,
+ * left-trimmed, pixels from bit 15) and the metrics at 0A:5580
+ * (Font12Metrics), both produced by scripts/font12-pack.py from
  * kernel/font12/font12.txt.
  *
- *   python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \\
+ *   python3 tools/inject.py src/draw12.c $V 10 4000 DrawString12Impl \\
  *       --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \\
- *       --pin GfxRowTable=2fbb --pin Font12=6000 --pin Font12Metrics=6978 \\
- *       --pin Fit12=7100 --pin DiNest=06fd --pin EiNest=0706 --replace --apply
+ *       --pin GfxRowTable=2fbb --pin Font12=4c00 --pin Font12Metrics=5580 \\
+ *       --pin Font12Dv=5d00 --pin Font12DvMetrics=6680 \\
+ *       --pin Fit12=4a00 --pin DiNest=06fd --pin EiNest=0706 --apply
  */
 
 #include "types.h"
@@ -66,8 +68,10 @@ extern volatile u8 wDrawColor;     /* $d734 ink   (StoreDrawParams) */
 extern volatile u8 wDrawColorB;    /* $d735 paper */
 extern volatile u8 wIntNest;       /* $d6d0 DiNest depth */
 extern const u16 GfxRowTable[];    /* 00:2fbb pixel row -> VRAM address of tile column 0 */
-extern const u8 Font12[];          /* 02:6000, 101 glyphs x 24 bytes (scripts/font12-pack.py) */
-extern const u8 Font12Metrics[];   /* 02:6978, advances first (layout12.c has the layout) */
+extern const u8 Font12[];          /* 0A:4C00, 101 glyphs x 24 bytes (scripts/font12-pack.py) */
+extern const u8 Font12Metrics[];   /* 0A:5580, advances first (layout12.c has the layout) */
+extern const u8 Font12Dv[];        /* 0A:5D00, the DV theme's glyph set (THEME_DV) */
+extern const u8 Font12DvMetrics[]; /* 0A:6680 */
 extern void DiNest(void);          /* 00:06fd */
 extern void EiNest(void);          /* 00:0706 */
 
@@ -75,7 +79,6 @@ extern void EiNest(void);          /* 00:0706 */
 #define PAPER wDrawColorB
 #define INT_NEST wIntNest
 #define ROWTAB GfxRowTable
-#define FONT12 Font12
 
 #define ROW_W 160
 #define ROW_H 12
@@ -103,7 +106,7 @@ static void preserve(u8 *dst, u16 addr, u8 n, u8 keep, u8 xm);
 static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper);
 static u8 glyph_index(u8 c);
 
-void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 col, u8 row) {
+void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 row) {
     u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, kl, xe, cnt, fast;
     /* one spare column: a glyph ending in tile 19 still ORs its (zero) low
      * byte into "tile 20" */
@@ -112,10 +115,13 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
     u16 addr;
     const u8 *g;
     u8 *p;
+    /* the glyph set: the DV theme has its own (layout12.c picks the metrics
+     * the same way) */
+    u8 dv = (u8)(THEME == THEME_DV);
+    const u8 *font = dv ? Font12Dv : Font12;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
-    (void)far_pad_ret;
     /* row >= 18 (past the last tile row) is a pixel y, for callers that
      * space their rows themselves (the START overlay, lastrom_box.c). It is
      * rounded down to a multiple of 4: the flush's 4-row batches must not
@@ -135,7 +141,7 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
     /* col 0: x 0 (the icon cell); 1: the name field, an icon's advance in;
      * >= 2: a pixel x (the tab strip's labels, tabstrip12.c). Same rule in
      * Fit12. */
-    x0 = col >= 2 ? col : col ? Font12Metrics[M_ADV + ICON0] : 0;
+    x0 = col >= 2 ? col : col ? (dv ? Font12DvMetrics : Font12Metrics)[M_ADV + ICON0] : 0;
     t0 = (u8)(x0 >> 3);
     /* The row is painted from x0 to its right edge: x 160, or hClip12 when
      * a caller set one (the SET pane's fields, settext.c). Fit12 reads the
@@ -170,7 +176,7 @@ void DrawString12(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *
     cnt = Fit12(0, 0, s, len, col, xs);
     for (i = 0; i < cnt; i++) {
         x = xs[i];
-        g = FONT12 + (u16)glyph_index(s[i]) * GLYPH;
+        g = font + (u16)glyph_index(s[i]) * GLYPH;
         p = buf + (u8)((u8)((x >> 3) - t0) * ROW_H);
         switch (x & 7) {
         case 0:  cell_or0(g, p); break;

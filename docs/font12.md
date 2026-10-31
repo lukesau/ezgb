@@ -50,11 +50,12 @@ blank columns that made `i`, `l` and `.` look spaced out are gone, and
 |---|---|
 | glyph sheet, hand-editable ASCII art | `kernel/font12/font12.txt` (`#` ink, `.` paper, 10 columns x 12 rows; `keep` on a header protects it from the renderer) |
 | renderer (TTF -> sheet) | `scripts/font12-render.py` (needs Pillow; defaults Menlo Bold 13, baseline 9) |
-| packer (sheet -> bitmaps + metrics) | `scripts/font12-pack.py` -> `kernel/font12/font12.bin` (2424 bytes) and `font12-metrics.bin` (~1.7 KB; `--gap`, `--kmax`, `--space`, `--icon-adv` tune the spacing) |
-| tables in ROM | `Font12` at `02:6000` and `Font12Metrics` at `02:6978`, placed by `scripts/inject-font12.sh` (which refuses a metrics table reaching `02:7100`: `inject_bytes.py` does not notice a block running into the next label) |
-| layout | `kernel/src/layout12.c` -> `Fit12` at `02:7100` |
-| renderer code | `kernel/src/draw12.c` -> `DrawString12` at `02:7500` |
-| bank-0 far-call stub | `FarCallDrawString12` at `00:05c0` (`cd 8d 07 00 75 02 00 c9`) |
+| packer (sheet -> bitmaps + metrics) | `scripts/font12-pack.py` -> `kernel/font12/font12.bin` (2424 bytes) and `font12-metrics.bin` (~1.5 KB; `--gap`, `--kmax`, `--space`, `--icon-adv` tune the spacing, `--mono N` packs a fixed-width set) |
+| tables in ROM | glyph set 0: `Font12` at `0A:4C00` and `Font12Metrics` at `0A:5580`; glyph set 1 (DV): `Font12Dv` at `0A:5D00`, `Font12DvMetrics` at `0A:6680`. Placed by `scripts/inject-font12.sh <version> <set>`, which refuses a metrics table reaching the next label (`inject_bytes.py` does not notice a block running into it). Until 2026-10-31 set 0 was at `02:6000` / `02:6978` |
+| layout | `kernel/src/layout12.c` -> `Fit12Impl` at `0A:4A00` |
+| renderer code | `kernel/src/draw12.c` -> `DrawString12Impl` at `0A:4000` |
+| shims at the old addresses | `DrawString12` at `02:7500` ([draw12_shim.c](../kernel/src/draw12_shim.c)) and `Fit12` at `02:7100` ([fit12_shim.c](../kernel/src/fit12_shim.c)): copy the string to the stack (bank-2 callers pass strings in bank 2 ROM), then far-call bank 10 |
+| bank-0 far-call stub | `FarCallDrawString12` at `00:05c0` (`cd 8d 07 00 75 02 00 c9`), still to the shim |
 | marquee fit check | `MarqueeWidth12` cave at `00:0229`, reached from the `MarqueeWidth` cave of [ui-mode.md](ui-mode.md) |
 | byte-level immediates | `kernel/tools/patch_bytes.py` (verifies the old bytes first) |
 
@@ -284,6 +285,27 @@ addresses), and the blocks are registered in `scripts/port-mod.py`'s
 them and `port-mod.py` carries them to the other kernels with the WRAM pins
 translated. `MarqueeWidth12` is a hand-assembled block, relocated like the
 other caves.
+
+## Glyph sets
+
+Since 2026-10-31 the renderer and layout live in bank 10 with the glyph sets,
+which the 16-bank kernel made room for ([kernel-size.md](kernel-size.md)).
+Code in one switchable bank cannot read data in another, so the engine had to
+move to where the fonts are; the two shims keep every caller, pin and stub
+as it was. A set is a sheet in `kernel/font12/` packed to 2424 bytes of
+bitmaps plus its metrics, 101 glyphs: `$20`-`$7F` (with `$7F` the star) and
+the icons `$C0`-`$C4`. The theme picks the set: `DrawString12Impl` and
+`Fit12Impl` read `THEME` and use set 1 for `THEME_DV`, set 0 otherwise.
+
+| Set | Sheet | Text | Icons |
+|---|---|---|---|
+| 0 | `font12.txt` | proportional, Menlo Bold 13 rendered and hand-tuned, capitals 9 px | ours |
+| 1 | `font12_dv.txt` | Tamzen 6x12 (Suraj N. Kurapati, after Tamsyn by Scott Fial; [license](../kernel/font12/LICENSE-Tamzen)), fixed 6 px, capitals 7 px | davidesqalv's, from [ezgb-dv](https://github.com/davidesqalv/ezgb-dv) |
+
+Set 1 is the DV theme's ([dark-mode.md](dark-mode.md)), an homage to that
+fork: its letters are the 8px font's size in a 12 px line, so a row holds
+about 26 characters to set 0's 18. Bank 10 has room for about two more sets
+after these two (each is about 3 to 4 KB), and banks 11 to 15 are empty.
 
 ## Next
 

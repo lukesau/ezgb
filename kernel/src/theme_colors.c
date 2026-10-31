@@ -151,7 +151,7 @@ u8 *colors(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 *p, u8 len) __naked
 	ld	a, (#0xdbf7)		; THEME
 	or	a
 	jr	z, 22$
-	cp	#7			; THEME_COUNT
+	cp	#8			; THEME_COUNT
 	jr	nc, 22$
 	ld	hl, #42$
 	ld	b, #6

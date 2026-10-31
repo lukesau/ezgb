@@ -49,7 +49,10 @@ const u8 *theme_ramp(void) __naked {
 	ld	a, (#0xdbf7)		; THEME
 	cp	#6			; THEME_CUSTOM
 	ret	z
-
+	cp	#7			; THEME_DV: the dark colors for now
+	jr	nz, 3$
+	ld	a, #1
+3$:
 	add	a
 	add	a
 	add	a

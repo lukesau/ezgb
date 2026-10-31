@@ -24,7 +24,7 @@
 
 extern void FarCallEzCfg(void);         /* 04:5f00 -> ezcfg (02:4a00) */
 extern void FarCallTheme_B4(void);      /* 04:5990 -> theme (02:43d0) */
-extern const u8 theme_names[THEME_COUNT][7];  /* 04:7f20, theme_names.c */
+extern const u8 theme_names[THEME_COUNT][7];  /* 04:7eeb, theme_names.c */
 
 void ThemeRow(u8 op) {
     const u8 *n;
@@ -33,7 +33,7 @@ void ThemeRow(u8 op) {
 
     if (op == 2) {
         i = THEME + 1;
-        if (i == THEME_CUSTOM && !CUST_OK) i = THEME_COUNT;
+        if (i == THEME_CUSTOM && !CUST_OK) i++;   /* custom needs COLORS= */
         THEME = i < THEME_COUNT ? i : 0;
         EZ_OP = OP_SAVE;
         FarCallEzCfg();

@@ -82,25 +82,32 @@ REGISTRY = {
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
                             "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00, "ReadJoypad": 0x3a4a}),
-    (2, 0x7500): dict(src="draw12.c",                       # 12px browser renderer (docs/font12.md)
+    (10, 0x4000): dict(src="draw12.c",                      # 12px renderer, beside the glyph sets (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
-                            "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
+                            "GfxRowTable": 0x2fbb, "Font12": 0x4c00, "Font12Metrics": 0x5580, "Fit12": 0x4a00,
+                            "Font12Dv": 0x5d00, "Font12DvMetrics": 0x6680,
                             "DiNest": 0x06fd, "EiNest": 0x0706}),
-    (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
+    (10, 0x4a00): dict(src="layout12.c", pins={"Font12Metrics": 0x5580, "Font12DvMetrics": 0x6680}),   # proportional layout + kerning
+    (2, 0x7500): dict(src="draw12_shim.c",                  # DrawString12 at its old address: copies the string, far-calls the renderer
+                      pins={"FarCallTrampoline": 0x078d, "DrawString12Impl": 0x4000}),
+    (2, 0x7100): dict(src="fit12_shim.c",                   # Fit12 at its old address, the same way; MarqueeWidth12 far-calls it
+                      pins={"FarCallTrampoline": 0x078d, "Fit12Impl": 0x4a00}),
     (2, 0x7e00): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
     (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser-tags.md): TagCat is the far target of 00:0d69
                       exports={"TagLen": 0x7a55}),              # far target of FarCallTagLen (00:0408)
-    (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
-    (2, 0x6978): dict(kind="data"),        # Font12Metrics: advances, ink widths, kerning classes (same packer)
+    (10, 0x4c00): dict(kind="data"),       # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
+    (10, 0x5580): dict(kind="data"),       # Font12Metrics: advances, ink widths, kerning classes (same packer)
+    (10, 0x5d00): dict(kind="data"),       # Font12Dv: the DV theme's glyph set (kernel/font12/font12_dv.txt)
+    (10, 0x6680): dict(kind="data"),       # Font12DvMetrics: fixed 6 px, no kerning (font12-pack.py --mono 6)
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
                       pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x5d58): dict(src="lastrom_name.c",                 # START overlay name lines, far target of the 00:0368 stub
+    (2, 0x6000): dict(src="lastrom_name.c",                 # START overlay name lines, far target of the 00:0368 stub
                       pins={"Marquee": 0x7260}),
     (2, 0x7260): dict(src="marquee.c",                      # shared scrolling text, far target of FarCallMarquee (00:0410) (docs/marquee.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x5d58, "DrawString12": 0x7500,
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x6000, "DrawString12": 0x7500,
                                               "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290,
                                               "FarCallColors": 0x4990}),
     (4, 0x6600): dict(src="flcfg.c",
@@ -116,8 +123,8 @@ REGISTRY = {
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
                       pins={"FarCallEzCfg": 0x5f00, "FarCallTheme_B4": 0x5990, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0,
-                            "theme_names": 0x7f20}),
-    (4, 0x7f20): dict(src="theme_names.c", pins={}),        # THEME button names, data only
+                            "theme_names": 0x7eeb}),
+    (4, 0x7eeb): dict(src="theme_names.c", pins={}),        # THEME button names, data only
 
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,

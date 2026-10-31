@@ -15,8 +15,12 @@
  * on a DMG it is the inverted palette, on a color console its row of
  * theme_ramps.c, or for custom the colors of COLORS= (theme_colors.c). */
 #define THEME     (*(volatile u8 *)0xDBF7)
-#define THEME_COUNT 7
-#define THEME_CUSTOM 6             /* the last; theme_ramps.c has no row for it */
+#define THEME_COUNT 8
+#define THEME_CUSTOM 6             /* theme_ramps.c has no row for it */
+/* DV, after custom so the earlier numbers stay as they are in EZGB.CFG: the
+ * homage to davidesqalv's ezgb-dv fork, its 12px glyph set (glyph set 1,
+ * docs/font12.md). Its colors are the dark theme's for now. */
+#define THEME_DV  7
 /* COLORS=RRGGBB,RRGGBB (theme_colors.c): the background and ink as read,
  * 1 once a valid line was read, and the four colors the custom theme draws
  * in (BGR555, as a theme_ramps.c row). CUST_RAMP is also loaded from the

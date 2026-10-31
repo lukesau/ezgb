@@ -646,8 +646,9 @@ static void cfg_load(void) {
     }
     parse_record(br, legacy);
     /* not one digit, past the last theme, or custom without COLORS=
-     * (theme_colors.c), wherever that is in the file: light */
-    if (THEME >= (u8)(THEME_CUSTOM + CUST_OK)) THEME = 0;
+     * (theme_colors.c), wherever that is in the file: light. DV comes after
+     * custom (vars.h) and needs nothing. */
+    if (THEME >= (u8)(THEME_CUSTOM + CUST_OK) && THEME != THEME_DV) THEME = 0;
 }
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the
