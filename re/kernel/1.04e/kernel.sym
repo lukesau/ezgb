@@ -4557,7 +4557,7 @@
 0a:4a00 Fit12Impl
 0a:4a00 .data:166:8
 0a:4000 DrawString12Impl
-0a:4000 .data:83a:8
+0a:4000 .data:9c4:8
 02:7500 DrawString12
 02:7500 .data:36:8
 02:7100 Fit12

@@ -101,15 +101,17 @@ static void cell_or4(const u8 *g, u8 *buf) __naked;
 static void cell_or5(const u8 *g, u8 *buf) __naked;
 static void cell_or6(const u8 *g, u8 *buf) __naked;
 static void cell_or7(const u8 *g, u8 *buf) __naked;
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper);
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper, const u8 *m);
 static u8 glyph_index(u8 c);
 
 void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 row) {
-    u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, kl, xe, cnt, fast;
+    u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, kl, xe, cnt, fast, blue, c;
     /* one spare column: a glyph ending in tile 19 still ORs its (zero) low
      * byte into "tile 20" */
     u8 buf[(MAX_TILES + 1) * ROW_H];
     u8 xs[MAX_GLYPHS];
+    /* DV's blue icons: the leading icon's pixels, its two tile columns */
+    u8 ib[2 * ROW_H];
     u16 addr;
     const u8 *g;
     u8 *p;
@@ -162,6 +164,13 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     xm = paper ? 0xFF : 0;
     fast = (u8)(INT_NEST == 0 && (ink | paper) == 3 && (ink & paper) == 0);
     fill0(buf, (u8)((nt + 1) * 3));
+    /* DV draws a row's leading icon (the browser's, col 0) in color 2, blue,
+     * on a normal row (white on black): its pixels also go into ib, and the
+     * flush clears plane 0 under them. A selected row (black on lime) keeps
+     * a black icon, as davidesqalv's fork does. */
+    c = s[0];
+    blue = (u8)(dv && ink == 3 && paper == 0 && col == 0 && (c == 0x7F || (c >= 0xC0 && c <= 0xC4)));
+    fill0(ib, 6);
     if (fast) {
         n &= 0xFC;                     /* batches of 4 rows; only the clipped bottom row is short (8) */
         if (n == 0) {
@@ -183,9 +192,12 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
         case 6:  cell_or6(g, p); break;
         default: cell_or7(g, p); break;
         }
+        if (blue && i == 0) {
+            cell_or0(g, ib);             /* col 0: the icon is at x 0 */
+        }
     }
     if (!fast) {
-        flush_rmw(buf, addr, n, nt, kf, kl, ink, paper);
+        flush_rmw(buf, addr, n, nt, kf, kl, ink, paper, blue ? ib : 0);
         return;
     }
     /* A tile the field only partly covers (the first one with kf, the last
@@ -197,8 +209,8 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     p = buf;
     for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
         x = (u8)((i ? 0 : kf) | (i == (u8)(nt - 1) ? kl : 0));
-        if (x) {
-            flush_rmw(p, addr, n, 1, x, 0, ink, paper);
+        if (x || (blue && i < 2)) {
+            flush_rmw(p, addr, n, 1, x, 0, ink, paper, blue && i < 2 ? ib + (u8)(i * ROW_H) : 0);
         } else {
             blit_col1(p, addr, n, xm);
         }
@@ -208,11 +220,13 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
 /* Generic flush: any ink/paper pair, nesting-safe. Each plane byte is
  * (bits & a) ^ x, where a selects the plane bits that differ between ink
  * and paper and x is paper's bit; the first tile column keeps its pixels
- * outside the field (kf). Row addresses step by 2 within a tile and by
+ * outside the field (kf). m, when given, masks the first two tile columns'
+ * plane-0 bits: ink 3 there becomes color 2 (DV's blue icons). Row addresses step by 2 within a tile and by
  * $130 + 2 across a tile boundary, where the low nibble wraps to 0. */
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper) {
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper, const u8 *m) {
     u8 a0, x0, a1, x1, i, r, keep, v;
     u16 a;
+    const u8 *mt;
 
     a0 = ((ink ^ paper) & 1) ? 0xFF : 0;
     x0 = (paper & 1) ? 0xFF : 0;
@@ -224,9 +238,10 @@ static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink
             keep |= kl;
         }
         a = addr;
+        mt = (m && i < 2) ? m + (u8)(i * ROW_H) : 0;
         for (r = 0; r < n; r++) {
             v = buf[r];
-            vram_rmw2(a, keep, (u8)(((v & a0) ^ x0) & ~keep), (u8)(((v & a1) ^ x1) & ~keep));
+            vram_rmw2(a, keep, (u8)((((mt ? v & ~mt[r] : v) & a0) ^ x0) & ~keep), (u8)(((v & a1) ^ x1) & ~keep));
             a += 2;
             if ((a & 0x0F) == 0) {
                 a += 0x130;

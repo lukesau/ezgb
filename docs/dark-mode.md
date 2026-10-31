@@ -227,8 +227,13 @@ stock-firmware GBC shows nearly the same lime and blue. A DMG shows the same
 layout in four grays, with a light-gray selection bar that black text stays
 readable on.
 
-**Not yet.** His icons are blue: here they are drawn with the row's ink, so
-white, until the 12px renderer can give a glyph its own color.
+**Blue icons.** On a normal row (white on black) the 12px renderer draws
+the row's leading icon, the browser's folder, cart, star, `.sav` or `?` at
+x 0, in color 2: it also ORs the icon into a two-tile mask and clears plane 0
+under it when the row is written (`draw12.c`), so the row is still one pass
+and nothing flashes. A selected row (black on lime) keeps a black icon, as
+in his fork. Blue on the firmware mod, the boot ROM's blue on a
+stock-firmware GBC, dark gray on a DMG.
 
 The renderer's fast path kept only plane 0 of an edge tile it partly
 covered, which turned lime pixels next to a label white (the SET tab beside
