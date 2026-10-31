@@ -38,7 +38,7 @@
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
  *           12 <name, 10 cols, scrolling> [PICK ROM]   14 SGB BOOT: [ ]
  *           16 1/2 [NEXT >]
- *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 SHOW NAME TAGS: [x]
+ *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 CLEAN UP NAMES: [ ]
  *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
  *           16 [< PREV] 2/2                                         (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
@@ -71,7 +71,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
-extern void SetPage(u8 op, u8 cur);                                 /* 04:7792, setpage.c: SGB BOOT, page 2, the page row */
+extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: SGB BOOT, page 2, the page row */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -87,7 +87,7 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:7792, 
 #define ROW_NEXT  6          /* page 1's last row */
 #define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
 #define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  9          /* SHOW NAME TAGS: checkbox: off hides ROM name tags (docs/browser-tags.md) */
+#define ROW_TAGS  9          /* CLEAN UP NAMES: checkbox: on cuts ROM names at their tags (docs/browser-tags.md) */
 #define ROW_SORT  10         /* SORT BY PLAYS: checkbox, a pSRAM record (setpage.c, docs/stars.md) */
 #define ROW_PREV  11         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
@@ -368,14 +368,7 @@ static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
 
     if (PAGE2) {
-        static const u8 auto_str[5] = {'A','U','T','O',0};
         SetPage(1, cur);
-        if (THEME == THEME_DV) {
-            /* the FONT button says AUTO: the theme has one font */
-            if (cur == ROW_UI) StoreDrawParams(0, 3, 0);
-            SetText(auto_str, 4, 15, 4);
-            StoreDrawParams(3, 0, 0);
-        }
         return;
     }
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */

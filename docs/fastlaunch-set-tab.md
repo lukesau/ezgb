@@ -23,7 +23,7 @@ The pane has two pages; row 16 of each switches to the other.
 |---|---|---|
 | 2 | `TIME:` + `SET` (stock) | `THEME:` button, `LIGHT`, `DARK` and four colors ([`dark-mode.md`](dark-mode.md)) |
 | 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
-| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SHOW NAME TAGS:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
+| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `CLEAN UP NAMES:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
 | 10 | `FAST LAUNCH:` checkbox | |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | |
@@ -36,7 +36,8 @@ BOOT, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 SORT BY PLAYS, 11 PREV on page
 (clamp `04:5604` `d6 0b`, and `flcfg` op ROWS keeps the cursor on its page).
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
-step through its fields.
+step through its fields. A new cursor row moves both the clamp and the row
+`FlSetJumpBottom` jumps to (`LAST_ROW` in that script).
 
 ### Pages
 
@@ -58,9 +59,9 @@ the screen's dirty flag (`sp+$3e`) is set after a cursor move; op ROWS
 clears it on page 2. The entry code draws those boxes once before op ENTER,
 which clears the pane again on page 2.
 
-Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:7792`,
-[`../kernel/src/setpage.c`](../kernel/src/setpage.c), 1130 B; at `04:77a0` until it outgrew the slot before
-`U32ToAsciiFast`, now starting in the free bytes after `ThemeRow`), near-called
+Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:6610`, since
+2026-10-31; at `04:77a0`, then `04:7792` after `ThemeRow`, until it outgrew
+those slots; [`../kernel/src/setpage.c`](../kernel/src/setpage.c)), near-called
 by `flcfg`, which had no room for them; it replaced `SgbTagsRow`, which
 held the SGB BOOT and TAGS boxes when they shared row 16. The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
@@ -154,7 +155,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 10, which op ROWS turns into NEXT on page 1) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 11, PREV, which op ROWS turns into NEXT on page 1; row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
 | `04:5604` | `d6 01` | `d6 0b` | cursor clamp 0..1 → 0..11, both pages (`d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`af ea ee db e8 6a c9`: clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |

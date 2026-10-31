@@ -3,9 +3,12 @@
 A ROM set names its files after a convention: No-Intro writes
 `Tetris (World) (Rev 1).gb`, GoodTools `Tetris (W) (V1.1) [!].gb`. The tags
 say which dump this is, which the browser's 19 columns (or the 12px row)
-would rather spend on the title. With the `SHOW NAME TAGS:` box on the
-SET tab unticked (`TAGS=0` in `EZGB.CFG`, [ezgb-cfg.md](ezgb-cfg.md)) the browser
-shows `Tetris` for either. The default is the full name, as before.
+would rather spend on the title. With the `CLEAN UP NAMES:` box on the
+SET tab ticked (`TAGS=0` in `EZGB.CFG`, [ezgb-cfg.md](ezgb-cfg.md)) the browser
+shows `Tetris` for either, and for a plain `Tetris.gb`: the cut takes the
+extension too. The default is the full name, as before. Until 2026-10-31 the
+box was `SHOW NAME TAGS:`, ticked for the full name; the setting and
+`TAGS=0` are the same, only the label and the tick's sense changed.
 
 ## The rule
 
@@ -44,11 +47,12 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 ## SET tab
 
 > Since 2026-10-30 the checkbox is on the SET tab's second page, row 6,
-> cursor row 9, drawn by `SetPage` (`04:7792`, `setpage.c`), which replaced
+> cursor row 9, drawn by `SetPage` (`04:6610`, `04:7792` until 2026-10-31, `setpage.c`), which replaced
 > `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). Its
-> label is `SHOW NAME TAGS:`, and row 8 under it shows an example name the
-> way the browser will draw it: `Game Title (USA) (Rev 1) [!].gb` ticked,
-> `Game Title.gb` unticked. The name takes the whole row (20 cells in 8px,
+> label is `CLEAN UP NAMES:` (`SHOW NAME TAGS:` until 2026-10-31), and row 8
+> under it shows an example name the way the browser will draw it:
+> `Game Title (USA) (Rev 1) [!].gb` unticked, `Game Title` ticked (until
+> 2026-10-31 it showed `Game Title.gb`, which the browser never drew). The name takes the whole row (20 cells in 8px,
 > x 0..159 in 12px; until later on 2026-10-30 an `Ex:` label came first) and
 > scrolls in the shared marquee's `MQ_A` like page 1's fast-launch name
 > ([marquee.md](marquee.md); `TagExample`, `04:7e60`, `tagexample.c`,

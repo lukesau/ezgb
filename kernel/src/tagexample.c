@@ -1,8 +1,8 @@
 /* The SET tab's tag example (docs/browser-tags.md): page 2, row 8, under
- * SHOW NAME TAGS:, a file name the way the browser will draw it.
+ * CLEAN UP NAMES:, a file name the way the browser will draw it.
  *
- *   ticked     Game Title (USA) (Rev 1) [!].gb
- *   unticked   Game Title.gb
+ *   unticked   Game Title (USA) (Rev 1) [!].gb
+ *   ticked     Game Title          (the cut drops the extension too)
  *
  * The name takes the whole row, in the shared marquee (marquee.c,
  * MQ_A), which scrolls it when it does not fit; flcfg.c's op TICK steps
@@ -25,7 +25,7 @@
 void TagExample(void) {
     static const u8 tagged[32] = {'G','a','m','e',' ','T','i','t','l','e',' ','(','U','S','A',')',' ',
                                   '(','R','e','v',' ','1',')',' ','[','!',']','.','g','b',0};
-    static const u8 plain[14] = {'G','a','m','e',' ','T','i','t','l','e','.','g','b',0};
+    static const u8 plain[11] = {'G','a','m','e',' ','T','i','t','l','e',0};
     const u8 *src = TAGS_HIDE ? plain : tagged;
     u8 i;
 

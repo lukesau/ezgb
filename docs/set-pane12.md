@@ -27,7 +27,7 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 |---|---|
 | 2 | `THEME:` 0..84; the theme name from 91 in a box (86,15)-(155,28), drawn by `ThemeRow` ([dark-mode.md](dark-mode.md)) |
 | 4 | `FONT:` 0..112; `12px` 120..155 in a box (115,31)-(155,44) |
-| 6 | `SHOW NAME TAGS:` 0..128, checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
+| 6 | `CLEAN UP NAMES:` 0..128 (`SHOW NAME TAGS:` until 2026-10-31), checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
 | 8 | the scrolling example name, 0..159 ([browser-tags.md](browser-tags.md)) |
 | 10 | `SORT BY PLAYS:` 0..128, checkbox at x 130 ([stars.md](stars.md)) |
 

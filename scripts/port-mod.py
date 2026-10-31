@@ -113,8 +113,8 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x7670, "SetPage": 0x7792, "FarCallMarquee": 0x0410}),
-    (4, 0x7792): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
+                            "ThemeRow": 0x7670, "SetPage": 0x6610, "FarCallMarquee": 0x0410}),
+    (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51}),
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage

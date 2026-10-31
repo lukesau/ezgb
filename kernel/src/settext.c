@@ -28,7 +28,7 @@
  *
  * Page 2 (setpage.c, SET_PAGE bit 0): row 2 "THEME:" 0..84 (its button
  * follows), row 4 col 0 "FONT:" 0..112 and col 15 "12px" 120..155, row 6
- * "SHOW NAME TAGS:" 0..128 (row 8 is the tag example, drawn by the marquee). While SET_PAGE is exactly 1 (page 2, and the caller is the
+ * "CLEAN UP NAMES:" 0..128 (row 8 is the tag example, drawn by the marquee). While SET_PAGE is exactly 1 (page 2, and the caller is the
  * stock screen, not flcfg) nothing is drawn.
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
@@ -62,7 +62,7 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         else if (col == 9) { x = 70; end = 97; }
         else { x = 104; end = 155; }
     } else if (SET_PAGE & 1) {
-        /* page 2 (setpage.c): THEME: (its button from x 86), FONT: 12px, SHOW NAME TAGS: */
+        /* page 2 (setpage.c): THEME: (its button from x 86), FONT: 12px, CLEAN UP NAMES: */
         if (row == 2) end = 84;
         else if (row == 4) { if (col) { x = 120; end = 155; } else { end = 112; } }
     } else switch (row) {

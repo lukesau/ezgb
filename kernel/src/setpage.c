@@ -1,12 +1,13 @@
 /* SET tab rows flcfg.c has no room for (docs/fastlaunch-set-tab.md "Pages"):
  * page 1's SGB BOOT row, page 2, and both pages' page row.
  *
- * Bank 4, injected at 04:7792, near-called by flcfg.c (04:6600). Page 2
+ * Bank 4, injected at 04:6610 (04:7792 until 2026-10-31, when it needed
+ * room for AUTO), near-called by flcfg.c (04:6d19). Page 2
  * holds the UI settings:
  *
  *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 7
  *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
- *   row 6   SHOW NAME TAGS:  [x]   cursor row 9 (docs/browser-tags.md)
+ *   row 6   CLEAN UP NAMES:  [ ]   cursor row 9 (docs/browser-tags.md)
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
  *   row 10  SORT BY PLAYS:   [ ]   cursor row 10 (docs/stars.md)
  *   row 16  [< PREV]  2/2        cursor row 11
@@ -70,7 +71,7 @@ void SetPage(u8 op, u8 cur) {
     if (op == 0) {
         static const u8 theme_label[7] = {'T','H','E','M','E',':',0};
         static const u8 font_label[6] = {'F','O','N','T',':',0};
-        static const u8 tags_label[16] = {'S','H','O','W',' ','N','A','M','E',' ','T','A','G','S',':',0};
+        static const u8 tags_label[16] = {'C','L','E','A','N',' ','U','P',' ','N','A','M','E','S',':',0};
         SetText(theme_label, 6, 0, 2);
         SetText(font_label, 5, 0, 4);
         static const u8 sort_label[15] = {'S','O','R','T',' ','B','Y',' ','P','L','A','Y','S',':',0};
@@ -80,10 +81,12 @@ void SetPage(u8 op, u8 cur) {
     } else if (op == 1) {
         static const u8 ui8_str[5] = {' ','8','p','x',0};
         static const u8 ui12_str[5] = {'1','2','p','x',0};
+        /* AUTO: a theme with one font (DV, 12px only) decides it */
+        static const u8 auto_str[5] = {'A','U','T','O',0};
         ThemeRow(cur == ROW_THEME);
         button(cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
-        SetText(hUiMode ? ui12_str : ui8_str, 4, 15, 4);
-        box(0x82, 0x30, !TAGS_HIDE, cur == ROW_TAGS);
+        SetText(THEME == THEME_DV ? auto_str : hUiMode ? ui12_str : ui8_str, 4, 15, 4);
+        box(0x82, 0x30, TAGS_HIDE, cur == ROW_TAGS);
         box(0x82, 0x50, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
@@ -94,7 +97,7 @@ void SetPage(u8 op, u8 cur) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         EZ_OP = OP_SAVE;
         FarCallEzCfg();
-        box(0x82, 0x30, !TAGS_HIDE, 1);
+        box(0x82, 0x30, TAGS_HIDE, 1);
         TagExample();                       /* the other name, from its start */
     } else if (op == 4) {
         StoreDrawParams(0, 0, 0);
