@@ -63,6 +63,7 @@ REGISTRY = {
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/dark-mode.md)
+    (0, 0x3fe4): dict(src="dv_params.c", pins={"wDrawOp": 0xd723, "wDrawColorB": 0xd735}),   # StoreDrawParams' tail: DV's lime remap (docs/dark-mode.md)
     (2, 0x43d0): dict(src="theme.c", pins={"theme_ramp": 0x4998}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
     (2, 0x4960): dict(src="theme_ramps.c", pins={}),   # UI theme colors, data only
     (2, 0x4990): dict(src="theme_pick.c",                   # custom theme: FarCallColors stub, theme_ramp for theme.c
@@ -152,12 +153,12 @@ REGISTRY = {
     (8, 0x7f29): dict(src="play_mark.c",                    # the sort's star marks, and its stub to PlayKeys (docs/stars.md)
                       pins={"FarCallTrampoline": 0x078d, "PlayKeys": 0x7cd2},
                       exports={"PlayMark": 0x7f31}),
-    (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
     (11, 0x4700): dict(src="play_file.c",                   # stars and plays mirrored in /.ezgbplays (docs/stars.md)
                       pins={"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941, "FarCall_07_7739": 0x1963,
                             "FarCall_03_76cc": 0x1985, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688,
                             "FarCallTrampoline": 0x078d},
                       exports={"PlaySync": 0x47af, "StarToggleSync": 0x491e}),
+    (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
                       exports={"PlayKeys": 0x7cd2, "StarQuery": 0x7d92, "StarToggle": 0x7db8}),
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
     (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)

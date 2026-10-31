@@ -1,12 +1,16 @@
 # Dark mode: UI themes for the kernel and stage1
 
 [Issue #11](https://github.com/lukesau/ezgb/issues/11). The SET tab has a
-`THEME` button on the `UI:` row that cycles the browser, every kernel screen
-and our stage1's boot screen through six themes: light (the stock look),
-dark, and four colored ones, plus a seventh, custom, whose two colors are set
-by hand in `EZGB.CFG` (see [Custom](#custom)). On a DMG, or anything else
-running the kernel in DMG mode, every theme but light is the inverted
-palette.
+`THEME` button that cycles the browser, every kernel screen and our stage1's
+boot screen through three themes: light (the stock look), dark, and DV (see
+[DV](#dv)). Light and dark are the DMG baseline: on a DMG, or anything else
+running the kernel in DMG mode, light is the stock palette and dark the
+inverted one. DV is designed for backlit and OLED screens.
+
+> Since 2026-10-31 there are only these three. Red, green, purple, blue and
+> custom (themes 2 to 6, with `COLORS=`) were removed; a card whose
+> `EZGB.CFG` still says `THEME=2` to `6` gets dark, and a `COLORS=` line is
+> kept but unused. Their rows below are history.
 
 ## The themes
 
@@ -41,7 +45,7 @@ that row goes to all 8 BG and 8 OBJ palettes. On a DMG, light is `BGP`,
 
 ## Custom
 
-Since 2026-10-30. One line in `EZGB.CFG` sets the background and the ink
+Removed on 2026-10-31 (see the top). Since 2026-10-30 until then. One line in `EZGB.CFG` sets the background and the ink
 (text), in web hex, the format every color picker gives:
 
 ```
@@ -199,12 +203,37 @@ never writes `BGP`.
 
 Theme 7, an homage to davidesqalv's
 [ezgb-dv](https://github.com/davidesqalv/ezgb-dv) fork: its 12px glyph set
-(Tamzen 6x12 and his icons, glyph set 1, [font12.md](font12.md#glyph-sets)).
-It comes after custom so the numbers already in people's `EZGB.CFG` keep
-their meaning; the button steps light, dark, red, green, purple, blue,
-custom (when `COLORS=` is set), DV. Its colors are dark's for now
-(`theme_ramp` maps 7 to row 1); his black, lime, blue and white, with the
-selection bar and icons in their own shades, come with the color work.
+(Tamzen 6x12 and his icons, glyph set 1, [font12.md](font12.md#glyph-sets))
+and its colors. The button steps light, dark, DV; DV keeps 7 so the numbers
+already in people's `EZGB.CFG` keep their meaning.
+
+**Colors.** Black, lime `#7BFF31`, blue `#0063C5` and white, as color indices
+0 to 3. The kernel draws normal text white on black (ink 3, paper 0) and
+highlights black on white (ink 0, paper 3), the same index for both, so a
+palette alone cannot make the highlight lime. With DV, `StoreDrawParams`
+(`00:2791`) ends in `DvParams` (`00:3fe4`, [dv_params.c](../kernel/src/dv_params.c)):
+a stored paper of 3 becomes 1, and an ink of 3 on that paper too. So the
+selection bar, the active tab, the hold-A menu's name band, the rules and the
+checkbox ticks are lime and black, white text on black is untouched, and
+nothing is drawn twice. Popups stay black with their white frame
+(`PopupDrawParams` gives dark's lighter popup to dark only).
+
+**Both firmwares, one look.** On a color console in CGB mode (the firmware
+mod's stage1) the four colors are DV's row of `theme_ramps.c`. On stock
+firmware the console runs the kernel in DMG compatibility mode, where only
+`BGP` counts: DV sets `$27` (index 0 black, 1 light, 2 dark, 3 white), and a
+GBC's boot ROM gives an unknown DMG game white, lime, blue and black, so a
+stock-firmware GBC shows nearly the same lime and blue. A DMG shows the same
+layout in four grays, with a light-gray selection bar that black text stays
+readable on.
+
+**Not yet.** His icons are blue: here they are drawn with the row's ink, so
+white, until the 12px renderer can give a glyph its own color.
+
+The renderer's fast path kept only plane 0 of an edge tile it partly
+covered, which turned lime pixels next to a label white (the SET tab beside
+HELP); since 2026-10-31 edge tiles go through its per-plane read-modify-write
+([font12.md](font12.md)).
 
 DV's glyph set is 12px only, so the theme decides the font: the SET tab's
 FONT button reads `AUTO` while DV is on and A on it does nothing. Stepping

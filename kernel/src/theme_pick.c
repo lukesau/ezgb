@@ -1,16 +1,14 @@
-/* The custom theme's bank-2 side (docs/dark-mode.md).
+/* Theme colors' bank-2 side (docs/dark-mode.md).
  *
  * Bank 2, injected at 02:4990, after ThemeRamps. Two entries:
  *
- *   FarCallColors  02:4990, ezcfg's stub for colors (05:7b50,
- *                  theme_colors.c): parsing and writing COLORS=
- *   theme_ramp     02:4998, the four colors THEME draws in, for theme.c,
- *                  called with the pSRAM mark mapped. It cannot far-call:
- *                  the boot runs theme with interrupts off.
- *
- * Before the file is read (boot), the mark's colors become CUST_RAMP, so a
- * custom theme's first frames need no file. After, THEME is only custom
- * with a valid COLORS= (ezcfg's cfg_load, theme_row.c), which set CUST_RAMP.
+ *   FarCallColors  02:4990, ezcfg's stub to 05:7b50 (theme_colors.c),
+ *                  which writes THEME= and BOOTROM= on a save and still
+ *                  reads a COLORS= line, which no theme uses since custom
+ *                  was retired (2026-10-31)
+ *   theme_ramp     02:4998, the four colors THEME draws in, for theme.c: a
+ *                  row of theme_ramps.c. It cannot far-call: the boot runs
+ *                  theme with interrupts off.
  */
 
 #include "types.h"
@@ -18,7 +16,7 @@
 #include "ezcfg.h"
 
 extern void FarCallTrampoline(void);           /* 00:078d */
-extern const u8 theme_ramps[THEME_CUSTOM][8];  /* 02:4960, theme_ramps.c */
+extern const u8 theme_ramps[3][8];             /* 02:4960, theme_ramps.c: light, dark, DV */
 
 u8 *FarCallColors(u8 op, u8 *p, u8 len) __naked {
     (void)op; (void)p; (void)len;
@@ -32,27 +30,16 @@ u8 *FarCallColors(u8 op, u8 *p, u8 len) __naked {
 
 const u8 *theme_ramp(void) __naked {
     __asm
-	ld	de, #0xdb58		; CUST_RAMP
-	ld	a, (#0xdbf9)		; CFG_LOADED
-	or	a
-	jr	nz, 2$
-	ld	hl, #0xa418		; the mark colors, page $11
-	ld	b, #8
-1$:
-	ld	a, (hl+)
-	ld	(de), a
-	inc	de
-	dec	b
+	ld	a, (#0xdbf7)		; THEME: 0 light, 1 dark, 7 DV (row 2),
+	cp	#7			; and 2..6, retired, dark
 	jr	nz, 1$
-	ld	de, #0xdb58
-2$:
-	ld	a, (#0xdbf7)		; THEME
-	cp	#6			; THEME_CUSTOM
-	ret	z
-	cp	#7			; THEME_DV: the dark colors for now
-	jr	nz, 3$
+	ld	a, #2
+	jr	2$
+1$:
+	cp	#2
+	jr	c, 2$
 	ld	a, #1
-3$:
+2$:
 	add	a
 	add	a
 	add	a

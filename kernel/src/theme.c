@@ -74,7 +74,10 @@ void theme(void) {
     RAM_PAGE = 0;
     fpga_page(0);
 
-    i = t ? 0x1b : 0xe4;
+    /* DMG and compatibility mode: dark inverts; DV is black, light gray,
+     * dark gray, white (his BGP), so on a GBC with stock firmware the boot
+     * ROM's lime and blue land where DV's CGB colors do */
+    i = t == THEME_DV ? 0x27 : t ? 0x1b : 0xe4;
     rBGP = i;
     rOBP0 = i;
     rOBP1 = ~i;

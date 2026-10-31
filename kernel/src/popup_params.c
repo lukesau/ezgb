@@ -15,7 +15,7 @@
 #include "vars.h"
 
 void PopupDrawParams(u8 ink, u8 paper) {
-    if (THEME) {
+    if (THEME && THEME != THEME_DV) {    /* DV keeps black popups, as his fork */
         if (ink == 0) ink = 1;
         if (paper == 0) paper = 1;
     }

@@ -32,9 +32,8 @@ void ThemeRow(u8 op) {
     u8 i;
 
     if (op == 2) {
-        i = THEME + 1;
-        if (i == THEME_CUSTOM && !CUST_OK) i++;   /* custom needs COLORS= */
-        THEME = i < THEME_COUNT ? i : 0;
+        /* light, dark, DV (2..6 are retired, vars.h) */
+        THEME = THEME == 0 ? 1 : THEME == 1 ? THEME_DV : 0;
         EZ_OP = OP_SAVE;
         FarCallEzCfg();
         FarCallTheme_B4();

@@ -9075,16 +9075,10 @@ PatchGuard::
     db $61, $74, $63, $68, $2e, $00
 
 PlayLaunchHook::
-    db $cd, $8d, $07, $9f, $7c, $05, $00, $c3
-    db $10, $76
+    db $cd, $8d, $07, $9f, $7c, $05, $00, $cd
+    db $8d, $07, $af, $47, $0b, $00, $c3, $10
+    db $76
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

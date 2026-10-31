@@ -388,19 +388,13 @@ CgbInit::
     rst RST_38
 
 PopupDrawParams::
-    db $fa, $f7, $db, $b7, $28, $10, $f8, $02
-    db $7e, $b7, $20, $02, $36, $01, $f8, $03
-    db $7e, $b7, $20, $02, $36, $01, $af, $f5
-    db $33, $f8, $04, $3a, $57, $5e, $d5, $cd
-    db $91, $27, $e8, $03, $c9
+    db $fa, $f7, $db, $b7, $28, $17, $fa, $f7
+    db $db, $fe, $07, $28, $10, $f8, $02, $7e
+    db $b7, $20, $02, $36, $01, $f8, $03, $7e
+    db $b7, $20, $02, $36, $01, $af, $f5, $33
+    db $f8, $04, $3a, $57, $5e, $d5, $cd, $91
+    db $27, $e8, $03, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -7575,10 +7569,11 @@ StoreDrawParams::
     ld [wDrawColor], a
     ld a, [hl+]
     ld [wDrawColorB], a
-    ld a, [hl]
-    ld [wDrawOp], a
-    ret
+    jp $3fe4
 
+
+    nop
+    nop
 
 ; [ezgb]
 ; DrawCircleXY: stack (x, y, r, fill); ensure EnterGfxMode1 then DrawCircle.
@@ -12056,31 +12051,10 @@ BrowserScroll::
     db $2a, $02, $03, $7e, $02, $e1, $36, $01
     db $e5, $e8, $06, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+DvParams::
+    db $7e, $ea, $23, $d7, $fa, $f7, $db, $fe
+    db $07, $c0, $21, $35, $d7, $7e, $fe, $03
+    db $c0, $36, $01, $2b, $7e, $fe, $03, $c0
+    db $36, $01, $c9
+
     rst RST_38

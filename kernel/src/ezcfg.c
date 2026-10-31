@@ -647,10 +647,9 @@ static void cfg_load(void) {
         legacy = 1;
     }
     parse_record(br, legacy);
-    /* not one digit, past the last theme, or custom without COLORS=
-     * (theme_colors.c), wherever that is in the file: light. DV comes after
-     * custom (vars.h) and needs nothing. */
-    if (THEME >= (u8)(THEME_CUSTOM + CUST_OK) && THEME != THEME_DV) THEME = 0;
+    /* not one digit or past the last theme: light. Red, green, purple,
+     * blue and custom (2..6) were retired on 2026-10-31: dark (vars.h). */
+    if (THEME > 1 && THEME != THEME_DV) THEME = THEME < THEME_DV ? 1 : 0;   /* 2..6 retired: dark */
     /* AUTO: DV's glyph set is 12px only, whatever UI= says */
     if (THEME == THEME_DV) hUiMode = 1;
 }
