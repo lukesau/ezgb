@@ -8,6 +8,7 @@ Options
 <ROM name>                paper on an ink band; scrolls when too long
 > Start
   Manage saves
+  Star                    Unstar for a starred ROM
 [B]back | [A]ok
 ```
 
@@ -15,7 +16,9 @@ UP/DOWN moves the `>`, A on Start launches, and B closes the menu and puts the
 browser back as it was, with the cursor on the same entry. A on Manage saves
 opens the save manager ([save-manager.md](save-manager.md)), which replaces
 browsing `SAVER/` now that it is hidden ([browser-hide-filter.md](browser-hide-filter.md)).
-The menu is redrawn when it returns.
+The menu is redrawn when it returns. A on Star stars the ROM (or unstars it),
+sorts the folder again, closes the menu and puts the cursor back on the ROM
+wherever it now sits ([stars.md](stars.md)). UP and DOWN wrap at both ends.
 
 Folders still open on press. Pick mode ([fastlaunch-set-tab.md](fastlaunch-set-tab.md))
 and files that are not ROMs take the stock path straight away.
@@ -48,17 +51,17 @@ passed. Reading P1 directly instead would race the VBlank sampler.
 
 ## Layout
 
-The BACKUPSAVE prompt's box ([modal-prompts.md](modal-prompts.md)) made two
-rows taller. The name goes on the same band, drawn and scrolled by
+The BACKUPSAVE prompt's box ([modal-prompts.md](modal-prompts.md)) made three
+rows taller (two until the Star row). The name goes on the same band, drawn and scrolled by
 `LastRomName` with `LR_GEO` = 1, and the menu polls through
 `LastRomTickStub`, which runs the marquee before `ReadJoypad`.
 
 | | 8px | 12px |
 |---|---|---|
-| box | (0,35)-(159,115) | (0,36)-(159,119) |
-| rows | tile rows 5, 7, 9, 11, 13 from column 1 | y 40, 56, 72, 88, 104 from x 12 |
+| box | (0,35)-(159,131) | (0,36)-(159,135) |
+| rows | tile rows 5, 7, 9, 11, 13, 15 from column 1 | y 40, 56, 72, 88, 104, 120 from x 12 |
 | name band | y 51..67 | y 53..69 |
-| rule / vertical | y 99 / x 83 | y 101 / x 79 |
+| rule / vertical | y 115 / x 83 | y 117 / x 79 |
 | `[A]ok` | column 11 | x 86 |
 
 The name is copied from its record in the pSRAM window to `$c4a4` before

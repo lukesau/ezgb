@@ -110,6 +110,7 @@ repurposed, labeled `FolderIconGlyphs` in `kernel.sym`:
 | `$C2` | `00:3816` | `.gbc` cartridge (placeholder: outline with a checkered label) |
 | `$C3` | `00:381e` | boxed `?` for any other file type |
 | `$C4` | `00:3826` | `.sav` page (dog-eared top-right corner) |
+| `$7F` | `00:35fe` | star for a starred ROM (`StarGlyph8`, was the CP437 house; [stars.md](stars.md)) |
 
 Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,
 `7E 81 A9 95 A9 81 7E 00`, `7E 99 A5 89 81 89 7E 00`, `F8 8C 8E 81 81 81 FF 00`.

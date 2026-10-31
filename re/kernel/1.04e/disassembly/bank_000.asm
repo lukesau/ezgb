@@ -9801,10 +9801,12 @@ FontGlyphSheet::
     db $f2, $9e
     db $0c, $00
     db $00, $00
-    db $10, $10
-    db $28, $28
-    db $44, $44
-    db $82, $fe
+
+StarGlyph8::
+    db $10, $38
+    db $fe, $7c
+    db $38, $6c
+    db $44, $00
     db $3c, $62
     db $60, $60
     db $60, $62
@@ -12239,7 +12241,7 @@ BrowserScrollDownRepaint::
     rst RST_38
 
 DrawNameWithIcon::
-    db $cd, $8d, $07, $80, $7e, $02, $00, $c9
+    db $cd, $8d, $07, $00, $7e, $02, $00, $c9
 
 BrowserScroll::
     db $e8, $ef, $f8, $13, $2a, $47, $4e, $78

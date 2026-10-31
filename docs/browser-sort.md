@@ -23,6 +23,10 @@ and the SM83 would take minutes to bubble-sort records across banks. Instead:
    and RIGHT-paging all work unchanged on the full list.
 2. **Build one 16-byte key per entry** in scratch PSRAM bank `$ff`: class byte
    (0 = dir, 1 = file), 13 uppercased name chars, original index.
+   Since the stars ([stars.md](stars.md)), `PlayKeys` then makes the class
+   1 for a starred file and 2 for any other, and with SORT BY PLAYS on puts
+   the play count in byte 1; after the permutation `PlayMark` marks the
+   starred records for the star icon.
 3. **Heapsort the keys.** Compare is a memcmp of the first 14 bytes; the class
    byte makes directories sort ahead of files for free. Prefix ties fall back
    to a full caseless name compare of the records (via the `$c4a4` LFN buffer,

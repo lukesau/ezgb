@@ -87,7 +87,7 @@ REGISTRY = {
                             "GfxRowTable": 0x2fbb, "Font12": 0x6000, "Font12Metrics": 0x6978, "Fit12": 0x7100,
                             "DiNest": 0x06fd, "EiNest": 0x0706}),
     (2, 0x7100): dict(src="layout12.c", pins={"Font12Metrics": 0x6978}),   # proportional layout + kerning; far target of MarqueeWidth12
-    (2, 0x7e80): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
+    (2, 0x7e00): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
     (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser-tags.md): TagCat is the far target of 00:0d69
                       exports={"TagLen": 0x7a55}),              # far target of FarCallTagLen (00:0408)
     (2, 0x6000): dict(kind="data"),        # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
@@ -109,7 +109,8 @@ REGISTRY = {
                             "ThemeRow": 0x7670, "SetPage": 0x7792, "FarCallMarquee": 0x0410}),
     (4, 0x7792): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
-                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60}),
+                            "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51}),
+    (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
     (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
                       pins={"FarCallMarquee": 0x0410}),
     (4, 0x7670): dict(src="theme_row.c",                    # SET tab THEME button, near-called by SetPage (docs/dark-mode.md)
@@ -121,7 +122,8 @@ REGISTRY = {
     (4, 0x5a00): dict(src="rom_menu.c",                     # hold A on a ROM: options menu, far target of 00:0597 (docs/rom-menu.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
-                            "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
+                            "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290,
+                            "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0}),
     (4, 0x6d11): dict(src="save_mgr.c",                     # Manage saves screens, near-called by RomMenu (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
@@ -138,7 +140,12 @@ REGISTRY = {
                             "RemoveChain_B9": 0x4f94, "SyncFs_B9": 0x4447}),
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
-    (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43}),
+    (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43, "PlayKeysFar": 0x7f29, "PlayMark": 0x7f31}),
+    (8, 0x7f29): dict(src="play_mark.c",                    # the sort's star marks, and its stub to PlayKeys (docs/stars.md)
+                      pins={"FarCallTrampoline": 0x078d, "PlayKeys": 0x7cd2},
+                      exports={"PlayMark": 0x7f31}),
+    (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
+                      exports={"PlayKeys": 0x7cd2, "StarQuery": 0x7d92, "StarToggle": 0x7db8}),
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
     (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
@@ -165,6 +172,7 @@ REGISTRY = {
     (8, 0x7a9c): dict(code_len=0x5b),      # DrawHelpModVersion: code, then 4 strings
     (8, 0x7cc0): dict(),                   # HelpSdHook: HelpSd(0), then the 8px HELP wait loop
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
+    (0, 0x35fe): dict(kind="data"),        # StarGlyph8: tile $7F, the star (docs/stars.md)
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
     (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)
     (4, 0x5f90): dict(),                   # FlSetJumpBottom: RIGHT on the SET tab

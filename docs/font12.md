@@ -59,7 +59,8 @@ blank columns that made `i`, `l` and `.` look spaced out are gone, and
 | byte-level immediates | `kernel/tools/patch_bytes.py` (verifies the old bytes first) |
 
 Bitmap table: 101 glyphs (codes `$20`-`$7F`, then the five icons `$C0`-`$C4`
-in the same codes the 8x8 icons use), 24 bytes each: 12 big-endian words,
+in the same codes the 8x8 icons use; `$7F` is an icon too, the star,
+[stars.md](stars.md)), 24 bytes each: 12 big-endian words,
 leftmost ink pixel in bit 15. Text glyphs are left-trimmed by the packer
 (the sheet's blank columns left of the ink are dropped), so a glyph has no
 side bearings: the pen sits on its first ink column. Icons keep their 10
@@ -244,7 +245,7 @@ pattern and less well with this one.
 
 | Site | Change |
 |---|---|
-| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7e80`), which sends icon + up to 39 name characters to `DrawString12` with a near call |
+| `DrawNameWithIcon` `00:3ec8` | the old 293-byte bank-0 block is gone; the address holds an 8-byte far stub to `DrawNameWithIconImpl` (`02:7e00`, `02:7e80` until the star icon, [stars.md](stars.md)), which sends icon + up to 39 name characters to `DrawString12` with a near call |
 | `DrawDirEntryLabel` marquee `00:0dd8` | `call DrawString` -> `call FarCallDrawString12` |
 | marquee field widths `00:0c87`, `00:0c8e` | `$13` -> the `MarqueeWidth` cave of [ui-mode.md](ui-mode.md): 19 in 8px mode, else `MarqueeWidth12` (`00:0229`) measures the name with `Fit12` and stores `$FF` (fits) or 0 (scroll) |
 | `DrawBrowserEntries` row clamp `01:411c`, `01:4128` | `$10` -> `$0a` |
@@ -267,7 +268,7 @@ python3 tools/inject.py src/draw12.c $V 2 7500 DrawString12 \
     --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \
     --pin GfxRowTable=2fbb --pin Font12=6000 --pin Font12Metrics=6978 --pin Fit12=7100 \
     --pin DiNest=06fd --pin EiNest=0706 --replace --apply
-python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
+python3 tools/inject.py src/browser_icons.c $V 2 7e00 DrawNameWithIconImpl \
     --pin DrawString12=7500 --pin DrawString=08b7 --replace --apply
 python3 tools/inject_bytes.py $V 0 3ec8 DrawNameWithIcon cd8d07807e0200c9 --apply   # once
 python3 tools/inject_bytes.py $V 0 0229 MarqueeWidth12 \

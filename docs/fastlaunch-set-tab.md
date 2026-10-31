@@ -32,8 +32,8 @@ The pane has two pages; row 16 of each switches to the other.
 
 UP/DOWN move a cursor over the page's rows. Its numbers run on across the
 pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB
-BOOT, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 PREV on page 2 (clamp
-`04:5604` `d6 0a`, and `flcfg` op ROWS keeps the cursor on its page).
+BOOT, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 SORT BY PLAYS, 11 PREV on page 2
+(clamp `04:5604` `d6 0b`, and `flcfg` op ROWS keeps the cursor on its page).
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
 step through its fields.
@@ -154,7 +154,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
 | `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 10, which op ROWS turns into NEXT on page 1) |
-| `04:5604` | `d6 01` | `d6 0a` | cursor clamp 0..1 → 0..10, both pages (`d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:5604` | `d6 01` | `d6 0b` | cursor clamp 0..1 → 0..11, both pages (`d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`af ea ee db e8 6a c9`: clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

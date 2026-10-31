@@ -1,6 +1,6 @@
 # Glyph sheet for the EZGB 12px browser (kernel/src/draw12.c).
 # '.' = paper, '#' = ink. 12 rows per glyph, in code order: text glyphs
-# ($20-$7F) and the icons ($C0-$C4) are all 10 columns wide (10x12 cells).
+# ($20-$7E) and the icons ($7F star, $C0-$C4) are all 10 columns wide (10x12 cells).
 # Add the word `keep` to a glyph header to protect it from font12-render.py.
 # Rendered from Menlo.ttc index 1 size 13 baseline 9.
 
@@ -1334,19 +1334,19 @@ glyph 0x7E '~'
 ..........
 ..........
 
-glyph 0x7F ''
+glyph 0x7F icon star keep
 ..........
+....#.....
+....#.....
+...###....
+#########.
 .#######..
+..#####...
+..#####...
+.##...##..
 .#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#.....#..
-.#######..
+..........
+..........
 
 glyph 0xC0 icon folder keep
 ..........

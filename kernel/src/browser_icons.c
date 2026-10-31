@@ -1,7 +1,8 @@
 /* Browser row icons (docs/dmg-ui-visibility.md "Change 4", docs/font12.md).
  *
- * Bank 2, injected at 02:7e80 and reached through the 8-byte far stub that
- * now sits at the old bank-0 address 00:3ec8 (`cd 8d 07 80 7e 02 00 c9`), so
+ * Bank 2, injected at 02:7e00 (02:7e80 until the star made it too long for
+ * the end of the bank) and reached through the 8-byte far stub that now sits
+ * at the old bank-0 address 00:3ec8 (`cd 8d 07 00 7e 02 00 c9`), so
  * the six stock name draws in DrawBrowserEntries / DrawBrowserDetail and
  * the scroll-repaint shim still `call $3ec8` with DrawString's (s, len, x,
  * y) frame. The stub is `call`ed, so FarCallTrampoline's three words sit
@@ -11,7 +12,9 @@
  * Directories are recognized by the stock len 0; files come in with len
  * $14. The icon is drawn in whatever ink the row has, so it inverts with
  * the selection bar. Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart,
- * $C4 .sav page, $C3 boxed "?" for anything else.
+ * $C4 .sav page, $C3 boxed "?" for anything else, and $7F a star for a
+ * starred file (PlayMark, play_mark.c, puts $2A in byte 253 of its record,
+ * docs/stars.md).
  *
  * Living in bank 2 next to the 12x12 renderer it calls DrawString12 (the
  * far entry, hence the three dummy pads) with a plain near call, one
@@ -22,7 +25,7 @@
  * docs/browser-tags.md) says: the row is drawn from a NUL-terminated copy
  * in both modes.
  *
- *   python3 tools/inject.py src/browser_icons.c $V 2 7e80 DrawNameWithIconImpl \
+ *   python3 tools/inject.py src/browser_icons.c $V 2 7e00 DrawNameWithIconImpl \
  *       --pin DrawString12=7500 --pin DrawString=08b7 --pin FarCallTagLen=0408 --replace --apply
  */
 
@@ -68,6 +71,7 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
                 ic = 0xC4;               /* .sav page */
             }
         }
+        if (s[253] == 0x2A) ic = 0x7F;   /* starred */
         len--;
     }
     /* One call for icon + name: the 12px renderer (docs/font12.md)

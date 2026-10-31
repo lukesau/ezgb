@@ -1832,7 +1832,7 @@ LastRomPersistDone::
     inc sp
     call SetFpgaPage_B1
     add sp, $01
-    jp $7610
+    jp $7ec6
 
 
     cpl
@@ -8913,16 +8913,10 @@ PatchGuard::
     db $74, $73, $20, $6f, $77, $6e, $20, $70
     db $61, $74, $63, $68, $2e, $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+PlayLaunchHook::
+    db $cd, $8d, $07, $9f, $7c, $05, $00, $c3
+    db $10, $76
+
     rst RST_38
     rst RST_38
     rst RST_38

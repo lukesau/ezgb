@@ -29,6 +29,7 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 | 4 | `FONT:` 0..112; `12px` 120..155 in a box (115,31)-(155,44) |
 | 6 | `SHOW NAME TAGS:` 0..128, checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
 | 8 | the scrolling example name, 0..159 ([browser-tags.md](browser-tags.md)) |
+| 10 | `SORT BY PLAYS:` 0..128, checkbox at x 130 ([stars.md](stars.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above
@@ -87,7 +88,7 @@ the two layouts can be compared.
 | `draw12.c`, `layout12.c` | | `hClip12` |
 
 To make room for the larger `DrawString12`, `LastRomName` moved to `02:7260`
-and `DrawNameWithIconImpl` to `02:7e80` (their bank-0 stubs follow).
+and `DrawNameWithIconImpl` to `02:7e80`, now `02:7e00` (their bank-0 stubs follow).
 `02:7260` is the shared marquee's since 2026-10-30, and `LastRomName` is at
 `02:5d58` ([marquee.md](marquee.md)).
 

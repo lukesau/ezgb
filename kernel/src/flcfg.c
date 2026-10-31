@@ -37,11 +37,12 @@
  *           12 <name, 10 cols, scrolling> [PICK ROM]   14 SGB BOOT: [ ]
  *           16 1/2 [NEXT >]
  *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 SHOW NAME TAGS: [x]
- *           8 <example name, scrolling>   16 [< PREV] 2/2               (setpage.c)
+ *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
+ *           16 [< PREV] 2/2                                         (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB BOOT,
- * 6 NEXT; 7 THEME, 8 UI, 9 TAGS, 10 PREV). The stock clamp lets the cursor
- * run 0..10; op ROWS keeps it on the page. Page 2 is drawn over the stock
+ * 6 NEXT; 7 THEME, 8 UI, 9 TAGS, 10 SORT, 11 PREV). The stock clamp lets
+ * the cursor run 0..11; op ROWS keeps it on the page. Page 2 is drawn over the stock
  * screen, which keeps running: SetText drops its text there (SET_PAGE, vars.h)
  * and op ROWS clears its dirty flag (frame[0x3e]) so it draws no boxes.
  *
@@ -85,7 +86,8 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:7792, 
 #define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
 #define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
 #define ROW_TAGS  9          /* SHOW NAME TAGS: checkbox: off hides ROM name tags (docs/browser-tags.md) */
-#define ROW_PREV  10         /* page 2's last row */
+#define ROW_SORT  10         /* SORT BY PLAYS: checkbox, a pSRAM record (setpage.c, docs/stars.md) */
+#define ROW_PREV  11         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
@@ -171,8 +173,8 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             SetFpgaPage_B4(0);
             return 0;
         }
-        if (row == ROW_SGB || row == ROW_TAGS) {
-            SetPage(row == ROW_SGB ? 7 : 3, 0);   /* toggles, saves, redraws */
+        if (row == ROW_SGB || row >= ROW_TAGS) {
+            SetPage(row == ROW_SGB ? 7 : 3, row);   /* toggles, saves, redraws */
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;

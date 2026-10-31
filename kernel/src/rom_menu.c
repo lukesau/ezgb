@@ -14,7 +14,10 @@
  *
  * A tap launches when A comes up; holding A for HOLD_FRAMES opens the menu
  * as soon as the hold is reached. A on "Manage saves" runs ManageSaves
- * (save_mgr.c) and redraws the menu when it returns. Pick mode (FL_PICK)
+ * (save_mgr.c) and redraws the menu when it returns. A on "Star" (or
+ * "Unstar") toggles the ROM's star through StarToggleFar (play.c,
+ * docs/stars.md), which sorts the folder again and puts the cursor back on
+ * the ROM, and closes the menu. Pick mode (FL_PICK)
  * and files that are not .gb/.gbc take the stock path straight away. An A that was already down at
  * the browser's previous poll (held on from the press that opened a folder)
  * is ignored until it is let go: RomMenuPadTrack (00:0453) wraps the loop's
@@ -30,16 +33,17 @@
  * marquee. The name is copied to $c4a4 first: the record sits in the pSRAM
  * window, and the open path clears and refills $c4a4 itself afterwards.
  *
- *   8px   box (0,35)-(159,115); title, name, two options, buttons on tile
- *         rows 5, 7, 9, 11, 13; band y 51..67; rule y 99, vertical x 83
- *   12px  box (0,36)-(159,119); rows at y 40, 56, 72, 88, 104 from x 12;
- *         band y 53..69; rule y 101, vertical x 79
+ *   8px   box (0,35)-(159,131); title, name, three options, buttons on
+ *         tile rows 5, 7, 9, 11, 13, 15; band y 51..67; rule y 115,
+ *         vertical x 83
+ *   12px  box (0,36)-(159,135); rows at y 40, 56, 72, 88, 104, 120 from
+ *         x 12; band y 53..69; rule y 117, vertical x 79
  *
  *   python3 tools/inject.py src/rom_menu.c $V 4 5a00 RomMenu \
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin FarCallDrawLoadingBox=0483 \
  *       --pin ManageSaves=6d11 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
- *       --apply
+ *       --pin StarQueryFar=5998 --pin StarToggleFar=59a0 --apply
  */
 
 #include "types.h"
@@ -50,6 +54,8 @@ extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
 extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -> 08:737f */
 extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
+extern u8 StarQueryFar(u8 *slot);                                   /* 04:5998 -> StarQuery (play.c, bank 5) */
+extern void StarToggleFar(u8 *slot);                                /* 04:59a0 -> StarToggle */
 
 #define REC_BASE  (*(volatile u16 *)0xC2A0) /* the open page's records in the $A000 window */
 #define NAME_BUF  ((u8 *)0xC4A4)            /* 255 bytes, refilled by the open path */
@@ -67,7 +73,8 @@ extern void ManageSaves(u8 page);                                   /* 04:6d11, 
 static u8 is_rom(const u8 *s);
 static u8 a_held(void);
 static void box(void);
-static void options(u8 sel);
+static void options(u8 sel, u8 starred);
+static void opt(const u8 *s, u8 on, u8 row8, u8 y12);
 static void text(const u8 *s, u8 row8, u8 y12);
 static void frame(void);
 
@@ -75,7 +82,7 @@ static void frame(void);
  * two pad parameters. */
 u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
     const u8 *rec;
-    u8 i, f, pad, prev, sel;
+    u8 i, f, pad, prev, sel, starred;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
@@ -95,9 +102,10 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
 
     for (i = 0; i < 254 && rec[i]; i++) NAME_BUF[i] = rec[i];
     NAME_BUF[i] = 0;
+    starred = StarQueryFar(slot);
     box();
     sel = 0;
-    options(sel);
+    options(sel, starred);
     prev = PAD_A;
     for (;;) {
         f = HFRAME;
@@ -106,23 +114,28 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
         f = pad & (u8)~prev;
         prev = pad;
         if (f & (PAD_UP | PAD_DOWN)) {
-            sel ^= 1;
-            options(sel);
+            sel += (f & PAD_UP) ? 2 : 1;    /* wraps at both ends */
+            if (sel > 2) sel -= 3;
+            options(sel, starred);
         } else if (f & PAD_B) {
             break;
         } else if (f & PAD_A) {
             if (sel == 0) goto open;
+            if (sel == 2) {
+                StarToggleFar(slot);
+                break;
+            }
             /* the record page MenuDispatchAB_bankEntry mapped: entry index
              * (loop sp+$13 word + sp+$15 byte) / 32 + $12 */
             ManageSaves((u8)((u16)(*(u16 *)(slot + 0x0f) + slot[0x11]) >> 5) + 0x12);
             box();
-            options(sel);
+            options(sel, starred);
             prev = 0xFF;
         }
     }
     /* the page repaint only covers rows with entries */
     StoreDrawParams(0, 0, 0);
-    if (hUiMode) DrawRect(0, 32, 159, 123, 1); else DrawRect(0, 32, 159, 119, 1);
+    DrawRect(0, 32, 159, 135 + (hUiMode << 2), 1);
     StoreDrawParams(3, 0, 0);
     slot[REDRAW_OFS] = 1;
     PAD_CUR = 0;
@@ -157,43 +170,52 @@ static void box(void) {
     static const u8 back_str[8]  = {'[','B',']','b','a','c','k',0};
     static const u8 ok_str[6]    = {'[','A',']','o','k',0};
     u8 buf[6];
-    u8 i;
+    u8 i, t = hUiMode;                  /* 12px: the box runs a few pixels lower */
 
     StoreDrawParams(0, 0, 0);
-    if (hUiMode) DrawRect(0, 32, 159, 123, 1); else DrawRect(0, 32, 159, 119, 1);
+    DrawRect(0, 32, 159, 135 + (t << 2), 1);
     PopupDrawParams(3, 0);
-    if (hUiMode) DrawRect(0, 36, 159, 119, 1); else DrawRect(0, 35, 159, 115, 1);
+    DrawRect(0, 35 + t, 159, 131 + (t << 2), 1);
     text(title_str, 5, 40);
     if (hUiMode) {
-        text(back_str, 13, 104);
+        text(back_str, 15, 120);
         for (i = 0; i < 6; i++) buf[i] = ok_str[i];
-        FarCallDrawString12(buf, 0, 86, 104);
+        FarCallDrawString12(buf, 0, 86, 120);
     } else {
-        DrawString(back_str, 7, 1, 13);
-        DrawString(ok_str, 5, 11, 13);
+        DrawString(back_str, 7, 1, 15);
+        DrawString(ok_str, 5, 11, 15);
     }
     frame();
     PopupDrawParams(3, 3);
-    if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
+    DrawRect(0, 51 + (t << 1), 159, 67 + (t << 1), 1);
     LR_GEO = 1;
     LastRomNameStub(NAME_BUF);
 }
 
-/* The two option rows, a '>' on the selected one. */
-static void options(u8 sel) {
-    static const u8 start_str[8]  = {' ',' ','S','t','a','r','t',0};
-    static const u8 saves_str[15] = {' ',' ','M','a','n','a','g','e',' ','s','a','v','e','s',0};
-    u8 buf[15];
-    u8 i;
+/* The three option rows, a '>' on the selected one; the third says Star,
+ * or Unstar for a starred ROM. */
+static void options(u8 sel, u8 starred) {
+    static const u8 start_str[] = "Start";
+    static const u8 saves_str[] = "Manage saves";
+    static const u8 star_str[] = "Star";
+    static const u8 unstar_str[] = "Unstar";
 
     PopupDrawParams(3, 0);
-    for (i = 0; i < 8; i++) buf[i] = start_str[i];
-    if (sel == 0) buf[0] = '>';
-    text(buf, 9, 72);
-    for (i = 0; i < 15; i++) buf[i] = saves_str[i];
-    if (sel == 1) buf[0] = '>';
-    text(buf, 11, 88);
+    opt(start_str, sel == 0, 9, 72);
+    opt(saves_str, sel == 1, 11, 88);
+    opt(starred ? unstar_str : star_str, sel == 2, 13, 104);
     frame();
+}
+
+/* One option row: "> " or two blanks, then the option. */
+static void opt(const u8 *s, u8 on, u8 row8, u8 y12) {
+    u8 buf[16];
+    u8 i;
+
+    buf[0] = on ? '>' : ' ';
+    buf[1] = ' ';
+    for (i = 0; (buf[2 + i] = s[i]) != 0; i++) {}
+    text(buf, row8, y12);
 }
 
 /* One text row: tile row row8 from column 1, or the 12px row at y12 from x 12. */
@@ -213,15 +235,12 @@ static void text(const u8 *s, u8 row8, u8 y12) {
 /* What a text row repaints: the box outline (a 12px row runs to x 159), the
  * rule above the buttons and the one between them. Leaves ink 3 on paper. */
 static void frame(void) {
+    u8 t = hUiMode;
+
     PopupDrawParams(3, 0);
-    if (hUiMode) DrawRect(0, 36, 159, 119, 0); else DrawRect(0, 35, 159, 115, 0);
+    DrawRect(0, 35 + t, 159, 131 + (t << 2), 0);
     PopupDrawParams(3, 3);
-    if (hUiMode) {
-        DrawRect(0, 101, 159, 101, 1);
-        DrawRect(79, 101, 79, 119, 1);
-    } else {
-        DrawRect(0, 99, 159, 99, 1);
-        DrawRect(83, 99, 83, 115, 1);
-    }
+    DrawRect(0, 115 + (t << 1), 159, 115 + (t << 1), 1);
+    DrawRect(83 - (t << 2), 115 + (t << 1), 83 - (t << 2), 131 + (t << 2), 1);
     PopupDrawParams(3, 0);
 }

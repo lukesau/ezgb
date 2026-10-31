@@ -21,7 +21,10 @@
  *     RIGHT-page paths already honor that latch, so they never re-enter
  *     DirList afterwards and all downstream count checks use the true total.
  *  2. Build one 16-byte key per entry in a scratch PSRAM bank:
- *       [0]    class: 0 directory, 1 file  (record attr $10 vs $20)
+ *       [0]    class: 0 directory, 1 file  (record attr $10 vs $20); then
+ *              PlayKeys makes it 1 for a starred file and 2 for any other,
+ *              and with SORT BY PLAYS puts 255 - launches in [1], the name
+ *              one byte on (docs/stars.md)
  *       [1-13] first 13 name chars, uppercased, NUL-padded
  *       [14-15] original record index, little-endian
  *  3. Heapsort the keys. Compare = memcmp of bytes 0-13, so dirs sort ahead
@@ -63,6 +66,10 @@
 /* Streams the next batch of up to 16 entries into the PSRAM records and
  * advances the count; sets the $c5a4 latch when readdir comes up empty. */
 extern void DirList(void);
+/* play_mark.c, bank 8 (docs/stars.md): stars and SORT BY PLAYS in the keys
+ * (far, to PlayKeys in bank 5), then the star marks in the records */
+extern void PlayKeysFar(u16 n);
+extern void PlayMark(void);
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
 #define END_OF_DIR (*(volatile u8 *)0xc5a4)
@@ -105,6 +112,7 @@ void browser_sort_all(void) {
     if (n >= 2 && !LIST_CUT) {
         fpga_sram_page();
         build_keys(n);
+        PlayKeysFar(n);
         for (i = n >> 1; i > 0; i--) {
             sift_down(i - 1, n);
         }
@@ -116,12 +124,11 @@ void browser_sort_all(void) {
         apply_perm(n);
     }
 
-    /* Leave the record window in a known state: page $03, records 0..31
-     * mapped. The redraw farcalls re-select it anyway; this also lets a
-     * debugger breakpoint right after the hook read sorted records at
-     * $A000 + 255*k directly. */
-    fpga_sram_page();
-    RAM_BANK = REC_BANK_BASE;
+    /* Mark the starred records, then leave the record window in a known
+     * state: page $03, records 0..31 mapped. The redraw farcalls re-select
+     * it anyway; this also lets a debugger breakpoint right after the hook
+     * read sorted records at $A000 + 255*k directly. */
+    PlayMark();
 }
 
 /* SetFpgaPageAlt_B4 (04:41e7) inlined: unlock, $7FC0 = page 3 (cart SRAM /

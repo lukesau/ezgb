@@ -8,7 +8,8 @@
  *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
  *   row 6   SHOW NAME TAGS:  [x]   cursor row 9 (docs/browser-tags.md)
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
- *   row 16  [< PREV]  2/2        cursor row 10
+ *   row 10  SORT BY PLAYS:   [ ]   cursor row 10 (docs/stars.md)
+ *   row 16  [< PREV]  2/2        cursor row 11
  *
  * and page 1 ends in SGB BOOT on row 14 (cursor row 5) and `1/2 [NEXT >]`
  * on row 16 (cursor row 6). `cur` is the cursor row.
@@ -16,7 +17,8 @@
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
- *   op 3  A on TAGS: toggle TAGS_HIDE, save EZGB.CFG, redraw it highlighted
+ *   op 3  A on TAGS (cur 9): toggle TAGS_HIDE, save EZGB.CFG, redraw it
+ *         highlighted; on SORT BY PLAYS (cur 10): toggle its pSRAM record
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
  *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
  *   op 5  SGB BOOT's label
@@ -27,9 +29,8 @@
  *   SGB BOOT:          [ ]     the box at x 130, as AUTO SAVE's
  *   SGB:              AUTO     when our stage1 handles the SGB
  *
- * SGB BOOT is a pSRAM record (docs/sgb-boot.md), mapped the way the kernel
- * maps page $11 for its AUTO SAVE flag (04:58d6): page latch, $7FC0 = $03,
- * access, then both back to 0, where the SET screen rests.
+ * SGB BOOT and SORT BY PLAYS are pSRAM records (docs/sgb-boot.md,
+ * docs/stars.md), read and toggled by RecFlag (rec_flag.c).
  *
  * Buttons and checkboxes are drawn as flcfg.c draws them: the box 5 px left
  * and 4 px right of the 8px text, 3 px above and 5 below; 12px, the text row
@@ -46,22 +47,23 @@ extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: 
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c */
 extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
+extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, rec_flag.c: a pSRAM checkbox */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
+#define SORT_REC ((volatile u8 *)0xA404)   /* page $11: 'S', 'O', flag, ~flag */
 
 #define ROW_SGB   5
 #define ROW_NEXT  6
 #define ROW_THEME 7
 #define ROW_UI    8
 #define ROW_TAGS  9
-#define ROW_PREV  10
+#define ROW_SORT  10
+#define ROW_PREV  11
 
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void page_row(u8 hi);
-static u8 sgb_get(void);
-static void sgb_set(u8 on);
 
 void SetPage(u8 op, u8 cur) {
     StoreDrawParams(3, 0, 0);
@@ -71,7 +73,9 @@ void SetPage(u8 op, u8 cur) {
         static const u8 tags_label[16] = {'S','H','O','W',' ','N','A','M','E',' ','T','A','G','S',':',0};
         SetText(theme_label, 6, 0, 2);
         SetText(font_label, 5, 0, 4);
+        static const u8 sort_label[15] = {'S','O','R','T',' ','B','Y',' ','P','L','A','Y','S',':',0};
         SetText(tags_label, 15, 0, 6);
+        SetText(sort_label, 14, 0, 10);
         TagExample();                       /* row 8, scrolling */
     } else if (op == 1) {
         static const u8 ui8_str[5] = {' ','8','p','x',0};
@@ -80,9 +84,12 @@ void SetPage(u8 op, u8 cur) {
         button(cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
         SetText(hUiMode ? ui12_str : ui8_str, 4, 15, 4);
         box(0x82, 0x30, !TAGS_HIDE, cur == ROW_TAGS);
+        box(0x82, 0x50, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
         page_row(cur == ROW_NEXT);
+    } else if (op == 3 && cur == ROW_SORT) {
+        box(0x82, 0x50, RecFlag(SORT_REC, 'O', 1), 1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         EZ_OP = OP_SAVE;
@@ -103,7 +110,7 @@ void SetPage(u8 op, u8 cur) {
     } else {
         if (op == 7) {
             if (S1_SGB) return;         /* AUTO: stage1 does it, nothing to set */
-            sgb_set(!sgb_get());
+            RecFlag(SGB_REC, 'G', 1);
             cur = ROW_SGB;
         }
         if (S1_SGB) {
@@ -113,7 +120,7 @@ void SetPage(u8 op, u8 cur) {
             if (cur == ROW_SGB) StoreDrawParams(0, 3, 0);
             SetText(auto_str, 4, 13, 14);
         } else {
-            box(0x82, 0x70, sgb_get(), cur == ROW_SGB);
+            box(0x82, 0x70, RecFlag(SGB_REC, 'G', 0), cur == ROW_SGB);
         }
     }
     StoreDrawParams(3, 0, 0);
@@ -157,25 +164,4 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
         y1 += 3;
     }
     DrawRect(x0, y0, x1, y1, 1);
-}
-
-static u8 sgb_get(void) {
-    u8 on;
-    RAM_PAGE = 0x11;
-    SetFpgaPage_B4(3);
-    on = SGB_REC[0] == 'S' && SGB_REC[1] == 'G' && SGB_REC[2] == 1 && SGB_REC[3] == 0xFE;
-    RAM_PAGE = 0;
-    SetFpgaPage_B4(0);
-    return on;
-}
-
-static void sgb_set(u8 on) {
-    RAM_PAGE = 0x11;
-    SetFpgaPage_B4(3);
-    SGB_REC[0] = 'S';
-    SGB_REC[1] = 'G';
-    SGB_REC[2] = on;
-    SGB_REC[3] = ~on;
-    RAM_PAGE = 0;
-    SetFpgaPage_B4(0);
 }
