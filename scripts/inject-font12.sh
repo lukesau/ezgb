@@ -11,9 +11,10 @@
 # the previous lines are dropped first (same pattern as
 # scripts/inject-ezcfg.sh). The bitmaps are a fixed 2424 bytes; the metrics
 # table shrinks or grows with the kerning classes (about 17 bytes per right
-# class), so the bytes between its end and the next block (Fit12 at
-# 02:7100) are blanked to $00 before it is written, leaving nothing stale
-# behind it, and a table that would reach 02:7100 is refused here:
+# class), so the bytes between its end and the next kernel.sym label after
+# 02:6978 (FillRect at 02:6f40 since the theme work; Fit12 at 02:7100 before
+# it) are blanked to $FF before it is written, leaving nothing stale behind
+# it, and a table that would reach that label is refused here:
 # inject_bytes.py does not notice a block running into the next label.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -21,7 +22,7 @@ V="${1:-1.05e-0731}"
 shift || true
 SYM="$ROOT/re/kernel/$V/kernel.sym"
 ROM="$ROOT/re/kernel/$V/kernel.gb"
-METRICS_END=0x7100
+METRICS_END="$(python3 -c 'import sys; print(hex(min(a for a in (int(l[3:7], 16) for l in open(sys.argv[1]) if l.startswith("02:")) if a > 0x6978)))' "$SYM")"
 
 python3 "$ROOT/scripts/font12-pack.py" "$@" | head -2
 perl -ni -e 'print unless /^02:(6000|6978) /' "$SYM"
@@ -30,7 +31,7 @@ import sys
 p, metrics, end = sys.argv[1], sys.argv[2], int(sys.argv[3], 16)
 n = len(open(metrics, "rb").read())
 if 0x6978 + n > end:
-    sys.exit(f"error: Font12Metrics is {n} bytes, 02:6978 + {n} = ${0x6978 + n:04x} reaches Fit12 at ${end:04x}")
+    sys.exit(f"error: Font12Metrics is {n} bytes, 02:6978 + {n} = ${0x6978 + n:04x} reaches the next block at ${end:04x}")
 d = bytearray(open(p, "rb").read())
 lo, hi = 2 * 0x4000 + (0x6978 - 0x4000), 2 * 0x4000 + (end - 0x4000)
 d[lo:hi] = b"\xff" * (hi - lo)
