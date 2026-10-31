@@ -34,8 +34,9 @@
 /* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
  * boot ROM, never the jump to $0100 (scripts/skipboot/skip_boot.asm). */
 #define BOOT_RESET (*(volatile u8 *)0xDBEB)
-/* Browser names without their tags (docs/browser-tags.md): TAGS=0 in
- * EZGB.CFG, the SET tab's TAGS checkbox off. tagtrim.c, browser_icons.c. */
+/* Browser names without their tags (docs/browser-tags.md): the SET tab's
+ * CLEAN UP NAMES, on unless EZGB.CFG says TAGS=1 (the default since
+ * 2026-10-31; TAGS=0 still reads as on). tagtrim.c, browser_icons.c. */
 #define TAGS_HIDE (*(volatile u8 *)0xDBF6)
 /* Set by TagLen when it cut the name it measured, for TagCat (tagtrim.c).
  * Past FL_PATH's end ($DAFA); $DBF0-$DBF5 are FillRect's scratch. */

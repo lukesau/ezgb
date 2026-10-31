@@ -4,11 +4,13 @@ A ROM set names its files after a convention: No-Intro writes
 `Tetris (World) (Rev 1).gb`, GoodTools `Tetris (W) (V1.1) [!].gb`. The tags
 say which dump this is, which the browser's 19 columns (or the 12px row)
 would rather spend on the title. With the `CLEAN UP NAMES:` box on the
-SET tab ticked (`TAGS=0` in `EZGB.CFG`, [ezgb-cfg.md](ezgb-cfg.md)) the browser
-shows `Tetris` for either, and for a plain `Tetris.gb`: the cut takes the
-extension too. The default is the full name, as before. Until 2026-10-31 the
-box was `SHOW NAME TAGS:`, ticked for the full name; the setting and
-`TAGS=0` are the same, only the label and the tick's sense changed.
+SET tab ticked, the default, the browser shows `Tetris` for either, and for a
+plain `Tetris.gb`: the cut takes the extension too. Unticked, it shows full
+names, saved as `TAGS=1` in `EZGB.CFG` ([ezgb-cfg.md](ezgb-cfg.md)).
+
+Until 2026-10-31 the default was the full name, the cut was `TAGS=0` (still
+read the same way), and the box was `SHOW NAME TAGS:`, ticked for the full
+name.
 
 ## The rule
 

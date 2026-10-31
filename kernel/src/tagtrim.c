@@ -1,7 +1,8 @@
 /* Clean ROM names in the browser (docs/browser-tags.md).
  *
- * ROM sets name their files "Title (Region) (Rev 1) [!].gb"; with TAGS=0
- * in EZGB.CFG (the SET tab's TAGS checkbox off) the browser shows "Title":
+ * ROM sets name their files "Title (Region) (Rev 1) [!].gb"; with the SET
+ * tab's CLEAN UP NAMES ticked (the default since 2026-10-31; TAGS=1 in
+ * EZGB.CFG unticks it) the browser shows "Title":
  * a file's name is cut at the first " (" or " [", else at its last '.',
  * the extension. Folders are left alone, and so is everything else that
  * shows a name (the hold-A menu, the START overlay, the save manager): the

@@ -635,7 +635,7 @@ static void cfg_load(void) {
     RTC_OFF = 0;
     AS_SD = 0xFF;
     THEME = 0;
-    TAGS_HIDE = 0;
+    TAGS_HIDE = 1;                       /* CLEAN UP NAMES is on unless TAGS= says otherwise */
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -899,8 +899,8 @@ static u8 cfg_save(void) {
         w = crlf(w);
     }
     w = FarCallColors(1, w, 0);          /* THEME= and COLORS= (theme_colors.c) */
-    if (TAGS_HIDE) {
-        static const u8 k_tg[6] = {'T','A','G','S','=','0'};
+    if (!TAGS_HIDE) {                    /* full names: the default is cut */
+        static const u8 k_tg[6] = {'T','A','G','S','=','1'};
         w = crlf(put(w, k_tg, 6));
     }
 #ifdef EZCFG_RTCLOG
