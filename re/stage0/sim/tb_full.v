@@ -61,6 +61,9 @@ module tb;
 `endif
 `elsif P61_LOW
     assign P61 = 1'b0;
+`elsif P61_GLITCH
+    reg p61_n = 1;                       // /RESET high; gb_glitch.vh pulses it
+    assign P61 = p61_n;
 `else
     pullup (P61);
 `endif
