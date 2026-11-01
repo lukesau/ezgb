@@ -91,7 +91,10 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     // +SD_BAD_READS=n   the next n read blocks go out with a wrong CRC16
     // +SD_BAD_WRITES=n  the next n written blocks get the CRC-error token
     // +SD_DROP_CMD=i +SD_DROP_N=n  the next n CMDi get no response
-    integer bad_reads = 0, bad_writes = 0, drop_cmd = -1, drop_n = 0;
+    // A slow card, also off by default:
+    // +SD_BUSY_N=n      the first n ACMD41s answer busy (OCR bit 31 clear)
+    // +SD_NCR=n         n clocks before each response (N_CR, 2 to 64 in spec)
+    integer bad_reads = 0, bad_writes = 0, drop_cmd = -1, drop_n = 0, busy_n = 0, ncr = 2, n41 = 0;
     initial begin
         if ($value$plusargs("SD_BAD_READS=%d", bad_reads)) $display("sd: %0d bad read block(s) armed", bad_reads);
         if ($value$plusargs("SD_BAD_WRITES=%d", bad_writes)) $display("sd: %0d bad write block(s) armed", bad_writes);
@@ -100,6 +103,8 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
             if ($value$plusargs("SD_DROP_N=%d", drop_n)) ;
             $display("sd: dropping the next %0d CMD%0d response(s)", drop_n, drop_cmd);
         end
+        if ($value$plusargs("SD_BUSY_N=%d", busy_n)) $display("sd: ACMD41 busy for the first %0d tries", busy_n);
+        if ($value$plusargs("SD_NCR=%d", ncr)) $display("sd: %0d clocks before each response", ncr);
     end
 
     function [6:0] crc7(input [39:0] d);
@@ -140,7 +145,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
     task send_bits(input integer n, input [135:0] v);
         integer i;
         begin
-            repeat (2) @(negedge CLK);         // N_CR
+            repeat (ncr) @(negedge CLK);       // N_CR
             cmd_oe = 1;
             for (i = n - 1; i >= 0; i = i - 1) begin cmd_o = v[i]; @(negedge CLK); end
             cmd_oe = 0; cmd_o = 1;
@@ -178,7 +183,11 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         else if (app) begin
             app = 0;
             case (idx)
-                41: r3(32'hC0FF8000);                      // powered up, SDHC
+                41: begin                                  // powered up, SDHC
+                    n41 = n41 + 1;
+                    if (n41 <= busy_n) r3(32'h40FF8000);   // still busy
+                    else begin if (busy_n) $display("%t sd: ready after %0d ACMD41s", $time, n41); r3(32'hC0FF8000); end
+                end
                 6:  begin wide = arg[1]; r48(6, ST_TRAN); end
                 default: r48(idx, ST_TRAN);
             endcase
