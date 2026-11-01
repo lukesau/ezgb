@@ -229,6 +229,60 @@ for the right block with exactly the bytes written (pattern `i*7+3`: first
 `03 0a 11 18`, last `fc`, sum `$FF00`), then `CMD12`; FW5 issues the
 command about 1 µs sooner. This is the path the kernel's save backup uses.
 
+## Console /RESET, FW4 to FW5-0918 (simulated)
+
+P61 reads the console's /RESET at the cart edge. FW4 registers it on every
+CLK2X edge, and a falling edge (two samples) resets about 46 Game
+Boy-side flip-flops: the unlock sequence, kernel mode, the window and
+MBC1 bits, the `$7FB4` command flag and the soft-reset counter. FW5-0918
+debounces it: P61's input register is enabled only by the all-ones carry
+of a 20-bit counter that restarts whenever P61 changes, so a level must
+hold for 2^20 CLK0 cycles (about 43 ms on the cart's crystal) to be taken.
+Its edge then restarts the PicoBlaze (license check and full card init,
+which waits for /RESET to rise) and resets the SD controller and more
+Game Boy registers: 16 LUTs use the edge, 4 as asynchronous resets and 12
+as synchronous ones.
+
+`gb_glitch.vh` pulses P61 during stage1's `sd_read`:
+
+| Pulse | FW4 | FW5-0918 |
+|---|---|---|
+| 10 µs, during the read | window registers reset, the poll reads `$FF` and the sector comes back wrong; the next read is right | ignored |
+| 10 µs to 30 ms | | ignored |
+| 50 ms | | PicoBlaze restarts at the debounce, card re-init 16 ms after /RESET rises; a read issued meanwhile waits and comes back right |
+
+So a short glitch hurts FW4, not FW5, and the low that FW5 does take also
+holds the console's CPU in reset. The counter's one-cycle window opens and
+closes on CLK0 edges, so a zero-delay simulation never sees P61 at all;
+`+define+P61_TICK_CAPTURE` takes P61 at the window's closing edge as the
+hardware does.
+
+## The SD controller, FW4 to FW5-0918 (proved)
+
+`scripts/fpga/fw5-prove-sd.sh` carries every SD block file to FW5 through
+`belmatch.py` and `blkmap.py` and proves it with `equiv.sh`, against a copy
+of FW5's design without the /RESET edge (`fw5-noedge.py`; every edit exact
+and checked). The DCM change does not reach the SD side: the PicoBlaze,
+the SD clock divider and the SD pads run on CLK2X in both, and FW5's
+faster CLKFX (x10/3 against x3) clocks only the pSRAM controller and the
+ROM-load byte sequencer.
+
+| Block | Against FW5-0918 |
+|---|---|
+| clock divider, command master, command serializer, register file (`sd_controller_wb`), data master, FIFO filler, FIFOs | equivalent to FW4's module |
+| crossings | equivalent to [stage0/fw5-0918/sd_crossings.v](../../../stage0/fw5-0918/sd_crossings.v): the 43 bits FW4 carries into the SD domain in one stage (command index, checks and with-data bits, command timeout, block size, bus width, byte alignment, soft reset) cross in two, as the source and FW4's argument, block count and data timeout do |
+| data serializer | equivalent to [stage0/fw5-0918/sd_data_serial.v](../../../stage0/fw5-0918/sd_data_serial.v): the 4-bit data cycle count is the source's `(blksize << 1) + 2`, not FW4's `blksize \| 4`; the same for the 8n - 1 sizes the firmware uses |
+| memory path | not carried: its inputs come from FW5's rebuilt Game Boy bus and pSRAM blocks |
+
+The extra stage still leaves the command one SD clock ahead of the
+three-stage start pulse that triggers it. The PicoBlaze's card init is
+unchanged too (it is not in the bank 1 table above), and a slow card
+initializes the same way on both in simulation: with ACMD41 answered busy
+(`models.v +SD_BUSY_N`) both give up after the 255th try and carry on as a
+standard-capacity card, and 64-clock response delays (`+SD_NCR`) work on
+both. With stage1 changed only at `$7FD3`, none of this explains a card
+that fails to initialize on FW5 and not on FW4.
+
 ## The MBC3 clock (simulated)
 
 `models.v` now has a PCF8563 on I2C (time registers in BCD, a tick shortened
