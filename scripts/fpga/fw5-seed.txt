@@ -1,0 +1,18 @@
+# FW4 -> FW5-0918 pairs that nothing in belmatch.py tells apart, for
+# fw5-prove-sd.sh (belmatch.py --seed); the proofs check each one.
+#
+# the three pulse crossings' last two SD-domain stages (sync[2], sync[1]),
+# found through the matched cmd_master/data_master LUTs that XOR them
+X2Y24_S0.FFX X17Y32_S2.FFY
+X8Y24_S0.FFX X23Y32_S1.FFX
+X9Y20_S0.FFX X23Y29_S3.FFY
+X9Y19_S1.FFX X23Y29_S3.FFX
+X12Y15_S1.FFY X12Y26_S0.FFY
+X12Y15_S1.FFX X14Y27_S2.FFY
+# cmd_int_enable_m[0]: the FW5 register on wb_dat_i[0] whose enable is the
+# same function of the address and strobe registers
+X18Y19_S0.FFX X16Y24_S0.FFY
+# wb_dat_o[7] and [8]: the read-back mux's two flip-flops, told apart by
+# the register bits each one reads
+X18Y21_S0.FFX X18Y18_S0.FFX
+X17Y26_S3.FFX X18Y17_S2.FFX
