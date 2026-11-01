@@ -31,7 +31,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
 blk=${1:?block name}
 exp=${2:-$top/fpga/fw4}
-blkfile=$top/stage0/blocks/$blk.blk
+blkfile=${BLK:-$top/stage0/blocks/$blk.blk}   # BLK=file.blk checks against another block file (blkmap.py)
 rtl=${RTL:-$top/stage0/rtl/$blk.v}   # RTL=file.v checks another module of the same name
 [ -f "$blkfile" ] || { echo "no $blkfile" >&2; exit 1; }
 [ -f "$rtl" ] || { echo "no $rtl" >&2; exit 1; }
@@ -53,6 +53,22 @@ grep -q 'select -set keep' "${ref%.v}.ys" && hide='rename -hide w:*.* @keep %d'
 # (equiv_simple, equiv_induct) must prove everything on their own.
 formal=''
 grep -q 'ifdef FORMAL' "$rtl" && formal='-formal'
+# TIE="port=0 port=1" ties inputs of the readable module to constants, for a
+# build that wires constants where the module's build has a constant LUT
+ties=''
+for t in ${TIE:-}; do
+    ties="$ties
+delete -port w:${t%%=*}
+connect -set ${t%%=*} 1'b${t#*=}"
+done
+# DROP="port ..." drops outputs of the readable module that the other build
+# does not have (constant-0 LUTs one build shares between blocks)
+for t in ${DROP:-}; do
+    ties="$ties
+delete -port w:$t"
+done
+[ -n "$ties" ] && ties="cd $blk$ties
+cd .."
 prelude="
 read_verilog -sv $top/stage0/lib/s3bels.v
 read_verilog -sv $ref
@@ -70,6 +86,7 @@ read_verilog -sv $top/stage0/lib/s3bels.v
 read_verilog -sv $formal $rtl
 prep -flatten -top $blk
 async2sync
+$ties
 opt_clean
 cd $blk
 script ${ref%.v}_gate.ys
