@@ -293,15 +293,17 @@ Game Boy side carry at all:
 - A pass can pair the wrong one of two alike registers (FW4's `port_id[1]`
   went to FW5's `port_id[3]`), so `belmatch.py` now drops any flip-flop
   pair whose D drivers are matched to other bels and reruns; 16 such pairs
-  went on the first run.
+  went on the first run. It also drops a pair whose D drivers differ in
+  kind while one is matched elsewhere: FW4's `out_port[5]` and
+  `out_port[6]` had gone to FW5 registers those bits feed.
 
 | Block | Against FW5-0918 (2026-11-02) |
 |---|---|
 | the nine SD blocks above | as above |
 | soft reset | equivalent to [stage0/fw5-0918/soft_reset.v](../../../stage0/fw5-0918/soft_reset.v): FW4's module on CLK0 instead of CLK2X (synchronizer and counter both), so the console reset is held for 65536 CLK0 cycles, twice FW4's time; its carry-in is the shared constant-0 LUT |
-| PicoBlaze | carried (423 of 425 bels, every name) but not proved: FW5 reads three outside flip-flops and exports five inner nets (`sx[6]` among them), a different packing of the port registers |
+| PicoBlaze | equivalent to FW4's module, unchanged. The packing difference the first run showed was two wrong `out_port` pairs, not FW5 |
 | pSRAM controller | carried (150 of 185, all 38 flip-flops), not proved |
-| unlock, Game Boy registers, Game Boy bus, data out, peripherals, RTC bridge, ports, clocks, P51 latch | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
+| unlock, Game Boy registers, Game Boy bus, data out, peripherals, RTC bridge, PicoBlaze ports (238 of 393), clocks, P51 latch | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
 
 The design proved against still lacks FW5's /RESET edge, which also resets
 FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so

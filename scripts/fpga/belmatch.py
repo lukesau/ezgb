@@ -135,7 +135,9 @@ class Matcher:
     def conflicts(self):
         """flip-flop pairs whose D drivers are both matched, but not to each
         other: a pass paired the wrong one of two alike registers (bit slices
-        of one bus). The pair is dropped and never made again; seeds stay."""
+        of one bus). Also pairs whose D drivers differ in kind with one side
+        matched elsewhere: a register paired with one it feeds. The pair is
+        dropped and never made again; seeds stay."""
         bad = []
         for a, b in self.ab.items():
             ca, cb = self.A.d.cells[a], self.B.d.cells[b]
@@ -145,8 +147,13 @@ class Matcher:
             if not sa_ or not sb_:
                 continue
             pa, pb = self.A.d.producer.get(sa_[0]), self.B.d.producer.get(sb_[0])
-            if pa in self.ab and pb in self.ba and self.ab[pa] != pb:
+            if pa is None or pb is None or self.ab.get(pa) == pb:
+                continue
+            if pa in self.ab and pb in self.ba:
                 bad.append(a)
+            elif (pa in self.ab or pb in self.ba) and \
+                    self.A.d.cells[pa].kind != self.B.d.cells[pb].kind:
+                bad.append(a)       # a register paired with one it feeds
         for a in bad:
             self.unpair(a)
         return len(bad)
