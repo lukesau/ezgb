@@ -259,7 +259,7 @@ hardware does.
 
 ## The SD controller, FW4 to FW5-0918 (proved)
 
-`scripts/fpga/fw5-prove-sd.sh` carries every SD block file to FW5 through
+`scripts/fpga/fw5-prove.sh` carries every SD block file to FW5 through
 `belmatch.py` and `blkmap.py` and proves it with `equiv.sh`, against a copy
 of FW5's design without the /RESET edge (`fw5-noedge.py`; every edit exact
 and checked). The DCM change does not reach the SD side: the PicoBlaze,
@@ -272,7 +272,41 @@ ROM-load byte sequencer.
 | clock divider, command master, command serializer, register file (`sd_controller_wb`), data master, FIFO filler, FIFOs | equivalent to FW4's module |
 | crossings | equivalent to [stage0/fw5-0918/sd_crossings.v](../../../stage0/fw5-0918/sd_crossings.v): the 43 bits FW4 carries into the SD domain in one stage (command index, checks and with-data bits, command timeout, block size, bus width, byte alignment, soft reset) cross in two, as the source and FW4's argument, block count and data timeout do |
 | data serializer | equivalent to [stage0/fw5-0918/sd_data_serial.v](../../../stage0/fw5-0918/sd_data_serial.v): the 4-bit data cycle count is the source's `(blksize << 1) + 2`, not FW4's `blksize \| 4`; the same for the 8n - 1 sizes the firmware uses |
-| memory path | not carried: its inputs come from FW5's rebuilt Game Boy bus and pSRAM blocks |
+| memory path | carried (116 of 131 bels) but not proved: its address inputs come from FW5's rebuilt Game Boy bus and pSRAM blocks |
+
+## The rest of the design, FW4 to FW5-0918 (in progress)
+
+The same script now carries all twenty-two of FW4's block files
+(`scripts/fpga/fw5-prove.sh` with no arguments). Three things made the
+Game Boy side carry at all:
+
+- FW4 clocks its `$7Fxx` registers from `/WR | A15` and FW5 from `/WR`
+  with A15 in every enable, so no decode LUT pairs. `regseed.py` pairs the
+  registers instead, by address and data pin from the two register maps
+  (76 of them).
+- `belmatch.py --shape` pairs bels by the shape of the logic around them
+  (a few rounds out, flip-flop and block RAM clocks left out), for logic
+  no matched bel reaches or that moved to another clock. Block RAMs pair
+  by how many bus bits agree; the PicoBlaze program banks and stage1's bit
+  planes, alike in every port, are hand seeds in `fw5-seed.txt` by their
+  contents (FW4's bank 0 is FW5's word for word).
+- A pass can pair the wrong one of two alike registers (FW4's `port_id[1]`
+  went to FW5's `port_id[3]`), so `belmatch.py` now drops any flip-flop
+  pair whose D drivers are matched to other bels and reruns; 16 such pairs
+  went on the first run.
+
+| Block | Against FW5-0918 (2026-11-02) |
+|---|---|
+| the nine SD blocks above | as above |
+| soft reset | equivalent to [stage0/fw5-0918/soft_reset.v](../../../stage0/fw5-0918/soft_reset.v): FW4's module on CLK0 instead of CLK2X (synchronizer and counter both), so the console reset is held for 65536 CLK0 cycles, twice FW4's time; its carry-in is the shared constant-0 LUT |
+| PicoBlaze | carried (423 of 425 bels, every name) but not proved: FW5 reads three outside flip-flops and exports five inner nets (`sx[6]` among them), a different packing of the port registers |
+| pSRAM controller | carried (150 of 185, all 38 flip-flops), not proved |
+| unlock, Game Boy registers, Game Boy bus, data out, peripherals, RTC bridge, ports, clocks, P51 latch | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
+
+The design proved against still lacks FW5's /RESET edge, which also resets
+FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so
+modules with a reset port will prove with it tied off until the edge has
+a block of its own.
 
 The extra stage still leaves the command one SD clock ahead of the
 three-stage start pulse that triggers it. The PicoBlaze's card init is

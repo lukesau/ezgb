@@ -1,0 +1,3 @@
+# FW5 names the carry cannot find (fw5-prove.sh appends them to the carried block)
+n_X13Y0c_BUFGMUX3_O        clk_0
+n_X24Y18_S3_X               gnd
