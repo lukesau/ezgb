@@ -151,8 +151,10 @@ def main():
             continue
         m = re.fullmatch(r'(X\d+Y\d+_S\d_[FG])\.m', net)
         if m:                       # LUT RAM contents
-            if m.group(1) in ab:
-                out_names[ab[m.group(1)] + '.m'] = new
+            cell = m.group(1)[:-2] + '.' + m.group(1)[-1]
+            if cell in ab:
+                b = ab[cell]
+                out_names[b[:-2] + '_' + b[-1] + '.m'] = new
             else:
                 lost.append(net)
             continue
