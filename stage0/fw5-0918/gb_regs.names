@@ -25,3 +25,39 @@ n_X8Y18_S0_Y               a1_n2
 n_X9Y23_S2_X               a210_4
 n_X8Y22_S0_Y               a210_6
 n_X1Y27_S3_X               n_lo0_c
+# the RTC values to set that pair with nothing (FW4's carry the /RESET
+# level, so the simulation can't tell), named by data pin, and the $7FD0 go
+n_X1Y28_S3_XQ              rtc_set_go out
+n_X1Y23_S3_YQ              rtc_set_sec[0] out
+n_X2Y23_S3_XQ              rtc_set_sec[1] out
+n_X2Y23_S3_YQ              rtc_set_sec[2] out
+n_X1Y21_S2_YQ              rtc_set_sec[3] out
+n_X2Y26_S3_YQ              rtc_set_sec[4] out
+n_X2Y19_S1_XQ              rtc_set_sec[5] out
+n_X2Y20_S0_YQ              rtc_set_sec[6] out
+n_X2Y19_S1_YQ              rtc_set_sec[7] out
+n_X1Y20_S3_YQ              rtc_set_min[0] out
+n_X2Y23_S1_YQ              rtc_set_min[1] out
+n_X1Y21_S3_XQ              rtc_set_min[2] out
+n_X1Y21_S3_YQ              rtc_set_min[3] out
+n_X2Y25_S0_YQ              rtc_set_min[4] out
+n_X7Y20_S3_XQ              rtc_set_min[5] out
+n_X7Y20_S3_YQ              rtc_set_min[6] out
+n_X2Y20_S2_YQ              rtc_set_min[7] out
+n_X2Y21_S2_XQ              rtc_set_wday[0] out
+n_X1Y25_S0_YQ              rtc_set_wday[1] out
+n_X1Y23_S0_XQ              rtc_set_wday[2] out
+n_X1Y21_S1_YQ              rtc_set_wday[3] out
+n_X2Y24_S3_YQ              rtc_set_wday[4] out
+n_X1Y23_S0_YQ              rtc_set_wday[5] out
+n_X2Y21_S2_YQ              rtc_set_wday[6] out
+n_X2Y18_S0_YQ              rtc_set_wday[7] out
+n_X2Y23_S2_XQ              rtc_set_month[0] out
+n_X2Y24_S1_YQ              rtc_set_month[1] out
+n_X1Y23_S2_YQ              rtc_set_month[2] out
+n_X1Y23_S1_YQ              rtc_set_month[3] out
+n_X2Y25_S3_YQ              rtc_set_month[4] out
+n_X2Y23_S2_YQ              rtc_set_month[5] out
+n_X2Y20_S3_YQ              rtc_set_month[6] out
+n_X2Y19_S3_YQ              rtc_set_month[7] out
+n_X7Y21_S2_Y               a0_n1 in

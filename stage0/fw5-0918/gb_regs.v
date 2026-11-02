@@ -10,9 +10,6 @@
 //     the design this is proved against
 //   - the $7Fxx key is the unlock block's last register alone (FW5's
 //     unlock has one register per key), with A15 low
-//   - the RTC values to set are only hours, day and year ($A00A, $A00B,
-//     $A00E): no FW5 register is written as FW4's seconds, minutes,
-//     weekday, month and $7FD0 go flag are
 //   - the RAM bank: MBC3 takes banks $00-$07 (three bits; FW4 $00-$03),
 //     and MBC1's mode-1 bank takes four masked bits as MBC5's does (FW4
 //     two)
@@ -40,6 +37,7 @@ module gb_regs (
     input reg_dec,                  // the register window (gb_data_out)
     // shared decodes, from the blocks that make them
     input adr_014d_lo3, win_a000,
+    input a0_n1,                    // a0 & !a1 (unlock)
     input game_mbc1m, is_mbc5, n_mbc1, n_4000, type_grp, type_lo,
     input gnd1,                     // the shared constant-0 LUT
     // $7Fxx
@@ -55,6 +53,7 @@ module gb_regs (
     output reg cmd_b4_flag,
     output reg load_win, load_start,
     output reg flash_op,
+    output reg rtc_set_go,
     output reg reset_req,
     // the banks
     output reg [7:0] rom_bank,
@@ -67,7 +66,7 @@ module gb_regs (
     output reg [1:0] mbc1m_hi,
     output reg mbc1m_mode, mbc1m_sel,
     // the RTC values to set
-    output reg [7:0] rtc_set_hour, rtc_set_day, rtc_set_year,
+    output reg [7:0] rtc_set_sec, rtc_set_min, rtc_set_hour, rtc_set_day, rtc_set_wday, rtc_set_month, rtc_set_year,
     // decodes shared outside
     output key_ok,                  // !a15 & unlocked
     output dec_7fcx,                // $7FC0-C7 and $7FD0-D7, unlocked
@@ -122,10 +121,11 @@ module gb_regs (
         rom_mask = 8'd0; rom_mask8 = 1'b0; ram_mask = 4'd0; hdr_chk = 7'd0;
         cmd_lba0_i = 8'd0; cmd_lba1_i = 8'd0; cmd_lba2_i = 8'd0; cmd_lba3_i = 8'd0;
         cmd_read = 1'b0; cmd_write = 1'b0; cmd_b4_flag = 1'b0;
-        load_win = 1'b0; load_start = 1'b0; flash_op = 1'b0; reset_req = 1'b0;
+        load_win = 1'b0; load_start = 1'b0; flash_op = 1'b0; rtc_set_go = 1'b0; reset_req = 1'b0;
         rom_bank = 8'd0; rom_bank8 = 1'b0; bank_4000 = 8'd0; mbc_bank = 9'd0; rtc_sel = 8'd0;
         mbc1_mode = 1'b0; mbc1_hi = 2'd0; mbc1m_ram = 4'd0; mbc1m_hi = 2'd0; mbc1m_mode = 1'b0; mbc1m_sel = 1'b0;
-        rtc_set_hour = 8'd0; rtc_set_day = 8'd0; rtc_set_year = 8'd0;
+        rtc_set_sec = 8'd0; rtc_set_min = 8'd0; rtc_set_hour = 8'd0; rtc_set_day = 8'd0;
+        rtc_set_wday = 8'd0; rtc_set_month = 8'd0; rtc_set_year = 8'd0;
     end
     reg [7:0] rom_mask;
     reg rom_mask8;
@@ -148,6 +148,8 @@ module gb_regs (
         // the flags the lock write clears
         if (key_ok & a[7:0] == 8'hb4) {cmd_write, cmd_read} <= {d7, !d7};
         else if (lock) {cmd_write, cmd_read} <= 2'b00;
+        if (key_ok & a[7:0] == 8'hd0) rtc_set_go <= d0;
+        else if (lock) rtc_set_go <= 1'b0;
         if (key_ok & a[7:0] == 8'he0) reset_req <= d7;
         else if (lock) reset_req <= 1'b0;
     end
@@ -226,14 +228,18 @@ module gb_regs (
             else if (r6000) mbc1m_hi <= mbc1_hi;
         end
 
-    // ---- the RTC values to set: the register window's offsets $A00A, $A00B, $A00E
+    // ---- the RTC values to set: the register window's offsets $A008-$A00E
     assign rtc_win = adr_014d_lo3 & !a6 & kernel_mode & reg_dec;
     assign rtc_set_wr = a15 & win_a000 & rtc_win;
     always @(posedge clk_wr_a)
         if (rtc_set_wr & !a4)
             case (a[2:0])
+                3'd0: rtc_set_sec <= d;
+                3'd1: rtc_set_min <= d;
                 3'd2: rtc_set_hour <= d;
                 3'd3: rtc_set_day <= d;
+                3'd4: rtc_set_wday <= d;
+                3'd5: rtc_set_month <= d;
                 3'd6: rtc_set_year <= d;
                 default: ;
             endcase
@@ -245,6 +251,7 @@ module gb_regs (
     always @* begin
         env_adr_014d_lo3:   assume (adr_014d_lo3 == (!a7 & a3 & !a5));
         env_win_a000:       assume (win_a000 == (a13 & !a14));
+        env_a0_n1:          assume (a0_n1 == (a0 & !a1));
         env_d_key_pattern:  assume (d_key_pattern == (d[7:3] == 5'b11100));
         env_n_4000:         assume (n_4000 == (!a14 | a15));
         env_n_mbc1:         assume (n_mbc1 == (mbc_type[3] | !mbc_type[0] | mbc_type[1]));
