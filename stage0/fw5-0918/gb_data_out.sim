@@ -1,0 +1,6 @@
+# simblk.py arguments for gb_data_out: FW5 packs the read mux differently,
+# with the neighbors' names bounding the cone
+--alias X17Y22_S2.FFY=X13Y19_S1.FFY,X15Y18_S1.FFY
+--context-a stage0/blocks/gb_regs.blk stage0/blocks/psram_ctrl.blk stage0/blocks/sd_mem_path.blk stage0/blocks/gb_bus.blk stage0/blocks/rtc_bridge.blk stage0/blocks/pb_periph.blk
+--context-b stage0/fw5-0918/gb_regs.names stage0/fw5-0918/psram_ctrl.names stage0/fw5-0918/sd_mem_path.names stage0/fw5-0918/unlock.names
+--hit a0=1,a1=0,a2=1,a3=1,a4=0,a5=0,a6=1,a7=0,a8=1,a9=0,a10=0,a11=0,a12=0,a13=0,a14=0

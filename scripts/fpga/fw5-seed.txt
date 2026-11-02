@@ -39,3 +39,7 @@ X17Y18_S1.FFY X11Y21_S2.FFY
 X18Y18_S2.FFY X8Y21_S3.FFY
 X17Y19_S0.FFY X9Y22_S0.FFX
 X17Y18_S3.FFY X9Y22_S0.FFY
+# two more of stage1's bit-plane RAMs, by the data bit they drive in
+# gb_data_out (the bus-bit overlap can't tell the planes apart)
+i_D0X19Y29_bram i_D0X3Y9_bram
+i_D0X3Y17_bram i_D0X3Y29_bram
