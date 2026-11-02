@@ -1,0 +1,11 @@
+# FW5 names simblk.py can't find: bit 0 of the MBC3 clock register number
+# (rtc_sel) that FW5 puts on A0, the shared constant-0 LUT, the
+# copy of game_mbc1m other blocks read, and terms FW5 shares that FW4 has
+# no net for
+n_X8Y19_S0_YQ              rtc_sel0
+n_X24Y18_S3_X              gnd1
+n_X7Y31_S3_X               game_mbc1m
+n_X10Y20_S1_X              adr_014d_lo3
+n_X23Y13_S3_X              n_rom_gb
+n_X9Y19_S3_X               u4_win
+n_X9Y22_S1_X               a13_pass

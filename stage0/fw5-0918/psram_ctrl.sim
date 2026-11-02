@@ -1,0 +1,5 @@
+# simblk.py arguments for psram_ctrl: FW5's two copies of port EF stand in
+# for FW4's CLK2X copy, and a quarter of the samples read $x14D (the header
+# checksum decode, too wide for random values)
+--alias X17Y22_S2.FFY=X13Y19_S1.FFY,X15Y18_S1.FFY
+--hit a0=1,a1=0,a2=1,a3=1,a4=0,a5=0,a6=1,a7=0,a8=1,a9=0,a10=0,a11=0,a12=0,a13=0,a14=0

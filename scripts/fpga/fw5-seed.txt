@@ -26,3 +26,16 @@ i_D0X3Y29_bram i_D0X3Y1_bram
 # agree, against 59% the other way round); gb_data_out's proof checks them
 i_D0X19Y25_bram i_D0X3Y25_bram
 i_D0X19Y5_bram i_D0X19Y29_bram
+# mbc_bank[8], the RAM enable: same data pins and MBC type inputs, but
+# FW5 enables it on !kernel_mode alone (FW4 adds the /RESET level)
+X15Y23_S2.FFX X9Y25_S1.FFX
+# rtc_sel, the MBC3 clock register number ($08-$0C written to $4000-$5FFF),
+# by data pin: FW5 also addresses U4 with it
+X23Y29_S3.FFY X8Y19_S0.FFY
+X17Y23_S1.FFY X1Y17_S2.FFY
+X23Y30_S1.FFY X8Y21_S3.FFX
+X17Y18_S0.FFY X11Y21_S2.FFX
+X17Y18_S1.FFY X11Y21_S2.FFY
+X18Y18_S2.FFY X8Y21_S3.FFY
+X17Y19_S0.FFY X9Y22_S0.FFX
+X17Y18_S3.FFY X9Y22_S0.FFY
