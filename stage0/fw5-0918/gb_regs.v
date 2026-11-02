@@ -22,7 +22,8 @@
 //
 // The MBC3 clock select ($08-$0C written to $4000-$5FFF) sets the RAM
 // bank register to all ones and loads rtc_sel, as on FW4; psram_ctrl
-// turns that into the U4 access that serves the clock.
+// turns that into an access to U4 page $08, while gb_data_out drives the
+// read from its latched clock registers.
 //
 // Block: built by scripts/fpga/simblk.py from stage0/blocks/gb_regs.blk
 // (stage0/fw5-0918/gb_regs.sim has its arguments), with the names in

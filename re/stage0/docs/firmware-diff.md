@@ -312,15 +312,21 @@ Game Boy side carry at all:
 | pSRAM controller | equivalent to [stage0/fw5-0918/psram_ctrl.v](../../../stage0/fw5-0918/psram_ctrl.v): one more way to reach U4, a `$A000-$BFFF` access with bank bit 7 set when the game bank is all ones with RAM enabled (an access FW4 keeps off both chips) or the kernel window mode is 6, 7 or 8 up. It is on page `$08`, with A0 carrying bit 0 of the MBC3 clock register number (`rtc_sel`). Port EF reaches it without FW4's CLK2X copy |
 | SD memory path | equivalent to [stage0/fw5-0918/sd_mem_path.v](../../../stage0/fw5-0918/sd_mem_path.v), which also builds the Game Boy side of the address pins (FW4's `mem_a_gb`, from three blocks). On that clock access A7-A0 hold `rtc_sel + $18`, so each clock register has its own location in U4, and A9/A13 set. The sector buffer is block RAM X19Y17 |
 | Game Boy registers | equivalent to [stage0/fw5-0918/gb_regs.v](../../../stage0/fw5-0918/gb_regs.v): one `/WR` clock with A15 in the `$7Fxx` key, no `/RESET`-level reset, the key from the unlock block's last register. MBC3 takes RAM banks `$00-$07` (FW4 `$00-$03`) and MBC1's mode-1 bank four masked bits (FW4 two). The clock values to set are only hours, day and year, and a data interrupt with the window off clears the `$7FB4` flag. The `$08-$0C` select loads the all-ones bank as on FW4 |
+| data out | equivalent to [stage0/fw5-0918/gb_data_out.v](../../../stage0/fw5-0918/gb_data_out.v): the game's MBC3 clock reads return five latched registers (S, M, H, DL, DH, loaded on the `$6000` latch: `$01` after `$00`), where FW4 converts the live PCF8563 BCD and serves DH as 1. The kernel window reads the RTC bridge's registers, which keep only the bits each BCD value uses. Other register-window reads return 0 (FW4 `$FF`), `$7FC0 = 4` reads `$05` (FW4 `$04`), and `$7FC3` bit 7 is a register. Two of stage1's bit-plane RAMs are now paired by the data bit they drive |
 | unlock | equivalent to [stage0/fw5-0918/unlock.v](../../../stage0/fw5-0918/unlock.v): four one-hot registers (idle, after `$E1`, after `$E2`, unlocked) where FW4 encodes the states in two. FW5 unlocks on the `$E3`, where FW4 unlocks on the `$E2` and the `$E3` only keeps it, and the writes that stay unlocked add `$7FD3` and `$7FD4` |
 | Game Boy bus, data out, peripherals, RTC bridge, PicoBlaze ports (238 of 393), clocks, P51 latch (a flip-flop in FW5) | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
 
-So FW5 serves the MBC3 clock registers from U4, not from FPGA registers
-as FW4 does. Selecting `$08-$0C` loads the all-ones bank and `rtc_sel`
-(proved in `gb_regs`, as on FW4), and a `$A000-$BFFF` access with RAM
-enabled then goes to U4 page `$08`, the register number on the address
-pins. Not checked yet: which bytes the PicoBlaze writes at those
-locations.
+> **Correction (2026-11-02):** an earlier version of this paragraph said FW5
+> serves the MBC3 clock registers from U4. `gb_data_out` (in the table above)
+> shows the read data comes from FPGA registers: the latched S, M, H, DL
+> and DH. What U4 page `$08` gets is the access itself, so a game's write
+> to a clock register lands there.
+
+Selecting `$08-$0C` loads the all-ones bank and `rtc_sel` (proved in
+`gb_regs`, as on FW4), and a `$A000-$BFFF` access with RAM enabled then
+selects U4 page `$08`, the register number on the address pins, while the
+FPGA drives the read from its latched copies. Not checked yet: what the
+PicoBlaze does with the bytes the game writes there.
 
 The design proved against still lacks FW5's /RESET edge, which also resets
 FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so
