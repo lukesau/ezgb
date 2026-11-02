@@ -1,5 +1,5 @@
 # FW4 -> FW5-0918 pairs that nothing in belmatch.py tells apart, for
-# fw5-prove-sd.sh (belmatch.py --seed); the proofs check each one.
+# fw5-prove.sh (belmatch.py --seed); the proofs check each one.
 #
 # the three pulse crossings' last two SD-domain stages (sync[2], sync[1]),
 # found through the matched cmd_master/data_master LUTs that XOR them
@@ -16,3 +16,13 @@ X18Y19_S0.FFX X16Y24_S0.FFY
 # the register bits each one reads
 X18Y21_S0.FFX X18Y18_S0.FFX
 X17Y26_S3.FFX X18Y17_S2.FFX
+#
+# the PicoBlaze program RAMs, which share the address and differ only in
+# contents: X3Y25 (bank 0) is word for word FW5's X3Y5, and X3Y29 (bank 1)
+# is FW5's edited X3Y1
+i_D0X3Y25_bram i_D0X3Y5_bram
+i_D0X3Y29_bram i_D0X3Y1_bram
+# stage1's two bit-plane RAMs, by the closer contents (63% and 67% of bits
+# agree, against 59% the other way round); gb_data_out's proof checks them
+i_D0X19Y25_bram i_D0X3Y25_bram
+i_D0X19Y5_bram i_D0X19Y29_bram

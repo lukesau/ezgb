@@ -6,7 +6,7 @@
 // command timeout, block size, bus width, byte alignment and software reset.
 // FW5 also resets these flip-flops on a debounced console /RESET; that net
 // is cut out of the design this is proved against (scripts/fpga/fw5-noedge.py,
-// run by fw5-prove-sd.sh).
+// run by fw5-prove.sh).
 //
 // Derived from the OpenCores WISHBONE SD Card Controller, Copyright (C)
 // 2013 Marek Czerski, based on original work Copyright (C) 2009 Adam

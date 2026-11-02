@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """FW5-0918's design.v made comparable with FW4's, for belmatch.py and
-equiv.sh (fw5-prove-sd.sh runs them):
+equiv.sh (fw5-prove.sh runs them):
 
     fw5-noedge.py FW5/design.v OUT/design.v
 

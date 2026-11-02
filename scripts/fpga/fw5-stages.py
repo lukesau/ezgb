@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FW5-0918's extra crossing stage, for fw5-prove-sd.sh.
+"""FW5-0918's extra crossing stage, for fw5-prove.sh.
 
     fw5-stages.py fix FW4/design.v FW5/design.v MATCH OUT.match OUT.names
     fw5-stages.py add BLOCK.blk NAMES
