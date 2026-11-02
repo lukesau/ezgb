@@ -4,5 +4,8 @@
 FW5-0918 and proves each against FW4's readable module (`stage0/rtl/`), or
 against the module here where FW5 differs, each FW4's with the change its
 header names. A `<block>.names` file adds names the carry can't find (a
-clock that moved). The results are in
+clock that moved). Where FW5 packs a block's logic into other LUTs, a
+`<block>.sim` file holds `scripts/fpga/simblk.py` arguments and the block
+is built by what its nets compute instead of carried; its `.names` lines
+then come first (an `in` at the end makes a logic net an input). The results are in
 [re/stage0/docs/firmware-diff.md](../../re/stage0/docs/firmware-diff.md).
