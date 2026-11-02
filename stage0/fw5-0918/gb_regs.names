@@ -1,0 +1,27 @@
+# FW5 names simblk.py can't find: the /WR clock (FW5 has no /WR | A15
+# clock), the unlock block's last key register, game_mbc1m (psram_ctrl's,
+# taken as an input), and the decodes FW5 shares from here
+n_X13Y33c_BUFGMUX0_O       clk_wr_a
+n_X1Y30_S0_XQ              unlocked
+n_X7Y31_S3_X               game_mbc1m in
+n_X2Y26_S1_X               key_ok
+n_X7Y19_S0_Y               dec_7fcx
+n_X7Y19_S2_Y               wr_7fbx
+n_X8Y18_S1_X               wr_7fc3
+n_X10Y21_S0_Y              rtc_win
+n_X7Y25_S2_Y               rtc_set_wr
+n_X7Y31_S1_Y               r2000
+n_X7Y26_S3_Y               n_r6000
+n_X8Y23_S1_X               game_n3
+n_X7Y27_S1_X               type0_n2
+n_X8Y27_S0_X               type1_n2
+n_X2Y25_S2_X               rtc_sel_d
+n_X1Y28_S1_Y               d_e4
+b_X8Y25_S3_F               d_0a
+n_X7Y21_S1_Y               a10_any
+n_X1Y27_S3_Y               a210_any
+n_X10Y21_S3_Y              a2_n1
+n_X8Y18_S0_Y               a1_n2
+n_X9Y23_S2_X               a210_4
+n_X8Y22_S0_Y               a210_6
+n_X1Y27_S3_X               n_lo0_c
