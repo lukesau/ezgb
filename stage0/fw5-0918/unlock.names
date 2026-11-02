@@ -1,0 +1,7 @@
+# FW5's one-hot key states (idle starts set) and the /WR clock
+n_X1Y29_S3_XQ              idle out
+n_X1Y29_S0_XQ              key_e1 out
+n_X1Y30_S3_YQ              key_e2 out
+n_X1Y30_S0_XQ              unlocked out
+n_X13Y33c_BUFGMUX0_O       clk_wr_a
+n_X7Y21_S2_Y               a0_n1
