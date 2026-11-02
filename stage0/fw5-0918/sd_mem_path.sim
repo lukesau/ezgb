@@ -1,0 +1,6 @@
+# simblk.py arguments for sd_mem_path: FW5's two copies of port EF stand in
+# for FW4's CLK2X copy; the Game Boy side of the address pins is packed into
+# the pin LUTs, so the blocks that feed it in FW4 bound the cone instead
+--alias X17Y22_S2.FFY=X13Y19_S1.FFY,X15Y18_S1.FFY
+--context-a stage0/blocks/psram_ctrl.blk stage0/blocks/gb_bus.blk stage0/blocks/pb_periph.blk stage0/blocks/gb_regs.blk
+--context-b stage0/fw5-0918/psram_ctrl.names

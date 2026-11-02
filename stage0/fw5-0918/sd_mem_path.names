@@ -1,0 +1,7 @@
+# FW5 names simblk.py can't find: the buffer's enable and write enable (too
+# rarely 1 for the simulation; X19Y17's ENB and WEB), the data pins' force-high (FW5's address tristate,
+# with the extra U4 access), and the A13 pin LUT's side the P51 register reads
+n_X9Y17_S1_Y               buf_en
+n_X15Y16_S1_Y              buf_we
+n_X23Y18_S1_Y              mem_d_ones in
+b_X16Y8_S3_G               mem_a13_b

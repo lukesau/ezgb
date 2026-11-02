@@ -296,14 +296,28 @@ Game Boy side carry at all:
   went on the first run. It also drops a pair whose D drivers differ in
   kind while one is matched elsewhere: FW4's `out_port[5]` and
   `out_port[6]` had gone to FW5 registers those bits feed.
+- Where FW5 packs the same logic into other LUTs, a named net has no bel
+  to carry to. `simblk.py` builds those blocks instead: it simulates both
+  designs on random values (paired registers and pads sharing theirs),
+  names each FW5 net that computes what a named FW4 net does, and takes
+  the logic between the named inputs and outputs. A named pin output with
+  no FW5 net of its function is named by its pad, and the proof shows
+  what changed. `padseed.py` pairs the LUTs that drive each pad.
 
 | Block | Against FW5-0918 (2026-11-02) |
 |---|---|
 | the nine SD blocks above | as above |
 | soft reset | equivalent to [stage0/fw5-0918/soft_reset.v](../../../stage0/fw5-0918/soft_reset.v): FW4's module on CLK0 instead of CLK2X (synchronizer and counter both), so the console reset is held for 65536 CLK0 cycles, twice FW4's time; its carry-in is the shared constant-0 LUT |
 | PicoBlaze | equivalent to FW4's module, unchanged. The packing difference the first run showed was two wrong `out_port` pairs, not FW5 |
-| pSRAM controller | carried (150 of 185, all 38 flip-flops), not proved |
-| unlock, Game Boy registers, Game Boy bus, data out, peripherals, RTC bridge, PicoBlaze ports (238 of 393), clocks, P51 latch | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
+| pSRAM controller | equivalent to [stage0/fw5-0918/psram_ctrl.v](../../../stage0/fw5-0918/psram_ctrl.v): one more way to reach U4, a `$A000-$BFFF` access with bank bit 7 set when the game bank is all ones with RAM enabled (an access FW4 keeps off both chips) or the kernel window mode is 6, 7 or 8 up. It is on page `$08`, with A0 carrying bit 0 of the MBC3 clock register number (`rtc_sel`). Port EF reaches it without FW4's CLK2X copy |
+| SD memory path | equivalent to [stage0/fw5-0918/sd_mem_path.v](../../../stage0/fw5-0918/sd_mem_path.v), which also builds the Game Boy side of the address pins (FW4's `mem_a_gb`, from three blocks). On that clock access A7-A0 hold `rtc_sel + $18`, so each clock register has its own location in U4, and A9/A13 set. The sector buffer is block RAM X19Y17 |
+| unlock, Game Boy registers, Game Boy bus, data out, peripherals, RTC bridge, PicoBlaze ports (238 of 393), clocks, P51 latch (a flip-flop in FW5) | carried only in part: the `$7Fxx` decode moved into the enables, the MBC3 clock was rewritten, and FW5 adds registers (`$7FD3`, `$7FD4`, the MBC3 latch) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
+
+This points to FW5 serving the MBC3 clock registers from U4, not from
+FPGA registers as FW4 does: the extra access puts the clock register
+number on the address pins. Not checked yet: that the MBC3 bank logic
+loads an all-ones bank when the game selects `$08-$0C`, and which bytes
+the PicoBlaze writes at those locations.
 
 The design proved against still lacks FW5's /RESET edge, which also resets
 FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so
