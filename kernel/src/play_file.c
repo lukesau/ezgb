@@ -13,7 +13,7 @@
  *
  * Bank 11, injected at 0B:4700. Three far entries:
  *
- *   PlayLoad        ezcfg's boot restore (02:60b0 stub): a valid file
+ *   PlayLoad        ezcfg's boot restore (02:78b0 stub): a valid file
  *                   replaces the pSRAM table, so the card is the source of
  *                   truth and a batteryless cart starts with its history. No
  *                   file: pSRAM is kept (a cart with a battery carries its

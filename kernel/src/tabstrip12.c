@@ -1,6 +1,6 @@
 /* 12px tab strip (docs/tab-strip12.md).
  *
- * Bank 2, injected at 02:5e00. The stock tab drawer DrawMenuTabs (08:7169)
+ * Bank 2, injected at 02:7600 (02:5e00 until 2026-11-02, moved to give ezcfg room). The stock tab drawer DrawMenuTabs (08:7169)
  * now starts with `jp TabStripHook` (08:7b20): in 8px mode the hook replays
  * the displaced instruction and continues in the stock code; in 12px mode it
  * pushes the tab number and far-calls this function instead (inline
@@ -25,7 +25,7 @@
  * The entry number at the right (TabNum12, 00:0380) is drawn by the list
  * code afterwards.
  *
- *   python3 tools/inject.py src/tabstrip12.c $V 2 5e00 TabStrip12 \
+ *   python3 tools/inject.py src/tabstrip12.c $V 2 7600 TabStrip12 \
  *       --pin DrawString12=7500 --pin Fit12=7100 --pin DrawRect=27ba \
  *       --pin StoreDrawParams=2791 --replace --apply
  */

@@ -103,13 +103,13 @@ REGISTRY = {
     (2, 0x4800): dict(src="lastrom_box.c",                  # START overlay chrome, far target of 00:129e (docs/last-rom.md)
                       pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x6000): dict(src="lastrom_name.c",                 # START overlay name lines, far target of the 00:0368 stub
+    (2, 0x7800): dict(src="lastrom_name.c",                 # START overlay name lines, far target of the 00:0368 stub
                       pins={"Marquee": 0x7260}),
     (2, 0x7260): dict(src="marquee.c",                      # shared scrolling text, far target of FarCallMarquee (00:0410) (docs/marquee.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawString": 0x08b7,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x6000, "DrawString12": 0x7500,
-                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290, "FarCallPlayLoad": 0x60b0,
+    (2, 0x4a00): dict(src="ezcfg.c", pins={**FATFS, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "LastRomName": 0x7800, "DrawString12": 0x7500,
+                                              "FarCallPatchGuard": 0x43c0, "theme": 0x43d0, "PopupDrawParams": 0x0290, "FarCallPlayLoad": 0x78b0,
                                               "FarCallColors": 0x4990}),
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
@@ -161,7 +161,7 @@ REGISTRY = {
     (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
                       exports={"PlayKeys": 0x7cd2, "StarQuery": 0x7d92, "StarToggle": 0x7db8}),
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
-    (2, 0x5e00): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
+    (2, 0x7600): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,

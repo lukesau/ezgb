@@ -10,8 +10,8 @@ instead simulates both designs on random values, the matched flip-flops
 and pads sharing theirs, and names each B net that computes what a named
 A net does. The block's cells are B's logic between the named inputs and
 the named outputs. --names takes B nets named by hand first (logic as
-outputs, registers and constants as inputs, or an input when the line
-ends in `in`); --context-a and --context-b
+outputs, registers and constants as inputs; a line ending in `in` or
+`out` says which); --context-a and --context-b
 take other blocks' names (A block files mapped the same way, B names as
 given) as inputs, so the cone stops at them. --alias gives an A flip-flop's value to B flip-flops
 that stand in for it without a pair (FW5's copies of one register).
@@ -177,7 +177,7 @@ def main():
     bpad = {k: n for n, k in pads(B).items()}
     apad = {n: k for n, k in apad.items() if k in bpad}
     out_names, bnames, missing, changed = set(), {}, [], []
-    given, given_in = {}, set()
+    given, given_in, given_out = {}, set(), set()
     if args.names:
         for l in open(args.names):
             l = l.split('#')[0].split()
@@ -185,6 +185,8 @@ def main():
                 given[l[0]] = l[1]
                 if l[2:] == ['in']:
                     given_in.add(l[1])
+                elif l[2:] == ['out']:
+                    given_out.add(l[1])
     def prod(d, net):
         for _ in range(8):
             if net in d.producer:
@@ -249,7 +251,8 @@ def main():
     for n, nm in given.items():     # logic is an output; a register or a constant an input
         bnames[n] = nm
         c = B.d.cells.get(prod(B.d, n))
-        if nm not in given_in and c and c.kind in COMB and any(not x.startswith("1'b") for x in c.ins.values()):
+        if nm in given_out or nm not in given_in and c and c.kind in COMB and \
+                any(not x.startswith("1'b") for x in c.ins.values()):
             out_names.add(nm)
     # the cone: back from the outputs to the inputs
     roots = {}

@@ -29,7 +29,7 @@ SET or HELP reaches above y 16.
 ## How it is drawn
 
 `DrawString12` always paints from its start x to the right edge of the row,
-in the current ink and paper. `TabStrip12` (`tabstrip12.c`, `02:5e00`) uses
+in the current ink and paper. `TabStrip12` (`tabstrip12.c`, `02:7600`; `02:5e00` until 2026-11-02) uses
 that: it draws the three labels left to right, each from its own pixel x,
 the selected one in paper on ink, and ends with a blank after ` HELP ` so a
 selected HELP tab's highlight stops there. The start positions are the pen

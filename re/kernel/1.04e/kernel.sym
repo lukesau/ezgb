@@ -4416,8 +4416,6 @@
 00:0368 .data:8:8
 02:4800 LastRomBox
 02:4800 .data:145:8
-02:5e00 TabStrip12
-02:5e00 .data:19c:8
 08:7b20 TabStripHook
 08:7b20 .data:20:8
 00:0380 TabNum12
@@ -4564,8 +4562,6 @@
 0a:5d00 .data:978:8
 0a:6680 Font12DvMetrics
 0a:6680 .data:1fa:8
-02:6000 LastRomName
-02:6000 .data:a6:8
 04:7eeb ThemeNames
 04:7eeb .data:38:8
 0b:4000 SmSaveOpB11
@@ -4582,8 +4578,6 @@
 04:6610 .data:46c:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
-02:60b0 FarCallPlayLoad
-02:60b0 .data:8:8
 04:7792 FarCallPlaySync_B4
 04:7792 .data:8:8
 01:7ec6 PlayLaunchHook
@@ -4594,3 +4588,9 @@
 0b:4b00 .data:195:8
 08:7e4c MsgBoxFar
 08:7e4c .data:8:8
+02:7600 TabStrip12
+02:7600 .data:19c:8
+02:7800 LastRomName
+02:7800 .data:a6:8
+02:78b0 FarCallPlayLoad
+02:78b0 .data:8:8

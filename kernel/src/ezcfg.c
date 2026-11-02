@@ -160,8 +160,8 @@ extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d7
 extern void theme(void);                                    /* 02:43d0 theme.c: palettes + pSRAM mark from THEME */
 extern u8 *FarCallColors(u8 op, u8 *p, u8 len);             /* 02:4990 -> 05:7b50 theme_colors.c: COLORS=, THEME= */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
-extern void FarCallPlayLoad(void);                          /* 02:60b0 -> 0B:4700 play_file.c: stars and plays from the card */
-extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7260, lastrom_name.c */
+extern void FarCallPlayLoad(void);                          /* 02:78b0 -> 0B:4700 play_file.c: stars and plays from the card */
+extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7800, lastrom_name.c */
 
 void ezcfg(void) {
     u8 op = EZ_OP;

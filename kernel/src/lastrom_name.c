@@ -1,8 +1,9 @@
 /* START overlay name line and its marquee (docs/last-rom.md "Overlay layout").
  *
- * Bank 2, injected at 02:6000 (02:5d58 until ezcfg needed the room, 2026-10-31)
+ * Bank 2, injected at 02:7800 (02:5d58 until 2026-10-31, then 02:6000 until
+ * 2026-11-02; both moves made room for ezcfg)
  * and reached through the 8-byte far stub
- * LastRomNameStub (00:0368, `cd 8d 07 00 60 02 00 c9`). The stub is
+ * LastRomNameStub (00:0368, `cd 8d 07 00 78 02 00 c9`). The stub is
  * `call`ed: three pad parameters. Two callers:
  *
  *   LastRomDrawBasename's `call DrawString` (00:132b) now calls the stub

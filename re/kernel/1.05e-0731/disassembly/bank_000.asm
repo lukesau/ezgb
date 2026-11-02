@@ -448,7 +448,7 @@ BrowserPageEnd::
     rst RST_38
 
 LastRomNameStub::
-    db $cd, $8d, $07, $00, $60, $02, $00, $c9
+    db $cd, $8d, $07, $00, $78, $02, $00, $c9
 
 LastRomTickStub::
     db $21, $00, $00, $e5, $cd, $68

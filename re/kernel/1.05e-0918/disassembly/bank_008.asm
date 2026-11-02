@@ -3707,7 +3707,7 @@ DrawHelpModVersion::
 TabStripHook::
     db $f0, $fb, $b7, $20, $06, $21, $00, $00
     db $c3, $6c, $71, $f8, $06, $7e, $f5, $33
-    db $cd, $8d, $07, $00, $5e, $02, $00, $33
+    db $cd, $8d, $07, $00, $76, $02, $00, $33
     db $f8, $06, $7e, $b7, $c0, $c3, $8d, $7b
 
 HelpHook::
