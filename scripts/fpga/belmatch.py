@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Match the bels of two exported designs (two firmware builds) by structure.
 
-    belmatch.py A/design.v B/design.v [--ignore-sr NET...] [--seed FILE] [--blocks stage0/blocks/*.blk] [--dump OUT]
+    belmatch.py A/design.v B/design.v [--ignore-sr NET...] [--seed FILE] [--shape] [--blocks stage0/blocks/*.blk] [--dump OUT]
 
 Placement differs from build to build, so bels are matched by what they
 compute, not where they sit. The matching starts from anchors (the pads by
@@ -20,6 +20,9 @@ pin name, the live DCM, DNA and ICAP) and grows outward:
              clock and parameters)
   functions  unmatched flip-flops told apart by the function on each pin
              over the matched nets under it, however the LUTs are packed
+  shape      (--shape) unmatched bels told apart by the logic around them,
+             refined a few rounds out, with flip-flop clocks left out: for
+             logic no matched bel reaches, or that moved to another clock
 
 A signature that occurs once on each side is a match. A clock buffer with a
 fixed select is treated as a wire. --ignore-sr names nets of B whose use as
@@ -89,6 +92,7 @@ class Matcher:
     def __init__(self, A, B):
         self.A, self.B = A, B
         self.ab, self.ba = {}, {}
+        self.banned, self.seeded = set(), set()
         for G in (A, B):
             G.outpin = {}
             for n in G.cells:
@@ -118,7 +122,34 @@ class Matcher:
         return None
 
     def pair(self, a, b):
+        if (a, b) in self.banned:
+            return 0
         self.ab[a], self.ba[b] = b, a
+        return 1
+
+    def unpair(self, a):
+        b = self.ab.pop(a)
+        del self.ba[b]
+        self.banned.add((a, b))
+
+    def conflicts(self):
+        """flip-flop pairs whose D drivers are both matched, but not to each
+        other: a pass paired the wrong one of two alike registers (bit slices
+        of one bus). The pair is dropped and never made again; seeds stay."""
+        bad = []
+        for a, b in self.ab.items():
+            ca, cb = self.A.d.cells[a], self.B.d.cells[b]
+            if ca.kind != 's3_ff' or cb.kind != 's3_ff' or a in self.seeded:
+                continue
+            sa_, sb_ = simple(ca.ins.get('D', '')), simple(cb.ins.get('D', ''))
+            if not sa_ or not sb_:
+                continue
+            pa, pb = self.A.d.producer.get(sa_[0]), self.B.d.producer.get(sb_[0])
+            if pa in self.ab and pb in self.ba and self.ab[pa] != pb:
+                bad.append(a)
+        for a in bad:
+            self.unpair(a)
+        return len(bad)
 
     def ref(self, G, net, side, depth=0):
         """a net as seen from the matching: a stable token or '*'"""
@@ -220,8 +251,7 @@ class Matcher:
         for s, la in sa.items():
             lb = sb.get(s)
             if len(la) == 1 and lb and len(lb) == 1:
-                self.pair(la[0], lb[0])
-                added += 1
+                added += self.pair(la[0], lb[0])
         return added
 
     def backward(self):
@@ -245,8 +275,7 @@ class Matcher:
                     continue
                 if self.A.outpin.get(sa_[0]) != self.B.outpin.get(sb_[0]):
                     continue
-                self.pair(da, db)
-                added += 1
+                added += self.pair(da, db)
         return added
 
     def lut_inputs(self, G, c, side):
@@ -311,8 +340,7 @@ class Matcher:
                     continue
                 if self.A.d.cells[da].kind != self.B.d.cells[db].kind or self.A.outpin.get(na) != self.B.outpin.get(nb):
                     continue
-                self.pair(da, db)
-                added += 1
+                added += self.pair(da, db)
         return added
 
     def readers(self, G, net, depth=0):
@@ -353,8 +381,7 @@ class Matcher:
         for s, la in sa.items():
             lb = sb.get(s)
             if len(la) == 1 and lb and len(lb) == 1 and la[0] not in self.ab and lb[0] not in self.ba:
-                self.pair(la[0], lb[0])
-                added += 1
+                added += self.pair(la[0], lb[0])
         return added
 
     SEQ = ('s3_ff', 's3_bram', 's3_ioi', 's3_ram16', 's3_srl16', 's3_dcm', 's3_dna', 's3_icap')
@@ -430,8 +457,7 @@ class Matcher:
         for s, la in sa.items():
             lb = sb.get(s)
             if len(la) == 1 and lb and len(lb) == 1:
-                self.pair(la[0], lb[0])
-                added += 1
+                added += self.pair(la[0], lb[0])
         return added
 
     COMB = ('s3_lut4', 's3_mux2', 's3_muxcy', 's3_xorcy')
@@ -553,11 +579,154 @@ class Matcher:
         for s, la in sa.items():
             lb = sb.get(s)
             if len(la) == 1 and lb and len(lb) == 1:
-                self.pair(la[0], lb[0])
-                added += 1
+                added += self.pair(la[0], lb[0])
         return added
 
-    def run(self, log=sys.stderr):
+    SHAPE_ROUNDS = 6
+
+    def lut_shape(self, c):
+        """a LUT's function with constant inputs folded, up to input order"""
+        init = int(c.params['INIT'].split("'h")[-1], 16) if "'h" in c.params['INIT'] else int(c.params['INIT'])
+        fixed, live = [0, 0, 0, 0], []
+        for i, k in enumerate(('I1', 'I2', 'I3', 'I4')):
+            e = c.ins.get(k, "1'b1")
+            if e in ("1'b0", "1'b1"):
+                fixed[i] = int(e[-1])
+            else:
+                live.append((i, e.startswith('~')))
+        best = None
+        for perm in itertools.permutations(live):
+            t = 0
+            for idx in range(1 << len(perm)):
+                bits = list(fixed)
+                for j, (i, neg) in enumerate(perm):
+                    bits[i] = ((idx >> j) & 1) ^ neg
+                t |= ((init >> (bits[0] | bits[1] << 1 | bits[2] << 2 | bits[3] << 3)) & 1) << idx
+            best = t if best is None else min(best, t)
+        return (len(live), best)
+
+    def shape(self):
+        """unmatched bels told apart by the shape of the logic around them,
+        clocks (flip-flop and block RAM) left out: each bel's color starts from its kind and function
+        (a matched bel's is its pair) and is refined from its drivers' and
+        readers' colors, a few rounds out. For logic no matched bel reaches
+        (a counter whose only input changed) or that moved to another clock."""
+        def neighbors(G):
+            nb = {}
+            for n in G.cells:
+                c = G.d.cells[n]
+                ins = []
+                for k, e in c.ins.items():
+                    if k in ('CLK', 'CLKA', 'CLKB'):
+                        continue
+                    pin = 'I' if c.kind == 's3_lut4' else k
+                    for net in self.srcnets(G, e):
+                        ins.append((pin, G.d.producer[net]))
+                outs = set()
+                for o in c.outs:
+                    outs |= self.readers(G, o)
+                nb[n] = (ins, [r for r in outs if r in G.d.live_cells])
+            return nb
+
+        def base(G, n, mine, side):
+            if n in mine:
+                return ('m', mine[n] if side == 'A' else n)
+            c = G.d.cells[n]
+            if c.kind == 's3_lut4':
+                return ('lut',) + self.lut_shape(c)
+            return (G.static(n),)
+
+        sides = [(self.A, self.ab, 'A'), (self.B, self.ba, 'B')]
+        nbs = [neighbors(G) for G, _, _ in sides]
+        hist = [[], []]
+        cols = [{n: h(*base(G, n, mine, s)) for n in G.cells} for G, mine, s in sides]
+        for r in range(self.SHAPE_ROUNDS):
+            new = []
+            for (G, mine, s), nb, col in zip(sides, nbs, cols):
+                nc = {}
+                for n in G.cells:
+                    if n in mine:
+                        nc[n] = col[n]
+                        continue
+                    ins, outs = nb[n]
+                    nc[n] = h(col[n], tuple(sorted((p, col[x]) for p, x in ins)),
+                              tuple(sorted(col[x] for x in outs)))
+                new.append(nc)
+            cols = new
+            hist[0].append(cols[0])
+            hist[1].append(cols[1])
+        added = 0
+        for r in range(self.SHAPE_ROUNDS - 1, 1, -1):
+            ca, cb = defaultdict(list), defaultdict(list)
+            for n in self.A.cells:
+                if n not in self.ab:
+                    ca[hist[0][r][n]].append(n)
+            for n in self.B.cells:
+                if n not in self.ba:
+                    cb[hist[1][r][n]].append(n)
+            for k, la in ca.items():
+                lb = cb.get(k)
+                if len(la) == 1 and lb and len(lb) == 1 and \
+                        self.A.d.cells[la[0]].kind == self.B.d.cells[lb[0]].kind:
+                    added += self.pair(la[0], lb[0])
+        return added + self.bram_overlap()
+
+    def bram_overlap(self):
+        """unmatched block RAMs of the same shape paired by how many of their
+        bus bits agree (the same matched driver, the same matched readers),
+        clocks left out, when each is the other's unique best"""
+        def bus(G):
+            if not hasattr(G, 'busbits'):
+                G.busbits = defaultdict(dict)
+                for w, x in G.d.wires.items():
+                    m = re.fullmatch(r'(\w+)\[(\d+)\]', x)
+                    if m and w.startswith('n_'):
+                        G.busbits[m.group(1)][int(m.group(2))] = w
+            return G.busbits
+
+        def bits(G, n, side):
+            kind, _, _, conns = G.d.inst[n]
+            out = {}
+            for p, e in conns.items():
+                if p in ('CLKA', 'CLKB'):
+                    continue
+                nets = carve.nets_of(e)
+                if len(nets) == 1 and nets[0] in bus(G):
+                    nets = [w for _, w in sorted(bus(G)[nets[0]].items())]
+                for i, net in enumerate(nets):
+                    rd = frozenset(self.ref(G, o, side) for r in self.readers(G, net)
+                                   for o in G.d.cells[r].outs[:1])
+                    out[(p, i)] = (self.ref(G, net, side), rd)
+            return out
+
+        def score(x, y):
+            s = 0
+            for k, (src, rd) in x.items():
+                if k not in y:
+                    continue
+                if src not in ('*', '?') and src == y[k][0]:
+                    s += 1
+                if rd and rd == y[k][1] and any(r != '*' for r in rd):
+                    s += 1
+            return s
+
+        ua = [n for n in self.A.cells if n not in self.ab and self.A.d.cells[n].kind == 's3_bram']
+        ub = [n for n in self.B.cells if n not in self.ba and self.B.d.cells[n].kind == 's3_bram']
+        ba_ = {n: bits(self.A, n, 'A') for n in ua}
+        bb_ = {n: bits(self.B, n, 'B') for n in ub}
+        sc = {(a, b): score(ba_[a], bb_[b]) for a in ua for b in ub
+              if self.A.static(a) == self.B.static(b)}
+        added = 0
+        for (a, b), s in sc.items():
+            if s == 0:
+                continue
+            best_b = [s2 for (a2, b2), s2 in sc.items() if a2 == a and b2 != b]
+            best_a = [s2 for (a2, b2), s2 in sc.items() if b2 == b and a2 != a]
+            if all(s > x for x in best_b) and all(s > x for x in best_a):
+                added += self.pair(a, b)
+        return added
+
+    def run(self, log=sys.stderr, shape=False):
         r = 0
         while True:
             r += 1
@@ -566,9 +735,14 @@ class Matcher:
             o = 0 if f + b else self.fanout()
             g = 0 if f + b + o else self.regs()
             p = 0 if f + b + o + g else self.funcs()
+            s = 0 if f + b + o + g + p or not shape else self.shape()
             print(f"round {r}: +{f} forward, +{b} backward, +{o} fanout, +{g} registers, +{p} functions, "
-                  f"{len(self.ab)} matched", file=log)
-            if f + b + o + g + p == 0:
+                  f"+{s} shape, {len(self.ab)} matched", file=log)
+            if f + b + o + g + p + s == 0:
+                c = self.conflicts()
+                if c:
+                    print(f"round {r}: -{c} flip-flop pairs whose D drivers disagree", file=log)
+                    continue
                 break
 
 
@@ -581,16 +755,19 @@ def main():
                     help="design B nets whose use as a flip-flop's SR is ignored when matching (a reset A lacks)")
     ap.add_argument('--seed', help='file of "A-bel B-bel" pairs to start from')
     ap.add_argument('--dump', help='write A-bel -> B-bel pairs and the unmatched bels here')
+    ap.add_argument('--shape', action='store_true',
+                    help='when the other passes stall, pair bels by the shape of the logic around them, clocks left out')
     args = ap.parse_args()
     A, B = Graph(args.a), Graph(args.b)
     B.ignore = set(args.ignore_sr)
     m = Matcher(A, B)
     if args.seed:
         for line in open(args.seed):
-            if line.split() and not line.startswith('#'):
-                a, b = line.split()
+            if line.split("#")[0].split():
+                a, b = line.split("#")[0].split()
                 m.pair(a, b)
-    m.run()
+                m.seeded.add(a)
+    m.run(shape=args.shape)
     pairs = m.ab
     ma, mb = set(pairs), set(pairs.values())
     print(f"A: {len(A.cells)} live cells, {len(pairs)} matched")
