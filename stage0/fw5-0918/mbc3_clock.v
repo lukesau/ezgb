@@ -19,7 +19,10 @@
 //     only the clock registers here
 //
 // Every register loads only for an MBC3 game (mbc_type 3, not kernel
-// mode); the kernel's writes come through its register window.
+// mode); the kernel's writes come through its register window. The block
+// never reads mbc_type bit 2: gb_regs's type0_n2 and type1_n2 carry it
+// (each is a type bit with !bit 2), and the hardware builds the MBC3 test
+// from them two ways, as below.
 //
 // Block: stage0/fw5-0918/mbc3_clock.blk (FW5 only).
 
@@ -28,13 +31,15 @@ module mbc3_clock (
     input a0, a1, a2, a4, a12, a13, a14, a15,
     input d0, d1, d2, d3, d4, d5, d6, d7,
     input kernel_mode,
-    input [3:0] mbc_type,
+    input [3:0] mbc_type,           // bits 0, 1 and 3; bit 2 only through the decodes
     input [7:0] rtc_sel,            // the MBC3 RAM bank / clock register select (gb_regs)
     input bank_lo_ones, bank_hi_ones,   // the game bank register is all ones (psram_ctrl)
     input win_a000,                 // the $A000 window decode (sd_mem_path)
     input rtc_set_wr,               // the kernel's register window write (gb_regs)
     // gb_regs's and unlock's shared decodes, stated in the assumptions below
-    input n_r6000, r2000, game_n3, type0_n2, type1_n2, rtc_sel_d,
+    input n_r6000, r2000, game_n3,
+    input type0_n2, type1_n2,       // mbc_type[0] & !mbc_type[2], mbc_type[1] & !mbc_type[2]
+    input rtc_sel_d,                // d[7:4] == 0 and mbc_type[2:0] == 3
     input a10_any, a0_n1, a210_4, d_0a,
     // the PicoBlaze's OUTPUT A5-A9
     input [7:0] mbc3_rd_s, mbc3_rd_m, mbc3_rd_h, mbc3_rd_dl, mbc3_rd_dh,
@@ -47,12 +52,16 @@ module mbc3_clock (
     reg [7:0] r6000;
     reg ram_en;
 
-    wire mbc3 = mbc_type == 4'd3 & !kernel_mode;
+    // an MBC3 game (game_n3: not kernel mode, mbc_type[3] clear), as the
+    // registers' enables test it and as the clock register decode does
+    wire mbc3 = game_n3 & type0_n2 & mbc_type[1];
+    wire mbc3_rd = game_n3 & type1_n2 & mbc_type[0];
     wire wr_0000 = !a15 & !a14 & !a13;
     wire wr_6000 = !a15 & a14 & a13;
     wire bank_ones = bank_lo_ones & bank_hi_ones;
     // the game's clock register write, and which register
-    wire clk_wr = mbc3 & a15 & win_a000 & ram_en & bank_ones & rtc_sel[7:3] == 5'b00001;
+    wire clk_win = a15 & win_a000 & ram_en & bank_ones & rtc_sel[7:3] == 5'b00001;
+    wire clk_wr = mbc3_rd & clk_win;
     wire [4:0] sel = {rtc_sel[2:0] == 3'd4, rtc_sel[2:0] == 3'd3, rtc_sel[2:0] == 3'd2,
                       rtc_sel[2:0] == 3'd1, rtc_sel[2:0] == 3'd0};
     // the kernel's, at $A010-$A014
@@ -60,7 +69,7 @@ module mbc3_clock (
     wire [4:0] k_sel = {a == 3'd4, a == 3'd3, a == 3'd2, a == 3'd1, a == 3'd0};
     wire [7:0] kd = kernel_mode ? 8'hff : 8'h00;  // the bits only the kernel writes
     // the latch: $01 written to $6000-$7FFF over $00
-    wire latch = mbc3 & wr_6000 & r6000 == 8'h00 & d == 8'h01;
+    wire latch = game_n3 & rtc_sel_d & wr_6000 & r6000 == 8'h00 & d[3:0] == 4'h1;
     // wrote_dh holds through everything but a $6000-$7FFF write and a
     // seconds or DH write ($08/$0C), which the OR below sets again for DH
     wire dh_clr = !a15 ? a14 & a13
@@ -79,11 +88,11 @@ module mbc3_clock (
         if (clk_wr & sel[3] | k_wr & k_sel[3]) mbc3_wr_dl <= d;
         if (clk_wr & sel[4] | k_wr & k_sel[4]) mbc3_wr_dh <= d & {2'b11, kd[5:1], 1'b1};
         if (mbc3) begin
-            wrote_s <= clk_wr & sel[0] | wrote_s & !wr_6000;
-            wrote_m <= clk_wr & sel[1] | wrote_m & !wr_6000;
-            wrote_h <= clk_wr & sel[2] | wrote_h & !wr_6000;
-            wrote_dl <= clk_wr & sel[3] | wrote_dl & !wr_6000;
-            wrote_dh <= clk_wr & sel[4] | wrote_dh & !dh_clr;
+            wrote_s <= clk_win & sel[0] | wrote_s & !wr_6000;
+            wrote_m <= clk_win & sel[1] | wrote_m & !wr_6000;
+            wrote_h <= clk_win & sel[2] | wrote_h & !wr_6000;
+            wrote_dl <= clk_win & sel[3] | wrote_dl & !wr_6000;
+            wrote_dh <= clk_win & sel[4] | wrote_dh & !dh_clr;
         end
         if (mbc3 & wr_6000) r6000 <= d;
         if (mbc3 & wr_0000) ram_en <= d_0a;
@@ -96,9 +105,6 @@ module mbc3_clock (
         env_r6000: assume (n_r6000 == !wr_6000);
         env_r2000: assume (r2000 == (!a15 & !a14 & a13));
         env_game: assume (game_n3 == (!kernel_mode & !mbc_type[3]));
-        env_t0: assume (type0_n2 == (mbc_type[0] & !mbc_type[2]));
-        env_t1: assume (type1_n2 == (mbc_type[1] & !mbc_type[2]));
-        env_seld: assume (rtc_sel_d == (d[7:4] == 4'd0 & mbc_type[2:0] == 3'd3));
         env_a10: assume (a10_any == (a1 | a0));
         env_a0n1: assume (a0_n1 == (a0 & !a1));
         env_a4: assume (a210_4 == (a == 3'd4));

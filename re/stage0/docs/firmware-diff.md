@@ -274,7 +274,7 @@ ROM-load byte sequencer.
 | data serializer | equivalent to [stage0/fw5-0918/sd_data_serial.v](../../../stage0/fw5-0918/sd_data_serial.v): the 4-bit data cycle count is the source's `(blksize << 1) + 2`, not FW4's `blksize \| 4`; the same for the 8n - 1 sizes the firmware uses |
 | memory path | carried (116 of 131 bels) but not proved: its address inputs come from FW5's rebuilt Game Boy bus and pSRAM blocks |
 
-## The rest of the design, FW4 to FW5-0918 (in progress)
+## The rest of the design, FW4 to FW5-0918 (proved)
 
 The same script now carries all twenty-two of FW4's block files
 (`scripts/fpga/fw5-prove.sh` with no arguments). Three things made the
@@ -345,6 +345,22 @@ register also lands in an FPGA register the PicoBlaze reads (INPUT
 A5-A9), and the PicoBlaze writes the values the latch copies (OUTPUT
 A5-A9), so the clock runs through the PicoBlaze both ways. Not checked
 yet: what its firmware does with them.
+
+The whole of it is proved too, as FW4's is (2026-11-02):
+`scripts/fpga/fw5-top.sh` stitches the 26 blocks into
+[stage0/fw5-0918/fw5_top.v](../../../stage0/fw5-0918/fw5_top.v) with
+`mktop.py` and runs `prove-top.sh` on them. The wiring pass proves
+`fw5_logic` over the carved blocks equal to every slice bel of the design
+(7,657 signals); the rtl pass proves it equal over the readable modules
+(4,679 signals, 130 of them under the modules' invariants), and every
+invariant, the `env_*` assumptions about other blocks included, holds on
+the reference from reset. Four cells sit in two blocks each (the shared
+constant-0 LUT, and three LUTs `gb_data_out` and `psram_ctrl` share); the
+first block's copy drives the net. Stitching found one wrong assumption:
+`mbc3_clock` stated `type0_n2`, `type1_n2` and `rtc_sel_d` in terms of
+`mbc_type[2]`, a bit no cell of the block reads, so the top tied it to 0
+and the assumptions failed for any type with bit 2 set. The module now
+builds its MBC3 test from those decodes, as the hardware does.
 
 The design proved against still lacks FW5's /RESET edge, which also resets
 FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so
