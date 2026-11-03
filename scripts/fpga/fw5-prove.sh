@@ -61,7 +61,7 @@ prove() {
 }
 for b in $BLOCKS; do
     case $b in
-        sd_crossings|soft_reset|psram_ctrl|sd_mem_path|gb_regs|unlock|gb_data_out|rtc_bridge|gb_bus) prove $b RTL=stage0/fw5-0918/$b.v ;;
+        sd_crossings|soft_reset|psram_ctrl|sd_mem_path|gb_regs|unlock|gb_data_out|rtc_bridge|gb_bus|picoblaze_ports) prove $b RTL=stage0/fw5-0918/$b.v ;;
         sd_data_serial) prove $b RTL=stage0/fw5-0918/sd_data_serial.v TIE="gnd_i=0" DROP="gnd gnd1 gnd2 gnd3 gnd4 gnd5 gnd6 gnd7" ;;
         sd_clock_divider) prove $b TIE="gnd_i=0" ;;
         sd_fifo_filler) prove $b TIE="gnd1_i=0 clr_i=0" ;;

@@ -314,9 +314,10 @@ Game Boy side carry at all:
 | Game Boy registers | equivalent to [stage0/fw5-0918/gb_regs.v](../../../stage0/fw5-0918/gb_regs.v): one `/WR` clock with A15 in the `$7Fxx` key, no `/RESET`-level reset, the key from the unlock block's last register. MBC3 takes RAM banks `$00-$07` (FW4 `$00-$03`) and MBC1's mode-1 bank four masked bits (FW4 two). A data interrupt with the window off clears the `$7FB4` flag. (An earlier version of this row said only hours, day and year can be set; the other four registers and the `$7FD0` go flag are there, found while proving the RTC bridge.) The `$08-$0C` select loads the all-ones bank as on FW4 |
 | RTC bridge | equivalent to [stage0/fw5-0918/rtc_bridge.v](../../../stage0/fw5-0918/rtc_bridge.v): FW4's on the PicoBlaze clock instead of the 2x clock, the readings on its falling edge and kept only as wide as each BCD value |
 | Game Boy bus | equivalent to [stage0/fw5-0918/gb_bus.v](../../../stage0/fw5-0918/gb_bus.v): FW4's window remap, stage1 copies and block RAM enables, without the address pins (built in the SD memory path). The `$7FB4` write is on `/WR` with no `/RESET`-level term, the loader's busy flag has no CLK2X copy (a second port EF register stands in), the second stage of `/RESET` is unread, and the loader's table RAM (X3Y13) has its Game Boy port on the PicoBlaze clock |
+| PicoBlaze ports | equivalent to [stage0/fw5-0918/picoblaze_ports.v](../../../stage0/fw5-0918/picoblaze_ports.v): FW4's port registers and SD bridge, plus OUTPUT A5-A9 (the seconds, minutes, hours, DL and DH the game's MBC3 latch copies) and an OUTPUT A1 that starts a 4-bit timer INPUT A0 reads. New reads: A5-A9 the game's writes to MBC3 clock registers `$08-$0C` (the kernel can write them at `$A010-$A014`), BB `$7FD3 + $7FD4` (a sum taken on the `$7FD4` write), B5 eight command bits (FW4 five), B8 two status bits. B9 reads `!kernel_mode` (FW4 1), B7 holds (FW4 0). The timer, its prescaler and the registers behind the new reads are other blocks' and not proven yet |
 | data out | equivalent to [stage0/fw5-0918/gb_data_out.v](../../../stage0/fw5-0918/gb_data_out.v): the game's MBC3 clock reads return five latched registers (S, M, H, DL, DH, loaded on the `$6000` latch: `$01` after `$00`), where FW4 converts the live PCF8563 BCD and serves DH as 1. The kernel window reads the RTC bridge's registers, which keep only the bits each BCD value uses. Other register-window reads return 0 (FW4 `$FF`), `$7FC0 = 4` reads `$05` (FW4 `$04`), and `$7FC3` bit 7 is a register. Two of stage1's bit-plane RAMs are now paired by the data bit they drive |
 | unlock | equivalent to [stage0/fw5-0918/unlock.v](../../../stage0/fw5-0918/unlock.v): four one-hot registers (idle, after `$E1`, after `$E2`, unlocked) where FW4 encodes the states in two. FW5 unlocks on the `$E3`, where FW4 unlocks on the `$E2` and the `$E3` only keeps it, and the writes that stay unlocked add `$7FD3` and `$7FD4` |
-| peripherals, PicoBlaze ports (238 of 393), clocks, P51 latch (a flip-flop in FW5) | carried only in part: the `$7Fxx` decode moved into the enables, and FW5 adds registers (`$7FD3`, `$7FD4`) and a 22-bit counter on the DCM clock; each needs an FW5 module of its own |
+| peripherals, clocks, P51 latch (a flip-flop in FW5), and registers only FW5 has | carried only in part: the `$7Fxx` decode moved into the enables. No block holds FW5's new registers yet: the MBC3 clock write and latch registers, the `$7FD3 + $7FD4` sum, the A0 timer and its prescaler on the PicoBlaze clock, and a 22-bit counter on the DCM clock |
 
 > **Correction (2026-11-02):** an earlier version of this paragraph said FW5
 > serves the MBC3 clock registers from U4. `gb_data_out` (in the table above)
@@ -327,8 +328,11 @@ Game Boy side carry at all:
 Selecting `$08-$0C` loads the all-ones bank and `rtc_sel` (proved in
 `gb_regs`, as on FW4), and a `$A000-$BFFF` access with RAM enabled then
 selects U4 page `$08`, the register number on the address pins, while the
-FPGA drives the read from its latched copies. Not checked yet: what the
-PicoBlaze does with the bytes the game writes there.
+FPGA drives the read from its latched copies. A game's write to a clock
+register also lands in an FPGA register the PicoBlaze reads (INPUT
+A5-A9), and the PicoBlaze writes the values the latch copies (OUTPUT
+A5-A9), so the clock runs through the PicoBlaze both ways. Not checked
+yet: what its firmware does with them.
 
 The design proved against still lacks FW5's /RESET edge, which also resets
 FW5's 34 `/WR` registers (FW4 resets 15 from the /RESET level), so
