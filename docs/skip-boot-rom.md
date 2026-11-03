@@ -5,7 +5,7 @@ end with `$7FE0=$80`, which resets the console into the loaded game, so the
 boot ROM ran a second time (logo and all, about 2-3 s). When it's safe, the
 launch now jumps to the game's `$0100` instead. Otherwise it resets as before.
 
-Emulator-verified (SameBoy, all three kernels). **Not yet tested on hardware.**
+Verified in SameBoy on all three kernels, and working on the FW5 and FW4 carts (2026-11-03, below).
 
 ## When it jumps
 
@@ -111,5 +111,19 @@ These were fast launches of Pokemon Crystal (`$0143 = $C0`) and Pokemon Red
 - **`BOOTROM=1`:** Crystal resets. The key survives the kernel's rewrite of
   `EZGB.CFG`.
 
-Still owed: a hardware test on a GBC or GBA with the mod stage1, and the
-same on stock stage1 (it should reset every time).
+## Hardware (mod 7.2, 2026-11-03)
+
+- **FW5 and FW4 carts:** Pokemon Crystal works. These runs had no timing
+  measurements, and the console used wasn't recorded.
+- **`.gb` games:** they still reset. A color-patched Gen 1 Pokemon ROM with a
+  `.gb` extension was treated as a color game, because the check reads
+  `$0143` and not the file name.
+- **Open, FW4:** there is a blank screen for a few seconds before the game
+  appears, longer than on FW5. FW4 has no fast-load path (`$7FD3`/`$7FD4`), so
+  its load is slower, but the launch doesn't turn the LCD off until the load
+  is done, so that doesn't yet explain a blank screen. Comparing against a
+  `BOOTROM=1` launch of the same game on that cart would show if the jump is
+  involved.
+
+Still owed: stock stage1 on hardware (it should reset every time), and
+Crystal's clock and saves checked across a power cycle.
