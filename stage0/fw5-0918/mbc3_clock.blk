@@ -1,0 +1,321 @@
+# FW5's MBC3 clock registers: the game's clock writes, the write flags, the $6000 latch and its latched copies, the clock-only RAM enable (FW5 only, fw5blk.py)
+[cells]
+X10Y12_S0.FFY
+X10Y12_S0.G
+X10Y13_S1.FFY
+X10Y15_S3.FFY
+X10Y15_S3.G
+X10Y22_S1.F
+X10Y9_S0.FFX
+X10Y9_S0.FFY
+X10Y9_S2.FFX
+X10Y9_S2.FFY
+X11Y12_S0.F
+X11Y12_S0.FFX
+X11Y12_S0.FFY
+X11Y12_S3.FFX
+X11Y12_S3.FFY
+X11Y21_S2.F
+X11Y9_S0.FFY
+X12Y12_S3.FFY
+X1Y12_S0.FFY
+X1Y12_S1.FFY
+X1Y12_S2.FFX
+X1Y12_S2.FFY
+X1Y15_S2.FFY
+X1Y15_S3.FFY
+X1Y18_S1.F
+X1Y18_S1.FFX
+X1Y18_S1.FFY
+X1Y18_S1.G
+X1Y19_S3.FFY
+X1Y1_S1.FFY
+X1Y7_S0.FFY
+X2Y12_S0.FFY
+X2Y12_S1.FFY
+X2Y12_S3.FFY
+X2Y14_S0.FFX
+X2Y14_S0.FFY
+X2Y14_S1.FFY
+X2Y16_S1.FFY
+X2Y17_S0.FFY
+X2Y17_S2.FFY
+X2Y17_S3.FFX
+X2Y17_S3.FFY
+X2Y22_S2.F
+X2Y22_S2.FFX
+X2Y22_S2.G
+X2Y5_S3.FFY
+X2Y6_S1.FFY
+X2Y7_S0.FFY
+X7Y11_S0.FFY
+X7Y13_S2.FFX
+X7Y13_S2.FFY
+X7Y14_S0.FFY
+X7Y15_S1.FFY
+X7Y15_S2.F
+X7Y15_S2.FFX
+X7Y15_S3.FFY
+X7Y16_S0.FFY
+X7Y16_S1.FFY
+X7Y16_S2.FFY
+X7Y17_S3.FFX
+X7Y17_S3.FFY
+X7Y18_S1.F
+X7Y18_S1.FFX
+X7Y18_S2.F
+X7Y18_S2.FFX
+X7Y18_S2.FFY
+X7Y18_S3.F
+X7Y18_S3.FFX
+X7Y18_S3.G
+X7Y19_S2.FFX
+X7Y19_S2.FFY
+X7Y1_S1.FFY
+X7Y20_S2.F
+X7Y20_S2.FFY
+X7Y20_S3.F
+X7Y21_S0.F
+X7Y21_S1.F
+X7Y21_S2.F
+X7Y21_S2.FFX
+X7Y21_S2.FFY
+X7Y21_S3.F
+X7Y21_S3.FFX
+X7Y21_S3.FFY
+X7Y22_S0.F
+X7Y22_S0.FFY
+X7Y22_S0.G
+X7Y22_S1.F
+X7Y22_S1.FFX
+X7Y23_S0.F
+X7Y23_S0.FFX
+X7Y23_S0.FFY
+X7Y23_S0.G
+X7Y23_S1.F
+X7Y23_S1.FFX
+X7Y23_S1.G
+X7Y23_S2.F
+X7Y23_S2.FFX
+X7Y23_S2.FFY
+X7Y23_S2.G
+X7Y24_S1.F
+X7Y24_S1.F5
+X7Y24_S1.G
+X7Y25_S2.FFX
+X7Y25_S2.FFY
+X7Y25_S3.F
+X7Y25_S3.FFX
+X7Y25_S3.FFY
+X7Y26_S2.F
+X7Y26_S2.G
+X7Y26_S3.F
+X7Y26_S3.FFY
+X7Y2_S1.FFY
+X7Y4_S3.FFY
+X7Y9_S3.FFY
+X8Y11_S1.FFY
+X8Y12_S2.FFX
+X8Y12_S2.FFY
+X8Y13_S1.FFY
+X8Y16_S2.FFY
+X8Y19_S3.F
+X8Y19_S3.G
+X8Y20_S0.G
+X8Y21_S0.FFX
+X8Y21_S0.FFY
+X8Y23_S1.FFX
+X8Y23_S1.FFY
+X8Y24_S3.F
+X8Y24_S3.F5
+X8Y24_S3.G
+X8Y25_S3.FFX
+X9Y10_S3.F
+X9Y10_S3.FFX
+X9Y11_S2.FFX
+X9Y11_S2.FFY
+X9Y12_S2.FFX
+X9Y12_S2.FFY
+X9Y14_S3.FFY
+X9Y21_S3.G
+X9Y22_S0.F
+X9Y22_S0.G
+X9Y26_S0.F
+[names]
+n_X7Y22_S0_YQ              r6000[7]
+n_X7Y23_S0_XQ              r6000[0]
+n_X7Y23_S0_YQ              r6000[1]
+n_X7Y25_S2_XQ              r6000[4]
+n_X7Y25_S2_YQ              r6000[5]
+n_X7Y25_S3_XQ              r6000[2]
+n_X7Y25_S3_YQ              r6000[3]
+n_X7Y26_S3_YQ              r6000[6]
+n_X8Y25_S3_XQ              ram_en
+n_X9Y14_S3_YQ              mbc3_wr_s[0]
+n_X7Y16_S2_YQ              mbc3_wr_s[1]
+n_X8Y16_S2_YQ              mbc3_wr_s[2]
+n_X7Y11_S0_YQ              mbc3_wr_s[3]
+n_X8Y12_S2_XQ              mbc3_wr_s[4]
+n_X9Y12_S2_XQ              mbc3_wr_s[5]
+n_X8Y12_S2_YQ              mbc3_wr_s[6]
+n_X9Y12_S2_YQ              mbc3_wr_s[7]
+n_X7Y13_S2_XQ              mbc3_wr_m[0]
+n_X2Y17_S2_YQ              mbc3_wr_m[1]
+n_X11Y12_S0_YQ             mbc3_wr_m[2]
+n_X1Y15_S2_YQ              mbc3_wr_m[3]
+n_X7Y15_S1_YQ              mbc3_wr_m[4]
+n_X7Y13_S2_YQ              mbc3_wr_m[5]
+n_X11Y12_S0_XQ             mbc3_wr_m[6]
+n_X10Y12_S0_YQ             mbc3_wr_m[7]
+n_X10Y13_S1_YQ             mbc3_wr_h[0]
+n_X10Y9_S2_XQ              mbc3_wr_h[1]
+n_X10Y9_S0_XQ              mbc3_wr_h[2]
+n_X10Y9_S0_YQ              mbc3_wr_h[3]
+n_X11Y9_S0_YQ              mbc3_wr_h[4]
+n_X10Y9_S2_YQ              mbc3_wr_h[5]
+n_X11Y12_S3_XQ             mbc3_wr_h[6]
+n_X11Y12_S3_YQ             mbc3_wr_h[7]
+n_X12Y12_S3_YQ             mbc3_wr_dl[0]
+n_X2Y14_S0_XQ              mbc3_wr_dl[1]
+n_X1Y12_S2_XQ              mbc3_wr_dl[2]
+n_X1Y12_S1_YQ              mbc3_wr_dl[3]
+n_X1Y12_S2_YQ              mbc3_wr_dl[4]
+n_X1Y12_S0_YQ              mbc3_wr_dl[5]
+n_X2Y14_S0_YQ              mbc3_wr_dl[6]
+n_X2Y12_S0_YQ              mbc3_wr_dl[7]
+n_X2Y12_S3_YQ              mbc3_wr_dh[0]
+n_X10Y15_S3_YQ             mbc3_wr_dh[1]
+n_X7Y15_S2_XQ              mbc3_wr_dh[2]
+n_X1Y18_S1_XQ              mbc3_wr_dh[3]
+n_X1Y18_S1_YQ              mbc3_wr_dh[4]
+n_X9Y10_S3_XQ              mbc3_wr_dh[5]
+n_X7Y9_S3_YQ               mbc3_wr_dh[6]
+n_X8Y11_S1_YQ              mbc3_wr_dh[7]
+n_X7Y21_S2_YQ              lat_dh[0]
+n_X7Y20_S2_YQ              lat_dh[1]
+n_X7Y17_S3_XQ              lat_dh[2]
+n_X7Y19_S2_XQ              lat_dh[3]
+n_X7Y14_S0_YQ              lat_dh[4]
+n_X2Y17_S3_XQ              lat_dh[5]
+n_X9Y11_S2_YQ              lat_dh[6]
+n_X1Y19_S3_YQ              lat_dh[7]
+n_X7Y23_S2_YQ              lat_dl[0]
+n_X2Y17_S0_YQ              lat_dl[1]
+n_X7Y17_S3_YQ              lat_dl[2]
+n_X7Y16_S1_YQ              lat_dl[3]
+n_X2Y5_S3_YQ               lat_dl[4]
+n_X1Y7_S0_YQ               lat_dl[5]
+n_X7Y4_S3_YQ               lat_dl[6]
+n_X1Y15_S3_YQ              lat_dl[7]
+n_X7Y23_S2_XQ              lat_hour[0]
+n_X8Y23_S1_XQ              lat_hour[1]
+n_X7Y18_S2_XQ              lat_hour[2]
+n_X8Y21_S0_XQ              lat_hour[3]
+n_X2Y6_S1_YQ               lat_hour[4]
+n_X7Y21_S2_XQ              lat_hour[5]
+n_X9Y11_S2_XQ              lat_hour[6]
+n_X7Y21_S3_XQ              lat_hour[7]
+n_X8Y21_S0_YQ              lat_min[0]
+n_X2Y14_S1_YQ              lat_min[1]
+n_X2Y17_S3_YQ              lat_min[2]
+n_X2Y16_S1_YQ              lat_min[3]
+n_X7Y2_S1_YQ               lat_min[4]
+n_X1Y1_S1_YQ               lat_min[5]
+n_X7Y1_S1_YQ               lat_min[6]
+n_X2Y12_S1_YQ              lat_min[7]
+n_X7Y21_S3_YQ              lat_sec[0]
+n_X7Y19_S2_YQ              lat_sec[1]
+n_X7Y15_S3_YQ              lat_sec[2]
+n_X8Y13_S1_YQ              lat_sec[3]
+n_X2Y7_S0_YQ               lat_sec[4]
+n_X7Y18_S2_YQ              lat_sec[5]
+n_X7Y16_S0_YQ              lat_sec[6]
+n_X8Y23_S1_YQ              lat_sec[7]
+n_X1Y11_S0_YQ              mbc3_rd_m[7]
+n_X1Y14_S0_YQ              mbc3_rd_dl[7]
+n_X1Y15_S0_YQ              mbc3_rd_dh[7]
+n_X1Y17_S1_YQ              mbc3_rd_dh[5]
+n_X1Y5_S3_XQ               mbc3_rd_dl[4]
+n_X1Y5_S3_YQ               mbc3_rd_dl[6]
+n_X1Y6_S0_YQ               mbc3_rd_h[4]
+n_X1Y7_S1_YQ               mbc3_rd_s[4]
+n_X1Y7_S2_YQ               mbc3_rd_h[6]
+n_X1Y7_S3_YQ               mbc3_rd_dl[5]
+n_X2Y14_S2_YQ              mbc3_rd_m[1]
+n_X2Y16_S2_XQ              mbc3_rd_m[2]
+n_X2Y16_S2_YQ              mbc3_rd_m[3]
+n_X2Y17_S1_YQ              mbc3_rd_dl[1]
+n_X2Y1_S1_YQ               mbc3_rd_m[5]
+n_X7Y11_S3_YQ              mbc3_rd_dh[6]
+n_X7Y13_S1_YQ              mbc3_rd_dh[4]
+n_X7Y17_S1_XQ              mbc3_rd_dl[2]
+n_X7Y17_S1_YQ              mbc3_rd_dl[3]
+n_X7Y17_S2_YQ              mbc3_rd_dh[2]
+n_X7Y19_S0_YQ              mbc3_rd_s[5]
+n_X7Y19_S1_YQ              mbc3_rd_s[1]
+n_X7Y19_S3_XQ              mbc3_rd_dh[1]
+n_X7Y19_S3_YQ              mbc3_rd_dh[3]
+n_X7Y1_S3_YQ               mbc3_rd_m[6]
+n_X7Y21_S0_YQ              mbc3_rd_h[5]
+n_X7Y21_S1_YQ              mbc3_rd_dh[0]
+n_X7Y22_S2_YQ              mbc3_rd_h[7]
+n_X7Y22_S3_YQ              mbc3_rd_s[0]
+n_X8Y10_S2_XQ              mbc3_rd_s[2]
+n_X8Y10_S2_YQ              mbc3_rd_s[3]
+n_X8Y11_S0_YQ              mbc3_rd_s[6]
+n_X8Y18_S0_YQ              mbc3_rd_h[2]
+n_X8Y19_S3_YQ              mbc3_rd_m[0]
+n_X8Y1_S0_YQ               mbc3_rd_m[4]
+n_X8Y20_S3_YQ              mbc3_rd_h[3]
+n_X8Y22_S3_YQ              mbc3_rd_s[7]
+n_X8Y24_S1_XQ              mbc3_rd_h[0]
+n_X8Y24_S1_YQ              mbc3_rd_h[1]
+n_X8Y24_S2_YQ              mbc3_rd_dl[0]
+n_X7Y18_S3_XQ              wrote_s
+n_X7Y22_S1_XQ              wrote_m
+n_X7Y18_S1_XQ              wrote_h
+n_X2Y22_S2_XQ              wrote_dl
+n_X7Y23_S1_XQ              wrote_dh
+b_X8Y25_S3_F               d_0a
+n_X0Y15_IOI0_I             d6
+n_X0Y15_IOI1_I             d5
+n_X0Y18_IOI0_I             d4
+n_X0Y18_IOI1_I             d3
+n_X0Y19_IOI0_I             d2
+n_X0Y19_IOI1_I             d1
+n_X0Y29_IOI0_I             a15
+n_X0Y2_IOI1_I              d7
+n_X0Y30_IOI0_I             a14
+n_X0Y30_IOI1_I             a13
+n_X0Y32_IOI0_I             a12
+n_X0Y32_IOI1_I             d0
+n_X11Y21_S2_XQ             rtc_sel[3]
+n_X11Y21_S2_YQ             rtc_sel[4]
+n_X11Y33_IOI0_I            a2
+n_X12Y33_IOI0_I            a1
+n_X12Y33_IOI1_I            a0
+n_X13Y33c_BUFGMUX0_O       clk_wr_a
+n_X1Y17_S2_YQ              rtc_sel[1]
+n_X2Y25_S2_X               rtc_sel_d
+n_X5Y33_IOI0_I             a4
+n_X7Y20_S0_YQ              kernel_mode
+n_X7Y21_S1_Y               a10_any
+n_X7Y21_S2_Y               a0_n1
+n_X7Y25_S2_Y               rtc_set_wr
+n_X7Y26_S3_Y               n_r6000
+n_X7Y27_S1_X               type0_n2
+n_X7Y31_S1_Y               r2000
+n_X8Y19_S0_YQ              rtc_sel[0]
+n_X8Y21_S2_Y               win_a000
+n_X8Y21_S3_XQ              rtc_sel[2]
+n_X8Y21_S3_YQ              rtc_sel[5]
+n_X8Y23_S1_X               game_n3
+n_X8Y26_S0_XQ              mbc_type[0]
+n_X8Y26_S0_YQ              mbc_type[1]
+n_X8Y27_S0_X               type1_n2
+n_X8Y27_S1_YQ              mbc_type[3]
+n_X9Y22_S0_XQ              rtc_sel[6]
+n_X9Y22_S0_YQ              rtc_sel[7]
+n_X9Y23_S2_X               a210_4
+n_X9Y24_S0_X               bank_lo_ones
+n_X9Y26_S0_Y               bank_hi_ones
