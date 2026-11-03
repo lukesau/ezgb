@@ -1,0 +1,5 @@
+# simblk.py arguments for pb_periph: FW5 moves the interrupt source to the
+# PicoBlaze clock and the SPI pins to sd_mem_path, so the neighbors' names
+# bound the cone
+--context-a stage0/blocks/picoblaze.blk stage0/blocks/picoblaze_ports.blk stage0/blocks/gb_regs.blk stage0/blocks/psram_ctrl.blk stage0/blocks/gb_bus.blk
+--context-b stage0/fw5-0918/picoblaze_ports.names stage0/fw5-0918/gb_regs.names stage0/fw5-0918/mbc3_clock.blk stage0/fw5-0918/fw5_7fxx.blk stage0/fw5-0918/gb_bus.names stage0/fw5-0918/sd_mem_path.names

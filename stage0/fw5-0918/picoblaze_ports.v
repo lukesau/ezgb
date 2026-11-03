@@ -5,8 +5,9 @@
 //          minutes, hours, DL, DH), registers in the Game Boy write domain
 //          the kernel can also write at $A010-$A014
 //   BB     $7FD3 + $7FD4
-//   B5     eight command bits (FW4 five, bits 7:3), on the PicoBlaze clock
-//   B8     two status bits
+//   B5     eight command bits (FW4 five, bits 7:3), on the PicoBlaze clock:
+//          FW4's five, then the game's seconds, minutes and hours writes
+//   B8     the game's DL (bit 0) and DH (bit 1) writes (pb_periph)
 //   A0     the timer OUTPUT A1 starts: bit 1 its top bit, bit 2 all four
 //          bits set (FW4 reads A0 as 0)
 //   B9     !kernel_mode (FW4 reads 1)

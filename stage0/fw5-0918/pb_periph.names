@@ -1,0 +1,37 @@
+# FW5 names simblk.py can't find: the interrupt source's synchronizers,
+# two stages per request flag on the PicoBlaze clock (FW4 has five flags on
+# the 2x clock, FW5 adds the five MBC3 clock-write flags), and the command
+# bits they load, which the PicoBlaze reads at B5 and B8; and the I2C
+# pads' tristate enable (OUTPUT EC)
+n_X1Y24_S2_YQ              cmd_read_s1 out
+n_X2Y19_S2_YQ              cmd_read_s2 out
+n_X1Y26_S3_YQ              cmd_write_s1 out
+n_X2Y18_S3_YQ              cmd_write_s2 out
+n_X8Y15_S0_XQ              load_start_s1 out
+n_X8Y15_S0_YQ              load_start_s2 out
+n_X1Y22_S2_YQ              rtc_set_s1 out
+n_X1Y21_S0_YQ              rtc_set_s2 out
+n_X7Y14_S2_YQ              flash_op_s1 out
+n_X2Y16_S3_YQ              flash_op_s2 out
+n_X2Y15_S0_XQ              wrote_s_s1 out
+n_X2Y15_S0_YQ              wrote_s_s2 out
+n_X1Y17_S3_YQ              wrote_m_s1 out
+n_X1Y18_S2_YQ              wrote_m_s2 out
+n_X1Y20_S0_YQ              wrote_h_s1 out
+n_X1Y20_S1_YQ              wrote_h_s2 out
+n_X1Y22_S1_YQ              wrote_dl_s1 out
+n_X1Y22_S0_YQ              wrote_dl_s2 out
+n_X7Y24_S1_YQ              wrote_dh_s1 out
+n_X2Y23_S0_YQ              wrote_dh_s2 out
+n_X1Y20_S2_XQ cmd_op[0] out
+n_X1Y18_S3_XQ cmd_op[1] out
+n_X2Y15_S1_XQ cmd_op[2] out
+n_X1Y17_S0_XQ cmd_op[3] out
+n_X1Y20_S2_YQ cmd_op[4] out
+n_X1Y17_S0_YQ cmd_op[5] out
+n_X1Y18_S0_YQ cmd_op[6] out
+n_X2Y18_S2_XQ cmd_op[7] out
+n_X1Y22_S3_XQ stat_b8[0] out
+n_X2Y22_S3_XQ stat_b8[1] out
+n_X9Y12_S3_X               wr_ec out
+n_X1Y28_S3_XQ              rtc_set_go in
