@@ -321,7 +321,15 @@ Game Boy side carry at all:
 | PicoBlaze timer (FW5 only) | proven against [stage0/fw5-0918/pb_timer.v](../../../stage0/fw5-0918/pb_timer.v): OUTPUT A1 queues a unit of 540 PicoBlaze clocks (up to 15), INPUT A0 reads the queue. The prescaler is a 0-26 counter and a 20-step phase machine with a 3-bit counter, kept as XST encoded them |
 | data out | equivalent to [stage0/fw5-0918/gb_data_out.v](../../../stage0/fw5-0918/gb_data_out.v): the game's MBC3 clock reads return five latched registers (S, M, H, DL, DH, loaded on the `$6000` latch: `$01` after `$00`), where FW4 converts the live PCF8563 BCD and serves DH as 1. The kernel window reads the RTC bridge's registers, which keep only the bits each BCD value uses. Other register-window reads return 0 (FW4 `$FF`), `$7FC0 = 4` reads `$05` (FW4 `$04`), and `$7FC3` bit 7 is a register. Two of stage1's bit-plane RAMs are now paired by the data bit they drive |
 | unlock | equivalent to [stage0/fw5-0918/unlock.v](../../../stage0/fw5-0918/unlock.v): four one-hot registers (idle, after `$E1`, after `$E2`, unlocked) where FW4 encodes the states in two. FW5 unlocks on the `$E3`, where FW4 unlocks on the `$E2` and the `$E3` only keeps it, and the writes that stay unlocked add `$7FD3` and `$7FD4` |
-| clocks, P51 latch (a flip-flop in FW5), and a 22-bit counter on the DCM clock only FW5 has | carried only in part; each needs an FW5 module of its own |
+| clocks | equivalent to [stage0/fw5-0918/clocks.v](../../../stage0/fw5-0918/clocks.v): FW4's clock gates and DCM reset on other buffers, no `/WR \| A15` clock (FW5's Game Boy registers all run on the `/WR` pad), 22 constant-0 LUTs (FW4 15) |
+| P51 latch | equivalent to FW4's module, unchanged: a latch on `flash_op` in FW5 too. The carry took the A13 mux's whole cone with it, so its block file is written in FW5's coordinates ([stage0/fw5-0918/p51_latch.blk](../../../stage0/fw5-0918/p51_latch.blk)) |
+| `/RESET` debounce (FW5 only) | proven against [stage0/fw5-0918/reset_debounce.v](../../../stage0/fw5-0918/reset_debounce.v): `/RESET` synchronized on CLK0 and a 20-bit counter, restarted when it falls, whose all-ones state enables the `/RESET` pad's input register. The pad is sampled once every 2^20 CLK0 cycles, the first time 2^20 after it fell |
+
+> **Correction (2026-11-02):** an earlier version of this table called
+> FW5's P51 register a flip-flop and its DCM-clock counter 22 bits. The
+> P51 register is a latch on `flash_op`, as on FW4, and the counter is 20
+> bits; the other two flip-flops on that clock are its `/RESET`
+> synchronizer.
 
 > **Correction (2026-11-02):** an earlier version of this paragraph said FW5
 > serves the MBC3 clock registers from U4. `gb_data_out` (in the table above)
