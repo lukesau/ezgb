@@ -7,5 +7,8 @@ header names. A `<block>.names` file adds names the carry can't find (a
 clock that moved). Where FW5 packs a block's logic into other LUTs, a
 `<block>.sim` file holds `scripts/fpga/simblk.py` arguments and the block
 is built by what its nets compute instead of carried; its `.names` lines
-then come first (an `in` at the end makes a logic net an input). The results are in
+then come first (an `in` at the end makes a logic net an input). Logic only
+FW5 has gets a `<block>.blk` here, in FW5's coordinates, written by
+`scripts/fpga/fw5blk.py` from its registers; it is carved as it is. The
+results are in
 [re/stage0/docs/firmware-diff.md](../../re/stage0/docs/firmware-diff.md).

@@ -19,6 +19,8 @@
 #      FW5 packs into other LUTs), stage0/fw5-0918/
 #      <block>.names adds the names it can't carry (a clock that moved), and
 #      fw5-stages.py adds the extra stages to the crossings block
+#      FW5-only blocks (stage0/fw5-0918/<block>.blk, in FW5's coordinates,
+#      written by fw5blk.py) are copied as they are
 #   4. equiv.sh proves each block: against stage0/rtl/ (FW4's module), or
 #      stage0/fw5-0918/ where FW5 differs; TIE/DROP stand in for the
 #      constant-0 LUTs FW4 shares between blocks, which FW5 wires as
@@ -42,8 +44,12 @@ awk '$1 != "-" && $2 != "-"' "$OUT/m1s.match" > "$OUT/seed2.txt"
 python3 "$here/belmatch.py" "$A" "$B" --seed "$OUT/seed2.txt" --shape --blocks stage0/blocks/*.blk --dump "$OUT/m2.match" 2>> "$OUT/match.log"
 python3 "$here/fw5-stages.py" fix "$A" "$B" "$OUT/m2.match" "$OUT/m.match" "$OUT/s1names.txt"
 BLOCKS=${*:-$(cd stage0/blocks && ls *.blk | sed 's/\.blk$//' | tr '\n' ' ')}
+FW5ONLY=$(cd stage0/fw5-0918 && ls *.blk 2>/dev/null | sed 's/\.blk$//' | tr '\n' ' ')
+[ $# -eq 0 ] && BLOCKS="$BLOCKS $FW5ONLY"
 for b in $BLOCKS; do
-    if [ -f stage0/fw5-0918/$b.sim ]; then      # packed differently: name nets by what they compute
+    if [ -f stage0/fw5-0918/$b.blk ]; then     # FW5 only: already in FW5's coordinates
+        cp stage0/fw5-0918/$b.blk "$OUT/blk/$b.blk"
+    elif [ -f stage0/fw5-0918/$b.sim ]; then      # packed differently: name nets by what they compute
         names=; [ -f stage0/fw5-0918/$b.names ] && names="--names stage0/fw5-0918/$b.names"
         python3 "$here/simblk.py" "$A" "$B" "$OUT/m.match" stage0/blocks/$b.blk -o "$OUT/blk/$b.blk" $names \
             $(grep -v '^#' stage0/fw5-0918/$b.sim) > "$OUT/blk/$b.log" 2>&1 || echo "$b: simblk failed, see $OUT/blk/$b.log"
@@ -60,6 +66,7 @@ prove() {
     env BLK="$OUT/blk/$b.blk" "$@" "$here/equiv.sh" $b "$OUT" > "$OUT/blk/$b.out" 2>&1
 }
 for b in $BLOCKS; do
+    [ -f stage0/fw5-0918/$b.blk ] && { prove $b RTL=stage0/fw5-0918/$b.v & continue; }
     case $b in
         sd_crossings|soft_reset|psram_ctrl|sd_mem_path|gb_regs|unlock|gb_data_out|rtc_bridge|gb_bus|picoblaze_ports) prove $b RTL=stage0/fw5-0918/$b.v ;;
         sd_data_serial) prove $b RTL=stage0/fw5-0918/sd_data_serial.v TIE="gnd_i=0" DROP="gnd gnd1 gnd2 gnd3 gnd4 gnd5 gnd6 gnd7" ;;
