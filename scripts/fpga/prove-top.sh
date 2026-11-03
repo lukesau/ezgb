@@ -25,6 +25,14 @@
 # Together: design.v's slice logic == fw4_logic over the readable modules;
 # fw4_top adds the primitives copied from design.v (mktop.py). Output in
 # EXPORTDIR/top/.
+#
+# Other builds (scripts/fpga/fw5-top.sh sets these for FW5-0918):
+#   PREFIX  module names <PREFIX>_logic / <PREFIX>_top (default fw4)
+#   BLKS    the block files (default stage0/blocks/*.blk)
+#   RTLS    the readable modules (default stage0/rtl/*.v, the top excluded)
+#   TOPRTL  where the stitched readable top goes (default stage0/rtl/fw4_top.v)
+#   TIES    "module:port=0 ..." inputs of a readable module tied to a
+#           constant, where the build wires a constant (equiv.sh's TIE)
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
@@ -33,13 +41,26 @@ exp=${2:-$top/fpga/fw4}
 out=$exp/top
 lib=$top/stage0/lib
 mkdir -p "$out/raw"
-blks=$(ls "$top"/stage0/blocks/*.blk)
+P=${PREFIX:-fw4}
+blks=${BLKS:-$(ls "$top"/stage0/blocks/*.blk)}
+toprtl=${TOPRTL:-$top/stage0/rtl/fw4_top.v}
+rtls=${RTLS:-$(ls "$top"/stage0/rtl/*.v | grep -v "/${P}_top.v$")}
+ties=''
+for t in ${TIES:-}; do
+    m=${t%%:*}; t=${t#*:}
+    ties="$ties
+cd $m
+delete -port w:${t%%=*}
+connect -set ${t%%=*} 1'b${t#*=}
+cd .."
+done
+pblk=$(echo "$blks" | tr ' ' '\n' | grep '/picoblaze\.blk$')
 # the LUT RAM contents: <cell>.m in the references, the readable name in the RTL
-python3 - "$top" "$out" <<'PY'
+python3 - "$pblk" "$out" <<'PY'
 import sys, re
-top, out = sys.argv[1:3]
+pblk, out = sys.argv[1:3]
 names = {}
-for l in open(f'{top}/stage0/blocks/picoblaze.blk').read().split('[names]')[1].splitlines():
+for l in open(pblk).read().split('[names]')[1].splitlines():
     l = l.split('#')[0].strip()
     if l.endswith('.m') or '.m ' in l:
         k, v = l.split(); names[k] = v
@@ -57,7 +78,7 @@ wiring)
         sed '/^\[names\]/,$d' "$b" > "$out/raw/$(basename "$b")"
         python3 "$here/carve.py" "$exp/design.v" "$out/raw/$(basename "$b")" -o "$out/raw/$(basename "${b%.blk}")_ref.v" >/dev/null 2>&1
     done
-    python3 "$here/mktop.py" "$exp/design.v" "$out"/raw/*.blk --suffix _ref -o "$out/top_raw.v" --strip "$out/strip_all.ys" >/dev/null
+    python3 "$here/mktop.py" "$exp/design.v" "$out"/raw/*.blk --prefix $P --suffix _ref -o "$out/top_raw.v" --strip "$out/strip_all.ys" >/dev/null
     log=$out/wiring.log
     # the gate's block-internal nets get their flat names back; a net yosys
     # optimized away while flattening (a LUT feeding a mux the register
@@ -66,10 +87,10 @@ wiring)
 read_verilog -sv $lib/s3bels.v
 read_verilog -sv $out/raw/*_ref.v
 read_verilog -sv $out/top_raw.v
-prep -flatten -top fw4_logic
+prep -flatten -top ${P}_logic
 async2sync
 opt_clean
-cd fw4_logic
+cd ${P}_logic
 tee -q -o $out/gate_wires.txt select -list w:*
 " >/dev/null 2>&1
     python3 - "$out" <<'PY'
@@ -95,10 +116,10 @@ design -stash gold
 read_verilog -sv $lib/s3bels.v
 read_verilog -sv $out/raw/*_ref.v
 read_verilog -sv $out/top_raw.v
-prep -flatten -top fw4_logic
+prep -flatten -top ${P}_logic
 async2sync
 opt_clean
-cd fw4_logic
+cd ${P}_logic
 script $out/strip_raw.ys
 script $out/ren_ref.ys
 cd ..
@@ -114,7 +135,7 @@ opt_clean
 equiv_simple -seq 1
 equiv_induct -seq 1
 equiv_status -assert
-" && echo "wiring: fw4_logic over the carved blocks == every slice bel of design.v ($(grep -oE 'Found [0-9]+ .equiv' "$log" | tail -1 | awk '{print $2}') signals)" || { echo "wiring: NOT proven, see $log" >&2; exit 1; }
+" && echo "wiring: ${P}_logic over the carved blocks == every slice bel of design.v ($(grep -oE 'Found [0-9]+ .equiv' "$log" | tail -1 | awk '{print $2}') signals)" || { echo "wiring: NOT proven, see $log" >&2; exit 1; }
     ;;
 rtl)
     refs=''
@@ -123,17 +144,17 @@ rtl)
         python3 "$here/carve.py" "$exp/design.v" "$b" -o "$r" >/dev/null 2>&1
         refs="$refs $r"
     done
-    python3 "$here/mktop.py" "$exp/design.v" $blks --suffix _ref -o "$out/top_ref.v" >/dev/null
-    python3 "$here/mktop.py" "$exp/design.v" $blks -o "$top/stage0/rtl/fw4_top.v" >/dev/null
+    python3 "$here/mktop.py" "$exp/design.v" $blks --prefix $P --suffix _ref -o "$out/top_ref.v" >/dev/null
+    python3 "$here/mktop.py" "$exp/design.v" $blks --prefix $P -o "$toprtl" >/dev/null
     log=$out/rtl.log
     prelude="
 read_verilog -sv $lib/s3bels.v
 read_verilog -sv $refs
 read_verilog -sv $out/top_ref.v
-prep -flatten -top fw4_logic
+prep -flatten -top ${P}_logic
 async2sync
 opt_clean
-cd fw4_logic
+cd ${P}_logic
 script $out/ren_ref.ys
 cd ..
 rename -hide w:*.*.*
@@ -141,11 +162,13 @@ opt_clean
 rename -top gold
 design -stash gold
 read_verilog -sv $lib/s3bels.v
-read_verilog -sv -formal $top/stage0/rtl/*.v
-prep -flatten -top fw4_logic
+read_verilog -sv -formal $rtls $toprtl
+hierarchy -top ${P}_logic
+proc$ties
+prep -flatten -top ${P}_logic
 async2sync
 opt_clean
-cd fw4_logic
+cd ${P}_logic
 script $out/ren_rtl.ys
 cd ..
 rename -hide w:*.*.*
