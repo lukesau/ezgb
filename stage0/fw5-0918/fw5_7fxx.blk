@@ -1,0 +1,79 @@
+# the registers FW5 adds to the $7Fxx file: $7FD3 (bit 7 in the d7 pad's input register), the $7FD3 + $7FD4 sum the PicoBlaze reads at port BB, and $7FC3 bit 7 (FW5 only, fw5blk.py)
+[cells]
+X1Y10_S0.FFX
+X1Y10_S0.FFY
+X1Y12_S3.CYF
+X1Y12_S3.CYG
+X1Y12_S3.F
+X1Y12_S3.FFX
+X1Y12_S3.FFY
+X1Y12_S3.G
+X1Y12_S3.XORF
+X1Y12_S3.XORG
+X1Y13_S1.CYF
+X1Y13_S1.CYG
+X1Y13_S1.F
+X1Y13_S1.FFX
+X1Y13_S1.FFY
+X1Y13_S1.G
+X1Y13_S1.XORF
+X1Y13_S1.XORG
+X1Y13_S3.CYF
+X1Y13_S3.CYG
+X1Y13_S3.F
+X1Y13_S3.FFX
+X1Y13_S3.FFY
+X1Y13_S3.G
+X1Y13_S3.XORF
+X1Y13_S3.XORG
+X1Y14_S1.CYF
+X1Y14_S1.F
+X1Y14_S1.FFX
+X1Y14_S1.FFY
+X1Y14_S1.G
+X1Y14_S1.XORF
+X1Y14_S1.XORG
+X1Y14_S3.FFX
+X1Y14_S3.FFY
+X2Y13_S3.FFX
+X2Y13_S3.FFY
+X2Y14_S3.FFY
+X2Y21_S3.G
+X7Y18_S0.FFY
+X8Y18_S2.G
+[names]
+n_X1Y10_S0_XQ              r7fd3[0]
+n_X1Y10_S0_YQ              r7fd3[1]
+n_X1Y14_S3_XQ              r7fd3[2]
+n_X1Y14_S3_YQ              r7fd3[3]
+n_X2Y13_S3_XQ              r7fd3[4]
+n_X2Y13_S3_YQ              r7fd3[5]
+n_X2Y14_S3_YQ              r7fd3[6]
+n_X1Y12_S3_XQ              sum_7fd4[0]
+n_X1Y12_S3_YQ              sum_7fd4[1]
+n_X1Y13_S1_XQ              sum_7fd4[2]
+n_X1Y13_S1_YQ              sum_7fd4[3]
+n_X1Y13_S3_XQ              sum_7fd4[4]
+n_X1Y13_S3_YQ              sum_7fd4[5]
+n_X1Y14_S1_XQ              sum_7fd4[6]
+n_X1Y14_S1_YQ              sum_7fd4[7]
+n_X7Y18_S0_YQ              hdr_chk7
+n_X8Y18_S2_Y               wr_7fd3
+n_X0Y15_IOI0_I             d6
+n_X0Y15_IOI1_I             d5
+n_X0Y18_IOI0_I             d4
+n_X0Y18_IOI1_I             d3
+n_X0Y19_IOI0_I             d2
+n_X0Y19_IOI1_I             d1
+n_X0Y2_IOI1_I              d7
+n_X0Y2_IOI1_IQ1            d7_q
+n_X0Y32_IOI1_I             d0
+n_X11Y33_IOI0_I            a2
+n_X12Y33_IOI1_I            a0
+n_X13Y33c_BUFGMUX0_O       clk_wr_a
+n_X24Y18_S3_X              gnd1
+n_X5Y33_IOI0_I             a4
+n_X7Y19_S0_Y               dec_7fcx
+n_X7Y21_S1_Y               a10_any
+n_X8Y18_S0_Y               a1_n2
+n_X8Y18_S1_X               wr_7fc3
