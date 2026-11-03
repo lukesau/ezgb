@@ -1,0 +1,9 @@
+# the A13 latch on P51, FW4's in FW5's coordinates (the carry takes the A13 mux's whole cone with it)
+[cells]
+X16Y8_S3.FFY
+[names]
+n_X9Y18_S0_YQ             flash_op
+b_X16Y8_S3_G               mem_a13_b
+n_X17Y7_S0_X               mem_a13_sd
+n_X17Y7_S0_Y               mem_a13_sd_n
+n_X16Y8_S3_YQ              a13_latch
