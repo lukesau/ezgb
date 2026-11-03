@@ -1,0 +1,4 @@
+# simblk.py arguments for clocks: FW5 drops the /WR | A15 clock, so the
+# neighbors' names bound the cone
+--context-a stage0/blocks/psram_ctrl.blk stage0/blocks/gb_regs.blk
+--context-b stage0/fw5-0918/gb_regs.names stage0/fw5-0918/psram_ctrl.names

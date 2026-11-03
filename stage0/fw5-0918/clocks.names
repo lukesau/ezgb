@@ -1,0 +1,29 @@
+# FW5 names simblk.py can't find: the clock-gating LUTs, which drive only
+# global buffers and the DCM (the simulation has no pin to key them by),
+# and the constant-0 LUTs no other block holds (FW5 has 22, FW4 15)
+n_X1Y14_S2_X               clk_fx_n
+n_X1Y10_S0_Y               sh_clk_run
+n_X9Y28_S3_X               pb_clk_run
+n_X18Y1_S2_Y               dcm_rst
+n_X12Y28_S3_Y              gnd[0] out
+n_X13Y13_S2_X              gnd[1] out
+n_X18Y13_S2_X              gnd[2] out
+n_X18Y14_S2_Y              gnd[3] out
+n_X18Y25_S2_Y              gnd[4] out
+n_X18Y27_S0_X              gnd[5] out
+n_X18Y30_S0_X              gnd[6] out
+n_X1Y12_S1_Y               gnd[7] out
+n_X1Y24_S0_Y               gnd[8] out
+n_X23Y17_S0_X              gnd[9] out
+n_X23Y21_S0_Y              gnd[10] out
+n_X23Y23_S1_X              gnd[11] out
+n_X23Y24_S2_X              gnd[12] out
+n_X23Y30_S0_Y              gnd[13] out
+n_X23Y32_S2_X              gnd[14] out
+n_X23Y5_S0_X               gnd[15] out
+n_X23Y9_S0_X               gnd[16] out
+n_X24Y15_S2_X              gnd[17] out
+n_X2Y14_S3_Y               gnd[18] out
+n_X2Y17_S1_Y               gnd[19] out
+n_X2Y21_S0_X               gnd[20] out
+n_X2Y29_S1_X               gnd[21] out
