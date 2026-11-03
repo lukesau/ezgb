@@ -1,0 +1,86 @@
+# FW5's PicoBlaze timer: the OUTPUT A1 queue of 540-clock units INPUT A0 reads, with its prescaler (FW5 only, fw5blk.py)
+[cells]
+X1Y25_S1.F
+X1Y25_S1.FFX
+X1Y25_S1.G
+X1Y25_S3.CYF
+X1Y25_S3.CYG
+X1Y25_S3.F
+X1Y25_S3.FFX
+X1Y25_S3.FFY
+X1Y25_S3.G
+X1Y25_S3.XORF
+X1Y25_S3.XORG
+X1Y26_S1.CYF
+X1Y26_S1.F
+X1Y26_S1.FFX
+X1Y26_S1.FFY
+X1Y26_S1.G
+X1Y26_S1.XORF
+X1Y26_S1.XORG
+X1Y27_S2.F
+X1Y27_S2.FFX
+X1Y31_S0.F
+X1Y31_S0.FFX
+X1Y31_S0.FFY
+X1Y31_S0.G
+X1Y31_S1.F
+X1Y31_S1.FFX
+X1Y31_S1.G
+X1Y31_S2.F
+X1Y31_S2.FFX
+X1Y31_S2.FFY
+X1Y31_S3.CYF
+X1Y31_S3.CYG
+X1Y31_S3.F
+X1Y31_S3.FFX
+X1Y31_S3.FFY
+X1Y31_S3.G
+X1Y31_S3.XORF
+X1Y31_S3.XORG
+X1Y32_S0.F
+X1Y32_S0.G
+X1Y32_S1.CYF
+X1Y32_S1.F
+X1Y32_S1.FFX
+X1Y32_S1.XORF
+X1Y32_S2.F
+X1Y32_S2.FFX
+X1Y32_S2.FFY
+X1Y32_S2.G
+X1Y32_S3.G
+X2Y17_S0.F
+X2Y32_S0.F
+X2Y32_S0.FFX
+X2Y32_S0.FFY
+X2Y32_S0.G
+X2Y32_S1.F
+X2Y32_S1.FFX
+X2Y32_S1.FFY
+X2Y32_S1.G
+X2Y32_S3.FFY
+[names]
+n_X1Y25_S1_XQ              tmr_run
+n_X1Y25_S3_XQ              tmr[0]
+n_X1Y25_S3_YQ              tmr[1]
+n_X1Y26_S1_XQ              tmr[2]
+n_X1Y26_S1_YQ              tmr[3]
+n_X1Y27_S2_XQ              tick
+n_X2Y32_S3_YQ              p_on
+n_X2Y32_S0_XQ              p_a
+n_X2Y32_S0_YQ              p_b
+n_X2Y32_S1_XQ              p_c
+n_X2Y32_S1_YQ              p_d
+n_X1Y31_S0_XQ              p_e
+n_X1Y31_S0_YQ              p_f
+n_X1Y31_S1_XQ              p_g
+n_X1Y31_S2_XQ              p_h
+n_X1Y31_S2_YQ              p_i
+n_X1Y31_S3_XQ              p_j
+n_X1Y31_S3_YQ              p_k
+n_X1Y32_S1_XQ              p_l
+n_X1Y32_S2_XQ              p_m
+n_X1Y32_S2_YQ              p_n
+n_X2Y17_S0_Y               wr_a1
+n_X7Y14_S2_Y               tmr_full
+n_X13Y33c_BUFGMUX3_O       clk_pb
