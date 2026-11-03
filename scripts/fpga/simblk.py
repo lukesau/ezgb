@@ -240,10 +240,11 @@ def main():
             if len(cands) >= 1:
                 for c in cands:
                     ctx.setdefault(c, nm)
-    for path in args.context_b:
-        for l in open(path):
+    for path in args.context_b:     # a names file, or a block file's [names]
+        text = open(path).read()
+        for l in (text.split('[names]', 1)[1] if '[names]' in text else text).splitlines():
             l = l.split('#')[0].split()
-            if l and l[1] not in names.values() and l[1] not in given.values():
+            if len(l) >= 2 and l[1] not in names.values() and l[1] not in given.values():
                 ctx[l[0]] = l[1]
     for n, nm in ctx.items():
         if n not in bnames and nm not in bnames.values():
