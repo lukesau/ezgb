@@ -44,7 +44,7 @@ mkdir -p "$out/raw"
 P=${PREFIX:-fw4}
 blks=${BLKS:-$(ls "$top"/stage0/blocks/*.blk)}
 toprtl=${TOPRTL:-$top/stage0/rtl/fw4_top.v}
-rtls=${RTLS:-$(ls "$top"/stage0/rtl/*.v | grep -v "/${P}_top.v$")}
+rtls=${RTLS:-$(ls "$top"/stage0/rtl/*.v | grep -v "/${P}_top.v$" | tr '\n' ' ')}
 ties=''
 for t in ${TIES:-}; do
     m=${t%%:*}; t=${t#*:}
