@@ -1,0 +1,11 @@
+# FW5 names simblk.py can't find: the 2x-role clock the stage1 read runs on
+# (FW4's clk_2x), the $7FB4 write and the table window (too
+# rarely 1 for the simulation), the port EF write (picoblaze_ports) and the
+# register FW5 has where FW4 has the 2x copy of the busy flag
+n_X13Y0c_BUFGMUX3_O        clk_2x
+n_X13Y33c_BUFGMUX3_O       clk_pb
+n_X2Y19_S1_Y               wr_7fb4
+n_X8Y16_S0_X               tbl_win
+n_X8Y16_S2_X               tbl_we
+n_X7Y17_S2_X               port_ef_we in
+n_X15Y18_S1_YQ             load_busy_2x out

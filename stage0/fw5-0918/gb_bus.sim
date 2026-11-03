@@ -1,0 +1,4 @@
+# simblk.py arguments for gb_bus: FW5 builds the address pins in sd_mem_path,
+# so the neighbors' names bound the cone
+--context-a stage0/blocks/gb_regs.blk stage0/blocks/psram_ctrl.blk stage0/blocks/sd_mem_path.blk stage0/blocks/gb_data_out.blk stage0/blocks/pb_periph.blk stage0/blocks/soft_reset.blk
+--context-b stage0/fw5-0918/gb_regs.names stage0/fw5-0918/psram_ctrl.names stage0/fw5-0918/sd_mem_path.names stage0/fw5-0918/unlock.names stage0/fw5-0918/gb_data_out.names
