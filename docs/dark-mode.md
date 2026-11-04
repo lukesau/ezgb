@@ -143,7 +143,7 @@ in bank 1 that fits. Bank 2 is byte-identical in all three stock kernels.
 ### SET tab
 
 > Since 2026-10-30 the button is on the SET tab's second page, row 2, after
-> `THEME:`, cursor row 7 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)).
+> `THEME:`, cursor row 6 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)).
 > The rest of this section is how it was first built.
 
 The `UI:` row (row 14) holds two buttons: `THEME` and the 8px/12px one. The

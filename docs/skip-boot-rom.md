@@ -27,7 +27,8 @@ every game too, but that needs stage1 to pass the boot registers to the
 kernel (A tells DMG from Pocket, and B tells GBA from GBC). The same record
 would give a GBA its own B. For now a GBA gets B = 0, the GBC value.
 
-Turning it off: `BOOTROM=1` in `/EZGB.CFG` resets on every launch, for
+Turning it off: untick `SKIP BOOT ROM:` on the SET tab's second page
+(`BOOTROM=1` in `/EZGB.CFG`). Every launch then resets, for
 anyone who needs the boot ROM's exact timing (`DIV`, which some games use
 for random numbers).
 

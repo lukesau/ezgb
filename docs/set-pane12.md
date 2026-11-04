@@ -18,7 +18,6 @@ changes is x, per field:
 | 6 | `RTC:` 0..44, `SD` 44..66, `NO SD` 86..130; the checkboxes stay at x 66 and 130 |
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..79 (scrolls when its glyphs do not fit, [marquee.md](marquee.md)); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
-| 14 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
 | 16 | the page row: `< PREV` 8..64 in a box (3,127)-(65,140), `1/2` 70..97, `NEXT >` 104..155 in a box (99,127)-(155,140) |
 
 Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
@@ -30,6 +29,8 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 | 6 | `CLEAN UP NAMES:` 0..128 (`SHOW NAME TAGS:` until 2026-10-31), checkbox at x 130 ([browser-tags.md](browser-tags.md)) |
 | 8 | the scrolling example name, 0..159 ([browser-tags.md](browser-tags.md)) |
 | 10 | `SORT BY PLAYS:` 0..128, checkbox at x 130 ([stars.md](stars.md)) |
+| 12 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
+| 14 | `SKIP BOOT ROM:` 0..128, checkbox at x 130 ([skip-boot-rom.md](skip-boot-rom.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above

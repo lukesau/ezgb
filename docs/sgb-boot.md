@@ -10,7 +10,7 @@ the kernel. The mod does the same, behind a SET-tab checkbox.
 
 ## Using it
 
-On a DMG, GBC or GBA: SET tab, last row, `SGB BOOT:`, A to tick it. Move the
+On a DMG, GBC or GBA: SET tab, second page, `SGB BOOT:`, A to tick it. Move the
 cart to the Super Game Boy and power on. Since mod 7.0 a boot with it ticked
 takes about 0.4 s longer, on every model (it was about 7 s): the rest of the
 header goes out in the background while the kernel starts
@@ -56,7 +56,7 @@ global checksum); set 1's waits count CPU cycles instead of halting for
 VBlank, so they don't depend on the LCD being on; A is preserved for
 KernelEntry; only set 1 holds up the boot.
 
-The checkbox is cursor row 5, on row 14 of the SET tab's first page, drawn
+The checkbox is cursor row 10, on row 12 of the SET tab's second page (row 14 of the first until 2026-11-03), drawn
 and toggled by `SetPage` (`setpage.c`, through `RecFlag` in `rec_flag.c` since the SORT BY PLAYS record joined it;
 [fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). The record's place in
 pSRAM: [psram-page-map.md](psram-page-map.md).

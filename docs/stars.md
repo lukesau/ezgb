@@ -136,7 +136,7 @@ listing the star is still saved but the order and icons stay as they are.
 | `StarQueryFar`, `StarToggleFar` | `04:5998`, `04:59a0`: far stubs for `RomMenu`; `StarToggleFar` goes to `StarToggleSync` (bank 11) since the table is on the card |
 | `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/src/play_file.c), 845 B: `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
 | `RecFlag` | `04:7f51`, [rec_flag.c](../kernel/src/rec_flag.c): SGB BOOT's and SORT BY PLAYS' pSRAM records, read and toggled for `SetPage` |
-| SET tab row | page 2, row 10, cursor row 10 (PREV is now 11, clamp `04:5604` `d6 0b`), [setpage.c](../kernel/src/setpage.c), [flcfg.c](../kernel/src/flcfg.c) |
+| SET tab row | page 2, row 10, cursor row 9 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)), [setpage.c](../kernel/src/setpage.c), [flcfg.c](../kernel/src/flcfg.c) |
 | `DrawNameWithIconImpl` | moved from `02:7e80` to `02:7e00` to make room for the star test |
 
 ## Not done

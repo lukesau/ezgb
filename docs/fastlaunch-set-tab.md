@@ -25,15 +25,15 @@ The pane has two pages; row 16 of each switches to the other.
 | 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `CLEAN UP NAMES:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
-| 10 | `FAST LAUNCH:` checkbox | |
-| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | |
-| 14 | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | |
+| 10 | `FAST LAUNCH:` checkbox | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) |
+| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` |
+| 14 | empty (`SGB BOOT:` until 2026-11-03) | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` ([`skip-boot-rom.md`](skip-boot-rom.md)) |
 | 16 | `1/2` and a `NEXT >` button | a `< PREV` button and `2/2` |
 
 UP/DOWN move a cursor over the page's rows. Its numbers run on across the
-pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB
-BOOT, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 SORT BY PLAYS, 11 PREV on page 2
-(clamp `04:5604` `d6 0b`, and `flcfg` op ROWS keeps the cursor on its page).
+pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 NEXT on
+page 1; 6 THEME, 7 UI, 8 TAGS, 9 SORT BY PLAYS, 10 SGB BOOT, 11 SKIP BOOT ROM,
+12 PREV on page 2 (clamp `04:5604` `d6 0c`, and `flcfg` op ROWS keeps the cursor on its page).
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
 step through its fields. A new cursor row moves both the clamp and the row
@@ -59,7 +59,7 @@ the screen's dirty flag (`sp+$3e`) is set after a cursor move; op ROWS
 clears it on page 2. The entry code draws those boxes once before op ENTER,
 which clears the pane again on page 2.
 
-Page 2, SGB BOOT and the page row are drawn by `SetPage` (`04:6610`, since
+Page 2 and the page row are drawn by `SetPage` (`04:6610`, since
 2026-10-31; at `04:77a0`, then `04:7792` after `ThemeRow`, until it outgrew
 those slots; [`../kernel/src/setpage.c`](../kernel/src/setpage.c)), near-called
 by `flcfg`, which had no room for them; it replaced `SgbTagsRow`, which
@@ -155,8 +155,8 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 11, PREV, which op ROWS turns into NEXT on page 1; row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
-| `04:5604` | `d6 01` | `d6 0b` | cursor clamp 0..1 → 0..11, both pages (`d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 12, PREV, which op ROWS turns into NEXT on page 1; row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
+| `04:5604` | `d6 01` | `d6 0c` | cursor clamp 0..1 → 0..12, both pages (`d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`af ea ee db e8 6a c9`: clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

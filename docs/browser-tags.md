@@ -49,7 +49,7 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 ## SET tab
 
 > Since 2026-10-30 the checkbox is on the SET tab's second page, row 6,
-> cursor row 9, drawn by `SetPage` (`04:6610`, `04:7792` until 2026-10-31, `setpage.c`), which replaced
+> cursor row 8, drawn by `SetPage` (`04:6610`, `04:7792` until 2026-10-31, `setpage.c`), which replaced
 > `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). Its
 > label is `CLEAN UP NAMES:` (`SHOW NAME TAGS:` until 2026-10-31), and row 8
 > under it shows an example name the way the browser will draw it:
