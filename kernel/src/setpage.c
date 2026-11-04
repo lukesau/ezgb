@@ -1,30 +1,30 @@
 /* SET tab rows flcfg.c has no room for (docs/fastlaunch-set-tab.md "Pages"):
- * page 1's SGB BOOT row, page 2, and both pages' page row.
+ * page 2 and both pages' page row.
  *
  * Bank 4, injected at 04:6610 (04:7792 until 2026-10-31, when it needed
  * room for AUTO), near-called by flcfg.c (04:6d19). Page 2
  * holds the UI settings:
  *
- *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 7
- *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
- *   row 6   CLEAN UP NAMES:  [ ]   cursor row 9 (docs/browser-tags.md)
+ *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 6
+ *   row 4   FONT:     [12px]     cursor row 7 (flcfg.c ROW_UI, docs/ui-mode.md)
+ *   row 6   CLEAN UP NAMES:  [ ]   cursor row 8 (docs/browser-tags.md)
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
- *   row 10  SORT BY PLAYS:   [ ]   cursor row 10 (docs/stars.md)
- *   row 16  [< PREV]  2/2        cursor row 11
+ *   row 10  SORT BY PLAYS:   [ ]   cursor row 9 (docs/stars.md)
+ *   row 12  SGB BOOT:        [ ]   cursor row 10 (docs/sgb-boot.md)
+ *   row 14  SKIP BOOT ROM:   [ ]   cursor row 11 (docs/skip-boot-rom.md)
+ *   row 16  [< PREV]  2/2        cursor row 12
  *
- * and page 1 ends in SGB BOOT on row 14 (cursor row 5) and `1/2 [NEXT >]`
- * on row 16 (cursor row 6). `cur` is the cursor row.
+ * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 5), with row 14 left
+ * empty. `cur` is the cursor row.
  *
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
- *   op 3  A on TAGS (cur 9): toggle TAGS_HIDE, save EZGB.CFG, redraw it
- *         highlighted; on SORT BY PLAYS (cur 10): toggle its pSRAM record
+ *   op 3  A on a page 2 checkbox: CLEAN UP NAMES and SKIP BOOT ROM toggle
+ *         and save EZGB.CFG, SORT BY PLAYS and SGB BOOT their pSRAM records
+ *         (SGB BOOT: nothing when AUTO); each redraws highlighted
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
  *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
- *   op 5  SGB BOOT's label
- *   op 6  SGB BOOT's box
- *   op 7  A on SGB BOOT: toggle the pSRAM record (nothing when AUTO), redraw
  *   op 8  TIME's SET button, plain
  *
  *   SGB BOOT:          [ ]     the box at x 130, as AUTO SAVE's
@@ -55,17 +55,19 @@ extern void FarCallPlaySync_B4(void);                               /* 04:7792 -
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define SORT_REC ((volatile u8 *)0xA404)   /* page $11: 'S', 'O', flag, ~flag */
 
-#define ROW_SGB   5
-#define ROW_NEXT  6
-#define ROW_THEME 7
-#define ROW_UI    8
-#define ROW_TAGS  9
-#define ROW_SORT  10
-#define ROW_PREV  11
+#define ROW_NEXT  5
+#define ROW_THEME 6
+#define ROW_UI    7
+#define ROW_TAGS  8
+#define ROW_SORT  9
+#define ROW_SGB   10
+#define ROW_BOOT  11
+#define ROW_PREV  12
 
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void page_row(u8 hi);
+static void sgb_row(u8 hi);
 
 void SetPage(u8 op, u8 cur) {
     StoreDrawParams(3, 0, 0);
@@ -78,6 +80,13 @@ void SetPage(u8 op, u8 cur) {
         static const u8 sort_label[15] = {'S','O','R','T',' ','B','Y',' ','P','L','A','Y','S',':',0};
         SetText(tags_label, 15, 0, 6);
         SetText(sort_label, 14, 0, 10);
+        {
+            static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
+            static const u8 sgb_short[5] = {'S','G','B',':',0};
+            static const u8 boot_label[15] = {'S','K','I','P',' ','B','O','O','T',' ','R','O','M',':',0};
+            if (S1_SGB) SetText(sgb_short, 4, 0, 12); else SetText(sgb_label, 9, 0, 12);
+            SetText(boot_label, 14, 0, 14);
+        }
         TagExample();                       /* row 8, scrolling */
     } else if (op == 1) {
         static const u8 ui8_str[5] = {' ','8','p','x',0};
@@ -89,6 +98,8 @@ void SetPage(u8 op, u8 cur) {
         SetText(THEME == THEME_DV ? auto_str : hUiMode ? ui12_str : ui8_str, 4, 15, 4);
         box(0x82, 0x30, TAGS_HIDE, cur == ROW_TAGS);
         box(0x82, 0x50, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
+        sgb_row(cur == ROW_SGB);
+        box(0x82, 0x70, !BOOT_RESET, cur == ROW_BOOT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
         page_row(cur == ROW_NEXT);
@@ -96,6 +107,15 @@ void SetPage(u8 op, u8 cur) {
         u8 on = RecFlag(SORT_REC, 'O', 1);
         FarCallPlaySync_B4();               /* /.ezgbplays keeps it (docs/stars.md) */
         box(0x82, 0x50, on, 1);
+    } else if (op == 3 && cur == ROW_SGB) {
+        if (S1_SGB) return;             /* AUTO: stage1 does it, nothing to set */
+        RecFlag(SGB_REC, 'G', 1);
+        sgb_row(1);
+    } else if (op == 3 && cur == ROW_BOOT) {
+        BOOT_RESET = BOOT_RESET ? 0 : 1;
+        EZ_OP = OP_SAVE;
+        FarCallEzCfg();
+        box(0x82, 0x70, !BOOT_RESET, 1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         EZ_OP = OP_SAVE;
@@ -105,31 +125,24 @@ void SetPage(u8 op, u8 cur) {
     } else if (op == 4) {
         StoreDrawParams(0, 0, 0);
         DrawRect(0, 0x0d, 0x9f, 0x8f, 1);   /* under the 12px rule (y 12) too */
-    } else if (op == 5) {
-        static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
-        static const u8 sgb_short[5] = {'S','G','B',':',0};
-        if (S1_SGB) SetText(sgb_short, 4, 0, 14); else SetText(sgb_label, 9, 0, 14);
     } else if (op == 8) {
         static const u8 set_str[4] = {'S','E','T',0};
         button(0, 0x7b, 0x0d, 0x9b, 0x19);
         SetText(set_str, 3, 16, 2);
-    } else {
-        if (op == 7) {
-            if (S1_SGB) return;         /* AUTO: stage1 does it, nothing to set */
-            RecFlag(SGB_REC, 'G', 1);
-            cur = ROW_SGB;
-        }
-        if (S1_SGB) {
-            /* our stage1 sends the SGB header itself, only on an SGB, and
-             * the kernel never does: the setting has nothing to decide */
-            static const u8 auto_str[5] = {'A','U','T','O',0};
-            if (cur == ROW_SGB) StoreDrawParams(0, 3, 0);
-            SetText(auto_str, 4, 13, 14);
-        } else {
-            box(0x82, 0x70, RecFlag(SGB_REC, 'G', 0), cur == ROW_SGB);
-        }
     }
     StoreDrawParams(3, 0, 0);
+}
+
+/* Row 12: SGB BOOT's box. Our stage1 sends the SGB header itself, only on
+ * an SGB, and the kernel never does: the setting has nothing to decide. */
+static void sgb_row(u8 hi) {
+    if (S1_SGB) {
+        static const u8 auto_str[5] = {'A','U','T','O',0};
+        if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+        SetText(auto_str, 4, 13, 12);
+    } else {
+        box(0x82, 0x60, RecFlag(SGB_REC, 'G', 0), hi);
+    }
 }
 
 /* Row 16: PREV (page 2) or NEXT (page 1), then the page number. */

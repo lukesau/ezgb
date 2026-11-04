@@ -22,7 +22,7 @@
  *               page, redraw the rows.
  *   op 2 A      A pressed with the cursor on a mod row. The checkboxes, THEME
  *               and UI toggle and rewrite the file (returns 0 = jp redraw); SGB BOOT
- *               toggles its pSRAM record instead (no file); PICK ROM
+ *               and SORT BY PLAYS toggle pSRAM records instead (no file); PICK ROM
  *               arms pick mode (returns 1 = leave the SET screen; the bank-0
  *               FlSetExitHook then re-enters the browser); NEXT and PREV
  *               switch the page (returns 2 = enter the SET screen again).
@@ -36,15 +36,15 @@
  * Two pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   page 1: 2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
- *           12 <name, 10 cols, scrolling> [PICK ROM]   14 SGB BOOT: [ ]
- *           16 1/2 [NEXT >]
+ *           12 <name, 10 cols, scrolling> [PICK ROM]   16 1/2 [NEXT >]
  *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 CLEAN UP NAMES: [ ]
  *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
+ *           12 SGB BOOT: [ ]   14 SKIP BOOT ROM: [ ]
  *           16 [< PREV] 2/2                                         (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
- * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 SGB BOOT,
- * 6 NEXT; 7 THEME, 8 UI, 9 TAGS, 10 SORT, 11 PREV). The stock clamp lets
- * the cursor run 0..11; op ROWS keeps it on the page. Page 2 is drawn over the stock
+ * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 NEXT; 6 THEME,
+ * 7 UI, 8 TAGS, 9 SORT, 10 SGB BOOT, 11 SKIP BOOT ROM, 12 PREV). The stock
+ * clamp lets the cursor run 0..12; op ROWS keeps it on the page. Page 2 is drawn over the stock
  * screen, which keeps running: SetText drops its text there (SET_PAGE, vars.h)
  * and op ROWS clears its dirty flag (frame[0x3e]) so it draws no boxes.
  *
@@ -71,7 +71,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
-extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: SGB BOOT, page 2, the page row */
+extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page row */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -83,13 +83,11 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
                               * row 2 is the stock AUTO SAVE, which never reaches flcfg */
 #define ROW_CHECK 3
 #define ROW_PICK  4
-#define ROW_SGB   5          /* SGB BOOT: checkbox, a pSRAM record (setpage.c) */
-#define ROW_NEXT  6          /* page 1's last row */
-#define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
-#define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  9          /* CLEAN UP NAMES: checkbox: on cuts ROM names at their tags (docs/browser-tags.md) */
-#define ROW_SORT  10         /* SORT BY PLAYS: checkbox, a pSRAM record (setpage.c, docs/stars.md) */
-#define ROW_PREV  11         /* page 2's last row */
+#define ROW_NEXT  5          /* page 1's last row */
+#define ROW_THEME 6          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
+#define ROW_UI    7          /* FONT: 8px / 12px button (docs/ui-mode.md) */
+#define ROW_TAGS  8          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
+#define ROW_PREV  12         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
@@ -183,8 +181,8 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             SetFpgaPage_B4(0);
             return 0;
         }
-        if (row == ROW_SGB || row >= ROW_TAGS) {
-            SetPage(row == ROW_SGB ? 7 : 3, row);   /* toggles, saves, redraws */
+        if (row >= ROW_TAGS) {
+            SetPage(3, row);            /* toggles, saves, redraws */
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;
@@ -305,7 +303,6 @@ static void draw_static(void) {
     SetText(sd_label, 2, 6, 6);
     SetText(nosd_label, 5, 11, 6);
     SetText(fl_label, 12, 0, 10);
-    SetPage(5, 0);                    /* the SGB BOOT label */
     draw_name();
 }
 
@@ -362,8 +359,8 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
 /* Page 1: the RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A
  * switches) and FAST LAUNCH (row 10) checkboxes, the PICK ROM button on row
  * 12, shaped like the stock SET button (box 5 px left and 4 px right of the
- * text, 3 px above and 5 below). SGB BOOT on row 14, page 2 and both pages'
- * row 16 are setpage.c's. */
+ * text, 3 px above and 5 below). Page 2 and both pages' row 16 are
+ * setpage.c's. */
 static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
 
@@ -374,7 +371,6 @@ static void draw_rows(u8 cur) {
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
     box(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
     box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
-    SetPage(6, cur);
 
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);

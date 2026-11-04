@@ -21,14 +21,14 @@
  *   row 6   col 0 "RTC:" 0..44   col 6 "SD" 44..66   col 11 "NO SD" 86..130
  *   row 8, 10   labels 0..128 (the checkbox is at x 130)
  *   row 12  col 0 the fast-launch name 0..80   col 11 "PICK ROM" 88..155
- *   row 14  col 0 "SGB BOOT:" 0..128 (checkbox at x 130), or col 13 "AUTO"
- *           120..155 when our stage1 handles the SGB
  *   row 16  the page row: col 1 "< PREV" 8..64, col 9 "1/2" 70..97,
  *           col 13 "NEXT >" 104..155
  *
  * Page 2 (setpage.c, SET_PAGE bit 0): row 2 "THEME:" 0..84 (its button
  * follows), row 4 col 0 "FONT:" 0..112 and col 15 "12px" 120..155, row 6
- * "CLEAN UP NAMES:" 0..128 (row 8 is the tag example, drawn by the marquee). While SET_PAGE is exactly 1 (page 2, and the caller is the
+ * "CLEAN UP NAMES:" 0..128 (row 8 is the tag example, drawn by the marquee),
+ * rows 10, 12, 14 labels 0..128 (the checkbox is at x 130), or row 12 col 13
+ * "AUTO" 120..155 when our stage1 handles the SGB. While SET_PAGE is exactly 1 (page 2, and the caller is the
  * stock screen, not flcfg) nothing is drawn.
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
@@ -65,6 +65,7 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         /* page 2 (setpage.c): THEME: (its button from x 86), FONT: 12px, CLEAN UP NAMES: */
         if (row == 2) end = 84;
         else if (row == 4) { if (col) { x = 120; end = 155; } else { end = 112; } }
+        else if (row == 12 && col) { x = 120; end = 155; }
     } else switch (row) {
     case 2:
         if (col) { x = 127; end = 155; } else { end = 120; }
@@ -80,9 +81,6 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         break;
     case 12:
         if (col) { x = 88; end = 155; } else { end = 80; }
-        break;
-    case 14:
-        if (col) { x = 120; end = 155; }
         break;
     }
     if (len == 0 || len > 23) len = 23;

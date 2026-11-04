@@ -2,7 +2,7 @@
  *
  * Bank 4, injected at 04:7670, near-called by setpage.c (04:7a00). The
  * button sits on row 2 of the SET tab's second page, after THEME:, and is
- * cursor row 7 (flcfg.c ROW_THEME):
+ * cursor row 6 (flcfg.c ROW_THEME):
  *
  *   op 0  draw it plain
  *   op 1  draw it highlighted (the cursor is on it)
