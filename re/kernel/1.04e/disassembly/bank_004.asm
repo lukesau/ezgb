@@ -6251,100 +6251,44 @@ SetPage::
     rst RST_38
 
 SkipBootPrep::
-    db $fa, $eb, $db, $a7, $c2, $00, $d1, $21
-    db $09, $6c, $11, $b0, $d1, $06, $be, $2a
-    db $12, $13, $05, $20, $fa, $21, $9c, $d1
-    db $36, $c3, $23, $36, $b0, $23, $36, $d1
-    db $c3, $00, $d1, $fa, $43, $01, $e6, $8c
-    db $fe, $80, $28, $06, $01, $e0, $7f, $c3
-    db $9f, $d1, $f3, $f0, $40, $87, $30, $09
-    db $f0, $44, $fe, $90, $38, $fa, $af, $e0
-    db $40, $21, $69, $ff, $af, $e0, $68, $3e
-    db $5a, $77, $be, $20, $df, $2f, $77, $be
-    db $20, $da, $af, $ea, $32, $7f, $3e, $e4
-    db $ea, $f0, $7f, $af, $ea, $00, $00, $ea
-    db $00, $40, $ea, $00, $60, $0e, $02, $79
-    db $3d, $e0, $4f, $21, $00, $80, $af, $22
-    db $cb, $6c, $28, $fb, $0d, $20, $f0, $21
-    db $00, $fe, $06, $a0, $22, $05, $20, $fc
-    db $3e, $80, $e0, $68, $e0, $6a, $06, $40
-    db $3e, $ff, $e0, $69, $e0, $6b, $05, $20
-    db $f9, $21, $5f, $d2, $06, $0f, $af, $4e
-    db $23, $e2, $05, $20, $fa, $3e, $80, $e0
-    db $26, $3e, $77, $e0, $24, $3e, $f3, $e0
-    db $25, $3e, $fc, $e0, $47, $3e, $91, $e0
-    db $40, $af, $e0, $0f, $f0, $44, $fe, $90
-    db $20, $fa, $3e, $80, $e0, $fc, $3e, $11
-    db $e0, $fd, $31, $fc, $ff, $f1, $01, $00
-    db $00, $11, $56, $ff, $21, $0d, $00, $c3
-    db $00, $01, $00, $01, $02, $05, $06, $07
-    db $41, $42, $43, $45, $4a, $4b, $56, $70
-    db $ff
+    db $fa, $eb, $db, $a7, $c2, $00, $d1, $af
+    db $f5, $33, $3e, $47, $f5, $33, $21, $00
+    db $a4, $e5, $cd, $51, $7f, $e8, $04, $fa
+    db $f8, $db, $b3, $4f, $21, $22, $6c, $11
+    db $b0, $d1, $06, $e5, $2a, $12, $13, $05
+    db $20, $fa, $79, $ea, $94, $d2, $21, $9c
+    db $d1, $36, $c3, $23, $36, $b0, $23, $36
+    db $d1, $c3, $00, $d1, $fa, $43, $01, $47
+    db $af, $e0, $4f, $f0, $4f, $1f, $38, $0d
+    db $78, $e6, $8c, $fe, $80, $28, $10, $01
+    db $e0, $7f, $c3, $9f, $d1, $cb, $78, $20
+    db $f6, $fa, $94, $d2, $a7, $20, $f0, $f3
+    db $f0, $40, $87, $30, $09, $f0, $44, $fe
+    db $90, $38, $fa, $af, $e0, $40, $f0, $4f
+    db $1f, $38, $11, $21, $69, $ff, $af, $e0
+    db $68, $3e, $5a, $77, $be, $20, $d0, $2f
+    db $77, $be, $20, $cb, $af, $ea, $32, $7f
+    db $3e, $e4, $ea, $f0, $7f, $af, $ea, $00
+    db $00, $ea, $00, $40, $ea, $00, $60, $0e
+    db $02, $79, $3d, $e0, $4f, $21, $00, $80
+    db $af, $22, $cb, $6c, $28, $fb, $0d, $20
+    db $f0, $21, $00, $fe, $06, $a0, $22, $05
+    db $20, $fc, $3e, $80, $e0, $68, $e0, $6a
+    db $06, $40, $3e, $ff, $e0, $69, $e0, $6b
+    db $05, $20, $f9, $21, $85, $d2, $06, $0f
+    db $af, $4e, $23, $e2, $05, $20, $fa, $3e
+    db $80, $e0, $26, $3e, $77, $e0, $24, $3e
+    db $f3, $e0, $25, $3e, $fc, $e0, $47, $3e
+    db $91, $e0, $40, $af, $e0, $0f, $f0, $44
+    db $fe, $90, $20, $fa, $31, $75, $d2, $f0
+    db $4f, $1f, $30, $03, $31, $7d, $d2, $f1
+    db $c1, $d1, $e1, $31, $fe, $ff, $c3, $00
+    db $01, $80, $11, $00, $00, $56, $ff, $0d
+    db $00, $b0, $01, $13, $00, $d8, $00, $4d
+    db $01, $00, $01, $02, $05, $06, $07, $41
+    db $42, $43, $45, $4a, $4b, $56, $70, $ff
+    db $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38

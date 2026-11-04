@@ -1,11 +1,15 @@
-; Skip boot ROM (issue #8): start a color game with a jump to $0100
-; instead of the $7FE0 reset, when the console is already in CGB mode.
+; Skip boot ROM (issue #8): start a game with a jump to $0100 instead of the
+; $7FE0 reset, when the console is already in the mode the game needs.
 ;
 ; The boot ROM picks CGB or DMG compatibility mode once, from stage1's
-; header, and the choice can't be changed after it unmaps itself. A jump is
-; only safe when the kernel runs in CGB mode (mod stage1, CGB flag set) and
-; the game has the CGB flag ($0143 bit 7) without PGB mode (bits 2-3).
-; Everything else resets as before.
+; header, and the choice can't be changed after it unmaps itself. Two cases
+; jump, and everything else resets as before:
+;
+; - GBC/GBA with the kernel in CGB mode (mod stage1, CGB flag set) and a game
+;   with the CGB flag ($0143 bit 7) without PGB mode (bits 2-3).
+; - DMG family (VBK reads $FF) with stock stage1, a game without the CGB flag
+;   and SGB BOOT off. The kernel can't tell an SGB from a DMG, so SGB BOOT
+;   ticked or our stage1 (S1_SGB, it may be on an SGB) resets.
 ;
 ; SkipBootPrep replaces RomLoad_BuildAndRunPoll's `call $d100`. It copies
 ; SkipBoot to WRAM after the launch stub and points the stub's reset
@@ -16,12 +20,28 @@
 DEF STUB_RESET EQU $d19c        ; RomLoad_SoftReset in the $D100 copy
 DEF WRAM_AT    EQU $d1b0        ; past the stub's last byte ($D1AA)
 DEF BOOT_RESET EQU $dbeb        ; kernel/src/vars.h
+DEF S1_SGB     EQU $dbf8        ; kernel/src/ezcfg.h
+DEF REC_FLAG   EQU $7f51        ; RecFlag(r, tag, toggle), kernel/src/rec_flag.c
+DEF SGB_REC    EQU $a400        ; SGB BOOT's pSRAM record
 
 SECTION "SkipBootPrep", ROMX[$6be6], BANK[4]
 SkipBootPrep::
     ld a, [BOOT_RESET]          ; BOOTROM=1 in EZGB.CFG: always reset
     and a
     jp nz, $d100
+    xor a                       ; RecFlag(SGB_REC, 'G', 0): reads while the
+    push af                     ; kernel is still mapped
+    inc sp
+    ld a, 'G'
+    push af
+    inc sp
+    ld hl, SGB_REC
+    push hl
+    call REC_FLAG
+    add sp, 4
+    ld a, [S1_SGB]
+    or e
+    ld c, a
     ld hl, SkipBootSrc
     ld de, WRAM_AT
     ld b, SkipBootSrcEnd - SkipBootSrc
@@ -31,6 +51,8 @@ SkipBootPrep::
     inc de
     dec b
     jr nz, .copy
+    ld a, c
+    ld [NoDmgJump], a
     ld hl, STUB_RESET           ; ld bc, $7fe0  ->  jp SkipBoot
     ld [hl], $c3
     inc hl
@@ -44,12 +66,25 @@ LOAD "SkipBoot", WRAMX[WRAM_AT]
 ; From the stub: $2000 = 1 and $3000 = 0 written, unlock $E1-$E3 written.
 SkipBoot:
     ld a, [$0143]
+    ld b, a
+    xor a                       ; DMG family: VBK reads $FF
+    ldh [$ff4f], a
+    ldh a, [$ff4f]
+    rra
+    jr c, .dmg
+    ld a, b
     and $8c
     cp $80
     jr z, .cgb
 .reset
     ld bc, $7fe0                ; the instruction the hook replaced
     jp STUB_RESET + 3
+.dmg
+    bit 7, b
+    jr nz, .reset
+    ld a, [NoDmgJump]
+    and a
+    jr nz, .reset
 .cgb
     di
     ldh a, [$ff40]                ; LCD off, in VBlank
@@ -65,6 +100,9 @@ SkipBoot:
     ; CGB mode: palette RAM takes a write. In DMG compatibility mode it
     ; ignores it (VBK reads back there, so it is no test), on a DMG it
     ; reads $FF.
+    ldh a, [$ff4f]
+    rra
+    jr c, .unlock
     ld hl, $ff69
     xor a
     ldh [$ff68], a
@@ -77,6 +115,7 @@ SkipBoot:
     cp [hl]
     jr nz, .reset
 
+.unlock
     xor a                       ; finish the unlock with a no-change write
     ld [$7f32], a
     ld a, $e4
@@ -106,7 +145,7 @@ SkipBoot:
     dec b
     jr nz, .oclear
 
-    ld a, $80                   ; BG and OBJ palettes white
+    ld a, $80                   ; BG and OBJ palettes white (no-op on DMG)
     ldh [$ff68], a
     ldh [$ff6a], a
     ld b, 64
@@ -144,20 +183,30 @@ SkipBoot:
     cp 144
     jr nz, .wait
 
-    ld a, $80                   ; CGB boot ROM: AF = $1180, BC = $0000,
-    ldh [$fffc], a                ; DE = $FF56, HL = $000D, SP = $FFFE
-    ld a, $11
-    ldh [$fffd], a
-    ld sp, $fffc
+    ld sp, .cgb_regs
+    ldh a, [$ff4f]
+    rra
+    jr nc, .regs
+    ld sp, .dmg_regs
+.regs
     pop af
-    ld bc, $0000
-    ld de, $ff56
-    ld hl, $000d
+    pop bc
+    pop de
+    pop hl
+    ld sp, $fffe
     jp $0100
+
+; AF, BC, DE, HL as each boot ROM leaves them
+.cgb_regs
+    dw $1180, $0000, $ff56, $000d
+.dmg_regs
+    dw $01b0, $0013, $00d8, $014d
 
 ; P1, SB, SC, TIMA, TMA, TAC, STAT, SCY, SCX, LYC, WY, WX, RP, SVBK, IE
 .zero
     db $00, $01, $02, $05, $06, $07, $41, $42, $43, $45, $4a, $4b, $56, $70, $ff
 .zero_end
+NoDmgJump:
+    db 0                        ; set by SkipBootPrep
 ENDL
 SkipBootSrcEnd:
