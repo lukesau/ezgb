@@ -194,7 +194,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | mod 1.8 | save backup offered on every fast-launch boot with a pending save, AUTO SAVE honored, clock games written in place with the kernel's footer | flashed 2026-10-11; one fast-launch boot with Pokemon Crystal's save pending hung at LOADING... before the name line (not reproduced; START booted the kernel fine) |
 | mod 1.9 | no backup and no fast launch when the battery canary (`$11:$A201`) is dead: the kernel shows BATTERY DRY and drops the faded save; the prompt reads `B:NO   A:YES`, as the buttons sit | flashed 2026-10-11 (before the B/A swap): a fast launch with a pending save backed it up and launched |
 | mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); B at the backup prompt for another game's save drops it and fast-launches, instead of booting the kernel to ask again; a save with no `/SAVER` file yet is created by stage1; released with kernel mod 7.0 | flashed 2026-10-23: works on the FW5 cart |
-| mod 2.0 + picker | the kernel picker ([kernel-picker.md](kernel-picker.md)): up to four root `*.dat` files listed when there is more than one, the pick loaded; the icon and wordmark tiles packed to pay for it | built 2026-10-26 (`Update_FW5-0918-mod-2.0-picker.gb`), not yet flashed |
+| mod 2.0 + picker | the kernel picker ([kernel-picker.md](kernel-picker.md)): up to four root `*.dat` files listed when there is more than one, the pick loaded; the icon and wordmark tiles packed to pay for it | built 2026-10-26 (`Update_FW5-0918-mod-2.0-picker.gb`), since tested on hardware |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
@@ -438,4 +438,3 @@ hiding of the extra files and what it cost in BRAM:
   details, `disk_readp_impl`.
 - Confirm v4 on hardware: the SELECT backup, the skip mark with a mod 5.4
   kernel, the version line.
-- The kernel picker on hardware ([kernel-picker.md](kernel-picker.md)).

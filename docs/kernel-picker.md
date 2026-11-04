@@ -1,6 +1,6 @@
 # Kernel picker (stage1)
 
-Status: **built 2026-10-26, checked in SameBoy, not yet on hardware.** The
+Status: **built 2026-10-26, checked in SameBoy, since tested on hardware.** The
 idea had been a "Next" bullet in [fpga-stage1.md](fpga-stage1.md#next) since
 the fast-launch work of 2026-10-08. The design below is what was built; the
 [As built](#as-built) section at the end lists where the build departed from
