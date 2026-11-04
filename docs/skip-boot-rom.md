@@ -1,4 +1,4 @@
-# Skip boot ROM: jump to color games instead of resetting
+# Skip boot ROM: jump to the game instead of resetting
 
 Issue [#8](https://github.com/lukesau/ezgb/issues/8). Every launch used to
 end with `$7FE0=$80`, which resets the console into the loaded game, so the
@@ -20,12 +20,30 @@ works when the console is already in the mode the game needs:
 | GBC, GBA, mod stage1 (CGB flag set) | CGB mode | `$0143` bit 7 set, bits 2-3 clear | **jump** |
 | GBC, GBA, mod stage1 | CGB mode | DMG only, or PGB bits set | reset |
 | GBC, GBA, stock stage1 | DMG compatibility | any | reset |
-| DMG, Pocket, SGB | DMG | any | reset |
+| DMG, DMG0, Pocket, stock stage1, `SGB BOOT` off | DMG | `$0143` bit 7 clear | **jump** |
+| DMG, DMG0, Pocket | DMG | `$0143` bit 7 set | reset |
+| DMG family with `SGB BOOT` ticked or mod stage1 | DMG | any | reset |
 
-This first pass covers only the CGB case. DMG and Pocket could jump for
-every game too, but that needs stage1 to pass the boot registers to the
-kernel (A tells DMG from Pocket, and B tells GBA from GBC). The same record
-would give a GBA its own B. For now a GBA gets B = 0, the GBC value.
+The kernel tells the DMG family from a GBC or GBA by reading `VBK`: `$FF` on
+the DMG family, the written value on color consoles in either mode. It can't
+tell the DMG models apart, because stage1 wipes the boot registers (`A` is
+`$E4` on every console at kernel entry). So:
+
+- Every jump on the DMG family gets the DMG boot ROM's registers. `A = $01`
+  is right on a DMG0, but its `F`, `BC`, `DE` and `HL` differ. A Pocket gets
+  `A = $01` instead of `$FF`.
+- An SGB looks like a DMG, and needs the reset because the SNES enables SGB
+  features from the game's header. `SGB BOOT` ticked stands in for it, since
+  the Jr needs that setting to run on an SGB with stock stage1. Mod stage1
+  sends the header itself, so `S1_SGB` could mean an SGB and always resets.
+  Its `"SB"`/`"SN"` mark says which, so mod stage1 could jump on a DMG later.
+- Non-color games on a GBC or GBA with stock stage1 still reset, because a
+  jump would lose the boot ROM's colorization. It picks the palette from
+  stage1's header at power-on, and palette RAM ignores writes in compatibility
+  mode.
+
+Passing the boot registers through stage1 would give every model exact values
+(and a GBA its own B; for now it gets B = 0, the GBC value).
 
 Turning it off: untick `SKIP BOOT ROM:` on the SET tab's second page
 (`BOOTROM=1` in `/EZGB.CFG`). Every launch then resets, for
@@ -44,15 +62,17 @@ polls it, switches the cart to the game (`$7F31/$7F32 = 0`), writes
 | Site | What |
 |---|---|
 | `04:40f8` | `call $d100` -> `call SkipBootPrep` |
-| `04:6be6` `SkipBootPrep` | 225 B, [skip_boot.asm](../scripts/skipboot/skip_boot.asm). Unless `BOOTROM=1` is set, copies `SkipBoot` to `$D1B0` (the stub ends at `$D1AA`) and patches the copy's `ld bc, $7fe0` at `$D19C` into `jp $d1b0`, then `jp $d100` |
+| `04:6be6` `SkipBootPrep` | 289 B of 299 (`ManageSaves` is at `04:6d11`), [skip_boot.asm](../scripts/skipboot/skip_boot.asm). Unless `BOOTROM=1` is set, reads the `SGB BOOT` record (`RecFlag`), copies `SkipBoot` to `$D1B0` (the stub ends at `$D1AA`), stores `S1_SGB` or the record in its `NoDmgJump` byte and patches the copy's `ld bc, $7fe0` at `$D19C` into `jp $d1b0`, then `jp $d100` |
 | `$D1B0` `SkipBoot` (WRAM) | Runs after the cart has switched, so it reads the game's header and can't call anything in cart space |
 
 `SkipBoot`:
 
-1. Reads the game's `$0143`. Unless bit 7 is set and bits 2-3 are clear,
-   it resets: the replaced `ld bc, $7fe0`, then back into the stub.
+1. Reads the game's `$0143` and `VBK`, and resets unless one of these holds:
+   the replaced `ld bc, $7fe0`, then back into the stub.
+   - Color console (`VBK` bit 0 reads 0), bit 7 set and bits 2-3 clear.
+   - DMG family (`VBK` reads `$FF`), bit 7 clear and `NoDmgJump` 0.
 2. `di`, then turns the LCD off in VBlank.
-3. **CGB mode test.** It writes `$5A` and then `$A5` to palette RAM (`BCPS = 0`)
+3. **CGB mode test, color consoles only.** It writes `$5A` and then `$A5` to palette RAM (`BCPS = 0`)
    and reads each back. In compatibility mode palette RAM ignores writes; on a
    DMG it reads `$FF`. Either one resets. `VBK` can't be used for this test
    because it reads back in compatibility mode
@@ -62,17 +82,21 @@ polls it, switches the cart to the game (`$7F31/$7F32 = 0`), writes
    unlock went to the game's MBC too (`$7F00` is in MBC1's mode register range).
 5. Puts back what the boot ROM leaves and the kernel changed:
    - VRAM banks 1 and 0 and OAM cleared, `VBK = 0`.
-   - BG and OBJ palettes white.
+   - BG and OBJ palettes white (these writes and `VBK` do nothing on the DMG family, so it shares this code).
    - `P1`, `SB`, `SC`, the timer, `STAT`, scroll, `LYC`, window, `RP`, `SVBK` and `IE` set to 0.
    - Sound on (`NR52 = $80`, `NR50 = $77`, `NR51 = $F3`) and `BGP = $FC`.
 6. `LCDC = $91`, `IF = 0`, then waits for LY 144. The jump comes at the start
    of VBlank with VBlank's `IF` bit set by the hardware, as after the boot
    ROM.
-7. Loads the CGB boot ROM's registers: AF = `$1180` (popped from `$FFFC`),
-   BC = 0, DE = `$FF56`, HL = `$000D`, SP = `$FFFE`. Then it jumps to `$0100`.
+7. Pops the boot ROM's registers from a table, then sets SP = `$FFFE` and
+   jumps to `$0100`:
+   - CGB: AF = `$1180`, BC = 0, DE = `$FF56`, HL = `$000D`.
+   - DMG: AF = `$01B0`, BC = `$0013`, DE = `$00D8`, HL = `$014D`.
 
 `DIV` and the exact LY don't match the boot ROM. `DMA` is never written,
-because writing it starts a transfer.
+because writing it starts a transfer. On the DMG family VRAM is cleared where
+the boot ROM would leave the logo, and `NR52` reads `$F0` plus any channel the
+game starts, not `$F1`.
 
 ### `BOOTROM=` and `BOOT_RESET`
 
@@ -111,6 +135,24 @@ These were fast launches of Pokemon Crystal (`$0143 = $C0`) and Pokemon Red
   palette test fails, and it resets into CGB mode.
 - **`BOOTROM=1`:** Crystal resets. The key survives the kernel's rewrite of
   `EZGB.CFG`.
+
+## Verification, DMG path (SameBoy, 2026-11-04)
+
+Fast launches with `--model dmg` unless noted, on a scratch card:
+
+| Case | Kernels | Result |
+|---|---|---|
+| Red (`$0143 = $00`) | 0731, 0918, 1.04e | jumps, AF = `$01B0`, BC = `$0013`, DE = `$00D8`, HL = `$014D`, SP = `$FFFE`, LCDC `$91`, LY `$90`. On 0731 the game's intro runs |
+| Crystal (`$0143 = $C0`) | 0731, 1.04e | resets |
+| Red, `SGB BOOT` record set | 0731 | resets |
+| Red, stage1's `"SN"` mark set | 0731 | resets |
+| Red, `BOOTROM=1` | 0731 | resets without entering `SkipBoot` |
+| Crystal, `--model cgb` | 0731, 0918 | jumps with the CGB registers |
+| Red, `--model cgb` | 0731 | resets |
+| Red and Crystal, `--model cgb` on a copy with `$0143 = $00` (stands in for stock stage1 on a GBC) | 0731 | resets |
+
+Not tested: any real DMG-family console, stock stage1 running through to the
+kernel (SameBoy stops at OSINIT), and a real SGB.
 
 ## Hardware (mod 7.2, 2026-11-03)
 
