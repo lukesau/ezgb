@@ -109,9 +109,9 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x77a0, "SetPage": 0x6610, "SetCommit": 0x5fc0, "FarCallMarquee": 0x0410, "RtcReadPage": 0x1a9a}),
+                            "ThemeRow": 0x77a0, "SetPage": 0x6610, "SetCommit": 0x5fc0, "FarCallMarquee": 0x0410}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
-                      pins={"RtcReadPage": 0x1a9a, "FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x77a0,
+                      pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x77a0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
                             "FarCallPlaySync_B4": 0x7792}),
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
@@ -216,9 +216,8 @@ OVERRIDES = {
         # DrawTimeAutosaveScreen_redraw: same entry address; 1.04e opens the
         # loop with `call WaitVBlankFlag` where 1.05e tests its time-set flag.
         (4, 0x48f5): 0x48f5,
-        # RtcReadPage: 1.04e has none (its FatFs stamps a constant date), and
-        # its address reading 0 is how auto_backup.c, flcfg.c and setpage.c know.
-        (0, 0x1a9a): 0x0000,
+        # RtcReadPage: 1.04e has none, so fat_date.c supplies it (TARGET_BLOCKS).
+        (0, 0x1a9a): 0x3db0,
     },
 }
 
@@ -234,6 +233,18 @@ REMAP = {
         # screen (+0) and only its tail to the real routine at 01:4ec9 (+619).
         (1, 0x4c5e, 0x4dd0): 619,
     },
+}
+
+# Blocks and patches only the target build gets, because the from-build has the
+# stock code they add. A site is (bank, addr, the stock bytes, its replacement).
+FAT_STAMP = bytes.fromhex("3e0012133e0012133e2112133e4612")      # the constant 2015-01-01
+FAT_CALL = bytes.fromhex("cdb33d180a") + bytes(10)               # call FatStamp; jr past the rest
+TARGET_BLOCKS = {
+    "1.04e": [dict(src="fat_date.c", bank=0, addr=0x3db0, name="FatDate")],
+}
+TARGET_SITES = {
+    "1.04e": [(3, 0x7626, FAT_STAMP, FAT_CALL), (6, 0x7464, FAT_STAMP, FAT_CALL), (6, 0x7480, FAT_STAMP, FAT_CALL),
+              (9, 0x79f2, FAT_STAMP, FAT_CALL), (9, 0x7c28, FAT_STAMP, FAT_CALL)],
 }
 
 # Code only the target build has, so there is nothing in the from-build to
@@ -653,9 +664,30 @@ class Port:
                 self.log.append(f"{what} -> {bank:02x}:{t:04x} ({t - addr:+d}) {len(new)}B: "
                                 f"{stock.hex()} -> {new.hex()}")
 
+    def port_target(self):
+        self.target_written = []
+        for t in TARGET_BLOCKS.get(self.dst_ver, []):
+            with tempfile.TemporaryDirectory() as wd:
+                ihx, _ = compile_c(os.path.join(SRC, t["src"]), wd, code_origin=t["addr"])
+                compiled = parse_ihx(ihx)
+            out, a = bytearray(), t["addr"]
+            while a in compiled:
+                out.append(compiled[a])
+                a += 1
+            if not self.free(self.dst, t["bank"], t["addr"], len(out)):
+                raise SystemExit(f"error: {t['name']} at {t['bank']:02x}:{t['addr']:04x} is not free in {self.dst_ver}")
+            self.dst[off(t["bank"], t["addr"]):off(t["bank"], t["addr"]) + len(out)] = out
+            self.target_written.append((t["bank"], t["addr"], len(out), t["name"]))
+        for bank, addr, old, new in TARGET_SITES.get(self.dst_ver, []):
+            o = off(bank, addr)
+            if bytes(self.dst[o:o + len(old)]) != old:
+                raise SystemExit(f"error: {bank:02x}:{addr:04x} in {self.dst_ver} is not the expected code")
+            self.dst[o:o + len(old)] = new
+
     def run(self):
         self.port_blocks()
         self.port_sites()
+        self.port_target()
         return bytes(self.dst)
 
     # -- kernel.sym / notes.json -------------------------------------------------
@@ -686,6 +718,8 @@ class Port:
                 dropped.append(line)
                 continue
             out.append(f"{bank:02x}:{r:04x} {rest}")
+        for b, a, n, name in getattr(self, "target_written", []):
+            out += [f"{b:02x}:{a:04x} {name}", f"{b:02x}:{a:04x} .data:{n:x}:8"]
         for t in TARGET_ONLY.get(self.dst_ver, []):
             # placed in front of the next name up in the same bank
             after = [(l[:7], i) for i, l in enumerate(out)

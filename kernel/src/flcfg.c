@@ -115,7 +115,6 @@ static void wait_a_release(void);
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static u8 flcfg_op(u8 *frame, u8 op);
-static u16 rtc_stamps(void) __naked;
 
 /* SET_PAGE bit 7 tells SetText the text is ours, which page 2 draws */
 u8 flcfg(u8 *frame, u8 op) {
@@ -158,8 +157,6 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             frame[0x3e] = 0;            /* no stock redraw: its boxes are page 1's */
         } else if (cur > ROW_NEXT) {
             cur = cur == ROW_THEME ? 0 : ROW_NEXT;
-        } else if (cur == ROW_BK && !rtc_stamps()) {
-            cur = SET_CUR == ROW_NEXT ? ROW_PICK : ROW_NEXT;   /* no box on 1.04e (setpage.c) */
         }
         frame[0x3d] = cur;
         draw_rows(cur);
@@ -401,12 +398,4 @@ static void draw_rows(u8 cur) {
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);
     SetPage(2, cur);
-}
-
-/* RtcReadPage's address: 0 on 1.04e (auto_backup.c). */
-static u16 rtc_stamps(void) __naked {
-    __asm
-	ld	de, #_RtcReadPage
-	ret
-    __endasm;
 }

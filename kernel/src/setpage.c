@@ -15,7 +15,7 @@
  *   row 16  [< PREV]  2/2        cursor row 13
  *
  * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 6); its row 14 is DAILY BACKUP,
- * cursor row 5, except on 1.04e. `cur` is the cursor row.
+ * cursor row 5. `cur` is the cursor row.
  *
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
@@ -72,7 +72,6 @@ static void page_row(u8 hi);
 static void sgb_row(u8 hi);
 static void boot_row(u8 hi);
 static u8 can_jump(void);
-static u16 rtc_stamps(void) __naked;
 
 void SetPage(u8 op, u8 cur) {
     StoreDrawParams(3, 0, 0);
@@ -107,8 +106,7 @@ void SetPage(u8 op, u8 cur) {
         boot_row(cur == ROW_BOOT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
-        if (rtc_stamps()) {
-            /* 1.04e stamps every file 2015-01-01: no backup there (auto_backup.c) */
+        {
             static const u8 bk_label[14] = {'D','A','I','L','Y',' ','B','A','C','K','U','P',':',0};
             SetText(bk_label, 13, 0, 14);
             box(0x82, 0x70, BK_DAILY, cur == ROW_BK);
@@ -142,13 +140,6 @@ void SetPage(u8 op, u8 cur) {
         SetText(set_str, 3, 16, 2);
     }
     StoreDrawParams(3, 0, 0);
-}
-
-static u16 rtc_stamps(void) __naked {
-    __asm
-	ld	de, #_RtcReadPage
-	ret
-    __endasm;
 }
 
 /* Row 12: SGB BOOT's box. Our stage1 sends the SGB header itself, only on

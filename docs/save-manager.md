@@ -223,6 +223,5 @@ looks like today's or an old day's, so the test is only as good as the clock.
 When stage1 does the fast launch's dump itself, the kernel never sees the stamp
 and there is no backup.
 
-Not on the 1.04e kernel: its FatFs stamps every file 2015-01-01, so "written
-today" can't be answered, and the box isn't shown (`RtcReadPage`, which it
-lacks, is pinned to 0, and the code tests that address).
+The 1.04e kernel stamps every file 2015-01-01 as stock, so the mod gives it real
+dates ([kernel-versions.md](kernel-versions.md)) and the backup works there too.

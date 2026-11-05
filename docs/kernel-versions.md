@@ -93,6 +93,12 @@ file it creates or updates with a hard-coded 2015-01-01 00:00. 1.05e calls a
 new bank-0 routine, `RtcReadPage` (`00:1a9a`, 896 bytes), and stamps the
 cart's clock instead.
 
+The mod does the same on 1.04e since 2026-11-05: its five stamp sites, in banks
+3, 6 and 9, call `FatStamp` ([fat_date.c](../kernel/src/fat_date.c), `00:3db0`),
+which reads the clock on FPGA page `$06`. FW4 has the clock chip and that page;
+what it lacks is the game clock (`$A018`-`$A01C`), so RTC games still don't keep
+time there. Manage saves' names and the daily backup depend on these dates.
+
 **One new FPGA register write at launch.** `SetFpga7FD4_B1` (`01:480b`) is
 new, and the launch path calls it with `$00` (`00:15e2`). 1.04e never touches
 `$7FD4`.
@@ -167,7 +173,7 @@ image, and reach a cart only through the updater.
 |---|---|---|
 | `FW5` | 1.05e, either build | RTC games keep time and saves get real dates. 0731 and 0918 do the same thing; take the one from the package you have. |
 | `FW4` | 1.04e | It is the kernel EZ Flash shipped for FW4, and the modded 1.04e has run on an FW4 cart. 1.05e on FW4 is untested here: its RTC code drives FPGA registers (`$A018`-`$A01C`, `$7FD4`) that 1.04e never uses, and whether the FW4 image implements them is unknown. Games load slower than on FW5 with the modded 1.05e kernel, and no kernel changes that. |
-| `FW5`, but you have 1.04e | It boots (stock 1.04e is confirmed on an FW5 cart) | You give up RTC-game support, file dates and (with the mod) fast loading, and gain nothing identified. |
+| `FW5`, but you have 1.04e | It boots (stock 1.04e is confirmed on an FW5 cart) | You give up RTC-game support, stock file dates (the mod supplies them) and (with the mod) fast loading, and gain nothing identified. |
 
 > [!NOTE]
 > **Author's note:** I have two EZ Flash Jr carts myself and run one of each:

@@ -38,7 +38,7 @@
 #include "draw.h"
 #include "vars.h"
 
-extern u32 RtcReadPage(void);                       /* 00:1a9a: get_fattime, date in the high word */
+extern u32 RtcReadPage(void);                       /* 00:1a9a (fat_date.c on 1.04e): get_fattime, date in the high word */
 extern void LastRomNameStub(const u8 *s);           /* 00:0368 -> LastRomName */
 extern void FarCallTrampoline(void);                /* 00:078d */
 
@@ -58,7 +58,6 @@ extern void FarCallTrampoline(void);                /* 00:078d */
 #define META_PAGE 0x11                      /* $4000 as the boot branch left it */
 
 static u8 SmSaveOp(u16 opidx) __naked;
-static u16 rtc_stamps(void) __naked;
 static u8 written_today(void);
 static void draw_box(void);
 static void text(const u8 *s, u8 row8, u8 y12);
@@ -69,7 +68,7 @@ void AutoBackup(void) {
     const u8 *s = SAVE_PATH + 7;
     u8 i;
 
-    if (!BK_DAILY || !rtc_stamps()) return;
+    if (!BK_DAILY) return;
     for (i = 0; s[i] && i < NAME_MAX; i++) NAME_BUF[i] = s[i];
     NAME_BUF[i] = 0;
     SmSaveOp(SO_SCAN << 8);
@@ -141,16 +140,6 @@ static u8 written_today(void) {
     return LIVE[1] == (u8)(date >> 9) &&
            LIVE[2] == ((u8)(date >> 5) & 0x0F) &&
            LIVE[3] == ((u8)date & 0x1F);
-}
-
-/* RtcReadPage's address: 0 on 1.04e (port-mod.py OVERRIDES), which has none and
- * stamps every file 2015-01-01, so "written today" means nothing there. The
- * SET tab hides the box too (setpage.c). */
-static u16 rtc_stamps(void) __naked {
-    __asm
-	ld	de, #_RtcReadPage
-	ret
-    __endasm;
 }
 
 /* SaveOp, 01:7670, through a `call`ed stub, as save_mgr.c's SmSaveOpB11. */
