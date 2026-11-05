@@ -41,6 +41,10 @@ struct Args {
     /// input pin as JSON lines
     #[arg(long)]
     netlist: Option<PathBuf>,
+    /// write the route of every bel input as JSON lines: the driving bel pin
+    /// and each switch on the way, sink first, as [switch, wire it drives]
+    #[arg(long)]
+    routes: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -216,6 +220,21 @@ fn main() -> Result<(), Box<dyn Error>> {
             writeln!(f, "{{\"tile\": \"{t}\", \"bel\": \"{b}\", \"attrs\": {{{}}}, \"in\": {{{}}}}}", a.join(", "), ins.join(", "))?;
         }
     }
+    if let Some(path) = &args.routes {
+        use std::io::Write;
+        let mut f = std::io::BufWriter::new(std::fs::File::create(path)?);
+        for ((t, b), pins) in &g.in_pins {
+            for (pin, &(w, _)) in pins {
+                let (src, hops) = route(&g, w);
+                let s = match src {
+                    Some(p) => format!("\"{}:{}:{}\"", p.tile, p.bel, p.pin),
+                    None => "null".to_string(),
+                };
+                let h: Vec<String> = hops.iter().map(|(how, wire)| format!("[\"{how}\", \"{wire}\"]")).collect();
+                writeln!(f, "{{\"sink\": \"{t}:{b}:{pin}\", \"src\": {s}, \"hops\": [{}]}}", h.join(", "))?;
+            }
+        }
+    }
     for f in &args.from {
         let parts: Vec<&str> = f.splitn(3, ':').collect();
         let [t, b, p] = parts[..] else { return Err("--from TILE:BEL:PIN".into()) };
@@ -244,6 +263,24 @@ fn resolve<'a>(g: &'a Graph, mut w: WireCoord) -> (Option<&'a Pin>, bool) {
         }
     }
     (None, inv)
+}
+
+/// resolve(), keeping the switches passed on the way back to the driver.
+fn route<'a>(g: &'a Graph, mut w: WireCoord) -> (Option<&'a Pin>, Vec<(String, String)>) {
+    let mut hops = vec![];
+    for _ in 0..300 {
+        if let Some(pins) = g.out_pins.get(&w) {
+            return (pins.first(), hops);
+        }
+        match g.driver.get(&w) {
+            Some(edges) if edges.len() == 1 => {
+                hops.push((edges[0].how.clone(), w.to_string(g.db)));
+                w = edges[0].src;
+            }
+            _ => return (None, hops),
+        }
+    }
+    (None, hops)
 }
 
 fn trace(g: &Graph, mut w: WireCoord, level: usize, depth: usize, seen: &mut Vec<WireCoord>) {
