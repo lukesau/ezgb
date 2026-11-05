@@ -3776,31 +3776,15 @@ FlPickBanner::
     db $fa, $fe, $db, $b7, $c8, $f0, $fb, $b7
     db $c0, $21, $03, $00, $e5, $af, $f5, $33
     db $cd, $d8, $23, $e8, $03, $af, $0f, $f5
-    db $af, $3e, $0f, $f5, $33, $11, $c1, $7b
+    db $af, $3e, $0c, $f5, $33, $11, $d3, $7b
     db $d5, $cd, $b7, $08, $e8, $05, $af, $0f
     db $f5, $af, $3e, $03, $f5, $33, $cd, $d8
-    db $23, $e8, $03, $c9, $20, $50, $49, $43
-    db $4b, $20, $41, $20, $52, $4f, $4d, $20
-    db $20, $20, $20, $00
+    db $23, $e8, $03, $af, $67, $2e, $0c, $e5
+    db $3e, $03, $f5, $33, $11, $df, $7b, $d5
+    db $cd, $b7, $08, $e8, $05, $c9, $20, $50
+    db $49, $43, $4b, $20, $41, $20, $52, $4f
+    db $4d, $20, $20, $20, $20, $00
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
