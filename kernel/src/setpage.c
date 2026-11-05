@@ -45,7 +45,7 @@
 
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c */
-extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c */
+extern void ThemeRow(u8 op);                                        /* 04:77a0, theme_row.c */
 extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
 extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, rec_flag.c: a pSRAM checkbox */
 

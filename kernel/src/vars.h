@@ -53,9 +53,17 @@
  * writes them on NEXT, on PREV and when the screen is left
  * (docs/fastlaunch-set-tab.md). */
 #define SET_DIRTY (*(volatile u8 *)0xDAFD)
+/* The SET tab's cursor row as last drawn (flcfg.c), for op TICK, which has no
+ * frame, and 1 when op TICK turned B on THEME into A: step back (theme_row.c). */
+#define SET_CUR   (*(volatile u8 *)0xDAFC)
+#define THEME_BACK (*(volatile u8 *)0xDAFB)
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */
+/* 1 once Theme (theme.c) found palette RAM locked: a DMG, or a CGB in
+ * compatibility mode. Past dark only DV looks different there, so the THEME
+ * button (theme_row.c) offers light, dark and DV. */
+#define PAL_LOCKED (*(volatile u8 *)0xFFF8)
 #define PAD_HELD  (*(volatile u8 *)0xFFF7)  /* buttons ReadJoypadLatched ignores until released (docs/joypad-latch.md) */
 #define hClip12   (*(volatile u8 *)0xFFF9)  /* right edge of the next 12px draw or layout, 0 = x 160 */
 #define HFRAME    (*(volatile u8 *)0xFFFA)  /* +1 per VBlank (VBlankPadLatch, 00:05cf) */

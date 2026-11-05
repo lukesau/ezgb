@@ -108,7 +108,10 @@ static void write_ramp(volatile u8 *sel, const u8 *ramp) {
         c = ramp[i & 7];
         n = 8;
         do {
-            if (!n--) return;
+            if (!n--) {
+                PAL_LOCKED = 1;
+                return;
+            }
             sel[0] = i;
             while (rSTAT & 2) {}
             sel[1] = c;

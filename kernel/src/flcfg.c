@@ -20,7 +20,8 @@
  *               the page's mod rows with the cursor highlight.
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): keep it on the
  *               page, redraw the rows.
- *   op 2 A      A pressed with the cursor on a mod row. The checkboxes, THEME and UI change RAM and
+ *   op 2 A      A pressed with the cursor on a mod row (or B on THEME, which op
+ *               TICK turns into A). The checkboxes, THEME and UI change RAM and
  *               set SET_DIRTY, and SetCommit (04:5fc0) writes the file on NEXT, on
  *               PREV and when the screen is left (returns 0 = jp redraw); SGB BOOT and SORT BY PLAYS
  *               toggle pSRAM records instead; PICK ROM
@@ -71,7 +72,7 @@ extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: 
 extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
-extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
+extern void ThemeRow(u8 op);                                        /* 04:77a0, theme_row.c: the THEME button */
 extern void SetCommit(void);                                        /* 04:5fc0: SET_DIRTY -> EZGB.CFG and /.ezgbplays */
 extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page row */
 
@@ -247,6 +248,11 @@ relayout:
         } else {
             RP_LEFT = RP_RATE;
         }
+        /* B on THEME steps back: the loop sees A, and ThemeRow the flag */
+        if ((pad & 0x20) && SET_CUR == ROW_THEME) {
+            THEME_BACK = 1;
+            pad ^= 0x30;
+        }
         return pad;
     }
     cfg_load();
@@ -291,8 +297,9 @@ static void pick_commit(void) {
     wait_a_release();
 }
 
+/* A or B: B on THEME acts as A */
 static void wait_a_release(void) {
-    while (ReadJoypad() & 0x10) {}
+    while (ReadJoypad() & 0x30) {}
 }
 
 /* Labels; the name is drawn by draw_name. */
@@ -371,6 +378,7 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
 static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
 
+    SET_CUR = cur;
     if (PAGE2) {
         SetPage(1, cur);
         return;

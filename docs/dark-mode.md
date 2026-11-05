@@ -4,10 +4,17 @@
 `THEME` button that cycles the browser, every kernel screen and our stage1's
 boot screen through light (the stock look), dark, DV (see [DV](#dv)), four
 colored ones, and custom, whose two colors are set by hand in `EZGB.CFG`
-(see [Custom](#custom)), in that order. Light and dark are the DMG baseline:
+(see [Custom](#custom)), in that order: A goes forward, B back, and both wrap.
+The file is written on NEXT, on PREV or on leaving the tab
+([fastlaunch-set-tab.md](fastlaunch-set-tab.md)). Light and dark are the DMG baseline:
 on a DMG, or anything else running the kernel in DMG mode, light is the stock
 palette and every other theme but DV the inverted one. DV and the colored
-themes are for backlit and OLED screens.
+themes are for backlit and OLED screens. Where palette RAM is locked (a DMG, or
+a GBC or GBA in compatibility mode on stock firmware) the colored themes and
+custom look the same as dark, so the button only offers light, dark and DV.
+One of the others set in the file shows as `DARK` there and keeps its value
+until the button is pressed, so a card moved to a color console keeps it.
+`Theme` sets `PAL_LOCKED` (HRAM `$FFF8`) when its palette write gives up.
 
 > For part of 2026-10-31 only light, dark and DV were left; the colored ones
 > and custom came back the same day, after DV on the button and with their
@@ -105,14 +112,14 @@ OK!`. Stage1 picks it up on the next power-on.
 
 | Block | Address | Does |
 |---|---|---|
-| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 296 B | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. A byte that still reads back wrong after 8 tries ends the ramp: palette RAM only takes writes in CGB mode. |
+| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 304 B (full) | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. A byte that still reads back wrong after 8 tries ends the ramp: palette RAM only takes writes in CGB mode. |
 | `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; custom has no row. |
 | `ThemeCustom` | `02:4990`, [theme_pick.c](../kernel/src/theme_pick.c), 48 B | `FarCallColors` (8 B), ezcfg's stub to `ThemeColors`, then `theme_ramp` (`02:4998`): the colors for `Theme`, a `ThemeRamps` row or, for custom, `CUST_RAMP`, which it loads from the mark at boot. |
 | `ThemeColors` | `05:7b50`, [theme_colors.c](../kernel/src/theme_colors.c), 335 B | Asm. Op 0 (or 8, ezcfg's key index) parses `COLORS=` into `CUST_RGB` and builds `CUST_RAMP`; op 1 writes the `THEME=` and `COLORS=` lines on a save (and `BOOTROM=1`, [skip-boot-rom.md](skip-boot-rom.md)); op 9 parses `BOOTROM=`. |
 | `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
 | `EzCfg` | `02:4a00` | Parses `THEME=` (light unless it is one digit naming a theme, and custom only with a valid `COLORS=`) and hands `COLORS=` and the save's two theme lines to `ThemeColors`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
-| `ThemeRow` | `04:7670`, [theme_row.c](../kernel/src/theme_row.c), 254 B | The SET tab button, near-called by `FlCfg`: op 0/1 draw it plain or highlighted, op 2 steps `THEME` (wrapping, past custom without `COLORS=`), saves `EZGB.CFG` and calls `Theme` through `FarCallTheme_B4` (`04:5990`). |
+| `ThemeRow` | `04:77a0` (`04:7670` until 2026-11-04), [theme_row.c](../kernel/src/theme_row.c), 434 B | The SET tab button, near-called by `FlCfg` and `SetPage`: op 0/1 draw it plain or highlighted, op 2 steps through the order table, back when `THEME_BACK` (`$DAFB`) is set, then sets `SET_DIRTY` and applies the theme. `FlCfg` op TICK turns B into A with that flag when `SET_CUR` (`$DAFC`) is the THEME row. |
 | `ThemeNames` | `04:7eeb`, [theme_names.c](../kernel/src/theme_names.c), 56 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh (at `04:7f20` until DV made eight). |
 
 > **Correction (2026-10-30).** `Theme` used to write the ramp only when
