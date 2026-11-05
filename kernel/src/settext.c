@@ -27,9 +27,8 @@
  * Page 2 (setpage.c, SET_PAGE bit 0): row 2 "THEME:" 0..84 (its button
  * follows), row 4 col 0 "FONT:" 0..112 and col 15 "12px" 120..155, row 6
  * "CLEAN UP NAMES:" 0..128 (row 8 is the tag example, drawn by the marquee),
- * rows 10, 12 labels 0..128 (the checkbox is at x 130), or row 12 col 13
- * "AUTO" 120..155 when our stage1 handles the SGB, row 14 "BOOT ROM:" 0..96,
- * col 15 "AUTO" 120..155 or col 13 "ALWAYS" 104..155. While SET_PAGE is exactly 1 (page 2, and the caller is the
+ * rows 10, 12, 14 labels 0..128 (the checkbox is at x 130), or row 12 col 13
+ * "AUTO" 120..155 when our stage1 handles the SGB. While SET_PAGE is exactly 1 (page 2, and the caller is the
  * stock screen, not flcfg) nothing is drawn.
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
@@ -67,10 +66,6 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
         if (row == 2) end = 84;
         else if (row == 4) { if (col) { x = 120; end = 155; } else { end = 112; } }
         else if (row == 12 && col) { x = 120; end = 155; }
-        else if (row == 14) {
-            /* col 15 AUTO, col 13 ALWAYS, both in their box */
-            if (col) { x = col == 15 ? 120 : 104; end = 155; } else { end = 96; }
-        }
     } else switch (row) {
     case 2:
         if (col) { x = 127; end = 155; } else { end = 120; }

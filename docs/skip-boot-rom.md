@@ -43,13 +43,14 @@ the written value on color consoles in either mode. The answer is `DMG_FAM`
 A test build for trying the DMG path on a GBC or GBA:
 
 ```bash
-STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=ubuntu-compute sh scripts/fpga/build-stage1-updater.sh fw4 "MOD 2.0 DMG" fpga/load/Update_FW4-mod-2.0-dmg.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=ubuntu-compute sh scripts/fpga/build-stage1-updater.sh fw4 "To FW4-DMG 2.1" fpga/load/Update_FW4-mod-2.1-dmg.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=ubuntu-compute sh scripts/fpga/build-stage1-updater.sh fw5-0918 "To FW5-DMG 2.1" fpga/load/Update_FW5-0918-mod-2.1-dmg.gb
 ```
 
 The header has no CGB flag, so the boot ROM picks compatibility mode, and the
 record holds a DMG's registers whatever the console's were. The kernel then sees
 a DMG (`DMG_FAM` 1, `PAL_LOCKED` 1), and games get `A = $01`. The boot screen
-reads `FW5-MOD 2.0-DMG`. What it can't hide is the hardware: colors still come
+reads `FW4-MOD 2.1-DMG` or `FW5-MOD 2.1-DMG`. What it can't hide is the hardware: colors still come
 from the boot ROM's compatibility palette, and `VBK` and the rest of the color
 registers still answer for a game that tests them directly, so it isn't a DMG to
 timing or to a test ROM. Flash a normal updater to go back.
@@ -84,21 +85,17 @@ Non-color games on a GBC or GBA with stock stage1 still reset, because a jump
 would lose the boot ROM's colorization. It picks the palette from stage1's
 header at power-on, and palette RAM ignores writes in compatibility mode.
 
-The `BOOT ROM:` row on the SET tab's second page shows it
-(`can_jump` in [setpage.c](../kernel/src/setpage.c); a checkbox, `SKIP BOOT ROM:`,
-until 2026-11-04):
+Turning it off: untick `SKIP BOOT ROM:` on the SET tab's second page
+(`BOOTROM=1` in `/EZGB.CFG`). Every launch then resets, for anyone who needs the
+boot ROM's exact timing (`DIV`, which some games use for random numbers).
 
-| Row | When | A |
-|---|---|---|
-| `[AUTO]` | this console can jump, and `BOOTROM=1` isn't set | `[ALWAYS]` |
-| `[ALWAYS]` | this console can jump, and `BOOTROM=1` is set | `[AUTO]` |
-| `ALWAYS`, no box | this console can't: a GBC or GBA in compatibility mode, an SGB under mod stage1, the DMG family under a mod stage1 from before the record or under stock stage1 with `SGB BOOT` ticked | nothing |
-
-`[ALWAYS]` is the off switch (`BOOTROM=1` in `/EZGB.CFG`). Every launch then
-resets, for anyone who needs the boot ROM's exact timing (`DIV`, which some
-games use for random numbers). `ALWAYS` with no box leaves `BOOTROM=` as it was,
-so a card moved to a console that can jump keeps its setting. `[AUTO]` doesn't
-promise a jump: a non-color game on a color console still resets.
+The box shows ticked only when launches may jump. On a console that can't (a GBC
+or GBA in compatibility mode, an SGB under mod stage1, the DMG family under a mod
+stage1 from before the record or under stock stage1 with `SGB BOOT` ticked) it
+shows unticked and A does nothing (`can_jump` in
+[setpage.c](../kernel/src/setpage.c)). `BOOTROM=` keeps its value there, so a card
+moved to a console that can jump keeps its setting. A tick doesn't promise a jump:
+a non-color game on a color console still resets.
 
 ## How
 
@@ -251,10 +248,9 @@ which were correct for the rule at the time:
 | Seeded CGB record, `--model cgb`, Red | resets |
 
 Crystal run on, on a DMG, shows its "only for Game Boy Color" screen. The
-`BOOT ROM:` row was checked by eye on 0731, 8px and 12px: `[AUTO]` and
-`[ALWAYS]` on a DMG and in CGB mode, `ALWAYS` with no box for `SGB BOOT` ticked
-and for compatibility mode (`$0143 = $00`), where A does nothing. `[ALWAYS]`
-wrote `BOOTROM=1` on PREV. Not run on a real DMG-family console.
+`SKIP BOOT ROM:` checkbox was checked by eye on 0731, 8px and 12px: ticked and
+unticked on a DMG, unticked with `SGB BOOT` ticked and in compatibility mode
+(`$0143 = $00`), where A does nothing. Unticking wrote `BOOTROM=1` on PREV. Not run on a real DMG-family console.
 
 ## Hardware (mod 7.2, 2026-11-03)
 
@@ -276,7 +272,8 @@ The debug screen read the record correctly on a GBA SP (`AF:1100 BC:0100`) and
 a GBC (`AF:1180 BC:0000`), both `DE:FF56 HL:000D`, as in SameBoy
 ([debug-tab.md](debug-tab.md#findings-boot-registers-2026-11-04)).
 
-The forced DMG stage1, the any-game DMG rule and the `BOOT ROM:` row were tested
+The forced DMG stage1, the any-game DMG rule and an `AUTO`/`ALWAYS` form of the row
+(a checkbox again since) were tested
 on hardware the same day and reported working. That run used color consoles, so
 a real DMG, Pocket or SGB is still untested.
 

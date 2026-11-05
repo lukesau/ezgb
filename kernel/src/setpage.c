@@ -11,7 +11,7 @@
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
  *   row 10  SORT BY PLAYS:   [ ]   cursor row 9 (docs/stars.md)
  *   row 12  SGB BOOT:        [ ]   cursor row 10 (docs/sgb-boot.md)
- *   row 14  BOOT ROM:     [AUTO]   cursor row 11 (docs/skip-boot-rom.md)
+ *   row 14  SKIP BOOT ROM:   [ ]   cursor row 11 (docs/skip-boot-rom.md)
  *   row 16  [< PREV]  2/2        cursor row 12
  *
  * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 5), with row 14 left
@@ -20,7 +20,7 @@
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
- *   op 3  A on a page 2 row: CLEAN UP NAMES and BOOT ROM toggle
+ *   op 3  A on a page 2 row: CLEAN UP NAMES and SKIP BOOT ROM toggle
  *         and set SET_DIRTY (SetCommit, 04:5fc0, saves), SORT BY PLAYS and SGB BOOT their pSRAM records
  *         (SGB BOOT: nothing when AUTO); each redraws highlighted
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
@@ -33,9 +33,8 @@
  * SGB BOOT and SORT BY PLAYS are pSRAM records (docs/sgb-boot.md,
  * docs/stars.md), read and toggled by RecFlag (rec_flag.c).
  *
- *   BOOT ROM:     [AUTO]     jump when this console and game allow it
- *   BOOT ROM:   [ALWAYS]     BOOTROM=1, every launch resets
- *   BOOT ROM:     ALWAYS     this console can't jump, nothing to set
+ *   SKIP BOOT ROM:     [x]   jump when this console and game allow it
+ *   SKIP BOOT ROM:     [ ]   BOOTROM=1, or this console can't jump (A does nothing)
  *
  * Buttons and checkboxes are drawn as flcfg.c draws them: the box 5 px left
  * and 4 px right of the 8px text, 3 px above and 5 below; 12px, the text row
@@ -87,9 +86,9 @@ void SetPage(u8 op, u8 cur) {
         {
             static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
             static const u8 sgb_short[5] = {'S','G','B',':',0};
-            static const u8 boot_label[10] = {'B','O','O','T',' ','R','O','M',':',0};
+            static const u8 boot_label[15] = {'S','K','I','P',' ','B','O','O','T',' ','R','O','M',':',0};
             if (S1_SGB) SetText(sgb_short, 4, 0, 12); else SetText(sgb_label, 9, 0, 12);
-            SetText(boot_label, 9, 0, 14);
+            SetText(boot_label, 14, 0, 14);
         }
         TagExample();                       /* row 8, scrolling */
     } else if (op == 1) {
@@ -159,21 +158,10 @@ static u8 can_jump(void) {
     return S1_SGB || !RecFlag(SGB_REC, 'G', 0);
 }
 
-/* Row 14. BOOT_RESET keeps its value while this console can't jump, so a card
- * moved to one that can still has it. */
+/* Row 14: ticked when launches may jump. BOOT_RESET keeps its value while this
+ * console can't jump, so a card moved to one that can still has it. */
 static void boot_row(u8 hi) {
-    static const u8 auto_str[5] = {'A','U','T','O',0};
-    static const u8 always_str[7] = {'A','L','W','A','Y','S',0};
-    u8 can = can_jump();
-    button(2, 0x63, 0x6d, 0x9b, 0x79);  /* AUTO's box is the narrower */
-    if (can && !BOOT_RESET) {
-        button(hi, 0x73, 0x6d, 0x9b, 0x79);
-        SetText(auto_str, 4, 15, 14);
-        return;
-    }
-    if (can || hi) button(hi, 0x63, 0x6d, 0x9b, 0x79);
-    else StoreDrawParams(3, 0, 0);
-    SetText(always_str, 6, 13, 14);
+    box(0x82, 0x70, can_jump() && !BOOT_RESET, hi);
 }
 
 /* Row 16: PREV (page 2) or NEXT (page 1), then the page number. */
@@ -206,11 +194,9 @@ static void box(u8 x, u8 y, u8 on, u8 hi) {
 }
 
 /* A button's box in 8px coordinates, in the ink its text then uses
- * (flcfg.c's); hi 2 clears it. */
+ * (flcfg.c's). */
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
-    if (hi == 2) StoreDrawParams(0, 0, 0);
-    else if (hi) StoreDrawParams(0, 3, 0);
-    else StoreDrawParams(3, 0, 0);
+    if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
     if (hUiMode) {
         y0 += 2;
         y1 += 3;
