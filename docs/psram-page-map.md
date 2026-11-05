@@ -139,6 +139,14 @@ otherwise. The kernel (mod 5.4+, `ezcfg.c` `stage1_skip_mark`, run by
 one-shot flag `$DBFF`, so a fast launch the user canceled in stage1 stays
 canceled even after START is released.
 
+## Stage1 boot registers (`$11:$A428`)
+
+Stage1 writes `$A428`-`$A42F` every boot: the boot ROM's registers in pop order,
+`F A C B E D L H`. The kernel's boot hook (`stage1_skip_mark`) copies them to
+`BOOT_REGS` for the jump to a game and zeroes `A`
+([skip-boot-rom.md](skip-boot-rom.md#boot-registers)). `$A420`-`$A427` stays
+free for the kernel picker's last pick ([kernel-picker.md](kernel-picker.md)).
+
 ## Stage1 SGB mark (`$11:$A412`)
 
 Stage1 writes `$A412`–`$A413` every boot: `"SB"` when it found a Super Game

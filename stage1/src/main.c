@@ -76,10 +76,15 @@ static void mark_skip(uint8_t skip)
 }
 
 /* Tell the kernel this stage1 handles the SGB (PSRAM_SGB_SENT): "SB" when
- * it sent the header packets, "SN" when there was no SGB to send them to */
+ * it sent the header packets, "SN" when there was no SGB to send them to.
+ * The boot registers go along (PSRAM_BOOT_REGS). */
 static void mark_sgb(uint8_t sent)
 {
+    uint8_t i;
+
     psram_map(PSRAM_META);
+    for (i = 0; i < 8; i++)
+        PSRAM[PSRAM_BOOT_REGS + i] = BOOT_REGS[i];
     PSRAM[PSRAM_SGB_SENT] = 'S';
     PSRAM[PSRAM_SGB_SENT + 1] = sent ? 'B' : 'N';
     psram_unmap();

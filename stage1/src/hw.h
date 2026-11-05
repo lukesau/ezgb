@@ -24,8 +24,10 @@
 
 /* crt0 saves the boot ROM's A and C here ($11 in A on a color console,
  * $14 in C on a Super Game Boy) */
-#define BOOT_A REG(0xFF80)
-#define BOOT_C REG(0xFF81)
+/* the boot ROM's registers as crt0.s pushed them: F A C B E D L H */
+#define BOOT_REGS ((volatile uint8_t *)0xFF80)
+#define BOOT_A REG(0xFF81)
+#define BOOT_C REG(0xFF82)
 
 /* FPGA registers ($7Fxx, write-only, each write inside unlock/lock) */
 #define FPGA_SD_MAP    0x7F30  /* $7F30: 0 off, 1 sector data at $A000, 3 read status */
@@ -55,6 +57,10 @@
  * sends them itself and its SGB BOOT setting is shown as AUTO. The kernel
  * clears it (kernel/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_SGB_SENT 0x412
+/* Page $11 $A428-$A42F, written every boot: BOOT_REGS, so the kernel's jump to
+ * a game (scripts/skipboot/skip_boot.asm) can hand over this console's boot
+ * registers. The kernel clears A (kernel/src/ezcfg.c stage1_skip_mark). */
+#define PSRAM_BOOT_REGS 0x428
 /* Page $11 $A414-$A41F: the kernel's UI theme, 'T', 'H', theme, ~theme,
  * then the theme's four BGR555 colors (kernel/src/theme.c,
  * docs/dark-mode.md), so the boot screen comes up in it before the SD card
