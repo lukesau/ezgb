@@ -146,11 +146,14 @@ static u8 flcfg_op(u8 *frame, u8 op) {
     }
     if (op == 1) {
         u8 cur = frame[0x3d];
+        /* UP on the page's first row and DOWN on its last wrap: the stock
+         * cursor steps across the page's end one row at a time, LEFT and RIGHT
+         * jump to row 0 and ROW_PREV (SetWrapUp / SetWrapDown, the two ends) */
         if (PAGE2) {
-            if (cur < ROW_THEME) cur = ROW_THEME;
+            if (cur < ROW_THEME) cur = cur == ROW_NEXT ? ROW_PREV : ROW_THEME;
             frame[0x3e] = 0;            /* no stock redraw: its boxes are page 1's */
         } else if (cur > ROW_NEXT) {
-            cur = ROW_NEXT;
+            cur = cur == ROW_THEME ? 0 : ROW_NEXT;
         }
         frame[0x3d] = cur;
         draw_rows(cur);
