@@ -196,6 +196,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | mod 2.0 | text in the stock kernel 8px font (same 472-byte 1bpp table); B at the backup prompt for another game's save drops it and fast-launches, instead of booting the kernel to ask again; a save with no `/SAVER` file yet is created by stage1; released with kernel mod 7.0 | flashed 2026-10-23: works on the FW5 cart |
 | mod 2.0 + picker | the kernel picker ([kernel-picker.md](kernel-picker.md)): up to four root `*.dat` files listed when there is more than one, the pick loaded; the icon and wordmark tiles packed to pay for it | built 2026-10-26 (`Update_FW5-0918-mod-2.0-picker.gb`), since tested on hardware |
 | mod 2.0 + boot registers | the boot ROM's registers pushed to `$FF80`-`$FF87` at start (`BOOT_A` is `$FF81`, `BOOT_C` `$FF82`) and copied to `$11:$A428` for the kernel ([skip-boot-rom.md](skip-boot-rom.md#boot-registers)); 18,430 of 18,432 BRAM bytes | flashed 2026-11-04: registers read correctly on a GBA SP and a GBC |
+| mod 2.1 | mod 2.0 + boot registers under its own number, with the `FORCE_DMG` test option in the source (off in this build) ([skip-boot-rom.md](skip-boot-rom.md#forced-dmg-stage1)) | built 2026-11-04 (`Update_FW4-mod-2.1.gb`, `Update_FW5-0918-mod-2.1.gb`), same stage1 code as `-regs` apart from the version text |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
 reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
