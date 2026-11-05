@@ -58,8 +58,6 @@ SRC = os.path.join(ROOT, "kernel", "src")
 FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
          "FarCall_07_7739": 0x1963, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}
 REGISTRY = {
-    (0, 0x3ed0): dict(src="browser_scroll.c", pins={"DirList": 0x0a43},   # moved from 00:01e3 for the UI mode flag
-                      exports={"browser_scroll_up": 0x3fa0}),   # called by BrowserScrollUpHook (00:02f3)
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
     (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/dark-mode.md)
@@ -77,9 +75,6 @@ REGISTRY = {
     (0, 0x0490): dict(src="fastlaunch_boot.c",
                       pins={"FarCallScan": 0x0400, "fastlaunch_do_launch": 0x0420,
                             "BrowserSortAllStub": 0x03d4, "ReadJoypad": 0x3a4a}),
-    (0, 0x3d8c): dict(src="browser_scroll_repaint.c",
-                      pins={"browser_scroll_down": 0x3ed0, "FarCallDrawDetailBottom": 0x03dc,
-                            "DrawString": 0x08b7, "StoreDrawParams": 0x2791, "DrawNameWithIcon": 0x3ec8}),
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
                             "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00, "ReadJoypad": 0x3a4a}),
@@ -166,6 +161,9 @@ REGISTRY = {
     (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "Delay": 0x3a93, "PopupDrawParams": 0x0290}),
+    (12, 0x4000): dict(src="browser_nav.c",                 # DOWN and UP after davidesqalv's fork (docs/browser-nav.md)
+                      pins={"GfxRowTable": 0x2fbb, "StoreDrawParams": 0x2791, "DrawString": 0x08b7,
+                            "DrawNameWithIcon": 0x3ec8, "FarCallDrawString12": 0x05c0, "wIntNest": 0xd6d0}),
     (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
                             "PopupDrawParams": 0x0290, "DrawString": 0x08b7}),

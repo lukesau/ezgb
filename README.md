@@ -63,8 +63,7 @@ build in on its own; each doc has the rationale, wiring, and exact commands.
 | Feature | What it does | Doc |
 |---|---|---|
 | **Sorted browser** | Directories first, then files, each group alphabetical (case-insensitive), instead of raw FAT order. | [`docs/browser-sort.md`](docs/browser-sort.md) |
-| **Continuous scrolling** | DOWN/UP scroll one line past the screen edge instead of stopping at the top/bottom row. | `kernel/src/browser_scroll.c` |
-| **Snappy down-scroll** | Repaints bottom-up so the new entry appears immediately on DOWN. | [`docs/browser-scroll-repaint.md`](docs/browser-scroll-repaint.md) |
+| **Fast list navigation** | The list wraps at both ends and shows `n/total` in 12px. A move inside the page recolors two rows instead of drawing them, a scroll moves the rows that stay and draws the cursor's row first, and a held UP or DOWN speeds up, moving up to 4 rows at a time. The SET tab's cursor wraps too. From [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code. | [`docs/browser-nav.md`](docs/browser-nav.md) |
 | **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
 | **DMG-readable highlight + file icons** | Every highlight (browser selection, tab strip, SET-tab buttons, prompts and Loading boxes) is white on black instead of black on dark gray, which is unreadable on an original Game Boy. The browser selection bar spans the full row, and every row starts with an icon: folder, .gb cart, .gbc cart, .sav page, or a boxed ? for anything else. | [`docs/dmg-ui-visibility.md`](docs/dmg-ui-visibility.md) |
 | **12px UI** | An opt-in larger menu font: a proportional 12px-tall font with kerning instead of 8x8 cells, so a row is the icon plus as many characters as fit (about 18 of a typical name; `Pokemon Crystal.gbc` fits without scrolling) and a page shows 10 entries (longer names scroll). The tab strip, the SET and HELP tabs, the START overlay, the boot prompts and the Reading / Loading / Error boxes follow the same mode. Switch it on with the `FONT:` button on the SET tab's second page (`UI=12` in `/EZGB.CFG`); the stock 8px layout stays the default. | [`docs/font12.md`](docs/font12.md), [`docs/ui-mode.md`](docs/ui-mode.md), [`docs/tab-strip12.md`](docs/tab-strip12.md), [`docs/set-pane12.md`](docs/set-pane12.md) |
@@ -173,7 +172,7 @@ re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731
     notes.json    Persistent comments
 decomp/           Stock kernel from source: disassembly + GBDK/C sources, md5-checked
 kernel/           Injectable feature sources (C) and the inject tooling
-  src/            browser_sort.c, browser_scroll*.c, fastlaunch*.c, cgb_init.c, ...
+  src/            browser_sort.c, browser_nav.c, fastlaunch*.c, cgb_init.c, ...
   tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
 docs/             Findings, feature write-ups, hardware notes
 scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
@@ -232,7 +231,7 @@ the FW5 packages differ
   count sorting, file names without extensions and a smaller status box
   first. Mod 7.1 brings those over, and its DV theme is an homage to his
   look: his icons and 12px font choice (Tamzen 6x12), black with lime and
-  blue.
+  blue. The list navigation is his code.
 - **[prjcombine](https://codeberg.org/prjunnamed/prjcombine)**: coolest
   project ever. I thought reverse engineering the FPGA bitstream would be a
   research project of its own, but they already did that research.

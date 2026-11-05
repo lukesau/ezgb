@@ -1,5 +1,9 @@
 # Browser scroll hook stubs
 
+> Since 2026-11-05 both hooks call far stubs to `browser_nav.c`
+> ([docs/browser-nav.md](../../docs/browser-nav.md)): `00:3d8c` for DOWN, `00:3fa0`
+> for UP. The frame layout below still holds; the C files it names are gone.
+
 Hand-assembled, not SDCC-compiled, for the same reason as `shims.md`, but
 with a different constraint: these are not far-call trampolines, they are
 *frame-preserving* entry stubs.

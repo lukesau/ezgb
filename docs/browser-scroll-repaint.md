@@ -1,5 +1,10 @@
 # Bottom-up repaint on down-scroll (1.05e)
 
+> **Replaced (2026-11-05).** `browser_nav.c` moves the rows that stay and draws
+> the bar's row first, in both directions ([browser-nav.md](browser-nav.md)).
+> `browser_scroll.c` and `browser_scroll_repaint.c` are gone from the tree. This
+> page is the history of that step.
+
 Companion to the continuous-scroll patch (`kernel/src/browser_scroll.c`) and the
 sorted browser ([browser-sort.md](browser-sort.md)).
 
