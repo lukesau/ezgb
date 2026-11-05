@@ -38,6 +38,9 @@
  * didn't pass its registers. */
 #define BOOT_REGS ((u8 *)0xDC00)   /* 8 */
 #define NO_DMG    (*(volatile u8 *)0xDC08)
+/* 1 on the DMG family: what stage1's record says, else VBK reading $FF. A
+ * FORCE_DMG stage1 (stage1/build.sh) records a DMG on any console. */
+#define DMG_FAM   (*(volatile u8 *)0xDC09)
 /* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
  * boot ROM, never the jump to $0100 (scripts/skipboot/skip_boot.asm). */
 #define BOOT_RESET (*(volatile u8 *)0xDBEB)

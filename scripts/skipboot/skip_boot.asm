@@ -7,7 +7,7 @@
 ;
 ; - GBC/GBA with the kernel in CGB mode (mod stage1, CGB flag set) and a game
 ;   with the CGB flag ($0143 bit 7) without PGB mode (bits 2-3).
-; - DMG family (VBK reads $FF) and any game, unless it may be an SGB: a DMG
+; - DMG family (DMG_FAM) and any game, unless it may be an SGB: a DMG
 ;   has one mode, and a game's CGB flag means nothing to it. Our stage1 passes the boot registers, where C = $14 shows one
 ;   (NO_DMG). With stock stage1 an SGB looks like a DMG, so SGB BOOT ticked
 ;   resets; its record means nothing under our stage1 (S1_SGB).
@@ -26,6 +26,7 @@ DEF BOOT_RESET EQU $dbeb        ; kernel/src/vars.h
 DEF S1_SGB     EQU $dbf8        ; kernel/src/ezcfg.h
 DEF BOOT_REGS  EQU $dc00        ; kernel/src/vars.h
 DEF NO_DMG     EQU $dc08
+DEF DMG_FAM    EQU $dc09
 DEF REC_FLAG   EQU $7f51        ; RecFlag(r, tag, toggle), kernel/src/rec_flag.c
 DEF SGB_REC    EQU $a400        ; SGB BOOT's pSRAM record
 
@@ -77,9 +78,7 @@ LOAD "SkipBoot", WRAMX[WRAM_AT]
 SkipBoot:
     ld a, [$0143]
     ld b, a
-    xor a                       ; DMG family: VBK reads $FF
-    ldh [$ff4f], a
-    ldh a, [$ff4f]
+    ld a, [DMG_FAM]
     rra
     jr c, .dmg
     ld a, b
@@ -108,7 +107,7 @@ SkipBoot:
     ; CGB mode: palette RAM takes a write. In DMG compatibility mode it
     ; ignores it (VBK reads back there, so it is no test), on a DMG it
     ; reads $FF.
-    ldh a, [$ff4f]
+    ld a, [DMG_FAM]
     rra
     jr c, .unlock
     ld hl, $ff69

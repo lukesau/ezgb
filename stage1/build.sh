@@ -29,6 +29,11 @@ python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr
 # stage1/VERSION: line 1 the firmware number (what the version register
 # reads), line 2 the mod version; shown as FW5-MOD 1.7
 fw=$(sed -n 1p "$here/VERSION"); mod=$(sed -n 2p "$here/VERSION")
+# STAGE1_CFLAGS=-DFORCE_DMG: test build for acting as a DMG on a color console.
+# No CGB flag, so the boot ROM picks compatibility mode, and a DMG's registers
+# in the record (docs/skip-boot-rom.md)
+cgb_flag=-c
+case "${STAGE1_CFLAGS:-}" in *-DFORCE_DMG*) cgb_flag=; mod="$mod-DMG" ;; esac
 printf '#define FW_NUMBER %s\n#define FW_TEXT "FW%s-MOD %s"\n' "$fw" "$fw" "$mod" > "$b/version.h"
 CFLAGS="-msm83 --opt-code-size --max-allocs-per-node 20000 -I$here/src -I$b ${STAGE1_CFLAGS:-}"
 rels=""
@@ -69,9 +74,10 @@ if used > 0x4800:
     sys.exit(f"stage1 is {used:#x} bytes: over the $4800 the BRAMs hold")
 for i in range(0x4800, 0x8000):
     d[i] = 0
+d[0x143] = 0                            # no CGB flag unless rgbfix -c sets it
 open(sys.argv[2], "wb").write(d)
 print(f"stage1: {used} bytes used of {0x4800}")
 PY
 # -s -l 0x33: SGB flag and old licensee $33, as stock 0918 (the SGB BIOS
 # ignores a header without both)
-rgbfix -v -c -s -l 0x33 -t BOOTLOADER -p 0 "$out/stage1.gb"
+rgbfix -v $cgb_flag -s -l 0x33 -t BOOTLOADER -p 0 "$out/stage1.gb"

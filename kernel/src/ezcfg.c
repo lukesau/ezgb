@@ -393,6 +393,8 @@ static void stage1_skip_mark(void) {
         volatile u8 *r = mark + 0x18;   /* $A428: F A C B E D L H */
         u8 i;
 
+        *(volatile u8 *)0xFF4F = 0;
+        DMG_FAM = *(volatile u8 *)0xFF4F & 1;
         /* $A412 "SB"/"SN": our stage1 handles the SGB (it sent the header
          * packets or found no SGB), so SGB BOOT is AUTO this boot (flcfg.c).
          * With its registers an SGB shows by C = $14; a stage1 from before
@@ -403,6 +405,7 @@ static void stage1_skip_mark(void) {
             if (r[1] == 0x01 || r[1] == 0x11 || r[1] == 0xFF) {
                 s = (const u8 *)r;
                 NO_DMG = r[2] == 0x14;
+                DMG_FAM = r[1] != 0x11;
             }
         }
         for (i = 0; i < 8; i++) BOOT_REGS[i] = s[i];

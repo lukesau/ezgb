@@ -56,7 +56,6 @@ extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define SORT_REC ((volatile u8 *)0xA404)   /* page $11: 'S', 'O', flag, ~flag */
-#define VBK      (*(volatile u8 *)0xFF4F)  /* DMG family: $FF; color consoles, in either mode: reads back */
 
 #define ROW_NEXT  5
 #define ROW_THEME 6
@@ -155,8 +154,7 @@ static void sgb_row(u8 hi) {
  * DMG family can unless it may be an SGB. */
 static u8 can_jump(void) {
     if (!PAL_LOCKED) return 1;
-    VBK = 0;
-    if (!(VBK & 1)) return 0;           /* reads back: a color console */
+    if (!DMG_FAM) return 0;             /* a color console */
     if (NO_DMG) return 0;
     return S1_SGB || !RecFlag(SGB_REC, 'G', 0);
 }

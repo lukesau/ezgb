@@ -144,6 +144,7 @@ void video_init(void)
     unpack((uint8_t *)(0x8000 + MARK_TILE * 16), wordmark_tiles);
     wordmark_map_draw(0);
 
+#ifndef FORCE_DMG                       /* compatibility mode ignores all this */
     rVBK = 0;
     cgb = !(rVBK & 1);
     if (cgb) {
@@ -156,7 +157,8 @@ void video_init(void)
         for (i = 0; i < sizeof pal; i++)
             rBCPD = pal[i];
     }
-    rLCDC = 0x91;                       /* on, BG tiles $8000, map $9800 */
+#endif
+    rLCDC = 0x91;                      /* on, BG tiles $8000, map $9800 */
 }
 
 /* VRAM write with the LCD on: wait for mode 0/1 */
