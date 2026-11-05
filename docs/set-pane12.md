@@ -30,7 +30,7 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 | 8 | the scrolling example name, 0..159 ([browser-tags.md](browser-tags.md)) |
 | 10 | `SORT BY PLAYS:` 0..128, checkbox at x 130 ([stars.md](stars.md)) |
 | 12 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
-| 14 | `SKIP BOOT ROM:` 0..128, checkbox at x 130 ([skip-boot-rom.md](skip-boot-rom.md)) |
+| 14 | `BOOT ROM:` 0..96; `AUTO` 120..155 or `ALWAYS` 104..155, in a box unless this console can't jump ([skip-boot-rom.md](skip-boot-rom.md)) |
 
 The checkboxes (9 px squares at y 8 x row) are not moved: they line up with
 the 12px caps as they are. Button boxes are the text row plus a pixel above

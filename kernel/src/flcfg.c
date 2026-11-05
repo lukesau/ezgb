@@ -41,11 +41,11 @@
  *           12 <name, 10 cols, scrolling> [PICK ROM]   16 1/2 [NEXT >]
  *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 CLEAN UP NAMES: [ ]
  *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
- *           12 SGB BOOT: [ ]   14 SKIP BOOT ROM: [ ]
+ *           12 SGB BOOT: [ ]   14 BOOT ROM: [AUTO]
  *           16 [< PREV] 2/2                                         (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 NEXT; 6 THEME,
- * 7 UI, 8 TAGS, 9 SORT, 10 SGB BOOT, 11 SKIP BOOT ROM, 12 PREV). The stock
+ * 7 UI, 8 TAGS, 9 SORT, 10 SGB BOOT, 11 BOOT ROM, 12 PREV). The stock
  * clamp lets the cursor run 0..12; op ROWS keeps it on the page. Page 2 is drawn over the stock
  * screen, which keeps running: SetText drops its text there (SET_PAGE, vars.h)
  * and op ROWS clears its dirty flag (frame[0x3e]) so it draws no boxes.
@@ -89,7 +89,7 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
 #define ROW_NEXT  5          /* page 1's last row */
 #define ROW_THEME 6          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
 #define ROW_UI    7          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  8          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
+#define ROW_TAGS  8          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, BOOT ROM */
 #define ROW_PREV  12         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */

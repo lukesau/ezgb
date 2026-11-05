@@ -11,7 +11,7 @@
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
  *   row 10  SORT BY PLAYS:   [ ]   cursor row 9 (docs/stars.md)
  *   row 12  SGB BOOT:        [ ]   cursor row 10 (docs/sgb-boot.md)
- *   row 14  SKIP BOOT ROM:   [ ]   cursor row 11 (docs/skip-boot-rom.md)
+ *   row 14  BOOT ROM:     [AUTO]   cursor row 11 (docs/skip-boot-rom.md)
  *   row 16  [< PREV]  2/2        cursor row 12
  *
  * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 5), with row 14 left
@@ -20,7 +20,7 @@
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
- *   op 3  A on a page 2 checkbox: CLEAN UP NAMES and SKIP BOOT ROM toggle
+ *   op 3  A on a page 2 row: CLEAN UP NAMES and BOOT ROM toggle
  *         and set SET_DIRTY (SetCommit, 04:5fc0, saves), SORT BY PLAYS and SGB BOOT their pSRAM records
  *         (SGB BOOT: nothing when AUTO); each redraws highlighted
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
@@ -32,6 +32,10 @@
  *
  * SGB BOOT and SORT BY PLAYS are pSRAM records (docs/sgb-boot.md,
  * docs/stars.md), read and toggled by RecFlag (rec_flag.c).
+ *
+ *   BOOT ROM:     [AUTO]     jump when this console and game allow it
+ *   BOOT ROM:   [ALWAYS]     BOOTROM=1, every launch resets
+ *   BOOT ROM:     ALWAYS     this console can't jump, nothing to set
  *
  * Buttons and checkboxes are drawn as flcfg.c draws them: the box 5 px left
  * and 4 px right of the 8px text, 3 px above and 5 below; 12px, the text row
@@ -52,6 +56,7 @@ extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define SORT_REC ((volatile u8 *)0xA404)   /* page $11: 'S', 'O', flag, ~flag */
+#define VBK      (*(volatile u8 *)0xFF4F)  /* DMG family: $FF; color consoles, in either mode: reads back */
 
 #define ROW_NEXT  5
 #define ROW_THEME 6
@@ -66,6 +71,8 @@ static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void page_row(u8 hi);
 static void sgb_row(u8 hi);
+static void boot_row(u8 hi);
+static u8 can_jump(void);
 
 void SetPage(u8 op, u8 cur) {
     StoreDrawParams(3, 0, 0);
@@ -81,9 +88,9 @@ void SetPage(u8 op, u8 cur) {
         {
             static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
             static const u8 sgb_short[5] = {'S','G','B',':',0};
-            static const u8 boot_label[15] = {'S','K','I','P',' ','B','O','O','T',' ','R','O','M',':',0};
+            static const u8 boot_label[10] = {'B','O','O','T',' ','R','O','M',':',0};
             if (S1_SGB) SetText(sgb_short, 4, 0, 12); else SetText(sgb_label, 9, 0, 12);
-            SetText(boot_label, 14, 0, 14);
+            SetText(boot_label, 9, 0, 14);
         }
         TagExample();                       /* row 8, scrolling */
     } else if (op == 1) {
@@ -97,7 +104,7 @@ void SetPage(u8 op, u8 cur) {
         box(0x82, 0x30, TAGS_HIDE, cur == ROW_TAGS);
         box(0x82, 0x50, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
         sgb_row(cur == ROW_SGB);
-        box(0x82, 0x70, !BOOT_RESET, cur == ROW_BOOT);
+        boot_row(cur == ROW_BOOT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
         page_row(cur == ROW_NEXT);
@@ -109,10 +116,12 @@ void SetPage(u8 op, u8 cur) {
         if (S1_SGB) return;             /* AUTO: stage1 does it, nothing to set */
         RecFlag(SGB_REC, 'G', 1);
         sgb_row(1);
+        boot_row(0);                    /* under stock stage1 it decides the DMG family */
     } else if (op == 3 && cur == ROW_BOOT) {
+        if (!can_jump()) return;
         BOOT_RESET = BOOT_RESET ? 0 : 1;
         SET_DIRTY = 1;
-        box(0x82, 0x70, !BOOT_RESET, 1);
+        boot_row(1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         SET_DIRTY = 1;
@@ -139,6 +148,34 @@ static void sgb_row(u8 hi) {
     } else {
         box(0x82, 0x60, RecFlag(SGB_REC, 'G', 0), hi);
     }
+}
+
+/* What SkipBoot (scripts/skipboot/skip_boot.asm) will decide for this console,
+ * whatever the game: a CGB mode can jump, a compatibility mode can't, and the
+ * DMG family can unless it may be an SGB. */
+static u8 can_jump(void) {
+    if (!PAL_LOCKED) return 1;
+    VBK = 0;
+    if (!(VBK & 1)) return 0;           /* reads back: a color console */
+    if (NO_DMG) return 0;
+    return S1_SGB || !RecFlag(SGB_REC, 'G', 0);
+}
+
+/* Row 14. BOOT_RESET keeps its value while this console can't jump, so a card
+ * moved to one that can still has it. */
+static void boot_row(u8 hi) {
+    static const u8 auto_str[5] = {'A','U','T','O',0};
+    static const u8 always_str[7] = {'A','L','W','A','Y','S',0};
+    u8 can = can_jump();
+    button(2, 0x63, 0x6d, 0x9b, 0x79);  /* AUTO's box is the narrower */
+    if (can && !BOOT_RESET) {
+        button(hi, 0x73, 0x6d, 0x9b, 0x79);
+        SetText(auto_str, 4, 15, 14);
+        return;
+    }
+    if (can || hi) button(hi, 0x63, 0x6d, 0x9b, 0x79);
+    else StoreDrawParams(3, 0, 0);
+    SetText(always_str, 6, 13, 14);
 }
 
 /* Row 16: PREV (page 2) or NEXT (page 1), then the page number. */
@@ -171,9 +208,11 @@ static void box(u8 x, u8 y, u8 on, u8 hi) {
 }
 
 /* A button's box in 8px coordinates, in the ink its text then uses
- * (flcfg.c's). */
+ * (flcfg.c's); hi 2 clears it. */
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
-    if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+    if (hi == 2) StoreDrawParams(0, 0, 0);
+    else if (hi) StoreDrawParams(0, 3, 0);
+    else StoreDrawParams(3, 0, 0);
     if (hUiMode) {
         y0 += 2;
         y1 += 3;
