@@ -4434,7 +4434,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:136b:8
+02:4a00 .data:144a:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4557,10 +4557,10 @@
 04:7d00 .data:152:8
 04:5990 FarCallTheme_B4
 04:5990 .data:8:8
-04:7670 ThemeRow
-04:7670 .data:11b:8
+04:77a0 ThemeRow
+04:77a0 .data:1b2:8
 02:43d0 Theme
-02:43d0 .data:12a:8
+02:43d0 .data:130:8
 02:4960 ThemeRamps
 02:4960 .data:30:8
 00:0290 PopupDrawParams
@@ -4576,7 +4576,9 @@
 08:7cc0 HelpSdHook
 08:7cc0 .data:b:8
 04:5fb0 SetExitHook
-04:5fb0 .data:7:8
+04:5fb0 .data:a:8
+04:5fc0 SetCommit
+04:5fc0 .data:1c:8
 04:7e60 TagExample
 04:7e60 .data:88:8
 02:7260 Marquee
@@ -4588,7 +4590,7 @@
 05:7b50 ThemeColors
 05:7b50 .data:14f:8
 04:6be6 SkipBootPrep
-04:6be6 .data:121:8
+04:6be6 .data:111:8
 05:7c9f Bump
 05:7c9f .data:361:8
 08:7f29 PlayKeysFar
@@ -4626,11 +4628,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:5e4:8
+04:6d19 .data:60b:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:512:8
+04:6610 .data:50d:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
