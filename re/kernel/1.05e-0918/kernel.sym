@@ -4487,7 +4487,7 @@
 00:039d BkSavingStub
 00:039d .data:d:8
 04:6400 SetText
-04:6400 .data:1e9:8
+04:6400 .data:1bd:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:5f30 FlSetADispatch
@@ -4633,7 +4633,7 @@
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:5c1:8
+04:6610 .data:54a:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
