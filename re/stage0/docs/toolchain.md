@@ -5,10 +5,14 @@ Reference for the tools that decode, trace and patch the cart's Spartan-3A
 end-to-end build of an updater, is in [../../../docs/fpga-setup.md](../../../docs/fpga-setup.md).
 Findings from using them are in [bitstream.md](bitstream.md).
 
-Decoded listings, BRAM dumps and anything else derived from EZ Flash's
-bitstream stay in the ignored `fpga/` directory, same policy as the flash dumps
+Cart images, flash dumps, BRAM contents and the exports made from them stay in
+the ignored `fpga/` directory, same policy as the firmware packages
 (`fpga/README.md`, itself untracked; the short version is in
 [../../../docs/fpga-setup.md](../../../docs/fpga-setup.md#10-risk-and-recovery)).
+Tracked and public, because they leave out BRAM contents: the decoded listings
+in [`../decode/`](../decode/README.md), and the
+[floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
+`fpga/floorplan/floorplan.html`.
 
 ## The pieces
 

@@ -180,7 +180,7 @@ scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
 patches/kernel/   IPS patches: stock ezgb.dat -> modded kernel (safe to share)
 patches/sameboy/  EZ Jr FPGA stub as diffs over a pinned SameBoy commit
 sd/               Local microSD image for the emulator     (untracked; see docs/DEVELOPMENT.md)
-fpga/, tools/     FPGA dumps and cloned reference repos     (not tracked)
+fpga/, tools/     FPGA dumps, reference repos (not tracked, except fpga/floorplan/)
 ```
 
 Untracked paths are gitignored: EZ Flash's copyrighted binaries (firmware,
@@ -198,6 +198,7 @@ the FW5 packages differ
 - **Hardware:** [`docs/hardware-board.md`](docs/hardware-board.md),
   [`docs/REGISTERS.md`](docs/REGISTERS.md),
   [`docs/fpga.md`](docs/fpga.md) (FPGA docs index and setup),
+  [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/) (FW4 and FW5 logic and wiring on the chip),
   [`re/stage0/docs/flash-map.md`](re/stage0/docs/flash-map.md),
   [`re/stage0/docs/bitstream.md`](re/stage0/docs/bitstream.md),
   [`re/stage0/docs/picoblaze.md`](re/stage0/docs/picoblaze.md),

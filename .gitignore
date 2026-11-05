@@ -54,8 +54,11 @@ re/kernel/*/label-proposals.txt
 
 # Cart config-flash dumps and repair images. Same policy as the firmware
 # packages: these are EZ Flash's FPGA bitstream, not this project's work, so
-# they stay local. See fpga/README.md.
-/fpga/
+# they stay local. See fpga/README.md. The floorplan page is the exception: it
+# has no block RAM contents and is published (scripts/publish-floorplan.sh).
+/fpga/*
+!/fpga/floorplan/
+/fpga/floorplan/*.jsonl
 
 *.bin
 
