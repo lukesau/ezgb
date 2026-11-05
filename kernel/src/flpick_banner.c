@@ -22,6 +22,7 @@ void flpick_banner(void) {
      * bank 8, out of the bank-2 renderer's reach */
     if (FL_PICK == 0 || hUiMode) return;
     StoreDrawParams(0, 3, 0);
-    DrawString(banner, 15, 0, 0);
+    DrawString(banner, 12, 0, 0);
     StoreDrawParams(3, 0, 0);
+    DrawString(banner + 12, 3, 12, 0);
 }

@@ -48,9 +48,10 @@ ink instead of the labels; the 8px banner (`flpick_banner.c`, bank 8) steps
 aside in 12px mode, since its string is out of the bank-2 renderer's reach.
 
 The entry number at the right end is drawn by the list code after the strip,
-through `TabNum12`: 8px goes to `DrawString` unchanged, 12px rewrites the
-column argument to 124 and goes to `FarCallDrawString12`, which paints from
-there to the edge and so also ends a pick banner.
+through `TabNum12`: 8px goes to `DrawString` unchanged, 12px to `TabNumFar`
+(`browser_nav.c`, [browser-nav.md](browser-nav.md)), which draws `n/total`. The
+pick banner paints only to the end of its text, so the rest of the strip stays
+the screen's color (in a dark theme it used to stay white up to the number).
 
 ## HELP pane
 

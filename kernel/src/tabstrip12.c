@@ -41,7 +41,7 @@ void TabStrip12(u16 far_pad_thunk, u16 far_pad_af, u8 tab) {
     /* " SD " at 0, " SET " at 4, " HELP " at 9, and one more blank */
     static const u8 text[17] = {' ','S','D',' ',' ','S','E','T',' ',' ','H','E','L','P',' ',' ',0};
     static const u8 start[4] = {0, 4, 9, 15};
-    static const u8 banner[13] = {' ','P','I','C','K',' ','A',' ','R','O','M',' ',0};
+    static const u8 banner[14] = {' ','P','I','C','K',' ','A',' ','R','O','M',' ',' ',0};
     u8 xs[40];
     u8 i, k;
 
@@ -56,10 +56,14 @@ void TabStrip12(u16 far_pad_thunk, u16 far_pad_af, u8 tab) {
         DrawRect(0, 0, 159, 143, 1);
     }
     if (tab == 0 && FL_PICK) {
-        /* SET tab's pick mode (flpick_banner.c draws the 8px one); the entry
-         * number repaints its field in the normal colors afterwards */
+        /* SET tab's pick mode (flpick_banner.c draws the 8px one), up to the
+         * end of its text: the extra blank is there for Fit12 to say where
+         * that is. The rest of the strip stays the screen's color. */
         StoreDrawParams(0, 3, 0);
-        DrawString12(0, 0, 0, banner, 0, 0, 0);
+        Fit12(0, 0, banner, 0, 0, xs);
+        hClip12 = xs[12];
+        DrawString12(0, 0, 0, banner, 12, 0, 0);
+        hClip12 = 0;
     } else if (tab != 3) {
         Fit12(0, 0, text, 0, 0, xs);
         for (i = 0; i < 4; i++) {
