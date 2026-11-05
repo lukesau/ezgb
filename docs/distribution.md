@@ -115,6 +115,9 @@ scripts/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v
 scripts/kernel-patch.py updater apply Update_FW5_2021-9-18.gb
 ```
 
+The screen label is at most 16 characters. A release names the firmware, as
+`To FW5-MOD 2.1`, so the updater says which cart it is for.
+
 The patch carries only bytes that differ from the stock updater: the stage1
 and bank 2 BRAM frames, the screen label, and the bitstream and header
 checksums. Patching is byte-granular, so a changed byte can still hold
