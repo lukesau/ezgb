@@ -21,7 +21,7 @@
  *   op 1  page 2's rows and its page row
  *   op 2  page 1's page row
  *   op 3  A on a page 2 checkbox: CLEAN UP NAMES and SKIP BOOT ROM toggle
- *         and save EZGB.CFG, SORT BY PLAYS and SGB BOOT their pSRAM records
+ *         and set SET_DIRTY (SetCommit, 04:5fc0, saves), SORT BY PLAYS and SGB BOOT their pSRAM records
  *         (SGB BOOT: nothing when AUTO); each redraws highlighted
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
  *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
@@ -43,13 +43,11 @@
 #include "vars.h"
 #include "ezcfg.h"
 
-extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c */
 extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
 extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, rec_flag.c: a pSRAM checkbox */
-extern void FarCallPlaySync_B4(void);                               /* 04:7792 -> 0B:47af play_file.c: the setting to the card */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)  /* pSRAM page latch, under $7FC0 = $03 */
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
@@ -105,7 +103,7 @@ void SetPage(u8 op, u8 cur) {
         page_row(cur == ROW_NEXT);
     } else if (op == 3 && cur == ROW_SORT) {
         u8 on = RecFlag(SORT_REC, 'O', 1);
-        FarCallPlaySync_B4();               /* /.ezgbplays keeps it (docs/stars.md) */
+        SET_DIRTY = 1;                      /* /.ezgbplays keeps it (docs/stars.md) */
         box(0x82, 0x50, on, 1);
     } else if (op == 3 && cur == ROW_SGB) {
         if (S1_SGB) return;             /* AUTO: stage1 does it, nothing to set */
@@ -113,13 +111,11 @@ void SetPage(u8 op, u8 cur) {
         sgb_row(1);
     } else if (op == 3 && cur == ROW_BOOT) {
         BOOT_RESET = BOOT_RESET ? 0 : 1;
-        EZ_OP = OP_SAVE;
-        FarCallEzCfg();
+        SET_DIRTY = 1;
         box(0x82, 0x70, !BOOT_RESET, 1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
-        EZ_OP = OP_SAVE;
-        FarCallEzCfg();
+        SET_DIRTY = 1;
         box(0x82, 0x30, TAGS_HIDE, 1);
         TagExample();                       /* the other name, from its start */
     } else if (op == 4) {

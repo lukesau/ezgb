@@ -41,12 +41,26 @@ step through its fields. A new cursor row moves both the clamp and the row
 
 ### Pages
 
+**When settings reach the card:** changes on the SET tab stay in RAM and set
+`SET_DIRTY` (WRAM `$DAFD`). `SetCommit` (`04:5fc0`, 28 B) writes `EZGB.CFG` and
+syncs `/.ezgbplays` when it is set, on NEXT, on PREV and when the screen is left
+(SELECT, or PICK ROM on its way to the browser). Nothing is written if nothing
+changed. So power off before one of those and `EZGB.CFG` keeps the old values;
+this covers the checkboxes, THEME, FONT, AUTO SAVE and TIME SET's `RTC=`. Marks
+in pSRAM still change at once: the SGB BOOT and SORT BY PLAYS records, and the
+theme mark, so after a power off the boot starts in the new theme and the file's
+theme then takes over at the restore. `RTC` itself, the clock chip, changes at
+TIME SET as before. A re-entry (`SET_RE` set, after a page or font switch)
+doesn't read the file, since RAM may be ahead of it, and `OP_AUTOSAVE` and
+`OP_TIMESET` no longer read it either; they only run on this screen. Until
+2026-11-04 every press wrote the file.
+
 A on NEXT or PREV flips `SET_PAGE` (WRAM `$DBEE`), clears the pane and
 enters the SET screen again from the top, as the UI toggle does
 (`FlSetADispatch`'s return 2), with the cursor on the other page's
 NEXT/PREV (`SET_RE`, `$DBEF`, the cursor row + 1), so A flips straight
 back. Leaving the tab ends on page 1: the screen's exit (`04:5912`,
-`add sp,$6a; ret`) goes through `SetExitHook` (`04:5fb0`), which clears
+`add sp,$6a; ret`) goes through `SetExitHook` (`04:5fb0`), which calls `SetCommit` and clears
 `SET_PAGE` first.
 
 Page 2 is drawn over the stock screen, which keeps running under it: the
@@ -157,7 +171,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
 | `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 12, PREV, which op ROWS turns into NEXT on page 1; row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
 | `04:5604` | `d6 01` | `d6 0c` | cursor clamp 0..1 → 0..12, both pages (`d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
-| `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`af ea ee db e8 6a c9`: clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
+| `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`cd c0 5f af ea ee db e8 6a c9`: `call SetCommit`, clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 
 ### Bank 0 (cave `$04c7-$05b5`)

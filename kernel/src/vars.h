@@ -49,6 +49,10 @@
 /* SET tab re-entry (flcfg.c): the cursor row + 1 to put the cursor on when
  * the screen is entered again after a page or UI mode switch, 0 = none. */
 #define SET_RE    (*(volatile u8 *)0xDBEF)
+/* SET tab settings changed in RAM since the last write: SetCommit (04:5fc0)
+ * writes them on NEXT, on PREV and when the screen is left
+ * (docs/fastlaunch-set-tab.md). */
+#define SET_DIRTY (*(volatile u8 *)0xDAFD)
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */

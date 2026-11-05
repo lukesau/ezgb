@@ -114,7 +114,7 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x7670, "SetPage": 0x6610, "FarCallMarquee": 0x0410}),
+                            "ThemeRow": 0x7670, "SetPage": 0x6610, "SetCommit": 0x5fc0, "FarCallMarquee": 0x0410}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x7670,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
@@ -190,7 +190,8 @@ REGISTRY = {
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (scripts/fillrect/fillrect.asm)
     (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)
     (4, 0x5f90): dict(),                   # FlSetJumpBottom: RIGHT on the SET tab
-    (4, 0x5fb0): dict(),                   # SetExitHook: SET screen exit clears SET_PAGE
+    (4, 0x5fb0): dict(),                   # SetExitHook: SET screen exit: SetCommit, clear SET_PAGE
+    (4, 0x5fc0): dict(),                   # SetCommit: SET_DIRTY -> EZGB.CFG and /.ezgbplays
     (4, 0x7c00): dict(),                   # U32ToAsciiFast: decimal fast path (scripts/fastdec/u32dec.asm)
     (4, 0x6be6): dict(code_len=0x3c),      # SkipBootPrep: copier, then SkipBoot assembled for WRAM $D1B0 (scripts/skipboot/skip_boot.asm)
 }

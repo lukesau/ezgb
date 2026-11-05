@@ -20,9 +20,10 @@
  *               the page's mod rows with the cursor highlight.
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): keep it on the
  *               page, redraw the rows.
- *   op 2 A      A pressed with the cursor on a mod row. The checkboxes, THEME
- *               and UI toggle and rewrite the file (returns 0 = jp redraw); SGB BOOT
- *               and SORT BY PLAYS toggle pSRAM records instead (no file); PICK ROM
+ *   op 2 A      A pressed with the cursor on a mod row. The checkboxes, THEME and UI change RAM and
+ *               set SET_DIRTY, and SetCommit (04:5fc0) writes the file on NEXT, on
+ *               PREV and when the screen is left (returns 0 = jp redraw); SGB BOOT and SORT BY PLAYS
+ *               toggle pSRAM records instead; PICK ROM
  *               arms pick mode (returns 1 = leave the SET screen; the bank-0
  *               FlSetExitHook then re-enters the browser); NEXT and PREV
  *               switch the page (returns 2 = enter the SET screen again).
@@ -71,6 +72,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern void ThemeRow(u8 op);                                        /* 04:7670, theme_row.c: the THEME button */
+extern void SetCommit(void);                                        /* 04:5fc0: SET_DIRTY -> EZGB.CFG and /.ezgbplays */
 extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page row */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
@@ -132,8 +134,10 @@ static u8 flcfg_op(u8 *frame, u8 op) {
              * highlighted for the cursor on row 0: page 2 clears them,
              * page 1 draws SET plain */
             SetPage(PAGE2 ? 4 : 8, 0);
+        } else {
+            /* not on a re-entry: RAM may hold changes the file doesn't */
+            cfg_load();
         }
-        cfg_load();
         draw_static();
         draw_rows(frame[0x3d]);
         SetFpgaPage_B4(0);
@@ -154,7 +158,9 @@ static u8 flcfg_op(u8 *frame, u8 op) {
     if (op == 2) {
         u8 row = frame[0x3d];
         if (row == ROW_NEXT || row == ROW_PREV) {
-            /* enter the screen again on the other page, over a clear pane */
+            /* write what changed, then enter the screen again on the other
+             * page, over a clear pane */
+            SetCommit();
             SET_PAGE ^= 1;
             SET_RE = (row == ROW_NEXT ? ROW_PREV : ROW_NEXT) + 1;
             SetPage(4, 0);
@@ -164,7 +170,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME) {
             if (row == ROW_THEME) {
                 u8 was = (u8)(THEME == THEME_DV);
-                ThemeRow(2);            /* saves, sets the palettes, redraws itself */
+                ThemeRow(2);            /* sets the palettes, redraws itself */
                 /* onto or off DV, whose glyph set is its own (12px only,
                  * AUTO): the tab strip and the pane are drawn again in the
                  * new glyphs, as the FONT button does */
@@ -174,7 +180,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
                 }
             } else {
                 if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1; else RTC_OFF = RTC_OFF ? 0 : 1;
-                cfg_save();
+                SET_DIRTY = 1;
                 draw_rows(row);
             }
             wait_a_release();
@@ -198,7 +204,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
              * FlSetADispatch re-enters the SET screen from the top. */
             hUiMode = hUiMode ? 0 : 1;
 relayout:
-            cfg_save();
+            SET_DIRTY = 1;
             FarCallMenuTabs(1);
             wait_a_release();
             SetFpgaPage_B4(0);
@@ -253,7 +259,8 @@ static void cfg_load(void) {
     FarCallEzCfg();
 }
 
-/* FL_* (+ the RTC copy loaded alongside) -> /EZGB.CFG. */
+/* FL_* (+ the RTC copy loaded alongside) -> /EZGB.CFG. Only a pick writes
+ * from here; the SET rows set SET_DIRTY and SetCommit (04:5fc0) saves. */
 static void cfg_save(void) {
     EZ_OP = OP_SAVE;
     FarCallEzCfg();

@@ -237,7 +237,7 @@ since they are plain stores that work from any bank.
 | `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
-| `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op BACKUP, then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
+| `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op TIMESET (takes the time, sets `SET_DIRTY`; `SetCommit` writes it), then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
 | `AutosaveSetHook` | `04:5fa0`, 11 B | AUTO SAVE toggle tail: op AUTOSAVE, then `jp DrawTimeAutosaveScreen_redraw` |
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
@@ -287,6 +287,7 @@ no version-specific address.
 | `$DB60-$DBC1` | `LOG_BUF`, `RTCLOG=` text, 98 B (7 entries; 140 B until 2026-10-30), test builds only |
 | `$DBC2-$DBE3` | the shared marquee: `MQ_ARG`, its work copy, `MQ_OPS`, `MQ_A`, `MQ_B` ([marquee.md](marquee.md)) |
 | `$DBE4-$DBE9` / `$DBEA` | `CUST_RGB`, `COLORS=` as read / `CUST_OK`, 1 once it was valid ([dark-mode.md](dark-mode.md#custom)) |
+| `$DAFB` / `$DAFC` / `$DAFD` | `THEME_BACK`, `SET_CUR`, `SET_DIRTY` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md), [dark-mode.md](dark-mode.md)) |
 | `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [joypad-latch.md](joypad-latch.md#set-tab-d-pad-repeat)) |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
 | `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |

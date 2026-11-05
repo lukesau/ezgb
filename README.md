@@ -96,7 +96,7 @@ root's only ROM. Anything else boots to the normal browser. Folders, kernels
 disables fast launch entirely (every trigger skipped) while
 keeping the path for later. **Hold START at power-on to skip fast launch and go to
 the browser.** You can also configure all of this **from the cart's SET tab** (a
-FAST LAUNCH checkbox and a ROM PICK button that rewrite `/EZGB.CFG`); see
+FAST LAUNCH checkbox and a ROM PICK button, saved to `/EZGB.CFG` on NEXT, on PREV or when you leave the tab); see
 [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md). The whole feature is confirmed on real hardware (Game
 Boy Color and Game Boy Advance SP): fast launch from a config file (root and
 subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the

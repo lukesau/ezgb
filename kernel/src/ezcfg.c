@@ -183,10 +183,9 @@ void ezcfg(void) {
     if (op == OP_LASTLOAD) { lastrom_load(); return; }
     if (op == OP_SAVECHK) { savestamp_check(); return; }
     if (op == OP_AUTOSAVE) {
-        cfg_load();
-        op = as_take();
+        /* SET tab: RAM holds the file, and SetCommit writes it */
+        if (as_take()) SET_DIRTY = 1;
         *(volatile u8 *)0x4000 = 0;      /* as the stock toggle leaves it */
-        if (op) cfg_save();              /* only when AUTOSAVE= changed */
         return;
     }
     cfg_restore();
@@ -298,8 +297,14 @@ static void backup_take(u8 ev, u8 force) {
 /* After every BACKUPSAVE dump (timeset 0) and TIME SET confirm (timeset 1). */
 static void cfg_backup(u8 timeset) {
     if (RTC_OFF) return;                 /* NO SD: flag from the boot/SET load */
+    if (timeset) {
+        /* SET tab: RAM holds the file, and SetCommit writes it */
+        backup_take('T', 1);
+        SET_DIRTY = 1;
+        return;
+    }
     cfg_load();
-    backup_take(timeset ? 'T' : 'B', timeset);
+    backup_take('B', 0);
     cfg_save();
 }
 
