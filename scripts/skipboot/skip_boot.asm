@@ -7,8 +7,8 @@
 ;
 ; - GBC/GBA with the kernel in CGB mode (mod stage1, CGB flag set) and a game
 ;   with the CGB flag ($0143 bit 7) without PGB mode (bits 2-3).
-; - DMG family (VBK reads $FF) and a game without the CGB flag, unless it may
-;   be an SGB. Our stage1 passes the boot registers, where C = $14 shows one
+; - DMG family (VBK reads $FF) and any game, unless it may be an SGB: a DMG
+;   has one mode, and a game's CGB flag means nothing to it. Our stage1 passes the boot registers, where C = $14 shows one
 ;   (NO_DMG). With stock stage1 an SGB looks like a DMG, so SGB BOOT ticked
 ;   resets; its record means nothing under our stage1 (S1_SGB).
 ;
@@ -90,8 +90,6 @@ SkipBoot:
     ld bc, $7fe0                ; the instruction the hook replaced
     jp STUB_RESET + 3
 .dmg
-    bit 7, b
-    jr nz, .reset
     ld a, [NoDmgJump]
     and a
     jr nz, .reset
