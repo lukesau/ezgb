@@ -4,9 +4,9 @@
 Release kernels leave the debug screen out. This takes re/kernel/<ver>/kernel.gb (the
 mod build, untouched) and writes a copy with:
 
-  bank 4      DebugTab (kernel/src/debug_tab.c), compiled for this build;
+  bank 12     DebugTab (kernel/src/debug_tab.c), compiled for this build;
               it starts with DrawMenuTabs(3) (clear the pane, keep the strip)
-  bank 5      FlashDump (kernel/src/flash_dump.c), the config flash dump
+  bank 12     FlashDump (kernel/src/flash_dump.c), the config flash dump
               DebugTab far-calls on START
   bank 0      DbgTabHook: far-call DebugTab, Delay, back to the browser
   site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
@@ -55,8 +55,8 @@ ADDR = {
     "HelpExit": (0, 0x1288),
 }
 MODSTR = (8, 0x7aff)
-DEBUG_AT = (4, 0x7400)      # preferred; any free run in bank 4 will do
-DUMP_BANK = 5               # debug_tab.c far-calls FlashDump in this bank
+DEBUG_AT = (12, 0x6000)     # preferred; any free run in bank 12 will do
+DUMP_BANK = 12              # debug_tab.c far-calls FlashDump in this bank
 HOOK_LEN = 19              # fits the 24-31 byte runs 1.05e has left in bank 0
 
 
@@ -116,7 +116,7 @@ def main():
                  f"expected {want.hex()} (already a debug build?)")
 
     # DebugTab, compiled where it will live
-    pins = [("_" + k, a[k]) for k in ("SetFpgaPage_B4", "DrawString", "StoreDrawParams",
+    pins = [("_" + k, a[k]) for k in ("DrawString", "StoreDrawParams",
                                       "ReadJoypad", "WaitVBlankFlag", "FarCallTrampoline",
                                       "DrawMenuTabs", "FarCall_06_7309", "FarCall_07_7739",
                                       "FarCall_03_768f")]
@@ -146,16 +146,16 @@ def main():
         return build_at(src, origin)
     code = build(DEBUG_AT[1])
     size = max(code) - DEBUG_AT[1] + 1
-    dbg = free_run(rom, 4, size, prefer=DEBUG_AT[1])
+    dbg = free_run(rom, DEBUG_AT[0], size, prefer=DEBUG_AT[1])
     if dbg != DEBUG_AT[1]:
         code = build(dbg)
     blob = bytes(code[dbg + i] for i in range(size))
-    rom[off(4, dbg):off(4, dbg) + size] = blob
+    rom[off(DEBUG_AT[0], dbg):off(DEBUG_AT[0], dbg) + size] = blob
 
     # DbgTabHook in bank 0
     far = lambda target, bank: b"\xcd" + le(a["FarCallTrampoline"]) + le(target) + bytes((bank, 0))
     delay = b"\x21\x32\x00\xe5\xcd" + le(a["Delay"]) + b"\xe8\x02"
-    hook = far(dbg, 4) + delay + b"\xc3" + le(a["FileBrowserEntry"])
+    hook = far(dbg, DEBUG_AT[0]) + delay + b"\xc3" + le(a["FileBrowserEntry"])
     assert len(hook) == HOOK_LEN, len(hook)
     cave = free_run(rom, 0, HOOK_LEN, prefer=0x02c4, lo=0x0150)
     rom[cave:cave + HOOK_LEN] = hook
@@ -174,7 +174,7 @@ def main():
     out = os.path.join(out_dir, f"ezgb-mod-{modver}-debug-for-{ver}.dat")
     open(out, "wb").write(rom)
     print(f"{os.path.relpath(out, ROOT)}  md5 {hashlib.md5(rom).hexdigest()}")
-    print(f"  DebugTab 04:{dbg:04x} ({size} B), DbgTabHook 00:{cave:04x}, "
+    print(f"  DebugTab {DEBUG_AT[0]:02x}:{dbg:04x} ({size} B), DbgTabHook 00:{cave:04x}, "
           f"HELP exit 00:{a['HelpExit']:04x}, boot A at ${boot_a_addr(rom):04x}")
     print(f"  FlashDump {DUMP_BANK:02x}:{dump_at:04x} ({dump_size} B)")
     if args.install:

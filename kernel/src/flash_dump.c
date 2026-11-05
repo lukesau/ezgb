@@ -1,6 +1,6 @@
 /* Config flash dump for the debug screen (docs/flash-dump.md).
  *
- * Debug builds only (scripts/make-debug-build.py), in bank 5 where there is
+ * Debug builds only (scripts/make-debug-build.py), in bank 12 where there is
  * room; DebugTab far-calls FlashDump on START and reads FD_RES. It needs
  * the bank 2 read patch in slot B (stage0/flash-read.psm). A Device DNA
  * command goes first and doubles as the patch check: only its "EZDN"

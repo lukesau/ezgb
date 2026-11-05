@@ -1,10 +1,13 @@
 /* Debug screen: a scrollable page of hardware readouts (docs/debug-tab.md).
  *
- * Debug builds only (scripts/make-debug-build.py), bank 4, at 04:7400 when
- * free. SELECT on HELP returns to the browser in a release build; in a
+ * Debug builds only (scripts/make-debug-build.py), bank 12. SELECT on HELP returns to the browser in a release build; in a
  * debug build HELP's exit jumps to DbgTabHook, which far-calls this. It
  * clears the pane first (DrawMenuTabs tab 3: the strip stays on HELP) and
  * returns on SELECT like the other tabs' loops.
+ *
+ * The page opens on the boot registers the jump to a game hands over
+ * (BOOT_REGS, docs/skip-boot-rom.md): where they came from, their values, the
+ * console they mean, and what the kernel decided from them.
  *
  * The page is a list of 20-column lines, built on the fly from a snapshot
  * (stats, refreshed on entry and after A), and drawn 16 at a time on rows
@@ -31,7 +34,7 @@
  * Then the SGB BOOT record, page $11 $A400-$A403 (docs/sgb-boot.md), and the
  * A register KernelEntry saved at boot (wBootA).
  *
- * START far-calls FlashDump (flash_dump.c, bank 5), which dumps the SPI
+ * START far-calls FlashDump (flash_dump.c, bank 12), which dumps the SPI
  * config flash to /FLASH.BIN and the Device DNA to /DNA.BIN, and shows its
  * results on the last lines.
  *
@@ -43,13 +46,14 @@
 
 #include "types.h"
 #include "draw.h"
+#include "vars.h"
+#include "ezcfg.h"
 
-extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a: A $10, SELECT $40, UP 4, DOWN 8 */
 extern volatile u8 wBootA;                                          /* KernelEntry's copy of the boot A */
 extern void FarCallTrampoline(void);                                /* 00:078d */
 extern void DrawMenuTabs(u8 tab);                                   /* 08:7169, far */
-extern void FlashDump(void);                                        /* flash_dump.c, bank 5, far */
+extern void FlashDump(void);                                        /* flash_dump.c, bank 12, far */
 
 #define RAM_PAGE (*(volatile u8 *)0x4000)
 #define WIN      ((volatile u8 *)0xA000)
@@ -99,6 +103,7 @@ static const u8 pages[4] = {0x00, 0x01, 0x10, 0x11};
 static void snapshot(Stats *st);
 static u8 line(const Stats *st, u8 n, u8 *out);
 static void draw(const Stats *st, u8 top);
+static void fpga_page(u8 page);
 static void map(u8 page);
 static void unmap(void);
 static u8 same_start(u8 a, u8 b);
@@ -154,7 +159,7 @@ void DebugTab(void) {
             __asm
                 call _FarCallTrampoline
                 .dw _FlashDump
-                .db 5, 0
+                .db 12, 0
             __endasm;
             st.dump = FD_RES[0];
             st.dump_err = FD_RES[1];
@@ -197,17 +202,75 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
     static const u8 t_sgb[18] = {'S','G','B',' ','B','O','O','T',' ','P','1','1',':','A','4','0','0',0};
     static const u8 t_on[3] = {'O','N',0};
     static const u8 t_off[4] = {'O','F','F',0};
-    static const u8 t_boot[17] = {'B','O','O','T',' ','A',' ','R','E','G','I','S','T','E','R',':',0};
     static const u8 t_dump[17] = {'S','T','A','R','T',':','D','U','M','P',' ','F','L','A','S','H',0};
     static const u8 t_dumpres[4][9] = {
         {'O','K',0}, {'N','O',' ','P','A','T','C','H',0}, {'T','I','M','E','O','U','T',0}, {'S','D',' ','E','R','R',0}};
     static const u8 t_sect[5] = {'S','E','C','T',0};
     static const u8 t_dna[5] = {'D','N','A',':',0};
-    u8 i;
+    static const u8 t_regs[11] = {'B','O','O','T',' ','R','E','G','S',':',0};
+    static const u8 t_stage1[8] = {'S','T','A','G','E','1',0};
+    static const u8 t_def_stock[10] = {'S','T','O','C','K',' ','S','1',0};
+    static const u8 t_def_old[7] = {'O','L','D',' ','S','1',0};
+    static const u8 t_console[9] = {'C','O','N','S','O','L','E',':',0};
+    static const u8 t_unknown[8] = {'U','N','K','N','O','W','N',0};
+    static const u8 t_models[7][5] = {
+        {'D','M','G',0}, {'D','M','G','0',0}, {'P','O','C','K',0},
+        {'S','G','B',0}, {'S','G','B','2',0}, {'G','B','C',0}, {'G','B','A',0}};
+    static const u8 t_pal[9] = {'P','A','L','E','T','T','E',':',0};
+    static const u8 t_locked[7] = {'L','O','C','K','E','D',0};
+    static const u8 t_cgbmode[9] = {'C','G','B',' ','M','O','D','E',0};
+    static const u8 t_jump[10] = {'D','M','G',' ','J','U','M','P',':',0};
+    static const u8 t_yes[4] = {'Y','E','S',0};
+    static const u8 t_no[3] = {'N','O',0};
+    static const u8 t_noff[10] = {'B','O','O','T','R','O','M','=','1',0};
+    static const u8 t_entry[15] = {'K','E','R','N','E','L',' ','E','N','T','R','Y',' ','A',0};
+    const u8 *r = BOOT_REGS;
+    u8 i, from_s1 = S1_SGB && (!NO_DMG || r[2] == 0x14);
 
-    if (n > 22) return 0;
+    if (n > 29) return 0;
     if (!out) return 1;
     for (i = 0; i < WIDTH; i++) out[i] = ' ';
+    /* F A C B E D L H */
+    switch (n) {
+    case 0:
+        text(out, t_regs);
+        text(out + 11, from_s1 ? t_stage1 : S1_SGB ? t_def_old : t_def_stock);
+        return 1;
+    case 1:
+        out[0] = 'A'; out[1] = 'F'; out[2] = ':'; hex(out + 3, r[1]); hex(out + 5, r[0]);
+        out[9] = 'B'; out[10] = 'C'; out[11] = ':'; hex(out + 12, r[3]); hex(out + 14, r[2]);
+        return 1;
+    case 2:
+        out[0] = 'D'; out[1] = 'E'; out[2] = ':'; hex(out + 3, r[5]); hex(out + 5, r[4]);
+        out[9] = 'H'; out[10] = 'L'; out[11] = ':'; hex(out + 12, r[7]); hex(out + 14, r[6]);
+        return 1;
+    case 3:
+        text(out, t_console);
+        if (!from_s1) { text(out + 9, t_unknown); return 1; }
+        /* A $11: GBC, B bit 0 on a GBA. Else C $14: SGB, A $FF the SGB2.
+         * Else A $FF: Pocket; B $FF: a DMG0. */
+        i = r[1] == 0x11 ? (r[3] & 1 ? 6 : 5)
+          : r[2] == 0x14 ? (r[1] == 0xFF ? 4 : 3)
+          : r[1] == 0xFF ? 2
+          : r[3] == 0xFF ? 1 : 0;
+        text(out + 9, t_models[i]);
+        return 1;
+    case 4:
+        text(out, t_pal);
+        text(out + 9, PAL_LOCKED ? t_locked : t_cgbmode);
+        return 1;
+    case 5:
+        text(out, t_jump);
+        if (BOOT_RESET) text(out + 10, t_noff);
+        else {
+            u8 sgb_on = st->rec[0] == 'S' && st->rec[1] == 'G' && st->rec[2] == 1 && st->rec[3] == 0xFE;
+            text(out + 10, NO_DMG || (!S1_SGB && sgb_on) ? t_no : t_yes);
+        }
+        return 1;
+    case 6:
+        return 1;
+    }
+    n -= 7;
     switch (n) {
     case 0: text(out, t_head); break;
     case 1:                               /* P00:xxxx P01:xxxx (game save RAM) */
@@ -254,7 +317,7 @@ static u8 line(const Stats *st, u8 n, u8 *out) {
         for (i = 0; i < 4; i++) hex(out + 1 + 2 * i, st->rec[i]);
         text(out + 10, (st->rec[0] == 'S' && st->rec[1] == 'G' && st->rec[2] == 1 && st->rec[3] == 0xFE) ? t_on : t_off);
         break;
-    case 17: text(out, t_boot); break;
+    case 17: text(out, t_entry); break;
     case 18:
         hex(out + 1, wBootA);
         break;
@@ -338,14 +401,23 @@ static void snapshot(Stats *st) {
                 (st->sum[2] == st->sum[3] && same_start(0x10, 0x11));
 }
 
+/* SetFpgaPage_B4 inlined, as in ezcfg.c */
+static void fpga_page(u8 page) {
+    *(volatile u8 *)0x7F00 = 0xE1;
+    *(volatile u8 *)0x7F10 = 0xE2;
+    *(volatile u8 *)0x7F20 = 0xE3;
+    *(volatile u8 *)0x7FC0 = page;
+    *(volatile u8 *)0x7FF0 = 0xE4;
+}
+
 static void map(u8 page) {
     RAM_PAGE = page;
-    SetFpgaPage_B4(3);
+    fpga_page(3);
 }
 
 static void unmap(void) {
     RAM_PAGE = 0;
-    SetFpgaPage_B4(0);
+    fpga_page(0);
 }
 
 /* B's check, interrupts off so nothing else sees the latch moved: 4 bytes at

@@ -20,6 +20,11 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 
 | Lines | Meaning |
 |---|---|
+| `BOOT REGS:` | where the registers the jump hands over came from: `STAGE1` (the record, [skip-boot-rom.md](skip-boot-rom.md#boot-registers)), `STOCK S1` or `OLD S1` (the kernel's fallback values) |
+| `AF:` `BC:` / `DE:` `HL:` | `BOOT_REGS`, the values themselves |
+| `CONSOLE:` | what those mean: `DMG`, `DMG0`, `POCK`, `SGB`, `SGB2`, `GBC`, `GBA`. `UNKNOWN` without the record |
+| `PALETTE:` | `CGB MODE` or `LOCKED` (`PAL_LOCKED`: a DMG, or a color console in compatibility mode) |
+| `DMG JUMP:` | `YES` or `NO`: whether a non-color game may jump on the DMG family (`NO_DMG`, or the `SGB BOOT` record under stock stage1). `BOOTROM=1` when that turns off every jump |
 | `PSRAM PAGE SUMS` / `P00:` `P01:` `P10:` `P11:` | 16-bit sums of pSRAM pages `$00`, `$01` (game save RAM), `$10` (the probe page) and `$11` (kernel meta) |
 | `P10 FIRST 8 BYTES` | page `$10`'s first bytes |
 | `P10 VALUES:` | how many of the 256 byte values occur in page `$10`: random power-on contents give about 250+, a cleared page 1 |
@@ -27,7 +32,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 | `A:WRITE P10 PATTERN` | A fills page `$10` with the pattern. Refused (`P10 ALIAS:NO WRITE`) when page `$10` matches `$00`, `$01` or `$11`, which would mean it is the same memory |
 | `B:ALIAS TEST P20/3F` / `P20=P00:` / `P3F=P1F:` | B checks whether the page latch is 5 bits (below). `--` until B is pressed |
 | `SGB BOOT P11:A400` | the SGB BOOT record and whether it reads as on ([sgb-boot.md](sgb-boot.md)) |
-| `BOOT A REGISTER:` | the A register KernelEntry saved at boot |
+| `KERNEL ENTRY A` | the A register KernelEntry saved at boot, `BOOT A REGISTER:` until 2026-11-04. `$E4` on every console: stage1's last write, not the boot ROM's value |
 | `START:DUMP FLASH` / result / `DNA:` | START dumps the config flash to `/FLASH.BIN` and the Device DNA to `/DNA.BIN`; needs the flash-read patch in slot B ([flash-dump.md](flash-dump.md)) |
 
 ## Page-latch alias test (B)
@@ -53,6 +58,24 @@ against `$00` and `$3F` against `$1F`, without losing data:
 SameBoy built from a stub older than 2026-10-10 models 64 pages
 (`EZJR_SRAM_BANKS`) and shows `NO ALIAS` for both; with 32 pages it shows
 `ALIAS` for both. Neither shows `!RST`.
+
+## Findings (boot registers, 2026-11-04)
+
+With the `-regs` stage1 flashed, the first readings of the real registers on
+hardware:
+
+| Console | `BOOT REGS:` | `AF` | `BC` | `DE` | `HL` | `CONSOLE:` | `PALETTE:` | `DMG JUMP:` |
+|---|---|---|---|---|---|---|---|---|
+| GBA SP | `STAGE1` | `1100` | `0100` | `FF56` | `000D` | `GBA` | `CGB MODE` | `YES` |
+| GBC | `STAGE1` | `1180` | `0000` | `FF56` | `000D` | `GBC` | `CGB MODE` | `YES` |
+
+- Both match SameBoy. DMG, Pocket and SGB are still unread on hardware.
+- Before that flash the GBA SP read `OLD S1` with the color fallback values
+  (`AF:1180 BC:0000`, `CONSOLE: UNKNOWN`, `DMG JUMP: NO`): a stage1 from before
+  the record, as intended.
+- Page `$10` on that cart read `5A 67 74 81 8F 9B A8 B5` and `BAD 890`: the test
+  pattern from an earlier A press with about 11% of its bytes changed
+  (`8E` to `8F` in the first 8). The sum stayed `C2A9` across the flash.
 
 ## Findings (FW5, 1.05e-0918, GBC, 2026-10-10)
 
@@ -87,7 +110,7 @@ SameBoy built from a stub older than 2026-10-10 models 64 pages
 
 ## Code
 
-`kernel/src/debug_tab.c` (bank 4, `04:7400` when free, `04:6cca` in mod 5.4)
+`kernel/src/debug_tab.c` (bank 12 since 2026-11-04; bank 4 before, `04:6cca` in mod 5.4)
 and `DbgTabHook` (bank 0, `00:02c4` when free): far-call the screen, delay,
 `jp FileBrowserEntry`. HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e)
 keeps its delay and jumps to the hook instead of the browser, and the screen
