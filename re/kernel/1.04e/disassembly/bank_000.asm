@@ -5,7 +5,7 @@
 
 SECTION "ROM Bank $000", ROM0[$0]
 
-RtcReadPage::
+RST_00::
     ret
 
 
@@ -12202,274 +12202,43 @@ AutoBackupStub::
     rst RST_38
     rst RST_38
     rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+
+FatDate::
+    db $c3, $e6, $3d, $c3, $ab, $3e, $21, $00
+    db $7f, $36, $e1, $2e, $10, $36, $e2, $2e
+    db $20, $36, $e3, $11, $c0, $7f, $f8, $02
+    db $7e, $12, $21, $f0, $7f, $36, $e4, $c9
+    db $f8, $02, $7e, $cb, $37, $e6, $0f, $f5
+    db $87, $87, $87, $4f, $f1, $87, $81, $4f
+    db $7e, $e6, $0f, $81, $5f, $c9, $e8, $f8
+    db $3e, $06, $f5, $33, $cd, $b6, $3d, $33
+    db $fa, $08, $a0, $cb, $bf, $f5, $33, $cd
+    db $d0, $3d, $33, $f8, $04, $73, $fa, $09
+    db $a0, $cb, $bf, $f5, $33, $cd, $d0, $3d
+    db $33, $f8, $05, $73, $fa, $0a, $a0, $e6
+    db $3f, $f5, $33, $cd, $d0, $3d, $33, $f8
+    db $06, $73, $fa, $0b, $a0, $e6, $3f, $f5
+    db $33, $cd, $d0, $3d, $33, $43, $fa, $0d
+    db $a0, $e6, $1f, $c5, $f5, $33, $cd, $d0
+    db $3d, $33, $4b, $f1, $47, $fa, $0e, $a0
+    db $c5, $f5, $33, $cd, $d0, $3d, $33, $f8
+    db $09, $73, $af, $f5, $33, $cd, $b6, $3d
+    db $33, $c1, $79, $b7, $28, $0e, $3e, $0c
+    db $91, $38, $09, $78, $b7, $28, $05, $3e
+    db $1f, $90, $30, $10, $f8, $00, $af, $22
+    db $22, $3e, $21, $22, $36, $46, $d1, $e1
+    db $e5, $d5, $18, $3c, $f8, $05, $3a, $cb
+    db $37, $07, $e6, $e0, $5e, $cb, $3b, $b3
+    db $f8, $00, $77, $f8, $06, $3a, $87, $87
+    db $87, $5e, $cb, $3b, $cb, $3b, $cb, $3b
+    db $b3, $f8, $01, $22, $79, $cb, $37, $07
+    db $e6, $e0, $b0, $77, $f8, $07, $7e, $c6
+    db $14, $87, $cb, $39, $cb, $39, $cb, $39
+    db $b1, $f8, $03, $77, $d1, $e1, $e5, $d5
+    db $e8, $08, $c9, $d5, $cd, $e6, $3d, $c1
+    db $7b, $02, $03, $7a, $02, $03, $7d, $02
+    db $03, $7c, $02, $c9
+
     rst RST_38
     rst RST_38
     rst RST_38

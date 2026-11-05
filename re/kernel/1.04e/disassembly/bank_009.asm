@@ -12690,17 +12690,21 @@ Open_B9_afterSync::
     ld b, h
     ld e, c
     ld d, b
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $21
-    ld [de], a
-    inc de
-    ld a, $46
-    ld [de], a
+    call $3db3
+    jr jr_009_7a01
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+jr_009_7a01:
     ld hl, sp+$20
     ld a, [hl+]
     ld h, [hl]
@@ -13142,17 +13146,21 @@ Open_B9_okPath::
     ld b, h
     ld e, c
     ld d, b
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $21
-    ld [de], a
-    inc de
-    ld a, $46
-    ld [de], a
+    call $3db3
+    jr jr_009_7c37
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+jr_009_7c37:
     ld hl, sp+$20
     ld a, [hl+]
     ld h, [hl]

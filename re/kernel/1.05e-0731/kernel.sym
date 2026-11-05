@@ -4620,11 +4620,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:668:8
+04:6d19 .data:63d:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:59a:8
+04:6610 .data:593:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
@@ -4658,6 +4658,6 @@
 04:5fdc SetWrapUp
 04:5fdc .data:8:8
 0c:4c00 AutoBackup
-0c:4c00 .data:2af:8
+0c:4c00 .data:2a5:8
 00:3d94 AutoBackupStub
 00:3d94 .data:f:8

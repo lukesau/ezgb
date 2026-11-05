@@ -11819,17 +11819,21 @@ Fsync_B3_updateDir::
     ld b, h
     ld e, c
     ld d, b
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $21
-    ld [de], a
-    inc de
-    ld a, $46
-    ld [de], a
+    call $3db3
+    jr jr_003_7635
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+jr_003_7635:
     ld hl, sp+$0a
     ld e, [hl]
     inc hl

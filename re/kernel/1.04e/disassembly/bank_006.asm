@@ -11424,17 +11424,21 @@ jr_006_7457:
     ld b, h
     ld e, c
     ld d, b
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $21
-    ld [de], a
-    inc de
-    ld a, $46
-    ld [de], a
+    call $3db3
+    jr jr_006_7473
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+jr_006_7473:
     ld hl, sp+$25
     ld e, [hl]
     inc hl
@@ -11445,17 +11449,21 @@ jr_006_7457:
     ld b, h
     ld e, c
     ld d, b
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $00
-    ld [de], a
-    inc de
-    ld a, $21
-    ld [de], a
-    inc de
-    ld a, $46
-    ld [de], a
+    call $3db3
+    jr jr_006_748f
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+jr_006_748f:
     ld hl, sp+$25
     ld e, [hl]
     inc hl
