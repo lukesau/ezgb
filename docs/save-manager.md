@@ -203,3 +203,26 @@ Delete, after the split into banks 1, 4 and 9:
 
 SameBoy's SD stub is slow at writes: a 32 KB copy takes about 40 seconds
 there.
+
+## Daily backup
+
+`DAILY BACKUP:` on the SET tab's first page, `DAILYBACKUP=1` in `/EZGB.CFG`,
+off by default ([auto_backup.c](../kernel/src/auto_backup.c), after
+[davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code).
+
+On the boot that finds a save stamp, before the dump overwrites
+`/SAVER/<base>.sav`: if that file was last written before today by the cart
+clock, it is copied to a backup with the names above and the game's other
+backups are deleted, so Manage saves shows that one. Later boots the same day
+find the file written today and leave the backup alone, so a save that went bad
+in a session can't replace it before the next day.
+
+Copying is slow (about 7 s for a 32 KB save), so it runs at most once a day per
+game, behind a box that says how long. On a cart whose clock reset, every save
+looks like today's or an old day's, so the test is only as good as the clock.
+When stage1 does the fast launch's dump itself, the kernel never sees the stamp
+and there is no backup.
+
+Not on the 1.04e kernel: its FatFs stamps every file 2015-01-01, so "written
+today" can't be answered, and the box isn't shown (`RtcReadPage`, which it
+lacks, is pinned to 0, and the code tests that address).

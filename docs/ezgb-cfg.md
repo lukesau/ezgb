@@ -35,6 +35,7 @@ RTC=2026-09-08 10:15:32
 | `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, `7` DV, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
 | `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB` (the first 12 hex digits count, so `#` and spaces are fine), see [dark-mode.md](dark-mode.md#custom). Written back as read. | by hand only |
 | `BOOTROM` | `1`: every launch resets through the boot ROM instead of jumping to a game's `$0100`, see [skip-boot-rom.md](skip-boot-rom.md). Written only as `BOOTROM=1`. Missing = jump when safe. | SET tab (`SKIP BOOT ROM:` checkbox, unticked) |
+| `DAILYBACKUP` | `1`: copy a save to a dated backup on the day's first dump, the SET tab's `DAILY BACKUP:` box ([save-manager.md](save-manager.md#daily-backup)). Anything else, or missing, off. | the SET tab |
 | `TAGS` | `1`: the browser shows full file names (the SET tab's `CLEAN UP NAMES:` box unticked). Anything else, or missing, cuts names at their tags and extensions, see [browser-tags.md](browser-tags.md). Written only as `TAGS=1`. Since 2026-10-31; until then missing meant full names and `TAGS=0` cut them, which still reads the same. | SET tab (`CLEAN UP NAMES:` checkbox) |
 | `AUTOSAVE` | `0` or `1`: the SET tab's AUTO SAVE checkbox (pSRAM `$11:$A200`). Put back when the pSRAM lost power (BATTERY DRY), see "AUTO SAVE backup" below. Missing = not restored. | SET tab (the AUTO SAVE toggle), every launch |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
@@ -267,6 +268,7 @@ no version-specific address.
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
 | `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
+| `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/src/auto_backup.c)) |
 | `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser-tags.md](browser-tags.md)) |
 | `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([dark-mode.md](dark-mode.md)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |

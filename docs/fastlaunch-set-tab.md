@@ -27,13 +27,16 @@ The pane has two pages; row 16 of each switches to the other.
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
 | 10 | `FAST LAUNCH:` checkbox | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` |
-| 14 | empty (`SGB BOOT:` until 2026-11-03) | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) |
+| 14 | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup)) | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) |
 | 16 | `1/2` and a `NEXT >` button | a `< PREV` button and `2/2` |
 
 UP/DOWN move a cursor over the page's rows. Its numbers run on across the
-pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 NEXT on
-page 1; 6 THEME, 7 UI, 8 TAGS, 9 SORT BY PLAYS, 10 SGB BOOT, 11 SKIP BOOT ROM,
-12 PREV on page 2 (clamp `04:5604` `d6 0c`, and `flcfg` op ROWS keeps the cursor on its page).
+pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY
+BACKUP, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 SORT BY PLAYS, 11 SGB BOOT,
+12 SKIP BOOT ROM, 13 PREV on page 2 (clamp `04:5604` `d6 0d`, and `flcfg` op
+ROWS keeps the cursor on its page). The cursor wraps within its page: UP on
+row 0 goes to `SetWrapUp` (`04:5fdc`, row 6), DOWN on row 13 to `SetWrapDown`
+(`04:5fe4`, row 7), and op ROWS turns a step off a page's end into its other end.
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
 step through its fields. A new cursor row moves both the clamp and the row

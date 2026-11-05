@@ -5,17 +5,17 @@
  * room for AUTO), near-called by flcfg.c (04:6d19). Page 2
  * holds the UI settings:
  *
- *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 6
- *   row 4   FONT:     [12px]     cursor row 7 (flcfg.c ROW_UI, docs/ui-mode.md)
- *   row 6   CLEAN UP NAMES:  [ ]   cursor row 8 (docs/browser-tags.md)
+ *   row 2   THEME: [ PURPLE]     ThemeRow (theme_row.c), cursor row 7
+ *   row 4   FONT:     [12px]     cursor row 8 (flcfg.c ROW_UI, docs/ui-mode.md)
+ *   row 6   CLEAN UP NAMES:  [ ]   cursor row 9 (docs/browser-tags.md)
  *   row 8   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
- *   row 10  SORT BY PLAYS:   [ ]   cursor row 9 (docs/stars.md)
- *   row 12  SGB BOOT:        [ ]   cursor row 10 (docs/sgb-boot.md)
- *   row 14  SKIP BOOT ROM:   [ ]   cursor row 11 (docs/skip-boot-rom.md)
- *   row 16  [< PREV]  2/2        cursor row 12
+ *   row 10  SORT BY PLAYS:   [ ]   cursor row 10 (docs/stars.md)
+ *   row 12  SGB BOOT:        [ ]   cursor row 11 (docs/sgb-boot.md)
+ *   row 14  SKIP BOOT ROM:   [ ]   cursor row 12 (docs/skip-boot-rom.md)
+ *   row 16  [< PREV]  2/2        cursor row 13
  *
- * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 5), with row 14 left
- * empty. `cur` is the cursor row.
+ * and page 1's row 16 is `1/2 [NEXT >]` (cursor row 6); its row 14 is DAILY BACKUP,
+ * cursor row 5, except on 1.04e. `cur` is the cursor row.
  *
  *   op 0  page 2's labels
  *   op 1  page 2's rows and its page row
@@ -56,14 +56,15 @@ extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, 
 #define SGB_REC  ((volatile u8 *)0xA400)   /* page $11: 'S', 'G', flag, ~flag */
 #define SORT_REC ((volatile u8 *)0xA404)   /* page $11: 'S', 'O', flag, ~flag */
 
-#define ROW_NEXT  5
-#define ROW_THEME 6
-#define ROW_UI    7
-#define ROW_TAGS  8
-#define ROW_SORT  9
-#define ROW_SGB   10
-#define ROW_BOOT  11
-#define ROW_PREV  12
+#define ROW_BK    5
+#define ROW_NEXT  6
+#define ROW_THEME 7
+#define ROW_UI    8
+#define ROW_TAGS  9
+#define ROW_SORT  10
+#define ROW_SGB   11
+#define ROW_BOOT  12
+#define ROW_PREV  13
 
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
@@ -71,6 +72,7 @@ static void page_row(u8 hi);
 static void sgb_row(u8 hi);
 static void boot_row(u8 hi);
 static u8 can_jump(void);
+static u16 rtc_stamps(void) __naked;
 
 void SetPage(u8 op, u8 cur) {
     StoreDrawParams(3, 0, 0);
@@ -105,6 +107,12 @@ void SetPage(u8 op, u8 cur) {
         boot_row(cur == ROW_BOOT);
         page_row(cur == ROW_PREV);
     } else if (op == 2) {
+        if (rtc_stamps()) {
+            /* 1.04e stamps every file 2015-01-01: no backup there (auto_backup.c) */
+            static const u8 bk_label[14] = {'D','A','I','L','Y',' ','B','A','C','K','U','P',':',0};
+            SetText(bk_label, 13, 0, 14);
+            box(0x82, 0x70, BK_DAILY, cur == ROW_BK);
+        }
         page_row(cur == ROW_NEXT);
     } else if (op == 3 && cur == ROW_SORT) {
         u8 on = RecFlag(SORT_REC, 'O', 1);
@@ -134,6 +142,13 @@ void SetPage(u8 op, u8 cur) {
         SetText(set_str, 3, 16, 2);
     }
     StoreDrawParams(3, 0, 0);
+}
+
+static u16 rtc_stamps(void) __naked {
+    __asm
+	ld	de, #_RtcReadPage
+	ret
+    __endasm;
 }
 
 /* Row 12: SGB BOOT's box. Our stage1 sends the SGB header itself, only on

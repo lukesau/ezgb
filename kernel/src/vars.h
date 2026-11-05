@@ -48,6 +48,8 @@
  * CLEAN UP NAMES, on unless EZGB.CFG says TAGS=1 (the default since
  * 2026-10-31; TAGS=0 still reads as on). tagtrim.c, browser_icons.c. */
 #define TAGS_HIDE (*(volatile u8 *)0xDBF6)
+/* DAILYBACKUP=1 in EZGB.CFG, the SET tab's DAILY BACKUP (auto_backup.c). */
+#define BK_DAILY  (*(volatile u8 *)0xDC0A)
 /* Set by TagLen when it cut the name it measured, for TagCat (tagtrim.c).
  * Past FL_PATH's end ($DAFA); $DBF0-$DBF5 are FillRect's scratch. */
 #define TAG_CUT   (*(volatile u8 *)0xDAFF)

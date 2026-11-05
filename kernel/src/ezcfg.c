@@ -664,6 +664,7 @@ static void cfg_load(void) {
     AS_SD = 0xFF;
     THEME = 0;
     TAGS_HIDE = 1;                       /* CLEAN UP NAMES is on unless TAGS= says otherwise */
+    BK_DAILY = 0;
 #ifdef EZCFG_RTCLOG
     LOG_LEN = 0;
 #endif
@@ -685,7 +686,7 @@ static void cfg_load(void) {
 
 /* The keys parse_record knows, as length-prefixed lowercase names, in the
  * order of its switch. The key's bit in `seen` is 1 << its index (eight
- * keys; COLORS, BOOTROM and the test-build RTCLOG key past them have no
+ * keys; COLORS, BOOTROM, DAILYBACKUP and the test-build RTCLOG key past them have no
  * bit, so only their first-occurrence rule is lost). */
 static const u8 cfg_keys[] = {
     7, 'f','l','a','u','n','c','h',
@@ -698,6 +699,7 @@ static const u8 cfg_keys[] = {
     4, 't','a','g','s',
     6, 'c','o','l','o','r','s',
     7, 'b','o','o','t','r','o','m',
+    11, 'd','a','i','l','y','b','a','c','k','u','p',
 #ifdef EZCFG_RTCLOG
     6, 'r','t','c','l','o','g',
 #endif
@@ -778,11 +780,14 @@ static void parse_record(u16 br, u8 legacy) {
             case 7:
                 TAGS_HIDE = (vlen != 0 && v[0] == '0') ? 1 : 0;
                 break;
+            case 10:
+                BK_DAILY = (vlen != 0 && v[0] == '1') ? 1 : 0;
+                break;
             default:                                     /* 8 COLORS=, 9 BOOTROM= */
                 FarCallColors(idx, (u8 *)v, (u8)vlen);
                 break;
 #ifdef EZCFG_RTCLOG
-            case 10: {
+            case 11: {
                 u16 j, len = vlen + 1;    /* the trimmed last entry's space */
                 u8 whole = 0;
                 if (len > LOG_MAX) len = LOG_MAX;
@@ -930,6 +935,10 @@ static u8 cfg_save(void) {
     if (!TAGS_HIDE) {                    /* full names: the default is cut */
         static const u8 k_tg[6] = {'T','A','G','S','=','1'};
         w = crlf(put(w, k_tg, 6));
+    }
+    if (BK_DAILY) {
+        static const u8 k_bk[13] = {'D','A','I','L','Y','B','A','C','K','U','P','=','1'};
+        w = crlf(put(w, k_bk, 13));
     }
 #ifdef EZCFG_RTCLOG
     if (LOG_LEN != 0) {

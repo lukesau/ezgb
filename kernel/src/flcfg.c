@@ -38,15 +38,17 @@
  * Two pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   page 1: 2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
- *           12 <name, 10 cols, scrolling> [PICK ROM]   16 1/2 [NEXT >]
+ *           12 <name, 10 cols, scrolling> [PICK ROM]   14 DAILY BACKUP: [ ]
+ *           16 1/2 [NEXT >]
  *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 CLEAN UP NAMES: [ ]
  *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
  *           12 SGB BOOT: [ ]   14 SKIP BOOT ROM: [ ]
  *           16 [< PREV] 2/2                                         (setpage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
- * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 NEXT; 6 THEME,
- * 7 UI, 8 TAGS, 9 SORT, 10 SGB BOOT, 11 SKIP BOOT ROM, 12 PREV). The stock
- * clamp lets the cursor run 0..12; op ROWS keeps it on the page. Page 2 is drawn over the stock
+ * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY BACKUP,
+ * 6 NEXT; 7 THEME,
+ * 8 UI, 9 TAGS, 10 SORT, 11 SGB BOOT, 12 SKIP BOOT ROM, 13 PREV). The stock
+ * clamp lets the cursor run 0..13; op ROWS keeps it on the page. Page 2 is drawn over the stock
  * screen, which keeps running: SetText drops its text there (SET_PAGE, vars.h)
  * and op ROWS clears its dirty flag (frame[0x3e]) so it draws no boxes.
  *
@@ -86,11 +88,12 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
                               * row 2 is the stock AUTO SAVE, which never reaches flcfg */
 #define ROW_CHECK 3
 #define ROW_PICK  4
-#define ROW_NEXT  5          /* page 1's last row */
-#define ROW_THEME 6          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
-#define ROW_UI    7          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  8          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
-#define ROW_PREV  12         /* page 2's last row */
+#define ROW_BK    5          /* DAILY BACKUP (auto_backup.c) */
+#define ROW_NEXT  6          /* page 1's last row */
+#define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
+#define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
+#define ROW_TAGS  9          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
+#define ROW_PREV  13         /* page 2's last row */
 #define PAGE2     (SET_PAGE & 1)
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
@@ -112,6 +115,7 @@ static void wait_a_release(void);
 static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static u8 flcfg_op(u8 *frame, u8 op);
+static u16 rtc_stamps(void) __naked;
 
 /* SET_PAGE bit 7 tells SetText the text is ours, which page 2 draws */
 u8 flcfg(u8 *frame, u8 op) {
@@ -154,6 +158,8 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             frame[0x3e] = 0;            /* no stock redraw: its boxes are page 1's */
         } else if (cur > ROW_NEXT) {
             cur = cur == ROW_THEME ? 0 : ROW_NEXT;
+        } else if (cur == ROW_BK && !rtc_stamps()) {
+            cur = SET_CUR == ROW_NEXT ? ROW_PICK : ROW_NEXT;   /* no box on 1.04e (setpage.c) */
         }
         frame[0x3d] = cur;
         draw_rows(cur);
@@ -171,7 +177,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             wait_a_release();
             return 2;
         }
-        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME) {
+        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME || row == ROW_BK) {
             if (row == ROW_THEME) {
                 u8 was = (u8)(THEME == THEME_DV);
                 ThemeRow(2);            /* sets the palettes, redraws itself */
@@ -183,7 +189,9 @@ static u8 flcfg_op(u8 *frame, u8 op) {
                     goto relayout;
                 }
             } else {
-                if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1; else RTC_OFF = RTC_OFF ? 0 : 1;
+                if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1;
+                else if (row == ROW_BK) BK_DAILY = BK_DAILY ? 0 : 1;
+                else RTC_OFF = RTC_OFF ? 0 : 1;
                 SET_DIRTY = 1;
                 draw_rows(row);
             }
@@ -393,4 +401,12 @@ static void draw_rows(u8 cur) {
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);
     SetPage(2, cur);
+}
+
+/* RtcReadPage's address: 0 on 1.04e (auto_backup.c). */
+static u16 rtc_stamps(void) __naked {
+    __asm
+	ld	de, #_RtcReadPage
+	ret
+    __endasm;
 }

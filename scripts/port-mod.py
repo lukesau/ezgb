@@ -109,9 +109,9 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "ThemeRow": 0x77a0, "SetPage": 0x6610, "SetCommit": 0x5fc0, "FarCallMarquee": 0x0410}),
+                            "ThemeRow": 0x77a0, "SetPage": 0x6610, "SetCommit": 0x5fc0, "FarCallMarquee": 0x0410, "RtcReadPage": 0x1a9a}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page row, near-called by FlCfg (docs/fastlaunch-set-tab.md)
-                      pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x77a0,
+                      pins={"RtcReadPage": 0x1a9a, "FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "ThemeRow": 0x77a0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
                             "FarCallPlaySync_B4": 0x7792}),
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
@@ -164,6 +164,9 @@ REGISTRY = {
     (12, 0x4000): dict(src="browser_nav.c",                 # DOWN and UP after davidesqalv's fork (docs/browser-nav.md)
                       pins={"GfxRowTable": 0x2fbb, "StoreDrawParams": 0x2791, "DrawString": 0x08b7,
                             "DrawNameWithIcon": 0x3ec8, "FarCallDrawString12": 0x05c0, "wIntNest": 0xd6d0}),
+    (12, 0x4c00): dict(src="auto_backup.c",                 # daily save backup, far target of AutoBackupStub 00:3d94 (docs/save-manager.md)
+                      pins={"RtcReadPage": 0x1a9a, "FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "LastRomNameStub": 0x0368,
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "FarCallTrampoline": 0x078d}),
     (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
                             "PopupDrawParams": 0x0290, "DrawString": 0x08b7}),
@@ -213,6 +216,9 @@ OVERRIDES = {
         # DrawTimeAutosaveScreen_redraw: same entry address; 1.04e opens the
         # loop with `call WaitVBlankFlag` where 1.05e tests its time-set flag.
         (4, 0x48f5): 0x48f5,
+        # RtcReadPage: 1.04e has none (its FatFs stamps a constant date), and
+        # its address reading 0 is how auto_backup.c, flcfg.c and setpage.c know.
+        (0, 0x1a9a): 0x0000,
     },
 }
 
