@@ -4435,7 +4435,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:144a:8
+02:4a00 .data:1466:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4487,7 +4487,7 @@
 00:039d BkSavingStub
 00:039d .data:d:8
 04:6400 SetText
-04:6400 .data:1bd:8
+04:6400 .data:1e9:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:5f30 FlSetADispatch
@@ -4591,7 +4591,7 @@
 05:7b50 ThemeColors
 05:7b50 .data:14f:8
 04:6be6 SkipBootPrep
-04:6be6 .data:111:8
+04:6be6 .data:10c:8
 05:7c9f Bump
 05:7c9f .data:361:8
 08:7f29 PlayKeysFar
@@ -4633,7 +4633,7 @@
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:50d:8
+04:6610 .data:5c1:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
