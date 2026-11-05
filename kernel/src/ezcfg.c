@@ -298,9 +298,15 @@ static void backup_take(u8 ev, u8 force) {
 static void cfg_backup(u8 timeset) {
     if (RTC_OFF) return;                 /* NO SD: flag from the boot/SET load */
     if (timeset) {
-        /* SET tab: RAM holds the file, and SetCommit writes it */
+        /* SET tab: RAM holds the file. Unlike the tab's other settings this
+         * goes to the card at once: a time set for a cart about to lose its
+         * cell is no use in RAM. The FPGA's copy of the clock only takes the
+         * new time once the PicoBlaze has written it and copied it back, so
+         * wait before reading, or RTC= gets the old time, or stays as it was
+         * when the old time isn't valid. */
+        rtc_read_settled();
         backup_take('T', 1);
-        SET_DIRTY = 1;
+        cfg_save();
         return;
     }
     cfg_load();

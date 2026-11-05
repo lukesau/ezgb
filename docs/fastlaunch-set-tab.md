@@ -49,7 +49,8 @@ step through its fields. A new cursor row moves both the clamp and the row
 syncs `/.ezgbplays` when it is set, on NEXT, on PREV and when the screen is left
 (SELECT, or PICK ROM on its way to the browser). Nothing is written if nothing
 changed. So power off before one of those and `EZGB.CFG` keeps the old values;
-this covers the checkboxes, THEME, FONT, AUTO SAVE and TIME SET's `RTC=`. Marks
+this covers the checkboxes, THEME, FONT and AUTO SAVE. TIME SET's `RTC=` is the
+exception: it writes the file at once, with any other changes then pending. Marks
 in pSRAM still change at once: the SGB BOOT and SORT BY PLAYS records, and the
 theme mark, so after a power off the boot starts in the new theme and the file's
 theme then takes over at the restore. `RTC` itself, the clock chip, changes at

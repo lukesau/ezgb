@@ -197,6 +197,16 @@ prompt was about the console's AA cells was wrong and has been corrected.)
 
 ## RTC access
 
+> **Correction (2026-11-05).** Two things could leave `RTC=` on its old value
+> after TIME SET. Since 2026-11-04 the time reached the card only when the SET
+> tab was left, so powering off on the tab lost it. And the time was read right
+> after the commit, from the FPGA's copy of the clock, which the PicoBlaze
+> refreshes on its own schedule ([picoblaze.md](../re/stage0/docs/picoblaze.md#rtc)):
+> that read can return the old time, and an invalid one left `RTC=` alone. TIME
+> SET now waits about a second, reads, and writes the file at once. Seen on the
+> FW4 cart (prompt showed `RTC=` from September); which of the two it was isn't
+> established.
+
 **Hardware finding (2026-09-09, FW4 cart, 1.04e, mod 4.1).** `RTC=` stayed
 empty after TIME SET, and a hand-written time was lost at the next save, so a
 battery-less cart came up at year 2000. The cause is in the kernel's FatFs,
@@ -238,7 +248,7 @@ since they are plain stores that work from any bank.
 | `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
-| `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op TIMESET (takes the time, sets `SET_DIRTY`; `SetCommit` writes it), then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
+| `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op TIMESET (waits about a second for the FPGA's copy of the clock, takes the time and writes the file), then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
 | `AutosaveSetHook` | `04:5fa0`, 11 B | AUTO SAVE toggle tail: op AUTOSAVE, then `jp DrawTimeAutosaveScreen_redraw` |
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
