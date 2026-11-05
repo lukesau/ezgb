@@ -7,9 +7,12 @@
 ;
 ; - GBC/GBA with the kernel in CGB mode (mod stage1, CGB flag set) and a game
 ;   with the CGB flag ($0143 bit 7) without PGB mode (bits 2-3).
-; - DMG family (VBK reads $FF) with stock stage1, a game without the CGB flag
-;   and SGB BOOT off. The kernel can't tell an SGB from a DMG, so SGB BOOT
-;   ticked or our stage1 (S1_SGB, it may be on an SGB) resets.
+; - DMG family (VBK reads $FF) and a game without the CGB flag, unless it may
+;   be an SGB. Our stage1 passes the boot registers, where C = $14 shows one
+;   (NO_DMG). With stock stage1 an SGB looks like a DMG, so SGB BOOT ticked
+;   resets; its record means nothing under our stage1 (S1_SGB).
+;
+; The registers come from BOOT_REGS, set at boot by kernel/src/ezcfg.c.
 ;
 ; SkipBootPrep replaces RomLoad_BuildAndRunPoll's `call $d100`. It copies
 ; SkipBoot to WRAM after the launch stub and points the stub's reset
@@ -21,6 +24,8 @@ DEF STUB_RESET EQU $d19c        ; RomLoad_SoftReset in the $D100 copy
 DEF WRAM_AT    EQU $d1b0        ; past the stub's last byte ($D1AA)
 DEF BOOT_RESET EQU $dbeb        ; kernel/src/vars.h
 DEF S1_SGB     EQU $dbf8        ; kernel/src/ezcfg.h
+DEF BOOT_REGS  EQU $dc00        ; kernel/src/vars.h
+DEF NO_DMG     EQU $dc08
 DEF REC_FLAG   EQU $7f51        ; RecFlag(r, tag, toggle), kernel/src/rec_flag.c
 DEF SGB_REC    EQU $a400        ; SGB BOOT's pSRAM record
 
@@ -29,6 +34,10 @@ SkipBootPrep::
     ld a, [BOOT_RESET]          ; BOOTROM=1 in EZGB.CFG: always reset
     and a
     jp nz, $d100
+    ld e, 0
+    ld a, [S1_SGB]
+    and a
+    jr nz, .sgb_done
     xor a                       ; RecFlag(SGB_REC, 'G', 0): reads while the
     push af                     ; kernel is still mapped
     inc sp
@@ -39,7 +48,8 @@ SkipBootPrep::
     push hl
     call REC_FLAG
     add sp, 4
-    ld a, [S1_SGB]
+.sgb_done
+    ld a, [NO_DMG]
     or e
     ld c, a
     ld hl, SkipBootSrc
@@ -183,24 +193,13 @@ SkipBoot:
     cp 144
     jr nz, .wait
 
-    ld sp, .cgb_regs
-    ldh a, [$ff4f]
-    rra
-    jr nc, .regs
-    ld sp, .dmg_regs
-.regs
+    ld sp, BOOT_REGS
     pop af
     pop bc
     pop de
     pop hl
     ld sp, $fffe
     jp $0100
-
-; AF, BC, DE, HL as each boot ROM leaves them
-.cgb_regs
-    dw $1180, $0000, $ff56, $000d
-.dmg_regs
-    dw $01b0, $0013, $00d8, $014d
 
 ; P1, SB, SC, TIMA, TMA, TAC, STAT, SCY, SCX, LYC, WY, WX, RP, SVBK, IE
 .zero

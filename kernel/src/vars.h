@@ -31,6 +31,13 @@
 #define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
 #define CUST_OK   (*(volatile u8 *)0xDBEA)
 #define CUST_RAMP ((u8 *)0xDB58)   /* 8 */
+/* What the jump to a game hands over (scripts/skipboot/skip_boot.asm), popped
+ * as F A C B E D L H: our stage1's record of this console's boot registers,
+ * else the DMG or the CGB values by PAL_LOCKED (ezcfg.c stage1_skip_mark).
+ * NO_DMG: 1 when a DMG-family console must reset, an SGB or a stage1 that
+ * didn't pass its registers. */
+#define BOOT_REGS ((u8 *)0xDC00)   /* 8 */
+#define NO_DMG    (*(volatile u8 *)0xDC08)
 /* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
  * boot ROM, never the jump to $0100 (scripts/skipboot/skip_boot.asm). */
 #define BOOT_RESET (*(volatile u8 *)0xDBEB)

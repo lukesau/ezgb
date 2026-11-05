@@ -384,10 +384,30 @@ static void stage1_skip_mark(void) {
         mark[1] = 0;
         *(volatile u8 *)0xDBFF = 1;
     }
-    /* $A412 "SB"/"SN": our stage1 handles the SGB (it sent the header
-     * packets or found no SGB), so SGB BOOT is AUTO this boot (flcfg.c) */
-    if (mark[2] == 'S' && (mark[3] == 'B' || mark[3] == 'N'))
-        S1_SGB = 1;
+    /* The registers the jump hands over. Stock stage1 passes none and wipes
+     * them, so the mode decides: without a CGB mode that's a DMG's */
+    {
+        static const u8 dmg_regs[8] = {0xB0, 0x01, 0x13, 0x00, 0xD8, 0x00, 0x4D, 0x01};
+        static const u8 cgb_regs[8] = {0x80, 0x11, 0x00, 0x00, 0x56, 0xFF, 0x0D, 0x00};
+        const u8 *s = PAL_LOCKED ? dmg_regs : cgb_regs;
+        volatile u8 *r = mark + 0x18;   /* $A428: F A C B E D L H */
+        u8 i;
+
+        /* $A412 "SB"/"SN": our stage1 handles the SGB (it sent the header
+         * packets or found no SGB), so SGB BOOT is AUTO this boot (flcfg.c).
+         * With its registers an SGB shows by C = $14; a stage1 from before
+         * the registers could be on one, so the DMG family resets. */
+        if (mark[2] == 'S' && (mark[3] == 'B' || mark[3] == 'N')) {
+            S1_SGB = 1;
+            NO_DMG = 1;
+            if (r[1] == 0x01 || r[1] == 0x11 || r[1] == 0xFF) {
+                s = (const u8 *)r;
+                NO_DMG = r[2] == 0x14;
+            }
+        }
+        for (i = 0; i < 8; i++) BOOT_REGS[i] = s[i];
+        r[1] = 0;
+    }
     mark[2] = 0;
     mark[3] = 0;
     fpga_page(0);

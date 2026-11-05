@@ -193,7 +193,7 @@ REGISTRY = {
     (4, 0x5fb0): dict(),                   # SetExitHook: SET screen exit: SetCommit, clear SET_PAGE
     (4, 0x5fc0): dict(),                   # SetCommit: SET_DIRTY -> EZGB.CFG and /.ezgbplays
     (4, 0x7c00): dict(),                   # U32ToAsciiFast: decimal fast path (scripts/fastdec/u32dec.asm)
-    (4, 0x6be6): dict(code_len=0x3c),      # SkipBootPrep: copier, then SkipBoot assembled for WRAM $D1B0 (scripts/skipboot/skip_boot.asm)
+    (4, 0x6be6): dict(code_len=0x44),      # SkipBootPrep: copier, then SkipBoot assembled for WRAM $D1B0 (scripts/skipboot/skip_boot.asm)
 }
 
 # The 11-byte kernel-version text DrawHelpModVersion draws over the stock
