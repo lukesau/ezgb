@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EZ Flash Jr floorplan</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #6f6d68;
+  --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10); --empty: #ecebe6; --dim: #d6d5ce;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --neutral: #898781; --sel: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #a09e97;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --empty: #232322; --dim: #3a3a37;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --neutral: #898781; --sel: #f0efec;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #a09e97;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --empty: #232322; --dim: #3a3a37;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --neutral: #898781; --sel: #f0efec;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--page); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 16px; border-bottom: 1px solid var(--ring); }
+h1 { font-size: 15px; font-weight: 600; margin: 0; }
+.group { display: inline-flex; align-items: center; gap: 6px; }
+.group > span { color: var(--muted); font-size: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 7px; overflow: hidden; }
+.seg button { background: none; border: 0; color: var(--ink2); padding: 4px 9px; font: inherit; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--axis); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.btn { background: none; border: 1px solid var(--axis); border-radius: 7px; padding: 4px 9px; color: var(--ink2); font: inherit; cursor: pointer; }
+label.check { display: inline-flex; gap: 5px; align-items: center; color: var(--ink2); cursor: pointer; }
+button:focus-visible, canvas:focus-visible, input:focus-visible { outline: 2px solid var(--s1); outline-offset: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 7px 16px; border-bottom: 1px solid var(--ring); color: var(--ink2); font-size: 12px; align-items: center; }
+.legend i, .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; flex: none; }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 372px; }
+.panes { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); min-height: 0; gap: 1px; background: var(--ring); }
+.pane { position: relative; background: var(--surface); min-width: 0; min-height: 0; }
+.pane[hidden] { display: none; }
+.pane canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; }
+.pane canvas.drag { cursor: grabbing; }
+.pane h2 { position: absolute; left: 10px; top: 8px; margin: 0; font-size: 13px; font-weight: 600; pointer-events: none; background: var(--surface); padding: 2px 6px; border-radius: 4px; z-index: 1; }
+.pane h2 small { display: block; font-weight: 400; color: var(--ink2); font-size: 11px; }
+aside { border-left: 1px solid var(--ring); overflow-y: auto; min-height: 0; background: var(--surface); }
+aside section { padding: 12px 14px; border-bottom: 1px solid var(--ring); }
+aside h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.note { color: var(--ink2); font-size: 12px; margin: 0 0 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+th { text-align: right; font-weight: 500; color: var(--muted); padding: 3px 3px; border-bottom: 1px solid var(--axis); position: sticky; top: 0; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; }
+td { padding: 0; text-align: right; color: var(--ink2); border-bottom: 1px solid var(--grid); }
+td.num { padding: 3px; }
+tr.fam td { color: var(--muted); padding: 8px 3px 2px; font-size: 11px; border-bottom: 1px solid var(--axis); text-align: left; }
+td button { all: unset; display: block; padding: 3px 3px; cursor: pointer; color: var(--ink); border-radius: 3px; overflow-wrap: anywhere; }
+td button:focus-visible { outline: 2px solid var(--s1); }
+tr.on td { background: var(--grid); }
+tbody tr.row:hover td { background: var(--empty); }
+.tt { display: grid; grid-template-columns: 34px repeat(4, 26px); gap: 2px; font-size: 11px; font-variant-numeric: tabular-nums; margin: 6px 0; color: var(--muted); align-items: center; text-align: center; }
+.tt b { height: 22px; line-height: 22px; border-radius: 3px; background: var(--empty); color: var(--ink2); font-weight: 400; }
+.tt b.one { background: var(--ink); color: var(--surface); }
+ul.links { list-style: none; padding: 0; margin: 2px 0 8px; }
+ul.links li { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; border-bottom: 1px solid var(--grid); }
+ul.links .p { flex: 0 0 34px; color: var(--muted); }
+ul.links button { all: unset; cursor: pointer; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+ul.links button:hover { text-decoration: underline; }
+ul.links button:focus-visible { outline: 2px solid var(--s1); }
+ul.links .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; margin: 4px 0 8px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; overflow-wrap: anywhere; }
+#tip { position: fixed; z-index: 5; pointer-events: none; background: var(--ink); color: var(--surface); padding: 4px 7px; border-radius: 5px; font-size: 12px; max-width: 320px; display: none; }
+.keys { color: var(--muted); font-size: 11px; }
+.hl-in, .hl-out { font-weight: 600; }
+@media (max-width: 900px) {
+  body { height: auto; }
+  main { grid-template-columns: 1fr; }
+  .panes { height: 72vh; }
+  aside { border-left: 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>EZ Flash Jr floorplan</h1>
+  <div class="group"><span>Show</span><div class="seg" id="view"></div></div>
+  <div class="group"><span>Color</span><div class="seg" id="colorBy"></div></div>
+  <div class="group"><span>Wires</span><div class="seg" id="wires"></div></div>
+  <label class="check"><input type="checkbox" id="clock"> Clock tree</label>
+  <button class="btn" id="fit">Fit</button>
+  <button class="btn" id="theme">Theme</button>
+</header>
+<div class="legend" id="legend"></div>
+<main>
+  <div class="panes" id="panes"></div>
+  <aside>
+    <section id="inspector"></section>
+    <section>
+      <h3>Blocks</h3>
+      <p class="note">Select a block to see it alone on both chips. <b>cells</b> counts its LUTs, flip-flops, wide muxes and carry bits. <b>wire</b> is the tiles of routing its outputs use.</p>
+      <table id="blocks"></table>
+    </section>
+    <section id="about"></section>
+  </aside>
+</main>
+<div id="tip" role="status"></div>
+<script>
+const DATA = /*DATA*/null;
+const PITCH = 10, COLS = 26, ROWS = 34;
+const BELS = DATA.bels;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('en-US');
+
+const state = {
+  view: 'both', colorBy: 'sub', wires: 'routes', clock: false,
+  solo: null, sel: null, // sel: {fw, site}
+  hot: null,             // hot net highlight from the inspector: {fw, net}
+  zoom: 1, tx: 0, ty: 0,
+};
+try { const t = localStorage.getItem('fp-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+
+// ---- per-firmware indexes
+for (const fw of DATA.firmwares) {
+  fw.faninOf = new Map(); fw.fanoutOf = new Map();
+  fw.nets.forEach((n, i) => {
+    if (!fw.fanoutOf.has(n.s)) fw.fanoutOf.set(n.s, []);
+    fw.fanoutOf.get(n.s).push(i);
+    n.k.forEach((k, j) => {
+      if (!fw.faninOf.has(k[0])) fw.faninOf.set(k[0], []);
+      fw.faninOf.get(k[0]).push([i, j]);
+    });
+  });
+  fw.byBel = new Map();
+  fw.prims = [];
+  fw.sites.forEach((s, i) => {
+    if (s[3] < 4) fw.byBel.set(s[0] + ',' + s[1] + ',' + s[2] + ',' + s[3], i);
+    if (s[3] >= 10) fw.prims.push(i);
+  });
+  fw.regIndex = new Map();
+  fw.sites.forEach((s, i) => { if (s[11]) fw.regIndex.set(fw.blocks[s[4]] + '\u0000' + s[5], i); });
+}
+
+// ---- color
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  C = {};
+  for (const k of ['page','surface','ink','ink2','muted','grid','axis','empty','dim','neutral','sel','s1','s2','s3','s4','s5','s6','s7','s8']) C[k] = css('--' + k);
+}
+const SUB_COLOR = ['s1', 's2', 's3', 'neutral'];
+const FAM_COLOR = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
+function groupOf(name) {
+  const g = DATA.blockGroups[name];
+  return state.colorBy === 'sub' ? SUB_COLOR[g[0]] : FAM_COLOR[g[1]];
+}
+function colorOfBlock(fw, b) { return b < 0 ? 'neutral' : groupOf(fw.blocks[b]); }
+
+// ---- geometry
+const tx = x => x * PITCH;
+const ty = y => (ROWS - 1 - y) * PITCH;
+// slice 0 and 2 are the SLICEM column (left); 0 and 1 are the bottom row
+function belRect(x, y, s, b) {
+  const sx = s & 1, sy = s >> 1;
+  const col = b >= 2 ? 1 : 0, row = (b === 1 || b === 3) ? 1 : 0;
+  const m = .35, ss = 4.5, bb = 1.9, o = .15;
+  return [tx(x) + m + sx * ss + col * (bb + o) + .1, ty(y) + PITCH - m - (sy + 1) * ss + (1 - row) * (bb + o) + .1, bb, bb];
+}
+function siteCenter(s) {
+  const b = s[3];
+  if (b < 4) { const r = belRect(s[0], s[1], s[2], b); return [r[0] + r[2] / 2, r[1] + r[3] / 2]; }
+  if (b < 10) return [tx(s[0]) + 2.3 + (s[2] & 1) * 4.5, ty(s[1]) + 7.6 - (s[2] >> 1) * 4.5];
+  const r = primRect(s);
+  return [r[0] + r[2] / 2, r[1] + r[3] / 2];
+}
+function primRect(s) {
+  const [x, y, k, b] = s;
+  if (b === 11) return [tx(x) + .5, ty(y + 3) + .5, PITCH * 4 - 1, PITCH * 4 - 1]; // block RAM: 4 by 4 tiles
+  if (b === 10) { // pads: three per ring tile
+    const horiz = y === 0 || y === ROWS - 1;
+    const p = k * 3.1 + .4;
+    return horiz ? [tx(x) + p, ty(y) + 3, 2.6, 4] : [tx(x) + 3, ty(y) + p, 4, 2.6];
+  }
+  if (b === 12) return [tx(x === 12 ? 9 : 13) + .5, ty(y === 1 ? 4 : 32) + .5, PITCH * 4 - 1, PITCH * 4 - 1]; // DCM in its cutout
+  if (b === 13) return [tx(x) + 1 + (k % 4) * 2, ty(y) + 1 + (k >> 2) * 2, 1.7, 1.7];
+  return [tx(x) + 7, ty(y) + 7, 2, 2];
+}
+
+// ---- panes
+const FOOT = new Path2D();
+for (const [x, y] of DATA.clb) for (let s = 0; s < 4; s++) for (let b = 0; b < 4; b++) { const r = belRect(x, y, s, b); FOOT.rect(r[0], r[1], r[2], r[3]); }
+for (const X of [3, 19]) for (let Y = 1; Y <= 29; Y += 4) { const r = primRect([X, Y, 0, 11]); FOOT.rect(r[0], r[1], r[2], r[3]); }
+for (const [X, Y] of [[12, 1], [13, 1], [12, 32], [13, 32]]) { const r = primRect([X, Y, 0, 12]); FOOT.rect(r[0], r[1], r[2], r[3]); }
+
+class Pane {
+  constructor(fw) {
+    this.fw = fw;
+    this.el = document.createElement('div');
+    this.el.className = 'pane';
+    const s = fw.summary;
+    this.el.innerHTML = `<h2>${esc(s.title)}<small>${fmt(s.slices)} slices · ${fmt(s.switches)} switch hops</small></h2><canvas tabindex="0" role="img" aria-label="${esc(s.title)} floorplan. The Blocks table has the same data."></canvas>`;
+    this.c = this.el.querySelector('canvas');
+    this.ctx = this.c.getContext('2d');
+    this.bind();
+  }
+  size() {
+    const r = this.el.getBoundingClientRect();
+    const d = devicePixelRatio || 1;
+    this.w = r.width; this.h = r.height;
+    this.c.width = Math.max(1, r.width * d); this.c.height = Math.max(1, r.height * d);
+    this.d = d;
+  }
+  bind() {
+    const c = this.c;
+    let start = null, moved = false;
+    c.addEventListener('pointerdown', e => { c.setPointerCapture(e.pointerId); start = [e.clientX, e.clientY, state.tx, state.ty]; moved = false; c.classList.add('drag'); });
+    c.addEventListener('pointermove', e => {
+      if (start) {
+        const dx = e.clientX - start[0], dy = e.clientY - start[1];
+        if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+        state.tx = start[2] + dx; state.ty = start[3] + dy; schedule(); return;
+      }
+      this.hover(e);
+    });
+    c.addEventListener('pointerup', e => {
+      c.classList.remove('drag');
+      if (start && !moved) this.click(e);
+      start = null;
+    });
+    c.addEventListener('pointerleave', () => { $('tip').style.display = 'none'; });
+    c.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = c.getBoundingClientRect();
+      const f = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0018));
+      zoomAt(f, e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    c.addEventListener('keydown', e => {
+      const step = 60;
+      if (e.key === '+' || e.key === '=') zoomAt(1.3, this.w / 2, this.h / 2);
+      else if (e.key === '-') zoomAt(1 / 1.3, this.w / 2, this.h / 2);
+      else if (e.key === 'ArrowLeft') state.tx += step;
+      else if (e.key === 'ArrowRight') state.tx -= step;
+      else if (e.key === 'ArrowUp') state.ty += step;
+      else if (e.key === 'ArrowDown') state.ty -= step;
+      else if (e.key === 'f') fit();
+      else if (e.key === 'Escape') { state.sel = null; state.solo = null; state.hot = null; refresh(); }
+      else return;
+      e.preventDefault(); schedule();
+    });
+  }
+  toWorld(e) {
+    const r = this.c.getBoundingClientRect();
+    const k = state.zoom * this.fitScale();
+    const o = this.origin();
+    return [(e.clientX - r.left - o[0]) / k, (e.clientY - r.top - o[1]) / k];
+  }
+  fitScale() { return Math.min(this.w / (COLS * PITCH + 8), this.h / (ROWS * PITCH + 8)); }
+  origin() {
+    const k = this.fitScale();
+    return [(this.w - COLS * PITCH * k) / 2 + state.tx, (this.h - ROWS * PITCH * k) / 2 + state.ty];
+  }
+  pick(wx, wy) {
+    const fw = this.fw;
+    const X = Math.floor(wx / PITCH), Y = ROWS - 1 - Math.floor(wy / PITCH);
+    for (const i of fw.prims) {
+      const r = primRect(fw.sites[i]);
+      if (wx >= r[0] - .3 && wx <= r[0] + r[2] + .3 && wy >= r[1] - .3 && wy <= r[1] + r[3] + .3) {
+        return i;
+      }
+    }
+    if (X < 0 || Y < 0 || X >= COLS || Y >= ROWS) return null;
+    const lx = wx - tx(X), ly = wy - ty(Y);
+    const sx = lx < 4.85 ? 0 : 1, sy = ly > 4.85 ? 0 : 1;
+    const s = sy * 2 + sx;
+    let best = null, bd = 1e9;
+    for (let b = 0; b < 4; b++) {
+      const i = fw.byBel.get(X + ',' + Y + ',' + s + ',' + b);
+      if (i == null) continue;
+      const r = belRect(X, Y, s, b);
+      const d = Math.hypot(wx - r[0] - r[2] / 2, wy - r[1] - r[3] / 2);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return bd < 2.2 ? best : null;
+  }
+  hover(e) {
+    const [wx, wy] = this.toWorld(e);
+    const i = this.pick(wx, wy);
+    const tip = $('tip');
+    if (i == null) { tip.style.display = 'none'; return; }
+    tip.textContent = siteLabel(this.fw, i);
+    tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+  }
+  click(e) {
+    const [wx, wy] = this.toWorld(e);
+    const i = this.pick(wx, wy);
+    state.hot = null;
+    state.sel = i == null ? null : { fw: DATA.firmwares.indexOf(this.fw), site: i };
+    refresh();
+  }
+  draw() {
+    const { ctx, fw } = this;
+    const k = state.zoom * this.fitScale();
+    const o = this.origin();
+    ctx.setTransform(this.d, 0, 0, this.d, 0, 0);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, this.w, this.h);
+    ctx.setTransform(this.d * k, 0, 0, this.d * k, this.d * o[0], this.d * o[1]);
+    const px = 1 / k;
+    const anyHot = state.sel && DATA.firmwares[state.sel.fw] === fw || (state.hot && DATA.firmwares[state.hot.fw] === fw);
+    const soloIdx = state.solo ? fw.blocks.indexOf(state.solo) : -1;
+    const focus = state.solo != null || anyHot;
+
+    // the chip: every CLB tile's bels, block RAM columns, DCM cutouts
+    ctx.fillStyle = C.empty; ctx.fill(FOOT);
+    ctx.strokeStyle = C.axis; ctx.lineWidth = px; ctx.strokeRect(0, 0, COLS * PITCH, ROWS * PITCH);
+
+    // cells, grouped by color so a redraw stays quick
+    const groups = new Map(), big = [];
+    const add =(color, r) => { if (!groups.has(color)) groups.set(color, new Path2D()); groups.get(color).rect(r[0], r[1], r[2], r[3]); };
+    for (const s of fw.sites) {
+      const b = s[3];
+      if (b >= 4 && b !== 10 && b !== 11 && b !== 12 && b !== 13 && b !== 14) continue;
+      const r = b < 4 ? belRect(s[0], s[1], s[2], b) : primRect(s);
+      const live = s[7];
+      let color;
+      if (b < 4 && !live) continue;
+      else if (s[4] < 0) color = 'neutral';
+      else if (state.solo != null) color = s[4] === soloIdx ? colorOfBlock(fw, s[4]) : 'dim';
+      else color = anyHot ? 'dim' : colorOfBlock(fw, s[4]);
+      if (state.solo != null && s[4] < 0 && live) color = 'dim';
+      if (b === 11 || b === 12) { big.push([color, r]); continue; }
+      add(color, r);
+    }
+    // block RAMs and DCMs are large, so a tint and an outline keep them from swamping the logic
+    for (const [color, r] of big) {
+      ctx.fillStyle = C[color]; ctx.globalAlpha = color === 'dim' ? .5 : .28; ctx.fillRect(r[0], r[1], r[2], r[3]);
+      ctx.globalAlpha = 1; ctx.strokeStyle = C[color]; ctx.lineWidth = 1.5 * px; ctx.strokeRect(r[0], r[1], r[2], r[3]);
+    }
+    const wiresShown = state.wires !== 'off';
+    for (const [color, path] of groups) {
+      ctx.fillStyle = C[color];
+      ctx.globalAlpha = color === 'dim' || color === 'empty' ? 1 : (wiresShown && !focus ? .82 : 1);
+      ctx.fill(path);
+    }
+    ctx.globalAlpha = 1;
+
+    // wires
+    if (state.wires !== 'off' || state.clock) {
+      const lines = new Map();
+      const line = (color, x1, y1, x2, y2) => { if (!lines.has(color)) lines.set(color, new Path2D()); const p = lines.get(color); p.moveTo(x1, y1); p.lineTo(x2, y2); };
+      for (const n of fw.nets) {
+        if (n.c ? !state.clock : state.wires === 'off') continue;
+        const src = fw.sites[n.s];
+        const own = src[4];
+        if (state.solo != null && own !== soloIdx) continue;
+        if (anyHot) continue;
+        const color = n.c ? 'ink2' : colorOfBlock(fw, own);
+        if (state.wires === 'straight' && !n.c) {
+          const a = siteCenter(src);
+          for (const q of n.k) { const b = siteCenter(fw.sites[q[0]]); line(color, a[0], a[1], b[0], b[1]); }
+        } else {
+          const g = n.g;
+          for (let i = 0; i < g.length; i += 6) {
+            const x1 = tx(g[i]) + 5, y1 = ty(g[i + 1]) + 5, x2 = tx(g[i + 2]) + 5, y2 = ty(g[i + 3]) + 5;
+            const d = (g[i + 5] - 7.5) * .38;
+            const horiz = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+            line(color, x1 + (horiz ? 0 : d), y1 + (horiz ? d : 0), x2 + (horiz ? 0 : d), y2 + (horiz ? d : 0));
+          }
+        }
+      }
+      ctx.lineWidth = Math.max(.14, .9 * px);
+      ctx.globalAlpha = state.solo != null ? .85 : .38;
+      for (const [color, path] of lines) { ctx.strokeStyle = C[color]; ctx.stroke(path); }
+      ctx.globalAlpha = 1;
+    }
+
+    // selected cell: its inputs and outputs, routed
+    const fwIdx = DATA.firmwares.indexOf(fw);
+    if (state.sel && state.sel.fw === fwIdx) {
+      const i = state.sel.site;
+      const inPath = new Path2D(), outPath = new Path2D();
+      for (const [ni, kj] of fw.faninOf.get(i) || []) pathOf(fw, fw.nets[ni], fw.nets[ni].k[kj][2], inPath);
+      for (const ni of fw.fanoutOf.get(i) || []) if (!fw.nets[ni].c) netPath(fw, fw.nets[ni], outPath);
+      ctx.lineWidth = Math.max(.35, 1.6 * px);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = C.s1; ctx.stroke(inPath);
+      ctx.strokeStyle = C.s2; ctx.stroke(outPath);
+      ctx.lineCap = 'butt';
+      const s = fw.sites[i];
+      for (const [ni] of fw.faninOf.get(i) || []) mark(ctx, fw, fw.sites[fw.nets[ni].s], C.s1, px);
+      for (const ni of fw.fanoutOf.get(i) || []) if (!fw.nets[ni].c) for (const q of fw.nets[ni].k) mark(ctx, fw, fw.sites[q[0]], C.s2, px);
+      mark(ctx, fw, s, C.sel, px, true);
+    }
+    if (state.hot && state.hot.fw === fwIdx) {
+      const n = fw.nets[state.hot.net], p = new Path2D();
+      netPath(fw, n, p);
+      ctx.lineWidth = Math.max(.35, 1.6 * px); ctx.strokeStyle = C.s3; ctx.stroke(p);
+    }
+
+    // direct labels
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    const label = (t, x, y) => {
+      const size = 12 / k;
+      ctx.font = `600 ${size}px system-ui, sans-serif`;
+      ctx.lineWidth = 3.5 / k; ctx.strokeStyle = C.surface; ctx.lineJoin = 'round';
+      ctx.strokeText(t, x, y); ctx.fillStyle = C.ink; ctx.fillText(t, x, y);
+    };
+    if (state.solo != null && fw.stats[state.solo]) {
+      const st = fw.stats[state.solo], b = st.bbox;
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1 * px;
+      ctx.strokeRect(tx(b[0]), ty(b[3]), (b[2] - b[0] + 1) * PITCH, (b[3] - b[1] + 1) * PITCH);
+      label(state.solo, tx(st.cx) + 5, ty(st.cy) + 5);
+    } else if (state.colorBy === 'fam' && !anyHot) {
+      // biggest first; a label that would overlap one already placed is left to the table and hover
+      const placed = [];
+      const big = fw.blocks.filter(n => fw.stats[n] && fw.stats[n].cells >= 100).sort((a, b) => fw.stats[b].cells - fw.stats[a].cells);
+      ctx.font = `600 ${12 / k}px system-ui, sans-serif`;
+      for (const n of big) {
+        const st = fw.stats[n], x = tx(st.cx) + 5, y = ty(st.cy) + 5;
+        const w = ctx.measureText(n).width + 8 / k, h = 16 / k;
+        if (placed.some(p => Math.abs(p[0] - x) < (p[2] + w) / 2 && Math.abs(p[1] - y) < h)) continue;
+        placed.push([x, y, w]);
+        label(n, x, y);
+      }
+    }
+    if (state.solo != null && !fw.stats[state.solo]) {
+      ctx.setTransform(this.d, 0, 0, this.d, 0, 0);
+      ctx.font = '13px system-ui, sans-serif'; ctx.fillStyle = C.ink2;
+      ctx.fillText(`${state.solo} is not in ${fw.summary.title}`, this.w / 2, this.h / 2);
+    }
+  }
+}
+function pathOf(fw, net, segIdx, p) {
+  for (const si of segIdx) {
+    const i = si * 6, g = net.g;
+    p.moveTo(tx(g[i]) + 5, ty(g[i + 1]) + 5); p.lineTo(tx(g[i + 2]) + 5, ty(g[i + 3]) + 5);
+  }
+}
+function netPath(fw, net, p) {
+  const g = net.g;
+  for (let i = 0; i < g.length; i += 6) { p.moveTo(tx(g[i]) + 5, ty(g[i + 1]) + 5); p.lineTo(tx(g[i + 2]) + 5, ty(g[i + 3]) + 5); }
+}
+function mark(ctx, fw, s, color, px, big) {
+  const c = siteCenter(s);
+  const r = big ? 2.1 : 1.15;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(c[0], c[1], Math.max(r, (big ? 5 : 2.5) * px), 0, Math.PI * 2); ctx.fill();
+  if (big) { ctx.strokeStyle = C.surface; ctx.lineWidth = 1.5 * px; ctx.stroke(); }
+}
+
+function siteLabel(fw, i) {
+  const s = fw.sites[i];
+  const bits = [];
+  if (s[3] < 10) bits.push(`X${s[0]} Y${s[1]} slice ${s[2]} ${BELS[s[3]]}`);
+  else bits.push(`X${s[0]} Y${s[1]} ${s[8] || ''}`);
+  if (s[5]) bits.push(s[5]);
+  if (s[9] && s[3] === 10) bits.push('pin ' + s[9]);
+  if (s[4] >= 0) bits.push(fw.blocks[s[4]] + (s[10] ? ' (inferred)' : ''));
+  else if (s[3] < 10) bits.push(s[7] ? 'not in a block' : 'unused');
+  return bits.join(' · ');
+}
+
+// ---- transform
+function fit() { state.zoom = 1; state.tx = 0; state.ty = 0; schedule(); }
+function zoomAt(f, cx, cy) {
+  const z = Math.min(40, Math.max(.6, state.zoom * f));
+  const p = panes.find(p => !p.el.hidden);
+  const k = z / state.zoom;
+  const fs = p.fitScale();
+  const ox = (p.w - COLS * PITCH * fs) / 2, oy = (p.h - ROWS * PITCH * fs) / 2;
+  state.tx = cx - ox - (cx - ox - state.tx) * k;
+  state.ty = cy - oy - (cy - oy - state.ty) * k;
+  state.zoom = z;
+  schedule();
+}
+
+// ---- controls
+function seg(id, key, options) {
+  const el = $(id);
+  el.innerHTML = options.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+  const paint = () => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === state[key]));
+  el.addEventListener('click', e => { const v = e.target.dataset && e.target.dataset.v; if (v) { state[key] = v; paint(); refresh(); } });
+  paint();
+}
+function renderLegend() {
+  const groups = state.colorBy === 'sub'
+    ? DATA.subsystems.map((n, i) => [n, SUB_COLOR[i]])
+    : DATA.families.map((n, i) => [n, FAM_COLOR[i]]);
+  let h = groups.map(([n, c]) => `<span><i style="background:var(--${c === 'neutral' ? 'neutral' : c})"></i>${esc(n)}</span>`).join('');
+  if (state.sel) h += `<span style="margin-left:auto"><i style="background:var(--s1)"></i>inputs of selected cell</span><span><i style="background:var(--s2)"></i>outputs</span>`;
+  $('legend').innerHTML = h;
+}
+function renderBlocks() {
+  const [A, B] = DATA.firmwares;
+  const fams = DATA.families;
+  const all = [...new Set([...A.blocks, ...B.blocks])];
+  let h = `<thead><tr><th>Block</th><th>${esc(A.summary.title)}<br>cells</th><th>${esc(B.summary.title)}<br>cells</th><th>${esc(A.summary.title)}<br>wire</th><th>${esc(B.summary.title)}<br>wire</th></tr></thead><tbody>`;
+  fams.forEach((f, fi) => {
+    const rows = all.filter(n => DATA.blockGroups[n][1] === fi);
+    h += `<tr class="fam"><td colspan="5"><span class="swatch" style="background:var(--${groupOf(rows[0])})"></span>${esc(f)}</td></tr>`;
+    for (const n of rows) {
+      const a = A.stats[n], b = B.stats[n];
+      h += `<tr class="row${state.solo === n ? ' on' : ''}"><td><button type="button" data-solo="${n}" title="${esc(A.desc[n] || B.desc[n] || '')}" class="mono" aria-pressed="${state.solo === n}">${esc(n)}</button></td><td class="num">${fmt(a && a.cells)}</td><td class="num">${fmt(b && b.cells)}</td><td class="num">${fmt(a && a.wire)}</td><td class="num">${fmt(b && b.wire)}</td></tr>`;
+    }
+  });
+  h += '</tbody>';
+  $('blocks').innerHTML = h;
+}
+function renderAbout() {
+  const rows = DATA.firmwares.map(f => {
+    const s = f.summary;
+    return `<tr><td>${esc(s.title)}</td><td class="num">${fmt(s.slices)}</td><td class="num">${fmt(s.luts)}</td><td class="num">${fmt(s.ffs)}</td><td class="num">${fmt(s.nets)}</td><td class="num">${fmt(s.switches)}</td></tr>`;
+  }).join('');
+  const lab = DATA.firmwares.map(f => `${esc(f.summary.title)} ${fmt(f.summary.labeled)} of ${fmt(f.summary.live)}`).join(', ');
+  $('about').innerHTML = `<h3>Reading the map</h3>
+  <p class="note">Each tile holds four slices. Each slice shows two LUTs (left) and two flip-flops (right). The large squares are block RAMs, in two columns, and the DCMs, in cutouts at top and bottom center. Ticks on the ring are used pads. Wires jump straight across all of these.</p>
+  <p class="note">Tile positions come straight from the bitstream, but tiles are drawn evenly spaced, not to die scale, and wires are drawn as straight lines between the switches they connect. Parallel wires are spread apart so they stay visible, so a wire's offset in its channel is not physical. Clock nets run on a dedicated tree, so with Clock tree on, each hop of a clock route is a straight line between its switches, not the tree's real shape.</p>
+  <p class="note">Cells in a block: ${lab}. ${DATA.firmwares.filter(f => f.summary.multi).map(f => `${fmt(f.summary.multi)} ${esc(f.summary.title)} cells belong to more than one block file and are shown under the first.`).join(' ')} A block RAM's block is inferred from what it connects to most. Routes reach a block RAM at its left edge, where its switches are.</p>
+  <table><thead><tr><th>Totals</th><th>slices</th><th>LUTs</th><th>FFs</th><th>nets</th><th>hops</th></tr></thead><tbody>${rows}</tbody></table>
+  <p class="keys" style="margin-top:8px">Scroll to zoom, drag to pan. Keys when a map has focus: + − zoom, arrows pan, f fit, Esc clear.</p>`;
+}
+function renderInspector() {
+  const el = $('inspector');
+  if (!state.sel) {
+    el.innerHTML = `<h3>Inspector</h3><p class="note">Select any LUT, flip-flop, block RAM or pad to see its truth table and trace its real routes.</p>`;
+    return;
+  }
+  const fw = DATA.firmwares[state.sel.fw], i = state.sel.site, s = fw.sites[i];
+  const kind = s[3] < 2 ? 'LUT' : s[3] < 4 ? 'Flip-flop' : s[3] < 10 ? BELS[s[3]] : ({10:'Pad',11:'Block RAM',12:'DCM',13:'Clock buffer'}[s[3]] || (s[8] || 'Primitive'));
+  let h = `<h3>${esc(kind)} at X${s[0]} Y${s[1]}${s[3] < 10 ? ', slice ' + s[2] + ' ' + BELS[s[3]] : ''}</h3><dl class="kv">`;
+  h += `<dt>Firmware</dt><dd>${esc(fw.summary.title)}</dd>`;
+  if (s[4] >= 0) {
+    const n = fw.blocks[s[4]];
+    h += `<dt>Block</dt><dd class="mono">${esc(n)}${s[10] ? ' (inferred)' : ''}</dd>`;
+    if (fw.desc[n]) h += `<dt></dt><dd style="color:var(--ink2);font-size:12px">${esc(fw.desc[n])}</dd>`;
+  } else h += `<dt>Block</dt><dd>${s[7] ? 'not in a block' : 'unused'}</dd>`;
+  if (s[5]) h += `<dt>Name</dt><dd class="mono">${esc(s[5])}</dd>`;
+  if (s[9] && s[3] < 4) h += `<dt>Data</dt><dd>from ${esc(s[9])} in this slice (not a routed wire)</dd>`;
+  else if (s[9]) h += `<dt>${s[3] === 10 ? 'Pin' : 'Contents'}</dt><dd>${esc(s[9])}</dd>`;
+  h += '</dl>';
+  if (s[6] && s[3] < 2 && s[7]) {
+    const p = s[3] === 0 ? 'F' : 'G';
+    const t = s[6]; // bit 15 first
+    h += `<div class="note">Truth table: output for each input combination</div><div class="tt"><span>${p}4${p}3<br>${p}2${p}1</span>${['00','01','10','11'].map(c => `<span>${c}</span>`).join('')}`;
+    for (let hi = 0; hi < 4; hi++) {
+      h += `<span>${(hi >> 1) & 1}${hi & 1}</span>`;
+      for (let lo = 0; lo < 4; lo++) { const v = t[15 - (hi * 4 + lo)]; h += `<b class="${v === '1' ? 'one' : ''}">${v}</b>`; }
+    }
+    h += '</div>';
+  }
+  const other = 1 - state.sel.fw;
+  if (s[11] && s[4] >= 0) {
+    const j = DATA.firmwares[other].regIndex.get(fw.blocks[s[4]] + '\u0000' + s[5]);
+    if (j != null) h += `<p><button class="btn" data-fw="${other}" data-site="${j}">Same register in ${esc(DATA.firmwares[other].summary.title)}</button></p>`;
+  }
+  const inputs = fw.faninOf.get(i) || [];
+  if (inputs.length) {
+    h += `<div class="note" style="margin-top:6px"><span class="swatch" style="background:var(--s1)"></span>Inputs</div><ul class="links">`;
+    for (const [ni, kj] of inputs) {
+      const n = fw.nets[ni], k = n.k[kj];
+      h += `<li><span class="p mono">${esc(fw.pins[k[1]])}</span><button data-fw="${state.sel.fw}" data-site="${n.s}">${esc(siteLabel(fw, n.s))}</button><span class="n">${k[2].length}</span></li>`;
+    }
+    h += '</ul><div class="keys">The number is the wire segments on that route.</div>';
+  }
+  const outs = (fw.fanoutOf.get(i) || []);
+  const sinks = outs.flatMap(ni => fw.nets[ni].k.map(k => [ni, k]));
+  if (sinks.length) {
+    const clockOnly = outs.every(ni => fw.nets[ni].c);
+    h += `<div class="note" style="margin-top:10px"><span class="swatch" style="background:var(--s2)"></span>Outputs, ${fmt(sinks.length)} ${sinks.length === 1 ? 'sink' : 'sinks'}${clockOnly ? ' on the clock tree (not drawn)' : ''}</div><ul class="links">`;
+    for (const [ni, k] of sinks.slice(0, 40)) {
+      h += `<li><span class="p mono">${esc(fw.pins[k[1]])}</span><button data-fw="${state.sel.fw}" data-site="${k[0]}">${esc(siteLabel(fw, k[0]))}</button></li>`;
+    }
+    h += '</ul>';
+    if (sinks.length > 40) h += `<div class="keys">The first 40 are listed. All are drawn.</div>`;
+  }
+  else if (s[7] && s[3] < 10) h += `<p class="note" style="margin-top:10px">No routed outputs: this ${s[3] < 2 ? 'LUT' : 'bel'} only drives logic inside its slice.</p>`;
+  el.innerHTML = h;
+}
+
+let raf = 0;
+function schedule() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; panes.forEach(p => { if (!p.el.hidden) p.draw(); }); }); }
+function refresh() {
+  panes[0].el.hidden = state.view === 'b';
+  panes[1].el.hidden = state.view === 'a';
+  panes.forEach(p => { if (!p.el.hidden) p.size(); });
+  renderLegend(); renderBlocks(); renderInspector();
+  schedule();
+}
+
+const panes = DATA.firmwares.map(f => new Pane(f));
+panes.forEach(p => $('panes').appendChild(p.el));
+seg('view', 'view', [['both', 'Both'], ['a', DATA.firmwares[0].summary.title], ['b', DATA.firmwares[1].summary.title]]);
+seg('colorBy', 'colorBy', [['sub', 'Subsystem'], ['fam', 'Function']]);
+seg('wires', 'wires', [['routes', 'Routes'], ['straight', 'Straight'], ['off', 'Off']]);
+$('clock').addEventListener('change', e => { state.clock = e.target.checked; schedule(); });
+$('fit').addEventListener('click', fit);
+$('theme').addEventListener('click', () => {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('fp-theme', next); } catch (e) {}
+  readColors(); refresh();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); refresh(); });
+document.body.addEventListener('click', e => {
+  const t = e.target.closest('[data-solo],[data-site]');
+  if (!t) return;
+  if (t.dataset.solo) { state.solo = state.solo === t.dataset.solo ? null : t.dataset.solo; state.sel = null; state.hot = null; }
+  else state.sel = { fw: +t.dataset.fw, site: +t.dataset.site };
+  refresh();
+});
+new ResizeObserver(() => { panes.forEach(p => { if (!p.el.hidden) p.size(); }); schedule(); }).observe($('panes'));
+readColors(); renderAbout(); refresh();
+window.__fp = { state, panes, DATA, refresh };
+</script>
+</body>
+</html>
