@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
 """Build the floorplan viewer: where each firmware's logic and wires sit on the chip.
 
-    scripts/fpga/floorplan.py [-o fpga/floorplan/floorplan.html]
+    scripts/fpga/floorplan.py [--fpga DIR] [-o fpga/floorplan/floorplan.html]
 
-For each firmware it reads netlist.jsonl, design.v and pins.txt from fpga/<fw>/,
-the block files, and the route dump from `s3trace --routes` (run here if
-missing). The output is one self-contained HTML file with the design data in
-it, so it belongs under the untracked fpga/ like everything else derived from
-EZ Flash's bitstreams.
+For each firmware it reads netlist.jsonl, design.v and pins.txt from
+export-netlist.sh, the block files (FW5's are made by fw5-prove.sh), and the
+route dump from `s3trace --routes` (run here if missing). All of that lives in
+the ignored fpga/, or the directory --fpga names. The output is one
+self-contained HTML file. It has LUT truth tables and routes but no block RAM
+contents, and it is the one thing under fpga/ that is tracked and published
+(scripts/publish-floorplan.sh).
 """
 import argparse, collections, glob, json, math, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOP = os.path.dirname(os.path.dirname(HERE))
+FPGA = f'{TOP}/fpga'
 sys.path.insert(0, HERE)
 import carve
 
 FIRMWARES = [
     # key, title, cart image, block files
-    ('fw4', 'FW4', 'fw4-updater.bin', 'stage0/blocks/*.blk'),
-    ('fw5-0918', 'FW5 0918', 'fw5-0918.bin', 'fpga/fw5-all/blk/*.blk'),
+    ('fw4', 'FW4', 'fw4-updater.bin', f'{TOP}/stage0/blocks/*.blk'),
+    ('fw5-0918', 'FW5 0918', 'fw5-0918.bin', 'fw5-all/blk/*.blk'),
 ]
 
 # (subsystem, family) per block. Subsystem 3 is the neutral group.
@@ -61,19 +64,19 @@ def tile_xy(s):
 
 
 def routes_path(key, image):
-    path = f'{TOP}/fpga/floorplan/{key}.routes.jsonl'
+    path = f'{FPGA}/floorplan/{key}.routes.jsonl'
     if not os.path.exists(path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         subprocess.check_call([f'{TOP}/scripts/fpga/s3decode/target/release/s3trace',
-                               '--db', f'{TOP}/fpga/db/spartan3.zstd', f'{TOP}/fpga/cart/{image}',
+                               '--db', f'{FPGA}/db/spartan3.zstd', f'{FPGA}/cart/{image}',
                                '--routes', path])
     return path
 
 
 def build(key, title, image, blockglob):
-    d = carve.Design(f'{TOP}/fpga/{key}/design.v')
+    d = carve.Design(f'{FPGA}/{key}/design.v')
     bel_block, block_desc, shared, name_of = {}, {}, set(), {}
-    for path in sorted(glob.glob(f'{TOP}/{blockglob}')):
+    for path in sorted(glob.glob(os.path.join(FPGA, blockglob))):
         if path.endswith('.sim.blk'):
             continue
         name, desc, cells, names = carve.read_block(path, d)
@@ -92,11 +95,11 @@ def build(key, title, image, blockglob):
         sys.exit(f'{key}: no subsystem for {unknown}')
 
     netlist = {}
-    for line in open(f'{TOP}/fpga/{key}/netlist.jsonl'):
+    for line in open(f'{FPGA}/{key}/netlist.jsonl'):
         r = json.loads(line)
         netlist[(r['tile'], r['bel'])] = r
     pads = {}
-    for line in open(f'{TOP}/fpga/{key}/pins.txt'):
+    for line in open(f'{FPGA}/{key}/pins.txt'):
         m = re.match(r'(\S+)\s+(D0X\d+Y\d+)\.IOI\[(\d)\]\.PAD', line)
         if m:
             pads[(m[2], int(m[3]))] = m[1]
@@ -126,7 +129,7 @@ def build(key, title, image, blockglob):
         return site_at[k]
 
     # every live bel gets a site, so the map shows them with no route attached
-    for cell in d.live_cells:
+    for cell in sorted(d.live_cells):
         m = re.match(r'X(\d+)Y(\d+)_S(\d)\.(\w+)$', cell)
         if m and m[4] in BEL_INDEX:
             site(int(m[1]), int(m[2]), int(m[3]), BEL_INDEX[m[4]], cell)
@@ -232,7 +235,7 @@ def build(key, title, image, blockglob):
                 talk[s][a['block']] += 1
             if b['block'] and a['b'] >= 10:
                 talk[n['site']][b['block']] += 1
-    bram_init = {os.path.basename(p)[2:].split('.')[0] for p in glob.glob(f'{TOP}/fpga/{key}/D0X*.DATA.mem')}
+    bram_init = {os.path.basename(p)[2:].split('.')[0] for p in glob.glob(f'{FPGA}/{key}/D0X*.DATA.mem')}
     for i, s in enumerate(sites):
         if s['b'] == PRIM['BRAM']:
             c = talk.get(i)
@@ -304,10 +307,13 @@ def build(key, title, image, blockglob):
 
 
 def main():
+    global FPGA
     ap = argparse.ArgumentParser()
+    ap.add_argument('--fpga', default=FPGA, help='directory holding the exports, default fpga/')
     ap.add_argument('-o', '--out', default=f'{TOP}/fpga/floorplan/floorplan.html')
     args = ap.parse_args()
-    clb = sorted({tile_xy(json.loads(l)['tile']) for l in open(f'{TOP}/fpga/fw4/netlist.jsonl') if '"bel": "SLICE' in l})
+    FPGA = os.path.abspath(args.fpga)
+    clb = sorted({tile_xy(json.loads(l)['tile']) for l in open(f'{FPGA}/fw4/netlist.jsonl') if '"bel": "SLICE' in l})
     data = {
         'firmwares': [build(*f) for f in FIRMWARES],
         'clb': clb,

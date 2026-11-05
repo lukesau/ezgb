@@ -43,6 +43,8 @@ h1 { font-size: 15px; font-weight: 600; margin: 0; }
 .btn { background: none; border: 1px solid var(--axis); border-radius: 7px; padding: 4px 9px; color: var(--ink2); font: inherit; cursor: pointer; }
 label.check { display: inline-flex; gap: 5px; align-items: center; color: var(--ink2); cursor: pointer; }
 button:focus-visible, canvas:focus-visible, input:focus-visible { outline: 2px solid var(--s1); outline-offset: 1px; }
+.intro { margin: 0; padding: 8px 16px; border-bottom: 1px solid var(--ring); color: var(--ink2); font-size: 13px; line-height: 1.45; }
+.intro a { color: inherit; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 7px 16px; border-bottom: 1px solid var(--ring); color: var(--ink2); font-size: 12px; align-items: center; }
 .legend i, .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; flex: none; }
 main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 372px; }
@@ -100,6 +102,7 @@ ul.links .n { color: var(--muted); font-variant-numeric: tabular-nums; }
   <button class="btn" id="fit">Fit</button>
   <button class="btn" id="theme">Theme</button>
 </header>
+<p class="intro">Where the logic and wiring of the EZ Flash Jr's FPGA sit on the chip, for firmware FW4 and FW5 0918. EZ Flash designed these; this map is decoded from their bitstreams by the <a href="https://github.com/lukesau/ezgb">ezgb</a> reverse-engineering project, which is not affiliated with EZ Flash. Block RAM contents aren't included. Select a block or any cell to explore.</p>
 <div class="legend" id="legend"></div>
 <main>
   <div class="panes" id="panes"></div>
