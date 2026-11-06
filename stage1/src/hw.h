@@ -26,6 +26,7 @@
  * $14 in C on a Super Game Boy) */
 /* the boot ROM's registers as crt0.s pushed them: F A C B E D L H */
 #define BOOT_REGS ((volatile uint8_t *)0xFF80)
+#define SKIP_BOOT (*(volatile uint8_t *)0xFF88) /* game_handoff.s: 1 = jump to the game */
 #define BOOT_A REG(0xFF81)
 #define BOOT_C REG(0xFF82)
 

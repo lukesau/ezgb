@@ -84,13 +84,12 @@ static void mark_sgb(uint8_t sent)
 #ifdef FORCE_DMG
     /* stage1/build.sh: a DMG's registers on any console */
     static const uint8_t dmg_regs[8] = {0xB0, 0x01, 0x13, 0x00, 0xD8, 0x00, 0x4D, 0x01};
-#else
-    const volatile uint8_t *dmg_regs = BOOT_REGS;
-#endif
 
+    memcpy((void *)BOOT_REGS, dmg_regs, 8);
+#endif
     psram_map(PSRAM_META);
     for (i = 0; i < 8; i++)
-        PSRAM[PSRAM_BOOT_REGS + i] = dmg_regs[i];
+        PSRAM[PSRAM_BOOT_REGS + i] = BOOT_REGS[i];
     PSRAM[PSRAM_SGB_SENT] = 'S';
     PSRAM[PSRAM_SGB_SENT + 1] = sent ? 'B' : 'N';
     psram_unmap();

@@ -1,6 +1,5 @@
 ; The hand-off, copied to WRAM and run from there: once the FPGA starts the
-; load, cart space ($0000-$7FFF) becomes the kernel. Position independent
-; (relative jumps only). Same register sequence as stock stage1's
+; load, cart space ($0000-$7FFF) becomes the kernel. Runs at $D000. Same register sequence as stock stage1's
 ; HandoffPoll, then the screen is left blank for the kernel (it switches
 ; the LCD on before it draws), and the kernel is entered with A = $E4 like
 ; stock leaves it.
@@ -9,22 +8,15 @@
         .globl  _handoff_start, _handoff_end
 
         .macro  UNLOCK
-        ld      hl, #0x7F00
-        ld      (hl), #0xE1
-        ld      hl, #0x7F10
-        ld      (hl), #0xE2
-        ld      hl, #0x7F20
-        ld      (hl), #0xE3
+        call    0xD000 + handoff_unlock - _handoff_start
         .endm
         .macro  LOCK
-        ld      hl, #0x7FF0
-        ld      (hl), #0xE4
+        call    0xD000 + handoff_lock - _handoff_start
         .endm
         .macro  FPGA reg, value
-        UNLOCK
-        ld      hl, #reg
-        ld      (hl), #value
-        LOCK
+        ld      de, #reg
+        ld      a, #value
+        call    0xD000 + handoff_fpga - _handoff_start
         .endm
 
         .area   _CODE
@@ -96,4 +88,24 @@ _handoff_start:
         ldh     (0x4F), a
         ld      a, #0xE4
         jp      0x0100
+
+; The copy always runs at $D000, so these calls are absolute.
+handoff_unlock:
+        ld      hl, #0x7F00
+        ld      (hl), #0xE1
+        ld      hl, #0x7F10
+        ld      (hl), #0xE2
+        ld      hl, #0x7F20
+        ld      (hl), #0xE3
+        ret
+; $(DE) = A inside unlock/lock
+handoff_fpga:
+        call    0xD000 + handoff_unlock - _handoff_start
+        ld      h, d
+        ld      l, e
+        ld      (hl), a
+handoff_lock:
+        ld      hl, #0x7FF0
+        ld      (hl), #0xE4
+        ret
 _handoff_end:

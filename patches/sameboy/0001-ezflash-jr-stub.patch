@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..abd5478
+index 0000000..47173ba
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1141 @@
+@@ -0,0 +1,1142 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -631,8 +631,9 @@ index 0000000..abd5478
 +        return;
 +    }
 +
-+    /* The kernel's launch writes $7F31/$7F32=$00 after the load: game mode. */
-+    if (!ez->stage1 && ez->last_cmd_addr == 0x7F32 && !(ez->last_cmd_value & 0x80) &&
++    /* A launch, the kernel's or stage1's fast launch, writes $7F31/$7F32=$00
++     * after the load: game mode. */
++    if (ez->last_cmd_addr == 0x7F32 && !(ez->last_cmd_value & 0x80) &&
 +        ez->pending_rom && ez->pending_rom_size) {
 +        ez->pending_boot = true;
 +        ez->boot_no_reset = true;

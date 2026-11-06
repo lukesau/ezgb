@@ -15,6 +15,7 @@
 #include "fat.h"
 #include "game.h"
 #include "rtc.h"
+#include "cfg.h"
 
 #define SRAM PSRAM
 #define STAMP_PAGE PSRAM_META
@@ -224,6 +225,11 @@ void game_launch(const char *path, uint8_t *buf)
     banks = (uint16_t)(file_size >> 14);
 
     fat_read_first(buf);
+    /* The console is in the mode the game needs (docs/skip-boot-rom.md):
+     * our header puts a color console in CGB mode, and a DMG has one mode.
+     * An SGB (C = $14) takes its features from the game's header. */
+    SKIP_BOOT = !cfg_boot_reset &&
+                (BOOT_A == 0x11 ? (buf[0x143] & 0x8C) == 0x80 : BOOT_C != 0x14);
     type = buf[0x147];
     code_rom = buf[0x148];
     code_ram = buf[0x149];

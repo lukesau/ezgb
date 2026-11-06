@@ -10,4 +10,7 @@
  * (no key, disabled with '#', or empty = the kernel's lone-ROM rule). */
 uint8_t cfg_flaunch(const uint8_t *text, uint16_t n, char *path);
 
+/* Set by cfg_flaunch: 1 for BOOTROM=1, every launch resets */
+extern uint8_t cfg_boot_reset;
+
 #endif

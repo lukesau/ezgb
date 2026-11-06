@@ -252,6 +252,39 @@ Crystal run on, on a DMG, shows its "only for Game Boy Color" screen. The
 unticked on a DMG, unticked with `SGB BOOT` ticked and in compatibility mode
 (`$0143 = $00`), where A does nothing. Unticking wrote `BOOTROM=1` on PREV. Not run on a real DMG-family console.
 
+## Stage1 fast launch
+
+A boot with `FLAUNCH=` never reaches the kernel, so stage1 makes the same choice
+itself (`game_launch`, [game.c](../stage1/src/game.c)) and the jump is the end of
+[game_handoff.s](../stage1/src/game_handoff.s). The rules are the kernel's, from the
+registers stage1 saved: `A = $11` jumps for a game with the CGB flag and no PGB
+bits, any other `A` jumps unless `C = $14` (an SGB), and `BOOTROM=1` always resets.
+Stage1 needs no mode test, since its header puts a color console in CGB mode.
+
+It puts back less than `SkipBoot`: only what stage1 changed. The LCD is already
+off, and it clears both VRAM banks, sets the palettes white, turns sound on and
+pops the registers. OAM and the timers are as the boot ROM left them.
+
+To pay for it, `cfg.c` went to pointers (from 635 to 528 B, with `BOOTROM` added)
+and both hand-offs share a subroutine for the unlock sequence. A hand-off now only
+runs at `$D000`. Stage1 is 18,432 of 18,432 B, full.
+
+Checked in SameBoy with a ROM that prints what it finds at `$0100` (the stub used to
+swap in the game on `$7F32 = 0` only outside stage1, and now does it in both):
+
+| Console, stage1 | Game | Result |
+|---|---|---|
+| GBC | color flag | jumps, `AF:1180 BC:0000 DE:FF56 HL:000D` |
+| GBA | color flag | jumps, `AF:1100 BC:0100` |
+| GBC | no flag | resets, compatibility mode |
+| GBC, `BOOTROM=1` | color flag | resets |
+| DMG | either | jumps, `AF:01B0 BC:0013 DE:00D8 HL:014D` |
+| SGB | no flag | resets, `BC:0014` |
+| GBC, forced DMG | no flag | jumps with DMG values |
+
+Crystal (timer, battery) and Red (battery) ran through it. A boot with no target
+still reaches the kernel through the changed `handoff.s`. Not run on hardware.
+
 ## Hardware (mod 7.2, 2026-11-03)
 
 - **FW5 and FW4 carts:** Pokemon Crystal works. These runs had no timing
