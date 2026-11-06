@@ -60,18 +60,28 @@ static uint32_t cluster_sector(uint32_t c)
     return data_base + ((c - 2) << csize_shift);
 }
 
-/* Next cluster in the chain; any end-of-chain becomes END_OF_CHAIN or more. */
-static uint32_t next_cluster(uint32_t c)
+/* Where cluster c's FAT entry is, in the cached sector */
+static uint8_t *fat_entry(uint32_t c)
 {
     uint16_t i = (uint16_t)c;
-    uint32_t n;
 
     if (is_fat32) {
         read_sector(fat_base + (c >> 7));
-        return ld32(buf + (i & 0x7F) * 4) & 0x0FFFFFFF;
+        return buf + (i & 0x7F) * 4;
     }
     read_sector(fat_base + (c >> 8));
-    n = ld16(buf + (i & 0xFF) * 2);
+    return buf + (i & 0xFF) * 2;
+}
+
+/* Next cluster in the chain; any end-of-chain becomes END_OF_CHAIN or more. */
+static uint32_t next_cluster(uint32_t c)
+{
+    const uint8_t *p = fat_entry(c);
+    uint16_t n;
+
+    if (is_fat32)
+        return ld32(p) & 0x0FFFFFFF;
+    n = ld16(p);
     return n >= 0xFFF8 ? END_OF_CHAIN : n;
 }
 
@@ -489,152 +499,123 @@ void fat_select(const uint8_t *list, uint8_t i)
     file_size = ld32(list + 8);
 }
 
+/* FAT16 takes the low half, so 0x0FFFFFFF ends a chain in either */
 static void fat_set(uint32_t c, uint32_t v)
 {
-    uint16_t i = (uint16_t)c;
+    uint8_t *p = fat_entry(c);
 
+    st16(p, (uint16_t)v);
     if (is_fat32) {
-        read_sector(fat_base + (c >> 7));
-        i = (i & 0x7F) * 4;
-        st32(buf + i, (ld32(buf + i) & 0xF0000000) | v);
-    } else {
-        read_sector(fat_base + (c >> 8));
-        st16(buf + (i & 0xFF) * 2, (uint16_t)v);
+        p[2] = (uint8_t)(v >> 16);
+        p[3] = (p[3] & 0xF0) | (uint8_t)(v >> 24);
     }
     dirty = 2;
 }
 
-/* The short name FatFs would give a long one: up to 6 legal characters of
- * the name, ~1 (the digit at sfn[*tail]), up to 3 of the extension */
-static void make_sfn(uint8_t *sfn, const char *s, uint8_t len, uint8_t *tail)
+/* A short name's character: the name is only ever matched by its long one */
+static uint8_t sfn_char(uint8_t c)
 {
-    uint8_t i, n = 0, dot = len, c;
-
-    memset(sfn, ' ', 11);
-    for (i = 0; i < len; i++)
-        if (s[i] == '.')
-            dot = i;
-    for (i = 0; i < len; i++) {
-        c = upper(s[i]);
-        if (c == ' ' || (c == '.' && i != dot))
-            continue;
-        if (i == dot) {
-            n = 8;
-            continue;
-        }
-        if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || strchr("$%'-_@~`!(){}^#&", c)))
-            c = '_';
-        if (i < dot ? n < 6 : n < 11)
-            sfn[n++] = c;
-        if (i < dot)
-            *tail = n;
-    }
-    if (dot == len)
-        *tail = n;
-    if (!*tail)
-        sfn[(*tail)++] = '_';
-    sfn[*tail] = '~';
-    sfn[++*tail] = '1';
+    c = upper(c);
+    return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ? c : '_';
 }
 
-/* Create "/dir/Long Name.sav" in an existing directory: a long name and a
- * unique short one, size bytes of clusters chained in every FAT, and the
- * file opened so fat_write fills it (its clusters hold whatever they held).
- * when: FAT date << 16 | time. Fails, changing nothing, when the name is
- * taken, isn't plain ASCII, or the directory or the card is full; the
- * directory isn't grown. */
+/* Create "/dir/Long Name.sav" in an existing directory: a long name, a short
+ * one unique by its ~digit (up to 6 characters of the name, ~digit, up to 3 of
+ * the extension), size bytes of clusters chained in every FAT, and the file
+ * opened so fat_write fills it (its clusters hold whatever they held).
+ * when: FAT date << 16 | time. Fails, changing nothing, when the name is taken
+ * or has no extension or isn't plain ASCII, or the directory or the card is
+ * full; the directory isn't grown. The caller leaves any failure to the
+ * kernel. */
 uint8_t fat_create(const char *path, uint32_t size, uint32_t when)
 {
-    const char *base = strrchr(path, '/') + 1;
-    uint8_t blen = strlen(base), need, tail = 0, k, end = 0, sfn[11], sum, *e;
-    uint16_t idx = 0, run = 0, start = 0xFFFF, used = 0, pos, ch;
-    uint32_t dir = 0, n, c, prev, got;
+    const char *base = strrchr(path, '/') + 1, *dot = strrchr(base, '.');
+    uint8_t blen = strlen(base), need = (blen + 12) / 13 + 1, tail, k, i, run = 0, end = 0;
+    uint8_t digit = '1', sfn[11], sum, *e, *q;
+    uint16_t idx, pos, n, got;
+    uint32_t dir, c, prev = 0;
 
-    for (k = 0; k < blen; k++)
-        if (base[k] < 0x20 || base[k] >= 0x7F || strchr("\"*:<>?|", base[k]))
-            return FAT_NOT_FOUND;
-    if (!blen || blen > 250)
+    if (!dot || !size || size >> 24 || blen > 250)     /* 16 MB: n fits */
         return FAT_NOT_FOUND;
-    if (base - path > 1) {
-        k = lookup(path, base - 1 - path);
-        if (k == 0xFF || !(k & 0x10))
+    for (k = 0; k < blen; k++)
+        if (base[k] < 0x20 || base[k] >= 0x7F)
             return FAT_NOT_FOUND;
-        dir = file_cluster;
-    }
-    make_sfn(sfn, base, blen, &tail);
-    need = (blen + 12) / 13 + 1;
+    k = lookup(path, base - 1 - path);
+    if ((k & 0x18) != 0x10)             /* not a directory, or $FF: not there */
+        return FAT_NOT_FOUND;
+    dir = file_cluster;
 
-    /* one pass: the name isn't there, which ~digits are taken, and the
-     * first run of need free entries */
+    memset(sfn, ' ', 11);
+    for (k = 0; k < 6 && base + k < dot; k++)
+        sfn[k] = sfn_char(base[k]);
+    sfn[k] = '~';
+    tail = k + 1;
+    for (k = 0; k < 3 && dot[k + 1]; k++)
+        sfn[8 + k] = sfn_char(dot[k + 1]);
+
+    /* the name isn't there; one past the highest ~digit taken */
     dir_start(dir);
-    lfn_valid = 0;
-    while ((e = (uint8_t *)dir_next())) {
-        if (end || !e[0] || e[0] == 0xE5) {
-            if (!e[0])
-                end = 1;            /* nothing in use from here on */
-            if (++run >= need && start == 0xFFFF)
-                start = idx + 1 - need;
-            if (end && start != 0xFFFF)
+    while ((e = (uint8_t *)dir_entry())) {
+        if (name_is(base, blen))
+            return FAT_NOT_FOUND;
+        sfn[tail] = e[tail];
+        if (!memcmp(e, sfn, 11) && e[tail] >= digit && e[tail] <= '9')
+            digit = e[tail] + 1;
+    }
+    if (digit > '9')
+        return FAT_NOT_FOUND;
+    sfn[tail] = digit;
+
+    /* the first run of need free entries */
+    dir_start(dir);
+    for (idx = 0;; idx++) {
+        e = (uint8_t *)dir_next();
+        if (!e)
+            return FAT_NOT_FOUND;
+        if (!e[0])
+            end = 1;                    /* nothing in use from here on */
+        if (end || e[0] == 0xE5) {
+            if (++run == need)
                 break;
-            lfn_valid = 0;
         } else {
             run = 0;
-            if ((e[11] & 0x3F) == 0x0F) {
-                lfn_piece(e);
-            } else {
-                if (!memcmp(e, sfn, tail) && e[tail] >= '1' && e[tail] <= '9' &&
-                    !memcmp(e + tail + 1, sfn + tail + 1, 10 - tail))
-                    used |= 1 << (e[tail] - '1');
-                if (!(e[11] & 0x08)) {
-                    entry_name(e);
-                    if (name_is(base, blen))
-                        return FAT_NOT_FOUND;
-                }
-                lfn_valid = 0;
+        }
+    }
+    idx += 1 - need;
+
+    /* clusters: count, so a full card changes nothing, then chain */
+    n = (uint16_t)((size - 1) >> (9 + csize_shift)) + 1;
+    for (k = 0; k < 2; k++)
+        for (got = 0, c = 2; got < n; c++) {
+            if (c > max_cluster)
+                return FAT_NOT_FOUND;
+            if (next_cluster(c))
+                continue;
+            got++;
+            if (k) {
+                if (prev)
+                    fat_set(prev, c);
+                else
+                    file_cluster = c;
+                prev = c;
             }
         }
-        idx++;
-    }
-    for (k = 0; k < 9 && used >> k & 1; k++)
-        ;
-    if (k == 9 || start == 0xFFFF)
-        return FAT_NOT_FOUND;
-    sfn[tail] = '1' + k;
-
-    /* clusters: count first, so a full card changes nothing */
-    n = (size + (512UL << csize_shift) - 1) >> (9 + csize_shift);
-    for (got = 0, c = 2; c <= max_cluster && got < n; c++)
-        if (!next_cluster(c))
-            got++;
-    if (!n || got < n)
-        return FAT_NOT_FOUND;
-    file_cluster = prev = 0;
-    for (got = 0, c = 2; got < n; c++) {
-        if (next_cluster(c))
-            continue;
-        if (prev)
-            fat_set(prev, c);
-        else
-            file_cluster = c;
-        prev = c;
-        got++;
-    }
-    fat_set(prev, is_fat32 ? 0x0FFFFFFF : 0xFFFF);
-    flush();
+    fat_set(prev, 0x0FFFFFFF);
     if (fsinfo) {
         read_sector(fsinfo);
         c = ld32(buf + 0x1E8);
-        if (ld32(buf) == 0x41615252 && c != 0xFFFFFFFF) {
+        if (buf[0] == 'R' && buf[3] == 'A' && c != 0xFFFFFFFF) {
             st32(buf + 0x1E8, c < n ? 0xFFFFFFFF : c - n);    /* free count */
             dirty = 1;
-            flush();
         }
     }
 
-    /* the entries: long name pieces last first, then the short entry */
+    /* the entries: long name pieces last first, then the short entry; the
+     * name's terminator is the 0 after it, read_sector writes each sector as
+     * dir_next leaves it */
     sum = short_sum(sfn);
     dir_start(dir);
-    for (idx = 0; idx < start; idx++)
+    for (; idx; idx--)
         dir_next();
     for (k = need - 1;; k--) {
         e = (uint8_t *)dir_next();
@@ -645,12 +626,15 @@ uint8_t fat_create(const char *path, uint32_t size, uint32_t when)
         e[0] = k | (k == need - 1 ? 0x40 : 0);
         e[11] = 0x0F;
         e[13] = sum;
-        for (idx = 0; idx < 13; idx++) {
-            pos = (k - 1) * 13 + idx;
-            ch = pos < blen ? (uint8_t)base[pos] : pos == blen ? 0 : 0xFFFF;
-            st16(e + lfn_offsets[idx], ch);
+        pos = (k - 1) * 13;
+        for (i = 0; i < 13; i++, pos++) {
+            q = e + lfn_offsets[i];
+            if (pos > blen)
+                q[0] = q[1] = 0xFF;
+            else
+                q[0] = base[pos];
         }
-    }                               /* read_sector writes each sector as dir_next leaves it */
+    }
     memcpy(e, sfn, 11);
     e[11] = 0x20;
     st32(e + 14, when);

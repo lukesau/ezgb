@@ -207,8 +207,8 @@ Departures from the design above:
 | with the tiles packed (shipped) | 18,400 |
 
 32 bytes were free then, the boot registers (2026-11-04) left 2, and the fast launch
-jump (2026-11-05) left 0 after trimming `cfg.c`. The next stage1 feature needs its
-own trim first; `fat_create` (about 2 KB) is where to look.
+jump (2026-11-05) left 0 after trimming `cfg.c`. Rewriting `fat_create` the same day
+brought stage1 to 17,504 B, 928 free.
 
 Checked in SameBoy (`--model dmg`, the Jr stub, test cards from `mformat`,
 64 MB: a 16 MB FAT32 card from `mformat -F` has too few clusters to be FAT32

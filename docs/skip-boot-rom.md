@@ -267,7 +267,8 @@ pops the registers. OAM and the timers are as the boot ROM left them.
 
 To pay for it, `cfg.c` went to pointers (from 635 to 528 B, with `BOOTROM` added)
 and both hand-offs share a subroutine for the unlock sequence. A hand-off now only
-runs at `$D000`. Stage1 is 18,432 of 18,432 B, full.
+runs at `$D000`. That left stage1 at 18,432 of 18,432 B, full, until the `fat_create`
+rewrite brought it to 17,504 B.
 
 Checked in SameBoy with a ROM that prints what it finds at `$0100` (the stub used to
 swap in the game on `$7F32 = 0` only outside stage1, and now does it in both):
