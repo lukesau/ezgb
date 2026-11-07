@@ -30,6 +30,11 @@ is the battery-backed 64-page / 512 KB store mapped in
 [psram-page-map.md](psram-page-map.md). The NOR die has no GB-visible use
 (see [hardware-board.md](hardware-board.md)).
 
+With the edge connector at the bottom, U4 is in the top row of the front of the
+board, between U9 on its left and the coin cell on its right, and above the
+FPGA. U9 looks similar but holds the game ROM store, so check the `U4`
+silkscreen above the chip before heating anything.
+
 Boards seen so far, oldest first:
 
 | U4 marking | Family | RAM die | Source |
@@ -106,16 +111,39 @@ model `F`, packing `0`. Two letters matter for soldering:
 
 The BGA top marking drops the leading `S` and the packing digit.
 
-## Sourcing (checked September 2026)
+## Sourcing (checked November 2026)
 
 All of these parts are long discontinued; the only supply is surplus brokers.
+Prices and stock below are a snapshot from 2026-11-05.
 
-- eBay, seller `chipsgate` (about 49k feedback): `S71GL032A08BAW0F0` at about
-  $20 each.
-- eBay, several sellers: `S71PL032J04BFW0B0` in lots of 5 for about $22-30.
-- eBay, US seller `specspecialty`: single `S71PL032J04BAW0B0` for about $7.
-- Depu, UTsource and similar brokers list the family but their search pages
-  were not fetchable at the time of writing.
+| Part | Seller (eBay) | Price + shipping | Ships from | Notes |
+|---|---|---|---|---|
+| [`S71PL032J04BAW0B0`](https://www.ebay.com/itm/227324771133) | `specspecialty` (99.9%, 19.6k) | $6.95 + $9.50 each | US | 25 available. Listing photo shows chips marked `71PL032J04BAWOB` and `CHINA ES`; see below. |
+| [`S71PL032J04BFW0B0`, 5 pcs](https://www.ebay.com/itm/166836409670) | `image006-04` (98.2%, 234) | $22.35 + $8.14 | China | Listing photo shows `71PL032J04BFW0B` with no `ES`. Confirm the price covers all five. |
+| [`S71GL032A08BAW0F0`](https://www.ebay.com/itm/377075244300) | `chipsgate` (99.7%, 50.3k) | $20.00 + $4.99 each | China | More than 10 available, listed as open box. Main photo is a warehouse shot, not the chip. |
+| [`S71GL032A08BAW0F0`](https://www.ebay.com/itm/307139505954) | `eleczone_18` (100%, 110) | $20.00 + $8.29 each | China | Listing page not reviewed. |
+
+Other `S71PL032J04BFW0B0` 5-packs from China ran about $28-42 before shipping.
+eBay had no exact matches for `S71PL032J08`, `S71GL064A08` or `S71PL064J08`.
+
+The `ES` on the `specspecialty` photo may mean engineering samples. This is
+unconfirmed, so ask the seller before buying.
+
+The same eBay searches return lookalikes such as `S71PL032J40`, `S71PL064J80`,
+`S71GL032N80` and `S71PL032JA0`. None of them is on the drop-in list above, so
+check the RAM field before buying.
+
+[Findchips](https://www.findchips.com/search/S71PL032J08) lists these
+request-for-quote broker stocks, which are unverified and may suit a larger
+order:
+
+- Chip 1 Exchange: `S71PL032J04BAW0B3`, 133 in stock.
+- Sense Electronic: `S71PL032J08BFW0B0`, 1720 in stock.
+- ComSIT: `S71PL032J08BFW0B2`, 500 in stock in Germany.
+
+Findchips had no results for `S71GL032A08`. Worldway Electronics also lists the
+family, but its pages were behind a human-verification check, and UTsource
+would not load, so neither was reviewed.
 
 Buy from a seller with a large feedback count. "New" BGA listings from surplus
 brokers are sometimes reballed pulls; inspect the balls under magnification
@@ -129,13 +157,22 @@ are the joint.
 1. Remove the cell. Note that everything in the pSRAM (saves, settings,
    last-ROM path, RTC) is lost; back up saves to the SD card first.
 2. Preheat the board, then hot-air the old U4 off (around 380 C air, generous
-   flux). The 74HC595 and RTC sit near it; shield them if the nozzle is wide.
+   flux). U9 is right next to it on the left, and C16 and C11 are just below
+   it, so shield them with Kapton tape or foil. D2 and R6 are also close, on the
+   right and lower right.
 3. Wick the pads flat and clean with IPA. Leaving the old solder bumps under
    the new balls sometimes works but hurts alignment and coplanarity.
 4. Apply tacky flux, align the new chip to the silkscreen outline with the A1
-   corner matched, and reflow. Pb-free (`BF`) balls need the hotter profile.
+   corner matched, and reflow. The silkscreen circle at U4's top-left corner
+   should mark A1; confirm it against the dot on the old chip before removing
+   it. Pb-free (`BF`) balls need the hotter profile.
 5. Refit the cell, boot: the kernel will rebuild its settings and offer
    BACKUPSAVE-style recovery as on a fresh cart.
+
+> **Correction (2026-11-06).** Step 2 used to say the 74HC595 and RTC sit near
+> U4 and may need shielding. The board photo shows both on the far side of the
+> coin cell from U4, and the parts at risk are U9, C16 and C11. Anyone who
+> followed the old step should shield those instead.
 
 A stencil and loose 0.4 mm solder balls are only needed if a chip arrives with
 missing or damaged balls and has to be reballed (generic 0.8 mm-pitch stencils

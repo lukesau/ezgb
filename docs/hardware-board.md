@@ -4,6 +4,14 @@ Silkscreen `EZGB` on the front, `EZFLASH` logo and a `JTAG` header on the back.
 Part numbers transcribed from a physical cart under magnification, so treat the
 exact strings as approximate; the families are confident.
 
+**Orientation.** Directions on the front of the board follow this convention:
+the Game Boy edge connector is the **bottom**, and the coin cell, U4 and U9 are
+the **top**. Viewed that way (as in `tools/IMG_8744.jpeg`), the top row runs U9,
+U4, coin cell from left to right, with the `EZGB` silkscreen above U9 and U4. The
+FPGA is below U9 and U4, and the SD slot is on the right, above the connector.
+The left/right wording in the JTAG sections below was written before this
+convention and has not been rechecked against it.
+
 ## Chips
 
 | Ref | Marking | Identification | Confidence | Role |
