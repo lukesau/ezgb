@@ -12536,9 +12536,9 @@ NavUpStub::
     rst RST_38
 
 DvParams::
-    db $7e, $ea, $23, $d7, $fa, $f7, $db, $fe
-    db $07, $c0, $21, $35, $d7, $7e, $fe, $03
-    db $c0, $36, $01, $2b, $7e, $fe, $03, $c0
-    db $36, $01, $c9
+    db $7e, $ea, $23, $d7, $21, $35, $d7, $7e
+    db $fe, $03, $c0, $fa, $0b, $dc, $b7, $c8
+    db $77, $2b, $7e, $fe, $03, $c0, $fa, $0b
+    db $dc, $77, $c9
 
     rst RST_38

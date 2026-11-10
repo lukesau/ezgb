@@ -4428,7 +4428,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:1426:8
+02:4a00 .data:1674:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4578,7 +4578,7 @@
 00:0410 FarCallMarquee
 00:0410 .data:8:8
 02:4990 ThemeCustom
-02:4990 .data:3e:8
+02:4990 .data:56:8
 05:7b50 ThemeColors
 05:7b50 .data:14f:8
 04:6be6 SkipBootPrep
@@ -4600,9 +4600,9 @@
 0a:5580 Font12Metrics
 0a:5580 .data:5aa:8
 0a:4a00 Fit12Impl
-0a:4a00 .data:166:8
+0a:4a00 .data:170:8
 0a:4000 DrawString12Impl
-0a:4000 .data:9c4:8
+0a:4000 .data:98d:8
 02:7500 DrawString12
 02:7500 .data:36:8
 02:7100 Fit12
@@ -4620,11 +4620,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:63d:8
+04:6d19 .data:667:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:593:8
+04:6610 .data:5a3:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
@@ -4644,7 +4644,7 @@
 02:78b0 FarCallPlayLoad
 02:78b0 .data:8:8
 0c:4000 BrowserNav
-0c:4000 .data:994:8
+0c:4000 .data:9fd:8
 00:3d8c NavDownStub
 00:3d8c .data:8:8
 00:3fa0 NavUpStub
