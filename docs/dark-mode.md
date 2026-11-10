@@ -26,10 +26,10 @@ until the button is pressed, so a card moved to a color console keeps it.
 |---|---|---|---|---|---|
 | 0 | `LIGHT` | `$7FFF` white | `$56B5` | `$294A` | `$0000` black |
 | 1 | `DARK` | `$0000` black | `$18C6` | `$4631` | `$7FFF` white |
-| 2 | `RED` | `$0428` (66,8,8) | `$1CED` | accent `$7FE3` cyan | `$7FFF` |
-| 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | accent `$70FF` magenta | `$7FFF` |
-| 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | accent `$17EF` lime | `$7FFF` |
-| 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | accent `$16FF` amber | `$7FFF` |
+| 2 | `RED` | `$0428` (66,8,8) | `$1CED` | accent `$7E88` sky | `$7FFF` |
+| 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | accent `$625F` rose | `$7FFF` |
+| 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | accent `$1F5D` gold | `$7FFF` |
+| 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | accent `$369F` apricot | `$7FFF` |
 | 6 | `CUSTOM` | `COLORS=` | 3/16 toward ink | accent: `COLORS=`'s third, or the complement | `COLORS=` |
 | 7 | `DV` | `$0000` black | accent `$1BEF` lime | `$6180` blue (icons) | `$7FFF` white |
 
@@ -73,14 +73,24 @@ Light and dark have none and look as before.
   theme is applied. White text on the background is untouched, and popups
   keep shade 1 as their background, so a popup is the lighter shade with
   accent rules.
-- **The color.** For red, green, purple and blue it is the background's
-  complement at full brightness: each channel becomes max + min - c (the
-  opposite hue at the same lightness), then all three are scaled so the
-  brightest is 255. Dark red gives cyan, green magenta, purple lime, blue
-  amber, each as bright as DV's lime, so black text reads on it. The four are
-  baked into [theme_ramps.c](../kernel/src/theme_ramps.c)'s shade 2.
+- **The color.** For red, green, purple and blue it was picked by hand
+  (2026-11-10): from the background's complement and its two split
+  complements (worked out in OKLCH), one per hue family, then made more
+  saturated until it kept its color through a GBC screen's washout (pastels
+  near white turned white under SameBoy's color correction). The background,
+  the bar's text color, reads on each at 5:1 or better: red takes sky
+  `#42A5FF`, green rose `#FF94C5`, purple gold `#EFD63A` (royal purple and
+  gold), blue apricot `#FFA56B` (navy and orange). They are baked into
+  [theme_ramps.c](../kernel/src/theme_ramps.c)'s shade 2. Until then each was
+  the plain complement at full brightness (cyan, magenta, lime, amber).
 - **Custom** works it out the same way from `COLORS=`'s background, or takes
   a third color from the line (see [Custom](#custom)).
+- **DV** keeps black, white and its blue icons, and its lime is the
+  highlight a third `COLORS=` color sets, when there is one: `THEME=7` with
+  `COLORS=000000,FFFFFF,FF5FA0` is DV in pink. ezcfg builds that ramp
+  (`DV_RAMP`, WRAM `$DC11`) and `theme_ramp` returns it for DV. The line's
+  first two colors are custom's and change nothing in DV. Only on a color
+  console in CGB mode, like every color.
 - **The browser bar** moves by recoloring the two rows in VRAM, which an
   inversion (index 0 <-> 3) can't do for an accent, so with any accent
   `move_bar` takes the routines DV used, now for both fonts and either
@@ -107,6 +117,8 @@ THEME=6
 COLORS=1E2A44,F2D7A0
 COLORS=000000,FFFFFF,7BFF31      (a third color: the accent)
 ```
+
+The third color is also DV's highlight in place of its lime ([Accents](#accents)).
 
 With `UI=SLIM` that last line is close to DV on any console: black, lime
 and white with the Tamzen font, though the icons are the stock ones in white
