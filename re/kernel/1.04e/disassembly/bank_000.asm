@@ -469,7 +469,7 @@ InvalidFarCallTrap::
     rst RST_38
 
 TabNum12::
-    db $f0, $fb, $b7, $ca, $b7, $08, $cd, $8d
+    db $f0, $fb, $b7, $00, $00, $00, $cd, $8d
     db $07, $06, $40, $0c, $00, $c9
 
     rst RST_38
