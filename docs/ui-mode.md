@@ -10,8 +10,9 @@ visible until the user opts in. Since 2026-10-30 the button is the `FONT:`
 row of the SET tab's second page
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)); with the DV theme it
 reads `AUTO` and the mode is 12px ([dark-mode.md](dark-mode.md#dv)). Since
-2026-11-09 it steps `8px`, `12px`, `SLIM`: SLIM is the 12px browser in DV's
-glyph set (Tamzen 6x12, [font12.md](font12.md#glyph-sets)) with any theme,
+2026-11-09 it steps `8px`, `12px`, `SLIM`: SLIM is the 12px browser with DV's
+letters (Tamzen 6x12, [font12.md](font12.md#glyph-sets)) and the stock icons
+and star, with any theme,
 `UI=SLIM` in the file and `FONT_SLIM` (WRAM `$DC0C`) set alongside
 `hUiMode` = 1 ([issue #13](https://github.com/lukesau/ezgb/issues/13)). The VRAM-race fix
 ([vram-write-race.md](vram-write-race.md)) and the joypad latch

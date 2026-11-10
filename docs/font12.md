@@ -296,8 +296,11 @@ as it was. A set is a sheet in `kernel/font12/` packed to 2424 bytes of
 bitmaps plus its metrics, 101 glyphs: `$20`-`$7F` (with `$7F` the star) and
 the icons `$C0`-`$C4`. `DrawString12Impl` and `Fit12Impl` use set 1 with
 `THEME_DV` or the FONT button's `SLIM` (`GLYPHS_DV` in vars.h, since
-2026-11-09), set 0 otherwise. A set's metrics sit `$980` past its bitmaps in
-both, so the renderer finds the icon advance from the glyph pointer.
+2026-11-09), set 0 otherwise. SLIM changes only the letters: outside DV the
+star and the icons (glyphs 95 to 100) still come from set 0, bitmaps and
+metrics, and never kern (`STOCK_ICONS`), so DV's icons stay DV's. A set's
+metrics sit `$980` past its bitmaps in both, so the renderer finds the icon
+advance from the glyph pointer.
 
 | Set | Sheet | Text | Icons |
 |---|---|---|---|

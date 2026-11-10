@@ -47,6 +47,9 @@
  * draws: DV's with the DV theme (AUTO) or SLIM. */
 #define FONT_SLIM (*(volatile u8 *)0xDC0C)
 #define GLYPHS_DV ((u8)((u8)(THEME == THEME_DV) | FONT_SLIM))
+/* ...but SLIM keeps the stock icons and star (set 0's) outside DV: the font
+ * changes, not the glyphs */
+#define STOCK_ICONS ((u8)(FONT_SLIM && THEME != THEME_DV))
 /* What the jump to a game hands over (scripts/skipboot/skip_boot.asm), popped
  * as F A C B E D L H: our stage1's record of this console's boot registers,
  * else the DMG or the CGB values by PAL_LOCKED (ezcfg.c stage1_skip_mark).

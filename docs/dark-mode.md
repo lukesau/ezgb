@@ -109,8 +109,8 @@ COLORS=000000,FFFFFF,7BFF31      (a third color: the accent)
 ```
 
 With `UI=SLIM` that last line is close to DV on any console: black, lime
-and white with the Tamzen font, though the icons stay white (DV's blue icons
-are its own).
+and white with the Tamzen font, though the icons are the stock ones in white
+(DV's icons and their blue are its own).
 
 - The value is read as its first 12 hex digits, so `#1E2A44, #F2D7A0` and
   lower case work too. Fewer than 12 and the line is ignored. The kernel

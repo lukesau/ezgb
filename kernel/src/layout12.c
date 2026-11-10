@@ -47,6 +47,7 @@ extern const u8 Font12DvMetrics[]; /* 0A:6680, the DV theme's glyph set */
 #define M_LCOL  202                /* u8[101] left kerning class = matrix column */
 #define M_RROW  303                /* u16[101] byte offset of the right class row, from M */
 #define ICON0   96                 /* glyph index of the first icon ($C0) */
+#define ICON_FIRST 95              /* the star ($7F), then the icons */
 #define ROW_W   160
 #define MAX_GLYPHS 40
 
@@ -58,10 +59,14 @@ u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs)
     /* the glyph set's metrics: DV's with the DV theme or UI=SLIM (draw12.c
      * picks the bitmaps the same way) */
     const u8 *M = GLYPHS_DV ? Font12DvMetrics : Font12Metrics;
+    /* SLIM outside DV: DV's letters with the stock icons (STOCK_ICONS, vars.h),
+     * so an icon's metrics are set 0's and it never kerns */
+    u8 mix = STOCK_ICONS;
+    const u8 *Mg;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
-    x = col >= 2 ? col : col ? M[M_ADV + ICON0] : 0;   /* >= 2: a pixel x */
+    x = col >= 2 ? col : col ? (mix ? Font12Metrics : M)[M_ADV + ICON0] : 0;   /* >= 2: a pixel x */
     lim = hClip12;                    /* a caller's right edge (draw12.c), else the row's */
     if (lim == 0 || lim > ROW_W) {
         lim = ROW_W;
@@ -76,14 +81,16 @@ u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs)
             break;
         }
         g = glyph_index(c);
-        if (prev != 0xFF) {
+        Mg = M;
+        if (mix && g >= ICON_FIRST) Mg = Font12Metrics;
+        if (prev != 0xFF && !(mix && (prev >= ICON_FIRST || g >= ICON_FIRST))) {
             x -= kern(M, prev, g);
         }
-        if (x >= lim || (u8)(x + M[M_W + g]) > lim) {
+        if (x >= lim || (u8)(x + Mg[M_W + g]) > lim) {
             break;
         }
         xs[i] = x;
-        x += M[M_ADV + g];
+        x += Mg[M_ADV + g];
         prev = g;
     }
     return i;

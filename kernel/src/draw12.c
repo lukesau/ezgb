@@ -89,6 +89,7 @@ extern void EiNest(void);          /* 00:0706 */
 #define MAX_GLYPHS 40              /* Fit12 never places more; xs[] size */
 #define M_ADV 0                    /* Font12Metrics: advance table */
 #define ICON0 96                   /* glyph index of the first icon */
+#define ICON_FIRST 95              /* the star ($7F), then the icons */
 
 static void blit_col1(const u8 *src, u16 addr, u8 n, u8 xm) __naked;
 static void fill0(u8 *p, u8 n4) __naked;
@@ -141,7 +142,7 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
      * >= 2: a pixel x (the tab strip's labels, tabstrip12.c). Same rule in
      * Fit12. */
     /* a set's metrics sit the same distance past its glyphs in both */
-    x0 = col >= 2 ? col : col ? font[(Font12Metrics - Font12) + M_ADV + ICON0] : 0;
+    x0 = col >= 2 ? col : col ? (STOCK_ICONS ? Font12Metrics : font + (Font12Metrics - Font12))[M_ADV + ICON0] : 0;
     t0 = (u8)(x0 >> 3);
     /* The row is painted from x0 to its right edge: x 160, or hClip12 when
      * a caller set one (the SET pane's fields, settext.c). Fit12 reads the
@@ -183,7 +184,9 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     cnt = Fit12(0, 0, s, len, col, xs);
     for (i = 0; i < cnt; i++) {
         x = xs[i];
-        g = font + (u16)glyph_index(s[i]) * GLYPH;
+        c = glyph_index(s[i]);
+        /* SLIM outside DV: the stock icons (layout12.c measures them so) */
+        g = (c >= ICON_FIRST && STOCK_ICONS ? Font12 : font) + (u16)c * GLYPH;
         p = buf + (u8)((u8)((x >> 3) - t0) * ROW_H);
         switch (x & 7) {
         case 0:  cell_or0(g, p); break;
