@@ -209,8 +209,8 @@ for o,n in ((2*0x4000+0x3600,0x200),(8*0x4000+0x3b20,0x20),(0x0380,13)):
 open(p,'wb').write(rom)
 PY
 python3 tools/inject.py src/tabstrip12.c "$V" 2 7600 TabStrip12 --pin DrawString12=7500 --pin Fit12=7100 --pin DrawRect=27ba --pin StoreDrawParams=2791 --apply
-python3 tools/inject_bytes.py "$V" 8 7b20 TabStripHook f0fbb72006210000c36c71f8067ef533cd8d070076020033f8067eb7c0c38d7b --apply
-python3 tools/inject_bytes.py "$V" 0 0380 TabNum12 f0fbb7cab708f805367cc3c005 --apply
+python3 tools/inject_bytes.py "$V" 8 7b20 TabStripHook f0fbb72006210300c36c71f8067ef533cd8d070076020033f8067eb7c0c38d7b --apply
+python3 tools/inject_bytes.py "$V" 0 0380 TabNum12 f0fbb7000000cd8d0706400c00c9 --apply
 python3 tools/patch_bytes.py "$V" 8 7169 210000 c3207b --apply >/dev/null
 python3 tools/patch_bytes.py "$V" 1 "$NUM1" cdb708 cd8003 --apply >/dev/null   # NUM1/NUM2: the entry number's
 python3 tools/patch_bytes.py "$V" 1 "$NUM2" cdb708 cd8003 --apply >/dev/null   # `call DrawString` (bank 1, per build)
