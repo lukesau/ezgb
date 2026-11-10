@@ -85,7 +85,7 @@ extern volatile u8 wDrawColorB;     /* $d735 */
 #define RAMP_N ((REPEAT_RATE - REPEAT_FAST) << RAMP_SHIFT)
 
 #define COUNTER_X_MIN 105                   /* right of the tab strip's HELP */
-#define COUNTER_X 16                        /* 8px: column, and four cells */
+#define COUNTER_X 15                        /* 8px: first column of the five right of HELP */
 
 void NavDown(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st);
 void NavUp(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st);
@@ -132,31 +132,52 @@ static u8 put_dec(u8 *p, u16 v) {
     return n;
 }
 
-/* The position, 1-based: "n/total" in 12px, from an x that holds for the
- * whole folder, so the number doesn't move and painting to the row's end
- * leaves nothing of a longer one. When two 3-digit numbers don't fit the
- * field in the proportional font, n alone. */
+/* The position, 1-based: "n/total" from an x that holds for the whole
+ * folder, so the number doesn't move and painting to the row's end leaves
+ * nothing of a longer one. When total/total wouldn't fit right of HELP
+ * (a three-digit total in 8px and in the 12px font; SLIM fits 416/416), n
+ * alone for the whole folder, so the total never comes and goes. */
 static void draw_counter(u16 n) {
     u8 buf[12];
     u8 i, nn, tn, x, w, dv, adv;
 
-    nn = put_dec(buf, n);
     if (!hUiMode) {
-        while (nn < 4) buf[nn++] = ' ';
-        DrawString(buf, 4, COUNTER_X, 0);
+        /* five cells right of " HELP " (columns 15-19), always all painted:
+         * n/total, from a column that holds for the folder, while the total
+         * has two digits, else n alone in the stock column (16) */
+        tn = put_dec(buf + 6, ENTRY_COUNT);
+        x = (u8)(tn < 3 ? 4 - tn - tn : 1);
+        for (i = 0; i < x; i++) buf[i] = ' ';
+        x = (u8)(x + put_dec(buf + x, n));
+        if (tn < 3) {
+            buf[x++] = '/';
+            for (i = 0; i < tn; i++) buf[x++] = buf[6 + i];
+        }
+        while (x < 5) buf[x++] = ' ';
+        {
+            u8 ink = wDrawColorA, paper = wDrawColorB, op = wDrawOp;
+            StoreDrawParams(3, 0, 0);
+            DrawString(buf, 5, COUNTER_X, 0);
+            wDrawColorA = ink;
+            wDrawColorB = paper;
+            wDrawOp = op;
+        }
         return;
     }
+    nn = put_dec(buf, n);
     dv = GLYPHS_DV;
     adv = dv ? 6 : 9;
     buf[nn] = '/';
     tn = put_dec(buf + nn + 1, ENTRY_COUNT);
-    x = 160 - (dv ? 6 : 8);
+    w = 160 - (dv ? 6 : 8);
+    x = w;
     for (i = 0; i < tn; i++) x = (u8)(x - adv - adv);
     if (x < COUNTER_X_MIN) {
-        x = COUNTER_X_MIN;
-        w = dv ? 6 : 8;
-        for (i = 0; i < (u8)(nn + tn); i++) w = (u8)(w + adv);
-        if (w > 160 - COUNTER_X_MIN) tn = 0;
+        /* total/total doesn't fit (three digits in the 9 px font): n alone
+         * for the whole folder, from where a number that long starts */
+        x = w;
+        for (i = 0; i < tn; i++) x = (u8)(x - adv);
+        tn = 0;
     }
     buf[tn ? (u8)(nn + 1 + tn) : nn] = 0;
     /* on the strip's plain background in every theme, whatever the last

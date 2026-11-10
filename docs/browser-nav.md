@@ -14,10 +14,12 @@ through 0731 and `port-mod.py` to all three kernels.
   the bar's row first, so the cursor is at its new place from the start.
 - **A held key** repeats after 18 frames, then every 6 6 5 5 4 4 3 frames, and
   while the list scrolls it moves by 1 1 2 2 3 3 4 rows a step.
-- **In 12px the entry number reads `n/total`**, from an x that holds for the
-  whole folder. The field is right of HELP (x 105 on), and in the proportional
-  font two 3-digit numbers don't fit it, so there it reads `n` alone. 8px has
-  four cells, as stock, so it stays `n`.
+- **The entry number reads `n/total`**, from an x that holds for the whole
+  folder, right of HELP: 12px from x 105 on, 8px in the five cells after
+  ` HELP ` (columns 15-19; stock drew `n` in four from 16). When the total
+  would not fit as `total/total`, which is a three-digit total in 8px and in
+  the 12px font (SLIM's 6 px digits fit `416/416`), it reads `n` alone for
+  the whole folder, so the total never comes and goes as `n` grows.
 
 ## Pieces
 
@@ -28,7 +30,7 @@ targets:
 |---|---|---|
 | `0C:4000` | `NavDown` | `BrowserScrollDownHook` (`00:02e0`) through the stub at `00:3d8c` |
 | `0C:4003` | `NavUp` | `BrowserScrollUpHook` (`00:02f0`) through the stub at `00:3fa0` |
-| `0C:4006` | `TabNumFar` | `TabNum12` (`00:0380`) in 12px; 8px goes on to `DrawString` |
+| `0C:4006` | `TabNumFar` | `TabNum12` (`00:0380`), both modes since 2026-11-10 (8px went on to the stock `DrawString`) |
 | `00:03dc` | `BrowserDelay` | `00:110f`, the browser loop's `Delay(45)`: skipped while UP or DOWN is held, since the pace is now in frames. A skipped pass takes its marquee tick back, so a long name starts scrolling when it did |
 
 This replaced `browser_scroll.c` (`00:3ed0`) and `browser_scroll_repaint.c`
