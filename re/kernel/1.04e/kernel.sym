@@ -4424,7 +4424,7 @@
 00:039d BkSavingStub
 00:039d .data:d:8
 04:6400 SetText
-04:6400 .data:1bd:8
+04:6400 .data:183:8
 04:5f60 SetBtnTopHL
 04:5f60 .data:f:8
 04:5f30 FlSetADispatch
@@ -4493,10 +4493,6 @@
 01:7f00 .data:e:8
 04:7d00 SgbLaunchHook
 04:7d00 .data:152:8
-04:5990 FarCallTheme_B4
-04:5990 .data:8:8
-04:77a0 ThemeRow
-04:77a0 .data:1b2:8
 02:43d0 Theme
 02:43d0 .data:130:8
 02:4960 ThemeRamps
@@ -4557,8 +4553,6 @@
 0a:5d00 .data:978:8
 0a:6680 Font12DvMetrics
 0a:6680 .data:1fa:8
-04:7eeb ThemeNames
-04:7eeb .data:38:8
 0b:4000 SmSaveOpB11
 0b:4000 .data:10:8
 0b:4010 ManageSavesImpl
@@ -4566,11 +4560,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:667:8
+04:6d19 .data:62d:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:5a3:8
+04:6610 .data:5a4:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
@@ -4607,5 +4601,9 @@
 0c:4c00 .data:2a5:8
 00:3d94 AutoBackupStub
 00:3d94 .data:f:8
+04:5990 FarCallThemePage
+04:5990 .data:8:8
+0d:4000 ThemePage
+0d:4000 .data:ac1:8
 00:3db0 FatDate
 00:3db0 .data:10c:8
