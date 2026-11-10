@@ -4601,9 +4601,9 @@
 0a:5580 Font12Metrics
 0a:5580 .data:5aa:8
 0a:4a00 Fit12Impl
-0a:4a00 .data:170:8
+0a:4a00 .data:1cc:8
 0a:4000 DrawString12Impl
-0a:4000 .data:98d:8
+0a:4000 .data:993:8
 02:7500 DrawString12
 02:7500 .data:36:8
 02:7100 Fit12
