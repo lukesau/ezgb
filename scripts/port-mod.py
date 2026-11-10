@@ -163,7 +163,8 @@ REGISTRY = {
                             "StoreDrawParams": 0x2791, "Delay": 0x3a93, "PopupDrawParams": 0x0290}),
     (12, 0x4000): dict(src="browser_nav.c",                 # DOWN and UP after davidesqalv's fork (docs/browser-nav.md)
                       pins={"GfxRowTable": 0x2fbb, "StoreDrawParams": 0x2791, "DrawString": 0x08b7,
-                            "DrawNameWithIcon": 0x3ec8, "FarCallDrawString12": 0x05c0, "wIntNest": 0xd6d0}),
+                            "DrawNameWithIcon": 0x3ec8, "FarCallDrawString12": 0x05c0, "wIntNest": 0xd6d0,
+                            "wDrawOp": 0xd723, "wDrawColorA": 0xd734, "wDrawColorB": 0xd735}),
     (12, 0x4c00): dict(src="auto_backup.c",                 # daily save backup, far target of AutoBackupStub 00:3d94 (docs/save-manager.md)
                       pins={"RtcReadPage": 0x1a9a, "FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "LastRomNameStub": 0x0368,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "FarCallTrampoline": 0x078d}),

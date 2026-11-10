@@ -294,8 +294,10 @@ Code in one switchable bank cannot read data in another, so the engine had to
 move to where the fonts are; the two shims keep every caller, pin and stub
 as it was. A set is a sheet in `kernel/font12/` packed to 2424 bytes of
 bitmaps plus its metrics, 101 glyphs: `$20`-`$7F` (with `$7F` the star) and
-the icons `$C0`-`$C4`. The theme picks the set: `DrawString12Impl` and
-`Fit12Impl` read `THEME` and use set 1 for `THEME_DV`, set 0 otherwise.
+the icons `$C0`-`$C4`. `DrawString12Impl` and `Fit12Impl` use set 1 with
+`THEME_DV` or the FONT button's `SLIM` (`GLYPHS_DV` in vars.h, since
+2026-11-09), set 0 otherwise. A set's metrics sit `$980` past its bitmaps in
+both, so the renderer finds the icon advance from the glyph pointer.
 
 | Set | Sheet | Text | Icons |
 |---|---|---|---|

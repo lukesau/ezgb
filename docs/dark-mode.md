@@ -22,16 +22,20 @@ until the button is pressed, so a card moved to a color console keeps it.
 
 ## The themes
 
-| # | Button | Background | Darker mid | Lighter mid | Ink |
+| # | Button | Background (0) | Popups (1) | Shade 2 | Ink (3) |
 |---|---|---|---|---|---|
 | 0 | `LIGHT` | `$7FFF` white | `$56B5` | `$294A` | `$0000` black |
 | 1 | `DARK` | `$0000` black | `$18C6` | `$4631` | `$7FFF` white |
-| 2 | `RED` | `$0428` (66,8,8) | `$1CED` | `$4A55` | `$7FFF` |
-| 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | `$4EB2` | `$7FFF` |
-| 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | `$5E55` | `$7FFF` |
-| 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | `$5E92` | `$7FFF` |
-| 6 | `CUSTOM` | `COLORS=` | 3/16 toward ink | 9/16 toward ink | `COLORS=` |
-| 7 | `DV` | dark's, for now | | | |
+| 2 | `RED` | `$0428` (66,8,8) | `$1CED` | accent `$7FE3` cyan | `$7FFF` |
+| 3 | `GREEN` | `$0D22` (16,74,25) | `$25A8` | accent `$70FF` magenta | `$7FFF` |
+| 4 | `PURPLE` | `$3048` (66,16,99) | `$410D` | accent `$17EF` lime | `$7FFF` |
+| 5 | `BLUE` | `$30A2` (16,41,99) | `$4148` | accent `$16FF` amber | `$7FFF` |
+| 6 | `CUSTOM` | `COLORS=` | 3/16 toward ink | accent: `COLORS=`'s third, or the complement | `COLORS=` |
+| 7 | `DV` | `$0000` black | accent `$1BEF` lime | `$6180` blue (icons) | `$7FFF` white |
+
+Until 2026-11-09 shade 2 of the color themes and custom was a second middle
+shade, the background 56% (custom 9/16) of the way to white; see
+[Accents](#accents).
 
 Dark is pure black with white ink, what the issue asked for on an OLED
 screen: those pixels stay off. (A dim gray background with a tan ink was
@@ -51,15 +55,62 @@ that row goes to all 8 BG and 8 OBJ palettes. On a DMG, light is `BGP`,
 `OBP0`, `OBP1` = `$E4`, `$E4`, `$1B` (stock) and every other theme
 `$1B`, `$1B`, `$E4`.
 
+## Accents
+
+Since 2026-11-09 ([issue #13](https://github.com/lukesau/ezgb/issues/13)).
+Every color theme draws its highlights in an accent the way DV draws them in
+lime: the selection bar, the active tab, the name band of the menus and
+prompts, the rules and dividers between their buttons, the checkbox ticks.
+Light and dark have none and look as before.
+
+- **How.** The kernel draws a highlight as black on white (ink 0 on paper
+  3) and a rule as a solid white fill. `StoreDrawParams` ends in `DvParams`
+  ([dv_params.c](../kernel/src/dv_params.c), 27 B at `00:3fe4`), which moves a
+  stored paper of 3, and the ink too when it is 3 as well, to `ACC_IDX`
+  (WRAM `$DC0B`): 1 in DV (its lime), 2 in a color theme (its shade 2), 0 in
+  light and dark (nothing moved). `theme_ramp`
+  ([theme_pick.c](../kernel/src/theme_pick.c)) sets `ACC_IDX` each time a
+  theme is applied. White text on the background is untouched, and popups
+  keep shade 1 as their background, so a popup is the lighter shade with
+  accent rules.
+- **The color.** For red, green, purple and blue it is the background's
+  complement at full brightness: each channel becomes max + min - c (the
+  opposite hue at the same lightness), then all three are scaled so the
+  brightest is 255. Dark red gives cyan, green magenta, purple lime, blue
+  amber, each as bright as DV's lime, so black text reads on it. The four are
+  baked into [theme_ramps.c](../kernel/src/theme_ramps.c)'s shade 2.
+- **Custom** works it out the same way from `COLORS=`'s background, or takes
+  a third color from the line (see [Custom](#custom)).
+- **The browser bar** moves by recoloring the two rows in VRAM, which an
+  inversion (index 0 <-> 3) can't do for an accent, so with any accent
+  `move_bar` takes the routines DV used, now for both fonts and either
+  accent plane ([browser-nav.md](browser-nav.md)).
+- **The SET tab** lays the screen out again when the THEME button goes onto
+  or off an accent, as it did onto or off DV: bars already drawn in white
+  would stay white otherwise.
+- **Stock firmware and the DMG** only have `BGP`: where `PAL_LOCKED` is set,
+  a color theme from the file (the button there offers light, dark and DV,
+  and shows it as `DARK`) gets no accent, so it is dark exactly. The first
+  `Theme` call at boot runs before the palette test, but nothing is drawn in
+  bars before the config load applies the theme again.
+- **Stage1** builds its boot screen from the mark, which now holds the
+  accent where the lighter middle shade was, as DV's mark always did.
+
 ## Custom
 
 Since 2026-10-30. One line in `EZGB.CFG` sets the background and the ink
-(text), in web hex, the format every color picker gives:
+(text), in web hex, the format every color picker gives, and since
+2026-11-09 optionally the accent:
 
 ```
 THEME=6
 COLORS=1E2A44,F2D7A0
+COLORS=000000,FFFFFF,7BFF31      (a third color: the accent)
 ```
+
+With `UI=SLIM` that last line is close to DV on any console: black, lime
+and white with the Tamzen font, though the icons stay white (DV's blue icons
+are its own).
 
 - The value is read as its first 12 hex digits, so `#1E2A44, #F2D7A0` and
   lower case work too. Fewer than 12 and the line is ignored. The kernel
@@ -67,9 +118,14 @@ COLORS=1E2A44,F2D7A0
 - The console has 5 bits per channel (BGR555, `$7FFF` style, which nobody
   can type), so each channel keeps its top 5 bits: `1E2A44` draws as
   `$20A3`.
-- The two middle shades are the background moved 3/16 and 9/16 of the way to
-  the ink, about where the built-in dark themes have theirs. Any pair works,
-  light or dark: the popups draw on the first middle shade either way.
+- Shade 1, the popups' background, is the background moved 3/16 of the way
+  to the ink, about where the built-in dark themes have theirs. Any pair
+  works, light or dark.
+- Shade 2 is the accent: digits 13 to 18 when the line has them (written back
+  as a third `RRGGBB`), else the background's complement at full brightness
+  ([Accents](#accents)), worked out by `colors_accent` in
+  [ezcfg.c](../kernel/src/ezcfg.c) after `ThemeColors` has read the first
+  two. Until 2026-11-09 it was the background moved 9/16 toward the ink.
 - `CUSTOM` is in the SET tab's `THEME` cycle only when the file has a valid
   `COLORS=` line; without one, `THEME=6` is light and the button goes from
   BLUE to LIGHT. The two lines can be in either order.

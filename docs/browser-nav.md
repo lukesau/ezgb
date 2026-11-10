@@ -41,13 +41,22 @@ A plain row and the bar differ only in color, so with `g` the row's glyph bits:
 | Row | Plane 0 | Plane 1 |
 |---|---|---|
 | plain | `g` | `g` |
-| bar | `~g` | `~g` |
+| bar, light and dark | `~g` | `~g` |
 | DV plain | `g`, clear in tile column 0 and bit 7 of column 1 (the blue icon) | `g` |
-| DV bar | `~g` | `0` |
+| bar, DV (lime, index 1) | `~g` | `0` |
+| bar, a color theme (accent, index 2) | `0` | `~g` |
 
-Every theme draws the same indices and differs in the palette, so outside DV
-both directions are one routine, `InvertRow`, for 3 groups of 4 pixel rows
-(12px) or 2 (8px). DV has `HighlightRow` and `UnhighlightRow`; it is always 12px.
+Light and dark draw the bar in index 3, so both directions are one routine,
+`InvertRow`, for 3 groups of 4 pixel rows (12px) or 2 (8px). With an accent
+(`ACC_IDX`, [dark-mode.md](dark-mode.md#accents)) the bar is in index 1 or 2,
+which an inversion can't reach, so `HighlightRow` and `UnhighlightRow` do it:
+plane 1 of a plain row is every lit pixel (white, or DV's blue icon), the bar
+is its complement in the accent's plane, and back again plane 0 | plane 1 is
+the bar, with DV's icon columns masked out of plane 0. Until 2026-11-09 the
+two were DV's alone, 12px and plane 0 only. In 12px the counter is drawn in
+ink 3 on paper 0 whatever the last draw left, since a move leaves the bar's
+paper set (it showed on the accent in DV), and the caller's colors go back
+after.
 
 The recolor is only right while the old row shows its name from the start. The
 marquee keeps the index it last drew at `$cc31`; every move puts the boot value

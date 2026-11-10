@@ -99,7 +99,8 @@ void SetPage(u8 op, u8 cur) {
         static const u8 auto_str[5] = {'A','U','T','O',0};
         ThemeRow(cur == ROW_THEME);
         button(cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
-        SetText(THEME == THEME_DV ? auto_str : hUiMode ? ui12_str : ui8_str, 4, 15, 4);
+        static const u8 slim_str[5] = {'S','L','I','M',0};
+        SetText(THEME == THEME_DV ? auto_str : FONT_SLIM ? slim_str : hUiMode ? ui12_str : ui8_str, 4, 15, 4);
         box(0x82, 0x30, TAGS_HIDE, cur == ROW_TAGS);
         box(0x82, 0x50, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
         sgb_row(cur == ROW_SGB);

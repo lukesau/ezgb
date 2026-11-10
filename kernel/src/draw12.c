@@ -115,10 +115,9 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     u16 addr;
     const u8 *g;
     u8 *p;
-    /* the glyph set: the DV theme has its own (layout12.c picks the metrics
-     * the same way) */
-    u8 dv = (u8)(THEME == THEME_DV);
-    const u8 *font = dv ? Font12Dv : Font12;
+    /* the glyph set: DV's with the DV theme or UI=SLIM (layout12.c picks the
+     * metrics the same way) */
+    const u8 *font = GLYPHS_DV ? Font12Dv : Font12;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
@@ -141,7 +140,8 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     /* col 0: x 0 (the icon cell); 1: the name field, an icon's advance in;
      * >= 2: a pixel x (the tab strip's labels, tabstrip12.c). Same rule in
      * Fit12. */
-    x0 = col >= 2 ? col : col ? (dv ? Font12DvMetrics : Font12Metrics)[M_ADV + ICON0] : 0;
+    /* a set's metrics sit the same distance past its glyphs in both */
+    x0 = col >= 2 ? col : col ? font[(Font12Metrics - Font12) + M_ADV + ICON0] : 0;
     t0 = (u8)(x0 >> 3);
     /* The row is painted from x0 to its right edge: x 160, or hClip12 when
      * a caller set one (the SET pane's fields, settext.c). Fit12 reads the
@@ -162,14 +162,17 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     ink = INK;
     paper = PAPER;
     xm = paper ? 0xFF : 0;
-    fast = (u8)(INT_NEST == 0 && (ink | paper) == 3 && (ink & paper) == 0);
+    /* ink 3 on 0 or 0 on 3 only: ink 1 on paper 2 (a color theme's popup
+     * band, on its accent) also passes an or/and test */
+    c = (u8)((ink << 2) | paper);
+    fast = (u8)(INT_NEST == 0 && (c == 0x03 || c == 0x0C));
     fill0(buf, (u8)((nt + 1) * 3));
     /* DV draws a row's leading icon (the browser's, col 0) in color 2, blue,
      * on a normal row (white on black): its pixels also go into ib, and the
      * flush clears plane 0 under them. A selected row (black on lime) keeps
      * a black icon, as davidesqalv's fork does. */
     c = s[0];
-    blue = (u8)(dv && ink == 3 && paper == 0 && col == 0 && (c == 0x7F || (c >= 0xC0 && c <= 0xC4)));
+    blue = (u8)(ACC_IDX == 1 && ink == 3 && paper == 0 && col == 0 && (c == 0x7F || (c >= 0xC0 && c <= 0xC4)));
     fill0(ib, 6);
     if (fast) {
         n &= 0xFC;                     /* batches of 4 rows; only the clipped bottom row is short (8) */

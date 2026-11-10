@@ -43,7 +43,8 @@
  *
  *   python3 tools/inject.py src/browser_nav.c $V 12 4000 BrowserNav \
  *       --pin GfxRowTable=2fbb --pin StoreDrawParams=2791 --pin DrawString=08b7 \
- *       --pin DrawNameWithIcon=3ec8 --pin FarCallDrawString12=05c0 --pin wIntNest=d6d0 --apply
+ *       --pin DrawNameWithIcon=3ec8 --pin FarCallDrawString12=05c0 --pin wIntNest=d6d0 \
+ *       --pin wDrawOp=d723 --pin wDrawColorA=d734 --pin wDrawColorB=d735 --apply
  */
 
 #include "types.h"
@@ -59,6 +60,9 @@ struct BrowserScrollState {
 extern const u16 GfxRowTable[];     /* 00:2fbb pixel row -> VRAM address of tile column 0 */
 extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);      /* 00:3ec8 */
 extern volatile u8 wIntNest;        /* $d6d0 DiNest depth */
+extern volatile u8 wDrawOp;         /* $d723, StoreDrawParams' op, ink and paper */
+extern volatile u8 wDrawColorA;     /* $d734 */
+extern volatile u8 wDrawColorB;     /* $d735 */
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
 #define MQ_LAST (*(volatile u16 *)0xcc31)   /* DrawDirEntryLabel's last drawn index */
@@ -88,8 +92,8 @@ void NavUp(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st);
 void TabNumFar(u16 p0, u16 p1, u16 p2, const u8 *s, u8 len, u8 x, u8 y);
 
 static void InvertRow(u8 py, u8 groups) __naked;
-static void HighlightRow(u8 py) __naked;
-static void UnhighlightRow(u8 py) __naked;
+static void HighlightRow(u8 py, u8 groups) __naked;
+static void UnhighlightRow(u8 py, u8 groups) __naked;
 static void ShiftRows(u8 dst_y, u8 src_y, u8 batches, signed char step) __naked;
 static void VramSync(void) __naked;
 static void RowAddr(void) __naked;
@@ -142,7 +146,7 @@ static void draw_counter(u16 n) {
         DrawString(buf, 4, COUNTER_X, 0);
         return;
     }
-    dv = (u8)(THEME == THEME_DV);
+    dv = GLYPHS_DV;
     adv = dv ? 6 : 9;
     buf[nn] = '/';
     tn = put_dec(buf + nn + 1, ENTRY_COUNT);
@@ -155,7 +159,17 @@ static void draw_counter(u16 n) {
         if (w > 160 - COUNTER_X_MIN) tn = 0;
     }
     buf[tn ? (u8)(nn + 1 + tn) : nn] = 0;
-    FarCallDrawString12(buf, 0, x, 0);
+    /* on the strip's plain background in every theme, whatever the last
+     * draw left (a move leaves the bar's paper, the accent); the caller's
+     * ink, paper and op go back after */
+    {
+        u8 ink = wDrawColorA, paper = wDrawColorB, op = wDrawOp;
+        StoreDrawParams(3, 0, 0);
+        FarCallDrawString12(buf, 0, x, 0);
+        wDrawColorA = ink;
+        wDrawColorB = paper;
+        wDrawOp = op;
+    }
 }
 
 /* 12px's TabNum12, with DrawString's frame: s holds the stock digits. */
@@ -178,9 +192,9 @@ static u8 move_bar(struct BrowserScrollState *st, u8 to) {
     u8 groups = hUiMode ? 3 : 2;
 
     if (MQ_LAST != MQ_CLEAN || wIntNest) return 0;
-    if (THEME == THEME_DV) {            /* DV is always 12px (font AUTO) */
-        UnhighlightRow(row_y(st->sel));
-        HighlightRow(row_y(to));
+    if (ACC_IDX) {                      /* a bar in the accent: DV, a color theme */
+        UnhighlightRow(row_y(st->sel), groups);
+        HighlightRow(row_y(to), groups);
     } else {
         InvertRow(row_y(st->sel), groups);
         InvertRow(row_y(to), groups);
@@ -428,51 +442,78 @@ invert_col:
     __endasm;
 }
 
-/* DV: plain -> bar, 12 pixel rows. */
-static void HighlightRow(u8 py) __naked {
-    (void)py;
+/* With an accent: plain -> bar. A plain row is white (both planes) or DV's
+ * blue icon (plane 1) on black, so plane 1 is every lit pixel, and the bar is
+ * its complement, black text on the accent: in plane 0 for DV's lime
+ * (ACC_IDX 1), plane 1 for a color theme's shade 2. groups of 4 pixel rows,
+ * 3 for 12px, 2 for 8px. */
+static void HighlightRow(u8 py, u8 groups) __naked {
+    (void)py; (void)groups;
     __asm
-	ldhl	sp, #2
+	ldhl	sp, #3
+	ld	b, (hl)
+	dec	hl
 	ld	c, (hl)
-	ld	b, #3
 hilite_group:
 	push	bc
 	ld	a, c
 	call	_RowAddr
+	ld	a, (#0xdc0b)		; ACC_IDX: 1 -> c $FF, e $00; 2 -> c $00, e $FF
+	rra
+	sbc	a, a
+	ld	c, a
+	cpl
+	ld	e, a
 	ld	b, #20
 hilite_col:
 	call	_VramSync
-	ld	a, (hl+)
-	or	a, (hl)
+	inc	l			; plane 1 (a tile is 16-aligned: no carry)
+	ld	a, (hl)
 	cpl
-	ld	(hl), #0
-	dec	l
+	ld	d, a
+	and	a, e
+	ld	(hl-), a		; plane 1
+	ld	a, d
+	and	a, c
+	ld	(hl+), a		; plane 0
+	inc	l			; plane 1 of the next pixel row
+	inc	l
+	ld	a, (hl)
+	cpl
+	ld	d, a
+	and	a, e
+	ld	(hl-), a
+	ld	a, d
+	and	a, c
 	ld	(hl+), a
-	inc	hl
-	ld	a, (hl+)
-	or	a, (hl)
+	inc	l			; plane 1 of the next pixel row
+	inc	l
+	ld	a, (hl)
 	cpl
-	ld	(hl), #0
-	dec	l
+	ld	d, a
+	and	a, e
+	ld	(hl-), a
+	ld	a, d
+	and	a, c
 	ld	(hl+), a
-	inc	hl
-	ld	a, (hl+)
-	or	a, (hl)
+	inc	l			; plane 1 of the next pixel row
+	inc	l
+	ld	a, (hl)
 	cpl
-	ld	(hl), #0
-	dec	l
-	ld	(hl+), a
-	inc	hl
-	ld	a, (hl+)
-	or	a, (hl)
-	cpl
-	ld	(hl), #0
-	dec	l
+	ld	d, a
+	and	a, e
+	ld	(hl-), a
+	ld	a, d
+	and	a, c
 	ld	(hl+), a
 	inc	hl
 	ei
-	ld	de, #8
-	add	hl, de
+	ld	a, l			; next tile column: 16 on, 8 of them done
+	add	a, #8
+	ld	l, a
+	jr	nc, hilite_next
+	inc	h
+hilite_next:
 	dec	b
 	jr	nz, hilite_col
 	pop	bc
@@ -485,48 +526,57 @@ hilite_col:
     __endasm;
 }
 
-/* DV: bar -> plain, the icon's pixels blue. */
-static void UnhighlightRow(u8 py) __naked {
-    (void)py;
+/* With an accent: bar -> plain. The bar's accent is in one plane or the
+ * other and its text is black, so plane 0 | plane 1 is the bar, and white
+ * text is the rest. DV's icon is blue: plane 0 masked off in tile column 0
+ * and the first pixel of column 1. */
+static void UnhighlightRow(u8 py, u8 groups) __naked {
+    (void)py; (void)groups;
     __asm
-	ldhl	sp, #2
+	ldhl	sp, #3
+	ld	b, (hl)
+	dec	hl
 	ld	c, (hl)
-	ld	b, #3
 unhilite_group:
 	push	bc
 	ld	a, c
 	call	_RowAddr
-	ld	bc, #0x1400		; b columns, c the plane-0 mask: $00 for tile column 0
+	ld	a, (#0xdc0b)		; ACC_IDX: 1 (DV) -> mask $00, else $FF
+	rra
+	sbc	a, a
+	cpl
+	ld	c, a
+	ld	b, #20
 unhilite_col:
 	call	_VramSync
-	ld	a, (hl)
+	ld	a, (hl+)
+	or	a, (hl)
 	cpl
-	ld	d, a
+	ld	(hl-), a		; plane 1
+	and	a, c
+	ld	(hl+), a		; plane 0
+	inc	l
+	ld	a, (hl+)
+	or	a, (hl)
+	cpl
+	ld	(hl-), a
 	and	a, c
 	ld	(hl+), a
-	ld	a, d
-	ld	(hl+), a
-	ld	a, (hl)
+	inc	l
+	ld	a, (hl+)
+	or	a, (hl)
 	cpl
-	ld	d, a
+	ld	(hl-), a
 	and	a, c
 	ld	(hl+), a
-	ld	a, d
-	ld	(hl+), a
-	ld	a, (hl)
+	inc	l
+	ld	a, (hl+)
+	or	a, (hl)
 	cpl
-	ld	d, a
+	ld	(hl-), a
 	and	a, c
 	ld	(hl+), a
-	ld	a, d
-	ld	(hl+), a
-	ld	a, (hl)
-	cpl
-	ld	d, a
-	and	a, c
-	ld	(hl+), a
-	ld	a, d
-	ld	(hl+), a
+	inc	hl
 	ei
 	ld	de, #8
 	add	hl, de

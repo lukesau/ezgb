@@ -31,6 +31,22 @@
 #define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
 #define CUST_OK   (*(volatile u8 *)0xDBEA)
 #define CUST_RAMP ((u8 *)0xDB58)   /* 8 */
+/* The accent (docs/dark-mode.md "Accents"): the color index a stored white
+ * paper, and a solid white fill, draw in instead (dv_params.c), so the
+ * selection bar, the active tab, the name bands and the rules. 0 = none
+ * (light, dark), 1 = DV's lime, 2 = a color theme's third shade. Set by
+ * theme_ramp (theme_pick.c) whenever a theme is applied. */
+#define ACC_IDX   (*(volatile u8 *)0xDC0B)
+/* COLORS='s optional third color, the custom theme's accent, as read, and 1
+ * once one was (ezcfg.c colors_accent). Without one the accent is the
+ * background's complement at full brightness. */
+#define ACC_RGB   ((u8 *)0xDC0D)   /* 3: R, G, B */
+#define ACC_OK    (*(volatile u8 *)0xDC10)
+/* UI=SLIM: the 12px browser in DV's glyph set (Tamzen 6x12) in any theme;
+ * only ever 1 with hUiMode 1. GLYPHS_DV is the glyph set the 12px renderer
+ * draws: DV's with the DV theme (AUTO) or SLIM. */
+#define FONT_SLIM (*(volatile u8 *)0xDC0C)
+#define GLYPHS_DV ((u8)((u8)(THEME == THEME_DV) | FONT_SLIM))
 /* What the jump to a game hands over (scripts/skipboot/skip_boot.asm), popped
  * as F A C B E D L H: our stage1's record of this console's boot registers,
  * else the DMG or the CGB values by PAL_LOCKED (ezcfg.c stage1_skip_mark).

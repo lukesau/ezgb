@@ -12,6 +12,8 @@
  * Before the file is read (boot), the mark's colors become CUST_RAMP, so a
  * custom theme's first frames need no file. After, THEME is only custom
  * with a valid COLORS= (ezcfg's cfg_load, theme_row.c), which set CUST_RAMP.
+ * It also sets ACC_IDX (vars.h) for the theme, so the accent remap
+ * (dv_params.c) follows every theme change.
  */
 
 #include "types.h"
@@ -48,6 +50,21 @@ const u8 *theme_ramp(void) __naked {
 	ld	de, #0xdb58
 2$:
 	ld	a, (#0xdbf7)		; THEME
+	ld	c, #1			; ACC_IDX: DV 1, a color theme 2, light and dark 0
+	cp	#7			; THEME_DV
+	jr	z, 3$
+	inc	c
+	cp	#2
+	jr	c, 4$
+	ld	hl, #0xfff8		; PAL_LOCKED: a color theme draws as dark there
+	inc	(hl)			; (zero test that keeps a)
+	dec	(hl)
+	jr	z, 3$
+4$:
+	ld	c, #0
+3$:
+	ld	hl, #0xdc0b		; ACC_IDX
+	ld	(hl), c
 	cp	#6			; THEME_CUSTOM
 	ret	z
 	ld	de, #_dv_ramp

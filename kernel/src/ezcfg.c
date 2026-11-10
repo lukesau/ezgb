@@ -145,6 +145,8 @@ static void cfg_restore(void);
 static void rtc_read_settled(void);
 static u8 restore_prompt(u8 why);
 static void put_hex(u8 *dst, u8 v);
+static void colors_accent(const u8 *v, u8 len);
+static u8 scale255(u8 c, u8 m);
 static void put_date(u8 *d, const u8 *r);
 static void put_time(u8 *t, const u8 *r);
 static void parse_lastrom(const u8 *v, u16 len);
@@ -489,6 +491,66 @@ static void cfg_restore(void) {
 #endif
 }
 
+/* After COLORS= set the custom theme's ramp (theme_colors.c, its first 12
+ * hex digits): digits 13 to 18, a third color, are its accent, shade 2
+ * (docs/dark-mode.md "Accents"); without them, the background's complement,
+ * each channel max + min - c, scaled so its brightest channel is 255, as
+ * theme_ramps.c's color themes have. */
+static void colors_accent(const u8 *v, u8 len) {
+    u8 c[3];
+    u8 i, h, n = 0, mx, mn;
+
+    ACC_OK = 0;
+    if (!CUST_OK) return;
+    for (i = 0; i < len; i++) {
+        h = lower(v[i]);
+        if (h >= '0' && h <= '9') h -= '0';
+        else if (h >= 'a' && h <= 'f') h -= 'a' - 10;
+        else continue;
+        if (n >= 12 && n < 18) {
+            u8 *d = ACC_RGB + ((u8)(n - 12) >> 1);
+            if (n & 1) *d |= h; else *d = (u8)(h << 4);
+        }
+        n++;
+    }
+    if (n >= 18) {
+        ACC_OK = 1;
+        for (i = 0; i < 3; i++) c[i] = ACC_RGB[i];
+    } else {
+        mx = mn = CUST_RGB[0];
+        for (i = 1; i < 3; i++) {
+            if (CUST_RGB[i] > mx) mx = CUST_RGB[i];
+            if (CUST_RGB[i] < mn) mn = CUST_RGB[i];
+        }
+        h = 0;
+        for (i = 0; i < 3; i++) {
+            c[i] = (u8)(mx + mn - CUST_RGB[i]);
+            if (c[i] > h) h = c[i];
+        }
+        if (h) for (i = 0; i < 3; i++) c[i] = scale255(c[i], h);
+    }
+    /* BGR555: r | g << 5 | b << 10 */
+    CUST_RAMP[4] = (u8)((c[0] >> 3) | ((c[1] & 0x38) << 2));
+    CUST_RAMP[5] = (u8)((c[1] >> 6) | ((c[2] >> 1) & 0x7C));
+}
+
+/* c * 255 / m for c <= m, by shift and subtract (no helper call). */
+static u8 scale255(u8 c, u8 m) {
+    u16 num = ((u16)c << 8) - c;
+    u16 d = (u16)m << 7;
+    u8 bit = 0x80, q = 0;
+
+    while (bit) {
+        if (num >= d) {
+            num -= d;
+            q |= bit;
+        }
+        d >>= 1;
+        bit >>= 1;
+    }
+    return q;
+}
+
 /* Two hex digits (the raw BCD nibbles, so a garbage read shows as such). */
 static void put_hex(u8 *dst, u8 v) {
     u8 h = v >> 4, l = v & 0x0F;
@@ -773,6 +835,8 @@ static void parse_record(u16 br, u8 legacy) {
                 break;
             case 3:
                 hUiMode = (vlen >= 2 && v[0] == '1' && v[1] == '2') ? 1 : 0;
+                FONT_SLIM = 0;
+                if (vlen && lower(v[0]) == 's') hUiMode = FONT_SLIM = 1;   /* UI=SLIM */
                 break;
             case 4:
                 RTC_OFF = (vlen != 0 && v[0] == '0') ? 1 : 0;
@@ -791,6 +855,7 @@ static void parse_record(u16 br, u8 legacy) {
                 break;
             default:                                     /* 8 COLORS=, 9 BOOTROM= */
                 FarCallColors(idx, (u8 *)v, (u8)vlen);
+                if (idx == 8) colors_accent(v, (u8)vlen);
                 break;
 #ifdef EZCFG_RTCLOG
             case 11: {
@@ -924,8 +989,13 @@ static u8 cfg_save(void) {
         w = crlf(w);
     }
     w = put(w, k_ui, 3);
-    if (hUiMode) *w++ = '1';
-    *w++ = hUiMode ? '2' : '8';
+    if (FONT_SLIM) {
+        static const u8 k_slim[4] = {'S','L','I','M'};
+        w = put(w, k_slim, 4);
+    } else {
+        if (hUiMode) *w++ = '1';
+        *w++ = hUiMode ? '2' : '8';
+    }
     w = crlf(w);
     if (RTC_OFF) {
         static const u8 k_rs[7] = {'R','T','C','S','D','=','0'};
@@ -938,6 +1008,13 @@ static u8 cfg_save(void) {
         w = crlf(w);
     }
     w = FarCallColors(1, w, 0);          /* THEME= and COLORS= (theme_colors.c) */
+    if (CUST_OK && ACC_OK) {             /* COLORS= is the last of them: its third color */
+        w[-2] = ',';
+        put_hex(w - 1, ACC_RGB[0]);
+        put_hex(w + 1, ACC_RGB[1]);
+        put_hex(w + 3, ACC_RGB[2]);
+        w = crlf(w + 5);
+    }
     if (!TAGS_HIDE) {                    /* full names: the default is cut */
         static const u8 k_tg[6] = {'T','A','G','S','=','1'};
         w = crlf(put(w, k_tg, 6));

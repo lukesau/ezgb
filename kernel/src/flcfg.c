@@ -176,13 +176,14 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         }
         if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME || row == ROW_BK) {
             if (row == ROW_THEME) {
-                u8 was = (u8)(THEME == THEME_DV);
+                u8 was_g = GLYPHS_DV, was_a = ACC_IDX;
                 ThemeRow(2);            /* sets the palettes, redraws itself */
                 /* onto or off DV, whose glyph set is its own (12px only,
-                 * AUTO): the tab strip and the pane are drawn again in the
-                 * new glyphs, as the FONT button does */
-                if ((u8)(THEME == THEME_DV) != was) {
-                    if (!was) hUiMode = 1;
+                 * AUTO), or onto or off an accent (the bars were drawn in
+                 * another color index, dv_params.c): the tab strip and the
+                 * pane are drawn again, as the FONT button does */
+                if (GLYPHS_DV != was_g || ACC_IDX != was_a) {
+                    if (THEME == THEME_DV) hUiMode = 1;
                     goto relayout;
                 }
             } else {
@@ -211,7 +212,10 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             /* The whole pane (and the tab strip) is laid out per mode:
              * redraw the strip, which also clears the pane, and return 2 so
              * FlSetADispatch re-enters the SET screen from the top. */
-            hUiMode = hUiMode ? 0 : 1;
+            /* 8px, 12px, SLIM (DV's glyph set, 12px), 8px */
+            if (!hUiMode) hUiMode = 1;
+            else if (!FONT_SLIM) FONT_SLIM = 1;
+            else hUiMode = FONT_SLIM = 0;
 relayout:
             SET_DIRTY = 1;
             FarCallMenuTabs(1);
