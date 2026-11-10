@@ -3,8 +3,9 @@
 [Issue #11](https://github.com/lukesau/ezgb/issues/11). The SET tab has a
 `THEME` button that cycles the browser, every kernel screen and our stage1's
 boot screen through light (the stock look), dark, DV (see [DV](#dv)), four
-colored ones, and custom, whose two colors are set by hand in `EZGB.CFG`
-(see [Custom](#custom)), in that order: A goes forward, B back, and both wrap.
+colored ones, and custom, whose colors are set with the picker under the
+button or by hand in `EZGB.CFG` (see [Color picker](#color-picker) and
+[Custom](#custom)), in that order: A goes forward, B back, and both wrap.
 The file is written on NEXT, on PREV or on leaving the tab
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)). Light and dark are the DMG baseline:
 on a DMG, or anything else running the kernel in DMG mode, light is the stock
@@ -106,6 +107,60 @@ Light and dark have none and look as before.
 - **Stage1** builds its boot screen from the mark, which now holds the
   accent where the lighter middle shade was, as DV's mark always did.
 
+## Color picker
+
+Since 2026-11-10. The SET tab's third page, under THEME and FONT, sets the
+custom theme's three colors on the cart:
+
+```
+COLORS:    R   G   B
+BG:       [17][ 9][22]
+TEXT:     [ 0][ 0][ 0]
+ACCENT:   [22][16][10]
+```
+
+- **What it shows.** The colors on screen, whatever the theme: color index
+  0, index 3 and the accent's index (shade 2 in light and dark, which have
+  no accent), read back from palette RAM, so 0 to 31 a channel, what the
+  console has. Stepping THEME changes the rows with it.
+- **Setting one.** A on a row, then LEFT and RIGHT pick the channel, UP and
+  DOWN change it (held, they repeat), A or B ends: the keys TIME's `SET`
+  uses for the clock. The screen is the preview; every step applies.
+- **It starts from the theme on screen.** The first change in a built-in
+  theme copies that theme's three colors to the custom one and switches
+  THEME to `CUSTOM`, so red with a darker background is: pick `RED`, turn
+  BG down. This replaces earlier custom colors, but only once a value
+  changes; looking does nothing. In `CUSTOM` a change is just that change.
+- **DV.** The accent row in DV sets DV's highlight and leaves DV on (the
+  third color has been DV's highlight since 2026-11-09). BG and TEXT there
+  go to `CUSTOM` like any other theme, with the stock glyphs.
+- **Saved** with the rest of the tab, on NEXT, PREV or leaving it, as
+  `COLORS=RRGGBB,RRGGBB,RRGGBB`; a channel the picker set is its 5 bits
+  widened to 8 (31 is `FF`), one it didn't touch keeps the file's digits.
+  An accent that `COLORS=` left to the complement stays the complement
+  until the ACCENT row is changed.
+- **Where palette RAM is locked** (a DMG, compatibility mode on stock
+  firmware) there are no colors to set: the cells read `--` and A does
+  nothing.
+
+`ThemePage` ([themepage.c](../kernel/src/themepage.c), bank 13) does it.
+While a row is being set (`CP_EDIT`, WRAM `$DC19`, 1 + the channel) its
+tick, called from `FlCfg` op TICK with the pad, hands the stock loop no
+keys. A change writes `CUST_RGB` or `ACC_RGB`, rebuilds `CUST_RAMP` (and
+`DV_RAMP`) the way `ThemeColors` and `colors_accent` do from the line, and
+calls `Theme`. When the first change moves the accent to another color
+index (light and dark draw their bars in index 3, custom in 2) or leaves
+DV's glyph set, the bars and text on screen are stale, as after a THEME
+step: the tick sets `CP_EDIT` bit 7 and returns A, the stock loop
+dispatches it as a press, and op A returns 2 for it, which lays the screen
+out again with the row still being set.
+
+Checked in SameBoy (2026-11-10, CGB model): all three rows in 8px, 12px and
+SLIM on 0731, the switch to `CUSTOM` from light with its relayout, the
+accent in DV, the saved line and the same colors after a reboot, a DMG
+model's `--` cells; the page and one change on 1.04e, the page on 0918.
+Not tested on hardware.
+
 ## Custom
 
 Since 2026-10-30. One line in `EZGB.CFG` sets the background and the ink
@@ -139,8 +194,8 @@ and white with the Tamzen font, though the icons are the stock ones in white
   [ezcfg.c](../kernel/src/ezcfg.c) after `ThemeColors` has read the first
   two. Until 2026-11-09 it was the background moved 9/16 toward the ink.
 - `CUSTOM` is in the SET tab's `THEME` cycle only when the file has a valid
-  `COLORS=` line; without one, `THEME=6` is light and the button goes from
-  BLUE to LIGHT. The two lines can be in either order.
+  `COLORS=` line or the picker has set a color; without either, `THEME=6`
+  is light and the button goes from BLUE to LIGHT. The two lines can be in either order.
 - On a DMG it is the inverted palette like every other theme past 0, and
   stage1's boot screen (which already reads the colors from the mark) needs
   no change.
@@ -187,8 +242,7 @@ OK!`. Stage1 picks it up on the next power-on.
 | `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
 | `EzCfg` | `02:4a00` | Parses `THEME=` (light unless it is one digit naming a theme, and custom only with a valid `COLORS=`) and hands `COLORS=` and the save's two theme lines to `ThemeColors`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
 | `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
-| `ThemeRow` | `04:77a0` (`04:7670` until 2026-11-04), [theme_row.c](../kernel/src/theme_row.c), 434 B | The SET tab button, near-called by `FlCfg` and `SetPage`: op 0/1 draw it plain or highlighted, op 2 steps through the order table, back when `THEME_BACK` (`$DAFB`) is set, then sets `SET_DIRTY` and applies the theme. `FlCfg` op TICK turns B into A with that flag when `SET_CUR` (`$DAFC`) is the THEME row. |
-| `ThemeNames` | `04:7eeb`, [theme_names.c](../kernel/src/theme_names.c), 56 B | The button's names, data only, moved out of `ThemeRow` to make room for the seventh (at `04:7f20` until DV made eight). |
+| `ThemePage` | `0D:4000`, [themepage.c](../kernel/src/themepage.c), 2753 B | The SET tab's third page, far-called by `FlCfg` through `FarCallThemePage` (`04:5990`): the THEME button (it steps through the order table, back when `THEME_BACK` (`$DAFB`) is set, sets `SET_DIRTY` and applies the theme; `FlCfg` op TICK hands it the pad, and it turns B into A with that flag when `SET_CUR` (`$DAFC`) is the THEME row), its names, the FONT button and the [color picker](#color-picker). Until 2026-11-10 the button was `ThemeRow` (`04:77a0`, theme_row.c) with `ThemeNames` (`04:7eeb`), on page 2. |
 
 > **Correction (2026-10-30).** `Theme` used to write the ramp only when
 > `VBK` read back bit 0 clear, taken from `CgbInit` as the CGB-mode test, and
@@ -217,9 +271,10 @@ in bank 1 that fits. Bank 2 is byte-identical in all three stock kernels.
 
 ### SET tab
 
-> Since 2026-10-30 the button is on the SET tab's second page, row 2, after
-> `THEME:`, cursor row 6 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)).
-> The rest of this section is how it was first built.
+> Since 2026-11-10 the button is on the SET tab's third page, row 2, after
+> `THEME:`, cursor row 13 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages));
+> from 2026-10-30 it was on the second. The rest of this section is how it
+> was first built.
 
 The `UI:` row (row 14) holds two buttons: `THEME` and the 8px/12px one. The
 theme name is right-aligned in columns 7-12 in 8px; in 12px it starts at
@@ -337,10 +392,10 @@ meaning.
 2. Its colors in [theme_pick.c](../kernel/src/theme_pick.c)'s `theme_ramp`
    (asm): [theme_ramps.c](../kernel/src/theme_ramps.c)'s rows end at custom's
    number, so a later theme gets its own row, as DV's `dv_ramp` is.
-3. A name, six characters wide, at the end of
-   [theme_names.c](../kernel/src/theme_names.c), and its place in the
-   button's order in [theme_row.c](../kernel/src/theme_row.c) (light, dark,
-   DV, red .. custom), which is not the number order.
+3. A name, six characters wide, at the end of `theme_names` in
+   [themepage.c](../kernel/src/themepage.c), and its place in the button's
+   order there (`theme_step`: light, dark, DV, red .. custom), which is not
+   the number order.
 4. Its own glyph set, if any: a sheet, a set in `scripts/inject-font12.sh`,
    and the set's choice in `draw12.c` and `layout12.c`.
 

@@ -24,8 +24,9 @@
  * (glyph set 1, docs/font12.md), black, lime, blue and white, the selection
  * bar and accents in lime (StoreDrawParams' DV remap, dv_params.c). */
 #define THEME_DV  7
-/* COLORS=RRGGBB,RRGGBB (theme_colors.c): the background and ink as read,
- * 1 once a valid line was read, and the four colors the custom theme draws
+/* COLORS=RRGGBB,RRGGBB (theme_colors.c): the background and ink as read
+ * or as the SET tab's color picker set them (themepage.c), 1 once there
+ * are any, and the four colors the custom theme draws
  * in (BGR555, as a theme_ramps.c row). CUST_RAMP is also loaded from the
  * pSRAM mark at boot, before the file is read. */
 #define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
@@ -76,10 +77,10 @@
 /* Set by TagLen when it cut the name it measured, for TagCat (tagtrim.c).
  * Past FL_PATH's end ($DAFA); $DBF0-$DBF5 are FillRect's scratch. */
 #define TAG_CUT   (*(volatile u8 *)0xDAFF)
-/* SET tab page (flcfg.c, setpage.c): bit 0 = page 2, bit 7 = flcfg is
- * drawing. SetText draws nothing while it is exactly 1, which keeps the
- * stock rows (TIME, the date, AUTO SAVE) off page 2. Cleared when the SET
- * screen exits (SetExitHook, 04:5fb0). */
+/* SET tab page (flcfg.c, setpage.c, themepage.c): bits 0-1 = the page, 0 to
+ * 2, bit 7 = flcfg is drawing. SetText draws nothing while it is exactly 1
+ * or 2, which keeps the stock rows (TIME, the date, AUTO SAVE) off pages 2
+ * and 3. Cleared when the SET screen exits (SetExitHook, 04:5fb0). */
 #define SET_PAGE  (*(volatile u8 *)0xDBEE)
 /* SET tab re-entry (flcfg.c): the cursor row + 1 to put the cursor on when
  * the screen is entered again after a page or UI mode switch, 0 = none. */
@@ -89,15 +90,20 @@
  * (docs/fastlaunch-set-tab.md). */
 #define SET_DIRTY (*(volatile u8 *)0xDAFD)
 /* The SET tab's cursor row as last drawn (flcfg.c), for op TICK, which has no
- * frame, and 1 when op TICK turned B on THEME into A: step back (theme_row.c). */
+ * frame, and 1 when op TICK turned B on THEME into A: step back (themepage.c). */
 #define SET_CUR   (*(volatile u8 *)0xDAFC)
 #define THEME_BACK (*(volatile u8 *)0xDAFB)
+/* SET tab page 3's color picker (themepage.c): 0, or 1 + the channel (0 R,
+ * 1 G, 2 B) being set on the cursor's color row. Bit 7: its op TICK asked
+ * for the screen to be laid out again (the A it handed the loop is not a
+ * press). */
+#define CP_EDIT   (*(volatile u8 *)0xDC19)
 
 /* HRAM, mod-owned and at the same address in every kernel. Constant
  * addresses in $FF00-$FFFF compile to ldh. */
 /* 1 once Theme (theme.c) found palette RAM locked: a DMG, or a CGB in
  * compatibility mode. Past dark only DV looks different there, so the THEME
- * button (theme_row.c) offers light, dark and DV. */
+ * button (themepage.c) offers light, dark and DV. */
 #define PAL_LOCKED (*(volatile u8 *)0xFFF8)
 #define PAD_HELD  (*(volatile u8 *)0xFFF7)  /* buttons ReadJoypadLatched ignores until released (docs/joypad-latch.md) */
 #define hClip12   (*(volatile u8 *)0xFFF9)  /* right edge of the next 12px draw or layout, 0 = x 160 */

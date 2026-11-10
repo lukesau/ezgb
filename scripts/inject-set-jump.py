@@ -7,7 +7,7 @@ and time fields while the time is being set (sp+$40 != 0); otherwise both
 just `jp z, DrawTimeAutosaveScreen_redraw`. Those two jumps now go to:
 
   04:5f80  FlSetJumpTop     LEFT: cursor (sp+$3d) to row 0, TIME SET
-  04:5f90  FlSetJumpBottom  RIGHT: cursor to row 13 (flcfg keeps it on the page: NEXT or PREV)
+  04:5f90  FlSetJumpBottom  RIGHT: cursor to row 18 (flcfg keeps it on the page: NEXT or PREV)
 
 which end like hiliteDec/hiliteInc: mark the row changed (sp+$3e = 1) and
 `jp FlSetRowsHook` (04:5948), which redraws the mod rows and the stock ones.
@@ -23,7 +23,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS = os.path.join(ROOT, "kernel", "tools")
 REDRAW, ROWS_HOOK = 0x48f5, 0x5948      # DrawTimeAutosaveScreen_redraw, FlSetRowsHook
-TOP, BOTTOM, LAST_ROW = 0x5f80, 0x5f90, 13   # PREV, page 2's last row (flcfg.c ROW_PREV)
+TOP, BOTTOM, LAST_ROW = 0x5f80, 0x5f90, 18   # PREV, page 3's last row (flcfg.c ROW_PREV3)
 
 
 def handler(row):

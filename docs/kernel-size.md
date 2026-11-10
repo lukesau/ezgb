@@ -3,7 +3,7 @@
 The stock kernels are 10 banks (160 KB). After stars and play counts, banks 2,
 4 and 5 were full, and the space free in all three builds was a few hundred
 bytes in each of banks 3, 6, 7 and 9. Since 2026-10-30 the modded kernel is
-**16 banks (256 KB)**: banks 10 to 15 are empty, room for the theme engine
+**16 banks (256 KB)**: banks 10 to 15 were empty (10 to 13 hold code now, 14 and 15 are still empty), room for the theme engine
 ([issue 12](https://github.com/lukesau/ezgb/issues/12)) and anything after it.
 
 ## Why it works

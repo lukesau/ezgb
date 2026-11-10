@@ -310,7 +310,7 @@ advance from the glyph pointer.
 Set 1 is the DV theme's ([dark-mode.md](dark-mode.md)), an homage to that
 fork: its letters are the 8px font's size in a 12 px line, so a row holds
 about 26 characters to set 0's 18. Bank 10 has room for about two more sets
-after these two (each is about 3 to 4 KB), and banks 11 to 15 are empty.
+after these two (each is about 3 to 4 KB), and banks 14 and 15 are empty.
 
 ## Edge tiles
 

@@ -12,7 +12,7 @@
  *
  * Before the file is read (boot), the mark's colors become CUST_RAMP, so a
  * custom theme's first frames need no file. After, THEME is only custom
- * with a valid COLORS= (ezcfg's cfg_load, theme_row.c), which set CUST_RAMP.
+ * with a valid COLORS= (ezcfg's cfg_load, themepage.c), which set CUST_RAMP.
  * It also sets ACC_IDX (vars.h) for the theme, so the accent remap
  * (dv_params.c) follows every theme change.
  */

@@ -12,7 +12,7 @@
  *            A custom theme takes its colors from the mark too
  *            (theme_pick.c).
  *   runtime  once THEME holds the file's value: ezcfg's boot restore (a
- *            near call) and the SET tab (FarCallTheme_B4, 04:5990). The
+ *            near call) and the SET tab (themepage.c, 0D:4000). The
  *            mark is rewritten from THEME, and the theme's four colors are
  *            copied after it ($A418-$A41F), so the next boot starts in it:
  *            our stage1 builds its boot screen palettes from that copy and

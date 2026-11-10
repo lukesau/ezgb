@@ -24,12 +24,12 @@
  *   row 16  the page row: col 1 "< PREV" 8..64, col 9 "1/2" 70..97,
  *           col 13 "NEXT >" 104..155
  *
- * Page 2 (setpage.c, SET_PAGE bit 0): row 2 "THEME:" 0..84 (its button
- * follows), row 4 col 0 "FONT:" 0..112 and col 15 "12px" 120..155, row 6
- * "CLEAN UP NAMES:" 0..128 (row 8 is the tag example, drawn by the marquee),
- * rows 10, 12, 14 labels 0..128 (the checkbox is at x 130), or row 12 col 13
- * "AUTO" 120..155 when our stage1 handles the SGB. While SET_PAGE is exactly 1 (page 2, and the caller is the
- * stock screen, not flcfg) nothing is drawn.
+ * Page 2 (setpage.c, SET_PAGE 1): rows 2, 6, 8, 10 labels 0..128 (the
+ * checkbox is at x 130; row 4 is the tag example, drawn by the marquee), or
+ * row 8 col 13 "AUTO" 120..155 when our stage1 handles the SGB. Page 3
+ * (SET_PAGE 2) draws its own text (themepage.c) and only its page row comes
+ * here. While SET_PAGE is 1 or 2 without bit 7 (page 2 or 3, and the caller
+ * is the stock screen, not flcfg) nothing is drawn.
  *
  * The renderer runs in bank 2, so the string is copied to the stack first.
  *
@@ -49,7 +49,7 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
     u8 buf[24];
     u8 i, x, end;
 
-    if (SET_PAGE == 1) return;          /* page 2: the stock rows are not on it */
+    if ((u8)(SET_PAGE - 1) < 2) return; /* pages 2 and 3: the stock rows are not on them */
     if (!hUiMode) {
         DrawString(s, len, col, row);
         return;
@@ -57,15 +57,13 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
     x = 0;
     end = 128;
     if (row == 16) {
-        /* the page row, both pages */
+        /* the page row, every page */
         if (col == 1) { x = 8; end = 64; }
         else if (col == 9) { x = 70; end = 97; }
         else { x = 104; end = 155; }
-    } else if (SET_PAGE & 1) {
-        /* page 2 (setpage.c): THEME: (its button from x 86), FONT: 12px, CLEAN UP NAMES: */
-        if (row == 2) end = 84;
-        else if (row == 4) { if (col) { x = 120; end = 155; } else { end = 112; } }
-        else if (row == 12 && col) { x = 120; end = 155; }
+    } else if (SET_PAGE & 3) {
+        /* page 2 (setpage.c): labels, and SGB's AUTO */
+        if (row == 8 && col) { x = 120; end = 155; }
     } else switch (row) {
     case 2:
         if (col) { x = 127; end = 155; } else { end = 120; }

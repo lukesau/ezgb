@@ -48,10 +48,11 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 
 ## SET tab
 
-> Since 2026-10-30 the checkbox is on the SET tab's second page, row 6,
-> cursor row 8, drawn by `SetPage` (`04:6610`, `04:7792` until 2026-10-31, `setpage.c`), which replaced
+> Since 2026-10-30 the checkbox is on the SET tab's second page, row 2
+> (row 6 until THEME and FONT moved to page 3, 2026-11-10),
+> cursor row 7, drawn by `SetPage` (`04:6610`, `04:7792` until 2026-10-31, `setpage.c`), which replaced
 > `SgbTagsRow` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)). Its
-> label is `CLEAN UP NAMES:` (`SHOW NAME TAGS:` until 2026-10-31), and row 8
+> label is `CLEAN UP NAMES:` (`SHOW NAME TAGS:` until 2026-10-31), and row 4
 > under it shows an example name the way the browser will draw it:
 > `Game Title (USA) (Rev 1) [!].gb` unticked, `Game Title` ticked (until
 > 2026-10-31 it showed `Game Title.gb`, which the browser never drew). The name takes the whole row (20 cells in 8px,

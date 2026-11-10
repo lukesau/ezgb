@@ -21,13 +21,15 @@
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): keep it on the
  *               page, redraw the rows.
  *   op 2 A      A pressed with the cursor on a mod row (or B on THEME, which op
- *               TICK turns into A). The checkboxes, THEME and UI change RAM and
- *               set SET_DIRTY, and SetCommit (04:5fc0) writes the file on NEXT, on
- *               PREV and when the screen is left (returns 0 = jp redraw); SGB BOOT and SORT BY PLAYS
- *               toggle pSRAM records instead; PICK ROM
- *               arms pick mode (returns 1 = leave the SET screen; the bank-0
- *               FlSetExitHook then re-enters the browser); NEXT and PREV
- *               switch the page (returns 2 = enter the SET screen again).
+ *               TICK turns into A). The checkboxes, THEME, FONT and the colors
+ *               change RAM and set SET_DIRTY, and SetCommit (04:5fc0) writes the
+ *               file on NEXT, on PREV and when the screen is left (returns 0 =
+ *               jp redraw); SGB BOOT and SORT BY PLAYS toggle pSRAM records
+ *               instead; PICK ROM arms pick mode (returns 1 = leave the SET
+ *               screen; the bank-0 FlSetExitHook then re-enters the browser);
+ *               NEXT and PREV switch the page, and THEME and FONT may need
+ *               the screen laid out again (returns 2 = enter the SET screen
+ *               again).
  *   op 3 PICK   the browser's A-on-ROM hook (bank 0, via FlPickCommitFar):
  *               compose $c2a6 + '/' + $c4a4, rewrite the file, disarm.
  *   op 4 LOAD   test hook only.
@@ -35,22 +37,25 @@
  *               04:5f20, on its ReadJoypad call): scroll the ROM name,
  *               then read the pad with a D-pad key repeat and return it.
  *
- * Two pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
+ * Three pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   page 1: 2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
  *           12 <name, 10 cols, scrolling> [PICK ROM]   14 DAILY BACKUP: [ ]
- *           16 1/2 [NEXT >]
- *   page 2: 2 THEME: [LIGHT]   4 FONT: [8px]   6 CLEAN UP NAMES: [ ]
- *           8 <example name, scrolling>   10 SORT BY PLAYS: [ ]
- *           12 SGB BOOT: [ ]   14 SKIP BOOT ROM: [ ]
- *           16 [< PREV] 2/2                                         (setpage.c)
+ *           16 1/3 [NEXT >]
+ *   page 2: 2 CLEAN UP NAMES: [ ]   4 <example name, scrolling>
+ *           6 SORT BY PLAYS: [ ]   8 SGB BOOT: [ ]   10 SKIP BOOT ROM: [ ]
+ *           16 [< PREV] 2/3 [NEXT >]                                (setpage.c)
+ *   page 3: 2 THEME: [LIGHT]   4 FONT: [8px]   6 COLORS: R G B
+ *           8 BG:   10 TEXT:   12 ACCENT:   the color picker
+ *           16 [< PREV] 3/3                                         (themepage.c)
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY BACKUP,
- * 6 NEXT; 7 THEME,
- * 8 UI, 9 TAGS, 10 SORT, 11 SGB BOOT, 12 SKIP BOOT ROM, 13 PREV). The stock
- * clamp lets the cursor run 0..13; op ROWS keeps it on the page. Page 2 is drawn over the stock
- * screen, which keeps running: SetText drops its text there (SET_PAGE, vars.h)
- * and op ROWS clears its dirty flag (frame[0x3e]) so it draws no boxes.
+ * 6 NEXT; 7 TAGS, 8 SORT, 9 SGB BOOT, 10 SKIP BOOT ROM, 11 PREV, 12 NEXT;
+ * 13 THEME, 14 UI, 15 BG, 16 TEXT, 17 ACCENT, 18 PREV). The stock clamp lets
+ * the cursor run 0..18; op ROWS keeps it on the page. Pages 2 and 3 are drawn
+ * over the stock screen, which keeps running: SetText drops its text there
+ * (SET_PAGE, vars.h) and op ROWS clears its dirty flag (frame[0x3e]) so it
+ * draws no boxes.
  *
  * SGB BOOT is not in EZGB.CFG: the boot stub (scripts/sgb/sgb_boot.asm) runs
  * long before the SD card is up, so it reads a record in battery-backed
@@ -74,9 +79,8 @@ extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: 
 extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
-extern void ThemeRow(u8 op);                                        /* 04:77a0, theme_row.c: the THEME button */
-extern void SetCommit(void);                                        /* 04:5fc0: SET_DIRTY -> EZGB.CFG and /.ezgbplays */
-extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page row */
+extern u8 FarCallThemePage(u8 op, u8 arg);                          /* 04:5990 -> ThemePage (0D:4000, themepage.c): page 3 */
+extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page rows */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -90,11 +94,12 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
 #define ROW_PICK  4
 #define ROW_BK    5          /* DAILY BACKUP (auto_backup.c) */
 #define ROW_NEXT  6          /* page 1's last row */
-#define ROW_THEME 7          /* page 2: THEME button (theme_row.c, docs/dark-mode.md) */
-#define ROW_UI    8          /* FONT: 8px / 12px button (docs/ui-mode.md) */
-#define ROW_TAGS  9          /* page 2's checkboxes start here (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
-#define ROW_PREV  13         /* page 2's last row */
-#define PAGE2     (SET_PAGE & 1)
+#define ROW_TAGS  7          /* page 2's checkboxes (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
+#define ROW_PREV  11         /* page 2: back to page 1 */
+#define ROW_NEXT2 12         /* page 2's last row: on to page 3 */
+#define ROW_THEME 13         /* page 3 (themepage.c): THEME, FONT, the three colors */
+#define ROW_PREV3 18         /* page 3's last row */
+#define PAGE      (SET_PAGE & 3)             /* 0, 1, 2 */
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
 #define HPADLATCH (*(volatile u8 *)0xFFFD)  /* VBlankPadLatch: buttons pressed since the last read */
@@ -116,12 +121,12 @@ static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static u8 flcfg_op(u8 *frame, u8 op);
 
-/* SET_PAGE bit 7 tells SetText the text is ours, which page 2 draws */
+/* SET_PAGE bit 7 tells SetText the text is ours, which pages 2 and 3 draw */
 u8 flcfg(u8 *frame, u8 op) {
     u8 r;
     SET_PAGE |= 0x80;
     r = flcfg_op(frame, op);
-    SET_PAGE &= 1;
+    SET_PAGE &= 3;
     return r;
 }
 
@@ -135,9 +140,9 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             frame[0x3d] = SET_RE - 1;
             SET_RE = 0;
             /* the stock entry code has drawn its boxes, TIME's SET
-             * highlighted for the cursor on row 0: page 2 clears them,
-             * page 1 draws SET plain */
-            SetPage(PAGE2 ? 4 : 8, 0);
+             * highlighted for the cursor on row 0: pages 2 and 3 clear
+             * them, page 1 draws SET plain */
+            SetPage(PAGE ? 4 : 8, 0);
         } else {
             /* not on a re-entry: RAM may hold changes the file doesn't */
             cfg_load();
@@ -148,51 +153,51 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         return 0;
     }
     if (op == 1) {
-        u8 cur = frame[0x3d];
+        static const u8 first[3] = {0, ROW_TAGS, ROW_THEME};
+        static const u8 last[3] = {ROW_NEXT, ROW_NEXT2, ROW_PREV3};
+        u8 cur = frame[0x3d], lo = first[PAGE], hi = last[PAGE];
         /* UP on the page's first row and DOWN on its last wrap: the stock
          * cursor steps across the page's end one row at a time, LEFT and RIGHT
-         * jump to row 0 and ROW_PREV (SetWrapUp / SetWrapDown, the two ends) */
-        if (PAGE2) {
-            if (cur < ROW_THEME) cur = cur == ROW_NEXT ? ROW_PREV : ROW_THEME;
-            frame[0x3e] = 0;            /* no stock redraw: its boxes are page 1's */
-        } else if (cur > ROW_NEXT) {
-            cur = cur == ROW_THEME ? 0 : ROW_NEXT;
-        }
+         * jump to row 0 and ROW_PREV3, and so do SetWrapUp and SetWrapDown
+         * at the two ends (to rows 6 and 7, off page 3 either way) */
+        if (cur < lo) cur = (u8)(cur + 1) == lo ? hi : lo;
+        else if (cur > hi) cur = cur == (u8)(hi + 1) ? lo : hi;
+        if (PAGE) frame[0x3e] = 0;      /* no stock redraw: its boxes are page 1's */
         frame[0x3d] = cur;
         draw_rows(cur);
         return 0;
     }
     if (op == 2) {
         u8 row = frame[0x3d];
-        if (row == ROW_NEXT || row == ROW_PREV) {
-            /* write what changed, then enter the screen again on the other
-             * page, over a clear pane */
-            SetCommit();
-            SET_PAGE ^= 1;
-            SET_RE = (row == ROW_NEXT ? ROW_PREV : ROW_NEXT) + 1;
-            SetPage(4, 0);
+        if (row == ROW_NEXT || row == ROW_NEXT2 || row == ROW_PREV || row == ROW_PREV3) {
+            /* write what changed, then enter the screen again on the next
+             * or the previous page, over a clear pane */
+            SetPage(6, row);
             wait_a_release();
             return 2;
         }
-        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_THEME || row == ROW_BK) {
-            if (row == ROW_THEME) {
-                u8 was_g = GLYPHS_DV, was_a = ACC_IDX;
-                ThemeRow(2);            /* sets the palettes, redraws itself */
-                /* onto or off DV, whose glyph set is its own (12px only,
-                 * AUTO), or onto or off an accent (the bars were drawn in
-                 * another color index, dv_params.c): the tab strip and the
-                 * pane are drawn again, as the FONT button does */
-                if (GLYPHS_DV != was_g || ACC_IDX != was_a) {
-                    if (THEME == THEME_DV) hUiMode = 1;
-                    goto relayout;
-                }
-            } else {
-                if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1;
-                else if (row == ROW_BK) BK_DAILY = BK_DAILY ? 0 : 1;
-                else RTC_OFF = RTC_OFF ? 0 : 1;
+        if (row >= ROW_THEME) {
+            /* THEME sets the palettes, FONT the mode, a color row starts
+             * its picker. 2: the whole pane (and the tab strip) has to be
+             * laid out again, for the new font, glyph set or accent: redraw
+             * the strip, which also clears the pane, and return 2 so
+             * FlSetADispatch re-enters the SET screen from the top. */
+            u8 r = FarCallThemePage(3, row);
+            if (r) {
                 SET_DIRTY = 1;
-                draw_rows(row);
+                FarCallMenuTabs(1);
+                SET_RE = row + 1;       /* op 0 of the re-entry: put the cursor back here */
             }
+            wait_a_release();
+            SetFpgaPage_B4(0);
+            return r;
+        }
+        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_BK) {
+            if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1;
+            else if (row == ROW_BK) BK_DAILY = BK_DAILY ? 0 : 1;
+            else RTC_OFF = RTC_OFF ? 0 : 1;
+            SET_DIRTY = 1;
+            draw_rows(row);
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;
@@ -202,27 +207,6 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             wait_a_release();
             SetFpgaPage_B4(0);
             return 0;
-        }
-        if (frame[0x3d] == ROW_UI) {
-            /* AUTO: the theme decides the font (DV is 12px only) */
-            if (THEME == THEME_DV) {
-                wait_a_release();
-                return 0;
-            }
-            /* The whole pane (and the tab strip) is laid out per mode:
-             * redraw the strip, which also clears the pane, and return 2 so
-             * FlSetADispatch re-enters the SET screen from the top. */
-            /* 8px, 12px, SLIM (DV's glyph set, 12px), 8px */
-            if (!hUiMode) hUiMode = 1;
-            else if (!FONT_SLIM) FONT_SLIM = 1;
-            else hUiMode = FONT_SLIM = 0;
-relayout:
-            SET_DIRTY = 1;
-            FarCallMenuTabs(1);
-            wait_a_release();
-            SetFpgaPage_B4(0);
-            SET_RE = frame[0x3d] + 1;     /* op 0 of the re-entry: put the cursor back here */
-            return 2;
         }
         FL_PICK = 1;
         wait_a_release();
@@ -238,8 +222,10 @@ relayout:
          * each pass), so count the VBlank interrupt's frame counter. */
         u8 d = HFRAME - MQ_A->fr, fresh, pad, dir;
         if (d > 100) d = 100;
-        /* the name on screen: page 1's, or page 2's tag example */
-        MQ_RUN(FarCallMarquee, MQ_A, MQ_STEP);
+        /* the name on screen: page 1's, or page 2's tag example; page 3
+         * has none, and only keeps the frame count the key repeat goes by */
+        if (PAGE == 2) MQ_A->fr = HFRAME;
+        else MQ_RUN(FarCallMarquee, MQ_A, MQ_STEP);
         /* The loop's pad read, with a key repeat on the D-pad. ReadJoypad
          * reports a held direction on every pass, and a pass is a fraction
          * of a frame, so a tap moved the cursor or a time field two or three
@@ -260,11 +246,9 @@ relayout:
         } else {
             RP_LEFT = RP_RATE;
         }
-        /* B on THEME steps back: the loop sees A, and ThemeRow the flag */
-        if ((pad & 0x20) && SET_CUR == ROW_THEME) {
-            THEME_BACK = 1;
-            pad ^= 0x30;
-        }
+        /* page 3: B on THEME steps back, and while a color is being set
+         * its picker takes the keys */
+        if (PAGE == 2) pad = FarCallThemePage(5, pad);
         return pad;
     }
     cfg_load();
@@ -320,8 +304,8 @@ static void draw_static(void) {
     static const u8 sd_label[3] = {'S','D',0};
     static const u8 nosd_label[6] = {'N','O',' ','S','D',0};
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
-    if (PAGE2) {
-        SetPage(0, 0);
+    if (PAGE) {
+        if (PAGE == 1) SetPage(0, 0); else FarCallThemePage(0, 0);
         return;
     }
     StoreDrawParams(3, 0, 0);
@@ -385,14 +369,19 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
 /* Page 1: the RTC (row 6: "SD [ ]  NO SD [ ]", one of the two ticked; A
  * switches) and FAST LAUNCH (row 10) checkboxes, the PICK ROM button on row
  * 12, shaped like the stock SET button (box 5 px left and 4 px right of the
- * text, 3 px above and 5 below). Page 2 and both pages' row 16 are
- * setpage.c's. */
+ * text, 3 px above and 5 below). Page 2 and every page's row 16 are
+ * setpage.c's, page 3 themepage.c's. */
 static void draw_rows(u8 cur) {
     static const u8 pick_str[9] = {'P','I','C','K',' ','R','O','M',0};
 
     SET_CUR = cur;
-    if (PAGE2) {
+    if (PAGE == 1) {
         SetPage(1, cur);
+        return;
+    }
+    if (PAGE) {
+        FarCallThemePage(1, cur);
+        SetPage(5, cur);
         return;
     }
     box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */

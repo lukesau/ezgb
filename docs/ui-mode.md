@@ -7,7 +7,7 @@ or `12px`; A toggles it, the choice is written to `EZGB.CFG` as `UI=8` or
 `UI=12` ([ezgb-cfg.md](ezgb-cfg.md)) and read back at boot. With no key, or
 no card, the browser is the 8px one, so shipping this changes nothing
 visible until the user opts in. Since 2026-10-30 the button is the `FONT:`
-row of the SET tab's second page
+row of the SET tab's third page (its second until 2026-11-10)
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)); with the DV theme it
 reads `AUTO` and the mode is 12px ([dark-mode.md](dark-mode.md#dv)). Since
 2026-11-09 it steps `8px`, `12px`, `SLIM`: SLIM is the 12px browser with DV's

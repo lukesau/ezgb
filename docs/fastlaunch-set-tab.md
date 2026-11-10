@@ -17,26 +17,28 @@ row (every row immediate and y pixel of TIME/SET and the date/time digits,
 the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 
-The pane has two pages; row 16 of each switches to the other.
+The pane has three pages (two until 2026-11-10); row 16 of each steps to
+the next or the previous one.
 
-| Row | Page 1 | Page 2 (the UI settings) |
-|---|---|---|
-| 2 | `TIME:` + `SET` (stock) | `THEME:` button, `LIGHT`, `DARK` and four colors ([`dark-mode.md`](dark-mode.md)) |
-| 4 | date and time (stock) | `FONT:` 8px / 12px button ([`ui-mode.md`](ui-mode.md)) |
-| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `CLEAN UP NAMES:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) |
-| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box ticked, `Game Title.gb` without (`TagExample`, `04:7e60`) |
-| 10 | `FAST LAUNCH:` checkbox | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) |
-| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` |
-| 14 | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup)) | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) |
-| 16 | `1/2` and a `NEXT >` button | a `< PREV` button and `2/2` |
+| Row | Page 1 | Page 2 | Page 3 (the theme) |
+|---|---|---|---|
+| 2 | `TIME:` + `SET` (stock) | `CLEAN UP NAMES:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) | `THEME:` button, `LIGHT`, `DARK`, `DV`, four colors and `CUSTOM` ([`dark-mode.md`](dark-mode.md)) |
+| 4 | date and time (stock) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box unticked, `Game Title` with it ticked (`TagExample`, `04:7e60`) | `FONT:` 8px / 12px / SLIM button ([`ui-mode.md`](ui-mode.md)) |
+| 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) | `COLORS:` and the `R` `G` `B` column heads |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](dark-mode.md#color-picker)) |
+| 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
+| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | | `ACCENT:` and its three values |
+| 14 | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup)) | | |
+| 16 | `1/3` and a `NEXT >` button | a `< PREV` button, `2/3` and a `NEXT >` button | a `< PREV` button and `3/3` |
 
 UP/DOWN move a cursor over the page's rows. Its numbers run on across the
 pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY
-BACKUP, 6 NEXT on page 1; 7 THEME, 8 UI, 9 TAGS, 10 SORT BY PLAYS, 11 SGB BOOT,
-12 SKIP BOOT ROM, 13 PREV on page 2 (clamp `04:5604` `d6 0d`, and `flcfg` op
+BACKUP, 6 NEXT on page 1; 7 TAGS, 8 SORT BY PLAYS, 9 SGB BOOT, 10 SKIP BOOT
+ROM, 11 PREV, 12 NEXT on page 2; 13 THEME, 14 FONT, 15 BG, 16 TEXT, 17
+ACCENT, 18 PREV on page 3 (clamp `04:5604` `d6 12`, and `flcfg` op
 ROWS keeps the cursor on its page). The cursor wraps within its page: UP on
-row 0 goes to `SetWrapUp` (`04:5fdc`, row 6), DOWN on row 13 to `SetWrapDown`
-(`04:5fe4`, row 7), and op ROWS turns a step off a page's end into its other end.
+row 0 goes to `SetWrapUp` (`04:5fdc`, row 6), DOWN on row 18 to `SetWrapDown`
+(`04:5fe4`, row 7, which is off page 3, so its first row), and op ROWS turns a step off a page's end into its other end.
 RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
 6.3, `scripts/inject-set-jump.py`); while the time is being set they still
 step through its fields. A new cursor row moves both the clamp and the row
@@ -49,7 +51,7 @@ step through its fields. A new cursor row moves both the clamp and the row
 syncs `/.ezgbplays` when it is set, on NEXT, on PREV and when the screen is left
 (SELECT, or PICK ROM on its way to the browser). Nothing is written if nothing
 changed. So power off before one of those and `EZGB.CFG` keeps the old values;
-this covers the checkboxes, THEME, FONT and AUTO SAVE. TIME SET's `RTC=` is the
+this covers the checkboxes, THEME, FONT, the colors and AUTO SAVE. TIME SET's `RTC=` is the
 exception: it writes the file at once, with any other changes then pending. Marks
 in pSRAM still change at once: the SGB BOOT and SORT BY PLAYS records, and the
 theme mark, so after a power off the boot starts in the new theme and the file's
@@ -59,23 +61,34 @@ doesn't read the file, since RAM may be ahead of it, and `OP_AUTOSAVE` and
 `OP_TIMESET` no longer read it either; they only run on this screen. Until
 2026-11-04 every press wrote the file.
 
-A on NEXT or PREV flips `SET_PAGE` (WRAM `$DBEE`), clears the pane and
+A on NEXT or PREV steps `SET_PAGE` (WRAM `$DBEE`, 0 to 2), clears the pane and
 enters the SET screen again from the top, as the UI toggle does
-(`FlSetADispatch`'s return 2), with the cursor on the other page's
-NEXT/PREV (`SET_RE`, `$DBEF`, the cursor row + 1), so A flips straight
-back. Leaving the tab ends on page 1: the screen's exit (`04:5912`,
+(`FlSetADispatch`'s return 2), with the cursor on the button that goes on
+the same way, or on the page's only one (`SET_RE`, `$DBEF`, the cursor
+row + 1): NEXT, NEXT walks page 1 to 3, and PREV, PREV back (`SetPage`
+op 6). Leaving the tab ends on page 1: the screen's exit (`04:5912`,
 `add sp,$6a; ret`) goes through `SetExitHook` (`04:5fb0`), which calls `SetCommit` and clears
 `SET_PAGE` first.
 
-Page 2 is drawn over the stock screen, which keeps running under it: the
-clock still ticks and its fields are redrawn every second. Two things keep
-the stock rows off it. `SetText`, which all the stock text goes through,
-draws nothing while `SET_PAGE` is exactly 1; `flcfg` sets bit 7 for as long
-as it runs, so its own text (and `SetPage`'s and `ThemeRow`'s) still draws.
-The stock boxes (the SET button, AUTO SAVE's checkbox) are drawn only when
-the screen's dirty flag (`sp+$3e`) is set after a cursor move; op ROWS
-clears it on page 2. The entry code draws those boxes once before op ENTER,
-which clears the pane again on page 2.
+Pages 2 and 3 are drawn over the stock screen, which keeps running under
+them: the clock still ticks and its fields are redrawn every second. Two
+things keep the stock rows off them. `SetText`, which all the stock text
+goes through, draws nothing while `SET_PAGE` is exactly 1 or 2; `flcfg`
+sets bit 7 for as long as it runs, so its own text (and `SetPage`'s) still
+draws. The stock boxes (the SET button, AUTO SAVE's checkbox) are drawn
+only when the screen's dirty flag (`sp+$3e`) is set after a cursor move; op
+ROWS clears it on pages 2 and 3. The entry code draws those boxes once
+before op ENTER, which clears the pane again on those pages.
+
+Page 3 is `ThemePage` (`0D:4000`,
+[`../kernel/src/themepage.c`](../kernel/src/themepage.c), 2753 B), in bank
+13 because bank 4 had no room for it; `flcfg` reaches it through
+`FarCallThemePage` (`04:5990`): op 0 the labels, op 1 the rows, op 3 A on a
+row, op 5 the loop's tick. It holds the THEME button (`ThemeRow`,
+`04:77a0`, until then), the FONT button and the color picker
+([dark-mode.md](dark-mode.md#color-picker)), and draws its own text; only
+its page row is `SetPage`'s (op 5). The name marquee has nothing to scroll
+there, so `flcfg` op 5 only keeps its frame count going for the key repeat.
 
 Page 2 and the page row are drawn by `SetPage` (`04:6610`, since
 2026-10-31; at `04:77a0`, then `04:7792` after `ThemeRow`, until it outgrew
@@ -173,8 +186,8 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 12, PREV, which op ROWS turns into NEXT on page 1; row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
-| `04:5604` | `d6 01` | `d6 0c` | cursor clamp 0..1 → 0..12, both pages (`d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 18, page 3's PREV, which op ROWS turns into the page's last row; row 13 with two pages, row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
+| `04:5604` | `d6 01` | `d6 12` | cursor clamp 0..1 → 0..18, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`cd c0 5f af ea ee db e8 6a c9`: `call SetCommit`, clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

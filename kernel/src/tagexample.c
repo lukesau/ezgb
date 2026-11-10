@@ -1,4 +1,4 @@
-/* The SET tab's tag example (docs/browser-tags.md): page 2, row 8, under
+/* The SET tab's tag example (docs/browser-tags.md): page 2, row 4, under
  * CLEAN UP NAMES:, a file name the way the browser will draw it.
  *
  *   unticked   Game Title (USA) (Rev 1) [!].gb
@@ -33,7 +33,7 @@ void TagExample(void) {
     MQ_A->s = FL_DISP;
     MQ_A->x0 = 0;
     MQ_A->x1 = 159;
-    MQ_A->y = 8 * 8;
+    MQ_A->y = 4 * 8;
     MQ_A->attr = 3;
     MQ_RUN(FarCallMarquee, MQ_A, MQ_START);
 }
