@@ -37,11 +37,15 @@
  * (light, dark), 1 = DV's lime, 2 = a color theme's third shade. Set by
  * theme_ramp (theme_pick.c) whenever a theme is applied. */
 #define ACC_IDX   (*(volatile u8 *)0xDC0B)
-/* COLORS='s optional third color, the custom theme's accent, as read, and 1
- * once one was (ezcfg.c colors_accent). Without one the accent is the
- * background's complement at full brightness. */
+/* COLORS='s optional third color, the accent of the custom theme and of DV,
+ * as read, and 1 once one was (ezcfg.c colors_accent). Without one custom's
+ * accent is the background's complement at full brightness, DV's its lime. */
 #define ACC_RGB   ((u8 *)0xDC0D)   /* 3: R, G, B */
 #define ACC_OK    (*(volatile u8 *)0xDC10)
+/* DV's colors with that third color for its lime, which theme_ramp returns
+ * for DV when ACC_OK (built by ezcfg.c colors_accent): DV stays black, white
+ * and blue, and its highlight is the one in COLORS=. */
+#define DV_RAMP   ((u8 *)0xDC11)   /* 8 */
 /* UI=SLIM: the 12px browser in DV's glyph set (Tamzen 6x12) in any theme;
  * only ever 1 with hUiMode 1. GLYPHS_DV is the glyph set the 12px renderer
  * draws: DV's with the DV theme (AUTO) or SLIM. */

@@ -493,7 +493,8 @@ static void cfg_restore(void) {
 
 /* After COLORS= set the custom theme's ramp (theme_colors.c, its first 12
  * hex digits): digits 13 to 18, a third color, are its accent, shade 2
- * (docs/dark-mode.md "Accents"); without them, the background's complement,
+ * (docs/dark-mode.md "Accents"), and DV's highlight in place of its lime
+ * (DV_RAMP); without them, the background's complement,
  * each channel max + min - c, scaled so its brightest channel is 255, as
  * theme_ramps.c's color themes have. */
 static void colors_accent(const u8 *v, u8 len) {
@@ -532,6 +533,14 @@ static void colors_accent(const u8 *v, u8 len) {
     /* BGR555: r | g << 5 | b << 10 */
     CUST_RAMP[4] = (u8)((c[0] >> 3) | ((c[1] & 0x38) << 2));
     CUST_RAMP[5] = (u8)((c[1] >> 6) | ((c[2] >> 1) & 0x7C));
+    /* DV with this color for its lime (theme_pick.c's dv_ramp otherwise):
+     * black, the highlight, blue, white */
+    if (ACC_OK) {
+        static const u8 dv[8] = {0x00, 0x00, 0, 0, 0x80, 0x61, 0xff, 0x7f};
+        for (i = 0; i < 8; i++) DV_RAMP[i] = dv[i];
+        DV_RAMP[2] = CUST_RAMP[4];
+        DV_RAMP[3] = CUST_RAMP[5];
+    }
 }
 
 /* c * 255 / m for c <= m, by shift and subtract (no helper call). */

@@ -33,7 +33,7 @@ RTC=2026-09-08 10:15:32
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `UI` | `8`, `12` or `SLIM` (12px in the Tamzen glyph set, since 2026-11-09): which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
 | `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, `7` DV, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
-| `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB`, and optionally its accent, a third `RRGGBB` (since 2026-11-09; without it the background's complement), see [dark-mode.md](dark-mode.md#custom). Hex digits count in order, so `#` and spaces are fine. Written back as read. | by hand only |
+| `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB`, and optionally its accent, a third `RRGGBB` (since 2026-11-09; without it the background's complement), which is also the DV theme's highlight in place of its lime, see [dark-mode.md](dark-mode.md#custom). Hex digits count in order, so `#` and spaces are fine. Written back as read. | by hand only |
 | `BOOTROM` | `1`: every launch resets through the boot ROM instead of jumping to a game's `$0100`, see [skip-boot-rom.md](skip-boot-rom.md). Written only as `BOOTROM=1`. Missing = jump when safe. | SET tab (`SKIP BOOT ROM:` checkbox, unticked) |
 | `DAILYBACKUP` | `1`: copy a save to a dated backup on the day's first dump, the SET tab's `DAILY BACKUP:` box ([save-manager.md](save-manager.md#daily-backup)). Anything else, or missing, off. | the SET tab |
 | `TAGS` | `1`: the browser shows full file names (the SET tab's `CLEAN UP NAMES:` box unticked). Anything else, or missing, cuts names at their tags and extensions, see [browser-tags.md](browser-tags.md). Written only as `TAGS=1`. Since 2026-10-31; until then missing meant full names and `TAGS=0` cut them, which still reads the same. | SET tab (`CLEAN UP NAMES:` checkbox) |
@@ -281,6 +281,7 @@ no version-specific address.
 | `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/src/auto_backup.c)) |
 | `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([dark-mode.md](dark-mode.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([ui-mode.md](ui-mode.md)) |
 | `$DC0D-$DC0F` / `$DC10` | `ACC_RGB`, `COLORS=`'s third color as read / `ACC_OK`, 1 once one was |
+| `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([dark-mode.md](dark-mode.md#accents)) |
 | `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser-tags.md](browser-tags.md)) |
 | `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([dark-mode.md](dark-mode.md)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |

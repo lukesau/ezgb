@@ -6,7 +6,8 @@
  *                  COLORS=, and the THEME= and BOOTROM= lines on a save
  *   theme_ramp     02:4998, the four colors THEME draws in, for theme.c,
  *                  called with the pSRAM mark mapped: a row of
- *                  theme_ramps.c, CUST_RAMP for custom, dv_ramp for DV. It
+ *                  theme_ramps.c, CUST_RAMP for custom, dv_ramp for DV (DV_RAMP, its
+ *                  lime swapped, when COLORS= has a third color). It
  *                  cannot far-call: the boot runs theme with interrupts off.
  *
  * Before the file is read (boot), the mark's colors become CUST_RAMP, so a
@@ -67,9 +68,15 @@ const u8 *theme_ramp(void) __naked {
 	ld	(hl), c
 	cp	#6			; THEME_CUSTOM
 	ret	z
-	ld	de, #_dv_ramp
 	cp	#7			; THEME_DV
+	jr	nz, 5$
+	ld	de, #_dv_ramp
+	ld	a, (#0xdc10)		; ACC_OK: COLORS= has a third color,
+	or	a
 	ret	z
+	ld	de, #0xdc11		; DV_RAMP, DV with it for the lime
+	ret
+5$:
 	add	a
 	add	a
 	add	a
