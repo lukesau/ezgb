@@ -11,7 +11,7 @@
  * y 52..87 in 12px (the text row at y 64) and 54..81 in 8px (tile row 8),
  * where the stock box was (35,37)-(125,108). Its frame is his too: a 2 px
  * outer line, a 1 px gap and a 1 px inner line, in the text's color, with
- * the outer corners rounded off in the screen's (color 0).
+ * the outer corner pixels left as they were, so the box looks rounded.
  *
  * Light: ink 0 on paper 3, as stock. A dark theme: white ink on a lighter
  * shade of the background (PopupDrawParams), like the other popups; DV keeps
@@ -61,7 +61,13 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
         return;
     }
     if (THEME) PopupDrawParams(3, 0); else StoreDrawParams(0, 3, 0);
-    DrawRect(x0, y0, x1, y1, 1);                       /* paper, outer line */
+    /* paper and the outer line, without its four corner pixels: the corners
+     * are rounded, and what is behind them (a list row, the bar, a theme's
+     * background) stays as it is. Until 2026-11-11 they were painted in
+     * color 0, which is only right over an empty background. */
+    DrawRect(x0 + 1, y0, x1 - 1, y1, 1);
+    DrawRect(x0, y0 + 1, x0, y1 - 1, 1);
+    DrawRect(x1, y0 + 1, x1, y1 - 1, 1);
     DrawRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1, 0);       /* its second pixel */
     DrawRect(x0 + 3, y0 + 3, x1 - 3, y1 - 3, 0);       /* the inner line */
     if (which == 3) {
@@ -77,11 +83,4 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
             hClip12 = 0;
         }
     }
-    /* the outer corners in the screen's color */
-    StoreDrawParams(0, 0, 0);
-    DrawRect(x0, y0, x0, y0, 0);
-    DrawRect(x1, y0, x1, y0, 0);
-    DrawRect(x0, y1, x0, y1, 0);
-    DrawRect(x1, y1, x1, y1, 0);
-    if (THEME) PopupDrawParams(3, 0); else StoreDrawParams(0, 3, 0);
 }
