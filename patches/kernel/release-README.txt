@@ -41,13 +41,13 @@ none of the patches will apply cleanly.
 
 Not sure which kernel to use? Match the cart's firmware, which the HELP tab
 shows: 1.04e on an FW4 cart, 1.05e on an FW5 cart. 1.04e also boots on FW5,
-so start there if you can't tell. FW5 is the better firmware (RTC games keep
-their clock and games load faster). If you are willing to run a firmware
-updater and have a modern, genuine microSD card, moving an FW4 cart to
-FW5-0918 is worth considering; section 4 says what is at stake. EZ Flash no
-longer lists its FW5 packages (1.05e) on the download page, for two reasons
-that section covers: interrupted updates, and slow cards that FW5 fails to
-start. The stock packages, both from EZ Flash:
+so start there if you can't tell. FW4 is missing MBC3 game clock, fast
+loading and SD error recovery. If you are comfortable running a firmware
+updater and have a modern, genuine microSD card, use FW5-0918; section 4
+says what is at stake. EZ Flash no longer lists its FW5 packages (1.05e) on
+the download page, for two reasons that section covers: interrupted updates,
+and slow cards that FW5 fails to start. The stock packages, both from EZ
+Flash:
   1.04e / FW4:     https://www.ezflash.cn/download/  (EZ-FLASH Junior)
   1.05e-0918 FW5:  https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip
 The full comparison:
