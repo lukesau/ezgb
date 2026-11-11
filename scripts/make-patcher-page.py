@@ -35,9 +35,9 @@ kp = __import__("kernel-patch")
 
 KPKG = {"1.04e": "juniorkernel-1.04e-FW4", "1.05e-0731": "juniorkernel-1.05e-FW5-0731",
         "1.05e-0918": "juniorkernel-1.05e-FW5-0918"}
-FW = {"fw4": ("FW4 updater (Update_FW4.gb)", "juniorkernel-1.04e-FW4", "Update_FW4-mod-{v}.gb"),
+FW = {"fw4": ("FW4 updater (Update_FW4.gb)", "juniorkernel-1.04e-FW4", "{v}-Update_FW4.gb"),
       "fw5-0918": ("FW5 2021-9-18 updater (Update_FW5_2021-9-18.gb)", "juniorkernel-1.05e-FW5-0918",
-                   "Update_FW5-0918-mod-{v}.gb")}
+                   "{v}-Update_FW5-0918.gb")}
 # patched but left out of the kernel table: the 0731 package is hard to find now
 KUNLISTED = {"1.05e-0731"}
 REJECT = {"juniorkernel-1.05e-FW5-0731/Update_FW5_7-31.gb":
