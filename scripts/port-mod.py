@@ -109,7 +109,7 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410}),
+                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page rows, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "SetCommit": 0x5fc0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
@@ -125,11 +125,11 @@ REGISTRY = {
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290,
-                            "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0}),
+                            "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0, "WaitVBlankFlag": 0x0688}),
     (11, 0x4010): dict(src="save_mgr.c",                    # Manage saves screens, far target of the 04:6d11 stub RomMenu calls (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "SmSaveOp": 0x4000, "PopupDrawParams": 0x0290}),
+                            "SmSaveOp": 0x4000, "PopupDrawParams": 0x0290, "WaitVBlankFlag": 0x0688}),
     (1, 0x7670): dict(src="save_ops.c",                     # save manager file work, far target of SmSaveOp 04:6562
                       pins={**FATFS, "SoOpendir": 0x7630, "SoReaddir": 0x7646, "SoUnlink": 0x765c, "SoMatch": 0x7d50}),
     (4, 0x73a0): dict(src="save_name.c", pins={}),

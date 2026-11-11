@@ -223,7 +223,12 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         /* Paced in frames, not loop passes: a pass takes anything from a
          * fraction of a frame (1.05e) to exactly one (1.04e waits for VBlank
          * each pass), so count the VBlank interrupt's frame counter. */
-        u8 d = HFRAME - MQ_A->fr, fresh, pad, dir;
+        u8 d, fresh, pad, dir;
+        /* One pass a frame at most, halted for the rest of it: 1.05e's loop
+         * has no wait of its own and kept the CPU, and the bus the save
+         * pSRAM shares, busy all the time. fr is the last pass's frame. */
+        if (HFRAME == MQ_A->fr) WaitVBlankFlag();
+        d = HFRAME - MQ_A->fr;
         if (d > 100) d = 100;
         /* the name on screen: page 1's, or page 2's tag example; page 3
          * has none, and only keeps the frame count the key repeat goes by */

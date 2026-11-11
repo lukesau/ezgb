@@ -138,7 +138,7 @@ void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
 static u8 key(u8 *prev) {
     u8 f = HFRAME, pad;
 
-    while (HFRAME == f) {}
+    while (HFRAME == f) WaitVBlankFlag();   /* halted, not spinning: docs/browser-nav.md */
     pad = LastRomTickStub();
     f = pad & (u8)~*prev;
     *prev = pad;
