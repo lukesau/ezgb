@@ -298,6 +298,23 @@ python3 tools/inject_bytes.py "$V" 8 7e4c MsgBoxFar cd8d07004b0b00c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e10 MsgHookReading f0fbb71806210300c347733e00f533cd4c7e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e24 MsgHookLoading f0fbb71806210300c382733e01f533cd4c7e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e38 MsgHookError   f0fbb71806210300c3bd733e02f533cd4c7e33c9 --apply
+# BATTERY DRY in the same box (docs/modal-prompts.md): BatteryCheck keeps its
+# first draw, the one-space string that puts the screen in graphics mode,
+# then far-calls MsgBox(3) inline (a pushed pad word puts the argument where
+# the called-stub form has it) and jumps to its wait for A. After A, the
+# three nops behind `call BatteryDryHook` (00:18e8) jump back to a second
+# far call (00:1878), MsgBox(4), which erases the box. The stock draws after
+# that stay, as dead code.
+python3 - "$GB" <<'PY'
+import sys
+p=sys.argv[1]; rom=bytearray(open(p,'rb').read())
+new=bytes.fromhex("3e03f533e5cd8d07004b0b00e803185f" "3e04f533e5cd8d07004b0b00e8031862")
+assert bytes(rom[0x18e5:0x18e8])==bytes.fromhex("cd3005"), "BatteryDryHook call first"
+rom[0x18e8:0x18eb]=bytes.fromhex("188e00")
+assert bytes(rom[0x1857:0x185a])==bytes.fromhex("210508") and bytes(rom[0x18d7:0x18da])==bytes.fromhex("cd4a3a")
+rom[0x1868:0x1868+len(new)]=new
+open(p,'wb').write(rom)
+PY
 # 12px HELP pane (docs/tab-strip12.md): DrawFwVersionScreen_drawChrome
 # (08:70e1) starts with `jp HelpHook`; 12px calls Help12 with the stock
 # version buffer, then jumps to the stock wait loop.

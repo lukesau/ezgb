@@ -109,11 +109,46 @@ its own `DrawString12` call with a pixel x, so the proportional font does not
 misalign the columns; the two options are separate calls for the same
 reason.
 
-## Not changed
-
-`BATTERY DRY!!!` (`BatteryCheck`, `00:1835`) and the Reading / Loading /
-Error boxes are stock.
-
 Checked in SameBoy (DMG model): both prompts in both modes on 0731 (long
 name scrolling, A saving through to the browser, B, the RTC prompt followed
 by the save prompt), and the 12px prompts on 0918.
+
+## BATTERY DRY
+
+Stock: the Reading box's rectangle, (35,37)-(125,108), with `BATTERY`,
+`DRY!!!` and a framed `[A]OK`. Now it is the small status box of
+[tab-strip12.md](tab-strip12.md) "Status boxes" around two lines:
+
+```
+Battery dry!
+   [A] ok
+```
+
+112 px wide, (24,46)-(135,89), tile rows 7 and 9, the same double frame and
+rounded corners. `MsgBox` (`msgbox.c`, `0B:4B00`) draws it as box 3. It comes
+up before `EZGB.CFG` is read, so it is always 8px.
+
+| Site (0731) | Was | Now |
+|---|---|---|
+| `00:1868`, in `BatteryCheck` | `StoreDrawParams`, the box, three strings, the button frame | `ld a,3; push af; inc sp; push hl`, inline far call to `MsgBox`, `add sp,3; jr BatteryCheck_waitA` |
+
+| `00:1878`, the stock draws | dead after the `jr` | `ld a,4; push af; inc sp; push hl`, inline far call to `MsgBox`, `add sp,3; jr $18ea` |
+| `00:18e8`, in `BatteryCheck_markOk` | three `nop` after `call BatteryDryHook` | `jr $1878; nop` |
+
+Box 4 erases the box once A is pressed. Nothing clears the screen between
+here and the first `Reading...` box, which is smaller, so without it that
+box was drawn over this one.
+
+The draw before it stays: `BatteryCheck` first draws a one-space string,
+which is what puts the screen in graphics mode, and that resets the ink and
+paper. A box drawn ahead of it comes out in the default colors, black on
+white. The far call is inline, so a pushed pad word puts the argument where
+`MsgBox` reads it (the status boxes reach it through a called stub). The
+stock draws after the `jr` are left in place as dead code: zeroing them made
+`port-mod.py` refuse the 1.04e port over a screen-position constant it reads
+as a pointer.
+
+Checked in SameBoy (DMG and CGB models on 0731, DMG on 0918 and 1.04e, with
+`SAMEBOY_EZFLASH_JR_DRY=1`): the box, then A, an empty screen under `Micro
+SD initial OK!`, the `Reading...` box alone, and the browser. Confirmed on
+hardware 2026-11-10.

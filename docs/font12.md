@@ -8,7 +8,7 @@ widest). Only the browser list (and its long-name marquee) is converted;
 the tab strip ([tab-strip12.md](tab-strip12.md)) and the START overlay
 ([last-rom.md](last-rom.md)) the HELP pane and the SET pane ([set-pane12.md](set-pane12.md)) use the
 same font, as do the Reading / Loading / Error boxes; only the boot
-messages and `BATTERY DRY!!!` still use the stock 8x8 text. Opt-in through the `UI:` row of the SET tab
+messages and the battery dry box ([modal-prompts.md](modal-prompts.md)) still use the stock 8x8 text. Opt-in through the `UI:` row of the SET tab
 ([ui-mode.md](ui-mode.md)).
 
 ## How the kernel draws text, and why on-the-fly composition works
