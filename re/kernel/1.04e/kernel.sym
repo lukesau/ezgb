@@ -4600,7 +4600,7 @@
 04:5990 FarCallThemePage
 04:5990 .data:8:8
 0d:4000 ThemePage
-0d:4000 .data:b56:8
+0d:4000 .data:b4f:8
 04:5f80 FlSetJumpTop
 04:5f80 .data:a:8
 04:5f90 FlSetJumpBottom
