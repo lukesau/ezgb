@@ -4638,7 +4638,7 @@
 02:78b0 FarCallPlayLoad
 02:78b0 .data:8:8
 0c:4000 BrowserNav
-0c:4000 .data:b21:8
+0c:4000 .data:b2b:8
 00:3d8c NavDownStub
 00:3d8c .data:8:8
 00:3fa0 NavUpStub
