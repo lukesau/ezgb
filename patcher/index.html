@@ -88,26 +88,37 @@ ol { padding-left: 22px; margin: 0 0 12px; }
 <details class="fold" id="firmware">
   <summary><h2>Firmware updater <span class="tag risk">Experimental</span></h2></summary>
   <div class="warn">
-    <strong>THIS CAN BRICK YOUR CART.</strong>
-    <p>All firmware updaters for the EZ Flash Jr, stock or modded, carry a small risk of bricking the cart if the update doesn't go smoothly.
-    A bitstream that fails its CRC is caught by the cart's fallback image, but a bootloader that runs and then hangs
-    cannot be fixed with another updater: recovery needs hardware, an SPI programmer on the flash chip or JTAG.
-    Both FW4 and FW5 are fully tested and working correctly. The risk is not the firmware itself, but the installation process. Only flash it if you accept losing the cart.</p>
-    <p>Use a fast, good-quality microSD card and fresh batteries (or a plugged-in, charging console), and do not power off
-    while the updater writes. A Game Boy Advance SP is not recommended, since it's too easy to bump the cart and interrupt
-    the update; if it's your only option, be extremely careful. EZ Flash's FW5 is itself a release candidate: on slow SD cards it can halt at
-    LOADING or OS INIT. If you don't need what the firmware adds, use the kernel above and stop there.</p>
+    <strong>Read this before flashing.</strong>
+    <p>Unlike the kernel, this rewrites the firmware in the cart's flash, the same way an official EZ Flash update does.
+    Both FW4 and FW5 are tested and working. What is at stake is the installation, stock or modded, and there are two
+    things that go wrong:</p>
+    <p><b>An interrupted or bad write.</b> Power is lost, the cart is bumped, or the card misreads while the updater writes.
+    Nearly always the half-written firmware fails its CRC, the cart starts from its factory firmware (a second copy no
+    updater touches) and you run the updater again. Rarely a damaged image passes the check and the cart boots a broken
+    bootloader. That one case can't be fixed with another updater: recovery needs hardware, an SPI programmer on the
+    flash chip or JTAG. So use fresh batteries (or a plugged-in, charging console) and do not power off or touch the cart
+    while the updater writes. A Game Boy Advance SP is not recommended, since it's too easy to bump the cart; if it's
+    your only option, be extremely careful.</p>
+    <p><b>A card FW5 can't start.</b> On FW5, some slow or old microSD cards stop at <code>Micro SD initial error</code>
+    or the mod's insert-card prompt. Nothing on the cart is damaged: put the kernel and the FW4 updater on a good card,
+    flash FW4, and the old card works again. The FW5 mod retries SD errors instead of hanging, and with it the error has
+    become hard to reproduce even on slow cards.</p>
+    <p><b>Which one?</b> If you are comfortable with the above and have a modern, genuine microSD card, take FW5, also on
+    a cart that is on FW4 now: it adds the MBC3 game clock, fast loading and SD error recovery, which FW4 can't do.
+    Stay on FW4 if your card is old or of doubtful origin. If you don't need what the firmware adds, use the kernel
+    above and stop there.</p>
   </div>
   <p>What it adds: a new boot screen, fast launch straight from the bootloader (the game named by
   <code>FLAUNCH=</code> in <code>/EZGB.CFG</code>, START at power-on cancels), the pending save backed up before a fast launch
   (never when the battery is dead), Super Game Boy detection (untested on a real Super Game Boy; it takes over from
   the kernel's SGB BOOT box, which is tested, so on an SGB use the kernel alone for now), and on FW5 the MBC3 game clock and fast loading.</p>
-  <label class="ack"><input type="checkbox" id="ack">I understand this rewrites my cart's firmware and can brick it.</label>
+  <label class="ack"><input type="checkbox" id="ack">I understand this rewrites my cart's firmware, and that a failed update can, rarely, need hardware tools to repair.</label>
   <label class="pick off" id="fpick"><input type="file" id="ffile" disabled>Choose or drop the stock updater (<code>Update_FW4.gb</code> or <code>Update_FW5_2021-9-18.gb</code>)</label>
   <div class="result" id="fres"></div>
   <p style="margin-top:14px">Installing:</p>
   <ol>
-    <li>Install the kernel above first.</li>
+    <li>Install the kernel above first. Moving an FW4 cart to FW5: stay on patched 1.04e for the update (it boots on both),
+    then switch <code>ezgb.dat</code> to patched 1.05e-0918.</li>
     <li>Copy the patched updater to the card, launch it from the file browser like a game, and press A.
     Wait until it says it's done.</li>
     <li>Power off and on. The boot screen's bottom line reads <code>FW4-MOD</code> or <code>FW5-MOD</code> and the mod's version.</li>
