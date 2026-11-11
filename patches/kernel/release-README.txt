@@ -121,12 +121,11 @@ What can go wrong, and what it costs:
   instead of hanging, and with it the error has become hard to reproduce
   even on slow cards.
 
-Which firmware: if the steps above don't put you off and you have a modern,
-genuine microSD card, take FW5 (the FW5-0918 patch), also on a cart that is
-on FW4 now. It adds the MBC3 game clock, fast loading and SD error recovery,
-none of which FW4 can do. On an FW4 cart, update while on the 1.04e kernel
-(it boots on both), then switch ezgb.dat to patched 1.05e-0918. Stay on FW4
-if your card is old or of doubtful origin.
+Which firmware: if you are comfortable with the above and have a modern,
+genuine microSD card, use FW5-0918. FW4 is missing MBC3 game clock, fast
+loading and SD error recovery. On an FW4 cart, update while on the 1.04e
+kernel (it boots on both), then switch ezgb.dat to patched 1.05e-0918. Stay
+on FW4 if your card is old or of doubtful origin.
 
 Apply each patch only to the updater it names, and check both md5s: a
 patch applied to another updater writes firmware that fails its CRC
