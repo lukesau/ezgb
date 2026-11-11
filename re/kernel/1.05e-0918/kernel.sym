@@ -4625,7 +4625,7 @@
 00:3fe4 DvParams
 00:3fe4 .data:1b:8
 0b:4b00 MsgBox
-0b:4b00 .data:195:8
+0b:4b00 .data:248:8
 08:7e4c MsgBoxFar
 08:7e4c .data:8:8
 02:7600 TabStrip12

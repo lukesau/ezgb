@@ -4500,23 +4500,32 @@ BatteryCheck::
     push hl
     call DrawString
     add sp, $05
-    ld hl, $0003
-    push hl
-    ld a, $00
+    ld a, $03
     push af
     inc sp
-    call StoreDrawParams
+    push hl
+    call FarCallTrampoline
+    nop
+    ld c, e
+    dec bc
+    nop
     add sp, $03
-    ld hl, $016c
-    push hl
-    ld hl, $7d25
-    push hl
-    ld a, $23
+    jr BatteryCheck_waitA
+
+jr_000_1878:
+    ld a, $04
     push af
     inc sp
-    call DrawRect
-    add sp, $05
-    ld hl, $0705
+    push hl
+    call FarCallTrampoline
+    nop
+    ld c, e
+    dec bc
+    nop
+    add sp, $03
+    jr jr_000_18ea
+
+    rlca
     push hl
     ld a, $07
     push af
@@ -4573,8 +4582,9 @@ BatteryCheck_waitA::
 
 BatteryCheck_markOk::
     call $0530
-    nop
-    nop
+    jr jr_000_1878
+
+jr_000_18ea:
     nop
 
 BatteryCheck_enterSdMenu::
