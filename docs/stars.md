@@ -14,8 +14,8 @@ free one, 16-bit hashes, and scores that stopped growing after 21 plays; the
 sort setting took the SGB BOOT row; and the menu sent the cursor to the top of
 the list after a star.
 
-Emulator-tested (SameBoy, CGB and DMG, 8px and 12px, 0731 and 0918). Not yet on
-hardware.
+Emulator-tested (SameBoy, CGB and DMG, 8px and 12px, 0731 and 0918). Stars and
+the play-count order work on hardware (2026-11-11).
 
 ## The table
 
@@ -39,6 +39,24 @@ Unstarring a ROM that was never launched drops its entry. A header that is not
 `'P'`, `'L'` (a new cart, or a dry coin cell) starts an empty table. Since
 2026-10-31 the table is also kept on the card (below), so a cart without a
 coin cell keeps its stars and counts too.
+
+**The full table, checked in SameBoy (2026-11-11).**
+[test-play-evict.py](../scripts/test-play-evict.py) writes a 254-entry
+`/.ezgbplays` to a scratch card, launches or stars a ROM that is not in it,
+and compares the file the kernel writes back:
+
+| Table | Action | Result |
+|---|---|---|
+| one least-launched unstarred entry (2 launches), beside starred entries with 0 and 1 and unstarred ones with 256 and 513 | launch | that entry goes, the new ROM is in with 1 launch |
+| the same | Star | that entry goes, the new ROM is in starred with 0 launches |
+| three unstarred entries tied for the least | launch | the last of the three in table order goes |
+| 253 stars and one unstarred entry with 1000 launches | launch | the unstarred one goes |
+| 254 stars | launch | nothing changes, the launch is not counted |
+| 254 stars | Star | nothing changes |
+
+Every case keeps 254 entries sorted by hash and the right star count. All six
+pass on 0731 as a CGB; the first two also on 0918 and 1.04e, and the first
+and last on 0731 as a DMG.
 
 ## On the card
 
@@ -141,7 +159,11 @@ listing the star is still saved but the order and icons stay as they are.
 
 ## Not done
 
-- Not tested on hardware, and the full-table eviction is untested anywhere.
-  The card file is checked in SameBoy only.
+- Stars and the play-count order work on hardware (2026-11-11). The card
+  file and the full table are checked in SameBoy only.
+- A star refused because all 254 entries are starred says nothing: the menu
+  closes and the ROM stays as it was.
+- A ROM launched for the first time into a full table has one launch, so it
+  is the likeliest entry to go when the next new ROM comes.
 - The play count is not shown anywhere, only used for the order.
 - Stage1's fast launch boots a game without the kernel, so it is not counted.
