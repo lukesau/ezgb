@@ -4429,7 +4429,7 @@
 00:0222 MarqueeShift
 00:0222 .data:7:8
 02:4a00 EzCfg
-02:4a00 .data:16a8:8
+02:4a00 .data:16d2:8
 02:4500 FastLaunchScan
 02:4500 .data:2d3:8
 04:5f00 FarCallEzCfg
@@ -4504,10 +4504,6 @@
 00:04ae .data:19:8
 02:6f40 FillRect
 02:6f40 .data:18a:8
-04:5f80 FlSetJumpTop
-04:5f80 .data:f:8
-04:5f90 FlSetJumpBottom
-04:5f90 .data:10:8
 04:7c00 U32ToAsciiFast
 04:7c00 .data:c2:8
 04:5a00 RomMenu
@@ -4615,11 +4611,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:62d:8
+04:6d19 .data:61d:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:5a4:8
+04:6610 .data:5ca:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
@@ -4659,4 +4655,8 @@
 04:5990 FarCallThemePage
 04:5990 .data:8:8
 0d:4000 ThemePage
-0d:4000 .data:ac1:8
+0d:4000 .data:af4:8
+04:5f80 FlSetJumpTop
+04:5f80 .data:a:8
+04:5f90 FlSetJumpBottom
+04:5f90 .data:a:8
