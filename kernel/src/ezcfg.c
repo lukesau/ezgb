@@ -496,7 +496,9 @@ static void cfg_restore(void) {
  * (docs/dark-mode.md "Accents"), and DV's highlight in place of its lime
  * (DV_RAMP); without them, the background's complement,
  * each channel max + min - c, scaled so its brightest channel is 255, as
- * theme_ramps.c's color themes have. */
+ * theme_ramps.c's color themes have. A gray background (black and white
+ * too) is its own complement, bars nobody could see: its accent is the
+ * ink, the bars light and dark have. */
 static void colors_accent(const u8 *v, u8 len) {
     u8 c[3];
     u8 i, h, n = 0, mx, mn;
@@ -525,10 +527,10 @@ static void colors_accent(const u8 *v, u8 len) {
         }
         h = 0;
         for (i = 0; i < 3; i++) {
-            c[i] = (u8)(mx + mn - CUST_RGB[i]);
+            c[i] = mx == mn ? CUST_RGB[i + 3] : (u8)(mx + mn - CUST_RGB[i]);
             if (c[i] > h) h = c[i];
         }
-        if (h) for (i = 0; i < 3; i++) c[i] = scale255(c[i], h);
+        if (h && mx != mn) for (i = 0; i < 3; i++) c[i] = scale255(c[i], h);
     }
     /* BGR555: r | g << 5 | b << 10 */
     CUST_RAMP[4] = (u8)((c[0] >> 3) | ((c[1] & 0x38) << 2));
@@ -757,7 +759,7 @@ static void cfg_load(void) {
      * (theme_colors.c), wherever that is in the file: light. DV comes after
      * custom (vars.h) and needs nothing. */
     if (THEME >= (u8)(THEME_CUSTOM + CUST_OK) && THEME != THEME_DV) THEME = 0;
-    /* AUTO: DV's glyph set is 12px only, whatever UI= says */
+    /* DV's glyph set is 12px only, whatever UI= says */
     if (THEME == THEME_DV) hUiMode = 1;
 }
 

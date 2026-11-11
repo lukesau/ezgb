@@ -206,7 +206,7 @@ there.
 
 ## Daily backup
 
-`DAILY BACKUP:` on the SET tab's first page, `DAILYBACKUP=1` in `/EZGB.CFG`,
+`DAILY BACKUP:` on the SET tab's second page (the first until 2026-11-10), `DAILYBACKUP=1` in `/EZGB.CFG`,
 off by default ([auto_backup.c](../kernel/src/auto_backup.c), after
 [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code).
 

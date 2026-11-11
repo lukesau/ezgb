@@ -40,19 +40,22 @@
  * Three pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   page 1: 2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]
  *           8 AUTO SAVE: [ ]   10 FAST LAUNCH: [ ]
- *           12 <name, 10 cols, scrolling> [PICK ROM]   14 DAILY BACKUP: [ ]
- *           16 1/3 [NEXT >]
+ *           12 <name, 10 cols, scrolling> [PICK ROM]
+ *           16 [< PREV] 1/3 [NEXT >]
  *   page 2: 2 CLEAN UP NAMES: [ ]   4 <example name, scrolling>
  *           6 SORT BY PLAYS: [ ]   8 SGB BOOT: [ ]   10 SKIP BOOT ROM: [ ]
+ *           12 DAILY BACKUP: [ ]
  *           16 [< PREV] 2/3 [NEXT >]                                (setpage.c)
  *   page 3: 2 THEME: [LIGHT]   4 FONT: [8px]   6 COLORS: R G B
  *           8 BG:   10 TEXT:   12 ACCENT:   the color picker
- *           16 [< PREV] 3/3                                         (themepage.c)
+ *           16 [< PREV] 3/3 [NEXT >]                                (themepage.c)
+ * The pages go round: PREV on page 1 is page 3, NEXT on page 3 page 1.
  * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
- * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY BACKUP,
- * 6 NEXT; 7 TAGS, 8 SORT, 9 SGB BOOT, 10 SKIP BOOT ROM, 11 PREV, 12 NEXT;
- * 13 THEME, 14 UI, 15 BG, 16 TEXT, 17 ACCENT, 18 PREV). The stock clamp lets
- * the cursor run 0..18; op ROWS keeps it on the page. Pages 2 and 3 are drawn
+ * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 PREV, 6 NEXT;
+ * 7 TAGS, 8 SORT, 9 SGB BOOT, 10 SKIP BOOT ROM, 11 DAILY BACKUP, 12 PREV,
+ * 13 NEXT; 14 THEME, 15 UI, 16 BG, 17 TEXT, 18 ACCENT, 19 PREV, 20 NEXT:
+ * a page's last two rows are its PREV and NEXT). The stock clamp lets
+ * the cursor run 0..20; op ROWS keeps it on the page. Pages 2 and 3 are drawn
  * over the stock screen, which keeps running: SetText drops its text there
  * (SET_PAGE, vars.h) and op ROWS clears its dirty flag (frame[0x3e]) so it
  * draws no boxes.
@@ -92,13 +95,8 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
                               * row 2 is the stock AUTO SAVE, which never reaches flcfg */
 #define ROW_CHECK 3
 #define ROW_PICK  4
-#define ROW_BK    5          /* DAILY BACKUP (auto_backup.c) */
-#define ROW_NEXT  6          /* page 1's last row */
-#define ROW_TAGS  7          /* page 2's checkboxes (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM */
-#define ROW_PREV  11         /* page 2: back to page 1 */
-#define ROW_NEXT2 12         /* page 2's last row: on to page 3 */
-#define ROW_THEME 13         /* page 3 (themepage.c): THEME, FONT, the three colors */
-#define ROW_PREV3 18         /* page 3's last row */
+#define ROW_TAGS  7          /* page 2's checkboxes (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM, DAILY BACKUP */
+#define ROW_THEME 14         /* page 3 (themepage.c): THEME, FONT, the three colors */
 #define PAGE      (SET_PAGE & 3)             /* 0, 1, 2 */
 #define NAME_X1  79                         /* the name's field ends left of PICK ROM: ten 8px cells, x 0..79 */
 
@@ -131,6 +129,9 @@ u8 flcfg(u8 *frame, u8 op) {
 }
 
 static u8 flcfg_op(u8 *frame, u8 op) {
+    /* each page's first row, and its last: NEXT, with PREV the row before it */
+    static const u8 first[3] = {0, ROW_TAGS, ROW_THEME};
+    static const u8 last[3] = {6, 13, 20};
     if (op == 0) {
         FL_PICK = 0;
         /* entered again after a page or UI switch: the cursor goes back on
@@ -153,14 +154,15 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         return 0;
     }
     if (op == 1) {
-        static const u8 first[3] = {0, ROW_TAGS, ROW_THEME};
-        static const u8 last[3] = {ROW_NEXT, ROW_NEXT2, ROW_PREV3};
         u8 cur = frame[0x3d], lo = first[PAGE], hi = last[PAGE];
-        /* UP on the page's first row and DOWN on its last wrap: the stock
-         * cursor steps across the page's end one row at a time, LEFT and RIGHT
-         * jump to row 0 and ROW_PREV3, and so do SetWrapUp and SetWrapDown
-         * at the two ends (to rows 6 and 7, off page 3 either way) */
-        if (cur < lo) cur = (u8)(cur + 1) == lo ? hi : lo;
+        /* LEFT and RIGHT (FlSetJumpTop / FlSetJumpBottom store $FE and $FF)
+         * put the cursor on the page's PREV or NEXT button from any row.
+         * UP on the page's first row and DOWN on its last wrap: the stock
+         * cursor steps across the page's end one row at a time, and
+         * SetWrapUp and SetWrapDown at the two ends go to rows 6 and 8,
+         * off page 3 either way */
+        if (cur >= 0xFE) cur = hi - (u8)(0xFF - cur);
+        else if (cur < lo) cur = (u8)(cur + 1) == lo ? hi : lo;
         else if (cur > hi) cur = cur == (u8)(hi + 1) ? lo : hi;
         if (PAGE) frame[0x3e] = 0;      /* no stock redraw: its boxes are page 1's */
         frame[0x3d] = cur;
@@ -169,9 +171,9 @@ static u8 flcfg_op(u8 *frame, u8 op) {
     }
     if (op == 2) {
         u8 row = frame[0x3d];
-        if (row == ROW_NEXT || row == ROW_NEXT2 || row == ROW_PREV || row == ROW_PREV3) {
-            /* write what changed, then enter the screen again on the next
-             * or the previous page, over a clear pane */
+        if ((u8)(row + 1) >= last[PAGE]) {
+            /* PREV or NEXT: write what changed, then enter the screen again
+             * on that page, over a clear pane */
             SetPage(6, row);
             wait_a_release();
             return 2;
@@ -192,9 +194,8 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             SetFpgaPage_B4(0);
             return r;
         }
-        if (row == ROW_CHECK || row == ROW_RTC || row == ROW_BK) {
+        if (row == ROW_CHECK || row == ROW_RTC) {
             if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1;
-            else if (row == ROW_BK) BK_DAILY = BK_DAILY ? 0 : 1;
             else RTC_OFF = RTC_OFF ? 0 : 1;
             SET_DIRTY = 1;
             draw_rows(row);
@@ -390,5 +391,5 @@ static void draw_rows(u8 cur) {
 
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);
-    SetPage(2, cur);
+    SetPage(5, cur);
 }

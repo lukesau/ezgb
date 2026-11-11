@@ -18,7 +18,8 @@ the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 
 The pane has three pages (two until 2026-11-10); row 16 of each steps to
-the next or the previous one.
+the next or the previous one, and they go round: PREV on page 1 is page 3,
+NEXT on page 3 page 1.
 
 | Row | Page 1 | Page 2 | Page 3 (the theme) |
 |---|---|---|---|
@@ -27,22 +28,28 @@ the next or the previous one.
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) | `COLORS:` and the `R` `G` `B` column heads |
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](dark-mode.md#color-picker)) |
 | 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
-| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | | `ACCENT:` and its three values |
-| 14 | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup)) | | |
-| 16 | `1/3` and a `NEXT >` button | a `< PREV` button, `2/3` and a `NEXT >` button | a `< PREV` button and `3/3` |
+| 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup); on page 1's row 14 until 2026-11-10) | `ACCENT:` and its three values |
+| 16 | a `< PREV` button, `1/3` and a `NEXT >` button | the same with `2/3` | the same with `3/3` |
 
 UP/DOWN move a cursor over the page's rows. Its numbers run on across the
-pages: 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 DAILY
-BACKUP, 6 NEXT on page 1; 7 TAGS, 8 SORT BY PLAYS, 9 SGB BOOT, 10 SKIP BOOT
-ROM, 11 PREV, 12 NEXT on page 2; 13 THEME, 14 FONT, 15 BG, 16 TEXT, 17
-ACCENT, 18 PREV on page 3 (clamp `04:5604` `d6 12`, and `flcfg` op
-ROWS keeps the cursor on its page). The cursor wraps within its page: UP on
-row 0 goes to `SetWrapUp` (`04:5fdc`, row 6), DOWN on row 18 to `SetWrapDown`
-(`04:5fe4`, row 7, which is off page 3, so its first row), and op ROWS turns a step off a page's end into its other end.
-RIGHT jumps to the bottom row and LEFT to the top, as in the browser (mod
-6.3, `scripts/inject-set-jump.py`); while the time is being set they still
-step through its fields. A new cursor row moves both the clamp and the row
-`FlSetJumpBottom` jumps to (`LAST_ROW` in that script).
+pages, and a page's last two are its PREV and NEXT: 0 TIME SET, 1 RTC, 2
+AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 PREV, 6 NEXT on page 1; 7 TAGS, 8
+SORT BY PLAYS, 9 SGB BOOT, 10 SKIP BOOT ROM, 11 DAILY BACKUP, 12 PREV, 13 NEXT
+on page 2; 14 THEME, 15 FONT, 16 BG, 17 TEXT, 18 ACCENT, 19 PREV, 20 NEXT on
+page 3 (clamp `04:5604` `d6 14`, and `flcfg` op ROWS keeps the cursor on its
+page). The cursor wraps within its page: UP on row 0 goes to `SetWrapUp`
+(`04:5fdc`, row 6, page 1's NEXT), DOWN on row 20 to `SetWrapDown` (`04:5fe4`, row 8, which
+is off page 3, so its first row), and op ROWS turns a step off a page's end
+into its other end.
+
+LEFT puts the cursor on the page's PREV button and RIGHT on its NEXT, from
+any row (since 2026-11-10; from mod 6.3 until then they jumped to the top
+and bottom rows, as in the browser): `FlSetJumpTop` and `FlSetJumpBottom`
+(`scripts/inject-set-jump.py`) store `$FE` and `$FF` as the cursor row, and
+op ROWS turns those into the page's last row but one and its last. While the
+time is being set they still step through its fields. A new cursor row
+moves the clamp, `SetWrapUp` / `SetWrapDown` and the `first` / `last` tables
+in `flcfg.c` and `setpage.c`.
 
 ### Pages
 
@@ -63,10 +70,9 @@ doesn't read the file, since RAM may be ahead of it, and `OP_AUTOSAVE` and
 
 A on NEXT or PREV steps `SET_PAGE` (WRAM `$DBEE`, 0 to 2), clears the pane and
 enters the SET screen again from the top, as the UI toggle does
-(`FlSetADispatch`'s return 2), with the cursor on the button that goes on
-the same way, or on the page's only one (`SET_RE`, `$DBEF`, the cursor
-row + 1): NEXT, NEXT walks page 1 to 3, and PREV, PREV back (`SetPage`
-op 6). Leaving the tab ends on page 1: the screen's exit (`04:5912`,
+(`FlSetADispatch`'s return 2), with the cursor on the same button of the new page (`SET_RE`, `$DBEF`, the
+cursor row + 1), so A again goes on the same way, round and round
+(`SetPage` op 6). Leaving the tab ends on page 1: the screen's exit (`04:5912`,
 `add sp,$6a; ret`) goes through `SetExitHook` (`04:5fb0`), which calls `SetCommit` and clears
 `SET_PAGE` first.
 
@@ -185,9 +191,9 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:47ef` | `f8 5c 4d 44 21 07 00` | `call $5932` + 4 nops | run `FlSetEnterHook` (op ENTER) then replay the displaced prologue |
 | `04:5404` | `c3 f5 48` | `jp $5948` | hiliteDec tail → `FlSetRowsHook` (op ROWS) |
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
-| `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor to row 0) |
-| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor to row 18, page 3's PREV, which op ROWS turns into the page's last row; row 13 with two pages, row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
-| `04:5604` | `d6 01` | `d6 12` | cursor clamp 0..1 → 0..18, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor row = `$FE`: the page's PREV; row 0 until 2026-11-10) |
+| `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor row = `$FF`: the page's NEXT; until 2026-11-10 the last row of all, which op ROWS turned into the page's last: row 13 with two pages, row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
+| `04:5604` | `d6 01` | `d6 14` | cursor clamp 0..1 → 0..20, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`cd c0 5f af ea ee db e8 6a c9`: `call SetCommit`, clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

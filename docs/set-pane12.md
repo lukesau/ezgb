@@ -18,7 +18,7 @@ changes is x, per field:
 | 6 | `RTC:` 0..44, `SD` 44..66, `NO SD` 86..130; the checkboxes stay at x 66 and 130 |
 | 8, 10 | `AUTO SAVE:`, `FAST LAUNCH:` 0..128; checkbox at x 130 |
 | 12 | fast-launch name 0..79 (scrolls when its glyphs do not fit, [marquee.md](marquee.md)); `PICK ROM` 88..155 in a box (83,95)-(155,108) |
-| 16 | the page row: `< PREV` 8..64 in a box (3,127)-(65,140), `1/3` 70..97, `NEXT >` 104..155 in a box (99,127)-(155,140) |
+| 16 | the page row, the same on every page: `< PREV` 8..64 in a box (3,127)-(65,140), `1/3` 70..97, `NEXT >` 104..155 in a box (99,127)-(155,140) |
 
 Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 

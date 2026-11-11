@@ -24,7 +24,7 @@
  *   row 16  the page row: col 1 "< PREV" 8..64, col 9 "1/2" 70..97,
  *           col 13 "NEXT >" 104..155
  *
- * Page 2 (setpage.c, SET_PAGE 1): rows 2, 6, 8, 10 labels 0..128 (the
+ * Page 2 (setpage.c, SET_PAGE 1): rows 2, 6, 8, 10, 12 labels 0..128 (the
  * checkbox is at x 130; row 4 is the tag example, drawn by the marquee), or
  * row 8 col 13 "AUTO" 120..155 when our stage1 handles the SGB. Page 3
  * (SET_PAGE 2) draws its own text (themepage.c) and only its page row comes

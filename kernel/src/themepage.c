@@ -5,13 +5,13 @@
  * (04:6d19) reaches it through FarCallThemePage (04:5990), so the args sit
  * past the trampoline's three words and the stub's return address.
  *
- *   row 2   THEME: [ PURPLE]       cursor row 13
- *   row 4   FONT:     [12px]       cursor row 14 (docs/ui-mode.md)
+ *   row 2   THEME: [ PURPLE]       cursor row 14
+ *   row 4   FONT:     [12px]       cursor row 15 (docs/ui-mode.md)
  *   row 6   COLORS:   R   G   B
- *   row 8   BG:      [ 6][ 2][12]  cursor row 15, color index 0
- *   row 10  TEXT:    [31][31][31]  cursor row 16, color index 3
- *   row 12  ACCENT:  [29][26] [7]  cursor row 17, the accent's index
- *   row 16  [< PREV]  3/3          cursor row 18 (setpage.c draws it)
+ *   row 8   BG:      [ 6][ 2][12]  cursor row 16, color index 0
+ *   row 10  TEXT:    [31][31][31]  cursor row 17, color index 3
+ *   row 12  ACCENT:  [29][26] [7]  cursor row 18, the accent's index
+ *   row 16  [< PREV] 3/3 [NEXT >]  cursor rows 19 and 20 (setpage.c draws it)
  *
  *   op 0  the labels
  *   op 1  the rows, arg = the cursor row
@@ -26,12 +26,15 @@
  * bits a channel as the console has them. A on a row sets it, as A on TIME's
  * SET does the clock: LEFT and RIGHT pick the channel, UP and DOWN change
  * it, A or B ends. While that runs (CP_EDIT) op 5 hands the stock loop no
- * keys. The first change in a built-in theme copies its colors to the custom
- * one (CUST_RGB, ACC_RGB) and switches THEME to it, so the picker always
+ * keys. The first change in a built-in theme copies its background and ink
+ * to the custom one (CUST_RGB) and switches THEME to it, so the picker
  * starts from what is on screen; from then on a change rebuilds CUST_RAMP
  * the way ThemeColors and ezcfg's colors_accent do from COLORS=, and Theme
- * applies it. The accent in DV is DV's highlight (DV_RAMP), so that row
- * leaves DV on. SetCommit writes COLORS= with the rest.
+ * applies it. The accent (ACC_RGB) is set only by its own row: it is DV's
+ * highlight too (DV_RAMP), so a theme's accent is never copied with its
+ * background, and that row in DV leaves DV on. DV's background and text are
+ * not for setting, as its font is not: A on those rows and on FONT, which
+ * reads SLIM there, does nothing. SetCommit writes COLORS= with the rest.
  *
  * When that first change moves the accent to another color index (light and
  * dark have none) or leaves DV's glyphs, the screen is laid out again: op 5
@@ -50,9 +53,9 @@
 extern void FarCallTrampoline(void);    /* 00:078d */
 extern u8 ReadJoypad(void);             /* 00:3a4a, post-swap byte: RIGHT 1, LEFT 2, UP 4, DOWN 8, A $10, B $20 */
 
-#define ROW_THEME 13
-#define ROW_UI    14
-#define ROW_BG    15         /* then TEXT and ACCENT */
+#define ROW_THEME 14
+#define ROW_UI    15
+#define ROW_BG    16         /* then TEXT and ACCENT */
 
 #define rSTAT (*(volatile u8 *)0xff41)
 #define rBCPS (*(volatile u8 *)0xff68)
@@ -119,13 +122,12 @@ static void rows(u8 cur) {
     static const u8 ui8_str[5] = {' ','8','p','x',0};
     static const u8 ui12_str[5] = {'1','2','p','x',0};
     static const u8 slim_str[5] = {'S','L','I','M',0};
-    /* AUTO: a theme with one font (DV, 12px only) decides it */
-    static const u8 auto_str[5] = {'A','U','T','O',0};
     u8 i;
 
     theme_btn(cur == ROW_THEME);
     button(cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
-    text(THEME == THEME_DV ? auto_str : FONT_SLIM ? slim_str : hUiMode ? ui12_str : ui8_str, 15, 4, 120, 155);
+    /* DV has one font, its glyph set, which is SLIM's letters */
+    text(GLYPHS_DV ? slim_str : hUiMode ? ui12_str : ui8_str, 15, 4, 120, 155);
     for (i = 0; i < 3; i++) color_row(i, cur == (u8)(ROW_BG + i));
 }
 
@@ -136,7 +138,7 @@ static u8 press(u8 row) {
     }
     if (row == ROW_THEME) return theme_step();
     if (row == ROW_UI) {
-        /* AUTO: the theme decides the font (DV is 12px only) */
+        /* DV decides the font: its glyph set, 12px only */
         if (THEME == THEME_DV) return 0;
         /* 8px, 12px, SLIM (DV's glyph set, 12px), 8px */
         if (!hUiMode) hUiMode = 1;
@@ -145,6 +147,8 @@ static u8 press(u8 row) {
         return 2;
     }
     if (PAL_LOCKED) return 0;
+    /* DV is black and white as it is its font: only its highlight is set */
+    if (THEME == THEME_DV && row != ROW_BG + 2) return 0;
     CP_EDIT = 1;
     color_row(row - ROW_BG, 1);
     return 0;
@@ -228,7 +232,7 @@ static u8 theme_step(void) {
     THEME = order[i];
     SET_DIRTY = 1;
     FarTheme();
-    /* onto or off DV, whose glyph set is its own (12px only, AUTO), or onto
+    /* onto or off DV, whose glyph set is its own (12px only), or onto
      * or off an accent (the bars were drawn in another color index,
      * dv_params.c): the tab strip and the pane are drawn again */
     if (GLYPHS_DV != was_g || ACC_IDX != was_a) {
@@ -287,18 +291,24 @@ static u8 change(u8 ci, u8 k, u8 up) {
         v--;
     }
     if (was_t != THEME_CUSTOM) {
-        /* a built-in theme: its colors are the custom theme's from here */
+        /* a built-in theme: its background and ink are the custom theme's
+         * from here */
         if (!keep_dv || !CUST_OK) {
             seed(0, CUST_RGB);
             seed(3, CUST_RGB + 3);
             CUST_OK = 1;
         }
-        if (!keep_dv || !ACC_OK) seed(acc, ACC_RGB);
         if (!keep_dv) THEME = THEME_CUSTOM;
-    } else if (ci == 2 && !ACC_OK) {
-        seed(acc, ACC_RGB);             /* the complement, as worked out */
     }
-    if (ci == 2 || was_t != THEME_CUSTOM) ACC_OK = 1;
+    /* The accent is only ever set on its own row: it is DV's highlight too
+     * (DV_RAMP), which a theme's accent copied along with its background
+     * would replace. Until then custom's stays the one worked out from the
+     * background. On its row it starts from the one on screen, unless the
+     * screen is another theme's and there is one set already. */
+    if (ci == 2) {
+        if (!ACC_OK || (was_t != THEME_CUSTOM && !keep_dv)) seed(acc, ACC_RGB);
+        ACC_OK = 1;
+    }
     (ci == 2 ? ACC_RGB : CUST_RGB + (ci ? 3 : 0))[k] = widen(v);
     rebuild();
     SET_DIRTY = 1;
@@ -310,8 +320,8 @@ static u8 change(u8 ci, u8 k, u8 up) {
 /* CUST_RAMP from CUST_RGB and ACC_RGB, as COLORS= builds it: the background,
  * the background 3/16 of the way to the ink (ThemeColors' four halving
  * steps), the accent (the third color, else the background's complement at
- * full brightness, ezcfg's colors_accent), the ink. And DV with the accent
- * for its lime. */
+ * full brightness, or the ink for a gray background, which has none:
+ * ezcfg's colors_accent), the ink. And DV with the accent for its lime. */
 static void rebuild(void) {
     static const u8 dv[8] = {0x00, 0x00, 0, 0, 0x80, 0x61, 0xff, 0x7f};
     u8 c[3];
@@ -339,10 +349,10 @@ static void rebuild(void) {
         }
         h = 0;
         for (i = 0; i < 3; i++) {
-            c[i] = (u8)(mx + mn - CUST_RGB[i]);
+            c[i] = mx == mn ? CUST_RGB[i + 3] : (u8)(mx + mn - CUST_RGB[i]);
             if (c[i] > h) h = c[i];
         }
-        if (h) for (i = 0; i < 3; i++) c[i] = scale255(c[i], h);
+        if (h && mx != mn) for (i = 0; i < 3; i++) c[i] = scale255(c[i], h);
     }
     pack(CUST_RAMP + 4, c);
     if (ACC_OK) {

@@ -127,13 +127,23 @@ ACCENT:   [22][16][10]
   DOWN change it (held, they repeat), A or B ends: the keys TIME's `SET`
   uses for the clock. The screen is the preview; every step applies.
 - **It starts from the theme on screen.** The first change in a built-in
-  theme copies that theme's three colors to the custom one and switches
-  THEME to `CUSTOM`, so red with a darker background is: pick `RED`, turn
-  BG down. This replaces earlier custom colors, but only once a value
-  changes; looking does nothing. In `CUSTOM` a change is just that change.
-- **DV.** The accent row in DV sets DV's highlight and leaves DV on (the
-  third color has been DV's highlight since 2026-11-09). BG and TEXT there
-  go to `CUSTOM` like any other theme, with the stock glyphs.
+  theme copies that theme's background and text to the custom one and
+  switches THEME to `CUSTOM`, so red with a darker background is: pick
+  `RED`, turn BG down. This replaces the earlier custom background and
+  text, but only once a value changes; looking does nothing. In `CUSTOM` a
+  change is just that change.
+- **The accent is only set on its row.** It is DV's highlight as well as
+  custom's (the third color, since 2026-11-09), so a built-in theme's
+  accent is never copied along with its background: DV keeps its lime, or
+  the accent already set, whatever BG and TEXT are changed from. Custom's
+  accent stays the one worked out from its background until the ACCENT row
+  is changed, which starts from the accent on screen.
+- **DV.** Only the accent row can be set in DV: it sets DV's highlight and
+  leaves DV on. DV is black and white the way its font is its font, so A on
+  BG and TEXT does nothing there, as on FONT. The accent is still the one
+  in `COLORS=`, the custom theme's too: with no line yet, the save writes
+  `COLORS=000000,FFFFFF,` and the accent, which also puts `CUSTOM` on the
+  THEME button.
 - **Saved** with the rest of the tab, on NEXT, PREV or leaving it, as
   `COLORS=RRGGBB,RRGGBB,RRGGBB`; a channel the picker set is its 5 bits
   widened to 8 (31 is `FF`), one it didn't touch keeps the file's digits.
@@ -157,7 +167,8 @@ out again with the row still being set.
 
 Checked in SameBoy (2026-11-10, CGB model): all three rows in 8px, 12px and
 SLIM on 0731, the switch to `CUSTOM` from light with its relayout, the
-accent in DV, the saved line and the same colors after a reboot, a DMG
+accent in DV (and BG, TEXT and FONT there doing nothing), DV still lime after a background set from dark, the saved
+line and the same colors after a reboot, a DMG
 model's `--` cells; the page and one change on 1.04e, the page on 0918.
 Not tested on hardware.
 
@@ -190,7 +201,9 @@ and white with the Tamzen font, though the icons are the stock ones in white
   works, light or dark.
 - Shade 2 is the accent: digits 13 to 18 when the line has them (written back
   as a third `RRGGBB`), else the background's complement at full brightness
-  ([Accents](#accents)), worked out by `colors_accent` in
+  ([Accents](#accents)), or the ink when the background is a gray (black
+  and white too: a gray is its own complement, bars nobody could see, until
+  2026-11-10), worked out by `colors_accent` in
   [ezcfg.c](../kernel/src/ezcfg.c) after `ThemeColors` has read the first
   two. Until 2026-11-09 it was the background moved 9/16 toward the ink.
 - `CUSTOM` is in the SET tab's `THEME` cycle only when the file has a valid
@@ -272,7 +285,7 @@ in bank 1 that fits. Bank 2 is byte-identical in all three stock kernels.
 ### SET tab
 
 > Since 2026-11-10 the button is on the SET tab's third page, row 2, after
-> `THEME:`, cursor row 13 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages));
+> `THEME:`, cursor row 14 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages));
 > from 2026-10-30 it was on the second. The rest of this section is how it
 > was first built.
 
@@ -374,7 +387,7 @@ HELP); since 2026-10-31 edge tiles go through its per-plane read-modify-write
 ([font12.md](font12.md)).
 
 DV's glyph set is 12px only, so the theme decides the font: the SET tab's
-FONT button reads `AUTO` while DV is on and A on it does nothing. Stepping
+FONT button reads `SLIM` while DV is on (DV's letters are SLIM's; it read `AUTO` until 2026-11-10) and A on it does nothing. Stepping
 the THEME button onto or off DV draws the tab strip and the pane again in the
 new glyphs, as the FONT button does (what is on screen keeps the glyphs it was
 drawn in); onto DV in 8px mode it also switches to 12px (saved as `UI=12`), and a card whose `EZGB.CFG` says `THEME=7` with
