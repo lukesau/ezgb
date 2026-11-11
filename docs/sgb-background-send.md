@@ -118,6 +118,13 @@ then runs as before.
 Nothing in the kernel or the mod reads or writes `$fff2`-`$fff4`. A cleared
 HRAM means idle, so a boot with the box off never enters `SgbFrame`.
 
+> **Correction (2026-11-10).** The line above stopped being true on
+> 2026-11-05: the browser navigation imported from ezgb-dv kept its held-key
+> repeat in `$fff2` and `$fff4`, and the resulting `Reading...` hang took a day
+> of bisecting on hardware to find. Those two bytes moved to mod WRAM
+> (`$DC1A`, `$DC1B`, [browser-nav.md](browser-nav.md)). Search the asm under
+> `scripts/` as well as `kernel/src` before taking an HRAM byte.
+
 > **Correction (2026-10-12).** The sketch proposed `$fff7`-`$fff9`. `$fff7`
 > is `hPadHeld` ([joypad-latch.md](joypad-latch.md), mod 6.8) and `$fff9` is
 > `hClip12` ([set-pane12.md](set-pane12.md)); both were taken before this was

@@ -74,8 +74,12 @@ extern volatile u8 wDrawColorB;     /* $d735 */
 #define ATTR_DIR 0x10
 
 #define PAD_PREV (*(volatile u8 *)0xfff5)   /* RomMenuPadTrack: the previous poll's report */
-#define HOLD_T   (*(volatile u8 *)0xfff2)   /* HFRAME after the press, moved on at each repeat */
-#define REP_N    (*(volatile u8 *)0xfff4)   /* repeats since the press, up to RAMP_N */
+/* Mod WRAM, not HRAM: until 2026-11-10 these were $FFF2 and $FFF4, which are
+ * the SGB sender's hSgbStep and hSgbBusy (docs/sgb-background-send.md). Every
+ * press then put the frame count in hSgbStep, the VBlank interrupt ran the
+ * SGB sender with it, and an SD read soon after could hang on Reading... */
+#define HOLD_T   (*(volatile u8 *)0xdc1a)   /* HFRAME after the press, moved on at each repeat */
+#define REP_N    (*(volatile u8 *)0xdc1b)   /* repeats since the press, up to RAMP_N */
 #define PAD_UP   0x04
 #define PAD_DOWN 0x08
 #define REPEAT_DELAY 18                     /* frames held before the first repeat (0.3 s) */

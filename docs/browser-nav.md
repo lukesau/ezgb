@@ -14,6 +14,18 @@ through 0731 and `port-mod.py` to all three kernels.
   the bar's row first, so the cursor is at its new place from the start.
 - **A held key** repeats after 18 frames, then every 6 6 5 5 4 4 3 frames, and
   while the list scrolls it moves by 1 1 2 2 3 3 4 rows a step.
+  The repeat's state is in mod WRAM (`$DC1A`, `$DC1B`).
+
+> **Correction (2026-11-10).** From the ezgb-dv import (2026-11-05,
+> `2f72aa8`) to this date the repeat's state was in HRAM `$FFF2` and `$FFF4`,
+> which are the SGB sender's `hSgbStep` and `hSgbBusy`
+> ([sgb-background-send.md](sgb-background-send.md)). Every UP or DOWN put the
+> frame count in `hSgbStep`, so the VBlank interrupt ran the SGB sender with a
+> step out of its range, and a directory read soon after (opening a folder,
+> switching to the SD tab) could hang on `Reading...`. It showed on hardware
+> only, more when A followed a move quickly, on both carts and two consoles;
+> SameBoy's SD stub answers at once and never hung. Builds from `2f72aa8`
+> through `1df6f09` have it; mod 7.1 does not.
 - **The entry number reads `n/total`**, from an x that holds for the whole
   folder, right of HELP: 12px from x 105 on, 8px in the five cells after
   ` HELP ` (columns 15-19; stock drew `n` in four from 16). When the total
