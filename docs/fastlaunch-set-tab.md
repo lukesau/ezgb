@@ -28,7 +28,7 @@ NEXT on page 3 page 1.
 | 4 | date and time (stock) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box unticked, `Game Title` with it ticked (`TagExample`, `04:7e60`) | `FONT:` 8px / 12px / SLIM button ([`ui-mode.md`](ui-mode.md)) |
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) | `COLORS:` and the `R` `G` `B` column heads |
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](dark-mode.md#color-picker)) |
-| 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1` or this console can't jump, when A does nothing ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
+| 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1`; gray, and passed over by the cursor, when this console can't jump ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup); on page 1's row 14 until 2026-11-10) | `ACCENT:` and its three values |
 | 16 | a `< PREV` button, `1/3` and a `NEXT >` button | the same with `2/3` | the same with `3/3` |
 

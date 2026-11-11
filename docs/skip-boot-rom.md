@@ -92,8 +92,11 @@ boot ROM's exact timing (`DIV`, which some games use for random numbers).
 The box shows ticked only when launches may jump. On a console that can't (a GBC
 or GBA in compatibility mode, an SGB under mod stage1, the DMG family under a mod
 stage1 from before the record or under stock stage1 with `SGB BOOT` ticked) it
-shows unticked and A does nothing (`can_jump` in
-[setpage.c](../kernel/src/setpage.c)). `BOOTROM=` keeps its value there, so a card
+can't be set (`can_jump` in [setpage.c](../kernel/src/setpage.c)): since
+2026-11-11 the label and an empty box are drawn in color index 2, a gray on a
+DMG and in compatibility mode, and the cursor passes over the row, as it does
+over the rows DV locks ([dark-mode.md](dark-mode.md)). Until then the row looked
+like any other, unticked, and A did nothing. `BOOTROM=` keeps its value there, so a card
 moved to a console that can jump keeps its setting. A tick doesn't promise a jump:
 a non-color game on a color console still resets.
 
@@ -249,8 +252,8 @@ which were correct for the rule at the time:
 
 Crystal run on, on a DMG, shows its "only for Game Boy Color" screen. The
 `SKIP BOOT ROM:` checkbox was checked by eye on 0731, 8px and 12px: ticked and
-unticked on a DMG, unticked with `SGB BOOT` ticked and in compatibility mode
-(`$0143 = $00`), where A does nothing. Unticking wrote `BOOTROM=1` on PREV. Not run on a real DMG-family console.
+unticked on a DMG, and gray with `SGB BOOT` ticked and in compatibility mode
+(`$0143 = $00`), where the cursor steps over it both ways (2026-11-11; ticking `SGB BOOT` grays it at once). Unticking wrote `BOOTROM=1` on PREV. Not run on a real DMG-family console.
 
 ## Stage1 fast launch
 

@@ -27,6 +27,9 @@
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
  *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
  *   op 5  page 1's or page 3's page row
+ *   op 7  cur = the row the cursor is moving to: returns the row it lands on,
+ *         past SKIP BOOT ROM when this console can't jump (SET_CUR is where
+ *         it was)
  *   op 6  A on NEXT or PREV (cur): write what changed (SetCommit), step
  *         SET_PAGE, round from page 3 to 1 and from 1 to 3, clear the
  *         pane, and leave the cursor row for the re-entry in SET_RE: the
@@ -40,7 +43,11 @@
  * docs/stars.md), read and toggled by RecFlag (rec_flag.c).
  *
  *   SKIP BOOT ROM:     [x]   jump when this console and game allow it
- *   SKIP BOOT ROM:     [ ]   BOOTROM=1, or this console can't jump (A does nothing)
+ *   SKIP BOOT ROM:     [ ]   BOOTROM=1
+ *
+ * On a console that can't jump the label and an empty box are drawn in color
+ * index 2, a gray, and the cursor passes over the row, as themepage.c's
+ * locked rows.
  *
  * Buttons and checkboxes are drawn as flcfg.c draws them: the box 5 px left
  * and 4 px right of the 8px text, 3 px above and 5 below; 12px, the text row
@@ -79,11 +86,16 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void page_row(u8 cur);
 static void sgb_row(u8 hi);
 static void boot_row(u8 hi);
+static void boot_label(void);
 static u8 can_jump(void);
 
-void SetPage(u8 op, u8 cur) {
+u8 SetPage(u8 op, u8 cur) {
     /* each page's last cursor row, NEXT; PREV is the one before it (flcfg.c) */
     static const u8 last[3] = {6, 13, 20};
+    if (op == 7) {
+        if (cur == ROW_BOOT && !can_jump()) return cur > SET_CUR ? ROW_BK : ROW_SGB;
+        return cur;
+    }
     StoreDrawParams(3, 0, 0);
     if (op == 0) {
         static const u8 tags_label[16] = {'C','L','E','A','N',' ','U','P',' ','N','A','M','E','S',':',0};
@@ -93,9 +105,8 @@ void SetPage(u8 op, u8 cur) {
         {
             static const u8 sgb_label[10] = {'S','G','B',' ','B','O','O','T',':',0};
             static const u8 sgb_short[5] = {'S','G','B',':',0};
-            static const u8 boot_label[15] = {'S','K','I','P',' ','B','O','O','T',' ','R','O','M',':',0};
             if (S1_SGB) SetText(sgb_short, 4, 0, 8); else SetText(sgb_label, 9, 0, 8);
-            SetText(boot_label, 14, 0, 10);
+            boot_label();
         }
         {
             static const u8 bk_label[14] = {'D','A','I','L','Y',' ','B','A','C','K','U','P',':',0};
@@ -129,12 +140,13 @@ void SetPage(u8 op, u8 cur) {
         SET_DIRTY = 1;                      /* /.ezgbplays keeps it (docs/stars.md) */
         SetBox(0x82, Y_SORT, on, 1);
     } else if (op == 3 && cur == ROW_SGB) {
-        if (S1_SGB) return;             /* AUTO: stage1 does it, nothing to set */
+        if (S1_SGB) return 0;           /* AUTO: stage1 does it, nothing to set */
         RecFlag(SGB_REC, 'G', 1);
         sgb_row(1);
-        boot_row(0);                    /* under stock stage1 it decides the DMG family */
+        boot_label();                   /* under stock stage1 it decides the DMG family */
+        boot_row(0);
     } else if (op == 3 && cur == ROW_BOOT) {
-        if (!can_jump()) return;
+        if (!can_jump()) return 0;
         BOOT_RESET = BOOT_RESET ? 0 : 1;
         SET_DIRTY = 1;
         boot_row(1);
@@ -156,6 +168,7 @@ void SetPage(u8 op, u8 cur) {
         SetText(set_str, 3, 16, 2);
     }
     StoreDrawParams(3, 0, 0);
+    return 0;
 }
 
 /* Row 8: SGB BOOT's box. Our stage1 sends the SGB header itself, only on
@@ -180,10 +193,20 @@ static u8 can_jump(void) {
     return S1_SGB || !RecFlag(SGB_REC, 'G', 0);
 }
 
-/* Row 10: ticked when launches may jump. BOOT_RESET keeps its value while this
- * console can't jump, so a card moved to one that can still has it. */
+/* Row 10: ticked when launches may jump. On a console that can't, an empty
+ * gray box; BOOT_RESET keeps its value there, so a card moved to a console
+ * that can jump still has it. */
 static void boot_row(u8 hi) {
-    SetBox(0x82, Y_BOOT, can_jump() && !BOOT_RESET, hi);
+    if (can_jump()) SetBox(0x82, Y_BOOT, !BOOT_RESET, hi);
+    else SetBox(0x82, Y_BOOT, 0, 2);
+}
+
+/* Its label, gray with the box. */
+static void boot_label(void) {
+    static const u8 label[15] = {'S','K','I','P',' ','B','O','O','T',' ','R','O','M',':',0};
+    StoreDrawParams(can_jump() ? 3 : 2, 0, 0);
+    SetText(label, 14, 0, 10);
+    StoreDrawParams(3, 0, 0);
 }
 
 /* Row 16: PREV, the page number, NEXT. `cur` highlights the one the cursor

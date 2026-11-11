@@ -84,7 +84,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern u8 FarCallThemePage(u8 op, u8 arg);                          /* 04:5990 -> ThemePage (0D:4000, themepage.c): page 3 */
-extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, setpage.c: page 2, the page rows */
+extern u8 SetPage(u8 op, u8 cur);                                   /* 04:6610, setpage.c: page 2, the page rows */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
 #define CWD      ((u8 *)0xC2A6)     /* browser: current directory ("/" or "/a/b") */
@@ -168,6 +168,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         if (PAGE) frame[0x3e] = 0;      /* no stock redraw: its boxes are page 1's */
         /* page 3: past the rows the theme or the console has locked */
         if (PAGE == 2) cur = FarCallThemePage(6, cur);
+        else if (PAGE) cur = SetPage(7, cur);   /* page 2: SKIP BOOT ROM, when this console can't jump */
         frame[0x3d] = cur;
         draw_rows(cur);
         return 0;
