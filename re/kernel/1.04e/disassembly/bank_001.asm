@@ -4654,7 +4654,7 @@ DrawCardTypeScreen_batteryNo::
     add sp, $05
 
 DrawCardTypeScreen_waitJoypad::
-    call ReadJoypad
+    call $0502
     ld c, e
     ld b, $00
     ld a, c
@@ -4847,7 +4847,7 @@ BootRomInfoMenu_romInfoInk::
 BootRomInfoMenu_inputLoop::
     ld hl, sp+$03
     ld [hl], $00
-    call ReadJoypad
+    call $0502
     ld c, e
     ld hl, sp+$00
     ld [hl], c

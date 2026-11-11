@@ -507,14 +507,10 @@ BrowserSortAllStub::
     db $cd, $8d, $07, $6b, $74, $08, $00, $c9
 
 BrowserDelay::
-    db $f0, $f6, $e6, $0c, $ca, $da, $36, $f8
-    db $0e, $7e, $a7, $c8, $35, $c9
+    db $f0, $f6, $e6, $0c, $20, $06, $cd, $88
+    db $06, $c3, $88, $06, $f8, $0e, $7e, $a7
+    db $c8, $35, $c9
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
     rst RST_38
     rst RST_38
     rst RST_38
@@ -609,12 +605,9 @@ FlPickCancelHook::
     db $fa, $fe, $db, $b7, $ca, $92, $16, $c3
     db $43, $12
 
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
-    rst RST_38
+PadWait::
+    db $cd, $88, $06, $c3, $91, $36
+
     rst RST_38
     rst RST_38
     rst RST_38
@@ -1178,7 +1171,7 @@ FarCallTrampoline::
 ; Jump_000_07ce: retry; jr_000_07d1: delay ret. Orphan before PlotBitRowXY.
 
 WaitJoypadSelect::
-    call ReadJoypad
+    call $0502
     ld c, e
     ld b, $00
     ld a, c
@@ -3897,8 +3890,9 @@ MenuDispatchAB_memcmpExt::
     cp d
     ld [hl], e
     ld [$cd00], sp
-    sub c
-    ld [hl], $43
+    ld [bc], a
+    dec b
+    ld b, e
     ld c, b
     ld b, $00
     ld a, c
@@ -4554,7 +4548,7 @@ jr_000_185f:
     add sp, $05
 
 BatteryCheck_waitA::
-    call ReadJoypad
+    call $0502
     ld c, e
     ld b, $00
     ld a, c

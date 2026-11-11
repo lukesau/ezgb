@@ -4507,7 +4507,7 @@
 04:7c00 U32ToAsciiFast
 04:7c00 .data:c2:8
 04:5a00 RomMenu
-04:5a00 .data:4dc:8
+04:5a00 .data:4ea:8
 00:0483 FarCallDrawLoadingBox
 00:0483 .data:8:8
 00:0453 RomMenuPadTrack
@@ -4607,11 +4607,11 @@
 0b:4000 SmSaveOpB11
 0b:4000 .data:10:8
 0b:4010 ManageSavesImpl
-0b:4010 .data:645:8
+0b:4010 .data:64c:8
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:62e:8
+04:6d19 .data:639:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
@@ -4625,7 +4625,7 @@
 00:3fe4 DvParams
 00:3fe4 .data:1b:8
 0b:4b00 MsgBox
-0b:4b00 .data:248:8
+0b:4b00 .data:1ed:8
 08:7e4c MsgBoxFar
 08:7e4c .data:8:8
 02:7600 TabStrip12
@@ -4643,7 +4643,7 @@
 00:0380 TabNum12
 00:0380 .data:e:8
 00:03dc BrowserDelay
-00:03dc .data:e:8
+00:03dc .data:13:8
 04:5fe4 SetWrapDown
 04:5fe4 .data:8:8
 04:5fdc SetWrapUp
@@ -4660,3 +4660,5 @@
 04:5f80 .data:a:8
 04:5f90 FlSetJumpBottom
 04:5f90 .data:a:8
+00:0502 PadWait
+00:0502 .data:6:8

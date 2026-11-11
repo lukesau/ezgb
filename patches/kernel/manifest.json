@@ -1,21 +1,21 @@
 {
   "1.04e": {
     "patch": "ezgb-1.04e.ips",
-    "patched_md5": "1470a71bc4f18103744141c53a9975f6",
+    "patched_md5": "25052f3922ed87d54baece722d0f8509",
     "patched_size": 262144,
     "size": 163840,
     "stock_md5": "b8c29fa5a94c37200434e4c72f0cdfea"
   },
   "1.05e-0731": {
     "patch": "ezgb-1.05e-0731.ips",
-    "patched_md5": "ce01496401a3d1d558b4a44637f782af",
+    "patched_md5": "d75ce5042230dab586048236673b50e9",
     "patched_size": 262144,
     "size": 163840,
     "stock_md5": "91eb7fc67332ef20b5691029181ff748"
   },
   "1.05e-0918": {
     "patch": "ezgb-1.05e-0918.ips",
-    "patched_md5": "19f682196dd8ce94ad82661212748400",
+    "patched_md5": "489637339e2e7f7f8255c8a5b2e9d442",
     "patched_size": 262144,
     "size": 163840,
     "stock_md5": "5238ac5987d23b68a19d40e43af8c786"
