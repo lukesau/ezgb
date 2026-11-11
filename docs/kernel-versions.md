@@ -31,6 +31,10 @@ behind it is in [DIFF_1.04e_vs_1.05e.md](DIFF_1.04e_vs_1.05e.md) and
   for every console.
   FW4 has no fast mode, so an FW4 cart loads at the stock speed whatever
   kernel it runs. See [Load speed](#load-speed-fw4-vs-fw5).
+- **An FW4 cart can be updated to FW5, and with a modern, genuine microSD
+  card it is worth doing.** See
+  [Should I update an FW4 cart to FW5?](#should-i-update-an-fw4-cart-to-fw5)
+  for what is at stake.
 
 ## Kernel and firmware are two different things
 
@@ -38,7 +42,7 @@ behind it is in [DIFF_1.04e_vs_1.05e.md](DIFF_1.04e_vs_1.05e.md) and
 |---|---|---|
 | What it is | The menu program, `ezgb.dat` on the card root | The FPGA image inside the cart |
 | How it changes | Copy a file. Loaded from the card at every power-on, nothing is flashed | Run `Update_FW*.gb` as a game, which rewrites the cart's config flash |
-| Risk | None. Copy the old file back to undo | Can brick the cart (EZ Flash's notes warn about slow cards and weak batteries; see [1.05e-instability.md](1.05e-instability.md)) |
+| Risk | None. Copy the old file back to undo | An interrupted write nearly always falls back to the cart's factory firmware; rarely it needs hardware tools to repair. See [Should I update an FW4 cart to FW5?](#should-i-update-an-fw4-cart-to-fw5) |
 | Shown on HELP tab as | `K1.04e` / `K1.05e`, a digit hard-coded in the kernel | `FW4` / `FW5`, read from the cart |
 
 Everything on this page is about the stock kernels and the stock firmware
@@ -207,8 +211,7 @@ next to the loader pause.
 
 An FW4 cart is the same hardware as an FW5 cart; only the FPGA image differs.
 Getting fast loading on FW4 means updating the firmware to FW5 with
-`Update_FW5_*.gb`, with the risk that carries. Load speed up is not supported on
-FW4.
+`Update_FW5_*.gb` (next section). Load speed up is not supported on FW4.
 
 Things that should not drive the choice:
 
@@ -218,7 +221,40 @@ Things that should not drive the choice:
   otherwise runs the same SD, loader and menu code as 1.04e.
 - **Getting FW5 features on an FW4 cart.** A kernel swap cannot do that.
   RTC-game support and fast loading on an FW4 cart mean updating the
-  firmware, with the risk that carries.
+  firmware.
+
+### Should I update an FW4 cart to FW5?
+
+If you are willing to run a firmware updater and have a modern, genuine
+microSD card: yes, to FW5-0918. It is the better firmware (RTC games keep
+their clock, games load faster, and with this project's firmware mod SD
+errors are retried instead of hanging), and both of the things that go wrong
+are understood. They are also the two reasons EZ Flash no longer lists its
+FW5 packages on the download page:
+
+1. **Interrupted updates.** The updater writes the cart's active firmware
+   (slot B of the config flash) and never the factory copy (slot A, FW4 or
+   FW5 depending on the cart). When power is lost, the cart is bumped or the
+   card misreads mid-write, the half-written image nearly always fails its
+   CRC, the cart starts from slot A, and the updater is run again. Rarely a
+   damaged image passes the check and the cart boots a broken bootloader.
+   That is the one outcome an updater can't undo: it takes an SPI programmer
+   or JTAG ([fpga-setup.md](fpga-setup.md#10-risk-and-recovery)). It applies
+   to every Jr firmware update, FW4's included, stock or modded. Fresh
+   batteries and a cart nothing can bump are what keep it rare.
+2. **Slow SD cards on FW5.** Some slow or old cards that work on FW4 stop on
+   FW5 at "Micro SD initial error" (or the insert-card prompt of the firmware
+   mod). Nothing on the cart is damaged. Put the kernel and `Update_FW4.gb`
+   on a good card, flash FW4, and the old card works again. The goal is an
+   FW5 that takes every card, and it looks close: with firmware mod 2.1 the
+   error is hard to reproduce even on the slow cards that used to show it
+   ([sd-error-recovery.md](sd-error-recovery.md)).
+
+Stay on FW4 if your card is old or of doubtful origin, or if you would
+rather not flash at all: the kernel mod is the same on both.
+
+On an FW4 cart, run the FW5 updater while on the 1.04e kernel, which boots
+on both firmwares, then switch `ezgb.dat` to 1.05e-0918.
 
 ### With this project's mod
 

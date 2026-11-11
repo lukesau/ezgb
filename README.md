@@ -18,8 +18,13 @@ patch it yourself with the IPS file from the
 [latest release](https://github.com/lukesau/ezgb/releases/latest). Nothing is
 flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on. Swapping the kernel is as simple as changing a file and is completely reversible.
 Both also have the experimental firmware mod (a new bootloader with fast
-launch, a kernel picker and, on FW5-0918, SD error recovery, which can brick the cart); the patcher page is the safer way to apply
-it, since it refuses anything but the exact stock updater.
+launch, a kernel picker and, on FW5-0918, SD error recovery). That one is
+flashed, like an official firmware update: an interrupted write nearly always
+falls back to the cart's factory firmware, but in rare cases needs hardware
+tools to repair. The patcher page says what is at stake and is the safer way
+to apply it, since it refuses anything but the exact stock updater. If you
+flash and have a modern, genuine microSD card, FW5-0918 is the firmware to
+take ([why](docs/kernel-versions.md#should-i-update-an-fw4-cart-to-fw5)).
 
 1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
    your card's root now): the 1.04e / FW4 package from EZ Flash's

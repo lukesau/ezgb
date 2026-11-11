@@ -100,7 +100,7 @@ doesn't take it for a kernel.
 
 **Released as IPS files since mod 6.9 / firmware 1.9**, named
 `ezgb-firmware-mod-F-for-<fw>.ips`, with their stock and patched md5s in the
-release README behind a brick warning. The patcher page (below) stays the
+release README after a section on what can go wrong. The patcher page (below) stays the
 recommended route because it patches nothing but the exact stock updater;
 someone using a generic patcher on the wrong updater gets a slot B that
 fails its CRC (see "Wrong patch"). `make-dist.sh` checks both firmware

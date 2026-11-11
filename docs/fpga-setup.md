@@ -341,6 +341,9 @@ The new stage1 runs from the next power-on.
   RAM without checking it, so a write can go bad through the load from the
   SD card or through power. EZ Flash's update notes ask for a fast card
   and fresh batteries.
+- An FW5 slot B that stops at "Micro SD initial error" with a slow card is
+  not a failed update. The cart boots a good card: put the kernel and
+  `Update_FW4.gb` on one and flash FW4 to use the slow card again.
 - A stage1 that configures but hangs can't run the updater again, because
   the updater is launched from the kernel and stage1 is what loads the
   kernel. Recovery then means an SPI programmer and a known-good flash dump
