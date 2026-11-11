@@ -1,9 +1,9 @@
 diff --git a/Core/ezflash_jr.c b/Core/ezflash_jr.c
 new file mode 100644
-index 0000000..47173ba
+index 0000000..8fd3d69
 --- /dev/null
 +++ b/Core/ezflash_jr.c
-@@ -0,0 +1,1142 @@
+@@ -0,0 +1,1232 @@
 +#include "gb.h"
 +#include "ezflash_jr.h"
 +#include <stdarg.h>
@@ -742,10 +742,98 @@ index 0000000..47173ba
 +    last_poll = now;
 +}
 +
++/* SAMEBOY_EZFLASH_JR_POWER=1: what the save pSRAM (U4) sees, once a second
++ * of emulated time on stderr. "save" is accesses to $A000-$BFFF that reach
++ * U4 (its /CE is a plain address decode, so each one is an active cycle),
++ * "halt" the share of time the CPU sat in HALT (bus static), and the
++ * busiest accessing PCs follow. */
++static int s_power = -1;
++static uint32_t s_pw_reads, s_pw_writes;
++static struct { uint32_t key, count; } s_pw_pcs[64];
++static void power_access(GB_gameboy_t *gb, bool write)
++{
++    if (s_power < 0) { const char *v = getenv("SAMEBOY_EZFLASH_JR_POWER"); s_power = v && *v == '1'; }
++    if (!s_power) return;
++    if (write) s_pw_writes++; else s_pw_reads++;
++    uint32_t key = ((uint32_t)(gb->pc < 0x4000 ? 0 : gb->pc < 0x8000 ? gb->mbc_rom_bank & 0xFF : 0xFF) << 16) | gb->pc;
++    unsigned j;
++    for (j = 0; j < 64 && s_pw_pcs[j].count && s_pw_pcs[j].key != key; j++) {}
++    if (j < 64) { s_pw_pcs[j].key = key; s_pw_pcs[j].count++; }
++}
++static void power_step(GB_gameboy_t *gb)
++{
++    static uint64_t last, mark, halted, ram_exec;
++    if (s_power < 0) { const char *v = getenv("SAMEBOY_EZFLASH_JR_POWER"); s_power = v && *v == '1'; }
++    if (!s_power) return;
++    uint64_t now = gb->debugger_ticks;
++    if (now < last) { last = mark = now; return; }
++    static struct { uint32_t key; uint64_t t; } hot[512];
++    if (gb->halted) halted += now - last;
++    else {
++        if (gb->pc >= 0x8000) ram_exec += now - last;
++        /* busy time by the innermost two return addresses */
++        uint32_t key = 0;
++        for (int d = (int)gb->backtrace_size - 1, k = 0; d >= 0 && k < 2; d--, k++)
++            key = (key << 16) | gb->backtrace_returns[d].addr;
++        unsigned j;
++        for (j = 0; j < 512 && hot[j].t && hot[j].key != key; j++) {}
++        if (j < 512) { hot[j].key = key; hot[j].t += now - last; }
++    }
++    last = now;
++    uint64_t span = now - mark;
++    if (span < 8388608) return;         /* one second at 8 MHz ticks */
++    fprintf(stderr, "power: save rd %u wr %u, halt %.1f%%, ram-exec %.1f%%, win %u page %02x\n",
++            s_pw_reads, s_pw_writes, 100.0 * halted / span, 100.0 * ram_exec / span,
++            gb->ezflash_jr.bank_regs[0], gb->ezflash_jr.rom_latch);
++    for (unsigned j = 0; j < 64 && s_pw_pcs[j].count; j++)
++        if (s_pw_pcs[j].count >= 4)
++            fprintf(stderr, "power:   %02x:%04x %u\n", s_pw_pcs[j].key >> 16, s_pw_pcs[j].key & 0xFFFF, s_pw_pcs[j].count);
++    for (int n = 0; n < 5; n++) {
++        unsigned b = 0;
++        for (unsigned j = 1; j < 512 && hot[j].t; j++) if (hot[j].t > hot[b].t) b = j;
++        if (!hot[b].t) break;
++        fprintf(stderr, "power:   busy %.1f%% ret %04x < %04x\n", 100.0 * hot[b].t / span, hot[b].key >> 16, hot[b].key & 0xFFFF);
++        hot[b].t = 0;
++    }
++    memset(hot, 0, sizeof hot);
++    memset(s_pw_pcs, 0, sizeof s_pw_pcs);
++    s_pw_reads = s_pw_writes = 0;
++    halted = ram_exec = 0;
++    mark = now;
++}
++
++/* SAMEBOY_EZFLASH_JR_PADFILE=<file>: buttons held from a file, for tests
++ * that can't rely on window focus. The file holds a hex mask in GB_key_t
++ * order (bit 0 right, left, up, down, A, B, select, start); it is read
++ * again every frame and applied when it changes. */
++static void padfile_step(GB_gameboy_t *gb)
++{
++    static int state = -1;
++    static const char *path;
++    static uint64_t next;
++    static unsigned held;
++    if (state < 0) { path = getenv("SAMEBOY_EZFLASH_JR_PADFILE"); state = path && *path; }
++    if (!state) return;
++    uint64_t now = gb->debugger_ticks;
++    if (now < next && next - now < 1000000) return;
++    next = now + 70224;
++    unsigned mask = 0;
++    FILE *f = fopen(path, "r");
++    if (!f) return;
++    if (fscanf(f, "%x", &mask) != 1) mask = held;
++    fclose(f);
++    if (mask == held) return;
++    for (unsigned k = 0; k < 8; k++)
++        if ((mask ^ held) & (1u << k)) GB_set_key_state(gb, (GB_key_t)k, (mask >> k) & 1);
++    held = mask;
++}
++
 +void GB_ezflash_jr_post_run(GB_gameboy_t *gb)
 +{
 +    GB_ezflash_jr_t *ez = &gb->ezflash_jr;
 +    profile_step(gb);
++    power_step(gb);
++    padfile_step(gb);
 +    if (ez->enabled && ez->pending_swap) {
 +        /* stage1 hand-off: the cart becomes the loaded kernel with the CPU
 +         * state untouched. Loading it reconfigures the stub for the kernel
@@ -1060,6 +1148,7 @@ index 0000000..47173ba
 +    }
 +
 +    if (cart_sram_active(ez) && addr >= 0xA000 && addr <= 0xBFFF) {
++        power_access(gb, true);
 +        *cart_sram_ptr(ez, addr) = value;
 +        ez->psram_dirty = true;
 +        /* Keep legacy status_byte mirror in sync for page $11:$A201. */
@@ -1140,6 +1229,7 @@ index 0000000..47173ba
 +    }
 +
 +    if (cart_sram_active(ez) && addr >= 0xA000 && addr <= 0xBFFF) {
++        power_access(gb, false);
 +        *out = *cart_sram_ptr(ez, addr);
 +        return true;
 +    }
