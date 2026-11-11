@@ -127,17 +127,19 @@ ACCENT:   [22][16][10]
   DOWN change it (held, they repeat), A or B ends: the keys TIME's `SET`
   uses for the clock. The screen is the preview; every step applies.
 - **It starts from the theme on screen.** The first change in a built-in
-  theme copies that theme's background and text to the custom one and
-  switches THEME to `CUSTOM`, so red with a darker background is: pick
-  `RED`, turn BG down. This replaces the earlier custom background and
-  text, but only once a value changes; looking does nothing. In `CUSTOM` a
-  change is just that change.
-- **The accent is only set on its row.** It is DV's highlight as well as
-  custom's (the third color, since 2026-11-09), so a built-in theme's
-  accent is never copied along with its background: DV keeps its lime, or
-  the accent already set, whatever BG and TEXT are changed from. Custom's
-  accent stays the one worked out from its background until the ACCENT row
-  is changed, which starts from the accent on screen.
+  theme copies that theme's background, text and accent to the custom one
+  and switches THEME to `CUSTOM`, so red with a darker background is: pick
+  `RED`, turn BG down. This replaces the earlier custom colors, but only
+  once a value changes; looking does nothing. In `CUSTOM` a change is just
+  that change.
+- **The accent comes along.** Since 2026-11-11 the theme's accent is copied
+  whichever row changed, even over an accent set before: until then BG and
+  TEXT left it alone, and the ACCENT row jumped to the older custom accent
+  (or one worked out from the background) as THEME became `CUSTOM`. From
+  light and dark, which have no accent, it is the shade the row shows. The
+  value is DV's highlight as well as custom's (the third color, since
+  2026-11-09), so DV's highlight follows it; set it again on DV's accent
+  row to change it back.
 - **DV.** Only the accent row can be set in DV: it sets DV's highlight and
   leaves DV on. DV is black and white the way its font is its font, so BG,
   TEXT and FONT can't be set there: they are drawn in color index 2, DV's

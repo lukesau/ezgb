@@ -30,9 +30,9 @@
  * to the custom one (CUST_RGB) and switches THEME to it, so the picker
  * starts from what is on screen; from then on a change rebuilds CUST_RAMP
  * the way ThemeColors and ezcfg's colors_accent do from COLORS=, and Theme
- * applies it. The accent (ACC_RGB) is set only by its own row: it is DV's
- * highlight too (DV_RAMP), so a theme's accent is never copied with its
- * background, and that row in DV leaves DV on. DV's background and text are
+ * applies it. The accent (ACC_RGB) is copied with them, replacing one set
+ * before (it is DV's highlight too, DV_RAMP, which follows); the accent row
+ * in DV sets that highlight and leaves DV on. DV's background and text are
  * not for setting, as its font is not: A on those rows and on FONT, which
  * reads SLIM there, does nothing. SetCommit writes COLORS= with the rest.
  *
@@ -323,15 +323,20 @@ static u8 change(u8 ci, u8 k, u8 up) {
             seed(3, CUST_RGB + 3);
             CUST_OK = 1;
         }
-        if (!keep_dv) THEME = THEME_CUSTOM;
+        /* ...and so is its accent, whichever row changed and whatever
+         * accent was set before (since 2026-11-11; until then BG and TEXT
+         * left the accent alone and the ACCENT row jumped to an older
+         * one). DV's highlight is the same value, so it follows. */
+        if (!keep_dv) {
+            seed(acc, ACC_RGB);
+            ACC_OK = 1;
+            THEME = THEME_CUSTOM;
+        }
     }
-    /* The accent is only ever set on its own row: it is DV's highlight too
-     * (DV_RAMP), which a theme's accent copied along with its background
-     * would replace. Until then custom's stays the one worked out from the
-     * background. On its row it starts from the one on screen, unless the
-     * screen is another theme's and there is one set already. */
+    /* In custom, and in DV on the accent row (its highlight), the accent
+     * starts from the one on screen the first time it is set. */
     if (ci == 2) {
-        if (!ACC_OK || (was_t != THEME_CUSTOM && !keep_dv)) seed(acc, ACC_RGB);
+        if (!ACC_OK) seed(acc, ACC_RGB);
         ACC_OK = 1;
     }
     (ci == 2 ? ACC_RGB : CUST_RGB + (ci ? 3 : 0))[k] = widen(v);
