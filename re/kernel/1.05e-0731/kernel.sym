@@ -4610,7 +4610,7 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:61d:8
+04:6d19 .data:62e:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
@@ -4654,7 +4654,7 @@
 04:5990 FarCallThemePage
 04:5990 .data:8:8
 0d:4000 ThemePage
-0d:4000 .data:af4:8
+0d:4000 .data:b56:8
 04:5f80 FlSetJumpTop
 04:5f80 .data:a:8
 04:5f90 FlSetJumpBottom
