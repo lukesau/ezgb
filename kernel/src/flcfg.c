@@ -36,6 +36,7 @@
  *   op 5 TICK   once per pass of the SET input loop (SetLoopTickHook,
  *               04:5f20, on its ReadJoypad call): scroll the ROM name,
  *               then read the pad with a D-pad key repeat and return it.
+ *               START is returned as SELECT with SET_BACK set.
  *
  * Three pages (8px rows; the stock rows were slid up one, see inject-ezcfg.sh):
  *   page 1: 2 TIME: [SET]   4 date/time   6 RTC: SD [ ] NO SD [ ]
@@ -259,6 +260,13 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         /* page 3: B on THEME steps back, and while a color is being set
          * its picker takes the keys */
         if (PAGE == 2) pad = FarCallThemePage(5, pad);
+        /* START goes back a tab: the loop leaves as it does on SELECT, and
+         * FlSetExitHook enters the browser instead of HELP */
+        SET_BACK = 0;
+        if (pad & 0x80) {
+            SET_BACK = 1;
+            pad = 0x40;
+        }
         return pad;
     }
     cfg_load();

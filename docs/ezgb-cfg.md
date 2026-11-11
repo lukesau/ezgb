@@ -283,6 +283,7 @@ no version-specific address.
 | `$DC0D-$DC0F` / `$DC10` | `ACC_RGB`, `COLORS=`'s third color as read / `ACC_OK`, 1 once one was |
 | `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([dark-mode.md](dark-mode.md#accents)) |
 | `$DC1A` / `$DC1B` | `HOLD_T` / `REP_N`, the browser's held-key repeat: the frame of the press, repeats so far ([browser-nav.md](browser-nav.md)); HRAM `$FFF2`/`$FFF4` until 2026-11-10 |
+| `$DC1C` | `SET_BACK`: 1 when START left the SET tab, which goes back to the browser ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-goes-back-a-tab)) |
 | `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser-tags.md](browser-tags.md)) |
 | `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([dark-mode.md](dark-mode.md)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |

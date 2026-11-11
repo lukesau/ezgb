@@ -595,9 +595,10 @@ SgbVblList::
     db $e5, $21, $d3, $d6, $c3, $67, $00
 
 FlSetExitHook::
-    db $fa, $fe, $db, $b7, $c2, $8d, $0f, $f8
-    db $0e, $36, $02, $c3, $67, $12
+    db $fa, $fe, $db, $21, $1c, $dc, $b6, $c2
+    db $8d, $0f, $c3, $74, $12
 
+    rst RST_38
     rst RST_38
     rst RST_38
 
@@ -3353,14 +3354,17 @@ FileBrowserEntry_modeFarcall2::
     ret nc
 
     ld l, a
-    ld [AdvanceTextCursor_wrapX], sp
-    ld [hl-], a
-    nop
-    push hl
-    call Delay
-    add sp, $02
+    ld [$cb00], sp
+    ld a, c
+    jp nz, FileBrowserEntry_modeFarcall1
+
     jp FileBrowserEntry
 
+
+    nop
+    nop
+    nop
+    nop
 
 ; [ezgb]
 ; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.

@@ -12,7 +12,7 @@ All addresses are `bank:addr` for 1.05e; banks 0/2/4/8 are byte-identical across
 
 ## What the user sees
 
-The SET tab (SELECT cycles SD → SET → HELP). The stock rows were slid up one
+The SET tab (SELECT cycles SD → SET → HELP; START goes back a tab, HELP → SET → SD, [below](#start-goes-back-a-tab)). The stock rows were slid up one
 row (every row immediate and y pixel of TIME/SET and the date/time digits,
 the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
@@ -202,7 +202,8 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 | Site | Stock | Patch | Purpose |
 |---|---|---|---|
-| `00:1263` | `f8 0e 36 02` | `jp $04e8` + nop | `FlSetExitHook`: enter browser if pick armed, else stock |
+| `00:1263` | `f8 0e 36 02` | `jp $04e8` + nop | `FlSetExitHook`: enter browser if pick armed or START left the tab, else HELP |
+| `00:1288` | `21 32 00 e5 cd 93 3a e8 02 c3 8d 0f` | `cb 79 c2 4f 12 c3 8d 0f` + 4 nops | HELP's exit: START → the SET tab (`$124f`), else the browser |
 | `00:1569` | `cd 8d 07 2b 48 01 00` | `jp $04c7` + 4 nops | `FlPickHook`: capture the ROM instead of launching, if pick armed |
 | `00:164e` | `ca ab 16` | `ca f8 04` | B-at-root → `FlPickCancelHook` |
 
@@ -211,6 +212,28 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | Site | Stock | Patch | Purpose |
 |---|---|---|---|
 | `08:7200` | `c3 31 73` | `jp $7b8d` | tab-strip tail → `FlPickBanner` |
+| `08:714c` | `40` | `c0` | HELP's wait loop leaves on SELECT or START |
+
+## START goes back a tab
+
+SELECT steps SD → SET → HELP → SD. START on the SD tab is the last-ROM overlay
+([last-rom.md](last-rom.md)) and did nothing on the other two; since
+2026-11-11 it undoes SELECT there: HELP → SET, SET → SD.
+
+- **SET.** `flcfg` op TICK returns a START as SELECT and sets `SET_BACK`
+  (WRAM `$DC1C`, cleared on every other pass), so the screen leaves the way it
+  does on SELECT, `SetCommit` included. `FlSetExitHook` then enters the browser
+  instead of HELP. The color picker takes the keys while a color is being set,
+  START among them, as it does SELECT.
+- **HELP.** The wait loop (`08:7141`) tests `$c0` instead of `$40`, and
+  returns with the pad in C, which `FarCallTrampoline` leaves alone. HELP's
+  exit in bank 0 tests bit 7: START jumps to `$124f` (draw the tabs, enter
+  SET), anything else to `FileBrowserEntry`. The stock `Delay($32)` there is
+  gone to make room; `ReadJoypad` reports a button once per press
+  ([joypad-latch.md](joypad-latch.md)), so a held START stops at SET.
+
+Checked in SameBoy (1.05e-0731 and 1.05e-0918 as a CGB, 1.04e as a DMG): every step of both directions, the
+overlay still on START in the browser, and START held on HELP.
 
 ## Shims (hand-assembled; see also [`../kernel/src/shims.md`](../kernel/src/shims.md))
 
@@ -231,9 +254,12 @@ frame via `push bc`), return in `E`.
   `jp $124f` (tabs+SET screen); else replay `LoaderPrepPath` far-call and
   `jp $1570`:
   `fa fe db b7 28 0a cd 8d 07 76 59 04 00 c3 4f 12 cd 8d 07 2b 48 01 00 c3 70 15`
-- `FlSetExitHook` `00:04e8` (14 B): armed → `jp $0f8d` (browser); else replay and
-  `jp $1267` (HELP as stock):
-  `fa fe db b7 c2 8d 0f f8 0e 36 02 c3 67 12`
+- `FlSetExitHook` `00:04e8` (13 B): armed or `SET_BACK` → `jp $0f8d` (browser);
+  else `jp $1274` (HELP):
+  `fa fe db 21 1c dc b6 c2 8d 0f c3 74 12`
+  (14 B until 2026-11-11: `fa fe db b7 c2 8d 0f f8 0e 36 02 c3 67 12`, which
+  replayed the mode variable's `= 2` and went through the stock check at
+  `$1267`; nothing reads that variable past here)
 - `FlPickCancelHook` `00:04f8` (10 B): not armed → stock no-op `$16ab`; armed →
   `jp $124f` (back to SET, which clears the flag):
   `fa fe db b7 ca ab 16 c3 4f 12`
@@ -265,11 +291,14 @@ python3 tools/inject_bytes.py $V 4 5604 FlSetHiliteClamp d603 --apply
 python3 tools/inject_bytes.py $V 4 5632 FlSetAHookSite  c25959 --apply
 # bank 0
 python3 tools/inject_bytes.py $V 0 04c7 FlPickHook       fafedbb7280acd8d0776590400c34f12cd8d072b480100c37015 --apply
-python3 tools/inject_bytes.py $V 0 04e8 FlSetExitHook    fafedbb7c28d0ff80e3602c36712 --apply
+python3 tools/inject_bytes.py $V 0 04e8 FlSetExitHook    fafedb211cdcb6c28d0fc37412 --apply
 python3 tools/inject_bytes.py $V 0 04f8 FlPickCancelHook fafedbb7caab16c34f12 --apply
 python3 tools/patch_call.py   $V 0 1263 4 00:04e8 --jp --apply
 python3 tools/patch_call.py   $V 0 1569 7 00:04c7 --jp --apply
 python3 tools/inject_bytes.py $V 0 164e FlPickCancelSite caf804 --apply
+# START goes back a tab
+python3 tools/patch_bytes.py  $V 0 1288 213200e5cd933ae802c38d0f cb79c24f12c38d0f00000000 --apply
+python3 tools/patch_bytes.py  $V 8 714c 40 c0 --apply
 # bank 8
 python3 tools/inject.py src/flpick_banner.c $V 8 7b8d FlPickBanner --pin DrawString=08b7 --pin StoreDrawParams=2791 --apply
 python3 tools/patch_call.py   $V 8 7200 3 08:7b8d --jp --apply --regen

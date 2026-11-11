@@ -4390,7 +4390,7 @@
 00:04c7 FlPickHook
 00:04c7 .data:1a:8
 00:04e8 FlSetExitHook
-00:04e8 .data:e:8
+00:04e8 .data:d:8
 00:04f8 FlPickCancelHook
 00:04f8 .data:a:8
 00:164e FlPickCancelSite
@@ -4610,7 +4610,7 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:5d8:8
+04:6d19 .data:5e8:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage

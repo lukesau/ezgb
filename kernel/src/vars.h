@@ -93,6 +93,9 @@
  * frame, and 1 when op TICK turned B on THEME into A: step back (themepage.c). */
 #define SET_CUR   (*(volatile u8 *)0xDAFC)
 #define THEME_BACK (*(volatile u8 *)0xDAFB)
+/* 1 when START left the SET tab (flcfg.c op TICK), which goes back to the
+ * browser where SELECT goes on to HELP (FlSetExitHook, 00:04e8). */
+#define SET_BACK  (*(volatile u8 *)0xDC1C)
 /* SET tab page 3's color picker (themepage.c): 0, or 1 + the channel (0 R,
  * 1 G, 2 B) being set on the cursor's color row. Bit 7: its op TICK asked
  * for the screen to be laid out again (the A it handed the loop is not a

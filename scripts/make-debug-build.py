@@ -9,13 +9,13 @@ mod build, untouched) and writes a copy with:
   bank 12     FlashDump (kernel/src/flash_dump.c), the config flash dump
               DebugTab far-calls on START
   bank 0      DbgTabHook: far-call DebugTab, Delay, back to the browser
-  site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
-              jp FileBrowserEntry`, 00:1288 in 1.05e): its Delay stays, the
-              jp goes to DbgTabHook
+  site        HELP's exit (`bit 7,c; jp nz,<SET tab>; jp FileBrowserEntry`,
+              00:1288 in 1.05e): the START test stays, the jp goes to
+              DbgTabHook
   HELP text   "MOD N.M" -> "MOD N.MDBG"
 
 so SELECT on HELP opens the debug screen and SELECT there goes to the
-browser. Addresses are written for 1.05e-0731 and carried to other builds
+browser; START on HELP still goes back to SET. Addresses are written for 1.05e-0731 and carried to other builds
 through scripts/portmap.py, the same matching port-mod.py uses; the site's
 bytes are checked before anything is written.
 
@@ -53,6 +53,7 @@ ADDR = {
     "FarCall_07_7739": (0, 0x1963),     # f_write
     "FarCall_03_768f": (0, 0x19a1),     # f_close
     "HelpExit": (0, 0x1288),
+    "SetTab": (0, 0x124f),              # FileBrowserEntry_modeFarcall1
 }
 MODSTR = (8, 0x7aff)
 DEBUG_AT = (12, 0x6000)     # preferred; any free run in bank 12 will do
@@ -110,7 +111,7 @@ def main():
             a[k] = t
 
     site = off(0, a["HelpExit"])
-    want = b"\x21\x32\x00\xe5\xcd" + le(a["Delay"]) + b"\xe8\x02\xc3" + le(a["FileBrowserEntry"])
+    want = b"\xcb\x79\xc2" + le(a["SetTab"]) + b"\xc3" + le(a["FileBrowserEntry"]) + bytes(4)
     if rom[site:site + 12] != want:
         sys.exit(f"error: HELP exit at 00:{a['HelpExit']:04x} is {rom[site:site + 12].hex()}, "
                  f"expected {want.hex()} (already a debug build?)")
@@ -159,7 +160,7 @@ def main():
     assert len(hook) == HOOK_LEN, len(hook)
     cave = free_run(rom, 0, HOOK_LEN, prefer=0x02c4, lo=0x0150)
     rom[cave:cave + HOOK_LEN] = hook
-    rom[site + 9:site + 12] = b"\xc3" + le(cave)
+    rom[site + 5:site + 8] = b"\xc3" + le(cave)
 
     # HELP: "MOD N.M" -> "MOD N.MDBG"
     m = off(*MODSTR)            # the same in every build (stamp-mod-version.sh)
