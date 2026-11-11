@@ -139,8 +139,10 @@ ACCENT:   [22][16][10]
   accent stays the one worked out from its background until the ACCENT row
   is changed, which starts from the accent on screen.
 - **DV.** Only the accent row can be set in DV: it sets DV's highlight and
-  leaves DV on. DV is black and white the way its font is its font, so A on
-  BG and TEXT does nothing there, as on FONT. The accent is still the one
+  leaves DV on. DV is black and white the way its font is its font, so BG,
+  TEXT and FONT can't be set there: they are drawn in color index 2, DV's
+  blue (a dark gray on a DMG), without a highlight, and the cursor passes
+  over them, from THEME straight to ACCENT. The accent is still the one
   in `COLORS=`, the custom theme's too: with no line yet, the save writes
   `COLORS=000000,FFFFFF,` and the accent, which also puts `CUSTOM` on the
   THEME button.
@@ -150,8 +152,9 @@ ACCENT:   [22][16][10]
   An accent that `COLORS=` left to the complement stays the complement
   until the ACCENT row is changed.
 - **Where palette RAM is locked** (a DMG, compatibility mode on stock
-  firmware) there are no colors to set: the cells read `--` and A does
-  nothing.
+  firmware) there are no colors to set, and the picker is not there: the
+  page is THEME, FONT and the page row. (Until 2026-11-10 the cells read
+  `--`.)
 
 `ThemePage` ([themepage.c](../kernel/src/themepage.c), bank 13) does it.
 While a row is being set (`CP_EDIT`, WRAM `$DC19`, 1 + the channel) its
@@ -168,8 +171,8 @@ out again with the row still being set.
 Checked in SameBoy (2026-11-10, CGB model): all three rows in 8px, 12px and
 SLIM on 0731, the switch to `CUSTOM` from light with its relayout, the
 accent in DV (and BG, TEXT and FONT there doing nothing), DV still lime after a background set from dark, the saved
-line and the same colors after a reboot, a DMG
-model's `--` cells; the page and one change on 1.04e, the page on 0918.
+line and the same colors after a reboot, DV's locked rows in blue with
+the cursor passing over them, a DMG model's page without the picker; the page and one change on 1.04e, the page on 0918.
 Not tested on hardware.
 
 ## Custom
@@ -387,7 +390,7 @@ HELP); since 2026-10-31 edge tiles go through its per-plane read-modify-write
 ([font12.md](font12.md)).
 
 DV's glyph set is 12px only, so the theme decides the font: the SET tab's
-FONT button reads `SLIM` while DV is on (DV's letters are SLIM's; it read `AUTO` until 2026-11-10) and A on it does nothing. Stepping
+FONT button reads `SLIM` while DV is on (DV's letters are SLIM's; it read `AUTO` until 2026-11-10), grayed like the color rows DV locks, and the cursor passes over it. Stepping
 the THEME button onto or off DV draws the tab strip and the pane again in the
 new glyphs, as the FONT button does (what is on screen keeps the glyphs it was
 drawn in); onto DV in 8px mode it also switches to 12px (saved as `UI=12`), and a card whose `EZGB.CFG` says `THEME=7` with

@@ -43,8 +43,8 @@ the written value on color consoles in either mode. The answer is `DMG_FAM`
 A test build for trying the DMG path on a GBC or GBA:
 
 ```bash
-STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=ubuntu-compute sh scripts/fpga/build-stage1-updater.sh fw4 "To FW4-DMG 2.1" fpga/load/Update_FW4-mod-2.1-dmg.gb
-STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=ubuntu-compute sh scripts/fpga/build-stage1-updater.sh fw5-0918 "To FW5-DMG 2.1" fpga/load/Update_FW5-0918-mod-2.1-dmg.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh scripts/fpga/build-stage1-updater.sh fw4 "To FW4-DMG 2.1" fpga/load/Update_FW4-mod-2.1-dmg.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh scripts/fpga/build-stage1-updater.sh fw5-0918 "To FW5-DMG 2.1" fpga/load/Update_FW5-0918-mod-2.1-dmg.gb
 ```
 
 The header has no CGB flag, so the boot ROM picks compatibility mode, and the

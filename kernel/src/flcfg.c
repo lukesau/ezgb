@@ -165,6 +165,8 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         else if (cur < lo) cur = (u8)(cur + 1) == lo ? hi : lo;
         else if (cur > hi) cur = cur == (u8)(hi + 1) ? lo : hi;
         if (PAGE) frame[0x3e] = 0;      /* no stock redraw: its boxes are page 1's */
+        /* page 3: past the rows the theme or the console has locked */
+        if (PAGE == 2) cur = FarCallThemePage(6, cur);
         frame[0x3d] = cur;
         draw_rows(cur);
         return 0;

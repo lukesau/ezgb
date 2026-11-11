@@ -41,8 +41,15 @@
  * sets CP_EDIT bit 7 and returns A, the stock loop dispatches it, and op 3
  * returns 2 for it. CP_EDIT stays set, so the row is still being set after.
  *
- * Palette RAM is locked on a DMG and in compatibility mode (PAL_LOCKED): the
- * cells read -- and A does nothing.
+ *   op 6  arg = the row the cursor is moving to: returns the row it lands
+ *         on, the next one that can be set the way it was going (SET_CUR is
+ *         where it was)
+ *
+ * A row that can't be set is drawn in color index 2, DV's blue and a gray
+ * elsewhere, with no highlight, and the cursor passes over it: FONT, BG and
+ * TEXT in DV. Palette RAM is locked on a DMG and in compatibility mode
+ * (PAL_LOCKED): there are no colors to set, and the color rows and their
+ * heading are not drawn at all.
  */
 
 #include "types.h"
@@ -62,6 +69,8 @@ extern u8 ReadJoypad(void);             /* 00:3a4a, post-swap byte: RIGHT 1, LEF
 #define rBCPD (*(volatile u8 *)0xff69)
 
 static void labels(void);
+static u8 locked(u8 row);
+static u8 skip(u8 cur);
 static void rows(u8 cur);
 static u8 press(u8 row);
 static u8 tick(u8 pad);
@@ -87,6 +96,7 @@ u8 ThemePage(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 arg) {
     if (op == 0) labels();
     else if (op == 1) rows(arg);
     else if (op == 3) r = press(arg);
+    else if (op == 6) return skip(arg);
     else return tick(arg);
     StoreDrawParams(3, 0, 0);
     return r;
@@ -111,6 +121,7 @@ static void labels(void) {
     StoreDrawParams(3, 0, 0);
     text(theme_label, 0, 2, 0, 84);
     text(font_label, 0, 4, 0, 112);
+    if (PAL_LOCKED) return;
     text(colors_label, 0, 6, 0, 64);
     for (k = 0; k < 3; k++) {
         text(rgb + (k << 1), 10 + (k << 2), 6, CELL_X(k) + 9, CELL_X(k) + 22);
@@ -125,10 +136,29 @@ static void rows(u8 cur) {
     u8 i;
 
     theme_btn(cur == ROW_THEME);
-    button(cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
+    button(locked(ROW_UI) ? 2 : cur == ROW_UI, 0x73, 0x1d, 0x9b, 0x29);
     /* DV has one font, its glyph set, which is SLIM's letters */
     text(GLYPHS_DV ? slim_str : hUiMode ? ui12_str : ui8_str, 15, 4, 120, 155);
+    if (PAL_LOCKED) return;
     for (i = 0; i < 3; i++) color_row(i, cur == (u8)(ROW_BG + i));
+}
+
+/* A row A does nothing on: DV has one font and is black and white, only its
+ * highlight is set; without palette RAM there are no colors at all. */
+static u8 locked(u8 row) {
+    if (row < ROW_UI || row > ROW_BG + 2) return 0;
+    if (row >= ROW_BG && PAL_LOCKED) return 1;
+    return THEME == THEME_DV && row != ROW_BG + 2;
+}
+
+/* The cursor never rests on such a row: it goes on the way it was going.
+ * THEME above and PREV below are never locked. */
+static u8 skip(u8 cur) {
+    u8 down = cur > SET_CUR;
+    while (locked(cur)) {
+        if (down) cur++; else cur--;
+    }
+    return cur;
 }
 
 static u8 press(u8 row) {
@@ -138,17 +168,14 @@ static u8 press(u8 row) {
     }
     if (row == ROW_THEME) return theme_step();
     if (row == ROW_UI) {
-        /* DV decides the font: its glyph set, 12px only */
-        if (THEME == THEME_DV) return 0;
+        if (locked(row)) return 0;      /* DV decides the font */
         /* 8px, 12px, SLIM (DV's glyph set, 12px), 8px */
         if (!hUiMode) hUiMode = 1;
         else if (!FONT_SLIM) FONT_SLIM = 1;
         else hUiMode = FONT_SLIM = 0;
         return 2;
     }
-    if (PAL_LOCKED) return 0;
-    /* DV is black and white as it is its font: only its highlight is set */
-    if (THEME == THEME_DV && row != ROW_BG + 2) return 0;
+    if (locked(row)) return 0;
     CP_EDIT = 1;
     color_row(row - ROW_BG, 1);
     return 0;
@@ -250,25 +277,23 @@ static void color_row(u8 ci, u8 hi) {
     u8 k, v, x0, e = CP_EDIT & 3, row = 8 + (ci << 1), y = row << 3;
     u8 w = GLYPHS_DV ? 6 : 9;           /* a 12px digit */
 
-    if (!PAL_LOCKED) pal_get(pal_idx(ci), c);
+    u8 off = locked(ROW_BG + ci);
+
+    pal_get(pal_idx(ci), c);
     s[2] = 0;
     for (k = 0; k < 3; k++) {
         x0 = CELL_X(k);
-        button(hi && (!e || e == (u8)(k + 1)), x0, y - 3, x0 + 24, y + 9);
+        button(off ? 2 : hi && (!e || e == (u8)(k + 1)), x0, y - 3, x0 + 24, y + 9);
         x0 += 13 - w;                   /* two digits, centered */
-        if (PAL_LOCKED) {
-            s[0] = s[1] = '-';
+        v = c[k];
+        s[0] = ' ';
+        if (v >= 10) {
+            s[0] = '0';
+            do { v -= 10; s[0]++; } while (v >= 10);
         } else {
-            v = c[k];
-            s[0] = ' ';
-            if (v >= 10) {
-                s[0] = '0';
-                do { v -= 10; s[0]++; } while (v >= 10);
-            } else {
-                x0 += w;                /* 12px: one digit, right-aligned */
-            }
-            s[1] = '0' + v;
+            x0 += w;                    /* 12px: one digit, right-aligned */
         }
+        s[1] = '0' + v;
         text(s, 9 + (k << 2), row, x0, CELL_X(k) + 23);
     }
 }
@@ -427,9 +452,11 @@ static u8 widen(u8 v) {
 }
 
 /* A button's box in 8px coordinates, in the ink its text then uses
- * (flcfg.c's): 12px, the text row plus a pixel above and below. */
+ * (flcfg.c's): 12px, the text row plus a pixel above and below. hi 1 is
+ * the cursor's highlight, 2 a button that can't be pressed, in index 2. */
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1) {
-    if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
+    if (hi == 1) StoreDrawParams(0, 3, 0);
+    else StoreDrawParams(hi ? 2 : 3, 0, 0);
     if (hUiMode) {
         y0 += 2;
         y1 += 3;
