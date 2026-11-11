@@ -79,6 +79,7 @@
 
 extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
+extern void SetBox(u8 x, u8 y, u8 on, u8 hi);                       /* 04:77a0, setbox.c: a checkbox */
 extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
@@ -93,6 +94,7 @@ extern void SetPage(u8 op, u8 cur);                                 /* 04:6610, 
 
 #define ROW_RTC   1          /* RTC: SD / NO SD (RTC backup, restore and prompt on or off);
                               * row 2 is the stock AUTO SAVE, which never reaches flcfg */
+#define ROW_AUTO  2          /* the stock AUTO SAVE checkbox */
 #define ROW_CHECK 3
 #define ROW_PICK  4
 #define ROW_TAGS  7          /* page 2's checkboxes (setpage.c): CLEAN UP NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM, DAILY BACKUP */
@@ -115,7 +117,6 @@ static void draw_name(void);
 static void draw_rows(u8 cur);
 static void pick_commit(void);
 static void wait_a_release(void);
-static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static u8 flcfg_op(u8 *frame, u8 op);
 
@@ -348,20 +349,6 @@ static void draw_name(void) {
     MQ_RUN(FarCallMarquee, MQ_A, MQ_START);
 }
 
-/* Checkbox at pixel x, row y/8 (the stock AUTO SAVE sequence, 04:496a, at
- * x $82; one row up is y $30): clear, outline (highlighted when the cursor is
- * on it), tick. */
-static void box(u8 x, u8 y, u8 on, u8 hi) {
-    StoreDrawParams(0, 0, 0);
-    DrawRect(x, y, x + 8, y + 8, 1);
-    if (hi) StoreDrawParams(1, 1, 0); else StoreDrawParams(3, 0, 0);
-    DrawRect(x, y, x + 8, y + 8, 0);
-    if (on) {
-        StoreDrawParams(3, 3, 0);
-        DrawRect(x + 2, y + 2, x + 6, y + 6, 1);
-    }
-}
-
 /* A button's box, given in 8px coordinates, in the ink its text then uses:
  * highlighted when the cursor is on it. 12px: the box is the text row plus
  * a pixel above and below, 2 px lower at the top and 3 at the bottom. */
@@ -392,9 +379,13 @@ static void draw_rows(u8 cur) {
         SetPage(5, cur);
         return;
     }
-    box(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
-    box(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
-    box(0x82, 0x50, FL_EN, cur == ROW_CHECK);
+    /* AUTO SAVE's box (row 8) is the stock code's: only its outer ring,
+     * which the stock clear and outline never touch, is drawn here */
+    StoreDrawParams(cur == ROW_AUTO ? 3 : 0, 0, 0);
+    DrawRect(0x81, 0x3f, 0x8b, 0x49, 0);
+    SetBox(0x42, 0x30, !RTC_OFF, cur == ROW_RTC);   /* after "SD" (cols 6-7) */
+    SetBox(0x82, 0x30, RTC_OFF, cur == ROW_RTC);    /* after "NO SD" (cols 11-15) */
+    SetBox(0x82, 0x50, FL_EN, cur == ROW_CHECK);
 
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);

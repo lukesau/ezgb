@@ -53,6 +53,7 @@
 #include "ezcfg.h"
 
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
+extern void SetBox(u8 x, u8 y, u8 on, u8 hi);                       /* 04:77a0, setbox.c: a checkbox */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c */
 extern void SetCommit(void);                                        /* 04:5fc0: SET_DIRTY -> EZGB.CFG and /.ezgbplays */
 extern void TagExample(void);                                       /* 04:7e60, tagexample.c */
@@ -74,7 +75,6 @@ extern u8 RecFlag(volatile u8 *r, u8 tag, u8 toggle);               /* 04:7f51, 
 #define Y_BOOT 0x50
 #define Y_BK   0x60
 
-static void box(u8 x, u8 y, u8 on, u8 hi);
 static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void page_row(u8 cur);
 static void sgb_row(u8 hi);
@@ -103,11 +103,11 @@ void SetPage(u8 op, u8 cur) {
         }
         TagExample();                       /* row 4, scrolling */
     } else if (op == 1) {
-        box(0x82, Y_TAGS, TAGS_HIDE, cur == ROW_TAGS);
-        box(0x82, Y_SORT, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
+        SetBox(0x82, Y_TAGS, TAGS_HIDE, cur == ROW_TAGS);
+        SetBox(0x82, Y_SORT, RecFlag(SORT_REC, 'O', 0), cur == ROW_SORT);
         sgb_row(cur == ROW_SGB);
         boot_row(cur == ROW_BOOT);
-        box(0x82, Y_BK, BK_DAILY, cur == ROW_BK);
+        SetBox(0x82, Y_BK, BK_DAILY, cur == ROW_BK);
         page_row(cur);
     } else if (op == 5) {
         page_row(cur);
@@ -127,7 +127,7 @@ void SetPage(u8 op, u8 cur) {
     } else if (op == 3 && cur == ROW_SORT) {
         u8 on = RecFlag(SORT_REC, 'O', 1);
         SET_DIRTY = 1;                      /* /.ezgbplays keeps it (docs/stars.md) */
-        box(0x82, Y_SORT, on, 1);
+        SetBox(0x82, Y_SORT, on, 1);
     } else if (op == 3 && cur == ROW_SGB) {
         if (S1_SGB) return;             /* AUTO: stage1 does it, nothing to set */
         RecFlag(SGB_REC, 'G', 1);
@@ -141,11 +141,11 @@ void SetPage(u8 op, u8 cur) {
     } else if (op == 3 && cur == ROW_BK) {
         BK_DAILY = BK_DAILY ? 0 : 1;
         SET_DIRTY = 1;
-        box(0x82, Y_BK, BK_DAILY, 1);
+        SetBox(0x82, Y_BK, BK_DAILY, 1);
     } else if (op == 3) {
         TAGS_HIDE = TAGS_HIDE ? 0 : 1;
         SET_DIRTY = 1;
-        box(0x82, Y_TAGS, TAGS_HIDE, 1);
+        SetBox(0x82, Y_TAGS, TAGS_HIDE, 1);
         TagExample();                       /* the other name, from its start */
     } else if (op == 4) {
         StoreDrawParams(0, 0, 0);
@@ -166,7 +166,7 @@ static void sgb_row(u8 hi) {
         if (hi) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
         SetText(auto_str, 4, 13, 8);
     } else {
-        box(0x82, Y_SGB, RecFlag(SGB_REC, 'G', 0), hi);
+        SetBox(0x82, Y_SGB, RecFlag(SGB_REC, 'G', 0), hi);
     }
 }
 
@@ -183,7 +183,7 @@ static u8 can_jump(void) {
 /* Row 10: ticked when launches may jump. BOOT_RESET keeps its value while this
  * console can't jump, so a card moved to one that can still has it. */
 static void boot_row(u8 hi) {
-    box(0x82, Y_BOOT, can_jump() && !BOOT_RESET, hi);
+    SetBox(0x82, Y_BOOT, can_jump() && !BOOT_RESET, hi);
 }
 
 /* Row 16: PREV, the page number, NEXT. `cur` highlights the one the cursor
@@ -204,19 +204,6 @@ static void page_row(u8 cur) {
     num[2] = '3';
     num[3] = 0;
     SetText(num, 3, 9, 16);
-}
-
-/* Checkbox at pixel x, y (flcfg.c's): clear, outline (highlighted when the
- * cursor is on it), tick. */
-static void box(u8 x, u8 y, u8 on, u8 hi) {
-    StoreDrawParams(0, 0, 0);
-    DrawRect(x, y, x + 8, y + 8, 1);
-    if (hi) StoreDrawParams(1, 1, 0); else StoreDrawParams(3, 0, 0);
-    DrawRect(x, y, x + 8, y + 8, 0);
-    if (on) {
-        StoreDrawParams(3, 3, 0);
-        DrawRect(x + 2, y + 2, x + 6, y + 6, 1);
-    }
 }
 
 /* A button's box in 8px coordinates, in the ink its text then uses

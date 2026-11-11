@@ -46,7 +46,11 @@ tried first; the requester preferred plain black and white.) Every theme past
 and blue are about half again as bright as red: at red's level the three
 were hard to tell apart on an unlit GBC screen. The darker mid
 shade matters: it is the cursor outline on a SET checkbox, so it has to stand
-off the background.
+off the background. It didn't always (dark, and some custom colors), so since
+2026-11-11 the checkbox under the cursor also gets a second outline, one
+pixel outside the first, in the text's color (`SetBox`, `04:77a0`,
+[setbox.c](../kernel/src/setbox.c), shared by pages 1 and 2; the stock AUTO
+SAVE box gets its ring from `flcfg`'s `draw_rows`).
 
 The kernel draws in color indices only (it wrote `BGP = $E4` once and never
 touched a palette again, [cgb-mode.md](cgb-mode.md)), so a theme is nothing

@@ -109,11 +109,12 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688}),
+                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688, "SetBox": 0x77a0}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page rows, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "SetCommit": 0x5fc0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
-                            "FarCallPlaySync_B4": 0x7792}),
+                            "FarCallPlaySync_B4": 0x7792, "SetBox": 0x77a0}),
+    (4, 0x77a0): dict(src="setbox.c", pins={"DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),   # SET tab checkbox, near-called by FlCfg and SetPage
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
     (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
                       pins={"FarCallMarquee": 0x0410}),
