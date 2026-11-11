@@ -3354,17 +3354,14 @@ FileBrowserEntry_modeFarcall2::
     ret nc
 
     ld l, a
-    ld [$cb00], sp
-    ld a, c
-    jp nz, FileBrowserEntry_modeFarcall1
-
+    ld [AdvanceTextCursor_wrapX], sp
+    ld [hl-], a
+    nop
+    push hl
+    call Delay
+    add sp, $02
     jp FileBrowserEntry
 
-
-    nop
-    nop
-    nop
-    nop
 
 ; [ezgb]
 ; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.

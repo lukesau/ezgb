@@ -12,7 +12,7 @@ All addresses are `bank:addr` for 1.05e; banks 0/2/4/8 are byte-identical across
 
 ## What the user sees
 
-The SET tab (SELECT cycles SD → SET → HELP; START goes back a tab, HELP → SET → SD, [below](#start-goes-back-a-tab)). The stock rows were slid up one
+The SET tab (SELECT cycles SD → SET → HELP; START returns to the SD tab from the other two, [below](#start-returns-to-the-sd-tab)). The stock rows were slid up one
 row (every row immediate and y pixel of TIME/SET and the date/time digits,
 the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
@@ -203,7 +203,6 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | Site | Stock | Patch | Purpose |
 |---|---|---|---|
 | `00:1263` | `f8 0e 36 02` | `jp $04e8` + nop | `FlSetExitHook`: enter browser if pick armed or START left the tab, else HELP |
-| `00:1288` | `21 32 00 e5 cd 93 3a e8 02 c3 8d 0f` | `cb 79 c2 4f 12 c3 8d 0f` + 4 nops | HELP's exit: START → the SET tab (`$124f`), else the browser |
 | `00:1569` | `cd 8d 07 2b 48 01 00` | `jp $04c7` + 4 nops | `FlPickHook`: capture the ROM instead of launching, if pick armed |
 | `00:164e` | `ca ab 16` | `ca f8 04` | B-at-root → `FlPickCancelHook` |
 
@@ -214,26 +213,28 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `08:7200` | `c3 31 73` | `jp $7b8d` | tab-strip tail → `FlPickBanner` |
 | `08:714c` | `40` | `c0` | HELP's wait loop leaves on SELECT or START |
 
-## START goes back a tab
+## START returns to the SD tab
 
 SELECT steps SD → SET → HELP → SD. START on the SD tab is the last-ROM overlay
 ([last-rom.md](last-rom.md)) and did nothing on the other two; since
-2026-11-11 it undoes SELECT there: HELP → SET, SET → SD.
+2026-11-11 it returns to the SD tab from either.
 
 - **SET.** `flcfg` op TICK returns a START as SELECT and sets `SET_BACK`
   (WRAM `$DC1C`, cleared on every other pass), so the screen leaves the way it
   does on SELECT, `SetCommit` included. `FlSetExitHook` then enters the browser
   instead of HELP. The color picker takes the keys while a color is being set,
   START among them, as it does SELECT.
-- **HELP.** The wait loop (`08:7141`) tests `$c0` instead of `$40`, and
-  returns with the pad in C, which `FarCallTrampoline` leaves alone. HELP's
-  exit in bank 0 tests bit 7: START jumps to `$124f` (draw the tabs, enter
-  SET), anything else to `FileBrowserEntry`. The stock `Delay($32)` there is
-  gone to make room; `ReadJoypad` reports a button once per press
-  ([joypad-latch.md](joypad-latch.md)), so a held START stops at SET.
+- **HELP.** The wait loop (`08:7141`) tests `$c0` instead of `$40`: either
+  key leaves for the browser, as SELECT did.
 
-Checked in SameBoy (1.05e-0731 and 1.05e-0918 as a CGB, 1.04e as a DMG): every step of both directions, the
-overlay still on START in the browser, and START held on HELP.
+`ReadJoypad` reports a button once per press
+([joypad-latch.md](joypad-latch.md)), so the START that left a tab doesn't
+open the overlay in the browser. The debug screen keeps START for the flash
+dump ([debug-tab.md](debug-tab.md)).
+
+Checked in SameBoy (1.05e-0731 and 1.05e-0918 as a CGB, 1.04e as a DMG): START
+from SET and from HELP, SELECT all the way round, the overlay still on START
+in the browser, and START held on HELP.
 
 ## Shims (hand-assembled; see also [`../kernel/src/shims.md`](../kernel/src/shims.md))
 
@@ -296,8 +297,7 @@ python3 tools/inject_bytes.py $V 0 04f8 FlPickCancelHook fafedbb7caab16c34f12 --
 python3 tools/patch_call.py   $V 0 1263 4 00:04e8 --jp --apply
 python3 tools/patch_call.py   $V 0 1569 7 00:04c7 --jp --apply
 python3 tools/inject_bytes.py $V 0 164e FlPickCancelSite caf804 --apply
-# START goes back a tab
-python3 tools/patch_bytes.py  $V 0 1288 213200e5cd933ae802c38d0f cb79c24f12c38d0f00000000 --apply
+# START returns to the SD tab
 python3 tools/patch_bytes.py  $V 8 714c 40 c0 --apply
 # bank 8
 python3 tools/inject.py src/flpick_banner.c $V 8 7b8d FlPickBanner --pin DrawString=08b7 --pin StoreDrawParams=2791 --apply

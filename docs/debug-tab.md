@@ -11,7 +11,7 @@ That writes `dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat` from
 `re/kernel/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
 copies it to the card as `ezgb.dat`. HELP then reads `MOD N.MDBG`, and SELECT
 on HELP opens the debug screen instead of returning to the browser; SELECT
-there goes on to the browser. START on HELP goes back to SET as in a release build. The tab strip stays on HELP.
+there goes on to the browser. START on HELP goes back to the browser as in a release build; START on the debug screen is still the flash dump. The tab strip stays on HELP.
 
 ## The page
 
@@ -113,7 +113,7 @@ hardware:
 `kernel/src/debug_tab.c` (bank 12 since 2026-11-04; bank 4 before, `04:6cca` in mod 5.4)
 and `DbgTabHook` (bank 0, `00:02c4` when free): far-call the screen, delay,
 `jp FileBrowserEntry`. HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e)
-keeps its START test ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-goes-back-a-tab)) and jumps to the hook instead of the browser, and the screen
+becomes `bit 7,c; jp nz,FileBrowserEntry; jp DbgTabHook` (HELP returns with the pad in C: START goes to the browser, [fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-returns-to-the-sd-tab), SELECT to the hook), and the screen
 itself starts with `DrawMenuTabs(3)` (clear the pane, keep the strip). That
 keeps the hook at 19 bytes: since `CgbInit` took `00:0259` (mod 5.3), 1.05e's
 largest free run in bank 0 is 31 bytes, and the old 41-byte hook no longer fit. Addresses are written for

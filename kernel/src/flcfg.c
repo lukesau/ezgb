@@ -260,7 +260,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         /* page 3: B on THEME steps back, and while a color is being set
          * its picker takes the keys */
         if (PAGE == 2) pad = FarCallThemePage(5, pad);
-        /* START goes back a tab: the loop leaves as it does on SELECT, and
+        /* START returns to the SD tab: the loop leaves as it does on SELECT, and
          * FlSetExitHook enters the browser instead of HELP */
         SET_BACK = 0;
         if (pad & 0x80) {
