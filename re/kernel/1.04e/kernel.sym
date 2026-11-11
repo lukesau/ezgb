@@ -4556,11 +4556,11 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:639:8
+04:6d19 .data:5c6:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
-04:6610 .data:5ca:8
+04:6610 .data:52e:8
 0b:4700 PlayLoad
 0b:4700 .data:34d:8
 04:7792 FarCallPlaySync_B4
@@ -4607,5 +4607,7 @@
 04:5f90 .data:a:8
 00:0502 PadWait
 00:0502 .data:6:8
+04:77a0 SetBox
+04:77a0 .data:bd:8
 00:3db0 FatDate
 00:3db0 .data:10c:8
