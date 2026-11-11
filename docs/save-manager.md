@@ -220,6 +220,7 @@ in a session can't replace it before the next day.
 Copying is slow (about 7 s for a 32 KB save), so it runs at most once a day per
 game, behind a box that says how long. On a cart whose clock reset, every save
 looks like today's or an old day's, so the test is only as good as the clock.
+Reported working on hardware 2026-11-10.
 When stage1 does the fast launch's dump itself, the kernel never sees the stamp
 and there is no backup.
 

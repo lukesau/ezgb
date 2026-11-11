@@ -284,7 +284,8 @@ swap in the game on `$7F32 = 0` only outside stage1, and now does it in both):
 | GBC, forced DMG | no flag | jumps with DMG values |
 
 Crystal (timer, battery) and Red (battery) ran through it. A boot with no target
-still reaches the kernel through the changed `handoff.s`. Not run on hardware.
+still reaches the kernel through the changed `handoff.s`. On hardware
+2026-11-10: reported working.
 
 ## Hardware (mod 7.2, 2026-11-03)
 
@@ -309,7 +310,9 @@ a GBC (`AF:1180 BC:0000`), both `DE:FF56 HL:000D`, as in SameBoy
 The forced DMG stage1, the any-game DMG rule and an `AUTO`/`ALWAYS` form of the row
 (a checkbox again since) were tested
 on hardware the same day and reported working. That run used color consoles, so
-a real DMG, Pocket or SGB is still untested.
+a real DMG, Pocket or SGB is still untested. The DMG jump was run on
+hardware again 2026-11-10 and reported working, again with the forced DMG
+stage1 on a color console.
 
 Still owed: a color game launched with these registers (a game that checks
 B = 1 on the GBA), the DMG path and SGB reset on real consoles, a Pocket's

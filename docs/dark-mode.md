@@ -173,7 +173,8 @@ SLIM on 0731, the switch to `CUSTOM` from light with its relayout, the
 accent in DV (and BG, TEXT and FONT there doing nothing), DV still lime after a background set from dark, the saved
 line and the same colors after a reboot, DV's locked rows in blue with
 the cursor passing over them, a DMG model's page without the picker; the page and one change on 1.04e, the page on 0918.
-Not tested on hardware.
+On hardware 2026-11-10: the picker, the accents and the SLIM font reported
+working.
 
 ## Custom
 

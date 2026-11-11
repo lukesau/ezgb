@@ -17,7 +17,8 @@ row (every row immediate and y pixel of TIME/SET and the date/time digits,
 the time-edit mode included) and AUTO SAVE moved down one, below the new RTC
 row (`scripts/inject-ezcfg.sh` step 3b, each byte checked against stock):
 
-The pane has three pages (two until 2026-11-10); row 16 of each steps to
+The pane has three pages (two until 2026-11-10, and the three reported
+working on hardware that day); row 16 of each steps to
 the next or the previous one, and they go round: PREV on page 1 is page 3,
 NEXT on page 3 page 1.
 
