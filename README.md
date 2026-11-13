@@ -73,6 +73,8 @@ Each links to a doc with the details.
 - [No lost button presses](docs/joypad-latch.md): the pad is read every
   frame.
 - [Hold A for options](docs/rom-menu.md): start, manage saves, star.
+- [Text viewer](docs/text-viewer.md): A on a `.txt`, `.ini` or `.md` file
+  opens it to read.
 - [Stars and play counts](docs/stars.md): starred ROMs stay on top, and the
   list can sort by most played.
 

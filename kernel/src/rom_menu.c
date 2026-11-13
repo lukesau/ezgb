@@ -17,8 +17,10 @@
  * (save_mgr.c) and redraws the menu when it returns. A on "Star" (or
  * "Unstar") toggles the ROM's star through StarToggleFar (play.c,
  * docs/stars.md), which sorts the folder again and puts the cursor back on
- * the ROM, and closes the menu. Pick mode (FL_PICK)
- * and files that are not .gb/.gbc take the stock path straight away. An A that was already down at
+ * the ROM, and closes the menu. A file that is not .gb/.gbc is offered to
+ * the text viewer (TextViewFar, textview.c), which shows a .txt, .ini or .md
+ * file and comes back to the page; anything else, and everything in pick
+ * mode (FL_PICK), takes the stock path straight away. An A that was already down at
  * the browser's previous poll (held on from the press that opened a folder)
  * is ignored until it is let go: RomMenuPadTrack (00:0453) wraps the loop's
  * ReadJoypad and keeps the previous and current reports in HRAM.
@@ -43,7 +45,7 @@
  *       --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
  *       --pin LastRomTickStub=0370 --pin FarCallDrawLoadingBox=0483 \
  *       --pin ManageSaves=6d11 --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
- *       --pin StarQueryFar=5998 --pin StarToggleFar=59a0 --apply
+ *       --pin StarQueryFar=5998 --pin StarToggleFar=59a0 --pin TextViewFar=59a8 --apply
  */
 
 #include "types.h"
@@ -56,6 +58,7 @@ extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -
 extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
 extern u8 StarQueryFar(u8 *slot);                                   /* 04:5998 -> StarQuery (play.c, bank 5) */
 extern void StarToggleFar(u8 *slot);                                /* 04:59a0 -> StarToggle */
+extern u8 TextViewFar(u8 *slot);                                    /* 04:59a8 -> TextView (textview.c, bank 14): 1 = it was a text file */
 
 #define REC_BASE  (*(volatile u16 *)0xC2A0) /* the open page's records in the $A000 window */
 #define NAME_BUF  ((u8 *)0xC4A4)            /* 255 bytes, refilled by the open path */
@@ -88,7 +91,11 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
     (void)far_pad_af;
     if (FL_PICK) goto open;
     rec = (const u8 *)(*(u16 *)slot + REC_BASE);
-    if (!is_rom(rec)) goto open;
+    if (!is_rom(rec)) {
+        /* a text file opens in the viewer (textview.c), then the page again */
+        if (TextViewFar(slot)) goto closed;
+        goto open;
+    }
     if (PAD_PREV & PAD_A) {
         while (a_held()) {}
         PAD_CUR = 0;
@@ -137,6 +144,7 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
     StoreDrawParams(0, 0, 0);
     DrawRect(0, 32, 159, 135 + (hUiMode << 2), 1);
     StoreDrawParams(3, 0, 0);
+closed:
     slot[REDRAW_OFS] = 1;
     PAD_CUR = 0;
     return 1;

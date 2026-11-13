@@ -126,7 +126,12 @@ REGISTRY = {
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "FarCallDrawLoadingBox": 0x0483, "ManageSaves": 0x6d11, "DrawString": 0x08b7, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290,
-                            "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0, "WaitVBlankFlag": 0x0688}),
+                            "StarQueryFar": 0x5998, "StarToggleFar": 0x59a0, "WaitVBlankFlag": 0x0688,
+                            "TextViewFar": 0x59a8}),
+    (14, 0x4000): dict(src="textview.c",                    # read-only text viewer, far target of TextViewFar 04:59a8 (docs/text-viewer.md)
+                      pins={"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941, "FarCall_03_76cc": 0x1985,
+                            "FarCall_03_768f": 0x19a1, "GfxRowTable": 0x2fbb, "ReadJoypad": 0x3a4a,
+                            "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "WaitVBlankFlag": 0x0688}),
     (11, 0x4010): dict(src="save_mgr.c",                    # Manage saves screens, far target of the 04:6d11 stub RomMenu calls (docs/save-manager.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "LastRomTickStub": 0x0370,
                             "DrawString": 0x08b7, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,

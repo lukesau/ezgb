@@ -109,7 +109,7 @@ repurposed, labeled `FolderIconGlyphs` in `kernel.sym`:
 | `$C1` | `00:380e` | `.gb` cartridge (placeholder: outline with a label band) |
 | `$C2` | `00:3816` | `.gbc` cartridge (placeholder: outline with a checkered label) |
 | `$C3` | `00:381e` | boxed `?` for any other file type |
-| `$C4` | `00:3826` | `.txt` page (dog-eared top-right corner; it was the `.sav` icon until `*.sav` was hidden, 2026-11-12) |
+| `$C4` | `00:3826` | text page for `.txt`, `.ini` and `.md` (dog-eared top-right corner; it was the `.sav` icon until `*.sav` was hidden, 2026-11-12). A opens these in the [text viewer](text-viewer.md) |
 | `$7F` | `00:35fe` | star for a starred ROM (`StarGlyph8`, was the CP437 house; [stars.md](stars.md)) |
 
 Rows: `F0 90 FF 81 81 81 FF 00`, `7E 81 B5 B5 81 81 7E 00`,

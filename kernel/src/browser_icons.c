@@ -12,7 +12,7 @@
  * Directories are recognized by the stock len 0; files come in with len
  * $14. The icon is drawn in whatever ink the row has, so it inverts with
  * the selection bar. Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart,
- * $C4 .txt page (.sav until those were hidden, browser_hide.c), $C3 boxed
+ * $C4 text page for .txt .ini .md (.sav until those were hidden, browser_hide.c), $C3 boxed
  * "?" for anything else, and $7F a star for a
  * starred file (PlayMark, play_mark.c, puts $2A in byte 253 of its record,
  * docs/stars.md).
@@ -42,7 +42,8 @@ extern u16 FarCallTagLen(const u8 *s);
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 
 void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
-    u8 i, dot, n, e, c1, c2, ic, lim;
+    static const u8 text_ext[] = "TXT" "INI" "MD";
+    u8 i, dot, n, e, c1, c2, c3, ic, lim;
 
     (void)far_pad_thunk;
     (void)far_pad_af;
@@ -68,8 +69,12 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
             if (c1 == 'G' && c2 == 'B') {
                 if (e == 2) ic = 0xC1;                            /* .gb  */
                 else if (e == 3 && UP(s[dot + 3]) == 'C') ic = 0xC2;   /* .gbc */
-            } else if (e == 3 && c1 == 'T' && c2 == 'X' && UP(s[dot + 3]) == 'T') {
-                ic = 0xC4;               /* .txt page */
+            } else if (e <= 3) {
+                /* text page: .txt .ini .md (the table's NUL is .md's third) */
+                c3 = UP(s[dot + 3]);
+                for (i = 0; i < 9; i += 3) {
+                    if (c1 == text_ext[i] && c2 == text_ext[i + 1] && c3 == text_ext[i + 2]) ic = 0xC4;
+                }
             }
         }
         if (s[253] == 0x2A) ic = 0x7F;   /* starred */

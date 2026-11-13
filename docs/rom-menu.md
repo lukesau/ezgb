@@ -21,7 +21,9 @@ sorts the folder again, closes the menu and puts the cursor back on the ROM
 wherever it now sits ([stars.md](stars.md)). UP and DOWN wrap at both ends.
 
 Folders still open on press. Pick mode ([fastlaunch-set-tab.md](fastlaunch-set-tab.md))
-and files that are not ROMs take the stock path straight away.
+takes the stock path straight away. A file that is not a ROM is offered to the
+text viewer ([text-viewer.md](text-viewer.md)), which opens `.txt`, `.ini` and
+`.md`; any other file takes the stock path too.
 
 ## Why A waits for release
 

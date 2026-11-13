@@ -4506,7 +4506,7 @@
 04:7c00 U32ToAsciiFast
 04:7c00 .data:c2:8
 04:5a00 RomMenu
-04:5a00 .data:4ea:8
+04:5a00 .data:4fb:8
 00:0483 FarCallDrawLoadingBox
 00:0483 .data:8:8
 00:0453 RomMenuPadTrack
@@ -4584,7 +4584,7 @@
 04:59a0 StarToggleFar
 04:59a0 .data:8:8
 02:7e00 DrawNameWithIconImpl
-02:7e00 .data:185:8
+02:7e00 .data:1ac:8
 04:7f51 RecFlag
 04:7f51 .data:9b:8
 0a:4c00 Font12
@@ -4663,3 +4663,7 @@
 00:0502 .data:6:8
 04:77a0 SetBox
 04:77a0 .data:db:8
+0e:4000 TextView
+0e:4000 .data:ddb:8
+04:59a8 TextViewFar
+04:59a8 .data:8:8
