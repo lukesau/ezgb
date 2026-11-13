@@ -1,225 +1,139 @@
 # EZ Flash Jr kernel: reverse engineering & mods
 
-![Stock vs. modded kernel: the SD browser, SET, and HELP tabs, the same three tabs of the mod in 12px mode, and the firmware mod's boot screens: splash, save backup, fast launch](docs/banner.png)
+![The modded kernel's file browser in its light, dark and DV themes, the theme settings page, the hold-A options menu, and the firmware mod's boot screen](docs/banner.png)
 
-The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. Its menu/OS
-firmware (the "kernel") runs on the stock Game Boy CPU (SM83) and, unlike its
-GBA sibling the [EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel),
-ships only as a compiled binary with no published source.
+The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. Its menu
+(the "kernel") ships only as a compiled binary with no published source,
+unlike its GBA sibling the
+[EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel).
 
-This repo reverse-engineers that kernel and adds new features you can compile
-into your own cartridge.
+This repo reverse-engineers the kernel and the cart's FPGA firmware, and
+builds a mod on top: a nicer menu with themes, fonts, save management and
+fast launch, plus an optional replacement bootloader.
 
-## Getting the modded kernel
+## Getting the mod
 
-The easiest way is the [patcher page](https://lukesau.github.io/ezgb/patcher/),
-which checks your `ezgb.dat` and applies the right patch in the browser. Or
-patch it yourself with the IPS file from the
-[latest release](https://github.com/lukesau/ezgb/releases/latest). Nothing is
-flashed: the Jr loads `ezgb.dat` from the microSD card at every power-on. Swapping the kernel is as simple as changing a file and is completely reversible.
-Both also have the experimental firmware mod (a new bootloader with fast
-launch, a kernel picker and, on FW5-0918, SD error recovery). That one is
-flashed, like an official firmware update: an interrupted write nearly always
-falls back to the cart's factory firmware, but in rare cases needs hardware
-tools to repair. The patcher page says what is at stake and is the safer way
-to apply it, since it refuses anything but the exact stock updater. If you
-flash and have a modern, genuine microSD card, FW5-0918 is the firmware to
-take ([why](docs/kernel-versions.md#should-i-update-an-fw4-cart-to-fw5)).
+Use the [patcher page](https://lukesau.github.io/ezgb/patcher/). It checks
+your `ezgb.dat` and applies the right patch in the browser. Copy the result
+to the card root as `ezgb.dat` and keep the stock file to go back. The HELP
+tab shows `MOD N.M` when it's running.
 
-1. Take `ezgb.dat` from EZ Flash's official firmware package (or the one on
-   your card's root now): the 1.04e / FW4 package from EZ Flash's
-   [download page](https://www.ezflash.cn/download/) (EZ-FLASH Junior), or their
-   [1.05e FW5 2021-9-18 package](https://www.ezflash.cn/zip/ezjunior-fw5-0918.zip).
-2. Download the matching `ezgb-mod-N.M-for-<kernel>.ips` from the release:
+Nothing is flashed: the Jr loads `ezgb.dat` from the microSD card at every
+power-on, so swapping kernels is swapping a file.
 
-   | Kernel | Package | Stock `ezgb.dat` md5 |
-   |---|---|---|
-   | 1.04e | `juniorkernel-1.04e-FW4` | `b8c29fa5a94c37200434e4c72f0cdfea` |
-   | 1.05e-0731 | `juniorkernel-1.05e-FW5-0731` | `91eb7fc67332ef20b5691029181ff748` |
-   | 1.05e-0918 | `juniorkernel-1.05e-FW5-0918` | `5238ac5987d23b68a19d40e43af8c786` |
+To patch by hand, take the IPS for your kernel from the
+[latest release](https://github.com/lukesau/ezgb/releases/latest) and apply
+it to the stock `ezgb.dat` from EZ Flash's
+[firmware package](https://www.ezflash.cn/download/):
 
-3. Apply it with any IPS patcher, e.g.
-   [Rom Patcher JS](https://www.marcrobledo.com/RomPatcher.js/) in the
-   browser, Flips, or MultiPatch.
-4. Copy the result to the card root as `ezgb.dat` (keep the stock file to go
-   back). The HELP tab shows `MOD N.M` when it's running.
+| Kernel | Stock `ezgb.dat` md5 |
+|---|---|
+| 1.04e (FW4) | `b8c29fa5a94c37200434e4c72f0cdfea` |
+| 1.05e-0731 (FW5) | `91eb7fc67332ef20b5691029181ff748` |
+| 1.05e-0918 (FW5) | `5238ac5987d23b68a19d40e43af8c786` |
 
-The release's README has the patched md5s and per-OS patcher notes. The 1.04e
-build also runs on an FW5 cart, so no firmware updater is ever needed to
-switch.
-[Which kernel should I choose?](docs/kernel-versions.md)
+Not sure which one? See
+[which kernel should I choose](docs/kernel-versions.md). This repo never
+redistributes EZ Flash's binaries, so there is no ready-made `ezgb.dat` to
+download ([why, and the other ways to build one](docs/distribution.md)).
 
-This repo never redistributes EZ Flash's binaries, so a ready-made `ezgb.dat`
-is not downloadable here. If you have a checkout,
-`python3 scripts/kernel-patch.py apply ezgb.dat` applies the patch from
-[`patches/kernel/`](patches/kernel/) and verifies md5s, and
-`scripts/build-kernel.sh 1.05e-0731 --install` reassembles the same bytes
-from the disassembly with rgbds. Details, checksums, and the copyright
-rationale: [`docs/distribution.md`](docs/distribution.md). To pick features
-individually or hack on new ones, see
-[building from your own dump](#building-a-modded-kernel-from-your-own-dump).
+### The firmware mod
+
+Optional and experimental: a new bootloader with a themed splash, fast
+launch, a kernel picker and, on FW5-0918, SD error recovery. Unlike the
+kernel it is flashed, like an official firmware update. An interrupted write
+nearly always falls back to the cart's factory firmware, but in rare cases
+needs hardware tools to repair. The patcher page explains the risk and
+refuses anything but the exact stock updater.
 
 ## Features
 
-Every release includes all of these, for the 1.04e and 1.05e kernels (the
-three builds the mod supports). Each is also a self-contained patch you can
-build in on its own; each doc has the rationale, wiring, and exact commands.
+Each links to a doc with the details.
 
-| Feature | What it does | Doc |
-|---|---|---|
-| **Sorted browser** | Directories first, then files, each group alphabetical (case-insensitive), instead of raw FAT order. | [`docs/browser-sort.md`](docs/browser-sort.md) |
-| **Fast list navigation** | The list wraps at both ends and shows `n/total` in 12px. A move inside the page recolors two rows instead of drawing them, a scroll moves the rows that stay and draws the cursor's row first, and a held UP or DOWN speeds up, moving up to 4 rows at a time. The SET tab's cursor wraps too. From [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code. | [`docs/browser-nav.md`](docs/browser-nav.md) |
-| **RIGHT jumps to end** | RIGHT on the last page moves the cursor to the bottom entry, mirroring LEFT at the top. | [`docs/browser-page-end.md`](docs/browser-page-end.md) |
-| **DMG-readable highlight + file icons** | Every highlight (browser selection, tab strip, SET-tab buttons, prompts and Loading boxes) is white on black instead of black on dark gray, which is unreadable on an original Game Boy. The browser selection bar spans the full row, and every row starts with an icon: folder, .gb cart, .gbc cart, .sav page, or a boxed ? for anything else. | [`docs/dmg-ui-visibility.md`](docs/dmg-ui-visibility.md) |
-| **12px UI** | An opt-in larger menu font: a proportional 12px-tall font with kerning instead of 8x8 cells, so a row is the icon plus as many characters as fit (about 18 of a typical name; `Pokemon Crystal.gbc` fits without scrolling) and a page shows 10 entries (longer names scroll). The tab strip, the SET and HELP tabs, the START overlay, the boot prompts and the Reading / Loading / Error boxes follow the same mode. Switch it on with the `FONT:` button on the SET tab's second page (`UI=12` in `/EZGB.CFG`); the stock 8px layout stays the default. | [`docs/font12.md`](docs/font12.md), [`docs/ui-mode.md`](docs/ui-mode.md), [`docs/tab-strip12.md`](docs/tab-strip12.md), [`docs/set-pane12.md`](docs/set-pane12.md) |
-| **Clean ROM names** | With `CLEAN UP NAMES:` ticked on the SET tab's second page, the default (untick it for full names, `TAGS=1` in `/EZGB.CFG`), the browser shows `Tetris` for `Tetris (World) (Rev 1).gb` and for `Tetris.gb`: a file's name is cut at the first ` (` or ` [` of a No-Intro or GoodTools style name, else at its extension, so extensions go too. Folders keep their names, and so does everything else: the hold-A menu, the START overlay and the save manager still show the full file name, and two files that differ only in their tags show the same name. | [`docs/browser-tags.md`](docs/browser-tags.md) |
-| **Dark mode and themes** | A `THEME` button on the SET tab's third page switches every kernel screen and the firmware mod's boot screen between light, dark (pure black with white ink, so an OLED screen leaves the background off), DV, and red, green, purple and blue backgrounds with white ink, or custom colors: a picker under the button sets the background, text and accent, starting from the theme on screen, and a `COLORS=` line holds them. DV is an homage to [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv): his 12px font (Tamzen 6x12) and blue icons, black and white with a lime selection bar and accents; exact on the firmware mod, close on stock firmware (a GBC's boot ROM supplies the lime and blue), in grays on a DMG. Popups and the Reading / Loading boxes become a lighter shade of the background with white text. On a DMG every theme but light and DV is the inverted palette. Saved as `THEME=<n>` in `/EZGB.CFG`. **Custom colors:** open `/EZGB.CFG` on a computer (create it if it's missing) and add `THEME=6` and `COLORS=1E2A44,F2D7A0` as its first two lines, the background then the text as hex like a web color. Put them at the top: the kernel pads the file with spaces you can't see, and a line typed at the very end is never read. The button steps LIGHT, DARK, DV, RED, GREEN, PURPLE, BLUE, and once `COLORS=` is set CUSTOM after BLUE. DV (`THEME=7`) always uses its 12px font (FONT shows SLIM), and only its accent can be set there. | [`docs/dark-mode.md`](docs/dark-mode.md), [`docs/font12.md`](docs/font12.md#glyph-sets) |
-| **Closed boxes on the START overlay and boot prompts** | The stock START overlay and BACKUPSAVE prompt draw their frames first and their text over them, and the text cells repaint parts of the frames, leaving bracket-like stubs. Each is now one closed box: a title (`Launch Last ROM?`, `Back up save?`), the file name in white on a black band (scrolling when long), and the two options with a rule between them. The save prompt also shows when the game was last played, and counts dots after `Saving` while it writes. The RTC restore prompt has the same look. | [`docs/last-rom.md`](docs/last-rom.md), [`docs/modal-prompts.md`](docs/modal-prompts.md) |
-| **Safe with a bad or missing battery** | The kernel keeps its between-boot records (the "backup pending" save stamp, the last-launched ROM, the clock) in battery-backed cart RAM, and with a dead or missing coin cell that RAM fades while the cart is off. The stock kernel trusts whatever it finds there: on boot it prompts to back up a save with a long garbled name, and pressing A dumps garbage to the SD card under that name. Every one of these records is now checked before it is used. A save stamp that is not a real `/SAVER/` path is ignored and the cart boots to the browser, a BATTERY DRY boot never backs up the faded save (not even with AUTO SAVE, and not from a fast launch) and puts the AUTO SAVE setting back from `AUTOSAVE=` in `/EZGB.CFG`, a corrupt last-ROM record falls back to `LASTROM=` in `/EZGB.CFG`, and a clock that has reset or reads as garbage gets a restore prompt from its SD backup (see the two rows at the end of this table). | [`docs/modal-prompts.md`](docs/modal-prompts.md), [`docs/last-rom.md`](docs/last-rom.md), [`docs/ezgb-cfg.md`](docs/ezgb-cfg.md) |
-| **No lost button presses** | The stock menus sample the pad once per loop (3 to 6 frames), so a quick tap can fall between two samples and do nothing. The pad is now sampled every frame from the VBlank interrupt and presses are latched, so any tap of one frame or more is acted on at the next poll. This is most of why the menus feel snappier. | [`docs/joypad-latch.md`](docs/joypad-latch.md) |
-| **No streak artifacts** | The stock text drawer checks the LCD mode with interrupts enabled, so now and then a pixel row of one tile is dropped: the thin one-tile streaks (or an underline under a letter of `Reading...`) that stay until the tile is redrawn. Every VRAM write is now made inside a short interrupt-free window right after the check, in both the 8px and 12px browsers. | [`docs/vram-write-race.md`](docs/vram-write-race.md) |
-| **Path overflow guard** | Entering a directory whose full path would overflow the browser's 255-byte path buffer (and corrupt the save-file path) is a no-op instead. | [`docs/path-length.md`](docs/path-length.md) |
-| **Version on HELP tab** | The HELP screen shows the kernel date (`K1.05e-0731`), the mod version (`MOD 5.0`), and a `github.com/lukesau/ezgb` link, so you can tell which build a card is running. Under the firmware mod on FW5-0918 it adds `SD SPEED: HALF` once a misbehaving card has been dropped to half speed ([`docs/sd-error-recovery.md`](docs/sd-error-recovery.md)). Stamp it with `scripts/stamp-mod-version.sh`. | — |
-| **Hide clutter** | Filters macOS cruft (`._*` sidecars, `.DS_Store`, `.Spotlight-V100/` etc.), unlaunchable `*.gba` ROMs, every kernel on the card (`*.dat`, for the firmware mod's kernel picker), the settings file (`EZGB.CFG`, plus a leftover `FLAUNCH.CFG`) and the `SAVER` save backup folder from the browser. | [`docs/browser-hide-filter.md`](docs/browser-hide-filter.md) |
-| **Hold A for options** | Holding A on a ROM for half a second opens a menu for it: Start, Manage saves, or Star. A tap launches when A comes up, so a launch is otherwise unchanged. | [`docs/rom-menu.md`](docs/rom-menu.md) |
-| **Stars and play counts** | Star a ROM from the hold-A menu and it stays at the top of its folder's files with a star icon. The cart counts launches, and `SORT BY PLAYS:` on the SET tab's second page orders files by them, most played first. Stars, counts and the setting are kept in battery-backed RAM and in a hidden `/.ezgbplays` on the card, so a cart without a coin cell keeps them too; a launch writes one 512-byte sector of it. After the idea in [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv). | [`docs/stars.md`](docs/stars.md) |
-| **Daily save backup** | Tick `DAILY BACKUP:` on the SET tab (off by default) and the first boot of each day after a game was played copies its save to a dated backup before the dump overwrites it. Each game keeps one, and Manage saves can restore it. A boot that does this takes a few seconds longer: about 7 s for a 32 KB save. A fast launch whose save stage1 dumps skips it. From [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code. | [`docs/save-manager.md`](docs/save-manager.md#daily-backup) |
-| **Manage saves** | From the hold-A menu: back up a ROM's save on the cart, named after its last-modified time (`/SAVER/Tetris 2026-10-10 14-32.sav`, with ` (2)`, ` (3)` when the time repeats, as it does on a cart whose clock reset), restore any backup, and delete backups. Restoring backs up the current save first. | [`docs/save-manager.md`](docs/save-manager.md) |
-| **Fast launch** | Boots straight into a ROM, skipping the browser: the ROM named by `FLAUNCH=` in `/EZGB.CFG`, or the card's only root ROM. Falls through to the browser when neither applies. **Hold START on boot (fast launch check happens after save prompt, if applicable) to skip fast launch and boot to the browser instead.** | [`docs/fast-launch-notes.md`](docs/fast-launch-notes.md) |
-| **Faster ROM loading on FW5** | The FW5 FPGA firmware has a fast load mode that stock only turns on for CGB and GBA: its loader skips a pause after every SD read when register `$7FD3 + $7FD4` reads `$11`, and stock stage1 puts the console's boot `A` (`$11` only on CGB and GBA) in `$7FD3`. The 1.05e kernels write `$7FD3 = $00` and `$7FD4 = $11` at launch, so games load noticeably faster on DMG, MGB and SGB too (roughly 0.7 s less per MB of ROM, estimated). FW4 carts don't have the register and load as before; the 1.04e kernel doesn't write it. | [`re/stage0/docs/firmware-diff.md`](re/stage0/docs/firmware-diff.md) |
-| **Fast-launch SET tab** | Configure fast launch on the cart itself: a FAST LAUNCH enable/disable checkbox on the SET tab, the target's name (scrolling when long), and a PICK ROM button that chooses the target in the file browser. Writes `/EZGB.CFG`. | [`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md) |
-| **RTC backup to SD** | Keeps a copy of the real-time clock in `/EZGB.CFG` (updated at every game launch, save-to-SD dump and TIME SET). At boot, if the clock has reset to 2000, gone backwards or reads as garbage, a prompt shows the chip's time next to the backup and restores the backup on A or leaves the value on B. This is because a weak coin cell can reset the time and restoring a backup goes back to your last launch time instead of resetting the clock to 2000. RTC games (Pokemon Crystal, Gold/Silver) also keep their clock when the cart's clock moves backwards, instead of resetting to their stored start time. An `RTC: SD / NO SD` setting on the SET tab (`RTCSD=`) turns the whole backup off for people who don't care about RTC features or don't have a battery installed. | [`docs/ezgb-cfg.md`](docs/ezgb-cfg.md) |
-| **Skip boot ROM** | A game starts with a jump instead of a console reset, so the boot animation doesn't play a second time (about 2-3 s). This covers color games on a Game Boy Color or GBA with the firmware mod's stage1, and every game on a DMG or Pocket (emulator only so far). With the firmware mod's stage1 every model gets its exact boot registers. Everything else resets as before, including non-color games on a color console with stock stage1, which would lose their colorization, an SGB, and the DMG family with `SGB BOOT` ticked on stock stage1. The choice is automatic from the console at each launch; untick `SKIP BOOT ROM:` on the SET tab's second page (`BOOTROM=1` in `/EZGB.CFG`) to turn it off. | [`docs/skip-boot-rom.md`](docs/skip-boot-rom.md) |
-| **SGB BOOT** | Makes the Jr work on a Super Game Boy, after nitro2k01's 2021 SGB Enabler: with `SGB BOOT:` ticked on the SET tab's second page, the kernel sends the cartridge header the SNES waits for, which the Jr's late CPU start makes it miss. Tick it on a handheld, then move the cart; boots take about 0.4 s longer while it is on, and the rest of the header goes out in the background (mod 7.0; it was about 7 s). Works on a real Super Game Boy as of mod 6.9; the 7.0 background send and the firmware mod's SGB detection are not yet tested on one. | [`docs/sgb-boot.md`](docs/sgb-boot.md) |
-| **Last-ROM fallback** | The START overlay's last-launched ROM lives in battery-backed cart RAM, which is lost when the coin cell fails. Every launch also writes `LASTROM=` to `/EZGB.CFG`, and the overlay falls back to it when the RAM record is corrupt, so START still relaunches the last game. | [`docs/last-rom.md`](docs/last-rom.md), [`docs/ezgb-cfg.md`](docs/ezgb-cfg.md) |
+**Look**
 
-Once built, **fast launch is driven entirely from the card** (no rebuild to
-change what boots), in priority order: a `FLAUNCH=` line in the `/EZGB.CFG`
-text file naming the ROM path (root or a subfolder, e.g. `/Pokemon/Blue.gb`); else the
-root's only ROM. Anything else boots to the normal browser. Folders, kernels
-(`*.dat`), and dot-files/macOS junk are ignored. A leading `#` on the `FLAUNCH=` value
-disables fast launch entirely (every trigger skipped) while
-keeping the path for later. **Hold START at power-on to skip fast launch and go to
-the browser.** You can also configure all of this **from the cart's SET tab** (a
-FAST LAUNCH checkbox and a ROM PICK button, saved to `/EZGB.CFG` on NEXT, on PREV or when you leave the tab); see
-[`docs/fastlaunch-set-tab.md`](docs/fastlaunch-set-tab.md). The whole feature is confirmed on real hardware (Game
-Boy Color and Game Boy Advance SP): fast launch from a config file (root and
-subfolder paths), the lone-ROM rule, the hold-a-button cancel, and the no-flash pre-paint hook that skips straight to Loading without the
-browser flashing. The cancel button is START (it was B, then SELECT, in earlier revisions).
+- [12px font](docs/font12.md): a proportional font with kerning, 10 rows a
+  page, on every screen. `FONT:` on the SET tab.
+- [Themes](docs/dark-mode.md): light, dark, DV, four colors, or your own
+  background, text and accent from a picker on the SET tab.
+- [File icons and a readable highlight](docs/dmg-ui-visibility.md): white on
+  black instead of black on dark gray, which an original Game Boy can't show.
+- [Clean ROM names](docs/browser-tags.md): `Tetris (World) (Rev 1).gb`
+  shows as `Tetris`.
+- [Closed boxes](docs/modal-prompts.md) for the prompts and the START
+  overlay, and [no streaks](docs/vram-write-race.md) in the text.
 
-**CGB mode (inactive on real carts):** since mod 5.3 the kernel's header
-declares it CGB-compatible and it sets up a grayscale CGB palette when it runs
-in CGB mode, the first step toward using the GBC IR port. A real Jr still boots
-the kernel in DMG compatibility mode, which can't be changed without FPGA
-firmware changes, so on hardware the code skips itself and nothing changes.
-Emulators that honor `ezgb.dat`'s header run it in CGB mode:
-[`docs/cgb-mode.md`](docs/cgb-mode.md).
+**Browser**
 
-## Where the project is
+- [Sorted](docs/browser-sort.md), folders first, with
+  [clutter hidden](docs/browser-hide-filter.md): macOS junk, `.gba` files,
+  kernels, the settings file.
+- [Fast navigation](docs/browser-nav.md): the list wraps, shows `n/total`,
+  and speeds up when UP or DOWN is held.
+- [No lost button presses](docs/joypad-latch.md): the pad is read every
+  frame.
+- [Hold A for options](docs/rom-menu.md): start, manage saves, star.
+- [Stars and play counts](docs/stars.md): starred ROMs stay on top, and the
+  list can sort by most played.
 
-The reverse engineering is essentially done:
+**Saves and clock**
 
-- **Full disassembly.** Every bank is labeled, and it reassembles to the exact
-  original firmware (both the 1.04e and 1.05e builds; only 3 cosmetic
-  ROM-header bytes differ).
-- **Hardware understood:** the FPGA unlock/command/commit registers, SD sector
-  I/O, bank switching, PSRAM save storage, the board, and the ROM launch path.
-  See [`docs/hardware-board.md`](docs/hardware-board.md),
-  [`docs/REGISTERS.md`](docs/REGISTERS.md),
-  [`re/stage0/docs/flash-map.md`](re/stage0/docs/flash-map.md),
-  [`docs/launch-trace.md`](docs/launch-trace.md). Why the coin cell dies in a
-  month and the drop-in SRAM fix: [`docs/battery-sram-swap.md`](docs/battery-sram-swap.md).
-- **Code injection works.** You can compile C, place it in verified-free ROM,
-  hook it into the kernel, and run it on real hardware and in emulator. The
-  features above are built on this. Recipe and free-space map:
-  [`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
+- [Manage saves](docs/save-manager.md): back up, restore and delete a ROM's
+  saves on the cart, with an optional
+  [daily backup](docs/save-manager.md#daily-backup).
+- [Safe with a dead battery](docs/modal-prompts.md): records that faded in
+  cart RAM are checked before use, so no garbage gets written to the card.
+- [RTC backup](docs/ezgb-cfg.md): the clock is copied to the card and
+  offered back when the coin cell lets it reset.
 
-## Building a modded kernel from your own dump
+**Launching**
 
-Drop your firmware dump at `re/kernel/1.05e-0731/kernel.gb` (a copy of the
-`ezgb.dat` from the official firmware package), then:
+- [Fast launch](docs/fast-launch-notes.md): boot straight into a ROM,
+  [set up on the cart](docs/fastlaunch-set-tab.md). Hold START at power-on
+  for the browser.
+- [Skip the boot ROM](docs/skip-boot-rom.md): a game starts without the
+  console's boot animation playing a second time.
+- [Faster loading on FW5](re/stage0/docs/firmware-diff.md) on every console,
+  not just a GBC.
+- [Super Game Boy support](docs/sgb-boot.md), after nitro2k01's SGB Enabler.
+- [Last ROM](docs/last-rom.md): START relaunches the last game, even after
+  the battery dies.
 
-```sh
-# 1. Regenerate the disassembly from your dump (one-time per version)
-cd re/kernel/1.05e-0731
-python3 ../../../tools/mgbdis/mgbdis.py kernel.gb --overwrite
-../../../scripts/annotate-disasm.py 1.05e-0731
+## The reverse engineering
 
-# 2. Apply features (example: sorted browser; see each doc for its commands)
-cd ../../../kernel
-python3 tools/inject.py src/browser_sort.c 1.05e-0731 8 746b BrowserSortAll \
-    --pin DirList=0a43 --apply
-python3 tools/inject_bytes.py 1.05e-0731 0 03d4 BrowserSortAllStub \
-    cd8d076b740800c9 --apply
-python3 tools/patch_call.py 1.05e-0731 0 102f 3 00:03d4 --apply --regen
+- **Kernel:** every bank is disassembled and labeled, and reassembles to the
+  original for all three builds. [decomp/](decomp/README.md) is turning it
+  into C.
+- **Hardware:** the [board](docs/hardware-board.md), the
+  [registers](docs/REGISTERS.md), the [boot](docs/boot-map.md) and
+  [launch](docs/launch-trace.md) paths, and
+  [why the coin cell dies in a month](docs/battery-sram-swap.md).
+- **FPGA:** the bitstream is decoded ([index](docs/fpga.md),
+  [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/)) and
+  [stage0/](stage0/README.md) rewrites it as readable Verilog, proven
+  equivalent block by block.
+- **Bootloader:** [stage1/](stage1/README.md) is a from-source replacement,
+  the firmware mod above.
 
-# 3. Build the emulator card image (the kernel is copied in as ezgb.dat)
-cd ..
-scripts/make-sd-image.sh
-# ...or a card-ready dist/mod-N.M/ezgb-mod-N.M-for-1.05e-0731.dat
-scripts/build-ezgb-dat.sh 1.05e-0731
-```
-
-Injection edits `re/kernel/1.05e-0731/kernel.gb` in place, so it becomes the patched
-artifact. Features are developed against 1.05e-0731 and carried to the other
-two kernels mechanically by `scripts/port-mod.py` (see
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#porting-the-mod-to-another-kernel-build)). Run it in SameBoy (with the EZ Jr FPGA stub, see
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#tools)), or copy `ezgb.dat` to the
-root of a real cart's microSD. Hook-site rules and the free-space map:
-[`docs/inject-smoke-test.md`](docs/inject-smoke-test.md).
+To build the mod yourself, add a feature or rebuild a disassembly, start
+with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Repo layout
 
 ```
-re/               Disassemblies, one dir per firmware version (1.04e, 1.05e-0731, 1.05e-0918)
-  1.05e-0731/     Primary target; disassembly/ reassembles to the original
-                  (1.04e and 1.05e-0918 are ports of it: scripts/port-mod.py)
-    kernel.sym    Persistent names     (kernel.gb is your own dump, not tracked)
-    notes.json    Persistent comments
-decomp/           Stock kernel from source: disassembly + GBDK/C sources, md5-checked
-kernel/           Injectable feature sources (C) and the inject tooling
-  src/            browser_sort.c, browser_nav.c, fastlaunch*.c, cgb_init.c, ...
-  tools/          inject.py, inject_bytes.py, patch_call.py, verify.py
-docs/             Findings, feature write-ups, hardware notes
-scripts/          Disassembly regen, mapping loop, SD image, SameBoy helpers
-patches/kernel/   IPS patches: stock ezgb.dat -> modded kernel (safe to share)
-patches/sameboy/  EZ Jr FPGA stub as diffs over a pinned SameBoy commit
-sd/               Local microSD image for the emulator     (untracked; see docs/DEVELOPMENT.md)
-fpga/, tools/     FPGA dumps, reference repos (not tracked, except fpga/floorplan/)
+kernel/     The mod: feature sources (C and asm) and the inject tooling
+patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
+stage1/     The bootloader, from source
+stage0/     The FPGA design as Verilog, and the PicoBlaze patches
+re/         Disassemblies and notes: kernel/ (three builds), stage0/, stage1/, updater/
+decomp/     The stock kernel rebuilt from source, checked byte for byte
+docs/       Feature write-ups, hardware notes, findings
+scripts/    Build, port, release and emulator helpers
 ```
 
-Untracked paths are gitignored: EZ Flash's copyrighted binaries (firmware,
-`kernel.gb`, FPGA bitstreams) or third-party repos. A fresh checkout supplies
-its own dump and re-clones `tools/` (see
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#tools)). Name a specific version;
-the FW5 packages differ
-([`docs/DIFF_1.05e-0731_vs_0918.md`](docs/DIFF_1.05e-0731_vs_0918.md)).
-
-## Digging deeper
-
-- **[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)**: rebuild the disassembly,
-  name functions, inject code, verify the decompilation, set up tools. Start
-  here to contribute.
-- **Hardware:** [`docs/hardware-board.md`](docs/hardware-board.md),
-  [`docs/REGISTERS.md`](docs/REGISTERS.md),
-  [`docs/fpga.md`](docs/fpga.md) (FPGA docs index and setup),
-  [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/) (FW4 and FW5 logic and wiring on the chip),
-  [`re/stage0/docs/flash-map.md`](re/stage0/docs/flash-map.md),
-  [`re/stage0/docs/bitstream.md`](re/stage0/docs/bitstream.md),
-  [`re/stage0/docs/picoblaze.md`](re/stage0/docs/picoblaze.md),
-  [`re/stage0/docs/fw5.md`](re/stage0/docs/fw5.md),
-  [`docs/fpga-cgb.md`](docs/fpga-cgb.md),
-  [`re/stage0/docs/toolchain.md`](re/stage0/docs/toolchain.md),
-  [`docs/game-slot-access.md`](docs/game-slot-access.md),
-  [`docs/psram-save-map.md`](docs/psram-save-map.md).
-- **Boot & launch:** [`docs/boot-map.md`](docs/boot-map.md),
-  [`docs/ezgb-dat-boot.md`](docs/ezgb-dat-boot.md),
-  [`docs/launch-trace.md`](docs/launch-trace.md),
-  [`docs/last-rom.md`](docs/last-rom.md).
-- **Version diffs:** [`docs/DIFF_1.04e_vs_1.05e.md`](docs/DIFF_1.04e_vs_1.05e.md),
-  [`docs/DIFF_1.05e-0731_vs_0918.md`](docs/DIFF_1.05e-0731_vs_0918.md),
-  [`docs/1.05e-instability.md`](docs/1.05e-instability.md).
-- **Methodology:** [`docs/MAPPING.md`](docs/MAPPING.md).
+EZ Flash's binaries (kernels, bitstreams, updaters) and third-party tools
+are not tracked. A checkout supplies its own dump; see
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#tools).
 
 ## Credits
 
