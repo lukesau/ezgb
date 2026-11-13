@@ -1,6 +1,7 @@
 /* Name filter for the file browser: returns 1 if the entry should be hidden.
  *
  * Hidden:
+ *  - anything whose name starts with '_'
  *  - anything whose name starts with '.' (dotfiles, .DS_Store, AppleDouble
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
  *    DirListSkipDotLongName behavior (docs/browser-hide-filter.md)
@@ -77,7 +78,7 @@ u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
                      const u8 *name) {
     u8 len;
 
-    if (name[0] == '.') {
+    if (name[0] == '.' || name[0] == '_') {
         return 1;
     }
     for (len = 0; name[len] && len < 253; len++) {

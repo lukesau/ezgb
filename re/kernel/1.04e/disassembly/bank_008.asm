@@ -2998,7 +2998,7 @@ DrawFwVersionScreen_waitSelect::
     ld c, e
     ld b, $00
     ld a, c
-    and $40
+    and $c0
     jr nz, DrawFwVersionScreen_epilogueRet
 
     jp DrawFwVersionScreen_waitSelect
