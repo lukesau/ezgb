@@ -595,9 +595,10 @@ SgbVblList::
     db $e5, $21, $d3, $d6, $c3, $67, $00
 
 FlSetExitHook::
-    db $fa, $fe, $db, $b7, $c2, $8d, $0f, $f8
-    db $0e, $36, $02, $c3, $67, $12
+    db $fa, $fe, $db, $21, $1c, $dc, $b6, $c2
+    db $8d, $0f, $c3, $74, $12
 
+    rst RST_38
     rst RST_38
     rst RST_38
 
@@ -746,7 +747,7 @@ RemoveJoypadCallback::
 ; RegisterVBlankCallback: HL=wVBlankCallbacks, jp InstallCallbackSlot (BC=fn).
 ; Siblings: RegisterLcdCallback $0634, RegisterTimerCallback $063a,
 ; RegisterSerialCallback $0640, RegisterJoypadCallback $0646. Matching Remove*
-; wrappers at $0610–$0628. See kernel/src/register_callback_slots.c.
+; wrappers at $0610–$0628. See decomp/gbdk/crt0.s.
 
 RegisterVBlankCallback::
     ld hl, wVBlankCallbacks

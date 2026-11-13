@@ -49,9 +49,6 @@ re/kernel/*/kernel.sav
 re/kernel/*/kernel.bmp
 re/kernel/*/kernel.log
 
-# Ephemeral propose-labels / packet output
-re/kernel/*/label-proposals.txt
-
 # Cart config-flash dumps and repair images. Same policy as the firmware
 # packages: these are EZ Flash's FPGA bitstream, not this project's work, so
 # they stay local. See fpga/README.md. The floorplan page is the exception: it

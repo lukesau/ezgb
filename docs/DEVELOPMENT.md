@@ -55,14 +55,10 @@ The disassembly is 100% labeled. To refine a name or comment, edit
 
 ```sh
 ./scripts/regen-disasm.sh 1.05e-0731       # after editing kernel.sym / notes.json
-./scripts/map-next.sh                 # progress + proposals + worklist + full packet
 ```
 
-`map-next` prints body, callers, WRAM/`$7Fxx` touches, and `needs_judgment` for
-its top target. Rank table only (no body): `doc-symbol-coverage.py --app --top
-10` (`F` = frontier) or `--top 25` (full dump incl. lib banks).
-
-Methodology, `bank:addr` translation, and interior-label conventions:
+How the names were derived, `bank:addr` translation, and interior-label
+conventions:
 [MAPPING.md](MAPPING.md).
 
 ## Matching decompilation (`decomp/`)
@@ -76,10 +72,6 @@ fails unless it stays byte-identical. Status and toolchain findings (GBDK
 `crt0.s`, FatFs R0.11a and its config, the compiler search):
 [PROGRESS.md](PROGRESS.md).
 
-`kernel/tools/verify.py` below predates `decomp/`: it diffs one function's
-bytes and is still handy for experiments, but bank 0's GBDK library routines
-are assembly, not C, and SDCC 4.6 is not the kernel's compiler.
-
 ### Why SDCC / `--sdcccall 0`
 
 The kernel's code shape is the fingerprint of SDCC compiling C for the
@@ -88,57 +80,16 @@ sm83/gbz80 target with its legacy stack-based calling convention (`--sdcccall
 sp+N` (the SM83 has no IX register); callers cleaning up with `add sp, N`; the
 `push af` / `inc sp` idiom for a single-byte argument.
 
-Confirmed empirically: `unsigned char return_zero(void) { return 0; }` compiled
-with `sdcc -msm83 --sdcccall 0` produces `1E 00 C9`, matching `Call_000_1a77` in
-the real 1.05e kernel exactly. See `kernel/src/misc.c` and
-`kernel/tools/verify.py`. Modern brew SDCC suffices for simple functions; more
-complex ones may expose version-specific codegen differences needing an older
-release (bridge small gaps with a peep file under `kernel/tools/peeps/`).
-
-### Workflow
-
-1. Pick a function from `re/kernel/1.05e-0731/disassembly/bank_*.asm` (or `1.04e`). Note its
-   bank and address.
-2. Write equivalent C in `kernel/src/`. One function (or a few closely related)
-   per attempt for easier mismatch isolation.
-3. Verify:
-
-   ```sh
-   kernel/tools/verify.py <file.c> <version> <bank> <address_hex> \
-       [--peep peep_file] [--pin SYM=ADDR ...] [--pins pins_file]
-   ```
-
-   It compiles with SDCC, links, extracts the raw bytes, and diffs them against
-   the real ROM at that address.
-4. Iterate on the C (and codegen flags) until it matches. Record in
-   [PROGRESS.md](PROGRESS.md).
-
-### Callee pins
-
-When the function under test `call`s/`jp`s a routine not in the same C file,
-declare it `extern` and pin its kernel address so sdld encodes the right
-absolute target (no stub bytes emitted):
-
-```sh
-# single pin
-kernel/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
-    --pin install_callback_slot=066c
-
-# or a pins file (matched bank-0 symbols for 1.05e)
-kernel/tools/verify.py src/register_callback_slots.c 1.05e-0731 0 062e \
-    --pins tools/pins/1.05e-0731.bank0
-```
-
-Pins are needed for not-yet-decompiled callees, and for matched ones you choose
-not to compile into the same translation unit. `verify` only compares the bytes
-SDCC emitted for the C file under test; pinned symbols contribute address fixups
-only.
+`unsigned char return_zero(void) { return 0; }` compiled with
+`sdcc -msm83 --sdcccall 0` produces `1E 00 C9`, matching `Call_000_1a77` in
+the 1.05e kernel. Bank 0's GBDK library routines are assembly, not C, and no
+stock SDCC or GBDK release has been found that reproduces the C
+([PROGRESS.md](PROGRESS.md)).
 
 ## Injecting a feature (`inject.py`)
 
 `inject.py` compiles a C file and writes the machine code into the build at a
-**real** final ROM address (unlike `verify.py`, which links at a throwaway
-address just to diff). Linking at the real address matters: any internal
+**real** final ROM address. Linking at the real address matters: any internal
 absolute `jp`/`call` the function makes is encoded for where it will actually
 live.
 
@@ -329,14 +280,11 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools
   ./scripts/gbdiff.sh                    # symbol-annotated byte diff of the two dumps
   ./scripts/gbdiff.sh old.gb new.gb      # ...or any two ROMs
-  ./scripts/naming-progress.sh           # % of 1.05e-0731 symbols still auto-named by mgbdis
-  ./scripts/naming-progress.sh 1.05e-0731 all # ...plus the full list of unnamed symbols
   ```
 
   `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
   (we ship `re/kernel/1.05e-0731/kernel.sym`; add `re/kernel/1.04e/kernel.sym` to annotate the
-  older side). `naming-progress.sh` reads a built `disassembly/game.sym`, so
-  `make` the disassembly first.
+  older side).
 - **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ Flash's
   own published Omega DE (GBA) kernel source: FPGA register naming, FatFs/UI
   structure, NOR / Mode B boot path. Pair with a real Omega cart for UX

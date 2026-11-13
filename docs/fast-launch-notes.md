@@ -140,7 +140,7 @@ vs the next address after any change. (Bank-0 free ranges:
 
 ## FILINFO / LFN layout (confirmed live)
 
-`kernel/src/fastlaunch_filinfo_probe.c` dumped a real `f_readdir` of the root and
+`kernel/src/fastlaunch_filinfo_probe.c` (removed 2026-11-12, in the git history) dumped a real `f_readdir` of the root and
 confirmed the classic FatFs `_USE_LFN` external-buffer layout (also visible in the
 browser's `FileBrowserEntry_memsetWireDirList`):
 
@@ -194,7 +194,7 @@ The scan lives in [`../kernel/src/fastlaunch.c`](../kernel/src/fastlaunch.c)
 [`../kernel/src/shims.md`](../kernel/src/shims.md).
 
 **Verified under SameBoy** (originally both root triggers) via
-`kernel/src/fastlaunch_scan_test.c` injected into empty bank 2, hooked from
+`kernel/src/fastlaunch_scan_test.c` (removed 2026-11-12, in the git history) injected into empty bank 2, hooked from
 `FileBrowserEntry_inputLoop` (`00:1107`): a lone-ROM card returned `/PKMRED.GB`
 (the since-removed marker trigger was verified the same way).
 

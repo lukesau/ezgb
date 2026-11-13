@@ -31,8 +31,7 @@ effect of the stock dirty path (zeroing the marquee tick at frame
    `00:2791`), **including the per-row ink reset after a directory row**.
 
 `StoreDrawParams` is not an (index, value) setter: every call it stores all
-three draw-state bytes (`$d734/$d735/$d723`,
-`kernel/src/store_d734_d735_d723.c`). Stock forced inverse video before the
+three draw-state bytes (`$d734/$d735/$d723`). Stock forced inverse video before the
 `DIR` tag and reset afterwards; since the icon-column change
 ([dmg-ui-visibility.md](dmg-ui-visibility.md)) the name goes through
 `DrawNameWithIcon` and the tag is no longer drawn, so the shim only keeps

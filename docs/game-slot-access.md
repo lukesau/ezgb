@@ -41,7 +41,7 @@ hangs with BATTERY DRY and "Micro SD initial error!" instead.
 
 ## Method
 
-`kernel/src/chainboot_probe.c`, injected into a copy of the kernel and hooked
+`kernel/src/chainboot_probe.c` (removed 2026-11-12, in the git history), injected into a copy of the kernel and hooked
 over three candidate stopping points, each tagged so the output identifies
 which one executed:
 

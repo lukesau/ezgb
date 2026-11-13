@@ -4,9 +4,7 @@ Compile a C file with SDCC and inject the resulting machine code into the
 disassembly build at a fixed address, as a named `.data:` block in
 kernel.sym.
 
-Unlike verify.py (which links at an arbitrary placeholder address just to
-diff bytes against something that already exists), inject.py links at the
-REAL final ROM address you give it. That matters: any internal absolute
+inject.py links at the REAL final ROM address you give it. That matters: any internal absolute
 jp/call the compiled function makes to itself is encoded for wherever the
 linker put it, so if that isn't the real address the injected code will
 silently jump to the wrong place once embedded.
@@ -40,9 +38,13 @@ byte it newly occupies must be $FF free space. With --replace the old block's
 own bytes count as free, its kernel.sym entry is updated in place (length
 only, position kept), and a shrunken tail is blanked back to $FF.
 
-Pins work exactly as in verify.py: declare `extern` in the C file, pass
-`--pin name=addr` (or a `--pins` file) for every existing kernel function or
-WRAM location referenced. See verify.py's docstring for the pins file format.
+Pins: declare `extern` in the C file, pass `--pin name=addr` (or a `--pins`
+file) for every existing kernel function or WRAM location referenced. Only
+pins the object actually references are passed to the linker, and names get
+a leading `_` if missing (SDCC's C name mangling). Pins file format, one per
+line, `#` comments:
+    install_callback_slot 066c
+    lcd_off=069f
 """
 import argparse
 import os
@@ -95,8 +97,7 @@ def patch_kernel_gb(gb_path, offset, code_bytes):
     kernel.gb is the user's only local copy of the firmware (gitignored,
     not re-derivable from this repo), so the first-ever patch makes a
     kernel.gb.orig backup alongside it if one doesn't already exist, so the
-    pristine dump can always be restored for future kernel/verify.py work
-    against the original.
+    pristine dump can always be restored.
     """
     orig_path = gb_path + ".orig"
     if not os.path.exists(orig_path):

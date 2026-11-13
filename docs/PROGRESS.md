@@ -13,9 +13,9 @@ from real source; the rest is still disassembly.
 > `.remove_int`, `.vbl`, `.wait_vbl_done`, `.display_off`, the OAM DMA
 > template, `.serial_IO`; `drawing.s`: `_gotogxy` at `$2765`, `_color` at
 > `$2791`). No SDCC version produces them; the peep files in
-> `kernel/tools/peeps/` only forced the bytes. Those C files still work as
-> injectable equivalents, but they are not decomp. Only `return_zero`
-> (`$1a77`, `1E 00 C9`) may be compiled C.
+> `kernel/tools/peeps/` only forced the bytes. Those files, the peep files
+> and `kernel/tools/verify.py` were removed on 2026-11-12 (they are in the git
+> history). Only `return_zero` (`$1a77`, `1E 00 C9`) may be compiled C.
 
 | Range | Source | Status |
 |---|---|---|

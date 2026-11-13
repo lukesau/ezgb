@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared SDCC compile/link helpers for verify.py and inject.py.
+"""Shared SDCC compile/link helpers for inject.py.
 
 Compiles a C file with SDCC (sm83 target, legacy stack calling convention,
 --sdcccall 0) to a .rel, then links it with sdld at chosen _CODE/_DATA
@@ -103,9 +103,7 @@ def compile_c(c_path, workdir, peep_path=None, pins=None, explicit_pin_syms=None
               code_origin=0x0200, data_origin=0xc000):
     """Compile C to IHX, applying only pins referenced by the object file.
 
-    code_origin/data_origin set the _CODE/_DATA link addresses. verify.py
-    uses arbitrary placeholders (0x0200/0xc000) since it only diffs bytes of
-    small, self-contained functions with no internal absolute self-reference.
+    code_origin/data_origin set the _CODE/_DATA link addresses.
     inject.py MUST pass the real final ROM address for code_origin: any
     internal absolute jp/call the function makes to itself needs to be
     encoded for where the bytes will actually live, not a placeholder.

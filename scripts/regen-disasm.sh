@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Regen disassembly from kernel.sym + notes.json, then print naming progress
-# and the app worklist. Quiet by default; pass -v for full mgbdis/make output.
+# Regen disassembly from kernel.sym + notes.json. Quiet by default; pass -v for full mgbdis/make output.
 #
 # Usage:
 #   scripts/regen-disasm.sh              # 1.05e-0731
@@ -59,14 +58,3 @@ run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
 }
 run make -C disassembly || exit $?
 
-echo "=== naming-progress ==="
-"$ROOT/scripts/naming-progress.sh" "$VER"
-echo "=== app worklist ==="
-WL="$(mktemp)"
-python3 "$ROOT/scripts/doc-symbol-coverage.py" "$VER" --app --frontier-only --top 5 >"$WL" || true
-if grep -qE '^[0-9a-fA-F]{2}:' "$WL"; then
-  cat "$WL"
-else
-  python3 "$ROOT/scripts/doc-symbol-coverage.py" "$VER" --app --top 5
-fi
-rm -f "$WL"

@@ -64,11 +64,9 @@ Foreground boot enters `Call_000_0de4` and stays there for the browser. The `$01
 ## Decomp outlook
 
 - Good for mapping/notes (this file): done enough to navigate.
-- Not a single verify target: `$0150` and `Call_000_0de4` call many unknowns; need
-  callee pins or more matched leaves before byte-identical `main`.
-- Next matchable leaves on this path: those *inside* `0de4` once listed (callee
-  pins via `verify.py --pin` / `--pins` are available now).
-  Boot IRQ/setup helpers `$062e`–`$06c0` are fully matched.
+- Boot IRQ/setup helpers `$062e`–`$06c0` are GBDK library assembly, matched in
+  [`decomp/gbdk/crt0.s`](../decomp/gbdk/crt0.s). `main` (`$0150`,
+  `Call_000_0de4`) is not yet built from source.
 - Naming/mapping the wider ASM (and Omega comparisons) outranks growing `kernel/` for now;
   see [`omega-jr-compare.md`](omega-jr-compare.md).
 
