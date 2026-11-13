@@ -1,6 +1,6 @@
 // Print the on-screen window id of the running SameBoy SDL window.
 // AppleScript can't see SDL windows; CGWindowList can. Used by
-// make-showcase-banner.sh to target `screencapture -l <id>`.
+// make-showcase-banner.py to target `screencapture -l <id>`.
 // Usage: winid [pid]. With a pid, only that process's window (other
 // SameBoy windows may be open); without one, every SameBoy window.
 import CoreGraphics

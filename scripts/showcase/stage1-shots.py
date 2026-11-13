@@ -16,7 +16,7 @@ The card is a copy of <card> with FLAUNCH= set to the target, the target's
 save in /SAVER, and a psram.bin holding a pending-backup stamp for it (AUTO
 SAVE off, so the prompt shows).
 
-    stage1-shots.py <card.img> <outdir> --keys <keys bin> --winid <winid bin>
+    stage1-shots.py <card.img> <outdir> --winid <winid bin>
 """
 import argparse
 import errno
@@ -36,7 +36,7 @@ MAP = os.path.join(ROOT, "fpga", "stage1", "build", "stage1.map")
 SAMEBOY = os.environ.get("SAMEBOY", os.path.join(ROOT, "tools", "SameBoy", "build", "bin", "SDL", "sameboy"))
 TARGET = "/Pokemon/Pokemon Red.gb"
 SAVE = "/SAVER/Pokemon Red.sav"
-KEY_A = 7                     # SameBoy default: X
+PAD_A = 0x10                  # SAMEBOY_EZFLASH_JR_PADFILE mask
 SPIN = 0xDC00                 # free WRAM: stage1 data ends below $CC00, the hand-off copy sits at $D000
 SAVING_HIT = 24               # fat_write calls before the SAVING... capture (frames to paint it)
 
@@ -52,7 +52,7 @@ def mtools(*args):
     subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
 
 
-def make_card(src, wd):
+def make_card(src, wd, dark=False):
     card = os.path.join(wd, "card.img")
     shutil.copy(src, card)
     cfg = os.path.join(wd, "ezgb.cfg")
@@ -74,6 +74,8 @@ def make_card(src, wd):
     ps[m + 0x10:m + 0x10 + len(path)] = path
     ps[m + 0x200] = 0                     # AUTO SAVE off: ask
     ps[m + 0x201] = 0x88                  # battery canary alive
+    if dark:                              # the kernel's theme mark: dark (docs/dark-mode.md)
+        ps[m + 0x414:m + 0x420] = b"TH\x01\xfe" + bytes.fromhex("0000c6183146ff7f")
     open(os.path.join(wd, "psram.bin"), "wb").write(ps)
     return card
 
@@ -122,9 +124,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("card")
     ap.add_argument("outdir")
-    ap.add_argument("--keys", required=True)
     ap.add_argument("--winid", required=True)
     ap.add_argument("--model", default="dmg")
+    ap.add_argument("--dark", action="store_true", help="boot in the dark theme (cgb)")
     a = ap.parse_args()
     for p in (STAGE1, MAP, SAMEBOY):
         if not os.path.isfile(p):
@@ -133,10 +135,13 @@ def main():
     os.makedirs(a.outdir, exist_ok=True)
     wd = os.path.join(a.outdir, "card")
     os.makedirs(wd, exist_ok=True)
-    card = make_card(a.card, wd)
+    card = make_card(a.card, wd, a.dark)
 
     env = os.environ.copy()
     env["SAMEBOY_EZFLASH_JR_IMG"] = card
+    pad = os.path.join(wd, "pad")
+    open(pad, "w").write("00\n")
+    env["SAMEBOY_EZFLASH_JR_PADFILE"] = pad
     env.setdefault("TERM", "xterm-256color")
     env.pop("SAMEBOY_EZFLASH_JR_DRY", None)
     pid, fd = pty.fork()
@@ -186,7 +191,9 @@ def main():
         subprocess.run(["screencapture", "-x", "-o", "-l", window(), os.path.join(a.outdir, "prompt.png")], check=True)
         print("  prompt.png")
         brk("_fat_write")
-        subprocess.run([a.keys, str(pid), str(KEY_A), "1"], check=True)
+        open(pad, "w").write("%02x\n" % PAD_A)
+        time.sleep(0.3)
+        open(pad, "w").write("00\n")
         for _ in range(SAVING_HIT):
             dbg.wait_for(r"Breakpoint \d+:", 30)
             dbg.cmd("continue")

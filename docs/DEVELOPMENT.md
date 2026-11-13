@@ -295,10 +295,13 @@ version's `re/kernel/<ver>/kernel.gb` straight into the emulator card image
 mtools`), not hdiutil — so macOS injects no junk (no stray `~1` from a `._.`
 sidecar) and the on-card directory-entry order is deterministic. That order is
 whatever `sd/ORDER` lists (top-level names, `#` comments); entries not listed
-are appended sorted. Because the stock browser lists raw FAT order and the mod
-sorts, `sd/ORDER` is what the stock-vs-mod README banner
-(`scripts/make-showcase-banner.sh`, output `docs/banner.png`) plays off — it
-boots the stock and modded kernels on this same card and stitches the shots.
+are appended sorted. The stock browser lists raw FAT order and the mod sorts,
+so a mixed-up `sd/ORDER` shows the difference.
+
+The README banner (`docs/banner.png`) comes from
+`scripts/make-showcase-banner.py`: a grid of SameBoy screenshots, one entry
+in its `SHOTS` table per tile (EZGB.CFG lines, stars, buttons to press). It
+builds its own card and leaves `sd/card.img` alone.
 
 ## Tools
 
