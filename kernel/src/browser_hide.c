@@ -5,7 +5,10 @@
  *  - anything whose name starts with '.' (dotfiles, .DS_Store, AppleDouble
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
  *    DirListSkipDotLongName behavior (docs/browser-hide-filter.md)
- *  - *.gba (GBA ROMs on a shared card; the Jr can't launch them)
+ *  - *.gba and *.nds (GBA and DS ROMs on a shared card; the Jr can't launch
+ *    them)
+ *  - *.sav and *.esv, save files (the Jr keeps its saves in SAVER)
+ *  - RTS, IMGS and CHEAT, folders that are not for the Jr
  *  - *.dat, the kernels: the stock browser hides ezgb.dat by that one name,
  *    but with a kernel picker in stage1 (docs/kernel-picker.md) a card can
  *    carry several, under any name
@@ -69,6 +72,15 @@ static u8 ends_ci(const u8 *name, u8 len, const u8 *suf, u8 suf_len);
 static void cut_notice(void);
 static void notice_line(const u8 *s, u8 row8, u8 y12);
 
+/* The names to hide, lowercase: a length byte, then that many characters,
+ * ended by a zero length. Bit 7 of the length means the whole name must
+ * match; without it the entry is a suffix (an extension). Octal escapes,
+ * since a hex one would swallow a following a-f. */
+static const u8 hide_tab[] =
+    "\004.gba" "\004.dat" "\004.nds" "\004.esv" "\004.sav"
+    "\210ezgb.cfg" "\213flaunch.cfg"
+    "\205saver" "\203rts" "\204imgs" "\205cheat";
+
 /* Reached only via FarCallTrampoline, which pushes three words (restore
  * thunk $07ae, saved bank AF, real return) between the caller's pushed args
  * and the jump, so a far callee finds its first real arg at sp+6, not sp+2
@@ -76,27 +88,21 @@ static void notice_line(const u8 *s, u8 row8, u8 y12);
  * The two pad params soak up those trampoline words; never read them. */
 u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
                      const u8 *name) {
-    u8 len;
+    u8 len, n;
+    const u8 *p;
 
     if (name[0] == '.' || name[0] == '_') {
         return 1;
     }
     for (len = 0; name[len] && len < 253; len++) {
     }
-    if (ends_ci(name, len, (const u8 *)".gba", 4)) {
-        return 1;
-    }
-    if (ends_ci(name, len, (const u8 *)".dat", 4)) {
-        return 1;
-    }
-    if (len == 8 && ends_ci(name, len, (const u8 *)"ezgb.cfg", 8)) {
-        return 1;
-    }
-    if (len == 11 && ends_ci(name, len, (const u8 *)"flaunch.cfg", 11)) {
-        return 1;
-    }
-    if (len == 5 && ends_ci(name, len, (const u8 *)"saver", 5)) {
-        return 1;
+    for (p = hide_tab; (n = *p) != 0; p += (u8)(n & 0x7f) + 1) {
+        if ((n & 0x80) && len != (u8)(n & 0x7f)) {
+            continue;
+        }
+        if (ends_ci(name, len, p + 1, (u8)(n & 0x7f))) {
+            return 1;
+        }
     }
     if (ENTRY_COUNT >= MAX_RECORDS) {
         DIR_SECT = 0;

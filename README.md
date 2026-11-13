@@ -66,8 +66,8 @@ Each links to a doc with the details.
 **Browser**
 
 - [Sorted](docs/browser-sort.md), folders first, with
-  [clutter hidden](docs/browser-hide-filter.md): macOS junk, `.gba` files,
-  kernels, the settings file, names starting with `_`.
+  [clutter hidden](docs/browser-hide-filter.md): macOS junk, `.gba` and `.nds` files,
+  saves, kernels, the settings file, names starting with `_`.
 - [Fast navigation](docs/browser-nav.md): the list wraps, shows `n/total`,
   and speeds up when UP or DOWN is held.
 - [No lost button presses](docs/joypad-latch.md): the pad is read every

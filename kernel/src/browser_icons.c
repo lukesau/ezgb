@@ -12,7 +12,8 @@
  * Directories are recognized by the stock len 0; files come in with len
  * $14. The icon is drawn in whatever ink the row has, so it inverts with
  * the selection bar. Font codes: $C0 folder, $C1 .gb cart, $C2 .gbc cart,
- * $C4 .sav page, $C3 boxed "?" for anything else, and $7F a star for a
+ * $C4 .txt page (.sav until those were hidden, browser_hide.c), $C3 boxed
+ * "?" for anything else, and $7F a star for a
  * starred file (PlayMark, play_mark.c, puts $2A in byte 253 of its record,
  * docs/stars.md).
  *
@@ -67,8 +68,8 @@ void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const 
             if (c1 == 'G' && c2 == 'B') {
                 if (e == 2) ic = 0xC1;                            /* .gb  */
                 else if (e == 3 && UP(s[dot + 3]) == 'C') ic = 0xC2;   /* .gbc */
-            } else if (e == 3 && c1 == 'S' && c2 == 'A' && UP(s[dot + 3]) == 'V') {
-                ic = 0xC4;               /* .sav page */
+            } else if (e == 3 && c1 == 'T' && c2 == 'X' && UP(s[dot + 3]) == 'T') {
+                ic = 0xC4;               /* .txt page */
             }
         }
         if (s[253] == 0x2A) ic = 0x7F;   /* starred */

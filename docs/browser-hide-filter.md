@@ -8,6 +8,10 @@ clutter get hidden by this patch:
   `.Trashes/`, `.TemporaryItems/`
 - names starting with `_`, for files and folders the user wants kept on the
   card but out of the list (2026-11-12)
+- `*.nds`, `*.sav`, `*.esv`, and the folders `RTS`, `IMGS` and `CHEAT`
+  (2026-11-12). Save management reads `SAVER/` with `f_readdir` directly
+  ([save_ops.c](../kernel/src/save_ops.c)), not through `DirList`, so hiding
+  `*.sav` in the browser does not touch it
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
   with an Omega), the settings file (`EZGB.CFG`, see [ezgb-cfg.md](ezgb-cfg.md))
   and its pre-3.0 predecessor `FLAUNCH.CFG`, the kernel's save backup folder
@@ -52,7 +56,7 @@ port, so its bank-0 call targets differ):
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 624 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
+| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 588 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -71,9 +75,9 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
     jp DirList_bankSlot    ; kept: continue unchanged, BC = name ptr
 ```
 
-`BrowserHideName` returns 1 (hide) for: leading `.` or `_`, `*.gba`, `*.dat` (the kernels: the stock
+`BrowserHideName` returns 1 (hide) for: leading `.` or `_`, `*.gba`, `*.nds`, `*.sav`, `*.esv`, `*.dat` (the kernels: the stock
 browser hides `ezgb.dat` by that one name, but a card can carry several for stage1's
-kernel picker, [kernel-picker.md](kernel-picker.md); mod 7.0), `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER`,
+kernel picker, [kernel-picker.md](kernel-picker.md); mod 7.0), `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER`, `RTS`, `IMGS`, `CHEAT`,
 and for any entry past the 416th shown, which also ends the directory
 ([browser-sort.md](browser-sort.md#record-cap)).
 (It also hid `*.fastlaunch` until that fast-launch trigger was removed on
@@ -140,6 +144,13 @@ Underscore rule (2026-11-12, 0731 in SameBoy): a copy of the showcase card
 with `_Hidden Game.gb` (LFN), `_SHORT.GB` (8.3 only), a folder `_Private`
 and `Shown_Mid.gb` added lists 8 entries, the three `_` names absent and
 `Shown_Mid.gb` present.
+
+Table rewrite (2026-11-12, 0731 in SameBoy): the names now sit in one table
+(`hide_tab`: length byte, bit 7 = whole name, else suffix). The showcase card
+plus `Some Game.nds`, `TETRIS.ESV`, `notes.TXT`, `cheats.gb`, `rts.gb` and
+folders `RTS`, `imgs`, `Cheat`, `CHEATS`, `IMAGES` lists 11 entries:
+`Some Game.nds`, `TETRIS.ESV`, `Pokemon.sav`, `RTS`, `imgs` and `Cheat` are
+absent; `CHEATS`, `IMAGES`, `cheats.gb`, `rts.gb` and `notes.TXT` are listed.
 
 ## Host-side alternative
 
