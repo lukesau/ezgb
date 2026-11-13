@@ -19,7 +19,8 @@
  *
  *   python3 tools/inject.py src/msgbox.c $V 11 4b00 MsgBox \
  *       --pin FarCallDrawString12=05c0 --pin DrawRect=27ba --pin StoreDrawParams=2791 \
- *       --pin PopupDrawParams=0290 --pin DrawString=08b7 --apply
+ *       --pin PopupDrawParams=0290 --pin DrawString=08b7 --pin ReadJoypad=3a4a \
+ *       --pin WaitVBlankFlag=0688 --apply
  */
 
 #include "types.h"
@@ -31,6 +32,14 @@
  * before EZGB.CFG is read, so it is always 8px. which = 4 erases it once A
  * is pressed (00:1878), or the Reading box that follows is drawn over it. */
 
+/* which = 5: the SET tab's FAST LAUNCH box was just ticked (flcfg.c, through
+ * FarCallMsgBox_B4, 04:59b0). Three lines in either font, 128 px wide,
+ * x 16..143: how to get back to the browser on a card that now boots
+ * straight into a game. It waits for A here and leaves the box up; flcfg
+ * clears the pane and enters the SET screen again. */
+
+extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
+
 void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
     static const u8 text[3][11] = {
         {'R','e','a','d','i','n','g','.','.','.',0},
@@ -39,8 +48,14 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
     };
     static const u8 dry[] = "Battery dry!";
     static const u8 dry_ok[] = "[A] ok";
-    u8 buf[11];
-    u8 i, x0, x1, y0, y1;
+    static const u8 fl[3][15] = {"Hold START at", "boot to cancel", "[A] ok"};
+    static const u8 fl_len[3] = {13, 14, 6};
+    static const u8 fl_col[3] = {3, 3, 7};         /* 8px: tile column and row */
+    static const u8 fl_row[3] = {6, 7, 9};
+    static const u8 fl_x[3] = {28, 28, 62};        /* 12px: pixel x and y */
+    static const u8 fl_y[3] = {48, 60, 76};
+    u8 buf[15];
+    u8 i, j, x0, x1, y0, y1;
 
     (void)pad_thunk;
     (void)pad_af;
@@ -54,6 +69,12 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
         x1 = 135;
         y0 = 46;
         y1 = 89;
+    }
+    if (which == 5) {
+        x0 = 16;
+        x1 = 143;
+        y0 = hUiMode ? 44 : 40;
+        y1 = hUiMode ? 95 : 89;
     }
     if (which == 4) {                    /* A was pressed: the box off the screen */
         StoreDrawParams(0, 0, 0);
@@ -73,6 +94,21 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
     if (which == 3) {
         DrawString(dry, 12, 4, 7);
         DrawString(dry_ok, 6, 7, 9);
+    } else if (which == 5) {
+        for (j = 0; j < 3; j++) {
+            for (i = 0; i < 15; i++) buf[i] = fl[j][i];
+            if (!hUiMode) {
+                DrawString(buf, fl_len[j], fl_col[j], fl_row[j]);
+            } else {
+                hClip12 = 143 - 4;
+                FarCallDrawString12(buf, 0, fl_x[j], fl_y[j]);
+            }
+        }
+        hClip12 = 0;
+        /* the A that ticked the box, then a new press, then its release */
+        while (ReadJoypad() & 0x10) WaitVBlankFlag();
+        while (!(ReadJoypad() & 0x10)) WaitVBlankFlag();
+        while (ReadJoypad() & 0x10) WaitVBlankFlag();
     } else {
         for (i = 0; i < 11; i++) buf[i] = text[which][i];
         if (!hUiMode) {

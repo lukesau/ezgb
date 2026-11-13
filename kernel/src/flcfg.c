@@ -21,7 +21,8 @@
  *   op 1 ROWS   cursor moved (hiliteDec/hiliteInc tails): keep it on the
  *               page, redraw the rows.
  *   op 2 A      A pressed with the cursor on a mod row (or B on THEME, which op
- *               TICK turns into A). The checkboxes, THEME, FONT and the colors
+ *               TICK turns into A). Ticking FAST LAUNCH shows the "Hold START
+ *               at boot to cancel" box (msgbox.c) and returns 2. The checkboxes, THEME, FONT and the colors
  *               change RAM and set SET_DIRTY, and SetCommit (04:5fc0) writes the
  *               file on NEXT, on PREV and when the screen is left (returns 0 =
  *               jp redraw); SGB BOOT and SORT BY PLAYS toggle pSRAM records
@@ -85,6 +86,7 @@ extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 extern u8 FarCallThemePage(u8 op, u8 arg);                          /* 04:5990 -> ThemePage (0D:4000, themepage.c): page 3 */
+extern void FarCallMsgBox_B4(u8 which);                             /* 04:59b0 -> MsgBox (0B:4B00, msgbox.c) */
 extern u8 SetPage(u8 op, u8 cur);                                   /* 04:6610, setpage.c: page 2, the page rows */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
@@ -200,9 +202,21 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             return r;
         }
         if (row == ROW_CHECK || row == ROW_RTC) {
-            if (row == ROW_CHECK) FL_EN = FL_EN ? 0 : 1;
-            else RTC_OFF = RTC_OFF ? 0 : 1;
             SET_DIRTY = 1;
+            if (row == ROW_CHECK) {
+                FL_EN = FL_EN ? 0 : 1;
+                if (FL_EN) {
+                    /* just ticked: say how to get past it at boot, wait for
+                     * A, then lay the page out again under the box */
+                    FarCallMsgBox_B4(5);
+                    SetPage(4, 0);
+                    SET_RE = ROW_CHECK + 1;
+                    SetFpgaPage_B4(0);
+                    return 2;
+                }
+            } else {
+                RTC_OFF = RTC_OFF ? 0 : 1;
+            }
             draw_rows(row);
             wait_a_release();
             SetFpgaPage_B4(0);

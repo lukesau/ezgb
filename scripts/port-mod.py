@@ -109,7 +109,8 @@ REGISTRY = {
     (4, 0x6d19): dict(src="flcfg.c",
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
-                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688, "SetBox": 0x77a0}),
+                            "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688, "SetBox": 0x77a0,
+                            "FarCallMsgBox_B4": 0x59b0}),
     (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page rows, near-called by FlCfg (docs/fastlaunch-set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "SetCommit": 0x5fc0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
@@ -174,7 +175,7 @@ REGISTRY = {
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "FarCallTrampoline": 0x078d}),
     (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/tab-strip12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
-                            "PopupDrawParams": 0x0290, "DrawString": 0x08b7}),
+                            "PopupDrawParams": 0x0290, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "WaitVBlankFlag": 0x0688}),
     (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),

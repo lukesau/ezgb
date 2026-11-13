@@ -52,6 +52,26 @@ time is being set they still step through its fields. A new cursor row
 moves the clamp, `SetWrapUp` / `SetWrapDown` and the `first` / `last` tables
 in `flcfg.c` and `setpage.c`.
 
+Ticking FAST LAUNCH (not clearing it) shows a box before anything else,
+since 2026-11-13: a card that boots straight into a game gives no hint of
+how to reach the browser again.
+
+```
+Hold START at
+boot to cancel
+    [A] ok
+```
+
+It is the status box of [tab-strip12.md](tab-strip12.md) "Status boxes",
+`MsgBox(5)` ([msgbox.c](../kernel/src/msgbox.c)), reached from bank 4
+through the far stub `FarCallMsgBox_B4` (`04:59b0`): 128 px wide, x 16..143,
+y 40..89 in 8px (tile rows 6, 7 and 9) and y 44..95 in 12px (text at y 48,
+60 and 76), below the date row and above the ROM name in either font.
+`MsgBox` waits there for A. `flcfg` op A then clears the pane, leaves the
+cursor row in `SET_RE` and returns 2, so the SET screen is entered again
+and draws page 1 with the box ticked, as after a page switch. Checked in
+SameBoy (DMG model, 0731) in both fonts.
+
 ### Pages
 
 **When settings reach the card:** changes on the SET tab stay in RAM and set

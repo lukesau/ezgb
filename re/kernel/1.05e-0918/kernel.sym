@@ -4611,7 +4611,7 @@
 04:6d11 ManageSaves
 04:6d11 .data:8:8
 04:6d19 FlCfg
-04:6d19 .data:5e8:8
+04:6d19 .data:60d:8
 04:6600 FlCfgJump
 04:6600 .data:3:8
 04:6610 SetPage
@@ -4625,7 +4625,7 @@
 00:3fe4 DvParams
 00:3fe4 .data:1b:8
 0b:4b00 MsgBox
-0b:4b00 .data:1ed:8
+0b:4b00 .data:35a:8
 08:7e4c MsgBoxFar
 08:7e4c .data:8:8
 02:7600 TabStrip12
@@ -4668,3 +4668,5 @@
 0e:4000 .data:ddb:8
 04:59a8 TextViewFar
 04:59a8 .data:8:8
+04:59b0 FarCallMsgBox_B4
+04:59b0 .data:8:8
