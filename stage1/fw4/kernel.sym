@@ -109,8 +109,11 @@
 00:25d0 DiskRead_issueLba
 00:26ec DiskRead_waitPeek
 00:26fc DiskRead_copyWindow
+00:2732 U32Mul
 00:2738 U32Mod
 00:273e U32Div
+00:27b5 S16Div
+00:27c9 S16Mod
 00:2823 S16DivMod
 00:2831 S16DivMod_absDividend
 00:283b S16DivMod_u16Div

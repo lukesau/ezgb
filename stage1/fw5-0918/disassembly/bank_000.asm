@@ -1374,7 +1374,7 @@ jr_000_061f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_27fa
+    call S16Mod
     add sp, $04
     ld b, d
     ld c, e
@@ -1392,7 +1392,7 @@ jr_000_061f:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_27e6
+    call S16Div
     add sp, $04
     ld b, d
     ld c, e
@@ -3482,7 +3482,7 @@ Jump_000_10fb:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2763
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$06
@@ -5599,7 +5599,7 @@ Jump_000_1afa:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2763
+    call U32Mul
     add sp, $08
     push hl
     ld hl, sp+$10
@@ -8137,7 +8137,7 @@ Jump_000_2757:
     ret
 
 
-Call_000_2763:
+U32Mul::
     jp U32MulImpl
 
 
@@ -8162,7 +8162,7 @@ U32Div::
 
     ld a, $05
     rst RST_08
-    jp Jump_000_27e6
+    jp S16Div
 
 
     ld a, $05
@@ -8202,7 +8202,7 @@ U32Div::
 
     ld a, $05
     rst RST_08
-    jp Jump_000_27fa
+    jp S16Mod
 
 
     ld a, $05
@@ -8254,8 +8254,7 @@ Jump_000_27da:
     ret
 
 
-Call_000_27e6:
-Jump_000_27e6:
+S16Div::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
@@ -8274,8 +8273,7 @@ Jump_000_27e6:
     ret
 
 
-Call_000_27fa:
-Jump_000_27fa:
+S16Mod::
     ld hl, $0005
     add hl, sp
     ld d, [hl]
