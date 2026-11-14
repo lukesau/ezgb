@@ -1,27 +1,22 @@
-# Stock stage1 in C, FW4 and FW5-0918 from one source (-DFW=4 / -DFW=5).
-# Not byte-exact: this checks that the C compiles, for both firmwares.
+# Stock stage1 in C, FW4 and FW5-0918 from one source (-DFW=4 / -DFW=5),
+# linked against the stock disassembly into a runnable stage1.gb. Not
+# byte-exact: the C is compiled by SDCC 4, not EZ Flash's compiler.
 #
-#   make            compile every file for fw4 and fw5 into build/
+#   make            build/fw4/stage1.gb and build/fw5/stage1.gb
 #   make clean
 
-SDCC   := sdcc
-CFLAGS := -msm83 --opt-code-size -Isrc
-SRCS   := $(wildcard src/*.c)
-HDRS   := $(wildcard src/*.h)
-FWS    := 4 5
+SRCS := $(wildcard src/*.c src/*.s src/*.h)
 
-RELS := $(foreach fw,$(FWS),$(patsubst src/%.c,build/fw$(fw)/%.rel,$(SRCS)))
+all: build/fw4/stage1.gb build/fw5/stage1.gb
 
-all: $(RELS)
+build/fw4/stage1.gb: $(SRCS) tools/link.py ../fw4/kernel.sym ../fw4/disassembly/bank_000.asm ../fw4/disassembly/bank_001.asm
+	python3 tools/link.py fw4
 
-define fw_rule
-build/fw$(1)/%.rel: src/%.c $(HDRS)
-	@mkdir -p $$(@D)
-	$$(SDCC) $$(CFLAGS) -DFW=$(1) -c $$< -o $$@
-endef
-$(foreach fw,$(FWS),$(eval $(call fw_rule,$(fw))))
+build/fw5/stage1.gb: $(SRCS) tools/link.py ../fw5-0918/kernel.sym ../fw5-0918/disassembly/bank_000.asm ../fw5-0918/disassembly/bank_001.asm
+	python3 tools/link.py fw5-0918
 
 clean:
 	rm -rf build
 
 .PHONY: all clean
+.DELETE_ON_ERROR:

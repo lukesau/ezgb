@@ -24,7 +24,7 @@ UBYTE SdWindowStatus(void)
 /* 00:250A: Petit FatFs asks for count bytes at offset in a sector. A whole
  * sector goes straight to buff; anything else is read into sector_buf and
  * the part copied out. */
-void disk_readp_impl(UDWORD sector, UWORD offset, UWORD count, UBYTE *buff) BANKED
+void disk_readp_impl(UDWORD sector, UWORD offset, UWORD count, UBYTE *buff)
 {
     if (count == 512) {
         DiskRead(sector, 1, buff);
@@ -39,7 +39,7 @@ void disk_readp_impl(UDWORD sector, UWORD offset, UWORD count, UBYTE *buff) BANK
  * As stock has it, every chunk copies n sectors to the start of buf: buf
  * never advances and the length is n, not the chunk. Right for n = 1, the
  * only n stage1 uses. */
-void DiskRead(UDWORD lba, UBYTE n, UBYTE *buf) BANKED
+void DiskRead(UDWORD lba, UBYTE n, UBYTE *buf)
 {
     UBYTE i, chunk;
     UDWORD sector;

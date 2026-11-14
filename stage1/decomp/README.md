@@ -12,10 +12,37 @@ One source covers both firmwares. FW5-0918 differs from FW4 only in
 `$31` bytes higher in bank 0 ([../stock.md](../stock.md#what-it-does)).
 
 ```bash
-make -C stage1/decomp      # compiles every file with -DFW=4 and -DFW=5 into build/
+make -C stage1/decomp      # build/fw4/stage1.gb and build/fw5/stage1.gb
 ```
 
-Needs SDCC 4.x (`sdcc -msm83`). It only compiles: nothing links yet.
+Needs SDCC 4.x (`sdcc`, `sdasgb`, `sdldgb`) and rgbds. No stock binary is
+needed: the asm comes from the tracked disassemblies.
+
+## Linking against the stock asm
+
+[tools/link.py](tools/link.py) compiles the C with `--sdcccall 0`, which
+passes every argument on the stack as GBDK 2.x does, so the C calls the
+stock runtime (`puts`, `memcpy`, the 16- and 32-bit math) where it is. It
+links with sdldgb at the stock addresses, resolving what the C calls from
+the firmware's `kernel.sym` (GBDK names that differ are in `ALIASES`), and
+writes the linked bytes as two rgbds includes. These replace the C regions
+in a copy of the disassembly (`build/fw<n>/asm/`), and rgbds builds the
+ROM. The C is smaller than stock's, so each region ends in `$FF` fill and
+every asm address stays the same. The only byte outside the C regions that
+differs from stock is crt0's `call main`.
+
+| Where | Area | What |
+|---|---|---|
+| `00:05BC` up to `U32Mul` | `_CODE`, `_HOME` | `main.c`, `diskio.c`, `pff.c`, `sd.c`, then `bcall.s` |
+| `01:4000` | `_HANDOFF` | `handoff_poll.c`, linked to run at `$D100` |
+| `01:4134` | `_GSINIT` | `gsinit.s`, where crt0 calls `InitMessages` |
+| `01:4150` | `_INITIALIZER`, `_CODE_1` | the message pointers' values, `handoff.c` |
+| `$C2A0`-`$C4A9` | `_INITIALIZED`, `_DATA` | message pointers, `FatFs`, the sector buffer: stock's RAM exactly |
+
+Two pieces of glue stand in for what EZ Flash's toolchain did:
+[src/bcall.s](src/bcall.s) is SDCC 4's banked call, the same switch as
+stock's `banked_call`, and [src/gsinit.s](src/gsinit.s) copies the
+initialized globals, where stock's compiler wrote code that stored each one.
 
 ## What is C and what stays assembly
 
@@ -26,9 +53,10 @@ Needs SDCC 4.x (`sdcc -msm83`). It only compiles: nothing links yet.
 | `00:05BC`-`0B4C` | [src/main.c](src/main.c) | six dead helpers, `FpgaSetMode`, FW5's `FpgaSetBootCpu`, `main`, then its strings |
 | `00:0BE6`-`0C15` | [src/diskio.c](src/diskio.c) | `disk_initialize`, `disk_readp` |
 | `00:0C16`-`24E2` | [src/pff.c](src/pff.c) | Petit FatFs, plus EZ Flash's accessors `FsFileSize` ... `FsClusterSectors` |
-| `00:24E3`-`273D` | [src/sd.c](src/sd.c) | the FPGA sector window: `FpgaSetSdWindow`, `SdWindowStatus`, `disk_readp_impl`, `DiskRead` |
-| `00:273E`-`399B`+ | asm | GBDK library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` |
-| `01:4000`-`4133` | [src/handoff.c](src/handoff.c) | `HandoffPoll` (runs at `$D100`), `HandoffRun`, `LoadKernel`, the dead `RomLoad_Build` |
+| `00:24E3`-`2731` | [src/sd.c](src/sd.c) | the FPGA sector window: `FpgaSetSdWindow`, `SdWindowStatus`, `disk_readp_impl`, `DiskRead` |
+| `00:2732`-`399B`+ | asm | GBDK library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` |
+| `01:4000`-`40AD` | [src/handoff_poll.c](src/handoff_poll.c) | `HandoffPoll`, run from `$D100` |
+| `01:40AE`-`4133` | [src/handoff.c](src/handoff.c) | `HandoffRun`, `LoadKernel`, the dead `RomLoad_Build` |
 | `01:4134` | (compiler) | `InitMessages`: the startup code for `main.c`'s initialized message pointers |
 
 [src/gb.h](src/gb.h) declares the GBDK routines the C calls, under GBDK's
@@ -53,7 +81,7 @@ RAM: `$C0A0` load command (512 bytes), `$C2A0`-`$C2A7` message pointers
 - `FpgaSetMode` and the other register writers write the unlock and commit
   envelope inline, as the `FPGA_UNLOCK()` / `FPGA_COMMIT()` macros do.
 - `disk_readp_impl` and `DiskRead` are in bank 0 but called through
-  `banked_call` with bank `$FFFF`, so EZ Flash declared them banked.
+  `banked_call` with bank `$FFFF`, so EZ Flash declared them banked. Here they are plain calls.
 - `DiskRead` copies `n` sectors to the start of `buf` for every chunk of
   four: wrong for `n > 1`, never used that way.
 - The load command's sector totals are a 16-bit product (clusters times
