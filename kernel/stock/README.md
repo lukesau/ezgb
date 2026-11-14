@@ -5,7 +5,7 @@ A build of the stock 1.05e-0731 kernel (`ezgb.dat`, md5
 the rgbds disassembly and replaces routines with real source one at a time;
 `make` fails unless the result is still byte-identical to stock.
 
-This is separate from `re/kernel/`, whose disassembly is regenerated from the
+This is separate from `kernel/re/`, whose disassembly is regenerated from the
 modded kernel after every injection. Everything here is stock.
 
 ```sh
@@ -19,7 +19,7 @@ build compares against the md5, not a file.
 
 | Path | What |
 |---|---|
-| `asm/` | Stock disassembly (mgbdis + `re/kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
+| `asm/` | Stock disassembly (mgbdis + `kernel/re/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
 | `tools/sdinc.py` | Assembles or compiles one source with SDCC, links its areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols). External symbols come from `kernel.sym`. |
 | `build/` | Generated includes and the built kernel (gitignored). |

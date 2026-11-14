@@ -9,7 +9,7 @@
 // The gate's polarity: this latch is transparent while the bit is 1, as
 // decoded. The IO tile's latch has the same gate, which netlist2v.py
 // inverts (transparent while the bit is 0) on the behavioral grounds in
-// re/stage0/docs/design.md, where a hardware check of that polarity is
+// stage0/docs/design.md, where a hardware check of that polarity is
 // still owed; it is owed for this one too.
 //
 // Block: stage0/blocks/p51_latch.blk.

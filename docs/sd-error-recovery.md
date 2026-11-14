@@ -3,8 +3,8 @@
 Status: **built 2026-10-29 for FW5-0918, checked in simulation, not yet on
 hardware.** FW4 (`X3Y29`) would take the same patch at its own addresses;
 not done. Source: [stage0/sd-recover-fw5-0918.psm](../stage0/sd-recover-fw5-0918.psm),
-on bank 1 = BRAM `D0X3Y1` (listing `re/stage0/picoblaze/fw5-0918/bank1.psm`).
-Shipped in slot B by `scripts/fpga/build-stage1-updater.sh fw5-0918`.
+on bank 1 = BRAM `D0X3Y1` (listing `stage0/picoblaze/fw5-0918/bank1.psm`).
+Shipped in slot B by `stage0/tools/build-stage1-updater.sh fw5-0918`.
 
 ## Why a bad card freezes instead of slowing down
 
@@ -30,13 +30,13 @@ DCM's CLK2X of the 24.545 MHz crystal (Y1), so f_sd = 49.09 MHz /
 (2 × (div + 1)): 24.545 MHz at divider 0, 336 kHz at `$48` during
 identification, on FW4 and FW5-0918 alike. FW5's faster CLKFX (×10/3
 against ×3) only clocks the 595. FW5's one SD speed-up is the fast-load key
-(`$7FD3+$7FD4 = $11`, [firmware-diff.md](../re/stage0/docs/firmware-diff.md#fw5s-new-registers)), which skips the
+(`$7FD3+$7FD4 = $11`, [firmware-diff.md](../stage0/docs/firmware-diff.md#fw5s-new-registers)), which skips the
 ~20 ms pause after each `CMD12` during a ROM load.
 
 > **Correction (2026-10-29).** The plan this doc started as put the SD
 > clock at ~29 MHz, past the 25 MHz default-speed limit, from a ~58 MHz base
 > inferred from `$48` giving 400 kHz. The netlist trace above replaced it;
-> divider 1 is 12.27 MHz, not 14.6. `re/stage0/docs/picoblaze.md` carried
+> divider 1 is 12.27 MHz, not 14.6. `stage0/docs/picoblaze.md` carried
 > the same inference and is corrected too.
 
 ## What the patch does
@@ -110,8 +110,8 @@ is unchanged. SameBoy shows the line with `SAMEBOY_EZFLASH_JR_SDSLOW=1`.
 
 ## Simulation
 
-`re/stage0/sim/gb_sdfault.vh` on the patched FW5-0918 design (exported
-with `scripts/fpga/export-netlist.sh`, `fastboot.py --fw fw5-0918`, RTC on
+`stage0/re/sim/gb_sdfault.vh` on the patched FW5-0918 design (exported
+with `stage0/tools/export-netlist.sh`, `fastboot.py --fw fw5-0918`, RTC on
 P31/P32): reads of LBA 0 and 1, a write of 4000, a read of 2, then the
 weekday in kernel mode. The SD model's fault plusargs (`models.v`):
 `+SD_BAD_READS=n`, `+SD_BAD_WRITES=n`, `+SD_DROP_CMD=i [+SD_DROP_N=n]`.

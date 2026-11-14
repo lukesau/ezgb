@@ -8,7 +8,7 @@ scripts/make-debug-build.py 1.05e-0918 --install /Volumes/EZGB_FW4
 ```
 
 That writes `dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat` from
-`re/kernel/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
+`kernel/re/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
 copies it to the card as `ezgb.dat`. HELP then reads `MOD N.MDBG`, and SELECT
 on HELP opens the debug screen instead of returning to the browser; SELECT
 there goes on to the browser. START on HELP goes back to the browser as in a release build; START on the debug screen is still the flash dump. The tab strip stays on HELP.
@@ -39,7 +39,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 
 Simulating the FW4, FW5-0731 and FW5-0918 bitstreams found only 5 bits of the
 `$4000` page latch reach the pSRAM: pages `$20-$3F` would be `$00-$1F` again
-([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel),
+([firmware-diff.md](../stage0/docs/firmware-diff.md#save-pages-from-the-kernel),
 [psram-page-map.md](psram-page-map.md)). B checks that on the cart, for `$20`
 against `$00` and `$3F` against `$1F`, without losing data:
 

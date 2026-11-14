@@ -62,7 +62,7 @@
  * (SET_PAGE, vars.h) and op ROWS clears its dirty flag (frame[0x3e]) so it
  * draws no boxes.
  *
- * SGB BOOT is not in EZGB.CFG: the boot stub (scripts/sgb/sgb_boot.asm) runs
+ * SGB BOOT is not in EZGB.CFG: the boot stub (kernel/mod/asm/sgb_boot.asm) runs
  * long before the SD card is up, so it reads a record in battery-backed
  * pSRAM, page $11 at $A400 ('S', 'G', flag, ~flag; docs/psram-page-map.md).
  * Set it on a DMG/GBC/GBA, then move the cart to the Super Game Boy.

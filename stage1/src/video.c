@@ -1,6 +1,6 @@
 /* Boot screen: the EZ Flash icon, a line of title text, a status line.
  * Tiles $20-$5A are the font (tile number = ASCII), tiles $80+ the icon,
- * then the EZ-FLASH Jr. wordmark (scripts/fpga/mkwordmark.py), map $9800
+ * then the EZ-FLASH Jr. wordmark (stage1/tools/mkwordmark.py), map $9800
  * with unsigned tile data at $8000. On a color console the text uses BG
  * palette 0 (grays), the icon palette 1 and the wordmark palette 2. The
  * colors are the kernel's UI theme (docs/dark-mode.md), from the mark and
@@ -72,7 +72,7 @@ static void vram_fill(uint16_t dst, uint8_t value, uint16_t n)
     memset((void *)dst, value, n);
 }
 
-/* Tile data packed by scripts/fpga/packbits.py: a control byte c, then c
+/* Tile data packed by stage1/tools/packbits.py: a control byte c, then c
  * literal bytes (c < $80) or the next byte c - $7D times; 0 ends. LCD off. */
 static void unpack(uint8_t *dst, const uint8_t *src)
 {

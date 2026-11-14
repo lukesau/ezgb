@@ -201,7 +201,7 @@ prompt was about the console's AA cells was wrong and has been corrected.)
 > after TIME SET. Since 2026-11-04 the time reached the card only when the SET
 > tab was left, so powering off on the tab lost it. And the time was read right
 > after the commit, from the FPGA's copy of the clock, which the PicoBlaze
-> refreshes on its own schedule ([picoblaze.md](../re/stage0/docs/picoblaze.md#rtc)):
+> refreshes on its own schedule ([picoblaze.md](../stage0/docs/picoblaze.md#rtc)):
 > that read can return the old time, and an invalid one left `RTC=` alone. TIME
 > SET now waits about a second, reads, and writes the file at once. Seen on the
 > FW4 cart (prompt showed `RTC=` from September); which of the two it was isn't

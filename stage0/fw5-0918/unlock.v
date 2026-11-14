@@ -22,7 +22,7 @@
 // FW5 resets these on the /RESET edge, which fw5-noedge.py takes out of the
 // design this is proved against.
 //
-// Block: built by scripts/fpga/simblk.py from stage0/blocks/unlock.blk
+// Block: built by stage0/tools/simblk.py from stage0/blocks/unlock.blk
 // (stage0/fw5-0918/unlock.sim has its arguments), with the names in
 // unlock.names.
 module unlock (

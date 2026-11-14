@@ -96,7 +96,7 @@ Each links to a doc with the details.
   for the browser.
 - [Skip the boot ROM](docs/skip-boot-rom.md): a game starts without the
   console's boot animation playing a second time.
-- [Faster loading on FW5](re/stage0/docs/firmware-diff.md) on every console,
+- [Faster loading on FW5](stage0/docs/firmware-diff.md) on every console,
   not just a GBC.
 - [Super Game Boy support](docs/sgb-boot.md), after nitro2k01's SGB Enabler.
 - [Last ROM](docs/last-rom.md): START relaunches the last game, even after
@@ -124,13 +124,21 @@ with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 ## Repo layout
 
 ```
-kernel/     mod/ is the mod: feature sources (C and asm) and the inject tooling.
-            stock/ is the stock kernel rebuilt from source, checked byte for byte
-patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
-stage1/     The bootloader, from source
-stage0/     The FPGA design as Verilog, and the PicoBlaze patches
-re/         Disassemblies and notes: kernel/ (three builds), stage0/, stage1/, updater/
+kernel/     The menu program
+              mod/     the mod: feature sources (C and asm) and the inject tooling
+              stock/   the stock kernel rebuilt from source, checked byte for byte
+              re/      disassembly, symbols and notes for the three builds
+stage1/     The bootloader
+              src/     our replacement, from source
+              re/      EZ Flash's stage1, disassembled
+              tools/   BRAM packing and splash art tools
+stage0/     The FPGA design
+              rtl/ blocks/   the design as Verilog, proven against the bitstream
+              picoblaze/     the soft CPU's programs, disassembled (our patches are the .psm files)
+              re/            bitstream decode, netlist, simulation, the updater
+              tools/ docs/   bitstream tools and the write-ups
 docs/       Feature write-ups, hardware notes, findings
+patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
 scripts/    Build, port, release and emulator helpers
 ```
 

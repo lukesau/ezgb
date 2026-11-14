@@ -183,7 +183,7 @@ static void sgb_row(u8 hi) {
     }
 }
 
-/* What SkipBoot (scripts/skipboot/skip_boot.asm) will decide for this console,
+/* What SkipBoot (kernel/mod/asm/skip_boot.asm) will decide for this console,
  * whatever the game: a CGB mode can jump, a compatibility mode can't, and the
  * DMG family can unless it may be an SGB. */
 static u8 can_jump(void) {

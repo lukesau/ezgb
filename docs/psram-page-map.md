@@ -4,7 +4,7 @@ Which pages of the battery-backed save pSRAM the kernel actually uses, and how
 much is spare for new persistent features. The pSRAM is reached only from the
 kernel via page latch `$4000 = <page>` then `$7FC0 = $03`, read/written through
 the `$A000`–`$BFFF` window (8 KB per page). See
-[personalities.md](../re/stage0/docs/personalities.md) and
+[personalities.md](../stage0/docs/personalities.md) and
 [psram-save-map.md](psram-save-map.md).
 
 Method: static sweep of every `$4000` page-latch write in `kernel.gb`, the
@@ -21,7 +21,7 @@ dumps came from an SD card with small directories.
 > **Correction (2026-10-10).** This page assumes a 6-bit page latch and 64
 > pages, as the emulator models it (`EZJR_SRAM_BANKS=64`). Simulating the
 > FPGA designs of FW4, FW5-0731 and FW5-0918
-> ([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
+> ([firmware-diff.md](../stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
 > says the page latch is **5 bits**: `$4000 = $20-$3F` drives exactly the
 > same memory address as `$00-$1F` (`$FF` lands on `$1F`, not `$3F`), on all
 > three. If the hardware agrees, there are 32 pages, the sort keys share
@@ -80,7 +80,7 @@ browser once a directory is big enough.
 
 Only 5 bits of the `$4000` latch reach the pSRAM, so the kernel sees 32 pages
 of 8 KB: simulated on FW4, FW5-0731 and FW5-0918
-([firmware-diff.md](../re/stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
+([firmware-diff.md](../stage0/docs/firmware-diff.md#save-pages-from-the-kernel))
 and confirmed on an FW5 cart (2026-10-10, the debug tab's B test). The
 simulation also says each byte takes one 16-bit word of U4 (low byte lane
 only), which is how 256 KB of pages fills the 512 KB die; that part is not

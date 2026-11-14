@@ -21,7 +21,7 @@ gap's self and inclusive time per function.
 SAMEBOY_PROFILE_GAP=/tmp/prof.txt SAMEBOY_EZFLASH_JR_IMG=card.img \
     tools/SameBoy/build/bin/SDL/sameboy --model dmg ezgb.dat
 # press SELECT a few times, quit
-scripts/debug/gap-profile.py re/kernel/1.05e-0918/kernel.sym /tmp/prof.txt
+scripts/debug/gap-profile.py kernel/re/1.05e-0918/kernel.sym /tmp/prof.txt
 ```
 
 SameBoy's SD reads don't take the time a real card does, so the HELP -> SD
@@ -56,7 +56,7 @@ switch (and by every other screen that clears with it). The SET tab adds the
 
 `DrawRectImpl_fillScan` (`00:236d`), the per-scanline `DrawLine` loop, is
 now a far call to `FillRect` (`02:6f40`,
-[scripts/fillrect/fillrect.asm](../scripts/fillrect/fillrect.asm)). For op 0,
+[kernel/mod/asm/fillrect.asm](../kernel/mod/asm/fillrect.asm)). For op 0,
 the common case, it writes each scanline's two edge tiles under their masks
 and the whole tiles between them in batches of five byte pairs, each batch
 synced to an HBlank the way `draw12.c`'s `blit_col1` is; ops 1-3 keep the
@@ -79,7 +79,7 @@ What's left on HELP in 12px is mostly the text (`DrawString12` 178 ms,
 Bank 4's `U32ToAscii` (`04:44f7`), which the SET tab uses for its six clock
 fields, made every digit with a `U32Div` and a `U32Mod` call. Its first four
 bytes are now `jp U32ToAsciiFast` (`04:7c00`,
-[scripts/fastdec/u32dec.asm](../scripts/fastdec/u32dec.asm)): radix 10 and a
+[kernel/mod/asm/u32dec.asm](../kernel/mod/asm/u32dec.asm)): radix 10 and a
 value under 65536, which covers every clock field, are done by subtracting
 powers of ten; anything else runs the original. The output is the same,
 including the original's two-digit minimum (a one-character result gets a

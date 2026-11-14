@@ -2,7 +2,7 @@
  * PLAYS (docs/stars.md): records in battery-backed page $11, 'S', a tag,
  * flag, ~flag, on only when all four bytes say so.
  *
- *   $A400  'S', 'G'  SGB BOOT (scripts/sgb/sgb_boot.asm reads it)
+ *   $A400  'S', 'G'  SGB BOOT (kernel/mod/asm/sgb_boot.asm reads it)
  *   $A404  'S', 'O'  SORT BY PLAYS (play.c reads it in the sort)
  *
  * Bank 4, injected at 04:7f51, near-called by SetPage (setpage.c), which

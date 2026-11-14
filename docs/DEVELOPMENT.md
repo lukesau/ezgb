@@ -13,7 +13,7 @@ the research and tooling underneath it work.
   functions): compiles the C for `kernel/` and for injected features.
 - **[SameBoy](https://sameboy.github.io)** with the EZ Jr FPGA stub, for dynamic
   tracing (see [Tools](#tools)).
-- A firmware dump at `re/kernel/<version>/kernel.gb` (not tracked; see the README's
+- A firmware dump at `kernel/re/<version>/kernel.gb` (not tracked; see the README's
   copyright note).
 
 `tools/` reference repos are gitignored; re-clone them per the [Tools](#tools)
@@ -22,7 +22,7 @@ section.
 ## Rebuilding a disassembly
 
 ```sh
-cd re/kernel/1.05e-0731
+cd kernel/re/1.05e-0731
 python3 ../../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # apply kernel.sym names
 ../../../scripts/annotate-disasm.py 1.05e-0731                      # notes.json + wram.inc
 
@@ -40,9 +40,9 @@ ROM-header bytes differ; see [REGISTERS.md](REGISTERS.md)).
 
 Persistent annotations live in two files per version:
 
-- [`re/kernel/1.05e-0731/kernel.sym`](../re/kernel/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
+- [`kernel/re/1.05e-0731/kernel.sym`](../kernel/re/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
   `SdMenuMain`). mgbdis applies these to labels.
-- [`re/kernel/1.05e-0731/notes.json`](../re/kernel/1.05e-0731/notes.json): comment blocks.
+- [`kernel/re/1.05e-0731/notes.json`](../kernel/re/1.05e-0731/notes.json): comment blocks.
   `annotate-disasm.py` injects them, matching either the assigned name or the
   raw `*_bbb_aaaa` label for still-unnamed addresses.
 
@@ -51,7 +51,7 @@ See [psram-save-map.md](psram-save-map.md) for an example of the note format.
 ## Naming and annotation
 
 The disassembly is 100% labeled. To refine a name or comment, edit
-`re/kernel/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
+`kernel/re/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
 
 ```sh
 ./scripts/regen-disasm.sh 1.05e-0731       # after editing kernel.sym / notes.json
@@ -63,9 +63,9 @@ conventions:
 
 ## Matching decompilation (`kernel/stock/`)
 
-A separate, longer-term effort from `re/`: rewriting the kernel
+A separate, longer-term effort from `kernel/re/`: rewriting the kernel
 function-by-function from source, verified against the stock kernel the
-same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. `re/` is the
+same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. `kernel/re/` is the
 research phase on the modded kernel; [`kernel/stock/`](../kernel/stock/README.md) is a
 stock build that replaces disassembly with source one routine at a time and
 fails unless it stays byte-identical. Status and toolchain findings (GBDK
@@ -196,8 +196,8 @@ manifest.
 The IPS patches in `patches/kernel/` are how the modded kernel is distributed
 (see [distribution.md](distribution.md)). After changing any injection (and
 regenerating/re-injecting per the feature docs), refresh the IPS and manifest
-from the canonical artifacts (`re/kernel/<ver>/kernel.gb.orig` stock →
-`re/kernel/<ver>/kernel.gb` modded):
+from the canonical artifacts (`kernel/re/<ver>/kernel.gb.orig` stock →
+`kernel/re/<ver>/kernel.gb` modded):
 
 ```sh
 python3 scripts/kernel-patch.py make    # all versions in the manifest
@@ -239,7 +239,7 @@ patched kernel ready to copy to a card as `ezgb.dat`. Each `.dat` is checked
 against the manifest md5 and each `.ips` is checked to reproduce it. `dist/`
 is gitignored; only the `.ips` files leave the machine. Nothing is staged
 into `sd/root/` any more: `scripts/make-sd-image.sh` copies the chosen
-version's `re/kernel/<ver>/kernel.gb` straight into the emulator card image
+version's `kernel/re/<ver>/kernel.gb` straight into the emulator card image
 (`EZGB_KERNEL_VERSION`, default 1.05e-0731).
 
 `make-sd-image.sh` builds the FAT16 card with **mtools** (`brew install
@@ -295,7 +295,7 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   ```
 
   `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
-  (we ship `re/kernel/1.05e-0731/kernel.sym`; add `re/kernel/1.04e/kernel.sym` to annotate the
+  (we ship `kernel/re/1.05e-0731/kernel.sym`; add `kernel/re/1.04e/kernel.sym` to annotate the
   older side).
 - **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ Flash's
   own published Omega DE (GBA) kernel source: FPGA register naming, FatFs/UI

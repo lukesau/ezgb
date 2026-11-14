@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Inject the SGB boot unlock into re/kernel/<ver>/kernel.gb (docs/sgb-boot.md).
+"""Inject the SGB boot unlock into kernel/re/<ver>/kernel.gb (docs/sgb-boot.md).
 
-Assembles scripts/sgb/sgb_boot.asm (the toggle build: it sends only when the
+Assembles kernel/mod/asm/sgb_boot.asm (the toggle build: it sends only when the
 SET tab's SGB BOOT record in pSRAM is on) with the kernel addresses it needs
 taken from kernel.sym, and, through kernel/mod/tools:
 
@@ -35,7 +35,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS = os.path.join(ROOT, "kernel", "mod", "tools")
-ASM = os.path.join(ROOT, "scripts", "sgb", "sgb_boot.asm")
+ASM = os.path.join(ROOT, "kernel", "mod", "asm", "sgb_boot.asm")
 
 
 # kernel.sym names the asm uses, passed to rgbasm as -D
@@ -44,7 +44,7 @@ KERNEL_SYMS = ["RunCallbackList", "wVBlankCallbacks", "wRomBank", "ReadJoypadRaw
 
 
 def kernel_syms(ver):
-    sym = open(os.path.join(ROOT, "re", "kernel", ver, "kernel.sym")).read()
+    sym = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.sym")).read()
     out = {}
     for name in KERNEL_SYMS:
         m = re.search(rf"^([0-9a-f]{{2}}):([0-9a-f]{{4}}) {name}$", sym, re.M)
@@ -89,7 +89,7 @@ def put_block(ver, bank, addr, name, data, apply):
     """inject_bytes.py for a new block; an existing one is overwritten in
     place (the rest of a longer old block goes back to stock) and its
     kernel.sym length updated."""
-    vdir = os.path.join(ROOT, "re", "kernel", ver)
+    vdir = os.path.join(ROOT, "kernel", "re", ver)
     sym_path = os.path.join(vdir, "kernel.sym")
     sym = open(sym_path).read()
     key = f"{bank:02x}:{addr:04x}"
@@ -115,7 +115,7 @@ def put_block(ver, bank, addr, name, data, apply):
 
 def drop_block(ver, bank, addr, name, apply):
     """Put an injected block back to stock bytes and remove it from kernel.sym."""
-    vdir = os.path.join(ROOT, "re", "kernel", ver)
+    vdir = os.path.join(ROOT, "kernel", "re", ver)
     sym_path = os.path.join(vdir, "kernel.sym")
     sym = open(sym_path).read()
     key = f"{bank:02x}:{addr:04x}"
@@ -142,7 +142,7 @@ def main():
     names = {"SgbStub": "SgbStub", "SgbVblTail": "SgbVblTail", "SgbVblList": "SgbVblList",
              "SgbPadGate": "SgbPadGate", "SgbBootHook": "SgbBootHook", "SgbBank4": "SgbLaunchHook"}
     drop_block(ver, 1, 0x7f00, "SgbUnlock", apply)
-    if not apply and "SgbUnlock" in open(os.path.join(ROOT, "re", "kernel", ver, "kernel.sym")).read():
+    if not apply and "SgbUnlock" in open(os.path.join(ROOT, "kernel", "re", ver, "kernel.sym")).read():
         print("(dry run: SgbUnlock still in place, so the 01:7f00 fit check below fails)")
     for sec, name in names.items():
         bank, addr, data = secs[sec]
@@ -161,7 +161,7 @@ def main():
     tool("patch_bytes.py", ver, "0", "0100", "00c35001", "00c32000", *apply)
     tool("patch_bytes.py", ver, "0", "0146", "00", "03", *apply)
     tool("patch_bytes.py", ver, "0", "014b", "00", "33", *apply)
-    rom = open(os.path.join(ROOT, "re","kernel", ver, "kernel.gb"), "rb").read()
+    rom = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.gb"), "rb").read()
     hdr = bytearray(rom[0x134:0x14D])
     hdr[0x146 - 0x134] = 0x03
     hdr[0x14B - 0x134] = 0x33

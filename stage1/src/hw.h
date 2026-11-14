@@ -59,7 +59,7 @@
  * clears it (kernel/mod/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_SGB_SENT 0x412
 /* Page $11 $A428-$A42F, written every boot: BOOT_REGS, so the kernel's jump to
- * a game (scripts/skipboot/skip_boot.asm) can hand over this console's boot
+ * a game (kernel/mod/asm/skip_boot.asm) can hand over this console's boot
  * registers. The kernel clears A (kernel/mod/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_BOOT_REGS 0x428
 /* Page $11 $A414-$A41F: the kernel's UI theme, 'T', 'H', theme, ~theme,

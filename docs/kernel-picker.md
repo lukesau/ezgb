@@ -196,7 +196,7 @@ Departures from the design above:
   480 bytes of SDCC output, not 300 to 450, and the three middle wordmark
   maps saved 289 (the tile-aligned cuts also dropped 7 part-painted tiles).
   The rest came from run-length packing the icon and wordmark tile data
-  (`scripts/fpga/packbits.py`, unpacked into VRAM by `video.c`): 672 to 457
+  (`stage1/tools/packbits.py`, unpacked into VRAM by `video.c`): 672 to 457
   bytes and 624 to 441, against a 40-byte decoder.
 
 | Build | BRAM bytes of 18,432 |

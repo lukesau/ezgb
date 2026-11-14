@@ -107,7 +107,7 @@ unchanged, but at `$1623` call `$41d2` instead of `$448f`.
 
 ## Experimental wiring: Start→A relaunch skips the copy
 
-Applied 2026-08-30 to the featured `re/kernel/1.05e-0731/kernel.gb` (pre-patch md5
+Applied 2026-08-30 to the featured `kernel/re/1.05e-0731/kernel.gb` (pre-patch md5
 `670a06a7`, patched build md5 `9e3b067d`). Five
 patches, `$DBFE` as the one-shot flag (zeroed by the boot WRAM clear):
 

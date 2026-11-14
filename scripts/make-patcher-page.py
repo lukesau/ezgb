@@ -11,7 +11,7 @@ SHA-256 before it can be saved, so no stock file can be patched with the
 wrong patch, the failure docs/distribution.md's mismatch test found
 dangerous for 0731/0918 kernels and for firmware.
 
-Needs the stock files (re/kernel/<ver>/kernel.gb.orig, the updaters in
+Needs the stock files (kernel/re/<ver>/kernel.gb.orig, the updaters in
 tools/ezflashjr/official) to compute the hashes, and checks every patch reproduces its
 manifest md5 before writing anything.
 
@@ -66,7 +66,7 @@ def main():
         known[digest] = entry
 
     for v, e in sorted(kman.items()):
-        stock = open(os.path.join(ROOT, "re", "kernel", v, "kernel.gb.orig"), "rb").read()
+        stock = open(os.path.join(ROOT, "kernel", "re", v, "kernel.gb.orig"), "rb").read()
         ips = open(os.path.join(ROOT, "patches", "kernel", e["patch"]), "rb").read()
         out = kp.apply_ips(stock, ips)
         if h("md5", stock) != e["stock_md5"] or h("md5", out) != e["patched_md5"]:

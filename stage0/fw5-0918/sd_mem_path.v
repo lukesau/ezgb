@@ -18,7 +18,7 @@
 //   - the sector buffer is block RAM X19Y17 (X3Y5 in FW4); its enables
 //     are the same
 //
-// Block: built by scripts/fpga/simblk.py from stage0/blocks/sd_mem_path.blk
+// Block: built by stage0/tools/simblk.py from stage0/blocks/sd_mem_path.blk
 // (stage0/fw5-0918/sd_mem_path.sim has its arguments), with the names in
 // sd_mem_path.names.
 

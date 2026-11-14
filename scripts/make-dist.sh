@@ -11,7 +11,7 @@
 # for every version in patches/kernel/manifest.json, N.M being
 # patches/kernel/VERSION. Each .dat is checked against the manifest's
 # patched_md5 and each .ips is checked to reproduce it from the stock dump, so
-# a stale re/kernel/<ver>/kernel.gb or patch fails loudly instead of shipping.
+# a stale kernel/re/<ver>/kernel.gb or patch fails loudly instead of shipping.
 # dist/ is gitignored; the .ips files are what a GitHub release gets.
 #
 # scripts/stamp-mod-version.sh runs this last, after stamping and rebuilding
@@ -39,7 +39,7 @@ out = os.path.join(root, "dist", f"mod-{modver}")
 ok = True
 for v, e in sorted(manifest.items()):
     dat = open(os.path.join(out, f"ezgb-mod-{modver}-for-{v}.dat"), "rb").read()
-    stock = open(os.path.join(root, "re","kernel", v, "kernel.gb.orig"), "rb").read()
+    stock = open(os.path.join(root, "kernel", "re", v, "kernel.gb.orig"), "rb").read()
     ips = open(os.path.join(out, f"ezgb-mod-{modver}-for-{v}.ips"), "rb").read()
     d_ok = hashlib.md5(dat).hexdigest() == e["patched_md5"]
     i_ok = kp.apply_ips(stock, ips) == dat
@@ -71,7 +71,7 @@ pkg = {"1.04e": "FW4, 2020-03-10", "1.05e-0731": "FW5, 2020-07-31", "1.05e-0918"
 tmpl = open(os.path.join(root, "patches", "kernel", "release-README.txt")).read()
 rows = []
 for v, e in sorted(manifest.items()):
-    stock = open(os.path.join(root, "re", "kernel", v, "kernel.gb.orig"), "rb").read()
+    stock = open(os.path.join(root, "kernel", "re", v, "kernel.gb.orig"), "rb").read()
     rows += [f"  {v}  ({pkg.get(v, '?')})", f"    stock md5:   {e['stock_md5']}",
              f"    stock sha1:  {hashlib.sha1(stock).hexdigest()}", f"    modded md5:  {e['patched_md5']}", ""]
 readme = (tmpl.replace("{MODVER}", modver).replace("{FWVER}", fwver).replace("{PATCHER_URL}", PATCHER_URL)

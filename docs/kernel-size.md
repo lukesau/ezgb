@@ -12,7 +12,7 @@ Stage1 loads the whole of `ezgb.dat`, by its file size, into the cart's game
 pSRAM with bank N at N × `$4000` ([fpga-stage1.md](fpga-stage1.md)). In kernel
 mode the FPGA's ROM bank register at `$2000` is a plain 8-bit latch: bit 0 is
 address line A13 and bits 1 to 7 go out through the 74HC595
-(`re/stage0/docs/design.md` on the bitstream-re branch). So the kernel can map
+(`stage0/docs/design.md` on the bitstream-re branch). So the kernel can map
 any of 256 banks of whatever the file holds, with the same `$2000` write
 `FarCallTrampoline` already does.
 
@@ -30,7 +30,7 @@ load, about 0.07 s more to load (an estimate).
 
 | Tool | Change |
 |---|---|
-| `re/kernel/<ver>/kernel.gb` | 262,144 bytes; banks 10-15 are `$FF` until code goes there |
+| `kernel/re/<ver>/kernel.gb` | 262,144 bytes; banks 10-15 are `$FF` until code goes there |
 | `scripts/build-kernel.sh` | `SIZE = 262144`, no truncation |
 | `scripts/portmap.py` | `load_stock` pads a stock image with `$FF` to `KERNEL_BANKS` (16), so the new banks are free space and map one to one between builds |
 | `scripts/kernel-patch.py` | the modded kernel may be longer than stock: it diffs against stock padded with zeros (as an IPS grows the file), writes runs of 16 or more equal bytes as RLE records, and records `patched_size` in the manifest. The patches grew about 1 KB |

@@ -2,7 +2,7 @@
 
 How to set up every tool the FPGA work uses, starting from a bare machine,
 and then build and install a stage1 updater end to end. Tool reference
-(every flag, output formats, ISE details): [toolchain.md](../re/stage0/docs/toolchain.md).
+(every flag, output formats, ISE details): [toolchain.md](../stage0/docs/toolchain.md).
 Reading order for the rest: [fpga.md](fpga.md).
 
 Nothing EZ Flash wrote is in this repository. Their updater, bitstreams,
@@ -49,10 +49,10 @@ same revision through cargo.
 
 **The database and the crates must come from the same commit.** The database
 is bincode-serialized, so a database from another revision won't load, or
-loads wrong. `scripts/fpga/s3decode/Cargo.toml` pins `7ab08a02…`; to move to
+loads wrong. `stage0/tools/s3decode/Cargo.toml` pins `7ab08a02…`; to move to
 a newer prjcombine, change the rev there and check out the same rev of the
 database together. More in
-[toolchain.md](../re/stage0/docs/toolchain.md#prjcombine), including building
+[toolchain.md](../stage0/docs/toolchain.md#prjcombine), including building
 `prjcombine-cli` to browse the database (optional).
 
 The project's `AGENTS.md` says it does not accept contributions authored by
@@ -61,10 +61,10 @@ work.
 
 ## 4. Our Rust tools
 
-Copy `scripts/fpga/s3decode/` to the build host and build it there:
+Copy `stage0/tools/s3decode/` to the build host and build it there:
 
 ```bash
-rsync -a scripts/fpga/s3decode/ <build host>:~/fpga/s3decode/
+rsync -a stage0/tools/s3decode/ <build host>:~/fpga/s3decode/
 ssh <build host>
 cd ~/fpga/s3decode && cargo build --release
 ```
@@ -80,7 +80,7 @@ from `~/fpga/s3decode`) and `--device` (default `xc3s200a`).
 | `s3trace` | walk routing back from a bel pin (`--from TILE:BEL:PIN --depth N`), list pins (`--list-pins TILE`), or dump the netlist as JSON lines (`--netlist out.jsonl`) |
 | `s3pins` | the package pin map, e.g. `--bond vq100` |
 
-Flags and output formats: [toolchain.md](../re/stage0/docs/toolchain.md#s3decode).
+Flags and output formats: [toolchain.md](../stage0/docs/toolchain.md#s3decode).
 
 ## 5. ISE 14.7 (optional)
 
@@ -88,10 +88,10 @@ Only needed to *make* bitstreams: the blank baseline that `s3decode
 --baseline` diffs against, and the smoke test. Nothing in the updater build
 needs it. Getting it (copied out of AMD's VM appliance), the Ubuntu 24.04
 packages, the free WebPACK license and how to run it are all in
-[toolchain.md](../re/stage0/docs/toolchain.md#ise-147). Once it's in place:
+[toolchain.md](../stage0/docs/toolchain.md#ise-147). Once it's in place:
 
 ```bash
-rsync -a --exclude s3decode scripts/fpga/ <build host>:~/fpga/scripts/
+rsync -a --exclude s3decode stage0/tools/ <build host>:~/fpga/scripts/
 ssh <build host> ~/fpga/scripts/smoke-test.sh
 ```
 
@@ -107,8 +107,8 @@ On the Game Boy side machine:
 |---|---|---|
 | SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
 | RGBDS | 1.x (1.0.1 was used) | `rgbfix` for stage1; `rgbasm`/`rgblink` for the splash lab in `stage1/fw4-patches/bootsplash/` and the overlay patches in `stage1/fw4-patches/` |
-| Python 3 | standard library only | every script in `scripts/fpga/`; PIL isn't needed |
-| mgbdis | cloned into `tools/mgbdis` | the stock stage1 disassembly (`scripts/fpga/stage1-regen.sh`) |
+| Python 3 | standard library only | every script in `stage0/tools/`; PIL isn't needed |
+| mgbdis | cloned into `tools/mgbdis` | the stock stage1 disassembly (`stage1/tools/stage1-regen.sh`) |
 
 On macOS: `brew install sdcc rgbds python`. mgbdis:
 
@@ -176,13 +176,13 @@ script does steps 4-8. It always adds the bank 2 flash read patch
 from v5 on, so a cart can always dump its config flash from a debug kernel.
 
 ```bash
-BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw4 "Update: s1 v5 rd" fpga/load/Update_FW4-stage1-v5.gb
-BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
+BUILD_HOST=<build host> stage0/tools/build-stage1-updater.sh fw4 "Update: s1 v5 rd" fpga/load/Update_FW4-stage1-v5.gb
+BUILD_HOST=<build host> stage0/tools/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
 ```
 
 It stops unless the patched image decodes back to the same stage1 and the
 same bank 2 program. Before anything else it runs
-`scripts/fpga/host-check.sh <build host>`, which prints the host's load and
+`stage0/tools/host-check.sh <build host>`, which prints the host's load and
 other users' jobs and stops only if the CPU is maxed out (fewer than
 `MIN_IDLE_CORES`, default 2, idle); GPU jobs don't block.
 `HOST_CHECK_FORCE=1` runs anyway. The steps by hand:
@@ -190,7 +190,7 @@ other users' jobs and stops only if the CPU is maxed out (fewer than
 **1. Extract slot B** from the stock updater:
 
 ```bash
-scripts/fpga/extract-bitstreams.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb -o fpga/images/
+stage0/tools/extract-bitstreams.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb -o fpga/images/
 # Update_FW4@08000.bin  sha1 65aff9ce6a20
 scp fpga/images/Update_FW4@08000.bin <build host>:~/fpga/cart/slotB.bin
 ```
@@ -216,14 +216,14 @@ dump:
 ```bash
 scp -r <build host>:~/fpga/cart/bram fpga/fw4-decode/
 mkdir -p fpga/cgb
-scripts/fpga/stage1-from-bram.py fpga/fw4-decode/bram -o fpga/cgb/stage1-fw4.gb \
+stage1/tools/stage1-from-bram.py fpga/fw4-decode/bram -o fpga/cgb/stage1-fw4.gb \
     --ref tools/ezflashjr/stage1/FW4/stage1.gb
 # matches reference: True
 ```
 
 `fpga/cgb/stage1-fw4.gb` is where the splash lab expects stock stage1. To
 regenerate the annotated disassembly of it, copy it to
-`re/stage1/fw4/kernel.gb` and run `scripts/fpga/stage1-regen.sh` ("rebuild
+`stage1/re/fw4/kernel.gb` and run `stage1/tools/stage1-regen.sh` ("rebuild
 matches kernel.gb").
 
 **4. Build our stage1.** It needs the icon tiles from the splash build first:
@@ -244,7 +244,7 @@ the printed `--set` arguments carry that path:
 
 ```bash
 cd fpga/stage1
-../../scripts/fpga/stage1-to-bram.py stage1.gb blobs > sets.txt
+../../stage1/tools/stage1-to-bram.py stage1.gb blobs > sets.txt
 scp -r blobs <build host>:~/fpga/cart/
 scp sets.txt <build host>:~/fpga/cart/
 ```
@@ -266,7 +266,7 @@ from it. It must equal `stage1.gb` byte for byte:
 tail -1 slotB-stage1.decode.txt  # 0 set bits unclaimed
 # back on the Game Boy side
 scp -r <build host>:~/fpga/cart/bram-new <build host>:~/fpga/cart/slotB-stage1.bin fpga/stage1/
-scripts/fpga/stage1-from-bram.py fpga/stage1/bram-new -o fpga/stage1/stage1-from-slotB.gb \
+stage1/tools/stage1-from-bram.py fpga/stage1/bram-new -o fpga/stage1/stage1-from-slotB.gb \
     --ref fpga/stage1/stage1.gb
 # matches reference: True
 ```
@@ -274,7 +274,7 @@ scripts/fpga/stage1-from-bram.py fpga/stage1/bram-new -o fpga/stage1/stage1-from
 **8. Build the updater:**
 
 ```bash
-scripts/fpga/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
+stage0/tools/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
     fpga/stage1/slotB-stage1.bin fpga/load/Update_FW4-stage1.gb --label "Update: my s1"
 ```
 
@@ -285,14 +285,14 @@ different BRAMs) and the FW5 updater as the base in step 8:
 
 ```bash
 cd fpga/stage1
-../../scripts/fpga/stage1-to-bram.py stage1.gb blobs-fw5-0918 --layout fw5-0918 > sets-fw5-0918.txt
+../../stage1/tools/stage1-to-bram.py stage1.gb blobs-fw5-0918 --layout fw5-0918 > sets-fw5-0918.txt
 # on the build host: s3patch ... ../fw5/0918.bin 0918-stage1.bin $(cat sets-fw5-0918.txt), then the round trip
-scripts/fpga/make-updater.py tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb \
+stage0/tools/make-updater.py tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb \
     fpga/stage1/0918-stage1.bin fpga/load/Update_FW5-0918-stage1.gb --label "Update: FW5 s1"
 ```
 
 The FW5 updater runs the same write loop as FW4's (149,516 bytes to slot B
-at `$040000`, [fw5.md](../re/stage0/docs/fw5.md)); `make-updater.py`
+at `$040000`, [fw5.md](../stage0/docs/fw5.md)); `make-updater.py`
 replaces only its first image and leaves the second, unwritten one alone.
 Our stage1's header carries 0918's SGB flag bytes (`$0146 = $03`,
 `$014B = $33`), and on a Super Game Boy stage1 also resends the header
@@ -332,7 +332,7 @@ The new stage1 runs from the next power-on.
 - Slot A is what the FPGA loads at power-on; its PicoBlaze firmware hands
   over to slot B. If slot B fails to come up, a boot tally makes the next
   power-on stay on slot A
-  ([picoblaze.md](../re/stage0/docs/picoblaze.md#at-boot-3f--0)). That covers a
+  ([picoblaze.md](../stage0/docs/picoblaze.md#at-boot-3f--0)). That covers a
   corrupt slot B, not a slot B that configures and then misbehaves.
   Confirmed on the FW4 Jr on 2026-10-12. Two writes in a row left a slot B
   that didn't configure, one of them a build that had installed fine before.
@@ -365,4 +365,4 @@ The new stage1 runs from the next power-on.
   one FW5 Jr (2026-10-10: boots, fast launch, Pokemon Crystal's clock
   restored). The FW5 updater writes slot B like FW4's, so the slot A
   fallback should work the same way, but no FW5 cart's slot A has been
-  dumped yet ([fw5.md](../re/stage0/docs/fw5.md)).
+  dumped yet ([fw5.md](../stage0/docs/fw5.md)).

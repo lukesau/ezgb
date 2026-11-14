@@ -3,7 +3,7 @@
 [cgb-mode.md](cgb-mode.md) found that the kernel can never run in CGB mode,
 because the console reads the CGB flag from the cart's bootstrap (stage1)
 before any of our code exists. Stage1 is BRAM contents in the FPGA bitstream
-([bitstream.md](../re/stage0/docs/bitstream.md)), so the flag is now a data edit. This
+([bitstream.md](../stage0/docs/bitstream.md)), so the flag is now a data edit. This
 is the first patched cart firmware: built and verified offline, then
 **installed with the CGB updater and confirmed working on hardware
 (2026-10-08)**: red OSINIT screen on a color console. Built
@@ -51,14 +51,14 @@ cd fpga/cgb
 rgbasm -o stage1-cgb.o ../../stage1/fw4-patches/stage1-cgb.asm
 rgblink -O stage1-fw4.gb -o stage1-cgb.gb stage1-cgb.o     # stage1-fw4.gb: stage1-from-bram.py output
 rgbfix -f h stage1-cgb.gb
-../../scripts/fpga/stage1-to-bram.py stage1-cgb.gb blobs   # prints the s3patch --set arguments
+../../stage1/tools/stage1-to-bram.py stage1-cgb.gb blobs   # prints the s3patch --set arguments
 # on the build host (copy blobs/ and the slot B image there):
 s3patch --db ~/fpga/prjcombine/databases/spartan3.zstd slotB.bin slotB-cgb.bin <--set args>
 ```
 
 then splice `slotB-cgb.bin` into a full dump at `$40026`.
 
-`s3patch` ([`scripts/fpga/s3decode/src/bin/s3patch.rs`](../scripts/fpga/s3decode/src/bin/s3patch.rs))
+`s3patch` ([`stage0/tools/s3decode/src/bin/s3patch.rs`](../stage0/tools/s3decode/src/bin/s3patch.rs))
 writes any bel attribute (here BRAM `DATA`) by mapping each bit through the
 prjcombine database to a frame bit, locating it in the stream's FDRI runs,
 refusing frames that are reused via MFWR, recomputing every CRC packet, and
@@ -74,10 +74,10 @@ flash-update command (the staging header is built at `00:13e9`: loop offset
 `+ $040000`). Checked in the code: no payload checksum, no read-back
 compare, no version gate. It shows a fixed `Update to ver:4` line (it never
 reads the cart's version, see the correction in
-[version-byte.md](../re/stage0/docs/version-byte.md)), waits for A, writes 149,516 bytes and stops. Its payload is
+[version-byte.md](../stage0/docs/version-byte.md)), waits for A, writes 149,516 bytes and stops. Its payload is
 exactly slot B.
 
-So `scripts/fpga/make-updater.py` builds `Update_FW4-cgb.gb`: the stock file
+So `stage0/tools/make-updater.py` builds `Update_FW4-cgb.gb`: the stock file
 with the payload replaced by the patched slot B and the on-screen line
 changed to `Update: CGB test`. The updater code is byte-identical to stock;
 only the payload, those 16 label bytes and the global checksum differ.
@@ -171,7 +171,7 @@ kernel that does its own CGB init (`CgbInit`, mod 5.3). Updater label
 
 Lab and build: `stage1/fw4-patches/bootsplash/build.sh` (needs the untracked logo
 PNG and stock stage1 in `fpga/`) builds a standalone `splash.gb` for
-iterating in SameBoy and the stage1 image; `scripts/fpga/mkicon.py` converts
+iterating in SameBoy and the stage1 image; `stage1/tools/mkicon.py` converts
 the logo. Verified: SameBoy CGB and DMG show the icon above EZ-FLASH;
 slot B patch flips 5,036 bits in the 8 plane BRAMs only; stage1 rebuilt from
 the patched bitstream equals the tested ROM. Installed with

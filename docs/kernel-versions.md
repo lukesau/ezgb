@@ -113,7 +113,7 @@ new, and the launch path calls it with `$00` (`00:15e2`). 1.04e never touches
 > when the key is `$11`. Stock 1.05e writes `$00`, which leaves loading slow.
 > FW4's design doesn't decode `$7FD4` at all. Details in
 > [Load speed](#load-speed-fw4-vs-fw5) and
-> [firmware-diff.md](../re/stage0/docs/firmware-diff.md).
+> [firmware-diff.md](../stage0/docs/firmware-diff.md).
 
 > **Correction (2026-10-12).** The key is the sum `$7FD3 + $7FD4`, and stock
 > FW5-0918 stage1 writes the console's boot `A` to `$7FD3`: `$11` on CGB and
@@ -141,7 +141,7 @@ kernels, so neither item is a kernel change. The faster loading is FW5's
 fast-load key (see the corrections above): stock FW5 stage1 sets `$7FD3` to
 the boot `A`, which is `$11` only on CGB and GBA, and the stock kernel adds
 `$00`. FW5's FPGA image is a new design (64% different from FW4's, see
-[flash-map.md](../re/stage0/docs/flash-map.md)), which is where they would be. The
+[flash-map.md](../stage0/docs/flash-map.md)), which is where they would be. The
 same goes for the hang at LOADING / OS INIT with slower cards that EZ Flash
 acknowledged in the 1.05e release candidate: the kernel diff gives no reason
 to expect an older `ezgb.dat` to cure it.
@@ -167,7 +167,7 @@ Banks 2-9 are byte-identical.
 So the 0918 kernel does the same thing as the 0731 kernel. What the 0918
 package really changes is the firmware: its updater carries two FPGA images,
 the fallback one identical to 0731's and the active one 61% different
-([flash-map.md](../re/stage0/docs/flash-map.md)). The improvements reported for 0918
+([flash-map.md](../stage0/docs/flash-map.md)). The improvements reported for 0918
 (no SD corruption on slower cards, Super Game Boy support) would be in that
 image, and reach a cart only through the updater.
 

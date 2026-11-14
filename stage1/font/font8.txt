@@ -1,7 +1,7 @@
 # 8x8 boot font, ASCII $20-$5A (lowercase prints as uppercase).
 # The stock kernel's 8px GBDK font (also stock stage1's), glyphs $20-$5A only.
 # One glyph per block: a line "= C" (the character, or "sp"), then 8 rows,
-# '#' set, '.' clear. Packed 1 bit per pixel by scripts/fpga/font8-pack.py.
+# '#' set, '.' clear. Packed 1 bit per pixel by stage1/tools/font8-pack.py.
 = sp
 ........
 ........

@@ -1674,7 +1674,7 @@ SetFpga7F34_35_B1::
 ; [ezgb]
 ; SetFpga7FD4_B1: unlock $7F00/10/20; write stack u8 to $7FD4; commit $7FF0.
 ; Mod: zeroes $7FD3 first, since FW5's $7FD4 stores $7FD3 + value and the
-; stock FW5 stage1 leaves the boot A in $7FD3 (re/stage0/docs/firmware-diff.md).
+; stock FW5 stage1 leaves the boot A in $7FD3 (stage0/docs/firmware-diff.md).
 
 SetFpga7FD4_B1::
     ld bc, SgbBootHook

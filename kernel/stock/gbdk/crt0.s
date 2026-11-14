@@ -3,7 +3,7 @@
 	;;
 	;; Changes from GBDK 2.96a (identical to GBDK-2020 3.0.1 here) are marked
 	;; ";; ezflash:". Global labels with no leading dot are the names the
-	;; kernel disassembly uses (re/kernel/1.05e-0731/kernel.sym); they alias
+	;; kernel disassembly uses (kernel/re/1.05e-0731/kernel.sym); they alias
 	;; the GBDK names so the rest of the rgbds source links against them.
 
 	.include	"global.s"

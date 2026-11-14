@@ -18,7 +18,7 @@
 // psram_ctrl also selects U4 page $08 on the game's clock accesses, so a
 // write lands there for the PicoBlaze; the read is the FPGA's.
 //
-// Block: built by scripts/fpga/simblk.py from stage0/blocks/gb_data_out.blk
+// Block: built by stage0/tools/simblk.py from stage0/blocks/gb_data_out.blk
 // (stage0/fw5-0918/gb_data_out.sim has its arguments), with the names in
 // gb_data_out.names.
 

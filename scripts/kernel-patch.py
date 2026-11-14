@@ -17,7 +17,7 @@ hand, when a release is cut; regenerating the patches never touches it.
 
 Usage:
   # Maintainer: regenerate all patches after changing injections
-  #   diffs re/kernel/<ver>/kernel.gb.orig (stock) -> re/kernel/<ver>/kernel.gb (modded)
+  #   diffs kernel/re/<ver>/kernel.gb.orig (stock) -> kernel/re/<ver>/kernel.gb (modded)
   scripts/kernel-patch.py make
 
   # User: patch an official ezgb.dat (version auto-detected by md5)
@@ -25,7 +25,7 @@ Usage:
 
 The firmware updater gets the same treatment: an IPS from EZ Flash's stock
 updater to ours (our stage1 and the flash read patch in slot B, built by
-scripts/fpga/build-stage1-updater.sh), in patches/updater/ with its own
+stage0/tools/build-stage1-updater.sh), in patches/updater/ with its own
 manifest.json. stage1/VERSION's mod version is recorded with it.
 
   # Maintainer: diff the stock updater -> a built one
@@ -186,7 +186,7 @@ def apply_ips(base, patch):
 
 def make_one(version):
     """Regenerate one version's IPS + manifest entry; True if the IPS changed."""
-    ver_dir = os.path.join(ROOT, "re","kernel", version)
+    ver_dir = os.path.join(ROOT, "kernel", "re", version)
     stock_path = os.path.join(ver_dir, "kernel.gb.orig")
     modded_path = os.path.join(ver_dir, "kernel.gb")
     for p, what in ((stock_path, "stock dump"), (modded_path, "modded build")):
@@ -375,7 +375,7 @@ def main():
 
     mk = sub.add_parser("make", help="diff kernel.gb.orig -> kernel.gb into an IPS")
     mk.add_argument("versions", nargs="*",
-                    help="version dirs under re/, e.g. 1.05e-0731 "
+                    help="version dirs under kernel/re/, e.g. 1.05e-0731 "
                          "(default: every version in the manifest)")
     mk.set_defaults(func=cmd_make)
 
@@ -391,7 +391,7 @@ def main():
     upsub = up.add_subparsers(dest="updater_cmd", required=True)
     umk = upsub.add_parser("make", help="diff the stock updater -> a built one into an IPS")
     umk.add_argument("firmware", help="firmware the updater is for: " + ", ".join(sorted(UPDATER_STOCK)))
-    umk.add_argument("built", help="updater built by scripts/fpga/build-stage1-updater.sh")
+    umk.add_argument("built", help="updater built by stage0/tools/build-stage1-updater.sh")
     umk.set_defaults(func=cmd_updater_make)
     uap = upsub.add_parser("apply", help="apply the IPS to a stock updater")
     uap.add_argument("base", help="stock updater from the official firmware package")

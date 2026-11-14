@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a debug kernel: the mod build plus the debug screen (docs/debug-tab.md).
 
-Release kernels leave the debug screen out. This takes re/kernel/<ver>/kernel.gb (the
+Release kernels leave the debug screen out. This takes kernel/re/<ver>/kernel.gb (the
 mod build, untouched) and writes a copy with:
 
   bank 12     DebugTab (kernel/mod/src/debug_tab.c), compiled for this build;
@@ -98,7 +98,7 @@ def main():
     args = ap.parse_args()
     ver = args.version
 
-    rom = bytearray(open(os.path.join(ROOT, "re","kernel", ver, "kernel.gb"), "rb").read())
+    rom = bytearray(open(os.path.join(ROOT, "kernel", "re", ver, "kernel.gb"), "rb").read())
     if ver == REF:
         a = {k: v[1] for k, v in ADDR.items()}
     else:

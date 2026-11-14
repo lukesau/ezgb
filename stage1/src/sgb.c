@@ -3,7 +3,7 @@
  * can't hold the Game Boy CPU in reset while it starts up. The boot ROM sends
  * the six header packets before the SNES listens, and the SGB stays dark.
  * Stage1 sends them again, as nitro2k01's SGB Enabler and the kernel's SGB
- * BOOT option do (scripts/sgb/sgb_boot.asm), but only on an SGB: the boot
+ * BOOT option do (kernel/mod/asm/sgb_boot.asm), but only on an SGB: the boot
  * ROM's last register values tell the models apart, so no other console
  * waits. */
 #include "hw.h"

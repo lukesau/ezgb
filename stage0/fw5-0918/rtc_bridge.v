@@ -7,7 +7,7 @@
 //     seconds and minutes 7, hours and day 6, weekday 3, month 5, year 8
 //   - the set values' mux (port F0 index, port B6) runs on its rising edge
 //
-// Block: built by scripts/fpga/simblk.py from stage0/blocks/rtc_bridge.blk
+// Block: built by stage0/tools/simblk.py from stage0/blocks/rtc_bridge.blk
 // (stage0/fw5-0918/rtc_bridge.sim has its arguments), with the names in
 // rtc_bridge.names.
 

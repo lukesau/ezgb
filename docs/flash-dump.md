@@ -81,22 +81,22 @@ offset 0), then 1024 read commands of 86 chunks (85 of 6 bytes and one of
 ## Build
 
 Since stage1 v5 the patch is part of every stage1 updater:
-`scripts/fpga/build-stage1-updater.sh` applies it with stage1 in one
+`stage0/tools/build-stage1-updater.sh` applies it with stage1 in one
 s3patch run ([fpga-setup.md](fpga-setup.md#9-end-to-end-build-and-install-a-stage1-updater)).
 By hand, on its own:
 
 ```bash
 # bank 2 BRAM with the patch (FW4 tile X3Y25, FW5-0918 X3Y5; same program)
 cd fpga/flashread
-../../scripts/fpga/picoblaze-patch.py ../fw4-decode/bram/D0X3Y25.BEL.BRAM \
+../../stage0/tools/picoblaze-patch.py ../fw4-decode/bram/D0X3Y25.BEL.BRAM \
     ../../stage0/flash-read.psm blobs-fw4 --tile D0X3Y25 --allow 1B7 > sets-fw4.txt
-../../scripts/fpga/picoblaze-patch.py ../fw5-decode/bram-0918/D0X3Y5.BEL.BRAM \
+../../stage0/tools/picoblaze-patch.py ../fw5-decode/bram-0918/D0X3Y5.BEL.BRAM \
     ../../stage0/flash-read.psm blobs-fw5 --tile D0X3Y5 --allow 1B7 > sets-fw5.txt
 # on the build host: s3patch onto the slot B the cart already runs, then
 # decode it and check only that tile changed
 s3patch --db $DB base-fw4.bin patched-fw4.bin $(cat sets-fw4.txt)
 # back here
-scripts/fpga/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
+stage0/tools/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
     fpga/flashread/patched-fw4.bin fpga/load/Update_FW4-flashread.gb --label "Update: fw4 read"
 scripts/make-debug-build.py 1.04e        # and 1.05e-0918 for the FW5 cart
 ```

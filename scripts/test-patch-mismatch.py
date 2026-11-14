@@ -120,7 +120,7 @@ def kernels(out):
     sameboy = os.environ.get("SAMEBOY", os.path.join(ROOT, "tools", "SameBoy", "build", "bin", "SDL", "sameboy"))
     winid = os.path.join(out, "winid")
     subprocess.run(["swiftc", "-O", os.path.join(ROOT, "scripts", "showcase", "winid.swift"), "-o", winid], check=True)
-    stock = {v: open(os.path.join(ROOT, "re", "kernel", v, "kernel.gb.orig"), "rb").read() for v in KERNELS}
+    stock = {v: open(os.path.join(ROOT, "kernel", "re", v, "kernel.gb.orig"), "rb").read() for v in KERNELS}
     for base in KERNELS:
         for p in KERNELS:
             tag = f"{p}-on-{base}"

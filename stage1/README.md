@@ -21,7 +21,7 @@ RGBDS overlays on the stock FW4 stage1 (`stage1-cgb.asm`, the CGB flag
 build in [docs/fpga-cgb.md](../docs/fpga-cgb.md); `test-red-on-error.asm`)
 and the boot splash lab in `bootsplash/`, whose `build.sh` also makes the
 icon tiles this build needs. The stock stage1 itself, disassembled, is in
-[re/stage1](../re/stage1/README.md).
+[stage1/re](re/README.md).
 
 ## Version
 
@@ -33,7 +33,7 @@ stage1, so `<n>` is read at boot from the cart's version register
 (`fw_version()`, 4 or 5), with line 1 of `VERSION` only the fallback for a
 reading outside 1-9. The register stays 4 or 5 until it can be changed
 itself, which is a separate fabric change
-([re/stage0/docs/version-byte.md](../re/stage0/docs/version-byte.md)).
+([stage0/docs/version-byte.md](../stage0/docs/version-byte.md)).
 stage1 has its own mod version, separate from the kernel mod's.
 
 ## Build knobs
@@ -65,12 +65,12 @@ Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 | `VERSION` | firmware number and mod version (above) |
 | `font/font8.txt` | 8x8 font, `$20-$5A` |
 | `art/ezflash.txt` | EZ-FLASH letters: Arial Bold Italic 22 pt, no antialiasing, E/Z join split by hand |
-| `art/jr.txt` | the brush "Jr.", traced from a photo of the cart label (`scripts/fpga/jr-trace.py`) |
+| `art/jr.txt` | the brush "Jr.", traced from a photo of the cart label (`stage0/tools/jr-trace.py`) |
 
-The wordmark is composed by `scripts/fpga/mkwordmark.py` into two tile maps,
+The wordmark is composed by `stage1/tools/mkwordmark.py` into two tile maps,
 EZ-FLASH alone and the whole mark, plus the tile columns at which the Jr. is
 painted on left to right in four steps. `main.c` plays the steps inside the
 stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so the intro costs no boot time.
-The icon and wordmark tiles are run-length packed (`scripts/fpga/packbits.py`,
+The icon and wordmark tiles are run-length packed (`stage1/tools/packbits.py`,
 about 400 bytes saved) and unpacked into VRAM at boot; BRAM is nearly full,
 see the space notes in [docs/kernel-picker.md](../docs/kernel-picker.md).

@@ -3,12 +3,12 @@
 The goal: human-readable Verilog for the EZ Flash Jr's FPGA that we can
 show is the same design as the FW4 bitstream, block by block, and that we
 can later place and route back into an identical bitstream. The reversing
-work it builds on is in [re/stage0/](../re/stage0/README.md): the decoded
+work it builds on is in [stage0/re/](re/README.md): the decoded
 bitstream, the PicoBlaze programs, the pin and register maps, and the
 whole-design simulation.
 
 Three layers were planned
-([re/stage0/docs/design.md](../re/stage0/docs/design.md), plan):
+([stage0/docs/design.md](docs/design.md), plan):
 
 1. **Encoder**: `s3encode` rebuilds every cart bitstream byte for byte
    from its decode. Done.
@@ -29,14 +29,14 @@ readable module, and a machine-made reference carved from the design:
 | readable module | `rtl/<name>.v` | our Verilog, module `<name>`, with the block file's port and register names |
 | reference | `fpga/<fw>/blocks/<name>_ref.v` (untracked) | module `<name>_ref`: the block's bels exactly as the bitstream configures them, over `lib/s3bels.v` |
 
-A **bel** is one LUT, flip-flop, wide mux or carry mux. `scripts/fpga/carve.py`
+A **bel** is one LUT, flip-flop, wide mux or carry mux. `stage0/tools/carve.py`
 decomposes every configured slice of the exported design into its bels and
 drops the ones whose output reaches nothing (an unused carry chain, an
 unconnected flip-flop). The slice's fixed selections (which LUT feeds the
 flip-flop, where the carry starts, input inversions) become wiring. A
 block can take one LUT of a slice and leave the other to another block.
 
-`scripts/fpga/equiv.sh <name>` proves the readable module equivalent to the
+`stage0/tools/equiv.sh <name>` proves the readable module equivalent to the
 reference with yosys. The two are matched by name: the ports, and every
 flip-flop the block file names. With the registers matched, each
 next-state function and output is a combinational proof (SAT); what that
@@ -110,26 +110,26 @@ exports a design from a local image:
 
 ```bash
 brew install yosys icarus-verilog rust
-(cd scripts/fpga/s3decode && cargo build --release)
-# fpga/db/spartan3.zstd: prjcombine's Spartan-3 database (see re/stage0/docs/toolchain.md)
-scripts/fpga/export-netlist.sh fpga/cart/fw4-updater.bin fpga/fw4
+(cd stage0/tools/s3decode && cargo build --release)
+# fpga/db/spartan3.zstd: prjcombine's Spartan-3 database (see stage0/docs/toolchain.md)
+stage0/tools/export-netlist.sh fpga/cart/fw4-updater.bin fpga/fw4
 ```
 
 `fpga/fw4/design.v` is then the structural design (`netlist2v.py`, module
 `fpga_top`), and:
 
 ```bash
-python3 scripts/fpga/carve.py fpga/fw4/design.v stage0/blocks/unlock.blk --stub   # port skeleton for a new block
-python3 scripts/fpga/carve.py fpga/fw4/design.v --cone n_X18Y31_S0_XQ            # bels driving a net
-python3 scripts/fpga/carve.py fpga/fw4/design.v --coverage stage0/blocks/*.blk    # what no block claims yet
-python3 scripts/fpga/dumpblk.py fpga/fw4/design.v stage0/blocks/unlock.blk          # the block's equations, with its names
-scripts/fpga/equiv.sh unlock                                                      # the proof
+python3 stage0/tools/carve.py fpga/fw4/design.v stage0/blocks/unlock.blk --stub   # port skeleton for a new block
+python3 stage0/tools/carve.py fpga/fw4/design.v --cone n_X18Y31_S0_XQ            # bels driving a net
+python3 stage0/tools/carve.py fpga/fw4/design.v --coverage stage0/blocks/*.blk    # what no block claims yet
+python3 stage0/tools/dumpblk.py fpga/fw4/design.v stage0/blocks/unlock.blk          # the block's equations, with its names
+stage0/tools/equiv.sh unlock                                                      # the proof
 ```
 
 ## Checking the decomposition itself
 
 The bel decomposition is checked against the exporter's slice model, which
-the simulations validated against the cart: `scripts/fpga/check-bels.sh`
+the simulations validated against the cart: `stage0/tools/check-bels.sh`
 carves a block of every live slice bel twice, as whole `s3_slice`
 instances (`--slices`, over `lib/s3prims_synth.v`, the simulation
 primitives without their start-up and delay modeling) and as bels, and
@@ -314,7 +314,7 @@ clear synchronizer's asynchronous set became a plain data input of the
 constant-0 LUT it is tied to. `en_rx_i`/`en_tx_i` are the data master's
 registers read straight from the SD clock domain, as in the source.
 
-What the ports settled: the firmware's port map (re/stage0/docs/picoblaze.md)
+What the ports settled: the firmware's port map (stage0/docs/picoblaze.md)
 is the hardware's, write for write and read for read, including the
 bank select on C8 that the notes had only inferred. Writes land one cycle
 after the strobe, while port_id and out_port still hold. The SD bridge is
@@ -413,7 +413,7 @@ set again by the interrupt, asynchronously. The data bus module's
 comment says so now.
 
 What the register block settled: the register map in
-re/stage0/docs/design.md is the hardware's, bit for bit, and a few
+stage0/docs/design.md is the hardware's, bit for bit, and a few
 registers it did not have are the four flag bits: $7FB4's bit 7 is kept
 as the command's direction (two flip-flops, read and write), $7FD0 bit
 0 is the RTC set's go and $7FE0 bit 7 the soft reset request, and the
@@ -526,7 +526,7 @@ check design.md owes for that polarity covers both.
 
 ## The top level
 
-`scripts/fpga/mktop.py` stitches the blocks into `rtl/fw4_top.v`: a
+`stage0/tools/mktop.py` stitches the blocks into `rtl/fw4_top.v`: a
 module `fw4_logic` that instantiates the twenty-two blocks and has as
 ports the nets crossing between the slice logic and everything else, and
 `fw4_top`, which wraps it with the 114 primitives (block RAMs, IO tiles,
@@ -534,7 +534,7 @@ clock buffers, DCMs, DNA port, ICAP) copied from design.v as wired there,
 under the pads as ports. Blocks connect to each other by the design's net
 names, so a block's names only have to suit that block.
 
-`scripts/fpga/prove-top.sh` proves it against design.v in two steps that
+`stage0/tools/prove-top.sh` proves it against design.v in two steps that
 compose with the block proofs and the bel check:
 
 - `wiring`: a block of every live slice bel, carved flat, against
@@ -554,15 +554,15 @@ With check-bels.sh (design.v's slices equal their bels) that chain makes
 `fw4_top` equivalent to design.v: its primitives are design.v's lines,
 byte for byte.
 
-`fw4_top` also runs in re/stage0/sim's testbench in design.v's place
-(`re/stage0/sim/topsim.sh`, verilator): a full boot with the flash and
+`fw4_top` also runs in stage0/re/sim's testbench in design.v's place
+(`stage0/re/sim/topsim.sh`, verilator): a full boot with the flash and
 SD card models and stage1's sector read through the window at 31 ms.
 The two logs are identical line for line, timestamps included: 1,003
 timed events, among them 885 PicoBlaze first executions, 98 flash and
 17 SD card transactions, the sector matching card.img byte for byte,
 and the same pins toggling the same number of times. One allowance
 makes that so: the design.v run is built with `NO_SLICE_GSR`
-(`re/stage0/sim/s3prims.v`), which lets the slice model's flip-flops
+(`stage0/re/sim/s3prims.v`), which lets the slice model's flip-flops
 start from their INIT values at time 0 as the readable registers do,
 instead of holding them under GSR for the first 100 ns of start-up.
 Without it the readable top runs a constant 20 ns ahead from the second

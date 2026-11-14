@@ -43,8 +43,8 @@ the written value on color consoles in either mode. The answer is `DMG_FAM`
 A test build for trying the DMG path on a GBC or GBA:
 
 ```bash
-STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh scripts/fpga/build-stage1-updater.sh fw4 "To FW4-DMG 2.1" fpga/load/2.1-dmg-Update_FW4.gb
-STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh scripts/fpga/build-stage1-updater.sh fw5-0918 "To FW5-DMG 2.1" fpga/load/2.1-dmg-Update_FW5-0918.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh stage0/tools/build-stage1-updater.sh fw4 "To FW4-DMG 2.1" fpga/load/2.1-dmg-Update_FW4.gb
+STAGE1_CFLAGS=-DFORCE_DMG BUILD_HOST=<build host> sh stage0/tools/build-stage1-updater.sh fw5-0918 "To FW5-DMG 2.1" fpga/load/2.1-dmg-Update_FW5-0918.gb
 ```
 
 The header has no CGB flag, so the boot ROM picks compatibility mode, and the
@@ -112,7 +112,7 @@ polls it, switches the cart to the game (`$7F31/$7F32 = 0`), writes
 | Site | What |
 |---|---|
 | `04:40f8` | `call $d100` -> `call SkipBootPrep` |
-| `04:6be6` `SkipBootPrep` | 268 B of 299 (`ManageSaves` is at `04:6d11`), [skip_boot.asm](../scripts/skipboot/skip_boot.asm). Unless `BOOTROM=1` is set, reads the `SGB BOOT` record (`RecFlag`) under stock stage1, copies `SkipBoot` to `$D1B0` (the stub ends at `$D1AA`), stores `NO_DMG` or the record in its `NoDmgJump` byte and patches the copy's `ld bc, $7fe0` at `$D19C` into `jp $d1b0`, then `jp $d100` |
+| `04:6be6` `SkipBootPrep` | 268 B of 299 (`ManageSaves` is at `04:6d11`), [skip_boot.asm](../kernel/mod/asm/skip_boot.asm). Unless `BOOTROM=1` is set, reads the `SGB BOOT` record (`RecFlag`) under stock stage1, copies `SkipBoot` to `$D1B0` (the stub ends at `$D1AA`), stores `NO_DMG` or the record in its `NoDmgJump` byte and patches the copy's `ld bc, $7fe0` at `$D19C` into `jp $d1b0`, then `jp $d100` |
 | `$D1B0` `SkipBoot` (WRAM) | Runs after the cart has switched, so it reads the game's header and can't call anything in cart space |
 
 `SkipBoot`:
@@ -161,7 +161,7 @@ the key index as the op, and `ThemeColors` (`05:7b50`, now 335 B) handles them:
 ## Emulator support
 
 The SameBoy stub used to swap in the loaded ROM only on `$7FE0`. The FPGA
-switches on `$7F32` bit 7 ([design.md](../re/stage0/docs/design.md), Game
+switches on `$7F32` bit 7 ([design.md](../stage0/docs/design.md), Game
 launch), so the stub now does too. It loads the game when the kernel clears
 the bit, and a later `$7FE0 = $80` resets into it
 (`boot_no_reset` / `reset_armed` in `ezflash_jr.c`).

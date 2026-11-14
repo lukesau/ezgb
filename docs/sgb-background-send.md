@@ -77,7 +77,7 @@ before a game starts.
 The box gates all of it: unticked, nothing is sent and nothing waits, as
 before. nitro2k01 thought the setting might not be needed once the send is in
 the background; it stays so that a cart that never goes near an SGB doesn't
-pay set 1's 0.42 s on every boot. Everything is in [scripts/sgb/sgb_boot.asm](../scripts/sgb/sgb_boot.asm);
+pay set 1's 0.42 s on every boot. Everything is in [kernel/mod/asm/sgb_boot.asm](../kernel/mod/asm/sgb_boot.asm);
 [scripts/inject-sgb.py](../scripts/inject-sgb.py) assembles it with the kernel
 addresses from `kernel.sym` and patches the hook sites, and `port-mod.py`
 carries it to 0918 and 1.04e.

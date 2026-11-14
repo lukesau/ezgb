@@ -6,7 +6,7 @@
 // selects and address tristate. The SD load path's half of the pins is in
 // stage0/rtl/sd_mem_path.v; the data bus is not here.
 //
-// What is known, from re/stage0/docs/design.md and the write decode:
+// What is known, from stage0/docs/design.md and the write decode:
 //
 //   - two pSRAMs: U9 (game ROM, /CE on P52) and U4 (saves, /CE on P60)
 //   - in kernel mode $7F32 bit 7 is set: $2000 is a plain 8-bit ROM bank

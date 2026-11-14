@@ -250,7 +250,7 @@ and never hardcode slot indices.
 An early design used a content-free `NAME.RUN` marker next to `NAME.GB`: patch
 `$102f` → `jp $01e3`; cave calls `$0a43`, scans WRAM FAT rows for ext `RUN`, builds
 `NAME.GB` at `$c4a4`, `jp $1569`. Removed artifacts:
-`scripts/apply-fast-launch.py`, `patches/fast-launch/`, `re/*/kernel-fast.gb`, root
+`scripts/apply-fast-launch.py`, `patches/fast-launch/`, `kernel/re/*/kernel-fast.gb`, root
 `*.RUN` test markers. Lessons kept:
 
 - Empty `NAME.RUN` (0 bytes) often becomes cluster = 0, size = 0 on FAT16; use a

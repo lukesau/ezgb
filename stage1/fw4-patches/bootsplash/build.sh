@@ -10,7 +10,7 @@ root=${EZGB_ROOT:-$repo}                  # checkout whose fpga/ holds the input
 out="$root/fpga/bootsplash"
 mkdir -p "$out/build"
 cd "$out"
-python3 "$repo/scripts/fpga/mkicon.py" ezflash-logo.png build > build/icon.txt
+python3 "$repo/stage1/tools/mkicon.py" ezflash-logo.png build > build/icon.txt
 for src in splash stage1-splash; do
     rgbasm -I "$out/" -o "build/$src.o" "$here/$src.asm"
 done

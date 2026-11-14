@@ -7,7 +7,7 @@ T-cycles: one gap per screen change. This prints each gap's time, the
 functions the samples landed in (self time), and the functions anywhere on
 the call stack (inclusive time).
 
-    scripts/debug/gap-profile.py re/kernel/1.05e-0918/kernel.sym profile.txt [2,3]
+    scripts/debug/gap-profile.py kernel/re/1.05e-0918/kernel.sym profile.txt [2,3]
 """
 import bisect, collections, re, sys
 

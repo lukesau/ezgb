@@ -28,7 +28,7 @@ dead coin cell turns it off (see below).
 |---|---|
 | `$0100` | `nop; jp SgbStub` instead of `jp KernelEntry` |
 | `00:0020` | `SgbStub`, 9 bytes: `push af`, map ROM bank 4, `jp SgbUnlock` |
-| `04:7d00` | `SgbUnlock` and the background send, 338 bytes (`scripts/sgb/sgb_boot.asm`); the other hooks are in [sgb-background-send.md](sgb-background-send.md#how-it-works) |
+| `04:7d00` | `SgbUnlock` and the background send, 338 bytes (`kernel/mod/asm/sgb_boot.asm`); the other hooks are in [sgb-background-send.md](sgb-background-send.md#how-it-works) |
 | `$0146` | SGB flag `$00` -> `$03` |
 | `$014B` | old licensee `$00` -> `$33` (the SGB BIOS ignores a cart without both) |
 | `$014D` | header checksum recomputed |
@@ -65,7 +65,7 @@ pSRAM: [psram-page-map.md](psram-page-map.md).
 
 `scripts/inject-sgb.py <ver> --apply` assembles the routines with the kernel
 addresses from `<ver>/kernel.sym` and injects them, the stub, the hook sites,
-the `$0100` jump and the header bytes into `re/kernel/<ver>/kernel.gb`. Run it
+the `$0100` jump and the header bytes into `kernel/re/<ver>/kernel.gb`. Run it
 on 1.05e-0731; `port-mod.py` carries it to the other builds (`SgbStub` is a
 data block, the rest are relocated; the header is copied as data). `build-kernel.sh` recomputes `$014D`
 when it rebuilds from the disassembly.

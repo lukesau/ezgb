@@ -22,7 +22,7 @@
 //   - the $A000 test inside comes from A13 and A14; only u4_win reads the
 //     shared win_a000
 //
-// Block: built by scripts/fpga/simblk.py from stage0/blocks/psram_ctrl.blk
+// Block: built by stage0/tools/simblk.py from stage0/blocks/psram_ctrl.blk
 // (stage0/fw5-0918/psram_ctrl.sim has its arguments), with the names in
 // psram_ctrl.names.
 module psram_ctrl (

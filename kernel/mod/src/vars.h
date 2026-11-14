@@ -55,7 +55,7 @@
 /* ...but SLIM keeps the stock icons and star (set 0's) outside DV: the font
  * changes, not the glyphs */
 #define STOCK_ICONS ((u8)(FONT_SLIM && THEME != THEME_DV))
-/* What the jump to a game hands over (scripts/skipboot/skip_boot.asm), popped
+/* What the jump to a game hands over (kernel/mod/asm/skip_boot.asm), popped
  * as F A C B E D L H: our stage1's record of this console's boot registers,
  * else the DMG or the CGB values by PAL_LOCKED (ezcfg.c stage1_skip_mark).
  * NO_DMG: 1 when a DMG-family console must reset, an SGB or a stage1 that
@@ -66,7 +66,7 @@
  * FORCE_DMG stage1 (stage1/build.sh) records a DMG on any console. */
 #define DMG_FAM   (*(volatile u8 *)0xDC09)
 /* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
- * boot ROM, never the jump to $0100 (scripts/skipboot/skip_boot.asm). */
+ * boot ROM, never the jump to $0100 (kernel/mod/asm/skip_boot.asm). */
 #define BOOT_RESET (*(volatile u8 *)0xDBEB)
 /* Browser names without their tags (docs/browser-tags.md): the SET tab's
  * CLEAN UP NAMES, on unless EZGB.CFG says TAGS=1 (the default since

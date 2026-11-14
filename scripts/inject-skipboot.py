@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Inject the skip-boot-ROM launch (issue #8) into re/kernel/<ver>/kernel.gb.
+"""Inject the skip-boot-ROM launch (issue #8) into kernel/re/<ver>/kernel.gb.
 
-Assembles scripts/skipboot/skip_boot.asm and, through kernel/mod/tools:
+Assembles kernel/mod/asm/skip_boot.asm and, through kernel/mod/tools:
 
   04:6be6   SkipBootPrep: copies SkipBoot to WRAM $D1B0, points the launch
             stub's reset at it, runs the stub
@@ -19,7 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "scripts", "inject-sgb.py"))
 sgb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sgb)
-sgb.ASM = os.path.join(ROOT, "scripts", "skipboot", "skip_boot.asm")
+sgb.ASM = os.path.join(ROOT, "kernel", "mod", "asm", "skip_boot.asm")
 
 HOOK = 0x40f8                   # RomLoad_BuildAndRunPoll: call $d100
 
@@ -33,7 +33,7 @@ def main():
     bank, addr, data = secs["SkipBootPrep"]
     print(f"SkipBootPrep: {len(data)} B at {bank:02x}:{addr:04x}")
     sgb.put_block(ver, bank, addr, "SkipBootPrep", data, apply)
-    rom = open(os.path.join(ROOT, "re", "kernel", ver, "kernel.gb"), "rb").read()
+    rom = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.gb"), "rb").read()
     new = bytes([0xcd, addr & 0xff, addr >> 8])
     if rom[sgb.offset(4, HOOK):sgb.offset(4, HOOK) + 3] != new:
         sgb.tool("patch_bytes.py", ver, "4", f"{HOOK:04x}", "cd00d1", new.hex(), *apply)

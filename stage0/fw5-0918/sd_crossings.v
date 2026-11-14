@@ -1,11 +1,11 @@
 // FW5-0918's SD controller clock-domain crossings: the FW4 module
 // (stage0/rtl/sd_crossings.v) with one change found by matching the two
-// builds (scripts/fpga/belmatch.py): every register FW4 carries into the SD
+// builds (stage0/tools/belmatch.py): every register FW4 carries into the SD
 // domain in one stage crosses in two here, as argument, block count and data
 // timeout already do in both: command index, checks and with-data bits,
 // command timeout, block size, bus width, byte alignment and software reset.
 // FW5 also resets these flip-flops on a debounced console /RESET; that net
-// is cut out of the design this is proved against (scripts/fpga/fw5-noedge.py,
+// is cut out of the design this is proved against (stage0/tools/fw5-noedge.py,
 // run by fw5-prove.sh).
 //
 // Derived from the OpenCores WISHBONE SD Card Controller, Copyright (C)

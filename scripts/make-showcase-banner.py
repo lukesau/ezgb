@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 KVER = "1.05e-0731"
-MOD_KERNEL = f"{ROOT}/re/kernel/{KVER}/kernel.gb"
+MOD_KERNEL = f"{ROOT}/kernel/re/{KVER}/kernel.gb"
 SAMEBOY = os.environ.get("SAMEBOY", f"{ROOT}/tools/SameBoy/build/bin/SDL/sameboy")
 FONT = os.environ.get("SHOWCASE_FONT", "/System/Library/Fonts/Menlo.ttc")
 CAPTION_COLOR = "#9bbc0f"

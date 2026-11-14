@@ -73,13 +73,13 @@ scripts/build-kernel.sh 1.05e-0918 --install  # also copy to re/.../kernel.gb
 scripts/build-kernel.sh 1.04e
 ```
 
-This runs `make` in `re/kernel/<ver>/disassembly`, then undoes two rgbds behaviors
+This runs `make` in `kernel/re/<ver>/disassembly`, then undoes two rgbds behaviors
 the shipped firmware doesn't have: it truncates the 256KB-padded output back
 to the real 160KB (10 banks), and restores the 4 header bytes rgbfix
 "corrects" (`$0148` ROM size, `$014D` header checksum, `$014E-$014F` global
 checksum; all are stale in the shipped firmware, and nothing verifies them).
 The result is verified against `patched_md5` in the manifest; `--install`
-puts it at `re/kernel/<ver>/kernel.gb`, where the SameBoy scripts expect it;
+puts it at `kernel/re/<ver>/kernel.gb`, where the SameBoy scripts expect it;
 `scripts/make-dist.sh` then lays out `dist/mod-N.M/` with a card-ready
 `ezgb-mod-N.M-for-<ver>.dat` (rename to `ezgb.dat`) and the matching `.ips`
 for every version.
@@ -108,7 +108,7 @@ patches against their manifest md5 and copies them into the release folder.
 
 ```sh
 # maintainer: build the updater, then diff it against the stock one
-BUILD_HOST=<build host> scripts/fpga/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
+BUILD_HOST=<build host> stage0/tools/build-stage1-updater.sh fw5-0918 "Update: FW5 v5rd" fpga/load/Update_FW5-0918-stage1-v5.gb
 scripts/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v5.gb
 
 # from a checkout: patch the official updater (md5-checked on both sides)
@@ -160,7 +160,7 @@ tested (`scripts/test-patch-mismatch.py`, `--boot` for the kernel runs):
   bitstreams whose CRC packets fail (no image sets the CRC bypass), while
   every stock and correctly patched image passes. The FPGA does not
   configure from a bad CRC, and the boot tally then keeps the cart on its
-  slot A ([picoblaze.md](../re/stage0/docs/picoblaze.md#at-boot-3f--0)), so
+  slot A ([picoblaze.md](../stage0/docs/picoblaze.md#at-boot-3f--0)), so
   the right updater can be run again. The fallback is confirmed on the FW4
   Jr (2026-10-12, two bad slot B writes each recovered to stock FW4); no FW5
   cart's slot A has been dumped yet, so on FW5 it is still inferred from the

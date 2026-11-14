@@ -1,4 +1,4 @@
-// fw5_top / fw5_logic: the readable blocks stitched together by scripts/fpga/mktop.py; do not edit
+// fw5_top / fw5_logic: the readable blocks stitched together by stage0/tools/mktop.py; do not edit
 // blocks: clocks fw5_7fxx gb_bus gb_data_out gb_regs mbc3_clock p51_latch pb_periph pb_timer picoblaze picoblaze_ports psram_ctrl reset_debounce rtc_bridge sd_clock_divider sd_cmd_master sd_cmd_serial sd_controller_wb sd_crossings sd_data_master sd_data_serial sd_fifo_filler sd_fifos sd_mem_path soft_reset unlock
 
 module fw5_logic (

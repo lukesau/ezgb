@@ -1,5 +1,5 @@
 # Names shared by every block: the design's pad and clock nets, and the
-# few register bits the whole design keys on. Pins per re/stage0/docs/design.md.
+# few register bits the whole design keys on. Pins per stage0/docs/design.md.
 # A pad's input net is n_<tile>_IOI<k>_I (n_..._IQ1 when registered in
 # the IO tile, n_..._CLKPAD from a clock pad).
 

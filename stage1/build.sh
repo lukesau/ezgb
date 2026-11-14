@@ -11,19 +11,19 @@ out="$root/fpga/stage1"
 b="$out/build"
 mkdir -p "$b"
 
-python3 "$repo/scripts/fpga/font8-pack.py" "$here/font/font8.txt" "$b/font8.c"
-python3 - "$root/fpga/bootsplash/build/icon.2bpp" "$b/icon.c" "$repo/scripts/fpga" <<'PY'
+python3 "$repo/stage1/tools/font8-pack.py" "$here/font/font8.txt" "$b/font8.c"
+python3 - "$root/fpga/bootsplash/build/icon.2bpp" "$b/icon.c" "$repo/stage1/tools" <<'PY'
 import sys
 sys.path.insert(0, sys.argv[3])
 from packbits import pack, c_array
 data = open(sys.argv[1], "rb").read()
 assert len(data) == 6 * 7 * 16, len(data)
 with open(sys.argv[2], "w") as f:
-    f.write("/* the boot icon's 42 tiles, packed (scripts/fpga/packbits.py) */\n#include <stdint.h>\n")
+    f.write("/* the boot icon's 42 tiles, packed (stage1/tools/packbits.py) */\n#include <stdint.h>\n")
     f.write(c_array("icon_tiles", pack(data)))
 PY
 
-python3 "$repo/scripts/fpga/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr.txt"     "$b/wordmark.c" --jr-at 86,4 --pivot 0,0 \
+python3 "$repo/stage1/tools/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr.txt"     "$b/wordmark.c" --jr-at 86,4 --pivot 0,0 \
     --width 16 --height 4 --letters-x 10 --stages 4 ${WORDMARK_FLAGS:---no-halo} > "$b/wordmark.txt"
 
 # stage1/VERSION: line 1 the firmware number (what the version register

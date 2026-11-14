@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inject persistent comment blocks from re/kernel/<version>/notes.json into bank_*.asm.
+"""Inject persistent comment blocks from kernel/re/<version>/notes.json into bank_*.asm.
 
 Comments are marked with '; [ezgb]' so re-running this script replaces prior injections
-without duplicating. Safe to run after mgbdis regen (pair with re/kernel/<version>/kernel.sym
+without duplicating. Safe to run after mgbdis regen (pair with kernel/re/<version>/kernel.sym
 for human symbol names).
 
 Usage:
@@ -21,13 +21,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def vdir(version):
-    """re/<version> (e.g. stage1/fw4) if it exists, else re/kernel/<version>.
-    A repo-relative directory path holding kernel.sym, notes.json and
-    disassembly/ is used as is (how kernel/stock/asm was first generated)."""
+    """kernel/re/<version> for a kernel build (1.05e-0731). A repo-relative
+    directory holding kernel.sym, notes.json and disassembly/ is used as is
+    (stage1/re/fw4; how kernel/stock/asm was first generated)."""
     if "/" in version and (ROOT / version).is_dir():
         return ROOT / version
-    p = ROOT / "re" / version
-    return p if p.is_dir() else ROOT / "re" / "kernel" / version
+    return ROOT / "kernel" / "re" / version
 
 def load_notes(version):
     path = vdir(version) / "notes.json"

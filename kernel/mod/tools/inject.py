@@ -79,11 +79,11 @@ def resolve_pins_file(path):
 
 
 def kernel_sym_path(version):
-    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.sym")
+    return os.path.join(REPO_ROOT, "kernel", "re", version, "kernel.sym")
 
 
 def kernel_gb_path(version):
-    return os.path.join(REPO_ROOT, "re","kernel", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "kernel", "re", version, "kernel.gb")
 
 
 def patch_kernel_gb(gb_path, offset, code_bytes):

@@ -2,14 +2,14 @@
 
 Stage1 is the Game Boy program the cart shows at power-on: EZ-FLASH,
 LOADING, OSINIT, then the kernel. It lives in FPGA BRAM, not in flash
-([bitstream.md](../re/stage0/docs/bitstream.md)): 32 KB address space, `$0000-$3FFF`
+([bitstream.md](../stage0/docs/bitstream.md)): 32 KB address space, `$0000-$3FFF`
 from 8 one-bit BRAM planes, `$4000-$47FF` from one x9 BRAM, `$4800-$7FFF`
 reads as zeros. Header title `BOOTLOADER`, cart type `$01` (MBC1). Built with
 GBDK, the same toolchain and crt0 as the kernel.
 
 > **Correction (2026-10-12).** This said cart type `$00` (no MBC). Byte
-> `$0147` is `$01` in both `re/stage1/fw4/kernel.gb` and
-> `re/stage1/fw5-0918/kernel.gb`. Nothing depends on it: our own stage1
+> `$0147` is `$01` in both `stage1/re/fw4/kernel.gb` and
+> `stage1/re/fw5-0918/kernel.gb`. Nothing depends on it: our own stage1
 > (`stage1/build.sh`) never sets the byte (it reads `$FF`) and boots on both
 > carts.
 
@@ -20,15 +20,15 @@ in the ignored `fpga/` directory.
 
 | Path | What |
 |---|---|
-| `re/stage1/fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
-| `re/stage1/fw4/kernel.sym` | names and `.data` ranges for mgbdis |
-| `re/stage1/fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
-| `re/stage1/fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
-| `scripts/fpga/stage1-regen.sh` | regenerate + rebuild + compare |
-| `scripts/fpga/stage1-trace.py` | recursive-descent trace: code vs data, unreached spans |
+| `stage1/re/fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
+| `stage1/re/fw4/kernel.sym` | names and `.data` ranges for mgbdis |
+| `stage1/re/fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
+| `stage1/re/fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
+| `stage1/tools/stage1-regen.sh` | regenerate + rebuild + compare |
+| `stage1/tools/stage1-trace.py` | recursive-descent trace: code vs data, unreached spans |
 
 ```bash
-scripts/fpga/stage1-regen.sh        # "rebuild matches kernel.gb"
+stage1/tools/stage1-regen.sh        # "rebuild matches kernel.gb"
 ```
 
 Stock stage1 has a stale global checksum (the console never checks it), so
@@ -157,7 +157,7 @@ same FPGA register sequence, and builds the same load command as stock.
   before the hand-off (mod 1.9, 2026-10-12), as stock FW5-0918 stage1 does
   at `00:07F1`. FW5 adds the kernel's `$7FD4` write to it, so a stock 1.05e
   kernel's `$00` makes the `$11` fast-load key on CGB and GBA, the same as
-  with stock firmware ([firmware-diff.md](../re/stage0/docs/firmware-diff.md)).
+  with stock firmware ([firmware-diff.md](../stage0/docs/firmware-diff.md)).
   Before this a stock kernel loaded slowly on our firmware everywhere.
   Checked in SameBoy: `$7FD3=$11` on CGB, `$01` on DMG, then the kernel boots.
 - **Load command bounds.** A file with more than 61 extents gets "EZGB.DAT
@@ -299,7 +299,7 @@ leaves them, so the kernel's next `BACKUPSAVE` writes a correct footer.
 
 On FW4 stage1 skips all of this, as 1.04e does: FW4 has no game clock and
 1.04e has no code for one. Stage1 tells the two apart by the FW version byte
-(`$7FC0 = 4`, then `$A000` reads 4 or 5, [version-byte.md](../re/stage0/docs/version-byte.md)).
+(`$7FC0 = 4`, then `$A000` reads 4 or 5, [version-byte.md](../stage0/docs/version-byte.md)).
 
 > **Correction (2026-10-10).** Earlier versions of stage1 left the clock
 > alone when pSRAM already held a clock game's save, so the game ran with
@@ -416,7 +416,7 @@ The header bytes alone (`$0146 = $03`, `$014B = $33`, which stock 0918 and
 the 2020 forSGB beta already set) don't make the Jr work on an SGB. P62
 drives the cart `/RESET` push-pull, `P61 & ` the `$7FE0` pulse flip-flop
 with its tristate tied off, through 330 ohms against the SGB's 10k
-(`re/stage0/maps/fw5-0918.pins.txt`; nitro2k01 in
+(`stage0/re/maps/fw5-0918.pins.txt`; nitro2k01 in
 [issue 5](https://github.com/lukesau/ezgb/issues/5)). The SNES can't hold
 the Game Boy CPU in reset while it starts, so the boot ROM sends its header
 packets before anything listens.

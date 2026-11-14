@@ -1,7 +1,7 @@
 ; Game hand-off, copied to WRAM and run from there: the kernel's stub
 ; (RomLoad_InitiatePoll 04:4000 copied to $D100) after a game launch.
 ; $7FE0=$80 resets the console into the loaded game, or with SKIP_BOOT set
-; it jumps there (scripts/skipboot/skip_boot.asm, docs/skip-boot-rom.md): the
+; it jumps there (kernel/mod/asm/skip_boot.asm, docs/skip-boot-rom.md): the
 ; registers stage1 saved, and only the state stage1 changed put back. The LCD
 ; is off already. Runs at $D000.
 

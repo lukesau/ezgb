@@ -83,7 +83,7 @@ void sd_write(uint32_t lba, const uint8_t *src)
 }
 
 /* The cart's firmware version register: with $7FC0 = 4, $A000 reads 4 on
- * FW4 and 5 on FW5 (re/stage0/docs/version-byte.md). The FW4 and FW5
+ * FW4 and 5 on FW5 (stage0/docs/version-byte.md). The FW4 and FW5
  * updaters carry the same stage1, so everything firmware-specific is decided
  * from this at run time. */
 uint8_t fw_version(void)

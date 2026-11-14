@@ -6,7 +6,7 @@
 //     and WRITE (bit 2). Each is a register wired straight to the
 //     Spartan-3A ICAP primitive, so bank 2 bit-bangs the configuration
 //     port the way it bit-bangs the SPI flash: the MultiBoot hand-over
-//     from slot A to slot B (re/stage0/docs/picoblaze.md). The data goes
+//     from slot A to slot B (stage0/docs/picoblaze.md). The data goes
 //     in bit-reversed, out_port bit 7 on I[0], as the readback on D1
 //     comes out (the port's bit order is the configuration stream's)
 //   - the I2C output enable, on the processor clock: an OUTPUT to EC

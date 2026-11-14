@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publish the floorplan viewer to GitHub Pages: https://lukesau.github.io/ezgb/floorplan/
 #
-# Commits stage0/floorplan/floorplan.html (scripts/fpga/floorplan.py builds it) as
+# Commits stage0/floorplan/floorplan.html (stage0/tools/floorplan.py builds it) as
 # floorplan/index.html on the gh-pages branch and pushes it. The patcher page
 # and the site root redirect stay as they are.
 #
@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PAGE="$ROOT/stage0/floorplan/floorplan.html"
 push=1
 [ "${1:-}" = "--no-push" ] && push=0
-[ -f "$PAGE" ] || { echo "no $PAGE, run scripts/fpga/floorplan.py" >&2; exit 1; }
+[ -f "$PAGE" ] || { echo "no $PAGE, run stage0/tools/floorplan.py" >&2; exit 1; }
 
 WT="$(mktemp -d /tmp/ezgb-gh-pages.XXXXXX)"
 trap 'git -C "$ROOT" worktree remove --force "$WT" 2>/dev/null || true; rm -rf "$WT"' EXIT
