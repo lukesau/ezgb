@@ -272,6 +272,9 @@ bank 1: 1,581 / 6,358, against 628 / 3,183 in 0731 and 628 / 2,573 in 0918).
 
 ## How this was checked
 
+The stock 1.05e kernel touches no CGB-only register (`$FF4C`-`$FF77`), so a
+fix for one GBC hardware revision can only be in the FPGA firmware.
+
 Stock `ezgb.dat` files, md5-verified against the table above, compared on
 2026-09-29 two ways: every region where the instruction streams of two builds
 stop lining up (`scripts/portmap.py`), and every operand that differs inside

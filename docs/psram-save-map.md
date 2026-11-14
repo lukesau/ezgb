@@ -169,4 +169,4 @@ ends at `$A3FE`, so `$A400`+ is free (the SGB BOOT record lives there,
 `$A4FD`. Protocol.md may describe an older kernel (its notes predate 1.04e);
 the 1.04e and 1.05e builds are single-byte throughout.
 
-Related: [boot-map.md](boot-map.md), [REGISTERS.md](REGISTERS.md), [launch-trace.md](launch-trace.md), [psram-page-map.md](psram-page-map.md).
+Related: [boot-map.md](boot-map.md), [design.md](../stage0/docs/design.md), [launch-trace.md](launch-trace.md), [psram-page-map.md](psram-page-map.md).

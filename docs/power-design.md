@@ -175,7 +175,7 @@ Bank 2 runs before anything else (`reset` → `call_bank2`):
 - An erase interrupted by a brown-out only hits the tally sector, not the
   bitstreams, but EN25F40 writes below ~2.7 V are out of spec. Issue #6's
   "bad flash" may simply have been an updater run on marginal power, which is
-  what EZ Flash warns about ([1.05e-instability.md](1.05e-instability.md)).
+  what EZ Flash warns about ([kernel-versions.md](kernel-versions.md#should-i-update-an-fw4-cart-to-fw5)).
 
 ### H4: the RTC holds the PicoBlaze before interrupts are enabled
 
@@ -266,7 +266,6 @@ In order of cost:
 - FPGBC cart-slot supply voltage, slew rate and level translation, compared
   with DMG/GBA (see "FPGBC cart slot").
 - Does the kernel's `BATTERY` / `DRY!!!` check ([boot-map.md](boot-map.md)
-  `Call_000_1835`) read the coin cell or console power? See
-  [1.05e-instability.md](1.05e-instability.md), which says console power.
+  `Call_000_1835`) read the coin cell or console power?
 - After a failed slot B boot leaves a `01`, does slot A ever advance the tally
   again, or does the cart stay on slot A until the sector is erased?

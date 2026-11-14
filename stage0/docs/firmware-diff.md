@@ -45,8 +45,7 @@ they clock with its enabling address; `regsum.py` groups them by address
 | `$6000-$7FFF` | none | an 8-bit register (MBC3 clock latch or RTC access) |
 | `$0000-$1FFF` | none | 4 bits through logic (RAM enable path) |
 
-The kernel writes `$7FD4` in 1.05e (cataloged in `docs/REGISTERS.md`
-beside `$7FD0`/`$7FD2`); FW4's design doesn't decode it.
+The kernel writes `$7FD4` in 1.05e; FW4's design doesn't decode it.
 
 Between FW5-0731 and FW5-0918 the register map is the same except for five
 flip-flops only 0918 has, plus a regrouped set of data-path flip-flops whose

@@ -91,6 +91,9 @@ measurements ([nor-reuse.md](nor-reuse.md), [psram-page-map.md](psram-page-map.m
 
 ## JTAG header: FPGA package pins
 
+Configuring the FPGA over JTAG loads its SRAM only and is gone at power-off,
+which makes it the route for trying a bitstream without writing the flash.
+
 The 8-pad `JTAG` header on the back edge goes to the XC3S200A's dedicated JTAG
 and configuration pins. From the VQ100 footprint (DS529, `tools/`), the pins to
 identify a buzzed pad against are:
@@ -178,7 +181,7 @@ consequences:
 
 The factory bootstrap is the GB-visible program that shows `EZ-FLASH` /
 `LOADING...`, reads `ezgb.dat` from the SD root, and runs it (see
-`ezgb-dat-boot.md`). **Its header is what the console's boot ROM reads at
+[boot-map.md](boot-map.md)). **Its header is what the console's boot ROM reads at
 power-on**, which is why the CGB flag in `ezgb.dat` has no effect (`cgb-mode.md`).
 
 Two possibilities:
@@ -204,14 +207,14 @@ one 2K × 8 BRAM. The rebuilt 32 KB matches `stage1.gb` exactly
 ([bitstream.md](../stage0/docs/bitstream.md)).
 
 Note: the ROM-space unlock/commit protocol the kernel and updater share
-([REGISTERS.md](REGISTERS.md)) is a *separate* interface from SPI configuration:
+([design.md](../stage0/docs/design.md#unlock-and-commit)) is a *separate* interface from SPI configuration:
 reverse engineering the updater teaches the delivery mechanism, not how to author
 the payload.
 
 ## Recovering a cart whose FPGA no longer configures
 
 **Confirmed working, 2026-08-16.** A cart bricked by an aborted FPGA command
-(see the warning in `game-slot-access.md`) was fully restored by reprogramming
+(see [updater-flash-write.md](updater-flash-write.md)) was fully restored by reprogramming
 the config flash. No second cart and no vendor image were needed: the flash
 carries a spare copy of the bitstream that the repair is built from.
 
@@ -331,10 +334,10 @@ reserved (nitro2k01's sibling revision even upgrades U4 to the 8 MB
 firmware); or reached only by an FPGA feature/personality not exposed to the GB
 CPU. If it is truly firmware-unused, it is a large nonvolatile store with **no
 known GB-side access path**: the prize, but gated on either an undiscovered
-FPGA command or a replacement FPGA design ([custom-logic.md](../stage0/docs/custom-logic.md)).
+FPGA command or a replacement FPGA design.
 
 **Consequence for CGB mode:** the "patch the bootstrap's CGB flag" shortcut is
-dead. The remaining route is a replacement FPGA design ([`stage0/docs/custom-logic.md`](../stage0/docs/custom-logic.md)), serving
+dead. The remaining route is a replacement FPGA design, serving
 its own bootstrap from BRAM with whatever ROM header it chooses.
 
 **Reopened 2026-10-08.** With stage1's BRAM layout known, header byte `$0143`
@@ -345,4 +348,4 @@ flips plus a new CRC, not a new design. Needs an encoder and JTAG testing first
 > **Correction (2026-10-09).** Done since, without JTAG: `s3patch` writes the
 > BRAM bits and CRCs, and a relabeled stock updater installs the result to
 > slot B. CGB mode at power-on was confirmed on hardware on 2026-10-08
-> ([fpga-cgb.md](fpga-cgb.md)).
+> ([stage1/fw4/patches](../stage1/fw4/patches/README.md)).

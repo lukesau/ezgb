@@ -92,7 +92,7 @@ with an 8-bit count ([ezgb-cfg.md](ezgb-cfg.md), ezcfg.c's `far_write`), so a
 the 48-byte RTC footer, so they never hit it. A file with such a tail is left
 out of the list (and the save itself can't be backed up).
 
-> **Correction (2026-10-11).** [fastlaunch-config-design.md](fastlaunch-config-design.md)
+> **Correction (2026-10-11).** An earlier design note
 > called this FatFs an FS_TINY build. It is not: every FIL carries its own
 > 512-byte sector buffer at `+$20` (`Fsync_B3` writes it back from there,
 > `Lseek_B3` reads it), so a FIL is `$220` = 544 bytes. The kernel's FIL at

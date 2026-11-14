@@ -35,8 +35,9 @@ files keep their old `Call_` names. `annotate-disasm.py` also emits `wram.inc`
 for `kernel.sym` entries at CPU addr ≥ `$C000` (mgbdis rewrites `[wGfxMode]` but
 does not define those labels).
 
-The build reassembles to the original dump exactly (only the 3 cosmetic
-ROM-header bytes differ; see [REGISTERS.md](REGISTERS.md)).
+The build reassembles to `kernel.gb` exactly, apart from four header bytes
+(`$0148` ROM size and the checksums at `$014D`-`$014F`), which
+`scripts/build-kernel.sh` sets.
 
 Persistent annotations live in two files per version:
 
@@ -127,10 +128,23 @@ Companion tools:
 - `patch_call.py`: repoint an existing `call`/`jp` operand to a new target
   (`--jp` for tail-`jp`/`ret` hook sites).
 
-**Start here:** [inject-smoke-test.md](inject-smoke-test.md) walks the full
-inject, hook, and run chain, documents the free-space map, and explains how to
-pick a safe hook site (and the two ways the earlier fastlaunch attempt silently
-corrupted the ROM). Read it before choosing an address.
+### Choosing a hook site
+
+- Prefer replacing a tail `jp` or a `jp` to a bare `ret`. The hook inherits
+  the stack frame untouched and its `ret` becomes the function's return, so
+  there are no stolen instructions to replay. `patch_call.py --jp` is for
+  this shape. A hook reached by `jp` must be stack-neutral and end in `ret`;
+  an ordinary SDCC function without `__naked` qualifies.
+- A `call` in the middle of a function has to replay whatever bytes it
+  overwrote.
+- A bare `call` or `jp` cannot cross ROMX banks. Code hooked from bank 8
+  must live in bank 8 or bank 0; anything else goes through
+  `FarCallTrampoline`.
+- Only a run of one repeated byte is free space. Tables of `ff 7f ff 7f`
+  look empty in a hex dump and are data. `inject.py` refuses an address
+  that is not single-byte filler, and prints how much is left after it.
+- To find what draws something, break on `DrawGlyph` (`$2701`) and look at
+  the caller: `scripts/debug/who-draws-row0-right.sbd` is an example.
 
 ## Porting the mod to another kernel build
 
@@ -297,9 +311,9 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
   `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
   (we ship `kernel/1.05e-0731/kernel.sym`; add `kernel/1.04e/kernel.sym` to annotate the
   older side).
-- **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: EZ Flash's
-  own published Omega DE (GBA) kernel source: FPGA register naming, FatFs/UI
-  structure, NOR / Mode B boot path. Pair with a real Omega cart for UX
-  side-by-side; see [omega-jr-compare.md](omega-jr-compare.md).
+- **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: the Omega DE (GBA)
+  kernel source, published by EZ Flash: the reference for FPGA register
+  naming and FatFs/UI structure; see
+  [MAPPING.md](MAPPING.md#omega-as-a-reference).
 - **[SDCC](https://sdcc.sourceforge.net/)**: C compiler for `kernel/` and for
   injected features.

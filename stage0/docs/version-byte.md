@@ -94,7 +94,7 @@ What the updater contributes is only text: its screen line
 `$7FC0` write is in an unreferenced function
 ([../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md)).
 
-> **Correction (2026-10-09).** [../../../docs/fpga-cgb.md](../../docs/fpga-cgb.md) said the updater
+> **Correction (2026-10-09).** An earlier doc said the updater
 > "shows the cart's current firmware version for display only". It
 > doesn't: the version on its screen is the fixed `Update to ver:4` label,
 > and nothing in it reads `$7FC0=$04`.

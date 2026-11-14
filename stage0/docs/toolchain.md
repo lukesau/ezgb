@@ -170,7 +170,7 @@ bitgen -w -d blank.ncd blank.bit
 > yet", written before `s3patch` existed. `s3patch` (below) writes BRAM
 > contents and recomputes the CRCs, and every updater built so far went
 > through it: the CGB flag, the splash builds and the stage1 rewrite
-> ([../../../docs/fpga-cgb.md](../../docs/fpga-cgb.md), [../../../docs/fpga-stage1.md](../../docs/fpga-stage1.md)). The same
+> ([stage1/fw4/patches](../../stage1/fw4/patches/README.md), [../../../docs/fpga-stage1.md](../../docs/fpga-stage1.md)). The same
 > stale claim was inherited by [bitstream.md](bitstream.md) and
 > [../../../docs/hardware-board.md](../../docs/hardware-board.md), which carry their own notes.
 

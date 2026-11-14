@@ -1,8 +1,11 @@
 # Kernel boot map (1.05e)
 
-The menu kernel entry point, after the factory bootstrap has loaded `ezgb.dat`.
-SameBoy skips the bootstrap and jumps here directly; see
-[`ezgb-dat-boot.md`](ezgb-dat-boot.md) for the bootstrap layer.
+The menu kernel entry point. The kernel is not installed on the cart:
+stage1, the Game Boy program in the FPGA bitstream
+([stage1/](../stage1/README.md)), reads `/ezgb.dat` from the SD card at every
+power-on, loads it and jumps to it. `Update_FW*.gb` is a different thing: a
+game launched from the menu that rewrites the FPGA firmware and needs a power
+cycle afterwards.
 
 ## Entry
 
@@ -67,8 +70,6 @@ Foreground boot enters `Call_000_0de4` and stays there for the browser. The `$01
 - Boot IRQ/setup helpers `$062e`–`$06c0` are GBDK library assembly, matched in
   [`kernel/1.05e-0731/stock/gbdk/crt0.s`](../kernel/1.05e-0731/stock/gbdk/crt0.s). `main` (`$0150`,
   `Call_000_0de4`) is not yet built from source.
-- Naming/mapping the wider ASM (and Omega comparisons) outranks growing `kernel/` for now;
-  see [`omega-jr-compare.md`](omega-jr-compare.md).
 
 ## Open questions
 

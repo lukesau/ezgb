@@ -80,6 +80,23 @@ Full list: `stage0/netlist/pintable.py`.
 | CLK2X or a constant 0, by kernel mode or the RTC flag (`$7F37` bit 7); CLKFX or 0, by kernel mode | global `X0Y17` [0], [4] | 196 flip-flops | [0] the PicoBlaze and its ports, [4] the ROM load's byte sequencer: both gated off in a plain game (`stage0/fw4/rtl/clocks.v`) |
 | `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
 
+## Unlock and commit
+
+Every write to a `$7Fxx` control register sits inside the same envelope:
+three unlock writes, the register writes, then a commit.
+
+```
+$7F00 = $E1
+$7F10 = $E2
+$7F20 = $E3
+  ... one or more register writes ...
+$7FF0 = $E4
+```
+
+The kernel inlines this at every call site (29 in 1.05e), and stage1 and
+the updater use it too. The Omega kernel has the same design at GBA
+addresses (`SetSDControl` in its `Ezcard_OP.c`).
+
 ## Registers written by the Game Boy
 
 Flip-flops that latch D0-D7, grouped by clock enable: about 20 byte-wide

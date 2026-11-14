@@ -102,6 +102,22 @@ map, and shim listings: [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).
   bank-2 ROM const reads the wrong bank. `scan_config` copies the name into WRAM
   (`CFGBUF`) before calling, as the kernel's opens do (`/SAVER/...`).
 
+### FatFs calls from injected C
+
+Each primitive has a bank-0 thunk, so injected C pins the label and calls
+it. `FRESULT` comes back in `E`, and the mode flags are the standard FatFs
+ones (`FA_READ=$01`, `FA_WRITE=$02`, `FA_OPEN_ALWAYS=$10`).
+
+| Op | Bank-0 thunk | Target | Args |
+|---|---|---|---|
+| `f_open` | `FarCall_06_7309` `00:1926` | `Open_B6` `06:7309` | (FIL*, path, mode) |
+| `f_read` | `FarCall_06_779a` `00:1941` | `Read_B6` `06:779a` | (FIL*, buf, len, &br) |
+| `f_lseek` | `FarCall_03_76cc` `00:1985` | `Lseek_B3` `03:76cc` | (FIL*, ofs32) |
+| `f_close` | `FarCall_03_768f` `00:19a1` | `Close_B3` `03:768f` | (FIL*) |
+
+The kernel keeps one FIL at `$CA0F`. A FIL is 544 bytes, since each carries
+a 512-byte sector buffer ([save-manager.md](save-manager.md)).
+
 ## Bug fixed: FPGA personality ($7FC0) around SD reads
 
 Symptom (real hardware only; emulator was fine): the first build broke *all* FatFs
@@ -118,7 +134,7 @@ was `$03`. Reading an SD sector under the PSRAM personality reads the wrong wind
 and wedges the SD controller, breaking every later op (browse and launch).
 Invisible in the emulator because the EZ Jr stub ignores `$7FC0`. Banks 2 and 5
 (the scan, FatFs, `DiskRead_B2`) never write `$7FC0`; it is purely the caller's
-job. (`$7FC0` register details: [`REGISTERS.md`](REGISTERS.md).)
+job. (`$7FC0` register details: [design.md](../stage0/docs/design.md).)
 
 Fix: `fastlaunch_scan` selects `$7FC0=$00` before every read (before each
 `f_opendir`, and in `readdir_prep` before each `f_readdir`, mirroring DirList) and
@@ -134,8 +150,8 @@ entered in from the START overlay, so the launch path is unaffected.
 `FlPickHook` `$04c7` (26 B), `FlSetExitHook` `$04e8` (14 B), `FlPickCancelHook`
 `$04f8` (10 B → `$0502`); the cave runs to `$05b5`. If a grown `fastlaunch_boot`
 overlaps `do_launch`'s `jp $1344`, the launch crashes; always check injected size
-vs the next address after any change. (Bank-0 free ranges:
-[`inject-smoke-test.md`](inject-smoke-test.md); SET-tab hooks in banks 4/8:
+vs the next address after any change. (Hook-site rules:
+[DEVELOPMENT.md](DEVELOPMENT.md#choosing-a-hook-site); SET-tab hooks in banks 4/8:
 [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md).)
 
 ## FILINFO / LFN layout (confirmed live)

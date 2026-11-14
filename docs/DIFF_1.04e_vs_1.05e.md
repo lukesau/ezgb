@@ -101,9 +101,8 @@ In 1.04e, this address is a bare, already-unlocked single write: `$7ff0 = $e4` (
 commit-only tail of some register operation started elsewhere), then `ret`. In 1.05e, a whole
 new function is inserted directly after that `ret`: a full unlock (`$7f00=e1, $7f10=e2,
 $7f20=e3`), a write of a dynamic (stack-supplied) value to `$7fd4`, then commit (`$7ff0=e4`).
-`$7fd4` is in the same port cluster as `$7fd0`/`$7fd2` already cataloged in `docs/REGISTERS.md`
-as an enable/disable-shaped register family. This register write capability did not exist in
-1.04e, and correlates with the "RTC codes are rewritten" changelog line.
+`$7fd4` is the FW5 fast-load key (`stage0/docs/firmware-diff.md`); 1.04e never
+writes it.
 
 ### RTC NOR-flash persistence (`0xc6c`, `0x1a88`-`0x1b06`, shape confirmed, purpose hypothesis)
 
@@ -117,7 +116,7 @@ confirmed) that those writes touch RTC-related persistence. **Caveat:** the Jrâ€
 backs the **RTC *and* the save PSRAM** (the Jr has no FRAM, see
 `hardware-board.md`), and `$A000=$AA` is also the documented
 BACKUPSAVE pending stamp in PSRAM (`docs/psram-save-map.md`). Do not treat `$AA` alone as proof
-of JEDEC NOR. See `docs/1.05e-instability.md`.
+of JEDEC NOR.
 
 ## Banks 3, 4, 6, 9 changes
 

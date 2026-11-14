@@ -14,7 +14,7 @@ wrappers, far-call thunks, FPGA unlock sequences, the FatFs copies in other
 banks) were labeled mechanically; the scripts that did it are in the git
 history. The rest were read by hand, with SameBoy for the ambiguous ones,
 and compared against EZ Flash's published Omega source
-([omega-jr-compare.md](omega-jr-compare.md)).
+([below](#omega-as-a-reference)).
 
 ## Source of truth in this repo
 
@@ -130,6 +130,25 @@ Jr's build predates that revision, but the internal static functions
 `GetFat_B9`, `DirFind_B9`, …) were matched. **Bank 09 is canonical; 03/05/06/07
 are near-identical twins**. When a role name is unclear, read the matching
 `ff.c` function rather than inferring from raw Z80.
+
+## Omega as a reference
+
+EZ Flash published the source of the Omega's GBA kernel
+([omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel), cloned
+to `tools/omega-de-kernel`). The Jr uses the same designs at other
+addresses, so it is the reference when a Jr routine needs a name:
+
+| Jr | Omega, under `source/` |
+|---|---|
+| `$7F00`/`$7F10`/`$7F20` unlock, register writes, `$7FF0` commit | `SetSDControl` and friends in `Ezcard_OP.c` |
+| SD sector I/O through `$7FB0`-`$7FB4` | `Read_SD_sectors`, `Write_SD_sectors` |
+| page and bank select, `$7FC0`-`$7FC4` | `SetRompage`, `SetRampage` |
+| FatFs in banks 3, 5, 6, 7 and 9 | `ff15/` |
+| the browser and the SET and HELP tabs (`SdMenuMain`) | `ezkernelnew.c`, `setwindow*.c`, `draw.c` |
+
+The two differ in how a game starts. The Omega can burn a game to NOR and
+boot it directly (its Mode B, `NORflash_OP.c`); the Jr loads from the SD
+card into volatile pSRAM on every launch.
 
 ## Confidence and honesty
 

@@ -87,3 +87,9 @@ differs, because the slower kernel's marquee had already started.
 The DV runs also showed the older kernel moving two rows on some taps, which this
 one doesn't. Wrap-around and the counter were also run on 0918 and 1.04e. None of
 this has been on hardware yet.
+
+## Two stock facts the row drawing relies on
+
+- `StoreDrawParams` (`00:2791`) is not an (index, value) setter: every call
+  stores all three draw-state bytes (`$d734`, `$d735`, `$d723`).
+- `DrawBrowserDetail` (`01:42ba`) prints the selection number on every call.

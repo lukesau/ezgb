@@ -1036,7 +1036,7 @@ index 0000000..8fd3d69
 +{
 +    GB_ezflash_jr_t *ez = &gb->ezflash_jr;
 +
-+    /* Unlock / commit handshake from docs/REGISTERS.md */
++    /* Unlock / commit handshake, stage0/docs/design.md */
 +    if (addr == 0x7F00 && value == 0xE1) {
 +        ez->unlock_step = 1;
 +        return;

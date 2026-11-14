@@ -108,7 +108,7 @@ Each links to a doc with the details.
   original for all three builds. [kernel/1.05e-0731/stock/](kernel/1.05e-0731/stock/README.md) is turning it
   into C.
 - **Hardware:** the [board](docs/hardware-board.md), the
-  [registers](docs/REGISTERS.md), the [boot](docs/boot-map.md) and
+  [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the [boot](docs/boot-map.md) and
   [launch](docs/launch-trace.md) paths, and
   [why the coin cell dies in a month](docs/battery-sram-swap.md).
 - **FPGA:** the bitstream is decoded ([index](docs/fpga.md),

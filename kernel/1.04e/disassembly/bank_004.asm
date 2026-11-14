@@ -1351,7 +1351,7 @@ SetFpgaPage_B4::
 
 ; [ezgb]
 ; SetFpga7FD0_B4: same unlock/commit as SetFpgaPage but writes stack u8 to $7FD0.
-; See docs/REGISTERS.md ($7fd0/$7fd2/$7fd4 peripheral enable candidates).
+; See stage0/docs/design.md for the $7Fxx register map.
 
 SetFpga7FD0_B4::
     ld bc, $7f00

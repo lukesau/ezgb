@@ -101,7 +101,7 @@ bitstream format.
 > **Correction (2026-10-09).** The encoder exists: `s3patch`
 > ([toolchain.md](toolchain.md#s3patch)) writes BRAM contents and
 > recomputes the CRCs. The CGB flag was patched with it and installed with
-> an updater, not over JTAG ([../../../docs/fpga-cgb.md](../../docs/fpga-cgb.md)), and every stage1
+> an updater, not over JTAG ([stage1/fw4/patches](../../stage1/fw4/patches/README.md)), and every stage1
 > build since has gone the same way.
 
 ## PicoBlaze

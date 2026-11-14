@@ -108,7 +108,7 @@ Two places in the kernel know the kernel file only by the exact name
 `ezgb.dat`, so a second kernel file would show through:
 
 - **Browser.** The stock browser hides `ezgb.dat` with a memcmp against that
-  one name (`00:0bc8`, [ezgb-dat-boot.md](ezgb-dat-boot.md)).
+  one name (an 8-byte compare at `00:0bc8`).
   `BrowserHideName` ([browser_hide.c](../kernel/mod/src/browser_hide.c)) adds
   `.gba`, `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER` and dot-files; it gets a `.dat`
   suffix rule, one more `ends_ci` call. The SET tab's PICK ROM runs over the

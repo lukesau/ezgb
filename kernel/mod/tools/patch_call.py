@@ -24,7 +24,7 @@ Usage:
     patch_call.py <version> <bank> <address_hex> <length> <target_bank:target_addr>
                   [--jp] [--apply] [--regen]
 
-Example (see docs/inject-smoke-test.md for the paired injection):
+Example (see docs/DEVELOPMENT.md, Choosing a hook site):
     patch_call.py 1.05e-0731 8 7200 3 08:746b --jp --apply --regen
 """
 import argparse

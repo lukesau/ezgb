@@ -12,9 +12,7 @@
 > pulling the cart), plus the chip map in [hardware-board.md](hardware-board.md).
 > Read every "NOR" below that refers to the game as "U9 game pSRAM". The kernel
 > symbols (`RomLoad_ResetIntoRom_B4` etc.) keep their names. Docs that inherited the NOR claim:
-> [omega-jr-compare.md](omega-jr-compare.md) ("Game staging and reuse"),
-> [fastlaunch-config-design.md](fastlaunch-config-design.md) ("NOR: effectively
-> off-limits"), [last-rom.md](last-rom.md) (B-mode paragraph).
+> [last-rom.md](last-rom.md) (B-mode paragraph), and two docs since removed.
 
 > **VERDICT (2026-08-30): dead. The game store is volatile RAM, not NOR.**
 > The read-back probe (below) proved it on hardware: after a full launch, a
@@ -35,8 +33,7 @@ at all. This page documents the kernel primitive that makes that possible, and
 the experimental Start→A hook that uses it.
 
 This is the Jr's latent equivalent of the Omega's **Mode B** (boot the game
-previously burned to NOR, no OS in the way); see
-[omega-jr-compare.md](omega-jr-compare.md).
+previously burned to NOR, no OS in the way).
 
 ## The find: a dormant no-copy boot primitive
 
@@ -79,7 +76,7 @@ with the stock launch tail, which sets all of those *before* the copy step.
 
 Safety note: the routine writes only `$7f31/$7f32/$7fe0` inside standard
 unlock+commit envelopes. It never touches `$7FD2` (the config-flash trigger
-that bricked a cart; see [game-slot-access.md](game-slot-access.md)), so the
+that bricked a cart; see [updater-flash-write.md](updater-flash-write.md)), so the
 worst case is a garbage boot you power-cycle out of.
 
 ## Where the copy actually happens (for contrast)

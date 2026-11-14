@@ -51,8 +51,13 @@ The primitives in bank 0 / bank 1:
 Parameters are staged before the trigger via `$7F31=$00` / `$7F32=$80` (a
 16-bit `$8000`-shaped operand), matching [flash-map.md](../stage0/docs/flash-map.md).
 This is the same register and handshake documented there, and the same one
-that **bricked a cart when the poll-until-clear was skipped**
-([game-slot-access.md](game-slot-access.md)). The `$7FD2` target is the SPI
+that **bricked a cart when the poll-until-clear was skipped**: a probe ROM
+wrote `$7FD2=$01`, sampled `$A000` once and wrote `$00`, which cut the flash
+operation off, and the FPGA never configured again until the config flash
+was reprogrammed
+([hardware-board.md](hardware-board.md#recovering-a-cart-whose-fpga-no-longer-configures)).
+Writing `$7Fxx` is never a read-only experiment: replicate the whole
+protocol, handshakes included, or do not issue the write. The `$7FD2` target is the SPI
 config flash, confirmed because the payload it writes overlays exactly onto the
 external config-flash dump.
 
@@ -101,7 +106,7 @@ the bitstream:
 Not *proven* (that needs Spartan-3A bitstream-format RE to extract the BRAM
 init and match it to `stage1.gb`), but it is the only hypothesis left standing,
 and it is directly testable if/when the bitstream container is cracked
-([hardware-board.md](hardware-board.md), [custom-logic.md](../stage0/docs/custom-logic.md)).
+([hardware-board.md](hardware-board.md)).
 
 **Proven 2026-10-08.** The BRAM init was extracted from the FW4 bitstream and
 rebuilds `stage1.gb` byte for byte ([bitstream.md](../stage0/docs/bitstream.md)).
@@ -117,6 +122,18 @@ invokes). The only firmware-writable nonvolatile store the updater exposes is
 the SPI config flash, and that is bitstream storage: brick-adjacent, not free
 scratch. A genuinely free large nonvolatile store, if the parallel NOR is one,
 would require an FPGA-side path we have not found (or a replacement design).
+
+## What a launched ROM can reach
+
+Probed on hardware with small ROMs launched from the kernel:
+
+- A read of `$A000` that returns `$46` means nothing answered. `ld b,(hl)`
+  is opcode `$46`, and the floating bus hands back the last byte driven.
+- `$A000`-`$BFFF` is live and writable from a launched ROM, but only after
+  the standard cart-RAM enable (`$0A` to `$0000`-`$1FFF`). The kernel never
+  writes that enable; stage1 hands it an open window.
+- Whether the paged control interface (unlock, `$7FC0`, the `$4000` page
+  latch) works from a launched ROM was not established.
 
 ## Reproduce
 

@@ -305,7 +305,7 @@ reached via the `$078d` far-call trampoline. Entry addresses and their strings:
 `$A300` already holds a full, directory-qualified path in the exact format the loader consumes
 (`$c2a6` = `/dir/NAME.GB`). A later B-mode kernel (or a deferred stock-kernel hook) reading
 `$A300` and driving the `jr_000_1344` split-and-load sequence would handle nested ROMs without
-the file browser. See [`omega-jr-compare.md`](omega-jr-compare.md) and
+the file browser. See
 [`fast-launch-notes.md`](fast-launch-notes.md).
 
 The other half of a B-mode boot, skipping the SD→NOR copy because the game is already in

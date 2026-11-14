@@ -126,7 +126,7 @@ Dead code, largest first:
 - three unreferenced user functions (`$05BC-$07F0`): `BootRomDirect`,
   `RunFromWram`, `PrintBlankLines`
 
-The splash ([fpga-cgb.md](fpga-cgb.md)) uses about 900 bytes of the filler.
+The splash ([stage1/fw4/patches](../stage1/fw4/patches/README.md)) uses about 900 bytes of the filler.
 
 ## Rewrite from source
 

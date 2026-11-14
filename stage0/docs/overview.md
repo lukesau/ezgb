@@ -56,7 +56,6 @@ disassembled in [../updater](updater.md).
 | [docs/fw5.md](fw5.md) | the FW5 designs, and what 0918 changed over 0731 |
 | [docs/firmware-diff.md](firmware-diff.md) | FW4, FW5-0731 and FW5-0918 run through the same simulations: pins, registers, banking, save RAM, the MBC3 clock, launches; per-firmware maps in [maps/](../) |
 | [docs/toolchain.md](toolchain.md) | prjcombine and `s3decode`/`s3trace`/`s3patch`: flags and output |
-| [docs/custom-logic.md](custom-logic.md) | historical: the original plan for running our own logic |
 
 ## Tools and notes
 

@@ -31,8 +31,7 @@ not from live bank4 `$448f` at the moment of the writes, so a `$448f` breakpoint
 can miss even though that routine is what installed the stub.
 
 This SD → FPGA program → `$7fe0=$80` handoff is the Jr's authentic-cart launch; a
-future B-mode kernel would reuse it and only skip the browser OS. See
-[`omega-jr-compare.md`](omega-jr-compare.md).
+future B-mode kernel would reuse it and only skip the browser OS.
 
 ### WRAM at `$1569` → bank1 `$5e14` (PKMRED.GB)
 
@@ -59,7 +58,6 @@ Far-call prefix matched Pokemon: `$482b` → `$4048` → `$4000` → `$5e14` (ba
 
 B-mode / direct-boot work is deferred behind full ASM mapping; WRAM / dir-list /
 hook-site notes from a withdrawn patch attempt are in [`fast-launch-notes.md`](fast-launch-notes.md).
-Product framing (Omega Mode B → Jr B-mode kernel): [`omega-jr-compare.md`](omega-jr-compare.md).
 
 ## Run
 
@@ -91,7 +89,8 @@ instead of inventing a stack dump each time.
 Joypad note: `Call_000_3a16` ends with an extra `swap a`, so the menu byte is
 **not** `hardware.inc` `PADF_*` order. Bit `$10` is **A** (confirm/open), `$20` is
 **B**, `$80` is **START** (opens the last-ROM overlay, see `docs/last-rom.md`),
-`$01`/`$02` are d-pad Right/Left.
+`$40` is **SELECT**, and the d-pad is Right `$01`, Left `$02`, Up `$04`,
+Down `$08`.
 
 ## Breakpoints (set first)
 
