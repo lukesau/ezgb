@@ -2,7 +2,8 @@
  * have the FPGA load it, enter it at $0100. Same steps as the stock
  * bootstrap (docs/fpga-stage1.md), written from scratch. With fast launch
  * set in EZGB.CFG it launches that game instead (game.c), unless START is
- * held, and boots the kernel whenever that isn't possible. Before a fast
+ * held or pressed while the boot screen is up, and boots the kernel
+ * whenever that isn't possible. Before a fast
  * launch it offers to back up the pending save (backup.c), as the kernel
  * does at boot; SELECT at power-on asks on a kernel boot too. With more
  * than one *.dat file in the card's root it asks which kernel to boot
@@ -18,6 +19,7 @@
 #include "sgb.h"
 
 /* the wordmark takes tile rows 9-12 (video.c); text stays clear below it */
+#define HINT_ROW 14                  /* a fast launch: how to get the kernel instead */
 #define STATUS_ROW 15
 #define DETAIL_ROW 16
 #define VERSION_ROW 17
@@ -45,6 +47,7 @@ static uint8_t text[512];
 static char launch_path[CFG_PATH_MAX + 1];
 static char fw_text[sizeof FW_TEXT];    /* "FW5-MOD <m>", the version line */
 static const char loading[] = "LOADING...";
+static uint8_t held;                    /* every button seen down since power-on */
 
 static const char *const errors[] = {
     0,
@@ -56,9 +59,6 @@ static const char *const errors[] = {
     "GPT CARD: USE MBR",            /* reformat with an MBR partition table */
 };
 
-/* Tell the kernel whether the user canceled fast launch (PSRAM_SKIP_FL):
- * set when START is held, cleared otherwise, so a kernel without support
- * never sees a stale mark. */
 void sd_wait_notice(uint8_t waiting)
 {
     if (waiting)
@@ -67,6 +67,9 @@ void sd_wait_notice(uint8_t waiting)
         clear_row(DETAIL_ROW);
 }
 
+/* Tell the kernel whether the user canceled fast launch (PSRAM_SKIP_FL):
+ * set when START was held or pressed, cleared otherwise, so a kernel
+ * without support never sees a stale mark. */
 static void mark_skip(uint8_t skip)
 {
     psram_map(PSRAM_META);
@@ -107,6 +110,27 @@ static uint8_t fast_launch_target(void)
     if (!cfg_flaunch(text, n, launch_path))
         return 0;
     return fat_open(launch_path) == FAT_OK;
+}
+
+/* The boot screen's waits, watching the buttons: START cancels a fast
+ * launch at power-on and at any time until the launch is decided. */
+static void wait_poll(uint8_t n)
+{
+    while (n--) {
+        wait_frames(1);
+        held |= buttons();
+    }
+}
+
+/* With the card mounted: is this a fast-launch boot? Then say how to get
+ * the kernel instead, while there is still time to. */
+static uint8_t fast_launch_check(void)
+{
+    held |= buttons();
+    if (held & BTN_START || !fast_launch_target())
+        return 0;
+    print_center(HINT_ROW, "HOLD START TO CANCEL");
+    return 1;
 }
 
 /* Which of the n kernels listed in text[] to boot: their names under a
@@ -170,7 +194,7 @@ static uint8_t kernel(void)
 
 void main(void)
 {
-    uint8_t err, keys, sgb, fl, fw, tried = 0;
+    uint8_t err, keys, sgb, fl = 0, fw, tried = 0, early;
 
     rNR52 = 0;                          /* sound off, as stock */
     video_init();
@@ -178,10 +202,19 @@ void main(void)
     if (sgb)
         sgb_unlock();                   /* about 6.7 s, on an SGB only */
     mark_sgb(sgb);
-    keys = buttons();                   /* as held at power-on */
-    wait_frames(JR_DELAY);
+    keys = held = buttons();            /* as held at power-on */
+    wait_poll(JR_DELAY);
     wordmark_paint(JR_STEP);
-    wait_frames(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
+    /* The card is mounted and EZGB.CFG read during the rest of the pause
+     * rather than after it, so a fast-launch boot shows its hint while
+     * START can still cancel. A card that isn't up yet is left to the
+     * loop below, as before. */
+    fpga_set(FPGA_SRAM_MAP, 0);
+    err = fat_mount();
+    early = !err;
+    if (early)
+        fl = fast_launch_check();
+    wait_poll(PAUSE_FRAMES - JR_DELAY - 4 * JR_STEP);
     print_center(STATUS_ROW, loading);
     /* FW_TEXT is "FW5-MOD <m>"; the digit is what this cart's version
      * register reads, so the FW4 updater's copy of stage1 says FW4 */
@@ -193,23 +226,36 @@ void main(void)
 
     /* keep retrying: the card may still be starting up, or be swapped */
     for (;;) {
-        fpga_set(FPGA_SRAM_MAP, 0);
-        err = fat_mount();
+        if (!early) {
+            fpga_set(FPGA_SRAM_MAP, 0);
+            err = fat_mount();
+        }
         if (!err && !tried) {
             tried = 1;
-            mark_skip(keys & BTN_START);
+            if (!early)
+                fl = fast_launch_check();
+            held |= buttons();
+            if (held & BTN_START) {     /* pressed since the hint went up */
+                fl = 0;
+                clear_row(HINT_ROW);
+            }
+            mark_skip(held & BTN_START);
             /* A fast-launch boot never reaches the kernel's BACKUPSAVE, so
              * stage1 offers the pending save itself; SELECT asks on any boot */
-            fl = !(keys & BTN_START) && fast_launch_target();
             if ((fl || keys & BTN_SELECT) &&
                 backup_offer(text, keys & BTN_SELECT, fl ? game_save_path() : 0))
                 fl = 0;                 /* the kernel backs up instead */
             print_center(STATUS_ROW, loading);
             if (fl && fat_open(launch_path) == FAT_OK) {
+                /* again: the backup prompt had its row. Past this point
+                 * the launch is not canceled */
+                print_center(HINT_ROW, "HOLD START TO CANCEL");
                 print_center(DETAIL_ROW, fat_name());
                 game_launch(launch_path, text);  /* returns only if it can't */
             }
+            clear_row(HINT_ROW);        /* the kernel boots instead */
         }
+        early = 0;
         if (!err)
             err = kernel();
         if (!err)

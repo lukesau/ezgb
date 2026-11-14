@@ -226,6 +226,22 @@ With `FLAUNCH=` set in `EZGB.CFG` (and START not held), stage1 launches the
 game itself, without loading the kernel (`stage1/src/game.c`). It copies
 the kernel's launch path, decoded from the stock 1.05e-0731 kernel:
 
+**Canceling (since 2026-11-13).** START cancels the launch when it is held
+at power-on or pressed at any time until the launch is decided, not only
+at stage1's first instruction: the boot screen's waits read the buttons
+every frame (`wait_poll`) and the decision reads them once more. To give
+the press something to answer, the card is mounted and `EZGB.CFG` read
+right after the wordmark is painted, during the rest of the 700 ms pause
+rather than after it, and a fast-launch boot then prints
+`HOLD START TO CANCEL` on row 14, above `LOADING...`. Boot time is
+unchanged (the same work in another order); the first SD read comes about
+270 ms sooner than before. A card that does not mount then is left to
+the retry loop, and the hint goes up when it does. Once the save is being
+loaded the launch is no longer canceled, and the hint stays up until the
+LCD goes off. SELECT is still read at power-on only. Checked in SameBoy
+(DMG model): no key launches, START held boots the kernel, START pressed
+after the wordmark boots the kernel. Not yet run on hardware.
+
 1. `LASTROM`: the full path to pSRAM `$11:$A300`, as `LastRomPersist`
    (`01:4856`) does.
 2. Header: MBC code from `$0147`, battery and timer flags, ROM mask from
@@ -304,7 +320,7 @@ offers the backup itself (below), as the kernel does at boot.
 ### Cancel mark and save backup (v4)
 
 **Cancel mark.** Stage1 writes `"S1"` to pSRAM page `$11` `$A410` when START
-was held at power-on and zeroes it otherwise. A mod 5.4+ kernel clears it
+was held at power-on, or pressed before the launch was decided, and zeroes it otherwise. A mod 5.4+ kernel clears it
 and skips its own fast launch for that boot, so a cancel made in stage1
 stays canceled after START is released
 ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
