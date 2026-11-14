@@ -9,14 +9,14 @@ Assembles kernel/mod/asm/skip_boot.asm and, through kernel/mod/tools:
 
 Re-running replaces the block and skips bytes already set.
 
-Usage: scripts/inject-skipboot.py <ver> [--apply]
+Usage: kernel/tools/inject-skipboot.py <ver> [--apply]
 """
 import importlib.util
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "scripts", "inject-sgb.py"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "kernel", "tools", "inject-sgb.py"))
 sgb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sgb)
 sgb.ASM = os.path.join(ROOT, "kernel", "mod", "asm", "skip_boot.asm")

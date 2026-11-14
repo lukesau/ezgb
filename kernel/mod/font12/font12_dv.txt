@@ -2,11 +2,11 @@
 # an homage to davidesqalv's ezgb-dv fork (https://github.com/davidesqalv/ezgb-dv).
 # Text ($20-$7E): Tamzen 6x12 regular by Suraj N. Kurapati, after Tamsyn by
 # Scott Fial (LICENSE-Tamzen in this folder), packed fixed width:
-#   scripts/inject-font12.sh <version> 1   (font12-pack.py --mono 6)
+#   kernel/tools/inject-font12.sh <version> 1   (font12-pack.py --mono 6)
 # Icons ($7F star, $C0-$C4): davidesqalv's, from dv/tools/icons.py, 8x9 ink at
 # column 1, row 1 of the 10x12 cell.
 # '.' = paper, '#' = ink, 12 rows of 10 columns per glyph; `keep` protects a
-# glyph from scripts/font12-render.py.
+# glyph from kernel/tools/font12-render.py.
 
 glyph 0x20 ' ' (space) keep
 ..........

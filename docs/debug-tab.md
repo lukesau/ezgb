@@ -4,7 +4,7 @@ A page of hardware readouts after HELP, for investigating the cart. Release
 kernels don't have it; build one when it's needed:
 
 ```bash
-scripts/make-debug-build.py 1.05e-0918 --install /Volumes/EZGB_FW4
+kernel/tools/make-debug-build.py 1.05e-0918 --install /Volumes/EZGB_FW4
 ```
 
 That writes `dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat` from
@@ -86,5 +86,5 @@ with the pad in C, so its exit (`00:1288` in 1.05e) becomes
 `bit 7,c; jp nz,FileBrowserEntry; jp DbgTabHook`: START goes to the browser
 and SELECT to the debug screen. The screen starts with `DrawMenuTabs(3)`,
 which clears the pane and keeps the strip. The script places the hook in
-each build through `scripts/portmap.py` and checks the exit's bytes before
+each build through `kernel/tools/portmap.py` and checks the exit's bytes before
 patching.

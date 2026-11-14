@@ -22,10 +22,10 @@ alignment can pick the wrong copy; port-mod.py corrects those ranges by hand
 (REMAP: 0731 01:4c5e-01:4dcf maps +0 here but belongs at +619 in 0918).
 
 Usage:
-    scripts/portmap.py <from_ver> <to_ver> [--summary] [BB:AAAA ...]
+    kernel/tools/portmap.py <from_ver> <to_ver> [--summary] [BB:AAAA ...]
 
-    scripts/portmap.py 1.05e-0731 1.04e 00:1344 04:5990 01:42ba
-    scripts/portmap.py 1.05e-0731 1.05e-0918 --summary
+    kernel/tools/portmap.py 1.05e-0731 1.04e 00:1344 04:5990 01:42ba
+    kernel/tools/portmap.py 1.05e-0731 1.05e-0918 --summary
 """
 import difflib
 import hashlib
@@ -33,7 +33,7 @@ import json
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BANK = 0x4000
 # The modded kernel is 16 banks; stock dumps are 10. Banks 10-15 are empty in
 # every stock build, so a stock image is padded with $FF (free space) to this

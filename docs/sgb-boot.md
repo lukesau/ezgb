@@ -60,7 +60,7 @@ With the box unticked nothing is sent and nothing waits.
 ## The code
 
 Everything is in [sgb_boot.asm](../kernel/mod/asm/sgb_boot.asm).
-`scripts/inject-sgb.py <ver> --apply` assembles it with the kernel's
+`kernel/tools/inject-sgb.py <ver> --apply` assembles it with the kernel's
 addresses from `kernel.sym` and patches the hook sites and the header. Run
 it on 1.05e-0731 and port.
 

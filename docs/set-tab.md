@@ -79,7 +79,7 @@ it.
 |---|---|---|
 | `04:47ef`, the prologue | `FlSetEnterHook` | drawing the mod's rows on entry |
 | `04:5404`, `04:560d`, the cursor tails | `FlSetRowsHook` | redrawing after a cursor move |
-| `04:5174`, `04:51a5`, LEFT and RIGHT | `FlSetJumpTop` (`04:5f80`), `FlSetJumpBottom` (`04:5f90`) | the jump to PREV and NEXT ([inject-set-jump.py](../scripts/inject-set-jump.py)) |
+| `04:5174`, `04:51a5`, LEFT and RIGHT | `FlSetJumpTop` (`04:5f80`), `FlSetJumpBottom` (`04:5f90`) | the jump to PREV and NEXT ([inject-set-jump.py](../kernel/tools/inject-set-jump.py)) |
 | `04:5604` | the clamp, `d6 14` | 21 cursor rows |
 | `04:5632`, A off row 0 | `FlSetADispatch` (`04:5f30`) | row 2 to the stock AUTO SAVE toggle, the rest to `FlCfg` |
 | `04:5162`, the loop's `call ReadJoypad` | `SetLoopTickHook` (`04:5f20`) | the per-pass tick: the name marquee and the D-pad repeat ([input.md](input.md#repeat-on-the-set-tab)) |

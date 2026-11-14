@@ -6,8 +6,8 @@ difference between stock and modded is distributed, as IPS patches.
 
 | | You need | You run |
 |---|---|---|
-| **Patch** | the official `ezgb.dat` and an `.ips` | the [patcher page](https://lukesau.github.io/ezgb/patcher/), `scripts/kernel-patch.py`, or any IPS patcher |
-| **Build** | this repo, rgbds, Python 3 | `scripts/build-kernel.sh` |
+| **Patch** | the official `ezgb.dat` and an `.ips` | the [patcher page](https://lukesau.github.io/ezgb/patcher/), `kernel/tools/kernel-patch.py`, or any IPS patcher |
+| **Build** | this repo, rgbds, Python 3 | `kernel/tools/build-kernel.sh` |
 
 Both produce the same bytes.
 
@@ -17,7 +17,7 @@ Take `ezgb.dat` from EZ Flash's firmware package for your kernel
 ([which one](kernel-versions.md)), then:
 
 ```bash
-scripts/kernel-patch.py apply ~/Downloads/ezgb.dat
+kernel/tools/kernel-patch.py apply ~/Downloads/ezgb.dat
 ```
 
 The script detects the version by md5, refuses a wrong or already patched
@@ -38,8 +38,8 @@ The committed disassembly reassembles the modded kernel, with no firmware
 download:
 
 ```bash
-scripts/build-kernel.sh 1.05e-0731            # kernel/1.05e-0731/disassembly/game_trunc.gb
-scripts/build-kernel.sh 1.05e-0918 --install  # also copies it to kernel/1.05e-0918/kernel.gb
+kernel/tools/build-kernel.sh 1.05e-0731            # kernel/1.05e-0731/disassembly/game_trunc.gb
+kernel/tools/build-kernel.sh 1.05e-0918 --install  # also copies it to kernel/1.05e-0918/kernel.gb
 ```
 
 It runs `make` in `kernel/<ver>/disassembly` and then restores the four
@@ -56,7 +56,7 @@ A release is tagged `mod-N.M`, from `patches/kernel/VERSION`, and carries:
 - `ezgb-mod-N.M-for-<ver>.ips`, one per kernel
 - `ezgb-firmware-mod-F-for-<fw>.ips`, one per firmware
 - `manifest.json`
-- `README.txt`, a patching guide rendered by `scripts/make-dist.sh` from
+- `README.txt`, a patching guide rendered by `kernel/tools/make-dist.sh` from
   [`patches/kernel/release-README.txt`](../patches/kernel/release-README.txt)
   with the version and the md5 table filled in
 
@@ -79,10 +79,10 @@ and the stage1 version from `stage1/VERSION`).
 ```sh
 # maintainer: build the updater, then diff it against the stock one
 BUILD_HOST=<host> stage0/tools/build-stage1-updater.sh fw5-0918 "To FW5-MOD 2.1" out.gb
-scripts/kernel-patch.py updater make fw5-0918 out.gb
+kernel/tools/kernel-patch.py updater make fw5-0918 out.gb
 
 # anyone: patch the official updater, md5-checked on both sides
-scripts/kernel-patch.py updater apply Update_FW5_2021-9-18.gb
+kernel/tools/kernel-patch.py updater apply Update_FW5_2021-9-18.gb
 ```
 
 The screen label is at most 16 characters, and names the firmware so the
@@ -119,7 +119,7 @@ leaves the browser.
 ## Wrong patch
 
 An ordinary IPS patcher writes a patch over any file, so every mix-up is
-tested (`scripts/test-patch-mismatch.py`, `--boot` for the kernel runs).
+tested (`kernel/tools/test-patch-mismatch.py`, `--boot` for the kernel runs).
 
 **A firmware patch on another updater.** The updater program itself runs as
 stock and writes its slot B region. In every wrong combination that region

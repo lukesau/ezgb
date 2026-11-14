@@ -110,7 +110,7 @@ stage0/tools/picoblaze-patch.py <bram dir>/D0X3Y25.BEL.BRAM \
 ```
 
 The PicoBlaze's second program is in tile `X3Y25` on FW4 and `X3Y5` on
-FW5-0918, and is the same in both. `scripts/make-debug-build.py <version>`
+FW5-0918, and is the same in both. `kernel/tools/make-debug-build.py <version>`
 builds the kernel with the debug screen.
 
 In simulation the patched firmware returned 300 chunks from two addresses

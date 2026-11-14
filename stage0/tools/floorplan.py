@@ -9,7 +9,7 @@ route dump from `s3trace --routes` (run here if missing). All of that lives in
 the ignored fpga/, or the directory --fpga names. The output is one
 self-contained HTML file. It has LUT truth tables and routes but no block RAM
 contents, and it is the one thing under fpga/ that is tracked and published
-(scripts/publish-floorplan.sh).
+(stage0/tools/publish-floorplan.sh).
 """
 import argparse, collections, glob, json, math, os, re, subprocess, sys
 

@@ -35,7 +35,7 @@ path as before.
 **Font.** The 12px renderer ([font12.md](font12.md)) places rows on 4 px
 steps and paints 12 pixel rows each, so it cannot set rows 10 px apart. The
 viewer has its own table, `tv_font` in `kernel/mod/src/textview_font.h`, written
-by `scripts/textview-font.py` from `kernel/mod/font12/font12_dv.txt`: codes
+by `kernel/tools/textview-font.py` from `kernel/mod/font12/font12_dv.txt`: codes
 `$20`-`$7E`, ten bytes each, rows 1-10 of the 6x12 cell. Row 11 is empty in
 every glyph; row 0 holds one pixel row of `$`, `{` and `}`, which is lost.
 

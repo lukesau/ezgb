@@ -12,18 +12,18 @@
 #     $0148 and $014E-$014F from kernel.gb.orig when present, else from the
 #     built-in table, and recompute $014D over the result: the stock value for
 #     a stock header, the right one when the mod changes it (the SGB flags,
-#     scripts/inject-sgb.py).
+#     kernel/tools/inject-sgb.py).
 #
 # Writes kernel/<ver>/disassembly/game_trunc.gb and verifies its md5 against
 # patches/kernel/manifest.json. --install copies it to kernel/<ver>/kernel.gb
 # (the path build-ezgb-dat.sh and the SameBoy scripts read).
 #
 # Usage:
-#   scripts/build-kernel.sh                # 1.05e-0731
-#   scripts/build-kernel.sh 1.05e-0918 --install
+#   kernel/tools/build-kernel.sh                # 1.05e-0731
+#   kernel/tools/build-kernel.sh 1.05e-0918 --install
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VER="1.05e-0731"
 INSTALL=0
 for arg in "$@"; do

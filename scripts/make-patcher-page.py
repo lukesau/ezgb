@@ -30,7 +30,7 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 kp = __import__("kernel-patch")
 
 KPKG = {"1.04e": "FW4, 2020-03-10", "1.05e-0731": "FW5, 2020-07-31", "1.05e-0918": "FW5, 2021-09-18"}

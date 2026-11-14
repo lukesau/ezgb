@@ -4,12 +4,12 @@
 # plus the RTC backup/restore hooks and the last-ROM hooks (LASTROM= key,
 # docs/last-rom.md), into one kernel version.
 #
-# Usage: scripts/inject-ezcfg.sh <1.05e-0731|1.05e-0918>
-# Then:  scripts/port-mod.py 1.05e-0731 1.04e --apply --sym   (hook sites below
+# Usage: kernel/tools/inject-ezcfg.sh <1.05e-0731|1.05e-0918>
+# Then:  kernel/tools/port-mod.py 1.05e-0731 1.04e --apply --sym   (hook sites below
 #        are 1.05e addresses; 1.04e is always a port of 0731, see DEVELOPMENT.md)
-#        python3 scripts/kernel-patch.py make   (once, after all versions)
+#        python3 kernel/tools/kernel-patch.py make   (once, after all versions)
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 V="${1:?version}"
 SYM="$ROOT/kernel/$V/kernel.sym"
 GB="$ROOT/kernel/$V/kernel.gb"

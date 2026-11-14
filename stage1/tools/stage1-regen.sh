@@ -10,6 +10,6 @@ cd "$ROOT/$DIR"
 python3 -u "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite >/dev/null
 # stock stage1 carries a stale global checksum: fix only the header one
 perl -pi -e 's/rgbfix -v -p 255/rgbfix -f h -p 255/' disassembly/Makefile
-python3 "$ROOT/scripts/annotate-disasm.py" "$DIR" >/dev/null || [[ $? -eq 1 ]]
+python3 "$ROOT/kernel/tools/annotate-disasm.py" "$DIR" >/dev/null || [[ $? -eq 1 ]]
 make -s -C disassembly >/dev/null
 cmp disassembly/game.gb kernel.gb && echo "rebuild matches kernel.gb"

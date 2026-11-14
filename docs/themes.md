@@ -210,7 +210,7 @@ ROM, which sets its own palettes, unless the boot ROM is skipped
    [themepage.c](../kernel/mod/src/themepage.c), and its place in the
    button's order there (`theme_step`).
 4. Its glyph set, if it has one: a sheet, a set in
-   `scripts/inject-font12.sh`, and the set's choice in `draw12.c` and
+   `kernel/tools/inject-font12.sh`, and the set's choice in `draw12.c` and
    `layout12.c`.
 
 Then rebuild the blocks, port, and cut the patches

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Rasterize a TrueType font into the 10x12 ASCII-art glyph sheet
-(kernel/mod/font12/font12.txt) that scripts/font12-pack.py turns into the
+(kernel/mod/font12/font12.txt) that kernel/tools/font12-pack.py turns into the
 font12_data.h table used by kernel/mod/src/draw12.c.
 
 The output is meant to be hand-edited afterwards: each glyph is a 12-line
@@ -10,7 +10,7 @@ the word `keep` (the icons, and any letter you have hand-tuned).
 
 Needs Pillow:  python3 -m venv .venv && .venv/bin/pip install pillow
 
-    scripts/font12-render.py [--font /System/Library/Fonts/Menlo.ttc] [--index 1]
+    kernel/tools/font12-render.py [--font /System/Library/Fonts/Menlo.ttc] [--index 1]
                              [--size 14] [--baseline 9] [--bold] [-o kernel/mod/font12/font12.txt]
 
 Cells are 10 wide x 12 tall, icons included. The TTF baseline is placed on cell row `--baseline`
@@ -29,7 +29,7 @@ try:
 except ImportError:
     sys.exit("Pillow is required: python3 -m venv .venv && .venv/bin/pip install pillow")
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_OUT = os.path.join(ROOT, "kernel", "mod", "font12", "font12.txt")
 W = 10
 H = 12

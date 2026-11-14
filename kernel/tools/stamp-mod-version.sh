@@ -8,7 +8,7 @@
 # VERSION is set by hand (kernel-patch.py make never changes it); re-running
 # with the same VERSION is a no-op.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
 python3 - "$ROOT" "$VER" <<'PY'
 import sys
@@ -26,8 +26,8 @@ for v in versions:
     else:
         print(f"  {v}: already '{s.decode()}'")
 PY
-for V in $(python3 -c "import json;print(' '.join(sorted(json.load(open('$ROOT/patches/kernel/manifest.json')))))"); do "$ROOT/scripts/regen-disasm.sh" "$V" >/dev/null 2>&1 || true; "$ROOT/scripts/build-kernel.sh" "$V" >/dev/null; done
-python3 "$ROOT/scripts/kernel-patch.py" make >/dev/null
+for V in $(python3 -c "import json;print(' '.join(sorted(json.load(open('$ROOT/patches/kernel/manifest.json')))))"); do "$ROOT/kernel/tools/regen-disasm.sh" "$V" >/dev/null 2>&1 || true; "$ROOT/kernel/tools/build-kernel.sh" "$V" >/dev/null; done
+python3 "$ROOT/kernel/tools/kernel-patch.py" make >/dev/null
 printf '%s' "$VER" > "$ROOT/patches/kernel/VERSION"   # keep the version this build names
 echo "stamped 'MOD $VER' into the HELP screen (VERSION held at $VER)"
-"$ROOT/scripts/make-dist.sh"
+"$ROOT/kernel/tools/make-dist.sh"

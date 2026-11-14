@@ -1,5 +1,5 @@
 ; Human-readable names for mgbdis (place beside kernel.gb).
-; Regenerate:  scripts/regen-disasm.sh <version> (kernel/<version>)
+; Regenerate:  kernel/tools/regen-disasm.sh <version> (kernel/<version>)
 ; See docs/psram-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 

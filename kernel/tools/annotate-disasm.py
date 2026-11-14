@@ -6,8 +6,8 @@ without duplicating. Safe to run after mgbdis regen (pair with kernel/<version>/
 for human symbol names).
 
 Usage:
-  ./scripts/annotate-disasm.py 1.05e-0731
-  ./scripts/annotate-disasm.py 1.04e
+  ./kernel/tools/annotate-disasm.py 1.05e-0731
+  ./kernel/tools/annotate-disasm.py 1.04e
 """
 
 import json
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 MARKER = "; [ezgb]"
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 

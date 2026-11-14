@@ -2,12 +2,12 @@
 # Regen disassembly from kernel.sym + notes.json. Quiet by default; pass -v for full mgbdis/make output.
 #
 # Usage:
-#   scripts/regen-disasm.sh              # 1.05e-0731
-#   scripts/regen-disasm.sh 1.05e-0731
-#   scripts/regen-disasm.sh 1.05e-0731 -v
+#   kernel/tools/regen-disasm.sh              # 1.05e-0731
+#   kernel/tools/regen-disasm.sh 1.05e-0731
+#   kernel/tools/regen-disasm.sh 1.05e-0731 -v
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VER="${1:-1.05e-0731}"
 VERBOSE=0
 if [[ "${2:-}" == "-v" ]] || [[ "${1:-}" == "-v" ]]; then
@@ -48,7 +48,7 @@ run python3 -u "$ROOT/tools/mgbdis/mgbdis.py" kernel.gb --overwrite || exit $?
 # mgbdis names the build game.gbc when the header's CGB flag is set ($0143 =
 # $80, docs/cgb-mode.md); everything else here reads game.gb
 perl -pi -e 's/\bgame\.gbc\b/game.gb/g' disassembly/Makefile
-run python3 "$ROOT/scripts/annotate-disasm.py" "$VER" || {
+run python3 "$ROOT/kernel/tools/annotate-disasm.py" "$VER" || {
   ann_ec=$?
   if [[ "$ann_ec" -eq 1 ]]; then
     echo "warn: annotate-disasm.py exit $ann_ec (orphan note blocks; continuing)" >&2

@@ -25,7 +25,7 @@
 ; Bitmap layout: GfxRowTable[y] is the address of pixel row y at x 0; each
 ; 8-pixel tile is 16 bytes further on, a row's two plane bytes adjacent.
 ;
-; scripts/inject-fillrect.py assembles this and injects it.
+; kernel/tools/inject-fillrect.py assembles this and injects it.
 
 DEF rSTAT      EQU $ff41
 DEF wDrawOp    EQU $d723

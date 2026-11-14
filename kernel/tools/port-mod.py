@@ -6,7 +6,7 @@ kernel/<from>/kernel.gb.orig (stock) plus kernel/<from>/kernel.sym, which names 
 injected block. This tool rebuilds the same mod on top of kernel/<to>/kernel.gb.orig:
 
 * C blocks (REGISTRY entries with `src`) are recompiled with SDCC at the same
-  address, with every --pin address translated through scripts/portmap.py.
+  address, with every --pin address translated through kernel/tools/portmap.py.
 * Hand-assembled blocks (shims, hooks) are decoded and every absolute ROM
   operand, including the 4-byte target after `call FarCallTrampoline`, is
   translated the same way. Blocks tagged `data` are copied verbatim; `code_len`
@@ -22,10 +22,10 @@ a modded kernel.gb to confirm the port reproduces it byte for byte (the 0731
 -> 0918 port is the regression test for the tool).
 
 Usage:
-    scripts/port-mod.py <from_ver> <to_ver> [--apply] [--check] [--sym] [-v]
+    kernel/tools/port-mod.py <from_ver> <to_ver> [--apply] [--check] [--sym] [-v]
 
-    scripts/port-mod.py 1.05e-0731 1.05e-0918 --check   # must report 0 diffs
-    scripts/port-mod.py 1.05e-0731 1.04e --apply --sym   # write kernel.gb, kernel.sym, notes.json
+    kernel/tools/port-mod.py 1.05e-0731 1.05e-0918 --check   # must report 0 diffs
+    kernel/tools/port-mod.py 1.05e-0731 1.04e --apply --sym   # write kernel.gb, kernel.sym, notes.json
 """
 import argparse
 import hashlib
@@ -36,8 +36,8 @@ import shutil
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 sys.path.insert(0, os.path.join(ROOT, "kernel", "mod", "tools"))
 from portmap import PortMap, ABS16, FARCALL, decode, insn_len, tokens, load_stock  # noqa: E402
 from sdcc_build import compile_c, parse_ihx  # noqa: E402
@@ -49,7 +49,7 @@ SRC = os.path.join(ROOT, "kernel", "mod", "src")
 # What each injected block is. Keyed by (bank, addr) in the FROM build; the
 # block length comes from that build's kernel.sym `.data` entry. Pins are the
 # FROM-build addresses the C source was linked against (docs/*.md,
-# scripts/inject-ezcfg.sh); the port translates them.
+# kernel/tools/inject-ezcfg.sh); the port translates them.
 #   src       C file under kernel/mod/src, recompiled per version
 #   pins      {symbol: from_addr}; bank-0 addresses unless `bank` says otherwise
 #   kind      'asm' (default: relocate operands), 'data' (verbatim)
@@ -91,7 +91,7 @@ REGISTRY = {
     (2, 0x7e00): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
     (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser.md): TagCat is the far target of 00:0d69
                       exports={"TagLen": 0x7a55}),              # far target of FarCallTagLen (00:0408)
-    (10, 0x4c00): dict(kind="data"),       # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
+    (10, 0x4c00): dict(kind="data"),       # Font12: 12px glyph bitmaps (kernel/tools/font12-pack.py)
     (10, 0x5580): dict(kind="data"),       # Font12Metrics: advances, ink widths, kerning classes (same packer)
     (10, 0x5d00): dict(kind="data"),       # Font12Dv: the DV theme's glyph set (kernel/mod/font12/font12_dv.txt)
     (10, 0x6680): dict(kind="data"),       # Font12DvMetrics: fixed 6 px, no kerning (font12-pack.py --mono 6)
@@ -186,7 +186,7 @@ REGISTRY = {
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09, "HelpSd": 0x7c00}),
     (8, 0x7c00): dict(src="help_sd.c",                      # SD speed line on both HELP panes (stage0/docs/sd-recovery.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
-    # SGB boot unlock and background send (scripts/inject-sgb.py). SgbStub only
+    # SGB boot unlock and background send (kernel/tools/inject-sgb.py). SgbStub only
     # names its own bank-4 entry; SgbVblTail, SgbVblList, SgbPadGate,
     # SgbBootHook (01:7f00) and SgbLaunchHook (04:7d00, the whole bank-4 part)
     # are relocated like any hand-assembled block
@@ -197,7 +197,7 @@ REGISTRY = {
     (0, 0x3806): dict(kind="data"),        # FolderIconGlyphs: font tiles
     (0, 0x35fe): dict(kind="data"),        # StarGlyph8: tile $7F, the star (docs/stars.md)
     (2, 0x6f40): dict(),                   # FillRect: fast DrawRect fill (kernel/mod/asm/fillrect.asm)
-    (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (scripts/inject-set-jump.py)
+    (4, 0x5f80): dict(),                   # FlSetJumpTop: LEFT on the SET tab (kernel/tools/inject-set-jump.py)
     (4, 0x5f90): dict(),                   # FlSetJumpBottom: RIGHT on the SET tab
     (4, 0x5fb0): dict(),                   # SetExitHook: SET screen exit: SetCommit, clear SET_PAGE
     (4, 0x5fc0): dict(),                   # SetCommit: SET_DIRTY -> EZGB.CFG and /.ezgbplays
@@ -618,7 +618,7 @@ class Port:
                                 f"space, not in kernel.sym: skipped (blank them in {self.src_ver})")
                 continue
             if bank == 0 and 0x0104 <= r0 and r1 <= 0x014e:
-                # cartridge header (the SGB flag and licensee, scripts/inject-sgb.py,
+                # cartridge header (the SGB flag and licensee, kernel/tools/inject-sgb.py,
                 # and the header checksum over them): data, laid out the same in
                 # every build, so copied as is
                 if self.dst_stock[r0:r1] != self.src_stock[r0:r1]:

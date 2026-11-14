@@ -22,7 +22,7 @@ Other people's repositories are cloned into `tools/`, which is ignored:
 ```sh
 git clone https://github.com/mattcurrie/mgbdis tools/mgbdis          # the disassembler
 git clone https://github.com/daid/ezflashjr tools/ezflashjr          # EZ Flash's firmware packages
-git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools    # optional, for scripts/gbdiff.sh
+git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools    # optional, for kernel/tools/gbdiff.sh
 git clone https://github.com/ezflash-team/omega-de-kernel tools/omega-de-kernel   # optional, naming reference
 ./scripts/setup-sameboy.sh && make -C tools/SameBoy CONF=debug sdl   # the emulator, with the EZ Jr stub
 ```
@@ -48,7 +48,7 @@ cp $O/2020-03-10_FW4_K1.04e/ezgb.dat   kernel/1.04e/kernel.gb.orig
 cp $O/2020-07-31_FW5_K1.05RC/ezgb.dat  kernel/1.05e-0731/kernel.gb.orig
 cp $O/2021-09-18_FW5_K1.05e/ezgb.dat   kernel/1.05e-0918/kernel.gb.orig
 
-for v in 1.04e 1.05e-0731 1.05e-0918; do scripts/build-kernel.sh $v --install; done
+for v in 1.04e 1.05e-0731 1.05e-0918; do kernel/tools/build-kernel.sh $v --install; done
 ```
 
 `build-kernel.sh` assembles the committed disassembly, checks the result
@@ -56,9 +56,9 @@ against the md5 in `patches/kernel/manifest.json`, and with `--install`
 writes it to `kernel.gb`. Then confirm the checkout is whole:
 
 ```sh
-scripts/rebuild-blocks.py                           # "all C blocks match their sources"
-scripts/port-mod.py 1.05e-0731 1.05e-0918 --check   # "identical"
-scripts/port-mod.py 1.05e-0731 1.04e --check
+kernel/tools/rebuild-blocks.py                           # "all C blocks match their sources"
+kernel/tools/port-mod.py 1.05e-0731 1.05e-0918 --check   # "identical"
+kernel/tools/port-mod.py 1.05e-0731 1.04e --check
 ```
 
 Put the `.orig` files in place before running anything else. Without one,
@@ -78,7 +78,7 @@ modded `kernel.gb` itself, described by tracked files:
   blocks. The disassembly is regenerated from these two, so hand edits to
   `bank_*.asm` are lost.
 - `kernel/mod/src/` is the C, `kernel/mod/asm/` the assembly. `REGISTRY` in
-  `scripts/port-mod.py` is the one list of C blocks: source file, bank,
+  `kernel/tools/port-mod.py` is the one list of C blocks: source file, bank,
   address and pins.
 - Hand-assembled hooks, and every patched call site in stock code, have no
   source file. They exist only as bytes in `kernel.gb` and as blocks in the
@@ -91,16 +91,16 @@ edited by hand; they are ports of it.
 
 ```sh
 # 1. edit C in kernel/mod/src, then bring 0731 up to date
-scripts/rebuild-blocks.py --apply          # re-injects every block whose source changed
-scripts/regen-disasm.sh 1.05e-0731         # disassembly from kernel.gb + kernel.sym + notes.json
+kernel/tools/rebuild-blocks.py --apply          # re-injects every block whose source changed
+kernel/tools/regen-disasm.sh 1.05e-0731         # disassembly from kernel.gb + kernel.sym + notes.json
 
 # 2. carry it to the other kernels
-scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply --sym
-scripts/port-mod.py 1.05e-0731 1.04e --apply --sym
-scripts/regen-disasm.sh 1.05e-0918 && scripts/regen-disasm.sh 1.04e
+kernel/tools/port-mod.py 1.05e-0731 1.05e-0918 --apply --sym
+kernel/tools/port-mod.py 1.05e-0731 1.04e --apply --sym
+kernel/tools/regen-disasm.sh 1.05e-0918 && kernel/tools/regen-disasm.sh 1.04e
 
 # 3. cut the patches
-scripts/kernel-patch.py make               # patches/kernel/*.ips and manifest.json
+kernel/tools/kernel-patch.py make               # patches/kernel/*.ips and manifest.json
 ```
 
 Commit the sources together with the three disassemblies, `kernel.sym`,
@@ -137,12 +137,12 @@ The features written in assembly have their own inject scripts, each run on
 
 | Script | Feature |
 |---|---|
-| `scripts/inject-ezcfg.sh` | the settings module and everything that hooks into it (the largest; it also places most hand-assembled hooks) |
-| `scripts/inject-font12.sh` | the 12px glyph tables, after editing a sheet |
-| `scripts/inject-sgb.py` | Super Game Boy boot |
-| `scripts/inject-skipboot.py` | skipping the boot ROM |
-| `scripts/inject-fillrect.py`, `inject-fastdec.py` | the fast rectangle fill and decimal conversion |
-| `scripts/inject-set-jump.py` | LEFT and RIGHT on the SET tab |
+| `kernel/tools/inject-ezcfg.sh` | the settings module and everything that hooks into it (the largest; it also places most hand-assembled hooks) |
+| `kernel/tools/inject-font12.sh` | the 12px glyph tables, after editing a sheet |
+| `kernel/tools/inject-sgb.py` | Super Game Boy boot |
+| `kernel/tools/inject-skipboot.py` | skipping the boot ROM |
+| `kernel/tools/inject-fillrect.py`, `inject-fastdec.py` | the fast rectangle fill and decimal conversion |
+| `kernel/tools/inject-set-jump.py` | LEFT and RIGHT on the SET tab |
 
 ### Choosing a hook site
 
@@ -168,12 +168,12 @@ The features written in assembly have their own inject scripts, each run on
 
 The three kernels are the same program with code inserted or removed in a
 few places, so `port-mod.py` moves the mod across mechanically
-(`scripts/portmap.py` does the mapping).
+(`kernel/tools/portmap.py` does the mapping).
 
 - **Address map.** Each bank of both stock ROMs is decoded into a stream of
   opcodes, operands ignored, and the two streams are aligned. An address
   inside a matched run maps by offset. Try it:
-  `scripts/portmap.py 1.05e-0731 1.04e 00:1344`.
+  `kernel/tools/portmap.py 1.05e-0731 1.04e 00:1344`.
 - **C blocks** are recompiled at the same address with every pin translated
   through the map.
 - **Hand-assembled blocks** are decoded and their absolute operands
@@ -205,7 +205,7 @@ porting 0731 onto 0918 the regression test for the whole tool.
 ## The disassembly
 
 ```sh
-scripts/regen-disasm.sh 1.05e-0731     # after editing kernel.sym or notes.json
+kernel/tools/regen-disasm.sh 1.05e-0731     # after editing kernel.sym or notes.json
 ```
 
 It runs mgbdis over `kernel.gb` with the names from `kernel.sym`, adds the
@@ -232,7 +232,7 @@ which matters because the stock browser shows raw FAT order.
 `run-sameboy-debug.sh --breakpoints` loads `scripts/debug/launch.sbd`, and
 `--script` takes any other file from `scripts/debug/`.
 
-`scripts/make-debug-build.py` builds a kernel with the debug screen
+`kernel/tools/make-debug-build.py` builds a kernel with the debug screen
 ([debug-tab.md](debug-tab.md)).
 
 ## Releases
@@ -242,7 +242,7 @@ hand, once per release, and never by a script:
 
 ```sh
 $EDITOR patches/kernel/VERSION
-scripts/stamp-mod-version.sh       # writes it into the HELP tab of every kernel, rebuilds, cuts patches
+kernel/tools/stamp-mod-version.sh       # writes it into the HELP tab of every kernel, rebuilds, cuts patches
 ```
 
 `stamp-mod-version.sh` ends by running `make-dist.sh`, which lays out

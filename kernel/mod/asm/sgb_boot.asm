@@ -33,13 +33,13 @@
 ; stage1, which handles the SGB itself (stage1/src/sgb.c) and says so with
 ; 'S','B' (sent) or 'S','N' (no SGB) at $A412. The mark is left for ezcfg's
 ; boot hook to read and clear, so the SET tab can show SGB BOOT as AUTO. Built
-; with -D SGB_ALWAYS (the mod-5.2-sgb test build, scripts/make-sgb-dist.py) it
+; with -D SGB_ALWAYS (the mod-5.2-sgb test build, kernel/tools/make-sgb-dist.py) it
 ; skips the check.
 ;
 ; Everything but two small bank-0 stubs and SgbBootHook lives at the end of
 ; bank 4, the only bank with room in all three kernels. Kernel addresses
 ; (RunCallbackList, wRomBank, ...) come from kernel.sym as -D definitions;
-; scripts/inject-sgb.py assembles this, injects every section and points the
+; kernel/tools/inject-sgb.py assembles this, injects every section and points the
 ; hook sites at them.
 
 DEF rP1        EQU $ff00

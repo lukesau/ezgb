@@ -55,9 +55,9 @@ at y 12, and the ten list rows are at `y = 20 + 12*i`.
 | What | Where |
 |---|---|
 | glyph sheets, ASCII art you can edit by hand | `kernel/mod/font12/font12.txt` and `font12_dv.txt`: `#` ink, `.` paper, 10 columns by 12 rows. `keep` on a glyph's header protects it from the renderer |
-| TTF to sheet | `scripts/font12-render.py` (needs Pillow; defaults to Menlo Bold 13, baseline on row 9) |
-| sheet to bitmaps and metrics | `scripts/font12-pack.py`; `--gap`, `--kmax`, `--space` and `--icon-adv` tune the spacing, `--mono N` packs a fixed-width set |
-| placing the tables | `scripts/inject-font12.sh <version> <set>` |
+| TTF to sheet | `kernel/tools/font12-render.py` (needs Pillow; defaults to Menlo Bold 13, baseline on row 9) |
+| sheet to bitmaps and metrics | `kernel/tools/font12-pack.py`; `--gap`, `--kmax`, `--space` and `--icon-adv` tune the spacing, `--mono N` packs a fixed-width set |
+| placing the tables | `kernel/tools/inject-font12.sh <version> <set>` |
 | tables in ROM | set 0: `Font12` `0A:4C00`, `Font12Metrics` `0A:5580`. Set 1: `Font12Dv` `0A:5D00`, `Font12DvMetrics` `0A:6680` |
 | layout | [layout12.c](../kernel/mod/src/layout12.c), `Fit12Impl` `0A:4A00` |
 | renderer | [draw12.c](../kernel/mod/src/draw12.c), `DrawString12Impl` `0A:4000` |

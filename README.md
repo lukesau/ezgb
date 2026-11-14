@@ -131,6 +131,7 @@ kernel/     The menu program
               1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
               1.05e-0731/stock/                that build from source, checked byte for byte
               mod/                             the mod: C and asm sources, inject tooling
+              tools/                           build, port, inject and release scripts
 stage1/     The bootloader
               fw4/ fw5-0918/                   EZ Flash's stage1, disassembled
               src/ art/ font/ tools/           our replacement, from source
@@ -140,7 +141,7 @@ stage0/     The FPGA design
               sim/ netlist/ lib/ tools/ docs/  shared: simulation, analysis, tools, write-ups
 docs/       Feature write-ups, hardware notes, findings
 patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
-scripts/    Build, port, release and emulator helpers
+scripts/    Emulator, SD image, patcher page and banner helpers
 ```
 
 EZ Flash's binaries (kernels, bitstreams, updaters) and third-party tools

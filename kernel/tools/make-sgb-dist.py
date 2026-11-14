@@ -16,7 +16,7 @@ model); there is no setting yet. Changes on top of the mod:
   $014D-$014F  header and global checksums recomputed
   08:7aff      HELP string "MOD N.MSGB"
 
-Usage: scripts/make-sgb-dist.py
+Usage: kernel/tools/make-sgb-dist.py
 """
 import hashlib
 import json
@@ -27,8 +27,8 @@ import sys
 import tempfile
 from importlib import import_module
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 kp = import_module("kernel-patch")
 
 ASM = os.path.join(ROOT, "kernel", "mod", "asm", "sgb_boot.asm")

@@ -1,6 +1,6 @@
 /* Draw routines shared by the injected blocks: the stock kernel's 8px
  * painters in bank 0 and the mod's 12px renderer in bank 2. Each block pins
- * the ones it calls (scripts/port-mod.py REGISTRY). Include after types.h.
+ * the ones it calls (kernel/tools/port-mod.py REGISTRY). Include after types.h.
  *
  * browser_scroll_repaint.c declares DrawString and StoreDrawParams itself,
  * with packed arguments, so it does not include this. */

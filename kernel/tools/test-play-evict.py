@@ -5,7 +5,7 @@ Each case writes a 254-entry /.ezgbplays to a scratch card with two ROMs,
 boots the kernel, launches or stars a ROM that is not in the table, and
 compares the file the kernel wrote back with what play.c should have done.
 
-  scripts/test-play-evict.py <kernel.gb> [case ...]
+  kernel/tools/test-play-evict.py <kernel.gb> [case ...]
 
 Needs mtools and the SameBoy stub with SAMEBOY_EZFLASH_JR_PADFILE. MODEL=dmg
 runs it as a DMG. Scratch cards go to a temp directory, or to EVICT_DIR.
@@ -14,7 +14,7 @@ each step is also screenshotted there.
 """
 import os, random, signal, subprocess, sys, tempfile, time
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HERE = os.environ.get("EVICT_DIR") or tempfile.mkdtemp(prefix="play-evict-")
 WINID = os.environ.get("EVICT_WINID")
 SAMEBOY = REPO + "/tools/SameBoy/build/bin/SDL/sameboy"

@@ -122,7 +122,7 @@ def main():
     print(f"patched {gb_path} at file offset ${offset:x}")
 
     if args.regen:
-        regen = os.path.join(REPO_ROOT, "scripts", "regen-disasm.sh")
+        regen = os.path.join(REPO_ROOT, "kernel", "tools", "regen-disasm.sh")
         print(f"\nrunning {regen} {args.version} ...")
         result = subprocess.run([regen, args.version], cwd=REPO_ROOT)
         if result.returncode != 0:

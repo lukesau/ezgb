@@ -36,7 +36,7 @@ Unstarring a ROM that was never launched drops its entry. A header that is not
 also kept on the card (below), so a cart without a coin cell keeps its stars
 and counts too.
 
-[test-play-evict.py](../scripts/test-play-evict.py) runs the full-table
+[test-play-evict.py](../kernel/tools/test-play-evict.py) runs the full-table
 cases in SameBoy: it writes a 254-entry `/.ezgbplays` to a scratch card,
 launches or stars a ROM that is not in it, and compares the file the kernel
 writes back.

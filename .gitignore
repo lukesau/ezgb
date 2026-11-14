@@ -51,7 +51,7 @@ kernel/*/kernel.log
 # they stay local. See fpga/README.md.
 /fpga/*
 # The floorplan page has no block RAM contents and is tracked and published
-# (scripts/publish-floorplan.sh); its intermediate files are not.
+# (stage0/tools/publish-floorplan.sh); its intermediate files are not.
 /stage0/floorplan/*.jsonl
 
 *.bin

@@ -2,12 +2,12 @@
 """Recompile every injected C block and bring the development kernel up to date.
 
 The C blocks, their addresses and their pins are listed once, in
-scripts/port-mod.py's REGISTRY; block names and lengths come from
+kernel/tools/port-mod.py's REGISTRY; block names and lengths come from
 kernel/<ver>/kernel.sym. This compiles each source at its address and compares the
 result with the bytes in kernel/<ver>/kernel.gb:
 
-    scripts/rebuild-blocks.py              # report; exit 1 if any block is stale
-    scripts/rebuild-blocks.py --apply      # re-inject the stale ones in place
+    kernel/tools/rebuild-blocks.py              # report; exit 1 if any block is stale
+    kernel/tools/rebuild-blocks.py --apply      # re-inject the stale ones in place
 
 --apply runs kernel/mod/tools/inject.py --replace for each stale block, so every
 rebuild gets the same fit check (no overlap with another kernel.sym entry, new
@@ -33,11 +33,11 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(ROOT, "kernel", "mod", "tools"))
 from sdcc_build import compile_c, parse_ihx, rom_offset  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("port_mod", os.path.join(ROOT, "scripts", "port-mod.py"))
+spec = importlib.util.spec_from_file_location("port_mod", os.path.join(ROOT, "kernel", "tools", "port-mod.py"))
 port_mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(port_mod)
 

@@ -25,7 +25,7 @@ taken from kernel.sym, and, through kernel/mod/tools:
 Re-running replaces the blocks and skips bytes already set. The pre-7.0
 SgbUnlock block at 01:7f00 is put back to stock first.
 
-Usage: scripts/inject-sgb.py <ver> [--apply]
+Usage: kernel/tools/inject-sgb.py <ver> [--apply]
 """
 import os
 import re
@@ -33,7 +33,7 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TOOLS = os.path.join(ROOT, "kernel", "mod", "tools")
 ASM = os.path.join(ROOT, "kernel", "mod", "asm", "sgb_boot.asm")
 

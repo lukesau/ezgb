@@ -11,12 +11,12 @@
 # different carts and releases never overwrite each other. Copy the one you
 # want to the card root as ezgb.dat; the browser never lists it (DirList
 # memcmps each entry against "ezgb.dat" and skips the match).
-# scripts/make-dist.sh runs this for every version and adds the IPS files.
+# kernel/tools/make-dist.sh runs this for every version and adds the IPS files.
 #
 # Usage:
-#   scripts/build-ezgb-dat.sh              # 1.05e-0731 -> dist/mod-N.M/ezgb-mod-N.M-for-1.05e-0731.dat
-#   scripts/build-ezgb-dat.sh 1.04e
-#   scripts/build-ezgb-dat.sh 1.05e-0731 --fix-checksum
+#   kernel/tools/build-ezgb-dat.sh              # 1.05e-0731 -> dist/mod-N.M/ezgb-mod-N.M-for-1.05e-0731.dat
+#   kernel/tools/build-ezgb-dat.sh 1.04e
+#   kernel/tools/build-ezgb-dat.sh 1.05e-0731 --fix-checksum
 #
 # --fix-checksum rewrites the global checksum at $014E-$014F. Off by default:
 # patching the ROM invalidates it, but neither the Game Boy boot ROM nor the
@@ -24,7 +24,7 @@
 # hardware), and silently altering header bytes would hide that fact.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VER="1.05e-0731"
 FIX=0
 for arg in "$@"; do

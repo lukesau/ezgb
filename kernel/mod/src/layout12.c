@@ -4,7 +4,7 @@
  * advance (ink + gap), and a pair of neighbors may kern, pulling the second
  * glyph left by up to 2 px where their shapes leave room (T followed by o,
  * r followed by a period). All of that comes from the metrics table
- * scripts/font12-pack.py derives from the glyph sheet (Font12Metrics at
+ * kernel/tools/font12-pack.py derives from the glyph sheet (Font12Metrics at
  * 02:6978): advances, ink widths, and a class-kerning matrix, each glyph
  * carrying a left class (its column) and a right class (its row).
  *
@@ -39,7 +39,7 @@
 #include "types.h"
 #include "vars.h"
 
-extern const u8 Font12Metrics[];   /* 0A:5580, scripts/font12-pack.py */
+extern const u8 Font12Metrics[];   /* 0A:5580, kernel/tools/font12-pack.py */
 extern const u8 Font12DvMetrics[]; /* 0A:6680, the DV theme's glyph set */
 
 #define M_ADV   0                  /* u8[101] advance */

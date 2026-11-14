@@ -14,7 +14,7 @@
  *
  * The 12px renderer (draw12.c) places rows on 4 px steps and paints 12 of
  * them, so the viewer draws its own: the glyphs are a table in this block
- * (textview_font.h, scripts/textview-font.py: rows 1-10 of each 6x12 cell,
+ * (textview_font.h, kernel/tools/textview-font.py: rows 1-10 of each 6x12 cell,
  * one byte a row), a row is composed in a stack buffer, one 10-byte column
  * per tile, and blit_col copies each column to the tile canvas, ink 3 on
  * paper 0, two pixel rows per HBlank with interrupts off across the sync

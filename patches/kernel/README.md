@@ -7,7 +7,7 @@ the md5s of the expected input and output, and `VERSION` the current mod
 version (`N.M`).
 
 ```bash
-python3 ../../scripts/kernel-patch.py apply /path/to/ezgb.dat
+python3 ../../kernel/tools/kernel-patch.py apply /path/to/ezgb.dat
 ```
 
 Or use any IPS tool (Flips, Lunar IPS, an online patcher) and check the md5s

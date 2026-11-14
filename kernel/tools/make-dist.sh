@@ -14,24 +14,24 @@
 # a stale kernel/<ver>/kernel.gb or patch fails loudly instead of shipping.
 # dist/ is gitignored; the .ips files are what a GitHub release gets.
 #
-# scripts/stamp-mod-version.sh runs this last, after stamping and rebuilding
-# every version. Usage: scripts/make-dist.sh
+# kernel/tools/stamp-mod-version.sh runs this last, after stamping and rebuilding
+# every version. Usage: kernel/tools/make-dist.sh
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MODVER="$(tr -d '[:space:]' < "$ROOT/patches/kernel/VERSION")"
 OUT="$ROOT/dist/mod-$MODVER"
 mkdir -p "$OUT"
 rm -f "$OUT"/ezgb-firmware-*.ips          # rewritten below from patches/updater/
 for V in $(python3 -c "import json;print(' '.join(sorted(json.load(open('$ROOT/patches/kernel/manifest.json')))))"); do
   echo "$V:"
-  "$ROOT/scripts/build-ezgb-dat.sh" "$V" | sed 's/^/  /'
+  "$ROOT/kernel/tools/build-ezgb-dat.sh" "$V" | sed 's/^/  /'
   cp "$ROOT/patches/kernel/ezgb-$V.ips" "$OUT/ezgb-mod-$MODVER-for-$V.ips"
 done
 python3 - "$ROOT" "$MODVER" <<'PY'
 import hashlib, json, os, sys
 root, modver = sys.argv[1], sys.argv[2]
 PATCHER_URL = "https://lukesau.github.io/ezgb/patcher/"   # where dist/patcher/index.html is hosted
-sys.path.insert(0, os.path.join(root, "scripts"))
+sys.path.insert(0, os.path.join(root, "kernel", "tools"))
 from importlib import import_module
 kp = import_module("kernel-patch")
 manifest = json.load(open(os.path.join(root, "patches", "kernel", "manifest.json")))

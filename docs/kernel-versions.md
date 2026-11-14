@@ -257,7 +257,7 @@ other two mechanically ([DEVELOPMENT.md](DEVELOPMENT.md#how-the-port-works)).
 
 By static comparison of the stock `ezgb.dat` files, md5-verified against the
 table above: every region where the instruction streams of two builds stop
-lining up (`scripts/portmap.py`), and every operand that differs inside the
+lining up (`kernel/tools/portmap.py`), and every operand that differs inside the
 matching regions and is not a relocated address or a stack-frame offset. The
 byte-level accounting is in [kernel-diffs.md](kernel-diffs.md).
 

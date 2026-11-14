@@ -9,19 +9,19 @@
 #   set 1  kernel/mod/font12/font12_dv.txt  Font12Dv 0A:5D00, Font12DvMetrics 0A:6680
 #          (the DV theme's: Tamzen 6x12, fixed width, packed with --mono 6)
 #
-#   scripts/inject-font12.sh [version] [set] [font12-pack.py options]
+#   kernel/tools/inject-font12.sh [version] [set] [font12-pack.py options]
 #                                             (default 1.05e-0731, set 0)
 #
 # inject_bytes.py refuses an address that already has a kernel.sym entry, so
 # the previous lines are dropped first (same pattern as
-# scripts/inject-ezcfg.sh). The bitmaps are a fixed 2424 bytes; the metrics
+# kernel/tools/inject-ezcfg.sh). The bitmaps are a fixed 2424 bytes; the metrics
 # table shrinks or grows with the kerning classes (about 17 bytes per right
 # class), so the bytes between its end and the next kernel.sym label in the
 # bank are blanked to $FF before it is written, leaving nothing stale behind
 # it, and a table that would reach that label is refused here:
 # inject_bytes.py does not notice a block running into the next label.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 V="${1:-1.05e-0731}"
 SET="${2:-0}"
 shift 2 2>/dev/null || shift $# || true
@@ -40,7 +40,7 @@ b, m = sys.argv[2], int(sys.argv[3], 16)
 after = [a for a in (int(l[3:7], 16) for l in open(sys.argv[1]) if l.startswith(b + ":")) if a > m]
 print(hex(min(after) if after else 0x8000))' "$SYM" "$BANK" "$MET")"
 
-python3 "$ROOT/scripts/font12-pack.py" -i "$ROOT/kernel/mod/font12/$SHEET" -o "$OUT" -m "$OUTM" ${OPTS[@]+"${OPTS[@]}"} "$@" | head -2
+python3 "$ROOT/kernel/tools/font12-pack.py" -i "$ROOT/kernel/mod/font12/$SHEET" -o "$OUT" -m "$OUTM" ${OPTS[@]+"${OPTS[@]}"} "$@" | head -2
 perl -ni -e "print unless /^$BANK:($BMP|$MET) /" "$SYM"
 python3 - "$ROM" "$OUTM" "$BANK" "$MET" "$METRICS_END" <<'EOF'
 import sys

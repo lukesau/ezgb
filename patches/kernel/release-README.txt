@@ -69,7 +69,7 @@ matching .ips as the patch; the result is a new 163,840-byte file.
     MultiPatch  https://projects.sappharad.com/multipatch/  (or Flips)
   Linux:
     Flips, or from a checkout of the repo:
-      python3 scripts/kernel-patch.py apply ezgb.dat
+      python3 kernel/tools/kernel-patch.py apply ezgb.dat
     which detects the build by md5 and verifies the result for you.
 
 The patched file's md5 must equal the modded md5 in the list above. If it

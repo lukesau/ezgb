@@ -1,6 +1,6 @@
 /* Debug screen: a scrollable page of hardware readouts (docs/debug-tab.md).
  *
- * Debug builds only (scripts/make-debug-build.py), bank 12. SELECT on HELP returns to the browser in a release build; in a
+ * Debug builds only (kernel/tools/make-debug-build.py), bank 12. SELECT on HELP returns to the browser in a release build; in a
  * debug build HELP's exit jumps to DbgTabHook, which far-calls this. It
  * clears the pane first (DrawMenuTabs tab 3: the strip stays on HELP) and
  * returns on SELECT like the other tabs' loops.
@@ -41,7 +41,7 @@
  * Page access is the kernel's: $4000 = page, $7FC0 = $03, read through
  * $A000-$BFFF, then $4000 = 0, $7FC0 = 0.
  *
- *   scripts/make-debug-build.py <ver> [--install /Volumes/<card>]
+ *   kernel/tools/make-debug-build.py <ver> [--install /Volumes/<card>]
  */
 
 #include "types.h"

@@ -16,13 +16,13 @@ Every page has both buttons since 2026-11-10 (the pages go round), so
 neither tests the row it is on any more.
 
 Written against the development base (1.05e-0731); port-mod.py carries it.
-Usage: scripts/inject-set-jump.py 1.05e-0731 [--apply]
+Usage: kernel/tools/inject-set-jump.py 1.05e-0731 [--apply]
 """
 import os
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TOOLS = os.path.join(ROOT, "kernel", "mod", "tools")
 REDRAW, ROWS_HOOK = 0x48f5, 0x5948      # DrawTimeAutosaveScreen_redraw, FlSetRowsHook
 TOP, BOTTOM = 0x5f80, 0x5f90

@@ -15,7 +15,7 @@
 ; `jp U32ToAsciiFast; nop`; the slow path runs them and jumps back.
 ; Arguments (sdcccall 0): sp+2 value (u32), sp+6 buffer, sp+8 radix.
 ;
-; scripts/inject-fastdec.py assembles this and injects it.
+; kernel/tools/inject-fastdec.py assembles this and injects it.
 
 DEF U32ToAsciiRest EQU $44fb   ; U32ToAscii + 4
 

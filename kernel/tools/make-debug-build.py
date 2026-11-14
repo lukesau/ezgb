@@ -17,11 +17,11 @@ mod build, untouched) and writes a copy with:
 
 so SELECT on HELP opens the debug screen and SELECT there goes to the
 browser; START on HELP still goes back to the browser. Addresses are written for 1.05e-0731 and carried to other builds
-through scripts/portmap.py, the same matching port-mod.py uses; the site's
+through kernel/tools/portmap.py, the same matching port-mod.py uses; the site's
 bytes are checked before anything is written.
 
 Usage:
-  scripts/make-debug-build.py <ver> [--install DIR]
+  kernel/tools/make-debug-build.py <ver> [--install DIR]
     -> dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat (and DIR/ezgb.dat)
 """
 import argparse
@@ -31,8 +31,8 @@ import shutil
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 sys.path.insert(0, os.path.join(ROOT, "kernel", "mod", "tools"))
 from portmap import PortMap, load_stock  # noqa: E402
 from sdcc_build import compile_c, parse_ihx  # noqa: E402

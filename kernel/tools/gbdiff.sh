@@ -8,11 +8,11 @@
 # beside the older dump (e.g. a built disassembly/game.sym) to name both sides.
 #
 # Usage:
-#   scripts/gbdiff.sh                # diff the 1.04e vs 1.05e-0731 kernel dumps
-#   scripts/gbdiff.sh old.gb new.gb  # diff any two ROMs
+#   kernel/tools/gbdiff.sh                # diff the 1.04e vs 1.05e-0731 kernel dumps
+#   kernel/tools/gbdiff.sh old.gb new.gb  # diff any two ROMs
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GBDIFF="${GBASM_TOOLS:-$ROOT/tools/gb-asm-tools}/tools/gbdiff.sh"
 
 A="${1:-$ROOT/kernel/1.04e/kernel.gb}"

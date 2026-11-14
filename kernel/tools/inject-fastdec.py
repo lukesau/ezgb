@@ -8,7 +8,7 @@ Assembles kernel/mod/asm/u32dec.asm and, through kernel/mod/tools:
             `jp U32ToAsciiFast; nop` (the slow path runs them and jumps back)
 
 Written against the development base (1.05e-0731); port-mod.py carries it.
-Usage: scripts/inject-fastdec.py 1.05e-0731 [--apply]
+Usage: kernel/tools/inject-fastdec.py 1.05e-0731 [--apply]
 """
 import importlib.util
 import os
@@ -17,8 +17,8 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "scripts", "inject-sgb.py"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "kernel", "tools", "inject-sgb.py"))
 sgb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sgb)
 

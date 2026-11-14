@@ -105,7 +105,7 @@ def main():
     print(f"\nwrote {sym_path}:\n" + "\n".join(new_lines))
 
     if args.regen:
-        regen = os.path.join(REPO_ROOT, "scripts", "regen-disasm.sh")
+        regen = os.path.join(REPO_ROOT, "kernel", "tools", "regen-disasm.sh")
         print(f"\nrunning {regen} {args.version} ...")
         result = subprocess.run([regen, args.version], cwd=REPO_ROOT)
         if result.returncode != 0:

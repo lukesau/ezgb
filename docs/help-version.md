@@ -37,9 +37,9 @@ with `jp HelpHook` (`08:7b40`):
 ## The version text
 
 The mod version is a fixed 10-byte field, `MODSTR` at `08:7aff`, so
-changing the number never changes any code. `scripts/stamp-mod-version.sh`
+changing the number never changes any code. `kernel/tools/stamp-mod-version.sh`
 copies `patches/kernel/VERSION` into it for every kernel
 ([DEVELOPMENT.md](DEVELOPMENT.md#releases)).
 
 The kernel text is the one string that differs between the three builds. It
-is `VERSION_TEXT` in `scripts/port-mod.py`, which the port writes into each.
+is `VERSION_TEXT` in `kernel/tools/port-mod.py`, which the port writes into each.

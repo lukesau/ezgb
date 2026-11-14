@@ -18,10 +18,10 @@ hand, when a release is cut; regenerating the patches never touches it.
 Usage:
   # Maintainer: regenerate all patches after changing injections
   #   diffs kernel/<ver>/kernel.gb.orig (stock) -> kernel/<ver>/kernel.gb (modded)
-  scripts/kernel-patch.py make
+  kernel/tools/kernel-patch.py make
 
   # User: patch an official ezgb.dat (version auto-detected by md5)
-  scripts/kernel-patch.py apply ~/Downloads/ezgb.dat -o /Volumes/EZGB/ezgb.dat
+  kernel/tools/kernel-patch.py apply ~/Downloads/ezgb.dat -o /Volumes/EZGB/ezgb.dat
 
 The firmware updater gets the same treatment: an IPS from EZ Flash's stock
 updater to ours (our stage1 and the flash read patch in slot B, built by
@@ -29,10 +29,10 @@ stage0/tools/build-stage1-updater.sh), in patches/updater/ with its own
 manifest.json. stage1/VERSION's mod version is recorded with it.
 
   # Maintainer: diff the stock updater -> a built one
-  scripts/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v5.gb
+  kernel/tools/kernel-patch.py updater make fw5-0918 fpga/load/Update_FW5-0918-stage1-v5.gb
 
   # User: patch the official Update_FW5_2021-9-18.gb
-  scripts/kernel-patch.py updater apply ~/Downloads/Update_FW5_2021-9-18.gb
+  kernel/tools/kernel-patch.py updater apply ~/Downloads/Update_FW5_2021-9-18.gb
 """
 import argparse
 import hashlib
@@ -40,7 +40,7 @@ import json
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PATCH_DIR = os.path.join(ROOT, "patches", "kernel")
 MANIFEST = os.path.join(PATCH_DIR, "manifest.json")
 VERSION_FILE = os.path.join(PATCH_DIR, "VERSION")

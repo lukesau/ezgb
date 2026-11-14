@@ -5,9 +5,9 @@
 # floorplan/index.html on the gh-pages branch and pushes it. The patcher page
 # and the site root redirect stay as they are.
 #
-#   scripts/publish-floorplan.sh [--no-push]
+#   stage0/tools/publish-floorplan.sh [--no-push]
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PAGE="$ROOT/stage0/floorplan/floorplan.html"
 push=1
 [ "${1:-}" = "--no-push" ] && push=0

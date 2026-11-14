@@ -16,7 +16,7 @@ release has to survive every mix-up (docs/distribution.md, "Wrong patch"):
             1.05e-0731 / 1.05e-0918 mixes must stop on the WRONG PATCH
             screen (kernel/mod/src/patch_guard.c). Screenshots land in --out.
 
-    scripts/test-patch-mismatch.py [--boot] [--out DIR]
+    kernel/tools/test-patch-mismatch.py [--boot] [--out DIR]
 
 Exit status 1 if any case fails.
 """
@@ -30,8 +30,8 @@ import sys
 import tempfile
 import time
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
 kp = __import__("kernel-patch")
 
 UPDATERS = {"fw4": "tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb",

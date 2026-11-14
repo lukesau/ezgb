@@ -11,7 +11,7 @@ Assembles kernel/mod/asm/fillrect.asm and, through kernel/mod/tools:
 Written against the development base (1.05e-0731); port-mod.py carries it.
 Re-running replaces the block.
 
-Usage: scripts/inject-fillrect.py 1.05e-0731 [--apply]
+Usage: kernel/tools/inject-fillrect.py 1.05e-0731 [--apply]
 """
 import importlib.util
 import os
@@ -20,8 +20,8 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "scripts", "inject-sgb.py"))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+spec = importlib.util.spec_from_file_location("inject_sgb", os.path.join(ROOT, "kernel", "tools", "inject-sgb.py"))
 sgb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sgb)
 

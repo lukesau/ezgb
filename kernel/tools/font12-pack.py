@@ -39,14 +39,14 @@ Class 0 on either side means "never kerns" (space, icons, digits). The
 ten digits are tabular: one fixed 7 px cell and advance each, untrimmed and
 unkerned, so numbers line up in columns and do not jitter as they change.
 
-    scripts/font12-pack.py [-i sheet] [-o bitmaps] [-m metrics]
+    kernel/tools/font12-pack.py [-i sheet] [-o bitmaps] [-m metrics]
                            [--gap 2] [--kmax 2] [--space 5] [--icon-adv 12]
 """
 import argparse
 import os
 import re
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_IN = os.path.join(ROOT, "kernel", "mod", "font12", "font12.txt")
 DEFAULT_OUT = os.path.join(ROOT, "kernel", "mod", "font12", "font12.bin")
 DEFAULT_METRICS = os.path.join(ROOT, "kernel", "mod", "font12", "font12-metrics.bin")
@@ -210,7 +210,7 @@ def main():
     kerned = sum(1 for a in range(n) for b in range(n) if matrix[a][b])
     print(f"wrote {args.metrics}: {len(metrics)} bytes; {R} right x {L} left classes, "
           f"{kerned} kerned pairs, gap {args.gap}, kmax {args.kmax}, space {args.space}, icon {args.icon_adv}")
-    print("place both with scripts/inject-font12.sh")
+    print("place both with kernel/tools/inject-font12.sh")
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@
  * glyph sets live beside the engine (docs/font12.md). The glyph bitmaps are a
  * separate raw block at 0A:4C00 (Font12, 101 glyphs x 12 rows x 2 bytes,
  * left-trimmed, pixels from bit 15) and the metrics at 0A:5580
- * (Font12Metrics), both produced by scripts/font12-pack.py from
+ * (Font12Metrics), both produced by kernel/tools/font12-pack.py from
  * kernel/mod/font12/font12.txt.
  *
  *   python3 tools/inject.py src/draw12.c $V 10 4000 DrawString12Impl \\
@@ -62,13 +62,13 @@
 #include "draw.h"
 #include "vars.h"
 
-/* Kernel symbols, all --pin'd so scripts/port-mod.py can re-pin them for a
+/* Kernel symbols, all --pin'd so kernel/tools/port-mod.py can re-pin them for a
  * kernel whose WRAM map differs (1.04e shifts $d6cc and up). */
 extern volatile u8 wDrawColor;     /* $d734 ink   (StoreDrawParams) */
 extern volatile u8 wDrawColorB;    /* $d735 paper */
 extern volatile u8 wIntNest;       /* $d6d0 DiNest depth */
 extern const u16 GfxRowTable[];    /* 00:2fbb pixel row -> VRAM address of tile column 0 */
-extern const u8 Font12[];          /* 0A:4C00, 101 glyphs x 24 bytes (scripts/font12-pack.py) */
+extern const u8 Font12[];          /* 0A:4C00, 101 glyphs x 24 bytes (kernel/tools/font12-pack.py) */
 extern const u8 Font12Metrics[];   /* 0A:5580, advances first (layout12.c has the layout) */
 extern const u8 Font12Dv[];        /* 0A:5D00, the DV theme's glyph set (THEME_DV) */
 extern const u8 Font12DvMetrics[]; /* 0A:6680 */
