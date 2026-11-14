@@ -214,7 +214,7 @@ python3 tools/inject_bytes.py "$V" 0 0380 TabNum12 f0fbb7000000cd8d0706400c00c9 
 python3 tools/patch_bytes.py "$V" 8 7169 210000 c3207b --apply >/dev/null
 python3 tools/patch_bytes.py "$V" 1 "$NUM1" cdb708 cd8003 --apply >/dev/null   # NUM1/NUM2: the entry number's
 python3 tools/patch_bytes.py "$V" 1 "$NUM2" cdb708 cd8003 --apply >/dev/null   # `call DrawString` (bank 1, per build)
-# BACKUPSAVE prompt (docs/modal-prompts.md): BkPrompt (bank 4) draws the box,
+# BACKUPSAVE prompt (docs/prompts.md): BkPrompt (bank 4) draws the box,
 # the options and "Saving..." for the stock BackupSavePrompt, whose draw
 # sequences become far calls (ops 0, 1) or stub calls (op 2 BkSavingStub,
 # op 3 BkSpinStub for BackupSaveDump's spinner); its joypad poll runs the
@@ -246,7 +246,7 @@ python3 tools/inject.py src/bkprompt.c "$V" 4 6000 BkPrompt --pin FarCallDrawStr
   --pin DrawString=08b7 --pin DrawRect=27ba --pin StoreDrawParams=2791 --apply
 python3 tools/inject_bytes.py "$V" 0 0390 BkSpinStub   3e03f533cd8d070060040033c9 --apply
 python3 tools/inject_bytes.py "$V" 0 039d BkSavingStub 3e02f533cd8d070060040033c9 --apply
-# Save-stamp check (docs/modal-prompts.md "Garbage stamp"): BackupBranchEntry's
+# Save-stamp check (docs/prompts.md "Garbage stamp"): BackupBranchEntry's
 # `push bc; ld a,$00; push af; inc sp` (00:0f1c, before its SetFpgaPage far
 # call) -> SaveStampHook: op SAVECHK validates the stamp's path in $c3a5;
 # EZ_RES 0 -> BackupBranchEntry_seedSlashPath (the browser, no prompt), else
@@ -298,7 +298,7 @@ python3 tools/inject_bytes.py "$V" 8 7e4c MsgBoxFar cd8d07004b0b00c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e10 MsgHookReading f0fbb71806210300c347733e00f533cd4c7e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e24 MsgHookLoading f0fbb71806210300c382733e01f533cd4c7e33c9 --apply
 python3 tools/inject_bytes.py "$V" 8 7e38 MsgHookError   f0fbb71806210300c3bd733e02f533cd4c7e33c9 --apply
-# BATTERY DRY in the same box (docs/modal-prompts.md): BatteryCheck keeps its
+# BATTERY DRY in the same box (docs/prompts.md): BatteryCheck keeps its
 # first draw, the one-space string that puts the screen in graphics mode,
 # then far-calls MsgBox(3) inline (a pushed pad word puts the argument where
 # the called-stub form has it) and jumps to its wait for A. After A, the

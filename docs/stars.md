@@ -7,15 +7,11 @@ one to the ROM's play count, and with **SORT BY PLAYS:** ticked on the SET tab's
 second page, files are listed most played first, unplayed ones A-Z after them.
 Starred files stay on top either way.
 
-The idea comes from davidesqalv's fork
-([ezgb-dv](https://github.com/davidesqalv/ezgb-dv)), built on mod 6.9. This is a
-rewrite for 7.0, not a port of its code: his table had 64 slots and no way to
-free one, 16-bit hashes, and scores that stopped growing after 21 plays; the
-sort setting took the SGB BOOT row; and the menu sent the cursor to the top of
-the list after a star.
+The idea comes from davidesqalv's fork,
+[ezgb-dv](https://github.com/davidesqalv/ezgb-dv). This is a rewrite, not a
+port of its code.
 
-Emulator-tested (SameBoy, CGB and DMG, 8px and 12px, 0731 and 0918). Stars and
-the play-count order work on hardware (2026-11-11).
+Addresses are 1.05e-0731's.
 
 ## The table
 
@@ -36,27 +32,14 @@ folders share it. A lookup is a binary search over the sorted entries.
 When the table is full, a new name takes the place of the least-launched entry
 without a star. With 254 stars, a new star is refused and nothing changes.
 Unstarring a ROM that was never launched drops its entry. A header that is not
-`'P'`, `'L'` (a new cart, or a dry coin cell) starts an empty table. Since
-2026-10-31 the table is also kept on the card (below), so a cart without a
-coin cell keeps its stars and counts too.
+`'P'`, `'L'` (a new cart, or a dry coin cell) starts an empty table. The table is
+also kept on the card (below), so a cart without a coin cell keeps its stars
+and counts too.
 
-**The full table, checked in SameBoy (2026-11-11).**
-[test-play-evict.py](../scripts/test-play-evict.py) writes a 254-entry
-`/.ezgbplays` to a scratch card, launches or stars a ROM that is not in it,
-and compares the file the kernel writes back:
-
-| Table | Action | Result |
-|---|---|---|
-| one least-launched unstarred entry (2 launches), beside starred entries with 0 and 1 and unstarred ones with 256 and 513 | launch | that entry goes, the new ROM is in with 1 launch |
-| the same | Star | that entry goes, the new ROM is in starred with 0 launches |
-| three unstarred entries tied for the least | launch | the last of the three in table order goes |
-| 253 stars and one unstarred entry with 1000 launches | launch | the unstarred one goes |
-| 254 stars | launch | nothing changes, the launch is not counted |
-| 254 stars | Star | nothing changes |
-
-Every case keeps 254 entries sorted by hash and the right star count. All six
-pass on 0731 as a CGB; the first two also on 0918 and 1.04e, and the first
-and last on 0731 as a DMG.
+[test-play-evict.py](../scripts/test-play-evict.py) runs the full-table
+cases in SameBoy: it writes a 254-entry `/.ezgbplays` to a scratch card,
+launches or stars a ROM that is not in it, and compares the file the kernel
+writes back.
 
 ## On the card
 
@@ -96,11 +79,6 @@ sectors only: this FatFs mishandles partial-sector writes (`ezcfg.c`
 the stars do not change: in SameBoy that is about seven more writes per launch,
 since `ezcfg` recreates the file each time.
 
-Checked in SameBoy with the SD write trace (`SAMEBOY_EZFLASH_JR_LOG=1`): a
-star on a fresh card creates the file, a launch writes one sector, SORT BY
-PLAYS one, and after pSRAM page `$11` is filled with random bytes the next boot
-shows the same stars, order and setting.
-
 ## How the sort uses it
 
 The sort ([browser.md](browser.md)) builds a 16-byte key per entry,
@@ -113,8 +91,7 @@ class byte first. After `build_keys`, `PlayKeys` looks up every file:
   counts sort by name
 
 With no star and the setting off, nothing is looked up and the sort costs what
-it did. Hashing is roughly 45 cycles a character, so a 416-entry folder adds
-about half a second on a DMG when there is something to look up (an estimate).
+it did.
 
 `PlayKeys` leaves the folder and star counts after the keys on the key page
 (`$BA00`). The star icon comes from the records themselves: as the sort's last
@@ -148,19 +125,18 @@ listing the star is still saved but the order and icons stay as they are.
 
 | Piece | Where |
 |---|---|
-| `Bump`, `PlayKeys`, `StarQuery`, `StarToggle` and the table code | `05:7c9f`, [play.c](../kernel/mod/src/play.c), 865 B of asm (SDCC made 1982 B of the C) |
+| `Bump`, `PlayKeys`, `StarQuery`, `StarToggle` and the table code | `05:7c9f`, [play.c](../kernel/mod/src/play.c), in assembly |
 | `PlayKeysFar` (stub to `PlayKeys`), `PlayMark` | `08:7f29`, [play_mark.c](../kernel/mod/src/play_mark.c), beside the sort that near-calls them |
 | `PlayLaunchHook` | `01:7ec6`: far call to `Bump`, then `jp LastRomSaveHook`; `01:48c1`, `LastRomPersist`'s tail, jumps here instead of to `LastRomSaveHook` |
 | `StarQueryFar`, `StarToggleFar` | `04:5998`, `04:59a0`: far stubs for `RomMenu`; `StarToggleFar` goes to `StarToggleSync` (bank 11) since the table is on the card |
-| `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/mod/src/play_file.c), 845 B: `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
+| `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/mod/src/play_file.c): `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
 | `RecFlag` | `04:7f51`, [rec_flag.c](../kernel/mod/src/rec_flag.c): SGB BOOT's and SORT BY PLAYS' pSRAM records, read and toggled for `SetPage` |
 | SET tab row | page 2, row 6, cursor row 8 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)), [setpage.c](../kernel/mod/src/setpage.c), [flcfg.c](../kernel/mod/src/flcfg.c) |
-| `DrawNameWithIconImpl` | moved from `02:7e80` to `02:7e00` to make room for the star test |
 
-## Not done
+## Limits
 
-- Stars and the play-count order work on hardware (2026-11-11). The card
-  file and the full table are checked in SameBoy only.
+- Stars and the play-count order work on hardware. The card file and the
+  full table are checked in SameBoy only.
 - A star refused because all 254 entries are starred says nothing: the menu
   closes and the ROM stays as it was.
 - A ROM launched for the first time into a full table has one launch, so it

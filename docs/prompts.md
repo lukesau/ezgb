@@ -1,12 +1,11 @@
-# Boot prompts: BACKUPSAVE and RTC restore
+# Prompts and status boxes
 
 The two prompts that can appear after `Micro SD initial OK!` share the look
 of the START overlay ([last-rom.md](last-rom.md)): one closed box, rules
 between its parts, a vertical rule between the two options, drawn in the
-font of the UI mode ([font12.md](font12.md)). The stock BACKUPSAVE box and
-the RTC prompt copied from it drew a frame around each option and then the
-option's label over it, and the 8x8 label cells repainted parts of the
-frame, so no frame was ever closed.
+font of the UI mode ([font12.md](font12.md)). Stock drew a frame around each
+option and then the option's label over it, and the label cells repainted
+parts of the frame, so no frame was ever closed.
 
 ## BACKUPSAVE
 
@@ -43,10 +42,10 @@ Played Oct 23 14:05       only when an RTC= backup exists; scrolls in 8px
 
 The pending-backup stamp (page `$11`: `$A000` = `$AA`, path length at `$A00F`,
 path at `$A010`) is battery-backed like the last-ROM record, and without a
-cell the flag can survive while the path is garbage: the prompt then showed
-up to 255 random bytes as the save's name, and A would have dumped under it
-(seen on a cart with no battery). The answer is the one for `$A300`
-([last-rom.md](last-rom.md)): validate before use. After the boot code has
+cell the flag can survive while the path is garbage: the prompt would show
+up to 255 random bytes as the save's name, and A would dump under it. So
+the path is validated before use, as the last-ROM record is
+([last-rom.md](last-rom.md)). After the boot code has
 copied the path to `$c3a5`, ezcfg op `SAVECHK` (8) accepts only what
 `PreLaunchSaveStamp` writes, `/SAVER/` followed by a plausible file name (the
 last-ROM path test: no control or `$FF` bytes, a NUL within 255, a non-empty
@@ -57,9 +56,6 @@ to the browser, as if no backup were pending; the kernel has already cleared
 | Site (0731; 1.04e in brackets) | Was | Now |
 |---|---|---|
 | `00:0f1c` (`00:0f10`), in `BackupBranchEntry_openSaverDir` | `push bc; ld a,$00; push af; inc sp` | `jp SaveStampHook` (`00:03aa`): op `SAVECHK`; `EZ_RES` 0 -> `BackupBranchEntry_seedSlashPath`, else the displaced pushes and back to the `SetFpgaPage` far call |
-
-Checked in SameBoy (DMG model, all three kernels): a stamp with `$AA` and 231
-printable random bytes boots to the browser; a real stamp still prompts.
 
 A valid path is not enough on a BATTERY DRY boot: the save itself faded
 with the canary. Since mod 6.9 op RESTORE clears `$A000` on such a boot
@@ -82,7 +78,7 @@ The two `Saving...` sites keep their argument pushes and only retarget the
 call: they load a bank-1 string address that differs per build, and
 `port-mod.py` refuses a replaced site whose stock operand it cannot
 translate. `BkPrompt` lives in bank 4, so it copies its strings to the stack
-before a 12px draw (the renderer runs in bank 2).
+before a 12px draw (the 12px engine is in another bank).
 
 ## RTC restore
 
@@ -109,10 +105,6 @@ its own `DrawString12` call with a pixel x, so the proportional font does not
 misalign the columns; the two options are separate calls for the same
 reason.
 
-Checked in SameBoy (DMG model): both prompts in both modes on 0731 (long
-name scrolling, A saving through to the browser, B, the RTC prompt followed
-by the save prompt), and the 12px prompts on 0918.
-
 ## BATTERY DRY
 
 Stock: the Reading box's rectangle, (35,37)-(125,108), with `BATTERY`,
@@ -137,21 +129,17 @@ up before `EZGB.CFG` is read, so it is always 8px.
 
 Box 4 erases the box once A is pressed. Nothing clears the screen between
 here and the first `Reading...` box, which is smaller, so without it that
-box was drawn over this one.
+box would be drawn over this one.
 
 The draw before it stays: `BatteryCheck` first draws a one-space string,
 which is what puts the screen in graphics mode, and that resets the ink and
 paper. A box drawn ahead of it comes out in the default colors, black on
 white. The far call is inline, so a pushed pad word puts the argument where
 `MsgBox` reads it (the status boxes reach it through a called stub). The
-stock draws after the `jr` are left in place as dead code: zeroing them made
-`port-mod.py` refuse the 1.04e port over a screen-position constant it reads
-as a pointer.
+stock draws after the `jr` are left in place as dead code.
 
-Checked in SameBoy (DMG and CGB models on 0731, DMG on 0918 and 1.04e, with
-`SAMEBOY_EZFLASH_JR_DRY=1`): the box, then A, an empty screen under `Micro
-SD initial OK!`, the `Reading...` box alone, and the browser. Confirmed on
-hardware 2026-11-10.
+`SAMEBOY_EZFLASH_JR_DRY=1` makes SameBoy's stub boot as a cart with a dry
+cell. Confirmed on hardware.
 
 ## Status boxes
 

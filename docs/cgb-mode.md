@@ -1,164 +1,71 @@
-# Running the kernel in CGB mode
+# The kernel in CGB mode
 
-## Why
+Stock declares itself DMG-only (`$0143 = $00`) and touches no CGB register,
+so a Game Boy Color runs it in compatibility mode: four shades, no
+palettes, no CGB-only hardware. The modded kernel carries the CGB flag and
+is ready to run in CGB mode, which is what the color themes need
+([themes.md](themes.md)). Addresses are 1.05e-0731's.
 
-The Game Boy Color's IR port (`RP`, `$FF56`), and every other CGB-only register,
-is locked out when the console runs in DMG compatibility mode. The stock kernel
-declares itself DMG-only (ROM header CGB flag `$0143 = $00`) and never touches a
-single CGB register: zero accesses to `$FF56`, `$FF68`/`$FF69` (palettes), or
-`$FF4D` (double speed) anywhere in the ROM. So IR features are not "not
-implemented"; they are unreachable until the kernel runs in CGB mode.
+## Which mode the console is in
 
-This change is the prerequisite. It does not add IR.
+The kernel's header does not decide it. The console's boot ROM reads the
+header before any of our code exists, and what it reads is stage1's, served
+from the FPGA. `ezgb.dat` is loaded later, by stage1.
 
-## What changed
+| Firmware | Stage1's CGB flag | The kernel runs in |
+|---|---|---|
+| stock | not set | DMG compatibility mode on a GBC or GBA |
+| the firmware mod ([stage1/](../stage1/README.md)) | set | CGB mode |
+
+An emulator that runs `ezgb.dat` directly reads the kernel's header, and
+runs it in CGB mode.
+
+## What the kernel does
 
 | Site | Change |
 |---|---|
-| `$0143` | `$00` → `$80` (CGB enhanced, still DMG compatible) |
-| `$014D` | header checksum recomputed. **The boot ROM verifies this one**; a wrong value locks the console up at the logo |
-| `$01ba` | `ld a,$c0 / ldh [rLCDC],a` → `call CgbInit` + `nop` |
-| `00:02fb` | `CgbInit`, 96 bytes, from `kernel/mod/src/cgb_init.c` |
+| `$0143` | `$80`: CGB enhanced, still DMG compatible |
+| `$014D` | the header checksum, recomputed |
+| `00:01ba`, the boot's LCD-on | calls `SgbBootHook` (`01:7f00`, [sgb-boot.md](sgb-boot.md)), which goes on to `CgbInit` |
+| `CgbInit` `00:0259` | [cgb_init.c](../kernel/mod/src/cgb_init.c) |
 
-`$01ba` is the boot LCD-on. Hooking it means the new code runs with the LCD
-still off (the only safe window for a bulk VRAM write), and it performs the
-LCD-on itself at the end.
+The hook site runs with the LCD still off, the only safe time for a bulk
+VRAM write. `CgbInit`:
 
-## What CgbInit does
+1. **Zeroes VRAM bank 1.** In CGB mode every tile map byte has an attribute
+   byte there choosing palette, tile bank and flips. `KernelEntry` clears
+   WRAM, OAM and HRAM but never VRAM, so without this the attributes are
+   whatever the boot ROM left: random palettes and mirrored tiles.
+2. **Calls `Theme`** (`02:43d0`) for the palettes, with bank 2 mapped by
+   hand, since interrupts are still off and `FarCallTrampoline` would turn
+   them on.
+3. **Turns the LCD on**, as the stock instructions it replaced did.
 
-1. **Feature-tests `VBK`** (`$FF4F`): writes 0, reads back, checks bit 0. In
-   DMG or DMG-compat mode the register is unmapped and reads as `$FF`, so bit 0
-   can never be observed as 0; in CGB mode it reads `$FE`. Everything below is
-   behind this test, so the same ROM is correct on DMG hardware.
+Translating the stock look to palettes is direct, because stock writes
+`BGP` exactly once, with `$E4`, and never changes it: color index N is
+shade N.
 
-   The saved boot `A` at `$d6c9` is *not* usable for this: stage1 jumps to the
-   kernel with `A=$E4` (the commit write it just made), so `$d6c9` is `$E4` on
-   every console. Even the console's real boot `A`, which stock FW5 stage1
-   passes to the FPGA as `$7FD3`, would be `$11` on CGB in DMG compatibility
-   mode, which is exactly the case that must be skipped.
+## Telling the modes apart
 
-   > **Correction (2026-10-30).** `VBK` does not read `$FF` in DMG
-   > compatibility mode: on a GBC booted from a cart without the CGB flag
-   > (stock stage1) it reads back what was written, in SameBoy and on
-   > hardware, so this test passes there. Here that only zeroes VRAM bank 1,
-   > which compat mode never displays. `Theme`
-   > ([themes.md](themes.md#the-code)) inherited the test for its palette
-   > writes and hung on it in 7.0; it no longer uses it.
+- **`VBK` (`$FF4F`) cannot.** It reads back what was written on a GBC in
+  compatibility mode, as it does in CGB mode. `CgbInit` uses it only to
+  skip a DMG, where clearing bank 1 would write over bank 0.
+- **Palette RAM can.** It takes writes only in CGB mode, so `Theme` writes
+  a palette byte and reads it back, and sets `PAL_LOCKED` when it does not
+  stick.
+- **The boot `A` saved at `$d6c9` cannot.** Stage1 enters the kernel with
+  `A = $E4` on every console. With the firmware mod, the console's real
+  boot registers are in a pSRAM record
+  ([skip-boot-rom.md](skip-boot-rom.md)).
 
-   > **Correction (2026-10-12).** This said `A` at `$d6c9` is `$11` on CGB
-   > hardware. It is `$E4` on all hardware ([debug-tab.md](debug-tab.md)'s
-   > `BOOT A REGISTER` readings, [fpga-stage1.md](fpga-stage1.md) on kernel
-   > entry). The conclusion stands;
-   > [sgb-background-send.md](sgb-background-send.md)'s `cp $11` plan
-   > inherited the wrong value.
+To test compatibility mode in an emulator, clear `$0143` in a copy of the
+kernel.
 
-2. **Zeroes VRAM bank 1** (`$8000-$9FFF`). In CGB mode every tilemap byte has a
-   companion attribute byte there selecting palette, tile bank and flips, and
-   `KernelEntry` clears WRAM, OAM and HRAM but never VRAM
-   (`bank_000.asm:337-363`). Left alone those attributes are boot-ROM leftovers,
-   which renders as random per-tile palettes and mirroring. Zero means
-   palette 0, tile bank 0, no flip.
+## Facts learned on the way
 
-3. **Writes the shade ramp** to all 8 BG and 8 OBJ palettes (`$7FFF` white,
-   `$56B5` light, `$294A` dark, `$0000` black). All eight so that a stray
-   non-zero attribute still renders sanely. Since dark mode this is the
-   theme's ramp, written by `Theme` (`02:43d0`), which `CgbInit` calls with
-   bank 2 mapped by hand ([themes.md](themes.md)).
-
-Replicating the old look is a direct translation because the kernel writes
-`BGP` exactly once, at `00:01b0`, with `$E4`, the identity mapping (color
-index N is simply shade N), and never touches it again. There are no runtime
-palette effects to preserve. (Byte-scanning for `e0 47`/`f0 47` suggests other
-`BGP` writes in banks 3 and 4, but those are false positives: `and $f0`
-followed by `ld b,a`. The disassembly shows only the one write.)
-
-## Outcome: CGB mode is not reachable at first boot. This branch is a dead end.
-
-Tested on a Game Boy Advance SP with a real Jr. What was proved, in order:
-
-1. **Flipping `$0143` in `ezgb.dat` does nothing.** The kernel booted normally,
-   in the usual DMG compatibility palette. Confirmed by comparison against
-   SameBoy running the same image, which honors the flag and came up in the
-   diagnostic red. The console's boot ROM never sees `ezgb.dat`'s header: the
-   factory bootstrap presents its own at power-on, DMG mode latches in `$FF4C`
-   before our code exists, and nothing in software can undo that.
-
-2. **The flag *is* honored on a game launch.** Loading the same image from the
-   browser as a game produced the red screen. So the launch path is a genuine
-   console reset that re-reads the loaded ROM's header, which is why launched
-   GBC games get real color rather than a compatibility palette.
-
-3. **But a launched kernel has no cart hardware.** It hangs with both
-   "Micro SD initial error" and the BATTERY DRY warning, identical to running
-   the stock kernel under an emulator with no EZ Flash stub at all. Not a
-   partial failure; the FPGA control interface is simply absent.
-
-4. **Header fixes did not help.** Declaring an MBC with RAM (`$0147=$03`,
-   `$0149=$03`), correcting the ROM size (`$0148=$03`, since `$00`/32 KB would
-   leave banks 1-9 unmapped), and adding the standard MBC RAM-enable write
-   (`$0A` → `$0000`) changed nothing. The hypothesis was that an emulated MBC
-   was gating `$A000-$BFFF`; it was wrong.
-
-**Why is unresolved, and one tempting explanation is wrong.** It is *not* that
-the FPGA stops decoding `$7F00-$7FFF` as control registers once it emulates a
-game cart (an appealing theory, since that range sits inside the ROMX window
-and a real cart must return ROM bytes there). `Update_FW*.gb` refutes it:
-
-|  | `Update_FW5` (works as a launched game) | kernel (fails) |
-|---|---|---|
-| `$0147` cart type | `$01` MBC1, no RAM | `$01` (identical) |
-| `$0149` RAM size | `$00` none | `$00` (identical) |
-| unlock triples / commits | 7 / 7 | 29 / 29 |
-| `$a000` pointer loads | 11 | 9 |
-
-The updater has the same header profile as the kernel, reaches both `$7Fxx` and
-`$A000`, and is launched as an *ordinary game* (the kernel contains no `UPDATE`
-string and special-cases nothing). So ordinary launched ROMs evidently can
-drive the FPGA, and the chain-boot approach is not blocked by any mechanism we
-have identified. The kernel is failing for a reason specific to itself, most
-likely something its SD init depends on that the factory bootstrap normally
-establishes.
-
-Diagnosing that means finding what the kernel's `f_mount` path needs and the
-game slot does not provide. It cannot be done under SameBoy: the stub models
-OS mode only, and even soft-patches the SD init hang
-(`soft_patch_sd_init_hang`). It would need on-hardware instrumentation: a
-chain-boot build that performs the unlock handshake, reads a register back, and
-renders the result as hex on screen. That is safe to try (it is only an SD
-file), just unbudgeted.
-
-**Do not test by modifying `Update_FW*.gb`.** Running it flashes FPGA firmware.
-That is the one genuinely brick-risky operation on this cart, and unlike
-`ezgb.dat` it cannot be undone by swapping a file back.
-
-Getting CGB mode at first boot therefore requires changing what the *factory
-bootstrap* presents to the console at power-on. That is FPGA firmware territory,
-the one genuinely brick-risky area, on a layer this project has no dump of.
-
-**Update 2026-10-08:** the bootstrap is now dumped and patchable. It is block
-RAM contents in the FPGA bitstream, and a CGB-flagged build for FW4 slot B is
-in [stage1/fw4/patches](../stage1/fw4/patches/README.md), confirmed working on hardware.
-
-## Status of the code on this branch
-
-`CgbInit` itself works and is verified under SameBoy: it is reached from the
-boot hook, the VBK feature test passes, the CGB branch executes, and boot
-continues into the browser. `scripts/debug/cgb-init.sbd` re-runs that check.
-The code is correct; there is just no way to get the console into CGB mode for
-it to matter on real hardware.
-
-**Since mod 5.3** `CgbInit` is part of the mod (`00:0259`, hooked at `$01ba`,
-header `$0143 = $80`), with the real grayscale ramp (`$7fff`, `$56b5`,
-`$294a`, `$0000`) instead of the red diagnostic. On a
-stock cart it stays inactive (the console runs the kernel in DMG
-compatibility mode, so the feature test skips it); in emulators that honor
-ezgb.dat's header the kernel runs in CGB mode with that palette. A bug in
-the old build is fixed on the way: SDCC merged the ramp's two `$00` stores
-into one, so every palette after the first was a byte out (black came out
-cyan).
-
-## Risk
-
-None to the cart. This is `ezgb.dat`, a file on the SD card: if a build does
-not boot, copy the previous `ezgb.dat` back. Only `Update_FW*.gb` writes cart
-firmware, and nothing here goes near it.
+- A launch is a real console reset: the boot ROM runs again and reads the
+  launched game's header, so a game gets the mode its header asks for
+  (unless the boot ROM is skipped, [skip-boot-rom.md](skip-boot-rom.md)).
+- A kernel started as a launched game finds no cart control interface (the
+  cause was not found), so the kernel cannot chain into a second copy of
+  itself to change mode.

@@ -44,11 +44,11 @@ tile (`glyph_or`: character `i` is at x = 2 + 6i, so its shift in a tile is
 2, 0, 6 or 4). `blit_col` copies a column to the tile canvas, ink 3 on paper
 0, with `blit_col1`'s sync from `draw12.c`: a batch is written at once during
 VBlank, and on a visible line with interrupts off from before mode 3 until
-the batch is written. Two pixel rows a batch: three reach 70 cycles when a
-tile boundary falls in the batch, and SameBoy's DMG model then dropped a row
-now and then. Interrupts are never held off over the start of VBlank or of
-line 72, whose handlers switch the BG tile addressing; holding them there
-showed as a flickering top row. Only the tile columns a row, or the row it
+the batch is written. A batch is two pixel rows: three can reach 70 cycles when
+a tile boundary falls in the batch, which is too long
+([drawing-timing.md](drawing-timing.md)). Interrupts are never held off over
+the start of VBlank or of line 72, whose handlers switch the BG tile
+addressing. Only the tile columns a row, or the row it
 replaces, has ink in are written.
 
 **File.** Nothing but one sector is held: `have(pos)` reads the 512-byte
@@ -72,26 +72,4 @@ while they run:
 | `$D9D2`-`$D9D7` | sector in the buffer, its length, the top row's number |
 | `$D900` | 256: the path, for `f_open` only (it overlaps the above) |
 
-## Testing
-
-SameBoy, 0731, 2026-11-12: a 16 KB test file (a long paragraph, a 70-letter
-word, tabs, UTF-8, a control code, 399 numbered lines), a 26-byte `.ini` and
-a 22-byte `.md` on a copy of the showcase card. Checked on screenshots: open,
-line and page scrolling both ways, held UP and DOWN, the end of a short file,
-return to the browser; in the 8px UI (DMG and CGB) and the 12px UI (DMG, and
-CGB with the dark theme).
-
-Hardware, 2026-11-12: the 0918 build works on a cart (reported by the user).
-
-## Idea: hardware scrolling
-
-Panning the background (SCY) would let a one-line scroll draw one row instead
-of twelve. What stands in the way: the UI is a bitmap of unique tiles, one
-per screen cell, using nearly all of tile RAM, so there is no off-screen
-content to pan to; it would have to be a ring, the tile map rewritten so the
-row that scrolls off the top comes back at the bottom. The tab strip must
-stay put, which needs SCY changed mid-frame. And the kernel already splits
-the frame at line 72 to switch tile addressing (360 tiles do not fit one
-addressing mode); that split is tied to screen lines, so it would have to
-follow the scroll. All three are raster interrupt work in the kernel's
-handlers and need a hardware check for timing.
+The 0918 build has run on a cart.

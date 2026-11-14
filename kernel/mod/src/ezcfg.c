@@ -570,7 +570,7 @@ static void put_hex(u8 *dst, u8 v) {
 }
 
 /* The RTC restore prompt, in the look of the START overlay and the
- * BACKUPSAVE prompt (docs/modal-prompts.md): one box, rules under the title
+ * BACKUPSAVE prompt (docs/prompts.md): one box, rules under the title
  * and above the options, a vertical rule between the options, in the font
  * of the UI mode. Shows why, the chip's settled reading (raw hex, so garbage
  * and the VL bit show as-is) and the RTC= backup, and asks which to keep:

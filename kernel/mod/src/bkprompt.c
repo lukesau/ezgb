@@ -1,4 +1,4 @@
-/* BACKUPSAVE prompt (docs/modal-prompts.md).
+/* BACKUPSAVE prompt (docs/prompts.md).
  *
  * Bank 4, injected at 04:6000. The stock BackupSavePrompt (01:6747) keeps its
  * control flow (auto-save or ask, A dumps, B skips) but its four draw

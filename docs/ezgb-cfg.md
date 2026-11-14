@@ -244,7 +244,7 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [kernel/mod/src/ezcfg.c](../kernel/mod/src/ezcfg.c), 5222 B release, 5191 B with `EZCFG_RTCLOG` (slot `02:4a00-6f3f`, 9536 B, since 2026-11-02, when `TabStrip12`, `LastRomName` and `FarCallPlayLoad` moved to `02:7600`-`78b7`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
+| `EzCfg` | `02:4a00`, [kernel/mod/src/ezcfg.c](../kernel/mod/src/ezcfg.c), 5222 B release, 5191 B with `EZCFG_RTCLOG` (slot `02:4a00-6f3f`, 9536 B, since 2026-11-02, when `TabStrip12`, `LastRomName` and `FarCallPlayLoad` moved to `02:7600`-`78b7`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [prompts.md](prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
 | `FastLaunchScan` | `02:4500`, [kernel/mod/src/fastlaunch.c](../kernel/mod/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
 | `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/mod/src/flcfg.c](../kernel/mod/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
@@ -293,7 +293,7 @@ no version-specific address.
 | `$DA80` / `$DA81` / `$DA82-$DAFA` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged; 120 characters and the NUL) |
 | `$DAFF` | `TAG_CUT`: the marquee's "this name was cut" flag between `TagLen` and `TagCat` ([browser.md](browser.md)) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |
-| `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged); off the SET tab, the BACKUPSAVE prompt's `Played` line text ([modal-prompts.md](modal-prompts.md)) |
+| `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged); off the SET tab, the BACKUPSAVE prompt's `Played` line text ([prompts.md](prompts.md)) |
 | `$DB40-$DB46` | `RTC_BK`, stored time, 7 BCD bytes in register order |
 | `$DB47` | `RTC_VALID`, 1 when the file held a usable `RTC=` |
 | `$DB48-$DB4E` | `RTC_CUR`, the last RTC read (masked) |

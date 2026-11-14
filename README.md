@@ -60,7 +60,7 @@ Each links to a doc with the details.
   black instead of black on dark gray, which an original Game Boy can't show.
 - [Clean ROM names](docs/browser.md#clean-names): `Tetris (World) (Rev 1).gb`
   shows as `Tetris`.
-- [Closed boxes](docs/modal-prompts.md) for the prompts and the START
+- [Closed boxes](docs/prompts.md) for the prompts and the START
   overlay, and [no streaks](docs/drawing-timing.md) in the text.
 
 **Browser**
@@ -84,7 +84,7 @@ Each links to a doc with the details.
 - [Manage saves](docs/save-manager.md): back up, restore and delete a ROM's
   saves on the cart, with an optional
   [daily backup](docs/save-manager.md#daily-backup).
-- [Safe with a dead battery](docs/modal-prompts.md): records that faded in
+- [Safe with a dead battery](docs/prompts.md): records that faded in
   cart RAM are checked before use, so no garbage gets written to the card.
 - [RTC backup](docs/ezgb-cfg.md): the clock is copied to the card and
   offered back when the coin cell lets it reset.

@@ -148,7 +148,7 @@ static u8 ends_ci(const u8 *name, u8 len, const u8 *suf, u8 suf_len) {
 }
 
 /* Erases the Reading... box (35,37)-(125,108), then a closed box in the look
- * of the boot prompts (docs/modal-prompts.md): ink 3 outline on paper 0,
+ * of the boot prompts (docs/prompts.md): ink 3 outline on paper 0,
  * two lines.
  *   8px   box (0,51)-(159,84), text on tile rows 7 and 9 from column 1
  *   12px  box (0,52)-(159,87), text at y 56 and 72 from x 12

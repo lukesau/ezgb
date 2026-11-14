@@ -178,7 +178,7 @@ REGISTRY = {
     (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/font12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
                             "PopupDrawParams": 0x0290, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "WaitVBlankFlag": 0x0688}),
-    (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
+    (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/prompts.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/font12.md)

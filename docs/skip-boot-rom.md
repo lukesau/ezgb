@@ -308,7 +308,7 @@ still reaches the kernel through the changed `handoff.s`. On hardware
 
 The debug screen read the record correctly on a GBA SP (`AF:1100 BC:0100`) and
 a GBC (`AF:1180 BC:0000`), both `DE:FF56 HL:000D`, as in SameBoy
-([debug-tab.md](debug-tab.md#findings-boot-registers-2026-11-04)).
+([debug-tab.md](debug-tab.md#what-it-has-shown-on-hardware)).
 
 The forced DMG stage1, the any-game DMG rule and an `AUTO`/`ALWAYS` form of the row
 (a checkbox again since) were tested

@@ -32,7 +32,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 | `A:WRITE P10 PATTERN` | A fills page `$10` with the pattern. Refused (`P10 ALIAS:NO WRITE`) when page `$10` matches `$00`, `$01` or `$11`, which would mean it is the same memory |
 | `B:ALIAS TEST P20/3F` / `P20=P00:` / `P3F=P1F:` | B checks whether the page latch is 5 bits (below). `--` until B is pressed |
 | `SGB BOOT P11:A400` | the SGB BOOT record and whether it reads as on ([sgb-boot.md](sgb-boot.md)) |
-| `KERNEL ENTRY A` | the A register KernelEntry saved at boot, `BOOT A REGISTER:` until 2026-11-04. `$E4` on every console: stage1's last write, not the boot ROM's value |
+| `KERNEL ENTRY A` | the A register KernelEntry saved at boot. `$E4` on every console: stage1's last write, not the boot ROM's value |
 | `START:DUMP FLASH` / result / `DNA:` | START dumps the config flash to `/FLASH.BIN` and the Device DNA to `/DNA.BIN`; needs the flash-read patch in slot B ([flash-dump.md](flash-dump.md)) |
 
 ## Page-latch alias test (B)
@@ -55,67 +55,36 @@ against `$00` and `$3F` against `$1F`, without losing data:
 | `ODD` | anything else, e.g. the high page doesn't hold what was written |
 | `!RST` after it | the bytes read back after step 3 differ from the originals |
 
-SameBoy built from a stub older than 2026-10-10 models 64 pages
-(`EZJR_SRAM_BANKS`) and shows `NO ALIAS` for both; with 32 pages it shows
-`ALIAS` for both. Neither shows `!RST`.
+SameBoy's stub models 32 pages and shows `ALIAS` for both.
 
-## Findings (boot registers, 2026-11-04)
+## What it has shown on hardware
 
-With the `-regs` stage1 flashed, the first readings of the real registers on
-hardware:
+- **The page latch is 5 bits.** `ALIAS` on both lines on an FW5 cart, as
+  simulated: 32 pages, and page `$20` up alias onto them
+  ([psram-page-map.md](psram-page-map.md)).
+- **Page `$10` is independent, battery-backed storage.** The pattern read
+  back `OK` after 30 minutes off with the coin cell in, and nothing the
+  kernel or stage1 does between boots touches it.
+- **Without a coin cell the save pSRAM keeps its contents for about a
+  minute** out of the console, then loses everything: game saves, the
+  last-ROM record and the SGB setting.
+- **`KERNEL ENTRY A` is `E4`** on FW4 and FW5. Stage1 leaves the value of
+  its last register write in A, so A cannot tell consoles apart.
+- **The boot registers** stage1 records, as read on two consoles (both
+  match SameBoy; DMG, Pocket and SGB are unread on hardware):
 
-| Console | `BOOT REGS:` | `AF` | `BC` | `DE` | `HL` | `CONSOLE:` | `PALETTE:` | `DMG JUMP:` |
-|---|---|---|---|---|---|---|---|---|
-| GBA SP | `STAGE1` | `1100` | `0100` | `FF56` | `000D` | `GBA` | `CGB MODE` | `YES` |
-| GBC | `STAGE1` | `1180` | `0000` | `FF56` | `000D` | `GBC` | `CGB MODE` | `YES` |
-
-- Both match SameBoy. DMG, Pocket and SGB are still unread on hardware.
-- Before that flash the GBA SP read `OLD S1` with the color fallback values
-  (`AF:1180 BC:0000`, `CONSOLE: UNKNOWN`, `DMG JUMP: NO`): a stage1 from before
-  the record, as intended.
-- Page `$10` on that cart read `5A 67 74 81 8F 9B A8 B5` and `BAD 890`: the test
-  pattern from an earlier A press with about 11% of its bytes changed
-  (`8E` to `8F` in the first 8). The sum stayed `C2A9` across the flash.
-
-## Findings (FW5, 1.05e-0918, GBC, 2026-10-10)
-
-- **B: `ALIAS` on both lines**, no `!RST`. The page latch is 5 bits on the
-  cart, as simulated. Reopening the screen afterwards gave the same sums
-  (P00 `94E1`, P01 `450A`, P10 `DC20`, P11 `51D2`), so the test put back
-  what it wrote.
-- Page `$10` read `BE BF BE BF BF BF BF AE` with only 33 distinct values:
-  neither random power-on contents (~250) nor a cleared page. Probably never
-  written on this cart and partly faded toward set bits; A was not pressed.
-- The SGB BOOT record read `AA AA AA AA` (`OFF`): what the cart held there
-  before the setting was ever saved. Turning SGB BOOT on gave `53 47 01 FE`
-  (`ON`), off `53 47 00 FF`, and a reboot kept it, so the record works on the
-  FW5.
-- `BOOT A REGISTER: E4`, as on the FW4 Jr.
-- Page `$10` with the coin cell in: A wrote the pattern, the console was off
-  about 30 minutes, and it read back `OK` on the next boot.
-- With the coin cell pulled for a few minutes the pattern read back `BAD` on
-  the next boot, as on the FW4 Jr. Pulling it also loses game save RAM, the
-  last-ROM record and the SGB setting in pSRAM.
-
-## Findings (FW4 Jr, GBC, no coin cell, 2026-10-08)
-
-- Page `$10` is real, independent storage: the pattern read back intact and
-  its sum never matched another page's. Nothing the kernel or stage 1 does
-  between boots touched it. See [psram-page-map.md](psram-page-map.md).
-- `BOOT A REGISTER: E4`: the Jr's boot leaves the palette value in A, not the
-  model ID the boot ROM puts there, so A can't tell DMG, GBC and SGB apart.
-- Without a coin cell the pSRAM keeps its contents for about a minute out of
-  the console; one reading showed 101 pattern bytes changed and the SGB record
-  `01 FE` read back as `00 FF`, then a longer wait lost everything.
+| Console | `AF` | `BC` | `DE` | `HL` |
+|---|---|---|---|---|
+| GBA SP | `1100` | `0100` | `FF56` | `000D` |
+| GBC | `1180` | `0000` | `FF56` | `000D` |
 
 ## Code
 
-`kernel/mod/src/debug_tab.c` (bank 12 since 2026-11-04; bank 4 before, `04:6cca` in mod 5.4)
-and `DbgTabHook` (bank 0, `00:02c4` when free): far-call the screen, delay,
-`jp FileBrowserEntry`. HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e)
-becomes `bit 7,c; jp nz,FileBrowserEntry; jp DbgTabHook` (HELP returns with the pad in C: START goes to the browser, [fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-returns-to-the-sd-tab), SELECT to the hook), and the screen
-itself starts with `DrawMenuTabs(3)` (clear the pane, keep the strip). That
-keeps the hook at 19 bytes: since `CgbInit` took `00:0259` (mod 5.3), 1.05e's
-largest free run in bank 0 is 31 bytes, and the old 41-byte hook no longer fit. Addresses are written for
-1.05e-0731 and matched into other builds with `scripts/portmap.py`; the script
-checks the exit's bytes before patching.
+[debug_tab.c](../kernel/mod/src/debug_tab.c), in bank 12, and `DbgTabHook`
+in bank 0: far-call the screen, delay, `jp FileBrowserEntry`. HELP returns
+with the pad in C, so its exit (`00:1288` in 1.05e) becomes
+`bit 7,c; jp nz,FileBrowserEntry; jp DbgTabHook`: START goes to the browser
+and SELECT to the debug screen. The screen starts with `DrawMenuTabs(3)`,
+which clears the pane and keeps the strip. The script places the hook in
+each build through `scripts/portmap.py` and checks the exit's bytes before
+patching.
