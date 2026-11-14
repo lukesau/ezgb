@@ -94,3 +94,14 @@ for GBDK-2020's. No function matches byte for byte. The ROM mixes
 temporaries, which none of the 90 gbz80 codegen commits from November 2011
 to March 2012 reproduces. Either EZ Flash used a patched SDCC or edited the
 FatFs source in ways that move the code.
+
+> **Correction (2026-11-14).** The compiler is SDCC 2.9.0 (2009), which the
+> search above never built: it tested 3.x and later, trunk from November
+> 2011, and GBDK 2.96a's SDCC 2.3.1. With `--opt-code-size`, 2.9.0
+> compiles R0.11a `ff.c` with this `ffconf.h` into bank 9's `mem_set`,
+> `chk_chr`, `clust2sect`, `ld_clust`, `st_clust`, `sum_sfn`, `validate`,
+> `check_fs`, `cmp_lfn`, `fit_lfn` and `dir_read` byte for byte (operands the
+> linker fills in masked). The 2012 trunk builds only scored closest, and
+> the "patched SDCC" guess is wrong. Found through stage1, built by the same
+> compiler without `--opt-code-size`
+> ([stage1/decomp](../../../stage1/decomp/README.md#matching)).
