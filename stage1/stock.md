@@ -21,10 +21,10 @@ mode the console is in.
 | Directory | Firmware | State |
 |---|---|---|
 | [fw4/](fw4/) | FW4 | disassembled and annotated; rebuilds byte for byte |
-| [fw5-0918/](fw5-0918/) | FW5, the 0918 update | disassembled, not annotated; rebuilds byte for byte |
+| [fw5-0918/](fw5-0918/) | FW5, the 0918 update | FW4's names and notes, ported; rebuilds byte for byte |
 
 Each holds `kernel.sym` (names and data ranges) and the generated
-`disassembly/`; `fw4/` also has `notes.json`. The binary, `kernel.gb`, is
+`disassembly/`, and `notes.json`. The binary, `kernel.gb`, is
 EZ Flash's and stays local. The file is named as the kernel's is so the
 kernel tooling applies.
 
@@ -71,9 +71,26 @@ crt0 (KernelEntry $0150)
 Every register write is inside the unlock and commit envelope
 ([design.md](../stage0/docs/design.md#unlock-and-commit)).
 
-FW5-0918's stage1 also writes the console's boot `A` to `$7FD3` before the
-hand-off (`00:07F1`), which is half of the fast-load key
-([firmware-diff.md](../stage0/docs/firmware-diff.md)).
+FW5-0918's stage1 is FW4's with three changes: `main` turns sound off, and
+after the delay it writes the console's boot `A` to `$7FD3`
+(`FpgaSetBootCpu`, `00:07F1`), which is half of the fast-load key
+([firmware-diff.md](../stage0/docs/firmware-diff.md)); and the header has
+SGB flag `$03` and old licensee `$33`. Everything after `main` in bank 0 is
+the same code `$31` bytes higher, so FW5's `kernel.sym` and `notes.json` are
+made from FW4's:
+
+```bash
+stage1/tools/stage1-port-sym.py --check    # the layout claim, on the two binaries
+stage1/tools/stage1-port-sym.py            # write fw5-0918/kernel.sym and notes.json from fw4/
+```
+
+Name things in `fw4/` and port them; don't edit FW5's files by hand.
+
+## In C
+
+[decomp/](decomp/README.md) is the stock stage1 rewritten in C, one source
+for both firmwares, as a best guess at what EZ Flash wrote. It compiles but
+is not byte-identical: the compiler is not known yet.
 
 ### The load command
 
@@ -105,8 +122,8 @@ at `$0B4D`, used only by the `pf_open` in `main`.
 | `$4800`-`$7FFF`, no BRAM behind it | 14 KB, unusable |
 
 The dead code is `pf_read` (1,061 bytes), unused GBDK library routines, and
-three unreferenced functions at `$05BC`-`$07F0` (`BootRomDirect`,
-`RunFromWram`, `PrintBlankLines`).
+six unreferenced functions at `$05BC`-`$07F0` (`PrintLine`, `PrintNumber`,
+`WaitButtonB`, `BootRomDirect`, `RunFromWram`, `PrintBlankLines`).
 
 So a stage1 has 18,432 bytes to live in, and stock leaves little of it.
 Our replacement, built from source, is described in
