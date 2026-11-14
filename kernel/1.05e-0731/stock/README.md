@@ -158,7 +158,7 @@ What fitting it showed:
 
 ```sh
 SDCC29=<sdcc 2.9.0 prefix> tools/match.py [-v] [-f func] [-b bank]
-SDCC29=<sdcc 2.9.0 prefix> tools/match.py -I gbdk/include -D BYTE_IS_UNSIGNED=1 src/kernel.c src/kernel2.c   # bank 0
+SDCC29=<sdcc 2.9.0 prefix> tools/match.py -I gbdk/include -D BYTE_IS_UNSIGNED=1 src/kernel.c   # bank 0
 SDCC29=<sdcc 2.9.0 prefix> tools/match.py --cflags " " sdcclib/_strncpy.c   # no options, found by content
 ```
 
