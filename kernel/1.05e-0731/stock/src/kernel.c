@@ -163,12 +163,19 @@ void DrawDirEntryLabel (UINT32 tick, UINT16 top, UINT16 row)
 }
 
 #ifdef UNMATCHED
-/* Not matched yet (tools/match.py -D UNMATCHED). The code is right but
-   SDCC allocates registers differently: stock spills res to the stack
-   (sp+$16) and loads &wFno for memset into bc, where this keeps res in c
-   for the whole function and rematerializes &wFno. Until it matches,
-   $0de4-$16f4 stays disassembly and the functions after it are in
-   kernel2.c. */
+/* Not matched yet (tools/match.py -D UNMATCHED). Right frame and register
+   allocation; two spots differ:
+   - memset(&wFno, ...): stock loads the address into bc (ld c / ld b) as
+     a cast temporary; this pushes it from hl, rematerialized. Explicit
+     casts on &wFno fold (it is a constant address).
+   - the last-ROM key loop: stock spills the 16-bit cast of keys (sp+4),
+     this keeps it in bc.
+   What it took to get this far, from SDCC 2.9.0's allocator: res is
+   spilled (it is live across the launch calls and stock needs b and c
+   there, for (wD3F0 << 7) | (char)wD3EB), and its first three tests are
+   written FR_OK != res, which SDCC does not fold into a plain test.
+   Until it matches, $0de4-$16f4 stays disassembly and the functions
+   after it are in kernel2.c. */
 
 /* 00:0de4: mount the card, offer the save backup, then the file browser */
 void SdMenuMain (void)
@@ -186,7 +193,7 @@ void SdMenuMain (void)
 
 	wEntries = (ENTRY *)0xA000;
 	res = f_mount(&wFatFs, "", 1);
-	if (res) {
+	if (FR_OK != res) {
 		DrawString("Micro SD initial error!", 20, 0, wDebugTextRow);
 		while (1)
 			;
@@ -220,11 +227,11 @@ browse:
 	DrawReadingBox();
 	SetFpgaPageAlt_B4(0);
 	res = f_chdir(wPath);
-	if (res)
+	if (FR_OK != res)
 		FileSystemErrorHang();
 	wEntryCount = 0;
 	res = f_opendir(&wDir, wPath);
-	if (res)
+	if (FR_OK != res)
 		FileSystemErrorHang();
 	memset(wLabelBuf, 0, 255);
 	memset(&wFno, 0, sizeof(FILINFO));
@@ -362,7 +369,7 @@ launch:
 					BackupOpenSaverPath(wLabelBuf, 0x2000);
 				LaunchSetup(wLabelBuf);
 				SetFpgaPageAlt_B4(2);
-				SetFpga7F37_B4((wD3F0 << 7) | wD3EB);
+				SetFpga7F37_B4((wD3F0 << 7) | (char)wD3EB);
 				SetFpga7FD4_B1(0);
 				SetFpga7FC4_B4(wD3ED);
 				SetFpgaRomSize_B4(wD3EC);

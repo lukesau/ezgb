@@ -99,11 +99,13 @@ skips its own; that guard is ours). Function names are kernel.sym's, and a
 
 All of bank 0's kernel C matches except `SdMenuMain` (`$0de4`-`$16f4`, the
 mount, save backup, file browser and launch, 2.2 KB). Its code is written
-(`kernel.c`, under `#ifdef UNMATCHED`) and the frame is one byte short:
-stock spills `res` to the stack for the whole function and loads `&wFno`
-for `memset` into `bc` as a register temporary, where this keeps `res` in
-`c` and rematerializes `&wFno` (SDCC does that for an address-of with one
-definition). The source form that makes the difference is not found yet.
+(`kernel.c`, under `#ifdef UNMATCHED`) with the right frame and register
+allocation, and two spots still differ: stock passes `&wFno` to `memset`
+through a register temporary, and spills the last-ROM loop's key value.
+SDCC 2.9.0 has only `b` and `c` to allocate on gbz80, so one value more or
+less in registers anywhere in a function moves the rest; the source forms
+that settled `res` (`FR_OK != res`, `(char)wD3EB`) came from reading its
+allocator (`src/z80/ralloc.c`).
 Until then the functions after it are built from `kernel2.c`, which is the
 same file as `kernel.c` in stock.
 
