@@ -27,7 +27,7 @@ if git -C "$WT" diff --cached --quiet; then
   echo "gh-pages already up to date"
 else
   rev="$(git -C "$ROOT" rev-parse --short HEAD)"
-  git -C "$WT" -c user.name="Luke Esau" -c user.email=lukesau@gmail.com commit -q -m "floorplan page from $rev"
+  git -C "$WT" commit -q -m "floorplan page from $rev"
   echo "committed gh-pages: $(git -C "$WT" log --oneline -1)"
 fi
 if [ "$push" = 1 ]; then

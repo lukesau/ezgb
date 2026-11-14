@@ -1,6 +1,6 @@
 #!/bin/sh
-# Check a shared build host before running anything on it. ubuntu-compute is
-# shared: model benchmarks and a friend's GPU/CPU jobs can be running unannounced.
+# Check a shared build host before running anything on it: other people's
+# jobs can be running there unannounced.
 # Prints the load, other users' busiest processes and GPU jobs, then exits 1
 # only if the CPU is maxed out: fewer than MIN_IDLE_CORES (default 2) cores
 # idle over a one-second sample. GPU jobs don't block; the stage1 tools are
