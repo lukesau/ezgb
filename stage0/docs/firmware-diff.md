@@ -207,7 +207,7 @@ firmwares give **identical results**:
 Save RAM bank N sits at U4 offset N×`$4000`: the RAM bank goes out on the
 same address lines as the ROM bank, so each 8 KB bank uses a 16 KB slot of
 the 512 KB chip. Reads with RAM disabled return `$FF`, and writes land only
-in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) applies to every type except MBC2.
+in the selected bank. The ROM bank mask (`$7FC1/$7FC2`) applies to MBC1, the multicart and MBC5; MBC2 and MBC3 are not masked.
 RAM enable looks only at the low nibble anywhere in `$0000-$1FFF` (`$1A`,
 `$FA`, and `$0A` at `$1FFF` all enable; `$0B` and `$00` disable), and writes
 while RAM is disabled never reach U4 (`mbctest.py ramx`, all three).

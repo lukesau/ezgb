@@ -10,7 +10,7 @@ the ignored `fpga/` directory, same policy as the firmware packages
 (`fpga/README.md`, itself untracked; the short version is in
 [../../../stage0/docs/setup.md](setup.md)).
 Tracked and public, because they leave out BRAM contents: the decoded listings
-in [`../decode/`](decode.md), and the
+in each firmware's folder as `stage0/<fw>/decode.txt`, and the
 [floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
 `stage0/floorplan/floorplan.html`.
 

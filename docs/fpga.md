@@ -1,37 +1,25 @@
-# FPGA docs
+# The FPGA and the firmware
 
-The Jr's FPGA (a Spartan-3A XC3S200A) work: decoding EZ Flash's bitstream,
-the PicoBlaze firmware inside it, and our own stage1 written to the cart
-through a relabeled stock updater.
+The Jr's FPGA work is in two folders, one per boot stage:
 
-The work splits by boot stage, `stage0/` and `stage1/`. **Stage0** is the FPGA's
-own logic: fabric, PicoBlaze and its firmware, bitstream and config flash
-([stage0/docs/overview.md](../stage0/docs/overview.md) has the boot chain and an index).
-**Stage1** is the Game Boy program the FPGA serves from block RAM at
-power-on: our source in [stage1](../stage1/README.md), the stock ones
-disassembled in `stage1/fw4` and `stage1/fw5-0918` ([stage1/stock.md](../stage1/stock.md)).
+- **[stage0/](../stage0/README.md)** is the FPGA's logic: EZ Flash's
+  bitstreams decoded, the PicoBlaze's programs, the design rewritten as
+  readable Verilog, and the tools to patch a bitstream and build an
+  updater. Start with its README, then
+  [setup.md](../stage0/docs/setup.md) to build something.
+- **[stage1/](../stage1/README.md)** is the Game Boy program the FPGA
+  serves at power-on: ours from source
+  ([design](../stage1/docs/design.md)) and EZ Flash's disassembled
+  ([stock.md](../stage1/stock.md)).
 
-## Reading order
-
-1. [setup.md](../stage0/docs/setup.md): set up every tool from nothing and build
-   an updater end to end. [toolchain.md](../stage0/docs/toolchain.md) is
-   the reference for each tool's flags and output.
-2. Stage0, in the order its [README](../stage0/docs/overview.md) lists: the
-   bitstream, the config flash, the PicoBlaze, the design and simulation.
-3. [stage1 design](../stage1/docs/design.md): stock stage1 disassembled, our rewrite,
-   fast launch, hardware status.
-4. [stage1/fw4/patches](../stage1/fw4/patches/README.md): the first patched firmware (CGB flag,
-   boot splash), overlays on the stock stage1.
-5. [updater.md](../stage0/docs/updater.md): how the stock updater
-   writes slot B.
-
-Hardware and flash recovery: [hardware-board.md](hardware-board.md).
+The board, the config flash and how to recover a cart are in
+[hardware-board.md](hardware-board.md).
 
 ## Terms
 
 | Term | Meaning |
 |---|---|
-| **stage0** | the FPGA's logic once a bitstream is loaded: fabric, PicoBlaze and its firmware. Slots A and B are both stage0 ([overview](../stage0/docs/overview.md)) |
+| **stage0** | the FPGA's logic once a bitstream is loaded: fabric, PicoBlaze and its firmware. Slots A and B are both stage0 |
 | **stage1** (level 1) | the Game Boy program the cart shows at power-on (EZ-FLASH, LOADING), which loads the kernel. It lives in FPGA block RAM, so it ships inside the bitstream |
 | **kernel** (`ezgb.dat`) | the menu/file browser on the SD card that stage1 loads. The kernel mod in the rest of this repo patches it |
 | **slot A** | the bitstream at config flash `$00000`, which the FPGA loads at power-on. On FW4 its only extra job is handing over to slot B; it is the fallback image |

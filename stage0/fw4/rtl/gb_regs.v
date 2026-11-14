@@ -36,7 +36,7 @@
 //   MBC1   $2000-$3FFF the low five bank bits, $4000-$5FFF the two high
 //          bits (mbc1_hi, folded into the bank in mode 0) or the RAM bank
 //          (mode 1), $6000-$7FFF the mode
-//   MBC2   $2100-$21FF (bit 8 set) the four bank bits, unmasked
+//   MBC2   $2000-$3FFF with address bit 8 set: five bank bits, unmasked
 //   MBC3   $2000-$3FFF the seven bank bits unmasked, $4000-$5FFF the RAM
 //          bank ($00-$03) or the RTC register select ($08-$0C), which also
 //          sets the bank register to all ones so the data bus output
