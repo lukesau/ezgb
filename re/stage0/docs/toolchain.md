@@ -12,7 +12,7 @@ the ignored `fpga/` directory, same policy as the firmware packages
 Tracked and public, because they leave out BRAM contents: the decoded listings
 in [`../decode/`](../decode/README.md), and the
 [floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
-`fpga/floorplan/floorplan.html`.
+`stage0/floorplan/floorplan.html`.
 
 ## The pieces
 

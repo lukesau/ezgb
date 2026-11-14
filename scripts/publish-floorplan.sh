@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Publish the floorplan viewer to GitHub Pages: https://lukesau.github.io/ezgb/floorplan/
 #
-# Commits fpga/floorplan/floorplan.html (scripts/fpga/floorplan.py builds it) as
+# Commits stage0/floorplan/floorplan.html (scripts/fpga/floorplan.py builds it) as
 # floorplan/index.html on the gh-pages branch and pushes it. The patcher page
 # and the site root redirect stay as they are.
 #
 #   scripts/publish-floorplan.sh [--no-push]
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PAGE="$ROOT/fpga/floorplan/floorplan.html"
+PAGE="$ROOT/stage0/floorplan/floorplan.html"
 push=1
 [ "${1:-}" = "--no-push" ] && push=0
 [ -f "$PAGE" ] || { echo "no $PAGE, run scripts/fpga/floorplan.py" >&2; exit 1; }

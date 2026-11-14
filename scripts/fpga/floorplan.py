@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the floorplan viewer: where each firmware's logic and wires sit on the chip.
 
-    scripts/fpga/floorplan.py [--fpga DIR] [-o fpga/floorplan/floorplan.html]
+    scripts/fpga/floorplan.py [--fpga DIR] [-o stage0/floorplan/floorplan.html]
 
 For each firmware it reads netlist.jsonl, design.v and pins.txt from
 export-netlist.sh, the block files (FW5's are made by fw5-prove.sh), and the
@@ -310,7 +310,7 @@ def main():
     global FPGA
     ap = argparse.ArgumentParser()
     ap.add_argument('--fpga', default=FPGA, help='directory holding the exports, default fpga/')
-    ap.add_argument('-o', '--out', default=f'{TOP}/fpga/floorplan/floorplan.html')
+    ap.add_argument('-o', '--out', default=f'{TOP}/stage0/floorplan/floorplan.html')
     args = ap.parse_args()
     FPGA = os.path.abspath(args.fpga)
     clb = sorted({tile_xy(json.loads(l)['tile']) for l in open(f'{FPGA}/fw4/netlist.jsonl') if '"bel": "SLICE' in l})
