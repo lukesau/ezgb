@@ -2456,6 +2456,7 @@ disk_readp::
     ret
 
 
+disk_writep::
     ld e, $00
     ret
 
@@ -2539,7 +2540,7 @@ ld_dword::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2906
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -2616,7 +2617,7 @@ ld_dword::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2906
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -2692,7 +2693,7 @@ ld_dword::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2906
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -3074,7 +3075,7 @@ Jump_000_0ef0:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -3230,7 +3231,7 @@ jr_000_0fc0:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$0a
@@ -3619,7 +3620,7 @@ jr_000_119b:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_2906
+    call U32Shl
     add sp, $05
     push hl
     ld hl, sp+$02
@@ -6960,7 +6961,7 @@ Jump_000_2196:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $05
     push hl
     ld hl, sp+$06
@@ -7980,7 +7981,7 @@ DiskRead_issueLba::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -8019,7 +8020,7 @@ DiskRead_issueLba::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$04
@@ -8059,7 +8060,7 @@ DiskRead_issueLba::
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_28cc
+    call U32Shr
     add sp, $06
     push hl
     ld hl, sp+$08
@@ -8214,22 +8215,22 @@ U32Div::
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28cc
+    jp U32Shr
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_28e9
+    jp S32Sar
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2906
+    jp U32Shl
 
 
     ld a, $05
     rst RST_08
-    jp Jump_000_2906
+    jp U32Shl
 
 
 Jump_000_27cc:
@@ -8490,8 +8491,7 @@ U16DivMod_finish::
     ret
 
 
-Call_000_28cc:
-Jump_000_28cc:
+U32Shr::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8518,7 +8518,7 @@ U32Shr_shiftLoop::
     jp U32Shr_shiftLoop
 
 
-Jump_000_28e9:
+S32Sar::
     ld hl, $0002
     add hl, sp
     ld e, [hl]
@@ -8545,8 +8545,7 @@ S32Sar_shiftLoop::
     jp S32Sar_shiftLoop
 
 
-Call_000_2906:
-Jump_000_2906:
+U32Shl::
     ld hl, $0002
     add hl, sp
     ld e, [hl]

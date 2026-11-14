@@ -77,6 +77,7 @@
 00:0bff MsgSdError
 00:0c17 disk_initialize
 00:0c1a disk_readp
+00:0c44 disk_writep
 00:0c47 ld_word
 00:0c7a ld_dword
 00:0dc9 mem_set
@@ -120,8 +121,11 @@
 00:2889 U16DivMod
 00:289c U16DivMod_shiftLoop
 00:28c2 U16DivMod_finish
+00:28cc U32Shr
 00:28db U32Shr_shiftLoop
+00:28e9 S32Sar
 00:28f8 S32Sar_shiftLoop
+00:2906 U32Shl
 00:2915 U32Shl_shiftLoop
 00:2923 putchar
 00:2935 SetTileCursor
