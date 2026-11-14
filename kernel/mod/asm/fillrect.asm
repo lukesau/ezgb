@@ -1,4 +1,4 @@
-; Fast rectangle fill for DrawRect (docs/screen-timing.md).
+; Fast rectangle fill for DrawRect (docs/drawing-timing.md).
 ;
 ; DrawRectImpl fills a rectangle by calling DrawLine once per scanline, and
 ; every 8 pixels of that line go through ApplyPixel's op dispatch and its own

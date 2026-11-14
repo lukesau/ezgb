@@ -31,7 +31,7 @@ RTC=2026-09-08 10:15:32
 |---|---|---|
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
-| `UI` | `8`, `12` or `SLIM` (12px in the Tamzen glyph set, since 2026-11-09): which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
+| `UI` | `8`, `12` or `SLIM` (12px in the Tamzen glyph set, since 2026-11-09): which browser the SD tab draws, see [font12.md](font12.md). Missing = 8. | SET tab (`UI:` button) |
 | `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, `7` DV, see [themes.md](themes.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
 | `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB`, and optionally its accent, a third `RRGGBB` (since 2026-11-09; without it the background's complement), which is also the DV theme's highlight in place of its lime, see [themes.md](themes.md#custom-colors). Hex digits count in order, so `#` and spaces are fine. Written back as read. | by hand only |
 | `BOOTROM` | `1`: every launch resets through the boot ROM instead of jumping to a game's `$0100`, see [skip-boot-rom.md](skip-boot-rom.md). Written only as `BOOTROM=1`. Missing = jump when safe. | SET tab (`SKIP BOOT ROM:` checkbox, unticked) |
@@ -118,7 +118,7 @@ and checks again. Nothing is ever written to the clock without the user:
   chip's settled reading (`CHIP`, raw hex so garbage and VL show as-is) and
   the backup (`SD`), with `A:SD  B:KEEP`. It first consumes the joypad latch
   and waits for A and B to be up for 8 frames
-  ([`joypad-latch.md`](joypad-latch.md): a tap from before the box existed
+  ([`input.md`](input.md): a tap from before the box existed
   would otherwise answer it unseen), takes A or B, waits for the release so
   it cannot carry into the `BACKUPSAVE` prompt, and clears the box.
 - **A** writes `RTC=` to the clock. **B** keeps the chip's time; for a VL
@@ -277,9 +277,9 @@ no version-specific address.
 |---|---|
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
-| `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
+| `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([drawing-timing.md](drawing-timing.md#faster-fills-and-digits)) |
 | `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/mod/src/auto_backup.c)) |
-| `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([themes.md](themes.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([ui-mode.md](ui-mode.md)) |
+| `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([themes.md](themes.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([font12.md](font12.md)) |
 | `$DC0D-$DC0F` / `$DC10` | `ACC_RGB`, `COLORS=`'s third color as read / `ACC_OK`, 1 once one was |
 | `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([themes.md](themes.md#accents)) |
 | `$DC1A` / `$DC1B` | `HOLD_T` / `REP_N`, the browser's held-key repeat: the frame of the press, repeats so far ([browser.md](browser.md)); HRAM `$FFF2`/`$FFF4` until 2026-11-10 |
@@ -306,7 +306,7 @@ no version-specific address.
 | `$DBE4-$DBE9` / `$DBEA` | `CUST_RGB`, `COLORS=` as read / `CUST_OK`, 1 once it was valid ([themes.md](themes.md#custom-colors)) |
 | `$DAFB` / `$DAFC` / `$DAFD` | `THEME_BACK`, `SET_CUR`, `SET_DIRTY` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md), [themes.md](themes.md)) |
 | `$DC00-$DC07` / `$DC08` / `$DC09` | `BOOT_REGS`, what the jump to a game pops / `NO_DMG`, 1 when a DMG-family console must reset / `DMG_FAM`, 1 on the DMG family ([skip-boot-rom.md](skip-boot-rom.md#boot-registers)) |
-| `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [joypad-latch.md](joypad-latch.md#set-tab-d-pad-repeat)) |
+| `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [input.md](input.md#repeat-on-the-set-tab)) |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
 | `$DBFD` | set by `BatteryDryHook`: drops the pending save stamp and restores `AUTOSAVE=` at boot (mod 6.9) |
 | `$DBFE` / `$DBFF` | `FL_PICK`, fast-launch one-shot (unchanged) |

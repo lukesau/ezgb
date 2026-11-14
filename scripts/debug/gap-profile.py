@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report a SAMEBOY_PROFILE_GAP profile (docs/screen-timing.md).
+"""Report a SAMEBOY_PROFILE_GAP profile (docs/drawing-timing.md).
 
 The SameBoy stub samples bank:PC and the call stack every 256 T-cycles and,
 at each joypad poll ($3A4A), writes out the samples of any gap over 1M

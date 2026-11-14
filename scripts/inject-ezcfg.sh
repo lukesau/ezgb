@@ -95,7 +95,7 @@ for a in (0x4777,0x4931,0x5646):
 open(p,'wb').write(rom)
 PY
 python3 tools/inject_bytes.py "$V" 4 5f60 SetBtnTopHL 210d9bf0fbb7c8f802361c210f9bc9 --apply   # hl=$9b0d; 12px: y1 (pushed) = $1c, hl=$9b0f
-# Joypad latch race (docs/joypad-latch.md): ReadJoypadLatched (00:2746) read
+# Joypad latch race (docs/input.md): ReadJoypadLatched (00:2746) read
 # P1 with interrupts on, so the VBlank sampler could run between its P1
 # select and read and leave P1 deselected: a held button read as released
 # (PICK ROM dropped into the browser with A still down, which then opened the
@@ -124,7 +124,7 @@ PY
 python3 tools/inject_bytes.py "$V" 4 5f30 FlSetADispatch f83d7efe02cad658f8004d443e02f533c5cd0066e8037bb7caf5483dca1259e86ac3f446 --apply
 python3 tools/inject_bytes.py "$V" 4 5632 FlSetAHookSite c2305f --apply
 # Frame counter for the SET-tab name marquee: VBlankPadLatch (00:05cf, the
-# joypad latch's VBlank callback, docs/joypad-latch.md) gains
+# joypad latch's VBlank callback, docs/input.md) gains
 # `ldh a,[$fa]; inc a; ldh [$fa],a` before its `pop bc; ret`, so hFrame
 # ($fffa) counts every VBlank. 30 -> 35 bytes, still clear of $0600.
 perl -ni -e 'print unless /^00:05cf /' "$SYM"
@@ -196,7 +196,7 @@ for o,n in ((2*0x4000+0x0800,0x200),(2*0x4000+0x3260,0x260),(2*0x4000+0x1d58,0xa
     rom[o:o+n]=b'\xff'*n
 open(p,'wb').write(rom)
 PY
-# 12px tab strip (docs/tab-strip12.md): DrawMenuTabs (08:7169) starts with
+# 12px tab strip (docs/font12.md): DrawMenuTabs (08:7169) starts with
 # `jp TabStripHook`, which in 12px mode far-calls TabStrip12 instead of the
 # stock drawer; the entry number's two DrawString calls in bank 1 go through
 # TabNum12 (12px: pixel x 124, FarCallDrawString12).
@@ -279,7 +279,7 @@ open(p,'wb').write(rom)
 PY
 python3 tools/inject.py src/settext.c "$V" 4 6400 SetText --pin FarCallDrawString12=05c0 --pin DrawString=08b7 --apply
 python3 tools/inject_bytes.py "$V" 4 5f70 FarCallMenuTabs f8027ef533cd8d076971080033c9 --apply
-# Reading / Loading / Error file boxes (docs/tab-strip12.md "Status boxes"):
+# Reading / Loading / Error file boxes (docs/font12.md "Status boxes"):
 # each stock drawer starts with `jp MsgHook<n>`, which far-calls MsgBox
 # (msgbox.c, bank 11) through MsgBoxFar in both UI modes.
 perl -ni -e 'print unless /^(08:7e10|08:7e24|08:7e38|08:7e4c|0b:4b00) /' "$SYM"
@@ -315,7 +315,7 @@ assert bytes(rom[0x1857:0x185a])==bytes.fromhex("210508") and bytes(rom[0x18d7:0
 rom[0x1868:0x1868+len(new)]=new
 open(p,'wb').write(rom)
 PY
-# 12px HELP pane (docs/tab-strip12.md): DrawFwVersionScreen_drawChrome
+# 12px HELP pane (docs/font12.md): DrawFwVersionScreen_drawChrome
 # (08:70e1) starts with `jp HelpHook`; 12px calls Help12 with the stock
 # version buffer, then jumps to the stock wait loop.
 perl -ni -e 'print unless /^(08:7d00|08:7b40) /' "$SYM"

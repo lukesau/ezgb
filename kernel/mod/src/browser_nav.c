@@ -380,7 +380,7 @@ static void up(struct BrowserScrollState *st) {
  * browser reports a held key on every pass of its loop, and a recolored move
  * is quick enough that a tap would otherwise move twice. The delay counts
  * from the end of a press's move: a long repaint can outlast it, and the
- * latched report that follows (docs/joypad-latch.md) would be a second move. */
+ * latched report that follows (docs/input.md) would be a second move. */
 static u8 repeat_ok(u8 key) {
     u8 now = HFRAME, n, rate;
 

@@ -163,7 +163,7 @@ REGISTRY = {
     (5, 0x7c9f): dict(src="play.c", pins={"BrowserSortAllStub": 0x03d4},   # play counts and stars (docs/stars.md); Bump is the far target of 01:7ec6
                       exports={"PlayKeys": 0x7cd2, "StarQuery": 0x7d92, "StarToggle": 0x7db8}),
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
-    (2, 0x7600): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
+    (2, 0x7600): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/font12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
     (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
@@ -175,13 +175,13 @@ REGISTRY = {
     (12, 0x4c00): dict(src="auto_backup.c",                 # daily save backup, far target of AutoBackupStub 00:3d94 (docs/save-manager.md)
                       pins={"RtcReadPage": 0x1a9a, "FarCallDrawString12": 0x05c0, "DrawString": 0x08b7, "LastRomNameStub": 0x0368,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "FarCallTrampoline": 0x078d}),
-    (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/tab-strip12.md)
+    (11, 0x4b00): dict(src="msgbox.c",                      # Reading / Loading / Error boxes, far target of MsgBoxFar 08:7e4c (docs/font12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791,
                             "PopupDrawParams": 0x0290, "DrawString": 0x08b7, "ReadJoypad": 0x3a4a, "WaitVBlankFlag": 0x0688}),
     (4, 0x6000): dict(src="bkprompt.c",                     # BACKUPSAVE prompt, far target of the BackupSavePrompt sites (docs/modal-prompts.md)
                       pins={"FarCallDrawString12": 0x05c0, "LastRomNameStub": 0x0368, "DrawString": 0x08b7,
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "PopupDrawParams": 0x0290}),
-    (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/tab-strip12.md)
+    (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/font12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09, "HelpSd": 0x7c00}),
     (8, 0x7c00): dict(src="help_sd.c",                      # SD speed line on both HELP panes (docs/sd-error-recovery.md)

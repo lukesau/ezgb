@@ -3,7 +3,7 @@
 The two prompts that can appear after `Micro SD initial OK!` share the look
 of the START overlay ([last-rom.md](last-rom.md)): one closed box, rules
 between its parts, a vertical rule between the two options, drawn in the
-font of the UI mode ([ui-mode.md](ui-mode.md)). The stock BACKUPSAVE box and
+font of the UI mode ([font12.md](font12.md)). The stock BACKUPSAVE box and
 the RTC prompt copied from it drew a frame around each option and then the
 option's label over it, and the 8x8 label cells repainted parts of the
 frame, so no frame was ever closed.
@@ -117,7 +117,7 @@ by the save prompt), and the 12px prompts on 0918.
 
 Stock: the Reading box's rectangle, (35,37)-(125,108), with `BATTERY`,
 `DRY!!!` and a framed `[A]OK`. Now it is the small status box of
-[tab-strip12.md](tab-strip12.md) "Status boxes" around two lines:
+[font12.md](font12.md) "Status boxes" around two lines:
 
 ```
 Battery dry!
@@ -152,3 +152,22 @@ Checked in SameBoy (DMG and CGB models on 0731, DMG on 0918 and 1.04e, with
 `SAMEBOY_EZFLASH_JR_DRY=1`): the box, then A, an empty screen under `Micro
 SD initial OK!`, the `Reading...` box alone, and the browser. Confirmed on
 hardware 2026-11-10.
+
+## Status boxes
+
+`Reading...`, `Loading...` and `Error file` are three copies of one stock
+drawer in bank 8 (`08:7344`, `08:737f`, `08:73ba`). Each starts with a `jp`
+to a hook (`MsgHookReading` `08:7e10`, `MsgHookLoading` `08:7e24`,
+`MsgHookError` `08:7e38`) that far-calls `MsgBox(n)`
+([msgbox.c](../kernel/mod/src/msgbox.c), `0B:4B00`), in both fonts and
+every theme.
+
+The box is 96 px wide (x 32 to 127) and only as tall as the text plus a
+margin: y 52 to 87 in 12px, y 54 to 81 in 8px. Its frame is a 2 px outer
+line, a 1 px gap and a 1 px inner line in the text's color, after
+davidesqalv's ezgb-dv fork. The four corner pixels are not drawn, so what
+is behind them stays.
+
+The boot messages (`Micro SD initial OK!` and the SD error texts) and
+`BATTERY DRY!!!` stay 8x8 in 12px mode.
+

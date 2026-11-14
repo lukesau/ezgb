@@ -1,42 +1,45 @@
-# Mod version on the HELP tab
+# The HELP tab
 
-The HELP tab's version screen (`DrawFwVersionScreen`, bank 8) stock-draws
-`ver: FW5 K1.05e` and `www.ezflash.cn`. `DrawHelpModVersion` extends it: it appends the kernel date to the version
-(`K1.05e-0731` / `K1.05e-0918`; plain `K1.04e` on the FW4 kernel, which has
-only one build), collapsing the stock double space to fit,
-adds a `MOD <version>` line, and a two-line GitHub link (`github.com/lukesau/` and `ezgb`, split there so the 12px `g` has nothing under it), so
-a card announces exactly which build it is running.
+Stock draws `ver: FW5 K1.05e` and `www.ezflash.cn` on the HELP tab
+(`DrawFwVersionScreen`, bank 8). The mod makes the screen say exactly which
+build is running:
 
-## How it hooks
+```
+FW5  K1.05e-0731
+www.ezflash.cn
+MOD N.M
+github.com/lukesau/
+ezgb
+```
 
-`DrawFwVersionScreen_drawChrome` (`08:70e1`) draws the URL last, with
-`ld hl,$0500` at `08:7130`. That instruction is repointed to
-`jp DrawHelpModVersion` (`08:7a9c`, a bank-8 cave). The hook redraws the URL
-itself (the three bytes it displaced), redraws `K1.05e-<date>` at row 3 col 9
-(over the second stock space, shifting it left one to make room for the
-suffix), draws `MOD <version>` at row 7 and the GitHub link at rows 9-10, then
-`jp`s to `DrawFwVersionScreen_waitSelect` (`08:7141`). The `-<date>` suffix is
-the one part that differs between the kernels (`VERSION_TEXT` in
-`scripts/port-mod.py`). Bank 8 is byte-identical across all three builds, so
-the hook and its call site are the same everywhere.
+The kernel text is `K1.05e-0731` or `K1.05e-0918` on the two 1.05e builds,
+which stock cannot tell apart, and plain `K1.04e` on the FW4 kernel.
+Addresses are 1.05e-0731's.
 
-The version text lives in a fixed 10-byte field `MODSTR` at `08:7aff`, drawn as
-`len $0a`, so updating the number never changes any code — only those bytes.
+## The hooks
 
-## Reproduce
+`DrawFwVersionScreen` builds `FW<n>  K1.05e` in a stack buffer and then
+draws. The draw half (`DrawFwVersionScreen_drawChrome`, `08:70e1`) starts
+with `jp HelpHook` (`08:7b40`):
 
-The hook is `DrawString(URL)` + `DrawString(K1.05e-<date>)` + `DrawString(MOD)`
-+ two `DrawString`s for the GitHub link + `jp $7141`, followed by the four
-strings (`K1.05e-<date>`, the 10-byte `MODSTR`, `github.com/lukesau/ezgb`, one 23-byte string drawn as 19 + 4 characters).
-It is injected at `08:7a9c` (bank-8 cave) with `kernel/mod/tools/inject_bytes.py`
-and wired with `patch_call.py "$V" 8 7130 3 08:7a9c --jp`. The exact bytes are
-in the disassembly (`DrawHelpModVersion`); `scripts/stamp-mod-version.sh` writes
-the `MODSTR` field.
+- In 8px mode the hook replays the displaced load and the stock code runs
+  on. Its last draw, `ld hl,$0500` at `08:7130`, is `jp DrawHelpModVersion`
+  (`08:7a9c`), which redraws the URL, draws the kernel text with its date
+  over the stock one, adds the `MOD` line and the two-line link, and jumps
+  to the stock wait loop (`08:7141`).
+- In 12px mode the hook calls `Help12`
+  ([help12.c](../kernel/mod/src/help12.c), `08:7d00`) with that buffer and
+  jumps to the same wait loop. `Help12` draws the five lines from x 4 at
+  y 24, 44, 64, 84 and 96, from the same bank-8 strings, copying each to
+  the stack first because the 12px engine is in another bank. The 8px
+  pane's `ver:` label is dropped there.
 
-## Keeping it in sync
+## The version text
 
-`scripts/stamp-mod-version.sh` copies `patches/kernel/VERSION` into `MODSTR` so
-the screen equals the mod version, then holds `VERSION` fixed (the stamp would
-otherwise bump it, since the bytes are part of the patch). Run it as the last
-step before building `ezgb.dat` for a release. Re-running with the same version
-is a no-op.
+The mod version is a fixed 10-byte field, `MODSTR` at `08:7aff`, so
+changing the number never changes any code. `scripts/stamp-mod-version.sh`
+copies `patches/kernel/VERSION` into it for every kernel
+([DEVELOPMENT.md](DEVELOPMENT.md#releases)).
+
+The kernel text is the one string that differs between the three builds. It
+is `VERSION_TEXT` in `scripts/port-mod.py`, which the port writes into each.

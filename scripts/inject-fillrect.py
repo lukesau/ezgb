@@ -3,7 +3,7 @@
 
 Assembles kernel/mod/asm/fillrect.asm and, through kernel/mod/tools:
 
-  02:6f40   FillRect (docs/screen-timing.md)
+  02:6f40   FillRect (docs/drawing-timing.md)
   00:236d   DrawRectImpl_fillScan, the per-scanline DrawLine loop, becomes
             `call FarCallTrampoline; dw FillRect; db 2, 0; jr
             DrawRectImpl_restoreColors`, the rest of its 32 bytes nop

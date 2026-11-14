@@ -126,7 +126,7 @@ HRAM means idle, so a boot with the box off never enters `SgbFrame`.
 > `scripts/` as well as `kernel/mod/src` before taking an HRAM byte.
 
 > **Correction (2026-10-12).** The sketch proposed `$fff7`-`$fff9`. `$fff7`
-> is `hPadHeld` ([joypad-latch.md](joypad-latch.md), mod 6.8) and `$fff9` is
+> is `hPadHeld` ([input.md](input.md), mod 6.8) and `$fff9` is
 > `hClip12` ([set-pane12.md](set-pane12.md)); both were taken before this was
 > built.
 
@@ -178,7 +178,7 @@ trampoline and its return stub), so whenever VBlank is taken, `wRomBank` is
 the mapped bank.
 
 Main-code VRAM writes don't care that the interrupt now runs long: since the
-[vram-write-race](vram-write-race.md) fixes every one is a STAT check and the
+[drawing-timing.md](drawing-timing.md) fixes every one is a STAT check and the
 write under `di`. `FillRect`'s VBlank batch just waits a frame.
 
 `SgbFrame` counts the freeze down, decrements `hSgbWait`, and at zero calls

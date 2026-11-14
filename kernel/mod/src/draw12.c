@@ -405,7 +405,7 @@ static void cell_or7(const u8 *g, u8 *buf) __naked {
 /* One row of the generic flush: both plane bytes at addr become
  * (old & keep) | v, inside a DiNest .. EiNest window around the STAT wait
  * and the four accesses (13 M-cycles after the check passes, under the
- * ~20 that are then guaranteed, docs/vram-write-race.md). v0 and v1 must
+ * ~20 that are then guaranteed, docs/drawing-timing.md). v0 and v1 must
  * already be masked with ~keep.
  * Frame (sdcccall 0): +2 addr  +4 keep  +5 v0  +6 v1. */
 static void vram_rmw2(u16 addr, u8 keep, u8 v0, u8 v1) __naked {

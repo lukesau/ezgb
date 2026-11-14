@@ -18,7 +18,7 @@
  * one byte a row), a row is composed in a stack buffer, one 10-byte column
  * per tile, and blit_col copies each column to the tile canvas, ink 3 on
  * paper 0, two pixel rows per HBlank with interrupts off across the sync
- * (docs/vram-write-race.md).
+ * (docs/drawing-timing.md).
  *
  * The file is never held in RAM: one 512-byte sector at a time is read into
  * the loader's scratch ($c0a0) through the kernel FIL ($ca0f), both idle in

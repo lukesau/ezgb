@@ -25,7 +25,7 @@
  *         and set SET_DIRTY (SetCommit, 04:5fc0, saves), SORT BY PLAYS and SGB BOOT their pSRAM records
  *         (SGB BOOT: nothing when AUTO); each redraws highlighted
  *   op 4  clear the pane (y 13 down, below the tab strip's rule in either
- *         font: 8px y 8..9, 12px y 12, docs/tab-strip12.md)
+ *         font: 8px y 8..9, 12px y 12, docs/font12.md)
  *   op 5  page 1's or page 3's page row
  *   op 7  cur = the row the cursor is moving to: returns the row it lands on,
  *         past SKIP BOOT ROM when this console can't jump (SET_CUR is where

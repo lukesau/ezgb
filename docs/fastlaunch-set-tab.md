@@ -25,7 +25,7 @@ NEXT on page 3 page 1.
 | Row | Page 1 | Page 2 | Page 3 (the theme) |
 |---|---|---|---|
 | 2 | `TIME:` + `SET` (stock) | `CLEAN UP NAMES:` checkbox ([`browser.md`](browser.md), `TAGS=`) | `THEME:` button, `LIGHT`, `DARK`, `DV`, four colors and `CUSTOM` ([`themes.md`](themes.md)) |
-| 4 | date and time (stock) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box unticked, `Game Title` with it ticked (`TagExample`, `04:7e60`) | `FONT:` 8px / 12px / SLIM button ([`ui-mode.md`](ui-mode.md)) |
+| 4 | date and time (stock) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box unticked, `Game Title` with it ticked (`TagExample`, `04:7e60`) | `FONT:` 8px / 12px / SLIM button ([`font12.md`](font12.md)) |
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) | `COLORS:` and the `R` `G` `B` column heads |
 | 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](themes.md#the-picker)) |
 | 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1`; gray, and passed over by the cursor, when this console can't jump ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
@@ -62,7 +62,7 @@ boot to cancel
     [A] ok
 ```
 
-It is the status box of [tab-strip12.md](tab-strip12.md) "Status boxes",
+It is the status box of [font12.md](font12.md) "Status boxes",
 `MsgBox(5)` ([msgbox.c](../kernel/mod/src/msgbox.c)), reached from bank 4
 through the far stub `FarCallMsgBox_B4` (`04:59b0`): 128 px wide, x 16..143,
 y 40..89 in 8px (tile rows 6, 7 and 9) and y 44..95 in 12px (text at y 48,
@@ -139,9 +139,9 @@ the shared marquee's `MQ_A`, run through `FarCallMarquee`
 is unchanged. `flcfg` op 5 runs once per pass of the SET input loop:
 its `call ReadJoypad` at `04:5162` goes through `SetLoopTickHook` (`04:5f20`,
 14 B: op 5, then `ret`; op 5 does the pad read itself, with the D-pad
-repeat in [`joypad-latch.md`](joypad-latch.md#set-tab-d-pad-repeat)). The scroll is paced by `hFrame` (`$fffa`),
+repeat in [`input.md`](input.md#repeat-on-the-set-tab)). The scroll is paced by `hFrame` (`$fffa`),
 a VBlank counter added to the joypad latch's callback
-([`joypad-latch.md`](joypad-latch.md)): one character per 20 frames, a
+([`input.md`](input.md)): one character per 20 frames, a
 60-frame hold at the start of the name, 3 blanks between repeats. Counting
 loop passes did not work: a pass is a fraction of a frame on 1.05e and
 exactly one on 1.04e, whose loop waits for VBlank.
@@ -214,7 +214,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor row = `$FE`: the page's PREV; row 0 until 2026-11-10) |
 | `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor row = `$FF`: the page's NEXT; until 2026-11-10 the last row of all, which op ROWS turned into the page's last: row 13 with two pages, row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
-| `04:5604` | `d6 01` | `d6 14` | cursor clamp 0..1 → 0..20, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser.md](browser.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [themes.md](themes.md)) |
+| `04:5604` | `d6 01` | `d6 14` | cursor clamp 0..1 → 0..20, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser.md](browser.md); `d6 07` before it, `d6 04` with the `UI:` button, [font12.md](font12.md), `d6 06` before `THEME`, [themes.md](themes.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`cd c0 5f af ea ee db e8 6a c9`: `call SetCommit`, clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 
@@ -248,7 +248,7 @@ SELECT steps SD → SET → HELP → SD. START on the SD tab is the last-ROM ove
   key leaves for the browser, as SELECT did.
 
 `ReadJoypad` reports a button once per press
-([joypad-latch.md](joypad-latch.md)), so the START that left a tab doesn't
+([input.md](input.md)), so the START that left a tab doesn't
 open the overlay in the browser. The debug screen keeps START for the flash
 dump ([debug-tab.md](debug-tab.md)).
 

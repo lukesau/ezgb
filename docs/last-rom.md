@@ -80,11 +80,11 @@ The mod replaces the chrome with one closed box holding three text rows: a
 title (`Launch Last ROM?`), the name, and the two button labels. The name
 sits on a solid ink band that spans the box, drawn in paper on ink, and a
 vertical rule separates the two labels. It is drawn
-in the font of the UI mode ([ui-mode.md](ui-mode.md)):
+in the font of the UI mode ([font12.md](font12.md)):
 
 | | 8px | 12px |
 |---|---|---|
-| box | (0,91)-(159,139); the list is cleared from y 88 down | (0,92)-(159,143), flush under list row 5 (the 12px list starts at y 20, [tab-strip12.md](tab-strip12.md)) |
+| box | (0,91)-(159,139); the list is cleared from y 88 down | (0,92)-(159,143), flush under list row 5 (the 12px list starts at y 20, [font12.md](font12.md)) |
 | title | tile row 12, column 1 | y 96, from x 12 |
 | name | tile row 14, column 1, 18 characters | y 112, from x 12, as many glyphs as end 2 px short of the right side |
 | labels | tile row 16, columns 1 and 11 | y 128, from x 12, one string |

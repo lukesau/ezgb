@@ -1,6 +1,6 @@
 # 12px SET pane
 
-In 12px UI mode ([ui-mode.md](ui-mode.md)) the SET tab's content is set in
+In 12px UI mode ([font12.md](font12.md)) the SET tab's content is set in
 the 12px font ([font12.md](font12.md)) too. 8px mode is unchanged.
 
 ## Layout

@@ -586,7 +586,7 @@ static void put_hex(u8 *dst, u8 v) {
  *   12px  box (0,20)-(159,115); rows at y 24, 44..80, 100; rules y 38 and 95
  *
  * Returns 1 for A (restore RTC=). Waits out the joypad latch and any held
- * button first (docs/joypad-latch.md: a tap from before the box existed would
+ * button first (docs/input.md: a tap from before the box existed would
  * answer it unseen), then for the release so the press cannot carry into the
  * BACKUPSAVE [A]OK prompt that follows, and clears the box. "Micro SD initial
  * OK!" sits on row 0, outside the box. */

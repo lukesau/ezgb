@@ -61,7 +61,7 @@ Each links to a doc with the details.
 - [Clean ROM names](docs/browser.md#clean-names): `Tetris (World) (Rev 1).gb`
   shows as `Tetris`.
 - [Closed boxes](docs/modal-prompts.md) for the prompts and the START
-  overlay, and [no streaks](docs/vram-write-race.md) in the text.
+  overlay, and [no streaks](docs/drawing-timing.md) in the text.
 
 **Browser**
 
@@ -71,7 +71,7 @@ Each links to a doc with the details.
   the card's `.ezgbhide` lists.
 - [Fast navigation](docs/browser.md#moving-around): the list wraps, shows `n/total`,
   and speeds up when UP or DOWN is held.
-- [No lost button presses](docs/joypad-latch.md): the pad is read every
+- [No lost button presses](docs/input.md): the pad is read every
   frame.
 - [Hold A for options](docs/rom-menu.md): start, manage saves, star.
 - [Text viewer](docs/text-viewer.md): A on a `.txt`, `.ini` or `.md` file

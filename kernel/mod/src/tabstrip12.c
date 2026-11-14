@@ -1,4 +1,4 @@
-/* 12px tab strip (docs/tab-strip12.md).
+/* 12px tab strip (docs/font12.md).
  *
  * Bank 2, injected at 02:7600 (02:5e00 until 2026-11-02, moved to give ezcfg room). The stock tab drawer DrawMenuTabs (08:7169)
  * now starts with `jp TabStripHook` (08:7b20): in 8px mode the hook replays

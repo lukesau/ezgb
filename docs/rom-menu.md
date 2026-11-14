@@ -48,7 +48,7 @@ current one, so the poll after the menu never counts as "A held".
 
 While the hold is timed nothing on the main thread reads the pad, so
 `$fffc`, which `VBlankPadLatch` writes with the live pad every frame
-([joypad-latch.md](joypad-latch.md)), is the live state once one VBlank has
+([input.md](input.md)), is the live state once one VBlank has
 passed. Reading P1 directly instead would race the VBlank sampler.
 
 ## Layout

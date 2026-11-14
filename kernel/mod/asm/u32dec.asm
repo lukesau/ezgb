@@ -1,4 +1,4 @@
-; Fast decimal path for bank 4's U32ToAscii (docs/screen-timing.md).
+; Fast decimal path for bank 4's U32ToAscii (docs/drawing-timing.md).
 ;
 ; U32ToAscii (04:44f7) makes every digit with a U32Div and a U32Mod call
 ; through the generic 32-bit divide: tens of thousands of cycles a digit,

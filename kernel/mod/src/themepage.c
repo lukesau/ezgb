@@ -6,7 +6,7 @@
  * past the trampoline's three words and the stub's return address.
  *
  *   row 2   THEME: [ PURPLE]       cursor row 14
- *   row 4   FONT:     [12px]       cursor row 15 (docs/ui-mode.md)
+ *   row 4   FONT:     [12px]       cursor row 15 (docs/font12.md)
  *   row 6   COLORS:   R   G   B
  *   row 8   BG:      [ 6][ 2][12]  cursor row 16, color index 0
  *   row 10  TEXT:    [31][31][31]  cursor row 17, color index 3

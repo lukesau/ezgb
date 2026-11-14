@@ -1,4 +1,4 @@
-/* 12px HELP pane (docs/tab-strip12.md "HELP pane").
+/* 12px HELP pane (docs/font12.md "HELP pane").
  *
  * Bank 8, injected at 08:7d00. DrawFwVersionScreen_drawChrome (08:70e1) now
  * starts with `jp HelpHook` (08:7b40): in 8px mode the hook replays the
