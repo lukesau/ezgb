@@ -163,17 +163,16 @@ void DrawDirEntryLabel (UINT32 tick, UINT16 top, UINT16 row)
 }
 
 #ifdef UNMATCHED
-/* Not matched yet (tools/match.py -D UNMATCHED). Right frame and register
-   allocation; two spots differ:
-   - memset(&wFno, ...): stock loads the address into bc (ld c / ld b) as
-     a cast temporary; this pushes it from hl, rematerialized. Explicit
-     casts on &wFno fold (it is a constant address).
-   - the last-ROM key loop: stock spills the 16-bit cast of keys (sp+4),
-     this keeps it in bc.
-   What it took to get this far, from SDCC 2.9.0's allocator: res is
-   spilled (it is live across the launch calls and stock needs b and c
-   there, for (wD3F0 << 7) | (char)wD3EB), and its first three tests are
-   written FR_OK != res, which SDCC does not fold into a plain test.
+/* Not matched yet (tools/match.py -D UNMATCHED). Everything but one
+   register decision matches: in the last-ROM key loop stock keeps the
+   16-bit cast of keys on the stack (sp+4), where SDCC's fillGaps pass
+   puts it in bc here. With fillGaps skipped for that one temporary (a
+   patched 2.9.0) the function is byte-identical, so something in the
+   real source holds b or c while that value is live; not found yet.
+   Inferred from the allocator rather than known: res is spilled because
+   (char)wD3EB needs a register while res is live across the launch
+   calls; FR_OK != res is not folded into a plain test; and the
+   (void *)(UINT16) round trip gives memset a register temporary.
    Until it matches, $0de4-$16f4 stays disassembly and the functions
    after it are in kernel2.c. */
 
@@ -234,7 +233,7 @@ browse:
 	if (FR_OK != res)
 		FileSystemErrorHang();
 	memset(wLabelBuf, 0, 255);
-	memset(&wFno, 0, sizeof(FILINFO));
+	memset((void *)(UINT16)&wFno, 0, sizeof(FILINFO));
 	wFno.lfname = wLabelBuf;
 	wFno.lfsize = 254;
 	DirList();
