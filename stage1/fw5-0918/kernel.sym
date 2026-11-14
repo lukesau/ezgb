@@ -53,12 +53,12 @@
 00:0582 RegisterJoypadCallbackArg
 00:058d FarCallTrampoline
 00:05bc PrintLine
-00:05e9 PrintNumber
+00:05ed PrintNumber
 00:071c WaitButtonB
 00:073b FpgaSetMode
 00:075b BootRomDirect
 00:0786 RunFromWram
-00:07a7 PrintBlankLines
+00:07a6 PrintBlankLines
 00:07f1 FpgaSetBootCpu
 00:0811 main
 00:086d main_sdErrorHang

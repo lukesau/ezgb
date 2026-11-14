@@ -1307,6 +1307,7 @@ Jump_000_05e1:
     ret
 
 
+PrintNumber::
     add sp, -$13
     ld hl, sp+$15
     ld a, [hl+]
@@ -1645,6 +1646,7 @@ RunFromWram::
     ret
 
 
+PrintBlankLines::
     ld hl, $07ef
     push hl
     call puts
