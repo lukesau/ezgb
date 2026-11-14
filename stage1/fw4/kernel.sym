@@ -54,8 +54,11 @@
 00:0577 RegisterSerialCallbackArg
 00:0582 RegisterJoypadCallbackArg
 00:058d FarCallTrampoline
+00:05bc PrintLine
+00:05e9 PrintNumber
+00:071c WaitButtonB
 00:073b FpgaSetMode
-00:0752 BootRomDirect
+00:075b BootRomDirect
 00:0786 RunFromWram
 00:07a7 PrintBlankLines
 00:07f1 main
@@ -106,7 +109,8 @@
 00:25d0 DiskRead_issueLba
 00:26ec DiskRead_waitPeek
 00:26fc DiskRead_copyWindow
-00:273e U32Mod
+00:2738 U32Mod
+00:273e U32Div
 00:2823 S16DivMod
 00:2831 S16DivMod_absDividend
 00:283b S16DivMod_u16Div
@@ -122,7 +126,7 @@
 00:2931 VBlankCb_Bg8000
 00:293c LycCb_Bg8800
 00:2998 S32DivImpl_u32DivEngine
-00:29eb U32DivImpl_runEngine
+00:29eb U32ModImpl_runEngine
 00:2a08 MemIsZero
 00:2a0a MemIsZero_scanLoop
 00:2a24 ClearNegZero32_matchMsb
@@ -132,7 +136,7 @@
 00:2aed S8Mul
 00:2b01 U8Mul
 00:2b1a S16Mul
-00:2b70 U32ModImpl_runEngine
+00:2b70 U32DivImpl_runEngine
 00:2b8d Memcpy
 00:2b9c Memcpy_copyLoop
 00:2ba6 puts
@@ -180,6 +184,7 @@
 00:3005 RegisterDefaultFont
 00:300c FontDesc
 00:391e ReadJoypadRaw
+00:3952 ReadJoypad
 00:392a ReadJoypadRaw_readFace
 00:3957 WaitJoypadMaskArg
 00:3961 DelayMs

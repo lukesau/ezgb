@@ -18,9 +18,10 @@
     },
     {
       "bank": 0,
-      "addr": "0752",
+      "addr": "05bc",
       "lines": [
-        "BootRomDirect / RunFromWram / PrintBlankLines: unreferenced (dead) user code."
+        "PrintLine, PrintNumber, WaitButtonB, BootRomDirect ($075B), RunFromWram, PrintBlankLines:",
+        "unreferenced (dead) user code, $05BC-$07F0. C reconstruction: stage1/decomp/src/main.c."
       ]
     },
     {
@@ -75,7 +76,7 @@
       "bank": 0,
       "addr": "2586",
       "lines": [
-        "DiskRead(lba, buf, n): up to 4 sectors per request; LBA bytes go to the FPGA from $7FB0,",
+        "DiskRead(lba, n, buf): up to 4 sectors per request; LBA bytes go to the FPGA from $7FB0,",
         "then the sector window at $A000 is polled and copied. Same routine as the kernel's DiskRead_B2."
       ]
     },

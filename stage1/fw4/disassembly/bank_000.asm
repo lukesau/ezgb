@@ -1258,7 +1258,11 @@ FarCallTrampoline::
     ret
 
 
-Call_000_05bc:
+; [ezgb]
+; PrintLine, PrintNumber, WaitButtonB, BootRomDirect ($075B), RunFromWram, PrintBlankLines:
+; unreferenced (dead) user code, $05BC-$07F0. C reconstruction: stage1/decomp/src/main.c.
+
+PrintLine::
     push af
     ld hl, sp+$04
     ld a, [hl+]
@@ -1538,14 +1542,14 @@ Jump_000_070e:
     ld h, [hl]
     ld l, a
     push hl
-    call Call_000_05bc
+    call PrintLine
     add sp, $02
     add sp, $13
     ret
 
 
-Jump_000_071c:
-    call Call_000_3952
+WaitButtonB::
+    call ReadJoypad
     ld c, e
     ld b, $00
     ld a, c
@@ -1558,7 +1562,7 @@ Jump_000_071c:
     jr jr_000_0731
 
 Jump_000_072e:
-    jp Jump_000_071c
+    jp WaitButtonB
 
 
 jr_000_0731:
@@ -1586,11 +1590,6 @@ FpgaSetMode::
     ld [bc], a
     ld bc, $7fc0
     ld hl, sp+$02
-
-; [ezgb]
-; BootRomDirect / RunFromWram / PrintBlankLines: unreferenced (dead) user code.
-
-BootRomDirect::
     ld a, [hl]
     ld [bc], a
     ld bc, $7ff0
@@ -1599,6 +1598,7 @@ BootRomDirect::
     ret
 
 
+BootRomDirect::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -1633,7 +1633,7 @@ RunFromWram::
     ld bc, $3000
     ld a, $00
     ld [bc], a
-    ld bc, $075b
+    ld bc, BootRomDirect
     ld hl, $0100
     push hl
     push bc
@@ -5961,7 +5961,7 @@ Jump_000_1c1b:
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -7794,7 +7794,7 @@ Jump_000_2583:
 
 
 ; [ezgb]
-; DiskRead(lba, buf, n): up to 4 sectors per request; LBA bytes go to the FPGA from $7FB0,
+; DiskRead(lba, n, buf): up to 4 sectors per request; LBA bytes go to the FPGA from $7FB0,
 ; then the sector window at $A000 is polled and copied. Same routine as the kernel's DiskRead_B2.
 
 DiskRead::
@@ -8109,13 +8109,14 @@ Call_000_2732:
     jp Jump_000_2949
 
 
+U32Mod::
     jp Jump_000_29c2
 
 
     jp Jump_000_2a73
 
 
-U32Mod::
+U32Div::
     jp Jump_000_2b47
 
 
@@ -8720,7 +8721,7 @@ Jump_000_29c2:
 jr_000_29d5:
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, U32DivImpl_runEngine
+    jr nz, U32ModImpl_runEngine
 
     ld a, $21
     ld [$c4aa], a
@@ -8732,7 +8733,7 @@ jr_000_29d5:
     jp Jump_000_2a05
 
 
-U32DivImpl_runEngine::
+U32ModImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -9083,7 +9084,7 @@ Jump_000_2b47:
 jr_000_2b5a:
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, U32ModImpl_runEngine
+    jr nz, U32DivImpl_runEngine
 
     ld a, $21
     ld [$c4aa], a
@@ -9095,7 +9096,7 @@ jr_000_2b5a:
     jp Jump_000_2b8a
 
 
-U32ModImpl_runEngine::
+U32DivImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -10343,7 +10344,7 @@ jr_000_394b:
     ret
 
 
-Call_000_3952:
+ReadJoypad::
     call ReadJoypadRaw
     ld e, a
     ret
