@@ -3,7 +3,8 @@
  * SDCC 2.9.0 passes every argument on the stack and returns in e / de /
  * dehl, the convention these routines were written for.
  *
- * These stay assembly (the disassemblies in ../../fw4 and ../../fw5-0918).
+ * They are library code: GBDK's (../gbdk), SDCC's (../sdcclib) and the library
+ * with no published source (../asm).
  * Names are GBDK's; the comment gives the name and FW4 address that
  * kernel.sym uses. FW5-0918 has the same code $31 bytes higher. */
 #ifndef GB_H

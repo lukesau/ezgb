@@ -91,7 +91,9 @@ Name things in `fw4/` and port them; don't edit FW5's files by hand.
 [decomp/](decomp/README.md) is the stock stage1 rewritten in C, one source
 for both firmwares. EZ Flash compiled it with SDCC 2.9.0 and no options;
 with that compiler `make -C stage1/decomp` builds both firmwares' stage1
-byte for byte.
+byte for byte, entirely from source (the C, GBDK's crt0 and library
+modules, SDCC's, and the library code no published source has, converted
+from the disassembly).
 
 ### The load command
 

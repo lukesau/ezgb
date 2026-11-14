@@ -3,8 +3,9 @@
 EZ Flash's stage1, the FW4 and FW5-0918 versions, rewritten in C from the
 annotated disassemblies in [../fw4](../fw4) and [../fw5-0918](../fw5-0918).
 EZ Flash compiled it with SDCC 2.9.0 and no options. With that compiler
-`make` builds both firmwares' stage1 byte for byte: same md5 as the stock
-`kernel.gb` from the FPGA.
+`make` builds both firmwares' stage1 byte for byte, entirely from source:
+same md5 as the stock `kernel.gb` from the FPGA, with nothing taken from the
+disassembly.
 
 One source covers both firmwares. FW5-0918 differs from FW4 only in
 `main.c` (and the header), under `#if FW == 5`; the rest is the same code,
@@ -19,36 +20,37 @@ make -C stage1/decomp match           # per function, if one ever differs
 Needs a current SDCC (`sdcpp`, `sdasgb`, `sdldgb`; 2.9.0's own preprocessor
 and linker no longer build), rgbds, and a C compiler to build SDCC 2.9.0
 (`build-sdcc29.sh` fetches its source release, or takes the tarball as an
-argument). No stock binary is needed: the asm comes from the tracked
-disassemblies. When `stage1/<fw>/kernel.gb` is there, `make` compares the ROM
-with it and fails if they differ.
+argument). No stock binary is needed. When `stage1/<fw>/kernel.gb` is there,
+`make` compares the ROM with it and fails if they differ.
 
 ## The build
 
-[tools/link.py](tools/link.py) compiles each file with SDCC 2.9.0
-(`sdcc -mgbz80`), links with sdldgb at the stock addresses, resolving what
-the C calls from the firmware's `kernel.sym` (GBDK names that differ are in
-`ALIASES`), and writes the linked bytes as two rgbds includes. These replace
-the C regions in a copy of the disassembly (`build/fw<n>/asm/`), and rgbds
-builds the ROM. GBDK's `crt0` is linked first, from source
-([gbdk/](gbdk/README.md), GBDK's license); the GBDK and SDCC library code
-after the C is still disassembly (the same README maps it to library
-modules).
+[tools/link.py](tools/link.py) compiles the C with SDCC 2.9.0
+(`sdcc -mgbz80`), assembles the rest with sdasgb, links everything with
+sdldgb in GBDK `lcc`'s order (crt0, the program, then the library modules in
+stock's order) and writes the ROM from the link.
 
-| Where | Area | What |
+| Where (FW4) | Area | Source |
 |---|---|---|
-| `00:0000`-`01E2` | `_HEADER` | `gbdk/crt0.s`: vectors, header, startup |
+| `00:0000`-`01E2` | `_HEADER` | [gbdk/crt0.s](gbdk/README.md): vectors, header, startup |
+| `00:03CD` | `_HEADER` | `gbdk/font.s`: its mode-table entry |
 | `00:0400`-`05BB` | `_HOME` | `gbdk/crt0.s`: interrupt dispatch, modes, `banked_call` |
 | `00:05BC`-`2731` | `_CODE` | `main.c`, `diskio.c`, `pff.c`, `sd.c` |
+| `00:2732`-`2D24` | `_CODE` | library: [sdcclib/](sdcclib/README.md) `stubs.s`, `shift.s`, `puts.c`; GBDK `font.s`; [asm/](asm/README.md) `div.s`, `drawing_isr.s`, `long.s`, `long2.s` |
+| `00:2D25`-`39A3` | `_BASE` | GBDK `font.s`, `cpy_data.s`, `ibmfixed.s` (the font), `pad.s`, `delay.s` |
 | `01:4000`-`40AD` | `_HANDOFF` | `handoff_poll.c`, linked to run at `$D100` |
 | `01:40AE`-`4133` | `_CODE_1` | `handoff.c` |
 | `01:4134`-`4160` | `_GSINIT`, `_GSINITTAIL` | crt0's `gsinit`: the startup code for `main.c`'s initialized message pointers (`InitMessages`), then crt0's `ret` |
-| `$C0A0`-`$C4A9` | `_DATA` | `LoadCmd`, the message pointers, `FatFs`, the sector buffer |
-| `$C4AC`- | `_BSS` | crt0's variables (`_cpu`, the mode, the current bank, the interrupt handler lists) |
+| `$C0A0`-`$C4AB` | `_DATA` | `LoadCmd`, the message pointers, `FatFs`, the sector buffer, `errno` |
+| `$C4AC`-`$C51F` | `_BSS` | crt0's variables, then `font.s`'s and `drawing_isr.s`'s |
 
-What the build does that EZ Flash's tools did and SDCC 2.9.0 does not:
-it writes the bank word of each banked call (2.9.0 writes 0: `BANKS` in
-`link.py`), and it stores `HandoffPoll`, linked for `$D100`, at `01:4000`.
+`asm/` is the library code no published library has, converted from the
+disassembly; its README lists what was searched.
+
+What the build does that EZ Flash's tools did and sdldgb does not: it
+writes the bank word of each banked call (2.9.0 writes 0: `BANKS` in
+`link.py`), stores `HandoffPoll`, linked for `$D100`, at `01:4000`, and puts
+`font.s`'s mode-table entry where GBDK 2.96a's linker did (`$03CD`).
 
 ## Matching
 
@@ -92,7 +94,7 @@ What fitting the C to it showed about EZ Flash's source:
 - `PrintNumber` is K&R's `itoa` with the reversal written inline.
 - Petit FatFs is R0.03a unchanged.
 
-## What is C and what stays assembly
+## What is where
 
 | FW4 range | File | What |
 |---|---|---|
@@ -102,7 +104,7 @@ What fitting the C to it showed about EZ Flash's source:
 | `00:0BE6`-`0C15` | [src/diskio.c](src/diskio.c) | `disk_initialize`, `disk_readp`, the template's unused `disk_writep` |
 | `00:0C16`-`24E2` | [src/pff.c](src/pff.c) | Petit FatFs, plus EZ Flash's accessors `FsFileSize` ... `FsClusterSectors` |
 | `00:24E3`-`2731` | [src/sd.c](src/sd.c) | the FPGA sector window: `FpgaSetSdWindow`, `SdWindowStatus`, `disk_readp_impl`, `DiskRead` |
-| `00:2732`-`39A3` | asm | GBDK and SDCC 2.9.0 library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` ([which modules](gbdk/README.md#the-rest-of-bank-0)) |
+| `00:2732`-`39A3` | [sdcclib/](sdcclib/README.md), [gbdk/](gbdk/README.md), [asm/](asm/README.md) | library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` |
 | `01:4000`-`40AD` | [src/handoff_poll.c](src/handoff_poll.c) | `HandoffPoll`, run from `$D100` |
 | `01:40AE`-`4133` | [src/handoff.c](src/handoff.c) | `HandoffRun`, `LoadKernel`, the dead `RomLoad_Build` |
 | `01:4134`-`415F` | [src/main.c](src/main.c) | `InitMessages`: the compiler's startup code for the initialized message pointers |
