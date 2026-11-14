@@ -55,14 +55,11 @@ from stays on the card (delete it afterwards if it isn't wanted).
 ## Delete
 
 The build has no `f_unlink` either. [kernel/mod/src/fs_unlink.c](../kernel/mod/src/fs_unlink.c)
-adds one: R0.10's `f_unlink` and `dir_remove`, injected into bank 9 next to
+adds one: R0.11a's `f_unlink` and `dir_remove`, injected into bank 9 next to
 that bank's copy of the FatFs internals and calling them directly
 (`find_volume`, `follow_path`, `ld_clust`, `dir_sdi`, `move_window`,
 `dir_next`, `remove_chain`, `sync_fs`), so the FAT is changed by the same
 code that writes the saves. Directories and read-only files are refused.
-
-> **Correction (2026-10-30).** The FatFs here was called R0.10; it is R0.11a
-> (same struct layout), see [the stock README](../kernel/1.05e-0731/stock/README.md#toolchain-findings).
 
 The structures come from `Open_B9`, which is really `f_mkdir` (it calls
 `get_fattime` first and turns `FR_OK` from `follow_path` into `FR_EXIST`):
@@ -92,14 +89,9 @@ with an 8-bit count ([ezgb-cfg.md](ezgb-cfg.md), ezcfg.c's `far_write`), so a
 the 48-byte RTC footer, so they never hit it. A file with such a tail is left
 out of the list (and the save itself can't be backed up).
 
-> **Correction (2026-10-11).** An earlier design note
-> called this FatFs an FS_TINY build. It is not: every FIL carries its own
-> 512-byte sector buffer at `+$20` (`Fsync_B3` writes it back from there,
-> `Lseek_B3` reads it), so a FIL is `$220` = 544 bytes. The kernel's FIL at
-> `$CA0F` runs to `$CC2E`, and the next kernel variable, `wDebugTextRow`, is at
-> `$CC2F`. The first version of this feature put a second FIL in 32 bytes at
-> `$D750` and overran its own state; the backup it wrote was fine, but the list
-> came back empty. Earlier code that reuses `$CA0F` is unaffected.
+A FIL is 544 bytes (`$220`): each carries a 512-byte sector buffer at
+`+$20`. The kernel's FIL at `$CA0F` runs to `$CC2E`, so a second FIL needs
+the full 544 bytes somewhere else.
 
 SD discipline is ezcfg's: `WaitVBlankFlag` and `$7FC0 = $00` before every
 FatFs call, paths in WRAM. On the way out (`SO_DONE`) `$7FC0` goes back to
@@ -134,79 +126,27 @@ Bank 4 has the screens, but not room for the file work as well, so that is
 name parser didn't fit bank 1 with it and went back to bank 4 as a far
 target of its own; `f_unlink` has to live in bank 9.
 
-| Block | Size | What |
-|---|---|---|
-| `ManageSavesImpl` `0B:4010` | 1605 | [kernel/mod/src/save_mgr.c](../kernel/mod/src/save_mgr.c): the screens, far-called by `RomMenu` through `ManageSaves`, an 8-byte stub at `04:6d11` where the block was until 2026-10-31 (bank 4 needed the room for the SET tab) |
-| `SmSaveOpB11` `0B:4000` | 16 | the same bytes as `SmSaveOp`, for the screens in bank 11 |
-| `SaveNameMatch` `04:73a0` | 715 | [kernel/mod/src/save_name.c](../kernel/mod/src/save_name.c): `<base>.sav` or a backup's name |
-| `SmSaveOp` `04:65f0` | 16 | far stub to `SaveOp` (no caller in bank 4 since the move; kept) |
-| `SaveOp` `01:7670` | 1750 | [kernel/mod/src/save_ops.c](../kernel/mod/src/save_ops.c): scan, copy, back up, restore, delete, labels |
-| `SoOpendir` `01:7630`, `SoReaddir` `01:7646` | 22, 22 | far stubs to `Opendir_B5` (`05:73dd`) and `Readdir_B5` (`05:7576`), the bank-2 `FarCallOpendir_B5`'s bytes |
-| `SoUnlink` `01:765c` | 16 | far stub to `FsUnlink` |
-| `SoMatch` `01:7d50` | 22 | far stub to `SaveNameMatch` |
-| `FsUnlink` `09:7cc0` | 486 | [kernel/mod/src/fs_unlink.c](../kernel/mod/src/fs_unlink.c) |
+| Block | What |
+|---|---|
+| `ManageSavesImpl` `0B:4010` | [kernel/mod/src/save_mgr.c](../kernel/mod/src/save_mgr.c): the screens, far-called by `RomMenu` through `ManageSaves`, an 8-byte stub at `04:6d11` |
+| `SmSaveOpB11` `0B:4000` | the same bytes as `SmSaveOp`, for the screens in bank 11 |
+| `SaveNameMatch` `04:73a0` | [kernel/mod/src/save_name.c](../kernel/mod/src/save_name.c): `<base>.sav` or a backup's name |
+| `SmSaveOp` `04:65f0` | far stub to `SaveOp`. Nothing calls it |
+| `SaveOp` `01:7670` | [kernel/mod/src/save_ops.c](../kernel/mod/src/save_ops.c): scan, copy, back up, restore, delete, labels |
+| `SoOpendir` `01:7630`, `SoReaddir` `01:7646` | far stubs to `Opendir_B5` (`05:73dd`) and `Readdir_B5` (`05:7576`), the bank-2 `FarCallOpendir_B5`'s bytes |
+| `SoUnlink` `01:765c` | far stub to `FsUnlink` |
+| `SoMatch` `01:7d50` | far stub to `SaveNameMatch` |
+| `FsUnlink` `09:7cc0` | [kernel/mod/src/fs_unlink.c](../kernel/mod/src/fs_unlink.c) |
 
 Every block sits where all three stock kernels are free: 0918's bank 1 has
 data at `01:7391`, which 0731 and 1.04e leave free.
-
-```sh
-cd kernel
-V=1.05e-0731
-python3 tools/inject_bytes.py $V 4 65f0 SmSaveOp f8022a666fe5cd8d0770760100e802c9 --apply
-python3 tools/inject_bytes.py $V 1 7630 SoOpendir f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply
-python3 tools/inject_bytes.py $V 1 7646 SoReaddir f8042a666fe5f8042a666fe5cd8d0776750500e804c9 --apply
-python3 tools/inject_bytes.py $V 1 765c SoUnlink f8022a666fe5cd8d07c07c0900e802c9 --apply
-python3 tools/inject_bytes.py $V 1 7d50 SoMatch f8042a666fe5f8042a666fe5cd8d07a0730400e804c9 --apply
-python3 tools/inject.py src/fs_unlink.c $V 9 7cc0 FsUnlink \
-    --pin FindVolume_B9=76f7 --pin FollowPath_B9=72c5 --pin DirSdi_B9=54db \
-    --pin DirNext_B9=580c --pin MoveWindow_B9=437e --pin LdClust_B9=5d72 \
-    --pin RemoveChain_B9=4f94 --pin SyncFs_B9=4447 --apply
-python3 tools/inject.py src/save_ops.c $V 1 7670 SaveOp \
-    --pin WaitVBlankFlag=0688 --pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 \
-    --pin FarCall_07_7739=1963 --pin FarCall_03_768f=19a1 --pin SoOpendir=7630 \
-    --pin SoReaddir=7646 --pin SoUnlink=765c --pin SoMatch=7d50 --apply
-python3 tools/inject.py src/save_name.c $V 4 73a0 SaveNameMatch --apply
-python3 tools/inject.py src/save_mgr.c $V 4 6d11 ManageSaves \
-    --pin FarCallDrawString12=05c0 --pin LastRomNameStub=0368 \
-    --pin LastRomTickStub=0370 --pin DrawString=08b7 --pin DrawRect=27ba \
-    --pin StoreDrawParams=2791 --pin SmSaveOp=65f0 --apply
-```
-
-## Testing
-
-SameBoy `--model dmg`, 0731, the `sd/` card plus a `/SAVER/Tetris.sav` of
-32,816 bytes (32 KB + a 48-byte footer) dated 2026-10-10 14:32:
-
-- Back up twice: `Tetris 2026-10-10 14-32.sav` and `Tetris 2026-10-10 14-32 (2).sav`,
-  each byte-identical to the save, listed newest first; the save's date
-  unchanged
-- Replace the save on the card with different contents dated 2026-10-11
-  12:00, restore `26-10-10 14:32`: `Tetris.sav` is byte-identical to the
-  first backup, and the replaced save is in `Tetris 2026-10-11 12-00.sav`,
-  byte-identical, at the top of the list
-- `UI=12`: four list rows, the selection band, B back to Options, then Start:
-  `Loading...` and `LASTROM=/Tetris.gb` in `EZGB.CFG`, so the record page
-  was put back
-- 0918: the same list
-
-Delete, after the split into banks 1, 4 and 9:
-
-- 0731, two backups on the card: Restore / Delete on the older one, Delete,
-  yes: the file is gone, 65 clusters (its 32,816 bytes) are free again, the
-  other backup and the save are byte-identical to before, and `fsck_msdos`
-  reports nothing new beyond FSInfo "unset" (it reported 65 before the
-  FSInfo fix)
-- 0918, one run: back up, restore the 12:00 backup, delete the ` (2)` backup
-  the restore made. The save holds the 12:00 contents, `14-32` the old save,
-  `12-00` unchanged, ` (2)` gone; `fsck_msdos`: FSInfo "unset" plus the test
-  image's volume-label warning, which the untouched card has too
 
 SameBoy's SD stub is slow at writes: a 32 KB copy takes about 40 seconds
 there.
 
 ## Daily backup
 
-`DAILY BACKUP:` on the SET tab's second page (the first until 2026-11-10), `DAILYBACKUP=1` in `/EZGB.CFG`,
+`DAILY BACKUP:` on the SET tab's second page, `DAILYBACKUP=1` in `/EZGB.CFG`,
 off by default ([auto_backup.c](../kernel/mod/src/auto_backup.c), after
 [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code).
 
@@ -220,7 +160,7 @@ in a session can't replace it before the next day.
 Copying is slow (about 7 s for a 32 KB save), so it runs at most once a day per
 game, behind a box that says how long. On a cart whose clock reset, every save
 looks like today's or an old day's, so the test is only as good as the clock.
-Reported working on hardware 2026-11-10.
+It works on hardware.
 When stage1 does the fast launch's dump itself, the kernel never sees the stamp
 and there is no backup.
 
