@@ -40,7 +40,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 Simulating the FW4, FW5-0731 and FW5-0918 bitstreams found only 5 bits of the
 `$4000` page latch reach the pSRAM: pages `$20-$3F` would be `$00-$1F` again
 ([firmware-diff.md](../stage0/docs/firmware-diff.md#save-pages-from-the-kernel),
-[psram-page-map.md](psram-page-map.md)). B checks that on the cart, for `$20`
+[psram-map.md](psram-map.md)). B checks that on the cart, for `$20`
 against `$00` and `$3F` against `$1F`, without losing data:
 
 1. With interrupts off, read the 4 bytes at `$BFFC` (past the end of most
@@ -61,7 +61,7 @@ SameBoy's stub models 32 pages and shows `ALIAS` for both.
 
 - **The page latch is 5 bits.** `ALIAS` on both lines on an FW5 cart, as
   simulated: 32 pages, and page `$20` up alias onto them
-  ([psram-page-map.md](psram-page-map.md)).
+  ([psram-map.md](psram-map.md)).
 - **Page `$10` is independent, battery-backed storage.** The pattern read
   back `OK` after 30 minutes off with the coin cell in, and nothing the
   kernel or stage1 does between boots touches it.

@@ -1599,7 +1599,7 @@ FormatFileSize_retDeHl::
 ; [ezgb]
 ; SetFpgaPage: unlock → $7FC0=page (arg on stack; $03=cart PSRAM window) → commit.
 ; With $7FC0=$03, $4000 latches PSRAM bank; $A000-$BFFF is battery-backed PSRAM
-; (no battery; cart battery is RTC-only). See docs/psram-save-map.md.
+; (no battery; cart battery is RTC-only). See docs/psram-map.md.
 
 SetFpgaPage_B1::
     ld bc, SgbBootHook
@@ -1698,7 +1698,7 @@ SetFpga7FD4_B1::
 
 ; [ezgb]
 ; LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569
-; launch chain ($482b → $4048 → $4000 → $5e14). See docs/launch-trace.md.
+; launch chain ($482b → $4048 → $4000 → $5e14). See docs/boot-and-launch.md.
 
 LoaderPrepPath::
     push af
@@ -4933,7 +4933,7 @@ BuildSaverBackupPath_epilogue::
 
 
 ; [ezgb]
-; LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see launch-trace.
+; LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see docs/boot-and-launch.md.
 ; Jump_001_58f9: $c7a9==2 → Jump_001_5905/jr_001_5908 FAT12 limit $0000ffff else Jump_001_5918 $0ffffff7; join Jump_001_5925 seed FarCall_05_4279 @$c0a0.
 ; Jump_001_59e4: walk clusters FarCall_05_4378 (jr_001_5a2c); EOF → Jump_001_5b12 else Jump_001_5a72 U32Mul*$c7ab + 4279 append.
 ; Jump_001_5b12: if sum<limit → Jump_001_59e4 else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → Jump_001_5c02 ret 0.
@@ -5991,7 +5991,7 @@ MapCartTypeToUi_ret::
 
 
 ; [ezgb]
-; RomLoaderMain(path@sp+$1c): Open_B6 → $ca0f; fail E=$ff Jump_001_601b. See launch-trace.
+; RomLoaderMain(path@sp+$1c): Open_B6 → $ca0f; fail E=$ff Jump_001_601b. See docs/boot-and-launch.md.
 ; Jump_001_5e56: fsize→$c2a4/$c2a5; seek0; read $200 hdr@$c0a0; Jump_001_5ec8 checksum $134..$14c → $c5a3 (jr_001_5ef2).
 ; Jump_001_5ef5: hdr cart/ROM/RAM → $d3ec/$d3ed/$d3ee + MapCartTypeToUi; if $d3eb!=1 Jump_001_5f2a → Jump_001_600f else jr_001_5f2d size gate.
 ; Jump_001_5f6a: XOR-fold bytes (jr_001_5fe5); Jump_001_5fe8 cmp LE $e06c8834; hit jr_001_600a $d3eb=$05 (MBC1m) else Jump_001_6007; Jump_001_600f close ret E=status.

@@ -1,4 +1,4 @@
-/* SET tab page 3, the theme page (docs/fastlaunch-set-tab.md "Pages",
+/* SET tab page 3, the theme page (docs/set-tab.md "Pages",
  * docs/themes.md "Color picker").
  *
  * Bank 13, injected at 0D:4000: bank 4 had no room for a third page. flcfg.c

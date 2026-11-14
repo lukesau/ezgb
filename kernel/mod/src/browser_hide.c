@@ -16,7 +16,7 @@
  *    carry several, under any name
  *  - EZGB.CFG, the settings file (docs/ezgb-cfg.md), and FLAUNCH.CFG, its
  *    pre-2.9 predecessor (a leftover would otherwise clutter the root)
- *  - SAVER, the kernel's save backup folder (docs/psram-save-map.md); saves
+ *  - SAVER, the kernel's save backup folder (docs/psram-map.md); saves
  *    are meant to be reached from the ROM they belong to, not browsed
  *
  * All extension/name tests are case-insensitive; FAT 8.3 short names come

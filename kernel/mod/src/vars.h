@@ -87,7 +87,7 @@
 #define SET_RE    (*(volatile u8 *)0xDBEF)
 /* SET tab settings changed in RAM since the last write: SetCommit (04:5fc0)
  * writes them on NEXT, on PREV and when the screen is left
- * (docs/fastlaunch-set-tab.md). */
+ * (docs/set-tab.md). */
 #define SET_DIRTY (*(volatile u8 *)0xDAFD)
 /* The SET tab's cursor row as last drawn (flcfg.c), for op TICK, which has no
  * frame, and 1 when op TICK turned B on THEME into A: step back (themepage.c). */

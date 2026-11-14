@@ -564,7 +564,7 @@ index 0000000..8fd3d69
 +
 +    /* Each extent's second word is a running total of file sectors up to the
 +     * end of that extent, not a count (stage1 main and the kernel's
-+     * LaunchSetup never reset their counter; docs/launch-trace.md). */
++     * LaunchSetup never reset their counter; docs/boot-and-launch.md). */
 +    size_t dest = 0;
 +    uint32_t prev_end = 0;
 +    for (unsigned i = 1; i + 1 < 0x7C; i += 2) {
@@ -1264,7 +1264,7 @@ index 0000000..bad5bae
 + */
 +
 +enum {
-+    EZJR_SRAM_BANKS = 32,         /* 5-bit page latch on the cart (docs/psram-page-map.md) */
++    EZJR_SRAM_BANKS = 32,         /* 5-bit page latch on the cart (docs/psram-map.md) */
 +    EZJR_SRAM_BANK_SIZE = 0x2000, /* $A000-$BFFF */
 +};
 +

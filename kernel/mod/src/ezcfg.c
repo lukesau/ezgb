@@ -383,7 +383,7 @@ static u8 rtc_suspect(void) {
  * fast launch there, so the kernel must not fast launch either, even with
  * START released by now. Consumed here, once per boot, by marking
  * fastlaunch_boot's one-shot flag ($DBFF) as already used. Page $11 is
- * free from $A400 (docs/psram-page-map.md); RtcBootHook re-selects page
+ * free from $A400 (docs/psram-map.md); RtcBootHook re-selects page
  * $11 and personality 3 after this op, as before. */
 static void stage1_skip_mark(void) {
     volatile u8 *mark = meta_map() + 0x410;
@@ -424,7 +424,7 @@ static void stage1_skip_mark(void) {
     fpga_page(0);
 }
 
-/* pSRAM page $11 (the kernel's meta page, docs/psram-page-map.md) at
+/* pSRAM page $11 (the kernel's meta page, docs/psram-map.md) at
  * $A000, as BatteryCheck maps it. The caller selects personality 0 again
  * when done; $4000 stays $11, which every caller's next step either expects
  * (RtcBootHook re-asserts it, LastRomPersist had it) or overwrites. */

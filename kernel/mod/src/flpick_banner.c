@@ -1,4 +1,4 @@
-/* Pick-mode banner for the file browser (docs/fastlaunch-set-tab.md).
+/* Pick-mode banner for the file browser (docs/set-tab.md).
  *
  * Bank 8, injected at 08:7b8d and reached by `jp` from the tail of the
  * tab-strip drawer's SD arm (08:7200, stock `jp $7331` = bare ret; stack is

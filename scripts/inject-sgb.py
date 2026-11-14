@@ -11,7 +11,7 @@ taken from kernel.sym, and, through kernel/mod/tools:
   00:05f2   SgbPadGate: joypad freeze for 4 frames after each packet
   01:7f00   SgbBootHook: starts the background count after KernelEntry
   04:7d00   SgbLaunchHook, SgbUnlock (set 1), the packet sender and the
-            background steps (docs/sgb-background-send.md)
+            background steps (docs/sgb-boot.md)
   00:0040   VBlank vector  ->  call SgbVblList / jp SgbVblTail
   00:01ba   KernelEntry's call CgbInit  ->  call SgbBootHook
   00:3a16   ReadJoypadRaw  ->  jp SgbPadGate

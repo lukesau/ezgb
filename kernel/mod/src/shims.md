@@ -92,5 +92,5 @@ way: by `jp` from the tab strip's tail at `08:7200`, ending in a `ret` that
 returns through the tab drawer.
 
 Pick mode is the flag at `$DBFE`. The SET tab's hooks and `FlCfg`'s ops are
-described in [docs/fastlaunch-set-tab.md](../../../docs/fastlaunch-set-tab.md),
+described in [docs/set-tab.md](../../../docs/set-tab.md),
 and `EzCfg`'s in [docs/ezgb-cfg.md](../../../docs/ezgb-cfg.md).

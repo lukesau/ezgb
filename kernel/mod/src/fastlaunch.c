@@ -16,7 +16,7 @@
  * left 0 so the caller falls through to the normal menu.
  *
  * FILINFO layout (classic FatFs _USE_LFN external-buffer form) CONFIRMED live
- * against this exact kernel (see docs/fast-launch-notes.md):
+ * against this exact kernel (see docs/fast-launch.md):
  *   +0..3   fsize
  *   +8      fattrib (bit 4 / $10 = AM_DIR)
  *   +9..21  fname[13]  8.3 short name, NUL-terminated
@@ -163,7 +163,7 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
 /* Load /EZGB.CFG through ezcfg and stage the FLAUNCH path in RESULT ($c4a4)
  * with a leading '/'. Returns 1 when a path is staged, 2 when fast launch is
  * disabled ('#' on the value, from the SET tab; the path is kept in the file
- * for re-enabling, see docs/fastlaunch-set-tab.md), 0 otherwise. ezcfg does
+ * for re-enabling, see docs/set-tab.md), 0 otherwise. ezcfg does
  * the VBlank-wait + $7FC0=$00 discipline around its own SD I/O. The path may
  * be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
 static unsigned char scan_config(void) {

@@ -196,4 +196,4 @@ paper on ink, then the rule. Its argument mirrors the stock drawer's cases:
 The entry number at the right end is drawn by the browser
 ([browser.md](browser.md#moving-around)). The HELP pane's 12px layout is
 `Help12` (`08:7d00`), reached through `HelpHook` (`08:7b40`), and the SET
-pane's is in [set-pane12.md](set-pane12.md).
+pane's is in [set-tab.md#the-12px-layout](set-tab.md#the-12px-layout).

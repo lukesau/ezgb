@@ -265,7 +265,7 @@ In order of cost:
 - Is the switchover a proper diode-OR, or can the rail charge the cell?
 - FPGBC cart-slot supply voltage, slew rate and level translation, compared
   with DMG/GBA (see "FPGBC cart slot").
-- Does the kernel's `BATTERY` / `DRY!!!` check ([boot-map.md](boot-map.md)
+- Does the kernel's `BATTERY` / `DRY!!!` check ([boot-and-launch.md](boot-and-launch.md)
   `Call_000_1835`) read the coin cell or console power?
 - After a failed slot B boot leaves a `01`, does slot A ever advance the tally
   again, or does the cart stay on slot A until the sector is erased?

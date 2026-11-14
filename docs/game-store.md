@@ -31,7 +31,7 @@ start of the same store at every power-on.
 ## Where the copy happens
 
 The launch tail (`MenuDispatchAB_launchFarcalls`, `00:1569`; the full chain
-is in [launch-trace.md](launch-trace.md)) sets up the game's configuration
+is in [boot-and-launch.md](boot-and-launch.md)) sets up the game's configuration
 and ends with a far call at `00:1623` to `RomLoad_CopyCmdWindowPoll_B4`
 (`04:448f`). That routine opens the load command window (`$7F36 = $01`),
 copies the 512-byte extent list from `$c0a0` to `$A000`, and installs the

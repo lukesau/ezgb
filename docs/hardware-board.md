@@ -18,7 +18,7 @@ convention and has not been rechecked against it.
 |---|---|---|---|---|
 | U1 | `XILINX SPARTAN XC3S200A VQG100AGQ1240` | Spartan-3A, 200K gates, 100-pin VQFP | High | The FPGA. Everything custom about this cart. |
 | - | `25Q40H E20090N` (8-pin SOIC) | 4 Mbit / **512 KB** SPI NOR flash (W25Q40 family) | High | **FPGA configuration storage** (see below). |
-| U4 | `Spansion 71GL032A40BFW0B` (BGA) | **S71GL032A40 MCP** (datasheet, `tools/S71GL032A.PDF`): a stacked package of **one S29PL032A = 4 MB NOR flash die + a 512 KB (4 Mbit) pSRAM die** | High | Its **512 KB pSRAM die = the battery-backed save/settings store** (exact size match to the 64-page / 512 KB map in [psram-page-map.md](psram-page-map.md)). Its 4 MB NOR die: **no GB-side use found** (see below). |
+| U4 | `Spansion 71GL032A40BFW0B` (BGA) | **S71GL032A40 MCP** (datasheet, `tools/S71GL032A.PDF`): a stacked package of **one S29PL032A = 4 MB NOR flash die + a 512 KB (4 Mbit) pSRAM die** | High | Its **512 KB pSRAM die = the battery-backed save/settings store** (exact size match to the 64-page / 512 KB map in [psram-map.md](psram-map.md)). Its 4 MB NOR die: **no GB-side use found** (see below). |
 | U9 | `3350LLZDQ0` (lowercase-`i`/Numonyx logo), 88-ball FBGA | **Numonyx RD38F3350LLZDQ0**, a StrataFlash Wireless (L18/L30) SCSP MCP, datasheet-confirmed (`tools/RD38F3350-StrataFlash-Wireless-L18-L30.pdf`, Table 28): **two 128 Mbit L30 NOR dies (256 Mbit = 32 MB NOR) + one 64 Mbit (8 MB) pSRAM die**, on a shared x16 NOR+pSRAM bus (QUAD+ ballout `Q`). | High | Its **8 MB pSRAM die = the volatile game-ROM store** (holds the loaded ROM, exactly the 64 Mbit GB max; hardware-proven volatile: fades toward `$FF` off-power, [game-store.md](game-store.md)). Its **32 MB NOR: no GB-side use found**, but it shares U9's bus with the game pSRAM so it is very likely wired to the FPGA. |
 | U6, U7 | `LVT162245` ×2 (`P01AD` = lot code, Fairchild) | 74LVT162245, 16-bit bus transceiver, 3.3 V with 5 V-tolerant inputs | High | Cart-edge level shifters: single 3.3 V supply, 5 V-tolerant inputs translate the GB's 5 V bus down, outputs only swing to ~3.3 V going up. Two × 16 bits ≈ 16 address + 8 data + control. |
 | U3 | `8563S 2506 TMS` (8-pin) | PCF8563/BM8563 I²C real-time clock | High | The RTC. Paired with the coin cell; this is what 1.05e's "RTC codes are rewritten" refers to. |
@@ -48,7 +48,7 @@ What is **proven by our own measurements** (independent of any part number):
 | Store | Where | Size | Volatile? | Evidence |
 |---|---|---|---|---|
 | **Game ROM** (loaded game) | U9's pSRAM | **~8 MB** (64 Mbit) | Volatile, fades off-power | [game-store.md](game-store.md); loads 64 Mbit ROMs = GB max |
-| **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) die, 256 KB usable | Battery-backed (coin cell) | [psram-page-map.md](psram-page-map.md); 32 pages × 8 KB (correction below) |
+| **Saves + settings** | U4's pSRAM die | **512 KB** (4 Mbit) die, 256 KB usable | Battery-backed (coin cell) | [psram-map.md](psram-map.md); 32 pages × 8 KB (correction below) |
 | **FPGA bitstream** (+ stage1 as BRAM) | SPI flash (`25Q40H`, board revs vary) | 512 KB–2 MB | Nonvolatile | [flash-map.md](../stage0/docs/flash-map.md), [updater-flash-write.md](updater-flash-write.md) |
 | **NOR die of U4** | S29PL032A (datasheet-confirmed) | 4 MB | Nonvolatile | **no GB-side use found** |
 
@@ -63,7 +63,7 @@ battery-backed RAM for saves).
 > confirmed on an FW5 cart with the debug tab's alias test), so the kernel
 > sees 32 pages × 8 KB = 256 KB. The simulation says each byte takes one
 > 16-bit word (low byte lane only), which is how 256 KB fills the 512 KB die.
-> The SameBoy stub's 64 pages and [psram-page-map.md](psram-page-map.md)
+> The SameBoy stub's 64 pages and [psram-map.md](psram-map.md)
 > inherited the 64; both are updated.
 
 **What is *not* confirmed:** U9's exact identity and full contents. Its marking
@@ -87,7 +87,7 @@ SRAM variants are a drop-in fix, see [battery-sram-swap.md](battery-sram-swap.md
 
 Sources: `tools/S71GL032A.PDF` (U4 datasheet, the one firm reference); GBAtemp
 "how does EZ Flash Junior work" thread (U9 discussion, unverified); our own
-measurements ([game-store.md](game-store.md), [psram-page-map.md](psram-page-map.md)).
+measurements ([game-store.md](game-store.md), [psram-map.md](psram-map.md)).
 
 ## JTAG header: FPGA package pins
 
@@ -181,7 +181,7 @@ consequences:
 
 The factory bootstrap is the GB-visible program that shows `EZ-FLASH` /
 `LOADING...`, reads `ezgb.dat` from the SD root, and runs it (see
-[boot-map.md](boot-map.md)). **Its header is what the console's boot ROM reads at
+[boot-and-launch.md](boot-and-launch.md)). **Its header is what the console's boot ROM reads at
 power-on**, which is why the CGB flag in `ezgb.dat` has no effect (`cgb-mode.md`).
 
 Two possibilities:

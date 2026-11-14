@@ -41,7 +41,7 @@
  *    attr at +$fe. Nothing else lives in a record (the browser's number
  *    field is base+sel+1, not a stored size).
  *  - Keys: same window, page $1f. The cart keeps only 5 bits of the page
- *    (docs/psram-page-map.md), so records can only use $12-$1e (416
+ *    (docs/psram-map.md), so records can only use $12-$1e (416
  *    entries) without meeting the keys and then wrapping onto the game save
  *    pages; browser_hide.c ends the directory there. 416 keys of 16 bytes
  *    take 6.5 KB of the page. Until mod 5.6 the keys were at bank $ff

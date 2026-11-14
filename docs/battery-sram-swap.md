@@ -27,7 +27,7 @@ U4 is a Spansion S71 stacked multi-chip package: one S29PL NOR flash die plus
 one RAM die on a shared x16 bus, in a 56-ball 7 x 9 mm FBGA (Spansion package
 code TLC056, 0.8 mm pitch). Only the RAM die matters to the Game Boy side: it
 is the battery-backed 64-page / 512 KB store mapped in
-[psram-page-map.md](psram-page-map.md). The NOR die has no GB-visible use
+[psram-map.md](psram-map.md). The NOR die has no GB-visible use
 (see [hardware-board.md](hardware-board.md)).
 
 With the edge connector at the bottom, U4 is in the top row of the front of the
@@ -183,7 +183,7 @@ exist).
 moon_rabbit's check was simply RTC still running after five weeks, then a year.
 A faster check is to measure the cell current with the cart unplugged: tens to
 hundreds of microamps means pSRAM, single-digit microamps means SRAM. The
-kernel-side pSRAM probes in [psram-page-map.md](psram-page-map.md) also work
+kernel-side pSRAM probes in [psram-map.md](psram-map.md) also work
 unchanged for confirming the store is still battery-backed.
 
 ## Sources

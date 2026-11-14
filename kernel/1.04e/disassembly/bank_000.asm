@@ -238,7 +238,7 @@ HeaderGlobalChecksum::
     db $7a, $ed
 
 ; [ezgb]
-; KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.
+; KernelEntry: after boot ROM (title EZGB). See docs/boot-and-launch.md. di; SP=$e000; save A in D.
 ; jr_000_015d: zero WRAM $DFFF down $2000 (B/C nested); jr_000_0169: OAM $FEFF..$100; jr_000_0172: HRAM $FFFF..$80.
 ; Save boot A@$d6c9; bank1; LcdOff; scroll/STAT/WY/WX init; jr_000_019e: copy OamDmaStub → $FF80.
 ; Register VBlank/Serial; BGP/OBP/LCDC/IE; serial SB=$66 SC=$80; BootUnpackWramTables ($68b6); BatteryCheck; fall HaltLoop.
@@ -3358,7 +3358,7 @@ FileBrowserEntry_modeFarcall2::
 
 ; [ezgb]
 ; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.
-; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md).
+; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/input.md).
 
 MenuKeyDispatch::
     ld hl, sp+$00

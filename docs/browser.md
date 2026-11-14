@@ -49,7 +49,7 @@ the tail to the first scroll past the last page.
 ### The 416-entry cap
 
 Records occupy pages `$12` to `$1E` and the keys page `$1F`, and the cart
-keeps only 5 bits of the page number ([psram-page-map.md](psram-page-map.md)).
+keeps only 5 bits of the page number ([psram-map.md](psram-map.md)).
 A 417th record would land on the keys, a 449th on game save RAM, and
 later ones on the kernel's own records. Stock has no cap, and on stock a
 folder of more than 448 entries overwrites saves.

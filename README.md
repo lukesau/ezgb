@@ -91,8 +91,8 @@ Each links to a doc with the details.
 
 **Launching**
 
-- [Fast launch](docs/fast-launch-notes.md): boot straight into a ROM,
-  [set up on the cart](docs/fastlaunch-set-tab.md). Hold START at power-on
+- [Fast launch](docs/fast-launch.md): boot straight into a ROM,
+  [set up on the cart](docs/set-tab.md). Hold START at power-on
   for the browser.
 - [Skip the boot ROM](docs/skip-boot-rom.md): a game starts without the
   console's boot animation playing a second time.
@@ -108,8 +108,8 @@ Each links to a doc with the details.
   original for all three builds. [kernel/1.05e-0731/stock/](kernel/1.05e-0731/stock/README.md) is turning it
   into C.
 - **Hardware:** the [board](docs/hardware-board.md), the
-  [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the [boot](docs/boot-map.md) and
-  [launch](docs/launch-trace.md) paths, and
+  [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the [boot](docs/boot-and-launch.md) and
+  [launch](docs/boot-and-launch.md) paths, and
   [why the coin cell dies in a month](docs/battery-sram-swap.md).
 - **FPGA:** the bitstream is decoded ([index](docs/fpga.md),
   [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/)) and

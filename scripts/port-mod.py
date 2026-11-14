@@ -111,7 +111,7 @@ REGISTRY = {
                             "DrawRect": 0x27ba, "StoreDrawParams": 0x2791, "ReadJoypad": 0x3a4a, "SetText": 0x6400, "FarCallMenuTabs": 0x5f70,
                             "FarCallThemePage": 0x5990, "SetPage": 0x6610, "FarCallMarquee": 0x0410, "WaitVBlankFlag": 0x0688, "SetBox": 0x77a0,
                             "FarCallMsgBox_B4": 0x59b0}),
-    (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page rows, near-called by FlCfg (docs/fastlaunch-set-tab.md)
+    (4, 0x6610): dict(src="setpage.c",                      # SET tab SGB BOOT, page 2 and the page rows, near-called by FlCfg (docs/set-tab.md)
                       pins={"FarCallEzCfg": 0x5f00, "SetFpgaPage_B4": 0x466e, "SetText": 0x6400, "SetCommit": 0x5fc0,
                             "StoreDrawParams": 0x2791, "DrawRect": 0x27ba, "TagExample": 0x7e60, "RecFlag": 0x7f51,
                             "FarCallPlaySync_B4": 0x7792, "SetBox": 0x77a0}),
@@ -147,7 +147,7 @@ REGISTRY = {
                       pins={"FindVolume_B9": 0x76f7, "FollowPath_B9": 0x72c5, "DirSdi_B9": 0x54db,
                             "DirNext_B9": 0x580c, "MoveWindow_B9": 0x437e, "LdClust_B9": 0x5d72,
                             "RemoveChain_B9": 0x4f94, "SyncFs_B9": 0x4447}),
-    (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
+    (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-tab.md#the-12px-layout)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43, "PlayKeysFar": 0x7f29, "PlayMark": 0x7f31, "HideLoadFar": 0x7b80}),
     (14, 0x5000): dict(src="hide_list.c",                   # the card's hide list, far target of HideLoadFar 08:7b80 (docs/browser.md)
@@ -276,7 +276,7 @@ SKIP_SITES = {
         # ink for DMG. 1.04e has no such draw, so there is nothing to retune.
         (4, 0x4e49),
         (4, 0x4e56),   # the same extra draw's row operand (SET slid up one row)
-        (4, 0x4e62),   # the same extra draw's `call DrawString` (-> SetText, docs/set-pane12.md)
+        (4, 0x4e62),   # the same extra draw's `call DrawString` (-> SetText, docs/set-tab.md#the-12px-layout)
         # RtcWriteTimeFromDayDelta's sign test (the negative-elapsed clamp,
         # docs/ezgb-cfg.md): the launch-time elapsed-time code is part of
         # 1.05e's RTC rewrite; 1.04e has no such routine to clamp.

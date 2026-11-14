@@ -1,4 +1,4 @@
-/* SET tab rows flcfg.c has no room for (docs/fastlaunch-set-tab.md "Pages"):
+/* SET tab rows flcfg.c has no room for (docs/set-tab.md "Pages"):
  * page 2 and every page's page row.
  *
  * Bank 4, injected at 04:6610 (04:7792 until 2026-10-31, when it needed

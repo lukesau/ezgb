@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """LEFT/RIGHT on the SET tab jump the cursor to the page's PREV/NEXT button
-(docs/fastlaunch-set-tab.md); until 2026-11-10, to the top/bottom row, as
+(docs/set-tab.md); until 2026-11-10, to the top/bottom row, as
 they do in the browser.
 
 Stock DrawTimeAutosaveScreen only uses LEFT/RIGHT to step through the date

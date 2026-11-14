@@ -26,7 +26,7 @@ Played Oct 23 14:05       only when an RTC= backup exists; scrolls in 8px
 | rule / vertical | y 83 / x 83 | y 85 / x 79 |
 
 - The name is the basename of the `SAVER/` path the boot code copies from
-  the page-`$11` stamp to `$c3a5` ([psram-save-map.md](psram-save-map.md)).
+  the page-`$11` stamp to `$c3a5` ([psram-map.md](psram-map.md)).
   `LastRomName` draws it, with `LR_GEO` (`$DB3F`) = 1 selecting this box's
   row, and the prompt's joypad poll runs its marquee tick.
 - `Played` is the `RTC=` backup ([ezgb-cfg.md](ezgb-cfg.md)), which is

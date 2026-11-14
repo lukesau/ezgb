@@ -15,7 +15,7 @@ Addresses are 1.05e-0731's.
 
 ## The table
 
-Battery-backed pSRAM, page `$11` ([psram-page-map.md](psram-page-map.md)):
+Battery-backed pSRAM, page `$11` ([psram-map.md](psram-map.md)):
 
 | Where | What |
 |---|---|
@@ -131,7 +131,7 @@ listing the star is still saved but the order and icons stay as they are.
 | `StarQueryFar`, `StarToggleFar` | `04:5998`, `04:59a0`: far stubs for `RomMenu`; `StarToggleFar` goes to `StarToggleSync` (bank 11) since the table is on the card |
 | `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/mod/src/play_file.c): `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
 | `RecFlag` | `04:7f51`, [rec_flag.c](../kernel/mod/src/rec_flag.c): SGB BOOT's and SORT BY PLAYS' pSRAM records, read and toggled for `SetPage` |
-| SET tab row | page 2, row 6, cursor row 8 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)), [setpage.c](../kernel/mod/src/setpage.c), [flcfg.c](../kernel/mod/src/flcfg.c) |
+| SET tab row | page 2, row 6, cursor row 8 ([set-tab.md](set-tab.md#the-pages)), [setpage.c](../kernel/mod/src/setpage.c), [flcfg.c](../kernel/mod/src/flcfg.c) |
 
 ## Limits
 

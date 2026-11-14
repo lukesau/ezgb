@@ -42,7 +42,7 @@ Almost all of it is the game clock: `IsLeapYear`, `DateToDaysSince1970`,
 | `BackupOpenSaverPath`, `BackupSaveDump` | Restore and append the 48-byte RTC record of a `.sav` |
 
 The `$4000 = $11` / `$A000 = $AA` writes in this code select save pSRAM page
-`$11` and set the BACKUPSAVE stamp ([psram-save-map.md](psram-save-map.md)).
+`$11` and set the BACKUPSAVE stamp ([psram-map.md](psram-map.md)).
 They are not NOR flash commands.
 
 ### Banks 3, 6, 9: +15, +35, +16 bytes

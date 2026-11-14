@@ -1,6 +1,6 @@
 ; Human-readable names for mgbdis (place beside kernel.gb).
 ; Regenerate:  scripts/regen-disasm.sh <version> (kernel/<version>)
-; See docs/psram-save-map.md
+; See docs/psram-map.md
 ; App worklist: scripts/doc-symbol-coverage.py --app --top 10
 
 00:0376 InvalidFarCallTrap

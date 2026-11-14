@@ -1,4 +1,4 @@
-/* A SET tab checkbox (docs/fastlaunch-set-tab.md), shared by flcfg.c and
+/* A SET tab checkbox (docs/set-tab.md), shared by flcfg.c and
  * setpage.c, which each had a copy until 2026-11-11.
  *
  * Bank 4, injected at 04:77a0, near-called. The box is 9 px square at pixel

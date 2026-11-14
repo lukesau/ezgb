@@ -100,7 +100,7 @@ can load something other than the kernel.
 > matters. The kernel's `LaunchSetup` builds the same table for games. The
 > kernel-side write-up, including what daid's `Protocol.md`, the SameBoy stub
 > and `norreuse_clamp_extents.c` get wrong, is on main in
-> [launch-trace.md](launch-trace.md#the-load-command-table).
+> [boot-and-launch.md](boot-and-launch.md).
 
 ### The kernel's name
 
@@ -200,7 +200,7 @@ On the FW5 Jr (FW5-0918 base, `build-stage1-updater.sh fw5-0918`):
 | mod 2.1, as it will be released | the above + the boot ROM skip on a fast launch ([skip-boot-rom.md](skip-boot-rom.md#stage1-fast-launch)) and a smaller `fat_create` to pay for it; stage1 is 18,432 of 18,432 BRAM bytes. The version text is unchanged, so the 2026-11-04 files above are an earlier 2.1 and are not the release build (decided 2026-11-10) | built 2026-11-10 (as `2.1-skip-Update_FW4.gb` and `2.1-skip-Update_FW5-0918.gb`; the plain `2.1-Update_*.gb` names hold these builds since the same day, the 2026-11-04 ones are `2.1-1104-Update_*.gb`, and `patches/updater/` is made from them); the fast-launch skip reported working on hardware 2026-11-10 |
 
 The skip mark only does something with a kernel at mod 5.4 or later, which
-reads and clears it ([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
+reads and clears it ([psram-map.md](psram-map.md)).
 
 ### Emulator support
 
@@ -216,7 +216,7 @@ it never could before. Changes, in `patches/sameboy` on this branch:
   sector data. Serving data hung stock stage1 whenever a FAT sector started
   with `$E1`, the busy value.
 - Extent `end` words are read as running totals
-  ([launch-trace.md](launch-trace.md#the-load-command-table)).
+  ([boot-and-launch.md](boot-and-launch.md)).
 - `SAMEBOY_EZFLASH_JR_LOG=1` sends the stub's messages to stderr, because
   `GB_log` only reaches a terminal when the debugger console starts.
 
@@ -323,7 +323,7 @@ offers the backup itself (below), as the kernel does at boot.
 was held at power-on, or pressed before the launch was decided, and zeroes it otherwise. A mod 5.4+ kernel clears it
 and skips its own fast launch for that boot, so a cancel made in stage1
 stays canceled after START is released
-([psram-page-map.md](psram-page-map.md#stage1-skip-fast-launch-mark-11a410)).
+([psram-map.md](psram-map.md)).
 
 **Save backup** (`stage1/src/backup.c`, the kernel's `BackupSaveDump`,
 `01:643a`, done in place). Offered on every fast-launch boot with a pending

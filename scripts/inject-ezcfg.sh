@@ -51,7 +51,7 @@ python3 tools/inject_bytes.py "$V" 4 5f00 FarCallEzCfg cd8d07004a0200c9 --apply
 python3 tools/inject_bytes.py "$V" 4 5f10 RtcSetHook   3e06eafcdbcd005fc3f548 --apply
 python3 tools/patch_call.py   "$V" 4 58d3 3 04:5f10 --jp --apply
 
-# 3b. SET tab layout (docs/fastlaunch-set-tab.md): TIME/SET slid up one row
+# 3b. SET tab layout (docs/set-tab.md): TIME/SET slid up one row
 #     (3->2), the date/time digits too (5->4, time-edit mode included), AUTO
 #     SAVE and its checkbox down one (7->8) to make room for the RTC row (6),
 #     and the stock "cursor == 1 is AUTO SAVE" highlight test now reads 2.
@@ -81,7 +81,7 @@ open(p,'wb').write(rom)
 PY
 # TIME's SET button box (`ld hl,$9b15`, y0 in L, at 04:4777/4931/5646): slid
 # up to y 13..25 with the row; in 12px mode it is y 15..28, the 12px text row
-# plus a pixel either side (docs/set-pane12.md). The three loads call
+# plus a pixel either side (docs/set-tab.md#the-12px-layout). The three loads call
 # SetBtnTopHL, which also rewrites the y1 the caller pushed just before.
 perl -ni -e 'print unless /^04:5f60 /' "$SYM"
 python3 - "$GB" <<'PY'
@@ -261,7 +261,7 @@ rom[0x0f1c:0x0f21]=bytes.fromhex("c3aa030000")   # jp SaveStampHook; nop; nop
 open(p,'wb').write(rom)
 PY
 python3 tools/inject_bytes.py "$V" 0 03aa SaveStampHook c53e08eafcdbcd8d07004a0200c1fafbdbb7ca5b0fc53e00f533c3210f --apply
-# 12px SET pane (docs/set-pane12.md): every `call DrawString` of the stock
+# 12px SET pane (docs/set-tab.md#the-12px-layout): every `call DrawString` of the stock
 # SET screen goes to SetText (8px: DrawString; 12px: the field's x span, drawn
 # clipped). flcfg's rows use it too, and its UI toggle redraws the strip
 # through FarCallMenuTabs and re-enters the screen (FlSetADispatch, code 2).

@@ -7,7 +7,7 @@
 ;
 ; Only set 1 blocks the boot (~0.4 s, at $0100 before KernelEntry). Sets 2-4
 ; go out from the VBlank interrupt while the kernel starts up and runs
-; (docs/sgb-background-send.md, after nitro2k01's plan in issue #5):
+; (docs/sgb-boot.md, after nitro2k01's plan in issue #5):
 ;   - the VBlank vector runs the callback list and then SgbVblTail, so a
 ;     packet (~2,500 M-cycles, longer than VBlank) never delays the list's
 ;     LCDC/OAM work
@@ -27,7 +27,7 @@
 ;
 ; The SET tab's SGB BOOT checkbox (kernel/mod/src/flcfg.c) turns it on: it writes
 ; 'S','G',flag,~flag to battery-backed pSRAM page $11 at $A400
-; (docs/psram-page-map.md), and SgbCheck says send only when that record reads
+; (docs/psram-map.md), and SgbCheck says send only when that record reads
 ; back valid with flag 1. Anything else (a dead coin cell's garbage, a cart
 ; that never had the mod) boots straight on. So does any boot through our
 ; stage1, which handles the SGB itself (stage1/src/sgb.c) and says so with

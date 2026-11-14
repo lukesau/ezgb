@@ -1,4 +1,4 @@
-/* SET pane text in the UI mode's font (docs/set-pane12.md).
+/* SET pane text in the UI mode's font (docs/set-tab.md#the-12px-layout).
  *
  * Bank 4, injected at 04:6400. Every `call DrawString` of the stock SET
  * screen (DrawTimeAutosaveScreen, 04:46f4..5162: TIME:, the SET / SAV button

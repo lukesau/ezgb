@@ -1,4 +1,4 @@
-/* Fast-launch configuration from the SET tab (docs/fastlaunch-set-tab.md).
+/* Fast-launch configuration from the SET tab (docs/set-tab.md).
  *
  * Bank 4, injected at 04:6d19, same bank as DrawTimeAutosaveScreen (04:46f4)
  * so the hand-assembled hook shims (04:5932..) reach it with a plain call to
@@ -64,7 +64,7 @@
  *
  * SGB BOOT is not in EZGB.CFG: the boot stub (kernel/mod/asm/sgb_boot.asm) runs
  * long before the SD card is up, so it reads a record in battery-backed
- * pSRAM, page $11 at $A400 ('S', 'G', flag, ~flag; docs/psram-page-map.md).
+ * pSRAM, page $11 at $A400 ('S', 'G', flag, ~flag; docs/psram-map.md).
  * Set it on a DMG/GBC/GBA, then move the cart to the Super Game Boy.
  * NULL for op 3/4/5.
  *

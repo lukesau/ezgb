@@ -50,7 +50,7 @@
 /* Page $11 $A410-$A411 = "S1": stage1 tells the kernel the user canceled
  * fast launch (START held), so the kernel doesn't fast launch either. The
  * kernel clears it (kernel/mod/src/ezcfg.c cfg_load). Free space per
- * docs/psram-page-map.md: the kernel uses $A000-$A316 of page $11. */
+ * docs/psram-map.md: the kernel uses $A000-$A316 of page $11. */
 #define PSRAM_SKIP_FL 0x410
 /* Page $11 $A412-$A413, written every boot: "SB" when stage1 found a Super
  * Game Boy and sent the header packets (sgb.c), "SN" when it found none. Either

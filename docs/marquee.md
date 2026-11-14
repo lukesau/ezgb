@@ -7,7 +7,7 @@ font. The browser's list is the exception: it keeps the stock marquee
 
 | User | Instance | Field (8px / 12px) | Colors |
 |---|---|---|---|
-| SET page 1, the fast-launch name ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)) | `MQ_A` | x 0..79 on row 12 / the same span, y 96 | ink 3 on paper 0 |
+| SET page 1, the fast-launch name ([set-tab.md](set-tab.md)) | `MQ_A` | x 0..79 on row 12 / the same span, y 96 | ink 3 on paper 0 |
 | SET page 2, the name example ([browser.md](browser.md#clean-names)) | `MQ_A` | x 0..159 on row 4 / the same span, y 32 | ink 3 on paper 0 |
 | the START overlay's name and the BACKUPSAVE prompt's name ([last-rom.md](last-rom.md)) | `MQ_A` | x 8..151 / x 12..156 | popup paper 3 on ink 0, the band |
 | the BACKUPSAVE prompt's `Played` line ([prompts.md](prompts.md)) | `MQ_B` | as above, on its row | popup ink 3 on paper 0 |

@@ -3,7 +3,7 @@
 The SET tab's `THEME` button cycles the browser, every kernel screen and
 our stage1's boot screen through light, dark, DV, four colored themes and a
 custom one. A goes forward, B back, and both wrap. The choice is saved to
-`EZGB.CFG` with the rest of the tab ([fastlaunch-set-tab.md](fastlaunch-set-tab.md)).
+`EZGB.CFG` with the rest of the tab ([set-tab.md](set-tab.md)).
 
 Addresses are 1.05e-0731's.
 
@@ -172,7 +172,7 @@ Two copies, because the first frames are drawn before the SD card is read:
   ([ezgb-cfg.md](ezgb-cfg.md)). `THEME=` is written only when the theme is
   not 0.
 - **pSRAM page `$11`, `$A414`-`$A41F`**: `'T'`, `'H'`, theme, `~theme`,
-  then the four colors ([psram-page-map.md](psram-page-map.md)). The kernel
+  then the four colors ([psram-map.md](psram-map.md)). The kernel
   rewrites it whenever it applies the file's theme, and the next boot's
   first frames read it. A missing or faded mark is theme 0.
 

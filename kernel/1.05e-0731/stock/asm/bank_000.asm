@@ -2574,7 +2574,7 @@ FileBrowserEntry_modeFarcall2::
 
 ; [ezgb]
 ; MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.
-; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md).
+; Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/input.md).
 
 MenuKeyDispatch::
     ld hl, sp+$00

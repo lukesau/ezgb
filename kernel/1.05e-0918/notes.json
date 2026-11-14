@@ -8,7 +8,7 @@
         "ROM load + soft-boot (kernel FPGA path only \u2014 not used by launched games).",
         "$7F36=$03: 512-byte load cmd window at $A000; build ROM in FPGA buffer.",
         "$7FE0=$80: reset into loaded ROM; same PSRAM chip, FPGA emulates game MBC.",
-        "See docs/psram-save-map.md and docs/DEVELOPMENT.md."
+        "See docs/psram-map.md and docs/DEVELOPMENT.md."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "SetFpgaPage: unlock \u2192 $7FC0=page (arg on stack; $03=cart PSRAM window) \u2192 commit.",
         "With $7FC0=$03, $4000 latches PSRAM bank; $A000-$BFFF is battery-backed PSRAM",
-        "(no battery; cart battery is RTC-only). See docs/psram-save-map.md."
+        "(no battery; cart battery is RTC-only). See docs/psram-map.md."
       ]
     },
     {
@@ -85,7 +85,7 @@
       "addr": "482b",
       "lines": [
         "LoaderPrepPath: assemble /dir/NAME path into $c2a6. First hop of the $1569",
-        "launch chain ($482b \u2192 $4048 \u2192 $4000 \u2192 $5e14). See docs/launch-trace.md."
+        "launch chain ($482b \u2192 $4048 \u2192 $4000 \u2192 $5e14). See docs/boot-and-launch.md."
       ]
     },
     {
@@ -119,7 +119,7 @@
       "bank": 1,
       "addr": "6076",
       "lines": [
-        "RomLoaderMain(path@sp+$1c): Open_B6 \u2192 $ca0f; fail E=$ff Jump_001_601b. See launch-trace.",
+        "RomLoaderMain(path@sp+$1c): Open_B6 \u2192 $ca0f; fail E=$ff Jump_001_601b. See docs/boot-and-launch.md.",
         "Jump_001_5e56: fsize\u2192$c2a4/$c2a5; seek0; read $200 hdr@$c0a0; Jump_001_5ec8 checksum $134..$14c \u2192 $c5a3 (jr_001_5ef2).",
         "Jump_001_5ef5: hdr cart/ROM/RAM \u2192 $d3ec/$d3ed/$d3ee + MapCartTypeToUi; if $d3eb!=1 Jump_001_5f2a \u2192 Jump_001_600f else jr_001_5f2d size gate.",
         "Jump_001_5f6a: XOR-fold bytes (jr_001_5fe5); Jump_001_5fe8 cmp LE $e06c8834; hit jr_001_600a $d3eb=$05 (MBC1m) else Jump_001_6007; Jump_001_600f close ret E=status."
@@ -375,7 +375,7 @@
       "bank": 0,
       "addr": "0150",
       "lines": [
-        "KernelEntry: after boot ROM (title EZGB). See docs/boot-map.md. di; SP=$e000; save A in D.",
+        "KernelEntry: after boot ROM (title EZGB). See docs/boot-and-launch.md. di; SP=$e000; save A in D.",
         "jr_000_015d: zero WRAM $DFFF down $2000 (B/C nested); jr_000_0169: OAM $FEFF..$100; jr_000_0172: HRAM $FFFF..$80.",
         "Save boot A@$d6c9; bank1; LcdOff; scroll/STAT/WY/WX init; jr_000_019e: copy OamDmaStub \u2192 $FF80.",
         "Register VBlank/Serial; BGP/OBP/LCDC/IE; serial SB=$66 SC=$80; BootUnpackWramTables ($68b6); BatteryCheck; fall HaltLoop."
@@ -386,7 +386,7 @@
       "addr": "1294",
       "lines": [
         "MenuKeyDispatch: START ($80) -> LastRomOverlay; else MenuDispatchAB.",
-        "Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/launch-trace.md)."
+        "Joypad byte is post-swap: A=$10, B=$20, START=$80 (see docs/input.md)."
       ]
     },
     {
@@ -2709,7 +2709,7 @@
       "bank": 1,
       "addr": "5b12",
       "lines": [
-        "LaunchSetup(path): Open_B6 \u2192 FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see launch-trace.",
+        "LaunchSetup(path): Open_B6 \u2192 FIL@sp+$20; fail DE:HL=$ffffffff Jump_001_5c02. After BackupOpenSaverPath; see docs/boot-and-launch.md.",
         "Jump_001_58f9: $c7a9==2 \u2192 Jump_001_5905/jr_001_5908 FAT12 limit $0000ffff else Jump_001_5918 $0ffffff7; join Jump_001_5925 seed FarCall_05_4279 @$c0a0.",
         "Jump_001_59e4: walk clusters FarCall_05_4378 (jr_001_5a2c); EOF \u2192 Jump_001_5b12 else Jump_001_5a72 U32Mul*$c7ab + 4279 append.",
         "Jump_001_5b12: if sum<limit \u2192 Jump_001_59e4 else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 \u2192 Jump_001_5c02 ret 0."

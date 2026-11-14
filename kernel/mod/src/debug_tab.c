@@ -14,7 +14,7 @@
  * 2..17. UP/DOWN scroll a line, holding repeats. A writes the page $10 test
  * pattern (see below), then the snapshot is taken again.
  *
- * pSRAM probe (docs/psram-page-map.md): is page $10 really unused and not
+ * pSRAM probe (docs/psram-map.md): is page $10 really unused and not
  * an alias of another page? Page sums for $00, $01 (game save RAM), $10 and
  * $11 (kernel meta), page $10's first bytes, how many of the 256 byte values
  * occur in it (random power-on contents give ~250+), and whether the test

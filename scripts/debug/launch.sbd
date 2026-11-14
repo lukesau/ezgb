@@ -1,4 +1,4 @@
-# Launch-path breakpoints for 1.05e (see docs/launch-trace.md).
+# Launch-path breakpoints for 1.05e (see docs/boot-and-launch.md).
 # Comments and blank lines are stripped by the launcher.
 #
 # After the file browser appears: A on a .GB to open/launch.
