@@ -4361,7 +4361,7 @@
 00:02f0 BrowserScrollUpHook
 00:02f0 .data:b:8
 08:746b BrowserSortAll
-08:746b .data:62c:8
+08:746b .data:62f:8
 00:03d4 BrowserSortAllStub
 00:03d4 .data:8:8
 00:02fb BrowserPageEnd
@@ -4499,7 +4499,7 @@
 00:0259 CgbInit
 00:0259 .data:31:8
 05:7700 BrowserHideName
-05:7700 .data:24c:8
+05:7700 .data:259:8
 00:04ae DirListHideNameStub
 00:04ae .data:19:8
 02:6f40 FillRect
@@ -4670,3 +4670,7 @@
 04:59a8 .data:8:8
 04:59b0 FarCallMsgBox_B4
 04:59b0 .data:8:8
+0e:5000 HideLoad
+0e:5000 .data:2d4:8
+08:7b80 HideLoadFar
+08:7b80 .data:8:8

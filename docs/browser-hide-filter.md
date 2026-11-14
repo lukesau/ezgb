@@ -8,8 +8,7 @@ clutter get hidden by this patch:
   `.Trashes/`, `.TemporaryItems/`
 - names starting with `_`, for files and folders the user wants kept on the
   card but out of the list (2026-11-12)
-- `*.nds`, `*.sav`, `*.esv`, and the folders `RTS`, `IMGS` and `CHEAT`
-  (2026-11-12). Save management reads `SAVER/` with `f_readdir` directly
+- `*.nds`, `*.sav` and `*.esv` (2026-11-12). Save management reads `SAVER/` with `f_readdir` directly
   ([save_ops.c](../kernel/src/save_ops.c)), not through `DirList`, so hiding
   `*.sav` in the browser does not touch it
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
@@ -21,6 +20,40 @@ clutter get hidden by this patch:
 
 This supersedes the original LFN-only dotfile stub (`DirListSkipDotLongName`,
 8 bytes at `00:03cc`, added 2026-08-19); those bytes are `$ff` again.
+
+## The card's list: `.ezgbhide`
+
+Names that are a matter of taste or of what else shares the card are not
+built in: they go in `/.ezgbhide` in the card's root (2026-11-13), named like
+the plays file `/.ezgbplays` ([stars.md](stars.md)). Unlike that one it is
+plain text: one name a line, any case, CRLF or LF:
+
+```
+# folders other carts use
+RTS
+IMGS
+CHEAT
+*.bak
+```
+
+- a plain name hides a file or folder with exactly that name, in any folder
+- `*` and an ending hides every name with that ending
+- `#` starts a comment line; blank lines and spaces around a name are skipped
+
+The leading dot hides the file itself. Only its first 512 bytes are read. Without the
+file nothing extra is hidden. `RTS`, `IMGS` and `CHEAT` were built in for a
+day (2026-11-12) and are the first names moved out to the file.
+
+[kernel/src/hide_list.c](../kernel/src/hide_list.c) (`HideLoad`, `0E:5000`)
+is far-called by `BrowserSortAll` through `HideLoadFar` (`08:7b80`) before
+every listing. It reads the file into ezcfg's sector scratch (`$D800`) and
+packs it into the loader's 512-byte scratch at `$C0A0` in the shape of the
+built-in table, behind the mark `'H'`, `'L'`. `BrowserHideName` walks the
+built-in table and then, if the mark is there, that one. The scratch belongs
+to whatever ran last (the loader, the save manager, the text viewer), which
+is why the list is packed again for each listing and never kept; a write
+watchpoint on `$C0A0`-`$C2A0` across a listing in SameBoy saw no writes. The
+cost is one `f_open`, `f_read` and `f_close` each time a folder is opened.
 
 ## Why the stock filter misses the junk
 
@@ -56,7 +89,7 @@ port, so its bank-0 call targets differ):
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 588 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
+| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 601 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
@@ -77,7 +110,7 @@ DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr
 
 `BrowserHideName` returns 1 (hide) for: leading `.` or `_`, `*.gba`, `*.nds`, `*.sav`, `*.esv`, `*.dat` (the kernels: the stock
 browser hides `ezgb.dat` by that one name, but a card can carry several for stage1's
-kernel picker, [kernel-picker.md](kernel-picker.md); mod 7.0), `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER`, `RTS`, `IMGS`, `CHEAT`,
+kernel picker, [kernel-picker.md](kernel-picker.md); mod 7.0), `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER`, any name in the card's list,
 and for any entry past the 416th shown, which also ends the directory
 ([browser-sort.md](browser-sort.md#record-cap)).
 (It also hid `*.fastlaunch` until that fast-launch trigger was removed on
@@ -151,6 +184,13 @@ plus `Some Game.nds`, `TETRIS.ESV`, `notes.TXT`, `cheats.gb`, `rts.gb` and
 folders `RTS`, `imgs`, `Cheat`, `CHEATS`, `IMAGES` lists 11 entries:
 `Some Game.nds`, `TETRIS.ESV`, `Pokemon.sav`, `RTS`, `imgs` and `Cheat` are
 absent; `CHEATS`, `IMAGES`, `cheats.gb`, `rts.gb` and `notes.TXT` are listed.
+
+Card list (2026-11-13, 0731 in SameBoy): the showcase card plus folders
+`RTS`, `imgs`, `Cheat`, `CHEATS` and files `old.BAK`, `rts.gb`. Without
+`.ezgbhide` all six are listed (12 entries). With one holding a comment,
+`RTS`, `  imgs  `, a blank line, `CHEAT` and `*.bak` (no final newline) the
+listing has 8 entries: `RTS`, `imgs`, `Cheat`, `old.BAK` and the list file
+are absent, `CHEATS` and `rts.gb` are listed.
 
 ## Host-side alternative
 

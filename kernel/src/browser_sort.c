@@ -70,6 +70,9 @@ extern void DirList(void);
  * (far, to PlayKeys in bank 5), then the star marks in the records */
 extern void PlayKeysFar(u16 n);
 extern void PlayMark(void);
+/* hide_list.c, bank 14, through the stub at 08:7b80: the card's list of
+ * names to hide, packed for browser_hide.c */
+extern void HideLoadFar(void);
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
 #define END_OF_DIR (*(volatile u8 *)0xc5a4)
@@ -104,6 +107,7 @@ void browser_sort_all(void) {
     u16 end;
 
     LIST_CUT = 0;
+    HideLoadFar();
     while (!END_OF_DIR) {
         DirList();
     }

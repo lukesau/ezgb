@@ -8,7 +8,9 @@
  *  - *.gba and *.nds (GBA and DS ROMs on a shared card; the Jr can't launch
  *    them)
  *  - *.sav and *.esv, save files (the Jr keeps its saves in SAVER)
- *  - RTS, IMGS and CHEAT, folders that are not for the Jr
+ *  - whatever names /.ezgbhide lists: the card's list, read by hide_list.c
+ *    before each listing (RTS, IMGS and CHEAT were built in here for a day
+ *    and moved to that file)
  *  - *.dat, the kernels: the stock browser hides ezgb.dat by that one name,
  *    but with a kernel picker in stage1 (docs/kernel-picker.md) a card can
  *    carry several, under any name
@@ -79,7 +81,12 @@ static void notice_line(const u8 *s, u8 row8, u8 y12);
 static const u8 hide_tab[] =
     "\004.gba" "\004.dat" "\004.nds" "\004.esv" "\004.sav"
     "\210ezgb.cfg" "\213flaunch.cfg"
-    "\205saver" "\203rts" "\204imgs" "\205cheat";
+    "\205saver";
+
+/* The card's list, /.ezgbhide, packed in the same shape behind 'H', 'L'
+ * by HideLoad (hide_list.c) before each listing; without the mark there is
+ * none. */
+#define CARD_TAB ((const u8 *)0xC0A0)
 
 /* Reached only via FarCallTrampoline, which pushes three words (restore
  * thunk $07ae, saved bank AF, real return) between the caller's pushed args
@@ -96,13 +103,20 @@ u8 browser_hide_name(unsigned int far_pad_af, unsigned int far_pad_ret,
     }
     for (len = 0; name[len] && len < 253; len++) {
     }
-    for (p = hide_tab; (n = *p) != 0; p += (u8)(n & 0x7f) + 1) {
-        if ((n & 0x80) && len != (u8)(n & 0x7f)) {
-            continue;
+    p = hide_tab;
+    for (;;) {
+        for (; (n = *p) != 0; p += (u8)(n & 0x7f) + 1) {
+            if ((n & 0x80) && len != (u8)(n & 0x7f)) {
+                continue;
+            }
+            if (ends_ci(name, len, p + 1, (u8)(n & 0x7f))) {
+                return 1;
+            }
         }
-        if (ends_ci(name, len, p + 1, (u8)(n & 0x7f))) {
-            return 1;
-        }
+        /* then the card's list, once */
+        if (p >= CARD_TAB && p < CARD_TAB + 512) break;
+        if (CARD_TAB[0] != 'H' || CARD_TAB[1] != 'L') break;
+        p = CARD_TAB + 2;
     }
     if (ENTRY_COUNT >= MAX_RECORDS) {
         DIR_SECT = 0;

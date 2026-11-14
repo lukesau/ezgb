@@ -149,7 +149,9 @@ REGISTRY = {
                             "RemoveChain_B9": 0x4f94, "SyncFs_B9": 0x4447}),
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
-    (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43, "PlayKeysFar": 0x7f29, "PlayMark": 0x7f31}),
+    (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43, "PlayKeysFar": 0x7f29, "PlayMark": 0x7f31, "HideLoadFar": 0x7b80}),
+    (14, 0x5000): dict(src="hide_list.c",                   # the card's hide list, far target of HideLoadFar 08:7b80 (docs/browser-hide-filter.md)
+                      pins={"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}),
     (8, 0x7f29): dict(src="play_mark.c",                    # the sort's star marks, and its stub to PlayKeys (docs/stars.md)
                       pins={"FarCallTrampoline": 0x078d, "PlayKeys": 0x7cd2},
                       exports={"PlayMark": 0x7f31}),
