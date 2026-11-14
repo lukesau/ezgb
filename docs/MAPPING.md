@@ -89,6 +89,14 @@ Jr's is R0.11a ([stock README](../kernel/1.05e-0731/stock/README.md#toolchain-fi
 are near-identical twins**. When a role name is unclear, read the matching
 `ff.c` function rather than inferring from raw Z80.
 
+> **Correction (2026-11-14).** The twins are not all byte-identical apart
+> from immediates. Each bank is its own compile with EZ Flash's edits
+> ([stock README](../kernel/1.05e-0731/stock/README.md#fatfs)): bank 5 is
+> readonly code with banked `clust2sect`/`get_fat`, `find_volume` is cut
+> short outside bank 5, and banks 5, 6 and 9 carry trace calls in
+> `follow_path`. Interior names copied across by offset can be wrong in
+> those functions, and `Open_B9` is `f_mkdir`.
+
 ## Omega as a reference
 
 EZ Flash published the source of the Omega's GBA kernel

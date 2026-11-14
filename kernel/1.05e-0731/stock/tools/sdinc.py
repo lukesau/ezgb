@@ -10,11 +10,22 @@ unwritten inside a range are $FF, the stock fill.
 
 Symbols the source uses but does not define are resolved from a kernel.sym
 style file (bank:addr name), so a source can call into code that is still
-disassembly.
+disassembly. -a C_NAME=KERNEL_NAME resolves one under its kernel.sym name.
+
+--sdcc29 compiles C with SDCC 2.9.0 (`$SDCC29/bin/sdcc -mgbz80`), the
+compiler EZ Flash used; its output is assembled with the SDCC 4.x sdasgb.
+2.9.0 writes the bank word after a banked call as `.dw 0 ; PENDING: bank
+support`, which --bank N fills with the source's own bank (stock has the
+real bank there). --bank N also labels each region with the kernel.sym entry
+names (not their `_B<n>_` local labels) in bank N, so the rest of the
+disassembly still links.
+
+Several sources link in the order given, as sdld places their areas.
 
 Usage:
-  sdinc.py <src> --sym kernel.sym [-b AREA=ADDR ...] [-g SYM=ADDR ...]
-           --region START:END:OUT.inc [...] [--cflags "..."]
+  sdinc.py <src> [<src> ...] --sym kernel.sym [-b AREA=ADDR ...] [-g SYM=ADDR ...]
+           [-a SYM=NAME ...] --region START:END:OUT.inc [...] [--cflags "..."]
+           [--sdcc29 --bank N]
 """
 import argparse
 import os
@@ -38,6 +49,17 @@ def load_syms(path):
         if m and not m.group(3).startswith("."):
             syms.setdefault(m.group(3), int(m.group(2), 16))
     return syms
+
+
+def load_bank_labels(path, bank):
+    """kernel.sym entry names in one bank: addr -> [names]"""
+    out = {}
+    for line in open(path):
+        m = re.match(r"\s*([0-9a-fA-F]{2}):([0-9a-fA-F]{4})\s+(\S+)", line)
+        if (m and int(m.group(1), 16) == bank and RGBDS_LABEL.match(m.group(3))
+                and not re.search(r"_B[0-9a-fA-F]+_", m.group(3))):
+            out.setdefault(int(m.group(2), 16), []).append(m.group(3))
+    return out
 
 
 def rel_symbols(rel):
@@ -73,12 +95,16 @@ def parse_map(path):
 RGBDS_LABEL = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
 
 
-def write_inc(path, src, start, end, data, labels):
+def write_inc(path, src, start, end, data, labels, extra_labels):
     by_addr = {}
+    for addr, names in extra_labels.items():
+        if start <= addr < end:
+            by_addr.setdefault(addr, []).extend(names)
     for name, addr in labels.items():
         # l__AREA / s__AREA are sdld's area length and start symbols
         if start <= addr < end and RGBDS_LABEL.match(name) and not name.startswith(("l__", "s__")):
-            by_addr.setdefault(addr, []).append(name)
+            if name not in by_addr.get(addr, []):
+                by_addr.setdefault(addr, []).append(name)
     lines = [f"; Generated from {src} by kernel/1.05e-0731/stock/tools/sdinc.py, do not edit.",
              f"; ${start:04x}-${end:04x}"]
     run_ = []
@@ -97,32 +123,65 @@ def write_inc(path, src, start, end, data, labels):
     open(path, "w").write("\n".join(lines) + "\n")
 
 
+def compile_one(a, src, rel, d):
+    if src.endswith(".c") and a.sdcc29:
+        prefix = os.environ.get("SDCC29")
+        if not prefix:
+            sys.exit("error: set SDCC29 to an SDCC 2.9.0 install prefix")
+        asm = rel[:-4] + ".asm"
+        run([os.path.join(prefix, "bin", "sdcc"), "-S", "-mgbz80", "--no-std-crt0",
+             *a.cflags.split(), src, "-o", asm], d)
+        text = open(asm).read()
+        if "PENDING: bank" in text:
+            if a.bank is None:
+                sys.exit("error: banked calls need --bank")
+            text = re.sub(r"\.dw 0(\s*; PENDING: bank support)", rf".dw {a.bank}\1", text)
+        open(asm, "w").write(text)
+        run(["sdasgb", "-plosgff", rel, asm], d)
+    elif src.endswith(".c"):
+        run(["sdcc", "-c", "-msm83", "--sdcccall", "0", "--no-std-crt0",
+             *a.cflags.split(), src, "-o", rel], d)
+    else:
+        run(["sdasgb", "-plosgff", "-I" + os.path.dirname(src), rel, src], d)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("src")
+    p.add_argument("src", nargs="+", help="sources, linked in this order")
     p.add_argument("--sym", required=True, help="kernel.sym for external symbols")
     p.add_argument("-b", action="append", default=[], help="AREA=ADDR placement")
     p.add_argument("-g", action="append", default=[], help="SYM=ADDR extra definition")
     p.add_argument("--region", action="append", required=True, help="START:END:OUT.inc")
+    p.add_argument("-a", action="append", default=[], help="SYM=NAME: resolve SYM as kernel.sym NAME")
     p.add_argument("--cflags", default="", help="extra sdcc flags for .c sources")
+    p.add_argument("--sdcc29", action="store_true", help="compile C with SDCC 2.9.0 ($SDCC29)")
+    p.add_argument("--bank", type=lambda v: int(v, 0), help="bank of the source (see above)")
     a = p.parse_args()
 
-    src = os.path.abspath(a.src)
+    srcs = [os.path.abspath(x) for x in a.src]
     with tempfile.TemporaryDirectory() as d:
-        rel = os.path.join(d, "out.rel")
-        if src.endswith(".c"):
-            run(["sdcc", "-c", "-msm83", "--sdcccall", "0", "--no-std-crt0",
-                 *a.cflags.split(), src, "-o", rel], d)
-        else:
-            run(["sdasgb", "-plosgff", "-I" + os.path.dirname(src), rel, src], d)
+        rels = []
+        for i, src in enumerate(srcs):
+            rel = os.path.join(d, f"out{i}.rel")
+            rels.append(os.path.basename(rel))
+            compile_one(a, src, rel, d)
 
-        refs, defs = rel_symbols(rel)
+        refs, defs = set(), set()
+        for rel in rels:
+            r_, d_ = rel_symbols(os.path.join(d, rel))
+            refs |= r_
+            defs |= d_
         kernel = load_syms(a.sym)
         extra = {}
         for spec in a.g:
             n, v = spec.split("=")
             extra[n] = int(v, 16)
+        for spec in a.a:
+            n, v = spec.split("=")
+            if v not in kernel:
+                sys.exit(f"error: -a {spec}: {v} is not in {a.sym}")
+            extra[n] = kernel[v]
         missing = []
         link = ["-mjwx", "-i", "out.ihx"]
         for spec in a.b:
@@ -142,7 +201,7 @@ def main():
         lines = ["-mjwx", "-i out.ihx"]
         lines += [f"-b {spec}" for spec in a.b]
         lines += [x for x in link if x.startswith("-g")]
-        lines += ["out.rel", "-e"]
+        lines += rels + ["-e"]
         open(os.path.join(d, "out.lk"), "w").write("\n".join(lines) + "\n")
         r = subprocess.run(["sdldgb", "-nf", "out.lk"], cwd=d, capture_output=True,
                            text=True, stdin=subprocess.DEVNULL, timeout=60)
@@ -151,10 +210,12 @@ def main():
         data = parse_ihx(os.path.join(d, "out.ihx"))
         labels = parse_map(os.path.join(d, "out.map"))
 
-    rel_src = os.path.relpath(src, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    rel_src = " ".join(os.path.relpath(x, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                       for x in srcs)
+    bank_labels = load_bank_labels(a.sym, a.bank) if a.bank is not None else {}
     for spec in a.region:
         s, e, out = spec.split(":", 2)
-        write_inc(out, rel_src, int(s, 16), int(e, 16), data, labels)
+        write_inc(out, rel_src, int(s, 16), int(e, 16), data, labels, bank_labels)
 
 
 if __name__ == "__main__":

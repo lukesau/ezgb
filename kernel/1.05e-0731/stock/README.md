@@ -9,10 +9,11 @@ This is separate from `../disassembly`, which is regenerated from the
 modded kernel after every injection. Everything here is stock.
 
 ```sh
-make -C kernel/1.05e-0731/stock        # build/kernel.gb, checked against the stock md5
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/kernel.gb, checked against the stock md5
 ```
 
-Needs rgbds and SDCC 4.x (`sdasgb`, `sdldgb`, `sdcc`). No dump is needed: the
+Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
+compiler EZ Flash used for the C ([below](#sdcc-290)). No dump is needed: the
 build compares against the md5, not a file.
 
 ## Layout
@@ -21,13 +22,14 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `tools/sdinc.py` | Assembles or compiles one source with SDCC, links its areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols). External symbols come from `kernel.sym`. |
+| `src/` | C: FatFs R0.11a (`ff.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, and `dbg.c`. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
+| `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
 | `build/` | Generated includes and the built kernel (gitignored). |
 
 ## Moving a routine to source
 
-1. Write the source: GBDK library asm in `gbdk/`, C in `src/` (once the
-   compiler is pinned, see below). Give its globals the names `asm/` uses
+1. Write the source: GBDK library asm in `gbdk/`, C in `src/`. Give its globals the names `asm/` uses
    (`LcdOff::` next to `.display_off::`) so the rest of the disassembly links.
 2. Add an `sdinc.py` rule to the `Makefile` with the area placements (`-b`)
    and the address range(s) to emit.
@@ -42,8 +44,83 @@ build compares against the md5, not a file.
 |---|---|---|
 | `00:0000`-`01e3` | `gbdk/crt0.s` | RST/interrupt vectors, interrupt dispatcher, cartridge header, startup (`KernelEntry`) |
 | `00:0600`-`07bc` | `gbdk/crt0.s` | `crt0` `_HOME` area: mode table jump, interrupt list add/remove, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` |
+| banks 3, 5, 6, 7, 9 (whole banks) | `src/ff.c`, `src/dbg.c` | FatFs R0.11a, one copy per bank ([FatFs](#fatfs)) |
 
-Compiled C is not in yet: the compiler has not been found.
+## FatFs
+
+Each of banks 3, 5, 6, 7 and 9 is one compile of `src/ff.c` with `-DBANK=n`,
+code from `$4000` and `$FF` fill after it. Banks 5, 6 and 9 link `src/dbg.c`
+first, an empty function at `$4000`. The globals (`FatFs`, `Fsid`, `LfnBuf`)
+are shared at `$C5A5`. What each bank holds:
+
+| Bank | API | Other functions cut |
+|---|---|---|
+| 3 | `f_sync`, `f_close`, `f_lseek` | `dir_read`, `get_fileinfo`, `check_fs` |
+| 5 | `f_mount`, `f_chdir`, `f_getcwd`, `f_opendir`, `f_closedir`, `f_readdir` | (readonly build, see below) |
+| 6 | `f_open`, `f_read` | `sync_fs`, `dir_read`, `get_fileinfo`, `check_fs` |
+| 7 | `f_write` | `remove_chain`, `check_fs`, `find_volume` |
+| 9 | `f_mkdir` | `get_fileinfo` |
+
+No bank has `dir_remove`, `f_stat`, `f_getfree`, `f_truncate`, `f_unlink`,
+`f_chmod`, `f_rename` or `f_utime`. EZ Flash's edits to R0.11a, all marked
+`ezflash:` in the source:
+
+- The `f_` API is `__banked` (callers use `banked_call`), except bank 3's
+  `f_sync`, which its `f_close` calls directly.
+- `mem_cpy` and `mem_cmp` take a `BYTE` count, and so does `mem_set` outside
+  bank 9.
+- Bank 5 is readonly code (`_FS_READONLY` set after `ff.h`, so FATFS keeps
+  the writable layout) but keeps `find_volume`'s write-protect checks, and
+  its `clust2sect` and `get_fat` are `__banked`.
+- `find_volume` in banks 3, 6 and 9 returns `FR_OK` after the "already
+  mounted" check: only bank 5 mounts.
+- Trace calls to `dbg_out` (`src/dbg.c`, our name): `0x77` and the name's
+  `NSFLAG` in `follow_path` (banks 5, 6, 9), and `0x4413`/`dcl`,
+  `0x3333`/`res`, `0x2222`/`res` in bank 9's `f_mkdir`.
+- Bank 9's `sync_fs` assigns the `disk_ioctl` result to `res`.
+
+kernel.sym names some of this wrong: `Open_B9` is `f_mkdir`, `FsUnlink`
+(`09:7cc0`) is a mod label on `$FF` fill, and `U32Mod` (`00:2832`) is what
+2.9.0 calls `_divulong_rrx_s`, a division.
+
+### Matching
+
+```sh
+SDCC29=<sdcc 2.9.0 prefix> tools/match.py [-v] [-f func] [-b bank]
+```
+
+[tools/match.py](tools/match.py) compiles the sources once per bank and
+looks up every function and table in that bank of `build/kernel.gb`, with
+the operands the linker fills in masked: a table of addresses, or how many
+bytes match at the kernel.sym address. All of them match. `-v` shows the
+instructions around the first wrong byte. It was how the edits above were
+found; `make` then checks the whole bank, jump targets included.
+
+### SDCC 2.9.0
+
+Build it from `sdcc-src-2.9.0.tar.bz2` (SourceForge), z80 port only, with a
+current compiler given old C:
+
+```sh
+CFLAGS="-O1 -fcommon -std=gnu89 -Wno-error -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int" \
+CXXFLAGS="-O1 -fcommon -std=gnu++98" ./configure --prefix=<prefix> \
+  --disable-mcs51-port --disable-ds390-port --disable-ds400-port --disable-hc08-port \
+  --disable-pic-port --disable-pic16-port --disable-xa51-port --disable-avr-port \
+  --disable-s08-port --disable-r2k-port --disable-ucsim --disable-device-lib \
+  --disable-packihx --disable-sdcpp --disable-sdcdb --disable-non-free
+make && make install
+```
+
+It ships no `sdcpp` or `sdasgb`. Link `sdasgb` from SDCC 4.x into
+`<prefix>/bin`, and give it an `sdcpp` that drops the `-obj-ext=` option
+2.9.0 passes, which SDCC 4.x's `sdcpp` reads as `-o` and then writes
+nothing:
+
+```sh
+#!/bin/sh
+for a; do shift; case $a in -obj-ext=*) ;; *) set -- "$@" "$a";; esac; done
+exec /path/to/sdcc-4/bin/sdcpp "$@"
+```
 
 ## Toolchain findings
 
@@ -66,6 +143,11 @@ holds its own copy of `ff.c`, cut to the API that bank uses:
 | 7 | `f_write` |
 | 5 | `f_mount` and the directory calls |
 | 3 | `f_sync`, `f_lseek`, `f_close` |
+
+> **Correction (2026-11-14).** Banks 9 and 6 are wrong above, and so is
+> kernel.sym's `Open_B9`: bank 9's one API function is `f_mkdir`, bank 6 has
+> `f_open` as well as `f_read`, and no bank has `f_unlink`. See
+> [FatFs](#fatfs).
 
 `ffconf.h`, read from the code:
 
@@ -105,3 +187,7 @@ FatFs source in ways that move the code.
 > the "patched SDCC" guess is wrong. Found through stage1, built by the same
 > compiler without `--opt-code-size`
 > ([stage1/decomp](../../../stage1/decomp/README.md#matching)).
+> The other guess holds: EZ Flash edited the FatFs source, and with those
+> edits every FatFs function matches and the five banks build from C
+> ([FatFs](#fatfs)). Bank 9's `mem_cmp`, the one miss in that first test,
+> was at the right address; its count is a `BYTE`.
