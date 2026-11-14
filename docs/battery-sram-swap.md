@@ -26,8 +26,8 @@ sourcing.
 U4 is a Spansion S71 stacked multi-chip package: one S29PL NOR flash die plus
 one RAM die on a shared x16 bus, in a 56-ball 7 x 9 mm FBGA (Spansion package
 code TLC056, 0.8 mm pitch). Only the RAM die matters to the Game Boy side: it
-is the battery-backed 64-page / 512 KB store mapped in
-[psram-map.md](psram-map.md). The NOR die has no GB-visible use
+is the battery-backed save store mapped in [psram-map.md](psram-map.md),
+a 512 KB die of which the kernel uses 32 pages of 8 KB. The NOR die has no GB-visible use
 (see [hardware-board.md](hardware-board.md)).
 
 With the edge connector at the bottom, U4 is in the top row of the front of the
@@ -42,7 +42,7 @@ Boards seen so far, oldest first:
 | `71GL064A08` | S71GL064A | 8 Mbit **SRAM** | nitro2k01's board survey (`tools/ezflashjr/hardware/README.md`), early carts |
 | `71GL032A08` | S71GL032A | 8 Mbit **SRAM** | moon_rabbit, GBAtemp |
 | `71PL032J80` | S71PL032J | 8 Mbit pSRAM | moon_rabbit, boards dated 0822 and 1022 |
-| `71GL032A40BFW0F` | S71GL032A | 4 Mbit pSRAM | this project's cart (`tools/IMG_8744.jpeg`) |
+| `71GL032A40BFW0B` | S71GL032A | 4 Mbit pSRAM | this project's cart (`tools/IMG_8744.jpeg`) |
 
 ## Reading the part number
 
@@ -92,8 +92,7 @@ and firmware updates with no change.
 The 8 Mbit parts turn A18 into a shared flash/RAM address ball (on the 4 Mbit
 parts A18 is flash-only). This is harmless: the FPGA drives whatever it drives
 on A18 and the RAM just decodes it as a second half, and the `064A08` boards
-shipped that way. The kernel's 64-page model is unaffected either way, since
-pages 0-63 sit in the low 512 KB.
+shipped that way. The kernel's 32 pages are unaffected either way.
 
 Avoid anything ending in `A0`, `B0`, `40` or `80`, and note that some
 distributor databases describe every S71 part as "Flash+PSRAM" regardless of
@@ -111,39 +110,15 @@ model `F`, packing `0`. Two letters matter for soldering:
 
 The BGA top marking drops the leading `S` and the packing digit.
 
-## Sourcing (checked November 2026)
+## Sourcing
 
-All of these parts are long discontinued; the only supply is surplus brokers.
-Prices and stock below are a snapshot from 2026-11-05.
+All of these parts are long discontinued, so the only supply is surplus
+brokers and eBay.
 
-| Part | Seller (eBay) | Price + shipping | Ships from | Notes |
-|---|---|---|---|---|
-| [`S71PL032J04BAW0B0`](https://www.ebay.com/itm/227324771133) | `specspecialty` (99.9%, 19.6k) | $6.95 + $9.50 each | US | 25 available. Listing photo shows chips marked `71PL032J04BAWOB` and `CHINA ES`; see below. |
-| [`S71PL032J04BFW0B0`, 5 pcs](https://www.ebay.com/itm/166836409670) | `image006-04` (98.2%, 234) | $22.35 + $8.14 | China | Listing photo shows `71PL032J04BFW0B` with no `ES`. Confirm the price covers all five. |
-| [`S71GL032A08BAW0F0`](https://www.ebay.com/itm/377075244300) | `chipsgate` (99.7%, 50.3k) | $20.00 + $4.99 each | China | More than 10 available, listed as open box. Main photo is a warehouse shot, not the chip. |
-| [`S71GL032A08BAW0F0`](https://www.ebay.com/itm/307139505954) | `eleczone_18` (100%, 110) | $20.00 + $8.29 each | China | Listing page not reviewed. |
-
-Other `S71PL032J04BFW0B0` 5-packs from China ran about $28-42 before shipping.
-eBay had no exact matches for `S71PL032J08`, `S71GL064A08` or `S71PL064J08`.
-
-The `ES` on the `specspecialty` photo may mean engineering samples. This is
-unconfirmed, so ask the seller before buying.
-
-The same eBay searches return lookalikes such as `S71PL032J40`, `S71PL064J80`,
-`S71GL032N80` and `S71PL032JA0`. None of them is on the drop-in list above, so
-check the RAM field before buying.
-
-[Findchips](https://www.findchips.com/search/S71PL032J08) lists these
-request-for-quote broker stocks, which are unverified and may suit a larger
-order:
-
-- Chip 1 Exchange: `S71PL032J04BAW0B3`, 133 in stock.
-- Sense Electronic: `S71PL032J08BFW0B0`, 1720 in stock.
-- ComSIT: `S71PL032J08BFW0B2`, 500 in stock in Germany.
-
-Findchips had no results for `S71GL032A08`. Worldway Electronics also lists the
-family, but its pages were behind a human-verification check, and UTsource
-would not load, so neither was reviewed.
+- Check the RAM field of the exact part number before buying. Searches
+  return lookalikes such as `S71PL032J40`, `S71PL064J80`, `S71GL032N80` and
+  `S71PL032JA0`, none of which is a drop-in.
+- Chips marked `ES` may be engineering samples. Ask the seller.
 
 Buy from a seller with a large feedback count. "New" BGA listings from surplus
 brokers are sometimes reballed pulls; inspect the balls under magnification
@@ -168,11 +143,6 @@ are the joint.
    it. Pb-free (`BF`) balls need the hotter profile.
 5. Refit the cell, boot: the kernel will rebuild its settings and offer
    BACKUPSAVE-style recovery as on a fresh cart.
-
-> **Correction (2026-11-06).** Step 2 used to say the 74HC595 and RTC sit near
-> U4 and may need shielding. The board photo shows both on the far side of the
-> coin cell from U4, and the parts at risk are U9, C16 and C11. Anyone who
-> followed the old step should shield those instead.
 
 A stencil and loose 0.4 mm solder balls are only needed if a chip arrives with
 missing or damaged balls and has to be reballed (generic 0.8 mm-pitch stencils
