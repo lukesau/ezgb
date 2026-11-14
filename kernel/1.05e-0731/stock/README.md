@@ -46,8 +46,7 @@ build compares against the md5, not a file.
 | `00:0000`-`01e3` | `gbdk/crt0.s` | RST/interrupt vectors, interrupt dispatcher, cartridge header, startup (`KernelEntry`) |
 | `00:0600`-`07bc` | `gbdk/crt0.s` | `crt0` `_HOME` area: mode table jump, interrupt list add/remove, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` |
 | banks 3, 5, 6, 7, 9 (whole banks) | `src/ff.c`, `src/dbg.c` | FatFs R0.11a, one copy per bank ([FatFs](#fatfs)) |
-| `00:07bc`-`0de4` | `src/kernel.c` | kernel C: `WaitJoypadSelect` to `DrawDirEntryLabel` ([Bank 0](#bank-0-c)) |
-| `00:16f4`-`1926` | `src/kernel2.c` | kernel C: `U32ToAscii_B0`, `BatteryCheck` |
+| `00:07bc`-`1926` | `src/kernel.c` | the kernel's C: `WaitJoypadSelect` to `BatteryCheck`, `SdMenuMain` included ([Bank 0](#bank-0-c)) |
 | `00:1926`-`20bb` | `src/fsglue.c`, `src/diskio.c`, `src/option/ccsbcs.c` | the `f_` entry points, the disk layer, `get_fattime`, CP437 conversion |
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
@@ -97,18 +96,22 @@ GBDK's `BYTE`/`WORD`/`DWORD` the unsigned types FatFs uses (`integer.h` then
 skips its own; that guard is ours). Function names are kernel.sym's, and a
 `/* BB:AAAA */` comment above each definition gives `match.py` its address.
 
-All of bank 0's kernel C matches except `SdMenuMain` (`$0de4`-`$16f4`, the
-mount, save backup, file browser and launch, 2.2 KB). Its code is written
-(`kernel.c`, under `#ifdef UNMATCHED`) and differs from stock in one
-register decision: stock keeps the last-ROM key loop's 16-bit key value on
-the stack where SDCC's fillGaps pass gives it `bc` here. With that one
-temporary left unfilled (a patched compiler) the function is
-byte-identical. SDCC 2.9.0 has only `b` and `c` to allocate on gbz80, so
-one value more or less in registers anywhere moves the rest; the forms
-that got this far (`FR_OK != res`, `(char)wD3EB`, `(void *)(UINT16)&wFno`)
-were inferred from reading its allocator (`src/z80/ralloc.c`).
-Until then the functions after it are built from `kernel2.c`, which is the
-same file as `kernel.c` in stock.
+All of bank 0's kernel C builds from source. `SdMenuMain` (`$0de4`-`$16f4`:
+the mount, save backup, file browser and launch, 2.2 KB) took reading SDCC
+2.9.0's register allocator (`src/z80/ralloc.c`): gbz80 has only `b` and `c`
+to allocate, so one value more or less in a register anywhere in a big
+function moves the rest. Its source forms are inferred from that, not
+known:
+
+- `SetFpga7F37_B4((wD3F0 << 7) | (char)wD3EB)`: the cast needs a register
+  while `res` is live across the launch calls, which spills `res` for the
+  whole function.
+- `FR_OK != res` for the mount, chdir and opendir results: SDCC folds
+  `res != FR_OK` into a plain test but not this.
+- `memset((void *)(UINT16)&wFno, ...)`: casts of `&wFno` itself fold (it is
+  constant); the round trip through an integer leaves a real cast.
+- `keys = joypad()` in the file-error wait loop too: that keeps `keys` live
+  across the last-ROM loop, so its 16-bit copy stays on the stack.
 
 What fitting it showed:
 

@@ -27,7 +27,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 
-INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc build/b0_kernel2.inc \
+INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc
 
 all: build/kernel.gb
@@ -62,7 +62,7 @@ build/b0_fatfs.inc build/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffc
 		-b _CODE=0x1926 -b _DATA=0xcc33 -b _GSINIT=0x68c0 $(B0_FATFS_ALIASES) \
 		--region 1926:20bb:build/b0_fatfs.inc --region 68c0:7096:build/b1_ccsbcs_init.inc
 
-# the kernel's own C in bank 0, from $07BC, against GBDK 2.96a's headers
+# the kernel's own C in bank 0, $07BC-$1926, against GBDK 2.96a's headers
 KERNEL_CFLAGS := --opt-code-size -I$(CURDIR)/gbdk/include -DBYTE_IS_UNSIGNED=1
 KERNEL_SRCS := src/kernel.c
 KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixelXY \
@@ -73,22 +73,28 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wDirEnd=0xc5a4 \
               -g _wFno=0xc9db -g _wDir=0xc9f5 -a _SetFpgaPageAlt_B4=SetFpgaPageAlt_B4 \
               -a _strncpy=Strncpy -a _CStrCat_B1=CStrCat_B1 -a __rrulong_rrx_s=U32Shr \
-              -a __modulong_rrx_s=U32Div -g _wLabelBuf=0xc4a4 -g _wMarqueePos=0xcc31
+              -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod -g _wLabelBuf=0xc4a4 -g _wMarqueePos=0xcc31 \
+              -a _box=DrawRect -a _memset=Memset -a _memcpy=Memcpy -a _strrchr=Strrchr \
+              -a _wait_vbl_done=WaitVBlankFlag -a _display_off=LcdOff -a _disable_interrupts=DiNest \
+              -a _f_mount=Mount_B5 -a _f_chdir=Chdir_B5 -a _f_opendir=Opendir_B5 -a _fs_mkdir=FarCall_09_77ff \
+              -a _CStrCmp=CStrCmp -a _DrawReadingBox=DrawReadingBox -a _DrawLoadingBox=DrawLoadingBox \
+              -a _DrawErrorFileBox=DrawErrorFileBox -a _DrawLastRomButtons=DrawLastRomButtons \
+              -a _DrawTimeAutosaveScreen=DrawTimeAutosaveScreen -a _DrawFwVersionScreen=DrawFwVersionScreen \
+              -a _DrawBrowserEntries=DrawBrowserEntries -a _DrawBrowserDetail=DrawBrowserDetail \
+              -a _BackupSavePrompt=BackupSavePrompt -a _LoaderPrepPath=LoaderPrepPath \
+              -a _RomLoaderMain=RomLoaderMain -a _BackupOpenSaverPath=BackupOpenSaverPath \
+              -a _LaunchSetup=LaunchSetup -a _SetFpga7F37_B4=SetFpga7F37_B4 -a _SetFpga7FD4_B1=SetFpga7FD4_B1 \
+              -a _SetFpga7FC4_B4=SetFpga7FC4_B4 -a _SetFpgaRomSize_B4=SetFpgaRomSize_B4 \
+              -a _SetFpga7FC3_B4=SetFpga7FC3_B4 -a _RomLoad_CopyCmdWindowPoll_B4=RomLoad_CopyCmdWindowPoll_B4 \
+              -g _Bank8_7169=08:7169 -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
+              -g _wD3EB=0xd3eb -g _wD3EC=0xd3ec -g _wD3ED=0xd3ed -g _wD3EF=0xd3ef -g _wD3F0=0xd3f0 \
+              -g _wD3F6=0xd3f6
 
-build/b0_kernel.inc: $(KERNEL_SRCS) src/kernel.h src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+build/b0_kernel.inc: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:0de4:$@
+		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:1926:$@
 
-# kernel2.c is the same file as kernel.c in stock, after SdMenuMain ($0de4),
-# which is not matched yet
-KERNEL2_ALIASES := $(KERNEL_ALIASES) -a _DrawString=DrawString -a _SdMenuMain=SdMenuMain \
-              -a _box=DrawRect -a __divulong_rrx_s=U32Mod
-
-build/b0_kernel2.inc: src/kernel2.c src/kernel.h src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
-	@mkdir -p build
-	$(SDINC) src/kernel2.c --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x16f4 $(KERNEL2_ALIASES) --region 16f4:1926:$@
 
 # SDCC 2.9.0's library C among bank 0's library modules, built as SDCC
 # builds its device lib: no options
