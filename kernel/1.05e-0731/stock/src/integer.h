@@ -10,6 +10,14 @@
 #include <windows.h>
 #include <tchar.h>
 
+#elif defined(ASM_TYPES_INCLUDE)	/* ezgb: after GBDK's types, built with
+				   BYTE_IS_UNSIGNED, which gives BYTE, WORD and DWORD */
+typedef short			SHORT;
+typedef unsigned short	WCHAR;
+typedef int				INT;
+typedef unsigned int	UINT;
+typedef long			LONG;
+
 #else			/* Embedded platform */
 
 /* This type MUST be 8-bit */

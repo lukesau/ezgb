@@ -5,6 +5,8 @@ The EZ Flash Jr kernel is a GBDK program: bank 0 starts with GBDK's runtime
 source.
 
 - `global.s`: GBDK 2.96a `libc/gb/global.s`, unchanged.
+- `include/`: GBDK 2.96a's headers, unchanged, for the kernel C in `../src`
+  (built with `-DBYTE_IS_UNSIGNED=1`).
 - `crt0.s`: GBDK 2.96a `libc/gb/crt0.s` (identical to GBDK-2020 3.0.1's) with
   EZ Flash's changes, each marked `;; ezflash:`. In short: an interrupt nesting
   count (`__int_nest`) used by the dispatcher, `enable_interrupts`/

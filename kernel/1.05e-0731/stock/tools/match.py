@@ -2,7 +2,7 @@
 """Byte-compare kernel C, compiled by SDCC 2.9.0, against the stock kernel.
 
     SDCC29=<sdcc 2.9.0 prefix> tools/match.py [-v] [-f FUNC ...] [-b BANK ...]
-                                              [-D NAME[=VAL] ...] [src.c ...]
+                                              [-D NAME[=VAL] ...] [-I DIR ...] [src.c ...]
 
 Compiles each source (default src/dbg.c and src/ff.c, the FatFs R0.11a
 copy) once per FatFs bank (3, 5, 6, 7 and 9, or the -b banks, hex) with
@@ -76,6 +76,15 @@ def sym_addr(syms, bank, cname):
         if n in stems or n in (f"{st}_B{bank:x}" for st in stems):
             return a
     return None
+
+
+def src_addrs(src):
+    """{function: (bank, addr)} from a `/* BB:AAAA` comment right above a definition"""
+    out = {}
+    for m in re.finditer(r"^/\*\s*([0-9a-fA-F]{2}):([0-9a-fA-F]{4})\b[^\n]*\n(?:static\s*\n)?"
+                         r"[A-Za-z_][\w \t\*]*?\b(\w+)\s*\(", open(src, encoding="latin-1").read(), re.M):
+        out[m[3]] = (int(m[1], 16), int(m[2], 16))
+    return out
 
 
 def prefix_at(data, at, pat):
@@ -178,6 +187,7 @@ def main():
     p.add_argument("src", nargs="*", default=[str(HERE / "src" / f) for f in ("dbg.c", "ff.c")])
     p.add_argument("-b", type=lambda s: int(s, 16), action="append", help="bank (hex), repeatable")
     p.add_argument("-D", action="append", default=[], help="define for the compile")
+    p.add_argument("-I", action="append", default=[], help="include directory for the compile")
     p.add_argument("--cflags", default="--opt-code-size", help="sdcc options (default %(default)s)")
     p.add_argument("-v", action="store_true")
     p.add_argument("-f", action="append", help="only this function, repeatable")
@@ -195,12 +205,18 @@ def main():
     syms = load_syms(HERE.parent / "kernel.sym")
     banks = a.b or FAT_BANKS
 
+    pinned = {}
+    for src in a.src:
+        pinned.update(src_addrs(src))
+    if not a.b and pinned:
+        banks = sorted({b for b, _ in pinned.values()})
     per_bank = {}
     for b in banks:
         per_bank[b] = {}
         for src in a.src:
             per_bank[b].update(listing(sdcc, sdas, Path(src).resolve(),
-                                       a.cflags.split() + [f"-DBANK={b}"] + [f"-D{d}" for d in a.D]))
+                                       a.cflags.split() + [f"-DBANK={b}"] + [f"-D{d}" for d in a.D]
+                                       + [f"-I{i}" for i in a.I]))
     names = []
     for b in banks:
         names += [n for n in per_bank[b] if n not in names]
@@ -217,10 +233,16 @@ def main():
                 cells.append("")
                 continue
             pat = [v for bs, _ in ins for v in bs]
-            data = rom[rom_off(b, 0x4000):rom_off(b, 0x4000) + 0x4000]
+            base = 0 if b == 0 else 0x4000
+            data = rom[rom_off(b, base):rom_off(b, base) + 0x4000]
             sa = sym_addr(syms, b, name)
+            if name in pinned:
+                sa = pinned[name][1] if pinned[name][0] == b else None
+                if sa is None:
+                    cells.append("")
+                    continue
             if sa is not None:
-                at = sa - 0x4000 if prefix_at(data, sa - 0x4000, pat) == len(pat) else None
+                at = sa - base if prefix_at(data, sa - base, pat) == len(pat) else None
             elif any(sym_addr(syms, o, name) is not None for o in FAT_BANKS):
                 cells.append("")                          # named elsewhere, cut here
                 continue
@@ -228,13 +250,13 @@ def main():
                 at, k, k_at = find(data, pat)
             if at is not None:
                 hit = True
-                cells.append(f"{0x4000 + at:04x} ok")
+                cells.append(f"{base + at:04x} ok")
             else:
                 if sa is not None:
-                    k, k_at = prefix_at(data, sa - 0x4000, pat), sa - 0x4000
+                    k, k_at = prefix_at(data, sa - base, pat), sa - base
                 cells.append(f"{k:>4}/{len(pat)}" if k else "-")
                 if k_at is not None:
-                    misses.append((b, k, 0x4000 + k_at, ins))
+                    misses.append((b, k, base + k_at, ins))
         all_ok &= not misses
         print(f"{name:{width}}  " + "  ".join(f"{c:>12}" for c in cells))
         if a.v and not hit and misses:

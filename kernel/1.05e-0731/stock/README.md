@@ -21,8 +21,8 @@ build compares against the md5, not a file.
 | Path | What |
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
-| `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, and `dbg.c`. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
 | `build/` | Generated includes and the built kernel (gitignored). |
@@ -45,6 +45,9 @@ build compares against the md5, not a file.
 | `00:0000`-`01e3` | `gbdk/crt0.s` | RST/interrupt vectors, interrupt dispatcher, cartridge header, startup (`KernelEntry`) |
 | `00:0600`-`07bc` | `gbdk/crt0.s` | `crt0` `_HOME` area: mode table jump, interrupt list add/remove, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` |
 | banks 3, 5, 6, 7, 9 (whole banks) | `src/ff.c`, `src/dbg.c` | FatFs R0.11a, one copy per bank ([FatFs](#fatfs)) |
+| `00:07bc`-`0bd1` | `src/kernel.c` | first kernel C: `WaitJoypadSelect` to `DirList` ([Bank 0](#bank-0-c)) |
+| `00:1926`-`20bb` | `src/fsglue.c`, `src/diskio.c`, `src/option/ccsbcs.c` | the `f_` entry points, the disk layer, `get_fattime`, CP437 conversion |
+| `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 
 ## FatFs
 
@@ -83,10 +86,42 @@ kernel.sym names some of this wrong: `Open_B9` is `f_mkdir`, `FsUnlink`
 (`09:7cc0`) is a mod label on `$FF` fill, and `U32Mod` (`00:2832`) is what
 2.9.0 calls `_divulong_rrx_s`, a division.
 
-### Matching
+## Bank 0 C
+
+The kernel's own C starts at `00:07bc`, right after crt0's `_HOME`, and is
+built with GBDK 2.96a's headers and `-DBYTE_IS_UNSIGNED=1`, which makes
+GBDK's `BYTE`/`WORD`/`DWORD` the unsigned types FatFs uses (`integer.h` then
+skips its own; that guard is ours). Function names are kernel.sym's, and a
+`/* BB:AAAA */` comment above each definition gives `match.py` its address.
+Matched so far, `$07bc`-`$0bd1` and `$1926`-`$20bb`; next is
+`DrawDirEntryLabel` (`0bd1`), in `kernel.c` under `#ifdef UNMATCHED`.
+
+What fitting it showed:
+
+- SDCC 2.9.0 gives a function's first-declared local the highest stack
+  slot. A frame that is the right size but has its slots shuffled is a
+  declaration-order question.
+- A value stock keeps in a stack slot can be a compiler temporary rather
+  than a variable: `DrawString` copies its `s` parameter, `DirList` reads
+  `f_readdir`'s result through a variable.
+- `$08b6` is an empty function nothing calls (`Unused_08b6`).
+- `$1926`-`$20bb` is three files: `fsglue.c`, banked wrappers around the
+  `f_` calls; FatFs's `diskio.c` (sector I/O through bank 2, the RTC as
+  `get_fattime`); and R0.11a's `option/ccsbcs.c`, unchanged.
+- The C files' `_GSINIT` area is linked into bank 1:
+  `BootUnpackWramTables` (`01:68b6`) is it, and `RleUnpack` (`00:20bb`) is
+  GBDK's `__initrleblock`. `ff_wtoupper`'s `static const` tables are WRAM
+  (`$CC33`, `$D00F`), copied there at boot.
+- Bank 0's GBDK library under kernel.sym names: `ReadJoypad` is `joypad`,
+  `Delay` `delay`, `PlotPixelXY` `plot_point`, `SetTextCursor` `gotogxy`,
+  `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `CStrLen`
+  `strlen`, `ApplyBasename` `strcpy`, `Strncpy` `strncpy`.
+
+## Matching
 
 ```sh
 SDCC29=<sdcc 2.9.0 prefix> tools/match.py [-v] [-f func] [-b bank]
+SDCC29=<sdcc 2.9.0 prefix> tools/match.py -I gbdk/include -D BYTE_IS_UNSIGNED=1 src/kernel.c   # bank 0
 ```
 
 [tools/match.py](tools/match.py) compiles the sources once per bank and
@@ -96,7 +131,7 @@ bytes match at the kernel.sym address. All of them match. `-v` shows the
 instructions around the first wrong byte. It was how the edits above were
 found; `make` then checks the whole bank, jump targets included.
 
-### SDCC 2.9.0
+## SDCC 2.9.0
 
 Build it from `sdcc-src-2.9.0.tar.bz2` (SourceForge), z80 port only, with a
 current compiler given old C:

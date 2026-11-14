@@ -10,13 +10,15 @@ unwritten inside a range are $FF, the stock fill.
 
 Symbols the source uses but does not define are resolved from a kernel.sym
 style file (bank:addr name), so a source can call into code that is still
-disassembly. -a C_NAME=KERNEL_NAME resolves one under its kernel.sym name.
+disassembly. -a C_NAME=KERNEL_NAME resolves one under its kernel.sym name,
+-g SYM=[BANK:]ADDR one kernel.sym does not name.
 
 --sdcc29 compiles C with SDCC 2.9.0 (`$SDCC29/bin/sdcc -mgbz80`), the
 compiler EZ Flash used; its output is assembled with the SDCC 4.x sdasgb.
 2.9.0 writes the bank word after a banked call as `.dw 0 ; PENDING: bank
-support`, which --bank N fills with the source's own bank (stock has the
-real bank there). --bank N also labels each region with the kernel.sym entry
+support`; sdinc fills it with the callee's bank: kernel.sym's for one
+resolved with -a, else --bank N (a function of the sources themselves)
+(stock has the real bank there). --bank N also labels each region with the kernel.sym entry
 names (not their `_B<n>_` local labels) in bank N, so the rest of the
 disassembly still links.
 
@@ -132,10 +134,17 @@ def compile_one(a, src, rel, d):
         run([os.path.join(prefix, "bin", "sdcc"), "-S", "-mgbz80", "--no-std-crt0",
              *a.cflags.split(), src, "-o", asm], d)
         text = open(asm).read()
-        if "PENDING: bank" in text:
+
+        def bank_word(m):
+            # the callee's bank: kernel.sym's for an external, else the source's
+            if m[2] in a.aliases:
+                return f"{m[1]}.dw {a.sym_banks[a.aliases[m[2]]]}{m[3]}"
+            if m[2] in a.g_banks:
+                return f"{m[1]}.dw {a.g_banks[m[2]]}{m[3]}"
             if a.bank is None:
-                sys.exit("error: banked calls need --bank")
-            text = re.sub(r"\.dw 0(\s*; PENDING: bank support)", rf".dw {a.bank}\1", text)
+                sys.exit(f"error: banked call to {m[2]} needs --bank")
+            return f"{m[1]}.dw {a.bank}{m[3]}"
+        text = re.sub(r"(\.dw\s+(\w+)\s*\n\s*)\.dw 0(\s*; PENDING: bank support)", bank_word, text)
         open(asm, "w").write(text)
         run(["sdasgb", "-plosgff", rel, asm], d)
     elif src.endswith(".c"):
@@ -151,7 +160,7 @@ def main():
     p.add_argument("src", nargs="+", help="sources, linked in this order")
     p.add_argument("--sym", required=True, help="kernel.sym for external symbols")
     p.add_argument("-b", action="append", default=[], help="AREA=ADDR placement")
-    p.add_argument("-g", action="append", default=[], help="SYM=ADDR extra definition")
+    p.add_argument("-g", action="append", default=[], help="SYM=ADDR or SYM=BANK:ADDR extra definition")
     p.add_argument("--region", action="append", required=True, help="START:END:OUT.inc")
     p.add_argument("-a", action="append", default=[], help="SYM=NAME: resolve SYM as kernel.sym NAME")
     p.add_argument("--cflags", default="", help="extra sdcc flags for .c sources")
@@ -160,6 +169,13 @@ def main():
     a = p.parse_args()
 
     srcs = [os.path.abspath(x) for x in a.src]
+    a.aliases = dict(spec.split("=") for spec in a.a)
+    a.g_banks = {n: int(v.split(":")[0], 16) for n, v in (spec.split("=") for spec in a.g) if ":" in v}
+    a.sym_banks = {}
+    for line in open(a.sym):
+        m = re.match(r"\s*([0-9a-fA-F]{2}):([0-9a-fA-F]{4})\s+(\S+)", line)
+        if m:
+            a.sym_banks.setdefault(m.group(3), int(m.group(1), 16))
     with tempfile.TemporaryDirectory() as d:
         rels = []
         for i, src in enumerate(srcs):
@@ -176,7 +192,7 @@ def main():
         extra = {}
         for spec in a.g:
             n, v = spec.split("=")
-            extra[n] = int(v, 16)
+            extra[n] = int(v.split(":")[-1], 16)
         for spec in a.a:
             n, v = spec.split("=")
             if v not in kernel:

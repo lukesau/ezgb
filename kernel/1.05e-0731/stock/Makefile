@@ -27,7 +27,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 
-INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc)
+INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc
 
 all: build/kernel.gb
 
@@ -44,6 +44,38 @@ build/ff_b%.inc: src/dbg.c src/ff.c src/ff.h src/ffconf.h src/integer.h src/disk
 	@mkdir -p build
 	$(SDINC) $(call ff_srcs,$*) --sdcc29 --bank $* --cflags "--opt-code-size -DBANK=$*" --sym $(SYM) \
 		-b _CODE=0x4000 -b _DATA=0xc5a5 $(FF_ALIASES) --region 4000:8000:$@
+
+# bank 0's FatFs glue: the f_ entry points, the disk layer and the RTC clock,
+# and the CP437 conversion. ff_wtoupper's tables are WRAM ($CC33): the
+# _GSINIT code that fills them is in bank 1, where EZ Flash linked that area.
+B0_FATFS_SRCS := src/fsglue.c src/diskio.c src/option/ccsbcs.c
+B0_FATFS_ALIASES := -a _f_open=Open_B6 -a _f_read=Read_B6 -a _f_write=Write_B7 \
+              -a _f_lseek=Lseek_B3 -a _f_close=Close_B3 -a _f_mkdir=Open_B9 \
+              -a _clust2sect=Clust2Sect_B5 -a _get_fat=GetFat_B5 \
+              -a _SdRead=DiskRead_B2 -a _SdWrite=DiskWrite_B2 -a banked_call=FarCallTrampoline \
+              -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr -a __initrleblock=RleUnpack
+
+build/b0_fatfs.inc build/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(B0_FATFS_SRCS) --sdcc29 --bank 0 --cflags=--opt-code-size --sym $(SYM) \
+		-b _CODE=0x1926 -b _DATA=0xcc33 -b _GSINIT=0x68c0 $(B0_FATFS_ALIASES) \
+		--region 1926:20bb:build/b0_fatfs.inc --region 68c0:7096:build/b1_ccsbcs_init.inc
+
+# the kernel's own C in bank 0, from $07BC, against GBDK 2.96a's headers
+KERNEL_CFLAGS := --opt-code-size -I$(CURDIR)/gbdk/include -DBYTE_IS_UNSIGNED=1
+KERNEL_SRCS := src/kernel.c
+KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixelXY \
+              -a _gotogxy=SetTextCursor -a _wrtchr=DrawGlyphAdvance -a _color=StoreDrawParams \
+              -a _strlen=CStrLen -a _strcpy=ApplyBasename -a _f_readdir=Readdir_B5 \
+              -a _U32ToAscii_B0=U32ToAscii_B0 -a _wDebugTextRow=wDebugTextRow \
+              -a _wDebugTextCol=wDebugTextCol -a banked_call=FarCallTrampoline \
+              -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wDirEnd=0xc5a4 \
+              -g _wFno=0xc9db -g _wDir=0xc9f5 -g _PsramPage=04:41e7
+
+build/b0_kernel.inc: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:0bd1:$@
 
 build/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	rgbasm -I asm/ -I build/ -o build/game.o asm/game.asm
