@@ -41,14 +41,13 @@ exported from them, live in the ignored `fpga/` folder.
 | Doc | Covers |
 |---|---|
 | [setup.md](docs/setup.md) | the tools, and building a firmware updater end to end |
-| [design.md](docs/design.md) | the pins, the clocks, and the register map the Game Boy sees |
+| [design.md](docs/design.md) | the pins, the clocks, every register the Game Boy sees, the values of `$7FC0`, the version byte |
 | [blocks.md](docs/blocks.md) | what each block of the design is, in detail |
 | [picoblaze.md](docs/picoblaze.md) | the soft CPU's two programs: SD, the loader, the clock, the flash, the license check |
-| [flash-map.md](docs/flash-map.md), [bitstream.md](docs/bitstream.md) | the config flash's layout and what a bitstream contains |
-| [firmware-diff.md](docs/firmware-diff.md), [fw5.md](docs/fw5.md) | FW4 against FW5-0731 and FW5-0918 |
+| [flash-map.md](docs/flash-map.md) | the config flash's layout and what a bitstream contains |
+| [firmware-diff.md](docs/firmware-diff.md) | FW4 against FW5-0731 and FW5-0918 |
 | [updater.md](docs/updater.md) | how the stock updater writes the flash |
 | [flash-dump.md](docs/flash-dump.md), [sd-recovery.md](docs/sd-recovery.md) | our two PicoBlaze patches |
-| [version-byte.md](docs/version-byte.md), [personalities.md](docs/personalities.md) | the firmware version byte, and the values of `$7FC0` |
 | [toolchain.md](docs/toolchain.md) | reference for prjcombine, the `s3*` tools and ISE |
 
 ## Status

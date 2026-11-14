@@ -4,12 +4,12 @@ The FW4 bitstream contains one PicoBlaze (Xilinx KCPSM3) soft processor
 running a 2K program held in two block RAMs. It handles everything on the
 cart that is sequential rather than fixed logic: the SD card, loading a game
 into memory, the RTC, the config flash, and a license check tied to the FPGA's
-Device DNA. Decoding background: [bitstream.md](bitstream.md);
-tooling: [toolchain.md](toolchain.md).
+Device DNA. This page describes FW4's. What FW5 changed is in
+[firmware-diff.md](firmware-diff.md).
 
-The annotated listings are generated into
-the ignored `fpga/` directory; only the annotation files and the tool are
-tracked.
+The annotated listings are tracked, per firmware, in
+`stage0/<fw>/picoblaze/`: a `.psm` listing and the `.notes` file its names
+come from.
 
 ## Reproducing the listings
 
@@ -54,11 +54,10 @@ same eight words at `$3F0`:
 ```
 
 So a `CALL $3F0` in bank 1 runs bank 2's `$1B5` and comes back. The no-ops
-cover the one-instruction fetch delay. Evidence beyond the shared window:
-both banks use the same ports and the same scratchpad bytes (each reads values
-the other writes), bank 2's reset path is a dead delay loop, and bank 2's
-interrupt vector is a stub, because the processor only ever resets in bank 1
-and only enters bank 2 with interrupts off.
+cover the one-instruction fetch delay. The bank bit on port `C8` is in the
+proven Verilog (`picoblaze_ports`). The processor only ever resets in bank
+1 and only enters bank 2 with interrupts off, so bank 2's reset path and
+interrupt vector are stubs.
 
 ## Bank 1 (X3Y29): SD, loader, RTC
 
@@ -84,21 +83,10 @@ an indirect `OUTPUT sD, (sE)` selects register `sE`, then polls it for an ack.
 | `48` | block count − 1 |
 | `60` | DMA address (always 0: the sector buffer) |
 
-> **Correction (2026-10-29).** The divider row said `$48` gives about
-> 400 kHz and inferred a ~58 MHz controller clock from that. The netlist
-> says otherwise: the divider runs on the DCM's CLK2X of the 24.545 MHz
-> crystal (Y1), so divider 0 is 24.545 MHz, inside SD default speed, on FW4
-> and FW5-0918 alike (FW5's faster CLKFX doesn't reach the SD clock).
-> [sd-recovery.md](../../stage0/docs/sd-recovery.md) inherited the
-> 58 MHz figure and is corrected too.
-
 Bring-up at reset, in **native SD mode, 4-bit bus** (not SPI mode):
 `CMD0`, `CMD8 $1AA`, `CMD55`+`ACMD41` until ready, `CMD2`, `CMD3`, `CMD7`,
 `CMD16 512`, `CMD55`+`ACMD6` (4-bit), `CMD13`. High-capacity cards are
 sector-addressed; standard ones get the sector number shifted left 9.
-
-Minor bug: `sd_acmd41` sets the HCS bit only for v2 cards, then overwrites
-the argument with HCS set anyway (`$085`/`$086`).
 
 ### Kernel commands
 
@@ -115,10 +103,8 @@ Commands arrive as interrupts; the handler (`isr`, `$395`) reads port `B5`:
 The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../kernel/1.05e-0731/disassembly/bank_002.asm))
 writes the LBA to `$7FB0-B3` and the count to `$7FB4`, adding `$80` for a
 write, in chunks of up to 4 sectors. FPGA logic between the two turns that
-into ports `B0-B4` and the `B5` command; the mapping is consistent but not
-one-to-one.
-
-The FPGA side of that is `stage0/fw4/rtl/pb_periph.v` (proven 2026-10-28):
+into ports `B0-B4` and the `B5` command
+([pb_periph.v](../fw4/rtl/pb_periph.v)):
 each `B5` bit is the rising edge of one request flag, synchronized into
 the 2x clock (`$7FB4` bit 7 clear or set for read or write, `$7F36` bit 1
 for the load, `$7FD0` bit 0 for the RTC set, `$7FD2` bit 0 for the flash
@@ -131,12 +117,13 @@ fresh edge.
 
 The kernel fills a 128-entry table of 32-bit words, read through
 `TBL_INDEX` (`BF`) and `TBL_Q0-3` (`C3-C0`): entries `$00-$7B` are
-(file offset, SD address) pairs, one pair per contiguous run of the file;
+pairs, one per contiguous run of the file
+([boot-and-launch.md](../../docs/boot-and-launch.md#the-load-command-table));
 `$7C` the length; `$7D` an enable flag; `$7E` the run step. The loader walks
 the file run by run: destination offset out on `E0-E3`, file offset turned
 into an SD address by scanning the pairs, then `CMD18` for the run and
-`CMD12`. Port `EF` is held high for the whole load, which reads like the busy
-flag the kernel polls.
+`CMD12`. Port `EF` is held high for the whole load: it is the busy
+flag the kernel polls, which makes a read return `$01`.
 
 **It refuses to load unless bank 2's license check passed** (scratchpad
 `$3E`/`$3F` = `F1 F2`, see below).
@@ -146,18 +133,21 @@ flag the kernel polls.
 Bit-banged I²C on ports `EC` (out: bit 0 SCL, bit 1 SDA, open drain) and
 `EB` (in, with clock stretching) to a **PCF8563** at address `$51`. At reset
 it checks the VL bit and, if the clock lost power, stops it and loads a
-default date. Whenever port `B9` reads 1 the idle loop copies registers 2-8
+default date. The idle loop copies registers 2-8
 (seconds to years) out as index/value pairs on `ED`/`EE`; command `$10`
 writes them back from `B6`.
-The FPGA side is `stage0/fw4/rtl/rtc_bridge.v` (proven 2026-10-28): a copy
+On FW4 port `B9`, which gates that copy, reads a constant 1.
+The FPGA side is [rtc_bridge.v](../fw4/rtl/rtc_bridge.v): a copy
 per register on the 2x clock, loaded from `EE` by the next OUTPUT's
 strobe while `ED` holds its index, and a registered mux over the seven
 RTC set registers that `F0` selects for `B6`.
 
 ### Debug output
 
-`dbg_putc` waits for `A0` bit 2 to clear and writes a byte to `A1`, which
-looks like a UART or a debug FIFO. Codes: `B0` card reset, `82`/`88` card is
+`dbg_putc` waits for `A0` bit 2 to clear and writes a byte to `A1`. In
+FW4's hardware nothing is behind either port: `A0` reads 0 and the write
+goes nowhere, so the debug output is leftover. (FW5 reuses the two ports
+for a timer.) The codes it would send: `B0` card reset, `82`/`88` card is
 high/standard capacity (or timed out), `EE` init done, `55` waiting for data,
 `99` + argument per transfer, and at boot the two license bytes.
 
@@ -193,13 +183,10 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    bad update can't brick the cart. Staying, slot A programs that `01` to
    `00` too (`tally_advance`), so the power-on after that finds a fresh `FF`
    and tries slot B again: a failed slot B costs one boot on slot A, never
-   more. **Confirmed on hardware 2026-10-12** (FW4 Jr): two updater runs that
-   left a slot B which did not configure each came up on stock FW4 from
-   slot A, the updater ran again from there, and the third write booted. One byte per power-on: the "52 B at
-   `$70000`" in [flash-map.md](flash-map.md) are 52 successful
-   slot B boots since the sector was last erased.
-2. **License check.** Read the 8 KB block at `$030000` (the flash map's
-   "unidentified high-entropy blob") as 128-byte records up to `$031500`,
+   more. **Confirmed on an FW4 cart**: two updater runs that left a slot B which
+   did not configure each came up on stock FW4 from slot A, and the
+   updater ran again from there.
+2. **License check.** Read the 8 KB block at `$030000` as 128-byte records up to `$031500`,
    each with its own checksum byte. The record at `$031100` also supplies an
    expected CRC-16 (poly `$A001`) and CRC-7 (the SD card CRC). Both are
    recomputed over record bytes with this chip's Device DNA mixed in. A
@@ -207,9 +194,9 @@ scratchpad `$0A-$11`. Unreached code at `$029` would print them.
    `$3E`/`$3F` for bank 1.
 
 So the `$30000` block is a per-chip license record bound to the FPGA's DNA,
-and without it bank 1 will not load ROMs. That explains why it is absent from
-the updater (it is per-cart, written at the factory) and why it has no twin in
-slot B's half of the flash.
+and without it bank 1 will not load ROMs. It is written at the factory, per cart, which is why no updater carries
+it. The check's two CRCs are spelled out in
+[flash-dump.md](flash-dump.md#the-license-check).
 
 ### Flash update (`$3F` = 1, kernel command `$08`)
 
@@ -219,36 +206,42 @@ page is programmed. Port `F1` is high while it runs. This is the write path
 behind the updater's `$7FD2` command ([updater.md](updater.md));
 the updater's per-block poll matches waiting on this.
 
-## Slot A vs slot B
+## Slot A and slot B
 
-The single differing instruction between the two FW4 slots
-([bitstream.md](bitstream.md)) is that `$1B8` constant. So the
-slots are not a spare copy: slot A is the fallback image whose only extra job
-is handing over to slot B, and slot B is what normally runs. The FW4 updater
-writes slot B. (Read from code, not tested on hardware.)
+The one instruction that differs between the two FW4 slots
+([flash-map.md](flash-map.md)) is that `$1B8` constant. So the slots are
+not a spare copy of each other: slot A is the fallback image whose only
+extra job is handing over to slot B, and slot B is what normally runs. The
+FPGA itself always loads address 0. It is slot A's firmware that hands
+over, so with slot A damaged nothing can reach slot B
+([hardware-board.md](../../docs/hardware-board.md#recovering-a-cart-whose-fpga-no-longer-configures)).
 
-This fits [../../../docs/hardware-board.md](../../docs/hardware-board.md)'s finding from the
-2026-08-16 recovery that the FPGA does not fall back to `$40000` on its own:
-the hardware always loads address 0, and it is slot A's firmware that hands
-over. With slot A's head erased nothing could reach slot B. On a healthy
-cart, slot B runs on every boot, via slot A.
+## Our patches
 
-Still unexplained: copying slot B wholesale over slot A gave a black screen.
-That image would skip the hand-over and run as slot B from address 0, which
-on its contents should work.
+Two patches to these programs ship in the updaters this project builds:
+
+| Patch | Program | Does |
+|---|---|---|
+| [flash-read.psm](../flash-read.psm) | the second | adds a read mode to the flash-update command ([flash-dump.md](flash-dump.md)) |
+| [sd-recover-fw5-0918.psm](../sd-recover-fw5-0918.psm) | the first, FW5-0918 | times out and retries SD errors ([sd-recovery.md](sd-recovery.md)) |
+
+`stage0/tools/picoblaze-patch.py` assembles a `.psm` patch over a decoded
+block RAM and prints the `s3patch` arguments that write it into a
+bitstream. It refuses to overwrite a word that is not free unless that
+address is named with `--allow`.
+
+Other tools: `picoblaze-diff.py` compares two programs routine by routine,
+and `picoblaze-port-notes.py` carries a notes file from one firmware's
+listing to another's.
 
 ## Open
 
-- Port `C8` is inferred as a bank select from the code; confirm in the
-  netlist. Net tracing exists now (`s3trace`,
-  [toolchain.md](toolchain.md#s3trace)); this hasn't been traced yet.
-- What drives `B9` (RTC refresh) and reads `ED`/`EE`, `E0-E3`, `EF` on the
-  GB side; tie each to its `$7Fxx` register.
-- The license check's exact data layout, and whether the record can be
-  regenerated for another chip. Layout settled on the FW4 cart's dump
-  (2026-10-10, [flash-dump.md](flash-dump.md)):
-  CRC-16 over record bytes 0-19 + DNA against bytes 20-21, CRC-7 over
-  bytes 0-9 + DNA against byte 10, both pass.
-- The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).
-- Repeat for the FW5 images. Done for bank 1 and bank 2:
-  [fw5.md](fw5.md).
+- **The license record.** Whether one can be regenerated for another
+  chip, given that the check is two CRCs over the record and the DNA.
+- **A dead loader** in the first program, `$1EE`-`$289`, using ports
+  nothing else does.
+- **Copying slot B wholesale over slot A** gave a black screen on the one
+  cart it was tried on. By its contents that image should have run as
+  slot B from address 0.
+- **`sd_acmd41`** sets the high-capacity bit only for v2 cards, then
+  overwrites the argument with it set anyway.

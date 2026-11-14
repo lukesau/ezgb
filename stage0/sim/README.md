@@ -1,16 +1,22 @@
-# The FW4 design as simulatable Verilog
+# Simulating the design
 
-`netlist2v.py` turns `s3trace --netlist` output into structural Verilog over
-the behavioral primitives in `s3prims.v`; iverilog then simulates the whole
-FPGA from power-on. Findings: [stage0/docs/design.md](../docs/design.md).
+`netlist2v.py` turns an exported netlist into structural Verilog over the
+behavioral primitives in `s3prims.v`, and the whole FPGA then simulates
+from power-on, with models of the config flash, the SD card and the clock
+chip, and tasks that drive the Game Boy's bus. It runs FW4, FW5-0731 and
+FW5-0918 alike. What the simulations found is in
+[design.md](../docs/design.md) and
+[firmware-diff.md](../docs/firmware-diff.md).
 
 ```bash
-# on the build host, from ~/fpga/verilog
-s3trace --db ../prjcombine/databases/spartan3.zstd ../cart/fw4-updater.bin --netlist ../cart/fw4-netlist.jsonl
-s3pins  --db ../prjcombine/databases/spartan3.zstd > ../cart/vq100-pins.txt
-python3 netlist2v.py ../cart/fw4-netlist.jsonl ../cart/vq100-pins.txt ../cart/bram-fw4-updater fw4
-cd fw4 && iverilog -g2012 -o tb.vvp -s tb -s glbl ../s3prims.v design.v ../tb_boot.v && vvp -n tb.vvp
+stage0/tools/export-netlist.sh <slot B image> fpga/fw4     # design.v and its block RAM files
+cd fpga/fw4
+iverilog -g2012 -o tb.vvp -s tb -s glbl ../../stage0/sim/s3prims.v design.v ../../stage0/sim/tb_boot.v && vvp -n tb.vvp
 ```
+
+Verilator is about 100 times faster than iverilog (`--binary --timing`,
+`--top-module tb`). One thread is fastest; use the cores by running
+independent experiments side by side.
 
 | File | What |
 |---|---|
@@ -42,10 +48,19 @@ REV (BY) sets a flip-flop to the opposite of SRVAL, SR winning (KCPSM3's
 interrupt vector depends on it); in a SLICEM, `DIF_MUX=BX` / `DIG_MUX=BY` on
 a LUT-mode LUT means the flip-flop takes BX / BY directly.
 
-Verilator is about 100 times faster than iverilog (`--binary --timing`,
-same files, `--top-module tb`). One thread is fastest: `--threads 4` and
-`8` ran 1.7x and 2.5x slower on a 5 ms boot. Use the cores by running
-independent experiments side by side instead.
+The other tests and tools, each with a header comment:
 
-Not modeled: Device DNA (the license check reads 0), ICAP, real DCM
-frequencies (the oscillator frequency is unknown; 25 MHz is assumed).
+| Files | What |
+|---|---|
+| `gb_kernel.vh`, `gb_load.vh`, `gb_sdload.vh` | stage1's kernel load and hand-off; ROM loads |
+| `gb_mbc.vh`, `gb_bank.vh`, `mbctest.py` | every MBC type's banking, save RAM and the game clock, checked against a model |
+| `gb_sdwrite.vh`, `gb_sdfault.vh` | sector writes; SD faults for the recovery patch |
+| `loadcmd.py`, `memmap.py`, `memcap.v` | build a load command; work out the memory address map from captured writes |
+| `pinconf.py`, `regsum.py` | the per-firmware `pins.txt` and `regs.txt` |
+| `bankfind.py`, `fanout.py`, `mksnap.py`, `snapdiff.py`, `mkbitmatch.py`, `mkffwin.py` | analysis helpers |
+| `rdmon.v`, `wrmon2.v`, `stmon2.v`, `wavemon.v` | monitors |
+
+Not modeled: the Device DNA, so the license check reads 0 and
+`fastboot.py --no-license` patches the gate out of a simulation-only copy
+of the program. The testbench's oscillator is 25 MHz; the cart's crystal
+is 24.545 MHz.

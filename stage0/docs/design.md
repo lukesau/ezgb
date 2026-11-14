@@ -1,84 +1,87 @@
-# The FW4 FPGA design, reversed from the bitstream
+# The hardware map: pins, clocks and registers
 
-A map of EZ Flash's logic in the XC3S200A, rebuilt from the FW4 slot B
-bitstream with no design files: `s3trace --netlist` (every configured bel
-and the driver of each input pin), `s3pins` (prjcombine's VQ100 bond: package
-pin -> bel pad), and the scripts in `stage0/netlist/`. Work in progress;
-each section says how sure it is.
-
-Related: [version-byte.md](version-byte.md) (the version byte),
-[picoblaze.md](picoblaze.md) (the two programs),
-[bitstream.md](bitstream.md) (format, BRAMs), hardware notes in
-[../../../docs/hardware-board.md](../../docs/hardware-board.md).
-
-## Size
-
-2,133 configured bels: about 1,700 of the 1,792 slices, 15 of 16 block RAMs,
-1 of 4 DCMs, 67 of the package's IO pins.
+What the FPGA connects to, and what the Game Boy sees of it: every register
+it can write and what a read returns. This is FW4's design, reversed from
+the slot B bitstream with no design files and since proven
+([README](../README.md)). Where FW5 differs is in
+[firmware-diff.md](firmware-diff.md).
 
 ## Pins
 
-Checks: `s3pins` puts TMS on P1 and TDI on P2, as daid/ezflashjr's board
-survey found by continuity; P62 (the survey's cart `/RESET`, through R5) is
-an output.
+68 of the package's pins are used. The full table is `stage0/fw4/pins.txt`
+and `stage0/netlist/pintable.py`.
 
-### Game Boy cartridge bus
+### The Game Boy cartridge bus
 
-| Signal | Pin | How identified |
-|---|---|---|
-| A0-A7 | P88 P89 P90 P93 P94 P97 P98 P99 | stage1 BRAM `ADDRA[0-7]` straight from these pins |
-| A8-A10 | P82 P68 P39 | `ADDRA[8-10]` |
-| A11, A12 | P21, P4 | `ADDRA[11]`/`[12]` through one AND gate each, sharing an enable (`X13Y24 SLICE[2]` Y) |
-| A13, A14, A15 | P5, P6, P7 | the version read needs them at `1 0 1` = `$A000-$BFFF` ([version-byte.md](version-byte.md)) |
-| D0-D7 | P3 P9 P10 P12 P13 P15 P16 P19 | bidirectional; each reads back its own BRAM output bit |
-| `/WR` | P84 | clock pad; through a global buffer it clocks the flip-flops that latch D0-D7 (the write registers); a simulated `/WR` pulse writes the registers as the kernel does |
-| `/RESET` | P62 | output; daid's survey traces it to the cart edge |
+| Signal | Pin |
+|---|---|
+| A0-A7 | P88 P89 P90 P93 P94 P97 P98 P99 |
+| A8-A10 | P82 P68 P39 |
+| A11, A12 | P21, P4 |
+| A13, A14, A15 | P5, P6, P7 |
+| D0-D7 | P3 P9 P10 P12 P13 P15 P16 P19 |
+| `/WR` | P84, a clock pad: it clocks the registers that latch D0-D7 |
+| `/RESET` in | P61 |
+| `/RESET` out | P62 |
 
-There is no `/RD` or `/CS`: the D0-D7 output enable is a function of A13-A15
-and `/WR` alone (LUT `X9Y20 SLICE[0]`), so the FPGA drives the bus for any
-address in its ranges while `/WR` is high. On a DMG `/RD` is low except
-during writes, so this amounts to the same thing.
+**There is no `/RD` or `/CS`.** The FPGA drives D0-D7 whenever `/WR` is
+high, for any address in its ranges, except at `$C000`-`$DFFF`. On a
+console `/RD` is low except during writes, so this amounts to the same
+thing.
 
-P61 reads the console's `/RESET` at the cart edge, and P62 is the FPGA's
-drive of it (P62's LUT takes P61 as an input). The FPGA registers P61 into
-the `X13Y0` BUFGMUX2 clock domain twice; a falling edge between the two
-copies asynchronously resets the `$7F00/$7F10/$7F20` unlock state machine
-(`X18Y31 SLICE[0]/[3]`, reset by `X12Y21 SLICE[0]`) and other registers.
-It cannot be the bus clock, `/RD` or `/CS`: all three fall during normal
-bus activity, often between the steps of an unlock (stage1's hand-off stub
-unlocks from WRAM), which would make unlocking impossible.
+**Reset is a pair of pins.** P61 reads the console's `/RESET` at the cart
+edge, and P62 is the FPGA's drive of it, through 330 ohms. A falling edge
+on P61 asynchronously resets the unlock state machine and the mode
+registers. P62 is driven push-pull, which is why the Jr fails on a Super
+Game Boy ([sgb-boot.md](../../docs/sgb-boot.md)).
 
 ### Everything else
 
-The bottom and right edges carry the memory buses (the two NOR+pSRAM
-packages share a 16-bit bus), the SD card, the SPI config flash and the RTC
-(I2C). Assigned so far:
+The two memory chips share a 16-bit bus.
 
 | Function | Pins |
 |---|---|
 | SPI config flash | CS P27, CLK P53, MOSI P46, MISO P51 |
-| SD card | CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29 (order from simulated block reads) |
-| RTC (I2C, PCF8563) | SCL P31, SDA P32 (only order that works in simulation, all three firmwares) |
-| pSRAM word address A0-A10 | P56 P59 P65 P71 P70 P73 P44 P50 P83 P86 P20 |
-| pSRAM word address A11-A13 | P53, P46, P51 (the config flash's CLK, MOSI and MISO, reused once bank 2 has read the flash) |
-| pSRAM upper address | 74HC595: SRCLK P35, SER P33, RCLK P24 |
-| pSRAM data | eight bidirectional pins, P41 P48 P49 P57 P64 P72 P77 P78 (bit order is a naming choice: the FPGA reads back through the same pins) |
-| pSRAM /LB, /UB, /WE | P37 (even bytes), P36 (odd bytes), P40 |
-| pSRAM /CE | P52 (U9, game ROM), P60 (U4, saves) |
-| P85 | follows the Game Boy's `/WR` |
+| SD card | CLK P23, CMD P28, DAT0 P34, DAT1 P25, DAT2 P30, DAT3 P29 |
+| Clock chip (I2C) | SCL P31, SDA P32 |
+| memory word address A0-A10 | P56 P59 P65 P71 P70 P73 P44 P50 P83 P86 P20 |
+| memory word address A11-A13 | P53, P46, P51: the config flash's CLK, MOSI and MISO, reused once the flash has been read |
+| memory upper address | through the 74HC595: SRCLK P35, SER P33, RCLK P24 |
+| memory data | P41 P48 P49 P57 P64 P72 P77 P78 |
+| memory `/LB`, `/UB`, `/WE` | P37 (even bytes), P36 (odd bytes), P40 |
+| memory `/CE` | P52 (U9, the game store), P60 (U4, saves) |
+| oscillator | P43, 24.545 MHz |
 
-Full list: `stage0/netlist/pintable.py`.
+The memory's `/OE` is not identified.
 
 ## Clocks
 
-| Source | Buffer | Clocks | Use |
-|---|---|---|---|
-| P43 (oscillator) | DCM `X13Y1`: CLK0, CLK2X, CLKFX (x2) | via 4 global buffers | system clocks |
-| `X13Y19 SLICE[2]` YQ (a divided clock) | global `X0Y17` [6] | 661 flip-flops | main logic clock; also driven out on P23 |
-| system clock / `X13Y25 SLICE[2]` Y, selected by the mode bit | global `X13Y33` [3] | 391 flip-flops | switches with the stage1/kernel/game mode |
-| P84 (`/WR`) | global `X13Y33` [0]/[1] | 160 flip-flops | the Game Boy-written registers |
-| CLK2X or a constant 0, by kernel mode or the RTC flag (`$7F37` bit 7); CLKFX or 0, by kernel mode | global `X0Y17` [0], [4] | 196 flip-flops | [0] the PicoBlaze and its ports, [4] the ROM load's byte sequencer: both gated off in a plain game (`stage0/fw4/rtl/clocks.v`) |
-| `X24Y16`/`X24Y19` | global `X25Y17` [7] | out on P35 | a clock driven off-chip |
+| Source | Clocks | Use |
+|---|---|---|
+| P43 through a clock manager: the crystal, twice it (49.09 MHz), and a multiplied clock | the system clocks | everything below |
+| a divided clock | 661 flip-flops | the SD logic's main clock, also driven out as the SD clock |
+| the system clock or a gated one, by mode | 391 flip-flops | logic that switches with the stage1, kernel and game modes |
+| P84, `/WR` | 160 flip-flops | the registers the Game Boy writes |
+| twice the crystal, gated | the PicoBlaze and its ports | **stopped in a plain game**; runs in kernel mode, and in a game only when the RTC flag is set |
+| the multiplied clock, gated | the ROM load's byte sequencer | kernel mode only |
+
+So in a game without a clock the processor stands still, and the cart is
+just memory behind an MBC.
+
+## Modes
+
+One register bit, `$7F32` bit 7, switches the whole design between kernel
+mode and game mode.
+
+| `$7F32` bits 7, 3 | State | Set by |
+|---|---|---|
+| `1 1` | stage1: reads below `$8000` return stage1 from block RAM | power-on |
+| `1 0` | kernel: reads below `$8000` return the game store, where the kernel was loaded | stage1's hand-off, `$7F32 = $80` |
+| `0 0` | game | the kernel's launch, `$7F31 = 0` and `$7F32 = 0` |
+
+In kernel mode the bank registers are plain latches and the SD and
+PicoBlaze logic runs. In game mode that logic stops and writes to
+`$0000`-`$7FFF` go through the MBC the game's type names.
 
 ## Unlock and commit
 
@@ -97,186 +100,131 @@ The kernel inlines this at every call site (29 in 1.05e), and stage1 and
 the updater use it too. The Omega kernel has the same design at GBA
 addresses (`SetSDControl` in its `Ezcard_OP.c`).
 
+The `$7Fxx` registers decode only the low address byte. The commit also
+clears the request flags below, which matters: a request raises the
+PicoBlaze's interrupt on its rising edge only.
+
 ## Registers written by the Game Boy
 
-Flip-flops that latch D0-D7, grouped by clock enable: about 20 byte-wide
-registers plus a few narrow ones. `regmap.py` lists each with the address
-that enables it and the data bit it takes. All `$7Fxx` registers decode only
-the low address byte, after the `$7F00/$7F10/$7F20` unlock
-(`X18Y31 SLICE[0]/[3]`):
+The proven source for all of this is
+[gb_regs.v](../fw4/rtl/gb_regs.v).
 
 | Address | Bits | Use |
 |---|---|---|
-| `$7F30` | 0-1 | written `$01`/`$03` by the kernel before sector reads and writes (`SetFpga7F30_B2`) |
-| `$7F32` | 3, 7 | bit 7: kernel (1) / game (0) mode, see Game launch below; bit 3 not identified |
-| `$7F36` | 0-1 | load window (1) / start load (3) |
-| `$7F37` | 0-3, 7 | MBC type (0 none, 1 MBC1, 2 MBC2, 3 MBC3, 4 MBC5, 5 MBC1 multicart); bit 7 RTC |
-| `$7FB0-$7FB3` | 8 each | LBA for sector reads |
-| `$7FB4` | 7 | sector command, bit 7 set for a write; the write sets the read or write request flag, whose rising edge raises the PicoBlaze interrupt (`stage0/fw4/rtl/pb_periph.v`) |
-| `$7FC0` | 0-3 | page for the `$A000` window |
-| `$7FC1`, `$7FC2` | 8, 1 | ROM bank mask (9 bits) |
-| `$7FC3` | 8 | header checksum |
-| `$7FC4` | 0-3 | RAM bank mask |
-| `$7FD2` | 0 | config-flash operation; also freezes P51 (see Game launch) |
-| `$2000` | 8 | ROM bank (plain latch in kernel mode, MBC logic in game mode) |
-| `$4000` | 8 | kernel mode only: save pSRAM page for the `$7FC0=3` window (per the kernel's `SetFpgaPage` notes) |
+| `$7F30` | 0-1 | the `$A000` window's enables: bit 0 makes the sector buffer readable, bit 1 makes it read `$01` |
+| `$7F32` | 7, 3 | the mode, above |
+| `$7F36` | 0-1 | bit 0 the load command window, bit 1 the loader's start |
+| `$7F37` | 0-3, 7 | the MBC type a game gets: 0 none, 1 MBC1, 2 MBC2, 3 MBC3, 4 MBC5, 5 MBC1 multicart. Bit 7 is the RTC flag |
+| `$7FB0`-`$7FB3` | 8 each | the sector address |
+| `$7FB4` | 8 | the sector count, with bit 7 set for a write. The write is the request |
+| `$7FC0` | 0-3 | what the `$A000` window shows, below |
+| `$7FC1`, `$7FC2` | 8, 1 | the ROM bank mask, 9 bits |
+| `$7FC3` | 8 | the header checksum a game reads at `$014D` |
+| `$7FC4` | 0-3 | the RAM bank mask |
+| `$7FD0` | 0 | the request to set the clock |
+| `$7FD2` | 0 | the request for a config flash operation. It also hands two memory address pins to the flash ([updater.md](updater.md)) |
+| `$7FE0` | 7 | the soft reset request: the console's `/RESET` is held low for 65,536 cycles |
+| `$7FD3`, `$7FD4` | | FW5 only: the fast-load key ([firmware-diff.md](firmware-diff.md)) |
 
-The mode register halves and the page register also appear in
-[version-byte.md](version-byte.md).
+The bank registers, in kernel mode:
 
-## Simulation
+| Address | Use |
+|---|---|
+| `$2000`-`$2FFF` | the ROM bank, a plain 8-bit latch |
+| `$3000`-`$3FFF` | its bit 8 |
+| `$4000`-`$5FFF` | the save page, for the `$7FC0 = 3` window |
+| `$A008`-`$A00E` in the clock window | the seven clock values to set |
 
-The whole design exports to structural Verilog and runs in iverilog
-([stage0/sim/](../sim/README.md)). From power-on,
-the PicoBlaze executes the FW4 program exactly as `X3Y29.psm` and
-`X3Y25.psm` read: the switch to bank 2 at `$3F1`, `bank2_main` (`$1B5`)
-with its Device DNA and flash routines, back to bank 1. That checks the
-slice, LUT RAM, carry, BRAM, clock and start-up models against the real
-design. Verilator runs it about 100 times faster than iverilog.
+In game mode:
 
-With the SPI flash and SD card models in `models.v`, the simulated FPGA
-reads the boot tally and license from flash, then initializes the card:
-CMD0, CMD8, CMD55/ACMD41, CMD2, CMD3, CMD7, CMD16, ACMD6 (4-bit bus),
-CMD13, then idles with interrupts on. The testbench drives the Game Boy bus
-(`gb_write` / `gb_read` in `tb_full.v`), and `gb_sdread.vh` runs stage1's
-`sd_read`: the `$7FB4` write sets a request flag (`X23Y29 SLICE[1]`), which
-reaches the PicoBlaze's interrupt input through a synchronizer
-(`X2Y29 SLICE[0]`); the interrupt handler issues CMD18, and the sector read
-back through the `$A000` window matches the card image byte for byte. Of
-the 24 possible DAT orders only one does (`datvariants.sh` runs them all).
+| Type | ROM bank | RAM |
+|---|---|---|
+| MBC1 | five bits at `$2000`-`$3FFF`, two at `$4000`-`$5FFF`, the mode at `$6000`-`$7FFF`. Masked | the two high bits, in mode 1 |
+| MBC2 | five bits at `$2000`-`$3FFF` with A8 set. Not masked | enabled from `$0000`-`$1FFF` with A8 clear |
+| MBC3 | seven bits at `$2000`-`$3FFF`. Not masked | bank `$00`-`$03`, or `$08`-`$0C` to select a clock register |
+| MBC5 | eight bits at `$2000`-`$2FFF`, bit 8 at `$3000`-`$3FFF`. Masked | four bank bits, masked |
+| MBC1 multicart | its own four-bit register | bank 0 |
 
-> **Correction (2026-10-09).** This paragraph first said P30 is input-only,
-> so SD writes could not use the 4-bit bus. Wrong: P30 drives through the
-> IO tile's second output register (FFO2/FFT2 on OTCLK2), which the pin
-> table script didn't look at. The IO tile model also ignored latch mode
-> and SR/REV until commit "io tile registers"; the DAT order above held up
-> when the sweep was rerun on the corrected model.
+The RAM enable is a low nibble of `$A` written to `$0000`-`$1FFF`.
 
-**ROM loads.** With `gb_load.vh`, the GB side runs stage1's kernel launch
-(`$7FC0=2`, the load command through the `$7F36=1` window, `$7F36=3`) and
-the PicoBlaze streams `ezgb.dat` into U9: every byte of the 160 KB file lands
-where it should (`loadcmd.py` builds the command, `memmap.py` works out the
-address map from a capture of the writes). Each byte is one `/WE` pulse with
-`/LB` or `/UB` low. Two findings on the way:
+**The memory page is the bank register.** A load puts bank N at
+N x `$4000` in the game store, so no translation is needed: bit 0 of the
+bank goes out on memory address A13 and the rest through the 74HC595.
 
-- The FPGA reuses the config flash's CLK, MOSI and MISO pins as pSRAM
-  address lines A11-A13. P51 (MISO, A13) is driven by an IO-tile output
-  latch whose SR and REV inputs carry the bit and its inverse, so the pin
-  follows the address asynchronously.
-- `cmd_load_rom` runs only after bank 2's license check passes, which
-  needs the Device DNA. The simulation doesn't model the DNA, so
-  `fastboot.py --no-license` patches the gate out of a sim-only copy of
-  the program.
+## What a read returns
 
-**Kernel launch.** `gb_kernel.vh` runs stage1's launch and hand-off as
-`stage1/src/handoff.s` does, with bus cycles timed as GB-CTR's Appendix C
-draws them (address just after the cycle starts, `/WR` low in the second
-half, reads sampled in the second half) and P61 low for the first
-millisecond like a console's power-on reset. The load runs to the end
-(status `$01` for about 25 ms, then done) and the PicoBlaze writes the
-whole kernel into U9. One detail for anyone polling the status: right after
-the `$7F36=3` command the `$A000` window floats (`$FF`) for about a cycle
-and a half while the FPGA switches it over; stage1 is past that by the
-time its first poll runs.
+In order of precedence ([gb_data_out.v](../fw4/rtl/gb_data_out.v)):
 
-**Game launch.** `gb_game.vh` runs the kernel's launch (1.04e bank 4)
-with the first 64 KB of Pokemon Red: `$7FC0=2`, the MBC type to `$7F37`,
-the RAM bank mask to `$7FC4`, the ROM bank mask to `$7FC1/$7FC2`, the header
-checksum to `$7FC3`, the load, `$7F36=0`, `$7F31/$7F32=0`, `$2000=1`,
-`$3000=0`, then `$7FE0=$80`, which holds P62 low for 65536 cycles of the
-`X13Y0` BUFGMUX2 clock to reset the console (`stage0/fw4/rtl/soft_reset.v`). After the reset, the header and banks 0-3 read back byte
-for byte, including MBC3's bank 0 selecting bank 1 (48 reads, none wrong).
-What it takes:
+1. `$01` while the loader runs: the status the kernel polls.
+2. In the sector buffer window (`$7FC0 = 0`, `$A000`-`$BFFF`): `$E1` from
+   the `$7FB4` write until the transfer's data interrupt, `$01` while
+   `$7F30` bit 1 is set, else the buffer's byte.
+3. In stage1 mode, below `$8000`: stage1, from block RAM.
+4. `$04` at `$7FC0 = 4`, and the flash writer's busy flag at `$7FC0 = 5`.
+5. In the clock window: the seven values the PicoBlaze reads from the
+   clock chip, at `$A008`-`$A00E` in kernel mode. In game mode they are
+   served the MBC3 way, by the value written to `$4000`, converted from
+   BCD to binary.
+6. The header checksum register at `$014D` in game mode.
+7. Otherwise the memory chip's data pins.
 
-- **`$7F32` bit 7 (`X14Y20 SLICE[0]`) is the kernel/game switch.** It powers
-  up 1 and stage1's hand-off writes `$80`, so the kernel runs with it set;
-  the kernel's game launch clears it. While it is 1, the ROM bank register
-  (`X18Y24 SLICE[0]` bit 0 ... `X15Y26 SLICE[0]` bit 7) is a plain latch at
-  `$2000-$2FFF`, `$4000-$5FFF` writes a second 8-bit register, and the
-  SD/PicoBlaze logic runs from the DCM. At 0, the global buffers `X13Y33[3]`,
-  `X0Y17[4]` and (unless `$7F37` bit 7, the RTC flag, is set) `X0Y17[0]`
-  switch to a constant, stopping that logic, and the bank register loads on
-  every `/WR` through MBC logic selected by `$7F37` bits 0-3 and masked by
-  `$7FC1/$7FC2`.
-- **The pSRAM page is the bank register.** Bit 0 goes out on P51 (word
-  address A13) and bits 7-1 through the 74HC595, which the FPGA reloads
-  whenever a read moves into or out of `$4000-$7FFF` (0 below `$4000`). The
-  load had put bank N at N×`$4000`, so no translation is needed.
-- **P51's latch is transparent while `$7FD2` bit 0 is 0.** P51 is driven by
-  an IO-tile output latch (`FFO1`) gated by `X12Y23 SLICE[1]`, which a write
-  to `$xxD2` (unlocked, D0) sets. Its data comes from `X17Y4 SLICE[0]`:
-  the load offset bit while loading, game-side bank logic otherwise. The
-  decoded clock polarity makes the latch transparent while the bit is 1,
-  and then P51 holds the 1 the load leaves behind and every bank-0 read
-  lands 16 KB off. The kernel never sets `$7FD2` outside its config-flash
-  routine, so the latch has to be open at 0 and closed during flash
-  operations. `netlist2v.py` inverts output-latch gates for this reason;
-  P51 is the only output latch in FW4, and the edge-triggered output
-  registers keep the decoded polarity. A hardware check is still owed.
-- **Bus contention at the `/WR` edge.** The FPGA drives D0-D7 whenever
-  `/WR` is high (except at `$C000-$DFFF`), so it starts driving in the same
-  instant `/WR` rises and clocks the bank register. With zero-delay pads
-  the register caught the console's byte ORed with the FPGA's read data
-  (written banks came back as bank|`$13`). The IO model now turns the
-  output buffer on 3 ns after T falls, as real buffers do.
+### The values of `$7FC0`
 
-> **Correction (2026-10-09).** This section first listed game-mode reads as
-> not understood, blaming a P51 gate "some write opens" and a bank register
-> that corrupts its upper bits. Both runs were still in kernel mode
-> (stage1's hand-off leaves `$7F32` bit 7 set), the corrupt bits were the
-> pad contention above, and the gate is `$7FD2`, which the kernel doesn't
-> touch on a game launch. The earlier note that P51's SR/REV make it follow
-> the address asynchronously holds only while loading.
+| Value | The `$A000` window shows | Used by |
+|---|---|---|
+| `$00` | the sector buffer, with `$7F30` bit 0 | every SD read and write |
+| `$01` | the game store | |
+| `$02` | the load command table, with `$7F36` bit 0 | stage1, and the kernel's launch |
+| `$03` | the save pSRAM, at the page in `$4000` | saves, the browser's records, the kernel's records |
+| `$04` | the firmware version byte | the HELP tab |
+| `$05` | the flash writer's busy flag | the updater. In the kernel only in a routine nothing calls |
+| `$06` and up | the clock registers | reading and setting the clock |
 
-/OE is not identified; the model ties it active. The SD controller is Marek Czerski's OpenCores `sdc_controller`
-(command word at `$04` with the index in bits 13:8, argument at `$00`
-starting the command, command status at `$34`); its registers cross from
-the PicoBlaze's clock (BUFGMUX3) to the SD clock (BUFGMUX6) through 43
-two-flop synchronizers.
+No value maps either NOR die.
 
-What the simulation showed:
+### The version byte
 
-- In a SLICEM, `DIF_MUX=BX` / `DIG_MUX=BY` on a LUT that isn't in RAM mode
-  goes with the flip-flop taking BX / BY directly, whatever `DXMUX` /
-  `DYMUX` decode as. In FW4 those are exactly the 51 flip-flops that would
-  otherwise be fed by a constant LUT, the synchronizers among them. Before
-  `netlist2v.py` applied this, every SD command went out with index 0.
-- The firmware races its own status clear. `sd_command` clears `$34`
-  after a command completes, but the clear takes three SD clocks to
-  cross and the next command's first status poll comes after two, so
-  CMD55 reads as complete before it is sent and the ACMD41 written after
-  it is lost. The ACMD41 retry loop covers it at the cost of one ~20 ms
-  delay per boot. The PicoBlaze and the SD divider share a clock, so this
-  should happen on the cart too.
-- The flip-flops' REV input matters: KCPSM3 forces its program counter to
-  the interrupt vector `$3FF` through REV (BY) on its ten PC flip-flops.
-  The slice model ignored REV at first, so interrupts were taken but
-  jumped nowhere.
-- CMD7 goes out with RCA `$0200` whatever the card's CMD3 reply says.
-  Not looked into yet.
+`$7FC0 = 4` reads `$04` on FW4 and `$05` on FW5. The number is not stored
+anywhere. One LUT decodes "version read" (kernel mode, window 4,
+`$A000`-`$BFFF`), and the version is simply which data bits that signal is
+wired into:
 
-> **Correction (2026-10-09).** An earlier version of this section said
-> prjcombine's CLB document has the F5 mux backwards (`BX ? G : F`). It
-> doesn't: `F5 = BX ? F : G` as documented. With the reversed mux the
-> simulated PicoBlaze looped in `clear_scratchpad` and its bank switch did
-> nothing; with the documented one it runs bank 2 as written. The
-> version-byte analysis in [version-byte.md](version-byte.md) had used the
-> reversed mux too; see the correction there.
+| Design | The decode | Wired into | Byte |
+|---|---|---|---|
+| FW4 | `X12Y18 SLICE[3]` | D2 | `$04` |
+| FW5-0731 | `X9Y23 SLICE[2]` | D0 and D2 | `$05` |
+| FW5-0918 | `X9Y21 SLICE[3]` | D0 and D2 | `$05` |
 
-## Plan
+It is a constant in EZ Flash's source that synthesis turned into routing.
+Each firmware is a complete design written whole to slot B, which is why
+the number changes with no "set version" step.
 
-1. Finish the pin map (`/RD`, `/CS`, console clock; then the memory, SD,
-   flash and RTC pins).
-2. ~~Export the netlist as structural Verilog~~ (done, above). SD card
-   model done: the boot gets through card init, and Game Boy-side sector
-   reads work. pSRAM model done: ROM loads land byte for byte, and the
-   kernel launch runs as on hardware. Game launch done: ROM reads land in
-   game mode with MBC3 banking. All MBC types, save RAM, the MBC3 clock and
-   both launches now run on FW4, FW5-0731 and FW5-0918 alike
-   ([firmware-diff.md](firmware-diff.md)). Next: what FW5's `$7FD3/$7FD4`
-   drive, /OE.
-3. Simulate Game Boy bus cycles from the kernel's register sequences
-   and watch each block respond.
-4. Name the blocks from their anchors: the `$7Fxx` register file and its
-   unlock sequence, the PicoBlaze (KCPSM3) and its port decode, the SD
-   controller, the MBC emulation, the ROM-load engine.
+## Launch sequences, as register writes
+
+**Stage1 loading the kernel:** `$7FC0 = 2`, the load command through the
+`$7F36 = 1` window, `$7F36 = 3`, poll `$A000` until the load is done, then
+`$7F36 = 0`, `$7FC0 = 0`, ROM bank 1, `$7F31 = 0`, `$7F32 = $80`.
+
+**The kernel launching a game:** `$7FC0 = 2`, the type to `$7F37`, the
+masks to `$7FC4`, `$7FC1` and `$7FC2`, the header checksum to `$7FC3`, the
+load, `$7F36 = 0`, `$7F31 = 0`, `$7F32 = 0`, `$2000 = 1`, `$3000 = 0`, then
+`$7FE0 = $80`.
+
+Right after `$7F36 = 3` the `$A000` window floats for about a cycle and a
+half while the FPGA switches it over. A poll that fast reads `$FF`.
+
+## Two things found in simulation
+
+- **The firmware races its own status clear.** The PicoBlaze clears the
+  SD command status after a command completes, but the clear takes three
+  SD clocks to cross domains and the next command's first poll comes after
+  two. So `CMD55` reads as complete before it is sent, and the `ACMD41`
+  after it is lost. The retry loop covers it, at the cost of one 20 ms
+  delay a boot.
+- **`CMD7` goes out with the address `$0200`** whatever the card's `CMD3`
+  reply says. Why has not been looked into.
+
+One check is still owed on hardware: P51, the pin that carries memory
+address A13, is driven through a latch gated by `$7FD2` bit 0. The decoded
+polarity makes it transparent while the bit is 1, which cannot be right,
+since the kernel leaves the bit 0. The model inverts it.

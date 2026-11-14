@@ -2,13 +2,13 @@
 
 Reference for the tools that decode, trace and patch the cart's Spartan-3A
 (`XC3S200A-4VQG100`) bitstream. Setting them up from nothing, and the
-end-to-end build of an updater, is in [../../../stage0/docs/setup.md](setup.md).
-Findings from using them are in [bitstream.md](bitstream.md).
+end-to-end build of an updater, is in [setup.md](setup.md).
+Findings from using them are in [flash-map.md](flash-map.md).
 
 Cart images, flash dumps, BRAM contents and the exports made from them stay in
 the ignored `fpga/` directory, same policy as the firmware packages
 (`fpga/README.md`, itself untracked; the short version is in
-[../../../stage0/docs/setup.md](setup.md)).
+[setup.md](setup.md)).
 Tracked and public, because they leave out BRAM contents: the decoded listings
 in each firmware's folder as `stage0/<fw>/decode.txt`, and the
 [floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
@@ -35,10 +35,9 @@ a design.
 ## Build host
 
 The Rust tools and ISE run on a Linux machine, called "the build host" in
-these docs. The current one is Ubuntu 24.04 on a Xeon E5-1680 v2 (8 cores /
-16 threads) with 62 GB RAM; nothing here needs that much. Stage1 and the
-Python scripts run on a second machine (currently macOS). That split is just
-how it is set up now, see [../../../stage0/docs/setup.md](setup.md).
+these docs: Ubuntu 24.04 here, and nothing needs a large machine. Stage1
+and the Python scripts run on a second machine, a Mac here. Nothing
+requires that split ([setup.md](setup.md)).
 
 Example layout under `~/fpga` (the scripts' defaults assume it):
 
@@ -70,7 +69,7 @@ cargo build --release -p prjcombine-cli
 
 **Pin the revision.** The database is bincode-serialized, so the Rust crates
 and `databases/spartan3.zstd` must come from the same commit. s3decode's
-`Cargo.toml` pins `7ab08a02…` (2026-09-28); the matching database has sha256
+`Cargo.toml` pins `7ab08a02…`; the matching database has sha256
 `fe6dad4f…6eb611`. To move to a newer prjcombine, bump the rev in
 `Cargo.toml` and check out the same rev of the database together.
 
@@ -85,9 +84,6 @@ cd ~/fpga/prjcombine/public
 `databases/spartan3.txt` is the same database as text and is the easiest thing
 to read: search for `tile_class CLB`, `BRAM_S3A`, `IOB_S3A_S2` and so on.
 
-**Contributions:** the repo's `AGENTS.md` says it does not accept anything
-authored by an LLM. Fine to use locally; anything sent upstream has to be your
-own work.
 
 ## s3decode
 
@@ -166,14 +162,6 @@ bitgen -w -d blank.ncd blank.bit
   feature list, routing included, in bitgen's uncompressed framing only (no
   MFWR).
 
-> **Correction (2026-10-09).** This list said "Decode only. No encoder
-> yet", written before `s3patch` existed. `s3patch` (below) writes BRAM
-> contents and recomputes the CRCs, and every updater built so far went
-> through it: the CGB flag, the splash builds and the stage1 rewrite
-> ([stage1/fw4/patches](../../stage1/fw4/patches/README.md), [stage1 design](../../stage1/docs/design.md)). The same
-> stale claim was inherited by [bitstream.md](bitstream.md) and
-> [../../../docs/hardware-board.md](../../docs/hardware-board.md), which carry their own notes.
-
 ## s3patch
 
 ```bash
@@ -247,7 +235,7 @@ a tree. Get exact pin names from `--list-pins` before using `--from`.
 `--netlist` writes one line per configured bel:
 `{"tile": ..., "bel": ..., "attrs": {...}, "in": {pin: driver}}`. The
 scripts in [`stage0/netlist/`](../netlist/README.md) read
-it; [version-byte.md](version-byte.md) and [design.md](design.md)
+it; [design.md](design.md#the-version-byte) and [design.md](design.md)
 are built on it.
 
 ## s3pins
@@ -337,26 +325,11 @@ Free **ISE WebPACK** license, which covers Spartan-3A:
 3. Host ID: the machine's Ethernet MAC, OS Linux 64-bit.
 4. Copy the emailed `Xilinx.lic` to `~/.Xilinx/Xilinx.lic`.
 
-The license issued on 2026-10-08 came back as `HOSTID=ANY`, so it works on any
-machine regardless of what host ID was entered.
+The license comes back as `HOSTID=ANY`, so it works on any machine
+whatever host ID was entered.
 
 What needs it: `xst` and `ngdbuild` run without a license; `map` fails with
 `No 'ISE' nor 'WebPack' feature`, so `map`, `par` and `bitgen` need it.
-
-If you ever get a license that really is node-locked: FlexLM on Linux reads
-only an interface named `eth0`, and with Ubuntu's predictable names
-(`enp5s0`, `eno1`) `lmutil lmhostid` reports `000000000000`. The fix used on
-an earlier build host was renaming an unused real NIC, persistently:
-
-```
-# /etc/systemd/network/10-flexlm-eth0.link
-[Match]
-MACAddress=<that NIC's MAC>
-[Link]
-Name=eth0
-```
-
-Not needed with an `ANY` license.
 
 ### Using it
 
@@ -383,10 +356,6 @@ xdl -ncd2xdl top.ncd top.xdl              # placed+routed design as text
 config data byte for byte, and the same XDL gives identical bits on
 two different machines. So designs can be written directly as XDL,
 skipping synthesis and place-and-route, which is the basis for any fuzzing.
-
-`bitgen` on a small design: ~2-3.5 s, single-threaded (3.3 s on the
-current build host). With 16 threads that is roughly 15-17k
-bitstreams an hour.
 
 ## Smoke test
 

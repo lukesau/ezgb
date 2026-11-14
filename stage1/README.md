@@ -38,7 +38,7 @@ build turns them into `version.h` and the boot screen shows
 stage1, so `<n>` is read at boot from the cart's version register
 (`fw_version()`, 4 or 5), with line 1 of `VERSION` only the fallback for a
 reading outside 1-9. The register is wiring in the FPGA
-([version-byte.md](../stage0/docs/version-byte.md)). Stage1's mod version
+([design.md](../stage0/docs/design.md#the-version-byte)). Stage1's mod version
 is separate from the kernel mod's.
 
 ## Build knobs

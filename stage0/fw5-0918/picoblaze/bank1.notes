@@ -287,7 +287,7 @@ note 3F3 bank 2 executes CALL $1B5 here
 # note 3AE license_b=1 tells bank 2 "flash update"
 # label 3B2 isr_done
 
-# ---- FW5: MBC3 real-time clock (docs/fw5.md) ----
+# ---- FW5: MBC3 real-time clock (docs/firmware-diff.md) ----
 port in A5 RTC_GAME_S
 port in A6 RTC_GAME_M
 port in A7 RTC_GAME_H

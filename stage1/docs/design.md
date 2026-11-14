@@ -147,7 +147,7 @@ kernel's next backup writes a correct footer.
 
 On FW4 stage1 skips this: FW4 has no game clock. It tells the two apart by
 the firmware version byte (`$7FC0 = 4`, then `$A000` reads 4 or 5,
-[version-byte.md](../../stage0/docs/version-byte.md)).
+[design.md](../../stage0/docs/design.md#the-version-byte)).
 
 ## Super Game Boy
 
