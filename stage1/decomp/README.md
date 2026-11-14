@@ -30,16 +30,21 @@ with it and fails if they differ.
 the C calls from the firmware's `kernel.sym` (GBDK names that differ are in
 `ALIASES`), and writes the linked bytes as two rgbds includes. These replace
 the C regions in a copy of the disassembly (`build/fw<n>/asm/`), and rgbds
-builds the ROM. The GBDK `crt0` and library stay assembly: they are GBDK's,
-not EZ Flash's, and the disassembly already rebuilds them byte for byte.
+builds the ROM. GBDK's `crt0` is linked first, from source
+([gbdk/](gbdk/README.md), GBDK's license); the GBDK and SDCC library code
+after the C is still disassembly (the same README maps it to library
+modules).
 
 | Where | Area | What |
 |---|---|---|
+| `00:0000`-`01E2` | `_HEADER` | `gbdk/crt0.s`: vectors, header, startup |
+| `00:0400`-`05BB` | `_HOME` | `gbdk/crt0.s`: interrupt dispatch, modes, `banked_call` |
 | `00:05BC`-`2731` | `_CODE` | `main.c`, `diskio.c`, `pff.c`, `sd.c` |
 | `01:4000`-`40AD` | `_HANDOFF` | `handoff_poll.c`, linked to run at `$D100` |
 | `01:40AE`-`4133` | `_CODE_1` | `handoff.c` |
-| `01:4134`-`415F` | `_GSINIT` | the startup code for `main.c`'s initialized message pointers, which crt0 calls (`InitMessages`); crt0's `ret` follows |
+| `01:4134`-`4160` | `_GSINIT`, `_GSINITTAIL` | crt0's `gsinit`: the startup code for `main.c`'s initialized message pointers (`InitMessages`), then crt0's `ret` |
 | `$C0A0`-`$C4A9` | `_DATA` | `LoadCmd`, the message pointers, `FatFs`, the sector buffer |
+| `$C4AC`- | `_BSS` | crt0's variables (`_cpu`, the mode, the current bank, the interrupt handler lists) |
 
 What the build does that EZ Flash's tools did and SDCC 2.9.0 does not:
 it writes the bank word of each banked call (2.9.0 writes 0: `BANKS` in
@@ -91,13 +96,13 @@ What fitting the C to it showed about EZ Flash's source:
 
 | FW4 range | File | What |
 |---|---|---|
-| `00:0000`-`01E3` | asm | GBDK `crt0`: vectors, header, startup |
-| `00:0400`-`05BB` | asm | GBDK `crt0` `_HOME`: interrupt lists, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` (`FarCallTrampoline`) |
+| `00:0000`-`01E2` | [gbdk/crt0.s](gbdk/crt0.s) | GBDK `crt0`: vectors, header, startup |
+| `00:0400`-`05BB` | [gbdk/crt0.s](gbdk/crt0.s) | GBDK `crt0` `_HOME`: interrupt lists, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` (`FarCallTrampoline`) |
 | `00:05BC`-`0B4C` | [src/main.c](src/main.c) | six dead helpers, `FpgaSetMode`, FW5's `FpgaSetBootCpu`, `main`, then its strings |
 | `00:0BE6`-`0C15` | [src/diskio.c](src/diskio.c) | `disk_initialize`, `disk_readp`, the template's unused `disk_writep` |
 | `00:0C16`-`24E2` | [src/pff.c](src/pff.c) | Petit FatFs, plus EZ Flash's accessors `FsFileSize` ... `FsClusterSectors` |
 | `00:24E3`-`2731` | [src/sd.c](src/sd.c) | the FPGA sector window: `FpgaSetSdWindow`, `SdWindowStatus`, `disk_readp_impl`, `DiskRead` |
-| `00:2732`-`399B`+ | asm | GBDK library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` |
+| `00:2732`-`39A3` | asm | GBDK and SDCC 2.9.0 library: 16/32-bit math, `memcpy`, console and font (`puts`, `putchar`), `set_data`, joypad, `delay` ([which modules](gbdk/README.md#the-rest-of-bank-0)) |
 | `01:4000`-`40AD` | [src/handoff_poll.c](src/handoff_poll.c) | `HandoffPoll`, run from `$D100` |
 | `01:40AE`-`4133` | [src/handoff.c](src/handoff.c) | `HandoffRun`, `LoadKernel`, the dead `RomLoad_Build` |
 | `01:4134`-`415F` | [src/main.c](src/main.c) | `InitMessages`: the compiler's startup code for the initialized message pointers |

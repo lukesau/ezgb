@@ -10,7 +10,7 @@
 # SDCC 2.9.0 goes in ../../tools/sdcc-2.9.0: tools/build-sdcc29.sh.
 
 SDCC29 := ../../tools/sdcc-2.9.0/bin/sdcc
-SRCS := $(wildcard src/*.c src/*.h)
+SRCS := $(wildcard src/*.c src/*.h gbdk/*.s)
 
 all: build/fw4/stage1.gb build/fw5/stage1.gb
 

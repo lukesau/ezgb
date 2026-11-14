@@ -13,13 +13,16 @@ stage1-from-bram.py).
     tools/link.py fw4       -> build/fw4/stage1.gb
     tools/link.py fw5-0918  -> build/fw5/stage1.gb
 
-Regions (FW4; FW5-0918 bank 0 starts at the same $05BC and ends $31 later):
+Regions (FW4; FW5-0918 bank 0 C ends $31 later):
 
+    00:0000-00:01E2               gbdk/crt0.s: vectors, header, startup
+    00:0400-00:05BB               gbdk/crt0.s: interrupt and mode code (_HOME)
     00:05BC up to U32Mul ($2732)  main.c, diskio.c, pff.c, sd.c   (_CODE)
     01:4000-01:40AD               handoff_poll.c, run at $D100     (_HANDOFF)
     01:40AE-01:4133               handoff.c                       (_CODE_1)
-    01:4134-01:415F               main.c's initialized globals    (_GSINIT)
+    01:4134-01:4160               main.c's initialized globals    (_GSINIT), crt0's ret
     $C0A0-$C4A9                   RAM: LoadCmd, messages, FatFs, sector buffer
+    $C4AC-                        crt0's variables (_BSS)
 
 SDCC 2.9.0 writes a banked call's bank word as 0 ("PENDING: bank support");
 stock has the bank, so the build writes b_<name> there and BANKS gives it.
@@ -39,16 +42,29 @@ FWS = {"fw4": ("4", STAGE1 / "fw4"), "fw5-0918": ("5", STAGE1 / "fw5-0918")}
 
 # Link order: RAM is laid out in this order, so main.c's LoadCmd and messages
 # come first ($C0A0, $C2A0), then pff.c's FatFs ($C2A8), then sd.c's buffer.
-OBJS = ["main.c", "diskio.c", "pff.c", "sd.c", "handoff_poll.c", "handoff.c"]
+# crt0 first, as GBDK's lcc linked it.
+OBJS = ["../gbdk/crt0.s", "main.c", "diskio.c", "pff.c", "sd.c", "handoff_poll.c", "handoff.c"]
+GBDK = DECOMP / "gbdk"
 SDCC = STAGE1.parent / "tools" / "sdcc-2.9.0" / "bin"
 
+CRT0_END = 0x01E3       # crt0's fixed part ends with the mode table's ret at $01E2
+HOME = 0x0400           # crt0's _HOME
 CODE0 = 0x05BC          # first byte of C in bank 0: PrintLine
 HANDOFF_ROM = 0x4000
 HANDOFF_RUN = 0xD100
 GSINIT = 0x4134         # crt0: call $4134, which ends in crt0's _GSFINAL `ret`
 BRAM1_END = 0x4200      # stock pads bank 1 with $FF to $41FF, zeros after
 RAM = 0xC0A0
-RAM_END = 0xC4AA        # GBDK runtime variables from here ($C4AA errno, $C4AC _cpu)
+RAM_END = 0xC4AA        # $C4AA-$C4AB unused, then crt0's _BSS
+BSS = 0xC4AC
+
+# header bytes that differ per firmware (gbdk/crt0.s includes fw.s)
+HEADER = {"4": {".SGB_FLAG": 0x00, ".LICENSEE": 0x00, ".CSUM_HI": 0xB3, ".CSUM_LO": 0x2E},
+          "5": {".SGB_FLAG": 0x03, ".LICENSEE": 0x33, ".CSUM_HI": 0x8E, ".CSUM_LO": 0xE3}}
+# addresses crt0 uses that GBDK's linker defines, and two that global.s
+# declares but nothing here uses
+CRT0_GLOBALS = {".STACK": 0xE000, ".refresh_OAM": 0xFF80, ".OAM": 0xC000,
+                ".init": 0, ".reset": 0}
 
 # C name -> kernel.sym name, where GBDK's name and ours differ
 ALIASES = {
@@ -66,8 +82,6 @@ ALIASES = {
     "__rrulong": "U32Shr",
     "__rlulong": "U32Shl",
 }
-# GBDK runtime variables (RAM, not in kernel.sym)
-VARS = {"__cpu": 0xC4AC}
 # the bank word stock has in each banked call: $FFFF for the two bank-0
 # functions EZ Flash declared banked
 BANKS = {"b_LoadKernel": 1, "b_disk_readp_impl": 0xFFFF, "b_DiskRead": 0xFFFF}
@@ -163,12 +177,20 @@ def write_inc(path, start, end, data, labels, fill):
     path.write_text("\n".join(lines) + "\n")
 
 
-def splice(text, start_label, end_label, include):
-    """Replace the lines from `start_label::` up to `end_label:` with an INCLUDE."""
+def splice(text, start_label, end_label, include, end_after=0):
+    """Replace the lines from `start_label::` up to `end_label:` with an
+    INCLUDE. With end_after, end_label's line and that many instruction lines
+    after it are replaced too."""
     lines = text.splitlines(keepends=True)
     s = next(i for i, l in enumerate(lines) if l.rstrip() == f"{start_label}::")
     e = len(lines) if end_label is None else \
         next(i for i, l in enumerate(lines) if re.match(rf"{end_label}::?$", l.rstrip()))
+    if end_after:
+        e += 1
+        while end_after:
+            if lines[e].startswith("    ") and lines[e].strip():
+                end_after -= 1
+            e += 1
     return "".join(lines[:s] + [f'INCLUDE "{include}"\n\n'] + lines[e:])
 
 
@@ -184,13 +206,18 @@ def build(fw):
     if not (SDCC / "sdcc").exists():
         sys.exit(f"error: no {SDCC / 'sdcc'}: run stage1/decomp/tools/build-sdcc29.sh")
     env = dict(os.environ, PATH=f"{SDCC}:{os.environ['PATH']}")
+    (obj / "fw.s").write_text(f"\tFW = {fwnum}\n" + "".join(
+        f"\t{k} = 0x{v:02X}\n" for k, v in HEADER[fwnum].items()))
     rels = []
     for src in OBJS:
-        s = obj / (Path(src).stem + ".asm")
-        rel = s.with_suffix(".rel")
-        run([str(SDCC / "sdcc"), *CFLAGS, f"-DFW={fwnum}", str(SRC / src), "-o", str(s)], env=env)
-        s.write_text(BANKCALL.sub(r"\1\t.dw\tb\2", s.read_text()))
-        run(["sdasgb", "-plosgff", str(rel), str(s)])
+        rel = obj / (Path(src).stem + ".rel")
+        if src.endswith(".s"):
+            run(["sdasgb", "-plosgff", f"-I{GBDK}", f"-I{obj}", str(rel), str(SRC / src)])
+        else:
+            s = rel.with_suffix(".asm")
+            run([str(SDCC / "sdcc"), *CFLAGS, f"-DFW={fwnum}", str(SRC / src), "-o", str(s)], env=env)
+            s.write_text(BANKCALL.sub(r"\1\t.dw\tb\2", s.read_text()))
+            run(["sdasgb", "-plosgff", str(rel), str(s)])
         rels.append(rel)
 
     refs, defs = set(), set()
@@ -202,8 +229,8 @@ def build(fw):
     for name in sorted(refs - defs):
         if name.startswith(("s__", "l__")):
             continue                        # sdld's area symbols
-        if name in VARS:
-            globs.append((name, VARS[name]))
+        if name in CRT0_GLOBALS:
+            globs.append((name, CRT0_GLOBALS[name]))
         elif name in BANKS:
             globs.append((name, BANKS[name]))
         elif name == "_HandoffPollRom":       # HandoffPoll where it is stored
@@ -227,14 +254,14 @@ def build(fw):
         return parse_map(obj / "stage1.map")
 
     # pass 1 for the sizes, pass 2 with every area placed
-    bases = {"_CODE": CODE0, "_HOME": 0x3000, "_HANDOFF": HANDOFF_RUN,
-             "_CODE_1": 0x4400, "_GSINIT": GSINIT, "_GSFINAL": 0x4700, "_DATA": RAM,
-             "_OVERLAY": 0xC800}
+    bases = {"_HOME": HOME, "_CODE": CODE0, "_HANDOFF": HANDOFF_RUN,
+             "_CODE_1": 0x4400, "_GSINIT": GSINIT, "_GSINITTAIL": 0x4700, "_GSFINAL": 0x4700,
+             "_DATA": RAM, "_BSS": BSS, "_OVERLAY": 0xC800}
     _, sizes = link(bases)
     size = lambda n: sizes.get(n, (0, 0))[1]
-    bases["_HOME"] = CODE0 + size("_CODE")
     bases["_CODE_1"] = HANDOFF_ROM + size("_HANDOFF")
-    bases["_GSFINAL"] = GSINIT + size("_GSINIT")
+    bases["_GSINITTAIL"] = GSINIT + size("_GSINIT")
+    bases["_GSFINAL"] = bases["_GSINITTAIL"] + size("_GSINITTAIL")
     syms, areas = link(bases)
     data = parse_ihx(obj / "stage1.ihx")
 
@@ -250,13 +277,13 @@ def build(fw):
         if size and not (lo <= base and base + size <= hi):
             problems.append(f"{name} ${base:04x}+${size:x} outside ${lo:04x}-${hi:04x}")
 
+    within("_HOME", HOME, CODE0)
     within("_CODE", CODE0, code0_end)
-    within("_HOME", CODE0, code0_end)
     within("_HANDOFF", HANDOFF_RUN, HANDOFF_RUN + GSINIT - HANDOFF_ROM)
     within("_CODE_1", HANDOFF_ROM, GSINIT)
     within("_GSINIT", GSINIT, BRAM1_END)
     within("_DATA", RAM, RAM_END)
-    for name in ("_HOME", "_GSFINAL", "_OVERLAY", "_DABS", "_CABS"):
+    for name in ("_BASE", "_LIT", "_GSFINAL", "_OVERLAY", "_HEAP", "_DABS", "_CABS"):
         if area(name)[1]:
             problems.append(f"{name} is not empty")
     if problems:
@@ -265,7 +292,6 @@ def build(fw):
     # HandoffPoll runs at $D100 and is stored at $4000
     for a in range(HANDOFF_RUN, HANDOFF_RUN + area("_HANDOFF")[1]):
         data[a - HANDOFF_RUN + HANDOFF_ROM] = data.pop(a)
-    data[GSINIT + area("_GSINIT")[1]] = 0xC9      # crt0's _GSFINAL: ret
 
     if asm.exists():
         shutil.rmtree(asm)
@@ -273,16 +299,26 @@ def build(fw):
                     ignore=shutil.ignore_patterns("game.*", "Makefile"))
     shutil.copy(fwdir / "disassembly" / "game.asm", asm / "game.asm")
 
-    lab0 = labels_for(syms, CODE0, code0_end)
-    write_inc(asm / "c_bank0.inc", CODE0, code0_end, data, lab0, lambda a: 0xFF)
-    lab1 = labels_for(syms, HANDOFF_ROM, 0x8000)
-    lab1.setdefault(HANDOFF_ROM, []).append("HandoffPoll")
-    lab1.setdefault(GSINIT, []).append("InitMessages")
-    write_inc(asm / "c_bank1.inc", HANDOFF_ROM, 0x8000, data, lab1,
+    # labels: the kernel.sym names in each region, which the rest of the
+    # disassembly refers to
+    def sym_labels(bank, lo, hi):
+        out = {}
+        for name, (b, a) in sym.items():
+            if b == bank and lo <= a < hi and RGBDS_LABEL.match(name):
+                out.setdefault(a, []).append(name)
+        return out
+
+    low = sym_labels(0, 0, CRT0_END)
+    for v in range(0, 0x40, 8):         # mgbdis's names for the rst vectors
+        low.setdefault(v, []).append(f"RST_{v:02X}")
+    write_inc(asm / "crt0_low.inc", 0, CRT0_END, data, low, lambda a: 0xFF)
+    write_inc(asm / "c_bank0.inc", HOME, code0_end, data, sym_labels(0, HOME, code0_end), lambda a: 0xFF)
+    write_inc(asm / "c_bank1.inc", HANDOFF_ROM, 0x8000, data, sym_labels(1, HANDOFF_ROM, 0x8000),
               lambda a: 0xFF if a < BRAM1_END else 0x00)
 
     b0 = asm / "bank_000.asm"
-    b0.write_text(splice(b0.read_text(), "PrintLine", "U32Mul", "c_bank0.inc"))
+    t = splice(b0.read_text(), "RST_00", "HaltLoop", "crt0_low.inc", end_after=3)
+    b0.write_text(splice(t, "SetGfxMode", "U32Mul", "c_bank0.inc"))
     b1 = asm / "bank_001.asm"
     b1.write_text(splice(b1.read_text(), "HandoffPoll", None, "c_bank1.inc"))
 
