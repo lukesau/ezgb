@@ -28,14 +28,16 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 
 INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
-        build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc
+        build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
+        build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc
 
 all: build/kernel.gb
 
-build/crt0_low.inc build/crt0_home.inc &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
+build/crt0_low.inc build/crt0_home.inc build/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0xd6c9 $(CRT0_DEFS) \
-		--region 0000:01e3:build/crt0_low.inc --region 0600:07bc:build/crt0_home.inc
+		--region 0000:01e3:build/crt0_low.inc --region 0600:07bc:build/crt0_home.inc \
+		--syms-out build/crt0.sym
 
 # the whole bank: code from $4000, $FF fill after it, FatFs globals at $C5A5
 # banks 5, 6 and 9 link src/dbg.c first
@@ -111,6 +113,39 @@ build/b0_strncpy.inc: sdcclib/_strncpy.c tools/sdinc.py $(SYM)
 build/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2d95 --region 2d95:2dba:$@
+
+# GBDK's gb library: the drawing, font and joypad code and the IBM font.
+# _BASE is one run in link order; drawing's _CODE comes first in _CODE,
+# font's is linked further on, and drawing.s's .vbl/.lcd sit at $2A5F.
+GBDK_SRCS := gbdk/drawing.s gbdk/cpy_data.s gbdk/ibmfixed.s gbdk/pad.s gbdk/delay.s build/font.s gbdk/init_tt.s
+GBDK_INCS := build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc
+
+build/font.s: gbdk/font.ms gbdk/wait_hbl.mh tools/maccer.py
+	@mkdir -p build
+	python3 tools/maccer.py $< $@
+
+$(GBDK_INCS) &: $(GBDK_SRCS) gbdk/global.s build/crt0.sym tools/sdinc.py $(SYM)
+	$(SDINC) $(GBDK_SRCS) -I gbdk --bank 0 --sym $(SYM) --defs build/crt0.sym $(CRT0_DEFS) \
+		-b _CODE=0x20f4 -b _BASE=0x2eea -b _VBLLCD=0x2a5f -b _BSS=0xd723 --area-at font.s:_CODE=0x2d56 \
+		--region 20f4:2826:build/b0_gbdk_code.inc --region 2a5f:2a77:build/b0_gbdk_vbl.inc \
+		--region 2d56:2d95:build/b0_gbdk_font.inc --region 2eea:3d8c:build/b0_gbdk_base.inc
+
+# SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
+# that order. stubs.s jumps to long and char math that is not SDCC's
+# (stock $29E6-$2E30, not identified yet); div.s has EZ Flash's edits.
+SDCCASM_SRCS := sdcclib/stubs.s sdcclib/div.s sdcclib/shift.s
+SDCCASM_DEFS := -g __mullong=0x2dc1 -g __modslong=0x29e6 -g __modulong=0x2a77 \
+              -g __divslong=0x2b28 -g __divulong=0x2bfc -g __mulschar_rrx_s=0x2ba2 \
+              -g __muluchar_rrx_s=0x2bb1 -g __mulint_rrx_s=0x2bcf
+
+build/b0_sdccasm.inc: $(SDCCASM_SRCS) tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(SDCCASM_SRCS) --bank 0 --sym $(SYM) -b _CODE=0x2826 $(SDCCASM_DEFS) --region 2826:29e6:$@
+
+# SDCC 2.9.0's crt0_rle.s: __initrleblock, which the C files' _GSINIT code calls
+build/b0_rle.inc: sdcclib/crt0_rle.s tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x20bb --region 20bb:20e2:$@
 
 build/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	rgbasm -I asm/ -I build/ -o build/game.o asm/game.asm

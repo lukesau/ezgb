@@ -11,10 +11,20 @@ source.
   EZ Flash's changes, each marked `;; ezflash:`. In short: an interrupt nesting
   count (`__int_nest`) used by the dispatcher, `enable_interrupts`/
   `disable_interrupts` and `banked_call`; ROM bank 1 selected at startup; the
-  kernel's own init instead of `gsinit`/`banked_call _main`; `_reset`,
+  kernel's init instead of `gsinit`/`banked_call _main`; `_reset`,
   `_clock` and `__printTStates` removed; the mode table at `$01E2`. Global
   labels without a leading dot are the kernel disassembly's names for the
   same addresses.
+- `drawing.s`: GBDK 2.96a `libc/gb/drawing.s` with two changes, marked
+  `;; ezgb:`, that reproduce stock's layout: `fg_colour` and `bg_colour`
+  come after `.ty` in `_BSS` (`$D734`), and `.vbl`/`.lcd` sit in an area of
+  their own, which the Makefile places at `$2A5F`, between other library
+  code. The code itself is unchanged, so EZ Flash's GBDK was likely a
+  nearby revision.
+- `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `init_tt.s`, `font.ms` and
+  `wait_hbl.mh`: GBDK 2.96a `libc/gb`, unchanged. GBDK runs `.ms` files
+  through its macro expander, maccer; `../tools/maccer.py` does the same
+  for `font.ms` (into `build/font.s`).
 
 ## License
 

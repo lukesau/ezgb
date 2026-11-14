@@ -11,7 +11,10 @@ unwritten inside a range are $FF, the stock fill.
 Symbols the source uses but does not define are resolved from a kernel.sym
 style file (bank:addr name), so a source can call into code that is still
 disassembly. -a C_NAME=KERNEL_NAME resolves one under its kernel.sym name,
--g SYM=[BANK:]ADDR one kernel.sym does not name.
+-g SYM=[BANK:]ADDR one kernel.sym does not name. --syms-out FILE writes
+every global the link defines (GBDK's dot names too) as kernel.sym lines,
+and --defs FILE reads such a file back, so one module can link against the
+symbols of another built on its own (GBDK's library modules against crt0.s).
 
 --sdcc29 compiles C with SDCC 2.9.0 (`$SDCC29/bin/sdcc -mgbz80`), the
 compiler EZ Flash used; its output is assembled with the SDCC 4.x sdasgb.
@@ -23,6 +26,9 @@ names (not their `_B<n>_` local labels) in bank N, so the rest of the
 disassembly still links.
 
 Several sources link in the order given, as sdld places their areas.
+--area-at SRC:AREA=ADDR places one source's piece of an area apart from the
+others' (stock's linker met that object elsewhere in the area): sdinc renames
+the area in that object before linking. SRC is the source's file name.
 
 Usage:
   sdinc.py <src> [<src> ...] --sym kernel.sym [-b AREA=ADDR ...] [-g SYM=ADDR ...]
@@ -151,7 +157,8 @@ def compile_one(a, src, rel, d):
         run(["sdcc", "-c", "-msm83", "--sdcccall", "0", "--no-std-crt0",
              *a.cflags.split(), src, "-o", rel], d)
     else:
-        run(["sdasgb", "-plosgff", "-I" + os.path.dirname(src), rel, src], d)
+        incs = ["-I" + os.path.dirname(src)] + ["-I" + os.path.abspath(x) for x in a.I]
+        run(["sdasgb", "-plosgff", *incs, rel, src], d)
 
 
 def main():
@@ -166,6 +173,10 @@ def main():
     p.add_argument("--cflags", default="", help="extra sdcc flags for .c sources")
     p.add_argument("--sdcc29", action="store_true", help="compile C with SDCC 2.9.0 ($SDCC29)")
     p.add_argument("--bank", type=lambda v: int(v, 0), help="bank of the source (see above)")
+    p.add_argument("-I", action="append", default=[], help="include directory for .s sources")
+    p.add_argument("--area-at", action="append", default=[], help="SRC:AREA=ADDR (see above)")
+    p.add_argument("--defs", action="append", default=[], help="kernel.sym-style file of more definitions")
+    p.add_argument("--syms-out", help="write the link's global symbols here")
     a = p.parse_args()
 
     srcs = [os.path.abspath(x) for x in a.src]
@@ -182,6 +193,18 @@ def main():
             rel = os.path.join(d, f"out{i}.rel")
             rels.append(os.path.basename(rel))
             compile_one(a, src, rel, d)
+            for spec in a.area_at:
+                name, rest = spec.split(":", 1)
+                area, addr = rest.split("=")
+                if os.path.basename(src) != name:
+                    continue
+                text = open(rel).read()
+                new = f"{area}_{i}"
+                text, n = re.subn(rf"^A {re.escape(area)} ", f"A {new} ", text, flags=re.M)
+                if not n:
+                    sys.exit(f"error: --area-at {spec}: no area {area} in {name}")
+                open(rel, "w").write(text)
+                a.b.append(f"{new}={addr}")
 
         refs, defs = set(), set()
         for rel in rels:
@@ -190,6 +213,11 @@ def main():
             defs |= d_
         kernel = load_syms(a.sym)
         extra = {}
+        for path in a.defs:
+            for line in open(path):
+                m = re.match(r"\s*[0-9a-fA-F]{2}:([0-9a-fA-F]{4})\s+(\S+)", line)
+                if m:
+                    extra.setdefault(m.group(2), int(m.group(1), 16))
         for spec in a.g:
             n, v = spec.split("=")
             extra[n] = int(v.split(":")[-1], 16)
@@ -225,6 +253,13 @@ def main():
             sys.exit(f"error: sdldgb\n{r.stdout}{r.stderr}")
         data = parse_ihx(os.path.join(d, "out.ihx"))
         labels = parse_map(os.path.join(d, "out.map"))
+
+    if a.syms_out:
+        bank = a.bank or 0
+        with open(a.syms_out, "w") as f:
+            for name, addr in sorted(labels.items(), key=lambda x: (x[1], x[0])):
+                if name in defs and not name.startswith(("l__", "s__")):
+                    f.write(f"{bank:02x}:{addr:04x} {name}\n")
 
     rel_src = " ".join(os.path.relpath(x, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
                        for x in srcs)

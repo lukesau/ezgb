@@ -123,7 +123,8 @@ def listing(sdcc, sdas, src, cflags):
                                capture_output=True, text=True)
             if r.returncode or not os.path.exists(asm):
                 sys.exit(r.stderr)
-        subprocess.run([sdas, "-plosgff", os.path.join(d, "o.rel"), asm], capture_output=True, cwd=d)
+        subprocess.run([sdas, "-plosgff", f"-I{src.parent}", os.path.join(d, "o.rel"), asm],
+                       capture_output=True, cwd=d)
         lines = open(os.path.join(d, "o.lst")).read().splitlines()
     # sdas listing lines: address, bytes ("DAr66r00": r marks a relocated
     # byte), optional [cycles], source line number, source. Long data runs
@@ -138,7 +139,7 @@ def listing(sdcc, sdas, src, cflags):
             bs = [None] * len(bs)
         return bs
 
-    items, cur, area = [], None, None
+    items, cur, area = [], None, "_CODE"
     for line in lines:
         a = re.search(r"\.area\s+(\w+)", line)
         if a:

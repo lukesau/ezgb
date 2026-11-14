@@ -50,6 +50,9 @@ build compares against the md5, not a file.
 | `00:1926`-`20bb` | `src/fsglue.c`, `src/diskio.c`, `src/option/ccsbcs.c` | the `f_` entry points, the disk layer, `get_fattime`, CP437 conversion |
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
+| `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
+| `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
+| `00:20f4`-`2826`, `2a5f`-`2a77`, `2d56`-`2d95`, `2eea`-`3d8c` | `gbdk/drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `font.ms`, `init_tt.s` | GBDK's gb library: graphics mode and drawing, VRAM copy and fill, the IBM font, joypad, `delay`, the text font engine |
 
 ## FatFs
 
@@ -142,10 +145,15 @@ What fitting it showed:
 - `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's own library C, built
   with no options (`sdcclib/`). GBDK 2.96a has no `strrchr` or `memset`;
   `Memset` and `Memcpy` are hand-written asm. SDCC 2.9.0's gbz80 asm
-  library is there too: `div.s` at `$288f` and `crt0_rle.s`'s
-  `_initrleblock` (`RleUnpack`) match its source, still disassembly here.
-- GBDK's libc C (`_divulong.c` and the other long math) does not match
-  under SDCC 2.9.0; the long math in bank 0 is asm.
+  library is there too: `stubs.s`, `div.s` and `shift.s` at `$2826`, and
+  `crt0_rle.s`'s `__initrleblock` (`RleUnpack`).
+- The long and char math that `stubs.s` jumps to (`$29e6`-`$2e30` apart
+  from the library C and GBDK pieces in it, and the multiply at `$2ba2`)
+  is hand-written asm from no SDCC release (2.7.0 to 4.x, every revision
+  of `mul.s`) and no GBDK (2.96a, 4.0). It writes `$21` (ERANGE) to
+  `errno` (`$D6C7`) on a zero divisor, and the multiply loads its
+  arguments with `ld hl,sp+2`. GBDK's libc C (`_divulong.c` and the rest)
+  and SDCC 2.9.0's do not match it either.
 - Bank 0's GBDK library under kernel.sym names: `ReadJoypad` is `joypad`,
   `Delay` `delay`, `PlotPixelXY` `plot_point`, `SetTextCursor` `gotogxy`,
   `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `DrawRect`
@@ -200,8 +208,11 @@ exec /path/to/sdcc-4/bin/sdcpp "$@"
 **GBDK.** Bank 0 is a GBDK 2.x program's: `crt0.s` from GBDK 2.96a (the
 same file as GBDK-2020 3.0.1) with EZ Flash's changes, listed in
 [gbdk/README.md](gbdk/README.md), then other GBDK library modules
-(`drawing.s` at least) further up bank 0. Those library routines are
-hand-written assembly, not compiled C.
+further up bank 0: `drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`,
+`delay.s`, `font.ms` and `init_tt.s`, all from source now. They match
+GBDK 2.96a's except for two layout points in `drawing.s` (marked
+`;; ezgb:`), so EZ Flash's GBDK was a near revision rather than 2.96a
+itself.
 
 **FatFs.** The FatFs in banks 3, 5, 6, 7 and 9 is R0.11a. The CP437
 upper-case table (`ExCvt`, at `09:4082`) has the R0.11a values,
