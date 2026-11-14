@@ -15,12 +15,21 @@
 #error "build with -DFW=4 or -DFW=5"
 #endif
 
+/* $C0A0: the load command, built here and copied to the FPGA's window by
+ * LoadKernel(). First in RAM, as stock's link put main.c's globals. SDCC 4
+ * puts initialized data in its own area, so it gets the address directly. */
+#ifdef __SDCC_VERSION_MAJOR
+UBYTE __at(0xC0A0) LoadCmd[512];
+#else
+UBYTE LoadCmd[512];
+#endif
+
 /* $C2A0-$C2A7. Initialized by InitMessages (01:4134), the startup code the
  * compiler made for these, which crt0 calls before main(). */
-char *msg_not_found1 = "ezgb.dat not found  on SD card";
-char *msg_not_found2 = "Please download it ";
-char *msg_not_found3 = "from www.ezflash.cn";
-char *msg_sd_error   = "Micro SD initial error!";
+UBYTE *msg_not_found1 = "ezgb.dat not found  on SD card";
+UBYTE *msg_not_found2 = "Please download it ";
+UBYTE *msg_not_found3 = "from www.ezflash.cn";
+char  *msg_sd_error   = "Micro SD initial error!";
 
 /* 00:05BC: puts() without GBDK's, one putchar() at a time. Unused. */
 void PrintLine(char *s)
@@ -36,11 +45,8 @@ void PrintLine(char *s)
  * five characters. */
 void PrintNumber(int n, char *s)
 {
-    int i;
-    char *p;
-    int sign;
+    int i, j, sign;
     char buf[5];
-    int len, j;
 
     if ((sign = n) < 0)
         n = -n;
@@ -48,17 +54,13 @@ void PrintNumber(int n, char *s)
     do {
         s[i++] = n % 10 + '0';
     } while ((n /= 10) > 0);
-    len = i;
-    if (sign < 0) {
-        len = i + 1;
-        s[i] = '-';
-    }
-    s[len] = 0;
+    if (sign < 0)
+        s[i++] = '-';
+    s[i] = 0;
 
-    p = buf;
-    for (j = len; j >= 0; j--)
-        p[(UBYTE)(len - j)] = s[j - 1];
-    PrintLine(p);
+    for (j = i; j >= 0; j--)
+        buf[(UBYTE)(i - j)] = s[j - 1];
+    PrintLine(buf);
 }
 
 /* 00:071C: wait for B alone, then 200 ms. Unused. */
@@ -133,7 +135,6 @@ const char KernelFileName[] = "EZGB.DAT";   /* 00:0B4D / 00:0B7E */
 #define CMD_ONE        0x1F4
 #define CMD_CSIZE      0x1F8
 
-#define CMD32(off) (*(UDWORD *)(LOADCMD + (off)))
 
 /* 00:07F1 / 00:0811 */
 void main(void)
@@ -145,9 +146,9 @@ void main(void)
     UDWORD prev;           /* sp+$12 */
     UDWORD eoc;            /* sp+$0E */
     UDWORD fsize;          /* sp+$0A */
+    FRESULT res;           /* register c */
     UWORD  clusters;       /* sp+$08: clusters walked so far */
-    UDWORD tmp;            /* sp+$04 */
-    UDWORD csize;          /* sp+$00 */
+    /* sp+$00-$07: the compiler's temporaries (call results, &p[0x7E]) */
 
     (void)unused;
 
@@ -163,12 +164,14 @@ void main(void)
     puts("\n\n\n\nLOADING...");
     FpgaSetMode(0);
 
-    if (pf_mount(&fs) != FR_OK) {
+    res = pf_mount(&fs);
+    if (res != FR_OK) {
         puts(msg_sd_error);
         while (1)
             ;
     }
-    if (pf_open(KernelFileName) != FR_OK) {
+    res = pf_open(KernelFileName);
+    if (res != FR_OK) {
         puts(msg_not_found1);
         puts(msg_not_found2);
         puts(msg_not_found3);
@@ -188,12 +191,9 @@ void main(void)
 
     /* {end, lba} pairs, where end is the running total of file sectors
      * before the extent. The first end is 0. */
-    p = (UDWORD *)LOADCMD;
-    *p = 0;
-    p++;
-    tmp = clust2sect(clst);
-    *p = tmp;
-    p++;
+    p = (UDWORD *)LoadCmd;
+    *p++ = 0;
+    *p++ = clust2sect(clst);
     prev = clst;
     clusters = 0;
 
@@ -201,17 +201,11 @@ void main(void)
      * then $C2A0. The sector total is a 16-bit product, so it wraps at
      * 65536 sectors (32 MB). */
     do {
-        tmp = FsNextCluster(clst);
-        clst = tmp;
+        clst = FsNextCluster(clst);
         clusters++;
-        tmp = prev + 1;
-        if (clst != tmp) {
-            tmp = (UWORD)(clusters * FsClusterSectors());
-            *p = tmp;
-            p++;
-            tmp = clust2sect(clst);
-            *p = tmp;
-            p++;
+        if (clst != prev + 1) {
+            *p++ = (UWORD)(clusters * FsClusterSectors());
+            *p++ = clust2sect(clst);
         }
         prev = clst;
     } while (clst < eoc);
@@ -223,13 +217,12 @@ void main(void)
     p--;
     *p = 0xFFFFFFFF;
 
-    p = (UDWORD *)LOADCMD;
-    CMD32(CMD_FILE_SIZE) = fsize;
-    CMD32(CMD_ONE) = 1;
-    csize = FsClusterSectors();
-    CMD32(CMD_CSIZE) = csize;
+    p = (UDWORD *)LoadCmd;
+    p[CMD_FILE_SIZE / 4] = fsize;
+    p[CMD_ONE / 4] = 1;
+    p[CMD_CSIZE / 4] = FsClusterSectors();
 
     FpgaSetMode(2);
     disable_interrupts();
-    LoadKernel(LOADCMD);
+    LoadKernel(LoadCmd);
 }

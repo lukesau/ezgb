@@ -3,8 +3,8 @@
 EZ Flash's stage1, the FW4 and FW5-0918 versions, rewritten in C from the
 annotated disassemblies in [../fw4](../fw4) and [../fw5-0918](../fw5-0918).
 EZ Flash compiled it with SDCC 2.9.0 and no options, and the C here is
-fitted to that compiler: every function but `main` and the dead
-`PrintNumber` compiles to stock's bytes ([Matching](#matching)). The ROM
+fitted to that compiler: every function compiles to stock's bytes
+([Matching](#matching)). The ROM
 that `make` builds is still linked from SDCC 4's output, so it runs like
 stock but is not stock's bytes.
 
@@ -54,8 +54,8 @@ SDCC29=<sdcc 2.9.0 prefix> stage1/decomp/tools/match.py [fw4|fw5-0918] [-v]
 [tools/match.py](tools/match.py) compiles each file with SDCC 2.9.0
 (`sdcc -mgbz80`, nothing else) and compares every function `kernel.sym`
 names with the firmware's `kernel.gb`, masking operands the linker fills in.
-FW4: 38 match. FW5-0918: 39, with `FpgaSetBootCpu`. Left: `main` and
-`PrintNumber`.
+All of them match: 40 functions on FW4, 41 on FW5-0918 (with
+`FpgaSetBootCpu`).
 
 SDCC 2.9.0 needs building from its source release (z80 port only; it builds
 with a current gcc given `-fcommon -std=gnu89`). It ships no `sdcpp` or
@@ -77,7 +77,18 @@ What fitting the C to it showed about EZ Flash's source:
   higher. 2.9.0 writes the bank word as 0; stock has `$FFFF` for these and
   1 for `LoadKernel`, so EZ Flash's tools filled it in.
 - 2.9.0 gives the first-declared local the highest stack slot, so local
-  order is fixed by the frame (`main` declares `fs` first).
+  order is fixed by the frame (`main` declares `fs` first). Slots stock
+  uses that no local explains are the compiler's temporaries: `main` has
+  no `tmp` or `csize`, and `PrintNumber` no `len`.
+- The load command is a global array, `LoadCmd[512]`, the first thing in
+  RAM (`$C0A0`). 2.9.0 folds a pointer that starts at a constant address
+  but not one that starts at an array, which is why stock's `main` keeps
+  its table pointer on the stack and adds 4 at run time.
+- The three "not found" message pointers are `UBYTE *` and the SD error
+  one `char *`: passing a `UBYTE *` to `puts(char *)` loads it through
+  `bc`, as stock does for those three only. `main` keeps the `pf_mount`
+  and `pf_open` results in one `res` variable.
+- `PrintNumber` is K&R's `itoa` with the reversal written inline.
 - Petit FatFs is R0.03a unchanged.
 
 ## What is C and what stays assembly
@@ -99,7 +110,7 @@ What fitting the C to it showed about EZ Flash's source:
 names, with the `kernel.sym` name and address of each. [src/hw.h](src/hw.h)
 has the cart registers.
 
-RAM: `$C0A0` load command (512 bytes), `$C2A0`-`$C2A7` message pointers
+RAM: `$C0A0` `LoadCmd`, the load command (512 bytes, `main.c`), `$C2A0`-`$C2A7` message pointers
 (`main.c`), `$C2A8` `FatFs` (`pff.c`), `$C2AA` the sector buffer (`sd.c`),
 `$C4AC` GBDK's `_cpu`.
 

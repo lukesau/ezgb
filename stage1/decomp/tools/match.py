@@ -62,7 +62,7 @@ def listing(src):
         head, tail = line[:27], line[27:]
         if "PENDING: bank" in line:                       # banked call's bank word
             head = re.sub(r"(\s)00 00(\s)", r"\1xx xx\2", head, count=1)
-        head = re.sub(r"r[0-9A-F]{2}", " xx", head)       # relocated byte
+        head = re.sub(r"[rs][0-9A-F]{2}", " xx", head)       # relocated byte
         line = head + tail
         m = re.match(r"^\s+[0-9A-F]{4}((?:\s(?:[0-9A-F]{2}|xx))+)\s+\d+\s(.*)$", line)
         more = len(line.rstrip()) <= 27 and re.match(r"^ {8}((?:[0-9A-F]{2}|xx)(?: (?:[0-9A-F]{2}|xx))*)\s*$", line)   # bytes of the line above

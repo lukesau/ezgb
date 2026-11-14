@@ -28,9 +28,6 @@
 #define FPGA_SRAM_MAP REG(0x7FC0)  /* what $A000 shows: 0 or 2 here */
 #define FPGA_BOOT_CPU REG(0x7FD3)  /* FW5: half of the fast-load key (../../stage0/docs/firmware-diff.md) */
 
-/* main() builds the load command here, LoadKernel() copies it to $A000 */
-#define LOADCMD ((UBYTE *)0xC0A0)
-
 /* The FPGA window at $A000, the load command's $200 bytes and HandoffPoll's
  * $150 bytes at $D100 are written as plain constants where they are used,
  * as stock's C had them: a volatile cast or a macro changes the code. */

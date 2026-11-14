@@ -90,8 +90,8 @@ Name things in `fw4/` and port them; don't edit FW5's files by hand.
 
 [decomp/](decomp/README.md) is the stock stage1 rewritten in C, one source
 for both firmwares. EZ Flash compiled it with SDCC 2.9.0 and no options;
-under that compiler every C function but `main` and the dead `PrintNumber`
-matches stock byte for byte (`decomp/tools/match.py`).
+under that compiler every C function matches stock byte for byte
+(`decomp/tools/match.py`).
 
 ### The load command
 
