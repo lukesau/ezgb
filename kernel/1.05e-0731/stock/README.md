@@ -24,6 +24,7 @@ build compares against the md5, not a file.
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
 | `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
+| `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
 | `build/` | Generated includes and the built kernel (gitignored). |
 
@@ -45,9 +46,11 @@ build compares against the md5, not a file.
 | `00:0000`-`01e3` | `gbdk/crt0.s` | RST/interrupt vectors, interrupt dispatcher, cartridge header, startup (`KernelEntry`) |
 | `00:0600`-`07bc` | `gbdk/crt0.s` | `crt0` `_HOME` area: mode table jump, interrupt list add/remove, VBlank and serial handlers, `display_off`, OAM DMA stub, `banked_call` |
 | banks 3, 5, 6, 7, 9 (whole banks) | `src/ff.c`, `src/dbg.c` | FatFs R0.11a, one copy per bank ([FatFs](#fatfs)) |
-| `00:07bc`-`0bd1` | `src/kernel.c` | first kernel C: `WaitJoypadSelect` to `DirList` ([Bank 0](#bank-0-c)) |
+| `00:07bc`-`0de4` | `src/kernel.c` | kernel C: `WaitJoypadSelect` to `DrawDirEntryLabel` ([Bank 0](#bank-0-c)) |
+| `00:16f4`-`1926` | `src/kernel2.c` | kernel C: `U32ToAscii_B0`, `BatteryCheck` |
 | `00:1926`-`20bb` | `src/fsglue.c`, `src/diskio.c`, `src/option/ccsbcs.c` | the `f_` entry points, the disk layer, `get_fattime`, CP437 conversion |
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
+| `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
 
 ## FatFs
 
@@ -93,8 +96,16 @@ built with GBDK 2.96a's headers and `-DBYTE_IS_UNSIGNED=1`, which makes
 GBDK's `BYTE`/`WORD`/`DWORD` the unsigned types FatFs uses (`integer.h` then
 skips its own; that guard is ours). Function names are kernel.sym's, and a
 `/* BB:AAAA */` comment above each definition gives `match.py` its address.
-Matched so far, `$07bc`-`$0bd1` and `$1926`-`$20bb`; next is
-`DrawDirEntryLabel` (`0bd1`), in `kernel.c` under `#ifdef UNMATCHED`.
+
+All of bank 0's kernel C matches except `SdMenuMain` (`$0de4`-`$16f4`, the
+mount, save backup, file browser and launch, 2.2 KB). Its code is written
+(`kernel.c`, under `#ifdef UNMATCHED`) and the frame is one byte short:
+stock spills `res` to the stack for the whole function and loads `&wFno`
+for `memset` into `bc` as a register temporary, where this keeps `res` in
+`c` and rematerializes `&wFno` (SDCC does that for an address-of with one
+definition). The source form that makes the difference is not found yet.
+Until then the functions after it are built from `kernel2.c`, which is the
+same file as `kernel.c` in stock.
 
 What fitting it showed:
 
@@ -105,6 +116,16 @@ What fitting it showed:
   than a variable: `DrawString` copies its `s` parameter, `DirList` reads
   `f_readdir`'s result through a variable.
 - `$08b6` is an empty function nothing calls (`Unused_08b6`).
+- Hardware registers are read as `*(volatile UINT8 *)addr`; where the code
+  is busy SDCC keeps the address in a stack temporary, which looks like a
+  pointer variable but isn't one.
+- `SdMenuMain`'s keys are a `UINT8`; the 16-bit value stock keeps is the
+  cast for comparing with GBDK's `J_` constants, which are `U` (unsigned
+  int).
+- SDCC 2.9.0 turns a local into a register candidate unless it is
+  volatile, has its address taken, or may be read before it is set; a
+  long-lived one is then spilled whole or kept in a register whole, so
+  the stack layout of a big function depends on all of it.
 - `$1926`-`$20bb` is three files: `fsglue.c`, banked wrappers around the
   `f_` calls; FatFs's `diskio.c` (sector I/O through bank 2, the RTC as
   `get_fattime`); and R0.11a's `option/ccsbcs.c`, unchanged.
@@ -112,16 +133,27 @@ What fitting it showed:
   `BootUnpackWramTables` (`01:68b6`) is it, and `RleUnpack` (`00:20bb`) is
   GBDK's `__initrleblock`. `ff_wtoupper`'s `static const` tables are WRAM
   (`$CC33`, `$D00F`), copied there at boot.
+- `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's own library C, built
+  with no options (`sdcclib/`). GBDK 2.96a has no `strrchr` or `memset`;
+  `Memset` and `Memcpy` are hand-written asm. SDCC 2.9.0's gbz80 asm
+  library is there too: `div.s` at `$288f` and `crt0_rle.s`'s
+  `_initrleblock` (`RleUnpack`) match its source, still disassembly here.
+- GBDK's libc C (`_divulong.c` and the other long math) does not match
+  under SDCC 2.9.0; the long math in bank 0 is asm.
 - Bank 0's GBDK library under kernel.sym names: `ReadJoypad` is `joypad`,
   `Delay` `delay`, `PlotPixelXY` `plot_point`, `SetTextCursor` `gotogxy`,
-  `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `CStrLen`
-  `strlen`, `ApplyBasename` `strcpy`, `Strncpy` `strncpy`.
+  `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `DrawRect`
+  `box`, `ApplyBasename` `strcpy`, `WaitVBlankFlag` `wait_vbl_done`,
+  `LcdOff` `display_off`, `DiNest` `disable_interrupts`. kernel.sym has
+  SDCC's `_modulong` and `_divulong` swapped: `U32Div` (`$282c`) is the
+  modulo, `U32Mod` (`$2832`) the division.
 
 ## Matching
 
 ```sh
 SDCC29=<sdcc 2.9.0 prefix> tools/match.py [-v] [-f func] [-b bank]
-SDCC29=<sdcc 2.9.0 prefix> tools/match.py -I gbdk/include -D BYTE_IS_UNSIGNED=1 src/kernel.c   # bank 0
+SDCC29=<sdcc 2.9.0 prefix> tools/match.py -I gbdk/include -D BYTE_IS_UNSIGNED=1 src/kernel.c src/kernel2.c   # bank 0
+SDCC29=<sdcc 2.9.0 prefix> tools/match.py --cflags " " sdcclib/_strncpy.c   # no options, found by content
 ```
 
 [tools/match.py](tools/match.py) compiles the sources once per bank and

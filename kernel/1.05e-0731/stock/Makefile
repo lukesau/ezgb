@@ -27,7 +27,8 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 
-INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc
+INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc build/b0_kernel2.inc \
+        build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc
 
 all: build/kernel.gb
 
@@ -70,12 +71,40 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -a _U32ToAscii_B0=U32ToAscii_B0 -a _wDebugTextRow=wDebugTextRow \
               -a _wDebugTextCol=wDebugTextCol -a banked_call=FarCallTrampoline \
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wDirEnd=0xc5a4 \
-              -g _wFno=0xc9db -g _wDir=0xc9f5 -g _PsramPage=04:41e7
+              -g _wFno=0xc9db -g _wDir=0xc9f5 -a _SetFpgaPageAlt_B4=SetFpgaPageAlt_B4 \
+              -a _strncpy=Strncpy -a _CStrCat_B1=CStrCat_B1 -a __rrulong_rrx_s=U32Shr \
+              -a __modulong_rrx_s=U32Div -g _wLabelBuf=0xc4a4 -g _wMarqueePos=0xcc31
 
-build/b0_kernel.inc: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+build/b0_kernel.inc: $(KERNEL_SRCS) src/kernel.h src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:0bd1:$@
+		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:0de4:$@
+
+# kernel2.c is the same file as kernel.c in stock, after SdMenuMain ($0de4),
+# which is not matched yet
+KERNEL2_ALIASES := $(KERNEL_ALIASES) -a _DrawString=DrawString -a _SdMenuMain=SdMenuMain \
+              -a _box=DrawRect -a __divulong_rrx_s=U32Mod
+
+build/b0_kernel2.inc: src/kernel2.c src/kernel.h src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) src/kernel2.c --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x16f4 $(KERNEL2_ALIASES) --region 16f4:1926:$@
+
+# SDCC 2.9.0's library C among bank 0's library modules, built as SDCC
+# builds its device lib: no options
+SDCCLIB_INCS := build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc
+
+build/b0_strrchr.inc: sdcclib/_strrchr.c tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2c42 --region 2c42:2ca5:$@
+
+build/b0_strncpy.inc: sdcclib/_strncpy.c tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2cd3 --region 2cd3:2d4c:$@
+
+build/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2d95 --region 2d95:2dba:$@
 
 build/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	rgbasm -I asm/ -I build/ -o build/game.o asm/game.asm

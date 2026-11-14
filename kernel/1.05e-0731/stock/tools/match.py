@@ -18,6 +18,10 @@ many bytes match there; a function with no kernel.sym entry in a bank is
 taken to be cut from it (blank cell). -v shows the instructions around the
 first wrong byte of each miss, -f limits the table to some functions.
 
+A `/* BB:AAAA */` comment on the line above a definition pins it to that
+address (and makes the bank list the comments' banks). A .s source is
+assembled as it is. Functions in _HOME (GBDK's NONBANKED) count too.
+
 This finds the function that differs; `make` checks the whole of each bank,
 masked operands included. Needs a stock ROM, by default build/kernel.gb,
 which is stock whenever `make` last passed (--rom for another). SDCC 2.9.0
@@ -28,6 +32,7 @@ function in the table matches.
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -110,11 +115,14 @@ def listing(sdcc, sdas, src, cflags):
     """[(name, [(bytes with None for relocated, source line)])] in source order"""
     with tempfile.TemporaryDirectory() as d:
         asm = os.path.join(d, "o.asm")
-        r = subprocess.run([sdcc, "-S", "-mgbz80", "--no-std-crt0",
-                            f"-I{src.parent}", *cflags, str(src), "-o", asm],
-                           capture_output=True, text=True)
-        if r.returncode or not os.path.exists(asm):
-            sys.exit(r.stderr)
+        if str(src).endswith(".s"):                       # assembly: listing only
+            shutil.copy(src, asm)
+        else:
+            r = subprocess.run([sdcc, "-S", "-mgbz80", "--no-std-crt0",
+                                f"-I{src.parent}", *cflags, str(src), "-o", asm],
+                               capture_output=True, text=True)
+            if r.returncode or not os.path.exists(asm):
+                sys.exit(r.stderr)
         subprocess.run([sdas, "-plosgff", os.path.join(d, "o.rel"), asm], capture_output=True, cwd=d)
         lines = open(os.path.join(d, "o.lst")).read().splitlines()
     # sdas listing lines: address, bytes ("DAr66r00": r marks a relocated
@@ -143,7 +151,7 @@ def listing(sdcc, sdas, src, cflags):
         lab = re.search(r"\s(_\w+)::?\s*$", line)
         if lab and not m:
             name = lab[1][1:]
-            if area == "_CODE" and not re.search(r"_(start|end)$", name):
+            if area in ("_CODE", "_HOME") and not re.search(r"_(start|end)$", name):
                 cur = (name, [])
                 items.append(cur)
         elif cur and m:
