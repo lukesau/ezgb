@@ -67,7 +67,8 @@ VARS = {"__cpu": 0xC4AC}
 # banks of banked functions, for SDCC's b_ symbols
 BANKS = {"b_LoadKernel": 1}
 
-CFLAGS = ["-msm83", "--sdcccall", "0", "--no-std-crt0", "--opt-code-size", "-I", str(SRC)]
+# 360: stock assigns string literals to plain char * (main.c message pointers)
+CFLAGS = ["-msm83", "--sdcccall", "0", "--no-std-crt0", "--opt-code-size", "--disable-warning", "360", "-I", str(SRC)]
 
 
 def run(cmd, cwd=None):

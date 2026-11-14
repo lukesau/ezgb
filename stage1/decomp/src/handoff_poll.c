@@ -16,17 +16,18 @@
  * then switches to kernel mode and calls the kernel. */
 void HandoffPoll(void)
 {
-    volatile UBYTE *status;
+    UBYTE v;
 
     FPGA_UNLOCK();
     FPGA_LOAD_MAP = 3;
     FPGA_COMMIT();
 
-    while (WINDOW[0] == 0)
-        ;
     do {
-        status = WINDOW;
-    } while (*status == 1);
+        v = *(volatile UBYTE *)0xA000;
+    } while (v == 0);
+    do {
+        v = *(volatile UBYTE *)0xA000;
+    } while (v == 1);
 
     FPGA_UNLOCK();
     FPGA_LOAD_MAP = 0;

@@ -7,17 +7,20 @@
 #include "handoff.h"
 
 /* 01:40AE: byte copy, n at most 255. Unused. */
-void RomLoad_Build(UBYTE *dst, const UBYTE *src, UBYTE n)
+void RomLoad_Build(void *dst, const void *src, UBYTE n)
 {
+    UBYTE *d = (UBYTE *)dst;
+    const UBYTE *s = (const UBYTE *)src;
+
     while (n--)
-        *dst++ = *src++;
+        *d++ = *s++;
 }
 
 /* 01:40EA */
 void HandoffRun(void)
 {
-    set_data((void *)HANDOFF_WRAM, HandoffPollRom, HANDOFF_SIZE);
-    ((void (*)(void))HANDOFF_WRAM)();
+    set_data((UBYTE *)0xD100, (UBYTE *)HandoffPollRom, 0x150);
+    ((void (*)(void))0xD100)();
 }
 
 /* 01:40FF: main() calls this through banked_call */
@@ -26,6 +29,6 @@ void LoadKernel(UBYTE *cmd) BANKED
     FPGA_UNLOCK();
     FPGA_LOAD_MAP = 1;
     FPGA_COMMIT();
-    set_data((void *)WINDOW, cmd, LOADCMD_SIZE);
+    set_data((UBYTE *)0xA000, cmd, 0x200);
     HandoffRun();
 }

@@ -2,10 +2,11 @@
 
 EZ Flash's stage1, the FW4 and FW5-0918 versions, rewritten in C from the
 annotated disassemblies in [../fw4](../fw4) and [../fw5-0918](../fw5-0918).
-It is a best guess at the source EZ Flash compiled, not a byte-identical
-rebuild: the SDCC they used has not been found
-([kernel/1.05e-0731/stock](../../kernel/1.05e-0731/stock/README.md#toolchain-findings)
-has the search so far). Once it is, the C here is what gets tuned to match.
+EZ Flash compiled it with SDCC 2.9.0 and no options, and the C here is
+fitted to that compiler: every function but `main` and the dead
+`PrintNumber` compiles to stock's bytes ([Matching](#matching)). The ROM
+that `make` builds is still linked from SDCC 4's output, so it runs like
+stock but is not stock's bytes.
 
 One source covers both firmwares. FW5-0918 differs from FW4 only in
 `main.c` (and the header), under `#if FW == 5`; the rest is the same code,
@@ -44,6 +45,41 @@ Two pieces of glue stand in for what EZ Flash's toolchain did:
 stock's `banked_call`, and [src/gsinit.s](src/gsinit.s) copies the
 initialized globals, where stock's compiler wrote code that stored each one.
 
+## Matching
+
+```bash
+SDCC29=<sdcc 2.9.0 prefix> stage1/decomp/tools/match.py [fw4|fw5-0918] [-v]
+```
+
+[tools/match.py](tools/match.py) compiles each file with SDCC 2.9.0
+(`sdcc -mgbz80`, nothing else) and compares every function `kernel.sym`
+names with the firmware's `kernel.gb`, masking operands the linker fills in.
+FW4: 38 match. FW5-0918: 39, with `FpgaSetBootCpu`. Left: `main` and
+`PrintNumber`.
+
+SDCC 2.9.0 needs building from its source release (z80 port only; it builds
+with a current gcc given `-fcommon -std=gnu89`). It ships no `sdcpp` or
+`sdasgb` under those names; later ones work (`SDASGB=` for the assembler).
+
+The kernel was built by the same compiler, with `--opt-code-size`
+([kernel/1.05e-0731/stock](../../kernel/1.05e-0731/stock/README.md#toolchain-findings)).
+
+What fitting the C to it showed about EZ Flash's source:
+
+- Constants with a `U` suffix: GBDK 2.x's `J_B` is `0x20U`, the SD busy
+  status is `0xE1U`, the LBA shifts are `>> 8U`. 2.9.0 compares and passes
+  those as 16-bit values, which is what stock does.
+- Constant addresses as plain casts, `(UBYTE *)0xA000`, not through a
+  `volatile` macro. The two status loops in `HandoffPoll` read
+  `*(volatile UBYTE *)0xA000` into one variable.
+- `disk_readp_impl` and `DiskRead` are banked functions, though they sit in
+  bank 0: callers use `banked_call` and the callees read arguments 4 bytes
+  higher. 2.9.0 writes the bank word as 0; stock has `$FFFF` for these and
+  1 for `LoadKernel`, so EZ Flash's tools filled it in.
+- 2.9.0 gives the first-declared local the highest stack slot, so local
+  order is fixed by the frame (`main` declares `fs` first).
+- Petit FatFs is R0.03a unchanged.
+
 ## What is C and what stays assembly
 
 | FW4 range | File | What |
@@ -80,11 +116,10 @@ RAM: `$C0A0` load command (512 bytes), `$C2A0`-`$C2A7` message pointers
   second local). Fixed there.
 - `FpgaSetMode` and the other register writers write the unlock and commit
   envelope inline, as the `FPGA_UNLOCK()` / `FPGA_COMMIT()` macros do.
-- `disk_readp_impl` and `DiskRead` are in bank 0 but called through
-  `banked_call` with bank `$FFFF`, so EZ Flash declared them banked. Here they are plain calls.
 - `DiskRead` copies `n` sectors to the start of `buf` for every chunk of
   four: wrong for `n > 1`, never used that way.
 - The load command's sector totals are a 16-bit product (clusters times
   sectors per cluster), so they wrap at 32 MB.
 - `kernel.sym` had `BootRomDirect` at `$0752`, inside `FpgaSetMode`; it is
-  at `$075B`, where `RunFromWram` copies from.
+  at `$075B`, where `RunFromWram` copies from. `PrintNumber` is at `$05ED`
+  and `PrintBlankLines` at `$07A6` (each was a few bytes off).

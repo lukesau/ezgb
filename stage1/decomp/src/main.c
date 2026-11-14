@@ -17,18 +17,16 @@
 
 /* $C2A0-$C2A7. Initialized by InitMessages (01:4134), the startup code the
  * compiler made for these, which crt0 calls before main(). */
-const char *msg_not_found1 = "ezgb.dat not found  on SD card";
-const char *msg_not_found2 = "Please download it ";
-const char *msg_not_found3 = "from www.ezflash.cn";
-const char *msg_sd_error   = "Micro SD initial error!";
+char *msg_not_found1 = "ezgb.dat not found  on SD card";
+char *msg_not_found2 = "Please download it ";
+char *msg_not_found3 = "from www.ezflash.cn";
+char *msg_sd_error   = "Micro SD initial error!";
 
 /* 00:05BC: puts() without GBDK's, one putchar() at a time. Unused. */
 void PrintLine(char *s)
 {
-    char c;
-
-    while ((c = *s++) != 0)
-        putchar(c);
+    while (*s)
+        putchar(*s++);
     putchar('\n');
 }
 
@@ -38,8 +36,11 @@ void PrintLine(char *s)
  * five characters. */
 void PrintNumber(int n, char *s)
 {
+    int i;
+    char *p;
+    int sign;
     char buf[5];
-    int sign, i, len, j;
+    int len, j;
 
     if ((sign = n) < 0)
         n = -n;
@@ -54,9 +55,10 @@ void PrintNumber(int n, char *s)
     }
     s[len] = 0;
 
+    p = buf;
     for (j = len; j >= 0; j--)
-        buf[(UBYTE)(len - j)] = s[j - 1];
-    PrintLine(buf);
+        p[(UBYTE)(len - j)] = s[j - 1];
+    PrintLine(p);
 }
 
 /* 00:071C: wait for B alone, then 200 ms. Unused. */
@@ -136,16 +138,16 @@ const char KernelFileName[] = "EZGB.DAT";   /* 00:0B4D / 00:0B7E */
 /* 00:07F1 / 00:0811 */
 void main(void)
 {
-    UDWORD csize;          /* sp+$00 */
-    UDWORD tmp;            /* sp+$04 */
-    UWORD  clusters;       /* sp+$08: clusters walked so far */
-    UDWORD fsize;          /* sp+$0A */
-    UDWORD eoc;            /* sp+$0E */
-    UDWORD prev;           /* sp+$12 */
-    UDWORD clst;           /* sp+$16 */
-    UDWORD *p;             /* sp+$1A */
-    UBYTE unused[20];      /* sp+$1C-$2F: allocated, never touched */
     FATFS fs;              /* sp+$30, 42 bytes */
+    UBYTE unused[20];      /* sp+$1C-$2F: allocated, never touched */
+    UDWORD *p;             /* sp+$1A */
+    UDWORD clst;           /* sp+$16 */
+    UDWORD prev;           /* sp+$12 */
+    UDWORD eoc;            /* sp+$0E */
+    UDWORD fsize;          /* sp+$0A */
+    UWORD  clusters;       /* sp+$08: clusters walked so far */
+    UDWORD tmp;            /* sp+$04 */
+    UDWORD csize;          /* sp+$00 */
 
     (void)unused;
 

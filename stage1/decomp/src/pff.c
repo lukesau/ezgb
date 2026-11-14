@@ -243,9 +243,7 @@ static FRESULT dir_rewind (
         clst = (CLUST)fs->dirbase;
     }
     dj->clust = clst;                           /* Current cluster */
-    /* Upstream: (_FS_32ONLY || clst) ? ...; _FS_32ONLY is 0 here, and the
-       constant form trips SDCC warning 110. */
-    dj->sect = clst ? clust2sect(clst) : fs->dirbase;   /* Current sector */
+    dj->sect = (_FS_32ONLY || clst) ? clust2sect(clst) : fs->dirbase;   /* Current sector */
 
     return FR_OK;   /* Seek succeeded */
 }

@@ -5,7 +5,7 @@
 
 void  FpgaSetSdWindow(UBYTE mode);
 UBYTE SdWindowStatus(void);
-void  disk_readp_impl(UDWORD sector, UWORD offset, UWORD count, UBYTE *buff);
-void  DiskRead(UDWORD lba, UBYTE n, UBYTE *buf);
+void  disk_readp_impl(UDWORD sector, UWORD offset, UWORD count, UBYTE *buff) BANKED;
+void  DiskRead(UDWORD lba, UBYTE n, UBYTE *buf) BANKED;
 
 #endif

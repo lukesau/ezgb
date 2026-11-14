@@ -18,10 +18,10 @@ typedef unsigned long  UDWORD;
 /* the boot ROM's A, saved by crt0 ($11 on a color console). GBDK's _cpu. */
 extern UBYTE _cpu;                       /* $C4AC */
 
-#define J_A      0x10
-#define J_B      0x20
-#define J_SELECT 0x40
-#define J_START  0x80
+#define J_A      0x10U
+#define J_B      0x20U
+#define J_SELECT 0x40U
+#define J_START  0x80U
 
 void  puts(const char *s);               /* puts, 00:2BA6; prints s, then a newline */
 void  putchar(char c);                   /* putchar, 00:28F2 */
@@ -31,14 +31,13 @@ void  disable_interrupts(void);          /* DiNest, 00:04FD */
 void *memcpy(void *dst, const void *src, UWORD n);       /* Memcpy, 00:2B8D */
 /* copy that waits for STAT before each VRAM byte; stage1 uses it for plain
  * copies too (the SD window, the load command, the hand-off) */
-void  set_data(void *dst, const void *src, UWORD n);     /* VramCopyStack, 00:2FF2 */
+void  set_data(UBYTE *dst, UBYTE *src, UWORD n);     /* VramCopyStack, 00:2FF2 */
 
 /* GBDK 2.x called banked functions through banked_call
  * (FarCallTrampoline, 00:058D): `call`, then the address and the bank
  * inline. SDCC 4 calls ___sdcc_bcall_ehl (bcall.s) instead, with the same
- * stack layout for the callee. Stock also declared disk_readp_impl and
- * DiskRead banked, though they are in bank 0, so they were called with
- * bank $FFFF; here they are plain calls. */
+ * stack layout for the callee. disk_readp_impl and DiskRead are banked
+ * too, though they are in bank 0 (stock calls them with bank $FFFF). */
 #define BANKED __banked
 
 #endif

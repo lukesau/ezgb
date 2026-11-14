@@ -6,7 +6,8 @@
 void LoadKernel(UBYTE *cmd) BANKED;
 void HandoffPoll(void);
 
-/* where HandoffPoll's bytes are in ROM: its link address is $D100 */
-extern const UBYTE HandoffPollRom[];
+/* HandoffPoll where it is stored, 01:4000; it is linked to run at $D100.
+ * tools/link.py defines it. */
+void HandoffPollRom(void);
 
 #endif
