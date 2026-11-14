@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Byte-compare the decomp's C, compiled by SDCC 2.9.0, against stock stage1.
 
-    SDCC29=<sdcc 2.9.0 prefix> stage1/decomp/tools/match.py [fw4|fw5-0918] [-v] [file ...]
+    stage1/decomp/tools/match.py [fw4|fw5-0918] [-v] [file ...]
 
 Each src/*.c is compiled with `sdcc -mgbz80` (no other options: EZ Flash
 used none) and assembled with a listing, and every function in it that
@@ -10,8 +10,10 @@ stage1-from-bram.py). Operands the linker fills in (calls, jumps, globals)
 are masked, and so is the bank word of a banked call: SDCC 2.9.0 writes it
 as 0 ("PENDING: bank support"), where stock has the real bank.
 
+The compiler is tools/sdcc-2.9.0 (build-sdcc29.sh), or SDCC29=<prefix>.
 SDCC 2.9.0 has no sdasgb; any later one assembles its output (SDASGB=<path>,
-default $SDCC29/bin/sdasgb). Exit status 0 when every function matches.
+default the one on PATH). Exit status 0 when every function matches. tools/link.py
+checks the whole ROM; this says which function differs.
 """
 import os
 import re
@@ -29,11 +31,12 @@ args = [a for a in args if a != "-v"]
 fw = args.pop(0) if args and args[0].startswith("fw") else "fw4"
 files = args or sorted(p.stem for p in (HERE / "src").glob("*.c"))
 
-sdcc_dir = os.environ.get("SDCC29")
-if not sdcc_dir:
-    sys.exit("set SDCC29 to an SDCC 2.9.0 install prefix")
-sdcc = Path(sdcc_dir) / "bin" / "sdcc"
-sdas = os.environ.get("SDASGB", str(Path(sdcc_dir) / "bin" / "sdasgb"))
+sdcc_dir = Path(os.environ.get("SDCC29", STAGE1.parent / "tools" / "sdcc-2.9.0"))
+sdcc = sdcc_dir / "bin" / "sdcc"
+if not sdcc.exists():
+    sys.exit(f"no {sdcc}: run stage1/decomp/tools/build-sdcc29.sh or set SDCC29")
+sdas = os.environ.get("SDASGB", "sdasgb")
+os.environ["PATH"] = f"{sdcc_dir / 'bin'}:{os.environ['PATH']}"      # its sdcpp wrapper
 
 rom = (STAGE1 / fw / "kernel.gb").read_bytes()
 sym = {}
@@ -57,25 +60,39 @@ def listing(src):
             sys.exit(r.stderr)
         subprocess.run([sdas, "-plosgff", os.path.join(d, "o.rel"), asm], capture_output=True, cwd=d)
         lines = open(os.path.join(d, "o.lst")).read().splitlines()
+    # sdas listings: address, bytes ("21r00s00": r/s mark bytes the linker
+    # fills in), optional [cycles], then the source line number at a fixed
+    # column. Lines that continue the bytes of the one above have no address
+    # and nothing at the line-number column. Column widths differ between sdas
+    # versions, so they are read from the first line with code.
+    tok = r"(?:[rs]?[0-9A-F]{2})+"
+    code = re.compile(rf"^(\s+[0-9A-F]{{4,8}})(?![0-9A-F])\s?(\s*{tok}(?:\s{tok})*)(\s+(?:\[\s*\d+\]\s+)?)(\d+)\s(.*)$")
+    numcol = None
     funcs, cur = {}, None
     for line in lines:
-        head, tail = line[:27], line[27:]
-        if "PENDING: bank" in line:                       # banked call's bank word
-            head = re.sub(r"(\s)00 00(\s)", r"\1xx xx\2", head, count=1)
-        head = re.sub(r"[rs][0-9A-F]{2}", " xx", head)       # relocated byte
-        line = head + tail
-        m = re.match(r"^\s+[0-9A-F]{4}((?:\s(?:[0-9A-F]{2}|xx))+)\s+\d+\s(.*)$", line)
-        more = len(line.rstrip()) <= 27 and re.match(r"^ {8}((?:[0-9A-F]{2}|xx)(?: (?:[0-9A-F]{2}|xx))*)\s*$", line)   # bytes of the line above
-        lab = re.search(r"\s(_\w+)::?\s*$", line)
-        if lab and not m:
-            cur = lab[1][1:]
-            funcs[cur] = []
-        elif cur and (m or more):
-            bs = [None if t == "xx" else int(t, 16) for t in (m or more)[1].split()]
-            if more and funcs[cur]:
-                funcs[cur][-1][0].extend(bs)
-            elif m:
-                funcs[cur].append((bs, m[2].strip()))
+        m = code.match(line)
+        if m:
+            numcol = numcol or m.start(4)
+            text, raw = m[5].strip(), m[2]
+        elif numcol and line[:numcol].strip() and not line[numcol:].strip() \
+                and re.fullmatch(rf"\s*{tok}(?:\s{tok})*\s*", line[:numcol]):
+            text, raw = None, line[:numcol]               # more bytes of the line above
+        else:
+            lab = re.search(r"\s(_\w+)::?\s*$", line)
+            if lab:
+                cur = lab[1][1:]
+                funcs[cur] = []
+            continue
+        if cur is None:
+            continue
+        if text and "PENDING: bank" in text:             # banked call's bank word
+            raw = "xx xx"
+        raw = re.sub(r"[rs][0-9A-F]{2}", " xx", raw)
+        bs = [None if t == "xx" else int(t, 16) for t in raw.split()]
+        if text is None and funcs[cur]:
+            funcs[cur][-1][0].extend(bs)
+        elif text is not None:
+            funcs[cur].append((bs, text))
     return funcs
 
 

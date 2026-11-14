@@ -16,13 +16,8 @@
 #endif
 
 /* $C0A0: the load command, built here and copied to the FPGA's window by
- * LoadKernel(). First in RAM, as stock's link put main.c's globals. SDCC 4
- * puts initialized data in its own area, so it gets the address directly. */
-#ifdef __SDCC_VERSION_MAJOR
-UBYTE __at(0xC0A0) LoadCmd[512];
-#else
+ * LoadKernel(). First in RAM: main.c's globals are linked first. */
 UBYTE LoadCmd[512];
-#endif
 
 /* $C2A0-$C2A7. Initialized by InitMessages (01:4134), the startup code the
  * compiler made for these, which crt0 calls before main(). */

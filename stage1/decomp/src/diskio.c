@@ -16,4 +16,9 @@ DRESULT disk_readp(BYTE *buff, DWORD sector, UINT offset, UINT count)
     return RES_OK;
 }
 
-/* 00:0C13: an unreachable second `return RES_OK`. Left out. */
+/* 00:0C13: the write stub from Petit FatFs's diskio template. Nothing
+ * calls it (PF_USE_WRITE is 0). */
+DRESULT disk_writep(const BYTE *buff, DWORD sc)
+{
+    return RES_OK;
+}

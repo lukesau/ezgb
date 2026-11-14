@@ -1,7 +1,7 @@
 /* The GBDK 2.x runtime that stock stage1 links, as C prototypes.
  *
- * GBDK 2.x passes every argument on the stack, which SDCC 4 does with
- * --sdcccall 0 (tools/link.py builds that way).
+ * SDCC 2.9.0 passes every argument on the stack and returns in e / de /
+ * dehl, the convention these routines were written for.
  *
  * These stay assembly (the disassemblies in ../../fw4 and ../../fw5-0918).
  * Names are GBDK's; the comment gives the name and FW4 address that
@@ -33,11 +33,10 @@ void *memcpy(void *dst, const void *src, UWORD n);       /* Memcpy, 00:2B8D */
  * copies too (the SD window, the load command, the hand-off) */
 void  set_data(UBYTE *dst, UBYTE *src, UWORD n);     /* VramCopyStack, 00:2FF2 */
 
-/* GBDK 2.x called banked functions through banked_call
- * (FarCallTrampoline, 00:058D): `call`, then the address and the bank
- * inline. SDCC 4 calls ___sdcc_bcall_ehl (bcall.s) instead, with the same
- * stack layout for the callee. disk_readp_impl and DiskRead are banked
- * too, though they are in bank 0 (stock calls them with bank $FFFF). */
+/* Banked functions are called through banked_call (FarCallTrampoline,
+ * 00:058D): `call`, then the address and the bank inline. disk_readp_impl
+ * and DiskRead are banked too, though they are in bank 0 (stock calls them
+ * with bank $FFFF; tools/link.py writes the bank words). */
 #define BANKED __banked
 
 #endif

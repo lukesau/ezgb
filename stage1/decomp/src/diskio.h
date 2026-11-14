@@ -21,8 +21,9 @@ typedef enum {
 #define STA_NOINIT  0x01    /* Drive not initialized */
 #define STA_NODISK  0x02    /* No medium in the drive */
 
-/* Implemented in diskio.c. No disk_writep: PF_USE_WRITE is 0. */
+/* Implemented in diskio.c. disk_writep is the template's stub, unused. */
 DSTATUS disk_initialize(void);
 DRESULT disk_readp(BYTE *buff, DWORD sector, UINT offset, UINT count);
+DRESULT disk_writep(const BYTE *buff, DWORD sc);
 
 #endif
