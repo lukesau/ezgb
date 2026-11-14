@@ -5,6 +5,12 @@
 
 SECTION "ROM Bank $001", ROMX[$4000], BANK[$1]
 
+; [ezgb]
+; HandoffPoll: copied to $D100 by HandoffRun and run from WRAM, because cart space switches
+; to the kernel. $7F36=3 starts the load of the command block in the $A000 window; poll $A000 until 1;
+; $7F36=0, $7FC0=0, ROM bank 1, $7F31=0, $7F32=$80, then call $0100 (the kernel entry).
+
+HandoffPoll::
     push af
     ld bc, $7f00
     ld a, $e1
@@ -101,6 +107,7 @@ SECTION "ROM Bank $001", ROMX[$4000], BANK[$1]
     ret
 
 
+RomLoad_Build::
     push af
     push af
     ld hl, sp+$08
@@ -120,7 +127,7 @@ SECTION "ROM Bank $001", ROMX[$4000], BANK[$1]
     ld hl, sp+$0a
     ld c, [hl]
 
-Jump_001_40c5:
+RomLoad_Build_decN::
     ld b, c
     dec c
     xor a
@@ -153,7 +160,7 @@ jr_001_40d8:
     inc [hl]
 
 jr_001_40e4:
-    jp Jump_001_40c5
+    jp RomLoad_Build_decN
 
 
 Jump_001_40e7:
@@ -161,19 +168,24 @@ Jump_001_40e7:
     ret
 
 
-Call_001_40ea:
-    ld bc, $4000
-    ld hl, $0150
+HandoffRun::
+    ld bc, HandoffPoll
+    ld hl, KernelEntry
     push hl
     push bc
     ld hl, $d100
     push hl
-    call Call_000_3023
+    call VramCopyStack
     add sp, $06
     call $d100
     ret
 
 
+; [ezgb]
+; LoadKernel(cmd): $7F36=1 maps the 512-byte command window at $A000, copy cmd there,
+; then HandoffRun. Called through FarCallTrampoline from main().
+
+LoadKernel::
     ld bc, $7f00
     ld a, $e1
     ld [bc], a
@@ -198,28 +210,32 @@ Call_001_40ea:
     push hl
     ld hl, $a000
     push hl
-    call Call_000_3023
+    call VramCopyStack
     add sp, $06
-    call Call_001_40ea
+    call HandoffRun
     ret
 
 
-    ld de, $0bb8
+; [ezgb]
+; InitMessages: message pointer globals at $C2A0-$C2A7 (called from crt0 before main).
+
+InitMessages::
+    ld de, MsgNotFound1
     ld hl, $c2a0
     ld [hl], e
     ld hl, $c2a1
     ld [hl], d
-    ld de, $0bd7
+    ld de, MsgNotFound2
     ld hl, $c2a2
     ld [hl], e
     ld hl, $c2a3
     ld [hl], d
-    ld de, $0beb
+    ld de, MsgNotFound3
     ld hl, $c2a4
     ld [hl], e
     ld hl, $c2a5
     ld [hl], d
-    ld de, $0bff
+    ld de, MsgSdError
     ld hl, $c2a6
     ld [hl], e
     ld hl, $c2a7
