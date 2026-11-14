@@ -22,7 +22,7 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). Also `longmath.s`, bank 0's math library rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -53,6 +53,7 @@ build compares against the md5, not a file.
 | `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
 | `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
 | `00:20f4`-`2826`, `2a5f`-`2a77`, `2d56`-`2d95`, `2eea`-`3d8c` | `gbdk/drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `font.ms`, `init_tt.s` | GBDK's gb library: graphics mode and drawing, VRAM copy and fill, the IBM font, joypad, `delay`, the text font engine |
+| `00:29e6`-`2a5f`, `2a77`-`2c42`, `2ca5`-`2cd3`, `2d4c`-`2d56`, `2dba`-`2eea` | `src/longmath.s` | the long, char and int math `stubs.s` jumps to, `memset`, `memcpy`: rebuilt from the stock bytes, origin unknown |
 
 ## FatFs
 
@@ -144,23 +145,27 @@ What fitting it showed:
   (`$CC33`, `$D00F`), copied there at boot.
 - `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's own library C, built
   with no options (`sdcclib/`). GBDK 2.96a has no `strrchr` or `memset`;
-  `Memset` and `Memcpy` are hand-written asm. SDCC 2.9.0's gbz80 asm
+  `Memset` and `Memcpy` are hand-written asm (`src/longmath.s`). SDCC 2.9.0's gbz80 asm
   library is there too: `stubs.s`, `div.s` and `shift.s` at `$2826`, and
   `crt0_rle.s`'s `__initrleblock` (`RleUnpack`).
-- The long and char math that `stubs.s` jumps to (`$29e6`-`$2e30` apart
-  from the library C and GBDK pieces in it, and the multiply at `$2ba2`)
-  is hand-written asm from no SDCC release (2.7.0 to 4.x, every revision
-  of `mul.s`) and no GBDK (2.96a, 4.0). It writes `$21` (ERANGE) to
-  `errno` (`$D6C7`) on a zero divisor, and the multiply loads its
-  arguments with `ld hl,sp+2`. GBDK's libc C (`_divulong.c` and the rest)
-  and SDCC 2.9.0's do not match it either.
+- The long and char math that `stubs.s` jumps to, with `memset` and
+  `memcpy`, is in no SDCC release (2.7.0 to 4.x, every revision of
+  `mul.s`) and no GBDK (2.0.17, 2.96a, 4.0). `src/longmath.s` is a
+  reconstruction from the stock bytes under SDCC's runtime names. It works
+  on byte arrays with the length in B, writes 33 (`EDOM` in SDCC's
+  `errno.h`) to `errno` (`$D6C7`) on a zero divisor, and the multiply
+  loads its arguments with `ld hl,sp+2`. Two float helpers sit in it
+  unreferenced. GBDK's libc C (`_divulong.c` and the rest) and SDCC
+  2.9.0's do not match it.
 - Bank 0's GBDK library under kernel.sym names: `ReadJoypad` is `joypad`,
   `Delay` `delay`, `PlotPixelXY` `plot_point`, `SetTextCursor` `gotogxy`,
   `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `DrawRect`
   `box`, `ApplyBasename` `strcpy`, `WaitVBlankFlag` `wait_vbl_done`,
   `LcdOff` `display_off`, `DiNest` `disable_interrupts`. kernel.sym has
   SDCC's `_modulong` and `_divulong` swapped: `U32Div` (`$282c`) is the
-  modulo, `U32Mod` (`$2832`) the division.
+  modulo, `U32Mod` (`$2832`) the division. The same goes for the bodies:
+  `S32DivImpl` (`$29e6`) and `U32DivImpl` (`$2a77`) return the remainder,
+  `S32ModImpl` and `U32ModImpl` the quotient.
 
 ## Matching
 

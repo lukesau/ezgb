@@ -29,7 +29,8 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
 
 INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
-        build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc
+        build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
+        build/b0_math1.inc build/b0_math2.inc build/b0_math3.inc build/b0_math4.inc build/b0_math5.inc
 
 all: build/kernel.gb
 
@@ -130,9 +131,21 @@ $(GBDK_INCS) &: $(GBDK_SRCS) gbdk/global.s build/crt0.sym tools/sdinc.py $(SYM)
 		--region 20f4:2826:build/b0_gbdk_code.inc --region 2a5f:2a77:build/b0_gbdk_vbl.inc \
 		--region 2d56:2d95:build/b0_gbdk_font.inc --region 2eea:3d8c:build/b0_gbdk_base.inc
 
+# the long, char and int math stubs.s jumps to, rebuilt from stock (origin
+# unknown, see src/longmath.s), in five pieces between other library code
+LONGMATH_INCS := build/b0_math1.inc build/b0_math2.inc build/b0_math3.inc build/b0_math4.inc build/b0_math5.inc
+
+$(LONGMATH_INCS) &: src/longmath.s tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0xd6c7 \
+		-b _MATH1=0x29e6 -b _MATH2=0x2a77 -b _MATH3=0x2ca5 -b _MATH4=0x2d4c -b _MATH5=0x2dba \
+		--region 29e6:2a5f:build/b0_math1.inc --region 2a77:2c42:build/b0_math2.inc \
+		--region 2ca5:2cd3:build/b0_math3.inc --region 2d4c:2d56:build/b0_math4.inc \
+		--region 2dba:2eea:build/b0_math5.inc
+
 # SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
-# that order. stubs.s jumps to long and char math that is not SDCC's
-# (stock $29E6-$2E30, not identified yet); div.s has EZ Flash's edits.
+# that order. stubs.s jumps to the math in src/longmath.s; div.s has edits
+# no SDCC release has.
 SDCCASM_SRCS := sdcclib/stubs.s sdcclib/div.s sdcclib/shift.s
 SDCCASM_DEFS := -g __mullong=0x2dc1 -g __modslong=0x29e6 -g __modulong=0x2a77 \
               -g __divslong=0x2b28 -g __divulong=0x2bfc -g __mulschar_rrx_s=0x2ba2 \
