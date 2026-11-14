@@ -26,7 +26,7 @@ It also links SDCC 2.9.0's gbz80 asm library (`device/lib/gbz80`):
 C,.exit`, and `.dvloop`'s exit, which drops the saved remainder before
 branching again. No SDCC release or revision in SDCC's history has that
 `div.s`; 2.7.0 and 2.8.0 keep the state in RAM. The math `stubs.s` jumps
-to is not SDCC's: see `../src/longmath.s`.
+to is not SDCC's: see `../src/libasm.s`.
 
 ## License
 

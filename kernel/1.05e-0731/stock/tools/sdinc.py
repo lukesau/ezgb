@@ -28,7 +28,9 @@ disassembly still links.
 Several sources link in the order given, as sdld places their areas.
 --area-at SRC:AREA=ADDR places one source's piece of an area apart from the
 others' (stock's linker met that object elsewhere in the area): sdinc renames
-the area in that object before linking. SRC is the source's file name.
+the area in that object before linking. SRC is the source's file name. For
+an absolute area, each `.org` lands at ADDR plus its address: stock's linker
+appended the modules' _HEADER areas one after another.
 
 Usage:
   sdinc.py <src> [<src> ...] --sym kernel.sym [-b AREA=ADDR ...] [-g SYM=ADDR ...]
@@ -201,7 +203,16 @@ def main():
                 text = open(rel).read()
                 new = f"{area}_{i}"
                 text, n = re.subn(rf"^A {re.escape(area)} ", f"A {new} ", text, flags=re.M)
-                if not n:
+                # an absolute area's .org pieces (sdas names them AREA0, AREA1, ...):
+                # placed relative to ADDR, the way a linker that appends each
+                # module's piece of the area does
+                def rebase(m):
+                    base = int(addr, 0)  # the T lines keep the .org address
+                    a.b.append(f"{new}_{m.group(1)}=0x{base:04x}")
+                    return f"A {new}_{m.group(1)} size {m.group(2)} flags 0 addr 0"
+                text, k = re.subn(rf"^A {re.escape(area)}(\d+) size (\w+) flags 8 addr (\w+)$", rebase,
+                                  text, flags=re.M)
+                if not n and not k:
                     sys.exit(f"error: --area-at {spec}: no area {area} in {name}")
                 open(rel, "w").write(text)
                 a.b.append(f"{new}={addr}")

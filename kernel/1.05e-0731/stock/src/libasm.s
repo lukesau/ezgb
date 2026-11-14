@@ -1,12 +1,13 @@
-	;; Long, char and int math for bank 0 (stock $29E6-$2EEA, in five pieces).
-	;; SDCC 2.9.0's stubs.s jumps here. The source this came from is not
-	;; known: no SDCC (2.7.0 to 4.x), GBDK (2.0.17, 2.96a, 4.0) or GBDK-2020
-	;; library has it. This file is a reconstruction from the stock kernel's
-	;; bytes, with the names SDCC's runtime gives the entry points. It also
-	;; holds memset, memcpy and two unreferenced float helpers.
+	;; Bank 0's asm runtime that is neither SDCC's nor GBDK's: the long, char
+	;; and int math SDCC 2.9.0's stubs.s jumps to, strcpy, memset and memcpy,
+	;; and two unreferenced float helpers (stock $20E2 and $29E6-$2EEA, in six
+	;; pieces). The source this came from is not known: no SDCC (2.7.0 to
+	;; 4.x) or GBDK (2.0.17, 2.96a, 4.0) library has it. This file is a
+	;; reconstruction from the stock kernel's bytes, with the names SDCC's
+	;; runtime gives the entry points.
 	;;
 	;; Stock links the pieces between other library objects, so each is its
-	;; own area here (_MATH1 to _MATH5) and the Makefile places them. The
+	;; own area here (_LIB0 to _LIB5) and the Makefile places them. The
 	;; helpers take a byte count in B; most work on 4-byte little-endian values.
 	;;
 	;; kernel.sym's S32DivImpl/U32DivImpl/S32ModImpl/U32ModImpl have division
@@ -14,10 +15,31 @@
 
 	.globl	__mullong, __modslong, __modulong, __divslong, __divulong
 	.globl	__mulschar_rrx_s, __muluchar_rrx_s, __mulint_rrx_s
-	.globl	_memset, _memcpy
+	.globl	_strcpy, _memset, _memcpy
 	.globl	_errno
 
-	.area	_MATH1
+	.area	_LIB0
+;; char *strcpy(char *d, const char *s); does not return d
+_strcpy::
+	lda	hl,4(sp)
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	lda	hl,2(sp)
+	ld	a,(hl+)
+	ld	h,(hl)
+	ld	l,a
+.strcpy_copyLoop:
+	ld	a,(de)
+	inc	de
+	ld	(hl),a
+	and	a,a
+	ret	z
+
+	inc	hl
+	jr	.strcpy_copyLoop
+
+	.area	_LIB1
 ;; long __modslong(long a, long b): a % b. A zero a returns 0; a zero b sets
 ;; errno to 33 (EDOM in SDCC's errno.h) and returns 0x7FFFFFFF. Divides
 ;; the magnitudes; the remainder is negated when the signs differ.
@@ -109,7 +131,7 @@ __modslong::
 	lda	sp,9(sp)
 	ret
 
-	.area	_MATH2
+	.area	_LIB2
 ;; unsigned long __modulong(unsigned long a, unsigned long b): a % b, with
 ;; __modslong's zero checks
 __modulong::
@@ -527,7 +549,7 @@ __divulong::
 	lda	sp,8(sp)
 	ret
 
-	.area	_MATH3
+	.area	_LIB3
 ;; void *memset(void *s, int c, size_t n); does not return s
 _memset::
 	lda	hl,5(sp)
@@ -578,7 +600,7 @@ _memcpy::
 	inc	hl
 	jr	.memcpy_copyLoop
 
-	.area	_MATH4
+	.area	_LIB4
 ;; negates the B-byte value at HL (carry must be clear)
 .lm_neg:
 	ld	c,b
@@ -594,7 +616,7 @@ _memcpy::
 
 	ret
 
-	.area	_MATH5
+	.area	_LIB5
 ;; zeroes B bytes at HL
 .lm_zero:
 	ld	c,b

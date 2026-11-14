@@ -106,7 +106,8 @@
 	.DT_RECEIVING	= 0x55
 
 	;; Table of routines for modes
-	.MODE_TABLE	= 0x01E0
+	;; ezflash: 0x01E2 (GBDK 2.96a has 0x01E0)
+	.MODE_TABLE	= 0x01E2
 
 	;; C related
 	;; Overheap of a banked call.  Used for parameters

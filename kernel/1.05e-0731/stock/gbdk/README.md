@@ -4,7 +4,9 @@ The EZ Flash Jr kernel is a GBDK program: bank 0 starts with GBDK's runtime
 (`crt0.s`), modified by EZ Flash. The files here reproduce it from GBDK's
 source.
 
-- `global.s`: GBDK 2.96a `libc/gb/global.s`, unchanged.
+- `global.s`: GBDK 2.96a `libc/gb/global.s` with `.MODE_TABLE` at `$01E2`
+  (2.96a has `$01E0`), marked `;; ezflash:`; crt0.s and the library modules
+  all see it.
 - `include/`: GBDK 2.96a's headers, unchanged, for the kernel C in `../src`
   (built with `-DBYTE_IS_UNSIGNED=1`).
 - `crt0.s`: GBDK 2.96a `libc/gb/crt0.s` (identical to GBDK-2020 3.0.1's) with
@@ -12,7 +14,7 @@ source.
   count (`__int_nest`) used by the dispatcher, `enable_interrupts`/
   `disable_interrupts` and `banked_call`; ROM bank 1 selected at startup; the
   kernel's init instead of `gsinit`/`banked_call _main`; `_reset`,
-  `_clock` and `__printTStates` removed; the mode table at `$01E2`. Global
+  `_clock` and `__printTStates` removed. Global
   labels without a leading dot are the kernel disassembly's names for the
   same addresses.
 - `drawing.s`: GBDK 2.96a `libc/gb/drawing.s` with two changes, marked

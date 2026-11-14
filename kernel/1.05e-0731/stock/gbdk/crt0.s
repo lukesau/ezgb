@@ -8,8 +8,6 @@
 
 	.include	"global.s"
 
-	;; ezflash: MODE_TABLE moved up two bytes (global.s has 0x01E0)
-	.MODE_TABLE	= 0x01E2
 
 	.globl	BootUnpackWramTables
 	.globl	BatteryCheck

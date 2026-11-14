@@ -29,8 +29,8 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
 
 INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
-        build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
-        build/b0_math1.inc build/b0_math2.inc build/b0_math3.inc build/b0_math4.inc build/b0_math5.inc
+        build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
+        build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
 all: build/kernel.gb
 
@@ -118,8 +118,12 @@ build/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM)
 # GBDK's gb library: the drawing, font and joypad code and the IBM font.
 # _BASE is one run in link order; drawing's _CODE comes first in _CODE,
 # font's is linked further on, and drawing.s's .vbl/.lcd sit at $2A5F.
+# The mode table jumps in drawing's and font's _HEADER land at $03C9 and
+# $05B6: stock's linker appended each module's _HEADER after crt0's
+# (ending at $01E3) instead of overlaying them, so $01E6 and $01EA, where
+# .set_mode jumps, are $FF.
 GBDK_SRCS := gbdk/drawing.s gbdk/cpy_data.s gbdk/ibmfixed.s gbdk/pad.s gbdk/delay.s build/font.s gbdk/init_tt.s
-GBDK_INCS := build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc
+GBDK_INCS := build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc
 
 build/font.s: gbdk/font.ms gbdk/wait_hbl.mh tools/maccer.py
 	@mkdir -p build
@@ -128,23 +132,26 @@ build/font.s: gbdk/font.ms gbdk/wait_hbl.mh tools/maccer.py
 $(GBDK_INCS) &: $(GBDK_SRCS) gbdk/global.s build/crt0.sym tools/sdinc.py $(SYM)
 	$(SDINC) $(GBDK_SRCS) -I gbdk --bank 0 --sym $(SYM) --defs build/crt0.sym $(CRT0_DEFS) \
 		-b _CODE=0x20f4 -b _BASE=0x2eea -b _VBLLCD=0x2a5f -b _BSS=0xd723 --area-at font.s:_CODE=0x2d56 \
+		--area-at drawing.s:_HEADER=0x01e3 --area-at font.s:_HEADER=0x03cc \
+		--region 01e3:0600:build/b0_gbdk_header.inc \
 		--region 20f4:2826:build/b0_gbdk_code.inc --region 2a5f:2a77:build/b0_gbdk_vbl.inc \
-		--region 2d56:2d95:build/b0_gbdk_font.inc --region 2eea:3d8c:build/b0_gbdk_base.inc
+		--region 2d56:2d95:build/b0_gbdk_font.inc --region 2eea:4000:build/b0_gbdk_base.inc
 
-# the long, char and int math stubs.s jumps to, rebuilt from stock (origin
-# unknown, see src/longmath.s), in five pieces between other library code
-LONGMATH_INCS := build/b0_math1.inc build/b0_math2.inc build/b0_math3.inc build/b0_math4.inc build/b0_math5.inc
+# bank 0's asm runtime that is neither SDCC's nor GBDK's, rebuilt from stock
+# (origin unknown, see src/libasm.s), in six pieces between other library code
+LIBASM_INCS := build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
-$(LONGMATH_INCS) &: src/longmath.s tools/sdinc.py $(SYM)
+$(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM)
 	@mkdir -p build
-	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0xd6c7 \
-		-b _MATH1=0x29e6 -b _MATH2=0x2a77 -b _MATH3=0x2ca5 -b _MATH4=0x2d4c -b _MATH5=0x2dba \
-		--region 29e6:2a5f:build/b0_math1.inc --region 2a77:2c42:build/b0_math2.inc \
-		--region 2ca5:2cd3:build/b0_math3.inc --region 2d4c:2d56:build/b0_math4.inc \
-		--region 2dba:2eea:build/b0_math5.inc
+	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0xd6c7 -b _LIB0=0x20e2 \
+		-b _LIB1=0x29e6 -b _LIB2=0x2a77 -b _LIB3=0x2ca5 -b _LIB4=0x2d4c -b _LIB5=0x2dba \
+		--region 20e2:20f4:build/b0_lib0.inc \
+		--region 29e6:2a5f:build/b0_lib1.inc --region 2a77:2c42:build/b0_lib2.inc \
+		--region 2ca5:2cd3:build/b0_lib3.inc --region 2d4c:2d56:build/b0_lib4.inc \
+		--region 2dba:2eea:build/b0_lib5.inc
 
 # SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
-# that order. stubs.s jumps to the math in src/longmath.s; div.s has edits
+# that order. stubs.s jumps to the math in src/libasm.s; div.s has edits
 # no SDCC release has.
 SDCCASM_SRCS := sdcclib/stubs.s sdcclib/div.s sdcclib/shift.s
 SDCCASM_DEFS := -g __mullong=0x2dc1 -g __modslong=0x29e6 -g __modulong=0x2a77 \

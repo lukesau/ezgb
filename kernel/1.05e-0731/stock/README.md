@@ -22,7 +22,7 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). Also `longmath.s`, bank 0's math library rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -52,8 +52,9 @@ build compares against the md5, not a file.
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
 | `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
 | `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
-| `00:20f4`-`2826`, `2a5f`-`2a77`, `2d56`-`2d95`, `2eea`-`3d8c` | `gbdk/drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `font.ms`, `init_tt.s` | GBDK's gb library: graphics mode and drawing, VRAM copy and fill, the IBM font, joypad, `delay`, the text font engine |
-| `00:29e6`-`2a5f`, `2a77`-`2c42`, `2ca5`-`2cd3`, `2d4c`-`2d56`, `2dba`-`2eea` | `src/longmath.s` | the long, char and int math `stubs.s` jumps to, `memset`, `memcpy`: rebuilt from the stock bytes, origin unknown |
+| `00:20f4`-`2826`, `2a5f`-`2a77`, `2d56`-`2d95`, `2eea`-`3d8c` (then `$FF` to `$4000`) | `gbdk/drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `font.ms`, `init_tt.s` | GBDK's gb library: graphics mode and drawing, VRAM copy and fill, the IBM font, joypad, `delay`, the text font engine |
+| `00:20e2`-`20f4`, `29e6`-`2a5f`, `2a77`-`2c42`, `2ca5`-`2cd3`, `2d4c`-`2d56`, `2dba`-`2eea` | `src/libasm.s` | the long, char and int math `stubs.s` jumps to, `strcpy`, `memset`, `memcpy`: rebuilt from the stock bytes, origin unknown |
+| `00:01e3`-`0600` | GBDK `drawing.s`, `font.ms` (`_HEADER`) | their mode table jumps, at `$03C9` and `$05B6` (see [GBDK](#toolchain-findings)), in `$FF` fill |
 
 ## FatFs
 
@@ -145,12 +146,12 @@ What fitting it showed:
   (`$CC33`, `$D00F`), copied there at boot.
 - `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's own library C, built
   with no options (`sdcclib/`). GBDK 2.96a has no `strrchr` or `memset`;
-  `Memset` and `Memcpy` are hand-written asm (`src/longmath.s`). SDCC 2.9.0's gbz80 asm
+  `Memset` and `Memcpy` are hand-written asm (`src/libasm.s`). SDCC 2.9.0's gbz80 asm
   library is there too: `stubs.s`, `div.s` and `shift.s` at `$2826`, and
   `crt0_rle.s`'s `__initrleblock` (`RleUnpack`).
 - The long and char math that `stubs.s` jumps to, with `memset` and
   `memcpy`, is in no SDCC release (2.7.0 to 4.x, every revision of
-  `mul.s`) and no GBDK (2.0.17, 2.96a, 4.0). `src/longmath.s` is a
+  `mul.s`) and no GBDK (2.0.17, 2.96a, 4.0). `src/libasm.s` is a
   reconstruction from the stock bytes under SDCC's runtime names. It works
   on byte arrays with the length in B, writes 33 (`EDOM` in SDCC's
   `errno.h`) to `errno` (`$D6C7`) on a zero divisor, and the multiply
@@ -217,7 +218,14 @@ further up bank 0: `drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`,
 `delay.s`, `font.ms` and `init_tt.s`, all from source now. They match
 GBDK 2.96a's except for two layout points in `drawing.s` (marked
 `;; ezgb:`), so EZ Flash's GBDK was a near revision rather than 2.96a
-itself.
+itself. EZ Flash's `global.s` has `.MODE_TABLE` at `$01E2`,
+and their linker appended each module's `_HEADER` piece after the last
+instead of placing it at its `.org`: crt0's ends at `$01E3`, so drawing's
+`jp .gmode` lands at `$01E3+$01E6 = $03C9` and font's `jp .tmode` at
+`$03CC+$01EA = $05B6`. The table itself (`$01E6`, `$01EA`) is `$FF`, so
+`set_mode` would jump into the fill; nothing calls `mode()`, and GBDK's
+drawing and text routines call `.gmode`/`.tmode` themselves.
+All of bank 0 now builds from source.
 
 **FatFs.** The FatFs in banks 3, 5, 6, 7 and 9 is R0.11a. The CP437
 upper-case table (`ExCvt`, at `09:4082`) has the R0.11a values,
