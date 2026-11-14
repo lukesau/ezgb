@@ -14,9 +14,6 @@ __pycache__/
 # /ezgb.dat is kept as a guard: nothing reads a root-level kernel any more
 # (use re/kernel/<version>/kernel.gb), but a stray dump dropped here must not be committed.
 /ezgb.dat
-/juniorkernel-1.04e-FW4/
-/juniorkernel-1.05e-FW5-0731/
-/juniorkernel-1.05e-FW5-0918/
 re/kernel/*/kernel.gb.orig
 # ...and anything else derived from it: probe builds, chain-boot copies,
 # ezgb.dat drops. A modified kernel still contains EZ Flash's firmware.
@@ -69,5 +66,5 @@ dist/
 # machine-specific scripts that depend on private infrastructure (lukesau.com logs etc.)
 /local/
 
-# decomp build output (generated includes, the built stock kernel)
+# stock kernel build output (generated includes, the built stock kernel)
 decomp/build/

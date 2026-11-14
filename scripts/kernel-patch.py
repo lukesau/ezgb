@@ -47,10 +47,11 @@ VERSION_FILE = os.path.join(PATCH_DIR, "VERSION")
 UPDATER_DIR = os.path.join(ROOT, "patches", "updater")
 UPDATER_MANIFEST = os.path.join(UPDATER_DIR, "manifest.json")
 STAGE1_VERSION = os.path.join(ROOT, "stage1", "VERSION")
-# the stock updater each firmware's patch applies to
+# the stock updater each firmware's patch applies to, in the daid/ezflashjr
+# clone (docs/DEVELOPMENT.md, Tools)
 UPDATER_STOCK = {
-    "fw5-0918": "juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb",
-    "fw4": "juniorkernel-1.04e-FW4/Update_FW4.gb",
+    "fw5-0918": "tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb",
+    "fw4": "tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb",
 }
 
 # IPS record layout: 3-byte offset, 2-byte size, then `size` bytes.

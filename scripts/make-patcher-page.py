@@ -11,8 +11,8 @@ SHA-256 before it can be saved, so no stock file can be patched with the
 wrong patch, the failure docs/distribution.md's mismatch test found
 dangerous for 0731/0918 kernels and for firmware.
 
-Needs the stock files (re/kernel/<ver>/kernel.gb.orig, the juniorkernel-*
-updaters) to compute the hashes, and checks every patch reproduces its
+Needs the stock files (re/kernel/<ver>/kernel.gb.orig, the updaters in
+tools/ezflashjr/official) to compute the hashes, and checks every patch reproduces its
 manifest md5 before writing anything.
 
     scripts/make-patcher-page.py [out.html] [--hold fw4]   # default dist/patcher/index.html
@@ -33,14 +33,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 kp = __import__("kernel-patch")
 
-KPKG = {"1.04e": "juniorkernel-1.04e-FW4", "1.05e-0731": "juniorkernel-1.05e-FW5-0731",
-        "1.05e-0918": "juniorkernel-1.05e-FW5-0918"}
-FW = {"fw4": ("FW4 updater (Update_FW4.gb)", "juniorkernel-1.04e-FW4", "{v}-Update_FW4.gb"),
-      "fw5-0918": ("FW5 2021-9-18 updater (Update_FW5_2021-9-18.gb)", "juniorkernel-1.05e-FW5-0918",
+KPKG = {"1.04e": "FW4, 2020-03-10", "1.05e-0731": "FW5, 2020-07-31", "1.05e-0918": "FW5, 2021-09-18"}
+FW = {"fw4": ("FW4 updater (Update_FW4.gb)", "tools/ezflashjr/official/2020-03-10_FW4_K1.04e", "{v}-Update_FW4.gb"),
+      "fw5-0918": ("FW5 2021-9-18 updater (Update_FW5_2021-9-18.gb)", "tools/ezflashjr/official/2021-09-18_FW5_K1.05e",
                    "{v}-Update_FW5-0918.gb")}
 # patched but left out of the kernel table: the 0731 package is hard to find now
 KUNLISTED = {"1.05e-0731"}
-REJECT = {"juniorkernel-1.05e-FW5-0731/Update_FW5_7-31.gb":
+REJECT = {"tools/ezflashjr/official/2020-07-31_FW5_K1.05RC/Update_FW5_7-31.gb":
           "this is EZ Flash's FW5 2020-7-31 updater. The firmware mod is built for the 2021-9-18 FW5 updater "
           "(Update_FW5_2021-9-18.gb) and the FW4 updater (Update_FW4.gb) only."}
 

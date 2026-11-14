@@ -262,7 +262,7 @@ s3pins --db $DB --bond vq100        # package pin <tab> bel pad(s)
 ## Pulling a bitstream out of the cart's files
 
 ```bash
-scripts/fpga/extract-bitstreams.py juniorkernel-1.04e-FW4/Update_FW4.gb \
+scripts/fpga/extract-bitstreams.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
     <your flash dump> -o fpga/images/
 scp fpga/images/*.bin <build host>:~/fpga/cart/
 ```

@@ -34,9 +34,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 kp = __import__("kernel-patch")
 
-UPDATERS = {"fw4": "juniorkernel-1.04e-FW4/Update_FW4.gb",
-            "fw5-0731": "juniorkernel-1.05e-FW5-0731/Update_FW5_7-31.gb",
-            "fw5-0918": "juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb"}
+UPDATERS = {"fw4": "tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb",
+            "fw5-0731": "tools/ezflashjr/official/2020-07-31_FW5_K1.05RC/Update_FW5_7-31.gb",
+            "fw5-0918": "tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb"}
 KERNELS = ["1.04e", "1.05e-0731", "1.05e-0918"]
 SLOT_B = (0x8000, 0x2480C)
 

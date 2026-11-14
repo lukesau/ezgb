@@ -1,6 +1,6 @@
 # FW4, FW5-0731 and FW5-0918 side by side
 
-The three updaters in the `juniorkernel-*` folders each carry an FPGA
+The three updaters in `tools/ezflashjr/official/` each carry an FPGA
 bitstream: `Update_FW4.gb`, `Update_FW5_7-31.gb` and
 `Update_FW5_2021-9-18.gb` (for FW5, the image at `$8000`; see
 [fw5.md](fw5.md) for the second image and the BRAM and PicoBlaze

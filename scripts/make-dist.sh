@@ -49,8 +49,8 @@ for v, e in sorted(manifest.items()):
 # manifest's patched md5, and all must carry the current stage1 version.
 # Copied as ezgb-firmware-mod-F-for-<fw>.ips (since mod 6.9 / firmware 1.9;
 # the patcher page stays the recommended route, it refuses wrong bases).
-fwname = {"fw4": "Update_FW4.gb (juniorkernel-1.04e-FW4)",
-          "fw5-0918": "Update_FW5_2021-9-18.gb (juniorkernel-1.05e-FW5-0918)"}
+fwname = {"fw4": "Update_FW4.gb (FW4, 2020-03-10)",
+          "fw5-0918": "Update_FW5_2021-9-18.gb (FW5, 2021-09-18)"}
 fwrows = []
 fwver = open(os.path.join(root, "stage1", "VERSION")).read().split()[1]
 updaters = json.load(open(os.path.join(root, "patches", "updater", "manifest.json")))
@@ -67,7 +67,7 @@ for fw, e in sorted(updaters.items()):
                f"    stock sha1:   {hashlib.sha1(stock).hexdigest()}", f"    patched md5:  {e['patched_md5']}", ""]
 if not ok:
     sys.exit("error: dist folder does not match the manifest; rerun kernel-patch.py make / stamp-mod-version.sh")
-pkg = {"1.04e": "juniorkernel-1.04e-FW4", "1.05e-0731": "juniorkernel-1.05e-FW5-0731", "1.05e-0918": "juniorkernel-1.05e-FW5-0918"}
+pkg = {"1.04e": "FW4, 2020-03-10", "1.05e-0731": "FW5, 2020-07-31", "1.05e-0918": "FW5, 2021-09-18"}
 tmpl = open(os.path.join(root, "patches", "kernel", "release-README.txt")).read()
 rows = []
 for v, e in sorted(manifest.items()):

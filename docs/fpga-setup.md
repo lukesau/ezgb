@@ -157,7 +157,7 @@ expect them, or adjust the paths.
 
 | Input | Where to get it | Used by |
 |---|---|---|
-| stock `Update_FW4.gb` | EZ Flash's 1.04e FW4 package (`juniorkernel-1.04e-FW4/`), or `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr). Both copies are the same file | every updater; slot B comes out of it |
+| stock `Update_FW4.gb` | `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr), cloned to `tools/ezflashjr` ([DEVELOPMENT.md](DEVELOPMENT.md#tools)). The same file as in EZ Flash's 1.04e FW4 package | every updater; slot B comes out of it |
 | stock stage1 dumps | daid/ezflashjr `stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
 | your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the license record, recovery |
 | the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `stage1/fw4-patches/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |
@@ -190,7 +190,7 @@ other users' jobs and stops only if the CPU is maxed out (fewer than
 **1. Extract slot B** from the stock updater:
 
 ```bash
-scripts/fpga/extract-bitstreams.py juniorkernel-1.04e-FW4/Update_FW4.gb -o fpga/images/
+scripts/fpga/extract-bitstreams.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb -o fpga/images/
 # Update_FW4@08000.bin  sha1 65aff9ce6a20
 scp fpga/images/Update_FW4@08000.bin <build host>:~/fpga/cart/slotB.bin
 ```
@@ -274,7 +274,7 @@ scripts/fpga/stage1-from-bram.py fpga/stage1/bram-new -o fpga/stage1/stage1-from
 **8. Build the updater:**
 
 ```bash
-scripts/fpga/make-updater.py juniorkernel-1.04e-FW4/Update_FW4.gb \
+scripts/fpga/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
     fpga/stage1/slotB-stage1.bin fpga/load/Update_FW4-stage1.gb --label "Update: my s1"
 ```
 
@@ -287,7 +287,7 @@ different BRAMs) and the FW5 updater as the base in step 8:
 cd fpga/stage1
 ../../scripts/fpga/stage1-to-bram.py stage1.gb blobs-fw5-0918 --layout fw5-0918 > sets-fw5-0918.txt
 # on the build host: s3patch ... ../fw5/0918.bin 0918-stage1.bin $(cat sets-fw5-0918.txt), then the round trip
-scripts/fpga/make-updater.py juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb \
+scripts/fpga/make-updater.py tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb \
     fpga/stage1/0918-stage1.bin fpga/load/Update_FW5-0918-stage1.gb --label "Update: FW5 s1"
 ```
 

@@ -273,6 +273,18 @@ Reference repos clone into `tools/` (gitignored; re-clone as needed):
 
   To move to a newer SameBoy: update `patches/sameboy/BASE_COMMIT`, rebase the
   local stub onto that commit, then re-run `refresh-sameboy-patch.sh`.
+- **[daid/ezflashjr](https://github.com/daid/ezflashjr)**: its `official/`
+  folder archives EZ Flash's firmware packages, and the build, release and
+  test scripts read the stock kernels and updaters from there:
+
+  ```sh
+  git clone https://github.com/daid/ezflashjr tools/ezflashjr
+  ```
+
+  It stops at the 2020 packages. The 2021-09-18 one goes beside them in the
+  same format, as `official/2021-09-18_FW5_K1.05e/` holding `ezgb.dat` and
+  `Update_FW5_2021-9-18.gb` (md5s in [kernel-versions.md](kernel-versions.md)
+  and `patches/updater/manifest.json`).
 - **[gb-asm-tools](https://github.com/pret/gb-asm-tools)**: pret's disassembly
   helpers (override the clone location with `GBASM_TOOLS=`):
 

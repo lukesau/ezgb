@@ -96,7 +96,7 @@ cd fpga/flashread
 # decode it and check only that tile changed
 s3patch --db $DB base-fw4.bin patched-fw4.bin $(cat sets-fw4.txt)
 # back here
-scripts/fpga/make-updater.py juniorkernel-1.04e-FW4/Update_FW4.gb \
+scripts/fpga/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb \
     fpga/flashread/patched-fw4.bin fpga/load/Update_FW4-flashread.gb --label "Update: fw4 read"
 scripts/make-debug-build.py 1.04e        # and 1.05e-0918 for the FW5 cart
 ```

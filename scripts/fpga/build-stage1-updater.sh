@@ -18,11 +18,11 @@ host=${BUILD_HOST:?set BUILD_HOST to the build host}
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 case $fw in
 fw4)      layout=; bank2=D0X3Y25; bank2_in=fw4-decode/bram/D0X3Y25.BEL.BRAM; bank1=
-          base=fw4-updater.bin; stock=juniorkernel-1.04e-FW4/Update_FW4.gb ;;
+          base=fw4-updater.bin; stock=tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb ;;
 fw5-0918) layout="--layout fw5-0918"; bank2=D0X3Y5; bank2_in=fw5-decode/bram-0918/D0X3Y5.BEL.BRAM
           bank1=D0X3Y1; bank1_in=fw5-decode/bram-0918/D0X3Y1.BEL.BRAM; bank1_psm=stage0/sd-recover-fw5-0918.psm
           bank1_allow="--allow 12B --allow 19F --allow 1A0 --allow 1A5 --allow 224 --allow 23A --allow 326 --allow 370 --allow 377"
-          base=fw5/0918.bin; stock=juniorkernel-1.05e-FW5-0918/Update_FW5_2021-9-18.gb ;;
+          base=fw5/0918.bin; stock=tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb ;;
 *)        echo "unknown firmware: $fw" >&2; exit 2 ;;
 esac
 
