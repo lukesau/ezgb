@@ -14,7 +14,7 @@ release has to survive every mix-up (docs/distribution.md, "Wrong patch"):
             SameBoy for ~15 s: a mismatched kernel must never write the SD
             card or touch $7FD2/$7FD3 (the config-flash register), and the
             1.05e-0731 / 1.05e-0918 mixes must stop on the WRONG PATCH
-            screen (kernel/src/patch_guard.c). Screenshots land in --out.
+            screen (kernel/mod/src/patch_guard.c). Screenshots land in --out.
 
     scripts/test-patch-mismatch.py [--boot] [--out DIR]
 

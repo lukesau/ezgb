@@ -10,7 +10,7 @@ Usage:
     inject_bytes.py <version> <bank> <address_hex> <name> <hex_bytes>
                     [--apply] [--regen]
 
-Example (see kernel/src/shims.md for how these bytes were derived):
+Example (see kernel/mod/src/shims.md for how these bytes were derived):
     inject_bytes.py 1.05e-0731 8 4772 FarCallOpendir_B5 \\
         f8042a666fe5f8042a666fe5cd8d07dd730500e804c9 --apply --regen
 """
@@ -23,7 +23,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sdcc_build import rom_offset  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 

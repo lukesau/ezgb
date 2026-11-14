@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inject the skip-boot-ROM launch (issue #8) into re/kernel/<ver>/kernel.gb.
 
-Assembles scripts/skipboot/skip_boot.asm and, through kernel/tools:
+Assembles scripts/skipboot/skip_boot.asm and, through kernel/mod/tools:
 
   04:6be6   SkipBootPrep: copies SkipBoot to WRAM $D1B0, points the launch
             stub's reset at it, runs the stub

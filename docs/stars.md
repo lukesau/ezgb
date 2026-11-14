@@ -125,7 +125,7 @@ writes it 0), so a name that runs to byte 253 has no room for the mark and
 shows no star. A listing that was not sorted (under two entries, or cut at 416,
 `LIST_CUT`) gets no marks.
 
-`DrawNameWithIcon` ([browser_icons.c](../kernel/src/browser_icons.c)) draws
+`DrawNameWithIcon` ([browser_icons.c](../kernel/mod/src/browser_icons.c)) draws
 glyph `$7F` for a marked record: the 8px font's tile `$7F` (`StarGlyph8`,
 `00:35fe`) and the 12px font's `$7F`, an icon like `$C0`-`$C4` with the 12 px
 icon advance ([font12.md](font12.md)). Both are a plain five-point star,
@@ -148,13 +148,13 @@ listing the star is still saved but the order and icons stay as they are.
 
 | Piece | Where |
 |---|---|
-| `Bump`, `PlayKeys`, `StarQuery`, `StarToggle` and the table code | `05:7c9f`, [play.c](../kernel/src/play.c), 865 B of asm (SDCC made 1982 B of the C) |
-| `PlayKeysFar` (stub to `PlayKeys`), `PlayMark` | `08:7f29`, [play_mark.c](../kernel/src/play_mark.c), beside the sort that near-calls them |
+| `Bump`, `PlayKeys`, `StarQuery`, `StarToggle` and the table code | `05:7c9f`, [play.c](../kernel/mod/src/play.c), 865 B of asm (SDCC made 1982 B of the C) |
+| `PlayKeysFar` (stub to `PlayKeys`), `PlayMark` | `08:7f29`, [play_mark.c](../kernel/mod/src/play_mark.c), beside the sort that near-calls them |
 | `PlayLaunchHook` | `01:7ec6`: far call to `Bump`, then `jp LastRomSaveHook`; `01:48c1`, `LastRomPersist`'s tail, jumps here instead of to `LastRomSaveHook` |
 | `StarQueryFar`, `StarToggleFar` | `04:5998`, `04:59a0`: far stubs for `RomMenu`; `StarToggleFar` goes to `StarToggleSync` (bank 11) since the table is on the card |
-| `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/src/play_file.c), 845 B: `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
-| `RecFlag` | `04:7f51`, [rec_flag.c](../kernel/src/rec_flag.c): SGB BOOT's and SORT BY PLAYS' pSRAM records, read and toggled for `SetPage` |
-| SET tab row | page 2, row 6, cursor row 8 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)), [setpage.c](../kernel/src/setpage.c), [flcfg.c](../kernel/src/flcfg.c) |
+| `PlayLoad`, `PlaySync`, `StarToggleSync` | `0B:4700`, [play_file.c](../kernel/mod/src/play_file.c), 845 B: `/.ezgbplays`; stubs `FarCallPlayLoad` `02:78b0` (from `ezcfg`) and `FarCallPlaySync_B4` `04:7792` (from `SetPage`); `PlayLaunchHook` calls `PlaySync` after `Bump` |
+| `RecFlag` | `04:7f51`, [rec_flag.c](../kernel/mod/src/rec_flag.c): SGB BOOT's and SORT BY PLAYS' pSRAM records, read and toggled for `SetPage` |
+| SET tab row | page 2, row 6, cursor row 8 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)), [setpage.c](../kernel/mod/src/setpage.c), [flcfg.c](../kernel/mod/src/flcfg.c) |
 | `DrawNameWithIconImpl` | moved from `02:7e80` to `02:7e00` to make room for the star test |
 
 ## Not done

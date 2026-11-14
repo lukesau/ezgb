@@ -25,7 +25,7 @@ re/updater/*/disassembly/game.sym
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
-# depth, and for as long as it existed it silently swallowed kernel/tools/,
+# depth, and for as long as it existed it silently swallowed kernel/mod/tools/,
 # this project's injection and verification tooling.
 /tools/
 
@@ -67,4 +67,4 @@ dist/
 /local/
 
 # stock kernel build output (generated includes, the built stock kernel)
-decomp/build/
+kernel/stock/build/

@@ -42,7 +42,7 @@ Python reference model over 400 randomized directories before injection.
 
 | Piece | Where |
 |---|---|
-| The code | `kernel/src/browser_sort.c` |
+| The code | `kernel/mod/src/browser_sort.c` |
 | Where it lives | bank 8 `$746b` (`BrowserSortAll`, 1577 bytes; `DrawHelpModVersion` follows at `$7a9c`, 8 bytes later) |
 | Bank-0 stub | `$03d4` `BrowserSortAllStub`: `cd 8d 07 6b 74 08 00 c9` (FarCallTrampoline shim) |
 | The hook | `00:102f` in `FileBrowserEntry`: was `call DirList`, now `call $03d4` |

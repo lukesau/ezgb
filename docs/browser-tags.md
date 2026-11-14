@@ -37,10 +37,10 @@ not fit. Both now measure the name through one function.
 
 | Block | Where | Does |
 |---|---|---|
-| `TagCat` | `05:7a00`, [kernel/src/tagtrim.c](../kernel/src/tagtrim.c), 324 B with `TagLen` (after the hide filter's slot, bank 5 having the room) | The marquee's gap strcat. `DrawDirEntryLabel` copies `name[offset..]` to `$c4a4`, far-calls `CStrCat_B1` (`01:4000`) to append the three-blank gap, then the name's start again for the wrap. The far target at `00:0d6c` is now `TagCat`: with `TAG_CUT` set it NUL-terminates the buffer at the cut first (the marquee's offset stays below the cut, so the cut point is always still in the buffer), then appends the gap as before. Inline far call: two pad parameters |
+| `TagCat` | `05:7a00`, [kernel/mod/src/tagtrim.c](../kernel/mod/src/tagtrim.c), 324 B with `TagLen` (after the hide filter's slot, bank 5 having the room) | The marquee's gap strcat. `DrawDirEntryLabel` copies `name[offset..]` to `$c4a4`, far-calls `CStrCat_B1` (`01:4000`) to append the three-blank gap, then the name's start again for the wrap. The far target at `00:0d6c` is now `TagCat`: with `TAG_CUT` set it NUL-terminates the buffer at the cut first (the marquee's offset stays below the cut, so the cut point is always still in the buffer), then appends the gap as before. Inline far call: two pad parameters |
 | `TagLen` | `05:7a55` | The name's length as drawn: the cut, when `TAGS_HIDE` is set and the record's attribute byte (`name[254]`) is not a directory, else `strlen`. Sets `TAG_CUT`. Called stub: three pad parameters |
 | `FarCallTagLen` | `00:0408`, 8 B | `call FarCallTrampoline; db 55 7a 05 00; ret`. The marquee's `call CStrLen` on the name (`00:0c55`) calls this instead, so `namelen` (frame `sp+$0e`) is the drawn length: the scroll check, the offset modulus and the 12px fit check (`MarqueeWidth12` compares `Fit12`'s count with that slot) all see the short name |
-| `DrawNameWithIcon` | `02:7e00`, [kernel/src/browser_icons.c](../kernel/src/browser_icons.c) | The row draw calls the same stub (one argument: the stub and the trampoline supply the three words `TagLen`'s pads stand for) and copies that many characters into its zero-padded row buffer, in both UI modes. 8px `DrawString` draws its `len` cells whatever the buffer holds, hence the padding |
+| `DrawNameWithIcon` | `02:7e00`, [kernel/mod/src/browser_icons.c](../kernel/mod/src/browser_icons.c) | The row draw calls the same stub (one argument: the stub and the trampoline supply the three words `TagLen`'s pads stand for) and copies that many characters into its zero-padded row buffer, in both UI modes. 8px `DrawString` draws its `len` cells whatever the buffer holds, hence the padding |
 
 `TAGS_HIDE` is WRAM `$DBF6`, loaded with the file (`ezcfg.c`, key index 7,
 written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
@@ -65,7 +65,7 @@ written only as `TAGS=0`). `TAG_CUT` is `$DAFF`, past `FL_PATH`'s end
 The `TAGS:` checkbox shares row 16 with `SGB BOOT:` and is cursor row 8
 (clamp `04:5604` `d6 08`, [fastlaunch-set-tab.md](fastlaunch-set-tab.md)).
 Ticked means the tags are shown. The row's two boxes are drawn and toggled by
-`SgbTagsRow` (`04:77a0`, [kernel/src/sgbtags_row.c](../kernel/src/sgbtags_row.c)),
+`SgbTagsRow` (`04:77a0`, [kernel/mod/src/sgbtags_row.c](../kernel/mod/src/sgbtags_row.c)),
 near-called by `flcfg` like `ThemeRow`: `flcfg` (`04:6600`) had outgrown
 its slot with the box in it, and moving the SGB record access and the row
 out took it from 1786 to 1594 bytes. `SetText` (`04:6400`) grew by 21 bytes

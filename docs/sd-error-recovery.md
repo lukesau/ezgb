@@ -101,7 +101,7 @@ report weekday 7, which a PCF8563 never holds (0-6). The FPGA keeps only
 the weekday's three bits (a tagged `$55` read back `$05`), so the unused
 high bits can't carry it. Nothing reads the weekday: stage1 skips `$A00C`,
 `ezcfg` masks it out of its comparisons, and the kernel's writes hardcode
-`$03`. The kernel's HELP pane ([help_sd.c](../kernel/src/help_sd.c),
+`$03`. The kernel's HELP pane ([help_sd.c](../kernel/mod/src/help_sd.c),
 `08:7c00`) reads `$A00C` in page 6 and draws `SD SPEED: HALF` under the
 GitHub link when it is 7, in both UI modes (8px: `DrawHelpModVersion`'s
 closing `jp $7141` at `08:7af1` goes through `HelpSdHook`, `08:7cc0`;

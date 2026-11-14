@@ -78,7 +78,7 @@ runs in bank 2.
 drawer in bank 8 (`08:7344`, `737f`, `73ba`): ink 0 on paper 3, a filled box
 (35,37)-(125,108), ten characters at column 5 of tile row 8. Each now starts
 with `jp MsgHook<n>` (`08:7e10` / `7e24` / `7e38`), which calls `MsgBoxFar`
-(`08:7e4c`), a far stub to `MsgBox(n)` ([msgbox.c](../kernel/src/msgbox.c),
+(`08:7e4c`), a far stub to `MsgBox(n)` ([msgbox.c](../kernel/mod/src/msgbox.c),
 `0B:4B00`), in both UI modes and every theme.
 
 Since 2026-10-31 the box is smaller, after davidesqalv's ezgb-dv fork: ten

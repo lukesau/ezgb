@@ -1,7 +1,7 @@
 # Browser scroll hook stubs
 
 > Since 2026-11-05 both hooks call far stubs to `browser_nav.c`
-> ([docs/browser-nav.md](../../docs/browser-nav.md)): `00:3d8c` for DOWN, `00:3fa0`
+> ([docs/browser-nav.md](../../../docs/browser-nav.md)): `00:3d8c` for DOWN, `00:3fa0`
 > for UP. The frame layout below still holds; the C files it names are gone.
 
 Hand-assembled, not SDCC-compiled, for the same reason as `shims.md`, but
@@ -72,7 +72,7 @@ REGISTRY entry in `scripts/port-mod.py` lists it under `exports`, and
 new address by hand:
 
 ```sh
-sdcc -c -msm83 --sdcccall 0 --no-std-crt0 kernel/src/browser_scroll.c -o bs.rel
+sdcc -c -msm83 --sdcccall 0 --no-std-crt0 kernel/mod/src/browser_scroll.c -o bs.rel
 # link with -b _CODE = 0x01e3, -g_DirList=0x0a43, then grep the .map
 ```
 

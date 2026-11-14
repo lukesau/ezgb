@@ -9,7 +9,7 @@ This is separate from `re/kernel/`, whose disassembly is regenerated from the
 modded kernel after every injection. Everything here is stock.
 
 ```sh
-make -C decomp        # build/kernel.gb, checked against the stock md5
+make -C kernel/stock        # build/kernel.gb, checked against the stock md5
 ```
 
 Needs rgbds and SDCC 4.x (`sdasgb`, `sdldgb`, `sdcc`). No dump is needed: the

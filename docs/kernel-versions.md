@@ -98,7 +98,7 @@ new bank-0 routine, `RtcReadPage` (`00:1a9a`, 896 bytes), and stamps the
 cart's clock instead.
 
 The mod does the same on 1.04e since 2026-11-05: its five stamp sites, in banks
-3, 6 and 9, call `FatStamp` ([fat_date.c](../kernel/src/fat_date.c), `00:3db0`),
+3, 6 and 9, call `FatStamp` ([fat_date.c](../kernel/mod/src/fat_date.c), `00:3db0`),
 which reads the clock on FPGA page `$06`. FW4 has the clock chip and that page;
 what it lacks is the game clock (`$A018`-`$A01C`), so RTC games still don't keep
 time there. Manage saves' names and the daily backup depend on these dates.

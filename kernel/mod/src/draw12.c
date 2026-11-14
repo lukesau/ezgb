@@ -49,7 +49,7 @@
  * separate raw block at 0A:4C00 (Font12, 101 glyphs x 12 rows x 2 bytes,
  * left-trimmed, pixels from bit 15) and the metrics at 0A:5580
  * (Font12Metrics), both produced by scripts/font12-pack.py from
- * kernel/font12/font12.txt.
+ * kernel/mod/font12/font12.txt.
  *
  *   python3 tools/inject.py src/draw12.c $V 10 4000 DrawString12Impl \\
  *       --pin wDrawColor=d734 --pin wDrawColorB=d735 --pin wIntNest=d6d0 \\

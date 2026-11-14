@@ -9,7 +9,7 @@ result with the bytes in re/kernel/<ver>/kernel.gb:
     scripts/rebuild-blocks.py              # report; exit 1 if any block is stale
     scripts/rebuild-blocks.py --apply      # re-inject the stale ones in place
 
---apply runs kernel/tools/inject.py --replace for each stale block, so every
+--apply runs kernel/mod/tools/inject.py --replace for each stale block, so every
 rebuild gets the same fit check (no overlap with another kernel.sym entry, new
 bytes only in $FF free space) and kernel.sym length update. Run it before
 porting: a C edit that was never injected is otherwise invisible until a
@@ -34,7 +34,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "mod", "tools"))
 from sdcc_build import compile_c, parse_ihx, rom_offset  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("port_mod", os.path.join(ROOT, "scripts", "port-mod.py"))
@@ -111,7 +111,7 @@ def main():
                str(bank), f"{addr:04x}", name, "--replace", "--apply"]
         for s, a in entry.get("pins", {}).items():
             cmd += ["--pin", f"{s}={a:04x}"]
-        r = subprocess.run(cmd, cwd=os.path.join(ROOT, "kernel"), capture_output=True, text=True)
+        r = subprocess.run(cmd, cwd=os.path.join(ROOT, "kernel", "mod"), capture_output=True, text=True)
         report = [l for l in r.stdout.splitlines() if l.startswith(("Fits", "patched", "error"))]
         print(f"{name}:", *report, sep="\n  ")
         if r.returncode != 0:

@@ -30,7 +30,7 @@ Page 2 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)):
 | 8 | `SGB BOOT:` 0..128 with its checkbox at x 130, or `SGB:` with `AUTO` 120..155 when our stage1 handles the SGB ([sgb-boot.md](sgb-boot.md)) |
 | 10 | `SKIP BOOT ROM:` 0..128, checkbox at x 130 ([skip-boot-rom.md](skip-boot-rom.md)) |
 
-Page 3, drawn by `ThemePage` ([themepage.c](../kernel/src/themepage.c)), which
+Page 3, drawn by `ThemePage` ([themepage.c](../kernel/mod/src/themepage.c)), which
 maps its own fields and does not go through `SetText`:
 
 | Row | 12px fields (x span) |

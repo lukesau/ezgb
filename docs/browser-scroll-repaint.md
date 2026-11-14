@@ -5,7 +5,7 @@
 > `browser_scroll.c` and `browser_scroll_repaint.c` are gone from the tree. This
 > page is the history of that step.
 
-Companion to the continuous-scroll patch (`kernel/src/browser_scroll.c`) and the
+Companion to the continuous-scroll patch (`kernel/mod/src/browser_scroll.c`) and the
 sorted browser ([browser-sort.md](browser-sort.md)).
 
 ## The problem
@@ -16,7 +16,7 @@ the user pressed DOWN, paints last, a visible beat after the press.
 
 ## The fix
 
-`browser_scroll_down_repaint` (`kernel/src/browser_scroll_repaint.c`, cave
+`browser_scroll_down_repaint` (`kernel/mod/src/browser_scroll_repaint.c`, cave
 `00:3d8c`) wraps `browser_scroll_down`. On a window shift it clears `dirty`
 (taking the repaint away from `FileBrowserEntry`), replicates the one side
 effect of the stock dirty path (zeroing the marquee tick at frame

@@ -250,5 +250,5 @@ All wiring (overlay hook, shim, blob repoint, browser-entry clear, probe) was
 reverted; the featured builds are back to fast launch + browser features only
 (0731 = md5 `670a06a7`, the hardware-confirmed build; 0918 = `448e90dd`).
 The sources (`norreuse_clamp_extents.c`, `nor_probe_draw.c`) were removed
-from `kernel/src/` on 2026-11-12 and are in the git history, with this page and
+from `kernel/mod/src/` on 2026-11-12 and are in the git history, with this page and
 [DIFF_1.05e-0731_vs_0918.md](DIFF_1.05e-0731_vs_0918.md) as the record.

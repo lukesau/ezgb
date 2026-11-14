@@ -58,7 +58,7 @@ timing or to a test ROM. Flash a normal updater to go back.
 ### Boot registers
 
 Each jump pops AF, BC, DE and HL from `BOOT_REGS` (WRAM `$DC00`), which the
-kernel fills at boot (`stage1_skip_mark`, [ezcfg.c](../kernel/src/ezcfg.c)):
+kernel fills at boot (`stage1_skip_mark`, [ezcfg.c](../kernel/mod/src/ezcfg.c)):
 
 - **Mod stage1.** Stage1 pushes the boot ROM's registers to `$FF80`-`$FF87` as
   its first instructions ([crt0.s](../stage1/src/crt0.s)) and copies them to
@@ -92,7 +92,7 @@ boot ROM's exact timing (`DIV`, which some games use for random numbers).
 The box shows ticked only when launches may jump. On a console that can't (a GBC
 or GBA in compatibility mode, an SGB under mod stage1, the DMG family under a mod
 stage1 from before the record or under stock stage1 with `SGB BOOT` ticked) it
-can't be set (`can_jump` in [setpage.c](../kernel/src/setpage.c)): since
+can't be set (`can_jump` in [setpage.c](../kernel/mod/src/setpage.c)): since
 2026-11-11 the label and an empty box are drawn in color index 2, a gray on a
 DMG and in compatibility mode, and the cursor passes over the row, as it does
 over the rows DV locks ([dark-mode.md](dark-mode.md)). Until then the row looked
@@ -148,7 +148,7 @@ game starts, not `$F1`.
 
 ### `BOOTROM=` and `BOOT_RESET`
 
-`BOOT_RESET` is WRAM `$DBEB` ([vars.h](../kernel/src/vars.h)). EzCfg had 11 B
+`BOOT_RESET` is WRAM `$DBEB` ([vars.h](../kernel/mod/src/vars.h)). EzCfg had 11 B
 left, so it only gains the key's table entry. Keys 8 (`COLORS=`) and 9
 (`BOOTROM=`) both go through the switch's `default` to `FarCallColors` with
 the key index as the op, and `ThemeColors` (`05:7b50`, now 335 B) handles them:

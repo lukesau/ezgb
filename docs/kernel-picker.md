@@ -109,12 +109,12 @@ Two places in the kernel know the kernel file only by the exact name
 
 - **Browser.** The stock browser hides `ezgb.dat` with a memcmp against that
   one name (`00:0bc8`, [ezgb-dat-boot.md](ezgb-dat-boot.md)).
-  `BrowserHideName` ([browser_hide.c](../kernel/src/browser_hide.c)) adds
+  `BrowserHideName` ([browser_hide.c](../kernel/mod/src/browser_hide.c)) adds
   `.gba`, `EZGB.CFG`, `FLAUNCH.CFG`, `SAVER` and dot-files; it gets a `.dat`
   suffix rule, one more `ends_ci` call. The SET tab's PICK ROM runs over the
   filtered list, so a kernel can't be picked as a fast-launch target either.
 - **Lone-ROM rule.** `scan_root` in
-  [fastlaunch.c](../kernel/src/fastlaunch.c) skips `ezgb.dat` by name when
+  [fastlaunch.c](../kernel/mod/src/fastlaunch.c) skips `ezgb.dat` by name when
   it counts the root's real files; a second kernel would count as a file and
   turn the rule off. It skips any `.dat` instead.
 

@@ -79,7 +79,7 @@ def write_inc(path, src, start, end, data, labels):
         # l__AREA / s__AREA are sdld's area length and start symbols
         if start <= addr < end and RGBDS_LABEL.match(name) and not name.startswith(("l__", "s__")):
             by_addr.setdefault(addr, []).append(name)
-    lines = [f"; Generated from {src} by decomp/tools/sdinc.py, do not edit.",
+    lines = [f"; Generated from {src} by kernel/stock/tools/sdinc.py, do not edit.",
              f"; ${start:04x}-${end:04x}"]
     run_ = []
 

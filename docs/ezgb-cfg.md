@@ -244,16 +244,16 @@ since they are plain stores that work from any bank.
 
 | Piece | Where | What |
 |---|---|---|
-| `EzCfg` | `02:4a00`, [kernel/src/ezcfg.c](../kernel/src/ezcfg.c), 5222 B release, 5191 B with `EZCFG_RTCLOG` (slot `02:4a00-6f3f`, 9536 B, since 2026-11-02, when `TabStrip12`, `LastRomName` and `FarCallPlayLoad` moved to `02:7600`-`78b7`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
-| `FastLaunchScan` | `02:4500`, [kernel/src/fastlaunch.c](../kernel/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
-| `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/src/flcfg.c](../kernel/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
+| `EzCfg` | `02:4a00`, [kernel/mod/src/ezcfg.c](../kernel/mod/src/ezcfg.c), 5222 B release, 5191 B with `EZCFG_RTCLOG` (slot `02:4a00-6f3f`, 9536 B, since 2026-11-02, when `TabStrip12`, `LastRomName` and `FarCallPlayLoad` moved to `02:7600`-`78b7`) | The module: load/save the file, parse keys, RTC read/write/compare, the backup and restore ops. **No stack argument**: the op is passed in WRAM `$DBFC` so the same entry works for a plain bank-2 `call` and for `FarCallTrampoline` (which shifts stack args by 6). Op 0 LOAD, 1 SAVE, 2 BACKUP, 3 RESTORE (also the BATTERY DRY stamp drop and AUTO SAVE restore), 4 LASTSAVE (also backs up the RTC and AUTO SAVE), 5 LASTLOAD, 6 TIMESET, 7 RELAUNCH, 8 SAVECHK (the BACKUPSAVE stamp check, [modal-prompts.md](modal-prompts.md)), 9 AUTOSAVE (SET-tab toggle). |
+| `FastLaunchScan` | `02:4500`, [kernel/mod/src/fastlaunch.c](../kernel/mod/src/fastlaunch.c), 670 B | Calls `ezcfg` (op LOAD) instead of parsing a file itself, only when no load has run this boot (`CFG_LOADED`); skips `ezgb.cfg` in the lone-ROM count. |
+| `FlCfg` | `04:6d19` (`04:6600` until 2026-10-31), [kernel/mod/src/flcfg.c](../kernel/mod/src/flcfg.c), 778 B then | SET-tab UI, now a client of `ezcfg` through `FarCallEzCfg`. Shrank from 1258 B. |
 | `FarCallEzCfg` | `04:5f00`, 8 B | `call FarCallTrampoline; db $00,$4a,$02,$00; ret` |
 | `RtcSetHook` | `04:5f10`, 11 B | TIME SET confirm tail: op TIMESET (waits about a second for the FPGA's copy of the clock, takes the time and writes the file), then `jp DrawTimeAutosaveScreen_redraw` (`$48f5`) |
 | `AutosaveSetHook` | `04:5fa0`, 11 B | AUTO SAVE toggle tail: op AUTOSAVE, then `jp DrawTimeAutosaveScreen_redraw` |
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
 | `RtcDumpHook` | `01:7600`, 15 B | `BackupSaveDump` epilogue: `add sp,$0b`, op BACKUP, `ret` |
-| `BrowserHideName` | `05:7700`, [kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 567 B | Hides `ezgb.cfg` too, and caps directories at 416 entries ([browser-sort.md](browser-sort.md#record-cap)). Relocated from `08:7a9c` and then `08:7c00` as it grew; `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
+| `BrowserHideName` | `05:7700`, [kernel/mod/src/browser_hide.c](../kernel/mod/src/browser_hide.c), 567 B | Hides `ezgb.cfg` too, and caps directories at 416 entries ([browser-sort.md](browser-sort.md#record-cap)). Relocated from `08:7a9c` and then `08:7c00` as it grew; `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
 
 ### Hook map (stock bytes → patch)
 
@@ -278,7 +278,7 @@ no version-specific address.
 | `$D800-$D9FF` | `CFGBUF`, 512 B: file contents on read, record on write (grown from 256 B and moved down from `$D980` for the third `LASTROM` line) |
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
 | `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
-| `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/src/auto_backup.c)) |
+| `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/mod/src/auto_backup.c)) |
 | `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([dark-mode.md](dark-mode.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([ui-mode.md](ui-mode.md)) |
 | `$DC0D-$DC0F` / `$DC10` | `ACC_RGB`, `COLORS=`'s third color as read / `ACC_OK`, 1 once one was |
 | `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([dark-mode.md](dark-mode.md#accents)) |

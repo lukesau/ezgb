@@ -33,7 +33,7 @@ for b,a,n in ((2,0x4500,0x500),(2,0x4a00,0x1600),(4,0x2600+0x4000,0x600),(8,0x7c
 open(p,'wb').write(rom)
 PY
 
-cd "$ROOT/kernel"
+cd "$ROOT/kernel/mod"
 FATFS="--pin FarCall_06_7309=1926 --pin FarCall_06_779a=1941 --pin FarCall_07_7739=1963 --pin FarCall_03_768f=19a1 --pin WaitVBlankFlag=0688"
 
 # 2. Bank 2: the settings module, then the scan that calls it.

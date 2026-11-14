@@ -6,7 +6,7 @@ to the SD card, with no desoldering and no JTAG. Two parts:
 - **A bank 2 PicoBlaze patch** ([stage0/flash-read.psm](../stage0/flash-read.psm))
   that adds a read mode to the flash-update command. It goes into slot B
   through a relabeled stock updater, like stage1.
-- **START on the debug screen** ([kernel/src/flash_dump.c](../kernel/src/flash_dump.c),
+- **START on the debug screen** ([kernel/mod/src/flash_dump.c](../kernel/mod/src/flash_dump.c),
   debug builds only, [debug-tab.md](debug-tab.md)) writes `/FLASH.BIN` and
   `/DNA.BIN`.
 

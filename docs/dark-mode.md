@@ -49,13 +49,13 @@ shade matters: it is the cursor outline on a SET checkbox, so it has to stand
 off the background. It didn't always (dark, and some custom colors), so since
 2026-11-11 the checkbox under the cursor also gets a second outline, one
 pixel outside the first, in the text's color (`SetBox`, `04:77a0`,
-[setbox.c](../kernel/src/setbox.c), shared by pages 1 and 2; the stock AUTO
+[setbox.c](../kernel/mod/src/setbox.c), shared by pages 1 and 2; the stock AUTO
 SAVE box gets its ring from `flcfg`'s `draw_rows`).
 
 The kernel draws in color indices only (it wrote `BGP = $E4` once and never
 touched a palette again, [cgb-mode.md](cgb-mode.md)), so a theme is nothing
 but the four colors those indices draw as: one row of
-[theme_ramps.c](../kernel/src/theme_ramps.c). On a color console in CGB mode
+[theme_ramps.c](../kernel/mod/src/theme_ramps.c). On a color console in CGB mode
 that row goes to all 8 BG and 8 OBJ palettes. On a DMG, light is `BGP`,
 `OBP0`, `OBP1` = `$E4`, `$E4`, `$1B` (stock) and every other theme
 `$1B`, `$1B`, `$E4`.
@@ -70,11 +70,11 @@ Light and dark have none and look as before.
 
 - **How.** The kernel draws a highlight as black on white (ink 0 on paper
   3) and a rule as a solid white fill. `StoreDrawParams` ends in `DvParams`
-  ([dv_params.c](../kernel/src/dv_params.c), 27 B at `00:3fe4`), which moves a
+  ([dv_params.c](../kernel/mod/src/dv_params.c), 27 B at `00:3fe4`), which moves a
   stored paper of 3, and the ink too when it is 3 as well, to `ACC_IDX`
   (WRAM `$DC0B`): 1 in DV (its lime), 2 in a color theme (its shade 2), 0 in
   light and dark (nothing moved). `theme_ramp`
-  ([theme_pick.c](../kernel/src/theme_pick.c)) sets `ACC_IDX` each time a
+  ([theme_pick.c](../kernel/mod/src/theme_pick.c)) sets `ACC_IDX` each time a
   theme is applied. White text on the background is untouched, and popups
   keep shade 1 as their background, so a popup is the lighter shade with
   accent rules.
@@ -86,7 +86,7 @@ Light and dark have none and look as before.
   the bar's text color, reads on each at 5:1 or better: red takes sky
   `#42A5FF`, green rose `#FF94C5`, purple gold `#EFD63A` (royal purple and
   gold), blue apricot `#FFA56B` (navy and orange). They are baked into
-  [theme_ramps.c](../kernel/src/theme_ramps.c)'s shade 2. Until then each was
+  [theme_ramps.c](../kernel/mod/src/theme_ramps.c)'s shade 2. Until then each was
   the plain complement at full brightness (cyan, magenta, lime, amber).
 - **Custom** works it out the same way from `COLORS=`'s background, or takes
   a third color from the line (see [Custom](#custom)).
@@ -162,7 +162,7 @@ ACCENT:   [22][16][10]
   page is THEME, FONT and the page row. (Until 2026-11-10 the cells read
   `--`.)
 
-`ThemePage` ([themepage.c](../kernel/src/themepage.c), bank 13) does it.
+`ThemePage` ([themepage.c](../kernel/mod/src/themepage.c), bank 13) does it.
 While a row is being set (`CP_EDIT`, WRAM `$DC19`, 1 + the channel) its
 tick, called from `FlCfg` op TICK with the pad, hands the stock loop no
 keys. A change writes `CUST_RGB` or `ACC_RGB`, rebuilds `CUST_RAMP` (and
@@ -214,7 +214,7 @@ and white with the Tamzen font, though the icons are the stock ones in white
   ([Accents](#accents)), or the ink when the background is a gray (black
   and white too: a gray is its own complement, bars nobody could see, until
   2026-11-10), worked out by `colors_accent` in
-  [ezcfg.c](../kernel/src/ezcfg.c) after `ThemeColors` has read the first
+  [ezcfg.c](../kernel/mod/src/ezcfg.c) after `ThemeColors` has read the first
   two. Until 2026-11-09 it was the background moved 9/16 toward the ink.
 - `CUSTOM` is in the SET tab's `THEME` cycle only when the file has a valid
   `COLORS=` line or the picker has set a color; without either, `THEME=6`
@@ -258,14 +258,14 @@ OK!`. Stage1 picks it up on the next power-on.
 
 | Block | Address | Does |
 |---|---|---|
-| `Theme` | `02:43d0`, [theme.c](../kernel/src/theme.c), 304 B (full) | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. A byte that still reads back wrong after 8 tries ends the ramp: palette RAM only takes writes in CGB mode. |
-| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; custom has no row. |
-| `ThemeCustom` | `02:4990`, [theme_pick.c](../kernel/src/theme_pick.c), 48 B | `FarCallColors` (8 B), ezcfg's stub to `ThemeColors`, then `theme_ramp` (`02:4998`): the colors for `Theme`, a `ThemeRamps` row or, for custom, `CUST_RAMP`, which it loads from the mark at boot. |
-| `ThemeColors` | `05:7b50`, [theme_colors.c](../kernel/src/theme_colors.c), 335 B | Asm. Op 0 (or 8, ezcfg's key index) parses `COLORS=` into `CUST_RGB` and builds `CUST_RAMP`; op 1 writes the `THEME=` and `COLORS=` lines on a save (and `BOOTROM=1`, [skip-boot-rom.md](skip-boot-rom.md)); op 9 parses `BOOTROM=`. |
-| `CgbInit` | `00:0259`, [cgb_init.c](../kernel/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
+| `Theme` | `02:43d0`, [theme.c](../kernel/mod/src/theme.c), 304 B (full) | At boot (`CFG_LOADED` 0): `THEME` from the mark. Later: the mark and colors from `THEME`. Then the palette registers, and the ramp, each byte written by index and read back in mode 0 or 1, so a call with the LCD on is safe. A byte that still reads back wrong after 8 tries ends the ramp: palette RAM only takes writes in CGB mode. |
+| `ThemeRamps` | `02:4960`, [theme_ramps.c](../kernel/mod/src/theme_ramps.c), 48 B | The colors, data only, 8 bytes per theme; custom has no row. |
+| `ThemeCustom` | `02:4990`, [theme_pick.c](../kernel/mod/src/theme_pick.c), 48 B | `FarCallColors` (8 B), ezcfg's stub to `ThemeColors`, then `theme_ramp` (`02:4998`): the colors for `Theme`, a `ThemeRamps` row or, for custom, `CUST_RAMP`, which it loads from the mark at boot. |
+| `ThemeColors` | `05:7b50`, [theme_colors.c](../kernel/mod/src/theme_colors.c), 335 B | Asm. Op 0 (or 8, ezcfg's key index) parses `COLORS=` into `CUST_RGB` and builds `CUST_RAMP`; op 1 writes the `THEME=` and `COLORS=` lines on a save (and `BOOTROM=1`, [skip-boot-rom.md](skip-boot-rom.md)); op 9 parses `BOOTROM=`. |
+| `CgbInit` | `00:0259`, [cgb_init.c](../kernel/mod/src/cgb_init.c), 49 B | The boot LCD-on hook. Its CGB ramp loop is gone: it maps bank 2 by hand (`$2000 = 2`, interrupts are still off, so not through `FarCallTrampoline`, whose `EiNest` would turn them on early), calls `Theme`, maps bank 1 back. |
 | `EzCfg` | `02:4a00` | Parses `THEME=` (light unless it is one digit naming a theme, and custom only with a valid `COLORS=`) and hands `COLORS=` and the save's two theme lines to `ThemeColors`; the boot restore (op 3) calls `Theme` right after its `cfg_load`. The key parser is now table-driven (`cfg_keys`, one `switch`), which took the module from 5010 to 4897 B with the new key. |
-| `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
-| `ThemePage` | `0D:4000`, [themepage.c](../kernel/src/themepage.c), 2753 B | The SET tab's third page, far-called by `FlCfg` through `FarCallThemePage` (`04:5990`): the THEME button (it steps through the order table, back when `THEME_BACK` (`$DAFB`) is set, sets `SET_DIRTY` and applies the theme; `FlCfg` op TICK hands it the pad, and it turns B into A with that flag when `SET_CUR` (`$DAFC`) is the THEME row), its names, the FONT button and the [color picker](#color-picker). Until 2026-11-10 the button was `ThemeRow` (`04:77a0`, theme_row.c) with `ThemeNames` (`04:7eeb`), on page 2. |
+| `PopupDrawParams` | `00:0290`, [popup_params.c](../kernel/mod/src/popup_params.c), 37 B | Popup ink and paper per theme, below. |
+| `ThemePage` | `0D:4000`, [themepage.c](../kernel/mod/src/themepage.c), 2753 B | The SET tab's third page, far-called by `FlCfg` through `FarCallThemePage` (`04:5990`): the THEME button (it steps through the order table, back when `THEME_BACK` (`$DAFB`) is set, sets `SET_DIRTY` and applies the theme; `FlCfg` op TICK hands it the pad, and it turns B into A with that flag when `SET_CUR` (`$DAFC`) is the THEME row), its names, the FONT button and the [color picker](#color-picker). Until 2026-11-10 the button was `ThemeRow` (`04:77a0`, theme_row.c) with `ThemeNames` (`04:7eeb`), on page 2. |
 
 > **Correction (2026-10-30).** `Theme` used to write the ramp only when
 > `VBK` read back bit 0 clear, taken from `CgbInit` as the CGB-mode test, and
@@ -319,7 +319,7 @@ black) and a status box as a white one. In a dark theme they now use a
 lighter shade of the background with white text:
 
 - `PopupDrawParams(ink, paper)` (`00:0290`,
-  [popup_params.c](../kernel/src/popup_params.c), 37 B, in the room
+  [popup_params.c](../kernel/mod/src/popup_params.c), 37 B, in the room
   `CgbInit` left) is `StoreDrawParams(ink, paper, 0)`, except that in any
   theme past 0 color 0 becomes color 1: the background blended 20% toward
   white. Each popup's drawing goes through it; erasing a popup back to the
@@ -361,13 +361,13 @@ Theme 7, an homage to davidesqalv's
 and its colors. The button steps light, dark, DV, red, green, purple, blue,
 custom; DV keeps number 7 so the numbers already in people's `EZGB.CFG` keep
 their meaning. Its colors are `dv_ramp` in
-[theme_pick.c](../kernel/src/theme_pick.c), which `theme_ramp` returns for 7.
+[theme_pick.c](../kernel/mod/src/theme_pick.c), which `theme_ramp` returns for 7.
 
 **Colors.** Black, lime `#7BFF31`, blue `#0063C5` and white, as color indices
 0 to 3. The kernel draws normal text white on black (ink 3, paper 0) and
 highlights black on white (ink 0, paper 3), the same index for both, so a
 palette alone cannot make the highlight lime. With DV, `StoreDrawParams`
-(`00:2791`) ends in `DvParams` (`00:3fe4`, [dv_params.c](../kernel/src/dv_params.c)):
+(`00:2791`) ends in `DvParams` (`00:3fe4`, [dv_params.c](../kernel/mod/src/dv_params.c)):
 a stored paper of 3 becomes 1, and an ink of 3 on that paper too. So the
 selection bar, the active tab, the hold-A menu's name band, the rules and the
 checkbox ticks are lime and black, white text on black is untouched, and
@@ -409,14 +409,14 @@ switches back as before. Any later theme with one font can do the same.
 A new theme goes after DV, so the numbers in people's `EZGB.CFG` keep their
 meaning.
 
-1. `THEME_COUNT` in [vars.h](../kernel/src/vars.h) (at most 10 themes:
+1. `THEME_COUNT` in [vars.h](../kernel/mod/src/vars.h) (at most 10 themes:
    `THEME=` is one digit), and the literal `THEME_COUNT` compare in
-   [theme_colors.c](../kernel/src/theme_colors.c) (asm).
-2. Its colors in [theme_pick.c](../kernel/src/theme_pick.c)'s `theme_ramp`
-   (asm): [theme_ramps.c](../kernel/src/theme_ramps.c)'s rows end at custom's
+   [theme_colors.c](../kernel/mod/src/theme_colors.c) (asm).
+2. Its colors in [theme_pick.c](../kernel/mod/src/theme_pick.c)'s `theme_ramp`
+   (asm): [theme_ramps.c](../kernel/mod/src/theme_ramps.c)'s rows end at custom's
    number, so a later theme gets its own row, as DV's `dv_ramp` is.
 3. A name, six characters wide, at the end of `theme_names` in
-   [themepage.c](../kernel/src/themepage.c), and its place in the button's
+   [themepage.c](../kernel/mod/src/themepage.c), and its place in the button's
    order there (`theme_step`: light, dark, DV, red .. custom), which is not
    the number order.
 4. Its own glyph set, if any: a sheet, a set in `scripts/inject-font12.sh`,

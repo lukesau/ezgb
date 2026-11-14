@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inject the fast DrawRect fill into re/kernel/<ver>/kernel.gb.
 
-Assembles scripts/fillrect/fillrect.asm and, through kernel/tools:
+Assembles scripts/fillrect/fillrect.asm and, through kernel/mod/tools:
 
   02:6f40   FillRect (docs/screen-timing.md)
   00:236d   DrawRectImpl_fillScan, the per-scanline DrawLine loop, becomes

@@ -186,7 +186,7 @@ so the two readings only differ from the third extent on.
 >
 > - the SameBoy stub (`rom_build_pending` in `Core/ezflash_jr.c`) copies `end`
 >   sectors per extent
-> - `kernel/src/norreuse_clamp_extents.c` subtracts each `end` from the clamp
+> - `kernel/mod/src/norreuse_clamp_extents.c` subtracts each `end` from the clamp
 >   (an experiment, removed 2026-11-12)
 > - the comment at the top of that file
 >

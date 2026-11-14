@@ -65,7 +65,7 @@ Foreground boot enters `Call_000_0de4` and stays there for the browser. The `$01
 
 - Good for mapping/notes (this file): done enough to navigate.
 - Boot IRQ/setup helpers `$062e`–`$06c0` are GBDK library assembly, matched in
-  [`decomp/gbdk/crt0.s`](../decomp/gbdk/crt0.s). `main` (`$0150`,
+  [`kernel/stock/gbdk/crt0.s`](../kernel/stock/gbdk/crt0.s). `main` (`$0150`,
   `Call_000_0de4`) is not yet built from source.
 - Naming/mapping the wider ASM (and Omega comparisons) outranks growing `kernel/` for now;
   see [`omega-jr-compare.md`](omega-jr-compare.md).

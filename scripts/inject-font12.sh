@@ -5,8 +5,8 @@
 # spacing options. The glyph sets live in bank 10 beside the 12px engine
 # (draw12.c, layout12.c; docs/font12.md):
 #
-#   set 0  kernel/font12/font12.txt     Font12 0A:4C00, Font12Metrics 0A:5580
-#   set 1  kernel/font12/font12_dv.txt  Font12Dv 0A:5D00, Font12DvMetrics 0A:6680
+#   set 0  kernel/mod/font12/font12.txt     Font12 0A:4C00, Font12Metrics 0A:5580
+#   set 1  kernel/mod/font12/font12_dv.txt  Font12Dv 0A:5D00, Font12DvMetrics 0A:6680
 #          (the DV theme's: Tamzen 6x12, fixed width, packed with --mono 6)
 #
 #   scripts/inject-font12.sh [version] [set] [font12-pack.py options]
@@ -33,14 +33,14 @@ case "$SET" in
   1) SHEET=font12_dv.txt; BMP=5d00; MET=6680; NAME=Font12Dv; OPTS=(--mono 6) ;;
   *) echo "error: no glyph set $SET" >&2; exit 2 ;;
 esac
-OUT="$ROOT/kernel/font12/${SHEET%.txt}.bin"
-OUTM="$ROOT/kernel/font12/${SHEET%.txt}-metrics.bin"
+OUT="$ROOT/kernel/mod/font12/${SHEET%.txt}.bin"
+OUTM="$ROOT/kernel/mod/font12/${SHEET%.txt}-metrics.bin"
 METRICS_END="$(python3 -c 'import sys
 b, m = sys.argv[2], int(sys.argv[3], 16)
 after = [a for a in (int(l[3:7], 16) for l in open(sys.argv[1]) if l.startswith(b + ":")) if a > m]
 print(hex(min(after) if after else 0x8000))' "$SYM" "$BANK" "$MET")"
 
-python3 "$ROOT/scripts/font12-pack.py" -i "$ROOT/kernel/font12/$SHEET" -o "$OUT" -m "$OUTM" ${OPTS[@]+"${OPTS[@]}"} "$@" | head -2
+python3 "$ROOT/scripts/font12-pack.py" -i "$ROOT/kernel/mod/font12/$SHEET" -o "$OUT" -m "$OUTM" ${OPTS[@]+"${OPTS[@]}"} "$@" | head -2
 perl -ni -e "print unless /^$BANK:($BMP|$MET) /" "$SYM"
 python3 - "$ROM" "$OUTM" "$BANK" "$MET" "$METRICS_END" <<'EOF'
 import sys
@@ -53,6 +53,6 @@ lo, hi = bank * 0x4000 + (start - 0x4000), bank * 0x4000 + (end - 0x4000)
 d[lo:hi] = b"\xff" * (hi - lo)
 open(p, "wb").write(d)
 EOF
-cd "$ROOT/kernel"
+cd "$ROOT/kernel/mod"
 python3 tools/inject_bytes.py "$V" 10 "$BMP" "$NAME" "$(xxd -p "$OUT" | tr -d '\n')" --apply | tail -1
 python3 tools/inject_bytes.py "$V" 10 "$MET" "${NAME}Metrics" "$(xxd -p "$OUTM" | tr -d '\n')" --apply | tail -1

@@ -2,7 +2,7 @@
 
 DOWN and UP in the browser, after
 [davidesqalv's ezgb-dv fork](https://github.com/davidesqalv/ezgb-dv): the code
-in [browser_nav.c](../kernel/src/browser_nav.c) is his, fitted to this kernel.
+in [browser_nav.c](../kernel/mod/src/browser_nav.c) is his, fitted to this kernel.
 His is 12px and one palette; this takes both fonts and every theme, and goes
 through 0731 and `port-mod.py` to all three kernels.
 

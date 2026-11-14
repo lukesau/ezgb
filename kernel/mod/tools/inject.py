@@ -64,7 +64,7 @@ from sdcc_build import (  # noqa: E402
     rom_offset,
 )
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")

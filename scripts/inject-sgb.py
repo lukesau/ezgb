@@ -3,7 +3,7 @@
 
 Assembles scripts/sgb/sgb_boot.asm (the toggle build: it sends only when the
 SET tab's SGB BOOT record in pSRAM is on) with the kernel addresses it needs
-taken from kernel.sym, and, through kernel/tools:
+taken from kernel.sym, and, through kernel/mod/tools:
 
   00:0020   SgbStub (9 B): push af, map bank 4, jp SgbUnlock
   00:02c3   SgbVblTail, 00:04e1 SgbVblList: VBlank vector runs the callback
@@ -34,7 +34,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOOLS = os.path.join(ROOT, "kernel", "tools")
+TOOLS = os.path.join(ROOT, "kernel", "mod", "tools")
 ASM = os.path.join(ROOT, "scripts", "sgb", "sgb_boot.asm")
 
 
@@ -78,7 +78,7 @@ def assemble(syms):
 
 
 def tool(*args):
-    subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True, cwd=os.path.join(ROOT, "kernel"))
+    subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True, cwd=os.path.join(ROOT, "kernel", "mod"))
 
 
 def offset(bank, addr):

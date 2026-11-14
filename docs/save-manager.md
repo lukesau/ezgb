@@ -54,7 +54,7 @@ from stays on the card (delete it afterwards if it isn't wanted).
 
 ## Delete
 
-The build has no `f_unlink` either. [kernel/src/fs_unlink.c](../kernel/src/fs_unlink.c)
+The build has no `f_unlink` either. [kernel/mod/src/fs_unlink.c](../kernel/mod/src/fs_unlink.c)
 adds one: R0.10's `f_unlink` and `dir_remove`, injected into bank 9 next to
 that bank's copy of the FatFs internals and calling them directly
 (`find_volume`, `follow_path`, `ld_clust`, `dir_sdi`, `move_window`,
@@ -136,15 +136,15 @@ target of its own; `f_unlink` has to live in bank 9.
 
 | Block | Size | What |
 |---|---|---|
-| `ManageSavesImpl` `0B:4010` | 1605 | [kernel/src/save_mgr.c](../kernel/src/save_mgr.c): the screens, far-called by `RomMenu` through `ManageSaves`, an 8-byte stub at `04:6d11` where the block was until 2026-10-31 (bank 4 needed the room for the SET tab) |
+| `ManageSavesImpl` `0B:4010` | 1605 | [kernel/mod/src/save_mgr.c](../kernel/mod/src/save_mgr.c): the screens, far-called by `RomMenu` through `ManageSaves`, an 8-byte stub at `04:6d11` where the block was until 2026-10-31 (bank 4 needed the room for the SET tab) |
 | `SmSaveOpB11` `0B:4000` | 16 | the same bytes as `SmSaveOp`, for the screens in bank 11 |
-| `SaveNameMatch` `04:73a0` | 715 | [kernel/src/save_name.c](../kernel/src/save_name.c): `<base>.sav` or a backup's name |
+| `SaveNameMatch` `04:73a0` | 715 | [kernel/mod/src/save_name.c](../kernel/mod/src/save_name.c): `<base>.sav` or a backup's name |
 | `SmSaveOp` `04:65f0` | 16 | far stub to `SaveOp` (no caller in bank 4 since the move; kept) |
-| `SaveOp` `01:7670` | 1750 | [kernel/src/save_ops.c](../kernel/src/save_ops.c): scan, copy, back up, restore, delete, labels |
+| `SaveOp` `01:7670` | 1750 | [kernel/mod/src/save_ops.c](../kernel/mod/src/save_ops.c): scan, copy, back up, restore, delete, labels |
 | `SoOpendir` `01:7630`, `SoReaddir` `01:7646` | 22, 22 | far stubs to `Opendir_B5` (`05:73dd`) and `Readdir_B5` (`05:7576`), the bank-2 `FarCallOpendir_B5`'s bytes |
 | `SoUnlink` `01:765c` | 16 | far stub to `FsUnlink` |
 | `SoMatch` `01:7d50` | 22 | far stub to `SaveNameMatch` |
-| `FsUnlink` `09:7cc0` | 486 | [kernel/src/fs_unlink.c](../kernel/src/fs_unlink.c) |
+| `FsUnlink` `09:7cc0` | 486 | [kernel/mod/src/fs_unlink.c](../kernel/mod/src/fs_unlink.c) |
 
 Every block sits where all three stock kernels are free: 0918's bank 1 has
 data at `01:7391`, which 0731 and 1.04e leave free.
@@ -207,7 +207,7 @@ there.
 ## Daily backup
 
 `DAILY BACKUP:` on the SET tab's second page (the first until 2026-11-10), `DAILYBACKUP=1` in `/EZGB.CFG`,
-off by default ([auto_backup.c](../kernel/src/auto_backup.c), after
+off by default ([auto_backup.c](../kernel/mod/src/auto_backup.c), after
 [davidesqalv's fork](https://github.com/davidesqalv/ezgb-dv), his code).
 
 On the boot that finds a save stamp, before the dump overwrites

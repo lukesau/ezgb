@@ -26,7 +26,7 @@ mid-word when a word is longer than a row.
 
 ## How it works
 
-[kernel/src/textview.c](../kernel/src/textview.c), bank 14 at `0E:4000`.
+[kernel/mod/src/textview.c](../kernel/mod/src/textview.c), bank 14 at `0E:4000`.
 `RomMenu` ([rom-menu.md](rom-menu.md)) offers every file that is not a ROM to
 `TextViewFar` (`04:59a8`, an 8-byte far stub); the viewer checks the
 extension and returns 0 for anything else, which then takes the stock open
@@ -34,8 +34,8 @@ path as before.
 
 **Font.** The 12px renderer ([font12.md](font12.md)) places rows on 4 px
 steps and paints 12 pixel rows each, so it cannot set rows 10 px apart. The
-viewer has its own table, `tv_font` in `kernel/src/textview_font.h`, written
-by `scripts/textview-font.py` from `kernel/font12/font12_dv.txt`: codes
+viewer has its own table, `tv_font` in `kernel/mod/src/textview_font.h`, written
+by `scripts/textview-font.py` from `kernel/mod/font12/font12_dv.txt`: codes
 `$20`-`$7E`, ten bytes each, rows 1-10 of the 6x12 cell. Row 11 is empty in
 every glyph; row 0 holds one pixel row of `$`, `{` and `}`, which is lost.
 

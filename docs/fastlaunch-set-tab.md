@@ -63,7 +63,7 @@ boot to cancel
 ```
 
 It is the status box of [tab-strip12.md](tab-strip12.md) "Status boxes",
-`MsgBox(5)` ([msgbox.c](../kernel/src/msgbox.c)), reached from bank 4
+`MsgBox(5)` ([msgbox.c](../kernel/mod/src/msgbox.c)), reached from bank 4
 through the far stub `FarCallMsgBox_B4` (`04:59b0`): 128 px wide, x 16..143,
 y 40..89 in 8px (tile rows 6, 7 and 9) and y 44..95 in 12px (text at y 48,
 60 and 76), below the date row and above the ROM name in either font.
@@ -108,7 +108,7 @@ ROWS clears it on pages 2 and 3. The entry code draws those boxes once
 before op ENTER, which clears the pane again on those pages.
 
 Page 3 is `ThemePage` (`0D:4000`,
-[`../kernel/src/themepage.c`](../kernel/src/themepage.c), 2753 B), in bank
+[`../kernel/mod/src/themepage.c`](../kernel/mod/src/themepage.c), 2753 B), in bank
 13 because bank 4 had no room for it; `flcfg` reaches it through
 `FarCallThemePage` (`04:5990`): op 0 the labels, op 1 the rows, op 3 A on a
 row, op 5 the loop's tick. It holds the THEME button (`ThemeRow`,
@@ -119,7 +119,7 @@ there, so `flcfg` op 5 only keeps its frame count going for the key repeat.
 
 Page 2 and the page row are drawn by `SetPage` (`04:6610`, since
 2026-10-31; at `04:77a0`, then `04:7792` after `ThemeRow`, until it outgrew
-those slots; [`../kernel/src/setpage.c`](../kernel/src/setpage.c)), near-called
+those slots; [`../kernel/mod/src/setpage.c`](../kernel/mod/src/setpage.c)), near-called
 by `flcfg`, which had no room for them; it replaced `SgbTagsRow`, which
 held the SGB BOOT and TAGS boxes when they shared row 16. The stock checkbox
 highlight tests the cursor against 2 instead of 1 (`04:498c`), and
@@ -173,7 +173,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 
 ## Code
 
-- [`../kernel/src/flcfg.c`](../kernel/src/flcfg.c) — bank 4 at `04:6d19` (at
+- [`../kernel/mod/src/flcfg.c`](../kernel/mod/src/flcfg.c) — bank 4 at `04:6d19` (at
   `04:6600` until 2026-10-31; a `jp` there, `FlCfgJump`, keeps the hook
   shims' calls), label `FlCfg`. One entry, `u8 flcfg(u8 *frame, u8 op)`, op-selected: 0 ENTER (load +
   draw the rows), 1 ROWS (redraw on cursor move), 2 A (row 2 toggle+save, row 3
@@ -183,10 +183,10 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
   `00:1941`, `f_write` `00:1963`, `f_close` `00:19a1`) and the kernel FIL at
   `$CA0F`, following the same `WaitVBlankFlag` + `$7FC0=$00` discipline as
   `fastlaunch.c`'s `scan_config` and the kernel's `BackupSaveDump`.
-- [`../kernel/src/flpick_banner.c`](../kernel/src/flpick_banner.c) — bank 8 at
+- [`../kernel/mod/src/flpick_banner.c`](../kernel/mod/src/flpick_banner.c) — bank 8 at
   `08:7b8d`. Draws the ` PICK A ROM ` banner over the tab strip while pick mode
   is armed.
-- `scan_config` in [`../kernel/src/fastlaunch.c`](../kernel/src/fastlaunch.c) —
+- `scan_config` in [`../kernel/mod/src/fastlaunch.c`](../kernel/mod/src/fastlaunch.c) —
   returns 2 on a leading `#` (disabled).
 
 ### WRAM (all zero at boot)
@@ -256,7 +256,7 @@ Checked in SameBoy (1.05e-0731 and 1.05e-0918 as a CGB, 1.04e as a DMG): START
 from SET and from HELP, SELECT all the way round, the overlay still on START
 in the browser, and START held on HELP.
 
-## Shims (hand-assembled; see also [`../kernel/src/shims.md`](../kernel/src/shims.md))
+## Shims (hand-assembled; see also [`../kernel/mod/src/shims.md`](../kernel/mod/src/shims.md))
 
 `flcfg` is pinned at `$6600`; args are pushed last-first (op via `push af; inc sp`,
 frame via `push bc`), return in `E`.

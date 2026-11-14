@@ -91,7 +91,7 @@ first.
 | `RomMenuPadTrack` `00:0453` | 11 | `$fff5` := `$fff6`; `ReadJoypad`; `$fff6` := the report. A and E unchanged |
 | `RomMenuHoldStub` `00:0597` | 19 | passes `sp+6` (the loop's `sp+4`, the record offset) to `RomMenu`; E = 0: `ret` into the open path, else drop the return and `jp MenuDispatchAB_waitVBlankLoop` |
 | `FarCallDrawLoadingBox` `00:0483` | 8 | far call to `DrawLoadingBox`, for the C |
-| `RomMenu` `04:5a00` | 1227 | [kernel/src/rom_menu.c](../kernel/src/rom_menu.c) |
+| `RomMenu` `04:5a00` | 1227 | [kernel/mod/src/rom_menu.c](../kernel/mod/src/rom_menu.c) |
 
 ```asm
 RomMenuPadTrack::          ; 00:0453

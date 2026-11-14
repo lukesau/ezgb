@@ -23,7 +23,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOOLS = os.path.join(ROOT, "kernel", "tools")
+TOOLS = os.path.join(ROOT, "kernel", "mod", "tools")
 REDRAW, ROWS_HOOK = 0x48f5, 0x5948      # DrawTimeAutosaveScreen_redraw, FlSetRowsHook
 TOP, BOTTOM = 0x5f80, 0x5f90
 
@@ -36,7 +36,7 @@ def handler(mark):
 
 def tool(*args):
     subprocess.run([sys.executable, os.path.join(TOOLS, args[0]), *args[1:]], check=True,
-                   cwd=os.path.join(ROOT, "kernel"))
+                   cwd=os.path.join(ROOT, "kernel", "mod"))
 
 
 def main():

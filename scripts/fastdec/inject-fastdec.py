@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inject the fast decimal path for bank 4's U32ToAscii.
 
-Assembles scripts/fastdec/u32dec.asm and, through kernel/tools:
+Assembles scripts/fastdec/u32dec.asm and, through kernel/mod/tools:
 
   04:7c00   U32ToAsciiFast
   04:44f7   U32ToAscii's `add sp, -$34; ld hl, sp+$13` becomes

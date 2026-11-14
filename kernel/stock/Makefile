@@ -6,7 +6,7 @@
 #   make clean
 
 STOCK_MD5 := 91eb7fc67332ef20b5691029181ff748
-SYM       := ../re/kernel/1.05e-0731/kernel.sym
+SYM       := ../../re/kernel/1.05e-0731/kernel.sym
 SDINC     := python3 tools/sdinc.py
 
 # Symbols crt0.s needs that are not in kernel.sym: GBDK's linker-defined

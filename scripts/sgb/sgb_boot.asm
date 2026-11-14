@@ -25,7 +25,7 @@
 ;     depend on the LCD being on, and IE/IF are left alone
 ;   - A is preserved for KernelEntry's `ld d, a`
 ;
-; The SET tab's SGB BOOT checkbox (kernel/src/flcfg.c) turns it on: it writes
+; The SET tab's SGB BOOT checkbox (kernel/mod/src/flcfg.c) turns it on: it writes
 ; 'S','G',flag,~flag to battery-backed pSRAM page $11 at $A400
 ; (docs/psram-page-map.md), and SgbCheck says send only when that record reads
 ; back valid with flag 1. Anything else (a dead coin cell's garbage, a cart

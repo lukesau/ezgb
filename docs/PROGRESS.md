@@ -1,11 +1,11 @@
 # Decompilation progress
 
-The stock 1.05e-0731 kernel builds from source in [`decomp/`](../decomp/README.md),
-byte-identical to stock (`make -C decomp` checks the md5). Ranges there come
+The stock 1.05e-0731 kernel builds from source in [`kernel/stock/`](../kernel/stock/README.md),
+byte-identical to stock (`make -C kernel/stock` checks the md5). Ranges there come
 from real source; the rest is still disassembly.
 
 > **Correction (2026-10-30).** This page used to list 15 bank-0 functions as
-> "matched" C in `kernel/src/` (`register_callback_slots.c`,
+> "matched" C in `kernel/mod/src/` (`register_callback_slots.c`,
 > `remove_callback_slot.c`, `install_callback_slot.c`, `vblank_callback.c`,
 > `wait_vblank_flag.c`, `lcd_off.c`, `oam_dma_stub.c`, `serial_callback.c`,
 > `store_d732_d733.c`, `store_d734_d735_d723.c`). None of them is compiled C:
@@ -13,20 +13,20 @@ from real source; the rest is still disassembly.
 > `.remove_int`, `.vbl`, `.wait_vbl_done`, `.display_off`, the OAM DMA
 > template, `.serial_IO`; `drawing.s`: `_gotogxy` at `$2765`, `_color` at
 > `$2791`). No SDCC version produces them; the peep files in
-> `kernel/tools/peeps/` only forced the bytes. Those files, the peep files
-> and `kernel/tools/verify.py` were removed on 2026-11-12 (they are in the git
+> `kernel/mod/tools/peeps/` only forced the bytes. Those files, the peep files
+> and `kernel/mod/tools/verify.py` were removed on 2026-11-12 (they are in the git
 > history). Only `return_zero` (`$1a77`, `1E 00 C9`) may be compiled C.
 
 | Range | Source | Status |
 |---|---|---|
-| `00:0000`-`01e3` | `decomp/gbdk/crt0.s` (GBDK 2.96a + EZ Flash changes) | Matched |
-| `00:0600`-`07bc` | `decomp/gbdk/crt0.s` `_HOME` area | Matched |
+| `00:0000`-`01e3` | `kernel/stock/gbdk/crt0.s` (GBDK 2.96a + EZ Flash changes) | Matched |
+| `00:0600`-`07bc` | `kernel/stock/gbdk/crt0.s` `_HOME` area | Matched |
 
 ## Toolchain findings
 
 **GBDK.** Bank 0 is a GBDK 2.x program's: `crt0.s` from GBDK 2.96a (the
 same file as GBDK-2020 3.0.1) with EZ Flash's changes listed in
-[`decomp/gbdk/README.md`](../decomp/gbdk/README.md), then other GBDK library
+[`kernel/stock/gbdk/README.md`](../kernel/stock/gbdk/README.md), then other GBDK library
 modules (`drawing.s` at least) further up bank 0.
 
 **FatFs.** The FatFs in banks 3, 5, 6, 7 and 9 is **R0.11a**, not R0.10:

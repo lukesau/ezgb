@@ -1,5 +1,5 @@
 /* EZGB.CFG: key=value lines, CR/LF or LF, keys any case, spaces around key
- * and value trimmed. Same rules as the kernel's parser (kernel/src/ezcfg.c
+ * and value trimmed. Same rules as the kernel's parser (kernel/mod/src/ezcfg.c
  * parse_record), FLAUNCH and BOOTROM only. The first FLAUNCH= decides. */
 #include "cfg.h"
 

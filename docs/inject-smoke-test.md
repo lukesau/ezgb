@@ -29,7 +29,7 @@ region regardless of helper or bank, and the backtrace names the culprit. See
 
 | Piece | Where |
 |---|---|
-| The code | `kernel/src/ezgb_tab_banner.c` |
+| The code | `kernel/mod/src/ezgb_tab_banner.c` |
 | Where it lives | bank 8 `$746b` (`EzgbTabBanner` in `kernel.sym`) |
 | How it runs | bank 8 `$7200`, `jp $7331` → `jp $746b` |
 

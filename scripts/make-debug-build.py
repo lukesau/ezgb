@@ -4,9 +4,9 @@
 Release kernels leave the debug screen out. This takes re/kernel/<ver>/kernel.gb (the
 mod build, untouched) and writes a copy with:
 
-  bank 12     DebugTab (kernel/src/debug_tab.c), compiled for this build;
+  bank 12     DebugTab (kernel/mod/src/debug_tab.c), compiled for this build;
               it starts with DrawMenuTabs(3) (clear the pane, keep the strip)
-  bank 12     FlashDump (kernel/src/flash_dump.c), the config flash dump
+  bank 12     FlashDump (kernel/mod/src/flash_dump.c), the config flash dump
               DebugTab far-calls on START
   bank 0      DbgTabHook: far-call DebugTab, Delay, back to the browser
   site        HELP's exit (`ld hl,$0032; push hl; call Delay; add sp,2;
@@ -33,7 +33,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-sys.path.insert(0, os.path.join(ROOT, "kernel", "tools"))
+sys.path.insert(0, os.path.join(ROOT, "kernel", "mod", "tools"))
 from portmap import PortMap, load_stock  # noqa: E402
 from sdcc_build import compile_c, parse_ihx  # noqa: E402
 
@@ -140,9 +140,9 @@ def main():
         return at, size
 
     # FlashDump first: DebugTab is pinned to it
-    dump_at, dump_size = place(os.path.join(ROOT, "kernel", "src", "flash_dump.c"), DUMP_BANK)
+    dump_at, dump_size = place(os.path.join(ROOT, "kernel", "mod", "src", "flash_dump.c"), DUMP_BANK)
     pins.append(("_FlashDump", dump_at))
-    src = os.path.join(ROOT, "kernel", "src", "debug_tab.c")
+    src = os.path.join(ROOT, "kernel", "mod", "src", "debug_tab.c")
     def build(origin):
         return build_at(src, origin)
     code = build(DEBUG_AT[1])

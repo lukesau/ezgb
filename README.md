@@ -105,7 +105,7 @@ Each links to a doc with the details.
 ## The reverse engineering
 
 - **Kernel:** every bank is disassembled and labeled, and reassembles to the
-  original for all three builds. [decomp/](decomp/README.md) is turning it
+  original for all three builds. [kernel/stock/](kernel/stock/README.md) is turning it
   into C.
 - **Hardware:** the [board](docs/hardware-board.md), the
   [registers](docs/REGISTERS.md), the [boot](docs/boot-map.md) and
@@ -124,12 +124,12 @@ with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 ## Repo layout
 
 ```
-kernel/     The mod: feature sources (C and asm) and the inject tooling
+kernel/     mod/ is the mod: feature sources (C and asm) and the inject tooling.
+            stock/ is the stock kernel rebuilt from source, checked byte for byte
 patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
 stage1/     The bootloader, from source
 stage0/     The FPGA design as Verilog, and the PicoBlaze patches
 re/         Disassemblies and notes: kernel/ (three builds), stage0/, stage1/, updater/
-decomp/     The stock kernel rebuilt from source, checked byte for byte
 docs/       Feature write-ups, hardware notes, findings
 scripts/    Build, port, release and emulator helpers
 ```

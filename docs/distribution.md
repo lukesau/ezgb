@@ -173,7 +173,7 @@ tested (`scripts/test-patch-mismatch.py`, `--boot` for the kernel runs):
   `BootUnpackWramTables`: the first save backup would have corrupted the
   `.sav`. Since mod 6.9 the kernel checks at boot that `BuildSaverBackupPath`
   opens where its patch expects it (`PatchGuard`, `01:7d70`,
-  [kernel/src/patch_guard.c](../kernel/src/patch_guard.c), called first in
+  [kernel/mod/src/patch_guard.c](../kernel/mod/src/patch_guard.c), called first in
   ezcfg's boot op through `FarCallPatchGuard` `02:43c0`) and otherwise stops
   on a WRONG PATCH screen before the BACKUPSAVE check. In SameBoy no mix-up
   writes the card or touches `$7FD2`/`$7FD3`.

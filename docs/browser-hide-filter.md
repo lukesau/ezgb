@@ -9,7 +9,7 @@ clutter get hidden by this patch:
 - names starting with `_`, for files and folders the user wants kept on the
   card but out of the list (2026-11-12)
 - `*.nds`, `*.sav` and `*.esv` (2026-11-12). Save management reads `SAVER/` with `f_readdir` directly
-  ([save_ops.c](../kernel/src/save_ops.c)), not through `DirList`, so hiding
+  ([save_ops.c](../kernel/mod/src/save_ops.c)), not through `DirList`, so hiding
   `*.sav` in the browser does not touch it
 - files the Jr can't or shouldn't launch: `*.gba` (GBA ROMs on a card shared
   with an Omega), the settings file (`EZGB.CFG`, see [ezgb-cfg.md](ezgb-cfg.md))
@@ -44,7 +44,7 @@ The leading dot hides the file itself. Only its first 512 bytes are read. Withou
 file nothing extra is hidden. `RTS`, `IMGS` and `CHEAT` were built in for a
 day (2026-11-12) and are the first names moved out to the file.
 
-[kernel/src/hide_list.c](../kernel/src/hide_list.c) (`HideLoad`, `0E:5000`)
+[kernel/mod/src/hide_list.c](../kernel/mod/src/hide_list.c) (`HideLoad`, `0E:5000`)
 is far-called by `BrowserSortAll` through `HideLoadFar` (`08:7b80`) before
 every listing. It reads the file into ezcfg's sector scratch (`$D800`) and
 packs it into the loader's 512-byte scratch at `$C0A0` in the shape of the
@@ -89,7 +89,7 @@ port, so its bank-0 call targets differ):
 |---|---|
 | `00:0a9d` | was `c2 a3 0a` (`jp nz, DirList_bankSlot`; the old stub had made it `c2 cc 03`); now `c3 ae 04`: unconditional `jp DirListHideNameStub`, flags still carrying the `or a` on `lfname[0]` |
 | `00:04ae` | `DirListHideNameStub`, 25 bytes (bank-0 cave) |
-| `05:7700` | `BrowserHideName` ([kernel/src/browser_hide.c](../kernel/src/browser_hide.c), 601 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
+| `05:7700` | `BrowserHideName` ([kernel/mod/src/browser_hide.c](../kernel/mod/src/browser_hide.c), 601 bytes, free space after FatFs in bank 5). It was `08:7a9c` until mod 3.0, when the `EZGB.CFG` rule made it outgrow the gap before `FlPickBanner` at `08:7b8d`, then `08:7c00` until mod 5.6, when the record cap ([browser-sort.md](browser-sort.md#record-cap)) made it outgrow that slot too |
 
 ```asm
 DirListHideNameStub::      ; 00:04ae: NZ means BC already = long-name ptr

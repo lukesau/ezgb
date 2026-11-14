@@ -61,12 +61,12 @@ How the names were derived, `bank:addr` translation, and interior-label
 conventions:
 [MAPPING.md](MAPPING.md).
 
-## Matching decompilation (`decomp/`)
+## Matching decompilation (`kernel/stock/`)
 
 A separate, longer-term effort from `re/`: rewriting the kernel
 function-by-function from source, verified against the stock kernel the
 same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. `re/` is the
-research phase on the modded kernel; [`decomp/`](../decomp/README.md) is a
+research phase on the modded kernel; [`kernel/stock/`](../kernel/stock/README.md) is a
 stock build that replaces disassembly with source one routine at a time and
 fails unless it stays byte-identical. Status and toolchain findings (GBDK
 `crt0.s`, FatFs R0.11a and its config, the compiler search):

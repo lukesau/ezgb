@@ -86,7 +86,7 @@ extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 0
 #define AS_SD     (*(volatile u8 *)0xDB57)  /* AUTOSAVE= from the file: 0 or 1, $FF when absent */
 #define BAT_DRY   (*(volatile u8 *)0xDBFD)  /* BatteryDryHook: the page-$11 canary was dead this boot */
 #ifdef EZCFG_RTCLOG
-/* Test builds only (EZGB_DEFINES=EZCFG_RTCLOG, see kernel/tools/sdcc_build.py):
+/* Test builds only (EZGB_DEFINES=EZCFG_RTCLOG, see kernel/mod/tools/sdcc_build.py):
  * an RTCLOG= trace of every RTC event, see log_add. */
 #define LOG_LEN   (*(volatile u8 *)0xDB4F)  /* RTCLOG= text length, a multiple of LOG_ENT */
 #define LOG_BUF   ((u8 *)0xDB60)     /* RTCLOG= text, newest entry first, LOG_MAX bytes */

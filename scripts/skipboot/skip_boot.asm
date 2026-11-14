@@ -12,7 +12,7 @@
 ;   (NO_DMG). With stock stage1 an SGB looks like a DMG, so SGB BOOT ticked
 ;   resets; its record means nothing under our stage1 (S1_SGB).
 ;
-; The registers come from BOOT_REGS, set at boot by kernel/src/ezcfg.c.
+; The registers come from BOOT_REGS, set at boot by kernel/mod/src/ezcfg.c.
 ;
 ; SkipBootPrep replaces RomLoad_BuildAndRunPoll's `call $d100`. It copies
 ; SkipBoot to WRAM after the launch stub and points the stub's reset
@@ -22,12 +22,12 @@
 
 DEF STUB_RESET EQU $d19c        ; RomLoad_SoftReset in the $D100 copy
 DEF WRAM_AT    EQU $d1b0        ; past the stub's last byte ($D1AA)
-DEF BOOT_RESET EQU $dbeb        ; kernel/src/vars.h
-DEF S1_SGB     EQU $dbf8        ; kernel/src/ezcfg.h
-DEF BOOT_REGS  EQU $dc00        ; kernel/src/vars.h
+DEF BOOT_RESET EQU $dbeb        ; kernel/mod/src/vars.h
+DEF S1_SGB     EQU $dbf8        ; kernel/mod/src/ezcfg.h
+DEF BOOT_REGS  EQU $dc00        ; kernel/mod/src/vars.h
 DEF NO_DMG     EQU $dc08
 DEF DMG_FAM    EQU $dc09
-DEF REC_FLAG   EQU $7f51        ; RecFlag(r, tag, toggle), kernel/src/rec_flag.c
+DEF REC_FLAG   EQU $7f51        ; RecFlag(r, tag, toggle), kernel/mod/src/rec_flag.c
 DEF SGB_REC    EQU $a400        ; SGB BOOT's pSRAM record
 
 SECTION "SkipBootPrep", ROMX[$6be6], BANK[4]

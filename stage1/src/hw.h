@@ -49,21 +49,21 @@
 #define PSRAM_CANARY_OK 0x88
 /* Page $11 $A410-$A411 = "S1": stage1 tells the kernel the user canceled
  * fast launch (START held), so the kernel doesn't fast launch either. The
- * kernel clears it (kernel/src/ezcfg.c cfg_load). Free space per
+ * kernel clears it (kernel/mod/src/ezcfg.c cfg_load). Free space per
  * docs/psram-page-map.md: the kernel uses $A000-$A316 of page $11. */
 #define PSRAM_SKIP_FL 0x410
 /* Page $11 $A412-$A413, written every boot: "SB" when stage1 found a Super
  * Game Boy and sent the header packets (sgb.c), "SN" when it found none. Either
  * way it tells the kernel this stage1 handles the SGB, so the kernel never
  * sends them itself and its SGB BOOT setting is shown as AUTO. The kernel
- * clears it (kernel/src/ezcfg.c stage1_skip_mark). */
+ * clears it (kernel/mod/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_SGB_SENT 0x412
 /* Page $11 $A428-$A42F, written every boot: BOOT_REGS, so the kernel's jump to
  * a game (scripts/skipboot/skip_boot.asm) can hand over this console's boot
- * registers. The kernel clears A (kernel/src/ezcfg.c stage1_skip_mark). */
+ * registers. The kernel clears A (kernel/mod/src/ezcfg.c stage1_skip_mark). */
 #define PSRAM_BOOT_REGS 0x428
 /* Page $11 $A414-$A41F: the kernel's UI theme, 'T', 'H', theme, ~theme,
- * then the theme's four BGR555 colors (kernel/src/theme.c,
+ * then the theme's four BGR555 colors (kernel/mod/src/theme.c,
  * docs/dark-mode.md), so the boot screen comes up in it before the SD card
  * is read. Missing or faded: theme 0, light. */
 #define PSRAM_THEME 0x414

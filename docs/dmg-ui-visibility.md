@@ -121,7 +121,7 @@ leaving it clear gives a 1px gap.
 Caveat: a filename containing bytes `$C0`-`$C3` (Hebrew alef to dalet in
 this font) shows an icon in that position.
 
-### `DrawNameWithIcon` (`00:3ec8`, [kernel/src/browser_icons.c](../kernel/src/browser_icons.c), 254 B)
+### `DrawNameWithIcon` (`00:3ec8`, [kernel/mod/src/browser_icons.c](../kernel/mod/src/browser_icons.c), 254 B)
 
 The six stock name draws are one `DrawString(name, len, 0, row)` each, with
 `len` 0 for directories (the 17-wide default) and `$14` for files. They now

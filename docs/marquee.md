@@ -2,7 +2,7 @@
 
 Since 2026-10-30 every name line that may not fit its field scrolls through
 one routine, `Marquee` (`02:7260`,
-[kernel/src/marquee.c](../kernel/src/marquee.c), 580 B), in either UI font.
+[kernel/mod/src/marquee.c](../kernel/mod/src/marquee.c), 580 B), in either UI font.
 Before that there were three copies of the same window-and-wrap loop, each
 fitted to its screen: the SET tab's fast-launch name in `flcfg.c`, the
 SET tab's tag example in `tagexample.c`, and the START overlay's and
@@ -21,7 +21,7 @@ The SET tab and the overlays are never on screen together, so they share
 
 ## Interface
 
-A caller owns an `Mq` in WRAM ([kernel/src/marquee.h](../kernel/src/marquee.h)):
+A caller owns an `Mq` in WRAM ([kernel/mod/src/marquee.h](../kernel/mod/src/marquee.h)):
 
 | Byte | Field | |
 |---|---|---|

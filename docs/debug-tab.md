@@ -110,7 +110,7 @@ hardware:
 
 ## Code
 
-`kernel/src/debug_tab.c` (bank 12 since 2026-11-04; bank 4 before, `04:6cca` in mod 5.4)
+`kernel/mod/src/debug_tab.c` (bank 12 since 2026-11-04; bank 4 before, `04:6cca` in mod 5.4)
 and `DbgTabHook` (bank 0, `00:02c4` when free): far-call the screen, delay,
 `jp FileBrowserEntry`. HELP's exit (`00:1288` in 1.05e, `00:127c` in 1.04e)
 becomes `bit 7,c; jp nz,FileBrowserEntry; jp DbgTabHook` (HELP returns with the pad in C: START goes to the browser, [fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-returns-to-the-sd-tab), SELECT to the hook), and the screen
