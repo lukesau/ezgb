@@ -1,5 +1,5 @@
 /* Reading / Loading / Error file boxes, in both UI modes (docs/tab-strip12.md
- * "Status boxes", docs/dark-mode.md "Popups").
+ * "Status boxes", docs/themes.md "Popups").
  *
  * Bank 11, injected at 0B:4B00 (MsgBox12 at 08:7e80 until 2026-10-31). The
  * three stock drawers (DrawReadingBox 08:7344, DrawLoadingBox 08:737f,

@@ -64,7 +64,7 @@
 #define PSRAM_BOOT_REGS 0x428
 /* Page $11 $A414-$A41F: the kernel's UI theme, 'T', 'H', theme, ~theme,
  * then the theme's four BGR555 colors (kernel/mod/src/theme.c,
- * docs/dark-mode.md), so the boot screen comes up in it before the SD card
+ * docs/themes.md), so the boot screen comes up in it before the SD card
  * is read. Missing or faded: theme 0, light. */
 #define PSRAM_THEME 0x414
 

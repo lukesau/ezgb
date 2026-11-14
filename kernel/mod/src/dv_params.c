@@ -1,4 +1,4 @@
-/* The accent's draw colors (docs/dark-mode.md "Accents").
+/* The accent's draw colors (docs/themes.md "Accents").
  *
  * Bank 0, injected at 00:3fe4, the end of StoreDrawParams (00:2791): its
  * last five bytes, `ld a, [hl]` / `ld [wDrawOp], a` / `ret`, became

@@ -493,7 +493,7 @@ static void cfg_restore(void) {
 
 /* After COLORS= set the custom theme's ramp (theme_colors.c, its first 12
  * hex digits): digits 13 to 18, a third color, are its accent, shade 2
- * (docs/dark-mode.md "Accents"), and DV's highlight in place of its lime
+ * (docs/themes.md "Accents"), and DV's highlight in place of its lime
  * (DV_RAMP); without them, the background's complement,
  * each channel max + min - c, scaled so its brightest channel is 255, as
  * theme_ramps.c's color themes have. A gray background (black and white

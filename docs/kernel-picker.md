@@ -78,7 +78,7 @@ ROM: about 300 to 450 bytes. Scan ~120, list drawing ~110, keys ~70, select
 
 ## Making room
 
-Stage1 is full. The dark-mode build is 18,419 of the 18,432 BRAM bytes, so
+Stage1 is full. The build with themes is 18,419 of the 18,432 BRAM bytes, so
 about 450 bytes have to go before the picker goes in. Candidates, biggest
 first:
 
@@ -201,7 +201,7 @@ Departures from the design above:
 
 | Build | BRAM bytes of 18,432 |
 |---|---|
-| dark-mode theme colors (the base) | 18,419 |
+| theme colors (the base) | 18,419 |
 | wordmark maps trimmed | 18,130 |
 | with the picker, before packing the tiles | 18,860 |
 | with the tiles packed (shipped) | 18,400 |

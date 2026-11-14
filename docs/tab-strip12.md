@@ -49,7 +49,7 @@ aside in 12px mode, since its string is out of the bank-2 renderer's reach.
 
 The entry number at the right end is drawn by the list code after the strip,
 through `TabNum12`: 8px goes to `DrawString` unchanged, 12px to `TabNumFar`
-(`browser_nav.c`, [browser-nav.md](browser-nav.md)), which draws `n/total`. The
+(`browser_nav.c`, [browser.md](browser.md)), which draws `n/total`. The
 pick banner paints only to the end of its text, so the rest of the strip stays
 the screen's color (in a dark theme it used to stay white up to the number).
 
@@ -99,7 +99,7 @@ SD error texts) and `BATTERY DRY!!!`.
 
 | Site | Was | Now |
 |---|---|---|
-| `08:7169` (`DrawMenuTabs` entry) | `ld hl,$0000` | `jp TabStripHook` (`08:7b20`): 8px loads `hl = $0003` in place of `$0000` and continues at `08:716c`, so the rule is drawn ink 3 on paper 3 and the accent remap colors it ([dark-mode.md](dark-mode.md#accents), since 2026-11-10; stock and light/dark draw the same line); 12px pushes the tab number, far-calls `TabStrip12` and returns (through `FlPickBanner` for tab 0, as the stock SD arm does) |
+| `08:7169` (`DrawMenuTabs` entry) | `ld hl,$0000` | `jp TabStripHook` (`08:7b20`): 8px loads `hl = $0003` in place of `$0000` and continues at `08:716c`, so the rule is drawn ink 3 on paper 3 and the accent remap colors it ([themes.md](themes.md#accents), since 2026-11-10; stock and light/dark draw the same line); 12px pushes the tab number, far-calls `TabStrip12` and returns (through `FlPickBanner` for tab 0, as the stock SD arm does) |
 | `01:42ae`, `01:45a7` (entry number, `DrawBrowserEntries` / `DrawBrowserDetail`) | `call DrawString` | `call TabNum12` (`00:0380`) |
 | `04:4777`, `04:4931`, `04:5646` (SET button box) | `ld hl,$9b0d` | `call SetBtnTopHL` (`04:5f60`): `hl = $9b0d` in 8px mode; the 12px box is in [set-pane12.md](set-pane12.md) |
 | `draw12.c` | `STRIP_H` 16 | 20; `col >= 2` is a pixel x (also `layout12.c`) |

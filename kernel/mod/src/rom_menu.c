@@ -116,7 +116,7 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
     prev = PAD_A;
     for (;;) {
         f = HFRAME;
-        while (HFRAME == f) WaitVBlankFlag();   /* halted, not spinning: docs/browser-nav.md */
+        while (HFRAME == f) WaitVBlankFlag();   /* halted, not spinning: docs/browser.md */
         pad = LastRomTickStub();
         f = pad & (u8)~prev;
         prev = pad;
@@ -169,7 +169,7 @@ static u8 is_rom(const u8 *s) {
 static u8 a_held(void) {
     u8 f = HFRAME;
 
-    while (HFRAME == f) WaitVBlankFlag();   /* halted, not spinning: docs/browser-nav.md */
+    while (HFRAME == f) WaitVBlankFlag();   /* halted, not spinning: docs/browser.md */
     return PAD_LIVE & PAD_A;
 }
 

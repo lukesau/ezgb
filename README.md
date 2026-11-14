@@ -54,22 +54,22 @@ Each links to a doc with the details.
 
 - [12px font](docs/font12.md): a proportional font with kerning, 10 rows a
   page, on every screen. `FONT:` on the SET tab.
-- [Themes](docs/dark-mode.md): light, dark, DV, four colors, or your own
+- [Themes](docs/themes.md): light, dark, DV, four colors, or your own
   background, text and accent from a picker on the SET tab.
-- [File icons and a readable highlight](docs/dmg-ui-visibility.md): white on
+- [File icons and a readable highlight](docs/browser.md#icons-and-the-selection-bar): white on
   black instead of black on dark gray, which an original Game Boy can't show.
-- [Clean ROM names](docs/browser-tags.md): `Tetris (World) (Rev 1).gb`
+- [Clean ROM names](docs/browser.md#clean-names): `Tetris (World) (Rev 1).gb`
   shows as `Tetris`.
 - [Closed boxes](docs/modal-prompts.md) for the prompts and the START
   overlay, and [no streaks](docs/vram-write-race.md) in the text.
 
 **Browser**
 
-- [Sorted](docs/browser-sort.md), folders first, with
-  [clutter hidden](docs/browser-hide-filter.md): macOS junk, `.gba` and `.nds` files,
+- [Sorted](docs/browser.md#sorting), folders first, with
+  [clutter hidden](docs/browser.md#what-is-hidden): macOS junk, `.gba` and `.nds` files,
   saves, kernels, the settings file, names starting with `_`, and whatever
   the card's `.ezgbhide` lists.
-- [Fast navigation](docs/browser-nav.md): the list wraps, shows `n/total`,
+- [Fast navigation](docs/browser.md#moving-around): the list wraps, shows `n/total`,
   and speeds up when UP or DOWN is held.
 - [No lost button presses](docs/joypad-latch.md): the pad is read every
   frame.

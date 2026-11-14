@@ -36,7 +36,7 @@
 #define LCDC_ON 0xc0 /* the value the stock boot wrote (bank_000.asm:401) */
 
 /* 02:43d0, theme.c: the palettes, DMG and CGB, in the theme of the pSRAM
- * mark (docs/dark-mode.md). A literal address, not a pin: the port map
+ * mark (docs/themes.md). A literal address, not a pin: the port map
  * would read a bank-0 pin above $4000 as bank-1 code, and injected
  * addresses are the same in every kernel. */
 #define THEME_FN ((void (*)(void))0x43d0)

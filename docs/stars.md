@@ -103,7 +103,7 @@ shows the same stars, order and setting.
 
 ## How the sort uses it
 
-The sort ([browser-sort.md](browser-sort.md)) builds a 16-byte key per entry,
+The sort ([browser.md](browser.md)) builds a 16-byte key per entry,
 class byte first. After `build_keys`, `PlayKeys` looks up every file:
 
 - class 0 stays a folder, 1 is a starred file, 2 any other file, so folders

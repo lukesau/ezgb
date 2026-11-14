@@ -24,10 +24,10 @@ NEXT on page 3 page 1.
 
 | Row | Page 1 | Page 2 | Page 3 (the theme) |
 |---|---|---|---|
-| 2 | `TIME:` + `SET` (stock) | `CLEAN UP NAMES:` checkbox ([`browser-tags.md`](browser-tags.md), `TAGS=`) | `THEME:` button, `LIGHT`, `DARK`, `DV`, four colors and `CUSTOM` ([`dark-mode.md`](dark-mode.md)) |
+| 2 | `TIME:` + `SET` (stock) | `CLEAN UP NAMES:` checkbox ([`browser.md`](browser.md), `TAGS=`) | `THEME:` button, `LIGHT`, `DARK`, `DV`, four colors and `CUSTOM` ([`themes.md`](themes.md)) |
 | 4 | date and time (stock) | an example name, scrolling, the whole row: `Game Title (USA) (Rev 1) [!].gb` with the box unticked, `Game Title` with it ticked (`TagExample`, `04:7e60`) | `FONT:` 8px / 12px / SLIM button ([`ui-mode.md`](ui-mode.md)) |
 | 6 | `RTC:  SD [ ]  NO SD [ ]`: RTC backup/restore on or off ([`ezgb-cfg.md`](ezgb-cfg.md), `RTCSD=`) | `SORT BY PLAYS:` checkbox, a pSRAM record ([`stars.md`](stars.md)) | `COLORS:` and the `R` `G` `B` column heads |
-| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](dark-mode.md#color-picker)) |
+| 8 | `AUTO SAVE:` checkbox (stock, moved down one row) | `SGB BOOT:` checkbox, a pSRAM record rather than an `EZGB.CFG` key ([`sgb-boot.md`](sgb-boot.md)), or `SGB: AUTO` | `BG:` and its three values, 0 to 31 ([color picker](themes.md#the-picker)) |
 | 10 | `FAST LAUNCH:` checkbox | `SKIP BOOT ROM:` checkbox, ticked unless `BOOTROM=1`; gray, and passed over by the cursor, when this console can't jump ([`skip-boot-rom.md`](skip-boot-rom.md)) | `TEXT:` and its three values |
 | 12 | the target's basename in 10 columns, scrolling continuously when longer, and a `PICK ROM` button. A arms pick mode and drops into the browser. | `DAILY BACKUP:` checkbox ([save-manager.md](save-manager.md#daily-backup); on page 1's row 14 until 2026-11-10) | `ACCENT:` and its three values |
 | 16 | a `< PREV` button, `1/3` and a `NEXT >` button | the same with `2/3` | the same with `3/3` |
@@ -113,7 +113,7 @@ Page 3 is `ThemePage` (`0D:4000`,
 `FarCallThemePage` (`04:5990`): op 0 the labels, op 1 the rows, op 3 A on a
 row, op 5 the loop's tick. It holds the THEME button (`ThemeRow`,
 `04:77a0`, until then), the FONT button and the color picker
-([dark-mode.md](dark-mode.md#color-picker)), and draws its own text; only
+([themes.md](themes.md#the-picker)), and draws its own text; only
 its page row is `SetPage`'s (op 5). The name marquee has nothing to scroll
 there, so `flcfg` op 5 only keeps its frame count going for the key repeat.
 
@@ -214,7 +214,7 @@ open `FA_CREATE_ALWAYS` and overwrite in place without needing `f_truncate`
 | `04:560d` | `c3 f5 48` | `jp $5948` | hiliteInc tail → `FlSetRowsHook` |
 | `04:5174` | `ca f5 48` | `ca 80 5f` | LEFT when not setting the time → `FlSetJumpTop` (cursor row = `$FE`: the page's PREV; row 0 until 2026-11-10) |
 | `04:51a5` | `ca f5 48` | `ca 90 5f` | RIGHT when not setting the time → `FlSetJumpBottom` (cursor row = `$FF`: the page's NEXT; until 2026-11-10 the last row of all, which op ROWS turned into the page's last: row 13 with two pages, row 11 before SKIP BOOT ROM, row 10 until SORT BY PLAYS took it, when RIGHT stopped one short of PREV) |
-| `04:5604` | `d6 01` | `d6 14` | cursor clamp 0..1 → 0..20, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser-tags.md](browser-tags.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [dark-mode.md](dark-mode.md)) |
+| `04:5604` | `d6 01` | `d6 14` | cursor clamp 0..1 → 0..20, all three pages (`d6 0d` with two pages, `d6 0c` before DAILY BACKUP, `d6 0b` before SKIP BOOT ROM, `d6 0a` before SORT BY PLAYS, [stars.md](stars.md); `d6 08` with TAGS on row 16, [browser.md](browser.md); `d6 07` before it, `d6 04` with the `UI:` button, [ui-mode.md](ui-mode.md), `d6 06` before `THEME`, [themes.md](themes.md)) |
 | `04:5912` | `e8 6a c9` | `c3 b0 5f` | the screen's exit → `SetExitHook` (`cd c0 5f af ea ee db e8 6a c9`: `call SetCommit`, clear `SET_PAGE`, then the displaced `add sp,$6a; ret`) |
 | `04:5632` | `c2 d6 58` | `c2 59 59` | A-with-cursor≠0 → `FlSetADispatch` |
 

@@ -1,5 +1,5 @@
 /* SET tab page 3, the theme page (docs/fastlaunch-set-tab.md "Pages",
- * docs/dark-mode.md "Color picker").
+ * docs/themes.md "Color picker").
  *
  * Bank 13, injected at 0D:4000: bank 4 had no room for a third page. flcfg.c
  * (04:6d19) reaches it through FarCallThemePage (04:5990), so the args sit

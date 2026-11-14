@@ -1,4 +1,4 @@
-/* Browser row icons (docs/dmg-ui-visibility.md "Change 4", docs/font12.md).
+/* Browser row icons (docs/browser.md "Change 4", docs/font12.md).
  *
  * Bank 2, injected at 02:7e00 (02:7e80 until the star made it too long for
  * the end of the bank) and reached through the 8-byte far stub that now sits
@@ -23,7 +23,7 @@
  * upcoming 8px/12px mode switch.
  *
  * With the TAGS checkbox off a file's name is cut where TagLen (tagtrim.c,
- * docs/browser-tags.md) says: the row is drawn from a NUL-terminated copy
+ * docs/browser.md) says: the row is drawn from a NUL-terminated copy
  * in both modes.
  *
  *   python3 tools/inject.py src/browser_icons.c $V 2 7e00 DrawNameWithIconImpl \

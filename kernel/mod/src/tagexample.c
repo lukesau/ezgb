@@ -1,4 +1,4 @@
-/* The SET tab's tag example (docs/browser-tags.md): page 2, row 4, under
+/* The SET tab's tag example (docs/browser.md): page 2, row 4, under
  * CLEAN UP NAMES:, a file name the way the browser will draw it.
  *
  *   unticked   Game Title (USA) (Rev 1) [!].gb

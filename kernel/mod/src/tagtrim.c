@@ -1,4 +1,4 @@
-/* Clean ROM names in the browser (docs/browser-tags.md).
+/* Clean ROM names in the browser (docs/browser.md).
  *
  * ROM sets name their files "Title (Region) (Rev 1) [!].gb"; with the SET
  * tab's CLEAN UP NAMES ticked (the default since 2026-10-31; TAGS=1 in

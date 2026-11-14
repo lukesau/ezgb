@@ -95,7 +95,7 @@ stage1 from before the record or under stock stage1 with `SGB BOOT` ticked) it
 can't be set (`can_jump` in [setpage.c](../kernel/mod/src/setpage.c)): since
 2026-11-11 the label and an empty box are drawn in color index 2, a gray on a
 DMG and in compatibility mode, and the cursor passes over the row, as it does
-over the rows DV locks ([dark-mode.md](dark-mode.md)). Until then the row looked
+over the rows DV locks ([themes.md](themes.md)). Until then the row looked
 like any other, unticked, and A did nothing. `BOOTROM=` keeps its value there, so a card
 moved to a console that can jump keeps its setting. A tick doesn't promise a jump:
 a non-color game on a color console still resets.

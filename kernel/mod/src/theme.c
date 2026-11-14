@@ -1,4 +1,4 @@
-/* UI theme palettes (docs/dark-mode.md).
+/* UI theme palettes (docs/themes.md).
  *
  * Bank 2, injected at 02:43d0 (bank 2 is the same in every stock kernel,
  * and bank 1 has no free space common to all three). One entry, three

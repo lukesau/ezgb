@@ -42,7 +42,7 @@ LCD-on itself at the end.
    > (stock stage1) it reads back what was written, in SameBoy and on
    > hardware, so this test passes there. Here that only zeroes VRAM bank 1,
    > which compat mode never displays. `Theme`
-   > ([dark-mode.md](dark-mode.md#kernel)) inherited the test for its palette
+   > ([themes.md](themes.md#the-code)) inherited the test for its palette
    > writes and hung on it in 7.0; it no longer uses it.
 
    > **Correction (2026-10-12).** This said `A` at `$d6c9` is `$11` on CGB
@@ -63,7 +63,7 @@ LCD-on itself at the end.
    `$56B5` light, `$294A` dark, `$0000` black). All eight so that a stray
    non-zero attribute still renders sanely. Since dark mode this is the
    theme's ramp, written by `Theme` (`02:43d0`), which `CgbInit` calls with
-   bank 2 mapped by hand ([dark-mode.md](dark-mode.md)).
+   bank 2 mapped by hand ([themes.md](themes.md)).
 
 Replicating the old look is a direct translation because the kernel writes
 `BGP` exactly once, at `00:01b0`, with `$E4`, the identity mapping (color

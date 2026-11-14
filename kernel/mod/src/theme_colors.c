@@ -1,5 +1,5 @@
 /* The custom theme's colors: COLORS=RRGGBB,RRGGBB in EZGB.CFG, the
- * background, then the ink (docs/dark-mode.md).
+ * background, then the ink (docs/themes.md).
  *
  * Bank 5, injected at 05:7b50: bank 2 has no room left. ezcfg reaches it
  * through FarCallColors (02:4990, theme_pick.c), so the args sit past the

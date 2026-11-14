@@ -60,9 +60,9 @@ FATFS = {"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941,
 REGISTRY = {
     (0, 0x02fb): dict(src="browser_page_end.c", pins={}),
     (0, 0x0259): dict(src="cgb_init.c", pins={}),   # CGB attributes + theme palettes at boot LCD-on (docs/cgb-mode.md)
-    (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/dark-mode.md)
-    (0, 0x3fe4): dict(src="dv_params.c", pins={"wDrawOp": 0xd723, "wDrawColorB": 0xd735}),   # StoreDrawParams' tail: DV's lime remap (docs/dark-mode.md)
-    (2, 0x43d0): dict(src="theme.c", pins={"theme_ramp": 0x4998}),   # UI theme palettes and pSRAM mark (docs/dark-mode.md)
+    (0, 0x0290): dict(src="popup_params.c", pins={"StoreDrawParams": 0x2791}),   # popup ink/paper per theme (docs/themes.md)
+    (0, 0x3fe4): dict(src="dv_params.c", pins={"wDrawOp": 0xd723, "wDrawColorB": 0xd735}),   # StoreDrawParams' tail: DV's lime remap (docs/themes.md)
+    (2, 0x43d0): dict(src="theme.c", pins={"theme_ramp": 0x4998}),   # UI theme palettes and pSRAM mark (docs/themes.md)
     (2, 0x4960): dict(src="theme_ramps.c", pins={}),   # UI theme colors, data only
     (2, 0x4990): dict(src="theme_pick.c",                   # custom theme: FarCallColors stub, theme_ramp for theme.c
                       pins={"FarCallTrampoline": 0x078d, "theme_ramps": 0x4960},
@@ -89,7 +89,7 @@ REGISTRY = {
     (2, 0x7100): dict(src="fit12_shim.c",                   # Fit12 at its old address, the same way; MarqueeWidth12 far-calls it
                       pins={"FarCallTrampoline": 0x078d, "Fit12Impl": 0x4a00}),
     (2, 0x7e00): dict(src="browser_icons.c", pins={"DrawString12": 0x7500, "DrawString": 0x08b7, "FarCallTagLen": 0x0408}),   # far target of the 00:3ec8 stub
-    (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser-tags.md): TagCat is the far target of 00:0d69
+    (5, 0x7a00): dict(src="tagtrim.c", pins={},                 # ROM names without tags (docs/browser.md): TagCat is the far target of 00:0d69
                       exports={"TagLen": 0x7a55}),              # far target of FarCallTagLen (00:0408)
     (10, 0x4c00): dict(kind="data"),       # Font12: 12px glyph bitmaps (scripts/font12-pack.py)
     (10, 0x5580): dict(kind="data"),       # Font12Metrics: advances, ink widths, kerning classes (same packer)
@@ -117,9 +117,9 @@ REGISTRY = {
                             "FarCallPlaySync_B4": 0x7792, "SetBox": 0x77a0}),
     (4, 0x77a0): dict(src="setbox.c", pins={"DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),   # SET tab checkbox, near-called by FlCfg and SetPage
     (4, 0x7f51): dict(src="rec_flag.c", pins={"SetFpgaPage_B4": 0x466e}),   # SET tab pSRAM checkboxes (SGB BOOT, SORT BY PLAYS), near-called by SetPage
-    (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser-tags.md)
+    (4, 0x7e60): dict(src="tagexample.c",                   # SET tab page 2 tag example name, near-called by SetPage (docs/browser.md)
                       pins={"FarCallMarquee": 0x0410}),
-    (13, 0x4000): dict(src="themepage.c",                   # SET tab page 3: THEME, FONT, the color picker; far target of FarCallThemePage 04:5990 (docs/dark-mode.md)
+    (13, 0x4000): dict(src="themepage.c",                   # SET tab page 3: THEME, FONT, the color picker; far target of FarCallThemePage 04:5990 (docs/themes.md)
                       pins={"FarCallTrampoline": 0x078d, "ReadJoypad": 0x3a4a, "StoreDrawParams": 0x2791,
                             "DrawRect": 0x27ba, "DrawString": 0x08b7, "FarCallDrawString12": 0x05c0}),
 
@@ -150,7 +150,7 @@ REGISTRY = {
     (4, 0x6400): dict(src="settext.c",                      # SET pane text, 8px or 12px fields (docs/set-pane12.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
     (8, 0x746b): dict(src="browser_sort.c", pins={"DirList": 0x0a43, "PlayKeysFar": 0x7f29, "PlayMark": 0x7f31, "HideLoadFar": 0x7b80}),
-    (14, 0x5000): dict(src="hide_list.c",                   # the card's hide list, far target of HideLoadFar 08:7b80 (docs/browser-hide-filter.md)
+    (14, 0x5000): dict(src="hide_list.c",                   # the card's hide list, far target of HideLoadFar 08:7b80 (docs/browser.md)
                       pins={"FarCall_06_7309": 0x1926, "FarCall_06_779a": 0x1941, "FarCall_03_768f": 0x19a1, "WaitVBlankFlag": 0x0688}),
     (8, 0x7f29): dict(src="play_mark.c",                    # the sort's star marks, and its stub to PlayKeys (docs/stars.md)
                       pins={"FarCallTrampoline": 0x078d, "PlayKeys": 0x7cd2},
@@ -165,10 +165,10 @@ REGISTRY = {
     (8, 0x7b8d): dict(src="flpick_banner.c", pins={"DrawString": 0x08b7, "StoreDrawParams": 0x2791}),
     (2, 0x7600): dict(src="tabstrip12.c",                   # 12px tab strip, far target of TabStripHook (docs/tab-strip12.md)
                       pins={"DrawString12": 0x7500, "Fit12": 0x7100, "DrawRect": 0x27ba, "StoreDrawParams": 0x2791}),
-    (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser-sort.md)
+    (5, 0x7700): dict(src="browser_hide.c",                 # hide filter + record cap, far target of 00:04ae (docs/browser.md)
                       pins={"DrawString": 0x08b7, "FarCallDrawString12": 0x05c0, "DrawRect": 0x27ba,
                             "StoreDrawParams": 0x2791, "Delay": 0x3a93, "PopupDrawParams": 0x0290}),
-    (12, 0x4000): dict(src="browser_nav.c",                 # DOWN and UP after davidesqalv's fork (docs/browser-nav.md)
+    (12, 0x4000): dict(src="browser_nav.c",                 # DOWN and UP after davidesqalv's fork (docs/browser.md)
                       pins={"GfxRowTable": 0x2fbb, "StoreDrawParams": 0x2791, "DrawString": 0x08b7,
                             "DrawNameWithIcon": 0x3ec8, "FarCallDrawString12": 0x05c0, "wIntNest": 0xd6d0,
                             "wDrawOp": 0xd723, "wDrawColorA": 0xd734, "wDrawColorB": 0xd735}),

@@ -74,7 +74,7 @@ def make_card(src, wd, dark=False):
     ps[m + 0x10:m + 0x10 + len(path)] = path
     ps[m + 0x200] = 0                     # AUTO SAVE off: ask
     ps[m + 0x201] = 0x88                  # battery canary alive
-    if dark:                              # the kernel's theme mark: dark (docs/dark-mode.md)
+    if dark:                              # the kernel's theme mark: dark (docs/themes.md)
         ps[m + 0x414:m + 0x420] = b"TH\x01\xfe" + bytes.fromhex("0000c6183146ff7f")
     open(os.path.join(wd, "psram.bin"), "wb").write(ps)
     return card

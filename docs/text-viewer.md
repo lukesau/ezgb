@@ -1,7 +1,7 @@
 # Text viewer
 
 A on a `.txt`, `.ini` or `.md` file in the browser opens it read-only. The
-three types share the page icon ([dmg-ui-visibility.md](dmg-ui-visibility.md)).
+three types share the page icon ([browser.md](browser.md)).
 
 | Button | Does |
 |---|---|

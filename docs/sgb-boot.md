@@ -41,7 +41,7 @@ first reads stage1's mark at `$A412`: `"SB"` or `"SN"` (mod 5.9) means our
 stage1 handles the SGB (it sent the packets, or found no SGB), so the kernel
 boots straight on. On those boots the SET tab shows `SGB: AUTO` instead
 of the checkbox (the short label leaves the `TAGS:` box to its right its
-room, [browser-tags.md](browser-tags.md)), and A does nothing there: the box only matters with the
+room, [browser.md](browser.md)), and A does nothing there: the box only matters with the
 stock stage1, where the kernel is the first code that can resend the header
 ([fpga-stage1.md](fpga-stage1.md#super-game-boy)). When
 on, it sends the six header packets (commands `$F1`..`$FB`, each the sum of

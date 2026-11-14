@@ -3,7 +3,7 @@
  * then the EZ-FLASH Jr. wordmark (stage1/tools/mkwordmark.py), map $9800
  * with unsigned tile data at $8000. On a color console the text uses BG
  * palette 0 (grays), the icon palette 1 and the wordmark palette 2. The
- * colors are the kernel's UI theme (docs/dark-mode.md), from the mark and
+ * colors are the kernel's UI theme (docs/themes.md), from the mark and
  * colors it leaves in pSRAM. */
 #include <string.h>
 #include "hw.h"
@@ -39,7 +39,7 @@ static const uint16_t palettes[12] = {
     0x7FFF, 0x15F9, 0x0932, 0x0000,
 };
 
-/* The boot screen palettes in the kernel's UI theme (docs/dark-mode.md),
+/* The boot screen palettes in the kernel's UI theme (docs/themes.md),
  * into pal; returns the theme. The kernel leaves its mark, 'T', 'H', theme,
  * ~theme, then the theme's four colors, so this needs no table of its own.
  * A dark theme takes the background and ink of every palette, the text's

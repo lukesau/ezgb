@@ -122,7 +122,7 @@ HRAM means idle, so a boot with the box off never enters `SgbFrame`.
 > 2026-11-05: the browser navigation imported from ezgb-dv kept its held-key
 > repeat in `$fff2` and `$fff4`, and the resulting `Reading...` hang took a day
 > of bisecting on hardware to find. Those two bytes moved to mod WRAM
-> (`$DC1A`, `$DC1B`, [browser-nav.md](browser-nav.md)). Search the asm under
+> (`$DC1A`, `$DC1B`, [browser.md](browser.md)). Search the asm under
 > `scripts/` as well as `kernel/mod/src` before taking an HRAM byte.
 
 > **Correction (2026-10-12).** The sketch proposed `$fff7`-`$fff9`. `$fff7`

@@ -1,4 +1,4 @@
-/* DOWN and UP in the file browser (docs/browser-nav.md).
+/* DOWN and UP in the file browser (docs/browser.md).
  *
  * After davidesqalv's ezgb-dv fork, whose code this is: ezjr_scroll.c,
  * rows_repaint.c, move_highlight.c, bank2_hilite.asm, bank4_rows.asm and

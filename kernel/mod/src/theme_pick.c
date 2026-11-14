@@ -1,4 +1,4 @@
-/* Theme colors' bank-2 side (docs/dark-mode.md).
+/* Theme colors' bank-2 side (docs/themes.md).
  *
  * Bank 2, injected at 02:4990, after ThemeRamps. Two entries:
  *

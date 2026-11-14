@@ -9,7 +9,7 @@ no card, the browser is the 8px one, so shipping this changes nothing
 visible until the user opts in. Since 2026-10-30 the button is the `FONT:`
 row of the SET tab's third page (its second until 2026-11-10)
 ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#pages)); with the DV theme it
-reads `SLIM` (`AUTO` until 2026-11-10), A does nothing and the mode is 12px ([dark-mode.md](dark-mode.md#dv)). Since
+reads `SLIM` (`AUTO` until 2026-11-10), A does nothing and the mode is 12px ([themes.md](themes.md#dv)). Since
 2026-11-09 it steps `8px`, `12px`, `SLIM`: SLIM is the 12px browser with DV's
 letters (Tamzen 6x12, [font12.md](font12.md#glyph-sets)) and the stock icons
 and star, with any theme,

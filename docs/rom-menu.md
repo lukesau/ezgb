@@ -15,7 +15,7 @@ Options
 UP/DOWN moves the `>`, A on Start launches, and B closes the menu and puts the
 browser back as it was, with the cursor on the same entry. A on Manage saves
 opens the save manager ([save-manager.md](save-manager.md)), which replaces
-browsing `SAVER/` now that it is hidden ([browser-hide-filter.md](browser-hide-filter.md)).
+browsing `SAVER/` now that it is hidden ([browser.md](browser.md)).
 The menu is redrawn when it returns. A on Star stars the ROM (or unstars it),
 sorts the folder again, closes the menu and puts the cursor back on the ROM
 wherever it now sits ([stars.md](stars.md)). UP and DOWN wrap at both ends.

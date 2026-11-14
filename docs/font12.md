@@ -152,7 +152,7 @@ stock routine's copy-from-offset replaced by a pixel offset).
 The stub is reached by a `call`, so the trampoline's three words sit between
 the stub's return address and the arguments: the first argument is at
 **sp+8**, hence three pad parameters (an inline `call FarCallTrampoline` stub,
-the case in `docs/browser-hide-filter.md`, needs two).
+the case in `docs/browser.md`, needs two).
 
 ### Blitter
 
@@ -307,7 +307,7 @@ advance from the glyph pointer.
 | 0 | `font12.txt` | proportional, Menlo Bold 13 rendered and hand-tuned, capitals 9 px | ours |
 | 1 | `font12_dv.txt` | Tamzen 6x12 (Suraj N. Kurapati, after Tamsyn by Scott Fial; [license](../kernel/mod/font12/LICENSE-Tamzen)), fixed 6 px, capitals 7 px | davidesqalv's, from [ezgb-dv](https://github.com/davidesqalv/ezgb-dv) |
 
-Set 1 is the DV theme's ([dark-mode.md](dark-mode.md)), an homage to that
+Set 1 is the DV theme's ([themes.md](themes.md)), an homage to that
 fork: its letters are the 8px font's size in a 12 px line, so a row holds
 about 26 characters to set 0's 18. Bank 10 has room for about two more sets
 after these two (each is about 3 to 4 KB), and banks 14 and 15 are empty.

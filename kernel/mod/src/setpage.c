@@ -6,7 +6,7 @@
  * holds the browser and launch settings (THEME and FONT were its first two
  * rows until page 3, themepage.c, took them):
  *
- *   row 2   CLEAN UP NAMES:  [ ]   cursor row 7 (docs/browser-tags.md)
+ *   row 2   CLEAN UP NAMES:  [ ]   cursor row 7 (docs/browser.md)
  *   row 4   Game Title (USA) (Re.. the example name, scrolling (tagexample.c)
  *   row 6   SORT BY PLAYS:   [ ]   cursor row 8 (docs/stars.md)
  *   row 8   SGB BOOT:        [ ]   cursor row 9 (docs/sgb-boot.md)

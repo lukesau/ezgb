@@ -1,4 +1,4 @@
-/* The card's list of names to hide (docs/browser-hide-filter.md).
+/* The card's list of names to hide (docs/browser.md).
  *
  * /.ezgbhide in the card's root names files and folders the browser leaves
  * out, on top of the ones built into browser_hide.c. It is named like the

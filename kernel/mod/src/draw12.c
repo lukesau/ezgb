@@ -208,7 +208,7 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
     }
     /* A tile the field only partly covers (the first one with kf, the last
      * with kl) keeps the pixels outside it, which may be any of the four
-     * colors (DV's lime, index 1, beside a tab label: docs/dark-mode.md),
+     * colors (DV's lime, index 1, beside a tab label: docs/themes.md),
      * so it goes through the per-plane read-modify-write; the whole tiles
      * between take the fast both-planes copy. Until 2026-10-31 the edge
      * tiles kept only plane 0 and came back as color 0 or 3. */

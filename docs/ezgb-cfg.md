@@ -32,11 +32,11 @@ RTC=2026-09-08 10:15:32
 | `FLAUNCH` | Fast-launch target path, root or nested. A leading `#` on the value means fast launch is **disabled** (every trigger skipped) with the path kept for re-enabling. Empty = enabled, no explicit target (lone-ROM rule). Same semantics as the old `FLAUNCH.CFG` line 1, see [`fast-launch-notes.md`](fast-launch-notes.md). | SET tab (checkbox, PICK) |
 | `LASTROM` | Last-launched ROM path, written on every launch. The START overlay uses it only when the battery-backed `$A300` record is corrupt. Same 120-char cap and `/`-prefix rules as `FLAUNCH`. | launch hook (`01:48c1`) |
 | `UI` | `8`, `12` or `SLIM` (12px in the Tamzen glyph set, since 2026-11-09): which browser the SD tab draws, see [ui-mode.md](ui-mode.md). Missing = 8. | SET tab (`UI:` button) |
-| `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, `7` DV, see [dark-mode.md](dark-mode.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
-| `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB`, and optionally its accent, a third `RRGGBB` (since 2026-11-09; without it the background's complement), which is also the DV theme's highlight in place of its lime, see [dark-mode.md](dark-mode.md#custom). Hex digits count in order, so `#` and spaces are fine. Written back as read. | by hand only |
+| `THEME` | UI theme number: `0` light, `1` dark, `2` red, `3` green, `4` purple, `5` blue, `6` custom, `7` DV, see [themes.md](themes.md). Written only when not 0. Missing, or custom without `COLORS`, = light. | SET tab (`THEME` button) |
+| `COLORS` | The custom theme's background and ink, `RRGGBB,RRGGBB`, and optionally its accent, a third `RRGGBB` (since 2026-11-09; without it the background's complement), which is also the DV theme's highlight in place of its lime, see [themes.md](themes.md#custom-colors). Hex digits count in order, so `#` and spaces are fine. Written back as read. | by hand only |
 | `BOOTROM` | `1`: every launch resets through the boot ROM instead of jumping to a game's `$0100`, see [skip-boot-rom.md](skip-boot-rom.md). Written only as `BOOTROM=1`. Missing = jump when safe. | SET tab (`SKIP BOOT ROM:` checkbox, unticked) |
 | `DAILYBACKUP` | `1`: copy a save to a dated backup on the day's first dump, the SET tab's `DAILY BACKUP:` box ([save-manager.md](save-manager.md#daily-backup)). Anything else, or missing, off. | the SET tab |
-| `TAGS` | `1`: the browser shows full file names (the SET tab's `CLEAN UP NAMES:` box unticked). Anything else, or missing, cuts names at their tags and extensions, see [browser-tags.md](browser-tags.md). Written only as `TAGS=1`. Since 2026-10-31; until then missing meant full names and `TAGS=0` cut them, which still reads the same. | SET tab (`CLEAN UP NAMES:` checkbox) |
+| `TAGS` | `1`: the browser shows full file names (the SET tab's `CLEAN UP NAMES:` box unticked). Anything else, or missing, cuts names at their tags and extensions, see [browser.md](browser.md). Written only as `TAGS=1`. Since 2026-10-31; until then missing meant full names and `TAGS=0` cut them, which still reads the same. | SET tab (`CLEAN UP NAMES:` checkbox) |
 | `AUTOSAVE` | `0` or `1`: the SET tab's AUTO SAVE checkbox (pSRAM `$11:$A200`). Put back when the pSRAM lost power (BATTERY DRY), see "AUTO SAVE backup" below. Missing = not restored. | SET tab (the AUTO SAVE toggle), every launch |
 | `RTC` | Last known good clock. The value is split on any punctuation into six numeric fields `YYYY MM DD HH MM SS`; the last two digits of each are used, so `2026-09-08 10:15:32`, `26-9-8 10:15:32`, and a stale `026-...` all restore to the same time (the century is dropped). | every save-to-SD dump, every TIME SET confirm |
 
@@ -253,7 +253,7 @@ since they are plain stores that work from any bank.
 | `RtcBootHook` | `00:0510`, 27 B | Boot restore: op RESTORE, re-assert `$4000=$11`, replay the displaced `SetFpgaPage(3)` far-call, `jp $0e50` |
 | `BatteryDryHook` | `00:0530`, 12 B | `$DBFD=1`, then the displaced `$A201=$88`, `ret` |
 | `RtcDumpHook` | `01:7600`, 15 B | `BackupSaveDump` epilogue: `add sp,$0b`, op BACKUP, `ret` |
-| `BrowserHideName` | `05:7700`, [kernel/mod/src/browser_hide.c](../kernel/mod/src/browser_hide.c), 567 B | Hides `ezgb.cfg` too, and caps directories at 416 entries ([browser-sort.md](browser-sort.md#record-cap)). Relocated from `08:7a9c` and then `08:7c00` as it grew; `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
+| `BrowserHideName` | `05:7700`, [kernel/mod/src/browser_hide.c](../kernel/mod/src/browser_hide.c), 567 B | Hides `ezgb.cfg` too, and caps directories at 416 entries ([browser.md](browser.md#the-416-entry-cap)). Relocated from `08:7a9c` and then `08:7c00` as it grew; `DirListHideNameStub` (`00:04ae`) re-emitted with the new target. |
 
 ### Hook map (stock bytes → patch)
 
@@ -279,19 +279,19 @@ no version-specific address.
 | `$DA00-$DA7E` / `$DA7F` | `LR_PATH` (LASTROM path) / `LR_VALID` |
 | `$DBF0-$DBF5` | `FillRect` scratch: edge masks, middle tile count, fill bytes ([screen-timing.md](screen-timing.md#fillrect-mod-62)) |
 | `$DC0A` | `BK_DAILY`: `DAILYBACKUP=1` ([auto_backup.c](../kernel/mod/src/auto_backup.c)) |
-| `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([dark-mode.md](dark-mode.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([ui-mode.md](ui-mode.md)) |
+| `$DC0B` / `$DC0C` | `ACC_IDX`, the accent's color index ([themes.md](themes.md#accents)) / `FONT_SLIM`, `UI=SLIM` ([ui-mode.md](ui-mode.md)) |
 | `$DC0D-$DC0F` / `$DC10` | `ACC_RGB`, `COLORS=`'s third color as read / `ACC_OK`, 1 once one was |
-| `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([dark-mode.md](dark-mode.md#accents)) |
-| `$DC1A` / `$DC1B` | `HOLD_T` / `REP_N`, the browser's held-key repeat: the frame of the press, repeats so far ([browser-nav.md](browser-nav.md)); HRAM `$FFF2`/`$FFF4` until 2026-11-10 |
+| `$DC11-$DC18` | `DV_RAMP`, DV's colors with that third color for its lime ([themes.md](themes.md#accents)) |
+| `$DC1A` / `$DC1B` | `HOLD_T` / `REP_N`, the browser's held-key repeat: the frame of the press, repeats so far ([browser.md](browser.md)); HRAM `$FFF2`/`$FFF4` until 2026-11-10 |
 | `$DC1C` | `SET_BACK`: 1 when START left the SET tab, which goes back to the browser ([fastlaunch-set-tab.md](fastlaunch-set-tab.md#start-returns-to-the-sd-tab)) |
-| `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser-tags.md](browser-tags.md)) |
-| `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([dark-mode.md](dark-mode.md)) |
+| `$DBF6` | `TAGS_HIDE`: 1 with `TAGS=0`, the browser cuts ROM names at their tags ([browser.md](browser.md)) |
+| `$DBF7` | `THEME`, the UI theme number from `THEME=` or the pSRAM mark ([themes.md](themes.md)) |
 | `$DBF8` | `S1_SGB`: 1 when our stage1 left its SGB mark this boot; the SET tab then shows SGB BOOT as AUTO ([sgb-boot.md](sgb-boot.md)) |
 | `$DBF9` | `CFG_LOADED`: set by every config load; the boot fast-launch scan reuses the RTC check's read instead of opening the file again |
-| `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser-sort.md](browser-sort.md#record-cap)) |
+| `$DBFA` | `LIST_CUT`: 1 when `BrowserHideName` cut the directory being listed ([browser.md](browser.md#the-416-entry-cap)) |
 | `$DBFB` | `EZ_RES`, op result byte read by the last-ROM stubs |
 | `$DA80` / `$DA81` / `$DA82-$DAFA` | `FL_EN`, `FL_PLEN`, `FL_PATH` (unchanged; 120 characters and the NUL) |
-| `$DAFF` | `TAG_CUT`: the marquee's "this name was cut" flag between `TagLen` and `TagCat` ([browser-tags.md](browser-tags.md)) |
+| `$DAFF` | `TAG_CUT`: the marquee's "this name was cut" flag between `TagLen` and `TagCat` ([browser.md](browser.md)) |
 | `$DB00-$DB0F` | `FL_SCR`, file-name bounce for `f_open` (path must be in WRAM) |
 | `$DB10-$DB37` | `FL_DISP` (SET tab, unchanged); off the SET tab, the BACKUPSAVE prompt's `Played` line text ([modal-prompts.md](modal-prompts.md)) |
 | `$DB40-$DB46` | `RTC_BK`, stored time, 7 BCD bytes in register order |
@@ -303,8 +303,8 @@ no version-specific address.
 | `$DB58-$DB5F` | `CUST_RAMP`, the custom theme's four colors (free since 2026-10-30 until then; was `LastRomName`'s second marquee line) |
 | `$DB60-$DBC1` | `LOG_BUF`, `RTCLOG=` text, 98 B (7 entries; 140 B until 2026-10-30), test builds only |
 | `$DBC2-$DBE3` | the shared marquee: `MQ_ARG`, its work copy, `MQ_OPS`, `MQ_A`, `MQ_B` ([marquee.md](marquee.md)) |
-| `$DBE4-$DBE9` / `$DBEA` | `CUST_RGB`, `COLORS=` as read / `CUST_OK`, 1 once it was valid ([dark-mode.md](dark-mode.md#custom)) |
-| `$DAFB` / `$DAFC` / `$DAFD` | `THEME_BACK`, `SET_CUR`, `SET_DIRTY` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md), [dark-mode.md](dark-mode.md)) |
+| `$DBE4-$DBE9` / `$DBEA` | `CUST_RGB`, `COLORS=` as read / `CUST_OK`, 1 once it was valid ([themes.md](themes.md#custom-colors)) |
+| `$DAFB` / `$DAFC` / `$DAFD` | `THEME_BACK`, `SET_CUR`, `SET_DIRTY` ([fastlaunch-set-tab.md](fastlaunch-set-tab.md), [themes.md](themes.md)) |
 | `$DC00-$DC07` / `$DC08` / `$DC09` | `BOOT_REGS`, what the jump to a game pops / `NO_DMG`, 1 when a DMG-family console must reset / `DMG_FAM`, 1 on the DMG family ([skip-boot-rom.md](skip-boot-rom.md#boot-registers)) |
 | `$DBEC` / `$DBED` | SET tab D-pad repeat: held direction, frames until it repeats (flcfg op 5, [joypad-latch.md](joypad-latch.md#set-tab-d-pad-repeat)) |
 | `$DBFC` | `EZ_OP`, operation selector for `ezcfg` |
@@ -339,7 +339,7 @@ python3 scripts/kernel-patch.py make
 `ezcfg.c`, `fastlaunch.c`, `flcfg.c` and `browser_hide.c`, drops the shims and
 hooks, patches the sites, and regenerates the disassembly. It replaces the
 per-feature recipes in [`fastlaunch-set-tab.md`](fastlaunch-set-tab.md) and
-[`browser-hide-filter.md`](browser-hide-filter.md) for those files.
+[`browser.md`](browser.md) for those files.
 
 ## Verification status
 

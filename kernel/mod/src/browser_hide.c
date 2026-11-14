@@ -4,7 +4,7 @@
  *  - anything whose name starts with '_'
  *  - anything whose name starts with '.' (dotfiles, .DS_Store, AppleDouble
  *    "._*" sidecars, .fseventsd/, .Spotlight-V100/), matching the old
- *    DirListSkipDotLongName behavior (docs/browser-hide-filter.md)
+ *    DirListSkipDotLongName behavior (docs/browser.md)
  *  - *.gba and *.nds (GBA and DS ROMs on a shared card; the Jr can't launch
  *    them)
  *  - *.sav and *.esv, save files (the Jr keeps its saves in SAVER)
@@ -37,7 +37,7 @@
  * banks). The 12px notice text is the exception: that renderer runs in bank
  * 2, so it gets a stack copy.
  *
- * It is also where a directory is cut short (docs/browser-sort.md "Record
+ * It is also where a directory is cut short (docs/browser.md "Record
  * cap"). DirList stores entry i at pSRAM page $12 + (i >> 5), unmasked, and
  * the cart keeps only 5 bits of the page, so past page $1E records would
  * land on the sort keys ($1F) and then wrap onto game saves ($00) and the

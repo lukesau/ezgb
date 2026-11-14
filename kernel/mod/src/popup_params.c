@@ -1,6 +1,6 @@
 /* Ink and paper for popups: the START overlay, the boot prompts, the ROM
  * menu, the save manager, the Reading / Loading / Error boxes
- * (docs/dark-mode.md "Popups").
+ * (docs/themes.md "Popups").
  *
  * Bank 0, injected at 00:0290, in the room CgbInit left (cgb_init.c), so
  * every bank reaches it with a plain call. StoreDrawParams(ink, paper, 0),

@@ -6,7 +6,7 @@
 # "~1"). It also lets us choose the on-card directory-entry ORDER exactly: the
 # stock Jr browser lists entries in raw FAT order, while the mod sorts them, so a
 # deliberate order makes the stock-vs-mod difference obvious (see
-# docs/browser-sort.md).
+# docs/browser.md).
 #
 # Order comes from sd/ORDER (one top-level name per line, '#' comments); any
 # entries in sd/root/ not listed there are appended in sorted order. The kernel

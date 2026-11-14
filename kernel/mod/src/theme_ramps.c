@@ -1,4 +1,4 @@
-/* UI theme colors (docs/dark-mode.md): what color index 0..3 of every tile
+/* UI theme colors (docs/themes.md): what color index 0..3 of every tile
  * draws as on a color console in CGB mode, per theme number (vars.h).
  * BGR555, little endian. Data only, injected at 02:4960 on its own;
  * theme_pick.c's theme_ramp reads it by address.
@@ -11,7 +11,7 @@
  * from the background's complement and split complements, then made more
  * saturated until they kept their color through a GBC screen's washout
  * (SameBoy's color correction); the background, the bar's text, reads on
- * each at 5:1 or better (docs/dark-mode.md "Accents"). Custom (6) has no row:
+ * each at 5:1 or better (docs/themes.md "Accents"). Custom (6) has no row:
  * its colors come from COLORS= (theme_colors.c). DV (7) has its own, in
  * theme_pick.c. */
 

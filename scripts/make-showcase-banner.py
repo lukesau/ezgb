@@ -80,7 +80,7 @@ def tap(mask, n=1):
 STARS = {TETRIS: (12, True), CRYSTAL: (30, True)}
 BIG = ["UI=12"]
 
-PINK = "COLORS=000000,FFFFFF,FF5FA0"          # DV with a pink accent (docs/dark-mode.md)
+PINK = "COLORS=000000,FFFFFF,FF5FA0"          # DV with a pink accent (docs/themes.md)
 THEME_PAGE = tap(SELECT) + tap(LEFT) + tap(A) + [("wait", 2.0)]   # SET, PREV wraps to page 3
 
 SHOTS = [

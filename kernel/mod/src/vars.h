@@ -9,7 +9,7 @@
 #define FL_PICK   (*(volatile u8 *)0xDBFE)
 /* Set by browser_hide.c when the listing hits its cap, cleared by browser_sort.c. */
 #define LIST_CUT  (*(volatile u8 *)0xDBFA)
-/* UI theme (docs/dark-mode.md): 0 light, 1 dark, 2.. red, green, purple,
+/* UI theme (docs/themes.md): 0 light, 1 dark, 2.. red, green, purple,
  * blue, 6 custom, 7 DV; the SET button steps light, dark, DV, then red ..
  * custom. THEME= in EZGB.CFG, mirrored to pSRAM page $11 $A414 for the next
  * boot's first frame (theme.c). On a color console in CGB mode a theme is
@@ -32,7 +32,7 @@
 #define CUST_RGB  ((u8 *)0xDBE4)   /* 6: R, G, B of the background, then of the ink */
 #define CUST_OK   (*(volatile u8 *)0xDBEA)
 #define CUST_RAMP ((u8 *)0xDB58)   /* 8 */
-/* The accent (docs/dark-mode.md "Accents"): the color index a stored white
+/* The accent (docs/themes.md "Accents"): the color index a stored white
  * paper, and a solid white fill, draw in instead (dv_params.c), so the
  * selection bar, the active tab, the name bands and the rules. 0 = none
  * (light, dark), 1 = DV's lime, 2 = a color theme's third shade. Set by
@@ -68,7 +68,7 @@
 /* BOOTROM=1 in EZGB.CFG (theme_colors.c): every launch resets through the
  * boot ROM, never the jump to $0100 (kernel/mod/asm/skip_boot.asm). */
 #define BOOT_RESET (*(volatile u8 *)0xDBEB)
-/* Browser names without their tags (docs/browser-tags.md): the SET tab's
+/* Browser names without their tags (docs/browser.md): the SET tab's
  * CLEAN UP NAMES, on unless EZGB.CFG says TAGS=1 (the default since
  * 2026-10-31; TAGS=0 still reads as on). tagtrim.c, browser_icons.c. */
 #define TAGS_HIDE (*(volatile u8 *)0xDBF6)
