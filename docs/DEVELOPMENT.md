@@ -1,132 +1,148 @@
 # Development guide
 
-Everything a contributor needs to regenerate the disassembly, name functions,
-inject C code, and verify a matching decompilation. The [README](../README.md)
-covers what the project *is* and how to build a modded kernel; this covers how
-the research and tooling underneath it work.
+How to set up a checkout, change the mod, carry the change to all three
+kernels and cut the patches. What the project is and how to install the mod
+are in the [README](../README.md).
 
-## Prerequisites
+## What you need
 
-- **RGBDS** (`rgbasm`/`rgblink`/`rgbfix`): assembles the disassembly.
-- **[mgbdis](https://github.com/mattcurrie/mgbdis)**: the disassembler.
-- **[SDCC](https://sdcc.sourceforge.net/)** (4.6.0+ from brew is fine for simple
-  functions): compiles the C for `kernel/` and for injected features.
-- **[SameBoy](https://sameboy.github.io)** with the EZ Jr FPGA stub, for dynamic
-  tracing (see [Tools](#tools)).
-- A firmware dump at `kernel/<version>/kernel.gb` (not tracked; see the README's
-  copyright note).
+| Tool | For |
+|---|---|
+| [RGBDS](https://rgbds.gbdev.io) 1.x (`rgbasm`, `rgblink`, `rgbfix`) | assembling the disassemblies and the mod's asm |
+| [SDCC](https://sdcc.sourceforge.net/) 4.6.0 | compiling the mod's C |
+| Python 3, perl | the scripts |
+| [mtools](https://www.gnu.org/software/mtools/) | building the emulator's SD card image |
 
-`tools/` reference repos are gitignored; re-clone them per the [Tools](#tools)
-section.
+The SDCC version matters. `rebuild-blocks.py` compares what the compiler
+produces with the bytes in the kernel, so a different SDCC reports every
+block as stale. The committed kernels were built with 4.6.0 (#16555).
 
-## Rebuilding a disassembly
+Other people's repositories are cloned into `tools/`, which is ignored:
 
 ```sh
-cd kernel/1.05e-0731
-python3 ../../../tools/mgbdis/mgbdis.py kernel.gb --overwrite  # apply kernel.sym names
-../../../scripts/annotate-disasm.py 1.05e-0731                      # notes.json + wram.inc
-
-cd disassembly
-make            # requires rgbasm/rgblink/rgbfix (rgbds)
+git clone https://github.com/mattcurrie/mgbdis tools/mgbdis          # the disassembler
+git clone https://github.com/daid/ezflashjr tools/ezflashjr          # EZ Flash's firmware packages
+git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools    # optional, for scripts/gbdiff.sh
+git clone https://github.com/ezflash-team/omega-de-kernel tools/omega-de-kernel   # optional, naming reference
+./scripts/setup-sameboy.sh && make -C tools/SameBoy CONF=debug sdl   # the emulator, with the EZ Jr stub
 ```
 
-`mgbdis` must run with `--overwrite` when `disassembly/` already exists, or bank
-files keep their old `Call_` names. `annotate-disasm.py` also emits `wram.inc`
-for `kernel.sym` entries at CPU addr ≥ `$C000` (mgbdis rewrites `[wGfxMode]` but
-does not define those labels).
+`tools/ezflashjr/official/` stops at the 2020 packages. The 2021-09-18 one
+goes beside them in the same format, as `official/2021-09-18_FW5_K1.05e/`
+holding `ezgb.dat` and `Update_FW5_2021-9-18.gb` (md5s in
+[kernel-versions.md](kernel-versions.md)).
 
-The build reassembles to `kernel.gb` exactly, apart from four header bytes
-(`$0148` ROM size and the checksums at `$014D`-`$014F`), which
-`scripts/build-kernel.sh` sets.
+## Setting up a checkout
 
-Persistent annotations live in two files per version:
+EZ Flash's binaries are not in the repo. Each kernel version needs two
+files beside its disassembly, both ignored by git:
 
-- [`kernel/1.05e-0731/kernel.sym`](../kernel/1.05e-0731/kernel.sym): names (`Call_000_0de4` becomes
-  `SdMenuMain`). mgbdis applies these to labels.
-- [`kernel/1.05e-0731/notes.json`](../kernel/1.05e-0731/notes.json): comment blocks.
-  `annotate-disasm.py` injects them, matching either the assigned name or the
-  raw `*_bbb_aaaa` label for still-unnamed addresses.
-
-See [psram-save-map.md](psram-save-map.md) for an example of the note format.
-
-## Naming and annotation
-
-The disassembly is 100% labeled. To refine a name or comment, edit
-`kernel/1.05e-0731/kernel.sym` / `notes.json` then regenerate:
+| File | What it is |
+|---|---|
+| `kernel/<ver>/kernel.gb.orig` | the stock `ezgb.dat`, untouched |
+| `kernel/<ver>/kernel.gb` | the modded kernel, the image every tool reads and patches |
 
 ```sh
-./scripts/regen-disasm.sh 1.05e-0731       # after editing kernel.sym / notes.json
+O=tools/ezflashjr/official
+cp $O/2020-03-10_FW4_K1.04e/ezgb.dat   kernel/1.04e/kernel.gb.orig
+cp $O/2020-07-31_FW5_K1.05RC/ezgb.dat  kernel/1.05e-0731/kernel.gb.orig
+cp $O/2021-09-18_FW5_K1.05e/ezgb.dat   kernel/1.05e-0918/kernel.gb.orig
+
+for v in 1.04e 1.05e-0731 1.05e-0918; do scripts/build-kernel.sh $v --install; done
 ```
 
-How the names were derived, `bank:addr` translation, and interior-label
-conventions:
-[MAPPING.md](MAPPING.md).
-
-## Matching decompilation (`kernel/1.05e-0731/stock/`)
-
-A separate, longer-term effort from the disassemblies in `kernel/<version>/`: rewriting the kernel
-function-by-function from source, verified against the stock kernel the
-same way the Pokémon Gen 1-3 or Super Mario 64 decompilations work. Those disassemblies are the
-research phase on the modded kernel; [`kernel/1.05e-0731/stock/`](../kernel/1.05e-0731/stock/README.md) is a
-stock build that replaces disassembly with source one routine at a time and
-fails unless it stays byte-identical. Status and toolchain findings (GBDK
-`crt0.s`, FatFs R0.11a and its config, the compiler search):
-[PROGRESS.md](PROGRESS.md).
-
-### Why SDCC / `--sdcccall 0`
-
-The kernel's code shape is the fingerprint of SDCC compiling C for the
-sm83/gbz80 target with its legacy stack-based calling convention (`--sdcccall
-0`, once the GBDK default): parameters passed on the stack and read via `ld hl,
-sp+N` (the SM83 has no IX register); callers cleaning up with `add sp, N`; the
-`push af` / `inc sp` idiom for a single-byte argument.
-
-`unsigned char return_zero(void) { return 0; }` compiled with
-`sdcc -msm83 --sdcccall 0` produces `1E 00 C9`, matching `Call_000_1a77` in
-the 1.05e kernel. Bank 0's GBDK library routines are assembly, not C, and no
-stock SDCC or GBDK release has been found that reproduces the C
-([PROGRESS.md](PROGRESS.md)).
-
-## Injecting a feature (`inject.py`)
-
-`inject.py` compiles a C file and writes the machine code into the build at a
-**real** final ROM address. Linking at the real address matters: any internal
-absolute `jp`/`call` the function makes is encoded for where it will actually
-live.
+`build-kernel.sh` assembles the committed disassembly, checks the result
+against the md5 in `patches/kernel/manifest.json`, and with `--install`
+writes it to `kernel.gb`. Then confirm the checkout is whole:
 
 ```sh
-inject.py <file.c> <version> <bank> <address_hex> <name> \
-          [--pin SYM=ADDR ...] [--pins pins_file] [--apply] [--regen] [--replace]
+scripts/rebuild-blocks.py                           # "all C blocks match their sources"
+scripts/port-mod.py 1.05e-0731 1.05e-0918 --check   # "identical"
+scripts/port-mod.py 1.05e-0731 1.04e --check
 ```
 
-The injected bytes land in `kernel.sym` as a `bank:addr .data:LEN:WIDTH` block
-(opaque compiled code, not hand-editable asm). The name is an ordinary
-`kernel.sym` label, so existing asm and other injected C can `call` it.
+Put the `.orig` files in place before running anything else. Without one,
+`inject.py` saves the modded kernel as the "pristine" copy and `portmap.py`
+maps from the modded kernel, and neither says so.
 
-Every run checks the block fits before writing anything: it must not run into
-another `kernel.sym` label or `.data` block, and every byte it newly occupies
-must be `$FF` free space. The report ends with the free bytes left after it.
-`--replace` rebuilds an existing block of the same name in place: its old
-bytes count as free, its `kernel.sym` length is updated where it stands, and a
-shrunken tail is blanked back to `$FF`.
+## How the mod is stored
 
-After editing any C block, don't work out its pins by hand:
+The mod has no single source tree that builds into a kernel. It is the
+modded `kernel.gb` itself, described by tracked files:
+
+- `kernel/<ver>/disassembly/` reassembles to `kernel.gb`, apart from four
+  header bytes (`$0148` and the checksums at `$014D`-`$014F`) that
+  `build-kernel.sh` sets.
+- `kernel/<ver>/kernel.sym` names every label and marks each injected block
+  as `bank:addr .data:LEN`. `kernel/<ver>/notes.json` holds the comment
+  blocks. The disassembly is regenerated from these two, so hand edits to
+  `bank_*.asm` are lost.
+- `kernel/mod/src/` is the C, `kernel/mod/asm/` the assembly. `REGISTRY` in
+  `scripts/port-mod.py` is the one list of C blocks: source file, bank,
+  address and pins.
+- Hand-assembled hooks, and every patched call site in stock code, have no
+  source file. They exist only as bytes in `kernel.gb` and as blocks in the
+  disassembly ([shims.md](../kernel/mod/src/shims.md) describes them).
+
+1.05e-0731 is where features are written. The other two kernels are never
+edited by hand; they are ports of it.
+
+## Changing the mod
 
 ```sh
-scripts/rebuild-blocks.py            # compile every C block, report stale ones (exit 1)
-scripts/rebuild-blocks.py --apply    # re-inject the stale ones with inject.py --replace
+# 1. edit C in kernel/mod/src, then bring 0731 up to date
+scripts/rebuild-blocks.py --apply          # re-injects every block whose source changed
+scripts/regen-disasm.sh 1.05e-0731         # disassembly from kernel.gb + kernel.sym + notes.json
+
+# 2. carry it to the other kernels
+scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply --sym
+scripts/port-mod.py 1.05e-0731 1.04e --apply --sym
+scripts/regen-disasm.sh 1.05e-0918 && scripts/regen-disasm.sh 1.04e
+
+# 3. cut the patches
+scripts/kernel-patch.py make               # patches/kernel/*.ips and manifest.json
 ```
 
-It takes each block's source and pins from `REGISTRY` in `port-mod.py` (the
-one list of them) and its name and length from `kernel.sym`, and works on
-1.05e-0731; port afterwards. A new C block needs a `REGISTRY` entry.
+Commit the sources together with the three disassemblies, `kernel.sym`,
+`notes.json`, the `.ips` files and `manifest.json`.
 
-Companion tools:
+### Adding a C block
 
-- `inject_bytes.py`: drop hand-assembled bytes (stubs, trampolines) at an
-  address as a named block.
-- `patch_call.py`: repoint an existing `call`/`jp` operand to a new target
-  (`--jp` for tail-`jp`/`ret` hook sites).
+```sh
+cd kernel/mod
+tools/inject.py src/<file>.c <version> <bank> <address_hex> <Name> \
+    [--pin SYM=ADDR ...] [--apply] [--replace]
+```
+
+`inject.py` compiles the file and links it at its real ROM address, so its
+internal jumps and calls are right for where it lives. Externs the kernel
+provides are given as pins. Before writing it checks that the block fits:
+it must not run into another label or block, and every new byte must be
+`$FF` free space. It reports the free bytes left after it. `--replace`
+rebuilds an existing block of the same name in place. Without `--apply`
+nothing is written.
+
+A new block needs a `REGISTRY` entry in `port-mod.py`, or it is neither
+rebuilt nor ported. A source must not hard-code a kernel address; use an
+`extern` and a pin, so the port can translate it.
+
+Two companions in `kernel/mod/tools`: `inject_bytes.py` places
+hand-assembled bytes as a named block, and `patch_call.py` repoints a
+`call` or `jp` operand to a new target.
+
+### Assembly features
+
+The features written in assembly have their own inject scripts, each run on
+1.05e-0731 and then ported:
+
+| Script | Feature |
+|---|---|
+| `scripts/inject-ezcfg.sh` | the settings module and everything that hooks into it (the largest; it also places most hand-assembled hooks) |
+| `scripts/inject-font12.sh` | the 12px glyph tables, after editing a sheet |
+| `scripts/inject-sgb.py` | Super Game Boy boot |
+| `scripts/inject-skipboot.py` | skipping the boot ROM |
+| `scripts/inject-fillrect.py`, `inject-fastdec.py` | the fast rectangle fill and decimal conversion |
+| `scripts/inject-set-jump.py` | LEFT and RIGHT on the SET tab |
 
 ### Choosing a hook site
 
@@ -139,181 +155,100 @@ Companion tools:
   overwrote.
 - A bare `call` or `jp` cannot cross ROMX banks. Code hooked from bank 8
   must live in bank 8 or bank 0; anything else goes through
-  `FarCallTrampoline`.
+  `FarCallTrampoline` ([kernel-size.md](kernel-size.md) has the stub bytes
+  and the argument rule).
 - Only a run of one repeated byte is free space. Tables of `ff 7f ff 7f`
-  look empty in a hex dump and are data. `inject.py` refuses an address
-  that is not single-byte filler, and prints how much is left after it.
+  look empty in a hex dump and are data.
+- Banks 10 to 15 were added by the mod: 10 to 14 hold code and 15 is empty
+  ([kernel-size.md](kernel-size.md)). The stock banks are close to full.
 - To find what draws something, break on `DrawGlyph` (`$2701`) and look at
   the caller: `scripts/debug/who-draws-row0-right.sbd` is an example.
 
-## Porting the mod to another kernel build
+## How the port works
 
-Features are written and injected against **1.05e-0731**. The other two
-supported kernels (1.05e-0918, 1.04e) are the same program with code inserted
-or removed in a few places, so the mod is carried over mechanically rather
-than re-injected by hand:
+The three kernels are the same program with code inserted or removed in a
+few places, so `port-mod.py` moves the mod across mechanically
+(`scripts/portmap.py` does the mapping).
 
-```sh
-scripts/port-mod.py 1.05e-0731 1.05e-0918 --check    # regression: must print "identical"
-scripts/port-mod.py 1.05e-0731 1.05e-0918 --apply --sym   # kernel.gb + kernel.sym + notes.json
-scripts/port-mod.py 1.05e-0731 1.04e --apply --sym
-scripts/regen-disasm.sh 1.04e && scripts/build-kernel.sh 1.04e
-```
-
-How it works (`scripts/portmap.py`, `scripts/port-mod.py`):
-
-- **Address map.** Each bank of both stock ROMs is linear-decoded into a
-  stream of opcodes (operands ignored, the 4-byte target after `call
-  FarCallTrampoline` folded into one token) and the two streams are aligned
-  with difflib. Any address inside a matched run maps by offset. Try it:
-  `scripts/portmap.py 1.05e-0731 1.04e 00:1344 04:5990`.
-- **C blocks** are recompiled with SDCC at the same address, every `--pin`
-  translated through the map (`REGISTRY` in `port-mod.py` records each
-  block's source and pins; a source with a hard-coded kernel address must use
-  an `extern` + pin instead, as `fastlaunch_do_launch.c` does).
-- **Hand-assembled blocks** (shims, hooks) are decoded and their absolute
-  operands translated. `ld rr,nn` is treated as a pointer only when `nn` is a
-  `kernel.sym` label or injected code, so screen-position constants survive.
-  Blocks with string tails use `code_len`; pure data (`FolderIconGlyphs`) is
-  copied verbatim; `VERSION_TEXT` holds the per-kernel `K1.0xe-…` string.
-- **Hook sites** (every remaining byte that differs from stock) are widened
-  to instruction boundaries and translated the same way. Before writing, the
-  tool proves the target kernel has the same stock instructions at the
-  translated site; a mismatch aborts. Sites that patch code the target does
-  not have are listed in `SKIP_SITES` with a reason (1.04e: one extra SET-tab
-  string draw that only 1.05e makes), and addresses the map cannot align are
-  pinned in `OVERRIDES` after reading both disassemblies (1.04e: the SET-tab
-  redraw label). Where a build repeats code and the map picks the wrong copy,
-  the range is corrected in `REMAP` (0918: `RtcToDayCount` sits behind an
-  uncalled test routine that opens with the same 370 bytes).
+- **Address map.** Each bank of both stock ROMs is decoded into a stream of
+  opcodes, operands ignored, and the two streams are aligned. An address
+  inside a matched run maps by offset. Try it:
+  `scripts/portmap.py 1.05e-0731 1.04e 00:1344`.
+- **C blocks** are recompiled at the same address with every pin translated
+  through the map.
+- **Hand-assembled blocks** are decoded and their absolute operands
+  translated. `ld rr,nn` counts as a pointer only when `nn` is a label or
+  injected code, so screen coordinates survive. Blocks ending in a string
+  give their code length; pure data is copied as it is.
+- **Hook sites**, every remaining byte that differs from stock, are widened
+  to instruction boundaries and translated the same way. Before writing,
+  the tool proves the target kernel has the same stock instructions at the
+  translated site, and aborts if not.
 - **Symbols.** `--sym` ports `kernel.sym` and `notes.json` through the same
-  map; 1.04e's runtime WRAM sits 39 bytes below 1.05e's from `$D6CC` up
-  (`WRAM_SHIFT`), and names inside 1.05e's inserted RTC tables are dropped.
-  The WRAM rule applies to both files (before mod 4.4 WRAM notes were
-  dropped from `notes.json`), and `notes.json` keeps the target file's
-  escaping and trailing newline, so `--sym` is safe on every port and a
-  re-port diffs only what moved. Names and notes for code only the target
-  build has come from `TARGET_ONLY` (0918: `RtcDebugDump`).
+  map.
 
-The tool also warns about stale bytes in free space (old versions of a block
-that were never blanked); blank them in the source build rather than porting
-them. `--check` against a build that already has a `kernel.gb` is the
-regression test: porting 0731 onto 0918 must reproduce the committed 0918
-kernel byte for byte.
+The exceptions are tables at the top of `port-mod.py`, each entry with its
+reason:
 
-After porting, regenerate the patches (below) and run
-`scripts/stamp-mod-version.sh`, which stamps and rebuilds every version in the
-manifest.
+| Table | For |
+|---|---|
+| `SKIP_SITES` | a site that patches code the target does not have |
+| `OVERRIDES` | an address the map cannot align, pinned by hand |
+| `REMAP` | a range where the target repeats code and the map picks the wrong copy |
+| `WRAM_SHIFT` | 1.04e's runtime WRAM sits 39 bytes below 1.05e's from `$D6CC` up |
+| `TARGET_ONLY` | names for code only the target build has |
+| `VERSION_TEXT` | the `K1.0xe-…` string each kernel shows |
 
-## Regenerating the kernel patches
+`--check` compares a fresh port with the kernel already there, which makes
+porting 0731 onto 0918 the regression test for the whole tool.
 
-The IPS patches in `patches/kernel/` are how the modded kernel is distributed
-(see [distribution.md](distribution.md)). After changing any injection (and
-regenerating/re-injecting per the feature docs), refresh the IPS and manifest
-from the canonical artifacts (`kernel/<ver>/kernel.gb.orig` stock →
-`kernel/<ver>/kernel.gb` modded):
+## The disassembly
 
 ```sh
-python3 scripts/kernel-patch.py make    # all versions in the manifest
+scripts/regen-disasm.sh 1.05e-0731     # after editing kernel.sym or notes.json
 ```
 
-The command round-trips each patch before writing its manifest entry, and
-regenerates every supported base in one run. The injected code is
-byte-identical across them (bank 2 and bank 0 are identical in the stock
-kernels), so the patches always change together. Commit
-`patches/kernel/*.ips` + `manifest.json` + `VERSION` together with the
-source change.
+It runs mgbdis over `kernel.gb` with the names from `kernel.sym`, adds the
+comment blocks from `notes.json`, and assembles the result to prove it
+still matches. The naming conventions and how to read a `bank:addr` are in
+[MAPPING.md](MAPPING.md).
 
-### Mod version
+The stock 1.05e-0731 kernel is also being rebuilt from source, byte for
+byte, in [kernel/1.05e-0731/stock](../kernel/1.05e-0731/stock/README.md).
 
-`patches/kernel/VERSION` holds the mod version `N.M`, the version releases
-are tagged with (`mod-N.M`). It is set by hand when a release is cut, never
-by `make`: edit the file, then run `scripts/stamp-mod-version.sh` to write it
-into the HELP screen. Regens between releases keep the upcoming release's
-number.
+## Trying it in SameBoy
 
-### Release policy
+The emulator runs stage1 and the kernel against a card image.
 
-Since the disassembly reassembles the ROM, the `bank_*.asm` files are the
-firmware in source-encoded form, which puts the repo in the same
-tolerated-but-gray zone as other proprietary-binary decomp projects.
-Attaching a built binary to a Release would escalate that from "repo you can
-build" to "binary handed out", so a GitHub Release gets only the `.ips` files
-(and optionally `scripts/kernel-patch.py`), never `ezgb.dat`, `kernel.gb`,
-updater packages, or FPGA bitstreams.
+```sh
+mkdir -p sd/root                   # put ROMs here; sd/ is ignored
+scripts/make-sd-image.sh           # sd/card.img, with kernel/1.05e-0731/kernel.gb as ezgb.dat
+scripts/run-sameboy-debug.sh       # plain boot; --model dmg for an original Game Boy
+```
 
-Releases are tagged `mod-N.M` (from `patches/kernel/VERSION`) and carry one
-asset per supported base, named `ezgb-mod-N.M-for-<base>.ips`, e.g.
-`ezgb-mod-4.1-for-1.04e.ips`.
+`EZGB_KERNEL_VERSION=1.04e` picks another kernel for the card. The card is
+built with mtools, so its directory order is exactly what `sd/ORDER` lists,
+which matters because the stock browser shows raw FAT order.
+`run-sameboy-debug.sh --breakpoints` loads `scripts/debug/launch.sbd`, and
+`--script` takes any other file from `scripts/debug/`.
 
-`scripts/make-dist.sh` (run automatically at the end of
-`scripts/stamp-mod-version.sh`) assembles `dist/mod-N.M/` with, for every
-version in the manifest, that `.ips` plus `ezgb-mod-N.M-for-<base>.dat`, the
-patched kernel ready to copy to a card as `ezgb.dat`. Each `.dat` is checked
-against the manifest md5 and each `.ips` is checked to reproduce it. `dist/`
-is gitignored; only the `.ips` files leave the machine. Nothing is staged
-into `sd/root/` any more: `scripts/make-sd-image.sh` copies the chosen
-version's `kernel/<ver>/kernel.gb` straight into the emulator card image
-(`EZGB_KERNEL_VERSION`, default 1.05e-0731).
+`scripts/make-debug-build.py` builds a kernel with the debug screen
+([debug-tab.md](debug-tab.md)).
 
-`make-sd-image.sh` builds the FAT16 card with **mtools** (`brew install
-mtools`), not hdiutil — so macOS injects no junk (no stray `~1` from a `._.`
-sidecar) and the on-card directory-entry order is deterministic. That order is
-whatever `sd/ORDER` lists (top-level names, `#` comments); entries not listed
-are appended sorted. The stock browser lists raw FAT order and the mod sorts,
-so a mixed-up `sd/ORDER` shows the difference.
+## Releases
 
-The README banner (`docs/banner.png`) comes from
-`scripts/make-showcase-banner.py`: a grid of SameBoy screenshots, one entry
-in its `SHOTS` table per tile (EZGB.CFG lines, stars, buttons to press). It
-builds its own card and leaves `sd/card.img` alone.
+`patches/kernel/VERSION` holds the mod version `N.M`. It is changed by
+hand, once per release, and never by a script:
 
-## Tools
+```sh
+$EDITOR patches/kernel/VERSION
+scripts/stamp-mod-version.sh       # writes it into the HELP tab of every kernel, rebuilds, cuts patches
+```
 
-Reference repos clone into `tools/` (gitignored; re-clone as needed):
+`stamp-mod-version.sh` ends by running `make-dist.sh`, which lays out
+`dist/mod-N.M/` with each `.ips` and the patched kernel it produces, both
+checked against the manifest. `dist/` is ignored.
 
-- **[RGBDS](https://rgbds.gbdev.io)**: assembler/linker; verifies disassembly
-  round-trips.
-- **[mgbdis](https://github.com/mattcurrie/mgbdis)**: the disassembler.
-- **[SameBoy](https://sameboy.github.io)**: Game Boy emulator with a debugger,
-  for dynamic tracing. Upstream stays out of git; our EZ Jr FPGA stub is tracked
-  as patches against a pinned upstream commit:
-
-  ```sh
-  ./scripts/setup-sameboy.sh              # clone @ patches/sameboy/BASE_COMMIT + apply
-  cd tools/SameBoy && make CONF=debug sdl
-  ./scripts/refresh-sameboy-patch.sh      # after editing the stub, rewrite the patch
-  ```
-
-  To move to a newer SameBoy: update `patches/sameboy/BASE_COMMIT`, rebase the
-  local stub onto that commit, then re-run `refresh-sameboy-patch.sh`.
-- **[daid/ezflashjr](https://github.com/daid/ezflashjr)**: its `official/`
-  folder archives EZ Flash's firmware packages, and the build, release and
-  test scripts read the stock kernels and updaters from there:
-
-  ```sh
-  git clone https://github.com/daid/ezflashjr tools/ezflashjr
-  ```
-
-  It stops at the 2020 packages. The 2021-09-18 one goes beside them in the
-  same format, as `official/2021-09-18_FW5_K1.05e/` holding `ezgb.dat` and
-  `Update_FW5_2021-9-18.gb` (md5s in [kernel-versions.md](kernel-versions.md)
-  and `patches/updater/manifest.json`).
-- **[gb-asm-tools](https://github.com/pret/gb-asm-tools)**: pret's disassembly
-  helpers (override the clone location with `GBASM_TOOLS=`):
-
-  ```sh
-  git clone https://github.com/pret/gb-asm-tools tools/gb-asm-tools
-  ./scripts/gbdiff.sh                    # symbol-annotated byte diff of the two dumps
-  ./scripts/gbdiff.sh old.gb new.gb      # ...or any two ROMs
-  ```
-
-  `gbdiff.sh` names each diff region from a `<rom-basename>.sym` beside each ROM
-  (we ship `kernel/1.05e-0731/kernel.sym`; add `kernel/1.04e/kernel.sym` to annotate the
-  older side).
-- **[omega-de-kernel](https://github.com/ezflash-team/omega-de-kernel)**: the Omega DE (GBA)
-  kernel source, published by EZ Flash: the reference for FPGA register
-  naming and FatFs/UI structure; see
-  [MAPPING.md](MAPPING.md#omega-as-a-reference).
-- **[SDCC](https://sdcc.sourceforge.net/)**: C compiler for `kernel/` and for
-  injected features.
+Only patches are published, never a built kernel, an updater or a
+bitstream. What goes on a release, how the firmware patches are made and
+what a wrong patch does are in [distribution.md](distribution.md).

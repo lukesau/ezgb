@@ -40,7 +40,7 @@ updater exposes a path to the U4 NOR die.
 daid notes `$02` is "used during stage1, but SRAM is not accessed afterwards",
 i.e. it arms the FPGA's SD→store path rather than exposing a CPU-readable
 window. The store it targets is the **volatile pSRAM die** (proven in
-[../../../docs/nor-reuse.md](../../docs/nor-reuse.md)). So `$02` does touch the U4 device, but it
+[../../../docs/game-store.md](../../docs/game-store.md)). So `$02` does touch the U4 device, but it
 reaches the RAM die, not the NOR die. Whether the NOR die is even selectable on that bus (by a
 different sub-address or chip-enable) is unknown and not reachable through any
 existing `$7FC0` value.

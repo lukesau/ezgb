@@ -145,7 +145,7 @@ scripts/    Build, port, release and emulator helpers
 
 EZ Flash's binaries (kernels, bitstreams, updaters) and third-party tools
 are not tracked. A checkout supplies its own dump; see
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#tools).
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#setting-up-a-checkout).
 
 ## Credits
 

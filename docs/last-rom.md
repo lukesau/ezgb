@@ -311,12 +311,12 @@ the file browser. See
 The other half of a B-mode boot, skipping the SD→NOR copy because the game is already in
 NOR, exists as a dormant, caller-less kernel primitive (`RomLoad_ResetIntoRom_B4`,
 `04:4180`); an experimental hook makes this overlay's A press use it. See
-[`nor-reuse.md`](nor-reuse.md).
+[`game-store.md`](game-store.md).
 
 > **Correction (2026-10-09).** The game is not in NOR. It is in **U9's volatile
 > pSRAM**, so after a power cycle there is nothing valid to boot. The hook was
 > reverted on 2026-08-30. See the correction at the top of
-> [`nor-reuse.md`](nor-reuse.md).
+> [`game-store.md`](game-store.md).
 
 ## Open questions / verification TODO
 

@@ -13,7 +13,7 @@
  *
  * Hooked in place of the single `call DirList` in FileBrowserEntry
  * (00:102f) via an 8-byte FarCallTrampoline stub at 00:03d4 (see
- * browser_sort_shims.md). Runs from a bank 8 code cave.
+ * shims.md). Runs from a bank 8 code cave.
  *
  * Phases:
  *  1. Enumerate the whole directory: loop DirList (streams 16 records per

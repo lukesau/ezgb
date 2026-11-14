@@ -1,39 +1,11 @@
-# How the kernel was named
+# Naming in the kernel disassembly
 
-Every label in the kernel disassembly has a name. This page records how the
-names were derived and the conventions they follow, for anyone refining one
-or naming another build. The approach is the one
-[pret](https://pret.github.io/) uses for its Game Boy disassemblies: label a
-little at a time, from evidence, with the tree rebuilding to the original at
-every step.
-
-Most names came from following one seam (a UI action, an interrupt, an SD
-helper) until its subgraph was named, starting with the routines that have
-the most callers. Shapes a script can recognize (interrupt callback
-wrappers, far-call thunks, FPGA unlock sequences, the FatFs copies in other
-banks) were labeled mechanically; the scripts that did it are in the git
-history. The rest were read by hand, with SameBoy for the ambiguous ones,
-and compared against EZ Flash's published Omega source
-([below](#omega-as-a-reference)).
-
-## Source of truth in this repo
-
-Hand-edited names inside `bank_*.asm` are not permanent; regen wipes them.
-Persist through:
-
-| Artifact | Role |
-|---|---|
-| `kernel/1.05e-0731/kernel.sym` | Human symbol names (`bank:addr Name`); mgbdis applies these |
-| `kernel/1.05e-0731/notes.json` | Multi-line `; [ezgb]` comment blocks at labels |
-| `docs/*.md` | Traces, hardware maps, subsystem writeups |
-
-Regen after adding sym names (details in [`DEVELOPMENT.md`](DEVELOPMENT.md)):
-
-```sh
-./scripts/regen-disasm.sh 1.05e-0731    # mgbdis → annotate → make
-```
-
-`make` must stay green (byte-identical aside from known header cosmetics).
+Every label in the kernel disassembly has a name. This page gives the
+conventions the names follow, for anyone refining one or naming another
+build. Names live in `kernel/<ver>/kernel.sym` and comment blocks in
+`kernel/<ver>/notes.json`; the disassembly is regenerated from them
+([DEVELOPMENT.md](DEVELOPMENT.md#the-disassembly)), so a name edited in a
+`bank_*.asm` file is lost.
 
 ## Reading the disassembly (`bank:addr`)
 
@@ -56,20 +28,6 @@ Call_000_27ba` is a caller, not the body.
 
 FatFs bank-start `ret` stubs are `RetStub_B5`/`RetStub_B6`/`RetStub_B9` (`xx:4000`
 before `MemCpy16_B*`).
-
-## Understand before renaming
-
-Many top fan-in hits are tiny SDCC runtime leaves (32-bit `<<`/`>>`, mul/div,
-memcpy), named from the instruction loop alone; do not open SameBoy for them.
-Example: `$298f` / `$29c9` / `$29ac` are `U32Shr` / `U32Shl` / `S32Sar` (stack
-args: ulong + shift count). SameBoy is for **ambiguous** functions (UI, SD,
-FPGA); even then prefer break + dump + continue over single-stepping.
-
-Minimum bar for a name:
-
-- [ ] Know callers (grep the `Call_xxx` / address)
-- [ ] Know what it reads/writes (regs, WRAM, `$7Fxx`, PSRAM)
-- [ ] Pure leaf proven from the body, **or** one live way to hit it
 
 ## Naming conventions
 
@@ -123,7 +81,7 @@ every twin, and their interior names were copied across on that basis.
 
 `tools/omega-de-kernel/source/ff15/ff.c` is ChaN's FatFs R0.15 (EZ Flash's Omega
 kernel ships it unmodified; only `diskio.c`/`ffsystem.c` are EZ Flash glue). The
-Jr's build predates that revision, but the internal static functions
+Jr's is R0.11a ([stock README](../kernel/1.05e-0731/stock/README.md#toolchain-findings)), but the internal static functions
 (`dir_find`, `dir_next`, `create_name`, `follow_path`, `create_chain`,
 `clust2sect`, `get_fat`/`put_fat`, `gen_numname`, `sync_window`, `move_window`,
 …) are stable across revisions; that is how the bank-09 names (`Clust2Sect_B9`,
@@ -150,13 +108,5 @@ The two differ in how a game starts. The Omega can burn a game to NOR and
 boot it directly (its Mode B, `NORflash_OP.c`); the Jr loads from the SD
 card into volatile pSRAM on every launch.
 
-## Confidence and honesty
-
-| Level | What to do |
-|---|---|
-| Confirmed live | Name + short note; cite SameBoy or hardware |
-| Strong static | Name OK; note "static only" if risky |
-| Educated guess | Comment only, or `LikelyFoo` + TODO, or leave unnamed |
-| String-adjacent only | Name the draw/print helper; don't invent the whole screen FSM |
-
-Wrong names are worse than `Call_`: they poison every future read.
+A wrong name is worse than an auto-generated one, because every later reader
+trusts it. When unsure, leave the `Call_` label or say so in a note.

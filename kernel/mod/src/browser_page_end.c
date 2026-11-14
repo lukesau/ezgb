@@ -9,7 +9,7 @@
  *
  * Hooked at the `jp nc, MenuDispatchAB_waitVBlankLoop` that ends the
  * FileBrowserEntry_pageInc bounds check (00:1195): its operand is repointed
- * to a frame-preserving stub (00:03f4, browser_scroll_shims.md pattern)
+ * to a frame-preserving stub (00:03f4, shims.md, hooks into a stock frame)
  * that passes &frame.dirty here and then jumps to the wait loop itself.
  * The nc branch is taken exactly when base + 16 >= count, so `count - base`
  * is the visible row count (at most 16) whenever count is nonzero.

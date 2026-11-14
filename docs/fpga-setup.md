@@ -157,7 +157,7 @@ expect them, or adjust the paths.
 
 | Input | Where to get it | Used by |
 |---|---|---|
-| stock `Update_FW4.gb` | `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr), cloned to `tools/ezflashjr` ([DEVELOPMENT.md](DEVELOPMENT.md#tools)). The same file as in EZ Flash's 1.04e FW4 package | every updater; slot B comes out of it |
+| stock `Update_FW4.gb` | `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr), cloned to `tools/ezflashjr` ([DEVELOPMENT.md](DEVELOPMENT.md#what-you-need)). The same file as in EZ Flash's 1.04e FW4 package | every updater; slot B comes out of it |
 | stock stage1 dumps | daid/ezflashjr `stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
 | your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the license record, recovery |
 | the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `stage1/fw4/patches/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |

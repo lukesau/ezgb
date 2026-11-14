@@ -103,7 +103,7 @@ backup").
 ### Version parity
 
 The mechanism, PSRAM addresses, and `BackupSavePrompt` exist identically in 1.04e (addresses
-shifted; see `docs/DIFF_1.04e_vs_1.05e.md`). The 1.05e-only `$d3f6` cache of `$A202` is RTC
+shifted; see `docs/kernel-diffs.md`). The 1.05e-only `$d3f6` cache of `$A202` is RTC
 state, adjacent to this path but not part of the save-dump flag itself.
 
 ## Key symbols (1.05e)

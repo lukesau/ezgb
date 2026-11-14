@@ -1512,7 +1512,7 @@ DrawString_epilogueRet::
 ; Inc $cc2f; wrap to 0 past $14 (20). Unlabeled orphan after Jump_000_0927 epilogue.
 ; wDebugTextCol/wDebugTextRow ($cc30/$cc2f) are its text cursor; the row is also where the boot messages draw (SdMenuMain,
 ; FileSystemErrorHang). No callers in 1.04e or 0731; 0918 calls it only from the unused RtcDebugDump.
-; 1.04e: radix $10, steps $cc30 and carries into $cc2f. See docs/DIFF_1.04e_vs_1.05e.md.
+; 1.04e: radix $10, steps $cc30 and carries into $cc2f. See docs/kernel-diffs.md.
 ; Scratch@sp+$01; CStrLen → DrawString(len,x=$cc30,y=$cc2f); ++$cc2f; >$14 → 0; Jump_000_0982 ret.
 
 DrawU32Decimal::

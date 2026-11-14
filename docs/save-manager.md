@@ -62,7 +62,7 @@ that bank's copy of the FatFs internals and calling them directly
 code that writes the saves. Directories and read-only files are refused.
 
 > **Correction (2026-10-30).** The FatFs here was called R0.10; it is R0.11a
-> (same struct layout), see [PROGRESS.md](PROGRESS.md#toolchain-findings).
+> (same struct layout), see [the stock README](../kernel/1.05e-0731/stock/README.md#toolchain-findings).
 
 The structures come from `Open_B9`, which is really `f_mkdir` (it calls
 `get_fattime` first and turns `FR_OK` from `follow_path` into `FR_EXIST`):

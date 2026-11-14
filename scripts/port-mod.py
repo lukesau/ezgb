@@ -305,7 +305,7 @@ SKIP_BLOCKS = {
 # op byte to $DBD5 while ezcfg read $DBFC.) The kernel's WRAM
 # names in kernel.sym are ported by this rule: 1.05e inserted its RTC day
 # tables at $D6A7, so every runtime global from $D6CC up sits 39 bytes lower
-# in 1.04e (docs/PROGRESS.md: $D6CE/$D6D1 -> $D6A7/$D6AA, $D6CC/$D6CD ->
+# in 1.04e ($D6CE/$D6D1 -> $D6A7/$D6AA, $D6CC/$D6CD ->
 # $D6A5/$D6A6); names inside the inserted range have no 1.04e equivalent.
 WRAM_SHIFT = {"1.04e": dict(keep_below=0xd6a7, shift_from=0xd6cc, delta=-0x27, mod_from=0xd780)}
 

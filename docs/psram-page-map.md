@@ -112,7 +112,7 @@ saves.
 
 ## Hardware verification
 
-A pSRAM analogue of the NOR probe ([nor-reuse.md](nor-reuse.md)): write a
+A pSRAM analogue of the NOR probe ([game-store.md](game-store.md)): write a
 sentinel to page `$11` `$A400` (and page `$10` if it is wanted), power cycle,
 and read it back on a later boot.
 

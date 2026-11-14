@@ -7,7 +7,7 @@ Everything else is a candidate explanation with a test that would settle it.
 
 Related: [hardware-board.md](hardware-board.md) (chips),
 [battery-sram-swap.md](battery-sram-swap.md) (cell drain),
-[nor-reuse.md](nor-reuse.md) (pSRAM fade), [`stage0/docs/picoblaze.md`](../stage0/docs/picoblaze.md) and
+[game-store.md](game-store.md) (pSRAM fade), [`stage0/docs/picoblaze.md`](../stage0/docs/picoblaze.md) and
 `fpga-stage1.md` on the `bitstream-re` branch (power-on sequence), and
 [issue #6](https://github.com/lukesau/ezgb/issues/6) (FPGBC + weak cell).
 
@@ -19,7 +19,7 @@ Related: [hardware-board.md](hardware-board.md) (chips),
 | O2 | It is worst on the **first boot after the cart has been off a while**. | observed |
 | O3 | After a failed boot, the next attempt is more likely to work. Something seems to **charge up**: batteryless carts sometimes need boot, wait, reboot, sometimes several times. | observed |
 | O4 | With an **empty holder**, the save pSRAM (U4) fades much more slowly than expected: the BACKUPSAVE stamp `$A000=$AA` survived while the path at `$A010` turned to junk. | observed, mod 5.x save-stamp check |
-| O5 | The game pSRAM (U9, not battery-backed) also holds data briefly. A fast power cycle reads back exact bytes, a longer off-time fades bits toward `$FF`, and pulling the cart clears it to `$FF`. | observed, [nor-reuse.md](nor-reuse.md) |
+| O5 | The game pSRAM (U9, not battery-backed) also holds data briefly. A fast power cycle reads back exact bytes, a longer off-time fades bits toward `$FF`, and pulling the cart clears it to `$FF`. | observed, [game-store.md](game-store.md) |
 | O6 | Failures happen at every stage before the kernel: garbled Nintendo logo, logo striped with vertical lines like a bar code, and a hang on the level-1 (stage1) splash. | observed |
 | O7 | Issue #6: after an FW4 to FW5 update, a cart showed full-screen repeating tile patterns at random, on both a GBA and an FPGBC. It was stable on the GBA after reflashing, but still marginal on the FPGBC with a weak cell. New cell result pending. | reported, issue #6 |
 
@@ -207,7 +207,7 @@ program with bad bytes**: issue #6's repeating tile patterns, Tetris running
 image is more likely to contain a bad bit.
 
 - Test: launch a known ROM, then read it back. The NOR-reuse probe
-  ([nor-reuse.md](nor-reuse.md)) already does this. Compare bit-error counts
+  ([game-store.md](game-store.md)) already does this. Compare bit-error counts
   for no cell vs new cell.
 
 ### Why the fade is slow with an empty holder (O4, O5)

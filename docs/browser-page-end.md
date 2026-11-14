@@ -15,7 +15,7 @@ the last visible row, same full-page dirty.
 The `nc` branch is taken exactly when `base + 16 >= count`, so the handler
 just clamps `sel` to `count - base - 1` (the bottom row) and sets dirty = 1
 if it moved. The stub is the same frame-preserving pattern as the scroll
-hooks (`browser_scroll_shims.md`): reached by `jp`, passes `&frame.dirty`,
+hooks ([shims.md](../kernel/mod/src/shims.md)): reached by `jp`, passes `&frame.dirty`,
 exits through the wait loop.
 
 With `count <= 16` (single page) the hook also fires, so RIGHT jumps to the
