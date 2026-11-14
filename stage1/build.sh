@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build stage1 from source: stage1.gb, 32 KB, for the FW4 slot B BRAMs.
+# Build stage1 from source: stage1.gb, 32 KB, for the slot B BRAMs.
 # Needs SDCC (sm83), rgbfix, and the icon tiles from the splash build
 # (fpga/bootsplash/build/icon.2bpp, stage1/fw4/patches/bootsplash/build.sh).
 # Output: fpga/stage1/ (ignored, like every built firmware image).
@@ -27,7 +27,7 @@ python3 "$repo/stage1/tools/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr
     --width 16 --height 4 --letters-x 10 --stages 4 ${WORDMARK_FLAGS:---no-halo} > "$b/wordmark.txt"
 
 # stage1/VERSION: line 1 the firmware number (what the version register
-# reads), line 2 the mod version; shown as FW5-MOD 1.7
+# reads), line 2 the mod version; shown as FW5-MOD 2.1
 fw=$(sed -n 1p "$here/VERSION"); mod=$(sed -n 2p "$here/VERSION")
 # STAGE1_CFLAGS=-DFORCE_DMG: test build for acting as a DMG on a color console.
 # No CGB flag, so the boot ROM picks compatibility mode, and a DMG's registers

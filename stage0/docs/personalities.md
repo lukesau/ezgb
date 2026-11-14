@@ -24,7 +24,7 @@ constant pushed before the call). Register meanings cross-checked against
 > stored value ([version-byte.md](version-byte.md)); the config-flash write
 > behind `$05`/`$7FD2` is the PicoBlaze's flash-update command
 > ([picoblaze.md](picoblaze.md)); `$02` is the load-command window
-> stage1 also uses ([../../../docs/fpga-stage1.md](../../docs/fpga-stage1.md)). The full pSRAM page
+> stage1 also uses ([stage1 design](../../stage1/docs/design.md)). The full pSRAM page
 > `$11` layout is in [../../../docs/psram-map.md](../../docs/psram-map.md).
 
 Only the six documented personalities appear. **No undocumented value, and no

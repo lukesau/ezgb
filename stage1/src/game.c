@@ -1,7 +1,7 @@
 /* Fast launch: start a game straight from stage1, doing what the kernel's
  * launch does (MenuDispatchAB_launchFarcalls 00:1569, RomLoaderMain
  * 01:5e14, BackupOpenSaverPath 01:5163, LaunchSetup 01:58b0; see
- * docs/fpga-stage1.md "Fast launch"). Anything it can't do exactly the
+ * stage1/docs/design.md "Fast launch"). Anything it can't do exactly the
  * kernel's way returns, and the caller boots the kernel instead.
  *
  * Saves live in battery-backed pSRAM while a game runs; the kernel copies

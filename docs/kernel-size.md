@@ -7,7 +7,7 @@ live in banks 10 to 14, and bank 15 is empty.
 ## Why it works
 
 Stage1 loads the whole of `ezgb.dat`, by its file size, into the cart's game
-pSRAM with bank N at N × `$4000` ([fpga-stage1.md](fpga-stage1.md)). In
+pSRAM with bank N at N × `$4000` ([stage1 design](../stage1/docs/design.md)). In
 kernel mode the FPGA's ROM bank register at `$2000` is a plain 8-bit latch
 ([design.md](../stage0/docs/design.md)), so the kernel can map any of 256
 banks of whatever the file holds, with the same `$2000` write

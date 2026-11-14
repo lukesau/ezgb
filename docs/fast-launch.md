@@ -25,7 +25,7 @@ In this order:
 | Firmware | Configured game | Lone ROM |
 |---|---|---|
 | stock stage1 | the kernel | the kernel |
-| our stage1 ([stage1/](../stage1/README.md)) | stage1 itself, without loading the kernel ([fpga-stage1.md](fpga-stage1.md)) | the kernel |
+| our stage1 ([stage1/](../stage1/README.md)) | stage1 itself, without loading the kernel ([stage1 design](../stage1/docs/design.md)) | the kernel |
 
 **Canceling.** The kernel reads START when it starts its scan. Our stage1
 watches START from power-on until the launch is decided, shows `HOLD START

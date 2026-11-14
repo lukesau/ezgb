@@ -45,7 +45,7 @@ the write registers. Two are needed here:
 - **Mode** (`X14Y20 SLICE[0]`/`[1]` YQ, latching D7 and D3, power-on `11`):
   `11` = stage1, `10` after stage1 writes `$7F32 = $80`, `00` after the
   kernel writes `$7F31/$7F32 = $00` before a game. Matches the
-  `$7F31`/`$7F32` writes in docs/fpga-stage1.md.
+  `$7F31`/`$7F32` writes in stage1/docs/design.md.
 - **Page** (`$7FC0`): a 4-bit register latching D0-D3; bit 2 is
   `X14Y19 SLICE[0]` YQ, bit 3 `X14Y18 SLICE[3]` YQ, bits 0/1 in
   `X13Y16 SLICE[1]`.

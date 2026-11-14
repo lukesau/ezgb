@@ -1,5 +1,5 @@
 /* FPGA register writes and SD sector reads, the way stock stage1 and the
- * kernel do them (docs/fpga-stage1.md). */
+ * kernel do them (stage1/docs/design.md). */
 #include <string.h>
 #include "hw.h"
 #include "fpga.h"

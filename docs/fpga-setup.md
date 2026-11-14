@@ -296,7 +296,7 @@ at `$040000`, [fw5.md](../stage0/docs/fw5.md)); `make-updater.py`
 replaces only its first image and leaves the second, unwritten one alone.
 Our stage1's header carries 0918's SGB flag bytes (`$0146 = $03`,
 `$014B = $33`), and on a Super Game Boy stage1 also resends the header
-packets ([fpga-stage1.md](fpga-stage1.md#super-game-boy)).
+packets ([stage1 design](../stage1/docs/design.md#super-game-boy)).
 
 > **Correction (2026-10-10).** Until then our stage1's header left both
 > bytes `$FF`, so every stage1 updater we built declared no SGB support,

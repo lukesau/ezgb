@@ -1,6 +1,6 @@
 /* stage1: show the boot screen, find the kernel (EZGB.DAT) on the SD card,
  * have the FPGA load it, enter it at $0100. Same steps as the stock
- * bootstrap (docs/fpga-stage1.md), written from scratch. With fast launch
+ * bootstrap (stage1/docs/design.md), written from scratch. With fast launch
  * set in EZGB.CFG it launches that game instead (game.c), unless START is
  * held or pressed while the boot screen is up, and boots the kernel
  * whenever that isn't possible. Before a fast

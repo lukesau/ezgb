@@ -18,7 +18,7 @@ disassembled in `stage1/fw4` and `stage1/fw5-0918` ([stage1/stock.md](../stage1/
    the reference for each tool's flags and output.
 2. Stage0, in the order its [README](../stage0/docs/overview.md) lists: the
    bitstream, the config flash, the PicoBlaze, the design and simulation.
-3. [fpga-stage1.md](fpga-stage1.md): stock stage1 disassembled, our rewrite,
+3. [stage1 design](../stage1/docs/design.md): stock stage1 disassembled, our rewrite,
    fast launch, hardware status.
 4. [stage1/fw4/patches](../stage1/fw4/patches/README.md): the first patched firmware (CGB flag,
    boot splash), overlays on the stock stage1.

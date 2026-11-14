@@ -1,5 +1,5 @@
 ; stage1 (FW4 bootstrap, BRAM contents) symbols for mgbdis.
-; Regenerate: stage1/tools/stage1-regen.sh   (docs/fpga-stage1.md)
+; Regenerate: stage1/tools/stage1-regen.sh   (stage1/stock.md)
 ; Library names were matched from the kernel's GBDK runtime; the FAT layer
 ; is Petit FatFs (pff.c names). Code reached only through pointers is
 ; seeded in stage1/tools/stage1-trace.py.

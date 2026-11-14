@@ -22,7 +22,7 @@ handheld.
 
 With our stage1 the box is not needed: stage1 detects the SGB and sends the
 packets itself, and the SET tab shows `SGB: AUTO`
-([fpga-stage1.md](fpga-stage1.md#super-game-boy)).
+([stage1 design](../stage1/docs/design.md#super-game-boy)).
 
 ## Where the setting lives
 

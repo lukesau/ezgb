@@ -1,4 +1,4 @@
-// Stage1's kernel launch from the Game Boy side (docs/fpga-stage1.md): game
+// Stage1's kernel launch from the Game Boy side (stage1/stock.md): game
 // mode, the load command (loadcmd.hex, from loadcmd.py) through the $7F36=1
 // window, $7F36=3, then poll $A000 until the PicoBlaze reports done (>= 2).
 // +define+GB_TEST=\"gb_load.vh\" +define+GB_START_NS=...

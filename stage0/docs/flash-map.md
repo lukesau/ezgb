@@ -198,7 +198,7 @@ close it (Phase 3).
 > ([picoblaze.md](picoblaze.md#flash-update-3f--1-kernel-command-08)).
 > The "never run" note above is also out of date: relabeled copies of the
 > FW4 updater carrying patched slot B images have been run on the FW4 cart
-> since 2026-10-08 ([stage1/fw4/patches](../../stage1/fw4/patches/README.md), [../../../docs/fpga-stage1.md](../../docs/fpga-stage1.md)).
+> since 2026-10-08 ([stage1/fw4/patches](../../stage1/fw4/patches/README.md), [stage1 design](../../stage1/docs/design.md)).
 > Which slot an FW5 updater writes is still open ([fw5.md](fw5.md)).
 
 ## Reproduce

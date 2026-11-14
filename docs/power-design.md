@@ -8,7 +8,7 @@ Everything else is a candidate explanation with a test that would settle it.
 Related: [hardware-board.md](hardware-board.md) (chips),
 [battery-sram-swap.md](battery-sram-swap.md) (cell drain),
 [game-store.md](game-store.md) (pSRAM fade), [`stage0/docs/picoblaze.md`](../stage0/docs/picoblaze.md) and
-`fpga-stage1.md` on the `bitstream-re` branch (power-on sequence), and
+[stage1 design](../stage1/docs/design.md) (the power-on sequence), and
 [issue #6](https://github.com/lukesau/ezgb/issues/6) (FPGBC + weak cell).
 
 ## Observations

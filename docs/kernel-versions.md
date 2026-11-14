@@ -50,7 +50,7 @@ replaces the cart's stage1 (the power-on bootstrap) and leaves the rest of
 the FPGA image as stock. It builds for both FW4 and FW5 and ships as an updater patch for each; the
 FW4 build leaves out the FW5-only features (game clock, fast load), since the
 FW4 image has no logic for them.
-It's covered in [fpga-stage1.md](fpga-stage1.md) and
+It's covered in [stage1 design](../stage1/docs/design.md) and
 [distribution.md](distribution.md), not here.
 
 ## Identity

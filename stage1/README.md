@@ -1,40 +1,45 @@
-# stage1 from source
+# Stage1
 
-Our own FW4 bootstrap. It replaces the stock GBDK one in the slot B BRAMs and
-does the same job: show the boot screen, find `EZGB.DAT` on the SD card, have
-the FPGA load it, and enter it at `$0100`.
-Design and protocol: [docs/fpga-stage1.md](../docs/fpga-stage1.md).
+The bootloader: the Game Boy program the FPGA serves at power-on, which
+shows the boot screen, finds the kernel on the SD card, has the FPGA load
+it and enters it. This folder has ours, built from source, and EZ Flash's,
+disassembled.
+
+| | |
+|---|---|
+| [docs/design.md](docs/design.md) | what ours does: the boot sequence, fast launch, the save backup, game clocks, the Super Game Boy |
+| [stock.md](stock.md) | EZ Flash's stage1: where it lives, what it does, the disassemblies in `fw4/` and `fw5-0918/` |
+| [fw4/patches/](fw4/patches/README.md) | overlays on the stock FW4 stage1, from before the rewrite |
+
+Ours replaces the stock one in the slot B bitstream and runs on FW4 and
+FW5 carts.
+
+## Building
 
 ```bash
 stage1/build.sh                     # -> fpga/stage1/stage1.gb
-STAGE1_CFLAGS=-DPAUSE_FRAMES=250 stage1/build.sh   # long boot screen, for screenshots
-EZGB_ROOT=<checkout> stage1/build.sh               # inputs/outputs in another checkout's fpga/
+STAGE1_CFLAGS=-DPAUSE_FRAMES=250 stage1/build.sh   # a long boot screen, for screenshots
+EZGB_ROOT=<checkout> stage1/build.sh               # inputs and outputs in another checkout's fpga/
 ```
 
-Needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
-(`fpga/bootsplash/build/icon.2bpp`, from `stage1/fw4/patches/bootsplash/build.sh`).
-Setting all of that up, and turning `stage1.gb` into an updater:
-[docs/fpga-setup.md](../docs/fpga-setup.md).
+It needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
+(`fpga/bootsplash/build/icon.2bpp`), which
+`stage1/fw4/patches/bootsplash/build.sh` makes from the logo. The output
+goes to the ignored `fpga/` folder.
 
-[fw4/patches/](fw4/patches/README.md) holds the work that came before the rewrite:
-RGBDS overlays on the stock FW4 stage1 (`stage1-cgb.asm`, the CGB flag
-build; `test-red-on-error.asm`)
-and the boot splash lab in `bootsplash/`, whose `build.sh` also makes the
-icon tiles this build needs. The stock stage1 itself, disassembled, is in
-[stock.md](stock.md).
+`stage1.gb` is a 32 KB image. Putting it into a bitstream and an updater
+is a stage0 job: [docs/fpga-setup.md](../docs/fpga-setup.md).
 
 ## Version
 
 `VERSION` has two lines: the firmware number, then the mod version. The
 build turns them into `version.h` and the boot screen shows
-`FW<n>-MOD <m>` on its bottom line, currently `FW5-MOD 2.0` on an FW5 cart
-and `FW4-MOD 2.0` on an FW4 cart. The FW4 and FW5 updaters carry the same
+`FW<n>-MOD <m>` on its bottom line, as `FW5-MOD 2.1` on an FW5 cart. The FW4 and FW5 updaters carry the same
 stage1, so `<n>` is read at boot from the cart's version register
 (`fw_version()`, 4 or 5), with line 1 of `VERSION` only the fallback for a
-reading outside 1-9. The register stays 4 or 5 until it can be changed
-itself, which is a separate fabric change
-([stage0/docs/version-byte.md](../stage0/docs/version-byte.md)).
-stage1 has its own mod version, separate from the kernel mod's.
+reading outside 1-9. The register is wiring in the FPGA
+([version-byte.md](../stage0/docs/version-byte.md)). Stage1's mod version
+is separate from the kernel mod's.
 
 ## Build knobs
 
@@ -45,19 +50,22 @@ stage1 has its own mod version, separate from the kernel mod's.
 | `-DJR_DELAY=<n>` | 18 | frames EZ-FLASH shows alone before the Jr. is painted |
 | `-DJR_STEP=<n>` | 2 | frames per paint step (4 steps) |
 | `WORDMARK_FLAGS` | `--no-halo` | flags passed to `mkwordmark.py` |
+| `-DFORCE_DMG` | off | a test build that acts as a DMG on a color console ([skip-boot-rom.md](../docs/skip-boot-rom.md#trying-the-dmg-path-on-a-color-console)) |
 | `EZGB_ROOT` | this checkout | checkout whose `fpga/` holds the icon tiles and gets `fpga/stage1/` |
 
 Keep `JR_DELAY + 4 * JR_STEP` under `PAUSE_FRAMES`.
 
 | File | What |
 |---|---|
-| `src/crt0.s` | entry, WRAM init, interrupts off |
+| `src/crt0.s` | entry: saves the boot ROM's registers, WRAM init, interrupts off |
+| `src/hw.h` | register and pSRAM addresses, the marks on page `$11` |
 | `src/main.c` | boot sequence, START/SELECT at power-on, save backup offer, kernel picker ([docs/kernel-picker.md](../docs/kernel-picker.md)), error retry loop |
 | `src/fat.c` | FAT16/FAT32 mount, path lookup, root scan for the kernels, load command, in-place sector writes, file create |
 | `src/fpga.c` | FPGA register writes, SD sector reads and writes, pSRAM pages |
-| `src/cfg.c` | `EZGB.CFG` parser, `FLAUNCH=` only |
+| `src/cfg.c` | `EZGB.CFG` parser: `FLAUNCH=` and `BOOTROM=` |
 | `src/game.c` | fast launch: the kernel's game launch done from stage1 |
 | `src/backup.c` | save backup to `/SAVER` before a fast launch, or on SELECT |
+| `src/rtc.c` | a clock game's clock, set as the kernel sets it (FW5) |
 | `src/video.c` | boot screen: icon and wordmark tiles unpacked into VRAM, text, CGB palettes |
 | `src/sgb.c` | Super Game Boy: detection from the boot ROM's registers, header packets resent |
 | `src/handoff.s` | runs from WRAM at `$D000` while the cart switches to the kernel |
@@ -72,5 +80,7 @@ EZ-FLASH alone and the whole mark, plus the tile columns at which the Jr. is
 painted on left to right in four steps. `main.c` plays the steps inside the
 stock 700 ms pause (`JR_DELAY`, `JR_STEP`), so the intro costs no boot time.
 The icon and wordmark tiles are run-length packed (`stage1/tools/packbits.py`,
-about 400 bytes saved) and unpacked into VRAM at boot; BRAM is nearly full,
-see the space notes in [docs/kernel-picker.md](../docs/kernel-picker.md).
+about 400 bytes saved) and unpacked into VRAM at boot.
+
+Stage1 has 18,432 bytes of block RAM to live in. `build.sh` prints how many
+are used.
