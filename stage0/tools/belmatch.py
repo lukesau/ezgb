@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Match the bels of two exported designs (two firmware builds) by structure.
 
-    belmatch.py A/design.v B/design.v [--ignore-sr NET...] [--seed FILE] [--shape] [--blocks stage0/blocks/*.blk] [--dump OUT]
+    belmatch.py A/design.v B/design.v [--ignore-sr NET...] [--seed FILE] [--shape] [--blocks stage0/fw4/blocks/*.blk] [--dump OUT]
 
 Placement differs from build to build, so bels are matched by what they
 compute, not where they sit. The matching starts from anchors (the pads by

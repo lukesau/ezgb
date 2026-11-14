@@ -1,5 +1,5 @@
 // FW5-0918's memory side of an SD transfer: the FW4 module
-// (stage0/rtl/sd_mem_path.v, which says what each part does) with the Game
+// (stage0/fw4/rtl/sd_mem_path.v, which says what each part does) with the Game
 // Boy side of the address pins built here, in the pin LUTs, where FW4
 // takes it ready-made from gb_bus, pb_periph and psram_ctrl (mem_a_gb).
 // The differences, read from the design and proved:
@@ -18,7 +18,7 @@
 //   - the sector buffer is block RAM X19Y17 (X3Y5 in FW4); its enables
 //     are the same
 //
-// Block: built by stage0/tools/simblk.py from stage0/blocks/sd_mem_path.blk
+// Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/sd_mem_path.blk
 // (stage0/fw5-0918/sd_mem_path.sim has its arguments), with the names in
 // sd_mem_path.names.
 

@@ -1,4 +1,4 @@
-// FW5-0918's SD data lines: the FW4 module (stage0/rtl/sd_data_serial.v)
+// FW5-0918's SD data lines: the FW4 module (stage0/fw4/rtl/sd_data_serial.v)
 // with one change found by proving it against FW5: in 4-bit mode the data
 // cycle count is the OpenCores source's (blksize << 1) + 2, without FW4's
 // "as if bit 2 of the block size were set" (no difference for the 8n - 1
@@ -40,7 +40,7 @@
 //   - the transfer counter's carry-in is sd_cmd_serial's constant-0 LUT
 //     (gnd_i); the constant-0 LUTs here are shared the same way
 //
-// Block: stage0/blocks/sd_data_serial.blk.
+// Block: stage0/fw4/blocks/sd_data_serial.blk.
 
 module sd_data_serial (
     input clk_sd,

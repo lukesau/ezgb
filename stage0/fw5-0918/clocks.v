@@ -1,4 +1,4 @@
-// FW5-0918's clocks and ties: FW4's (stage0/rtl/clocks.v) with these
+// FW5-0918's clocks and ties: FW4's (stage0/fw4/rtl/clocks.v) with these
 // changes:
 //
 //   - no wr_a15_n: FW5 has no /WR | A15 clock, its Game Boy registers all
@@ -14,7 +14,7 @@
 // clock (X25Y17 [4]) and clk_sys4 (X25Y17 [0]) are gated by kernel_mode
 // and gb_bus's copy of the loader's busy flag directly.
 //
-// Block: simblk.py from stage0/blocks/clocks.blk with
+// Block: simblk.py from stage0/fw4/blocks/clocks.blk with
 // stage0/fw5-0918/clocks.sim and clocks.names.
 
 module clocks (

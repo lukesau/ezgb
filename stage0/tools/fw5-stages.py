@@ -40,7 +40,7 @@ def plain_sd(d, side, c):
 def fix(a_path, b_path, match, out_match, out_names):
     A, B = carve.Design(a_path), carve.Design(b_path)
     ab = {a: b for a, b in (l.split() for l in open(match)) if a != '-' and b != '-'}
-    names = carve.read_block(os.path.join(here, '../../stage0/blocks/sd_crossings.blk'), A)[3]
+    names = carve.read_block(os.path.join(here, '../../stage0/fw4/blocks/sd_crossings.blk'), A)[3]
     # FW5 chains: a plain SD stage fed by a plain SD stage fed by a mode register
     chain = {}
     for c in B.live_cells:

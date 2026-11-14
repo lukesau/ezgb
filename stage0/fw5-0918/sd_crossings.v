@@ -1,5 +1,5 @@
 // FW5-0918's SD controller clock-domain crossings: the FW4 module
-// (stage0/rtl/sd_crossings.v) with one change found by matching the two
+// (stage0/fw4/rtl/sd_crossings.v) with one change found by matching the two
 // builds (stage0/tools/belmatch.py): every register FW4 carries into the SD
 // domain in one stage crosses in two here, as argument, block count and data
 // timeout already do in both: command index, checks and with-data bits,
@@ -11,7 +11,7 @@
 // Derived from the OpenCores WISHBONE SD Card Controller, Copyright (C)
 // 2013 Marek Czerski, based on original work Copyright (C) 2009 Adam
 // Edvardsson, under the GNU Lesser General Public License version 2.1 or
-// later, as stage0/rtl/sd_crossings.v is.
+// later, as stage0/fw4/rtl/sd_crossings.v is.
 
 module sd_crossings (
     input clk_mode,

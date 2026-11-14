@@ -6,7 +6,7 @@ How a "blank" Jr gets a menu without running the updater ROM.
 
 | File | Role | Where it runs from |
 |---|---|---|
-| **`ezgb.dat`** | Menu / OS kernel (what `kernel/re/*/kernel.gb` is a copy of) | Loaded by a **factory-resident bootloader**, then executed |
+| **`ezgb.dat`** | Menu / OS kernel (what `kernel/*/kernel.gb` is a copy of) | Loaded by a **factory-resident bootloader**, then executed |
 | **`Update_FW*.gb`** | FPGA **firmware** updater (title `UPDATE`) | Launched **as a game** from the kernel file browser |
 
 They are not interchangeable. Skipping `Update_FW*.gb` is fine if the cart's FPGA already reports the FW version you need (HELP tab). Updating the kernel: replace `ezgb.dat` on the SD root and reboot.
@@ -87,6 +87,6 @@ Factory bootstrap ──(no ezgb.dat)──► "ezgb.dat not found…" (not in k
 ## Open RE work
 
 - Dump or behaviorally reimplement the **factory bootstrap** (this screen’s ROM/bitstream).
-  Outside `kernel/re/*/kernel.gb`; needed only for full cold-boot fidelity.
+  Outside `kernel/*/kernel.gb`; needed only for full cold-boot fidelity.
 - Measure bootstrap load: size, destination map, any checksum. Analog Discovery on SD + cart
   bus during a good boot is the clean experiment (vs blank-SD for this error path).

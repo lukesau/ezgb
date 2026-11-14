@@ -65,7 +65,7 @@ pSRAM: [psram-page-map.md](psram-page-map.md).
 
 `scripts/inject-sgb.py <ver> --apply` assembles the routines with the kernel
 addresses from `<ver>/kernel.sym` and injects them, the stub, the hook sites,
-the `$0100` jump and the header bytes into `kernel/re/<ver>/kernel.gb`. Run it
+the `$0100` jump and the header bytes into `kernel/<ver>/kernel.gb`. Run it
 on 1.05e-0731; `port-mod.py` carries it to the other builds (`SgbStub` is a
 data block, the rest are relocated; the header is copied as data). `build-kernel.sh` recomputes `$014D`
 when it rebuilds from the disassembly.

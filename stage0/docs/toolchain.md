@@ -10,7 +10,7 @@ the ignored `fpga/` directory, same policy as the firmware packages
 (`fpga/README.md`, itself untracked; the short version is in
 [../../../docs/fpga-setup.md](../../docs/fpga-setup.md#10-risk-and-recovery)).
 Tracked and public, because they leave out BRAM contents: the decoded listings
-in [`../decode/`](../re/decode/README.md), and the
+in [`../decode/`](decode.md), and the
 [floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
 `stage0/floorplan/floorplan.html`.
 
@@ -246,7 +246,7 @@ a tree. Get exact pin names from `--list-pins` before using `--from`.
 
 `--netlist` writes one line per configured bel:
 `{"tile": ..., "bel": ..., "attrs": {...}, "in": {pin: driver}}`. The
-scripts in [`stage0/re/netlist/`](../re/netlist/README.md) read
+scripts in [`stage0/netlist/`](../netlist/README.md) read
 it; [version-byte.md](version-byte.md) and [design.md](design.md)
 are built on it.
 
@@ -278,7 +278,7 @@ Then:
 stage1/tools/stage1-from-bram.py bram/ -o stage1.gb --ref tools/ezflashjr/stage1/FW4/stage1.gb
 stage1/tools/stage1-from-bram.py bram/ --ref <stage1.gb> --discover   # other FW revisions
 stage0/tools/picoblaze-words.py bram/D0X3Y25.BEL.BRAM > pb-x3y25.txt
-stage0/tools/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a stage0/picoblaze/fw4/X3Y29.notes -o X3Y29.psm
+stage0/tools/picoblaze-dis.py bram/D0X3Y29.BEL.BRAM -a stage0/fw4/picoblaze/X3Y29.notes -o X3Y29.psm
 stage0/tools/picoblaze-diff.py old/D0X19Y25.BEL.BRAM new/D0X3Y1.BEL.BRAM   # routine-level diff
 ```
 

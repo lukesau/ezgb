@@ -3,8 +3,8 @@
 
 The C blocks, their addresses and their pins are listed once, in
 scripts/port-mod.py's REGISTRY; block names and lengths come from
-kernel/re/<ver>/kernel.sym. This compiles each source at its address and compares the
-result with the bytes in kernel/re/<ver>/kernel.gb:
+kernel/<ver>/kernel.sym. This compiles each source at its address and compares the
+result with the bytes in kernel/<ver>/kernel.gb:
 
     scripts/rebuild-blocks.py              # report; exit 1 if any block is stale
     scripts/rebuild-blocks.py --apply      # re-inject the stale ones in place
@@ -68,8 +68,8 @@ def main():
     ap.add_argument("--apply", action="store_true", help="re-inject stale blocks with inject.py --replace")
     args = ap.parse_args()
 
-    sym_path = os.path.join(ROOT, "kernel", "re", args.version, "kernel.sym")
-    rom = open(os.path.join(ROOT, "kernel", "re", args.version, "kernel.gb"), "rb").read()
+    sym_path = os.path.join(ROOT, "kernel", args.version, "kernel.sym")
+    rom = open(os.path.join(ROOT, "kernel", args.version, "kernel.gb"), "rb").read()
     blocks = {(b, a): (n, name) for b, a, n, name in port_mod.read_sym_blocks(sym_path)}
 
     stale = []
@@ -116,7 +116,7 @@ def main():
         print(f"{name}:", *report, sep="\n  ")
         if r.returncode != 0:
             sys.exit(r.stderr.strip() or f"error: inject.py failed for {name}")
-    print(f"re-injected {len(stale)} block(s) into kernel/re/{args.version}/kernel.gb")
+    print(f"re-injected {len(stale)} block(s) into kernel/{args.version}/kernel.gb")
 
 
 if __name__ == "__main__":

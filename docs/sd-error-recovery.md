@@ -3,14 +3,14 @@
 Status: **built 2026-10-29 for FW5-0918, checked in simulation, not yet on
 hardware.** FW4 (`X3Y29`) would take the same patch at its own addresses;
 not done. Source: [stage0/sd-recover-fw5-0918.psm](../stage0/sd-recover-fw5-0918.psm),
-on bank 1 = BRAM `D0X3Y1` (listing `stage0/picoblaze/fw5-0918/bank1.psm`).
+on bank 1 = BRAM `D0X3Y1` (listing `stage0/fw5-0918/picoblaze/bank1.psm`).
 Shipped in slot B by `stage0/tools/build-stage1-updater.sh fw5-0918`.
 
 ## Why a bad card freezes instead of slowing down
 
 - **Timeouts are off.** `sdc_init` writes 0 to the command timeout (`$20`)
   and data timeout (`$18`), and in the controller 0 means none
-  (`timed_out = |timeout_reg && ...` in `stage0/rtl/sd_cmd_master.v` and
+  (`timed_out = |timeout_reg && ...` in `stage0/fw4/rtl/sd_cmd_master.v` and
   `sd_data_master.v`). A command the card never answers waits forever.
 - **A data CRC error never completes.** The data master sets `EI|CCRCE`
   on a CRC error (and `EI|CFE` on a buffer error) but not `CC`
@@ -19,7 +19,7 @@ Shipped in slot B by `stage0/tools/build-stage1-updater.sh fw5-0918`.
   interrupts off.
 - **The kernel waits on the same bit.** The data interrupt enable is
   `$01` (CC only, `$13E`), and the `$A000` status window reads `$E1`
-  until that interrupt (`stage0/rtl/gb_data_out.v` L94, `cmd_b4_flag`).
+  until that interrupt (`stage0/fw4/rtl/gb_data_out.v` L94, `cmd_b4_flag`).
   `DiskRead_B2_waitPeek` spins on `$E1` with no timeout, so the screen
   just stops.
 
@@ -110,7 +110,7 @@ is unchanged. SameBoy shows the line with `SAMEBOY_EZFLASH_JR_SDSLOW=1`.
 
 ## Simulation
 
-`stage0/re/sim/gb_sdfault.vh` on the patched FW5-0918 design (exported
+`stage0/sim/gb_sdfault.vh` on the patched FW5-0918 design (exported
 with `stage0/tools/export-netlist.sh`, `fastboot.py --fw fw5-0918`, RTC on
 P31/P32): reads of LBA 0 and 1, a write of 4000, a read of 2, then the
 weekday in kernel mode. The SD model's fault plusargs (`models.v`):

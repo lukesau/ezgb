@@ -3,7 +3,7 @@
 
     regseed.py A.regmap.txt B.regmap.txt > seed.txt
 
-The register maps (stage0/re/sim/regmap.py, stage0/re/maps/*.regmap.txt)
+The register maps (stage0/sim/regmap.py, stage0/*/regmap.txt)
 give each flip-flop the /WR clocks drive its data pin and enabling address.
 FW4 decodes $7Fxx with A15 in the clock and FW5 with A15 in the enable, so
 the decodes differ and belmatch.py's structural passes can't pair those

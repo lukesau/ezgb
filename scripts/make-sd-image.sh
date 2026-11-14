@@ -10,7 +10,7 @@
 #
 # Order comes from sd/ORDER (one top-level name per line, '#' comments); any
 # entries in sd/root/ not listed there are appended in sorted order. The kernel
-# from kernel/re/<EZGB_KERNEL_VERSION>/kernel.gb is written last as ezgb.dat (both
+# from kernel/<EZGB_KERNEL_VERSION>/kernel.gb is written last as ezgb.dat (both
 # browsers hide it). Override the size with SD_IMAGE_MB=128 etc.
 set -euo pipefail
 export MTOOLS_SKIP_CHECK=1
@@ -22,7 +22,7 @@ ROOTFS="$SD/root"
 ORDER="$SD/ORDER"
 MB="${SD_IMAGE_MB:-64}"
 KVER="${EZGB_KERNEL_VERSION:-1.05e-0731}"
-KERNEL="$ROOT/kernel/re/$KVER/kernel.gb"
+KERNEL="$ROOT/kernel/$KVER/kernel.gb"
 
 command -v mformat >/dev/null || { echo "error: mtools not found (brew install mtools)" >&2; exit 1; }
 [ -d "$ROOTFS" ] || { echo "error: no $ROOTFS (create it or dump your card there)" >&2; exit 1; }

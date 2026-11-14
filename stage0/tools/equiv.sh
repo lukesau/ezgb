@@ -3,8 +3,8 @@
 #
 #   stage0/tools/equiv.sh BLOCK [EXPORTDIR]
 #
-# BLOCK names stage0/blocks/BLOCK.blk (the cells and names) and
-# stage0/rtl/BLOCK.v (the readable module, named BLOCK). EXPORTDIR is an
+# BLOCK names stage0/fw4/blocks/BLOCK.blk (the cells and names) and
+# stage0/fw4/rtl/BLOCK.v (the readable module, named BLOCK). EXPORTDIR is an
 # export-netlist.sh output directory, default fpga/fw4. The carved reference
 # lands in EXPORTDIR/blocks/BLOCK_ref.v.
 #
@@ -31,8 +31,8 @@ here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
 blk=${1:?block name}
 exp=${2:-$top/fpga/fw4}
-blkfile=${BLK:-$top/stage0/blocks/$blk.blk}   # BLK=file.blk checks against another block file (blkmap.py)
-rtl=${RTL:-$top/stage0/rtl/$blk.v}   # RTL=file.v checks another module of the same name
+blkfile=${BLK:-$top/stage0/fw4/blocks/$blk.blk}   # BLK=file.blk checks against another block file (blkmap.py)
+rtl=${RTL:-$top/stage0/fw4/rtl/$blk.v}   # RTL=file.v checks another module of the same name
 [ -f "$blkfile" ] || { echo "no $blkfile" >&2; exit 1; }
 [ -f "$rtl" ] || { echo "no $rtl" >&2; exit 1; }
 [ -f "$exp/design.v" ] || { echo "no $exp/design.v: run export-netlist.sh first" >&2; exit 1; }

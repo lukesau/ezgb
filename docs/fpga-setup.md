@@ -106,7 +106,7 @@ On the Game Boy side machine:
 | Tool | Version | Used for |
 |---|---|---|
 | SDCC | 4.x with the `sm83` port (`-msm83`); 4.6.0 was used | compiling `stage1/` (`sdcc`, `sdasgb`, `sdldgb`, `makebin`) |
-| RGBDS | 1.x (1.0.1 was used) | `rgbfix` for stage1; `rgbasm`/`rgblink` for the splash lab in `stage1/fw4-patches/bootsplash/` and the overlay patches in `stage1/fw4-patches/` |
+| RGBDS | 1.x (1.0.1 was used) | `rgbfix` for stage1; `rgbasm`/`rgblink` for the splash lab in `stage1/fw4/patches/bootsplash/` and the overlay patches in `stage1/fw4/patches/` |
 | Python 3 | standard library only | every script in `stage0/tools/`; PIL isn't needed |
 | mgbdis | cloned into `tools/mgbdis` | the stock stage1 disassembly (`stage1/tools/stage1-regen.sh`) |
 
@@ -160,7 +160,7 @@ expect them, or adjust the paths.
 | stock `Update_FW4.gb` | `official/2020-03-10_FW4_K1.04e/` in [daid/ezflashjr](https://github.com/daid/ezflashjr), cloned to `tools/ezflashjr` ([DEVELOPMENT.md](DEVELOPMENT.md#tools)). The same file as in EZ Flash's 1.04e FW4 package | every updater; slot B comes out of it |
 | stock stage1 dumps | daid/ezflashjr `stage1/FW1`..`FW5/stage1.gb` (clone it to `tools/ezflashjr`) | `stage1-from-bram.py --ref`, to prove a decode |
 | your cart's config-flash dump (optional) | read with an SPI programmer, [hardware-board.md](hardware-board.md) | slot A, the license record, recovery |
-| the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `stage1/fw4-patches/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |
+| the EZ Flash logo PNG | EZ Flash's marketing logo with the console icon on the left, saved as `fpga/bootsplash/ezflash-logo.png` | `mkicon.py`, via `stage1/fw4/patches/bootsplash/build.sh`; stage1 needs its `icon.2bpp` |
 | the cart-label photo (optional) | a photo of the Jr's label, `fpga/bootsplash/cart-label.png` | `jr-trace.py`, only to retrace the committed `stage1/art/jr.txt` |
 
 ## 9. End to end: build and install a stage1 updater
@@ -223,13 +223,13 @@ stage1/tools/stage1-from-bram.py fpga/fw4-decode/bram -o fpga/cgb/stage1-fw4.gb 
 
 `fpga/cgb/stage1-fw4.gb` is where the splash lab expects stock stage1. To
 regenerate the annotated disassembly of it, copy it to
-`stage1/re/fw4/kernel.gb` and run `stage1/tools/stage1-regen.sh` ("rebuild
+`stage1/fw4/kernel.gb` and run `stage1/tools/stage1-regen.sh` ("rebuild
 matches kernel.gb").
 
 **4. Build our stage1.** It needs the icon tiles from the splash build first:
 
 ```bash
-stage1/fw4-patches/bootsplash/build.sh          # -> fpga/bootsplash/build/icon.2bpp (and the splash lab)
+stage1/fw4/patches/bootsplash/build.sh          # -> fpga/bootsplash/build/icon.2bpp (and the splash lab)
 EZGB_ROOT=<repo> stage1/build.sh         # -> fpga/stage1/stage1.gb
 # stage1: 11410 bytes used of 18432
 ```

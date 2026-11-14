@@ -5,8 +5,8 @@ of files we hold; no hardware was touched to produce this. The working image is
 `EN25F40-repaired-v2.bin`, the intact **FW4** reconstruction (verified against
 the real chip dump `EN25F40@SOP8.BIN`; see [../../../docs/hardware-board.md](../../docs/hardware-board.md)).
 
-Tools: [`stage0/tools/flash-map.py`](../../stage0/tools/flash-map.py) (segment map),
-[`stage0/tools/slot-diff.py`](../../stage0/tools/slot-diff.py) (slot A/B diff and
+Tools: [`stage0/tools/flash-map.py`](../tools/flash-map.py) (segment map),
+[`stage0/tools/slot-diff.py`](../tools/slot-diff.py) (slot A/B diff and
 updater-payload overlay).
 
 ## Top-level layout
@@ -160,7 +160,7 @@ repository).
 
 ## How the updater programs the flash (via `$7FD2`)
 
-Static disassembly of `Update_FW4.gb`'s code (banks 0–1, in `stage0/re/updater/fw4/`)
+Static disassembly of `Update_FW4.gb`'s code (banks 0–1, in `stage0/fw4/updater/`)
 shows the flash-programming path uses the same FPGA command envelope the kernel
 uses, wrapped around register **`$7FD2`**:
 
@@ -184,7 +184,7 @@ before proceeding, the ready handshake. Parameters are staged first via
 > disassembly is static only; the updater is never run
 > (see [../../../docs/game-slot-access.md](../../docs/game-slot-access.md)).
 
-`stage0/re/updater/fw4/` holds the disassembly; the write routine is `Call_000_1252`
+`stage0/fw4/updater/` holds the disassembly; the write routine is `Call_000_1252`
 (bit set/clear, no wait) and the polled loop near `$4013`. The physical
 slot-address setup, which decides whether a written image lands at `$00000` or
 `$40000`, is staged through the parameter registers and is the one piece the

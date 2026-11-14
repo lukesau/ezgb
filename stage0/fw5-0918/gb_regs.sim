@@ -1,4 +1,4 @@
 # simblk.py arguments for gb_regs: FW5 clocks every register from /WR with
 # A15 in the enables, so the decode is packed differently throughout
---context-a stage0/blocks/unlock.blk stage0/blocks/gb_data_out.blk stage0/blocks/psram_ctrl.blk stage0/blocks/sd_controller_wb.blk stage0/blocks/gb_bus.blk
+--context-a stage0/fw4/blocks/unlock.blk stage0/fw4/blocks/gb_data_out.blk stage0/fw4/blocks/psram_ctrl.blk stage0/fw4/blocks/sd_controller_wb.blk stage0/fw4/blocks/gb_bus.blk
 --context-b stage0/fw5-0918/psram_ctrl.names

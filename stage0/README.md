@@ -3,7 +3,7 @@
 The goal: human-readable Verilog for the EZ Flash Jr's FPGA that we can
 show is the same design as the FW4 bitstream, block by block, and that we
 can later place and route back into an identical bitstream. The reversing
-work it builds on is in [stage0/re/](re/README.md): the decoded
+work it builds on is in [docs/overview.md](docs/overview.md): the decoded
 bitstream, the PicoBlaze programs, the pin and register maps, and the
 whole-design simulation.
 
@@ -25,8 +25,8 @@ readable module, and a machine-made reference carved from the design:
 
 | | Where | What |
 |---|---|---|
-| block file | `blocks/<name>.blk` | the bels that make up the block, and readable names for its boundary nets and flip-flops |
-| readable module | `rtl/<name>.v` | our Verilog, module `<name>`, with the block file's port and register names |
+| block file | `fw4/blocks/<name>.blk` | the bels that make up the block, and readable names for its boundary nets and flip-flops |
+| readable module | `fw4/rtl/<name>.v` | our Verilog, module `<name>`, with the block file's port and register names |
 | reference | `fpga/<fw>/blocks/<name>_ref.v` (untracked) | module `<name>_ref`: the block's bels exactly as the bitstream configures them, over `lib/s3bels.v` |
 
 A **bel** is one LUT, flip-flop, wide mux or carry mux. `stage0/tools/carve.py`
@@ -119,10 +119,10 @@ stage0/tools/export-netlist.sh fpga/cart/fw4-updater.bin fpga/fw4
 `fpga_top`), and:
 
 ```bash
-python3 stage0/tools/carve.py fpga/fw4/design.v stage0/blocks/unlock.blk --stub   # port skeleton for a new block
+python3 stage0/tools/carve.py fpga/fw4/design.v stage0/fw4/blocks/unlock.blk --stub   # port skeleton for a new block
 python3 stage0/tools/carve.py fpga/fw4/design.v --cone n_X18Y31_S0_XQ            # bels driving a net
-python3 stage0/tools/carve.py fpga/fw4/design.v --coverage stage0/blocks/*.blk    # what no block claims yet
-python3 stage0/tools/dumpblk.py fpga/fw4/design.v stage0/blocks/unlock.blk          # the block's equations, with its names
+python3 stage0/tools/carve.py fpga/fw4/design.v --coverage stage0/fw4/blocks/*.blk    # what no block claims yet
+python3 stage0/tools/dumpblk.py fpga/fw4/design.v stage0/fw4/blocks/unlock.blk          # the block's equations, with its names
 stage0/tools/equiv.sh unlock                                                      # the proof
 ```
 
@@ -526,7 +526,7 @@ check design.md owes for that polarity covers both.
 
 ## The top level
 
-`stage0/tools/mktop.py` stitches the blocks into `rtl/fw4_top.v`: a
+`stage0/tools/mktop.py` stitches the blocks into `fw4/rtl/fw4_top.v`: a
 module `fw4_logic` that instantiates the twenty-two blocks and has as
 ports the nets crossing between the slice logic and everything else, and
 `fw4_top`, which wraps it with the 114 primitives (block RAMs, IO tiles,
@@ -554,15 +554,15 @@ With check-bels.sh (design.v's slices equal their bels) that chain makes
 `fw4_top` equivalent to design.v: its primitives are design.v's lines,
 byte for byte.
 
-`fw4_top` also runs in stage0/re/sim's testbench in design.v's place
-(`stage0/re/sim/topsim.sh`, verilator): a full boot with the flash and
+`fw4_top` also runs in stage0/sim's testbench in design.v's place
+(`stage0/sim/topsim.sh`, verilator): a full boot with the flash and
 SD card models and stage1's sector read through the window at 31 ms.
 The two logs are identical line for line, timestamps included: 1,003
 timed events, among them 885 PicoBlaze first executions, 98 flash and
 17 SD card transactions, the sector matching card.img byte for byte,
 and the same pins toggling the same number of times. One allowance
 makes that so: the design.v run is built with `NO_SLICE_GSR`
-(`stage0/re/sim/s3prims.v`), which lets the slice model's flip-flops
+(`stage0/sim/s3prims.v`), which lets the slice model's flip-flops
 start from their INIT values at time 0 as the readable registers do,
 instead of holding them under GSR for the first 100 ns of start-up.
 Without it the readable top runs a constant 20 ns ahead from the second

@@ -1,6 +1,6 @@
 # How the FW4 updater writes flash (and where stage1 comes from)
 
-Static read of `stage0/re/updater/fw4/` (the disassembled `Update_FW4.gb`), done to
+Static read of `stage0/fw4/updater/` (the disassembled `Update_FW4.gb`), done to
 answer: **how does the firmware updater write `stage1`** (the 32 KB factory
 bootstrap, dumped per-FW-version by [daid/ezflashjr](https://github.com/daid/ezflashjr),
 which records only that it "is somehow updated by the firmware updater, exact
@@ -67,7 +67,7 @@ external config-flash dump.
 
 > **Correction (2026-10-12).** This doc and the FW4 updater's `kernel.sym`
 > (`FpgaSetPersonality_7FC0_DEAD`) called `00:153a` dead code. It is called:
-> `stage0/re/updater/fw4/disassembly/bank_000.asm` around line 4566 has
+> `stage0/fw4/updater/disassembly/bank_000.asm` around line 4566 has
 > `ld a,$05; push af; inc sp; call $078d` followed by the inline far-call
 > target `3a 15 ff ff` (`00:153a`), which the disassembler decoded as
 > `ld a,[hl-]; dec d; rst $38; rst $38`; the same call with `$00` follows the
@@ -122,12 +122,12 @@ would require an FPGA-side path we have not found (or a replacement design).
 
 ```bash
 # updater writes only $7FD2; no SD, no JEDEC-NOR, personality setter unreferenced
-grep -rn '\$7fd2\|\$7fc0\|\$7fb0\|\$7f30' stage0/re/updater/fw4/disassembly/bank_00{0,1}.asm
+grep -rn '\$7fd2\|\$7fc0\|\$7fb0\|\$7f30' stage0/fw4/updater/disassembly/bank_00{0,1}.asm
 
 # stage1 is not embedded in the updater (any simple encoding)
 python3 - <<'PY'
 s=open('tools/ezflashjr/stage1/FW4/stage1.gb','rb').read()
-u=open('stage0/re/updater/fw4/updater.gb','rb').read()
+u=open('stage0/fw4/updater/updater.gb','rb').read()
 n=s[0x100:0x300]
 enc={'plain':n,'bitrev':bytes(int(f"{x:08b}"[::-1],2) for x in n),
      'invert':bytes(x^0xff for x in n),'nib':bytes(((x<<4)|(x>>4))&0xff for x in n)}

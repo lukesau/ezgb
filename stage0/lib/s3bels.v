@@ -1,7 +1,7 @@
 // Bel-level primitives: what stage0/tools/carve.py decomposes a configured
 // slice into. One cell per LUT, flip-flop, wide mux and carry mux; the
 // slice's fixed selections (FXMUX, DXMUX, CYINIT, ...) become wiring.
-// Equivalent to stage0/re/sim/s3prims.v's s3_slice in steady state
+// Equivalent to stage0/sim/s3prims.v's s3_slice in steady state
 // (check: stage0/tools/equiv.sh all --slices against the bel version).
 // Synthesizable for yosys, simulatable in iverilog.
 

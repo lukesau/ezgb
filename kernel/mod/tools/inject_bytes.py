@@ -28,11 +28,11 @@ NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def kernel_gb_path(version):
-    return os.path.join(REPO_ROOT, "kernel", "re", version, "kernel.gb")
+    return os.path.join(REPO_ROOT, "kernel", version, "kernel.gb")
 
 
 def kernel_sym_path(version):
-    return os.path.join(REPO_ROOT, "kernel", "re", version, "kernel.sym")
+    return os.path.join(REPO_ROOT, "kernel", version, "kernel.sym")
 
 
 def patch_kernel_gb(gb_path, offset, code_bytes):

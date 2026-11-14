@@ -1,4 +1,4 @@
 # simblk.py arguments for unlock: FW5 keeps one register per key, so no
 # register pairs with FW4's two; the names come from unlock.names
---context-a stage0/blocks/gb_regs.blk stage0/blocks/psram_ctrl.blk
+--context-a stage0/fw4/blocks/gb_regs.blk stage0/fw4/blocks/psram_ctrl.blk
 --context-b stage0/fw5-0918/gb_regs.names stage0/fw5-0918/psram_ctrl.names

@@ -1,11 +1,11 @@
-// FW5-0918's soft reset: the FW4 module (stage0/rtl/soft_reset.v) on the
+// FW5-0918's soft reset: the FW4 module (stage0/fw4/rtl/soft_reset.v) on the
 // DCM's CLK0 instead of CLK2X. The synchronizer takes the rising edge and
 // the counter the falling edge, as FW4's do on CLK2X, so the drive stays
 // low for 65536 falling edges of CLK0, twice as long as on FW4.
 // The counter's carry-in is the constant-0 LUT the rest of the design
 // shares (FW4 builds one for the counter alone), so it leaves as gnd.
 //
-// Block: carried from stage0/blocks/soft_reset.blk by fw5-prove.sh, with
+// Block: carried from stage0/fw4/blocks/soft_reset.blk by fw5-prove.sh, with
 // the clock named in soft_reset.names.
 module soft_reset (
     input clk_0,

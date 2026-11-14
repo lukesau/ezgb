@@ -28,9 +28,9 @@
 #
 # Other builds (stage0/tools/fw5-top.sh sets these for FW5-0918):
 #   PREFIX  module names <PREFIX>_logic / <PREFIX>_top (default fw4)
-#   BLKS    the block files (default stage0/blocks/*.blk)
-#   RTLS    the readable modules (default stage0/rtl/*.v, the top excluded)
-#   TOPRTL  where the stitched readable top goes (default stage0/rtl/fw4_top.v)
+#   BLKS    the block files (default stage0/fw4/blocks/*.blk)
+#   RTLS    the readable modules (default stage0/fw4/rtl/*.v, the top excluded)
+#   TOPRTL  where the stitched readable top goes (default stage0/fw4/rtl/fw4_top.v)
 #   TIES    "module:port=0 ..." inputs of a readable module tied to a
 #           constant, where the build wires a constant (equiv.sh's TIE)
 set -e
@@ -42,9 +42,9 @@ out=$exp/top
 lib=$top/stage0/lib
 mkdir -p "$out/raw"
 P=${PREFIX:-fw4}
-blks=${BLKS:-$(ls "$top"/stage0/blocks/*.blk)}
-toprtl=${TOPRTL:-$top/stage0/rtl/fw4_top.v}
-rtls=${RTLS:-$(ls "$top"/stage0/rtl/*.v | grep -v "/${P}_top.v$" | tr '\n' ' ')}
+blks=${BLKS:-$(ls "$top"/stage0/fw4/blocks/*.blk)}
+toprtl=${TOPRTL:-$top/stage0/fw4/rtl/fw4_top.v}
+rtls=${RTLS:-$(ls "$top"/stage0/fw4/rtl/*.v | grep -v "/${P}_top.v$" | tr '\n' ' ')}
 ties=''
 for t in ${TIES:-}; do
     m=${t%%:*}; t=${t#*:}

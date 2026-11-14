@@ -105,7 +105,7 @@ Each links to a doc with the details.
 ## The reverse engineering
 
 - **Kernel:** every bank is disassembled and labeled, and reassembles to the
-  original for all three builds. [kernel/stock/](kernel/stock/README.md) is turning it
+  original for all three builds. [kernel/1.05e-0731/stock/](kernel/1.05e-0731/stock/README.md) is turning it
   into C.
 - **Hardware:** the [board](docs/hardware-board.md), the
   [registers](docs/REGISTERS.md), the [boot](docs/boot-map.md) and
@@ -123,20 +123,21 @@ with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Repo layout
 
+Each component has one folder per stock version, beside the code that is
+ours.
+
 ```
 kernel/     The menu program
-              mod/     the mod: feature sources (C and asm) and the inject tooling
-              stock/   the stock kernel rebuilt from source, checked byte for byte
-              re/      disassembly, symbols and notes for the three builds
+              1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
+              1.05e-0731/stock/                that build from source, checked byte for byte
+              mod/                             the mod: C and asm sources, inject tooling
 stage1/     The bootloader
-              src/     our replacement, from source
-              re/      EZ Flash's stage1, disassembled
-              tools/   BRAM packing and splash art tools
+              fw4/ fw5-0918/                   EZ Flash's stage1, disassembled
+              src/ art/ font/ tools/           our replacement, from source
 stage0/     The FPGA design
-              rtl/ blocks/   the design as Verilog, proven against the bitstream
-              picoblaze/     the soft CPU's programs, disassembled (our patches are the .psm files)
-              re/            bitstream decode, netlist, simulation, the updater
-              tools/ docs/   bitstream tools and the write-ups
+              fw4/ fw5-0731/ fw5-0918/ ...     per firmware: Verilog and block files, PicoBlaze
+                                               listings, bitstream decode, pin and register maps
+              sim/ netlist/ lib/ tools/ docs/  shared: simulation, analysis, tools, write-ups
 docs/       Feature write-ups, hardware notes, findings
 patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
 scripts/    Build, port, release and emulator helpers

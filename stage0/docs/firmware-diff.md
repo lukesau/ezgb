@@ -5,16 +5,16 @@ bitstream: `Update_FW4.gb`, `Update_FW5_7-31.gb` and
 `Update_FW5_2021-9-18.gb` (for FW5, the image at `$8000`; see
 [fw5.md](fw5.md) for the second image and the BRAM and PicoBlaze
 comparisons). Each one is exported to Verilog the same way
-([../sim/README.md](../re/sim/README.md)) and put through the same tools, so
+([../sim/README.md](../sim/README.md)) and put through the same tools, so
 the three map together and their differences fall out. Placement differs
 from build to build, so the comparisons are by function (pins, addresses,
 data bits), not by slice name. The per-firmware outputs are in
-[../maps/](../re/maps/).
+[../maps/](../).
 
 ## Pins
 
 `pinconf.py` lists each package pin's output source, tristate source, input
-use and register clocking (`maps/<fw>.pins.txt`). All three use the same 68
+use and register clocking (`stage0/<fw>/pins.txt`). All three use the same 68
 pins in the same modes, so the board wiring and the FPGA's view of it didn't
 change between FW4 and FW5. The differences:
 
@@ -33,7 +33,7 @@ change between FW4 and FW5. The differences:
 `regmap.py` finds the `/WR` clocks itself (FW4 has two global buffers on
 `/WR`, one of them ORed with A15; FW5 has one) and lists every flip-flop
 they clock with its enabling address; `regsum.py` groups them by address
-(`maps/<fw>.regs.txt`).
+(`stage0/<fw>/regs.txt`).
 
 | Address | FW4 | FW5 (both) |
 |---|---|---|
@@ -157,7 +157,7 @@ the `$7FD3/$7FD4` pair and the bootstrap header, not in loading or banking.
   skips `delay_long` after every SD run (`$23C` / `$222`); FW4's loader
   always waits. Both `$7FD3` and the sum power up 0, but stock FW5-0918
   stage1 writes the console's boot `A` to `$7FD3` before handing over
-  (`stage1/re/fw5-0918/disassembly/bank_000.asm`, `$07F1`), and the kernel
+  (`stage1/fw5-0918/disassembly/bank_000.asm`, `$07F1`), and the kernel
   then writes `$7FD4=$00`: the sum is `$11` on CGB and GBA, so stock loads
   are fast there and slow on DMG, MGB and SGB.
   In simulation,

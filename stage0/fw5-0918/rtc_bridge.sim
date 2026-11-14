@@ -1,4 +1,4 @@
 # simblk.py arguments for rtc_bridge: FW5 keeps the readings in narrower
 # registers on the PicoBlaze clock's falling edge, named by hand
---context-a stage0/blocks/picoblaze.blk stage0/blocks/picoblaze_ports.blk stage0/blocks/gb_regs.blk
+--context-a stage0/fw4/blocks/picoblaze.blk stage0/fw4/blocks/picoblaze_ports.blk stage0/fw4/blocks/gb_regs.blk
 --context-b stage0/fw5-0918/gb_regs.names

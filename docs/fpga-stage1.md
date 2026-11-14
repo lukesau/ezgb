@@ -8,8 +8,8 @@ reads as zeros. Header title `BOOTLOADER`, cart type `$01` (MBC1). Built with
 GBDK, the same toolchain and crt0 as the kernel.
 
 > **Correction (2026-10-12).** This said cart type `$00` (no MBC). Byte
-> `$0147` is `$01` in both `stage1/re/fw4/kernel.gb` and
-> `stage1/re/fw5-0918/kernel.gb`. Nothing depends on it: our own stage1
+> `$0147` is `$01` in both `stage1/fw4/kernel.gb` and
+> `stage1/fw5-0918/kernel.gb`. Nothing depends on it: our own stage1
 > (`stage1/build.sh`) never sets the byte (it reads `$FF`) and boots on both
 > carts.
 
@@ -20,10 +20,10 @@ in the ignored `fpga/` directory.
 
 | Path | What |
 |---|---|
-| `stage1/re/fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
-| `stage1/re/fw4/kernel.sym` | names and `.data` ranges for mgbdis |
-| `stage1/re/fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
-| `stage1/re/fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
+| `stage1/fw4/kernel.gb` | stage1 as written by `stage1-from-bram.py` (ignored; `kernel.gb` so the kernel tooling applies) |
+| `stage1/fw4/kernel.sym` | names and `.data` ranges for mgbdis |
+| `stage1/fw4/notes.json` | comment blocks, injected by `annotate-disasm.py` |
+| `stage1/fw4/disassembly/` | generated; rebuilds stage1 byte for byte |
 | `stage1/tools/stage1-regen.sh` | regenerate + rebuild + compare |
 | `stage1/tools/stage1-trace.py` | recursive-descent trace: code vs data, unreached spans |
 
@@ -416,7 +416,7 @@ The header bytes alone (`$0146 = $03`, `$014B = $33`, which stock 0918 and
 the 2020 forSGB beta already set) don't make the Jr work on an SGB. P62
 drives the cart `/RESET` push-pull, `P61 & ` the `$7FE0` pulse flip-flop
 with its tristate tied off, through 330 ohms against the SGB's 10k
-(`stage0/re/maps/fw5-0918.pins.txt`; nitro2k01 in
+(`stage0/fw5-0918/pins.txt`; nitro2k01 in
 [issue 5](https://github.com/lukesau/ezgb/issues/5)). The SNES can't hold
 the Game Boy CPU in reset while it starts, so the boot ROM sends its header
 packets before anything listens.

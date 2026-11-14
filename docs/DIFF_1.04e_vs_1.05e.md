@@ -4,9 +4,9 @@ Accounting of every place the two kernel binaries differ in behavior. Useful bef
 modified or alternate kernel (including a future B-mode image): understand both versions well
 enough that work against either does not collide with version-specific changes.
 
-Source: `kernel/re/1.04e/kernel.gb` (SHA1 `43c76dc...`) vs `kernel/re/1.05e-0731/kernel.gb` (SHA1 `ce1d531...`),
+Source: `kernel/1.04e/kernel.gb` (SHA1 `43c76dc...`) vs `kernel/1.05e-0731/kernel.gb` (SHA1 `ce1d531...`),
 both hash-verified against EZ Flash's distribution. Disassemblies in
-`kernel/re/1.04e/disassembly/` and `kernel/re/1.05e-0731/disassembly/`.
+`kernel/1.04e/disassembly/` and `kernel/1.05e-0731/disassembly/`.
 
 ## Methodology
 
@@ -217,7 +217,7 @@ What the port had to translate, all mechanically from the address map:
   `WaitVBlankFlag`, which is pinned per version.
 - The HELP screen draws `K1.04e` (no date; FW4 had a single kernel build).
 
-`kernel/re/1.04e/kernel.sym` and `notes.json` are ports of the 0731 files through the
+`kernel/1.04e/kernel.sym` and `notes.json` are ports of the 0731 files through the
 same map (53 names dropped: 1.05e-only routines such as `SetFpgaPage_B0` /
 `RtcReadPage`, and the inserted day tables); comment text still quotes 0731
 addresses. The regenerated disassembly reassembles to the ported kernel

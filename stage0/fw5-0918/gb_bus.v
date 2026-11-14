@@ -1,4 +1,4 @@
-// FW5-0918's Game Boy bus state, FW4's gb_bus (stage0/rtl/gb_bus.v) with
+// FW5-0918's Game Boy bus state, FW4's gb_bus (stage0/fw4/rtl/gb_bus.v) with
 // these changes:
 //
 //   - no address pins: FW5 builds A1-A13 in sd_mem_path (with the extra U4
@@ -15,7 +15,7 @@
 //     on the PicoBlaze clock; tbl_win and tbl_we are FW4's
 //
 // clk_2x is the global buffer the stage1 read and its copies run on in FW5
-// (FW4's 2x clock). Block: simblk.py from stage0/blocks/gb_bus.blk with
+// (FW4's 2x clock). Block: simblk.py from stage0/fw4/blocks/gb_bus.blk with
 // stage0/fw5-0918/gb_bus.sim and gb_bus.names.
 
 module gb_bus (

@@ -7,7 +7,7 @@
 # OUT is fw5-prove.sh's work directory (its design.v and blk/). The blocks
 # are the ones fw5-prove.sh carried or copied there; each block's readable
 # module is stage0/fw5-0918/<block>.v where FW5 has one, FW4's in
-# stage0/rtl/ otherwise. The stitched top is stage0/fw5-0918/fw5_top.v.
+# stage0/fw4/rtl/ otherwise. The stitched top is stage0/fw5-0918/fw5_top.v.
 # TIES are fw5-prove.sh's TIE settings: FW4 modules whose constant-0 input
 # FW5 wires as a constant.
 set -eu
@@ -19,7 +19,7 @@ blks=$(ls "$OUT"/blk/*.blk | grep -v '\.sim\.blk$')
 rtls=''
 for b in $blks; do
     n=$(basename "${b%.blk}")
-    r=$top/stage0/fw5-0918/$n.v; [ -f "$r" ] || r=$top/stage0/rtl/$n.v
+    r=$top/stage0/fw5-0918/$n.v; [ -f "$r" ] || r=$top/stage0/fw4/rtl/$n.v
     rtls="$rtls $r"
 done
 PREFIX=fw5 BLKS="$blks" RTLS="$rtls" TOPRTL=$top/stage0/fw5-0918/fw5_top.v \

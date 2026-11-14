@@ -7,7 +7,7 @@
 #   netlist.jsonl   s3trace --netlist: every configured bel and its input drivers
 #   pins.txt        s3pins: package pin -> pad
 #   decode.txt      s3decode, with the BRAM contents as blobs in bram/
-#   design.v        netlist2v.py: module fpga_top over stage0/re/sim/s3prims.v,
+#   design.v        netlist2v.py: module fpga_top over stage0/sim/s3prims.v,
 #                   plus the <tile>.DATA.mem files its BRAMs read
 #
 # Tools: stage0/tools/s3decode/target/release (cargo build --release there)
@@ -25,5 +25,5 @@ mkdir -p "$out/bram"
 "$bin/s3trace" --db "$db" "$img" --netlist "$out/netlist.jsonl"
 "$bin/s3pins" --db "$db" > "$out/pins.txt"
 "$bin/s3decode" --db "$db" --blob-dir "$out/bram" "$img" > "$out/decode.txt"
-python3 "$top/stage0/re/sim/netlist2v.py" "$out/netlist.jsonl" "$out/pins.txt" "$out/bram" "$out"
+python3 "$top/stage0/sim/netlist2v.py" "$out/netlist.jsonl" "$out/pins.txt" "$out/bram" "$out"
 echo "exported to $out"

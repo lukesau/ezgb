@@ -12,16 +12,16 @@ __pycache__/
 
 # EZ Flash's copyrighted firmware binaries, not our work, keep local-only.
 # /ezgb.dat is kept as a guard: nothing reads a root-level kernel any more
-# (use kernel/re/<version>/kernel.gb), but a stray dump dropped here must not be committed.
+# (use kernel/<version>/kernel.gb), but a stray dump dropped here must not be committed.
 /ezgb.dat
-kernel/re/*/kernel.gb.orig
+kernel/*/kernel.gb.orig
 # ...and anything else derived from it: probe builds, chain-boot copies,
 # ezgb.dat drops. A modified kernel still contains EZ Flash's firmware.
-kernel/re/*/*.dat
+kernel/*/*.dat
 # updater disassembly build artifacts (the updaters' .gb files are covered above)
-stage0/re/updater/*/disassembly/game.o
-stage0/re/updater/*/disassembly/game.map
-stage0/re/updater/*/disassembly/game.sym
+stage0/fw4/updater/*/disassembly/game.o
+stage0/fw4/updater/*/disassembly/game.map
+stage0/fw4/updater/*/disassembly/game.sym
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY
@@ -30,21 +30,21 @@ stage0/re/updater/*/disassembly/game.sym
 /tools/
 
 # build artifacts from `make` inside the kernel and stage1 disassemblies
-kernel/re/*/disassembly/game.o
-kernel/re/*/disassembly/game.map
-kernel/re/*/disassembly/game.sym
-stage1/re/*/disassembly/game.o
-stage1/re/*/disassembly/game.map
-stage1/re/*/disassembly/game.sym
+kernel/*/disassembly/game.o
+kernel/*/disassembly/game.map
+kernel/*/disassembly/game.sym
+stage1/*/disassembly/game.o
+stage1/*/disassembly/game.map
+stage1/*/disassembly/game.sym
 
 # Debugger auto-trace output
 scripts/debug/*.log
 
 # SameBoy run artifacts (battery save, screenshot, debug log) are regenerated
 # locally, not source; the debug log also embeds your local filesystem path.
-kernel/re/*/kernel.sav
-kernel/re/*/kernel.bmp
-kernel/re/*/kernel.log
+kernel/*/kernel.sav
+kernel/*/kernel.bmp
+kernel/*/kernel.log
 
 # Cart config-flash dumps and repair images. Same policy as the firmware
 # packages: these are EZ Flash's FPGA bitstream, not this project's work, so
@@ -67,4 +67,4 @@ dist/
 /local/
 
 # stock kernel build output (generated includes, the built stock kernel)
-kernel/stock/build/
+kernel/1.05e-0731/stock/build/

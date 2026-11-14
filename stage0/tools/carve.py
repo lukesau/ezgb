@@ -27,7 +27,7 @@ A block file names bels and gives boundary nets and registers readable names:
                                   # module's s3_ram16 instance path
     P84             wr_n
 
-stage0/blocks/common.names holds [names] shared by every block (pins,
+stage0/fw4/blocks/common.names holds [names] shared by every block (pins,
 clocks, mode bits); a block's names win.
 
 The module `<block>_ref` keeps the block's bels as they are in the design,

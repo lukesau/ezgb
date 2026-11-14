@@ -21,7 +21,7 @@ import carve
 
 FIRMWARES = [
     # key, title, cart image, block files
-    ('fw4', 'FW4', 'fw4-updater.bin', f'{TOP}/stage0/blocks/*.blk'),
+    ('fw4', 'FW4', 'fw4-updater.bin', f'{TOP}/stage0/fw4/blocks/*.blk'),
     ('fw5-0918', 'FW5 0918', 'fw5-0918.bin', 'fw5-all/blk/*.blk'),
 ]
 

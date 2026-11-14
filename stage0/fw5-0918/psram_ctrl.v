@@ -1,4 +1,4 @@
-// FW5-0918's pSRAM controller: the FW4 module (stage0/rtl/psram_ctrl.v,
+// FW5-0918's pSRAM controller: the FW4 module (stage0/fw4/rtl/psram_ctrl.v,
 // which says what each part does) with these differences, read from the
 // design and proved:
 //
@@ -22,7 +22,7 @@
 //   - the $A000 test inside comes from A13 and A14; only u4_win reads the
 //     shared win_a000
 //
-// Block: built by stage0/tools/simblk.py from stage0/blocks/psram_ctrl.blk
+// Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/psram_ctrl.blk
 // (stage0/fw5-0918/psram_ctrl.sim has its arguments), with the names in
 // psram_ctrl.names.
 module psram_ctrl (

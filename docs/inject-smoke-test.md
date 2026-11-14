@@ -41,7 +41,7 @@ python3 tools/patch_call.py 1.05e-0731 8 7200 3 08:746b --jp --apply --regen
 ```
 
 Total ROM footprint: 38 bytes of code + a 3-byte hook. Revert with
-`cp kernel/re/1.05e-0731/kernel.gb.orig kernel/re/1.05e-0731/kernel.gb`, then drop the two
+`cp kernel/1.05e-0731/kernel.gb.orig kernel/1.05e-0731/kernel.gb`, then drop the two
 `08:746b` lines from `kernel.sym` and regen.
 
 Verify it fires:

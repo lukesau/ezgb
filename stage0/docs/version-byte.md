@@ -4,7 +4,7 @@ The kernel reads the cart's firmware version by writing `$7FC0 = $04` and
 reading any byte in `$A000-$BFFF` (FW4 reads `$04`, FW5 `$05`; the HELP tab
 draws `ver: FW<n>`). The byte comes from the FPGA fabric, not from either
 PicoBlaze program. Found with `s3trace --netlist` and the scripts in
-[`stage0/re/netlist/`](../re/netlist/README.md), on the FW4
+[`stage0/netlist/`](../netlist/README.md), on the FW4
 slot B design.
 
 ## The cartridge data bus

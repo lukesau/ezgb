@@ -1,4 +1,4 @@
-// FW5-0918's PicoBlaze ports: FW4's (stage0/rtl/picoblaze_ports.v) with
+// FW5-0918's PicoBlaze ports: FW4's (stage0/fw4/rtl/picoblaze_ports.v) with
 // these changes to what INPUT reads:
 //
 //   A5-A9  the game's writes to the MBC3 clock registers $08-$0C (seconds,
@@ -63,7 +63,7 @@
 // whenever the address is loaded and held until the controller
 // acknowledges.
 //
-// Block: simblk.py from stage0/blocks/picoblaze_ports.blk with
+// Block: simblk.py from stage0/fw4/blocks/picoblaze_ports.blk with
 // stage0/fw5-0918/picoblaze_ports.sim and picoblaze_ports.names.
 
 module picoblaze_ports (

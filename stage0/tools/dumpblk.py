@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print a block's logic as equations, with the block file's names.
 
-    stage0/tools/dumpblk.py fpga/fw4/design.v stage0/blocks/NAME.blk [OUT]
+    stage0/tools/dumpblk.py fpga/fw4/design.v stage0/fw4/blocks/NAME.blk [OUT]
 
 For every bel in the block: flip-flops as `q <= D=... CE=... SR=...`, LUTs as
 a sum of products over their named inputs, muxes, carry muxes and XORs. Nets

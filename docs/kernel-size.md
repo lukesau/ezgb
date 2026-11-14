@@ -30,7 +30,7 @@ load, about 0.07 s more to load (an estimate).
 
 | Tool | Change |
 |---|---|
-| `kernel/re/<ver>/kernel.gb` | 262,144 bytes; banks 10-15 are `$FF` until code goes there |
+| `kernel/<ver>/kernel.gb` | 262,144 bytes; banks 10-15 are `$FF` until code goes there |
 | `scripts/build-kernel.sh` | `SIZE = 262144`, no truncation |
 | `scripts/portmap.py` | `load_stock` pads a stock image with `$FF` to `KERNEL_BANKS` (16), so the new banks are free space and map one to one between builds |
 | `scripts/kernel-patch.py` | the modded kernel may be longer than stock: it diffs against stock padded with zeros (as an IPS grows the file), writes runs of 16 or more equal bytes as RLE records, and records `patched_size` in the manifest. The patches grew about 1 KB |

@@ -151,4 +151,4 @@ pursued.
 Investigated read-only across `docs/hardware-board.md`, `stage0/docs/flash-map.md`,
 `stage0/docs/custom-logic.md`, `docs/game-slot-access.md`, `docs/psram-save-map.md`,
 `docs/last-rom.md`, `docs/omega-jr-compare.md`, `kernel/mod/src/shims.md`,
-`kernel/re/1.05e-0731/disassembly/bank_*.asm`, and `kernel/re/1.05e-0731/kernel.sym`.
+`kernel/1.05e-0731/disassembly/bank_*.asm`, and `kernel/1.05e-0731/kernel.sym`.

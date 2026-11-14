@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inject the fast DrawRect fill into kernel/re/<ver>/kernel.gb.
+"""Inject the fast DrawRect fill into kernel/<ver>/kernel.gb.
 
 Assembles kernel/mod/asm/fillrect.asm and, through kernel/mod/tools:
 
@@ -54,8 +54,8 @@ def main():
     jr = RESTORE - (FILL_SCAN + len(stub) + 2)
     stub += bytes([0x18, jr & 0xFF])
     stub += bytes(RESTORE - FILL_SCAN - len(stub))       # nop
-    rom = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.gb"), "rb").read()
-    stock = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.gb.orig"), "rb").read()
+    rom = open(os.path.join(ROOT, "kernel", ver, "kernel.gb"), "rb").read()
+    stock = open(os.path.join(ROOT, "kernel", ver, "kernel.gb.orig"), "rb").read()
     cur = rom[FILL_SCAN:RESTORE]
     if cur != stub:
         sgb.tool("patch_bytes.py", ver, "0", f"{FILL_SCAN:04x}", stock[FILL_SCAN:RESTORE].hex(), stub.hex(), *apply)

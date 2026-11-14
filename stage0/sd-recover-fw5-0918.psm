@@ -1,6 +1,6 @@
 ; Bank 1 (FW5-0918, D0X3Y1) patch: SD error exit, retry and clock fallback.
 ; docs/sd-error-recovery.md has the why; addresses are from
-; stage0/picoblaze/fw5-0918/bank1.psm.
+; stage0/fw5-0918/picoblaze/bank1.psm.
 ;
 ; Stock waits forever on a data CRC or buffer error (the data master sets
 ; EI without CC, and sd_command waits for CC alone) and on a command the

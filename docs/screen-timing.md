@@ -21,7 +21,7 @@ gap's self and inclusive time per function.
 SAMEBOY_PROFILE_GAP=/tmp/prof.txt SAMEBOY_EZFLASH_JR_IMG=card.img \
     tools/SameBoy/build/bin/SDL/sameboy --model dmg ezgb.dat
 # press SELECT a few times, quit
-scripts/debug/gap-profile.py kernel/re/1.05e-0918/kernel.sym /tmp/prof.txt
+scripts/debug/gap-profile.py kernel/1.05e-0918/kernel.sym /tmp/prof.txt
 ```
 
 SameBoy's SD reads don't take the time a real card does, so the HELP -> SD

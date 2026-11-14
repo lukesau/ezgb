@@ -1,4 +1,4 @@
-// FW5-0918's Game Boy registers: the FW4 module (stage0/rtl/gb_regs.v, which
+// FW5-0918's Game Boy registers: the FW4 module (stage0/fw4/rtl/gb_regs.v, which
 // says what each register does) with these differences, read from the
 // design and proved:
 //
@@ -22,7 +22,7 @@
 // turns that into an access to U4 page $08, while gb_data_out drives the
 // read from its latched clock registers.
 //
-// Block: built by stage0/tools/simblk.py from stage0/blocks/gb_regs.blk
+// Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/gb_regs.blk
 // (stage0/fw5-0918/gb_regs.sim has its arguments), with the names in
 // gb_regs.names.
 

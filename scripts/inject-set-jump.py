@@ -43,7 +43,7 @@ def main():
     if len(sys.argv) < 2 or sys.argv[1] != "1.05e-0731":
         sys.exit(__doc__)
     ver, apply = sys.argv[1], (["--apply"] if "--apply" in sys.argv[2:] else [])
-    sym = open(os.path.join(ROOT, "kernel", "re", ver, "kernel.sym")).read()
+    sym = open(os.path.join(ROOT, "kernel", ver, "kernel.sym")).read()
     for addr, name, mark in ((TOP, "FlSetJumpTop", 0xFE), (BOTTOM, "FlSetJumpBottom", 0xFF)):
         if f"04:{addr:04x} {name}\n" not in sym:
             tool("inject_bytes.py", ver, "4", f"{addr:04x}", name, handler(mark).hex(), *apply)

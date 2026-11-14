@@ -61,9 +61,9 @@ def ensure_kernel_sym(version):
     missing entirely or was already a symlink from a previous run of this
     script; never touch a real, pre-existing kernel.sym.
     """
-    kernel = os.path.join(ROOT, "kernel", "re", version, "kernel.gb")
-    sym = os.path.join(ROOT, "kernel", "re", version, "kernel.sym")
-    game_sym = os.path.join(ROOT, "kernel", "re", version, "disassembly", "game.sym")
+    kernel = os.path.join(ROOT, "kernel", version, "kernel.gb")
+    sym = os.path.join(ROOT, "kernel", version, "kernel.sym")
+    game_sym = os.path.join(ROOT, "kernel", version, "disassembly", "game.sym")
     if not os.path.isfile(kernel):
         sys.exit(f"error: missing {kernel} (copy ezgb.dat there)")
     if os.path.isfile(sym) and not os.path.islink(sym):
@@ -132,7 +132,7 @@ def drain(fd, timeout=0.05):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--version", default="1.05e-0731", help="kernel version dir under kernel/re/")
+    ap.add_argument("--version", default="1.05e-0731", help="kernel version dir under kernel/")
     ap.add_argument("--model", default="cgb",
                     help="SameBoy model (default cgb). Use dmg to emulate an "
                          "original Game Boy; auto-detection would pick dmg from "

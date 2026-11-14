@@ -1,4 +1,4 @@
 # simblk.py arguments for picoblaze_ports: FW5 packs the port decode and the
 # in_port mux differently, so the neighbors' names bound the cone
---context-a stage0/blocks/picoblaze.blk stage0/blocks/sd_controller_wb.blk stage0/blocks/gb_regs.blk stage0/blocks/pb_periph.blk stage0/blocks/rtc_bridge.blk stage0/blocks/sd_mem_path.blk stage0/blocks/gb_bus.blk
+--context-a stage0/fw4/blocks/picoblaze.blk stage0/fw4/blocks/sd_controller_wb.blk stage0/fw4/blocks/gb_regs.blk stage0/fw4/blocks/pb_periph.blk stage0/fw4/blocks/rtc_bridge.blk stage0/fw4/blocks/sd_mem_path.blk stage0/fw4/blocks/gb_bus.blk
 --context-b stage0/fw5-0918/gb_regs.names stage0/fw5-0918/gb_bus.names stage0/fw5-0918/rtc_bridge.names stage0/fw5-0918/sd_mem_path.names

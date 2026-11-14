@@ -1,4 +1,4 @@
-// FW5-0918's RTC bridge: the FW4 module (stage0/rtl/rtc_bridge.v, which says
+// FW5-0918's RTC bridge: the FW4 module (stage0/fw4/rtl/rtc_bridge.v, which says
 // what the two directions are) on the PicoBlaze's clock instead of the 2x
 // clock, read from the design and proved:
 //
@@ -7,7 +7,7 @@
 //     seconds and minutes 7, hours and day 6, weekday 3, month 5, year 8
 //   - the set values' mux (port F0 index, port B6) runs on its rising edge
 //
-// Block: built by stage0/tools/simblk.py from stage0/blocks/rtc_bridge.blk
+// Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/rtc_bridge.blk
 // (stage0/fw5-0918/rtc_bridge.sim has its arguments), with the names in
 // rtc_bridge.names.
 

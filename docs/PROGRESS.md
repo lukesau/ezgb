@@ -1,7 +1,7 @@
 # Decompilation progress
 
-The stock 1.05e-0731 kernel builds from source in [`kernel/stock/`](../kernel/stock/README.md),
-byte-identical to stock (`make -C kernel/stock` checks the md5). Ranges there come
+The stock 1.05e-0731 kernel builds from source in [`kernel/1.05e-0731/stock/`](../kernel/1.05e-0731/stock/README.md),
+byte-identical to stock (`make -C kernel/1.05e-0731/stock` checks the md5). Ranges there come
 from real source; the rest is still disassembly.
 
 > **Correction (2026-10-30).** This page used to list 15 bank-0 functions as
@@ -19,14 +19,14 @@ from real source; the rest is still disassembly.
 
 | Range | Source | Status |
 |---|---|---|
-| `00:0000`-`01e3` | `kernel/stock/gbdk/crt0.s` (GBDK 2.96a + EZ Flash changes) | Matched |
-| `00:0600`-`07bc` | `kernel/stock/gbdk/crt0.s` `_HOME` area | Matched |
+| `00:0000`-`01e3` | `kernel/1.05e-0731/stock/gbdk/crt0.s` (GBDK 2.96a + EZ Flash changes) | Matched |
+| `00:0600`-`07bc` | `kernel/1.05e-0731/stock/gbdk/crt0.s` `_HOME` area | Matched |
 
 ## Toolchain findings
 
 **GBDK.** Bank 0 is a GBDK 2.x program's: `crt0.s` from GBDK 2.96a (the
 same file as GBDK-2020 3.0.1) with EZ Flash's changes listed in
-[`kernel/stock/gbdk/README.md`](../kernel/stock/gbdk/README.md), then other GBDK library
+[`kernel/1.05e-0731/stock/gbdk/README.md`](../kernel/1.05e-0731/stock/gbdk/README.md), then other GBDK library
 modules (`drawing.s` at least) further up bank 0.
 
 **FatFs.** The FatFs in banks 3, 5, 6, 7 and 9 is **R0.11a**, not R0.10:

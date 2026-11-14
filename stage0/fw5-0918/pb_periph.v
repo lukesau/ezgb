@@ -1,4 +1,4 @@
-// FW5-0918's PicoBlaze peripherals: FW4's (stage0/rtl/pb_periph.v) with
+// FW5-0918's PicoBlaze peripherals: FW4's (stage0/fw4/rtl/pb_periph.v) with
 // these changes:
 //
 //   - the interrupt source runs on the PicoBlaze clock (FW4 the 2x clock)
@@ -12,7 +12,7 @@
 //     address pins, so mem_a_gb is gone
 //   - the ICAP writes decode D1 and D2 from picoblaze_ports's D0-D3 term
 //
-// Block: simblk.py from stage0/blocks/pb_periph.blk with
+// Block: simblk.py from stage0/fw4/blocks/pb_periph.blk with
 // stage0/fw5-0918/pb_periph.sim and pb_periph.names.
 
 module pb_periph (

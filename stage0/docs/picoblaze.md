@@ -15,9 +15,9 @@ tracked.
 
 ```bash
 stage0/tools/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    -a stage0/picoblaze/fw4/X3Y29.notes -o stage0/picoblaze/fw4/X3Y29.psm
+    -a stage0/fw4/picoblaze/X3Y29.notes -o stage0/fw4/picoblaze/X3Y29.psm
 stage0/tools/picoblaze-dis.py fpga/fw4-decode/bram/D0X3Y29.BEL.BRAM \
-    --check stage0/picoblaze/fw4/X3Y29.psm      # -> identical
+    --check stage0/fw4/picoblaze/X3Y29.psm      # -> identical
 ```
 
 Same for `X3Y25`. The BRAM files come from `s3decode --blob-dir`.
@@ -112,13 +112,13 @@ Commands arrive as interrupts; the handler (`isr`, `$395`) reads port `B5`:
 | `$10` | set the RTC from port `B6` |
 | `$08` | run bank 2 in flash-update mode |
 
-The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../kernel/re/1.05e-0731/disassembly/bank_002.asm))
+The kernel side ([`DiskRead_B2`/`DiskWrite_B2`](../../kernel/1.05e-0731/disassembly/bank_002.asm))
 writes the LBA to `$7FB0-B3` and the count to `$7FB4`, adding `$80` for a
 write, in chunks of up to 4 sectors. FPGA logic between the two turns that
 into ports `B0-B4` and the `B5` command; the mapping is consistent but not
 one-to-one.
 
-The FPGA side of that is `stage0/rtl/pb_periph.v` (proven 2026-10-28):
+The FPGA side of that is `stage0/fw4/rtl/pb_periph.v` (proven 2026-10-28):
 each `B5` bit is the rising edge of one request flag, synchronized into
 the 2x clock (`$7FB4` bit 7 clear or set for read or write, `$7F36` bit 1
 for the load, `$7FD0` bit 0 for the RTC set, `$7FD2` bit 0 for the flash
@@ -149,7 +149,7 @@ it checks the VL bit and, if the clock lost power, stops it and loads a
 default date. Whenever port `B9` reads 1 the idle loop copies registers 2-8
 (seconds to years) out as index/value pairs on `ED`/`EE`; command `$10`
 writes them back from `B6`.
-The FPGA side is `stage0/rtl/rtc_bridge.v` (proven 2026-10-28): a copy
+The FPGA side is `stage0/fw4/rtl/rtc_bridge.v` (proven 2026-10-28): a copy
 per register on the 2x clock, loaded from `EE` by the next OUTPUT's
 strobe while `ED` holds its index, and a registered mux over the seven
 RTC set registers that `F0` selects for `B6`.

@@ -1,4 +1,4 @@
-// The Spartan-3A primitives of stage0/re/sim/s3prims.v in the form yosys
+// The Spartan-3A primitives of stage0/sim/s3prims.v in the form yosys
 // takes for equivalence checking: the same functions in steady state, with
 // the simulation-only parts left out (GSR/GTS start-up, the pad turn-on
 // delay, the DCM's measured clocks). Keep the two files in step: any

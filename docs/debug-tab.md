@@ -8,7 +8,7 @@ scripts/make-debug-build.py 1.05e-0918 --install /Volumes/EZGB_FW4
 ```
 
 That writes `dist/debug/ezgb-mod-N.M-debug-for-<ver>.dat` from
-`kernel/re/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
+`kernel/<ver>/kernel.gb` (the mod build, left untouched) and, with `--install`,
 copies it to the card as `ezgb.dat`. HELP then reads `MOD N.MDBG`, and SELECT
 on HELP opens the debug screen instead of returning to the browser; SELECT
 there goes on to the browser. START on HELP goes back to the browser as in a release build; START on the debug screen is still the flash dump. The tab strip stays on HELP.

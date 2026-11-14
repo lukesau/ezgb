@@ -1,4 +1,4 @@
-// FW5-0918's unlock of the $7Fxx registers, against FW4's (stage0/rtl/unlock.v)
+// FW5-0918's unlock of the $7Fxx registers, against FW4's (stage0/fw4/rtl/unlock.v)
 // the same three keys and lock, a different state machine, read from the
 // design and proved:
 //
@@ -22,7 +22,7 @@
 // FW5 resets these on the /RESET edge, which fw5-noedge.py takes out of the
 // design this is proved against.
 //
-// Block: built by stage0/tools/simblk.py from stage0/blocks/unlock.blk
+// Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/unlock.blk
 // (stage0/fw5-0918/unlock.sim has its arguments), with the names in
 // unlock.names.
 module unlock (

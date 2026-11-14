@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pack a 12px glyph sheet and (re)place its two tables in
-# kernel/re/<version>/kernel.gb: the glyph bitmaps and the advances / ink
+# kernel/<version>/kernel.gb: the glyph bitmaps and the advances / ink
 # widths / kerning matrix. Re-run after editing a sheet or the packer's
 # spacing options. The glyph sets live in bank 10 beside the 12px engine
 # (draw12.c, layout12.c; docs/font12.md):
@@ -25,8 +25,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 V="${1:-1.05e-0731}"
 SET="${2:-0}"
 shift 2 2>/dev/null || shift $# || true
-SYM="$ROOT/kernel/re/$V/kernel.sym"
-ROM="$ROOT/kernel/re/$V/kernel.gb"
+SYM="$ROOT/kernel/$V/kernel.sym"
+ROM="$ROOT/kernel/$V/kernel.gb"
 BANK=0a
 case "$SET" in
   0) SHEET=font12.txt; BMP=4c00; MET=5580; NAME=Font12; OPTS=() ;;
