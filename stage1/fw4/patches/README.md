@@ -22,7 +22,7 @@ rgbfix -f h stage1-cgb.gb
 
 `s3patch` then writes those BRAM contents into the slot B bitstream, and
 `make-updater.py` wraps the result in an updater
-([docs/fpga-setup.md](../../../docs/fpga-setup.md)).
+([stage0/docs/setup.md](../../../stage0/docs/setup.md)).
 
 `bootsplash/build.sh` builds the splash, and also makes the icon tiles that
 [stage1/build.sh](../../build.sh) needs. It reads the logo PNG and the stock

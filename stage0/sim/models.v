@@ -87,7 +87,7 @@ module sd_card #(parameter IMAGE = "card.img", parameter VERBOSE = 1) (
         if (fd == 0) $display("sd: cannot open %s", IMAGE);
     end
 
-    // Fault injection (docs/sd-error-recovery.md), all off by default:
+    // Fault injection (stage0/docs/sd-recovery.md), all off by default:
     // +SD_BAD_READS=n   the next n read blocks go out with a wrong CRC16
     // +SD_BAD_WRITES=n  the next n written blocks get the CRC-error token
     // +SD_DROP_CMD=i +SD_DROP_N=n  the next n CMDi get no response

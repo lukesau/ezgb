@@ -182,7 +182,7 @@ before proceeding, the ready handshake. Parameters are staged first via
 > updater does at `$4013`, leaving a flash erase/program half-finished. `$7FD2`
 > is the config-flash command register; never write it by hand. This
 > disassembly is static only; the updater is never run
-> (see [../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md)).
+> (see [updater.md](updater.md)).
 
 `stage0/fw4/updater/` holds the disassembly; the write routine is `Call_000_1252`
 (bit set/clear, no wait) and the polled loop near `$4013`. The physical

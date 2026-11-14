@@ -13,7 +13,7 @@ disassembled in `stage1/fw4` and `stage1/fw5-0918` ([stage1/stock.md](../stage1/
 
 ## Reading order
 
-1. [fpga-setup.md](fpga-setup.md): set up every tool from nothing and build
+1. [setup.md](../stage0/docs/setup.md): set up every tool from nothing and build
    an updater end to end. [toolchain.md](../stage0/docs/toolchain.md) is
    the reference for each tool's flags and output.
 2. Stage0, in the order its [README](../stage0/docs/overview.md) lists: the
@@ -22,7 +22,7 @@ disassembled in `stage1/fw4` and `stage1/fw5-0918` ([stage1/stock.md](../stage1/
    fast launch, hardware status.
 4. [stage1/fw4/patches](../stage1/fw4/patches/README.md): the first patched firmware (CGB flag,
    boot splash), overlays on the stock stage1.
-5. [updater-flash-write.md](updater-flash-write.md): how the stock updater
+5. [updater.md](../stage0/docs/updater.md): how the stock updater
    writes slot B.
 
 Hardware and flash recovery: [hardware-board.md](hardware-board.md).

@@ -30,7 +30,7 @@ constant pushed before the call). Register meanings cross-checked against
 Only the six documented personalities appear. **No undocumented value, and no
 personality that opens a fresh, general-purpose nonvolatile window** onto the
 parallel NOR die. This is the GB-side counterpart to the updater finding
-([../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md)): neither the kernel nor the
+([updater.md](updater.md)): neither the kernel nor the
 updater exposes a path to the U4 NOR die.
 
 ## `$02` is the game-store personality, and the store is volatile

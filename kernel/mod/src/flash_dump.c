@@ -1,4 +1,4 @@
-/* Config flash dump for the debug screen (docs/flash-dump.md).
+/* Config flash dump for the debug screen (stage0/docs/flash-dump.md).
  *
  * Debug builds only (scripts/make-debug-build.py), in bank 12 where there is
  * room; DebugTab far-calls FlashDump on START and reads FD_RES. It needs

@@ -1,4 +1,4 @@
-// SD error recovery (docs/sd-error-recovery.md): two sector reads, a sector
+// SD error recovery (stage0/docs/sd-recovery.md): two sector reads, a sector
 // write, another read, then the RTC window's weekday tag at $A00C. Run with
 // the SD model's fault plusargs (+SD_BAD_READS, +SD_BAD_WRITES, +SD_DROP_CMD)
 // to check that each fault is retried and the data still comes back right.

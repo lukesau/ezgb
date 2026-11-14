@@ -2,13 +2,13 @@
 
 Reference for the tools that decode, trace and patch the cart's Spartan-3A
 (`XC3S200A-4VQG100`) bitstream. Setting them up from nothing, and the
-end-to-end build of an updater, is in [../../../docs/fpga-setup.md](../../docs/fpga-setup.md).
+end-to-end build of an updater, is in [../../../stage0/docs/setup.md](setup.md).
 Findings from using them are in [bitstream.md](bitstream.md).
 
 Cart images, flash dumps, BRAM contents and the exports made from them stay in
 the ignored `fpga/` directory, same policy as the firmware packages
 (`fpga/README.md`, itself untracked; the short version is in
-[../../../docs/fpga-setup.md](../../docs/fpga-setup.md#10-risk-and-recovery)).
+[../../../stage0/docs/setup.md](setup.md)).
 Tracked and public, because they leave out BRAM contents: the decoded listings
 in [`../decode/`](decode.md), and the
 [floorplan page](https://lukesau.github.io/ezgb/floorplan/) at
@@ -38,7 +38,7 @@ The Rust tools and ISE run on a Linux machine, called "the build host" in
 these docs. The current one is Ubuntu 24.04 on a Xeon E5-1680 v2 (8 cores /
 16 threads) with 62 GB RAM; nothing here needs that much. Stage1 and the
 Python scripts run on a second machine (currently macOS). That split is just
-how it is set up now, see [../../../docs/fpga-setup.md](../../docs/fpga-setup.md).
+how it is set up now, see [../../../stage0/docs/setup.md](setup.md).
 
 Example layout under `~/fpga` (the scripts' defaults assume it):
 

@@ -38,7 +38,7 @@ and each byte takes one 16-bit word of the chip.
 
 **Neither NOR die has any use the Game Boy can reach.** No value of
 `$7FC0` maps one, and the updater writes only the SPI flash
-([updater-flash-write.md](updater-flash-write.md)). About 36 MB of flash
+([updater.md](../stage0/docs/updater.md)). About 36 MB of flash
 sits on the board unused.
 
 **The coin cell** runs the clock and U4's pSRAM. pSRAM draws far more

@@ -91,7 +91,7 @@ updater says which cart it is for.
 The patch carries only the bytes that differ from the stock updater: the
 stage1 and PicoBlaze BRAM frames, the screen label, and the bitstream and
 header checksums. How the updater is built is in
-[fpga-setup.md](fpga-setup.md).
+[setup.md](../stage0/docs/setup.md).
 
 ## The patcher page
 

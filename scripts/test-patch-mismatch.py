@@ -6,7 +6,7 @@ release has to survive every mix-up (docs/distribution.md, "Wrong patch"):
 
   firmware  every updater patch on every other stock updater: what the
             updater would write to slot B (file $8000, 149,516 bytes, the
-            write loop in docs/updater-flash-write.md) must fail its
+            write loop in stage0/docs/updater.md) must fail its
             bitstream CRC, so the FPGA never configures from it and the
             boot tally keeps the cart on slot A. Correct and stock images
             must pass, or the check proves nothing.

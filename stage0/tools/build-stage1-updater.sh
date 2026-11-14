@@ -6,7 +6,7 @@
 #   BUILD_HOST=<host> stage0/tools/build-stage1-updater.sh fw4|fw5-0918 LABEL OUT.gb
 #
 # Runs stage1/build.sh first. The build host needs prjcombine's database and
-# s3patch/s3decode (fpga-setup.md), plus the stock slot B images
+# s3patch/s3decode (stage0/docs/setup.md), plus the stock slot B images
 # ~/fpga/cart/fw4-updater.bin and ~/fpga/cart/fw5/0918.bin. Local inputs: the
 # stock bank 2 BRAMs from fpga/fw4-decode/bram and fpga/fw5-decode/bram-0918,
 # and FW5-0918's stock bank 1 from the latter.

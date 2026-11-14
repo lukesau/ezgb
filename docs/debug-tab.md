@@ -33,7 +33,7 @@ seconds while it reads 40 KB); UP/DOWN scroll once it has more than 16 lines.
 | `B:ALIAS TEST P20/3F` / `P20=P00:` / `P3F=P1F:` | B checks whether the page latch is 5 bits (below). `--` until B is pressed |
 | `SGB BOOT P11:A400` | the SGB BOOT record and whether it reads as on ([sgb-boot.md](sgb-boot.md)) |
 | `KERNEL ENTRY A` | the A register KernelEntry saved at boot. `$E4` on every console: stage1's last write, not the boot ROM's value |
-| `START:DUMP FLASH` / result / `DNA:` | START dumps the config flash to `/FLASH.BIN` and the Device DNA to `/DNA.BIN`; needs the flash-read patch in slot B ([flash-dump.md](flash-dump.md)) |
+| `START:DUMP FLASH` / result / `DNA:` | START dumps the config flash to `/FLASH.BIN` and the Device DNA to `/DNA.BIN`; needs the flash-read patch in slot B ([flash-dump.md](../stage0/docs/flash-dump.md)) |
 
 ## Page-latch alias test (B)
 

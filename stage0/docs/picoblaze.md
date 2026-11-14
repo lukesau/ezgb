@@ -89,7 +89,7 @@ an indirect `OUTPUT sD, (sE)` selects register `sE`, then polls it for an ack.
 > says otherwise: the divider runs on the DCM's CLK2X of the 24.545 MHz
 > crystal (Y1), so divider 0 is 24.545 MHz, inside SD default speed, on FW4
 > and FW5-0918 alike (FW5's faster CLKFX doesn't reach the SD clock).
-> [sd-error-recovery.md](../../docs/sd-error-recovery.md) inherited the
+> [sd-recovery.md](../../stage0/docs/sd-recovery.md) inherited the
 > 58 MHz figure and is corrected too.
 
 Bring-up at reset, in **native SD mode, 4-bit bus** (not SPI mode):
@@ -216,7 +216,7 @@ slot B's half of the flash.
 Table entry 0 is a flash address; entries 1-`$40` are 256 bytes of data.
 If the address is on a 64 KB boundary the sector is erased first, then the
 page is programmed. Port `F1` is high while it runs. This is the write path
-behind the updater's `$7FD2` command ([../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md));
+behind the updater's `$7FD2` command ([updater.md](updater.md));
 the updater's per-block poll matches waiting on this.
 
 ## Slot A vs slot B
@@ -246,7 +246,7 @@ on its contents should work.
   GB side; tie each to its `$7Fxx` register.
 - The license check's exact data layout, and whether the record can be
   regenerated for another chip. Layout settled on the FW4 cart's dump
-  (2026-10-10, [flash-dump.md](../../docs/flash-dump.md#fw4-cart-dump-2026-10-10)):
+  (2026-10-10, [flash-dump.md](flash-dump.md)):
   CRC-16 over record bytes 0-19 + DNA against bytes 20-21, CRC-7 over
   bytes 0-9 + DNA against byte 10, both pass.
 - The dead `$1EE-$289` loader in bank 1 (ports `B7`, `E4-E7`, `A2`/`A3`).

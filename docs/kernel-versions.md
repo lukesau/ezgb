@@ -224,7 +224,7 @@ FW5 packages on the download page:
    CRC, the cart starts from slot A, and the updater is run again. Rarely a
    damaged image passes the check and the cart boots a broken bootloader.
    That is the one outcome an updater can't undo: it takes an SPI programmer
-   or JTAG ([fpga-setup.md](fpga-setup.md#10-risk-and-recovery)). It applies
+   or JTAG ([setup.md](../stage0/docs/setup.md)). It applies
    to every Jr firmware update, FW4's included, stock or modded. Fresh
    batteries and a cart nothing can bump are what keep it rare.
 2. **Slow SD cards on FW5.** Some slow or old cards that work on FW4 stop on
@@ -233,7 +233,7 @@ FW5 packages on the download page:
    on a good card, flash FW4, and the old card works again. The goal is an
    FW5 that takes every card, and it looks close: with firmware mod 2.1 the
    error is hard to reproduce even on the slow cards that used to show it
-   ([sd-error-recovery.md](sd-error-recovery.md)).
+   ([sd-recovery.md](../stage0/docs/sd-recovery.md)).
 
 Stay on FW4 if your card is old or of doubtful origin, or if you would
 rather not flash at all: the kernel mod is the same on both.

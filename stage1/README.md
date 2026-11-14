@@ -28,7 +28,7 @@ It needs SDCC 4.x (`-msm83`), `rgbfix`, and the splash icon tiles
 goes to the ignored `fpga/` folder.
 
 `stage1.gb` is a 32 KB image. Putting it into a bitstream and an updater
-is a stage0 job: [docs/fpga-setup.md](../docs/fpga-setup.md).
+is a stage0 job: [setup.md](../stage0/docs/setup.md).
 
 ## Version
 

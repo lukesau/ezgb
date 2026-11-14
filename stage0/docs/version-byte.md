@@ -92,7 +92,7 @@ What the updater contributes is only text: its screen line
 `Update to ver:4` is a fixed string at `$11D2` (the 16 bytes
 `make-updater.py` relabels). It never reads the cart's version: its only
 `$7FC0` write is in an unreferenced function
-([../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md)).
+([updater.md](updater.md)).
 
 > **Correction (2026-10-09).** An earlier doc said the updater
 > "shows the cart's current firmware version for display only". It

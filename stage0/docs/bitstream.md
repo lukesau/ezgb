@@ -87,7 +87,7 @@ why no byte-oriented or constant-stride search of the flash ever found it
 
 `stage1/tools/stage1-from-bram.py` rebuilds all 32 KB and it matches
 `tools/ezflashjr/stage1/FW4/stage1.gb` exactly. This settles the open question
-in [../../../docs/updater-flash-write.md](../../docs/updater-flash-write.md) and hypothesis (b) in
+in [updater.md](updater.md) and hypothesis (b) in
 [../../../docs/hardware-board.md](../../docs/hardware-board.md): flashing a new bitstream ships a new
 stage1, with no separate write.
 

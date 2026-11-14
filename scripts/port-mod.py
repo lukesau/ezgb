@@ -184,7 +184,7 @@ REGISTRY = {
     (8, 0x7d00): dict(src="help12.c",                       # 12px HELP pane, called by HelpHook (docs/font12.md)
                       pins={"FarCallDrawString12": 0x05c0, "StoreDrawParams": 0x2791, "HelpUrlStr": 0x715a,
                             "HelpKStr": 0x7af4, "HelpModStr": 0x7aff, "HelpGitStr": 0x7b09, "HelpSd": 0x7c00}),
-    (8, 0x7c00): dict(src="help_sd.c",                      # SD speed line on both HELP panes (docs/sd-error-recovery.md)
+    (8, 0x7c00): dict(src="help_sd.c",                      # SD speed line on both HELP panes (stage0/docs/sd-recovery.md)
                       pins={"FarCallDrawString12": 0x05c0, "DrawString": 0x08b7}),
     # SGB boot unlock and background send (scripts/inject-sgb.py). SgbStub only
     # names its own bank-4 entry; SgbVblTail, SgbVblList, SgbPadGate,

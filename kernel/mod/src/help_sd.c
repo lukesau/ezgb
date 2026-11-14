@@ -1,4 +1,4 @@
-/* SD speed line on the HELP pane (docs/sd-error-recovery.md).
+/* SD speed line on the HELP pane (stage0/docs/sd-recovery.md).
  *
  * Bank 8, injected at 08:7c00. Once the bank-1 PicoBlaze patch has dropped
  * the SD clock to half speed after an SD error, its RTC refresh reports
