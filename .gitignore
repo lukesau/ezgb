@@ -69,4 +69,5 @@ dist/
 # stock kernel build output (generated includes, the built stock kernel)
 kernel/1.05e-0731/stock/build/
 kernel/1.05e-0731/stock/build-0918/
+kernel/1.05e-0731/stock/build-104/
 stage1/decomp/build/

@@ -200,7 +200,11 @@
 /  data transfer. */
 
 
+#ifdef K104
+#define _FS_NORTC	1	/* ezflash: 1.04e has no RTC, stamps 2015-01-01 */
+#else
 #define _FS_NORTC	0
+#endif
 #define _NORTC_MON	1
 #define _NORTC_MDAY	1
 #define _NORTC_YEAR	2015

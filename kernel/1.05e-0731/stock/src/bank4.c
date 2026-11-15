@@ -328,7 +328,11 @@ void DrawTimeAutosaveScreen (void) __banked
 	}
 	memset(shown, 0xff, 7);
 	for (;;) {
+#ifdef K104
+		wait_vbl_done();
+#else
 		if (mode == 0) {
+#endif
 			if (dirty == 1) {
 				if (row == 0)
 					color(3, 2, 0);
@@ -351,6 +355,9 @@ void DrawTimeAutosaveScreen (void) __banked
 					box(0x84, 0x3a, 0x88, 0x3e, M_FILL);
 				}
 			}
+#ifdef K104
+		if (mode == 0) {
+#endif
 			SetFpgaPage_B4(6);
 			rtc[0] = *(volatile UINT8 *)0xa008;
 			rtc[1] = *(volatile UINT8 *)0xa009;
@@ -392,8 +399,10 @@ void DrawTimeAutosaveScreen (void) __banked
 			dirty = 0;
 			memcpy(shown, rtc, 7);
 		} else if (dirty) {
+#ifndef K104
 			color(3, 2, 0);
 			DrawString("SAV", 3, 16, 3);
+#endif
 			color(3, 0, 0);
 			U32ToAscii(edit[6] + 2000, buf, 10);
 			if (field == 0)
@@ -515,20 +524,32 @@ void DrawTimeAutosaveScreen (void) __banked
 					else
 						edit[6]--;
 				} else if (field == 1) {
+#ifdef K104
+					if (edit[5] == 1)
+#else
 					if (edit[5] < 1)
+#endif
 						edit[5] = 12;
 					else
 						edit[5]--;
 				} else if (field == 2) {
 					switch (edit[5]) {
 					case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+#ifdef K104
+						if (edit[3] == 1)
+#else
 						if (edit[3] < 1)
+#endif
 							edit[3] = 31;
 						else
 							edit[3]--;
 						break;
 					case 4: case 6: case 9: case 11:
+#ifdef K104
+						if (edit[3] == 1)
+#else
 						if (edit[3] < 1)
+#endif
 							edit[3] = 30;
 						else
 							edit[3]--;
@@ -578,7 +599,9 @@ void DrawTimeAutosaveScreen (void) __banked
 				if (mode == 0) {
 					mode = 1;
 					dirty = 1;
+#ifndef K104
 					field = 0;
+#endif
 					edit[6] = (rtc[6] & 0x0f) + (rtc[6] >> 4) * 10;
 					edit[5] = (rtc[5] & 0x0f) + ((rtc[5] & 0x1f) >> 4) * 10;
 					edit[3] = (rtc[3] & 0x0f) + ((rtc[3] & 0x3f) >> 4) * 10;

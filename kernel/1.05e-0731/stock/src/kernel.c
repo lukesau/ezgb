@@ -110,18 +110,30 @@ void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y)
 	}
 }
 
-/* 00:092a: v in decimal on the next boot message row */
+/* 00:092a: v in decimal on the next boot message row (1.04e: in hex, on
+   the next column) */
 void DrawU32Decimal (UINT32 v)
 {
 	char buf[20];
 	UINT8 n;
 
+#ifdef K104
+	U32ToAscii_B0(v, buf, 16);
+	n = strlen(buf);
+	DrawString(buf, n, wDebugTextCol, wDebugTextRow);
+	wDebugTextCol++;
+	if (wDebugTextCol > 20) {
+		wDebugTextCol = 0;
+		wDebugTextRow++;
+	}
+#else
 	U32ToAscii_B0(v, buf, 10);
 	n = strlen(buf);
 	DrawString(buf, n, wDebugTextCol, wDebugTextRow);
 	wDebugTextRow++;
 	if (wDebugTextRow > 20)
 		wDebugTextRow = 0;
+#endif
 }
 
 /* 00:0985 */
@@ -248,7 +260,9 @@ void SdMenuMain (void)
 	SetFpgaPageAlt_B4(3);
 		if (*(volatile UINT8 *)0xA000 == 0xAAU) {
 				flag = *(volatile UINT8 *)0xA200;
+#ifndef K104
 				wD3F6 = *(volatile UINT8 *)0xA202;
+#endif
 				save = *(volatile UINT8 *)0xA001;
 				*(volatile UINT8 *)0xA000 = 0;
 				len = *(volatile UINT8 *)0xA00F;
@@ -417,7 +431,9 @@ launch:
 				LaunchSetup(wLabelBuf);
 				SetFpgaPageAlt_B4(2);
 				SetFpga7F37_B4((wD3F0 << 7) | (char)wD3EB);
+#ifndef K104
 				SetFpga7FD4_B1(0);
+#endif
 				SetFpga7FC4_B4(wD3ED);
 				SetFpgaRomSize_B4(wD3EC);
 				SetFpga7FC3_B4();

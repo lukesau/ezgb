@@ -321,6 +321,7 @@ void SetFpga7F34_35_B1 (UINT16 v)
 	*(UINT8 *)0x7ff0 = 0xe4;
 }
 
+#ifndef K104	/* 1.04e has neither this nor the date code below */
 /* 01:480b */
 void SetFpga7FD4_B1 (UINT8 v) __banked
 {
@@ -330,6 +331,7 @@ void SetFpga7FD4_B1 (UINT8 v) __banked
 	*(UINT8 *)0x7fd4 = v;
 	*(UINT8 *)0x7ff0 = 0xe4;
 }
+#endif
 
 /* 01:482b: append the selected name to the directory path, and keep a copy
    of the path in pSRAM page $11 at $A300 for the last-ROM menu */
@@ -353,6 +355,7 @@ void LoaderPrepPath (void) __banked
 	SetFpgaPage_B1(0);
 }
 
+#ifndef K104
 /* the date code: the cart RTC as a calendar date (year in full) */
 typedef struct {
 	UINT16 year;
@@ -561,6 +564,7 @@ UINT32 RtcReadDaysClearRegs (void)
 	SetFpgaPage_B1(0);
 	return now;
 }
+#endif
 
 /* 01:5163: load /SAVER/<name>.sav into the save pSRAM (or $FF when there is
    none), restore the game clock from a 48-byte RTC footer, and stamp page
@@ -572,11 +576,15 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 	UINT32 ofs;
 	UINT br;
 	UINT32 size;
+#ifndef K104
 	UINT32 rtcpos;
 	UINT32 now;
+#endif
 	UINT8 len;
 	UINT16 i;
+#ifndef K104
 	UINT8 hasrtc;
+#endif
 	FRESULT res;
 
 	memcpy(wTmp, "/SAVER/", 30);
@@ -612,6 +620,11 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 		break;
 	}
 	if (res == FR_OK) {
+#ifdef K104
+		fs_open(&wFil, wTmp, 1);
+		size = wFil.fsize;
+		fs_lseek(&wFil, 0);
+#else
 		fs_open(&wFil, wTmp, 3);
 		size = wFil.fsize;
 		fs_lseek(&wFil, 0);
@@ -620,6 +633,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 			size &= 0xffffff00;
 		} else
 			hasrtc = 0;
+#endif
 		for (ofs = 0; ofs < size; ofs += 512) {
 			SetFpgaPage_B1(0);
 			fs_read(&wFil, wSaveBuf, 512, &br);
@@ -627,6 +641,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 			SetFpgaPage_B1(3);
 			set_data((unsigned char *)((ofs & 0x1fff) + 0xa000), wSaveBuf, 512);
 		}
+#ifndef K104
 		if (hasrtc) {
 			SetFpgaPage_B1(0);
 			rtcpos = size + 0x28;
@@ -637,6 +652,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 			now = RtcWriteTimeFromDayDelta(wD3F2);
 		} else if (wD3F0)
 			now = RtcReadDaysClearRegs();
+#endif
 		SetFpgaPage_B1(0);
 		fs_close(&wFil);
 	} else {
@@ -647,7 +663,9 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 			SetFpgaPage_B1(3);
 			set_data((unsigned char *)((ofs & 0x1fff) + 0xa000), wSaveBuf, 512);
 		}
+#ifndef K104
 		now = RtcReadDaysClearRegs();
+#endif
 		SetFpgaPage_B1(0);
 	}
 	size = size >> 13;
@@ -657,6 +675,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 	*(UINT8 *)0xa001 = size;
 	*(UINT8 *)0xa00f = len;
 	for (i = 0; i < len; i++) *(UINT8 *)(0xa010 + i) = wTmp[i];
+#ifndef K104
 	if (wD3F0) {
 		*(UINT8 *)0xa202 = 0x77;
 		*(UINT8 *)0xa210 = now & 0xff;
@@ -665,6 +684,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 		*(UINT8 *)0xa213 = (now >> 24) & 0xff;
 	} else
 		*(UINT8 *)0xa202 = 0;
+#endif
 	*(UINT8 *)0x4000 = 0;
 	SetFpgaPage_B1(0);
 }
@@ -1024,6 +1044,9 @@ void BackupSaveDump (char *path, UINT32 size)
 		spin++;
 		if (spin == 3)
 			spin = 0;
+#ifdef K104
+		color(2, 2, 0);
+#endif
 		if (spin == 0)
 			DrawString(".  ", 3, 11, 10);
 		else if (spin == 1)
@@ -1031,6 +1054,7 @@ void BackupSaveDump (char *path, UINT32 size)
 		else
 			DrawString("...", 3, 11, 10);
 	}
+#ifndef K104
 	if (wD3F6 == 0x77) {
 		memset(wSaveBuf, 0, 48);
 		*(UINT8 *)0x4000 = 0x11;
@@ -1054,6 +1078,7 @@ void BackupSaveDump (char *path, UINT32 size)
 		fs_lseek(&wFil, size);
 		fs_write(&wFil, wSaveBuf, 48, &bw);
 	}
+#endif
 	fs_close(&wFil);
 }
 

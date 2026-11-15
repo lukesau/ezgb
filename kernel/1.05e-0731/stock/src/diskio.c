@@ -43,6 +43,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 	return RES_OK;
 }
 
+#ifndef K104	/* 1.04e has no RTC: neither of these */
 /* 00:1a7a: select an FPGA register page ($A000 window) */
 void SetFpgaPage (BYTE page)
 {
@@ -76,3 +77,4 @@ DWORD get_fattime (void)
 		| ((DWORD)((rtc[1] & 0x0F) + (rtc[1] >> 4) * 10) << 5)
 		| ((DWORD)((rtc[0] & 0x0F) + (rtc[0] >> 4) * 10) >> 1);
 }
+#endif

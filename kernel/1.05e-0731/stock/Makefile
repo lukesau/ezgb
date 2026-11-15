@@ -5,7 +5,7 @@
 # The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>.
 #
 #   make            build build/kernel.gb (0731) and build-0918/kernel.gb, check their md5s
-#   make K=0918     only 0918
+#   make K=0918     only 0918 (K=104: only 1.04e)
 #   make clean
 
 K ?= 0731
@@ -13,7 +13,24 @@ SDINC := python3 tools/sdinc.py
 
 # 0918 is 0731 with RtcDebugDump added to bank 1, so bank 1 from $4C5E on
 # is $262 higher: G1-G4 are where its _GSINIT pieces and _GSINITTAIL start
-ifeq ($(K),0918)
+# 1.04e (FW4) is 1.05e without the RTC code (K104 in the C): bank 0's
+# library code from $20BB is $3B9 lower, and the runtime globals from
+# $D6A7, where 1.05e's day-count tables are, $27 lower. lib and wram map a
+# 1.05e address to this kernel's.
+ifeq ($(K),104)
+STOCK_MD5 := b8c29fa5a94c37200434e4c72f0cdfea
+SYM       := ../../1.04e/kernel.sym
+B         := build-104
+KDEFS     := -DK104
+LSHIFT    := 3b9
+WSHIFT    := 27
+B0K := 190d
+G1 := 5c87
+G2 := 5c91
+G3 := 6467
+G4 := 6729
+D1 := d3f2
+else ifeq ($(K),0918)
 STOCK_MD5 := 5238ac5987d23b68a19d40e43af8c786
 SYM       := ../../1.05e-0918/kernel.sym
 B         := build-0918
@@ -22,6 +39,7 @@ G1 := 6b18
 G2 := 6b22
 G3 := 72f8
 G4 := 75f2
+B0K := 1926
 else
 STOCK_MD5 := 91eb7fc67332ef20b5691029181ff748
 SYM       := ../kernel.sym
@@ -31,7 +49,14 @@ G1 := 68b6
 G2 := 68c0
 G3 := 7096
 G4 := 7390
+B0K := 1926
 endif
+RTC_ALIASES := $(if $(filter 104,$(K)),,-a _SetFpga7FD4_B1=SetFpga7FD4_B1)
+D1 ?= d3f9
+LSHIFT ?= 0
+WSHIFT ?= 0
+lib  = $(shell printf %04x $$((0x$(1) - 0x$(LSHIFT))))
+wram = $(shell printf %04x $$((0x$(1) - 0x$(WSHIFT))))
 
 # Symbols crt0.s needs that are not in kernel.sym: GBDK's linker-defined
 # addresses, and globals that global.s declares but the kernel never uses.
@@ -57,11 +82,12 @@ INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kern
 all: $(B)/kernel.gb
 ifeq ($(origin K),file)
 	$(MAKE) K=0918
+	$(MAKE) K=104
 endif
 
 $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0xd6c9 $(CRT0_DEFS) \
+	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0x$(call wram,d6c9) $(CRT0_DEFS) \
 		-b _GSINIT=0x$(G1) -b _GSINITTAIL=0x$(G4) \
 		--region 0000:01e3:$(B)/crt0_low.inc --region 0600:07bc:$(B)/crt0_home.inc \
 		--region $(G4):8000:$(B)/b1_gsinittail.inc --syms-out $(B)/crt0.sym
@@ -72,7 +98,7 @@ ff_srcs = $(if $(filter 5 6 9,$(1)),src/dbg.c) src/ff.c
 
 $(B)/ff_b%.inc: src/dbg.c src/ff.c src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(call ff_srcs,$*) --sdcc29 --bank $* --cflags "--opt-code-size -DBANK=$*" --sym $(SYM) \
+	$(SDINC) $(call ff_srcs,$*) --sdcc29 --bank $* --cflags "--opt-code-size -DBANK=$* $(KDEFS)" --sym $(SYM) \
 		-b _CODE=0x4000 -b _DATA=0xc5a5 $(FF_ALIASES) --region 4000:8000:$@
 
 # bank 0's FatFs glue: the f_ entry points, the disk layer and the RTC clock,
@@ -87,12 +113,12 @@ B0_FATFS_ALIASES := -a _f_open=Open_B6 -a _f_read=Read_B6 -a _f_write=Write_B7 \
 
 $(B)/b0_fatfs.inc $(B)/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(B0_FATFS_SRCS) --sdcc29 --bank 0 --cflags=--opt-code-size --sym $(SYM) \
-		-b _CODE=0x1926 -b _DATA=0xcc33 -b _GSINIT=0x$(G2) $(B0_FATFS_ALIASES) \
-		--region 1926:20bb:$(B)/b0_fatfs.inc --region $(G2):$(G3):$(B)/b1_ccsbcs_init.inc
+	$(SDINC) $(B0_FATFS_SRCS) --sdcc29 --bank 0 --cflags="--opt-code-size $(KDEFS)" --sym $(SYM) \
+		-b _CODE=0x$(B0K) -b _DATA=0xcc33 -b _GSINIT=0x$(G2) $(B0_FATFS_ALIASES) \
+		--region $(B0K):$(call lib,20bb):$(B)/b0_fatfs.inc --region $(G2):$(G3):$(B)/b1_ccsbcs_init.inc
 
 # the kernel's own C in bank 0, $07BC-$1926, against GBDK 2.96a's headers
-KERNEL_CFLAGS := --opt-code-size -I$(CURDIR)/gbdk/include -DBYTE_IS_UNSIGNED=1
+KERNEL_CFLAGS := --opt-code-size -I$(CURDIR)/gbdk/include -DBYTE_IS_UNSIGNED=1 $(KDEFS)
 KERNEL_SRCS := src/kernel.c
 KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixelXY \
               -a _gotogxy=SetTextCursor -a _wrtchr=DrawGlyphAdvance -a _color=StoreDrawParams \
@@ -112,7 +138,7 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -a _DrawBrowserEntries=DrawBrowserEntries -a _DrawBrowserDetail=DrawBrowserDetail \
               -a _BackupSavePrompt=BackupSavePrompt -a _LoaderPrepPath=LoaderPrepPath \
               -a _RomLoaderMain=RomLoaderMain -a _BackupOpenSaverPath=BackupOpenSaverPath \
-              -a _LaunchSetup=LaunchSetup -a _SetFpga7F37_B4=SetFpga7F37_B4 -a _SetFpga7FD4_B1=SetFpga7FD4_B1 \
+              -a _LaunchSetup=LaunchSetup -a _SetFpga7F37_B4=SetFpga7F37_B4 $(RTC_ALIASES) \
               -a _SetFpga7FC4_B4=SetFpga7FC4_B4 -a _SetFpgaRomSize_B4=SetFpgaRomSize_B4 \
               -a _SetFpga7FC3_B4=SetFpga7FC3_B4 -a _RomLoad_CopyCmdWindowPoll_B4=RomLoad_CopyCmdWindowPoll_B4 \
               -g _DrawMenuTabs=08:7169 -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
@@ -124,7 +150,7 @@ $(B)/b0_kernel.inc $(B)/b1_kernel_init.inc &: $(KERNEL_SRCS) src/ff.h src/ffconf
 	@mkdir -p $(B)
 	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x07bc -b _DATA=0xcc31 -b _GSINIT=0x$(G1) $(KERNEL_ALIASES) \
-		--region 07bc:1926:$(B)/b0_kernel.inc --region $(G1):$(G2):$(B)/b1_kernel_init.inc
+		--region 07bc:$(B0K):$(B)/b0_kernel.inc --region $(G1):$(G2):$(B)/b1_kernel_init.inc
 
 # the kernel's C in bank 1, $4000-$68B6 ($6B18 in 0918); its initialized
 # data's _GSINIT code follows ccsbcs.c's at $7096 ($72F8)
@@ -146,8 +172,8 @@ BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _c
 
 $(B)/b1_code.inc $(B)/b1_init.inc &: $(BANK1_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(BANK1_SRCS) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS) $(KDEFS)" --sym $(SYM) \
-		-b _CODE=0x4000 -b _DATA=0xd3f9 -b _GSINIT=0x$(G3) $(BANK1_ALIASES) \
+	$(SDINC) $(BANK1_SRCS) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x4000 -b _DATA=0x$(D1) -b _GSINIT=0x$(G3) $(BANK1_ALIASES) \
 		--region 4000:$(G1):$(B)/b1_code.inc --region $(G3):$(G4):$(B)/b1_init.inc
 
 
@@ -157,15 +183,15 @@ SDCCLIB_INCS := $(B)/b0_strrchr.inc $(B)/b0_strncpy.inc $(B)/b0_strlen.inc
 
 $(B)/b0_strrchr.inc: sdcclib/_strrchr.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2c42 --region 2c42:2ca5:$@
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2c42) --region $(call lib,2c42):$(call lib,2ca5):$@
 
 $(B)/b0_strncpy.inc: sdcclib/_strncpy.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2cd3 --region 2cd3:2d4c:$@
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2cd3) --region $(call lib,2cd3):$(call lib,2d4c):$@
 
 $(B)/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x2d95 --region 2d95:2dba:$@
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2d95) --region $(call lib,2d95):$(call lib,2dba):$@
 
 # GBDK's gb library: the drawing, font and joypad code and the IBM font.
 # _BASE is one run in link order; drawing's _CODE comes first in _CODE,
@@ -183,11 +209,11 @@ $(B)/font.s: gbdk/font.ms gbdk/wait_hbl.mh tools/maccer.py
 
 $(GBDK_INCS) &: $(GBDK_SRCS) gbdk/global.s $(B)/crt0.sym tools/sdinc.py $(SYM)
 	$(SDINC) $(GBDK_SRCS) -I gbdk --bank 0 --sym $(SYM) --defs $(B)/crt0.sym $(CRT0_DEFS) \
-		-b _CODE=0x20f4 -b _BASE=0x2eea -b _VBLLCD=0x2a5f -b _BSS=0xd723 --area-at font.s:_CODE=0x2d56 \
+		-b _CODE=0x$(call lib,20f4) -b _BASE=0x$(call lib,2eea) -b _VBLLCD=0x$(call lib,2a5f) -b _BSS=0x$(call wram,d723) --area-at font.s:_CODE=0x$(call lib,2d56) \
 		--area-at drawing.s:_HEADER=0x01e3 --area-at font.s:_HEADER=0x03cc \
 		--region 01e3:0600:$(B)/b0_gbdk_header.inc \
-		--region 20f4:2826:$(B)/b0_gbdk_code.inc --region 2a5f:2a77:$(B)/b0_gbdk_vbl.inc \
-		--region 2d56:2d95:$(B)/b0_gbdk_font.inc --region 2eea:4000:$(B)/b0_gbdk_base.inc
+		--region $(call lib,20f4):$(call lib,2826):$(B)/b0_gbdk_code.inc --region $(call lib,2a5f):$(call lib,2a77):$(B)/b0_gbdk_vbl.inc \
+		--region $(call lib,2d56):$(call lib,2d95):$(B)/b0_gbdk_font.inc --region $(call lib,2eea):4000:$(B)/b0_gbdk_base.inc
 
 # bank 0's asm runtime that is neither SDCC's nor GBDK's, rebuilt from stock
 # (origin unknown, see src/libasm.s), in six pieces between other library code
@@ -195,12 +221,12 @@ LIBASM_INCS := $(B)/b0_lib0.inc $(B)/b0_lib1.inc $(B)/b0_lib2.inc $(B)/b0_lib3.i
 
 $(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0xd6c7 -b _LIB0=0x20e2 \
-		-b _LIB1=0x29e6 -b _LIB2=0x2a77 -b _LIB3=0x2ca5 -b _LIB4=0x2d4c -b _LIB5=0x2dba \
-		--region 20e2:20f4:$(B)/b0_lib0.inc \
-		--region 29e6:2a5f:$(B)/b0_lib1.inc --region 2a77:2c42:$(B)/b0_lib2.inc \
-		--region 2ca5:2cd3:$(B)/b0_lib3.inc --region 2d4c:2d56:$(B)/b0_lib4.inc \
-		--region 2dba:2eea:$(B)/b0_lib5.inc
+	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0x$(call wram,d6c7) -b _LIB0=0x$(call lib,20e2) \
+		-b _LIB1=0x$(call lib,29e6) -b _LIB2=0x$(call lib,2a77) -b _LIB3=0x$(call lib,2ca5) -b _LIB4=0x$(call lib,2d4c) -b _LIB5=0x$(call lib,2dba) \
+		--region $(call lib,20e2):$(call lib,20f4):$(B)/b0_lib0.inc \
+		--region $(call lib,29e6):$(call lib,2a5f):$(B)/b0_lib1.inc --region $(call lib,2a77):$(call lib,2c42):$(B)/b0_lib2.inc \
+		--region $(call lib,2ca5):$(call lib,2cd3):$(B)/b0_lib3.inc --region $(call lib,2d4c):$(call lib,2d56):$(B)/b0_lib4.inc \
+		--region $(call lib,2dba):$(call lib,2eea):$(B)/b0_lib5.inc
 
 # the kernel's C in bank 2, all of it: the SD sector reads and writes
 $(B)/b2_code.inc: src/bank2.c src/diskio.h src/integer.h tools/sdinc.py $(SYM)
@@ -220,6 +246,7 @@ BANK4_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=Dra
               -a __moduchar_rrx_s=U8Mod -a __divuchar_rrx_s=U8Div -a __modschar_rrx_s=S8Mod \
               -a __divschar_rrx_s=S8Div -a banked_call=FarCallTrampoline \
               -a __moduschar_rrx_s=U8Mod -a __divuschar_rrx_s=U8Div \
+              -a _wait_vbl_done=WaitVBlankFlag \
               -a _RomLoad_InitiatePoll=RomLoad_InitiatePoll -g _wRomBanks=0xc2a4 -g _wHdrSum=0xc5a3 -g _wD3EB=0xd3eb
 
 $(B)/b4_wram.inc: src/bank4_wram.c tools/sdinc.py $(SYM)
@@ -249,18 +276,18 @@ $(B)/b8_code.inc: $(BANK8_SRCS) tools/sdinc.py $(SYM)
 # that order. stubs.s jumps to the math in src/libasm.s; div.s has edits
 # no SDCC release has.
 SDCCASM_SRCS := sdcclib/stubs.s sdcclib/div.s sdcclib/shift.s
-SDCCASM_DEFS := -g __mullong=0x2dc1 -g __modslong=0x29e6 -g __modulong=0x2a77 \
-              -g __divslong=0x2b28 -g __divulong=0x2bfc -g __mulschar_rrx_s=0x2ba2 \
-              -g __muluchar_rrx_s=0x2bb1 -g __mulint_rrx_s=0x2bcf
+SDCCASM_DEFS := -g __mullong=0x$(call lib,2dc1) -g __modslong=0x$(call lib,29e6) -g __modulong=0x$(call lib,2a77) \
+              -g __divslong=0x$(call lib,2b28) -g __divulong=0x$(call lib,2bfc) -g __mulschar_rrx_s=0x$(call lib,2ba2) \
+              -g __muluchar_rrx_s=0x$(call lib,2bb1) -g __mulint_rrx_s=0x$(call lib,2bcf)
 
 $(B)/b0_sdccasm.inc: $(SDCCASM_SRCS) tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(SDCCASM_SRCS) --bank 0 --sym $(SYM) -b _CODE=0x2826 $(SDCCASM_DEFS) --region 2826:29e6:$@
+	$(SDINC) $(SDCCASM_SRCS) --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2826) $(SDCCASM_DEFS) --region $(call lib,2826):$(call lib,29e6):$@
 
 # SDCC 2.9.0's crt0_rle.s: __initrleblock, which the C files' _GSINIT code calls
 $(B)/b0_rle.inc: sdcclib/crt0_rle.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x20bb --region 20bb:20e2:$@
+	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,20bb) --region $(call lib,20bb):$(call lib,20e2):$@
 
 $(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	rgbasm -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
@@ -271,7 +298,7 @@ $(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	else echo "$@: MISMATCH ($$md5, want $(STOCK_MD5))"; exit 1; fi
 
 clean:
-	rm -rf build build-0918
+	rm -rf build build-0918 build-104
 
 .PHONY: all clean
 

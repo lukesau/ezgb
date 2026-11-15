@@ -389,7 +389,11 @@ void RomLoad_ClearCartWindow_B8 (void)
 void DrawFwVersionScreen (void) __banked
 {
 	char ver[20];
+#ifdef K104
+	char buf[20] = "FWx  K1.04e";
+#else
 	char buf[20] = "FWx  K1.05e";
+#endif
 	UINT8 v;
 
 	SetFpgaPage_B8(4);

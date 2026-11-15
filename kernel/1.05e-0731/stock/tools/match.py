@@ -24,7 +24,9 @@ assembled as it is. Functions in _HOME (GBDK's NONBANKED) count too.
 
 This finds the function that differs; `make` checks the whole of each bank,
 masked operands included. Needs a stock ROM, by default build/kernel.gb,
-which is stock whenever `make` last passed (--rom for another). SDCC 2.9.0
+which is stock whenever `make` last passed (--rom for another; for another
+kernel also --sym with its kernel.sym, and --sym-pins to look the pinned
+functions up there). SDCC 2.9.0
 ships no sdcpp or sdasgb; SDCC 4.x ones work (README.md). SDASGB=<path>
 picks the assembler (default $SDCC29/bin/sdasgb). Exit status 0 when every
 function in the table matches.
@@ -201,6 +203,9 @@ def main():
     p.add_argument("-v", action="store_true")
     p.add_argument("-f", action="append", help="only this function, repeatable")
     p.add_argument("--rom", default=str(HERE / "build" / "kernel.gb"))
+    p.add_argument("--sym", default=str(HERE.parent / "kernel.sym"), help="kernel.sym (default %(default)s)")
+    p.add_argument("--sym-pins", action="store_true",
+                   help="look pinned functions up in --sym, not at their comment's address (another kernel)")
     a = p.parse_args()
 
     prefix = os.environ.get("SDCC29")
@@ -211,7 +216,7 @@ def main():
     if not os.path.exists(a.rom):
         sys.exit(f"{a.rom}: missing, run make first")
     rom = open(a.rom, "rb").read()
-    syms = load_syms(HERE.parent / "kernel.sym")
+    syms = load_syms(Path(a.sym))
     banks = a.b or FAT_BANKS
 
     pinned = {}
@@ -219,6 +224,8 @@ def main():
         pinned.update(src_addrs(src))
     if not a.b and pinned:
         banks = sorted({b for b, _ in pinned.values()})
+    if a.sym_pins:
+        pinned = {n: (b, sym_addr(syms, b, n)) for n, (b, _) in pinned.items()}
     per_bank = {}
     for b in banks:
         per_bank[b] = {}
