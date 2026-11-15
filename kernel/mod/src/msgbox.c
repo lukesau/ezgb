@@ -11,7 +11,8 @@
  * y 52..87 in 12px (the text row at y 64) and 54..81 in 8px (tile row 8),
  * where the stock box was (35,37)-(125,108). Its frame is his too: a 2 px
  * outer line, a 1 px gap and a 1 px inner line, in the text's color, with
- * the outer corner pixels left as they were, so the box looks rounded.
+ * square corners. The box is drawn one pixel in from x0 and x1 on each
+ * side.
  *
  * Light: ink 0 on paper 3, as stock. A dark theme: white ink on a lighter
  * shade of the background (PopupDrawParams), like the other popups; DV keeps
@@ -82,13 +83,11 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
         return;
     }
     if (THEME) PopupDrawParams(3, 0); else StoreDrawParams(0, 3, 0);
-    /* paper and the outer line, without its four corner pixels: the corners
-     * are rounded, and what is behind them (a list row, the bar, a theme's
-     * background) stays as it is. Until 2026-11-11 they were painted in
-     * color 0, which is only right over an empty background. */
+    /* The box is x0+1 .. x1-1: the columns x0 and x1 are not drawn, so what
+     * is behind them (a list row, the bar, a theme's background) stays as
+     * it is. Until 2026-11-14 each was drawn as a one-pixel-wide DrawRect,
+     * which plots only its two ends: a stray pixel beside each corner. */
     DrawRect(x0 + 1, y0, x1 - 1, y1, 1);
-    DrawRect(x0, y0 + 1, x0, y1 - 1, 1);
-    DrawRect(x1, y0 + 1, x1, y1 - 1, 1);
     DrawRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1, 0);       /* its second pixel */
     DrawRect(x0 + 3, y0 + 3, x1 - 3, y1 - 3, 0);       /* the inner line */
     if (which == 3) {
