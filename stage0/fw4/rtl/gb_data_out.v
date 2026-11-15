@@ -95,7 +95,8 @@ module gb_data_out (
 
     // the RTC window in kernel mode: the seven readings at offsets $08-$0E
     function [7:0] bcd2bin(input [7:0] v);
-        bcd2bin = {4'd0, v[7:4]} * 8'd10 + {4'd0, v[3:0]};
+        // tens times 10 as 8 + 2, so synthesis has no multiplier to pull registers into
+        bcd2bin = {1'b0, v[7:4], 3'd0} + {3'd0, v[7:4], 1'b0} + {4'd0, v[3:0]};
     endfunction
     wire rtc_win_k = adr_014d_lo & !a6;                   // offsets $08-$0F
     reg [7:0] rtc_k;
