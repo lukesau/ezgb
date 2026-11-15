@@ -60,13 +60,13 @@ later placed and routed back into an identical bitstream. Three layers:
 2. **Readable Verilog, proven equivalent to the extracted netlist.** Done
    for FW4: every slice cell is in one of 22 blocks, each proven, and the
    stitched top level is proven and simulates identically. FW5-0918 is
-   proven in 26 blocks, on its design with the console `/RESET` edge logic
-   removed.
+   proven in 27 blocks, its console `/RESET` edge included, and its
+   stitched top level is proven too.
 3. **Placement and routing data**, to turn the readable design back into
-   the exact bitstream. Started: [ise/](ise/README.md) builds FW4's
-   readable design with ISE, every register in its stock cell, and proves
-   the result equivalent to stock. Its LUTs and routing come from ISE, so the
-   bitstream is not stock's byte for byte.
+   the exact bitstream. Started: [ise/](ise/README.md) builds the readable
+   designs of FW4 and FW5-0918 with ISE, every register in its stock cell,
+   and proves each result equivalent to stock. The LUTs and routing come
+   from ISE, so the bitstreams are not stock's byte for byte.
 
 ## How the proof works
 

@@ -22,17 +22,17 @@ r="fpga/ise/$name"
 
 "$repo/stage0/tools/host-check.sh" "$host"
 ssh "$host" "rm -rf $r && mkdir -p $r"
-scp -q "$proj"/*.v "$proj"/top.prj "$proj"/top.ucf "$host:$r/"
+scp -q "$proj"/*.v "$proj"/top.prj "$proj"/top.ucf "$proj"/top.name "$proj"/map.opts "$host:$r/"
 ssh "$host" "set -e; cd $r
 part=xc3s200a-4-vq100; ise=\$HOME/Xilinx/14.7/ISE_DS
 . \$ise/settings64.sh \$ise >/dev/null
-printf 'run\n-ifn top.prj\n-ifmt mixed\n-top fw4_top\n-ofn top.ngc\n-ofmt NGC\n-p %s\n-equivalent_register_removal NO\n-fsm_extract NO\n-register_duplication NO\n-iob auto\n-opt_mode Area\n-opt_level 2\n-shreg_extract NO\n-mult_style lut\n-signal_encoding user\n' \$part > top.xst
+printf 'run\n-ifn top.prj\n-ifmt mixed\n-top %s\n-ofn top.ngc\n-ofmt NGC\n-p %s\n-equivalent_register_removal NO\n-fsm_extract NO\n-register_duplication NO\n-iob auto\n-opt_mode Area\n-opt_level 2\n-shreg_extract NO\n-mult_style lut\n-signal_encoding user\n-max_fanout 100000\n-mux_extract NO\n' \$(cat top.name) \$part > top.xst
 printf '%b' '${XST_OPTS:-}' | tr ';' '\\n' | grep . >> top.xst || true
 run() { echo \"== \$*\" >> build.log; \"\$@\" >> build.log 2>&1 || { echo \"failed: \$1 (\$PWD/build.log)\"; grep -m20 'ERROR' build.log; exit 1; }; }
 run xst -ifn top.xst
 run ngdbuild -p \$part -uc top.ucf top.ngc
-run map -w -p \$part -pr b ${MAP_BASE--timing -ol high} ${MAP_OPTS:-} -o top_map.ncd top.ngd top.pcf
-run par -w -ol high top_map.ncd top.ncd top.pcf
+run map -w -p \$part -pr b ${MAP_BASE--timing -ol high \$(cat map.opts)} ${MAP_OPTS:-} -o top_map.ncd top.ngd top.pcf
+run par -w -ol high ${PAR_OPTS:-} top_map.ncd top.ncd top.pcf
 run trce -v 20 top.ncd top.pcf -o top.twr
 run bitgen -w ${BITGEN_OPTS--g ConfigRate:25 -g DonePipe:Yes -g Reset_on_err:Yes} top.ncd top.bit
 run xdl -ncd2xdl top.ncd top.xdl

@@ -34,11 +34,32 @@ ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 ap.add_argument("stock", type=pathlib.Path)
 ap.add_argument("ise", type=pathlib.Path)
 ap.add_argument("proj", type=pathlib.Path)
-ap.add_argument("--fw", default="fw4")
+ap.add_argument("--fw", default="fw4", help="default: the project's (PROJDIR/fw)")
+ap.add_argument("--blocks", type=pathlib.Path, help="the block files (default the firmware's)")
 ap.add_argument("--swap64", action="store_true", help="RAM64X1S: XDL .S1 holds q0/q1")
 args = ap.parse_args()
 out = args.ise / "prove"
 out.mkdir(parents=True, exist_ok=True)
+# the firmware the project was made for (mkise.py writes it), and mkise.py's
+# table of where its top, modules and block files are
+fwf = args.proj / "fw"
+if fwf.exists():
+    args.fw = fwf.read_text().strip()
+FW = {"fw4": ("stage0/fw4/rtl/fw4_top.v", ["stage0/fw4/rtl"], "stage0/fw4/blocks"),
+      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk")}
+top_rel, rtl_dirs, blk_dir = FW[args.fw]
+blk_dir = args.blocks or repo / blk_dir
+top_src = (repo / top_rel).read_text()
+# inputs the stitched top ties to a constant and leaves unconnected (fw5-top.sh's TIES)
+ties = {}
+if args.fw == "fw5-0918":
+    m = re.search(r'TIES="([^"]*)"', (repo / "stage0" / "tools" / "fw5-top.sh").read_text())
+    for t in (m[1].split() if m else []):
+        mod, pv = t.split(":")
+        port, v = pv.split("=")
+        ties.setdefault(mod, {})[port] = v
+block_names = re.search(r"^// blocks: (.*)$", top_src, re.M)[1].split()
+module_file = lambda n: next(repo / d / f"{n}.v" for d in rtl_dirs if (repo / d / f"{n}.v").exists())
 
 # ---- slice sites -> tiles
 site_tile = {}
@@ -72,7 +93,7 @@ for name, cell in stock_cell.items():
 
 # LUT RAM: stock names from the picoblaze block file, ISE names from the XDL
 stock_ram = {}
-for l in open(repo / "stage0" / args.fw / "blocks" / "picoblaze.blk"):
+for l in open(blk_dir / "picoblaze.blk"):
     m = re.match(r"(X\d+Y\d+_S\d_[FG])\.m\s+(\S+)", l)
     if m:
         stock_ram[m[2]] = m[1]
@@ -102,6 +123,31 @@ def lut_wire(cell):
     return f"i_{slc}.{'fm' if lut == 'F' else 'gm'}"
 
 
+# ---- power-up values, which the proof does not see: each slice flip-flop's
+# INIT, and each LUT RAM's initial contents, against its stock cell
+def slice_params(path):
+    d = {}
+    for m in re.finditer(r"s3_slice #\((.*?)\) i_(X\d+Y\d+_S\d) \(", open(path).read()):
+        d[m[2]] = dict(re.findall(r"\.(\w+)\(([^(),]*)\)", m[1]))
+    return d
+
+
+sp_gold, sp_gate = slice_params(args.stock / "design.v"), slice_params(args.ise / "design.v")
+bad_init = []
+for name, cell in stock_cell.items():
+    gs, gff = cell.split("."); ts, tff = ff_at[name].split(".")
+    a = sp_gold.get(gs, {}).get(f"{gff}_INIT", "0"); b = sp_gate.get(ts, {}).get(f"{tff}_INIT", "0")
+    if a != b:
+        bad_init.append(f"{name}: stock {a}, ISE {b}")
+for n, c in stock_ram.items():
+    gs, lut = c.rsplit("_", 1); ts, tlut = gate_ram[n].rsplit("_", 1)
+    a = sp_gold.get(gs, {}).get(lut); b = sp_gate.get(ts, {}).get(tlut)
+    if a != b:
+        bad_init.append(f"LUT RAM {n}: stock {a}, ISE {b}")
+for x in bad_init[:20]:
+    print("power-up value differs:", x)
+print(f"power-up values: {len(stock_cell) + len(stock_ram) - len(bad_init)} of {len(stock_cell) + len(stock_ram)} match")
+
 # ---- primitive attributes, compared as text
 CUT = ("s3_ioi", "s3_bram", "s3_dcm", "s3_dna", "s3_icap")
 
@@ -128,8 +174,23 @@ for k in bad:
 # Only modules whose invariants read nothing but their own registers.
 inv_v, inv_inst = [], []
 KW = {"always", "begin", "end", "if", "else", "assume", "assert", "case", "endcase", "default", "signed"}
-top_src = (repo / "stage0" / args.fw / "rtl" / f"{args.fw}_top.v").read_text()
-stock_wires = set(re.findall(r"^wire (\w+);", (args.stock / "design.v").read_text(), re.M))
+stock_src = (args.stock / "design.v").read_text()
+stock_wires = set(re.findall(r"^wire (\w+);", stock_src, re.M))
+stock_mux = {m[2]: dict(re.findall(r"\.(FXMUX|GYMUX)\(\"(\w+)\"\)", m[1]))
+             for m in re.finditer(r"s3_slice #\((.*?)\) i_(X\d+Y\d+_S\d) \(", stock_src)}
+
+
+def lut_net(b):
+    """b_<slice>_F/G, a LUT's output: the slice's X/Y net when that passes it."""
+    m = re.fullmatch(r"b_(X\d+Y\d+_S\d)_([FG])", b)
+    if not m:
+        return None
+    mux = stock_mux.get(m[1], {})
+    if m[2] == "F" and mux.get("FXMUX", "F") == "F":
+        return f"n_{m[1]}_X"
+    if m[2] == "G" and mux.get("GYMUX", "G") == "G":
+        return f"n_{m[1]}_Y"
+    return None
 
 
 def vnum(t):
@@ -149,18 +210,18 @@ def width(spec, params):
     return ev(hi), ev(lo)
 
 
-for f in sorted((repo / "stage0" / args.fw / "rtl").glob("*.v")):
-    src = re.sub(r"//.*", "", f.read_text())
+for blk in block_names:
+    src = re.sub(r"//.*", "", module_file(blk).read_text())
     m = re.search(r"`ifdef FORMAL(.*?)`endif", src, re.S)
-    if not m or f.name == f"{args.fw}_top.v":
+    if not m:
         continue
-    blk, body = f.stem, m[1]
+    body = m[1]
     params, plines = {}, re.findall(r"\blocalparam\b[^;]*;", src)
     for pl in plines:
         for n, v in re.findall(r"(\w+)\s*=\s*([\w']+)", pl):
             params[n] = vnum(v)
     decl = {}       # name -> (kind, (hi, lo) or None, signed, wire expr)
-    for kind, sg, spec, names in re.findall(r"\b(reg|input|wire)\s+(signed\s+)?(\[[^\]]*\])?\s*([^;)]*?)(?=;|\)\s*;|,\s*(?:input|output|inout)\b|$)", src, re.M):
+    for kind, sg, spec, names in re.findall(r"\b(output\s+reg|reg|input|output|wire)\s+(signed\s+)?(\[[^\]]*\])?\s*([^;)]*?)(?=;|\)\s*;|,\s*(?:input|output|inout)\b|$)", src, re.M):
         for part in re.split(r",(?![^{]*})", names):
             nm, _, expr = part.partition("=")
             nm = nm.strip()
@@ -181,16 +242,52 @@ for f in sorted((repo / "stage0" / args.fw / "rtl").glob("*.v")):
                 want |= ids
     # nets for registers (their stock cells) and inputs (as fw4_top wires them)
     inst = re.search(rf"^{blk} u_{blk} \((.*)\);$", top_src, re.M)[1]
-    wiring = {}
+    wiring = {p: [f"1'b{v}"] for p, v in ties.get(blk, {}).items()}
     for port, conn in re.findall(r"\.(\w+)\(([^()]*)\)", inst):
         bits = [b.strip() for b in conn.strip("{}").split(",")]
         wiring[port] = bits
+    # an assumption that names a net the stock netlist doesn't have (a LUT
+    # output inside a slice) is left out: fewer assumptions can only make
+    # the proof harder, never wrong
+    def bindable(i):
+        if i in wires:
+            return True
+        if i not in decl or decl[i][0] == "wire":
+            return False
+        bits = wiring.get(i)
+        if decl[i][0] in ("reg", "output reg") or decl[i][0].startswith("output") and decl[i][0] != "output":
+            return True
+        if bits is None:
+            return False
+        for b in bits:
+            b = lut_net(b) if b.startswith("b_") else b
+            if b is None or not (b in stock_wires or re.fullmatch(r"~?1'b[01]", b)):
+                return False
+        return True
+    dropped = []
+    for i in sorted(want):
+        if not bindable(i):
+            pat = re.compile(rf"^[ \t]*(\w+:\s*)?assume\s*\(.*\b{i}\b.*\);[ \t]*$", re.M)
+            if pat.search(body):
+                dropped += [x.strip() for x in pat.findall(body)] or [i]
+                body = pat.sub("", body)
+    if dropped:
+        want = set(re.findall(r"\b[A-Za-z_]\w*\b", body)) - KW - set(params) - set(re.findall(r"\b(\w+)\s*:\s*assume", body))
+        want = {i for i in want if not re.fullmatch(r"[bdh][0-9a-fA-F]+", i)}
+        for w in list(wires):
+            ids = {x for x in re.findall(r"\b[A-Za-z_]\w*\b", decl[w][3]) if not re.fullmatch(r"[bdh][0-9a-fA-F]+", x)} - set(params)
+            want |= ids if w in want else set()
+        print(f"invariants of {blk}: an assumption on a net the stock netlist lacks left out")
     ports, conns, ok = [], [], True
     for i in sorted(want - set(wires)):
         if i not in decl or decl[i][0] == "wire":
             ok = False
             break
         kind, w, sg, _ = decl[i]
+        if kind.startswith("output") and kind != "output":
+            kind = "reg"
+        if kind == "output":
+            kind = "input"          # a plain output: its net, as the top wires it
         nets = []
         for k in (range(w[0], w[1] - 1, -1) if w else [None]):
             if kind == "reg":
@@ -199,6 +296,8 @@ for f in sorted((repo / "stage0" / args.fw / "rtl").glob("*.v")):
             else:
                 bits = wiring.get(i)
                 net = None if bits is None else bits[len(bits) - 1 - (k - w[1])] if w else bits[0]
+            if net is not None and net.startswith("b_"):
+                net = lut_net(net)
             if net is None or not (net in stock_wires or re.fullmatch(r"~?1'b[01]", net)):
                 ok = False
                 break
@@ -213,6 +312,26 @@ for f in sorted((repo / "stage0" / args.fw / "rtl").glob("*.v")):
     wdecl = [f"    wire {'signed ' if decl[x][2] else ''}{f'[{decl[x][1][0]}:{decl[x][1][1]}] ' if decl[x][1] else ''}{x} = {decl[x][3]};" for x in reversed(wires)]
     inv_v.append(f"module inv_{blk} ({', '.join(ports)});\n" + "\n".join(plines) + "\n" + "\n".join(wdecl) + body + "endmodule\n")
     inv_inst.append(f"inv_{blk} u_inv_{blk} ({', '.join(conns)});")
+# registers stock duplicates: the same D net, enable, clock, set/reset and
+# power-up value, so always equal (equal at power-up, and the same next
+# value from the same inputs). The induction needs that stated where the two
+# builds read different copies (FW5's two port EF copies, load_busy_2x)
+groups = {}
+for m in re.finditer(r"s3_slice #\((.*?)\) i_(X\d+Y\d+_S\d) \((.*?)\);", stock_src):
+    P = dict(re.findall(r"\.(\w+)\(([^(),]*)\)", m[1])); B = dict(re.findall(r"\.(\w+)\(([^()]*)\)", m[3]))
+    common = tuple(P.get(k) for k in ("FF_LATCH", "FF_SR_SYNC", "FF_SR_ENABLE", "FF_REV_ENABLE")) + tuple(B.get(k) for k in ("CE", "SR", "CLK"))
+    for ff, pin, mux in (("X", "BX_i", "DXMUX"), ("Y", "BY_i", "DYMUX")):
+        q = B.get(f"{ff}Q")
+        if q and P.get(mux) == f'"B{ff}"' and B.get(pin):
+            key = (B[pin], P.get(f"FF{ff}_INIT"), P.get(f"FF{ff}_SRVAL")) + common
+            groups.setdefault(key, []).append(q)
+dups = [g for g in groups.values() if len(g) > 1]
+if dups:
+    inv_v.append("module inv_dups (" + ", ".join(f"input d{k}_{j}" for k, g in enumerate(dups) for j in range(len(g))) + ");\n"
+                 "    always @* begin\n" + "".join(f"        assume (d{k}_0 == d{k}_{j});\n" for k, g in enumerate(dups) for j in range(1, len(g)))
+                 + "    end\nendmodule\n")
+    inv_inst.append("inv_dups u_inv_dups (" + ", ".join(f".d{k}_{j}({q})" for k, g in enumerate(dups) for j, q in enumerate(g)) + ");")
+    print(f"duplicate registers in stock: {sum(len(g) for g in dups)} in {len(dups)} groups, assumed equal")
 print("invariants bound:", ", ".join(x.split()[0][4:] for x in inv_inst) or "none")
 (out / "inv.v").write_text("\n".join(inv_v))
 gold_v = (args.stock / "design.v").read_text()
@@ -268,15 +387,18 @@ total = re.search(r"Found (\d+) \$equiv cells", log.read_text())
 print(f"structural: {int(total[1]) - len(left)} of {total[1]} signals proven, {len(left)} left")
 if left:
     # the rest by temporal induction with the invariants in force
-    proves = " ".join(f"-prove {a} {b}" for a, b in left)
-    # what equiv_simple / equiv_induct proved is merged first, so the
-    # induction only carries the open pairs
-    (out / "induct.ys").write_text("\n".join(ys + ["equiv_remove", "opt_clean",
-        f"sat -verify -tempinduct -set-assumes -seq 1 -maxsteps 8 {proves} equiv"]) + "\n")
-    r = subprocess.run(["yosys", "-q", "-l", str(out / "induct.log"), "-s", str(out / "induct.ys")])
-    if r.returncode:
-        sys.exit(f"NOT proven: {len(left)} signals, see {out / 'induct.log'}")
+    # the pins and the registers separately: together the induction need not
+    # close within the steps where each does on its own
+    groups = [g for g in ([p for p in left if "IOI" in p[0]], [p for p in left if "IOI" not in p[0]]) if g]
+    for k, grp in enumerate(groups):
+        proves = " ".join(f"-prove {a} {b}" for a, b in grp)
+        steps = 16 if "IOI" in grp[0][0] else 8
+        (out / f"induct{k}.ys").write_text("\n".join(ys + ["equiv_remove", "opt_clean",
+            f"sat -verify -tempinduct -set-assumes -seq 1 -maxsteps {steps} {proves} equiv"]) + "\n")
+        r = subprocess.run(["yosys", "-q", "-l", str(out / f"induct{k}.log"), "-s", str(out / f"induct{k}.ys")])
+        if r.returncode:
+            sys.exit(f"NOT proven: {len(grp)} signals, see {out / f'induct{k}.log'}")
     print(f"induction: the other {len(left)} proven under the invariants")
-if bad:
-    sys.exit(f"{len(bad)} primitives differ in attributes")
+if bad or bad_init:
+    sys.exit(f"{len(bad)} primitives differ in attributes, {len(bad_init)} power-up values differ")
 print("equivalent to stock: every matched register and port")

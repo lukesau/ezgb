@@ -2,12 +2,13 @@
 # Build stage0 from the readable Verilog with stage1 in it, prove it, and
 # wrap it in an updater: one step.
 #
-#   BUILD_HOST=<host> stage0/tools/build-stage0.sh fw4 [LABEL OUT.gb]
+#   BUILD_HOST=<host> stage0/tools/build-stage0.sh fw4|fw5-0918 [LABEL OUT.gb]
 #
 # STAGE1=ours (default) or stock picks stage1 as build-stage1-updater.sh
 # does; PATCHES=0 leaves the PicoBlaze programs stock. Steps:
-#   1. stock slot B exported (fpga/fw4-export, from the official updater)
-#      for the placement and the proof
+#   1. stock slot B exported (fpga/<fw>-export, from the official updater)
+#      for the placement and the proof; FW5's block files come from
+#      fw5-prove.sh (fpga/fw5-nx/edge/blk)
 #   2. stage1 built and split into block RAM blobs, with the PicoBlaze
 #      patches, as build-stage1-updater.sh makes them
 #   3. mkise.py: the ISE project, every register in its stock cell
@@ -17,17 +18,27 @@
 #   6. make-updater.py, when LABEL and OUT.gb are given
 # Work in fpga/ise/<fw>-<stage1>[-nopatch]/ (ignored).
 set -e
-fw=${1:?usage: build-stage0.sh fw4 [LABEL OUT.gb]}; label=$2; out=$3
-[ "$fw" = fw4 ] || { echo "only fw4 so far" >&2; exit 2; }
+fw=${1:?usage: build-stage0.sh fw4|fw5-0918 [LABEL OUT.gb]}; label=$2; out=$3
 host=${BUILD_HOST:?set BUILD_HOST to the build host}
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 stage1=${STAGE1:-ours}; patches=${PATCHES:-1}
-stock_updater=$repo/tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb
+case $fw in
+fw4)      stock_updater=$repo/tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb
+          layout=; decomp=fw4; bram=$repo/fpga/fw4-decode/bram; blocks=
+          bank2=D0X3Y25; bank1= ;;
+fw5-0918) stock_updater=$repo/tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb
+          layout="--layout fw5-0918"; decomp=fw5; bram=$repo/fpga/fw5-decode/bram-0918
+          blocks="--blocks $repo/fpga/fw5-nx/edge/blk"
+          [ -f "$repo/fpga/fw5-nx/edge/blk/picoblaze.blk" ] || { echo "run stage0/tools/fw5-prove.sh first (fpga/fw5-nx)" >&2; exit 1; }
+          bank2=D0X3Y5; bank1=D0X3Y1
+          bank1_allow="--allow 12B --allow 19F --allow 1A0 --allow 1A5 --allow 224 --allow 23A --allow 326 --allow 370 --allow 377" ;;
+*)        echo "unknown firmware: $fw" >&2; exit 2 ;;
+esac
 db=${S3DB:-$repo/fpga/db/spartan3.zstd}
 export S3DB=$db
 
 # 1. the stock export
-exp=$repo/fpga/fw4-export
+exp=$repo/fpga/$fw-export
 if [ ! -f "$exp/design.v" ]; then
     mkdir -p "$exp"
     python3 -c "import sys; d = open(sys.argv[1], 'rb').read(); open(sys.argv[2], 'wb').write(d[0x8000:0x8000 + 149516])" \
@@ -41,30 +52,40 @@ w=$repo/fpga/ise/$fw-$stage1
 rm -rf "$w"; mkdir -p "$w/blobs"
 case $stage1 in
 ours)  "$repo/stage1/build.sh" 2>/dev/null | grep -v "Overwrote"; s1=$repo/fpga/stage1/stage1.gb ;;
-stock) make -s -C "$repo/stage1/decomp" build/fw4/stage1.gb; s1=$repo/stage1/decomp/build/fw4/stage1.gb ;;
+stock) make -s -C "$repo/stage1/decomp" build/$decomp/stage1.gb; s1=$repo/stage1/decomp/build/$decomp/stage1.gb ;;
 *)     echo "STAGE1 is ours or stock, not $stage1" >&2; exit 2 ;;
 esac
 cp "$s1" "$w/stage1.gb"
-"$repo/stage1/tools/stage1-to-bram.py" "$w/stage1.gb" "$w/blobs" > /dev/null
+"$repo/stage1/tools/stage1-to-bram.py" "$w/stage1.gb" "$w/blobs" $layout > /dev/null
 if [ "$patches" != 0 ]; then
-    "$repo/stage0/tools/picoblaze-patch.py" "$repo/fpga/fw4-decode/bram/D0X3Y25.BEL.BRAM" \
-        "$repo/stage0/flash-read.psm" "$w/blobs" --tile D0X3Y25 --allow 1B7 > /dev/null
+    "$repo/stage0/tools/picoblaze-patch.py" "$bram/$bank2.BEL.BRAM" \
+        "$repo/stage0/flash-read.psm" "$w/blobs" --tile $bank2 --allow 1B7 > /dev/null
+    if [ -n "$bank1" ]; then
+        "$repo/stage0/tools/picoblaze-patch.py" "$bram/$bank1.BEL.BRAM" \
+            "$repo/stage0/sd-recover-fw5-0918.psm" "$w/blobs" --tile $bank1 $bank1_allow > /dev/null
+    fi
 fi
 
 # 3-4. the ISE build
-python3 "$repo/stage0/tools/mkise.py" "$w/proj" --bram "$w/blobs" --bram "$repo/fpga/fw4-decode/bram" --place "$exp/design.v"
+python3 "$repo/stage0/tools/mkise.py" "$w/proj" --fw $fw $blocks --bram "$w/blobs" --bram "$bram" --place "$exp/design.v"
 "$repo/stage0/tools/build-ise.sh" "$w/proj" > "$w/build.txt" 2>&1 || { cat "$w/build.txt" >&2; exit 1; }
 grep "Timing errors" "$w/build.txt"
 grep -q "Timing errors: 0 " "$w/build.txt" || { echo "timing not met: $w/proj/top.twr" >&2; exit 1; }
 
 # 5. the proof, and stage1 back out of the block RAMs
 "$repo/stage0/tools/export-netlist.sh" "$w/proj/top.raw" "$w/export" > "$w/export.txt"
-python3 "$repo/stage0/tools/prove-ise.py" "$exp" "$w/export" "$w/proj" --swap64 > "$w/prove.txt" 2>&1 \
+python3 "$repo/stage0/tools/prove-ise.py" "$exp" "$w/export" "$w/proj" --swap64 $blocks > "$w/prove.txt" 2>&1 \
     || { grep -v "^Warning" "$w/prove.txt" >&2; exit 1; }
 grep -v "^Warning" "$w/prove.txt"
-"$repo/stage1/tools/stage1-from-bram.py" "$w/proj/bram" -o "$w/stage1-check.gb" --ref "$w/stage1.gb" | tail -1 | grep -q True \
+"$repo/stage1/tools/stage1-from-bram.py" "$w/proj/bram" -o "$w/stage1-check.gb" --ref "$w/stage1.gb" ${layout:+--discover} | tail -1 | grep -q True \
     || { echo "stage1 is not in the block RAMs" >&2; exit 1; }
-echo "stage1 round trip: match"
+for b in $bank2 $bank1; do
+    [ "$patches" = 0 ] && break
+    for p in DATA DATAP; do
+        cmp -s "$w/blobs/$b.$p.bin" "$w/proj/bram/$b.BEL.BRAM.$p.bin" || { echo "$b: the patched program is not in the block RAM" >&2; exit 1; }
+    done
+done
+echo "round trip: stage1${bank2:+ and the PicoBlaze patches} match"
 
 # 6. the updater
 if [ -n "$out" ]; then

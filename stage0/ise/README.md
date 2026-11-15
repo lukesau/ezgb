@@ -1,47 +1,51 @@
 # Building stage0 from the readable Verilog
 
-The readable FW4 design (`stage0/fw4/rtl`) builds with ISE 14.7 into a slot B
-bitstream with stage1 in its block RAMs, and the result is proved equivalent
-to the stock bitstream. It is not stock byte for byte: ISE maps and routes
+The readable designs of FW4 (`stage0/fw4/rtl`) and FW5-0918
+(`stage0/fw5-0918`) build with ISE 14.7 into a slot B bitstream with
+stage1 in its block RAMs, and each result is proved equivalent to that
+firmware's stock bitstream. It is not stock byte for byte: ISE maps and routes
 the logic itself. Every register sits in its stock cell, though, so the
 design packs and meets timing the way stock does.
 
 ```bash
-make stage0 BUILD_HOST=<build host>             # fpga/stage1/Update-fw4-ise.gb
+make stage0 BUILD_HOST=<build host>     # Update-fw4-ise.gb, Update-fw5-0918-ise.gb
 STAGE1=stock PATCHES=0 make stage0 BUILD_HOST=<build host>
+stage0/tools/build-stage0.sh fw5-0918   # one firmware, no updater
 ```
 
 `stage0/tools/build-stage0.sh` is the whole flow:
 
 1. **The stock export.** Slot B from the official updater, exported
-   (`export-netlist.sh`) to `fpga/fw4-export`: the placement source and
-   the proof's reference.
+   (`export-netlist.sh`) to `fpga/<fw>-export`: the placement source and
+   the proof's reference. FW5's block files are `fw5-prove.sh`'s
+   (`fpga/fw5-nx/edge/blk`), so that runs first.
 2. **Stage1 and the PicoBlaze patches** as block RAM contents, as
    `build-stage1-updater.sh` makes them (`STAGE1`, `PATCHES` as there).
-3. **The ISE project** (`tools/mkise.py`): `fw4_top.v` and the blocks,
+3. **The ISE project** (`tools/mkise.py`): the stitched top and the blocks,
    compiled against `s3prims_ise.v`, which writes the primitives the
    extracted top instantiates over the UNISIM ones. The UCF it writes
    places every pad, block RAM, clock buffer and the DCM as stock has
    them, puts the contents in the block RAMs (`INIT_xx`), and with
-   `--place` puts each of the 2,135 slice flip-flops in its stock cell.
-   `fw4.ucf` is appended.
+   `--place` puts each slice flip-flop (2,135 on FW4, 2,374 on FW5) and the
+   PicoBlaze's LUT RAMs in their stock cells. `<fw>.ucf` is appended.
 4. **The build** on the build host (`tools/build-ise.sh`): XST, map,
    par, trce, bitgen, and s3decode of the result.
 5. **The checks.** Timing must be met; the result is exported and proved
-   equivalent to stock (`tools/prove-ise.py`); stage1 must decode back out
-   of the block RAMs.
+   equivalent to stock (`tools/prove-ise.py`), every register's and LUT
+   RAM's power-up value must be stock's; stage1 and the patched PicoBlaze
+   programs must decode back out of the block RAMs.
 6. **The updater**, as `make-updater.py` makes them.
 
 ## What it takes
 
-**Register placement.** Without it the design does not fit: stock fills
-1,727 of the part's 1,792 slices, and ISE packing the same 3,050 LUTs and
-2,135 flip-flops its own way needs over 1,900. The readable design keeps
+**Register placement.** Without it the design does not fit: stock FW4
+fills 1,727 of the part's 1,792 slices (FW5 1,788), and ISE packing the
+same LUTs and flip-flops its own way needs over 1,900. The readable design keeps
 the hardware's registers one for one, so each register's stock cell comes
 from the block files (their `[names]`, with a port name followed through
 `assign port = reg` to the register). Map then packs the logic around
-them. Two flip-flops are left to ISE (`fw4.unplace`): XST gives each a clock
-enable its stock slice-mate does not have.
+them. A few flip-flops are left to ISE (`<fw>.unplace`, two each): XST
+gives each a clock enable or set/reset its stock slice-mate does not have.
 
 **XST options** (`build-ise.sh`), so the registers stay as written:
 
@@ -53,9 +57,16 @@ enable its stock slice-mate does not have.
   `-register_duplication NO`
 - `-mult_style lut`; the one multiply (BCD tens times 10, `gb_data_out`)
   is written as shifts, or XST pulls registers into a pipelined multiplier
+- `-max_fanout 100000`: FW5's `/RESET` edge resets about 480 flip-flops
+  from one LUT; XST copies a LUT past 500 loads, and the copies can't share
+  slices with the stock registers on the original
+- `-mux_extract NO`: XST's F5/FX mux trees need runs of free slices, which
+  FW5's full device doesn't have once the registers are placed
+- an `initial` value on every register: left to XST, a register with a
+  synchronous set (an FDS) starts at 1 (`psram_ctrl`'s `sh_run` did)
 
-**The IOs** (`fw4.ucf`), each found by building and comparing the IOB
-bits with stock's:
+**The IOs** (`<fw>.ucf`), each found by building and comparing the IOB
+bits with stock's (FW5's are FW4's bit for bit):
 
 - every pad LVCMOS33, 4 mA, slow (LVTTL at 4 or 6 mA sets the same bits)
 - the clock chip's I2C lines, P31 and P32, at 2 mA
@@ -64,15 +75,21 @@ bits with stock's:
 **bitgen**: `ConfigRate:25`, `DonePipe:Yes`, `Reset_on_err:Yes`, stock
 slot B's header.
 
-**Timing** (`fw4.ucf`). The oscillator, 24.545 MHz on P43, and the DCM's
-clocks follow from it; the Game Boy's two write clocks get their own
+**Timing** (`<fw>.ucf`). The oscillator, 24.545 MHz on P43, and the DCM's
+clocks follow from it (FW4 x3, FW5 x10/3); the Game Boy's write clocks get their own
 periods, unrelated to it, since every crossing into or out of them is
 synchronized. A clock mux whose select is tied becomes a plain BUFG
 (`mkise.py`), or the analyzer times the 2x clock at the multiplied clock's
 period through the mux's other input. The memory page register's 2x-to-fx
 paths are timing-ignored: it resamples every fx cycle and acts only on two
-equal samples. With those, all paths meet timing; the 2x clock's has
-about 0.25 ns of slack.
+equal samples (on FW5 also into `page_q`, whose load enable takes the
+loader's busy flag). FW5's fx clock gate is a BUFGMUX switched from the 2x
+clock; a BUFGMUX switches without a glitch, so its select is
+timing-ignored. FW5 places with the cost table in `fw5-0918.map`: by
+default three PicoBlaze-to-register-file hold paths come up 0.2-0.6 ns
+short (the two gated clocks come from buffers on different sides of the
+part), and tables 2, 4 and 5 meet everything. With those, all paths meet
+timing; FW4's 2x clock has about 0.25 ns of slack.
 
 ## The proof
 
@@ -82,11 +99,20 @@ the build's XDL says which register is in which cell, so the two that are
 not in their stock cell are renamed. The LUT RAMs are matched the same way.
 The block RAMs, IO tiles, DCMs, DNA port and ICAP are cut out, so the logic
 around them is compared pin for pin; their attributes are compared as
-text. yosys proves the matched signals structurally. What is left, the SD
-command response buffer and four SD pin outputs, holds only in the states
-the hardware reaches, so it is proved by temporal induction under the
-readable modules' invariants, bound to stock's nets. `equiv.sh` proves
-those invariants hold on stock.
+text. yosys proves the matched signals structurally. What is left (the SD
+command response buffer, SD pins, on FW5 the memory data pins) holds only
+in the states the hardware reaches, so it is proved by temporal induction
+under the readable modules' invariants, bound to stock's nets, with the pins
+and the registers as two groups. `equiv.sh` proves those invariants hold on
+stock. An assumption on a net stock's netlist doesn't name (a LUT output
+inside a slice) is left out, which can only make the proof harder. Stock
+registers that are copies of each other (the same D, enable, clock and
+power-up value, as FW5's two `load_busy_2x`) are assumed equal, which they
+are by construction, since the two builds read different copies.
+
+The proof can't see power-up values, so `prove-ise.py` compares them
+directly: every slice flip-flop's INIT and every LUT RAM's contents
+against its stock cell.
 
 With the per-block proofs (readable == stock), that shows the ISE build
 does what the readable design says.
@@ -101,9 +127,18 @@ already assumed for P51's IO-tile latch on behavioral grounds, and both
 latches are transparent while the bit is 0. `p51_latch.v` and
 `netlist2v.py` are corrected (see `stage0/docs/design.md`).
 
+## FW5's console `/RESET` edge
+
+FW5's readable design used to be proved against FW5 with its `/RESET`
+edge logic removed. Built that way it would not reset the SD controller,
+restart the PicoBlaze or clear the `/WR` registers when the console resets,
+which is how the kernel starts a game. The edge is now in the readable
+design (`stage0/fw5-0918/reset_edge.v` and the modules it reaches), and
+the blocks and the top level prove against FW5 as it is
+(`stage0/docs/firmware-diff.md`).
+
 ## Not yet
 
-- FW5-0918: its design proves in 26 blocks, but the flow is FW4 only.
 - The bitstream is not stock's. Reproducing stock exactly needs its LUT
   contents and routing too (layer 3 in [../README.md](../README.md)).
 - Not run on hardware yet.
@@ -113,6 +148,7 @@ latches are transparent while the bit is 0. `p51_latch.v` and
 | File | What |
 |---|---|
 | `s3prims_ise.v` | the primitives over UNISIM, for XST |
-| `fw4.ucf` | the hand-written constraints |
-| `fw4.unplace` | flip-flops left to ISE |
+| `fw4.ucf`, `fw5-0918.ucf` | the hand-written constraints |
+| `fw4.unplace`, `fw5-0918.unplace` | flip-flops left to ISE |
+| `fw5-0918.map` | map options FW5 needs (the placer cost table) |
 | `xc3s200a-slices.txt` | every slice site per CLB tile (`xdl -report`), for the placement |

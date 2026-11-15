@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Write an ISE project for the readable design: Verilog, UCF, XST script.
 
-    stage0/tools/mkise.py OUTDIR --bram DIR [--bram DIR ...] [--fw fw4]
+    stage0/tools/mkise.py OUTDIR --bram DIR [--bram DIR ...] [--fw fw4|fw5-0918]
 
-The design is stage0/<fw>/rtl: fw4_top.v (the primitives as the bitstream
-has them, over the readable fw4_logic) and the blocks. fw4_top.v is copied
-to OUTDIR/top.v with the unused DCMs and block RAMs left out and the two
-clock pads marked, and compiled against stage0/ise/s3prims_ise.v.
+The design is the firmware's stitched top (fw4: stage0/fw4/rtl/fw4_top.v;
+fw5-0918: stage0/fw5-0918/fw5_top.v), the primitives as the bitstream has
+them over the readable <prefix>_logic, and the blocks its header lists,
+each from the first module directory that has it (FW5: stage0/fw5-0918,
+then FW4's). The top is copied to OUTDIR/top.v with the unused DCMs and
+block RAMs left out and the two clock pads marked, and compiled against
+stage0/ise/s3prims_ise.v.
 
 OUTDIR/top.ucf places every pad and block RAM where the bitstream has
 them, with stage0/ise/<fw>.ucf (IO standards, pull-ups, timing) appended.
@@ -35,18 +38,42 @@ ap.add_argument("out", type=pathlib.Path)
 ap.add_argument("--bram", type=pathlib.Path, action="append", default=[])
 ap.add_argument("--fw", default="fw4")
 ap.add_argument("--place", type=pathlib.Path, metavar="DESIGN.v")
+ap.add_argument("--blocks", type=pathlib.Path, help="the block files (default the firmware's)")
 args = ap.parse_args()
 
-rtl = repo / "stage0" / args.fw / "rtl"
-top_v = rtl / f"{args.fw}_top.v"
+FW = {"fw4": ("stage0/fw4/rtl/fw4_top.v", ["stage0/fw4/rtl"], "stage0/fw4/blocks"),
+      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk")}
+top_rel, rtl_dirs, blk_dir = FW[args.fw]
+top_v = repo / top_rel
+rtl_dirs = [repo / d for d in rtl_dirs]
+blk_dir = args.blocks or repo / blk_dir
 src = top_v.read_text()
 args.out.mkdir(parents=True, exist_ok=True)
+top_name = re.search(r"^module (\w+_top)\b", src, re.M)[1]
+block_names = re.search(r"^// blocks: (.*)$", src, re.M)[1].split()
 
-# fw4_top: one instance per line after the wire declarations
+
+def module_file(name):
+    return next(d / f"{name}.v" for d in rtl_dirs if (d / f"{name}.v").exists())
+
+
+# the top: one instance per line after the wire declarations
 lines = src.split("\n")
-start = next(i for i, l in enumerate(lines) if l.startswith(f"module {args.fw}_top"))
+start = next(i for i, l in enumerate(lines) if l.startswith(f"module {top_name}"))
 kept, pads, brams = [], [], []
 for i, l in enumerate(lines):
+    if re.match(r"\w+ u_\w+ \(", l):
+        # a block file can give two nets one name (FW5's two copies of a
+        # register); yosys takes the connection twice, XST refuses it.
+        # Keep the first: the proof against stock checks the choice
+        seen = set()
+        def first(m):
+            if m[1] in seen:
+                return ""
+            seen.add(m[1])
+            return m[0]
+        l = re.sub(r",?\s*\.(\w+)\((?:[^()]|\([^()]*\))*\)", first, l)
+        l = re.sub(r"\(\s*,\s*", "(", l)
     if i > start:
         if l.startswith("s3_dcm ") and ".CLKIN(1'b0)" in l:
             continue
@@ -140,12 +167,13 @@ if args.place:
     if up.exists():
         unplace = {l.split("#")[0].strip() for l in open(up)} - {""}
     ucf.append("\n# stock flip-flop placement (--place)")
-    for blk in sorted((repo / "stage0" / args.fw / "blocks").glob("*.blk")):
+    for name in block_names:
+        blk = blk_dir / f"{name}.blk"
         name, _, cells, names = carve.read_block(str(blk), d)
         cells = set(cells)
         # a block file may name an output port where the register behind it
         # is "assign port = reg": place the register
-        body = re.sub(r"//.*", "", (rtl / f"{name}.v").read_text())
+        body = re.sub(r"//.*", "", module_file(name).read_text())
         alias = {}
         for a in re.findall(r"\bassign\b(.*?);", body, re.S):
             for part in a.split(","):
@@ -168,6 +196,19 @@ if args.place:
                 continue
             ucf.append(f'INST "{inst}" LOC = "SLICE_X{site_x}Y{site_y}" | BEL = "FF{xy}";')
             placed += 1
+if args.place:
+    # the PicoBlaze's LUT RAMs in their stock slices too: the picoblaze block
+    # file names each RAM cell (X7Y26_S0_G.m regs0.sx); a RAM64X1S takes two
+    # slices and is placed by its lower one
+    rams = {}
+    for l in open(blk_dir / "picoblaze.blk"):
+        m = re.match(r"X(\d+)Y(\d+)_S(\d)_[FG]\.m\s+(\w+)\.", l)
+        if m:
+            x, y, k = int(m[1]), int(m[2]), int(m[3])
+            rams.setdefault(m[4], set()).add((sx[x] + (k & 1), 2 * (y - 1) + (k >> 1)))
+    for base, sites in sorted(rams.items()):
+        site_x, site_y = min(sites, key=lambda t: (t[1], t[0]))
+        ucf.append(f'INST "u_logic/u_picoblaze/{base}/r" LOC = "SLICE_X{site_x}Y{site_y}";')
 if place:
     # every named flip-flop's stock cell, for prove-ise.py
     (args.out / "place.txt").write_text("\n".join(place) + "\n")
@@ -176,9 +217,15 @@ ucf.append(f"\n# {hand.relative_to(repo)}")
 ucf.append(hand.read_text())
 (args.out / "top.ucf").write_text("\n".join(ucf) + "\n")
 
-srcs = sorted(p.name for p in rtl.glob("*.v") if p != top_v)
-for n in srcs:
-    shutil.copy(rtl / n, args.out / n)
+srcs = []
+for n in block_names:
+    shutil.copy(module_file(n), args.out / f"{n}.v")
+    srcs.append(f"{n}.v")
 shutil.copy(repo / "stage0" / "ise" / "s3prims_ise.v", args.out / "s3prims_ise.v")
 (args.out / "top.prj").write_text("".join(f"verilog work {n}\n" for n in srcs + ["s3prims_ise.v", "top.v"]))
+(args.out / "top.name").write_text(top_name + "\n")      # the top module, for build-ise.sh
+(args.out / "fw").write_text(args.fw + "\n")
+# map options the firmware needs (FW5: the placer cost table that meets hold)
+mopt = repo / "stage0" / "ise" / f"{args.fw}.map"
+(args.out / "map.opts").write_text(mopt.read_text().split("#")[0].strip() + "\n" if mopt.exists() else "\n")
 print(f"{args.out}: {len(pads)} pads, {len(brams)} block RAMs, {placed} flip-flops placed" + (f", no contents for {' '.join(missing)}" if missing else ""))

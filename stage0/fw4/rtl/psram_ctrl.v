@@ -212,6 +212,7 @@ module psram_ctrl (
     wire page_stable = (page_n == page_s);
     wire sh_clr = sh_run & sh_done | sh_run & sh_start;
     always @(posedge clk_fx) sh_start <= !page_stable;
+    initial sh_run = 1'b0;                 // stock starts it at 0 (left to XST, an FDS starts at 1)
     always @(posedge clk_fx)
         if (sh_start) sh_run <= 1'b1;
         else if (sh_done) sh_run <= gnd1;
