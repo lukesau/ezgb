@@ -5,7 +5,11 @@
 #
 #   BUILD_HOST=<host> stage0/tools/build-stage1-updater.sh fw4|fw5-0918 LABEL OUT.gb
 #
-# Runs stage1/build.sh first. The build host needs prjcombine's database and
+# STAGE1=ours (default) runs stage1/build.sh first; STAGE1=stock builds the
+# stock stage1 from source instead (stage1/decomp, needs SDCC 2.9.0).
+# PATCHES=0 leaves the PicoBlaze programs stock. STAGE1=stock PATCHES=0 is the
+# check of the whole flow: the slot B it makes must be stock's, byte for byte,
+# and it stops there (no updater; LABEL and OUT.gb are not needed). The build host needs prjcombine's database and
 # s3patch/s3decode (stage0/docs/setup.md), plus the stock slot B images
 # ~/fpga/cart/fw4-updater.bin and ~/fpga/cart/fw5/0918.bin. Local inputs: the
 # stock bank 2 BRAMs from fpga/fw4-decode/bram and fpga/fw5-decode/bram-0918,
@@ -13,7 +17,9 @@
 # Stops first if the host is busy (host-check.sh).
 set -e
 fw=$1; label=$2; out=$3
-[ -n "$fw" ] && [ -n "$label" ] && [ -n "$out" ] || { sed -n 5p "$0"; exit 2; }
+stage1=${STAGE1:-ours}; patches=${PATCHES:-1}
+check=; [ "$stage1" = stock ] && [ "$patches" = 0 ] && check=1
+[ -n "$fw" ] && { [ -n "$check" ] || { [ -n "$label" ] && [ -n "$out" ]; }; } || { sed -n 5p "$0"; exit 2; }
 host=${BUILD_HOST:?set BUILD_HOST to the build host}
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 case $fw in
@@ -26,28 +32,40 @@ fw5-0918) layout="--layout fw5-0918"; bank2=D0X3Y5; bank2_in=fw5-decode/bram-091
 *)        echo "unknown firmware: $fw" >&2; exit 2 ;;
 esac
 
+[ "$patches" = 0 ] && { bank2=; bank1=; }
+
 "$repo/stage0/tools/host-check.sh" "$host"
-"$repo/stage1/build.sh" | grep -v "Overwrote"
-w="$repo/fpga/stage1/$fw"
+case $stage1 in
+ours)  "$repo/stage1/build.sh" | grep -v "Overwrote"
+       s1="$repo/fpga/stage1/stage1.gb"; w="$repo/fpga/stage1/$fw" ;;
+stock) make -s -C "$repo/stage1/decomp" "build/${fw%-0918}/stage1.gb"
+       s1="$repo/stage1/decomp/build/${fw%-0918}/stage1.gb"; w="$repo/fpga/stage1/$fw-stock" ;;
+*)     echo "STAGE1 is ours or stock, not $stage1" >&2; exit 2 ;;
+esac
+[ "$patches" = 0 ] && w="$w-nopatch"
 rm -rf "$w"; mkdir -p "$w"
 cd "$w"
-cp ../stage1.gb .
+cp "$s1" stage1.gb
 # relative blob paths: the --set args are used as-is on the build host
 "$repo/stage1/tools/stage1-to-bram.py" stage1.gb blobs $layout > sets.txt
-"$repo/stage0/tools/picoblaze-patch.py" "$repo/fpga/$bank2_in" "$repo/stage0/flash-read.psm" \
-    blobs --tile $bank2 --allow 1B7 >> sets.txt
+if [ -n "$bank2" ]; then
+    "$repo/stage0/tools/picoblaze-patch.py" "$repo/fpga/$bank2_in" "$repo/stage0/flash-read.psm" \
+        blobs --tile $bank2 --allow 1B7 >> sets.txt
+fi
 if [ -n "$bank1" ]; then
     "$repo/stage0/tools/picoblaze-patch.py" "$repo/fpga/$bank1_in" "$repo/$bank1_psm" \
         blobs --tile $bank1 $bank1_allow >> sets.txt
 fi
 
-r="fpga/cart/s1-$fw"
+r="fpga/cart/s1-$(basename "$w")"
+same=; [ -n "$check" ] && same="cmp slotB.bin ~/fpga/cart/$base && echo 'slot B: identical to stock'"
 ssh "$host" "rm -rf $r && mkdir -p $r"
 scp -qr blobs sets.txt "$host:$r/"
 ssh "$host" "set -e; cd $r; db=~/fpga/prjcombine/databases/spartan3.zstd; t=~/fpga/s3decode/target/release
 \$t/s3patch --db \$db ~/fpga/cart/$base slotB.bin \$(cat sets.txt) >/dev/null
 \$t/s3decode --db \$db --blob-dir bram-new/ slotB.bin > decode.txt
-tail -1 decode.txt"
+tail -1 decode.txt
+$same"
 scp -qr "$host:$r/bram-new" "$host:$r/slotB.bin" .
 
 # both halves must decode back to what went in
@@ -59,7 +77,8 @@ for b in $bank2 $bank1; do
             || { echo "$b round trip failed ($p)" >&2; exit 1; }
     done
 done
-echo "round trip: stage1, bank 2${bank1:+ and bank 1} match"
+echo "round trip: stage1${bank2:+, bank 2}${bank1:+ and bank 1} match"
+[ -n "$check" ] && exit 0
 
 cd "$repo"
 stage0/tools/make-updater.py "$stock" "$w/slotB.bin" "$out" --label "$label"

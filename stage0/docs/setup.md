@@ -102,6 +102,18 @@ on the build host, and wraps the result in the stock updater with a new
 screen label of at most 16 characters. It stops unless the patched image
 decodes back to the same stage1 and the same PicoBlaze programs.
 
+`make updaters BUILD_HOST=<build host>` at the top of the repo runs it for
+both firmwares, with the label from `stage1/VERSION`, into
+`fpga/stage1/Update-fw4.gb` and `Update-fw5-0918.gb`.
+
+`STAGE1=stock` puts the stock stage1, built from source
+([stage1/decomp](../../stage1/decomp/README.md), needs SDCC 2.9.0), in place
+of ours, and `PATCHES=0` leaves the PicoBlaze programs stock. Both together
+check the whole flow: `make check-slotb BUILD_HOST=<build host>` builds the
+stock stage1 from source, patches it into stock slot B and stops unless the
+result is stock's slot B byte for byte. It passes for FW4 and FW5-0918
+(2026-11-14).
+
 It runs `host-check.sh` first, which stops only when the build host's CPU
 is fully busy.
 
