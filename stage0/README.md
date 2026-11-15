@@ -63,9 +63,10 @@ later placed and routed back into an identical bitstream. Three layers:
    proven in 26 blocks, on its design with the console `/RESET` edge logic
    removed.
 3. **Placement and routing data**, to turn the readable design back into
-   the exact bitstream. Not started.
-
-One hardware check is still owed: the gate polarity of the P51 latch.
+   the exact bitstream. Started: [ise/](ise/README.md) builds FW4's
+   readable design with ISE, every register in its stock cell, and proves
+   the result equivalent to stock. Its LUTs and routing come from ISE, so the
+   bitstream is not stock's byte for byte.
 
 ## How the proof works
 

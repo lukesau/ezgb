@@ -1,0 +1,5 @@
+# Flip-flops mkise.py --place leaves for ISE to place: XST gives each a clock
+# enable that differs from its stock slice-mate's, so the two can't share a
+# slice as they do in the bitstream.
+u_logic/u_picoblaze_ports/wb_adr_i_0
+u_logic/u_picoblaze_ports/wb_adr_i_1
