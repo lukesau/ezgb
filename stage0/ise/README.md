@@ -19,8 +19,13 @@ stage0/tools/build-stage0.sh fw5-0918   # one firmware, no updater
    (`export-netlist.sh`) to `fpga/<fw>-export`: the placement source and
    the proof's reference. FW5's block files are `fw5-prove.sh`'s
    (`fpga/fw5-nx/edge/blk`), so that runs first.
-2. **Stage1 and the PicoBlaze patches** as block RAM contents, as
-   `build-stage1-updater.sh` makes them (`STAGE1`, `PATCHES` as there).
+2. **Stage1 and the PicoBlaze's programs** as block RAM contents. Stage1 is
+   built and split as `build-stage1-updater.sh` does it (`STAGE1` as
+   there). The two programs are assembled from their listings
+   (`picoblaze-dis.py --assemble`, `stage0/<fw>/picoblaze/`), which
+   reassemble to stock's words; bank 2 is the same program on both
+   firmwares, so FW5 takes FW4's listing. Our patches go on top unless
+   `PATCHES=0`. No block RAM contents come from the stock bitstream.
 3. **The ISE project** (`tools/mkise.py`): the stitched top and the blocks,
    compiled against `s3prims_ise.v`, which writes the primitives the
    extracted top instantiates over the UNISIM ones. The UCF it writes

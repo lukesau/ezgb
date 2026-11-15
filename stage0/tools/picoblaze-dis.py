@@ -7,6 +7,7 @@ Input is a 1K x 18 program, either the BRAM files s3decode writes
 
     picoblaze-dis.py fw4-decode/bram/D0X3Y25.BEL.BRAM [-a notes.txt] [-o out.psm]
     picoblaze-dis.py --check out.psm PREFIX     # reassemble and compare words
+    picoblaze-dis.py --assemble in.psm PREFIX   # write PREFIX.DATA.bin + .DATAP.bin
 
 Control flow is traced from the reset vector ($000) and the interrupt vector
 ($3FF).  Every jump/call target gets a label; CALL targets are marked as
@@ -329,14 +330,29 @@ def assemble(text):
     return words
 
 
+def pack(words):
+    """1024 18-bit words as a block RAM's DATA and DATAP contents."""
+    data, par = bytearray(2048), bytearray(256)
+    for i, w in enumerate(words):
+        data[2 * i], data[2 * i + 1] = w & 0xFF, w >> 8 & 0xFF
+        par[i // 4] |= (w >> 16 & 3) << (i % 4 * 2)
+    return bytes(data), bytes(par)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("program", help="BRAM prefix or words .txt")
+    ap.add_argument("--assemble", metavar="PSM", help="assemble this .psm into program's two files")
     ap.add_argument("-a", "--notes")
     ap.add_argument("-o", "--out")
     ap.add_argument("--check", help="reassemble this .psm and compare with program")
     ap.add_argument("--summary", action="store_true", help="print port/scratchpad/call usage")
     args = ap.parse_args()
+    if args.assemble:
+        data, par = pack(assemble(open(args.assemble).read()))
+        open(args.program + ".DATA.bin", "wb").write(data)
+        open(args.program + ".DATAP.bin", "wb").write(par)
+        return
     words = load_words(args.program)
     if args.check:
         got = assemble(open(args.check).read())

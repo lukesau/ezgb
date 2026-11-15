@@ -64,11 +64,7 @@ def main():
     for a in addrs:
         words[a] = new[a]
 
-    data = bytearray(2048)
-    par = bytearray(256)
-    for i, w in enumerate(words):
-        data[2 * i], data[2 * i + 1] = w & 0xFF, w >> 8 & 0xFF
-        par[i // 4] |= (w >> 16 & 3) << (i % 4 * 2)
+    data, par = pbdis.pack(words)
     args.out.mkdir(parents=True, exist_ok=True)
     d = args.out / f"{args.tile}.DATA.bin"
     p = args.out / f"{args.tile}.DATAP.bin"
