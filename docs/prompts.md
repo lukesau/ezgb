@@ -116,8 +116,7 @@ Battery dry!
    [A] ok
 ```
 
-112 px wide, (24,46)-(135,89), tile rows 7 and 9, the same double frame and
-rounded corners. `MsgBox` (`msgbox.c`, `0B:4B00`) draws it as box 3. It comes
+112 px wide, (24,46)-(135,89), tile rows 7 and 9, the same double frame. `MsgBox` (`msgbox.c`, `0B:4B00`) draws it as box 3. It comes
 up before `EZGB.CFG` is read, so it is always 8px.
 
 | Site (0731) | Was | Now |
@@ -153,8 +152,13 @@ every theme.
 The box is 96 px wide (x 32 to 127) and only as tall as the text plus a
 margin: y 52 to 87 in 12px, y 54 to 81 in 8px. Its frame is a 2 px outer
 line, a 1 px gap and a 1 px inner line in the text's color, after
-davidesqalv's ezgb-dv fork. The four corner pixels are not drawn, so what
-is behind them stays.
+davidesqalv's ezgb-dv fork, with square corners. The frame is drawn one pixel
+in from the stated x on each side; the outermost columns are left as they
+are.
+
+Until 2026-11-14 those two columns were each drawn as a one-pixel-wide
+`DrawRect`, which plots only its two ends, so a stray pixel sat beside each
+corner of the box.
 
 The boot messages (`Micro SD initial OK!` and the SD error texts) and
 `BATTERY DRY!!!` stay 8x8 in 12px mode.
