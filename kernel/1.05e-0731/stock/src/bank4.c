@@ -1,4 +1,4 @@
-/* The kernel's C in bank 4, $40AB-$5932 ($40E7 on is spliced): the FPGA ROM loader commands and
+/* The kernel's C in bank 4, $40AB-$5932: the FPGA ROM loader commands and
    register writes, string helpers and the time and autosave screen.
    Function names are kernel.sym's; built like src/kernel.c. */
 
@@ -11,28 +11,34 @@ extern UINT16 wRomBanks;		/* $C2A4: the ROM's size in 16 KB banks */
 extern UINT8 wHdrSum;			/* $C5A3: the header checksum, worked out */
 extern UINT8 wD3EB;			/* save type */
 
-void RomLoad_InitiatePoll (void);	/* 04:4000, run from $D100 */
+void RomLoad_InitiatePoll (void);	/* 04:4000, src/bank4_wram.c */
 void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y);
 void memset (void *dst, UINT8 c, UINT16 n);	/* Memset, 00:2ca5 */
 
 /* FPGA registers: $7F00/$7F10/$7F20 unlock, $7FF0 commits */
 
-/* 04:40ab: copy n bytes. Not matched yet: stock keeps n in c, this in b;
-   still disassembly, like RomLoad_InitiatePoll at $4000. */
-#ifdef UNMATCHED
-void RomLoad_Build_B4 (UINT8 *dst, UINT8 *src, UINT8 n)
+/* 04:40ab: copy n bytes. The local copies, src's char *, and loop
+   induction off are what keep n in c. */
+#pragma save
+#pragma noinduction
+void RomLoad_Build_B4 (UINT8 *dst, char *src, UINT8 n)
 {
-	while (n--)
-		*dst++ = *src++;
+	UINT8 *d;
+	UINT8 *s;
+	UINT8 i;
+
+	s = src;
+	d = dst;
+	i = n;
+	while (i--)
+		*d++ = *s++;
 }
-#else
-void RomLoad_Build_B4 (UINT8 *dst, UINT8 *src, UINT8 n);
-#endif
+#pragma restore
 
 /* 04:40e7: run RomLoad_InitiatePoll from WRAM */
 void RomLoad_BuildAndRunPoll (void)
 {
-	RomLoad_Build_B4((UINT8 *)0xd100, (UINT8 *)RomLoad_InitiatePoll, 0xff);
+	RomLoad_Build_B4((UINT8 *)0xd100, (char *)RomLoad_InitiatePoll, 0xff);
 	((void (*)(void))0xd100)();
 }
 
@@ -94,7 +100,7 @@ void RomLoad_ResetIntoRom_B4 (void)
 /* 04:41d2 */
 void RomLoad_BuildAndRunReset_B4 (void)
 {
-	RomLoad_Build_B4((UINT8 *)0xd000, (UINT8 *)RomLoad_ResetIntoRom_B4, 0xff);
+	RomLoad_Build_B4((UINT8 *)0xd000, (char *)RomLoad_ResetIntoRom_B4, 0xff);
 	((void (*)(void))0xd000)();
 }
 
