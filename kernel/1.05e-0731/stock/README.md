@@ -1,9 +1,12 @@
 # Stock kernel from source
 
 A build of the stock 1.05e-0731 kernel (`ezgb.dat`, md5
-`91eb7fc67332ef20b5691029181ff748`) that the C rewrite grows in. It starts as
-the rgbds disassembly and replaces routines with real source one at a time;
-`make` fails unless the result is still byte-identical to stock.
+`91eb7fc67332ef20b5691029181ff748`) built entirely from source: C compiled with
+SDCC 2.9.0, the GBDK and SDCC library code it links, and the asm runtime
+rebuilt from the stock bytes. It started as the rgbds disassembly and
+replaced routines with source one at a time; `asm/` is now only the bank
+sections and `INCLUDE`s. `make` fails unless the result is byte-identical to
+stock.
 
 This is separate from `../disassembly`, which is regenerated from the
 modded kernel after every injection. Everything here is stock.
@@ -20,9 +23,9 @@ build compares against the md5, not a file.
 
 | Path | What |
 |---|---|
-| `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
+| `asm/` | Was the stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names); every routine has moved to source, so each bank file is its `SECTION` and the `INCLUDE`s of its generated files. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank4_wram.c` and `bank4.c`, `bank8.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank2.c`, `bank4_wram.c` and `bank4.c`, `bank8.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -53,6 +56,7 @@ build compares against the md5, not a file.
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 | `01:7096`-`7390` | `src/bank1.c` | its `_GSINIT` code: the tables of `WToUpper_B1` and the date code |
 | `01:7390`-`8000` | `gbdk/crt0.s` | `_GSINITTAIL`'s `ret`, then `$FF` fill |
+| `02:4000`-`8000` | `src/bank2.c` | bank 2: the SD sector reads and writes `diskio.c` calls ([Bank 2](#bank-2-c)) |
 | `04:4000`-`40ab` | `src/bank4_wram.c` | `RomLoad_InitiatePoll`, linked for `$D100`, where it runs ([Bank 4](#bank-4-c)) |
 | `04:40ab`-`8000` | `src/bank4.c` | the rest of bank 4: the FPGA ROM loader commands and register writes, `CStrCat`, `U32ToAscii`, the TIME and AUTO SAVE screen ([Bank 4](#bank-4-c)) |
 | `08:4000`-`8000` | `src/bank8.c` | bank 8: an unused 8x12 font and QR code, the FW version screen, the menu tabs, the message boxes, the last ROM buttons, and bank 4's loader helpers again ([Bank 8](#bank-8-c)) |
@@ -63,8 +67,7 @@ build compares against the md5, not a file.
 | `00:20e2`-`20f4`, `29e6`-`2a5f`, `2a77`-`2c42`, `2ca5`-`2cd3`, `2d4c`-`2d56`, `2dba`-`2eea` | `src/libasm.s` | the long, char and int math `stubs.s` jumps to, `strcpy`, `memset`, `memcpy`: rebuilt from the stock bytes, origin unknown |
 | `00:01e3`-`0600` | GBDK `drawing.s`, `font.ms` (`_HEADER`) | their mode table jumps, at `$03C9` and `$05B6` (see [GBDK](#toolchain-findings)), in `$FF` fill |
 
-Still disassembly: bank 2's 896 bytes, the rest of the kernel's non-fill bytes
-(99.3%) build from source.
+Nothing is left as disassembly.
 
 ## FatFs
 
@@ -210,6 +213,24 @@ code at `$7096`.
   which reproduce stock keeping all three locals on the stack.
 - The ROM info screen prints the RAM size in hex (radix 16), so 128 KB
   shows as `80KB`.
+
+## Bank 2 C
+
+`src/bank2.c` is all of bank 2 (896 bytes, then `$FF`): `SdRead` and
+`SdWrite` (kernel.sym's `DiskRead_B2`, `DiskWrite_B2`), which `diskio.c`
+calls, and their two helpers. Each sends at most four sectors a command:
+the LBA to `$7FB0`-`$7FB3`, the count to `$7FB4` (`+$80` to write), then
+waits while `$A000` reads `$E1`. Both copy `count * 512` bytes through the
+`$A000` window for every command and never advance `buff`, so a transfer of
+more than four sectors would go wrong; `SdWrite` ends with `delay(10)`.
+
+- The LBA bytes are `(sector + i) & 0xffu` and
+  `((sector + i) & 0xff00) >> 8u` and so on: the `u` on the shift count
+  makes SDCC 2.9.0 push it as a 16-bit int, as stock does, and the `u` on
+  the first mask keeps the double widening stock has.
+- `SdRead` compares `count - i > 4u` and takes `4u : (BYTE)(count - i)`;
+  `SdWrite` the plain `> 4 ? 4 : count - i`. The busy wait is
+  `SdWindowPeek() == 0xe1u` (a 16-bit compare).
 
 ## Bank 4 C
 
