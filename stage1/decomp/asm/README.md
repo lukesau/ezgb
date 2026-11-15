@@ -29,6 +29,11 @@ Compared byte for byte with relocated operands masked (2026-11-14):
   `--std-c99`, `--nostdinc` and `--opt-code-size`. SDCC sets `errno` only
   in its float functions.
 - SDCC's git history: no gbz80 or z80 library assembly ever used `errno`.
+  A structural search (2026-11-14) of every `.s` file in all 11,154 commits,
+  January 2000 to June 2025 (every release and snapshot), by normalized
+  six-instruction sequences: `long.s` and `long2.s` share at most 7 of 519
+  with any of them, common byte-multiply code. Only `div.s` matches, as
+  above.
 - GBDK-2020 4.0 to 4.1.0 (only the 8-bit divide stubs match).
 - Michael Hope's GBDK repository, every tag from 2.91 to 2.96a, and GBDK
   2.1.5, the last `lcc` release (its `fp_long.s` is register-based, a
