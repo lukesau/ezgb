@@ -137,7 +137,7 @@ stage1/     The bootloader
               fw4/ fw5-0918/                   EZ Flash's stage1, disassembled
               src/ art/ font/ tools/           our replacement, from source
 stage0/     The FPGA design
-              fw4/ fw5-0731/ fw5-0918/ ...     per firmware: Verilog and block files, PicoBlaze
+              fw4/ fw5-0918/                   per firmware: Verilog and block files, PicoBlaze
                                                listings, bitstream decode, pin and register maps
               sim/ netlist/ lib/ tools/ docs/  shared: simulation, analysis, tools, write-ups
 docs/       Feature write-ups, hardware notes, findings

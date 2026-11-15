@@ -91,9 +91,10 @@ Every updater writes only its first bitstream, to slot B
 ([updater.md](updater.md)). The second one in the FW5 updaters is
 byte-identical in all three and is not written by the update loop.
 
-So there are five distinct designs, each with a folder here: `fw4`,
-`fw5-0731`, `fw5-sgb-beta`, `fw5-0918`, and that second image as
-`fw5-slota`.
+So there are five distinct designs: FW4, FW5-0731, the SGB beta, FW5-0918,
+and that second image. FW4 and FW5-0918 have folders here (`fw4`,
+`fw5-0918`); the other three were decoded for the comparisons in
+[firmware-diff.md](firmware-diff.md) and are not kept.
 
 What slot A an FW5 cart shipped with has not been read from one. An FW4
 cart's and a repaired cart's slot A are identical.
