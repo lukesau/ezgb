@@ -77,7 +77,8 @@ REGISTRY = {
                             "BrowserSortAllStub": 0x03d4, "ReadJoypad": 0x3a4a}),
     (2, 0x4500): dict(src="fastlaunch.c",
                       pins={"FarCallOpendir_B5": 0x4380, "FarCallReaddir_B5": 0x4396,
-                            "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00, "ReadJoypad": 0x3a4a}),
+                            "FarCallSetPage": 0x43ac, "ezcfg": 0x4a00, "ReadJoypad": 0x3a4a,
+                            "FarCall_06_7309": 0x1926, "FarCall_03_768f": 0x19a1}),
     (10, 0x4000): dict(src="draw12.c",                      # 12px renderer, beside the glyph sets (docs/font12.md)
                       pins={"wDrawColor": 0xd734, "wDrawColorB": 0xd735, "wIntNest": 0xd6d0,
                             "GfxRowTable": 0x2fbb, "Font12": 0x4c00, "Font12Metrics": 0x5580, "Fit12": 0x4a00,

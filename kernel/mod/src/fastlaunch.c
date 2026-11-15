@@ -44,6 +44,8 @@
 extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *path);
 extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
 extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page */
+extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode);   /* f_open  00:1926 */
+extern unsigned char FarCall_03_768f(unsigned char *fp);                                                  /* f_close 00:19a1 */
 
 /* Shared settings module (same bank, plain call; no stack args, op in WRAM). */
 extern void ezcfg(void);                          /* 02:4a00 */
@@ -58,6 +60,7 @@ extern unsigned char ReadJoypad(void);           /* 00:3a4a, E = key byte, START
 #define FNO   ((unsigned char *)0xD780)  /* FILINFO, 26 used */
 #define LFN   ((unsigned char *)0xD7A0)  /* long-name buffer, 256 */
 #define DIRO  ((unsigned char *)0xD900)  /* the one DIR object, 128 reserved */
+#define FIL_OBJ ((unsigned char *)0xCA0F) /* kernel FIL, idle at boot */
 
 #define FNO_ATTRIB  8
 #define FNO_SFN     9
@@ -161,8 +164,8 @@ static void write_result(unsigned char *result_path, const unsigned char *name) 
 }
 
 /* Load /EZGB.CFG through ezcfg and stage the FLAUNCH path in RESULT ($c4a4)
- * with a leading '/'. Returns 1 when a path is staged, 2 when fast launch is
- * disabled ('#' on the value, from the SET tab; the path is kept in the file
+ * with a leading '/'. Returns 1 when a path is staged, 2 when the file it
+ * names cannot be opened or fast launch is disabled ('#' on the value, from the SET tab; the path is kept in the file
  * for re-enabling, see docs/set-tab.md), 0 otherwise. ezcfg does
  * the VBlank-wait + $7FC0=$00 discipline around its own SD I/O. The path may
  * be nested (e.g. /Pokemon/Blue.gb); the launch glue handles it. */
@@ -178,6 +181,13 @@ static unsigned char scan_config(void) {
     }
     if (!FL_EN) return 2;             /* disabled: no trigger at all */
     if (FL_PLEN == 0) return 0;
+    /* A path that no longer opens (the ROM was moved or renamed, the card
+     * swapped) is no trigger: the launch path does not come back from a
+     * missing file, it hangs on "Loading...". Stage1 makes the same test and
+     * boots the kernel, so this is where such a card ends up. */
+    FarCallSetPage(SD_PAGE);
+    if (FarCall_06_7309(FIL_OBJ, FL_PATH, 0x01)) return 2;
+    FarCall_03_768f(FIL_OBJ);         /* opened for reading: closing touches no sector */
     for (i = 0; i < FL_PLEN; i++) r[i] = FL_PATH[i];
     r[i] = 0;
     return 1;
