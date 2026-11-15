@@ -105,8 +105,9 @@ Each links to a doc with the details.
 ## The reverse engineering
 
 - **Kernel:** every bank is disassembled and labeled, and reassembles to the
-  original for all three builds. [kernel/1.05e-0731/stock/](kernel/1.05e-0731/stock/README.md) is turning it
-  into C.
+  original for all three builds. Both 1.05e builds (0731 and 0918) also
+  build entirely from source, C compiled with SDCC 2.9.0, byte for byte, in
+  [kernel/1.05e-0731/stock/](kernel/1.05e-0731/stock/README.md).
 - **Hardware:** the [board](docs/hardware-board.md), the
   [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the [boot](docs/boot-and-launch.md) and
   [launch](docs/boot-and-launch.md) paths, and
@@ -129,7 +130,7 @@ ours.
 ```
 kernel/     The menu program
               1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
-              1.05e-0731/stock/                that build from source, checked byte for byte
+              1.05e-0731/stock/                0731 and 0918 from source, checked byte for byte
               mod/                             the mod: C and asm sources, inject tooling
               tools/                           build, port, inject and release scripts
 stage1/     The bootloader

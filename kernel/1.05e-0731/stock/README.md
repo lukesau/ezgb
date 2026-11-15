@@ -8,11 +8,15 @@ replaced routines with source one at a time; `asm/` is now only the bank
 sections and `INCLUDE`s. `make` fails unless the result is byte-identical to
 stock.
 
+The same source builds the stock 1.05e-0918 kernel (md5
+`5238ac5987d23b68a19d40e43af8c786`) too ([0918](#0918)).
+
 This is separate from `../disassembly`, which is regenerated from the
 modded kernel after every injection. Everything here is stock.
 
 ```sh
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/kernel.gb, checked against the stock md5
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/kernel.gb and build-0918/kernel.gb, checked against the stock md5s
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock K=0918   # only 0918
 ```
 
 Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
@@ -29,7 +33,25 @@ build compares against the md5, not a file.
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
-| `build/` | Generated includes and the built kernel (gitignored). |
+| `build/`, `build-0918/` | Generated includes and the built kernels (gitignored). |
+
+## 0918
+
+0918 is 0731 plus one routine nothing calls, so it builds from the same
+source with `K0918` defined for `src/bank1.c` (`make K=0918`, against
+`kernel/1.05e-0918/kernel.sym`). Only banks 0 and 1 differ
+([kernel-diffs.md](../../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
+
+- `RtcDebugDump` (`01:4c5e`-`4ec9`), an RTC test screen: it reads the clock
+  like `RtcToDayCount`, prints `12345678`, the date and the time with
+  `DrawU32Decimal`, and waits for SELECT.
+- `RtcWriteTimeFromDayDelta` calls `SetFpgaPage_B1(0)` once at the end, not
+  twice.
+
+Everything after `RtcDebugDump` in bank 1 is `$262` higher, `_GSINIT`
+included, which the Makefile's `G1`-`G4` place. Bank 0 changes only in the
+addresses it calls in bank 1 and the global checksum, which the build sets
+with `rgbfix` for both kernels (`crt0.s` has 0731's).
 
 ## Moving a routine to source
 
