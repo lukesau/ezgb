@@ -1,5 +1,15 @@
-# Stage1 into slot B, then the updater, in one step. Each step is
-# stage0/tools/build-stage1-updater.sh; the build host runs s3patch
+# The stock software from source:
+#
+#   make                                the three stock kernels, both stock
+#                                       stage1s and both updater programs, each
+#                                       checked against stock's md5 (needs SDCC
+#                                       2.9.0: stage1/decomp/tools/build-sdcc29.sh)
+#   make check BUILD_HOST=<host>        that, and both stock firmwares from the
+#                                       Verilog (stage0-stock below)
+#   make clean
+#
+# The firmware mod: stage1 into slot B, then the updater, in one step. Each
+# step is stage0/tools/build-stage1-updater.sh; the build host runs s3patch
 # (stage0/docs/setup.md). Outputs go in fpga/stage1/ (ignored).
 #
 #   make updaters BUILD_HOST=<host>     Update-fw4.gb and Update-fw5-0918.gb
@@ -23,6 +33,18 @@
 MOD := $(shell sed -n 2p stage1/VERSION)
 OUT := fpga/stage1
 export STAGE1 PATCHES PROVE UPDATER BUILD_HOST
+
+stock:
+	$(MAKE) -C kernel/stock
+	$(MAKE) -C stage1/decomp
+	$(MAKE) -C stage0/updater
+
+check: stock stage0-stock
+
+clean:
+	$(MAKE) -C kernel/stock clean
+	$(MAKE) -C stage1/decomp clean
+	$(MAKE) -C stage0/updater clean
 
 updaters: $(OUT)/Update-fw4.gb $(OUT)/Update-fw5-0918.gb
 
@@ -49,4 +71,4 @@ check-slotb:
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage1-updater.sh fw5-0918
 
 FORCE:
-.PHONY: updaters check-slotb stage0 stage0-stock FORCE
+.PHONY: stock check clean updaters check-slotb stage0 stage0-stock FORCE
