@@ -22,7 +22,7 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank4.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank4_wram.c` and `bank4.c`, `bank8.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -53,13 +53,18 @@ build compares against the md5, not a file.
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 | `01:7096`-`7390` | `src/bank1.c` | its `_GSINIT` code: the tables of `WToUpper_B1` and the date code |
 | `01:7390`-`8000` | `gbdk/crt0.s` | `_GSINITTAIL`'s `ret`, then `$FF` fill |
-| `04:40e7`-`8000` | `src/bank4.c` | the kernel's C in bank 4: the FPGA ROM loader commands and register writes, `CStrCat`, `U32ToAscii`, the TIME and AUTO SAVE screen ([Bank 4](#bank-4-c)); `04:4000`-`40e7` is still disassembly |
+| `04:4000`-`40ab` | `src/bank4_wram.c` | `RomLoad_InitiatePoll`, linked for `$D100`, where it runs ([Bank 4](#bank-4-c)) |
+| `04:40ab`-`8000` | `src/bank4.c` | the rest of bank 4: the FPGA ROM loader commands and register writes, `CStrCat`, `U32ToAscii`, the TIME and AUTO SAVE screen ([Bank 4](#bank-4-c)) |
+| `08:4000`-`8000` | `src/bank8.c` | bank 8: an unused 8x12 font and QR code, the FW version screen, the menu tabs, the message boxes, the last ROM buttons, and bank 4's loader helpers again ([Bank 8](#bank-8-c)) |
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
 | `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
 | `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
 | `00:20f4`-`2826`, `2a5f`-`2a77`, `2d56`-`2d95`, `2eea`-`3d8c` (then `$FF` to `$4000`) | `gbdk/drawing.s`, `cpy_data.s`, `ibmfixed.s`, `pad.s`, `delay.s`, `font.ms`, `init_tt.s` | GBDK's gb library: graphics mode and drawing, VRAM copy and fill, the IBM font, joypad, `delay`, the text font engine |
 | `00:20e2`-`20f4`, `29e6`-`2a5f`, `2a77`-`2c42`, `2ca5`-`2cd3`, `2d4c`-`2d56`, `2dba`-`2eea` | `src/libasm.s` | the long, char and int math `stubs.s` jumps to, `strcpy`, `memset`, `memcpy`: rebuilt from the stock bytes, origin unknown |
 | `00:01e3`-`0600` | GBDK `drawing.s`, `font.ms` (`_HEADER`) | their mode table jumps, at `$03C9` and `$05B6` (see [GBDK](#toolchain-findings)), in `$FF` fill |
+
+Still disassembly: bank 2's 896 bytes, the rest of the kernel's non-fill bytes
+(99.3%) build from source.
 
 ## FatFs
 
@@ -208,18 +213,26 @@ code at `$7096`.
 
 ## Bank 4 C
 
-`src/bank4.c` holds bank 4 from `$40ab`; `$40e7` on is spliced, so
-everything but the first 231 bytes builds from source.
+All of bank 4 builds from source, in two objects.
 
-- `RomLoad_InitiatePoll` (`$4000`) runs from WRAM: `RomLoad_BuildAndRunPoll`
-  copies 255 bytes from `$4000` to `$D100` and calls it, so its jumps point
-  into `$D1xx`, while its symbol stays `$4000` (the copy passes
-  `RomLoad_InitiatePoll`). `RomLoad_ResetIntoRom_B4` is copied to `$D000`
-  the same way but linked in ROM as normal.
-- Still disassembly: `RomLoad_InitiatePoll` and `RomLoad_Build_B4` (a
-  byte copy, `$40ab`). The C for both is written; stock keeps a different
-  local in `c` than SDCC 2.9.0 does for it (`RomLoad_Build_B4` is in
-  `bank4.c` under `#ifdef UNMATCHED`).
+- `RomLoad_InitiatePoll` (`$4000`, `src/bank4_wram.c`) runs from WRAM:
+  `RomLoad_BuildAndRunPoll` copies 255 bytes from `$4000` to `$D100` and
+  calls it there. It is linked for `$D100` (its jumps go to `$D1xx`) and its
+  bytes are placed at `$4000`, so it is its own object; the rest of the bank
+  calls it by its `$4000` symbol. `RomLoad_ResetIntoRom_B4` is copied to
+  `$D000` the same way but linked in ROM as normal.
+- `src/bank4.c` is the rest, from `RomLoad_Build_B4` (`$40ab`, a byte
+  copy). `RomLoad_Build_B4` keeps `n` in `c` only with local copies of all
+  three arguments, `src` declared `char *` against the `UINT8 *` copy, and
+  loop induction off (`#pragma noinduction` between `save` and `restore`).
+  With induction on, SDCC 2.9.0 makes a loop copy of each induction
+  variable, and the parameter `n`'s copy comes last and has no spill
+  location, so the allocator spills it; for the whole file the pragma breaks
+  `CStrCat` and `U32ToAscii`.
+- `RomLoad_InitiatePoll`'s second wait loop reads `p` from its stack slot
+  into `de` as stock does only as `UINT8 * volatile p` assigned
+  `(volatile UINT8 *)0xa000`, with one `st` shared by both loops (its live
+  range over the second loop takes `c`).
 - `DrawTimeAutosaveScreen` (`$46f4`, 4,658 bytes) matches as one function
   with three `char[7]` arrays (the RTC's BCD, what was last drawn, the time
   being set).
@@ -229,6 +242,32 @@ everything but the first 231 bytes builds from source.
   resolves them so.
 - `U32ToAscii` is bank 0's `U32ToAscii_B0` plus padding to two digits.
 - `InitTimeAutosaveFpga_B4` sets the cart RTC to 2019-07-24 11:22:33.
+
+## Bank 8 C
+
+`src/bank8.c` is all of bank 8, one file. SDCC 2.9.0 emits a const after the
+function that follows its declaration, which puts the font after
+`PlotIconGlyphs` and the QR code after `Fpga7FD2WaitClear_B8`, as in stock.
+
+- `wFont8x12` (`$413e`): 128 glyphs of 12 rows, bit 7 the left pixel, and
+  one more `$00`. `PlotIconGlyphs` draws one with `plot_point`. Nothing
+  calls it.
+- `wQrCode` (`$478d`): a 70x70 QR code, one RGB555 word a pixel (`$0000`,
+  `$7FFF`), 9,800 bytes. Nothing reads it. Four unused bytes follow it.
+- The loader helpers are bank 4's again under `_B8` names.
+  `RomLoad_Build_B8` is the same code as `RomLoad_Build_B4` and needs the
+  same form. `Fpga7FD2WaitClear_B8` is built for `$473f` and run from
+  `$D000`; its loop jumps back into ROM, which works because bank 8 is
+  mapped. `RomLoad_ClearCartWindow_B8` (a signed 32-bit counter) is not
+  called.
+- `DrawFwVersionScreen` shows `FW` plus the cart's version (page 4,
+  `$A000`, in decimal) and `K1.05e`, `ver:` and `www.ezflash.cn`, until
+  SELECT. Its buffer is `char buf[20] = "FWx  K1.05e"`, which SDCC 2.9.0
+  fills one byte at a time.
+- `DrawMenuTabs` (`$7169`, name ours) draws the SD, SET and HELP tabs with
+  the selected one highlighted. Tab 0 clears the strip first, tabs 1 and 2
+  the screen below it; tab 3 only clears below it.
+- The strings are stock's: `ver:`, `[B]return`, `[A]start`.
 
 ## Matching
 
