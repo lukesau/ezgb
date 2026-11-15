@@ -1,11 +1,11 @@
-# The stock kernels from source: 1.05e-0918 and 1.04e, and 1.05e-0731, which
-# the source was first matched against (K0918 and K104 in the C mark where
-# the other two differ from it). The build fails unless each result is
+# The stock kernels from source: 1.05e-0918, 1.04e and 1.05e-0731. 0731 is
+# the reference: the source was first matched against it, and K0918 and
+# K104 in the C mark where the other two differ from it. The build fails unless each result is
 # byte-identical to its stock kernel.
 #
 # The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>.
 #
-#   make            build build-0918/kernel.gb and build-104/kernel.gb, check their md5s
+#   make            build all three (build-0918/, build-104/, build-0731/kernel.gb), check their md5s
 #   make K=0918     only 0918 (K=104: only 1.04e, K=0731: only 0731)
 #   make clean
 
@@ -85,6 +85,7 @@ INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kern
 all: $(B)/kernel.gb
 ifeq ($(origin K),file)
 	$(MAKE) K=104
+	$(MAKE) K=0731
 endif
 
 $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)

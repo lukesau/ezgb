@@ -15,8 +15,8 @@ One source builds three kernels:
 | 1.04e, the FW4 kernel | `104` | `b8c29fa5a94c37200434e4c72f0cdfea` |
 | 1.05e-0731 | `0731` | `91eb7fc67332ef20b5691029181ff748` |
 
-`make` builds the first two. 0731 is the kernel the source was first
-matched against, so the C is 0731's where nothing says otherwise, `K0918`
+`make` builds all three. 0731 is the reference: the source was first
+matched against it, so the C is 0731's where nothing says otherwise, `K0918`
 and `K104` mark where the other two differ ([0918](#0918),
 [1.04e](#104e)), and the addresses in the comments are 0731's.
 
@@ -24,8 +24,8 @@ This is separate from `../1.05e-0731/disassembly`, which is regenerated
 from the modded kernel after every injection. Everything here is stock.
 
 ```sh
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock          # build-0918/ and build-104/kernel.gb, checked against the stock md5s
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock K=0731   # only 0731, in build-0731/ (K=0918, K=104: only that one)
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock          # build-0918/, build-104/ and build-0731/kernel.gb, checked against the stock md5s
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock K=0918   # only 0918 (K=104: only 1.04e, K=0731: only 0731)
 ```
 
 Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
