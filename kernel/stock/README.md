@@ -1,23 +1,31 @@
 # Stock kernel from source
 
-A build of the stock 1.05e-0731 kernel (`ezgb.dat`, md5
-`91eb7fc67332ef20b5691029181ff748`) built entirely from source: C compiled with
+The stock kernels (`ezgb.dat`) built entirely from source: C compiled with
 SDCC 2.9.0, the GBDK and SDCC library code it links, and the asm runtime
 rebuilt from the stock bytes. It started as the rgbds disassembly and
 replaced routines with source one at a time; `asm/` is now only the bank
-sections and `INCLUDE`s. `make` fails unless the result is byte-identical to
+sections and `INCLUDE`s. `make` fails unless each result is byte-identical to
 stock.
 
-The same source builds the other two stock kernels too: 1.05e-0918 (md5
-`5238ac5987d23b68a19d40e43af8c786`, [0918](#0918)) and 1.04e, the FW4
-kernel (md5 `b8c29fa5a94c37200434e4c72f0cdfea`, [1.04e](#104e)).
+One source builds three kernels:
 
-This is separate from `../disassembly`, which is regenerated from the
-modded kernel after every injection. Everything here is stock.
+| Kernel | `K=` | md5 |
+|---|---|---|
+| 1.05e-0918, the latest for FW5 | `0918` | `5238ac5987d23b68a19d40e43af8c786` |
+| 1.04e, the FW4 kernel | `104` | `b8c29fa5a94c37200434e4c72f0cdfea` |
+| 1.05e-0731 | `0731` | `91eb7fc67332ef20b5691029181ff748` |
+
+`make` builds the first two. 0731 is the kernel the source was first
+matched against, so the C is 0731's where nothing says otherwise, `K0918`
+and `K104` mark where the other two differ ([0918](#0918),
+[1.04e](#104e)), and the addresses in the comments are 0731's.
+
+This is separate from `../1.05e-0731/disassembly`, which is regenerated
+from the modded kernel after every injection. Everything here is stock.
 
 ```sh
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/, build-0918/ and build-104/kernel.gb, checked against the stock md5s
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock K=0918   # only 0918 (K=104: only 1.04e, K=0731: only 0731)
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock          # build-0918/ and build-104/kernel.gb, checked against the stock md5s
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock K=0731   # only 0731, in build-0731/ (K=0918, K=104: only that one)
 ```
 
 Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
@@ -35,14 +43,14 @@ build compares against the md5, not a file.
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
 | `tools/incdiff.py` | Compares each generated include of a build with a stock kernel and names the first function that differs (how 1.04e was matched). |
-| `build/`, `build-0918/`, `build-104/` | Generated includes and the built kernels (gitignored). |
+| `build-0918/`, `build-104/`, `build-0731/` | Generated includes and the built kernels (gitignored). |
 
 ## 0918
 
 0918 is 0731 plus one routine nothing calls, so it builds from the same
 source with `K0918` defined for the C (`make K=0918`, against
 `kernel/1.05e-0918/kernel.sym`). Only banks 0 and 1 differ
-([kernel-diffs.md](../../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
+([kernel-diffs.md](../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
 
 - `RtcDebugDump` (`01:4c5e`-`4ec9`), an RTC test screen: it reads the clock
   like `RtcToDayCount`, prints `12345678`, the date and the time with
@@ -61,7 +69,7 @@ with `rgbfix` for every kernel (`crt0.s` has 0731's).
 source with `K104` defined for the C (`make K=104`, against
 `kernel/1.04e/kernel.sym`). Banks 2, 5 and 7 are the same C; the rest
 differ only where 1.05e added the clock
-([kernel-diffs.md](../../../docs/kernel-diffs.md#104e-to-105e-0731)):
+([kernel-diffs.md](../../docs/kernel-diffs.md#104e-to-105e-0731)):
 
 - FatFs is built with `_FS_NORTC`, so files are stamped 2015-01-01, FatFs's
   default, and there is no `get_fattime` or `SetFpgaPage` in bank 0
@@ -352,7 +360,7 @@ SDCC29=<sdcc 2.9.0 prefix> tools/match.py --cflags " " sdcclib/_strncpy.c   # no
 ```
 
 [tools/match.py](tools/match.py) compiles the sources once per bank and
-looks up every function and table in that bank of `build/kernel.gb`, with
+looks up every function and table in that bank of `build-0731/kernel.gb`, with
 the operands the linker fills in masked: a table of addresses, or how many
 bytes match at the kernel.sym address. All of them match. `-v` shows the
 instructions around the first wrong byte. It was how the edits above were
@@ -464,7 +472,7 @@ FatFs source in ways that move the code.
 > linker fills in masked). The 2012 trunk builds only scored closest, and
 > the "patched SDCC" guess is wrong. Found through stage1, built by the same
 > compiler without `--opt-code-size`
-> ([stage1/decomp](../../../stage1/decomp/README.md#matching)).
+> ([stage1/decomp](../../stage1/decomp/README.md#matching)).
 > The other guess holds: EZ Flash edited the FatFs source, and with those
 > edits every FatFs function matches and the five banks build from C
 > ([FatFs](#fatfs)). Bank 9's `mem_cmp`, the one miss in that first test,

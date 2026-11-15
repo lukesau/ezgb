@@ -1,5 +1,5 @@
 /* The updater's C in bank 0, from $07BC: text drawing and main. Several
-   functions are the kernel's (kernel/1.05e-0731/stock/src/kernel.c). */
+   functions are the kernel's (kernel/stock/src/kernel.c). */
 
 #include <gb/gb.h>
 #include <gb/drawing.h>

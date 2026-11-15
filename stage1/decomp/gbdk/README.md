@@ -8,7 +8,7 @@ GBDK's `lcc` did: crt0 first, the library modules after the program.
 - `global.s`: GBDK 2.96a `libc/gb/global.s`, unchanged.
 - `crt0.s`: GBDK 2.96a `libc/gb/crt0.s` with EZ Flash's changes, each marked
   `;; ezflash:`. It is the kernel's crt0
-  ([kernel/1.05e-0731/stock/gbdk](../../../kernel/1.05e-0731/stock/gbdk/README.md))
+  ([kernel/stock/gbdk](../../../kernel/stock/gbdk/README.md))
   with stage1's header (title `BOOTLOADER`; on FW5-0918 the SGB flag and
   licensee `$33`) and GBDK's ending put back: `call gsinit`, then `main`
   called directly (no `EI`, no `banked_call`). The header bytes that differ

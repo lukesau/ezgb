@@ -40,7 +40,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent.parent          # kernel/1.05e-0731/stock
+HERE = Path(__file__).resolve().parent.parent          # kernel/stock
 FAT_BANKS = [3, 5, 6, 7, 9]
 
 
@@ -202,8 +202,8 @@ def main():
     p.add_argument("--cflags", default="--opt-code-size", help="sdcc options (default %(default)s)")
     p.add_argument("-v", action="store_true")
     p.add_argument("-f", action="append", help="only this function, repeatable")
-    p.add_argument("--rom", default=str(HERE / "build" / "kernel.gb"))
-    p.add_argument("--sym", default=str(HERE.parent / "kernel.sym"), help="kernel.sym (default %(default)s)")
+    p.add_argument("--rom", default=str(HERE / "build-0731" / "kernel.gb"))
+    p.add_argument("--sym", default=str(HERE.parent / "1.05e-0731" / "kernel.sym"), help="kernel.sym (default %(default)s)")
     p.add_argument("--sym-pins", action="store_true",
                    help="look pinned functions up in --sym, not at their comment's address (another kernel)")
     a = p.parse_args()

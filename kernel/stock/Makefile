@@ -1,14 +1,15 @@
-# Stock 1.05e kernels from source: 0731, and 0918 from the same source
-# (K0918 in src/bank1.c). The build fails unless each result is
+# The stock kernels from source: 1.05e-0918 and 1.04e, and 1.05e-0731, which
+# the source was first matched against (K0918 and K104 in the C mark where
+# the other two differ from it). The build fails unless each result is
 # byte-identical to its stock kernel.
 #
 # The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>.
 #
-#   make            build build/kernel.gb (0731) and build-0918/kernel.gb, check their md5s
-#   make K=0918     only 0918 (K=104: only 1.04e)
+#   make            build build-0918/kernel.gb and build-104/kernel.gb, check their md5s
+#   make K=0918     only 0918 (K=104: only 1.04e, K=0731: only 0731)
 #   make clean
 
-K ?= 0731
+K ?= 0918
 SDINC := python3 tools/sdinc.py
 
 # 0918 is 0731 with RtcDebugDump added to bank 1, so bank 1 from $4C5E on
@@ -19,7 +20,7 @@ SDINC := python3 tools/sdinc.py
 # 1.05e address to this kernel's.
 ifeq ($(K),104)
 STOCK_MD5 := b8c29fa5a94c37200434e4c72f0cdfea
-SYM       := ../../1.04e/kernel.sym
+SYM       := ../1.04e/kernel.sym
 B         := build-104
 KDEFS     := -DK104
 LSHIFT    := 3b9
@@ -32,7 +33,7 @@ G4 := 6729
 D1 := d3f2
 else ifeq ($(K),0918)
 STOCK_MD5 := 5238ac5987d23b68a19d40e43af8c786
-SYM       := ../../1.05e-0918/kernel.sym
+SYM       := ../1.05e-0918/kernel.sym
 B         := build-0918
 KDEFS     := -DK0918
 G1 := 6b18
@@ -40,16 +41,18 @@ G2 := 6b22
 G3 := 72f8
 G4 := 75f2
 B0K := 1926
-else
+else ifeq ($(K),0731)
 STOCK_MD5 := 91eb7fc67332ef20b5691029181ff748
-SYM       := ../kernel.sym
-B         := build
+SYM       := ../1.05e-0731/kernel.sym
+B         := build-0731
 KDEFS     :=
 G1 := 68b6
 G2 := 68c0
 G3 := 7096
 G4 := 7390
 B0K := 1926
+else
+$(error K=$(K): want 0918, 104 or 0731)
 endif
 RTC_ALIASES := $(if $(filter 104,$(K)),,-a _SetFpga7FD4_B1=SetFpga7FD4_B1)
 D1 ?= d3f9
@@ -81,7 +84,6 @@ INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kern
 
 all: $(B)/kernel.gb
 ifeq ($(origin K),file)
-	$(MAKE) K=0918
 	$(MAKE) K=104
 endif
 
@@ -298,7 +300,7 @@ $(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	else echo "$@: MISMATCH ($$md5, want $(STOCK_MD5))"; exit 1; fi
 
 clean:
-	rm -rf build build-0918 build-104
+	rm -rf build-0918 build-104 build-0731
 
 .PHONY: all clean
 

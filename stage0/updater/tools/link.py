@@ -14,9 +14,9 @@ Everything is source. The C (src/) is compiled by SDCC 2.9.0 as the
 kernel's is (--opt-code-size, GBDK 2.96a's headers); the startup code and
 the libraries are the kernel's and stage1's:
 
-    kernel/1.05e-0731/stock/gbdk      crt0, drawing, the 8x8 font, joypad, delay
-    kernel/1.05e-0731/stock/sdcclib   SDCC 2.9.0's stubs, divide, shifts, strlen
-    kernel/1.05e-0731/stock/src/libasm.s   the long math
+    kernel/stock/gbdk      crt0, drawing, the 8x8 font, joypad, delay
+    kernel/stock/sdcclib   SDCC 2.9.0's stubs, divide, shifts, strlen
+    kernel/stock/src/libasm.s   the long math
     stage1/decomp/gbdk/font.s         the text console (stage1's revision of it)
     stage1/decomp/sdcclib/puts.c      puts
 
@@ -39,7 +39,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent           # stage0/updater
 REPO = HERE.parent.parent
-KERNEL = REPO / "kernel" / "1.05e-0731" / "stock"
+KERNEL = REPO / "kernel" / "stock"
 S1 = REPO / "stage1" / "decomp"
 SDCC = Path(os.environ.get("SDCC29", REPO / "tools" / "sdcc-2.9.0")) / "bin"
 

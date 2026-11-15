@@ -46,7 +46,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("build")
     p.add_argument("incs", nargs="*")
-    p.add_argument("--rom", default=str(HERE.parent.parent / "1.04e" / "kernel.gb.orig"))
+    p.add_argument("--rom", default=str(HERE.parent / "1.04e" / "kernel.gb.orig"))
     p.add_argument("-v", action="store_true")
     a = p.parse_args()
     rom = open(a.rom, "rb").read()

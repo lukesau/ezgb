@@ -81,7 +81,7 @@ every twin, and their interior names were copied across on that basis.
 
 `tools/omega-de-kernel/source/ff15/ff.c` is ChaN's FatFs R0.15 (EZ Flash's Omega
 kernel ships it unmodified; only `diskio.c`/`ffsystem.c` are EZ Flash glue). The
-Jr's is R0.11a ([stock README](../kernel/1.05e-0731/stock/README.md#toolchain-findings)), but the internal static functions
+Jr's is R0.11a ([stock README](../kernel/stock/README.md#toolchain-findings)), but the internal static functions
 (`dir_find`, `dir_next`, `create_name`, `follow_path`, `create_chain`,
 `clust2sect`, `get_fat`/`put_fat`, `gen_numname`, `sync_window`, `move_window`,
 …) are stable across revisions; that is how the bank-09 names (`Clust2Sect_B9`,
@@ -91,7 +91,7 @@ are near-identical twins**. When a role name is unclear, read the matching
 
 > **Correction (2026-11-14).** The twins are not all byte-identical apart
 > from immediates. Each bank is its own compile with EZ Flash's edits
-> ([stock README](../kernel/1.05e-0731/stock/README.md#fatfs)): bank 5 is
+> ([stock README](../kernel/stock/README.md#fatfs)): bank 5 is
 > readonly code with banked `clust2sect`/`get_fat`, `find_volume` is cut
 > short outside bank 5, and banks 5, 6 and 9 carry trace calls in
 > `follow_path`. Interior names copied across by offset can be wrong in

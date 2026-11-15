@@ -25,7 +25,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent          # stage0/updater
 REPO = HERE.parent.parent
-GBDK = REPO / "kernel" / "1.05e-0731" / "stock" / "gbdk"
+GBDK = REPO / "kernel" / "stock" / "gbdk"
 STOCK = {"fw4": ("2020-03-10_FW4_K1.04e/Update_FW4.gb", 0, "Update to ver:4 "),
          "fw5-0918": ("2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb", 0x38, "Update to ver:5 ")}
 

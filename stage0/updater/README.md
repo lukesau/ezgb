@@ -35,7 +35,7 @@ the write loop.
 | `01:404E`-`4181` | `src/bank1.c` | `RunFlashPoll`, and three of the kernel's string functions nothing calls |
 
 The libraries are not copied here. `tools/link.py` takes them from
-`kernel/1.05e-0731/stock` and `stage1/decomp`, and edits three things at
+`kernel/stock` and `stage1/decomp`, and edits three things at
 build time: the header's title and ROM size and the function the startup
 code calls (`crt0.s`), the order of the drawing library's variables, and
 where the long math is cut into objects. EZ Flash's linker interleaved the

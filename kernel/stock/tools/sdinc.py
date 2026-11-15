@@ -115,7 +115,7 @@ def write_inc(path, src, start, end, data, labels, extra_labels):
         if start <= addr < end and RGBDS_LABEL.match(name) and not name.startswith(("l__", "s__")):
             if name not in by_addr.get(addr, []):
                 by_addr.setdefault(addr, []).append(name)
-    lines = [f"; Generated from {src} by kernel/1.05e-0731/stock/tools/sdinc.py, do not edit.",
+    lines = [f"; Generated from {src} by kernel/stock/tools/sdinc.py, do not edit.",
              f"; ${start:04x}-${end:04x}"]
     run_ = []
 

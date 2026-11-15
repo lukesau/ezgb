@@ -1,5 +1,5 @@
 	;; EZ Flash Jr stage1 runtime: GBDK 2.96a crt0.s as EZ Flash modified it,
-	;; the same as the kernel's (kernel/1.05e-0731/stock/gbdk/crt0.s) but for
+	;; the same as the kernel's (kernel/stock/gbdk/crt0.s) but for
 	;; the header and the call to main. GBDK library code, GPLv2 with linking
 	;; exception (LICENSE_GPLV2_LE).
 	;;

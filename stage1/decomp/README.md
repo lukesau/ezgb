@@ -65,7 +65,7 @@ All of them match: 41 functions on FW4, 42 on FW5-0918 (with
 `FpgaSetBootCpu`).
 
 The kernel was built by the same compiler, with `--opt-code-size`
-([kernel/1.05e-0731/stock](../../kernel/1.05e-0731/stock/README.md#toolchain-findings)).
+([kernel/stock](../../kernel/stock/README.md#toolchain-findings)).
 
 What fitting the C to it showed about EZ Flash's source:
 

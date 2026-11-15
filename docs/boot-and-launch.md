@@ -16,7 +16,7 @@ that rewrites the FPGA firmware and needs a power cycle afterwards.
 `$0100` is `nop` / `jp $0150` in stock (the mod's goes through `$0020`
 first, for the Super Game Boy, [sgb-boot.md](sgb-boot.md)). `KernelEntry`
 (`00:0150`) is the GBDK runtime start
-([crt0.s](../kernel/1.05e-0731/stock/gbdk/crt0.s)):
+([crt0.s](../kernel/stock/gbdk/crt0.s)):
 
 ```text
 KernelEntry
