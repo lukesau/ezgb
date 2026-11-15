@@ -45,7 +45,7 @@ Example layout under `~/fpga` (the scripts' defaults assume it):
 ~/fpga/prjcombine/         prjcombine checkout (rev below), built
 ~/fpga/s3decode/           copy of stage0/tools/s3decode, built
 ~/fpga/scripts/            copy of stage0/tools/ (rsync -a --exclude s3decode stage0/tools/ <build host>:~/fpga/scripts/)
-~/fpga/blank/blank.bit     blank-design baseline for diffing
+~/fpga/blank.bit           blank-design baseline for diffing
 ~/fpga/smoke/              smoke-test design and outputs
 ~/fpga/cart/               cart bitstream images, decodes, BRAM dumps
 ~/fpga/ise.kdl             prjcombine toolchain config for ISE (only for its fuzzers)
@@ -91,7 +91,7 @@ to read: search for `tile_class CLB`, `BRAM_S3A`, `IOB_S3A_S2` and so on.
 # on the build host
 cd ~/fpga/s3decode && cargo build --release
 ./target/release/s3decode --db ~/fpga/prjcombine/databases/spartan3.zstd \
-    --baseline ~/fpga/blank/blank.bit --blob-dir bram/ image.bin > image.decode.txt
+    --baseline ~/fpga/blank.bit --blob-dir bram/ image.bin > image.decode.txt
 ```
 
 | Flag | Meaning |
