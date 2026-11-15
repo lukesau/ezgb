@@ -12,8 +12,9 @@ source.
 - `crt0.s`: GBDK 2.96a `libc/gb/crt0.s` (identical to GBDK-2020 3.0.1's) with
   EZ Flash's changes, each marked `;; ezflash:`. In short: an interrupt nesting
   count (`__int_nest`) used by the dispatcher, `enable_interrupts`/
-  `disable_interrupts` and `banked_call`; ROM bank 1 selected at startup; the
-  kernel's init instead of `gsinit`/`banked_call _main`; `_reset`,
+  `disable_interrupts` and `banked_call`; ROM bank 1 selected at startup, so
+  `gsinit` (linked in bank 1) can run, then `BatteryCheck` instead of
+  `banked_call _main`; `_reset`,
   `_clock` and `__printTStates` removed. Global
   labels without a leading dot are the kernel disassembly's names for the
   same addresses.

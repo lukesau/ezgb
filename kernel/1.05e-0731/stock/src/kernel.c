@@ -1,4 +1,4 @@
-/* The kernel's own C in bank 0, from $07BC. Function names are kernel.sym's;
+/* The kernel's C in bank 0, from $07BC. Function names are kernel.sym's;
    the GBDK calls are GBDK 2.96a's library (gbdk/include), built with
    BYTE_IS_UNSIGNED so its types and FatFs's agree. */
 

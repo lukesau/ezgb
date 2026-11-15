@@ -39,7 +39,7 @@ build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/crt0.sym &:
 	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0xd6c9 $(CRT0_DEFS) \
 		-b _GSINIT=0x68b6 -b _GSINITTAIL=0x7390 \
 		--region 0000:01e3:build/crt0_low.inc --region 0600:07bc:build/crt0_home.inc \
-		--region 7390:7600:build/b1_gsinittail.inc --syms-out build/crt0.sym
+		--region 7390:8000:build/b1_gsinittail.inc --syms-out build/crt0.sym
 
 # the whole bank: code from $4000, $FF fill after it, FatFs globals at $C5A5
 # banks 5, 6 and 9 link src/dbg.c first
@@ -101,7 +101,7 @@ build/b0_kernel.inc build/b1_kernel_init.inc &: $(KERNEL_SRCS) src/ff.h src/ffco
 		-b _CODE=0x07bc -b _DATA=0xcc31 -b _GSINIT=0x68b6 $(KERNEL_ALIASES) \
 		--region 07bc:1926:build/b0_kernel.inc --region 68b6:68c0:build/b1_kernel_init.inc
 
-# the kernel's C in bank 1, from $4000; its initialized data's _GSINIT code
+# the kernel's C in bank 1, $4000-$68B6; its initialized data's _GSINIT code
 # follows ccsbcs.c's at $7096
 BANK1_SRCS := src/bank1.c
 BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _color=StoreDrawParams \
@@ -112,13 +112,17 @@ BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _c
               -a __mullong_rrx_s=U32Mul -a __rrulong_rrx_s=U32Shr -a __moduint_rrx_s=U16Mod \
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wPath=0xc2a6 -g _wLabelBuf=0xc4a4 \
               -g _wSaveBuf=0xc0a0 -g _wTmp=0xc3a5 -g _wFil=0xca0f -g _wD3EB=0xd3eb -g _wD3ED=0xd3ed \
-              -g _wD3F0=0xd3f0 -g _wD3F2=0xd3f2
+              -g _wD3F0=0xd3f0 -g _wD3F2=0xd3f2 -g _wD3EC=0xd3ec -g _wD3EE=0xd3ee -g _wD3EF=0xd3ef \
+              -g _wD3F1=0xd3f1 -g _wD3F6=0xd3f6 -g _wFatFs=0xc7a9 -g _wRomBanks=0xc2a4 -g _wHdrSum=0xc5a3 \
+              -a _fs_write=FarCall_07_7739 -a _fs_clust2sect=FarCall_05_4279 -a _fs_get_fat=FarCall_05_4378 \
+              -a _wait_vbl_done=WaitVBlankFlag -a _joypad=ReadJoypad -a _delay=Delay -a _box=DrawRect \
+              -a _strcpy=ApplyBasename -a __rlulong_rrx_s=U32Shl
 
 build/b1_code.inc build/b1_init.inc &: $(BANK1_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) $(BANK1_SRCS) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x4000 -b _DATA=0xd3f9 -b _GSINIT=0x7096 $(BANK1_ALIASES) \
-		--region 4000:5736:build/b1_code.inc --region 7096:7390:build/b1_init.inc
+		--region 4000:68b6:build/b1_code.inc --region 7096:7390:build/b1_init.inc
 
 
 # SDCC 2.9.0's library C among bank 0's library modules, built as SDCC

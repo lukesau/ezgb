@@ -22,7 +22,7 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's bank 0 C (`kernel.c`, `fsglue.c`, `diskio.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -48,7 +48,11 @@ build compares against the md5, not a file.
 | banks 3, 5, 6, 7, 9 (whole banks) | `src/ff.c`, `src/dbg.c` | FatFs R0.11a, one copy per bank ([FatFs](#fatfs)) |
 | `00:07bc`-`1926` | `src/kernel.c` | the kernel's C: `WaitJoypadSelect` to `BatteryCheck`, `SdMenuMain` included ([Bank 0](#bank-0-c)) |
 | `00:1926`-`20bb` | `src/fsglue.c`, `src/diskio.c`, `src/option/ccsbcs.c` | the `f_` entry points, the disk layer, `get_fattime`, CP437 conversion |
+| `01:4000`-`68b6` | `src/bank1.c` | the kernel's C in bank 1: the browser rows, the RTC and date code, the save load and write, the launch setup and the ROM info screens ([Bank 1](#bank-1-c)) |
+| `01:68b6`-`68c0` | `src/kernel.c` | the start of `_GSINIT` (`gsinit`): `wMarqueePos`'s initializer |
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
+| `01:7096`-`7390` | `src/bank1.c` | its `_GSINIT` code: the tables of `WToUpper_B1` and the date code |
+| `01:7390`-`8000` | `gbdk/crt0.s` | `_GSINITTAIL`'s `ret`, then `$FF` fill |
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
 | `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
 | `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
@@ -95,7 +99,7 @@ kernel.sym names some of this wrong: `Open_B9` is `f_mkdir`, `FsUnlink`
 
 ## Bank 0 C
 
-The kernel's own C starts at `00:07bc`, right after crt0's `_HOME`, and is
+The kernel's C starts at `00:07bc`, right after crt0's `_HOME`, and is
 built with GBDK 2.96a's headers and `-DBYTE_IS_UNSIGNED=1`, which makes
 GBDK's `BYTE`/`WORD`/`DWORD` the unsigned types FatFs uses (`integer.h` then
 skips its own; that guard is ours). Function names are kernel.sym's, and a
@@ -141,10 +145,11 @@ What fitting it showed:
   `f_` calls; FatFs's `diskio.c` (sector I/O through bank 2, the RTC as
   `get_fattime`); and R0.11a's `option/ccsbcs.c`, unchanged.
 - The C files' `_GSINIT` area is linked into bank 1:
-  `BootUnpackWramTables` (`01:68b6`) is it, and `RleUnpack` (`00:20bb`) is
-  GBDK's `__initrleblock`. `ff_wtoupper`'s `static const` tables are WRAM
+  `BootUnpackWramTables` (`01:68b6`) is crt0's `gsinit`, `RleUnpack`
+  (`00:20bb`) is `__initrleblock`, and the `ret` at `01:7390` is crt0's
+  `_GSINITTAIL`. `ff_wtoupper`'s `static const` tables are WRAM
   (`$CC33`, `$D00F`), copied there at boot.
-- `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's own library C, built
+- `strrchr`, `strncpy` and `strlen` are SDCC 2.9.0's library C, built
   with no options (`sdcclib/`). GBDK 2.96a has no `strrchr` or `memset`;
   `Memset` and `Memcpy` are hand-written asm (`src/libasm.s`). SDCC 2.9.0's gbz80 asm
   library is there too: `stubs.s`, `div.s` and `shift.s` at `$2826`, and
@@ -167,6 +172,38 @@ What fitting it showed:
   modulo, `U32Mod` (`$2832`) the division. The same goes for the bodies:
   `S32DivImpl` (`$29e6`) and `U32DivImpl` (`$2a77`) return the remainder,
   `S32ModImpl` and `U32ModImpl` the quotient.
+
+## Bank 1 C
+
+`src/bank1.c` is all of bank 1's code, `$4000`-`$68b6`, built like
+`kernel.c`. Its initialized data (two month tables, a year table and
+`WToUpper_B1`'s tables) lands in WRAM from `$D3F9`, filled by its `_GSINIT`
+code at `$7096`.
+
+- kernel.sym gets several bank 1 names wrong:
+  - `FormatFileSize` (`$45b3`) is FatFs's `ff_wtoupper` as `ffunicode.c`
+    has it from R0.12 on (R0.15's copy matches, tables included). It is
+    banked and nothing calls it; here it is `WToUpper_B1`.
+  - `BuildSaverBackupPath` (`$5736`) bubble-sorts the browser's entries by
+    name (`SortEntries_B1`).
+  - `PreLaunchSaveStamp` (`$55c2`) is the shared tail of
+    `BackupOpenSaverPath`, not a function.
+  - `DateToDaysSince1970` returns seconds since 1970, less eight hours
+    (the RTC holds UTC+8).
+  - `wFileSizeFmtLo`/`Hi` (`$D3F9`, `$D5EB`) are `WToUpper_B1`'s tables.
+- `$C0A0` is a 512-byte sector buffer (`wSaveBuf`). A `.sav`'s 48-byte RTC
+  footer is read into it, so the game's MBC3 clock registers sit there one
+  per 4 bytes.
+- `BackupSaveDump` (`$643a`) is not banked and takes a path it does not
+  use; `BackupSavePrompt` passes `""`. `BackupOpenSaverPath` also ignores
+  its second argument.
+- Forms that matter: `(UINT16)(row - 1) + 2` (the cast stops a constant
+  fold), `j * 255` in the sort (SDCC strength-reduces it into the running
+  offset stock has), `volatile` RTC register reads, `wSaveBuf[n]` as an
+  array, and `volatile` locals plus `(int)sel < 1` in `BootRomInfoMenu`,
+  which reproduce stock keeping all three locals on the stack.
+- The ROM info screen prints the RAM size in hex (radix 16), so 128 KB
+  shows as `80KB`.
 
 ## Matching
 

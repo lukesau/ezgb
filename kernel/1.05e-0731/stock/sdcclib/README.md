@@ -1,6 +1,6 @@
 # SDCC library code
 
-Bank 0 links some of SDCC 2.9.0's own C library, built the way SDCC's
+Bank 0 links some of SDCC 2.9.0's C library, built the way SDCC's
 `device/lib` builds it: plain `sdcc -mgbz80`, no options.
 
 | File | Address | kernel.sym |

@@ -22,14 +22,22 @@ extern UINT8 wSaveBuf[];		/* $C0A0: a 512-byte sector buffer; after a .sav's
 					   clock registers, one per 4 bytes */
 extern char wTmp[];			/* $C3A5: save path */
 extern FIL wFil;			/* $CA0F */
-extern UINT8 wD3EB, wD3ED, wD3F0;	/* launch settings: wD3ED save type, wD3F0 RTC */
+extern FATFS wFatFs;			/* $C7A9 */
+extern UINT8 wD3EB, wD3EC, wD3ED, wD3EE, wD3EF, wD3F0, wD3F1;
+extern UINT8 wD3F6;			/* $77: the save has an RTC footer */	/* launch settings: wD3EB/wD3ED save type,
+						   wD3EF battery, wD3F0 RTC, wD3F1 rumble */
+extern UINT16 wRomBanks;		/* $C2A4: the ROM's size in 16 KB banks */
+extern UINT8 wHdrSum;			/* $C5A3: the header checksum, worked out */
 extern UINT32 wD3F2;			/* $D3F2: the time a .sav's clock was saved */
 
 /* bank 0 */
 FRESULT fs_open (FIL* fp, const TCHAR* path, BYTE mode);
 FRESULT fs_read (FIL* fp, void* buff, UINT btr, UINT* br);
+FRESULT fs_write (FIL* fp, const void* buff, UINT btw, UINT* bw);
 FRESULT fs_lseek (FIL* fp, DWORD ofs);
 FRESULT fs_close (FIL* fp);
+DWORD fs_clust2sect (FATFS* fs, DWORD clst);
+DWORD fs_get_fat (FATFS* fs, DWORD clst);
 void memset (void *dst, UINT8 c, UINT16 n);	/* Memset, 00:2ca5 */
 void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y);
 void U32ToAscii_B0 (UINT32 v, char *buf, UINT8 radix);
@@ -158,7 +166,7 @@ void DrawBrowserDetail (UINT16 top, UINT16 row, UINT8 code) __banked
 
 /* 01:45b3: FatFs's ff_wtoupper as ffunicode.c has it from R0.12 on (this is
    R0.15's, tables included), banked. Nothing calls it. kernel.sym has it as
-   FormatFileSize. */
+   FormatFileSize. FatFs code, (C) ChaN, under the FatFs license (src/ff.h). */
 DWORD WToUpper_B1 (DWORD uni) __banked
 {
 	const WORD* p;
@@ -627,4 +635,426 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 		*(UINT8 *)0xa202 = 0;
 	*(UINT8 *)0x4000 = 0;
 	SetFpgaPage_B1(0);
+}
+
+/* 01:5736: bubble-sort the first n entries by name (page 1 of the table,
+   swapping through wSaveBuf). kernel.sym has it as BuildSaverBackupPath. */
+void SortEntries_B1 (UINT16 n) __banked
+{
+	UINT16 i, j, last, end;
+
+	if (n > 1) {
+		*(UINT8 *)0x4000 = 1;
+		last = n - 1;
+		for (i = 0; i < last; i++) {
+			end = n - i - 1;
+			for (j = 0; j < end; j++) {
+				if (CStrCmp(wEntries[j].name, wEntries[j + 1].name) > 0) {
+					memcpy(wSaveBuf, wEntries[j + 1].name, 255);
+					memcpy(wEntries[j + 1].name, wEntries[j].name, 255);
+					memcpy(wEntries[j].name, wSaveBuf, 255);
+				}
+			}
+		}
+	}
+}
+
+/* 01:58b0: the ROM file's sectors as runs for the FPGA loader, in wSaveBuf:
+   0, then (sector count, start sector) pairs, ending 0, $FFFFFFFF; at
+   $1F0 the file size, 1 and the cluster size. Returns $FFFFFFFF when the
+   file does not open. */
+UINT32 LaunchSetup (char *path) __banked
+{
+	UINT32 res;
+	FIL fil;
+	UINT32 *p;
+	UINT32 clst;
+	UINT32 prev;
+	UINT32 n;
+	UINT32 last;
+	UINT32 fsize;
+
+	SetFpgaPage_B1(0);
+	res = fs_open(&fil, path, FA_READ);
+	if (res)
+		return 0xffffffff;
+	if (wFatFs.fs_type == FS_FAT16)
+		last = 0xffff;
+	else
+		last = 0x0ffffff7;
+	clst = fil.sclust;
+	fsize = fil.fsize;
+	p = (UINT32 *)wSaveBuf;
+	*p = 0;
+	p++;
+	*p = fs_clust2sect(&wFatFs, clst);
+	p++;
+	prev = clst;
+	n = 0;
+	do {
+		clst = fs_get_fat(fil.fs, clst);
+		n++;
+		if (clst != prev + 1) {
+			*p = n * wFatFs.csize;
+			p++;
+			*p = fs_clust2sect(&wFatFs, clst);
+			p++;
+		}
+		prev = clst;
+	} while (clst < last);
+	p--;
+	*p = 0;
+	p--;
+	*p = 0xffffffff;
+	fs_close(&fil);
+	p = (UINT32 *)wSaveBuf;
+	p[124] = fsize;
+	p[125] = 1;
+	p[126] = wFatFs.csize;
+	return 0;
+}
+
+/* 01:5c08: the launch settings from the cartridge type byte ($0147) */
+void MapCartTypeToUi (UINT8 type)
+{
+	switch (type) {
+	case 0x00:
+	case 0x08:
+	case 0x09:
+		wD3EB = 0;
+		break;
+	case 0x01:
+	case 0x02:
+	case 0x03:
+	case 0xea:
+	case 0xff:
+		wD3EB = 1;
+		break;
+	case 0x05:
+	case 0x06:
+		wD3EB = 2;
+		break;
+	case 0x0f:
+	case 0x10:
+	case 0x11:
+	case 0x12:
+	case 0x13:
+	case 0xfc:
+		wD3EB = 3;
+		break;
+	case 0x19:
+	case 0x1a:
+	case 0x1b:
+	case 0x1c:
+	case 0x1d:
+	case 0x1e:
+		wD3EB = 4;
+		break;
+	case 0x0b:
+	case 0x0c:
+	case 0x0d:
+	case 0x15:
+	case 0x16:
+	case 0x17:
+	case 0x22:
+	case 0x55:
+	case 0x56:
+	case 0xfd:
+	case 0xfe:
+		wD3EB = 6;
+		break;
+	default:
+		wD3EB = 6;
+		break;
+	}
+	if (type == 0x03 || type == 0x06 || type == 0x09 || type == 0x0d || type == 0x0f
+	    || type == 0x10 || type == 0x13 || type == 0x17 || type == 0x1b || type == 0x1e
+	    || type == 0x22 || type == 0xfd || type == 0xff)
+		wD3EF = 1;
+	else
+		wD3EF = 0;
+	if (type == 0x0f || type == 0x10)
+		wD3F0 = 1;
+	else
+		wD3F0 = 0;
+	switch (type) {
+	case 0x1c:
+	case 0x1d:
+	case 0x1e:
+		wD3F1 = 1;
+		break;
+	default:
+		wD3F1 = 0;
+		break;
+	}
+}
+
+/* 01:5e14: open the ROM, read its header into the launch settings, and
+   tell MBC1M (a second header at 256 KB) from MBC1; returns f_open's
+   result */
+UINT8 RomLoaderMain (char *path) __banked
+{
+	UINT32 res;
+	UINT br;
+	UINT16 i;
+	UINT8 type;
+	UINT32 hash = 0;
+
+	SetFpgaPage_B1(0);
+	res = fs_open(&wFil, path, FA_READ);
+	if (res)
+		return 0xff;
+	wRomBanks = wFil.fsize >> 14;
+	fs_lseek(&wFil, 0);
+	fs_read(&wFil, wSaveBuf, 512, &br);
+	wHdrSum = 0;
+	for (i = 0x134; i <= 0x14c; i++)
+		wHdrSum = wHdrSum - wSaveBuf[i] - 1;
+	type = wSaveBuf[0x147];
+	wD3EC = wSaveBuf[0x148];
+	wD3ED = wSaveBuf[0x149];
+	wD3EE = wSaveBuf[0x14c];
+	MapCartTypeToUi(type);
+	if (wD3EB == 1 && wRomBanks > 32) {
+		fs_lseek(&wFil, 0x40000);
+		fs_read(&wFil, wSaveBuf, 512, &br);
+		for (i = 0x104; i <= 0x133; i++)
+			hash = (hash << 1) ^ wSaveBuf[i];
+		if (hash == 0xe06c8834)
+			wD3EB = 5;
+	}
+	fs_close(&wFil);
+	return res;
+}
+
+void DrawInfoPanelRect (void);
+
+/* 01:601e: the ROM info screen (cartridge type, ROM and RAM size, battery);
+   waits for A or B. The RAM size is printed in hex. */
+void DrawCardTypeScreen (void)
+{
+	char buf[20];
+	UINT8 ram;
+	UINT8 keys;
+
+	DrawInfoPanelRect();
+	color(3, 0, 0);
+	DrawString("Cardtype:", 0, 0x25, 0x2a);
+	switch (wD3EB) {
+	case 0:
+		strcpy(buf, "NoMBC");
+		break;
+	case 1:
+		strcpy(buf, "MBC1");
+		break;
+	case 2:
+		strcpy(buf, "MBC2");
+		break;
+	case 3:
+		strcpy(buf, "MBC3");
+		break;
+	case 4:
+		strcpy(buf, "MBC5");
+		break;
+	case 5:
+		strcpy(buf, "MBC1M");
+		break;
+	case 6:
+		strcpy(buf, "Not");
+		break;
+	}
+	DrawString(buf, 0, 0x5c, 0x2a);
+	DrawString("ROM size:", 0, 0x25, 0x36);
+	U32ToAscii_B0(32 << wD3EC, buf, 10);
+	CStrCat_B1(buf, "KB");
+	DrawString(buf, 0, 0x5c, 0x36);
+	DrawString("RAM size:", 0, 0x25, 0x42);
+	switch (wD3ED) {
+	case 0:
+		ram = 0;
+		break;
+	case 1:
+	case 2:
+		ram = 8;
+		break;
+	case 4:
+		ram = 128;
+		break;
+	default:
+		ram = 32;
+		break;
+	}
+	U32ToAscii_B0(ram, buf, 16);
+	CStrCat_B1(buf, "KB");
+	DrawString(buf, 0, 0x5c, 0x42);
+	DrawString("Battery :", 0, 0x25, 0x4e);
+	if (wD3EF)
+		DrawString("Yes", 0, 0x5c, 0x4e);
+	else
+		DrawString("No", 0, 0x5c, 0x4e);
+	for (;;) {
+		keys = joypad();
+		if (keys & J_A)
+			break;
+		if (keys & J_B)
+			break;
+	}
+}
+
+/* 01:62b1 */
+void DrawInfoPanelRect (void)
+{
+	color(3, 2, 0);
+	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
+}
+
+/* 01:62d0: BOOT / ROM info menu; returns the choice, or $FF for B.
+   volatile on the locals reproduces stock's allocation (all three on the
+   stack). */
+UINT8 BootRomInfoMenu (void)
+{
+	volatile UINT8 redraw = 1;
+	volatile UINT8 sel = 0;
+	volatile UINT16 keys;
+
+panel:
+	DrawInfoPanelRect();
+	for (;;) {
+		if (redraw) {
+			if (sel == 0) {
+				color(1, 2, 0);
+				DrawString("BOOT", 0, 0x25, 0x2a);
+				color(3, 0, 0);
+				DrawString("ROM info", 0, 0x25, 0x3a);
+			} else {
+				color(3, 0, 0);
+				DrawString("BOOT", 0, 0x25, 0x2a);
+				color(1, 2, 0);
+				DrawString("ROM info", 0, 0x25, 0x3a);
+			}
+		}
+		redraw = 0;
+		keys = joypad();
+		if (keys & J_UP) {
+			if (sel) {
+				sel--;
+				redraw = 1;
+			}
+		}
+		if (keys & J_DOWN) {
+			if ((int)sel < 1) {
+				sel++;
+				redraw = 1;
+			}
+		}
+		if (keys & J_A) {
+			if (sel == 1) {
+				DrawCardTypeScreen();
+				redraw = 1;
+				sel = 0;
+				goto panel;
+			} else
+				break;
+		}
+		if (keys & J_B)
+			return 0xff;
+		delay(100);
+	}
+	color(0, 0, 0);
+	box(0, 0, 0x9f, 0x8f, M_FILL);
+	color(3, 0, 0);
+	DrawString("Loading", 0, 0x33, 0x41);
+	return sel;
+}
+
+/* 01:643a: write the save pSRAM to wTmp (the .sav path), then the 48-byte
+   RTC footer from page $11 when the save has one. path is not used. */
+void BackupSaveDump (char *path, UINT32 size)
+{
+	UINT32 ofs;
+	UINT bw;
+	UINT8 spin;
+	FRESULT res;
+
+	wait_vbl_done();
+	SetFpgaPage_B1(0);
+	res = fs_open(&wFil, wTmp, FA_WRITE | FA_OPEN_ALWAYS);
+	if (res)
+		return;
+	fs_lseek(&wFil, 0);
+	spin = 0;
+	for (ofs = 0; ofs < size; ofs += 512) {
+		*(UINT8 *)0x4000 = ofs >> 13;
+		SetFpgaPage_B1(3);
+		set_data(wSaveBuf, (unsigned char *)((ofs & 0x1fff) + 0xa000), 512);
+		SetFpgaPage_B1(0);
+		fs_write(&wFil, wSaveBuf, 512, &bw);
+		spin++;
+		if (spin == 3)
+			spin = 0;
+		if (spin == 0)
+			DrawString(".  ", 3, 11, 10);
+		else if (spin == 1)
+			DrawString(".. ", 3, 11, 10);
+		else
+			DrawString("...", 3, 11, 10);
+	}
+	if (wD3F6 == 0x77) {
+		memset(wSaveBuf, 0, 48);
+		*(UINT8 *)0x4000 = 0x11;
+		SetFpgaPage_B1(3);
+		*(wSaveBuf + 0) = *(volatile UINT8 *)0xa220;
+		*(wSaveBuf + 4) = *(volatile UINT8 *)0xa221;
+		*(wSaveBuf + 8) = *(volatile UINT8 *)0xa222;
+		*(wSaveBuf + 12) = *(volatile UINT8 *)0xa223;
+		*(wSaveBuf + 16) = *(volatile UINT8 *)0xa224;
+		*(wSaveBuf + 20) = *(volatile UINT8 *)0xa220;
+		*(wSaveBuf + 24) = *(volatile UINT8 *)0xa221;
+		*(wSaveBuf + 28) = *(volatile UINT8 *)0xa222;
+		*(wSaveBuf + 32) = *(volatile UINT8 *)0xa223;
+		*(wSaveBuf + 36) = *(volatile UINT8 *)0xa224;
+		*(wSaveBuf + 40) = *(volatile UINT8 *)0xa210;
+		*(wSaveBuf + 41) = *(volatile UINT8 *)0xa211;
+		*(wSaveBuf + 42) = *(volatile UINT8 *)0xa212;
+		*(wSaveBuf + 43) = *(volatile UINT8 *)0xa213;
+		*(UINT8 *)0x4000 = 0;
+		SetFpgaPage_B1(0);
+		fs_lseek(&wFil, size);
+		fs_write(&wFil, wSaveBuf, 48, &bw);
+	}
+	fs_close(&wFil);
+}
+
+/* 01:6747: the BACKUPSAVE box; flag 1 saves without asking. save is the
+   size in 8 KB pages. */
+void BackupSavePrompt (UINT32 save, UINT8 flag) __banked
+{
+	UINT32 size;
+	UINT16 keys;
+
+	color(3, 2, 0);
+	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
+	DrawString("BACKUPSAVE", 10, 5, 5);
+	if (flag == 1) {
+		DrawString("Saving...", 9, 5, 10);
+		size = save << 13;
+		BackupSaveDump("", size);
+		return;
+	}
+	color(3, 2, 0);
+	box(0x27, 0x5d, 0x50, 0x6a, M_FILL);
+	box(0x52, 0x5d, 0x7b, 0x6a, M_FILL);
+	DrawString("[B]NO", 5, 5, 12);
+	DrawString("[A]OK", 5, 10, 12);
+	for (;;) {
+		keys = joypad();
+		if (keys & J_A) {
+			DrawString("Saving...", 9, 5, 10);
+			size = save << 13;
+			BackupSaveDump("", size);
+			return;
+		}
+		if (keys & J_B)
+			return;
+	}
 }
