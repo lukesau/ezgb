@@ -27,18 +27,19 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 
-INCS := build/crt0_low.inc build/crt0_home.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
+INCS := build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/b1_kernel_init.inc build/b1_code.inc build/b1_init.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
         build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
         build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
 all: build/kernel.gb
 
-build/crt0_low.inc build/crt0_home.inc build/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
+build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0xd6c9 $(CRT0_DEFS) \
+		-b _GSINIT=0x68b6 -b _GSINITTAIL=0x7390 \
 		--region 0000:01e3:build/crt0_low.inc --region 0600:07bc:build/crt0_home.inc \
-		--syms-out build/crt0.sym
+		--region 7390:7600:build/b1_gsinittail.inc --syms-out build/crt0.sym
 
 # the whole bank: code from $4000, $FF fill after it, FatFs globals at $C5A5
 # banks 5, 6 and 9 link src/dbg.c first
@@ -76,7 +77,7 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wDirEnd=0xc5a4 \
               -g _wFno=0xc9db -g _wDir=0xc9f5 -a _SetFpgaPageAlt_B4=SetFpgaPageAlt_B4 \
               -a _strncpy=Strncpy -a _CStrCat_B1=CStrCat_B1 -a __rrulong_rrx_s=U32Shr \
-              -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod -g _wLabelBuf=0xc4a4 -g _wMarqueePos=0xcc31 \
+              -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod -g _wLabelBuf=0xc4a4 \
               -a _box=DrawRect -a _memset=Memset -a _memcpy=Memcpy -a _strrchr=Strrchr \
               -a _wait_vbl_done=WaitVBlankFlag -a _display_off=LcdOff -a _disable_interrupts=DiNest \
               -a _f_mount=Mount_B5 -a _f_chdir=Chdir_B5 -a _f_opendir=Opendir_B5 -a _fs_mkdir=FarCall_09_77ff \
@@ -93,10 +94,31 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -g _wD3EB=0xd3eb -g _wD3EC=0xd3ec -g _wD3ED=0xd3ed -g _wD3EF=0xd3ef -g _wD3F0=0xd3f0 \
               -g _wD3F6=0xd3f6
 
-build/b0_kernel.inc: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+# its one initialized global, wMarqueePos, starts _GSINIT ($68B6, bank 1)
+build/b0_kernel.inc build/b1_kernel_init.inc &: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p build
 	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x07bc $(KERNEL_ALIASES) --region 07bc:1926:$@
+		-b _CODE=0x07bc -b _DATA=0xcc31 -b _GSINIT=0x68b6 $(KERNEL_ALIASES) \
+		--region 07bc:1926:build/b0_kernel.inc --region 68b6:68c0:build/b1_kernel_init.inc
+
+# the kernel's C in bank 1, from $4000; its initialized data's _GSINIT code
+# follows ccsbcs.c's at $7096
+BANK1_SRCS := src/bank1.c
+BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _color=StoreDrawParams \
+              -a banked_call=FarCallTrampoline -a __initrleblock=RleUnpack -a _memset=Memset \
+              -a _memcpy=Memcpy -a _strlen=CStrLen -a _set_data=VramCopyStack \
+              -a _fs_open=FarCall_06_7309 -a _fs_read=FarCall_06_779a -a _fs_lseek=FarCall_03_76cc \
+              -a _fs_close=FarCall_03_768f -a __modslong_rrx_s=S32Div -a __divslong_rrx_s=S32Mod \
+              -a __mullong_rrx_s=U32Mul -a __rrulong_rrx_s=U32Shr -a __moduint_rrx_s=U16Mod \
+              -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wPath=0xc2a6 -g _wLabelBuf=0xc4a4 \
+              -g _wSaveBuf=0xc0a0 -g _wTmp=0xc3a5 -g _wFil=0xca0f -g _wD3EB=0xd3eb -g _wD3ED=0xd3ed \
+              -g _wD3F0=0xd3f0 -g _wD3F2=0xd3f2
+
+build/b1_code.inc build/b1_init.inc &: $(BANK1_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(BANK1_SRCS) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x4000 -b _DATA=0xd3f9 -b _GSINIT=0x7096 $(BANK1_ALIASES) \
+		--region 4000:5736:build/b1_code.inc --region 7096:7390:build/b1_init.inc
 
 
 # SDCC 2.9.0's library C among bank 0's library modules, built as SDCC

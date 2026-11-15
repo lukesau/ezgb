@@ -9,7 +9,6 @@
 	.include	"global.s"
 
 
-	.globl	BootUnpackWramTables
 	.globl	BatteryCheck
 
 	;; ****************************************
@@ -284,9 +283,9 @@ KernelEntry::
 	LD	(.sys_time+0),A	; Zero the system clock
 	LD	(.sys_time+1),A
 
-	;; ezflash: no gsinit, EI or banked_call _main; the kernel unpacks its
-	;; WRAM tables from bank 1 and runs its main loop from BatteryCheck
-	CALL	BootUnpackWramTables
+	;; ezflash: no EI or banked_call _main: after gsinit (linked in bank 1,
+	;; which is mapped at startup) the main loop runs from BatteryCheck
+	CALL	gsinit
 	CALL	BatteryCheck
 HaltLoop::
 _exit::
@@ -311,7 +310,9 @@ _exit::
 	.area	_LIT
 	;; Constant data used to init _DATA
 	.area	_GSINIT
+gsinit::
 	.area	_GSINITTAIL
+	ret
 	.area	_GSFINAL
 	;; Initialised in ram data
 	.area	_DATA

@@ -55,7 +55,7 @@ extern char wTmp[];			/* $C3A5: save name, extension, path scratch */
 extern FATFS wFatFs;			/* $C7A9 */
 extern UINT8 wD3EB, wD3EC, wD3ED, wD3EF, wD3F0;	/* launch settings */
 extern UINT8 wD3F6;
-extern UINT16 wMarqueePos;		/* $CC31: the offset last drawn */
+UINT16 wMarqueePos = 0xeeee;		/* $CC31: the offset last drawn */
 
 extern UINT8 wDebugTextRow;		/* $CC2F: row of the next boot message */
 extern UINT8 wDebugTextCol;		/* $CC30 */
