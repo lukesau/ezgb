@@ -8,15 +8,16 @@ replaced routines with source one at a time; `asm/` is now only the bank
 sections and `INCLUDE`s. `make` fails unless the result is byte-identical to
 stock.
 
-The same source builds the stock 1.05e-0918 kernel (md5
-`5238ac5987d23b68a19d40e43af8c786`) too ([0918](#0918)).
+The same source builds the other two stock kernels too: 1.05e-0918 (md5
+`5238ac5987d23b68a19d40e43af8c786`, [0918](#0918)) and 1.04e, the FW4
+kernel (md5 `b8c29fa5a94c37200434e4c72f0cdfea`, [1.04e](#104e)).
 
 This is separate from `../disassembly`, which is regenerated from the
 modded kernel after every injection. Everything here is stock.
 
 ```sh
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/kernel.gb and build-0918/kernel.gb, checked against the stock md5s
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock K=0918   # only 0918
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock   # build/, build-0918/ and build-104/kernel.gb, checked against the stock md5s
+SDCC29=<sdcc 2.9.0 prefix> make -C kernel/1.05e-0731/stock K=0918   # only 0918 (K=104: only 1.04e, K=0731: only 0731)
 ```
 
 Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
@@ -33,12 +34,13 @@ build compares against the md5, not a file.
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
-| `build/`, `build-0918/` | Generated includes and the built kernels (gitignored). |
+| `tools/incdiff.py` | Compares each generated include of a build with a stock kernel and names the first function that differs (how 1.04e was matched). |
+| `build/`, `build-0918/`, `build-104/` | Generated includes and the built kernels (gitignored). |
 
 ## 0918
 
 0918 is 0731 plus one routine nothing calls, so it builds from the same
-source with `K0918` defined for `src/bank1.c` (`make K=0918`, against
+source with `K0918` defined for the C (`make K=0918`, against
 `kernel/1.05e-0918/kernel.sym`). Only banks 0 and 1 differ
 ([kernel-diffs.md](../../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
 
@@ -51,7 +53,36 @@ source with `K0918` defined for `src/bank1.c` (`make K=0918`, against
 Everything after `RtcDebugDump` in bank 1 is `$262` higher, `_GSINIT`
 included, which the Makefile's `G1`-`G4` place. Bank 0 changes only in the
 addresses it calls in bank 1 and the global checksum, which the build sets
-with `rgbfix` for both kernels (`crt0.s` has 0731's).
+with `rgbfix` for every kernel (`crt0.s` has 0731's).
+
+## 1.04e
+
+1.04e is 1.05e without the real-time clock, so it builds from the same
+source with `K104` defined for the C (`make K=104`, against
+`kernel/1.04e/kernel.sym`). Banks 2, 5 and 7 are the same C; the rest
+differ only where 1.05e added the clock
+([kernel-diffs.md](../../../docs/kernel-diffs.md#104e-to-105e-0731)):
+
+- FatFs is built with `_FS_NORTC`, so files are stamped 2015-01-01, FatFs's
+  default, and there is no `get_fattime` or `SetFpgaPage` in bank 0
+  (`diskio.c`).
+- Bank 0 (`kernel.c`): no `$d3f6` flag from save pSRAM, no
+  `SetFpga7FD4_B1(0)` before launch, and `DrawU32Decimal` prints hex and
+  moves along the row instead of down.
+- Bank 1: no `SetFpga7FD4_B1`, no date code (`IsLeapYear` to
+  `RtcReadDaysClearRegs`), no clock restore in `BackupOpenSaverPath` (which
+  opens the save with mode 1, not 3) and no RTC footer in `BackupSaveDump`,
+  which sets `color(2, 2, 0)` before its progress dots.
+- Bank 4 (`DrawTimeAutosaveScreen`): the screen waits for VBlank and redraws
+  the SET box before the mode test, does not redraw `SAV` while editing or
+  zero the field on entering edit mode, and the month and day wrap on DOWN
+  at 1 (`== 1`, not `< 1`).
+- Bank 8: `K1.04e` on the firmware version screen.
+
+The places that move: bank 0's library code from `$20BB` is `$3B9` lower
+(the Makefile's `lib`), the runtime globals from `$D6A7` are `$27` lower
+(`wram`), bank 1's data starts at `$D3F2` (`D1`), and its `_GSINIT` pieces
+at `G1`-`G4`.
 
 ## Moving a routine to source
 
@@ -325,7 +356,13 @@ looks up every function and table in that bank of `build/kernel.gb`, with
 the operands the linker fills in masked: a table of addresses, or how many
 bytes match at the kernel.sym address. All of them match. `-v` shows the
 instructions around the first wrong byte. It was how the edits above were
-found; `make` then checks the whole bank, jump targets included.
+found; `make` then checks the whole bank, jump targets included. For 0918
+or 1.04e, add `--rom`, `--sym` with that kernel's kernel.sym and
+`--sym-pins`.
+
+`tools/incdiff.py build-104` compares every generated include of a build
+with a stock kernel (default 1.04e's), and names the function holding the
+first differing byte, `-v` with the bytes around it.
 
 ## SDCC 2.9.0
 

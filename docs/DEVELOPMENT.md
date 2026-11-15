@@ -213,8 +213,8 @@ comment blocks from `notes.json`, and assembles the result to prove it
 still matches. The naming conventions and how to read a `bank:addr` are in
 [MAPPING.md](MAPPING.md).
 
-The stock 1.05e-0731 and 1.05e-0918 kernels also build entirely from
-source, byte for byte, in
+All three stock kernels (1.04e, 1.05e-0731 and 1.05e-0918) also build
+entirely from source, byte for byte, in
 [kernel/1.05e-0731/stock](../kernel/1.05e-0731/stock/README.md).
 
 ## Trying it in SameBoy
