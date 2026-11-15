@@ -272,7 +272,9 @@ for (t, b), c in sorted(cells.items()):
             if src in used_out:
                 decl.append(f"wire {wname(src)} = {st}[{i}];")
         mul = int(c['attrs'].get('S3E_CLKFX_MULTIPLY', '00000001'), 2) + 1
-        body.append(f"s3_dcm #(.FX_MUL({mul})) i_{name}_dcm (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
+        div = int(c['attrs'].get('S3E_CLKFX_DIVIDE', '00000000'), 2) + 1
+        fx = f".FX_MUL({mul})" + (f", .FX_DIV({div})" if div != 1 else "")
+        body.append(f"s3_dcm #({fx}) i_{name}_dcm (" + ', '.join(f'.{k}({v})' for k, v in conns.items()) + ");")
 
 # Device DNA (value from the testbench: defparam or -P fpga_top...)
 for (t, b), c in sorted(cells.items()):
