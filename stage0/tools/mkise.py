@@ -17,14 +17,19 @@ Block RAM contents are INIT_xx / INITP_xx constraints from the blobs:
 <tile>.DATA.bin and <tile>.DATAP.bin (stage1-to-bram.py,
 picoblaze-patch.py) or <tile>.BEL.BRAM.DATA.bin (s3decode --blob-dir). The
 first --bram directory holding a tile's blob wins, so stage1 and patch
-blobs go before the stock decode.
+blobs go first.
 
---place DESIGN.v (the exported netlist the blocks were carved from) also
-puts every flip-flop a block file names in the slice and FF it has in the
-bitstream: the readable design keeps the hardware's registers one for one,
-so stock's placement carries over and map packs the logic around it. The
+--place also puts every flip-flop and each of the PicoBlaze's LUT RAMs in
+the cell it has in the stock bitstream, as stage0/ise/<fw>.place lists
+them: the readable design keeps the hardware's registers one for one, so
+stock's placement carries over and map packs the logic around it. The
 slice sites come from stage0/ise/xc3s200a-slices.txt (xdl -report);
 stage0/ise/<fw>.unplace lists the flip-flops left to ISE.
+
+--derive-place DESIGN.v writes stage0/ise/<fw>.place: DESIGN.v is the
+stock export the blocks were carved from, and each flip-flop a block file
+names goes to the cell that names it. Only this step reads anything of
+stock's.
 """
 import argparse
 import pathlib
@@ -37,8 +42,10 @@ ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 ap.add_argument("out", type=pathlib.Path)
 ap.add_argument("--bram", type=pathlib.Path, action="append", default=[])
 ap.add_argument("--fw", default="fw4")
-ap.add_argument("--place", type=pathlib.Path, metavar="DESIGN.v")
-ap.add_argument("--blocks", type=pathlib.Path, help="the block files (default the firmware's)")
+ap.add_argument("--place", action="store_true", help="place the flip-flops and LUT RAMs as stage0/ise/<fw>.place has them")
+ap.add_argument("--derive-place", type=pathlib.Path, metavar="DESIGN.v",
+                help="write stage0/ise/<fw>.place from the stock export and the block files, and place by it")
+ap.add_argument("--blocks", type=pathlib.Path, help="the block files, for --derive-place (default the firmware's)")
 args = ap.parse_args()
 
 FW = {"fw4": ("stage0/fw4/rtl/fw4_top.v", ["stage0/fw4/rtl"], "stage0/fw4/blocks"),
@@ -151,22 +158,23 @@ for t in sorted(brams):
         assert len(par) == 256, (t, len(par))
         for k in range(8):
             ucf.append(f'INST "{inst}" INITP_{k:02X} = {int.from_bytes(par[32 * k:32 * k + 32], "little"):064X};')
-placed, place = 0, []
-if args.place:
+# ---- placement: each slice flip-flop and each of the PicoBlaze's LUT RAMs
+# where the stock bitstream has it. stage0/ise/<fw>.place holds it, one
+# "instance cell" line per flip-flop (X3Y5_S1.FFX) and one "instance site"
+# line per LUT RAM (SLICE_X4Y8), so a build needs nothing of stock's.
+# --derive-place writes that file from the stock export and the block files.
+place_file = repo / "stage0" / "ise" / f"{args.fw}.place"
+sx = {}
+for l in open(repo / "stage0" / "ise" / "xc3s200a-slices.txt"):
+    t, site, _ = l.split()
+    x = int(re.match(r"CLB_X(\d+)Y", t)[1])
+    sxx = int(re.match(r"SLICE_X(\d+)Y", site)[1])
+    sx[x] = min(sx.get(x, sxx), sxx)
+place, ram_place = [], []       # (instance, cell), (instance, site)
+if args.derive_place:
     sys.path.insert(0, str(repo / "stage0" / "tools"))
     import carve
-    d = carve.Design(str(args.place))
-    sx = {}
-    for l in open(repo / "stage0" / "ise" / "xc3s200a-slices.txt"):
-        t, site, _ = l.split()
-        x = int(re.match(r"CLB_X(\d+)Y", t)[1])
-        sxx = int(re.match(r"SLICE_X(\d+)Y", site)[1])
-        sx[x] = min(sx.get(x, sxx), sxx)
-    unplace = set()
-    up = repo / "stage0" / "ise" / f"{args.fw}.unplace"
-    if up.exists():
-        unplace = {l.split("#")[0].strip() for l in open(up)} - {""}
-    ucf.append("\n# stock flip-flop placement (--place)")
+    d = carve.Design(str(args.derive_place))
     for name in block_names:
         blk = blk_dir / f"{name}.blk"
         name, _, cells, names = carve.read_block(str(blk), d)
@@ -181,25 +189,15 @@ if args.place:
                 if m:
                     alias[m[1]] = m[2]
         for net, new in names.items():
-            m = re.fullmatch(r"n_X(\d+)Y(\d+)_S(\d)_([XY])Q", net)
-            if not m:
+            m = re.fullmatch(r"n_(X\d+Y\d+_S\d)_([XY])Q", net)
+            if not m or f"{m[1]}.FF{m[2]}" not in cells:
                 continue
-            x, y, k, xy = int(m[1]), int(m[2]), int(m[3]), m[4]
-            if f"X{x}Y{y}_S{k}.FF{xy}" not in cells:
-                continue
-            site_x, site_y = sx[x] + (k & 1), 2 * (y - 1) + (k >> 1)
             base = re.match(r"\w+", new)[0]
             new = alias.get(base, base) + new[len(base):]
-            inst = f"u_logic/u_{name}/" + re.sub(r"\[(\d+)\]", r"_\1", new)
-            place.append(f"{inst} X{x}Y{y}_S{k}.FF{xy}")
-            if inst in unplace:
-                continue
-            ucf.append(f'INST "{inst}" LOC = "SLICE_X{site_x}Y{site_y}" | BEL = "FF{xy}";')
-            placed += 1
-if args.place:
-    # the PicoBlaze's LUT RAMs in their stock slices too: the picoblaze block
-    # file names each RAM cell (X7Y26_S0_G.m regs0.sx); a RAM64X1S takes two
-    # slices and is placed by its lower one
+            place.append((f"u_logic/u_{name}/" + re.sub(r"\[(\d+)\]", r"_\1", new), f"{m[1]}.FF{m[2]}"))
+    # the LUT RAMs: the picoblaze block file names each RAM cell
+    # (X7Y26_S0_G.m regs0.sx); a RAM64X1S takes two slices and is placed by
+    # its lower one
     rams = {}
     for l in open(blk_dir / "picoblaze.blk"):
         m = re.match(r"X(\d+)Y(\d+)_S(\d)_[FG]\.m\s+(\w+)\.", l)
@@ -208,10 +206,34 @@ if args.place:
             rams.setdefault(m[4], set()).add((sx[x] + (k & 1), 2 * (y - 1) + (k >> 1)))
     for base, sites in sorted(rams.items()):
         site_x, site_y = min(sites, key=lambda t: (t[1], t[0]))
-        ucf.append(f'INST "u_logic/u_picoblaze/{base}/r" LOC = "SLICE_X{site_x}Y{site_y}";')
+        ram_place.append((f"u_logic/u_picoblaze/{base}/r", f"SLICE_X{site_x}Y{site_y}"))
+    place_file.write_text(f"# {args.fw}: where the stock bitstream has each slice flip-flop and LUT RAM\n"
+                          "# (stage0/tools/mkise.py --derive-place)\n"
+                          + "".join(f"{i} {c}\n" for i, c in place + ram_place))
+elif args.place:
+    for l in open(place_file):
+        if l.strip() and not l.startswith("#"):
+            inst, where = l.split()
+            (ram_place if where.startswith("SLICE_") else place).append((inst, where))
+placed = 0
+if place:
+    unplace = set()
+    up = repo / "stage0" / "ise" / f"{args.fw}.unplace"
+    if up.exists():
+        unplace = {l.split("#")[0].strip() for l in open(up)} - {""}
+    ucf.append("\n# stock flip-flop placement (--place)")
+    for inst, cell in place:
+        if inst in unplace:
+            continue
+        x, y, k, xy = re.fullmatch(r"X(\d+)Y(\d+)_S(\d)\.FF([XY])", cell).groups()
+        x, y, k = int(x), int(y), int(k)
+        ucf.append(f'INST "{inst}" LOC = "SLICE_X{sx[x] + (k & 1)}Y{2 * (y - 1) + (k >> 1)}" | BEL = "FF{xy}";')
+        placed += 1
+    for inst, site in ram_place:
+        ucf.append(f'INST "{inst}" LOC = "{site}";')
 if place:
     # every named flip-flop's stock cell, for prove-ise.py
-    (args.out / "place.txt").write_text("\n".join(place) + "\n")
+    (args.out / "place.txt").write_text("".join(f"{i} {c}\n" for i, c in place))
 hand = repo / "stage0" / "ise" / f"{args.fw}.ucf"
 ucf.append(f"\n# {hand.relative_to(repo)}")
 ucf.append(hand.read_text())
