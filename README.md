@@ -1,17 +1,98 @@
-# EZ Flash Jr kernel: reverse engineering & mods
+# EZ Flash Jr from source
+
+The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. EZ Flash
+published no source for it, unlike its GBA sibling the
+[EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel): the menu
+(the "kernel"), the bootloader and the FPGA design ship only as binaries.
+
+This repository rebuilds all of it from source. The Game Boy programs
+compile to the stock bytes, and the FPGA design is readable Verilog proved
+equivalent to the stock bitstream. No file of EZ Flash's is in the
+repository, and none is needed to build.
+
+| Piece | What it is | Source | Result |
+|---|---|---|---|
+| Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | byte for byte |
+| Stage1, FW4 and FW5-0918 | the bootloader, stored in the FPGA's block RAM | [stage1/decomp](stage1/decomp/README.md): C, GBDK | byte for byte |
+| The updater's program, FW4 and FW5-0918 | the ROM that flashes a firmware | [stage0/updater](stage0/updater/README.md): C | byte for byte |
+| Slot B, FW4 and FW5-0918 | the FPGA configuration an update writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to the stock netlist |
+
+FW4 and FW5 are the two firmware generations; a cart runs one or the other
+([which is which](docs/kernel-versions.md)). 1.04e is the kernel for FW4,
+and both 1.05e builds are for FW5.
+
+## Building
+
+```sh
+stage1/decomp/tools/build-sdcc29.sh    # once: SDCC 2.9.0 into tools/sdcc-2.9.0
+make                                   # three kernels, two stage1s, two updater programs
+make compare                           # that, then every result against stock.sha1
+```
+
+[stock.sha1](stock.sha1) lists the hash of each stock binary, and a build
+fails if its result is not the one listed. This needs SDCC 2.9.0 (the
+compiler EZ Flash used), a current SDCC, RGBDS, GNU make and Python 3.
+
+The FPGA side needs Xilinx ISE 14.7 on a Linux machine and, for the proof,
+yosys and the official updater to prove against:
+
+```sh
+make stage0-stock BUILD_HOST=<build host>            # both firmwares, proved
+PROVE=0 make stage0-stock BUILD_HOST=<build host>    # built, not proved
+```
+
+[INSTALL.md](INSTALL.md) has the tools, the versions checked and the build
+host setup.
+
+## How it is put together
+
+- **Kernel:** C compiled with SDCC 2.9.0 against GBDK 2.96a and FatFs
+  R0.11a, with the edits EZ Flash made to both marked. One tree builds all
+  three kernels; 1.05e-0731 is the reference the other two are written
+  against ([kernel/stock](kernel/stock/README.md)). Each build also has a
+  labeled disassembly that reassembles to the original
+  ([differences between them](docs/kernel-diffs.md)).
+- **Stage1:** the bootloader that finds `ezgb.dat` on the card and starts
+  it, in C for both firmwares ([stage1/decomp](stage1/decomp/README.md)),
+  with a disassembly of each ([stage1/stock.md](stage1/stock.md)).
+- **FPGA:** the bitstream is decoded to a netlist
+  ([index](docs/fpga.md),
+  [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/)) and
+  rewritten as readable Verilog, proved equivalent block by block and then
+  as a whole ([stage0](stage0/README.md),
+  [design](stage0/docs/design.md), [blocks](stage0/docs/blocks.md)). ISE
+  builds a slot B image from that Verilog, which is proved against stock
+  again ([stage0/ise](stage0/ise/README.md)).
+- **PicoBlaze:** the soft CPU inside the FPGA that runs the SD card, the
+  loader, the clock and the flash. Its two programs are annotated listings
+  that assemble to the stock words
+  ([picoblaze.md](stage0/docs/picoblaze.md)).
+- **Updater:** a cut-down kernel that writes slot B to the configuration
+  flash ([updater.md](stage0/docs/updater.md),
+  [flash map](stage0/docs/flash-map.md)).
+- **Hardware:** the [board](docs/hardware-board.md), the
+  [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the
+  [boot and launch paths](docs/boot-and-launch.md), the
+  [FW4 to FW5 changes](stage0/docs/firmware-diff.md) and
+  [why the coin cell dies in a month](docs/battery-sram-swap.md).
+
+Three pieces have no published source to match and are rebuilt from the
+stock bytes: a few library routines in assembly, the Verilog, and the
+PicoBlaze's programs ([INSTALL.md](INSTALL.md#what-is-not-from-found-source)).
+Code that is other people's keeps its license
+([THIRD-PARTY.md](THIRD-PARTY.md)).
+
+## The mod
 
 ![The modded kernel's file browser in its light, dark and DV themes, the theme settings page, the hold-A options menu, and the firmware mod's boot screen](docs/banner.png)
 
-The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. Its menu
-(the "kernel") ships only as a compiled binary with no published source,
-unlike its GBA sibling the
-[EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel).
+Built on the same work: a nicer menu with themes, fonts, save management
+and fast launch, plus an optional replacement bootloader. It predates the
+source build and is a set of patches on the stock 1.05e-0731 kernel, ported
+to the other two. To build it, add a feature or rebuild a disassembly,
+start with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-This repo reverse-engineers the kernel and the cart's FPGA firmware, and
-builds a mod on top: a nicer menu with themes, fonts, save management and
-fast launch, plus an optional replacement bootloader.
-
-## Getting the mod
+### Getting it
 
 Use the [patcher page](https://lukesau.github.io/ezgb/patcher/). It checks
 your `ezgb.dat` and applies the right patch in the browser. Copy the result
@@ -37,7 +118,7 @@ Not sure which one? See
 redistributes EZ Flash's binaries, so there is no ready-made `ezgb.dat` to
 download ([why, and the other ways to build one](docs/distribution.md)).
 
-### The firmware mod
+#### The firmware mod
 
 Optional and experimental: a new bootloader with a themed splash, fast
 launch, a kernel picker and, on FW5-0918, SD error recovery. Unlike the
@@ -46,7 +127,7 @@ nearly always falls back to the cart's factory firmware, but in rare cases
 needs hardware tools to repair. The patcher page explains the risk and
 refuses anything but the exact stock updater.
 
-## Features
+### Features
 
 Each links to a doc with the details.
 
@@ -102,52 +183,34 @@ Each links to a doc with the details.
 - [Last ROM](docs/last-rom.md): START relaunches the last game, even after
   the battery dies.
 
-## The reverse engineering
-
-- **Kernel:** every bank is disassembled and labeled, and reassembles to the
-  original for all three builds. All three also build entirely from
-  source, C compiled with SDCC 2.9.0, byte for byte, in
-  [kernel/stock/](kernel/stock/README.md).
-- **Hardware:** the [board](docs/hardware-board.md), the
-  [registers](stage0/docs/design.md#registers-written-by-the-game-boy), the [boot](docs/boot-and-launch.md) and
-  [launch](docs/boot-and-launch.md) paths, and
-  [why the coin cell dies in a month](docs/battery-sram-swap.md).
-- **FPGA:** the bitstream is decoded ([index](docs/fpga.md),
-  [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/)) and
-  [stage0/](stage0/README.md) rewrites it as readable Verilog, proven
-  equivalent block by block.
-- **Bootloader:** [stage1/](stage1/README.md) is a from-source replacement,
-  the firmware mod above.
-
-To build the mod yourself, add a feature or rebuild a disassembly, start
-with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
-
 ## Repo layout
-
-Each component has one folder per stock version, beside the code that is
-ours.
 
 ```
 kernel/     The menu program
+              stock/                           all three kernels from source
               1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
-              stock/                           all three from source, checked byte for byte
               mod/                             the mod: C and asm sources, inject tooling
               tools/                           build, port, inject and release scripts
 stage1/     The bootloader
+              decomp/                          EZ Flash's stage1 from source
               fw4/ fw5-0918/                   EZ Flash's stage1, disassembled
-              src/ art/ font/ tools/           our replacement, from source
+              src/ art/ font/ tools/           the mod's replacement
 stage0/     The FPGA design
               fw4/ fw5-0918/                   per firmware: Verilog and block files, PicoBlaze
                                                listings, bitstream decode, pin and register maps
+              ise/                             building slot B with ISE, and its proof
+              updater/                         the updater from source
               sim/ netlist/ lib/ tools/ docs/  shared: simulation, analysis, tools, write-ups
-docs/       Feature write-ups, hardware notes, findings
+docs/       Hardware notes, findings, the mod's feature write-ups
 patches/    IPS patches for the kernel and the firmware updaters, SameBoy stub
 scripts/    Emulator, SD image, patcher page and banner helpers
+stock.sha1  The hash of every stock binary the build is checked against
 ```
 
 EZ Flash's binaries (kernels, bitstreams, updaters) and third-party tools
-are not tracked. A checkout supplies its own dump; see
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#setting-up-a-checkout).
+are not tracked. The source build needs none of them; the mod and the
+proofs read a dump the checkout supplies
+([docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#setting-up-a-checkout)).
 
 ## Credits
 
@@ -180,6 +243,8 @@ are not tracked. A checkout supplies its own dump; see
 
 ## License
 
-AGPLv3, see [LICENSE](LICENSE). Covers this project's work (disassembly,
-notes, tooling, feature code). It does not relicense EZ Flash's original
-firmware, which is not redistributed here.
+AGPLv3, see [LICENSE](LICENSE). It covers this project's work: the notes,
+the tooling, the mod, the readable Verilog. It does not relicense EZ
+Flash's code, which is here as source written from their binaries, and
+their binaries are not in the repository. Other people's code keeps its
+license; [THIRD-PARTY.md](THIRD-PARTY.md) lists it.
