@@ -9,11 +9,11 @@ stock.
 
 One source builds three kernels:
 
-| Kernel | `K=` | md5 |
-|---|---|---|
-| 1.05e-0918, the latest for FW5 | `0918` | `5238ac5987d23b68a19d40e43af8c786` |
-| 1.04e, the FW4 kernel | `104` | `b8c29fa5a94c37200434e4c72f0cdfea` |
-| 1.05e-0731 | `0731` | `91eb7fc67332ef20b5691029181ff748` |
+| Kernel | `make` | Built as | md5 |
+|---|---|---|---|
+| 1.05e-0918, the latest for FW5 | `0918` | `build-0918/kernel.gb` | `5238ac5987d23b68a19d40e43af8c786` |
+| 1.04e, the FW4 kernel | `1.04e` | `build-104/kernel.gb` | `b8c29fa5a94c37200434e4c72f0cdfea` |
+| 1.05e-0731 | `0731` | `build-0731/kernel.gb` | `91eb7fc67332ef20b5691029181ff748` |
 
 `make` builds all three. 0731 is the reference: the source was first
 matched against it, so the C is 0731's where nothing says otherwise, `K0918`
@@ -24,13 +24,15 @@ This is separate from `../1.05e-0731/disassembly`, which is regenerated
 from the modded kernel after every injection. Everything here is stock.
 
 ```sh
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock          # build-0918/, build-104/ and build-0731/kernel.gb, checked against the stock md5s
-SDCC29=<sdcc 2.9.0 prefix> make -C kernel/stock K=0918   # only 0918 (K=104: only 1.04e, K=0731: only 0731)
+make -C kernel/stock          # all three, each checked against stock.sha1
+make -C kernel/stock 0918     # only 0918 (or 1.04e, 0731)
 ```
 
 Needs rgbds, SDCC 4.x (`sdasgb`, `sdldgb`, `sdcpp`) and SDCC 2.9.0, the
-compiler EZ Flash used for the C ([below](#sdcc-290)). No dump is needed: the
-build compares against the md5, not a file.
+compiler EZ Flash used for the C ([below](#sdcc-290)), in `tools/sdcc-2.9.0`
+or wherever `SDCC29` points ([INSTALL.md](../../INSTALL.md)). No dump is
+needed: the build compares against the hash in
+[stock.sha1](../../stock.sha1), not a file.
 
 ## Layout
 
@@ -100,7 +102,7 @@ at `G1`-`G4`.
    and the address range(s) to emit.
 3. In `asm/bank_NNN.asm`, delete the routine's lines and `INCLUDE` the
    generated file in their place.
-4. `make`. A wrong byte fails the md5 check; a label the rest of the asm still
+4. `make`. A wrong byte fails the hash check; a label the rest of the asm still
    needs fails the rgbds link.
 
 ## Status

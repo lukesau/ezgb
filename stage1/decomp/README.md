@@ -20,8 +20,8 @@ make -C stage1/decomp match           # per function, if one ever differs
 Needs a current SDCC (`sdcpp`, `sdasgb`, `sdldgb`; the preprocessor and linker
 of 2.9.0 no longer build), rgbds, and a C compiler to build SDCC 2.9.0
 (`build-sdcc29.sh` fetches its source release, or takes the tarball as an
-argument). No stock binary is needed: `make` fails unless each ROM has the
-stock stage1's md5.
+argument). No stock binary is needed: `make` fails unless each ROM is the
+one [stock.sha1](../../stock.sha1) lists.
 
 ## The build
 

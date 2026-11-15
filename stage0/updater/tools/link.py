@@ -25,9 +25,9 @@ math in pieces between the others. So each object's areas get names of
 their own here and an address each (OBJS), and the build checks that they
 tile the ROM with no gap or overlap: a link in stock's order.
 
-The program is compared with stock's by md5 (CODE_MD5), so no file of EZ
+The program is compared with the hash in stock.sha1, so no file of EZ
 Flash's is needed. --label changes the 16-character line that names the
-version, which the md5 check then skips.
+version, which the check then skips.
 """
 import argparse
 import hashlib
@@ -44,9 +44,9 @@ S1 = REPO / "stage1" / "decomp"
 SDCC = Path(os.environ.get("SDCC29", REPO / "tools" / "sdcc-2.9.0")) / "bin"
 
 # per firmware: -DFW, the stock label, how much longer Update() is than
-# FW4's (everything after it in bank 0 moves up), md5 of the stock program
-FWS = {"fw4": ("4", "Update to ver:4 ", 0x00, "912f842a14c7911a2618c1a0b31d4353"),
-       "fw5-0918": ("5", "Update to ver:5 ", 0x38, "fad54c4378d3f85208a6e833396db5c0")}
+# FW4's (everything after it in bank 0 moves up)
+FWS = {"fw4": ("4", "Update to ver:4 ", 0x00),
+       "fw5-0918": ("5", "Update to ver:5 ", 0x38)}
 PAYLOAD = 149516
 
 KCFLAGS = ["--opt-code-size", "-DBYTE_IS_UNSIGNED=1", f"-I{KERNEL / 'gbdk' / 'include'}"]
@@ -164,7 +164,7 @@ def rename_areas(text, areas):
 
 
 def build(fw, label=None, payload=None, outpath=None):
-    fwnum, stock_label, shift, md5 = FWS[fw]
+    fwnum, stock_label, shift = FWS[fw]
     label = stock_label if label is None else label
     if len(label.encode("ascii")) > 16:
         sys.exit("error: the label is at most 16 characters")
@@ -286,8 +286,10 @@ def build(fw, label=None, payload=None, outpath=None):
         for name, a in sorted(syms.items(), key=lambda t: t[1]):
             if not name.startswith(("s__", "l__", ".__")) and a < 0x8000:
                 f.write(f"{1 if a >= 0x4000 else 0:02x}:{a:04x} {name}\n")
-    got = hashlib.md5(rom).hexdigest()
-    same = "" if label != stock_label else ", same as stock" if got == md5 else f", DIFFERS from stock (md5 {got})"
+    want = dict(l.split(" *")[::-1] for l in (REPO / "stock.sha1").read_text().splitlines()).get(
+        code.relative_to(REPO).as_posix())
+    got = hashlib.sha1(rom).hexdigest()
+    same = "" if label != stock_label else ", same as stock" if got == want else f", DIFFERS from stock (sha1 {got})"
     print(f"{code.relative_to(REPO)}: bank 0 to ${end0 - 1:04x}{same}")
     if payload:
         full = bytearray(rom)

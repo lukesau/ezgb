@@ -7,7 +7,7 @@ published source has, converted from the disassembly (asm/). The C is
 compiled by SDCC 2.9.0 (tools/sdcc-2.9.0, from build-sdcc29.sh), the
 compiler EZ Flash used, with no options; everything is linked by sdldgb in
 GBDK lcc's order, and the ROM is written from the link. The build fails
-unless the ROM's md5 is the stock stage1's, so no file of EZ Flash's is
+unless the ROM is the one stock.sha1 lists, so no file of EZ Flash's is
 needed.
 
     tools/link.py fw4       -> build/fw4/stage1.gb
@@ -45,9 +45,7 @@ SRC = DECOMP / "src"
 GBDK = DECOMP / "gbdk"
 SDCC = STAGE1.parent / "tools" / "sdcc-2.9.0" / "bin"
 
-# firmware -> (FW define, md5 of the stock stage1)
-FWS = {"fw4": ("4", "0f0b6647e8188ff5ef7c5185e88655fb"),
-       "fw5-0918": ("5", "fdf3194f08eeb5bbf9eb82565661262d")}
+FWS = {"fw4": "4", "fw5-0918": "5"}       # firmware -> FW define
 
 # Link order, as lcc linked it: crt0, the program, then the library modules
 # in the order stock has them. RAM follows it too: main.c's LoadCmd and
@@ -132,7 +130,7 @@ def parse_map(path):
 
 
 def build(fw):
-    fwnum, md5 = FWS[fw]
+    fwnum = FWS[fw]
     out = DECOMP / "build" / f"fw{fwnum}"
     obj = out / "obj"
     obj.mkdir(parents=True, exist_ok=True)
@@ -238,8 +236,10 @@ def build(fw):
                 bank = 1 if HANDOFF_ROM <= a else 0
                 f.write(f"{bank:02x}:{a:04x} {name}\n")
 
-    got = hashlib.md5(gb.read_bytes()).hexdigest()
-    same = ", same as stock" if got == md5 else f", DIFFERS from stock (md5 {got})"
+    name = gb.relative_to(STAGE1.parent).as_posix()
+    want = dict(l.split(" *")[::-1] for l in (STAGE1.parent / "stock.sha1").read_text().splitlines()).get(name)
+    got = hashlib.sha1(gb.read_bytes()).hexdigest()
+    same = ", same as stock" if got == want else f", DIFFERS from stock (sha1 {got})"
     print(f"{gb.relative_to(STAGE1.parent)}: bank 0 ${0:04x}-${area('_BASE')[0] + area('_BASE')[1] - 1:04x}, "
           f"RAM ${RAM:04x}-${BSS + area('_BSS')[1] - 1:04x}{same}")
     return not same.startswith(", DIFFERS")

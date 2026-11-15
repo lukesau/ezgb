@@ -1,9 +1,9 @@
 # The stock software from source:
 #
 #   make                                the three stock kernels, both stock
-#                                       stage1s and both updater programs, each
-#                                       checked against stock's md5 (needs SDCC
-#                                       2.9.0: stage1/decomp/tools/build-sdcc29.sh)
+#                                       stage1s and both updater programs
+#                                       (INSTALL.md)
+#   make compare                        that, then each against stock.sha1
 #   make check BUILD_HOST=<host>        that, and both stock firmwares from the
 #                                       Verilog (stage0-stock below)
 #   make clean
@@ -39,7 +39,10 @@ stock:
 	$(MAKE) -C stage1/decomp
 	$(MAKE) -C stage0/updater
 
-check: stock stage0-stock
+compare: stock
+	@shasum -c stock.sha1 2>/dev/null || sha1sum -c stock.sha1
+
+check: compare stage0-stock
 
 clean:
 	$(MAKE) -C kernel/stock clean
@@ -71,4 +74,4 @@ check-slotb:
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage1-updater.sh fw5-0918
 
 FORCE:
-.PHONY: stock check clean updaters check-slotb stage0 stage0-stock FORCE
+.PHONY: stock compare check clean updaters check-slotb stage0 stage0-stock FORCE

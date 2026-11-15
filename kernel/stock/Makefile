@@ -6,8 +6,9 @@
 # The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>,
 # by default ../../tools/sdcc-2.9.0 (stage1/decomp/tools/build-sdcc29.sh).
 #
-#   make            build all three (build-0918/, build-104/, build-0731/kernel.gb), check their md5s
-#   make K=0918     only 0918 (K=104: only 1.04e, K=0731: only 0731)
+#   make            build all three (build-0918/, build-104/, build-0731/kernel.gb),
+#                   each checked against ../../stock.sha1
+#   make 0918       only 0918 (make 1.04e, make 0731)
 #   make clean
 
 K ?= 0918
@@ -22,7 +23,6 @@ SDINC := python3 tools/sdinc.py
 # $D6A7, where 1.05e's day-count tables are, $27 lower. lib and wram map a
 # 1.05e address to this kernel's.
 ifeq ($(K),104)
-STOCK_MD5 := b8c29fa5a94c37200434e4c72f0cdfea
 SYM       := ../1.04e/kernel.sym
 B         := build-104
 KDEFS     := -DK104
@@ -35,7 +35,6 @@ G3 := 6467
 G4 := 6729
 D1 := d3f2
 else ifeq ($(K),0918)
-STOCK_MD5 := 5238ac5987d23b68a19d40e43af8c786
 SYM       := ../1.05e-0918/kernel.sym
 B         := build-0918
 KDEFS     := -DK0918
@@ -45,7 +44,6 @@ G3 := 72f8
 G4 := 75f2
 B0K := 1926
 else ifeq ($(K),0731)
-STOCK_MD5 := 91eb7fc67332ef20b5691029181ff748
 SYM       := ../1.05e-0731/kernel.sym
 B         := build-0731
 KDEFS     :=
@@ -85,11 +83,16 @@ INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kern
         $(B)/b0_gbdk_header.inc $(B)/b0_gbdk_code.inc $(B)/b0_gbdk_vbl.inc $(B)/b0_gbdk_font.inc $(B)/b0_gbdk_base.inc \
         $(B)/b2_code.inc $(B)/b4_wram.inc $(B)/b4_code.inc $(B)/b8_code.inc $(B)/b0_lib0.inc $(B)/b0_lib1.inc $(B)/b0_lib2.inc $(B)/b0_lib3.inc $(B)/b0_lib4.inc $(B)/b0_lib5.inc
 
-all: $(B)/kernel.gb
 ifeq ($(origin K),file)
-	$(MAKE) K=104
-	$(MAKE) K=0731
+all: 0918 1.04e 0731
+else
+all: $(B)/kernel.gb
 endif
+
+0918 0731:
+	$(MAKE) K=$@
+1.04e:
+	$(MAKE) K=104
 
 $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
@@ -299,14 +302,15 @@ $(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
 	rgbasm -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
 	rgblink -n $(B)/kernel.sym -m $(B)/kernel.map -o $@ $(B)/game.o
 	rgbfix -Wno-overwrite -f g $@
-	@md5=$$(md5 -q $@ 2>/dev/null || md5sum $@ | cut -d' ' -f1); \
-	if [ "$$md5" = "$(STOCK_MD5)" ]; then echo "$@: matches stock ($$md5)"; \
-	else echo "$@: MISMATCH ($$md5, want $(STOCK_MD5))"; exit 1; fi
+	@want=$$(awk '$$2 == "*kernel/stock/$@" { print $$1 }' ../../stock.sha1); \
+	got=$$( (shasum $@ 2>/dev/null || sha1sum $@) | cut -d' ' -f1); \
+	if [ -n "$$want" ] && [ "$$got" = "$$want" ]; then echo "$@: matches stock ($$got)"; \
+	else echo "$@: MISMATCH ($$got, want $$want)"; exit 1; fi
 
 clean:
 	rm -rf build-0918 build-104 build-0731
 
-.PHONY: all clean
+.PHONY: all clean 0918 1.04e 0731
 
-# a kernel that fails the md5 check must not count as up to date
+# a kernel that fails the hash check must not count as up to date
 .DELETE_ON_ERROR:

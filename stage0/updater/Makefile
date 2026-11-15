@@ -1,6 +1,6 @@
 # The firmware updaters' program from source, FW4's and FW5-0918's from one
 # source (-DFW=4 / -DFW=5): the kernel's crt0 and libraries, the C compiled
-# by SDCC 2.9.0. Byte for byte stock's: tools/link.py fails if the md5
+# by SDCC 2.9.0. Byte for byte stock's: tools/link.py fails if the result
 # differs.
 #
 #   make            build/fw4/updater-code.gb and build/fw5-0918/updater-code.gb

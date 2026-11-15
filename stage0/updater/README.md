@@ -14,7 +14,7 @@ stage0/updater/tools/link.py fw4 --label "My build" --payload slotB.bin -o Updat
 ```
 
 Needs SDCC 2.9.0 for the C, a current SDCC for `sdasgb` and `sdldgb`, and
-Python 3. No file of EZ Flash's: the build checks its md5 against stock's.
+Python 3. No file of EZ Flash's: the build checks its result against [stock.sha1](../../stock.sha1).
 `stage0/tools/build-stage0.sh` wraps the bitstream it builds this way.
 
 ## What the updater is
