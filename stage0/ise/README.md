@@ -37,7 +37,7 @@ anything of EZ Flash's, and `PROVE=0` skips it.
    stage1 and the PicoBlaze's programs must decode back out of the block
    RAMs.
 4. **The proof.** Slot B from the official updater is exported
-   (`export-netlist.sh`) to `fpga/<fw>-export`, and the result is proved
+   (`export-netlist.sh`) to `fpga/<fw>`, and the result is proved
    equivalent to it (`tools/prove-ise.py`); every register's and LUT RAM's
    power-up value must be stock's. FW5's block files are `fw5-prove.sh`'s
    (`fpga/fw5-nx/edge/blk`), so that runs first.
