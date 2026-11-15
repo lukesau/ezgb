@@ -76,6 +76,22 @@ breaks every later operation. The scan selects `$00` before each
 `EZGB.CFG`. Its contents may still name a ROM with a long name or in a
 folder: the launch walks the directories.
 
+> **Correction (2026-11-14).** `f_open` does open long names: the kernel
+> opens `/.ezgbplays` and `/.ezgbhide` by path, and the check below opens
+> `/Pokemon/Pokemon Crystal.gbc`. The 8.3 rule above was drawn from one
+> early failure and is wrong; anything that avoided long names in `f_open`
+> because of it need not.
+
+**The target must open.** `scan_config` opens the `FLAUNCH=` path before
+staging it, and treats a path that does not open like a disabled fast launch:
+the card boots to the browser (2026-11-14). The launch path does not come
+back from a missing file. It draws `Loading...` and hangs, which is what a
+card did after its ROM was moved to another folder: stage1 could not open
+the file and booted the kernel ([stage1's design](../stage1/docs/design.md)),
+and the kernel then tried the same path. SameBoy, 0731: `FLAUNCH=` naming a
+missing file hung on `Loading...` before the check and reaches the browser
+with it; a valid nested path still launches.
+
 **A path passed to FatFs must be in WRAM.** `f_open` runs in bank 6, so a
 pointer to a string in another bank's ROM reads the wrong bank.
 
