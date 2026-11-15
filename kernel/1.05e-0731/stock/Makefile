@@ -30,7 +30,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
 INCS := build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/b1_kernel_init.inc build/b1_code.inc build/b1_init.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
         build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
-        build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
+        build/b4_code.inc build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
 all: build/kernel.gb
 
@@ -175,6 +175,24 @@ $(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM)
 		--region 29e6:2a5f:build/b0_lib1.inc --region 2a77:2c42:build/b0_lib2.inc \
 		--region 2ca5:2cd3:build/b0_lib3.inc --region 2d4c:2d56:build/b0_lib4.inc \
 		--region 2dba:2eea:build/b0_lib5.inc
+
+# the kernel's C in bank 4, from $40E7 (RomLoad_InitiatePoll and
+# RomLoad_Build_B4 before it are still disassembly). SDCC 2.9.0 calls
+# __moduschar/__divuschar for a char by a constant, which its gbz80 library
+# does not have; stock calls the unsigned ones there.
+BANK4_SRCS := src/bank4.c
+BANK4_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=DrawRect \
+              -a _joypad=ReadJoypad -a _memset=Memset -a _memcpy=Memcpy -a _set_data=VramCopyStack \
+              -a _RomLoad_Build_B4=RomLoad_Build_B4 -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod \
+              -a __moduchar_rrx_s=U8Mod -a __divuchar_rrx_s=U8Div -a __modschar_rrx_s=S8Mod \
+              -a __divschar_rrx_s=S8Div -a banked_call=FarCallTrampoline \
+              -a __moduschar_rrx_s=U8Mod -a __divuschar_rrx_s=U8Div \
+              -a _RomLoad_InitiatePoll=RomLoad_InitiatePoll -g _wRomBanks=0xc2a4 -g _wHdrSum=0xc5a3 -g _wD3EB=0xd3eb
+
+build/b4_code.inc: $(BANK4_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(BANK4_SRCS) --sdcc29 --bank 4 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x40e7 $(BANK4_ALIASES) --region 40e7:8000:$@
 
 # SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
 # that order. stubs.s jumps to the math in src/libasm.s; div.s has edits
