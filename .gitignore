@@ -19,9 +19,6 @@ kernel/*/kernel.gb.orig
 # ezgb.dat drops. A modified kernel still contains EZ Flash's firmware.
 kernel/*/*.dat
 # updater disassembly build artifacts (the updaters' .gb files are covered above)
-stage0/fw4/updater/*/disassembly/game.o
-stage0/fw4/updater/*/disassembly/game.map
-stage0/fw4/updater/*/disassembly/game.sym
 
 # cloned reference tools (mgbdis, omega-de-kernel, SameBoy), not our code.
 # Anchored: an unanchored `tools/` matches a directory of that name at ANY

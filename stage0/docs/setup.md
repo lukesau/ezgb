@@ -49,8 +49,8 @@ ssh <build host> 'cd ~/fpga/s3decode && cargo build --release'
 | `s3trace` | walks routing back from a pin, or dumps the netlist |
 | `s3pins` | the package's pin map |
 
-Xilinx ISE 14.7 is needed only to make bitstreams from scratch, which no
-part of the updater build does ([toolchain.md](toolchain.md#ise-147)).
+Xilinx ISE 14.7 is needed only to make bitstreams from scratch, which the
+updater build on this page does not do ([toolchain.md](toolchain.md#ise-147)).
 
 ### The Game Boy side
 
@@ -86,6 +86,13 @@ SameBoy's stub takes these settings:
 | your cart's flash dump (optional) | an SPI programmer ([hardware-board.md](../../docs/hardware-board.md#the-config-flash)) or the cart itself ([flash-dump.md](flash-dump.md)) | slot A, the license record, recovery |
 
 ## Building an updater
+
+There are two ways to an updater. This page is the first: patch our stage1
+and PicoBlaze changes into the stock slot B and put the result in the
+stock updater, which is how the firmware mod is built and published. The
+other builds everything from source, slot B from the readable Verilog with
+ISE and the updater's program from C, and needs nothing of EZ Flash's:
+[ise/README.md](../ise/README.md), `make stage0` and `make stage0-stock`.
 
 One script does it, once the stock slot B images and their decoded block
 RAMs are in place (steps 1 to 3 below):
@@ -194,7 +201,8 @@ stage0/tools/make-updater.py tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Upda
 The result is the stock updater with the bitstream at `$8000` replaced,
 the screen line relabeled so it cannot be mistaken for stock, and the
 ROM's checksum fixed. The updater's code is unchanged
-([updater.md](updater.md)).
+([updater.md](updater.md)); [stage0/updater](../updater/README.md) builds
+that code from source.
 
 **9. Test in SameBoy.** Stage1 itself, with a card image holding a kernel:
 
