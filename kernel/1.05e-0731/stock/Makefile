@@ -30,7 +30,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
 INCS := build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/b1_kernel_init.inc build/b1_code.inc build/b1_init.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
         build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
-        build/b4_wram.inc build/b4_code.inc build/b8_code.inc build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
+        build/b2_code.inc build/b4_wram.inc build/b4_code.inc build/b8_code.inc build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
 all: build/kernel.gb
 
@@ -175,6 +175,13 @@ $(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM)
 		--region 29e6:2a5f:build/b0_lib1.inc --region 2a77:2c42:build/b0_lib2.inc \
 		--region 2ca5:2cd3:build/b0_lib3.inc --region 2d4c:2d56:build/b0_lib4.inc \
 		--region 2dba:2eea:build/b0_lib5.inc
+
+# the kernel's C in bank 2, all of it: the SD sector reads and writes
+build/b2_code.inc: src/bank2.c src/diskio.h src/integer.h tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $< --sdcc29 --bank 2 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x4000 -a _set_data=VramCopyStack -a _delay=Delay -a __rrulong_rrx_s=U32Shr \
+		--region 4000:8000:$@
 
 # the kernel's C in bank 4: RomLoad_InitiatePoll ($4000), linked for $D100
 # where RomLoad_BuildAndRunPoll copies it, then the rest from $40AB. SDCC
