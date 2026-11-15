@@ -30,7 +30,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
 INCS := build/crt0_low.inc build/crt0_home.inc build/b1_gsinittail.inc build/b1_kernel_init.inc build/b1_code.inc build/b1_init.inc $(FF_BANKS:%=build/ff_b%.inc) build/b0_fatfs.inc build/b1_ccsbcs_init.inc build/b0_kernel.inc \
         build/b0_strrchr.inc build/b0_strncpy.inc build/b0_strlen.inc build/b0_sdccasm.inc build/b0_rle.inc \
         build/b0_gbdk_header.inc build/b0_gbdk_code.inc build/b0_gbdk_vbl.inc build/b0_gbdk_font.inc build/b0_gbdk_base.inc \
-        build/b4_wram.inc build/b4_code.inc build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
+        build/b4_wram.inc build/b4_code.inc build/b8_code.inc build/b0_lib0.inc build/b0_lib1.inc build/b0_lib2.inc build/b0_lib3.inc build/b0_lib4.inc build/b0_lib5.inc
 
 all: build/kernel.gb
 
@@ -90,7 +90,7 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -a _LaunchSetup=LaunchSetup -a _SetFpga7F37_B4=SetFpga7F37_B4 -a _SetFpga7FD4_B1=SetFpga7FD4_B1 \
               -a _SetFpga7FC4_B4=SetFpga7FC4_B4 -a _SetFpgaRomSize_B4=SetFpgaRomSize_B4 \
               -a _SetFpga7FC3_B4=SetFpga7FC3_B4 -a _RomLoad_CopyCmdWindowPoll_B4=RomLoad_CopyCmdWindowPoll_B4 \
-              -g _Bank8_7169=08:7169 -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
+              -g _DrawMenuTabs=08:7169 -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
               -g _wD3EB=0xd3eb -g _wD3EC=0xd3ec -g _wD3ED=0xd3ed -g _wD3EF=0xd3ef -g _wD3F0=0xd3f0 \
               -g _wD3F6=0xd3f6
 
@@ -198,6 +198,19 @@ build/b4_code.inc: $(BANK4_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc
 	@mkdir -p build
 	$(SDINC) $(BANK4_SRCS) --sdcc29 --bank 4 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x40ab $(BANK4_ALIASES) --region 40ab:8000:$@
+
+# the kernel's C in bank 8, all of it
+BANK8_SRCS := src/bank8.c
+BANK8_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=DrawRect \
+              -a _line=DrawLineXY -a _plot_point=PlotPixelXY -a _set_data=VramCopyStack \
+              -a _disable_interrupts=DiNest -a _enable_interrupts=EiNest -a _wait_vbl_done=WaitVBlankFlag \
+              -a _joypad=ReadJoypad -a _U32ToAscii_B0=U32ToAscii_B0 -a banked_call=FarCallTrampoline \
+              -g _wSaveBuf=0xc0a0
+
+build/b8_code.inc: $(BANK8_SRCS) tools/sdinc.py $(SYM)
+	@mkdir -p build
+	$(SDINC) $(BANK8_SRCS) --sdcc29 --bank 8 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x4000 $(BANK8_ALIASES) --region 4000:8000:$@
 
 # SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
 # that order. stubs.s jumps to the math in src/libasm.s; div.s has edits

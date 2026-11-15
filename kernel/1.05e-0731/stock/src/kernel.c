@@ -33,7 +33,7 @@ void DrawErrorFileBox (void) __banked;
 void DrawLastRomButtons (void) __banked;
 void DrawTimeAutosaveScreen (void) __banked;
 void DrawFwVersionScreen (void) __banked;
-void Bank8_7169 (UINT8 mode) __banked;		/* 08:7169, name ours */
+void DrawMenuTabs (UINT8 tab) __banked;		/* 08:7169, name ours */
 void DrawBrowserEntries (UINT16 top, UINT16 row) __banked;
 void DrawBrowserDetail (UINT16 top, UINT16 row, UINT8 code) __banked;
 void BackupSavePrompt (UINT32 save, UINT8 flag) __banked;
@@ -287,8 +287,8 @@ browse:
 	top = 0;
 	redraw = 1;
 	tick = 0;
-	Bank8_7169(0);
-	Bank8_7169(3);
+	DrawMenuTabs(0);
+	DrawMenuTabs(3);
 	for (;;) {
 		tick++;
 		if (redraw) {
@@ -342,12 +342,12 @@ browse:
 			if (mode == 2) {
 				mode = 0;
 			} else if (mode == 1) {
-				Bank8_7169(1);
+				DrawMenuTabs(1);
 				DrawTimeAutosaveScreen();
 				mode = 2;
 			}
 			if (mode == 2) {
-				Bank8_7169(2);
+				DrawMenuTabs(2);
 				DrawFwVersionScreen();
 				delay(50);
 				goto browse;
