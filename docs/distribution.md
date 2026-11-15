@@ -78,8 +78,8 @@ and the stage1 version from `stage1/VERSION`).
 
 ```sh
 # maintainer: build the updater, then diff it against the stock one
-BUILD_HOST=<host> stage0/tools/build-stage1-updater.sh fw5-0918 "To FW5-MOD 2.1" out.gb
-kernel/tools/kernel-patch.py updater make fw5-0918 out.gb
+make updaters BUILD_HOST=<host>
+kernel/tools/kernel-patch.py updater make fw5-0918 fpga/stage1/Update-fw5-0918.gb
 
 # anyone: patch the official updater, md5-checked on both sides
 kernel/tools/kernel-patch.py updater apply Update_FW5_2021-9-18.gb
