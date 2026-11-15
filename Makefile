@@ -10,13 +10,19 @@
 #                                       with stage1 in it: Update-fw4-ise.gb and
 #                                       Update-fw5-0918-ise.gb (stage0/ise/README.md;
 #                                       FW5 needs stage0/tools/fw5-prove.sh run first)
+#   make stage0-stock BUILD_HOST=<host> the stock firmware from source: both
+#                                       slot B images with the stock stage1 and
+#                                       PicoBlaze programs, proved equivalent to
+#                                       stock (fpga/ise/<fw>-stock-nopatch/proj/top.raw).
+#                                       PROVE=0 skips the proof and needs no
+#                                       file of EZ Flash's
 #
 # STAGE1=stock builds the updaters with the stock stage1 from source instead of
 # ours; PATCHES=0 leaves the PicoBlaze programs stock.
 
 MOD := $(shell sed -n 2p stage1/VERSION)
 OUT := fpga/stage1
-export STAGE1 PATCHES BUILD_HOST
+export STAGE1 PATCHES PROVE UPDATER BUILD_HOST
 
 updaters: $(OUT)/Update-fw4.gb $(OUT)/Update-fw5-0918.gb
 
@@ -34,9 +40,13 @@ $(OUT)/Update-fw4-ise.gb: FORCE
 $(OUT)/Update-fw5-0918-ise.gb: FORCE
 	stage0/tools/build-stage0.sh fw5-0918 "FW5 ISE MOD $(MOD)" $@
 
+stage0-stock:
+	STAGE1=stock PATCHES=0 stage0/tools/build-stage0.sh fw4
+	STAGE1=stock PATCHES=0 stage0/tools/build-stage0.sh fw5-0918
+
 check-slotb:
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage1-updater.sh fw4
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage1-updater.sh fw5-0918
 
 FORCE:
-.PHONY: updaters check-slotb stage0 FORCE
+.PHONY: updaters check-slotb stage0 stage0-stock FORCE

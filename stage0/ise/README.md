@@ -11,35 +11,40 @@ design packs and meets timing the way stock does.
 make stage0 BUILD_HOST=<build host>     # Update-fw4-ise.gb, Update-fw5-0918-ise.gb
 STAGE1=stock PATCHES=0 make stage0 BUILD_HOST=<build host>
 stage0/tools/build-stage0.sh fw5-0918   # one firmware, no updater
+PROVE=0 STAGE1=stock PATCHES=0 stage0/tools/build-stage0.sh fw4   # from the repository alone
 ```
 
-`stage0/tools/build-stage0.sh` is the whole flow:
+`stage0/tools/build-stage0.sh` is the whole flow. Only the proof reads
+anything of EZ Flash's, and `PROVE=0` skips it.
 
-1. **The stock export.** Slot B from the official updater, exported
-   (`export-netlist.sh`) to `fpga/<fw>-export`: the placement source and
-   the proof's reference. FW5's block files are `fw5-prove.sh`'s
-   (`fpga/fw5-nx/edge/blk`), so that runs first.
-2. **Stage1 and the PicoBlaze's programs** as block RAM contents. Stage1 is
+1. **Stage1 and the PicoBlaze's programs** as block RAM contents. Stage1 is
    built and split as `build-stage1-updater.sh` does it (`STAGE1` as
    there). The two programs are assembled from their listings
    (`picoblaze-dis.py --assemble`, `stage0/<fw>/picoblaze/`), which
    reassemble to stock's words; bank 2 is the same program on both
    firmwares, so FW5 takes FW4's listing. Our patches go on top unless
    `PATCHES=0`. No block RAM contents come from the stock bitstream.
-3. **The ISE project** (`tools/mkise.py`): the stitched top and the blocks,
+2. **The ISE project** (`tools/mkise.py`): the stitched top and the blocks,
    compiled against `s3prims_ise.v`, which writes the primitives the
    extracted top instantiates over the UNISIM ones. The UCF it writes
    places every pad, block RAM, clock buffer and the DCM as stock has
    them, puts the contents in the block RAMs (`INIT_xx`), and with
    `--place` puts each slice flip-flop (2,135 on FW4, 2,374 on FW5) and the
-   PicoBlaze's LUT RAMs in their stock cells. `<fw>.ucf` is appended.
-4. **The build** on the build host (`tools/build-ise.sh`): XST, map,
-   par, trce, bitgen, and s3decode of the result.
-5. **The checks.** Timing must be met; the result is exported and proved
-   equivalent to stock (`tools/prove-ise.py`), every register's and LUT
-   RAM's power-up value must be stock's; stage1 and the patched PicoBlaze
-   programs must decode back out of the block RAMs.
-6. **The updater**, as `make-updater.py` makes them.
+   PicoBlaze's LUT RAMs in their stock cells, as `<fw>.place` lists them.
+   `<fw>.ucf` is appended.
+3. **The build** on the build host (`tools/build-ise.sh`): XST, map,
+   par, trce, bitgen, and s3decode of the result. Timing must be met, and
+   stage1 and the PicoBlaze's programs must decode back out of the block
+   RAMs.
+4. **The proof.** Slot B from the official updater is exported
+   (`export-netlist.sh`) to `fpga/<fw>-export`, and the result is proved
+   equivalent to it (`tools/prove-ise.py`); every register's and LUT RAM's
+   power-up value must be stock's. FW5's block files are `fw5-prove.sh`'s
+   (`fpga/fw5-nx/edge/blk`), so that runs first.
+5. **The updater**: its program built from source
+   ([../updater](../updater/README.md)) with the new slot B after it.
+   `UPDATER=stock` swaps the payload inside the official updater instead
+   (`make-updater.py`).
 
 ## What it takes
 
@@ -48,7 +53,10 @@ fills 1,727 of the part's 1,792 slices (FW5 1,788), and ISE packing the
 same LUTs and flip-flops its own way needs over 1,900. The readable design keeps
 the hardware's registers one for one, so each register's stock cell comes
 from the block files (their `[names]`, with a port name followed through
-`assign port = reg` to the register). Map then packs the logic around
+`assign port = reg` to the register). `mkise.py --derive-place <stock
+export's design.v>` writes that as `<fw>.place`, which is checked in, so a
+build reads no stock file; the proof fails if a line of it is wrong, since
+it matches the registers by cell. Map then packs the logic around
 them. A few flip-flops are left to ISE (`<fw>.unplace`, two each): XST
 gives each a clock enable or set/reset its stock slice-mate does not have.
 
@@ -154,6 +162,7 @@ the blocks and the top level prove against FW5 as it is
 |---|---|
 | `s3prims_ise.v` | the primitives over UNISIM, for XST |
 | `fw4.ucf`, `fw5-0918.ucf` | the hand-written constraints |
+| `fw4.place`, `fw5-0918.place` | each flip-flop's and LUT RAM's stock cell (`mkise.py --derive-place`) |
 | `fw4.unplace`, `fw5-0918.unplace` | flip-flops left to ISE |
 | `fw5-0918.map` | map options FW5 needs (the placer cost table) |
 | `xc3s200a-slices.txt` | every slice site per CLB tile (`xdl -report`), for the placement |
