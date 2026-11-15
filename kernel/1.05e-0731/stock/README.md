@@ -22,7 +22,7 @@ build compares against the md5, not a file.
 |---|---|
 | `asm/` | Stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names and notes). Hand-maintained from here on: a routine that moves to source is deleted here and replaced by an `INCLUDE` of its generated file. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
-| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
+| `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank4.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
 | `sdcclib/` | SDCC 2.9.0's library C that bank 0 links, unchanged (GNU LGPL v2+). |
 | `tools/match.py` | Per-function byte compare of the C against stock, for finding what differs ([Matching](#matching)). |
@@ -53,6 +53,7 @@ build compares against the md5, not a file.
 | `01:68c0`-`7096` | `src/option/ccsbcs.c` | its `_GSINIT` code: `ff_wtoupper`'s tables into WRAM |
 | `01:7096`-`7390` | `src/bank1.c` | its `_GSINIT` code: the tables of `WToUpper_B1` and the date code |
 | `01:7390`-`8000` | `gbdk/crt0.s` | `_GSINITTAIL`'s `ret`, then `$FF` fill |
+| `04:40e7`-`8000` | `src/bank4.c` | the kernel's C in bank 4: the FPGA ROM loader commands and register writes, `CStrCat`, `U32ToAscii`, the TIME and AUTO SAVE screen ([Bank 4](#bank-4-c)); `04:4000`-`40e7` is still disassembly |
 | `00:2c42`, `2cd3`, `2d95` | `sdcclib/` | SDCC 2.9.0's library `strrchr`, `strncpy`, `strlen` |
 | `00:20bb`-`20e2` | `sdcclib/crt0_rle.s` | SDCC 2.9.0's `__initrleblock` (`RleUnpack`) |
 | `00:2826`-`29e6` | `sdcclib/stubs.s`, `div.s`, `shift.s` | SDCC 2.9.0's gbz80 asm library: math stubs, 8/16-bit divide, 32-bit shifts (`div.s` edited, see `sdcclib/README.md`) |
@@ -204,6 +205,30 @@ code at `$7096`.
   which reproduce stock keeping all three locals on the stack.
 - The ROM info screen prints the RAM size in hex (radix 16), so 128 KB
   shows as `80KB`.
+
+## Bank 4 C
+
+`src/bank4.c` holds bank 4 from `$40ab`; `$40e7` on is spliced, so
+everything but the first 231 bytes builds from source.
+
+- `RomLoad_InitiatePoll` (`$4000`) runs from WRAM: `RomLoad_BuildAndRunPoll`
+  copies 255 bytes from `$4000` to `$D100` and calls it, so its jumps point
+  into `$D1xx`, while its symbol stays `$4000` (the copy passes
+  `RomLoad_InitiatePoll`). `RomLoad_ResetIntoRom_B4` is copied to `$D000`
+  the same way but linked in ROM as normal.
+- Still disassembly: `RomLoad_InitiatePoll` and `RomLoad_Build_B4` (a
+  byte copy, `$40ab`). The C for both is written; stock keeps a different
+  local in `c` than SDCC 2.9.0 does for it (`RomLoad_Build_B4` is in
+  `bank4.c` under `#ifdef UNMATCHED`).
+- `DrawTimeAutosaveScreen` (`$46f4`, 4,658 bytes) matches as one function
+  with three `char[7]` arrays (the RTC's BCD, what was last drawn, the time
+  being set).
+- SDCC 2.9.0 calls `__moduschar`/`__divuschar` for a `char` by a
+  constant. Its gbz80 library has no such routines; stock calls
+  `__moduchar`/`__divuchar` (`U8Mod`, `U8Div`) there, so the Makefile
+  resolves them so.
+- `U32ToAscii` is bank 0's `U32ToAscii_B0` plus padding to two digits.
+- `InitTimeAutosaveFpga_B4` sets the cart RTC to 2019-07-24 11:22:33.
 
 ## Matching
 
