@@ -28,6 +28,9 @@
 
 module mbc3_clock (
     input clk_wr_a,
+    input rst_edge,                 // the console /RESET edge (reset_edge): clears ram_en
+    input gb_reset_n_q,             // the debounced /RESET register (reset_edge)
+    input rst_prev,                 // and its last value: no latch writes on the edge
     input a0, a1, a2, a4, a12, a13, a14, a15,
     input d0, d1, d2, d3, d4, d5, d6, d7,
     input kernel_mode,
@@ -81,30 +84,34 @@ module mbc3_clock (
         {lat_sec, lat_min, lat_hour, lat_dl, lat_dh} = 40'd0;
         r6000 = 8'd0; ram_en = 1'b0;
     end
+    wire no_edge = !(rst_prev & !gb_reset_n_q);
     always @(posedge clk_wr_a) begin
         if (clk_wr & sel[0] | k_wr & k_sel[0]) mbc3_wr_s <= d & {kd[7:6], 6'h3f};
         if (clk_wr & sel[1] | k_wr & k_sel[1]) mbc3_wr_m <= d & {kd[7:6], 6'h3f};
         if (clk_wr & sel[2] | k_wr & k_sel[2]) mbc3_wr_h <= d & {kd[7:5], 5'h1f};
         if (clk_wr & sel[3] | k_wr & k_sel[3]) mbc3_wr_dl <= d;
         if (clk_wr & sel[4] | k_wr & k_sel[4]) mbc3_wr_dh <= d & {2'b11, kd[5:1], 1'b1};
-        if (mbc3) begin
+        if (mbc3 & no_edge) begin
             wrote_s <= clk_win & sel[0] | wrote_s & !wr_6000;
             wrote_m <= clk_win & sel[1] | wrote_m & !wr_6000;
             wrote_h <= clk_win & sel[2] | wrote_h & !wr_6000;
             wrote_dl <= clk_win & sel[3] | wrote_dl & !wr_6000;
             wrote_dh <= clk_win & sel[4] | wrote_dh & !dh_clr;
         end
-        if (mbc3 & wr_6000) r6000 <= d;
-        if (mbc3 & wr_0000) ram_en <= d_0a;
+        if (mbc3 & no_edge & wr_6000) r6000 <= d;
         if (latch) {lat_sec, lat_min, lat_hour, lat_dl, lat_dh} <= {mbc3_rd_s, mbc3_rd_m, mbc3_rd_h, mbc3_rd_dl, mbc3_rd_dh};
     end
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) ram_en <= 1'b0;
+        else if (mbc3 & wr_0000) ram_en <= d_0a;
 
 `ifdef FORMAL
     // gb_regs's and unlock's decodes, which the block reads as nets
     always @* begin
         env_r6000: assume (n_r6000 == !wr_6000);
         env_r2000: assume (r2000 == (!a15 & !a14 & a13));
-        env_game: assume (game_n3 == (!kernel_mode & !mbc_type[3]));
+        env_game: assume (game_n3 == (!kernel_mode & !mbc_type[3] & !(rst_prev & !gb_reset_n_q)));
+        env_rst_edge: assume (rst_edge == (rst_prev & !gb_reset_n_q));
         env_a10: assume (a10_any == (a1 | a0));
         env_a0n1: assume (a0_n1 == (a0 & !a1));
         env_a4: assume (a210_4 == (a == 3'd4));

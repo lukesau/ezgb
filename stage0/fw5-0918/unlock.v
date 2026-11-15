@@ -31,6 +31,7 @@ module unlock (
     input a10_any, a210_any,    // a1 | a0, a2 | a1 | a0 (gb_regs)
     input d_e4,                 // d == $E4 (gb_regs)
     input clk_wr_a,             // /WR
+    input rst_edge,             // the console /RESET edge (reset_edge): back to locked
     output reg unlocked,
     output d_key_pattern,       // d[7:3] == 11100
     output a0_n1                // a0 & !a1, shared outside
@@ -59,8 +60,10 @@ module unlock (
 
     reg idle, key_e1, key_e2;
     initial begin idle = 1'b1; key_e1 = 1'b0; key_e2 = 1'b0; unlocked = 1'b0; end
-    always @(posedge clk_wr_a)
-        if (!a15) begin
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) begin
+            idle <= 1'b1; key_e1 <= 1'b0; key_e2 <= 1'b0; unlocked <= 1'b0;
+        end else if (!a15) begin
             idle <= idle & !key1 | key_e1 & !key2 | key_e2 & !key3 | unlocked & !reg_write;
             key_e1 <= idle & key1;
             key_e2 <= key_e1 & key2;

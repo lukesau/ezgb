@@ -193,7 +193,8 @@ The SD controller:
 
 | Block | Against FW5-0918 |
 |---|---|
-| clock divider, command master, command serializer, register file (`sd_controller_wb`), data master, FIFO filler, FIFOs | equivalent to FW4's module |
+| command master, data master, FIFO filler | equivalent to FW4's module, with the `/RESET` edge in the soft reset they take |
+| clock divider, command serializer, register file (`sd_controller_wb`), FIFOs | equivalent to FW4's module with the `/RESET` edge added ([stage0/fw5-0918](../fw5-0918/)): the source's Wishbone reset, see the `/RESET` edge row |
 | crossings | equivalent to [stage0/fw5-0918/sd_crossings.v](../fw5-0918/sd_crossings.v): the 43 bits FW4 carries into the SD domain in one stage (command index, checks and with-data bits, command timeout, block size, bus width, byte alignment, soft reset) cross in two, as the source and FW4's argument, block count and data timeout do |
 | data serializer | equivalent to [stage0/fw5-0918/sd_data_serial.v](../fw5-0918/sd_data_serial.v): the 4-bit data cycle count is the source's `(blksize << 1) + 2`, not FW4's `blksize \| 4`; the same for the 8n - 1 sizes the firmware uses |
 
@@ -219,11 +220,25 @@ The rest:
 | P51 latch | equivalent to FW4's module, unchanged: a latch on `flash_op` in FW5 too. The carry took the A13 mux's whole cone with it, so its block file is written in FW5's coordinates ([stage0/fw5-0918/p51_latch.blk](../fw5-0918/p51_latch.blk)) |
 | `/RESET` debounce (FW5 only) | proven against [stage0/fw5-0918/reset_debounce.v](../fw5-0918/reset_debounce.v): `/RESET` synchronized on CLK0 and a 20-bit counter, restarted when it falls, whose all-ones state enables the `/RESET` pad's input register. The pad is sampled once every 2^20 CLK0 cycles, the first time 2^20 after it fell |
 
-### What the proof leaves out
+| `/RESET` edge (FW5 only) | proven against [stage0/fw5-0918/reset_edge.v](../fw5-0918/reset_edge.v): the debounced `/RESET` register one CLK0 cycle late (`rst_prev`) and the edge, `rst_prev & !gb_reset_n_q`. The edge is the SD controller's Wishbone reset (every register of the clock divider, register file and crossings; the register file's block size back to 511), joins the soft reset (`sd_rst`, made in the FIFOs block) for the command master, data master, data host and filler, and joins `go_idle` in the command serializer's reset. It restarts the PicoBlaze (its reset synchronizer), clears the unlock, the `$7FD4` sum, the MBC3 clock's RAM enable, the memory page and 21 Game Boy registers (kernel mode and `$7F32` bit 3 back to 1, the window, the MBC registers), and no `/WR` register takes a write in its cycle |
 
-The design proved against is FW5's without its console `/RESET` edge
-logic (`fw5-noedge.py`). That edge also resets FW5's 34 registers on the
-`/WR` clock, so modules with a reset port are proven with it tied off.
+### What the proof covers
+
+The blocks are proven against FW5 as it is, with the console `/RESET`
+edge (`fw5-noedge.py --keep-edge`, which keeps only its two other
+normalizations). `fw5-prove.sh` still matches FW4 and FW5 on the design
+without the edge, where the two line up, and carries the block files from
+that match.
+
+> **Correction (2026-11-14).** This section used to say the proof left the
+> `/RESET` edge out, with the modules' reset ports tied off. A build from
+> that readable design would not reset the SD controller, the PicoBlaze or
+> the `/WR` registers when the console resets, as it does when the kernel
+> starts a game. The edge is now in the readable modules (the `reset_edge`
+> row above) and every block and the top level prove against FW5 with it.
+> Also corrected the same day: `netlist2v.py` wrote FW5's DCM as x10, so
+> simulations of FW5 ran the multiplied clock at x10, not x10/3; it now
+> writes the divider.
 
 ### The SD init error
 

@@ -30,6 +30,7 @@ module psram_ctrl (
     input wr_n,
     input gb_reset_n,
     input clk_fx,
+    input rst_edge,                 // the console /RESET edge (reset_edge) clears the page
     input kernel_mode,              // $7F32 bit 7
     input gnd1,                     // the constant-0 LUT the design shares (soft_reset's gnd)
     input rtc_sel0,                 // bit 0 of the MBC3 clock register number (gb_regs' rtc_sel)
@@ -189,8 +190,12 @@ module psram_ctrl (
 
     reg [7:0] page_d, page_q, page_n, page_s;
     initial page_s = 8'hff;
-    always @(posedge clk_fx)
-        if (page_ce) begin
+    initial begin page_d = 8'd0; page_q = 8'd0; end
+    always @(posedge clk_fx or posedge rst_edge)
+        if (rst_edge) begin
+            page_d <= 8'd0;
+            page_q <= 8'd0;
+        end else if (page_ce) begin
             page_d <= page_d_next;
             page_q <= page_d;
         end
@@ -205,6 +210,7 @@ module psram_ctrl (
     wire page_stable = (page_n == page_s);
     wire sh_clr = sh_run & sh_done | sh_run & sh_start;
     always @(posedge clk_fx) sh_start <= !page_stable;
+    initial sh_run = 1'b0;                 // stock starts it at 0 (left to XST, an FDS starts at 1)
     always @(posedge clk_fx)
         if (sh_start) sh_run <= 1'b1;
         else if (sh_done) sh_run <= gnd1;

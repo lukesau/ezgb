@@ -1,0 +1,10 @@
+# FW5's console /RESET edge: the debounced /RESET register delayed one CLK0 cycle, and its falling edge, which resets the SD controller and the /WR registers (FW5 only)
+[cells]
+X11Y16_S3.FFY
+X7Y25_S1.G
+[names]
+n_X13Y0c_BUFGMUX3_O        clk_0
+n_X13Y1_DCM_LOCKED         dcm_locked
+n_X25Y15_IOI0_IQ1          gb_reset_n_q
+n_X11Y16_S3_YQ             rst_prev
+n_X7Y25_S1_Y               rst_edge

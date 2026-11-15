@@ -16,6 +16,7 @@
 
 module fw5_7fxx (
     input clk_wr_a,
+    input rst_edge,                 // the console /RESET edge (reset_edge) clears the $7FD4 sum
     input a0, a2, a4,
     input d0, d1, d2, d3, d4, d5, d6, d7,
     input dec_7fcx,                 // the unlocked $7FC0-$7FDF decode (gb_regs)
@@ -36,7 +37,9 @@ module fw5_7fxx (
     initial begin r7fd3 = 7'd0; sum_7fd4 = 8'd0; hdr_chk7 = 1'b0; end
     always @(posedge clk_wr_a) begin
         if (wr_7fd3) r7fd3 <= d[6:0];
-        if (wr_7fd4) sum_7fd4 <= {d7_q, r7fd3} + d + gnd1;
         if (wr_7fc3) hdr_chk7 <= d7;
     end
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) sum_7fd4 <= 8'd0;
+        else if (wr_7fd4) sum_7fd4 <= {d7_q, r7fd3} + d + gnd1;
 endmodule

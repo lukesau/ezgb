@@ -12,3 +12,10 @@ FW5 has gets a `<block>.blk` here, in FW5's coordinates, written by
 `stage0/tools/fw5blk.py` from its registers; it is carved as it is. The
 results are in
 [stage0/docs/firmware-diff.md](../docs/firmware-diff.md).
+
+The proofs run against FW5 as it is, console `/RESET` edge included
+(`fw5-noedge.py --keep-edge`); `edge.names` holds the names the carried
+block files need for it. `reset_edge` is the edge itself, and the modules
+the edge reaches have it here, FW4's included (`sd_clock_divider`,
+`sd_controller_wb`, `sd_cmd_serial`, `sd_fifos`), so FW4's stay as they are.
+`fw5_top.v` is the stitched top (`stage0/tools/fw5-top.sh`).

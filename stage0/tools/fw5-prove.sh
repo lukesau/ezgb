@@ -22,7 +22,8 @@
 #      A stage0/fw5-0918/<block>.blk, in FW5's coordinates, is copied as it
 #      is: blocks only FW5 has (written by fw5blk.py), and a block the carry
 #      can't take (p51_latch)
-#   4. equiv.sh proves each block: against stage0/fw4/rtl/ (FW4's module), or
+#   4. equiv.sh proves each block against FW5 as it is, the /RESET edge
+#      kept (OUT/edge): against stage0/fw4/rtl/ (FW4's module), or
 #      stage0/fw5-0918/ where FW5 differs; TIE/DROP stand in for the
 #      constant-0 LUTs FW4 shares between blocks, which FW5 wires as
 #      constants (each is an INIT 0000 LUT in FW4)
@@ -62,24 +63,42 @@ for b in $BLOCKS; do        # names the carry can't find (a clock that moved)
     [ -f stage0/fw5-0918/$b.names ] && [ ! -f stage0/fw5-0918/$b.sim ] && grep -v '^#' stage0/fw5-0918/$b.names >> "$OUT/blk/$b.blk"
 done
 case " $BLOCKS " in *" sd_crossings "*) python3 "$here/fw5-stages.py" add "$OUT/blk/sd_crossings.blk" "$OUT/s1names.txt" ;; esac
+# The proofs run against FW5 as it is, with the console /RESET edge
+# (fw5-noedge.py --keep-edge, OUT/edge/design.v): the carried block files
+# with the names stage0/fw5-0918/edge.names adds for it.
+E=$OUT/edge
+mkdir -p "$E/blk"
+python3 "$here/fw5-noedge.py" --keep-edge "$FW5/design.v" "$E/design.v" > "$E/noedge.log" || { cat "$E/noedge.log"; exit 1; }
+cp "$FW5"/*.mem "$E/" 2>/dev/null
+for b in $BLOCKS; do cp "$OUT/blk/$b.blk" "$E/blk/$b.blk"; done
+python3 - "$E/blk" stage0/fw5-0918/edge.names <<'PY2'
+import os, re, sys
+blk, names = sys.argv[1], sys.argv[2]
+rules = [l.split() for l in open(names) if l.strip() and not l.startswith('#')]
+common = [(n, v) for b, n, v in rules if b == '*']
+open(os.path.join(blk, 'common.names'), 'w').write(''.join(f'{n} {v}\n' for n, v in common))
+for b, n, v in rules:
+    f = os.path.join(blk, b + '.blk')
+    if b == '*' or not os.path.exists(f):
+        continue
+    lines = [l for l in open(f) if not re.match(rf'{n}\s', l)]
+    if v != '-':
+        lines.append(f'{n} {v}\n')
+    open(f, 'w').writelines(lines)
+PY2
 prove() {
     b=$1; shift
-    env BLK="$OUT/blk/$b.blk" "$@" "$here/equiv.sh" $b "$OUT" > "$OUT/blk/$b.out" 2>&1
+    env BLK="$E/blk/$b.blk" "$@" "$here/equiv.sh" $b "$E" > "$E/blk/$b.out" 2>&1
 }
 for b in $BLOCKS; do
     rtl=stage0/fw5-0918/$b.v; [ -f $rtl ] || rtl=stage0/fw4/rtl/$b.v
-    [ -f stage0/fw5-0918/$b.blk ] && { prove $b RTL=$rtl & continue; }
     case $b in
-        sd_crossings|soft_reset|psram_ctrl|sd_mem_path|gb_regs|unlock|gb_data_out|rtc_bridge|gb_bus|picoblaze_ports|pb_periph|clocks) prove $b RTL=stage0/fw5-0918/$b.v ;;
-        sd_data_serial) prove $b RTL=stage0/fw5-0918/sd_data_serial.v TIE="gnd_i=0" DROP="gnd gnd1 gnd2 gnd3 gnd4 gnd5 gnd6 gnd7" ;;
-        sd_clock_divider) prove $b TIE="gnd_i=0" ;;
-        sd_fifo_filler) prove $b TIE="gnd1_i=0 clr_i=0" ;;
-        sd_cmd_serial) prove $b DROP="gnd gnd1 gnd2" ;;
-        *) prove $b ;;
+        sd_data_serial) prove $b RTL=$rtl TIE="gnd_i=0" DROP="gnd gnd1 gnd2 gnd3 gnd4 gnd5 gnd6 gnd7" ;;
+        sd_clock_divider) prove $b RTL=$rtl TIE="gnd_i=0" ;;
+        sd_fifo_filler) prove $b RTL=$rtl TIE="gnd1_i=0 clr_i=0" ;;
+        sd_cmd_serial) prove $b RTL=$rtl DROP="gnd gnd1 gnd2" ;;
+        *) prove $b RTL=$rtl ;;
     esac &
 done
 wait
-for b in $BLOCKS; do
-    r=$(grep -E "^$b: (equivalent|NOT|setup failed)" "$OUT/blk/$b.out" | head -1)
-    echo "${r:-$b: no result, see $OUT/blk/$b.out}"
-done
+for b in $BLOCKS; do grep -hE "equivalent|NOT|assumptions" "$E/blk/$b.out" | grep -v Warning; done

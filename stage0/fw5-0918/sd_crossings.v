@@ -4,9 +4,8 @@
 // domain in one stage crosses in two here, as argument, block count and data
 // timeout already do in both: command index, checks and with-data bits,
 // command timeout, block size, bus width, byte alignment and software reset.
-// FW5 also resets these flip-flops on a debounced console /RESET; that net
-// is cut out of the design this is proved against (stage0/tools/fw5-noedge.py,
-// run by fw5-prove.sh).
+// FW5 also resets every one of these flip-flops on the console /RESET edge
+// (rst_edge, reset_edge.v), the source's Wishbone reset.
 //
 // Derived from the OpenCores WISHBONE SD Card Controller, Copyright (C)
 // 2013 Marek Czerski, based on original work Copyright (C) 2009 Adam
@@ -16,6 +15,7 @@
 module sd_crossings (
     input clk_mode,
     input clk_sd,
+    input rst_edge,                 // the console /RESET edge (reset_edge)
     // mode domain in
     input [31:0] argument_m,
     input [5:0] cmd_index_m,
@@ -61,6 +61,7 @@ module sd_crossings (
     output reg [4:0] cmd_int_status_m,
     output reg [4:0] data_int_status_m
 );
+    // every register starts at 0 and the edge clears it
     // ---- into the SD domain
     reg [31:0] argument_s1;
     reg [7:0] data_timeout_s1, blkcnt_s1;
@@ -70,7 +71,10 @@ module sd_crossings (
     reg [15:0] cmd_timeout_s1;
     reg [9:0] blksize_s1;
     reg bus_4bit_s1, soft_rst_s1;
-    always @(posedge clk_sd) begin
+    always @(posedge clk_sd or posedge rst_edge)
+      if (rst_edge)
+        {argument_s1, argument_i, data_timeout_s1, data_timeout_i, blkcnt_s1, blkcnt_i, cmd_index_s1, cmd_index_i, cmd_check_s1, cmd_check_i, cmd_with_data_s1, cmd_with_data_i, cmd_timeout_s1, cmd_timeout_i, blksize_s1, blksize_i, bus_4bit_s1, bus_4bit_i, byte_alignment_s1, byte_alignment_i, soft_rst_s1, soft_rst} <= 0;
+      else begin
         argument_s1 <= argument_m;           argument_i <= argument_s1;
         data_timeout_s1 <= data_timeout_m;   data_timeout_i <= data_timeout_s1;
         blkcnt_s1 <= blkcnt_m;               blkcnt_i <= blkcnt_s1;
@@ -86,12 +90,18 @@ module sd_crossings (
 
     // ---- the pulses: toggle on the mode side, three stages on the SD side
     reg cmd_start_toggle, cmd_int_rst_toggle, data_int_rst_toggle;
-    always @(posedge clk_mode) begin
+    always @(posedge clk_mode or posedge rst_edge)
+      if (rst_edge)
+        {cmd_start_toggle, cmd_int_rst_toggle, data_int_rst_toggle} <= 0;
+      else begin
         cmd_start_toggle <= cmd_start_toggle ^ (cmd_start_m[1] & !cmd_start_m[0]);
         cmd_int_rst_toggle <= cmd_int_rst_toggle ^ (cmd_int_rst_m[1] & !cmd_int_rst_m[0]);
         data_int_rst_toggle <= data_int_rst_toggle ^ (data_int_rst_m[1] & !data_int_rst_m[0]);
     end
-    always @(posedge clk_sd) begin
+    always @(posedge clk_sd or posedge rst_edge)
+      if (rst_edge)
+        {cmd_start_sync, cmd_int_rst_sync, data_int_rst_sync} <= 0;
+      else begin
         cmd_start_sync <= {cmd_start_sync[1:0], cmd_start_toggle};
         cmd_int_rst_sync <= {cmd_int_rst_sync[1:0], cmd_int_rst_toggle};
         data_int_rst_sync <= {data_int_rst_sync[1:0], data_int_rst_toggle};
@@ -101,7 +111,10 @@ module sd_crossings (
     reg [31:0] response_0_s1, response_1_s1, response_2_s1;
     reg [31:8] response_3_s1;
     reg [4:0] cmd_int_status_s1, data_int_status_s1;
-    always @(posedge clk_mode) begin
+    always @(posedge clk_mode or posedge rst_edge)
+      if (rst_edge)
+        {response_0_s1, response_0_m, response_1_s1, response_1_m, response_2_s1, response_2_m, response_3_s1, response_3_m, cmd_int_status_s1, cmd_int_status_m, data_int_status_s1, data_int_status_m} <= 0;
+      else begin
         response_0_s1 <= response_0_i;           response_0_m <= response_0_s1;
         response_1_s1 <= response_1_i;           response_1_m <= response_1_s1;
         response_2_s1 <= response_2_i;           response_2_m <= response_2_s1;

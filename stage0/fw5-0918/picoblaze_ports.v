@@ -69,6 +69,8 @@
 module picoblaze_ports (
     input clk_pb,
     input dcm_locked,
+    input gb_reset_n_q,             // the debounced /RESET register (reset_edge)
+    input rst_prev,                 // and its last value: low after high restarts the PicoBlaze
     // the core
     input [7:0] port_id,
     input [7:0] out_port,
@@ -128,12 +130,14 @@ module picoblaze_ports (
 );
     assign gnd = 1'b0;
 
-    // ---- the reset: released two cycles after the DCM locks
+    // ---- the reset: released two cycles after the DCM locks, and taken
+    // again on the console /RESET edge, which restarts the PicoBlaze
+    wire pb_rst = !dcm_locked | rst_prev & !gb_reset_n_q;
     reg reset_s1;
     initial begin reset_s1 = 1'b1; reset = 1'b1; end
     always @(posedge clk_pb) begin
-        reset_s1 <= !dcm_locked ? 1'b1 : gnd;
-        reset <= !dcm_locked ? 1'b1 : reset_s1;
+        reset_s1 <= pb_rst ? 1'b1 : gnd;
+        reset <= pb_rst ? 1'b1 : reset_s1;
     end
 
     // ---- the strobes, one cycle later

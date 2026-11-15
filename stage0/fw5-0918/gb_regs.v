@@ -28,6 +28,9 @@
 
 module gb_regs (
     input clk_wr_a,                 // /WR
+    input rst_edge,                 // the console /RESET edge (reset_edge)
+    input gb_reset_n_q,             // the debounced /RESET register, and its last value:
+    input rst_prev,                 // the same edge, which some enables read themselves
     input a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15,
     input d0, d1, d2, d3, d4, d5, d6, d7,
     input unlocked,                 // the unlock block's last key register
@@ -89,11 +92,15 @@ module gb_regs (
     wire [7:0] d = {d7, d6, d5, d4, d3, d2, d1, d0};
 
     // ---- the shared decodes
-    assign key_ok = !a15 & unlocked;
+    // FW5: not in the console /RESET edge's cycle, which also gates the
+    // shared decodes below that other blocks' writes use
+    wire no_edge = !(rst_prev & !gb_reset_n_q);
+    wire key = !a15 & unlocked;
+    assign key_ok = key & no_edge;              // the copy other blocks read
     assign a10_any = a1 | a0;
     assign a210_any = a2 | a1 | a0;
     assign a2_n1 = a2 | !a1;
-    assign a1_n2 = a1 & !a2;
+    assign a1_n2 = a1 & !a2 & no_edge;
     assign a210_4 = a[2:0] == 3'd4;
     assign a210_6 = a[2:0] == 3'd6;
     assign n_lo0_c = !(a7 & a6 & !a3 & !a210_any);
@@ -101,20 +108,24 @@ module gb_regs (
     assign d_0a = d[3:0] == 4'ha;
     assign r2000 = !a15 & !a14 & a13;
     assign n_r6000 = !(!a15 & a14 & a13);
-    assign game_n3 = !kernel_mode & !mbc_type[3];
+    assign game_n3 = !kernel_mode & !mbc_type[3] & no_edge;
     assign type0_n2 = mbc_type[0] & !mbc_type[2];
     assign type1_n2 = mbc_type[1] & !mbc_type[2];
     assign rtc_sel_d = d[7:4] == 4'd0 & !mbc_type[2] & mbc_type[1] & mbc_type[0];
 
     // ---- $7Fxx, after the unlock
-    wire key_3x = key_ok & !a3;
+    wire key_3x = key & !a3;
     wire dec_7f3x = key_3x & (a[6:4] == 3'b011);
     assign dec_7fcx = key_3x & a7 & a6 & !a5;
     wire wr_7f3x = dec_7f3x & !a7;
     assign wr_7fbx = dec_7f3x & a7;
-    assign wr_7fc3 = dec_7fcx & (a[4:0] == 5'h03);
+    assign wr_7fc3 = dec_7fcx & (a[4:0] == 5'h03) & no_edge;
     wire lock = key_ok & (a[7:0] == 8'hf0) & d_e4;              // $7FF0 = $E4
 
+    reg [7:0] rom_mask;
+    reg rom_mask8;
+    reg [3:0] ram_mask;
+    reg [1:0] mbc1_hi;
     initial begin
         kernel_mode = 1'b1; mode32_b3 = 1'b1;
         win_en = 1'b0; win_en1 = 1'b0; win_mode = 4'd0; mbc_type = 4'd0; rtc_flag = 1'b0;
@@ -127,13 +138,20 @@ module gb_regs (
         rtc_set_sec = 8'd0; rtc_set_min = 8'd0; rtc_set_hour = 8'd0; rtc_set_day = 8'd0;
         rtc_set_wday = 8'd0; rtc_set_month = 8'd0; rtc_set_year = 8'd0;
     end
-    reg [7:0] rom_mask;
-    reg rom_mask8;
-    reg [3:0] ram_mask;
-    always @(posedge clk_wr_a) begin
-        if (wr_7f3x & a[2:0] == 3'd2) {kernel_mode, mode32_b3} <= {d7, d3};
-        if (wr_7f3x & a[2:0] == 3'd0) {win_en1, win_en} <= d[1:0];
-        if (dec_7fcx & a[4:0] == 5'h00) win_mode <= d[3:0];
+    // FW5: the console /RESET edge clears the mode, the window and the MBC
+    // registers, and no register here takes a write in its cycle
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) begin
+            {kernel_mode, mode32_b3} <= 2'b11;
+            win_en <= 1'b0;
+            win_mode <= 4'd0;
+        end else if (no_edge) begin
+            if (wr_7f3x & a[2:0] == 3'd2) {kernel_mode, mode32_b3} <= {d7, d3};
+            if (wr_7f3x & a[2:0] == 3'd0) win_en <= d0;
+            if (dec_7fcx & a[4:0] == 5'h00) win_mode <= d[3:0];
+        end
+    always @(posedge clk_wr_a) if (no_edge) begin
+        if (wr_7f3x & a[2:0] == 3'd0) win_en1 <= d1;
         if (wr_7f3x & a[2:0] == 3'd6) {load_start, load_win} <= {d1, d0};
         if (wr_7f3x & a[2:0] == 3'd7) {rtc_flag, mbc_type} <= {d7, d[3:0]};
         if (wr_7fbx & a[2:0] == 3'd0) cmd_lba0_i <= d;
@@ -173,10 +191,10 @@ module gb_regs (
     wire mbc2 = mbc_type == 4'd2;
     wire mbc3 = mbc_type == 4'd3;
     wire mbc5 = mbc_type == 4'd4;
-    reg [1:0] mbc1_hi;
 
     always @(posedge clk_wr_a)
-        if (kernel_mode) begin
+        if (!no_edge) ;
+        else if (kernel_mode) begin
             if (r2000_lo) rom_bank <= d;
         end else if (mbc1) begin
             if (r2000) rom_bank <= {1'b0, mbc1_hi[1] & rom_mask[6], mbc1_hi[0] & rom_mask[5], d[4:0] & rom_mask[4:0]};
@@ -189,9 +207,9 @@ module gb_regs (
             if (r2000_lo) rom_bank <= d & rom_mask;
         end
     always @(posedge clk_wr_a)
-        if (r3000 & (kernel_mode | mbc5)) rom_bank8 <= d0 & (kernel_mode | rom_mask8);
+        if (no_edge & r3000 & (kernel_mode | mbc5)) rom_bank8 <= d0 & (kernel_mode | rom_mask8);
     always @(posedge clk_wr_a)
-        if (kernel_mode & r4000) bank_4000 <= d;
+        if (no_edge & kernel_mode & r4000) bank_4000 <= d;
 
     // the RAM bank, the RTC select and the RAM enable
     wire rtc_sel_wr = mbc3 & r4000 & d[7:4] == 4'd0 & d3 & (!d2 | d[1:0] == 2'd0);   // $08-$0C
@@ -201,27 +219,34 @@ module gb_regs (
     wire [7:0] ram_bank_val = {4'd0, d[3:0] & ram_mask};
     wire ram_en_wr = r0000 & !type_grp & !(mbc2 & a8);
     always @(posedge clk_wr_a)
-        if (!kernel_mode) begin
-            if (rtc_sel_wr) begin
-                mbc_bank[7:0] <= 8'hff;
-                rtc_sel <= d;
-            end else if (ram_bank_wr)
-                mbc_bank[7:0] <= ram_bank_val;
+        if (no_edge & !kernel_mode & rtc_sel_wr) rtc_sel <= d;
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) mbc_bank <= 9'd0;
+        else if (no_edge & !kernel_mode) begin
+            if (rtc_sel_wr) mbc_bank[7:0] <= 8'hff;
+            else if (ram_bank_wr) mbc_bank[7:0] <= ram_bank_val;
             if (ram_en_wr) mbc_bank[8] <= d_0a;
         end
 
     // MBC1: the mode and the two high bits
-    always @(posedge clk_wr_a)
-        if (!kernel_mode & !n_mbc1) begin
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) begin
+            mbc1_mode <= 1'b0;
+            mbc1_hi <= 2'd0;
+        end else if (no_edge & !kernel_mode & !n_mbc1) begin
             if (r6000) mbc1_mode <= d0;
             if (r4000 & (!mbc1_mode | mbc_type[2])) mbc1_hi <= d[1:0];
         end
 
     // the multicart's registers
-    always @(posedge clk_wr_a)
-        if (game_mbc1m) begin
+    always @(posedge clk_wr_a or posedge rst_edge)
+        if (rst_edge) {mbc1m_sel, mbc1m_mode} <= 2'b00;
+        else if (no_edge & game_mbc1m) begin
             if (r4000) {mbc1m_sel, mbc1m_mode} <= {mbc1_mode & d1, mbc1_mode & d0};
             else if (r6000) {mbc1m_sel, mbc1m_mode} <= {mbc1_hi[1] & d0, mbc1_hi[0] & d0};
+        end
+    always @(posedge clk_wr_a)
+        if (no_edge & game_mbc1m) begin
             if (r2000) mbc1m_ram <= d[3:0] & rom_mask[3:0];
             if (r4000) mbc1m_hi <= d[1:0];
             else if (r2000) mbc1m_hi <= mbc1_hi & rom_mask[5:4];
@@ -230,7 +255,7 @@ module gb_regs (
 
     // ---- the RTC values to set: the register window's offsets $A008-$A00E
     assign rtc_win = adr_014d_lo3 & !a6 & kernel_mode & reg_dec;
-    assign rtc_set_wr = a15 & win_a000 & rtc_win;
+    assign rtc_set_wr = a15 & win_a000 & rtc_win & no_edge;
     always @(posedge clk_wr_a)
         if (rtc_set_wr & !a4)
             case (a[2:0])
@@ -260,6 +285,7 @@ module gb_regs (
         env_type_grp:       assume (type_grp == (mbc_type[3] | mbc_type[1] & mbc_type[2] | !mbc_type[1] & !mbc_type[0] & !mbc_type[2]));
         env_game_mbc1m:     assume (game_mbc1m == (!kernel_mode & !n_mbc1 & mbc_type[2]));
         env_gnd1:           assume (gnd1 == 1'b0);
+        env_rst_edge:       assume (rst_edge == (rst_prev & !gb_reset_n_q));
     end
 `endif
 endmodule

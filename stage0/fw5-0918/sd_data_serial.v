@@ -26,7 +26,8 @@
 //     bits, data_cycles 13 (its bit 0 is a constant 0 and has no register),
 //     blkcnt_reg 8; blksize_reg keeps only the two bits the byte alignment
 //     update reads, and those two have no reset: their enable is
-//     IDLE & !soft_rst instead
+//     IDLE & !soft_rst instead (FW5: & !the console /RESET edge, which
+//     joins soft_rst in every other register's reset, sd_rst)
 //   - DAT_dat_reg is the pads' own input registers (sd_dat*_q here), and
 //     DAT_dat_o / DAT_oe_o are registered again in the pads' output cells
 //     from the same next values this module keeps in its own copies
@@ -45,6 +46,9 @@
 module sd_data_serial (
     input clk_sd,
     input soft_rst,
+    input sd_rst,                   // soft_rst | the console /RESET edge (sd_fifos): the registers' reset
+    input gb_reset_n_q,             // the debounced /RESET register (reset_edge)
+    input rst_prev,                 // and its last value: low after high is the edge
     input [1:0] start_i,            // {d_read, d_write} from the data master
     input sd_dat0_q,                // DAT0..3 pads, registered (DAT_dat_reg)
     input sd_dat1_q,
@@ -294,8 +298,8 @@ module sd_data_serial (
     assign dat_out_next = DAT_dat_n;
     assign dat_t_next = !DAT_oe_n;
 
-    always @(posedge clk_sd or posedge soft_rst)
-        if (soft_rst) begin
+    always @(posedge clk_sd or posedge sd_rst)
+        if (sd_rst) begin
             state <= IDLE; DAT_oe_o <= 0; crc_en <= 0; crc_rst <= 1; transf_cnt <= 0; crc_c <= 0; rd <= 0;
             last_din <= 0; crc_in <= 0; DAT_dat_o <= 0; crc_status <= 0; crc_s <= 0; we <= 0; data_out <= 0;
             crc_ok <= 0; busy_int <= 0; data_index <= 0; next_block <= 0; blkcnt_reg <= 0; byte_alignment_reg <= 0;
@@ -308,9 +312,10 @@ module sd_data_serial (
             byte_alignment_reg <= byte_alignment_n; data_cycles <= data_cycles_n[BLKSIZE_W-1+3:1]; bus_4bit_reg <= bus_4bit_n;
         end
 
-    // blksize_reg[1:0]: loaded in IDLE like the rest, but without a reset
+    // blksize_reg[1:0]: loaded in IDLE like the rest, but without a reset;
+    // the enable reads the soft reset and the /RESET edge itself
     always @(posedge clk_sd)
-        if (state == IDLE && !soft_rst)
+        if (state == IDLE && !soft_rst && !(rst_prev & !gb_reset_n_q))
             blksize_reg <= blksize_i[1:0];
 
 `ifdef FORMAL

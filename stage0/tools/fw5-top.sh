@@ -4,7 +4,8 @@
 #
 #   stage0/tools/fw5-top.sh wiring|rtl [OUT]
 #
-# OUT is fw5-prove.sh's work directory (its design.v and blk/). The blocks
+# OUT is the directory fw5-prove.sh proves the blocks in (its edge/: the
+# design.v with the console /RESET edge, and blk/). The blocks
 # are the ones fw5-prove.sh carried or copied there; each block's readable
 # module is stage0/fw5-0918/<block>.v where FW5 has one, FW4's in
 # stage0/fw4/rtl/ otherwise. The stitched top is stage0/fw5-0918/fw5_top.v.
@@ -14,7 +15,7 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
 mode=${1:?wiring|rtl}
-OUT=$(cd "${2:-$top/fpga/fw5-nx}" && pwd)
+OUT=$(cd "${2:-$top/fpga/fw5-nx/edge}" && pwd)
 blks=$(ls "$OUT"/blk/*.blk | grep -v '\.sim\.blk$')
 rtls=''
 for b in $blks; do

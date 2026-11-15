@@ -21,14 +21,23 @@ Every edit is exact for FW5 without its console /RESET edge, and checked:
     CONST_0, so the BX/BY pin it names is no input of its block
 
 The design proved against is therefore FW5 minus the /RESET edge; the edge
-is FW5's addition on its own (docs in stage0/docs/firmware-diff.md)."""
+is FW5's addition on its own (docs in stage0/docs/firmware-diff.md).
+
+    fw5-noedge.py --keep-edge FW5/design.v OUT/design.v
+
+keeps the edge and makes only the other two edits (the shared constant 0,
+the unused carry inputs), so the block files apply to FW5 as it is: the
+design the ISE build is proved against."""
 import re, sys
+keep = '--keep-edge' in sys.argv
+if keep:
+    sys.argv.remove('--keep-edge')
 PREV, CUR = 'n_X11Y16_S3_YQ', 'n_X25Y15_IOI0_IQ1'
 EXPECT = {('i_X7Y25_S1', 'G'): 0x0000, ('i_X10Y16_S1', 'F'): 0x0FFF,
           ('i_X23Y25_S3', 'G'): 0xFF00, ('i_X23Y26_S3', 'G'): 0xFFAA}
 src = open(sys.argv[1]).read()
 done = 0
-for m in list(re.finditer(r"s3_slice #\(([^;]*?)\) (i_X\d+Y\d+_S\d) \(([^;]*?)\);", src)):
+for m in ([] if keep else list(re.finditer(r"s3_slice #\(([^;]*?)\) (i_X\d+Y\d+_S\d) \(([^;]*?)\);", src))):
     params, inst, body = m.groups()
     newp, newb, hit = params, body, []
     for lut in ('F', 'G'):
@@ -56,14 +65,17 @@ for m in list(re.finditer(r"s3_slice #\(([^;]*?)\) (i_X\d+Y\d+_S\d) \(([^;]*?)\)
         print(*hit, sep='\n')
 print(done, 'LUTs lose the edge;', len(re.findall(r'\b' + PREV + r'\b', src)), 'mentions of prev left')
 # with the edge gone, X23Y25_S3.G = G4
-m = re.search(r"s3_slice #\([^;]*?\) i_X23Y25_S3 \(([^;]*?)\);", src)
-g4 = re.search(r'\.G4\(([^()]*)\)', m.group(1)).group(1)
-n = src.count('.SR(n_X23Y25_S3_Y)')
-sr = src.replace('.SR(n_X23Y25_S3_Y)', f'.SR({g4})')
-# X7Y25_S1.G is now constant 0: its loads take 1'b0, so the blocks it resets
-# do not pull /RESET's register in as an input
-k = len(re.findall(r'\((n_X7Y25_S1_Y)\)', sr))
-sr = re.sub(r'\.(\w+)\(n_X7Y25_S1_Y\)', lambda m: m.group(0) if m.group(1) in ('Y',) else f".{m.group(1)}(1'b0)", sr)
+if keep:
+    sr, n, k, g4 = src, 0, 1, "-"
+else:
+  m = re.search(r"s3_slice #\([^;]*?\) i_X23Y25_S3 \(([^;]*?)\);", src)
+  g4 = re.search(r'\.G4\(([^()]*)\)', m.group(1)).group(1)
+  n = src.count('.SR(n_X23Y25_S3_Y)')
+  sr = src.replace('.SR(n_X23Y25_S3_Y)', f'.SR({g4})')
+  # X7Y25_S1.G is now constant 0: its loads take 1'b0, so the blocks it resets
+  # do not pull /RESET's register in as an input
+  k = len(re.findall(r'\((n_X7Y25_S1_Y)\)', sr))
+  sr = re.sub(r'\.(\w+)\(n_X7Y25_S1_Y\)', lambda m: m.group(0) if m.group(1) in ('Y',) else f".{m.group(1)}(1'b0)", sr)
 # FW4 shares one constant-0 net between blocks where FW5 builds several
 # constant LUTs: every load of a LUT that is 0 on every input moves to one of
 # them, so a block's constant input is one net in both builds.

@@ -1,0 +1,16 @@
+# Names fw5-prove.sh adds to the carried block files for the design with the
+# console /RESET edge (fw5-noedge.py --keep-edge): BLOCK NET NAME, * for
+# every block, NAME - to drop a name the block file has for NET.
+*                 n_X7Y25_S1_Y       rst_edge
+*                 n_X11Y16_S3_YQ     rst_prev
+*                 n_X25Y15_IOI0_IQ1  gb_reset_n_q
+# the SD soft reset with the edge (sd_fifos makes it) is the reset these
+# take as soft_rst; the soft reset register alone is no input of theirs
+sd_cmd_master     n_X14Y26_S1_YQ     -
+sd_cmd_master     n_X23Y25_S3_Y      soft_rst
+sd_data_master    n_X14Y26_S1_YQ     -
+sd_data_master    n_X23Y25_S3_Y      soft_rst
+sd_fifo_filler    n_X14Y26_S1_YQ     -
+sd_fifo_filler    n_X23Y25_S3_Y      soft_rst
+sd_fifos          n_X23Y25_S3_Y      sd_rst
+sd_data_serial    n_X23Y25_S3_Y      sd_rst

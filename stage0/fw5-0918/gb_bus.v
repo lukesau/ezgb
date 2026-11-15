@@ -30,6 +30,8 @@ module gb_bus (
     input [3:0] win_mode,           // $7FC0
     input win_a000, win_sel,        // the window decode's stages (sd_mem_path)
     input wr_7fbx, a210_4,          // the $7FBx write and A2-A0 = 4 (gb_regs)
+    input gb_reset_n_q,             // the debounced /RESET register (reset_edge)
+    input rst_prev,                 // and its last value: low after high is the edge
     // the pSRAM controller's terms
     input kernel_b3_lo,             // the stage1 read is enabled
     input pg15_gb, pg15_gb_b,       // the controller's page bit, under both its nets
@@ -61,7 +63,7 @@ module gb_bus (
     assign brom_en = kernel_b3_lo & pg15_gb & !a11_pass & !a12_pass & !a13_gb;
     assign plane_en = kernel_b3_lo & !pg15_gb;
     assign tbl_we = tbl_win & !wr_n;
-    assign wr_7fb4 = wr_7fbx & a210_4;
+    assign wr_7fb4 = wr_7fbx & a210_4 & !(rst_prev & !gb_reset_n_q);   // not on the /RESET edge
 
     // ---- the copies
     initial begin
