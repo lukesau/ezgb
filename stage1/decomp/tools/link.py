@@ -6,9 +6,9 @@ GBDK 2.96a's library modules (sdcclib/, gbdk/), and the library code no
 published source has, converted from the disassembly (asm/). The C is
 compiled by SDCC 2.9.0 (tools/sdcc-2.9.0, from build-sdcc29.sh), the
 compiler EZ Flash used, with no options; everything is linked by sdldgb in
-GBDK lcc's order, and the ROM is written from the link. When the firmware's
-kernel.gb is present (local, from stage1-from-bram.py) the build is compared
-with it and fails if it differs.
+GBDK lcc's order, and the ROM is written from the link. The build fails
+unless the ROM's md5 is the stock stage1's, so no file of EZ Flash's is
+needed.
 
     tools/link.py fw4       -> build/fw4/stage1.gb
     tools/link.py fw5-0918  -> build/fw5/stage1.gb
@@ -32,6 +32,7 @@ the bank (BANKS); and GBDK 2.96a's linker put font.s's absolute mode-table
 entry after crt0's _HEADER area, at $03CD, not at its .org ($01E9), so the
 build moves those three bytes there.
 """
+import hashlib
 import os
 import re
 import subprocess
@@ -44,7 +45,9 @@ SRC = DECOMP / "src"
 GBDK = DECOMP / "gbdk"
 SDCC = STAGE1.parent / "tools" / "sdcc-2.9.0" / "bin"
 
-FWS = {"fw4": ("4", STAGE1 / "fw4"), "fw5-0918": ("5", STAGE1 / "fw5-0918")}
+# firmware -> (FW define, md5 of the stock stage1)
+FWS = {"fw4": ("4", "0f0b6647e8188ff5ef7c5185e88655fb"),
+       "fw5-0918": ("5", "fdf3194f08eeb5bbf9eb82565661262d")}
 
 # Link order, as lcc linked it: crt0, the program, then the library modules
 # in the order stock has them. RAM follows it too: main.c's LoadCmd and
@@ -129,7 +132,7 @@ def parse_map(path):
 
 
 def build(fw):
-    fwnum, fwdir = FWS[fw]
+    fwnum, md5 = FWS[fw]
     out = DECOMP / "build" / f"fw{fwnum}"
     obj = out / "obj"
     obj.mkdir(parents=True, exist_ok=True)
@@ -235,9 +238,8 @@ def build(fw):
                 bank = 1 if HANDOFF_ROM <= a else 0
                 f.write(f"{bank:02x}:{a:04x} {name}\n")
 
-    stock = fwdir / "kernel.gb"
-    same = "" if not stock.exists() else \
-        ", same as stock" if gb.read_bytes() == stock.read_bytes() else ", DIFFERS from stock"
+    got = hashlib.md5(gb.read_bytes()).hexdigest()
+    same = ", same as stock" if got == md5 else f", DIFFERS from stock (md5 {got})"
     print(f"{gb.relative_to(STAGE1.parent)}: bank 0 ${0:04x}-${area('_BASE')[0] + area('_BASE')[1] - 1:04x}, "
           f"RAM ${RAM:04x}-${BSS + area('_BSS')[1] - 1:04x}{same}")
     return not same.startswith(", DIFFERS")

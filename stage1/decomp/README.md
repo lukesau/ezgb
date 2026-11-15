@@ -17,11 +17,11 @@ make -C stage1/decomp                 # build/fw4/stage1.gb and build/fw5/stage1
 make -C stage1/decomp match           # per function, if one ever differs
 ```
 
-Needs a current SDCC (`sdcpp`, `sdasgb`, `sdldgb`; 2.9.0's own preprocessor
-and linker no longer build), rgbds, and a C compiler to build SDCC 2.9.0
+Needs a current SDCC (`sdcpp`, `sdasgb`, `sdldgb`; the preprocessor and linker
+of 2.9.0 no longer build), rgbds, and a C compiler to build SDCC 2.9.0
 (`build-sdcc29.sh` fetches its source release, or takes the tarball as an
-argument). No stock binary is needed. When `stage1/<fw>/kernel.gb` is there,
-`make` compares the ROM with it and fails if they differ.
+argument). No stock binary is needed: `make` fails unless each ROM has the
+stock stage1's md5.
 
 ## The build
 

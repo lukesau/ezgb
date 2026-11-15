@@ -3,13 +3,16 @@
 # K104 in the C mark where the other two differ from it. The build fails unless each result is
 # byte-identical to its stock kernel.
 #
-# The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>.
+# The C needs SDCC 2.9.0, the compiler EZ Flash used: SDCC29=<install prefix>,
+# by default ../../tools/sdcc-2.9.0 (stage1/decomp/tools/build-sdcc29.sh).
 #
 #   make            build all three (build-0918/, build-104/, build-0731/kernel.gb), check their md5s
 #   make K=0918     only 0918 (K=104: only 1.04e, K=0731: only 0731)
 #   make clean
 
 K ?= 0918
+SDCC29 ?= $(abspath ../../tools/sdcc-2.9.0)
+export SDCC29
 SDINC := python3 tools/sdinc.py
 
 # 0918 is 0731 with RtcDebugDump added to bank 1, so bank 1 from $4C5E on

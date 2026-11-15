@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Build SDCC 2.9.0, the compiler EZ Flash used for stage1 and the kernel,
-# into tools/sdcc-2.9.0 (ignored). Only the compiler is built: the
-# preprocessor, assembler and linker come from a current SDCC on PATH
-# (sdcpp, sdasgb, sdldgb), which handle 2.9.0's output the same.
+# into tools/sdcc-2.9.0 (ignored). Only the compiler is built, and its C
+# library headers copied: the preprocessor, assembler and linker come from
+# a current SDCC on PATH (sdcpp, sdasgb, sdldgb), which handle 2.9.0's
+# output the same.
 #
 #   stage1/decomp/tools/build-sdcc29.sh [sdcc-src-2.9.0.tar.bz2]
 #
@@ -33,6 +34,10 @@ make -C src -j4 >/dev/null
 
 mkdir -p "$OUT/bin"
 cp bin/sdcc "$OUT/bin/sdcc"
+# the C library headers (string.h, stdarg.h), where the compiler looks
+mkdir -p "$OUT/share/sdcc"
+rm -rf "$OUT/share/sdcc/include"
+cp -R device/include "$OUT/share/sdcc/include"
 # 2.9.0 passes -obj-ext=.o to sdcpp, which a current sdcpp reads as -o
 cat > "$OUT/bin/sdcpp" <<'EOF'
 #!/bin/sh
