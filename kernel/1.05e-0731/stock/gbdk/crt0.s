@@ -160,7 +160,8 @@ Boot::
 	.org	0x14D
 	.byte	0xBD
 
-	;; Checksum
+	;; Checksum: 0731's; the Makefile sets the global checksum with rgbfix, which
+	;; gives 0918's ($F8B5) there
 	.org	0x14E
 	.byte	0x7B,0x57
 

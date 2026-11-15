@@ -410,8 +410,38 @@ UINT32 DateToDaysSince1970 (RTCTIME *t)
 	return secs;
 }
 
-/* 01:4c5e: the cart RTC (page 6, BCD from $A008) as DateToDaysSince1970's
-   seconds */
+#ifdef K0918
+void DrawU32Decimal (UINT32 v);
+void WaitJoypadSelect (void);
+
+/* 01:4c5e, 0918 only: an RTC test screen nothing calls. It reads the clock
+   like RtcToDayCount, prints 12345678 and the date and time, and waits for
+   SELECT. */
+void RtcDebugDump (void)
+{
+	RTCTIME t;
+
+	SetFpgaPage_B1(6);
+	t.year = (*(volatile UINT8 *)0xa00e & 0x0f) + (*(volatile UINT8 *)0xa00e >> 4) * 10 + 2000;
+	t.month = (*(volatile UINT8 *)0xa00d & 0x0f) + (*(volatile UINT8 *)0xa00d >> 4) * 10;
+	t.day = (*(volatile UINT8 *)0xa00b & 0x0f) + (*(volatile UINT8 *)0xa00b >> 4) * 10;
+	t.hour = (*(volatile UINT8 *)0xa00a & 0x0f) + (*(volatile UINT8 *)0xa00a >> 4) * 10;
+	t.min = (*(volatile UINT8 *)0xa009 & 0x0f) + (*(volatile UINT8 *)0xa009 >> 4) * 10;
+	t.sec = (*(volatile UINT8 *)0xa008 & 0x0f) + (*(volatile UINT8 *)0xa008 >> 4) * 10;
+	SetFpgaPage_B1(3);
+	DrawU32Decimal(12345678);
+	DrawU32Decimal(t.year);
+	DrawU32Decimal(t.month);
+	DrawU32Decimal(t.day);
+	DrawU32Decimal(t.hour);
+	DrawU32Decimal(t.min);
+	DrawU32Decimal(t.sec);
+	WaitJoypadSelect();
+}
+#endif
+
+/* 01:4c5e (0918: 01:4ec9): the cart RTC (page 6, BCD from $A008) as
+   DateToDaysSince1970's seconds */
 UINT32 RtcToDayCount (void)
 {
 	RTCTIME t;
@@ -501,7 +531,9 @@ UINT32 RtcWriteTimeFromDayDelta (UINT32 base)
 	*(UINT8 *)0xa224 = ctl;
 	*(UINT8 *)0x4000 = 0;
 	SetFpgaPage_B1(0);
+#ifndef K0918
 	SetFpgaPage_B1(0);
+#endif
 	return now;
 }
 
