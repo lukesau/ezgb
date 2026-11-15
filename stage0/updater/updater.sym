@@ -1,0 +1,26 @@
+; FW4 updater: where each function of src/ is in Update_FW4.gb
+00:07bc WaitJoypadSelect
+00:07db PlotBitRowXY
+00:08b6 DrawString12
+00:0dca DrawU32Hex
+00:0e92 FileSystemErrorHang
+00:0ebc U32ToAscii_B0
+00:0ffd main
+00:120f MemCopy8
+00:124b ReadA000
+00:1252 SetFpga7FD2On
+00:1271 SetFpga7FD2Off
+00:1290 SetFpga7F36
+00:12b0 StageBlock
+00:12f0 ReadVersion
+00:1305 CStrCat
+00:134d Update
+00:14fe MemCopy8_B
+00:153a SetFpga7FC0
+00:155a PlotGlyph12
+01:4000 FlashPoll
+01:404e MemCopy8_B1
+01:408a RunFlashPoll
+01:409f CStrCat_B1
+01:40e7 CStrCmp
+01:4142 CStrChr

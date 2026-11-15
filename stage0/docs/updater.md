@@ -2,10 +2,10 @@
 
 `Update_FW4.gb` and `Update_FW5_*.gb` are Game Boy programs, launched from
 the kernel like a game, that write a new FPGA design to the cart's config
-flash. The FW4 one is disassembled in [fw4/updater/](../fw4/updater/)
-(`kernel.sym` and the generated `disassembly/`). The updaters themselves are
-EZ Flash's and stay local. Building our own from one is in
-[setup.md](setup.md).
+flash. Their program builds from source, byte for byte, in
+[stage0/updater/](../updater/README.md); the addresses below are FW4's.
+The updaters themselves are EZ Flash's and stay local. Building our own is
+in [setup.md](setup.md).
 
 ## What is in the file
 
