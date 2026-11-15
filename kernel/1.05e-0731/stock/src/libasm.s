@@ -1,11 +1,12 @@
 	;; Bank 0's asm runtime that is neither SDCC's nor GBDK's: the long, char
 	;; and int math SDCC 2.9.0's stubs.s jumps to, strcpy, memset and memcpy,
 	;; and two unreferenced float helpers (stock $20E2 and $29E6-$2EEA, in six
-	;; pieces). The source this came from is not known: no SDCC revision
-	;; (2000 to 2025, searched by instruction sequence) or GBDK (2.0.17,
-	;; 2.96a, 4.0) library has it. Stage1 links the same library
-	;; (stage1/decomp/asm). This file is a reconstruction from the stock
-	;; kernel's bytes, with the names SDCC's runtime gives the entry points.
+	;; pieces). Rebuilt from EZ Flash's kernel, which stage1 shares
+	;; (stage1/decomp/asm). No SDCC revision (2000 to 2025, searched by
+	;; instruction sequence) or GBDK (2.0.17, 2.96a, 4.0) library has it, so
+	;; it is probably EZ Flash's code. This file is a reconstruction from the
+	;; stock kernel's bytes, with the names SDCC's runtime gives the entry
+	;; points.
 	;;
 	;; Stock links the pieces between other library objects, so each is its
 	;; own area here (_LIB0 to _LIB5) and the Makefile places them. The

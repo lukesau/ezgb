@@ -46,5 +46,6 @@ Compared byte for byte with relocated operands masked (2026-11-14):
 - GitHub code search for asm defining SDCC's `__divslong` / `__mullong` or
   storing to `_errno`: only SDCC's own libraries for other targets.
 
-So it is most likely a library EZ Flash wrote, or carried over from their
-own earlier products.
+This code is rebuilt from EZ Flash's stage1 (and their kernel, which links
+the same library). No published library has it, so it is probably EZ
+Flash's code, written for this or carried over from their earlier products.
