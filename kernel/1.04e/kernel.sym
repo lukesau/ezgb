@@ -4378,7 +4378,7 @@
 02:4a00 EzCfg
 02:4a00 .data:16d2:8
 02:4500 FastLaunchScan
-02:4500 .data:2d3:8
+02:4500 .data:2fa:8
 04:5f00 FarCallEzCfg
 04:5f00 .data:8:8
 04:5f10 RtcSetHook
@@ -4570,7 +4570,7 @@
 00:3fe4 DvParams
 00:3fe4 .data:1b:8
 0b:4b00 MsgBox
-0b:4b00 .data:35a:8
+0b:4b00 .data:32c:8
 08:7e4c MsgBoxFar
 08:7e4c .data:8:8
 02:7600 TabStrip12
