@@ -224,7 +224,18 @@ half while the FPGA switches it over. A poll that fast reads `$FF`.
 - **`CMD7` goes out with the address `$0200`** whatever the card's `CMD3`
   reply says. Why has not been looked into.
 
-One check is still owed on hardware: P51, the pin that carries memory
-address A13, is driven through a latch gated by `$7FD2` bit 0. The decoded
-polarity makes it transparent while the bit is 1, which cannot be right,
-since the kernel leaves the bit 0. The model inverts it.
+P51, the pin that carries memory address A13, is driven through a latch
+gated by `$7FD2` bit 0, and a second latch in a slice holds the same
+value. Both are transparent while the bit is 0, which is what the kernel
+leaves it at. The decoded gate bit reads the other way round.
+
+> **Correction (2026-11-14).** This paragraph used to say the latch's
+> polarity was still owed a check on hardware, and the slice latch was
+> modeled as decoded (transparent while the bit is 1). ISE settles it
+> ([stage0/ise](../ise/README.md)): built from `p51_latch.v` written
+> transparent-while-1, it sets the slice's CLK inversion where stock's is
+> clear; written transparent-while-0, it matches stock. So every latch's
+> gate is inverted against the decoded bit, the slice latch included.
+> `p51_latch.v` and `netlist2v.py` (which already inverted the IO tile's
+> latch) are corrected; anything simulated or proven on the old slice
+> latch inherits the fix.

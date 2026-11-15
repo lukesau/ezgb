@@ -142,6 +142,14 @@ for (x, y), t in sorted(clb.items()):
         conns['CE'] = inp(c, 'CE', "1'b1")
         conns['SR'] = inp(c, 'SR', "1'b0")
         conns['CLK'] = inp(c, 'CLK', "1'b0")
+        # A latch's gate reads inverted against the decoded bit, as in the IO
+        # tiles below. ISE says so: asked for the P51 slice latch transparent
+        # while its gate is 1, it sets the CLK inversion stock leaves clear
+        # (stage0/ise, 2026-11-14). So a latch is transparent while the
+        # decoded gate is 0.
+        if a.get('FF_LATCH') == '1' and c['in'].get('CLK', [None])[0]:
+            s_, inv = c['in']['CLK']
+            conns['CLK'] = wname(s_) if inv else f"~{wname(s_)}"
         conns.update(CIN=cin, FXINA=fxa, FXINB=fxb, SHIFTIN=shin, ALTDIG=altdig, WE1=we1)
         for pin in ('X', 'Y', 'XQ', 'YQ', 'XB', 'YB'):
             src = f"{t}:{b}:{pin}"
@@ -208,7 +216,9 @@ for (t, b), c in sorted(cells.items()):
     conns = {'PAD': pin or ''}
     for p in ('O1', 'O2', 'T1', 'T2', 'OTCLK1', 'OTCLK2', 'ICLK1', 'SR', 'REV'):
         conns[p] = inp(c, p, "1'b0")
-    # An output latch's gate reads inverted against the decoded bit. P51's
+    # An output latch's gate reads inverted against the decoded bit (ISE
+    # encodes it so, stage0/ise: an ISE build of this latch, transparent
+    # while the bit is 0, sets the same bits as stock). P51's
     # latch is the only one: its gate is OTCLK1 from the $7FD2 bit, and it
     # has to be transparent while that bit is 0 or every game-mode ROM read
     # lands 16KB off (docs/design.md, game-mode reads). The edge-triggered

@@ -338,6 +338,5 @@ write clock is /WR | A15 and the other write clock the /WR pad itself.
 The fifteen constant LUTs tie block RAM, clock buffer and DCM pins and a
 few inputs of other blocks. The one slice latch is a second latch of
 the A13 mux beside P51's IO-tile latch, with the same set, clear and
-gate; it keeps the decoded gate polarity (transparent while the flash
-bit is 1) where the generator inverts the IO tile's. That polarity still needs a check on
-hardware.
+gate. Both are transparent while the flash bit is 0; the gate bit
+decodes the other way, which ISE settles ([design.md](design.md)).

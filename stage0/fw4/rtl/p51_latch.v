@@ -6,11 +6,12 @@
 // A13 while a load runs (mem_a13_sd sets, mem_a13_sd_n clears) and gated
 // by the flash operation bit ($7FD2 bit 0) otherwise.
 //
-// The gate's polarity: this latch is transparent while the bit is 1, as
-// decoded. The IO tile's latch has the same gate, which netlist2v.py
-// inverts (transparent while the bit is 0) on the behavioral grounds in
-// stage0/docs/design.md, where a hardware check of that polarity is
-// still owed; it is owed for this one too.
+// The gate's polarity: both latches are transparent while the bit is 0,
+// so in the kernel, which leaves it 0, they follow the mux. The decoded
+// bit reads the other way. ISE settles it: built from this module with the
+// gate the other way round (transparent while 1), it sets this slice's CLK
+// inversion where stock's is clear, and built as here it matches stock
+// (stage0/ise, 2026-11-14). netlist2v.py inverts latch gates to match.
 //
 // Block: stage0/fw4/blocks/p51_latch.blk.
 
@@ -25,5 +26,5 @@ module p51_latch (
     always @*
         if (mem_a13_sd_n) a13_latch = 1'b0;
         else if (mem_a13_sd) a13_latch = 1'b1;
-        else if (flash_op) a13_latch = mem_a13_b;
+        else if (!flash_op) a13_latch = mem_a13_b;
 endmodule
