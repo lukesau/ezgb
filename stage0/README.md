@@ -25,7 +25,7 @@ Slots A and B are both stage0: two configurations of the same chip.
 | `fw4/`, `fw5-0918/` | one folder per firmware: its decoded bitstream (`decode.txt`), pin and register maps (`pins.txt`, `regs.txt`, `regmap.txt`), and the PicoBlaze's programs disassembled (`picoblaze/`) |
 | `fw4/rtl/`, `fw4/blocks/` | the readable Verilog of FW4 and the block files that tie it to the bitstream |
 | `fw5-0918/` | the modules and block files where FW5-0918 differs from FW4 |
-| `updater/` | the firmware updater's program in C, FW4's and FW5-0918's, byte for byte ([README](updater/README.md)) |
+| `updater/` | the firmware updater's program in C, FW4's and FW5-0918's, identical to stock ([README](updater/README.md)) |
 | `flash-read.psm`, `sd-recover-fw5-0918.psm` | our patches to the PicoBlaze's programs |
 | `sim/` | the whole design as simulatable Verilog, with models of the flash, the SD card and the Game Boy bus |
 | `netlist/` | scripts from the analysis of the netlist |
@@ -55,7 +55,7 @@ exported from them, live in the ignored `fpga/` folder.
 The goal is readable Verilog that can be shown to be EZ Flash's design and
 later placed and routed back into an identical bitstream. Three layers:
 
-1. **An encoder.** `s3encode` rebuilds every cart bitstream byte for byte
+1. **An encoder.** `s3encode` rebuilds every cart bitstream exactly
    from its decode. Done.
 2. **Readable Verilog, proven equivalent to the extracted netlist.** Done
    for FW4: every slice cell is in one of 22 blocks, each proven, and the
@@ -66,7 +66,7 @@ later placed and routed back into an identical bitstream. Three layers:
    the exact bitstream. Started: [ise/](ise/README.md) builds the readable
    designs of FW4 and FW5-0918 with ISE, every register in its stock cell,
    and proves each result equivalent to stock. The LUTs and routing come
-   from ISE, so the bitstreams are not stock's byte for byte.
+   from ISE, so the bitstreams are not identical to stock's.
 
 ## How the proof works
 

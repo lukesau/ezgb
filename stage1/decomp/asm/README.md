@@ -21,7 +21,7 @@ to 33, SDCC's `EDOM`, and returns `$7FFFFFFF`.
 
 ## Where it is not from
 
-Compared byte for byte with relocated operands masked (2026-11-14):
+Compared in full with relocated operands masked (2026-11-14):
 
 - GBDK 2.96a's prebuilt `gb.lib` and `gbz80.lib`, whole modules and by
   function.

@@ -101,7 +101,7 @@ three kernels.
 
 It opens with the same 370 bytes of clock-reading code as `RtcToDayCount`,
 so a byte diff finds the first difference 370 bytes in, at `$4dd0`. The real
-`RtcToDayCount` follows at `01:4ec9`, byte for byte the 0731 routine, and
+`RtcToDayCount` follows at `01:4ec9`, identical to the 0731 routine, and
 its two callers (`01:505e`, `01:5348`) were repointed.
 
 The 9 deleted bytes are at the end of `RtcWriteTimeFromDayDelta`: 0731 calls

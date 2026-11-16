@@ -118,7 +118,7 @@ both firmwares, with the label from `stage1/VERSION`, into
 of ours, and `PATCHES=0` leaves the PicoBlaze programs stock. Both together
 check the whole flow: `make check-slotb BUILD_HOST=<build host>` builds the
 stock stage1 from source, patches it into stock slot B and stops unless the
-result is stock's slot B byte for byte. It passes for FW4 and FW5-0918
+result is exactly stock's slot B. It passes for FW4 and FW5-0918
 (2026-11-14).
 
 It runs `host-check.sh` first, which stops only when the build host's CPU
@@ -184,7 +184,7 @@ s3patch --db $DB slotB.bin slotB-stage1.bin $(cat sets.txt)
 ```
 
 **7. Check the round trip.** Decode the patched image and rebuild stage1
-from it. It must equal `stage1.gb` byte for byte:
+from it. It must equal `stage1.gb` exactly:
 
 ```bash
 s3decode --db $DB --blob-dir bram-new/ slotB-stage1.bin > /dev/null

@@ -4,7 +4,7 @@
 // (loadcmd.hex, from loadcmd.py) through the $7F36 window. The PC monitor
 // counts cmd_load_rom's key_store and its zeroing branch, each run's
 // fast-key check (LOAD_NEXT $23B) and the pause after it ($23E CALL
-// delay_long). The load is checked byte for byte against card.img in U9.
+// delay_long). The load is checked in full against card.img in U9.
 // +define+GB_TEST=\"gb_sdload.vh\" +define+PC_BRAM=i_D0X3Y1_bram
 // plusargs: +LOAD_LBA=n +LOAD_LEN=n (the file in loadcmd.hex),
 // +KS=hex +KS0=hex (key_store and its LOAD s0,00; 3d8/3db in the patch),

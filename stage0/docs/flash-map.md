@@ -61,7 +61,7 @@ The others have no initial contents and are used as RAM: the sector
 buffer, the two SD FIFOs and the load command table.
 
 `stage1/tools/stage1-from-bram.py` rebuilds stage1's 32 KB from a decoded
-bitstream, and the result matches a dump from a cart byte for byte. Going
+bitstream, and the result matches a dump from a cart exactly. Going
 the other way, `stage1-to-bram.py` and `s3patch` put a new stage1 in
 ([setup.md](setup.md)).
 
@@ -84,7 +84,7 @@ positions. The second program is identical in every image, FW4 included.
 
 | Updater | Bitstreams |
 |---|---|
-| `Update_FW4.gb` | one, at `$8000`. It is slot B byte for byte |
+| `Update_FW4.gb` | one, at `$8000`. It is exactly slot B |
 | `Update_FW5_7-31.gb`, `Update_FW5_forSGB.gb`, `Update_FW5_2021-9-18.gb` | two each, at `$8000` and `$2C80C` |
 
 Every updater writes only its first bitstream, to slot B

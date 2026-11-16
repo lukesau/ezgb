@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build stock stage1 from source, byte for byte.
+"""Build stock stage1 from source, identical to stock.
 
 Everything is source: GBDK's crt0 (gbdk/), the C (src/), SDCC 2.9.0's and
 GBDK 2.96a's library modules (sdcclib/, gbdk/), and the library code no

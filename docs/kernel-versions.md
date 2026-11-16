@@ -143,7 +143,7 @@ Banks 2-9 are byte-identical.
   minute and second with the debug number printer, and waits for SELECT: an
   RTC test screen left in the build. No `call`, `jp` or far-call entry in the
   ROM points at it.
-- The real `RtcToDayCount` follows it at `01:4ec9`, byte for byte the 0731
+- The real `RtcToDayCount` follows it at `01:4ec9`, identical to the 0731
   routine; its two callers were repointed.
 - **9 bytes were removed** from the end of `RtcWriteTimeFromDayDelta`: a
   second, redundant `SetFpgaPage($00)` right after the first.

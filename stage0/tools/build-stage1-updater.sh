@@ -8,7 +8,7 @@
 # STAGE1=ours (default) runs stage1/build.sh first; STAGE1=stock builds the
 # stock stage1 from source instead (stage1/decomp, needs SDCC 2.9.0).
 # PATCHES=0 leaves the PicoBlaze programs stock. STAGE1=stock PATCHES=0 is the
-# check of the whole flow: the slot B it makes must be stock's, byte for byte,
+# check of the whole flow: the slot B it makes must be exactly stock's,
 # and it stops there (no updater; LABEL and OUT.gb are not needed). The build host needs prjcombine's database and
 # s3patch/s3decode (stage0/docs/setup.md), plus the stock slot B images
 # ~/fpga/cart/fw4-updater.bin and ~/fpga/cart/fw5/0918.bin. Local inputs: the

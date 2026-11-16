@@ -3,7 +3,7 @@
 The readable designs of FW4 (`stage0/fw4/rtl`) and FW5-0918
 (`stage0/fw5-0918`) build with ISE 14.7 into a slot B bitstream with
 stage1 in its block RAMs, and each result is proved equivalent to that
-firmware's stock bitstream. It is not stock byte for byte: ISE maps and routes
+firmware's stock bitstream. It is not identical to stock: ISE maps and routes
 the logic itself. Every register sits in its stock cell, though, so the
 design packs and meets timing the way stock does.
 

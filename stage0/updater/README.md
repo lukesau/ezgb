@@ -3,7 +3,7 @@
 EZ Flash's updaters (`Update_FW4.gb`, `Update_FW5_2021-9-18.gb`) are a
 32 KB Game Boy program followed by the bitstream it writes to the config
 flash ([../docs/updater.md](../docs/updater.md)). This is that program in
-C, for both firmwares from one source. `make` builds it byte for byte:
+C, for both firmwares from one source. `make` builds it identical to stock:
 with the stock bitstreams after it, the result is the official file.
 
 ```bash

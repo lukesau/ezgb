@@ -188,7 +188,7 @@ that only the requested bits changed and COR1 is untouched. Output:
 A slot B image has two CRC packets.
 
 Patching slot B with its own original BRAM contents reproduces the input
-byte for byte, CRCs included.
+exactly, CRCs included.
 
 ## s3encode
 
@@ -213,7 +213,7 @@ flush frame, CRC, GRESTORE, DGHIGH, START, MASK `$0085`, CTL0, a second
 CRC (not reset after the first), DESYNC, 16 NOPs.
 
 `--check ORIG` compares the result with ORIG as parsed config bits and
-byte for byte. Every one of these images, and the FW4 updater payload,
+as bytes. Every one of these images, and the FW4 updater payload,
 encodes **byte-identical** to the original. Editing one line works as
 expected: setting FW4's version select LUT (`D0X12Y18` `SLICE[3] F`) to zero changes one frame bit plus the
 two CRCs, and decoding the result gives back the edited list.
@@ -353,7 +353,7 @@ xdl -ncd2xdl top.ncd top.xdl              # placed+routed design as text
 ```
 
 **XDL round trip is exact.** `xdl -xdl2ncd` then `bitgen` reproduces the same
-config data byte for byte, and the same XDL gives identical bits on
+config data exactly, and the same XDL gives identical bits on
 two different machines. So designs can be written directly as XDL,
 skipping synthesis and place-and-route, which is the basis for any fuzzing.
 

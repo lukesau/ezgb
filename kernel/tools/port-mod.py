@@ -18,7 +18,7 @@ injected block. This tool rebuilds the same mod on top of kernel/<to>/kernel.gb.
 
 Nothing here is inferred from documentation: the source of truth is the bytes
 of the from-version build. Run with --check against a version that already has
-a modded kernel.gb to confirm the port reproduces it byte for byte (the 0731
+a modded kernel.gb to confirm the port reproduces it exactly (the 0731
 -> 0918 port is the regression test for the tool).
 
 Usage:

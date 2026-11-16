@@ -11,7 +11,7 @@ checked against the stock files, with none of them present
 | the updater's program, FW4 and FW5-0918 | [stage0/updater](stage0/updater/README.md): C, the kernel's libraries | sha1 of the stock program |
 | slot B, FW4 and FW5-0918 | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to stock's netlist |
 
-The first three are byte for byte. Slot B is not: ISE maps and routes the
+The first three are identical to stock. Slot B is not: ISE maps and routes the
 logic its own way, so the result is proved to be the same design instead
 ([stage0/ise](stage0/ise/README.md)).
 

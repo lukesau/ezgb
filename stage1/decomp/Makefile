@@ -1,6 +1,6 @@
 # Stock stage1 from source, FW4 and FW5-0918 from one source (-DFW=4 / -DFW=5):
 # GBDK's crt0, the C compiled by SDCC 2.9.0, and the library modules, linked
-# into the ROM. Byte for byte stock's; tools/link.py fails if the
+# into the ROM. Identical to stock's; tools/link.py fails if the
 # result is not the one in ../../stock.sha1.
 #
 #   make            build/fw4/stage1.gb and build/fw5/stage1.gb

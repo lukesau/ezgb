@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the firmware updater's program from source, byte for byte.
+"""Build the firmware updater's program from source, identical to stock.
 
     tools/link.py fw4|fw5-0918 [--label TEXT] [--payload SLOTB.bin [--payload SECOND.bin]] [-o OUT.gb]
 

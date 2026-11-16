@@ -2,7 +2,7 @@
 
 `Update_FW4.gb` and `Update_FW5_*.gb` are Game Boy programs, launched from
 the kernel like a game, that write a new FPGA design to the cart's config
-flash. Their program builds from source, byte for byte, in
+flash. Their program builds from source, identical to stock, in
 [stage0/updater/](../updater/README.md); the addresses below are FW4's.
 The updaters themselves are EZ Flash's and stay local. Building our own is
 in [setup.md](setup.md).
@@ -17,7 +17,7 @@ in [setup.md](setup.md).
 | bank 1 | a few routines that are copied to WRAM; otherwise empty |
 | `$8000` on | the bitstream it writes: 149,516 bytes, with the sync word `aa 99 30 a1` at `$8020` |
 
-The bitstream is byte for byte what ends up in the config flash's slot B
+The bitstream is exactly what ends up in the config flash's slot B
 ([flash-map.md](flash-map.md)). The FW5 updaters are 331,800 bytes and
 carry two bitstreams, at `$8000` and `$2C80C`; only the first is written.
 

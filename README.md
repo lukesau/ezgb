@@ -12,9 +12,9 @@ repository, and none is needed to build.
 
 | Piece | What it is | Source | Result |
 |---|---|---|---|
-| Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | byte for byte |
-| Stage1, FW4 and FW5-0918 | the bootloader, stored in the FPGA's block RAM | [stage1/decomp](stage1/decomp/README.md): C, GBDK | byte for byte |
-| The updater's program, FW4 and FW5-0918 | the ROM that flashes a firmware | [stage0/updater](stage0/updater/README.md): C | byte for byte |
+| Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | identical to stock |
+| Stage1, FW4 and FW5-0918 | the bootloader, stored in the FPGA's block RAM | [stage1/decomp](stage1/decomp/README.md): C, GBDK | identical to stock |
+| The updater's program, FW4 and FW5-0918 | the ROM that flashes a firmware | [stage0/updater](stage0/updater/README.md): C | identical to stock |
 | Slot B, FW4 and FW5-0918 | the FPGA configuration an update writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to the stock netlist |
 
 FW4 and FW5 are the two firmware generations; a cart runs one or the other

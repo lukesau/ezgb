@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate a stage1 disassembly from stage1/<fw>/kernel.sym + notes.json
-# and check that it rebuilds byte for byte. kernel.gb there is stage1 as
+# and check that it rebuilds exactly. kernel.gb there is stage1 as
 # written by stage1-from-bram.py (ignored, like every firmware binary).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

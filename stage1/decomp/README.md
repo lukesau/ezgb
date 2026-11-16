@@ -3,7 +3,7 @@
 EZ Flash's stage1, the FW4 and FW5-0918 versions, rewritten in C from the
 annotated disassemblies in [../fw4](../fw4) and [../fw5-0918](../fw5-0918).
 EZ Flash compiled it with SDCC 2.9.0 and no options. With that compiler
-`make` builds both firmwares' stage1 byte for byte, entirely from source:
+`make` builds both firmwares' stage1 identical to stock, entirely from source:
 same md5 as the stock `kernel.gb` from the FPGA, with nothing taken from the
 disassembly.
 

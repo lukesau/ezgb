@@ -20,8 +20,8 @@ mode the console is in.
 
 | Directory | Firmware | State |
 |---|---|---|
-| [fw4/](fw4/) | FW4 | disassembled and annotated; rebuilds byte for byte |
-| [fw5-0918/](fw5-0918/) | FW5, the 0918 update | FW4's names and notes, ported; rebuilds byte for byte |
+| [fw4/](fw4/) | FW4 | disassembled and annotated; rebuilds exactly |
+| [fw5-0918/](fw5-0918/) | FW5, the 0918 update | FW4's names and notes, ported; rebuilds exactly |
 
 Each holds `kernel.sym` (names and data ranges) and the generated
 `disassembly/`, and `notes.json`. The binary, `kernel.gb`, is
@@ -91,7 +91,7 @@ Name things in `fw4/` and port them; don't edit FW5's files by hand.
 [decomp/](decomp/README.md) is the stock stage1 rewritten in C, one source
 for both firmwares. EZ Flash compiled it with SDCC 2.9.0 and no options;
 with that compiler `make -C stage1/decomp` builds both firmwares' stage1
-byte for byte, entirely from source (the C, GBDK's crt0 and library
+identical to stock, entirely from source (the C, GBDK's crt0 and library
 modules, SDCC's, and the library code no published source has, converted
 from the disassembly).
 

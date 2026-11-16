@@ -459,7 +459,7 @@ frames, which SDCC dropped in September 2013. Scored against 33 bank-9
 FatFs functions, the closest builds are SDCC trunk from mid-January to
 March 2012 (3.1.2 to 3.1.4 development) with `--opt-code-size`: mean byte
 similarity 0.59, against 0.41 to 0.48 for the 3.2 to 3.7 releases and 0.31
-for GBDK-2020's. No function matches byte for byte. The ROM mixes
+for GBDK-2020's. No function matches exactly. The ROM mixes
 `ld c,(hl)`/`inc hl`/`ld b,(hl)` with `ld a,(hl+)` and keeps dead `ld c,a`
 temporaries, which none of the 90 gbz80 codegen commits from November 2011
 to March 2012 reproduces. Either EZ Flash used a patched SDCC or edited the
@@ -470,7 +470,7 @@ FatFs source in ways that move the code.
 > 2011, and GBDK 2.96a's SDCC 2.3.1. With `--opt-code-size`, 2.9.0
 > compiles R0.11a `ff.c` with this `ffconf.h` into bank 9's `mem_set`,
 > `chk_chr`, `clust2sect`, `ld_clust`, `st_clust`, `sum_sfn`, `validate`,
-> `check_fs`, `cmp_lfn`, `fit_lfn` and `dir_read` byte for byte (operands the
+> `check_fs`, `cmp_lfn`, `fit_lfn` and `dir_read` exactly (operands the
 > linker fills in masked). The 2012 trunk builds only scored closest, and
 > the "patched SDCC" guess is wrong. Found through stage1, built by the same
 > compiler without `--opt-code-size`
