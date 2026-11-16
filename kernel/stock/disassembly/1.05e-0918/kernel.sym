@@ -493,7 +493,7 @@
 01:48c6 IsLeapYear
 01:4917 DateToSecondsSince1970
 01:4c5e RtcDebugDump
-01:4ec9 RtcToDayCount
+01:4ec9 RtcToSeconds
 01:5346 RtcReadDaysClearRegs
 01:6280 DrawCardTypeScreen
 01:6513 DrawInfoPanelRect
@@ -535,7 +535,7 @@
 01:6694 BootMenuLoadingStr
 01:6694 .text:8
 01:669c BackupSaveDump
-01:505c RtcWriteTimeFromDayDelta
+01:505c RtcWriteTimeFromDelta
 01:5e6a MapCartTypeToUi
 
 ; Bank0 joypad / mul runtime
@@ -1006,21 +1006,21 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- WToUpper_B1 ---
-01:45e7 WToUpper_B1_pickFmtHi
-01:45ec WToUpper_B1_pickFmtLo
-01:45f1 WToUpper_B1_walkTable
-01:4691 WToUpper_B1_opScaleSubA
-01:46bd WToUpper_B1_opScaleSubB
-01:46e2 WToUpper_B1_opSub10
-01:46f6 WToUpper_B1_opSub20
-01:470a WToUpper_B1_opSub30
-01:471e WToUpper_B1_opSub1a
-01:4732 WToUpper_B1_opAdd8
-01:4744 WToUpper_B1_opSub50
-01:4758 WToUpper_B1_opSub1c60
-01:476c WToUpper_B1_afterOp
-01:478a WToUpper_B1_rewriteLo16
-01:479b WToUpper_B1_retDeHl
+01:45e7 WToUpper_B1_pickCvt2
+01:45ec WToUpper_B1_pickCvt1
+01:45f1 WToUpper_B1_nextBlock
+01:4691 WToUpper_B1_caseTable
+01:46bd WToUpper_B1_casePairs
+01:46e2 WToUpper_B1_caseSub16
+01:46f6 WToUpper_B1_caseSub32
+01:470a WToUpper_B1_caseSub48
+01:471e WToUpper_B1_caseSub26
+01:4732 WToUpper_B1_caseAdd8
+01:4744 WToUpper_B1_caseSub80
+01:4758 WToUpper_B1_caseSub1c60
+01:476c WToUpper_B1_skipTable
+01:478a WToUpper_B1_storeResult
+01:479b WToUpper_B1_ret
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupSaveDump ---
@@ -1148,15 +1148,15 @@
 01:4a63 DateToSecondsSince1970_addHms
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- RtcWriteTimeFromDayDelta ---
-01:50a3 RtcWriteTimeFromDayDelta_zeroHms
-01:50bb RtcWriteTimeFromDayDelta_seedC0a0
-01:50ff RtcWriteTimeFromDayDelta_overflowZero
-01:5114 RtcWriteTimeFromDayDelta_div60a
-01:514b RtcWriteTimeFromDayDelta_modSec
-01:51b7 RtcWriteTimeFromDayDelta_modMin
-01:5231 RtcWriteTimeFromDayDelta_modHr
-01:52ce RtcWriteTimeFromDayDelta_writeFpga
+; --- RtcWriteTimeFromDelta ---
+01:50a3 RtcWriteTimeFromDelta_zeroHms
+01:50bb RtcWriteTimeFromDelta_seedC0a0
+01:50ff RtcWriteTimeFromDelta_overflowZero
+01:5114 RtcWriteTimeFromDelta_addSec
+01:514b RtcWriteTimeFromDelta_addMin
+01:51b7 RtcWriteTimeFromDelta_addHour
+01:5231 RtcWriteTimeFromDelta_addDays
+01:52ce RtcWriteTimeFromDelta_writeFpga
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- SetFpga7FC4_B4 ---

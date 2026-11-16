@@ -30,8 +30,8 @@ are not: their string pointers moved by the 25 bytes inserted above them.
 
 ### Bank 1: +3,175 bytes
 
-Almost all of it is the game clock: `IsLeapYear`, `DateToDaysSince1970`,
-`RtcToDayCount`, `RtcWriteTimeFromDayDelta` and `RtcReadDaysClearRegs` at
+Almost all of it is the game clock: `IsLeapYear`, `DateToSecondsSince1970`,
+`RtcToSeconds`, `RtcWriteTimeFromDelta` and `RtcReadDaysClearRegs` at
 `01:48c6`-`01:5162`, and their hooks in the save path
 ([kernel-versions.md](kernel-versions.md#104e-to-105e) says what they do).
 
@@ -99,12 +99,12 @@ and waits for SELECT. No `call`, `jp` or far-call entry in the ROM points at
 it, and its seven calls are the only calls to `DrawU32Decimal` in any of the
 three kernels.
 
-It opens with the same 370 bytes of clock-reading code as `RtcToDayCount`,
+It opens with the same 370 bytes of clock-reading code as `RtcToSeconds`,
 so a byte diff finds the first difference 370 bytes in, at `$4dd0`. The real
-`RtcToDayCount` follows at `01:4ec9`, identical to the 0731 routine, and
+`RtcToSeconds` follows at `01:4ec9`, identical to the 0731 routine, and
 its two callers (`01:505e`, `01:5348`) were repointed.
 
-The 9 deleted bytes are at the end of `RtcWriteTimeFromDayDelta`: 0731 calls
+The 9 deleted bytes are at the end of `RtcWriteTimeFromDelta`: 0731 calls
 `SetFpgaPage_B1($00)` twice in a row before returning and 0918 drops the
 second call.
 

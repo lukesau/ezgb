@@ -78,7 +78,7 @@ they call moved, plus the version digit in bank 8.
 **RTC games keep time (bank 1).** 1.04e has no code for a game's clock: it
 never reads or writes RTC state when it loads or dumps a save. 1.05e adds
 2.2 KB of routines at `01:48c6`-`01:5162` (`IsLeapYear`,
-`DateToDaysSince1970`, `RtcToDayCount`, `RtcWriteTimeFromDayDelta`,
+`DateToSecondsSince1970`, `RtcToSeconds`, `RtcWriteTimeFromDelta`,
 `RtcReadDaysClearRegs`) and hooks them into the save path:
 
 - Launch (`BackupOpenSaverPath`): a `.sav` that ends in a 48-byte RTC record
@@ -143,9 +143,9 @@ Banks 2-9 are byte-identical.
   minute and second with the debug number printer, and waits for SELECT: an
   RTC test screen left in the build. No `call`, `jp` or far-call entry in the
   ROM points at it.
-- The real `RtcToDayCount` follows it at `01:4ec9`, identical to the 0731
+- The real `RtcToSeconds` follows it at `01:4ec9`, identical to the 0731
   routine; its two callers were repointed.
-- **9 bytes were removed** from the end of `RtcWriteTimeFromDayDelta`: a
+- **9 bytes were removed** from the end of `RtcWriteTimeFromDelta`: a
   second, redundant `SetFpgaPage($00)` right after the first.
 - Net +610 bytes, so everything in bank 1 after the insertion sits `$262`
   higher. Bank 1's free tail shrinks from 3,183 to 2,573 bytes.

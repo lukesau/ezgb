@@ -120,10 +120,9 @@
    "bank": 1,
    "addr": "4bda",
    "lines": [
-    "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.",
-    "$A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.",
-    "BackupOpenSaverPath_stamp_copyBasename: copy basename until len@sp+$0b (BackupOpenSaverPath_stamp_copyCont ++idx); done → BackupOpenSaverPath_stamp_epilogue.",
-    "BackupOpenSaverPath_stamp_epilogue: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup."
+    "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 of the save pSRAM",
+    "gets the per-launch stamp: $A000=$AA backup pending, $A001=save size in 8 KB banks, $A00F=path length,",
+    "$A010+=the save's path. 1.04e writes no clock stamp ($A202, $A210)."
    ]
   },
   {
@@ -184,7 +183,7 @@
    "addr": "1d29",
    "lines": [
     "Source: kernel/stock/src/libasm.s",
-    "ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (DrawLine_xMajorByteAdv).",
+    "ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (ApplyBasename_copyLoop).",
     "DirList uses this to copy entry names into the browser table."
    ]
   },
@@ -251,7 +250,7 @@
    "lines": [
     "Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s",
     "DrawRectImpl: normalize corners; outline via four DrawLine; optional fill if wDrawRectFill ($d724). Called by DrawRect.",
-    "DrawRectImpl_afterSwapX: if X1<X0 swap; fall. jr_000_22ec: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.",
+    "DrawRectImpl_afterSwapX: if X1<X0 swap; fall. DrawRectImpl_drawOutline: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.",
     "If fill==0 or empty inset ret; else swap wDrawColor/wDrawColorB; jr_000_1fb4: horiz DrawLine at Y0; if Y0!=Y1 ++Y0 loop.",
     "DrawRectImpl_restoreColors: restore colors (swap again) ret."
    ]
@@ -467,10 +466,10 @@
    "lines": [
     "Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s",
     "DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|@$d72a, |dx|@$d729; err wCircleErr/$d72d..$d731.",
-    "Setup: DrawLine_absDy/SetTextCursor abs dy/dx; |dx|<|dy| → DrawLine_yMajor y-major; else DrawLine_maybeSwapEnds maybe swap ends; DrawLine_swapEndsDone/DrawLine_setYstepErr set $d72b ±ystep + GfxRowTable/err.",
+    "Setup: DrawLine_absDy/DrawLine_absDx abs dy/dx; |dx|<|dy| → DrawLine_yMajor y-major; else DrawLine_maybeSwapEnds maybe swap ends; DrawLine_swapEndsDone/DrawLine_setYstepErr set $d72b ±ystep + GfxRowTable/err.",
     "X-major DrawLine_xMajor: err≥0 DrawLine_xMajorPlotYstep plot+ystep (DrawLine_xMajorRowWrapA/DrawLine_xMajorRowWrapB row wrap $0130/$fed0); else DrawLine_xMajorErrAdd err+=2dy; DrawLine_xMajorByteAdv/DrawLine_xMajorLoopDec byte advance; --E loop.",
     "Horiz DrawLine_horiz: DrawLine_horizMaskShift/DrawLine_horizMidRun/DrawLine_horizTailPixel/DrawLine_horizDoneCheck/DrawLine_horizMaskInit/DrawLine_horizMaskLoop/DrawLine_horizApplyPixel mask runs.",
-    "Y-major DrawLine_yMajor: DrawLine_yMajorMaybeSwap/DrawLine_yMajorSwapDone/DrawLine_yMajorSetYstep swap+$d72b; dx==0 → DrawLine_vert; else U16DivMod_setup plot (DrawLine_yMajorAfterPlot), err DrawLine_yMajorErrCheck/DrawLine_yMajorXstep/DrawLine_yMajorErrAdd xstep → S32Sar_shiftLoop.",
+    "Y-major DrawLine_yMajor: DrawLine_yMajorMaybeSwap/DrawLine_yMajorSwapDone/DrawLine_yMajorSetYstep swap+$d72b; dx==0 → DrawLine_vert; else DrawLine_yMajorPlot plot (DrawLine_yMajorAfterPlot), err DrawLine_yMajorErrCheck/DrawLine_yMajorXstep/DrawLine_yMajorErrAdd xstep → DrawLine_yMajorLoopDec.",
     "Vert DrawLine_vert: DrawLine_vertApplyPixel/DrawLine_vertLoopDec ApplyPixel down. Callers: DrawRect edges + circle chords."
    ]
   },
@@ -510,7 +509,7 @@
    "lines": [
     "Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s",
     "GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).",
-    "U32ModImpl_runEngine: STAT-wait read 2bpp pair; mask from $10+(x&7).",
+    "jr_000_232e: STAT-wait read 2bpp pair; mask from $10+(x&7).",
     "GetPixel_testPlane0: if plane0 bit clear skip; set0 B. GetPixel_retColor: plane1 bit → set1 B; E=B ret."
    ]
   },
@@ -577,9 +576,9 @@
     "Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c",
     "WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.",
     "WToUpper_asciiGate: if code≥$80 → WToUpper_initSearch; else if not in 'a'..'z' → WToUpper_retDe; else code-=$20 → WToUpper_retDe.",
-    "WToUpper_initSearch: init lo/hi/count; WToUpper_midKey: mid key from wWToUpperKeys; eq → DrawLine_xMajorErrAdd; else WToUpper_cmpKey.",
-    "WToUpper_cmpKey: key<code → raise lo else DrawLine_xMajor lower hi; WToUpper_decCount --count; NZ → WToUpper_midKey else fall DrawLine_xMajorErrAdd.",
-    "DrawLine_xMajorErrAdd: if count==0 miss → WToUpper_retDe; else replace from wWToUpperVals; WToUpper_retDe: DE=code ret."
+    "WToUpper_initSearch: init lo/hi/count; WToUpper_midKey: mid key from wWToUpperKeys; eq → WToUpper_hitOrMiss; else WToUpper_cmpKey.",
+    "WToUpper_cmpKey: key<code → raise lo else WToUpper_lowerHi lower hi; WToUpper_decCount --count; NZ → WToUpper_midKey else fall WToUpper_hitOrMiss.",
+    "WToUpper_hitOrMiss: if count==0 miss → WToUpper_retDe; else replace from wWToUpperVals; WToUpper_retDe: DE=code ret."
    ]
   },
   {
@@ -1481,7 +1480,7 @@
     "FindVolume_B5_checkFsResult: CheckFs result; nonzero→next PTE FindVolume_B5_nextPte→FindVolume_B5_tryPartitions; else FindVolume_B5_fmtDispatch: fmt==3 FindVolume_B5_noFilesystem E=$01; FindVolume_B5_fmtNotDiskErr/FindVolume_B5_fmtNonzero fmt!=0 E=$0d else FindVolume_B5_parseBpb.",
     "FindVolume_B5_parseBpb BPB: BytsPerSec==512 (FindVolume_B5_badBytsPerSec fail E=$0d / FindVolume_B5_readFatSz); FATSz16 else FATSz32 → FindVolume_B5_checkNumFats; NumFATs 1|2 else E=$0d FindVolume_B5_mulFatSize.",
     "FindVolume_B5_mulFatSize: U32Mul fat size; SecPerClus power-of-2 (FindVolume_B5_badSecPerClus fail / FindVolume_B5_checkRootEnt); RootEntCnt&$0f FindVolume_B5_badRootEnt E=$0d else FindVolume_B5_readTotSec TotSec16 else TotSec32 → FindVolume_B5_checkRsvd.",
-    "FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; U32Div nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.",
+    "FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; cluster count (U32Div by the cluster size) nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.",
     "FindVolume_B5_fsTypeFat12/FindVolume_B5_fsTypeFat16/FindVolume_B5_fillFsFields: classify fs_type 1/2/3 from vol size; fill volbase/fatbase/dirbase/database/csize fields.",
     "fmt==3 FindVolume_B5_toFat32Root→FindVolume_B5_fat32Path (FAT32 RootClus FindVolume_B5_readRootClus; fmt==2 FindVolume_B5_fat16U32Shl U32Shl else FindVolume_B5_toClusterCalc→FindVolume_B5_u32MulShr U32Mul/U32Shr) else FindVolume_B5_toFat12_16Root→FindVolume_B5_fat12_16Root FAT12/16 root (U32Shl→FindVolume_B5_afterRootCalc); merge FindVolume_B5_mergeBases/FindVolume_B5_afterRootCalc.",
     "U32Shr cluster sanity → FindVolume_B5_storeFsType: store fs_type, bump mount ctr @$C5A7 (FindVolume_B5_bumpMountCtr), clear win; E=0 → FindVolume_B5_epilogue (add sp,$4f / ret)."
@@ -1547,7 +1546,7 @@
     "FindVolume_B9(mode=1); err → Mkdir_B9_epilogue. Init fp/dp; stamp $A9C5; FollowPath_B9.",
     "Follow err → Mkdir_B9_afterFollow; found → E=$08 (exist) → Mkdir_B9_afterFollow.",
     "Mkdir_B9_afterFollow: E==$04 (NO_FILE) → Mkdir_B9_noFileCheckDir else Mkdir_B9_notNoFile→Mkdir_B9_checkCreate.",
-    "Mkdir_B9_noFileCheckDir: ATTR_DIR → Mkdir_B9_openFail E=$06 else Mkdir_B9_checkCreate; Mkdir_B9_checkCreate: E==$04 → Mkdir_B9_createChain create else Mkdir_B9_openFail→Mkdir_B9_epilogue.",
+    "Mkdir_B9_noFileCheckDir: ATTR_DIR → Mkdir_B9_deniedIsDir E=$06 else Mkdir_B9_checkCreate; Mkdir_B9_checkCreate: E==$04 → Mkdir_B9_createChain create else Mkdir_B9_openFail→Mkdir_B9_epilogue.",
     "Mkdir_B9_createChain: CreateChain_B9; cluster zero → Mkdir_B9_afterCreateChain E=$07; cluster−1 zero → Mkdir_B9_diskErr E=$02 else Mkdir_B9_newClustOk→Mkdir_B9_checkClustWrap.",
     "Mkdir_B9_checkClustWrap: cluster+1 wrap → Mkdir_B9_intErr E=$01 else Mkdir_B9_clustWrapOk→Mkdir_B9_syncWindow; ok SyncWindow_B9 Mkdir_B9_afterSync.",
     "Mkdir_B9_afterSync: err → Mkdir_B9_dirRegister else Clust2Sect + MemSet16 dir buf + StClust + timestamp/attr copy.",
@@ -1590,7 +1589,7 @@
     "Target of FarCall_03_76cc; orphan after Close_B3_epilogue.",
     "Validate_B3 fail → Lseek_B3_epilogue; else Lseek_B3_afterValidate: fp->err nonzero → Lseek_B3_epilogue else Lseek_B3_checkOfsVsFsize.",
     "Lseek_B3_checkOfsVsFsize: if ofs > fsize and not FA_WRITE (Lseek_B3_ofsInRange/Lseek_B3_clampOfs clamp ofs=fsize); join Lseek_B3_clearFptr clear fptr.",
-    "Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Div cluster align — same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.",
+    "Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Div by the cluster size: same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.",
     "Lseek_B3_fromSclust: start from sclust; empty → CreateChain_B3 (clust==1 Lseek_B3_afterCreateChain/Lseek_B3_createChainDiskErr E=$02; else Lseek_B3_checkChainClust: clust==-1 Lseek_B3_chainAborted E=$01; Lseek_B3_chainOk/Lseek_B3_writeSclust write sclust); join Lseek_B3_setClust set clust.",
     "Lseek_B3_sameCluster: clust==0 → Lseek_B3_fillWindow; else Lseek_B3_followLoop: while bc < ofs — FA_WRITE Lseek_B3_extendChain CreateChain_B3 else Lseek_B3_getFatNext GetFat_B3; fail Lseek_B3_getFatDiskErr E=$01 / Lseek_B3_getFatIntErr E=$02; ok Lseek_B3_afterGetFat/Lseek_B3_getFatOk/Lseek_B3_checkFatClust; past EOF Lseek_B3_pastEof → Lseek_B3_followLoop else Lseek_B3_setFptr.",
     "Lseek_B3_setFptr: set fptr; zero ofs→Lseek_B3_fillWindow else Lseek_B3_clust2Sect Clust2Sect_B3; sect ok Lseek_B3_sectOffset U32Shr sector offset else E=$02 → Lseek_B3_epilogue.",
@@ -1738,20 +1737,20 @@
     "Setup: sp+$3c!=1 → DrawTimeAutosaveScreen_setupSkipDrawRect; DrawTimeAutosaveScreen_setupDoDrawRect DrawRect; Jump_004_47ef field slot ptrs → DrawTimeAutosaveScreen_redraw.",
     "SET redraw DrawTimeAutosaveScreen_redraw: sp+$40≠0 → SAV DrawTimeAutosaveScreen_savRedraw; sp+$3e!=1 → DrawTimeAutosaveScreen_hiliteGate/DrawTimeAutosaveScreen_fpgaPage6; else DrawTimeAutosaveScreen_hilitePath hilite.",
     "Hilite: DrawTimeAutosaveScreen_hiliteStoreDrawParamsA/DrawTimeAutosaveScreen_hiliteStoreDrawParamsB StoreDrawParams; DrawTimeAutosaveScreen_setStringA/DrawTimeAutosaveScreen_setStringB/DrawTimeAutosaveScreen_setStringC/DrawTimeAutosaveScreen_setStringCPath/DrawTimeAutosaveScreen_setStringD/DrawTimeAutosaveScreen_setStringE SET strings; DrawTimeAutosaveScreen_setStringsDone/DrawTimeAutosaveScreen_setStringsDonePath → DrawTimeAutosaveScreen_fpgaPage6.",
-    "FPGA DrawTimeAutosaveScreen_fpgaPage6: page6 $A008..$A00E → slots; DrawTimeAutosaveScreen_fpgaSlotGate/DrawTimeAutosaveScreen_fpgaSlotGate gate.",
-    "Field clones: DrawTimeAutosaveScreen_field0Clone (+DrawTimeAutosaveScreen_field0LoadVal/DrawTimeAutosaveScreen_field0Next/DrawTimeAutosaveScreen_field0Next); DrawTimeAutosaveScreen_field1Clone (+DrawTimeAutosaveScreen_field1LoadVal/DrawTimeAutosaveScreen_field1Next/DrawTimeAutosaveScreen_field1Next); DrawTimeAutosaveScreen_field2Clone (+DrawTimeAutosaveScreen_field2LoadVal/DrawTimeAutosaveScreen_field2Next/DrawTimeAutosaveScreen_field2Next);",
-    "DrawTimeAutosaveScreen_field3Clone (+DrawTimeAutosaveScreen_field3LoadVal/DrawTimeAutosaveScreen_field3Next/DrawTimeAutosaveScreen_field3Next); DrawTimeAutosaveScreen_field4Clone (+DrawTimeAutosaveScreen_field4LoadVal/DrawTimeAutosaveScreen_field4Next/DrawTimeAutosaveScreen_field4Next); DrawTimeAutosaveScreen_field5Clone; DrawTimeAutosaveScreen_clearDirtyMemcpy Memcpy → DrawTimeAutosaveScreen_inputLoop.",
+    "FPGA DrawTimeAutosaveScreen_fpgaPage6: page6 $A008..$A00E → slots; DrawTimeAutosaveScreen_fpgaSlotGate/DrawTimeAutosaveScreen_fpgaSlotGatePath gate.",
+    "Field clones: DrawTimeAutosaveScreen_field0Clone (+DrawTimeAutosaveScreen_field0LoadVal/DrawTimeAutosaveScreen_field0Next/DrawTimeAutosaveScreen_field0NextPath); DrawTimeAutosaveScreen_field1Clone (+DrawTimeAutosaveScreen_field1LoadVal/DrawTimeAutosaveScreen_field1Next/DrawTimeAutosaveScreen_field1NextPath); DrawTimeAutosaveScreen_field2Clone (+DrawTimeAutosaveScreen_field2LoadVal/DrawTimeAutosaveScreen_field2Next/DrawTimeAutosaveScreen_field2NextPath);",
+    "DrawTimeAutosaveScreen_field3Clone (+DrawTimeAutosaveScreen_field3LoadVal/DrawTimeAutosaveScreen_field3Next/DrawTimeAutosaveScreen_field3NextPath); DrawTimeAutosaveScreen_field4Clone (+DrawTimeAutosaveScreen_field4LoadVal/DrawTimeAutosaveScreen_field4Next/DrawTimeAutosaveScreen_field4NextPath); DrawTimeAutosaveScreen_field5Clone; DrawTimeAutosaveScreen_clearDirtyMemcpy Memcpy → DrawTimeAutosaveScreen_inputLoop.",
     "SAV date clones (DrawTimeAutosaveScreen_savRedraw dirty): yr DrawTimeAutosaveScreen_savYearClone; mon DrawTimeAutosaveScreen_savMonGate/DrawTimeAutosaveScreen_savMonGatePath/DrawTimeAutosaveScreen_savMonClone; day DrawTimeAutosaveScreen_savDayGate/DrawTimeAutosaveScreen_savDayGatePath/DrawTimeAutosaveScreen_savDayClone;",
     "hr DrawTimeAutosaveScreen_savHrGate/DrawTimeAutosaveScreen_savHrGatePath/DrawTimeAutosaveScreen_savHrClone; min DrawTimeAutosaveScreen_savMinGate/DrawTimeAutosaveScreen_savMinGatePath/DrawTimeAutosaveScreen_savMinClone; sec DrawTimeAutosaveScreen_savSecGate/DrawTimeAutosaveScreen_savSecGatePath/DrawTimeAutosaveScreen_savSecClone → DrawTimeAutosaveScreen_inputLoop.",
     "Input DrawTimeAutosaveScreen_inputLoop: $02 DrawTimeAutosaveScreen_inputLoopFieldDec field-- (DrawTimeAutosaveScreen_fieldDecCheck/DrawTimeAutosaveScreen_fieldDecDirty/DrawTimeAutosaveScreen_fieldDecWrap wrap); $01 DrawTimeAutosaveScreen_fieldDecWrapFieldInc field++ (DrawTimeAutosaveScreen_fieldIncGate/DrawTimeAutosaveScreen_fieldIncGateWrap0/DrawTimeAutosaveScreen_fieldIncDirty/DrawTimeAutosaveScreen_fieldIncWrap).",
-    "$04 bump DrawTimeAutosaveScreen_fieldIncWrapBump field0 yr (DrawTimeAutosaveScreen_field0YrGate/DrawTimeAutosaveScreen_field1MonCheck wrap $63/DrawTimeAutosaveScreen_field0YrWrap); DrawTimeAutosaveScreen_field1MonPath field1 mon (DrawTimeAutosaveScreen_field1MonGate/DrawTimeAutosaveScreen_field1MonGatePath/DrawTimeAutosaveScreen_field1MonPath/DrawTimeAutosaveScreen_field2DayCheck/DrawTimeAutosaveScreen_field1MonLoad).",
-    "DrawTimeAutosaveScreen_field2DayCheck field2 day (DrawTimeAutosaveScreen_field2DayGate/DrawTimeAutosaveScreen_field2DayGatePath; DrawTimeAutosaveScreen_field2DayLoadA/DrawTimeAutosaveScreen_field2DayPath/DrawTimeAutosaveScreen_field2DayLoadC/DrawTimeAutosaveScreen_field2DayLoadB; DrawTimeAutosaveScreen_field2DayLoadC/DrawTimeAutosaveScreen_field2DayPath2/DrawTimeAutosaveScreen_field2DayU8Mod/DrawTimeAutosaveScreen_field2DayLoadD; DrawTimeAutosaveScreen_field2DayU8Mod U8Mod; DrawTimeAutosaveScreen_field2DayModCheck/DrawTimeAutosaveScreen_field2DayModGate/DrawTimeAutosaveScreen_field3HrCheck/DrawTimeAutosaveScreen_field3HrCheck/DrawTimeAutosaveScreen_field2DayModLoad) → DrawTimeAutosaveScreen_fieldBumpDirty.",
-    "$04 fields 3..5: DrawTimeAutosaveScreen_field3HrPath hr (DrawTimeAutosaveScreen_field3HrGate/DrawTimeAutosaveScreen_field3HrGatePath/DrawTimeAutosaveScreen_field3HrPath/DrawTimeAutosaveScreen_field4MinCheck/DrawTimeAutosaveScreen_field3HrLoad); DrawTimeAutosaveScreen_field4MinPath min (DrawTimeAutosaveScreen_field4MinGate/DrawTimeAutosaveScreen_field4MinGatePath/DrawTimeAutosaveScreen_field4MinPath/DrawTimeAutosaveScreen_field5SecCheck/DrawTimeAutosaveScreen_field4MinLoad);",
-    "DrawTimeAutosaveScreen_field5SecPath sec (DrawTimeAutosaveScreen_field5SecGate/DrawTimeAutosaveScreen_field5SecGatePath/DrawTimeAutosaveScreen_fieldBumpDirty/DrawTimeAutosaveScreen_field5SecJr/DrawTimeAutosaveScreen_field5SecLoad); join DrawTimeAutosaveScreen_fieldBumpDirty dirty; DrawTimeAutosaveScreen_hiliteDec SET hilite-- twin → DrawTimeAutosaveScreen_redraw.",
-    "$08 dec DrawTimeAutosaveScreen_fieldDecBtn/DrawTimeAutosaveScreen_fieldDecBtnJr: field0 yr DrawTimeAutosaveScreen_field0YrDecLoad/Jump_004_5448/DrawTimeAutosaveScreen_field0YrDecSkip/DrawTimeAutosaveScreen_field0YrDecJr/DrawTimeAutosaveScreen_field0YrDecPath; field1 mon DrawTimeAutosaveScreen_field1MonDecCheck/DrawTimeAutosaveScreen_field1MonDecSkip/DrawTimeAutosaveScreen_field1MonDecSkipPath;",
+    "$04 bump DrawTimeAutosaveScreen_fieldIncWrapBump field0 yr (DrawTimeAutosaveScreen_field0YrGate/DrawTimeAutosaveScreen_field0YrGateZero wrap $63/DrawTimeAutosaveScreen_field0YrWrap); DrawTimeAutosaveScreen_field1MonCheck field1 mon (DrawTimeAutosaveScreen_field1MonGate/DrawTimeAutosaveScreen_field1MonGatePath/DrawTimeAutosaveScreen_field1MonPath/DrawTimeAutosaveScreen_field1MonPathZero/DrawTimeAutosaveScreen_field1MonLoad).",
+    "DrawTimeAutosaveScreen_field2DayCheck field2 day (DrawTimeAutosaveScreen_field2DayGate/DrawTimeAutosaveScreen_field2DayGatePath; DrawTimeAutosaveScreen_field2DayLoadA/DrawTimeAutosaveScreen_field2DayPath/DrawTimeAutosaveScreen_field2DayPathZero/DrawTimeAutosaveScreen_field2DayLoadB; DrawTimeAutosaveScreen_field2DayLoadC/DrawTimeAutosaveScreen_field2DayPath2/DrawTimeAutosaveScreen_field2DayPath2Zero/DrawTimeAutosaveScreen_field2DayLoadD; DrawTimeAutosaveScreen_field2DayU8Mod U8Mod; DrawTimeAutosaveScreen_field2DayModCheck/DrawTimeAutosaveScreen_field2DayModGate/DrawTimeAutosaveScreen_field2DayModPath/DrawTimeAutosaveScreen_field2DayModPath/DrawTimeAutosaveScreen_field2DayModLoad) → DrawTimeAutosaveScreen_fieldBumpDirty.",
+    "$04 fields 3..5: DrawTimeAutosaveScreen_field3HrCheck hr (DrawTimeAutosaveScreen_field3HrGate/DrawTimeAutosaveScreen_field3HrGatePath/DrawTimeAutosaveScreen_field3HrPath/DrawTimeAutosaveScreen_field3HrPathZero/DrawTimeAutosaveScreen_field3HrLoad); DrawTimeAutosaveScreen_field4MinCheck min (DrawTimeAutosaveScreen_field4MinGate/DrawTimeAutosaveScreen_field4MinGatePath/DrawTimeAutosaveScreen_field4MinPath/DrawTimeAutosaveScreen_field4MinPathZero/DrawTimeAutosaveScreen_field4MinLoad);",
+    "DrawTimeAutosaveScreen_field5SecCheck sec (DrawTimeAutosaveScreen_field5SecGate/DrawTimeAutosaveScreen_field5SecGatePath/DrawTimeAutosaveScreen_field5SecPath/DrawTimeAutosaveScreen_field5SecJr/DrawTimeAutosaveScreen_field5SecLoad); join DrawTimeAutosaveScreen_fieldBumpDirty dirty; DrawTimeAutosaveScreen_hiliteDec SET hilite-- twin → DrawTimeAutosaveScreen_redraw.",
+    "$08 dec DrawTimeAutosaveScreen_fieldDecBtn/DrawTimeAutosaveScreen_fieldDecBtnJr: field0 yr DrawTimeAutosaveScreen_field0YrDecLoad/DrawTimeAutosaveScreen_field0YrDecCheck/DrawTimeAutosaveScreen_field0YrDecSkip/DrawTimeAutosaveScreen_field0YrDecJr/DrawTimeAutosaveScreen_field0YrDecPath; field1 mon DrawTimeAutosaveScreen_field1MonDecCheck/DrawTimeAutosaveScreen_field1MonDecSkip/DrawTimeAutosaveScreen_field1MonDecSkipPath;",
     "field2 day DrawTimeAutosaveScreen_field2DayDecLoadA/DrawTimeAutosaveScreen_field2DayDecLoadB/DrawTimeAutosaveScreen_field2DayDecLoadC/DrawTimeAutosaveScreen_field2DayDecLoadD/DrawTimeAutosaveScreen_field2DayDecLoadE/DrawTimeAutosaveScreen_field2DayDecSkip/DrawTimeAutosaveScreen_field2DayDecSkipPath/DrawTimeAutosaveScreen_field2DayDecLoadF/DrawTimeAutosaveScreen_field2DayDecLoadG; field3 hr DrawTimeAutosaveScreen_field3HrDecCheck/DrawTimeAutosaveScreen_field3HrDecSkip/DrawTimeAutosaveScreen_field3HrDecSkipPath/DrawTimeAutosaveScreen_field3HrDecLoad;",
     "field4 min DrawTimeAutosaveScreen_field4MinDecCheck/DrawTimeAutosaveScreen_field4MinDecSkip/DrawTimeAutosaveScreen_field4MinDecSkipPath/DrawTimeAutosaveScreen_field4MinDecLoad; field5 sec DrawTimeAutosaveScreen_field5SecDecCheck/DrawTimeAutosaveScreen_field5SecDecSkip/DrawTimeAutosaveScreen_field5SecDecSkipPath/DrawTimeAutosaveScreen_field5SecDecLoad; DrawTimeAutosaveScreen_fieldDecJoinDirty dirty; DrawTimeAutosaveScreen_hiliteInc SET hilite++.",
-    "Exit: DrawTimeAutosaveScreen_exitCheck40/DrawTimeAutosaveScreen_exitCheck40Epilogue/DrawTimeAutosaveScreen_exitCheck20/DrawTimeAutosaveScreen_exitCheck20Redraw/FlSetAHookSite; $10 DrawTimeAutosaveScreen_exitCheck10Confirm confirm DrawTimeAutosaveScreen_confirmBcdWrite BCD→$A008+$7FD0; $40 DrawTimeAutosaveScreen_toggleA200Check/DrawTimeAutosaveScreen_toggleA200Clear/DrawTimeAutosaveScreen_toggleA200Apply toggle $A200 → Jump_004_5903 ret."
+    "Exit: DrawTimeAutosaveScreen_exitCheck40/DrawTimeAutosaveScreen_exitCheck40Epilogue/DrawTimeAutosaveScreen_exitCheck20/DrawTimeAutosaveScreen_exitCheck20Redraw/DrawTimeAutosaveScreen_exitCheck10; $10 DrawTimeAutosaveScreen_exitCheck10Confirm confirm DrawTimeAutosaveScreen_confirmBcdWrite BCD→$A008+$7FD0; $40 DrawTimeAutosaveScreen_toggleA200Check/DrawTimeAutosaveScreen_toggleA200Clear/DrawTimeAutosaveScreen_toggleA200Apply toggle $A200 → Jump_004_5903 ret."
    ]
   },
   {
@@ -1810,11 +1809,12 @@
    "addr": "48a6",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; BackupOpenSaverPath_forceSavExt force \".sav\"; Open_B6 FarCall_06_7309 → $ca0f.",
-    "Size from $d3ed: BackupOpenSaverPath_sizeFromD3eb ($d3eb==2 → BackupOpenSaverPath_sizeSkip2k/BackupOpenSaverPath_size2kRtc $2000 else BackupOpenSaverPath_size0 0); 1/2 BackupOpenSaverPath_size2k $2000; 4 MapCartTypeToUi_bucket1 $20000; 5 MapCartTypeToUi_bucket3 $10000; else MapCartTypeToUi_bucket6a $8000.",
-    "MapCartTypeToUi_batteryCheck: open ok else BackupOpenSaverPath_failMemsetFf; and $30==$30 → Jump_001_530e/MapCartTypeToUi_timerCheck RTC flag else Jump_001_531c; BackupOpenSaverPath_readInit/BackupOpenSaverPath_readLoop read+$200 VramCopyStack loop.",
-    "BackupOpenSaverPath_closePreLaunch RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; RomLoaderMain_xorFold close → BackupOpenSaverPath_stamp.",
-    "BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; Jump_001_4bd1 RtcReadDaysClearRegs → BackupOpenSaverPath_stamp."
+    "BackupOpenSaverPath(path): build wTmp = \"/SAVER/\" + name with the extension forced to .sav, and open it.",
+    "Save size from the cart type ($d3ed): 0 -> $2000 if $d3eb == 2 else 0; 1 and 2 -> $2000; 4 -> $20000;",
+    "5 -> $10000; else $8000.",
+    "Opened: the size is the file's, and it is read into the save pSRAM 512 bytes at a time through wSaveBuf.",
+    "Not there: the save pSRAM is filled with $FF for that size.",
+    "Then BackupOpenSaverPath_stamp. 1.05e's clock handling is not in 1.04e."
    ]
   },
   {
@@ -1907,7 +1907,7 @@
    "lines": [
     "Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s",
     "GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.",
-    "jr_000_2d90: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY."
+    "GetTileCursorY_retY: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY."
    ]
   },
   {
@@ -2319,7 +2319,7 @@
     "Source: kernel/stock/src/libasm.s",
     "S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.",
     "a MSB set: if b also neg → MemCmp3Down swapped; else S32Cmp_retALess C-set (a<b) ret.",
-    "CopyBytes: a pos; if b neg → A=$ff ret; else jr_000_2767 MemCmp3Down a vs b.",
+    "jr_000_275e: a pos; if b neg → A=$ff ret; else jr_000_2767 MemCmp3Down a vs b.",
     "No external callers in this build (SDCC runtime residue)."
    ]
   },
@@ -2348,10 +2348,10 @@
    "addr": "598c",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_5b09 ret.",
-    "BackupSaveDump_writeLoop: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.",
-    "Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BackupSaveDump_spinnerReset0 reset0; BackupSaveDump_spinnerDot \".\"; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots \"..\"; BackupSaveDump_spinnerEllipsis \"...\"; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.",
-    "BackupSaveDump_close: $d3f6==$77 → jr_001_65af Memset+$A220 pack+write else Jump_001_65ac → BackupSaveDump_close close 768f; Jump_001_5b09 fail (jr_001_5b10/jr_001_5b14 strs)."
+    "BackupSaveDump(path, size): write the save pSRAM to wTmp (the .sav path); path is not used.",
+    "Opens it for writing, creating it if needed, and returns if that fails.",
+    "BackupSaveDump_writeLoop: 512 bytes at a time from the pSRAM through wSaveBuf, drawing one to three dots",
+    "as it goes. Then closes the file. 1.05e's 48-byte clock footer is not in 1.04e."
    ]
   },
   {
@@ -2629,7 +2629,7 @@
     "Source: kernel/stock/src/kernel.c",
     "DrawDirEntryLabel(size@sp+$12, ofs@sp+$16, y@sp+$18): frame -$10. size≤$14 → DrawDirEntryLabel_epilogueRet skip.",
     "DrawDirEntryLabel_bankShift: >>5 bank from ofs; attr+$fe==$10 → jr_000_0c88 width $11 else DrawDirEntryLabel_skipDirWidth → Jump_000_0c8f width $14.",
-    "Jump_000_0c8f: if namelen≥width → DrawDirEntryLabel_epilogueRet; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → DrawDirEntryLabel_epilogueRet.",
+    "DrawDirEntryLabel_scrollCheck: if namelen≥width → DrawDirEntryLabel_epilogueRet; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → DrawDirEntryLabel_epilogueRet.",
     "DrawDirEntryLabel_drawEllipsis: update $cc31/32; Strncpy name+$fe ellipsis into $c4a4; DrawString at y+2; DrawDirEntryLabel_epilogueRet epilogue."
    ]
   },

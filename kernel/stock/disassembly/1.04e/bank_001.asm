@@ -1190,7 +1190,7 @@ WToUpper_B1::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, WToUpper_B1_retDeHl
+    jp nc, WToUpper_B1_ret
 
     ld hl, sp+$10
     ld a, [hl]
@@ -1205,26 +1205,26 @@ WToUpper_B1::
     inc hl
     ld a, [hl]
     sbc $10
-    jp nc, WToUpper_B1_pickFmtHi
+    jp nc, WToUpper_B1_pickCvt2
 
     ld de, $d3f2
     ld c, e
     ld b, d
-    jp WToUpper_B1_pickFmtLo
+    jp WToUpper_B1_pickCvt1
 
 
-WToUpper_B1_pickFmtHi::
+WToUpper_B1_pickCvt2::
     ld de, $d5e4
     ld c, e
     ld b, d
 
-WToUpper_B1_pickFmtLo::
+WToUpper_B1_pickCvt1::
     ld hl, sp+$08
     ld [hl], c
     inc hl
     ld [hl], b
 
-WToUpper_B1_walkTable::
+WToUpper_B1_nextBlock::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -1252,7 +1252,7 @@ WToUpper_B1_walkTable::
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, WToUpper_B1_rewriteLo16
+    jp z, WToUpper_B1_storeResult
 
     inc hl
     ld d, h
@@ -1265,7 +1265,7 @@ WToUpper_B1_walkTable::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, WToUpper_B1_rewriteLo16
+    jp c, WToUpper_B1_storeResult
 
     ld hl, sp+$08
     ld e, [hl]
@@ -1315,7 +1315,7 @@ WToUpper_B1_walkTable::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, WToUpper_B1_afterOp
+    jp nc, WToUpper_B1_skipTable
 
     ld a, $08
     ld hl, sp+$00
@@ -1323,7 +1323,7 @@ WToUpper_B1_walkTable::
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, WToUpper_B1_rewriteLo16
+    jp c, WToUpper_B1_storeResult
 
     dec hl
     ld e, [hl]
@@ -1335,34 +1335,34 @@ WToUpper_B1_walkTable::
     jp hl
 
 
-    jp WToUpper_B1_opScaleSubA
+    jp WToUpper_B1_caseTable
 
 
-    jp WToUpper_B1_opScaleSubB
+    jp WToUpper_B1_casePairs
 
 
-    jp WToUpper_B1_opSub10
+    jp WToUpper_B1_caseSub16
 
 
-    jp WToUpper_B1_opSub20
+    jp WToUpper_B1_caseSub32
 
 
-    jp WToUpper_B1_opSub30
+    jp WToUpper_B1_caseSub48
 
 
-    jp WToUpper_B1_opSub1a
+    jp WToUpper_B1_caseSub26
 
 
-    jp WToUpper_B1_opAdd8
+    jp WToUpper_B1_caseAdd8
 
 
-    jp WToUpper_B1_opSub50
+    jp WToUpper_B1_caseSub80
 
 
-    jp WToUpper_B1_opSub1c60
+    jp WToUpper_B1_caseSub1c60
 
 
-WToUpper_B1_opScaleSubA::
+WToUpper_B1_caseTable::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1398,10 +1398,10 @@ WToUpper_B1_opScaleSubA::
     ld [hl], c
     inc hl
     ld [hl], b
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opScaleSubB::
+WToUpper_B1_casePairs::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1431,10 +1431,10 @@ WToUpper_B1_opScaleSubB::
     sbc b
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub10::
+WToUpper_B1_caseSub16::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1448,10 +1448,10 @@ WToUpper_B1_opSub10::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub20::
+WToUpper_B1_caseSub32::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1465,10 +1465,10 @@ WToUpper_B1_opSub20::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub30::
+WToUpper_B1_caseSub48::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1482,10 +1482,10 @@ WToUpper_B1_opSub30::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub1a::
+WToUpper_B1_caseSub26::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1499,10 +1499,10 @@ WToUpper_B1_opSub1a::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opAdd8::
+WToUpper_B1_caseAdd8::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1514,10 +1514,10 @@ WToUpper_B1_opAdd8::
     ld hl, sp+$06
     ld [hl+], a
     ld [hl], d
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub50::
+WToUpper_B1_caseSub80::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1531,10 +1531,10 @@ WToUpper_B1_opSub50::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub1c60::
+WToUpper_B1_caseSub1c60::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1548,14 +1548,14 @@ WToUpper_B1_opSub1c60::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_afterOp::
+WToUpper_B1_skipTable::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, WToUpper_B1_walkTable
+    jp nz, WToUpper_B1_nextBlock
 
     inc hl
     ld c, [hl]
@@ -1573,10 +1573,10 @@ WToUpper_B1_afterOp::
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], d
-    jp WToUpper_B1_walkTable
+    jp WToUpper_B1_nextBlock
 
 
-WToUpper_B1_rewriteLo16::
+WToUpper_B1_storeResult::
     ld hl, sp+$06
     ld a, [hl]
     ld hl, sp+$10
@@ -1589,7 +1589,7 @@ WToUpper_B1_rewriteLo16::
     inc hl
     ld [hl], $00
 
-WToUpper_B1_retDeHl::
+WToUpper_B1_ret::
     ld hl, sp+$10
     ld e, [hl]
     inc hl
@@ -1813,11 +1813,12 @@ LastRomPersistDone::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; BackupOpenSaverPath: build $c3a5="/SAVER/"+name; BackupOpenSaverPath_forceSavExt force ".sav"; Open_B6 FarCall_06_7309 → $ca0f.
-; Size from $d3ed: BackupOpenSaverPath_sizeFromD3eb ($d3eb==2 → BackupOpenSaverPath_sizeSkip2k/BackupOpenSaverPath_size2kRtc $2000 else BackupOpenSaverPath_size0 0); 1/2 BackupOpenSaverPath_size2k $2000; 4 MapCartTypeToUi_bucket1 $20000; 5 MapCartTypeToUi_bucket3 $10000; else MapCartTypeToUi_bucket6a $8000.
-; MapCartTypeToUi_batteryCheck: open ok else BackupOpenSaverPath_failMemsetFf; and $30==$30 → Jump_001_530e/MapCartTypeToUi_timerCheck RTC flag else Jump_001_531c; BackupOpenSaverPath_readInit/BackupOpenSaverPath_readLoop read+$200 VramCopyStack loop.
-; BackupOpenSaverPath_closePreLaunch RTC/meta restore else Jump_001_5495 RtcReadDaysClearRegs; RomLoaderMain_xorFold close → BackupOpenSaverPath_stamp.
-; BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; Jump_001_4bd1 RtcReadDaysClearRegs → BackupOpenSaverPath_stamp.
+; BackupOpenSaverPath(path): build wTmp = "/SAVER/" + name with the extension forced to .sav, and open it.
+; Save size from the cart type ($d3ed): 0 -> $2000 if $d3eb == 2 else 0; 1 and 2 -> $2000; 4 -> $20000;
+; 5 -> $10000; else $8000.
+; Opened: the size is the file's, and it is read into the save pSRAM 512 bytes at a time through wSaveBuf.
+; Not there: the save pSRAM is filled with $FF for that size.
+; Then BackupOpenSaverPath_stamp. 1.05e's clock handling is not in 1.04e.
 
 BackupOpenSaverPath::
     add sp, -$15
@@ -2410,10 +2411,9 @@ Jump_001_4bd1:
     add sp, $01
 
 ; [ezgb]
-; BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
-; $A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.
-; BackupOpenSaverPath_stamp_copyBasename: copy basename until len@sp+$0b (BackupOpenSaverPath_stamp_copyCont ++idx); done → BackupOpenSaverPath_stamp_epilogue.
-; BackupOpenSaverPath_stamp_epilogue: if $d3f0 → $A202=$77 + ROM size@$A210–13 else Jump_001_5716 $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup.
+; BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 of the save pSRAM
+; gets the per-launch stamp: $A000=$AA backup pending, $A001=save size in 8 KB banks, $A00F=path length,
+; $A010+=the save's path. 1.04e writes no clock stamp ($A202, $A210).
 
 BackupOpenSaverPath_stamp::
     ld a, $0d
@@ -5002,10 +5002,10 @@ BootMenuLoadingStr::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_5b09 ret.
-; BackupSaveDump_writeLoop: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.
-; Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BackupSaveDump_spinnerReset0 reset0; BackupSaveDump_spinnerDot "."; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots ".."; BackupSaveDump_spinnerEllipsis "..."; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.
-; BackupSaveDump_close: $d3f6==$77 → jr_001_65af Memset+$A220 pack+write else Jump_001_65ac → BackupSaveDump_close close 768f; Jump_001_5b09 fail (jr_001_5b10/jr_001_5b14 strs).
+; BackupSaveDump(path, size): write the save pSRAM to wTmp (the .sav path); path is not used.
+; Opens it for writing, creating it if needed, and returns if that fails.
+; BackupSaveDump_writeLoop: 512 bytes at a time from the pSRAM through wSaveBuf, drawing one to three dots
+; as it goes. Then closes the file. 1.05e's 48-byte clock footer is not in 1.04e.
 
 BackupSaveDump::
     add sp, -$0b

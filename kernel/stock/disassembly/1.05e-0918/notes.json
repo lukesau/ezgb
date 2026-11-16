@@ -123,7 +123,7 @@
     "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.",
     "$A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.",
     "BackupOpenSaverPath_stamp_copyBasename: copy basename until len@sp+$0b (BackupOpenSaverPath_stamp_copyCont ++idx); done → BackupOpenSaverPath_stamp_checkRtc.",
-    "BackupOpenSaverPath_stamp_checkRtc: if $d3f0 → $A202=$77 + ROM size@$A210–13 else BackupOpenSaverPath_stamp_clearRtcFlag $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup."
+    "BackupOpenSaverPath_stamp_checkRtc: if $d3f0 → $A202=$77 + the time now@$A210–13 else BackupOpenSaverPath_stamp_clearRtcFlag $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup."
    ]
   },
   {
@@ -1481,7 +1481,7 @@
     "FindVolume_B5_checkFsResult: CheckFs result; nonzero→next PTE FindVolume_B5_nextPte→FindVolume_B5_tryPartitions; else FindVolume_B5_fmtDispatch: fmt==3 FindVolume_B5_noFilesystem E=$01; FindVolume_B5_fmtNotDiskErr/FindVolume_B5_fmtNonzero fmt!=0 E=$0d else FindVolume_B5_parseBpb.",
     "FindVolume_B5_parseBpb BPB: BytsPerSec==512 (FindVolume_B5_badBytsPerSec fail E=$0d / FindVolume_B5_readFatSz); FATSz16 else FATSz32 → FindVolume_B5_checkNumFats; NumFATs 1|2 else E=$0d FindVolume_B5_mulFatSize.",
     "FindVolume_B5_mulFatSize: U32Mul fat size; SecPerClus power-of-2 (FindVolume_B5_badSecPerClus fail / FindVolume_B5_checkRootEnt); RootEntCnt&$0f FindVolume_B5_badRootEnt E=$0d else FindVolume_B5_readTotSec TotSec16 else TotSec32 → FindVolume_B5_checkRsvd.",
-    "FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; U32Div nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.",
+    "FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; cluster count (U32Div by the cluster size) nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.",
     "FindVolume_B5_fsTypeFat12/FindVolume_B5_fsTypeFat16/FindVolume_B5_fillFsFields: classify fs_type 1/2/3 from vol size; fill volbase/fatbase/dirbase/database/csize fields.",
     "fmt==3 FindVolume_B5_toFat32Root→FindVolume_B5_fat32Path (FAT32 RootClus FindVolume_B5_readRootClus; fmt==2 FindVolume_B5_fat16U32Shl U32Shl else FindVolume_B5_toClusterCalc→FindVolume_B5_u32MulShr U32Mul/U32Shr) else FindVolume_B5_toFat12_16Root→FindVolume_B5_fat12_16Root FAT12/16 root (U32Shl→FindVolume_B5_afterRootCalc); merge FindVolume_B5_mergeBases/FindVolume_B5_afterRootCalc.",
     "U32Shr cluster sanity → FindVolume_B5_storeFsType: store fs_type, bump mount ctr @$C5A7 (FindVolume_B5_bumpMountCtr), clear win; E=0 → FindVolume_B5_epilogue (add sp,$4f / ret)."
@@ -1590,7 +1590,7 @@
     "Target of FarCall_03_76cc; orphan after Close_B3_epilogue.",
     "Validate_B3 fail → Lseek_B3_epilogue; else Lseek_B3_afterValidate: fp->err nonzero → Lseek_B3_epilogue else Lseek_B3_checkOfsVsFsize.",
     "Lseek_B3_checkOfsVsFsize: if ofs > fsize and not FA_WRITE (Lseek_B3_ofsInRange/Lseek_B3_clampOfs clamp ofs=fsize); join Lseek_B3_clearFptr clear fptr.",
-    "Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Div cluster align — same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.",
+    "Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Div by the cluster size: same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.",
     "Lseek_B3_fromSclust: start from sclust; empty → CreateChain_B3 (clust==1 Lseek_B3_afterCreateChain/Lseek_B3_createChainDiskErr E=$02; else Lseek_B3_checkChainClust: clust==-1 Lseek_B3_chainAborted E=$01; Lseek_B3_chainOk/Lseek_B3_writeSclust write sclust); join Lseek_B3_setClust set clust.",
     "Lseek_B3_sameCluster: clust==0 → Lseek_B3_fillWindow; else Lseek_B3_followLoop: while bc < ofs — FA_WRITE Lseek_B3_extendChain CreateChain_B3 else Lseek_B3_getFatNext GetFat_B3; fail Lseek_B3_getFatDiskErr E=$01 / Lseek_B3_getFatIntErr E=$02; ok Lseek_B3_afterGetFat/Lseek_B3_getFatOk/Lseek_B3_checkFatClust; past EOF Lseek_B3_pastEof → Lseek_B3_followLoop else Lseek_B3_setFptr.",
     "Lseek_B3_setFptr: set fptr; zero ofs→Lseek_B3_fillWindow else Lseek_B3_clust2Sect Clust2Sect_B3; sect ok Lseek_B3_sectOffset U32Shr sector offset else E=$02 → Lseek_B3_epilogue.",
@@ -1813,7 +1813,7 @@
     "BackupOpenSaverPath: build $c3a5=\"/SAVER/\"+name; BackupOpenSaverPath_forceSavExt force \".sav\"; Open_B6 FarCall_06_7309 → $ca0f.",
     "Size from $d3ed: BackupOpenSaverPath_sizeFromD3eb ($d3eb==2 → BackupOpenSaverPath_sizeSkip2k/BackupOpenSaverPath_size2kRtc $2000 else BackupOpenSaverPath_size0 0); 1/2 BackupOpenSaverPath_size2k $2000; 4 BackupOpenSaverPath_size20000 $20000; 5 BackupOpenSaverPath_size10000 $10000; else BackupOpenSaverPath_size8000 $8000.",
     "BackupOpenSaverPath_openOk: open ok else BackupOpenSaverPath_failMemsetFf; and $30==$30 → BackupOpenSaverPath_rtcFlagSkip/BackupOpenSaverPath_rtcFlagSet RTC flag else BackupOpenSaverPath_afterRtcFlag; BackupOpenSaverPath_readInit/BackupOpenSaverPath_readLoop read+$200 VramCopyStack loop.",
-    "BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_sizeFromD3eb RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → BackupOpenSaverPath_stamp.",
+    "BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_rtcReadDaysClear RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → BackupOpenSaverPath_stamp.",
     "BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; BackupOpenSaverPath_failRtcPreLaunch RtcReadDaysClearRegs → BackupOpenSaverPath_stamp."
    ]
   },
@@ -2293,10 +2293,17 @@
    "addr": "505c",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "RtcWriteTimeFromDayDelta(delta@sp+$18): RtcToDayCount − delta; if delta==0 or result<0 → RtcWriteTimeFromDayDelta_zeroHms zero HMS.",
-    "RtcWriteTimeFromDayDelta_seedC0a0: seed from $c0a0..$c0b0; overflow → RtcWriteTimeFromDayDelta_overflowZero zero then RtcWriteTimeFromDayDelta_div60a else fall RtcWriteTimeFromDayDelta_div60a.",
-    "Cascade: RtcWriteTimeFromDayDelta_div60a S32Mod/60; RtcWriteTimeFromDayDelta_modSec S32Div/60 (sec) + Div/60; RtcWriteTimeFromDayDelta_modMin S32Div/60 (min) + Div/24;",
-    "RtcWriteTimeFromDayDelta_modHr/RtcWriteTimeFromDayDelta_modHr: S32Div/24 (hr); RtcWriteTimeFromDayDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11)."
+    "RtcWriteTimeFromDelta(base): delta = RtcToSeconds() - base, the seconds the game's clock has to catch up.",
+    "base == 0 or delta < 0 -> RtcWriteTimeFromDelta_zeroHms zeroes the clock.",
+    "RtcWriteTimeFromDelta_seedC0a0: sec, min, hour, days and control from wSaveBuf ($c0a0, one per 4 bytes); out of",
+    "range -> RtcWriteTimeFromDelta_overflowZero zeroes them.",
+    "RtcWriteTimeFromDelta_addSec: sec += delta % 60 (S32Mod), carrying into min.",
+    "RtcWriteTimeFromDelta_addMin: delta /= 60 (S32Div); min += delta % 60, carrying into hour.",
+    "RtcWriteTimeFromDelta_addHour: delta /= 60; hour += delta % 24, carrying into days.",
+    "RtcWriteTimeFromDelta_addDays: delta /= 24; days += delta. Past $ff sets the day's bit 8 in the control byte,",
+    "past $1ff the day carry.",
+    "RtcWriteTimeFromDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).",
+    "Returns the time now."
    ]
   },
   {
@@ -2358,7 +2365,7 @@
    "addr": "4917",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "DateToSecondsSince1970(date*): returns seconds since 1970-01-01 (HL:DE), less eight hours: the RTC holds UTC+8. Feeds RtcToDayCount.",
+    "DateToSecondsSince1970(date*): returns seconds since 1970-01-01 (HL:DE), less eight hours: the RTC holds UTC+8. Feeds RtcToSeconds.",
     "DateToSecondsSince1970_yearLoop: years from $07b2/1970; IsLeapYear → +$016e else DateToSecondsSince1970_nonLeapYear +$016d; DateToSecondsSince1970_incYear ++y (DateToSecondsSince1970_yearCont) → DateToSecondsSince1970_yearLoop; done DateToSecondsSince1970_afterYears.",
     "DateToSecondsSince1970_monthLoop: months via IsLeapYear → wDaysInMonthLeap else DateToSecondsSince1970_nonLeapMonths wDaysInMonth; DateToSecondsSince1970_incMonth ++m (DateToSecondsSince1970_monthCont) → DateToSecondsSince1970_monthLoop.",
     "DateToSecondsSince1970_addHms: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE."
@@ -2369,8 +2376,8 @@
    "addr": "4ec9",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…",
-    "(year+=$07d0/2000), then DateToSecondsSince1970. Returns HL:DE day count."
+    "RtcToSeconds: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…",
+    "(year+=$07d0/2000), then DateToSecondsSince1970. Returns the seconds in HL:DE."
    ]
   },
   {
@@ -2378,7 +2385,7 @@
    "addr": "5346",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "RtcReadDaysClearRegs: RtcToDayCount → HL:DE; then zero $A018–$A01C (FPGA page $06)",
+    "RtcReadDaysClearRegs: RtcToSeconds → HL:DE; then zero $A018–$A01C (FPGA page $06)",
     "and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/PSRAM."
    ]
   },
@@ -2409,7 +2416,7 @@
     "Source: kernel/stock/src/bank1.c",
     "BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_699a ret.",
     "BackupSaveDump_writeLoop: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.",
-    "Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BootRomInfoMenu reset0; BackupSaveDump_spinnerDot \".\"; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots \"..\"; BackupSaveDump_spinnerEllipsis \"...\"; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.",
+    "Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BackupSaveDump_spinnerReset0 reset0; BackupSaveDump_spinnerDot \".\"; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots \"..\"; BackupSaveDump_spinnerEllipsis \"...\"; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.",
     "BackupSaveDump_checkRtcMagic: $d3f6==$77 → BackupSaveDump_rtcPackWrite Memset+$A220 pack+write else BackupSaveDump_skipRtcPack → BackupSaveDump_close close 768f; Jump_001_699a fail (jr_001_69a1/jr_001_69a5 strs)."
    ]
   },
@@ -2915,8 +2922,8 @@
     "Source: kernel/stock/src/bank1.c",
     "LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff LaunchSetup_epilogueRet. After BackupOpenSaverPath; see docs/boot-and-launch.md.",
     "LaunchSetup_fatTypeCheck: $c7a9==2 → LaunchSetup_skipFat12/LaunchSetup_fat12Limit FAT12 limit $0000ffff else LaunchSetup_fatOtherLimit $0ffffff7; join LaunchSetup_seedClust2Sect seed FarCall_05_4279 @$c0a0.",
-    "LaunchSetup_walkClusters: walk clusters FarCall_05_4378 (LaunchSetup_walkCont); EOF → LaunchSetup else LaunchSetup_appendCluster U32Mul*$c7ab + 4279 append.",
-    "LaunchSetup: if sum<limit → LaunchSetup_walkClusters else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → LaunchSetup_epilogueRet ret 0."
+    "LaunchSetup_walkClusters: walk clusters FarCall_05_4378 (LaunchSetup_walkCont); EOF → LaunchSetup_eofCheck else LaunchSetup_appendCluster U32Mul*$c7ab + 4279 append.",
+    "LaunchSetup_eofCheck: if sum<limit → LaunchSetup_walkClusters else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → LaunchSetup_epilogueRet ret 0."
    ]
   },
   {
@@ -3666,9 +3673,9 @@
    "addr": "4c5e",
    "lines": [
     "Source: kernel/stock/src/bank1.c",
-    "RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToDayCount's",
+    "RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToSeconds's",
     "first 370 bytes (page $06, BCD-decode $A008..$A00E to the stack, page $03), then DrawU32Decimal of",
-    "12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToDayCount follows."
+    "12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToSeconds follows."
    ]
   },
   {

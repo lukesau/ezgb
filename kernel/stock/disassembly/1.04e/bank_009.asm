@@ -12288,7 +12288,7 @@ Validate_B9_epilogue::
 ; FindVolume_B9(mode=1); err → Mkdir_B9_epilogue. Init fp/dp; stamp $A9C5; FollowPath_B9.
 ; Follow err → Mkdir_B9_afterFollow; found → E=$08 (exist) → Mkdir_B9_afterFollow.
 ; Mkdir_B9_afterFollow: E==$04 (NO_FILE) → Mkdir_B9_noFileCheckDir else Mkdir_B9_notNoFile→Mkdir_B9_checkCreate.
-; Mkdir_B9_noFileCheckDir: ATTR_DIR → Mkdir_B9_openFail E=$06 else Mkdir_B9_checkCreate; Mkdir_B9_checkCreate: E==$04 → Mkdir_B9_createChain create else Mkdir_B9_openFail→Mkdir_B9_epilogue.
+; Mkdir_B9_noFileCheckDir: ATTR_DIR → Mkdir_B9_deniedIsDir E=$06 else Mkdir_B9_checkCreate; Mkdir_B9_checkCreate: E==$04 → Mkdir_B9_createChain create else Mkdir_B9_openFail→Mkdir_B9_epilogue.
 ; Mkdir_B9_createChain: CreateChain_B9; cluster zero → Mkdir_B9_afterCreateChain E=$07; cluster−1 zero → Mkdir_B9_diskErr E=$02 else Mkdir_B9_newClustOk→Mkdir_B9_checkClustWrap.
 ; Mkdir_B9_checkClustWrap: cluster+1 wrap → Mkdir_B9_intErr E=$01 else Mkdir_B9_clustWrapOk→Mkdir_B9_syncWindow; ok SyncWindow_B9 Mkdir_B9_afterSync.
 ; Mkdir_B9_afterSync: err → Mkdir_B9_dirRegister else Clust2Sect + MemSet16 dir buf + StClust + timestamp/attr copy.

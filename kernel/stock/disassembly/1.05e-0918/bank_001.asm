@@ -1190,7 +1190,7 @@ WToUpper_B1::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, WToUpper_B1_retDeHl
+    jp nc, WToUpper_B1_ret
 
     ld hl, sp+$10
     ld a, [hl]
@@ -1205,26 +1205,26 @@ WToUpper_B1::
     inc hl
     ld a, [hl]
     sbc $10
-    jp nc, WToUpper_B1_pickFmtHi
+    jp nc, WToUpper_B1_pickCvt2
 
     ld de, wWToUpperCvt1
     ld c, e
     ld b, d
-    jp WToUpper_B1_pickFmtLo
+    jp WToUpper_B1_pickCvt1
 
 
-WToUpper_B1_pickFmtHi::
+WToUpper_B1_pickCvt2::
     ld de, wWToUpperCvt2
     ld c, e
     ld b, d
 
-WToUpper_B1_pickFmtLo::
+WToUpper_B1_pickCvt1::
     ld hl, sp+$08
     ld [hl], c
     inc hl
     ld [hl], b
 
-WToUpper_B1_walkTable::
+WToUpper_B1_nextBlock::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -1252,7 +1252,7 @@ WToUpper_B1_walkTable::
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, WToUpper_B1_rewriteLo16
+    jp z, WToUpper_B1_storeResult
 
     inc hl
     ld d, h
@@ -1265,7 +1265,7 @@ WToUpper_B1_walkTable::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, WToUpper_B1_rewriteLo16
+    jp c, WToUpper_B1_storeResult
 
     ld hl, sp+$08
     ld e, [hl]
@@ -1315,7 +1315,7 @@ WToUpper_B1_walkTable::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, WToUpper_B1_afterOp
+    jp nc, WToUpper_B1_skipTable
 
     ld a, $08
     ld hl, sp+$00
@@ -1323,7 +1323,7 @@ WToUpper_B1_walkTable::
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, WToUpper_B1_rewriteLo16
+    jp c, WToUpper_B1_storeResult
 
     dec hl
     ld e, [hl]
@@ -1335,34 +1335,34 @@ WToUpper_B1_walkTable::
     jp hl
 
 
-    jp WToUpper_B1_opScaleSubA
+    jp WToUpper_B1_caseTable
 
 
-    jp WToUpper_B1_opScaleSubB
+    jp WToUpper_B1_casePairs
 
 
-    jp WToUpper_B1_opSub10
+    jp WToUpper_B1_caseSub16
 
 
-    jp WToUpper_B1_opSub20
+    jp WToUpper_B1_caseSub32
 
 
-    jp WToUpper_B1_opSub30
+    jp WToUpper_B1_caseSub48
 
 
-    jp WToUpper_B1_opSub1a
+    jp WToUpper_B1_caseSub26
 
 
-    jp WToUpper_B1_opAdd8
+    jp WToUpper_B1_caseAdd8
 
 
-    jp WToUpper_B1_opSub50
+    jp WToUpper_B1_caseSub80
 
 
-    jp WToUpper_B1_opSub1c60
+    jp WToUpper_B1_caseSub1c60
 
 
-WToUpper_B1_opScaleSubA::
+WToUpper_B1_caseTable::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1398,10 +1398,10 @@ WToUpper_B1_opScaleSubA::
     ld [hl], c
     inc hl
     ld [hl], b
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opScaleSubB::
+WToUpper_B1_casePairs::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1431,10 +1431,10 @@ WToUpper_B1_opScaleSubB::
     sbc b
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub10::
+WToUpper_B1_caseSub16::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1448,10 +1448,10 @@ WToUpper_B1_opSub10::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub20::
+WToUpper_B1_caseSub32::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1465,10 +1465,10 @@ WToUpper_B1_opSub20::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub30::
+WToUpper_B1_caseSub48::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1482,10 +1482,10 @@ WToUpper_B1_opSub30::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub1a::
+WToUpper_B1_caseSub26::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1499,10 +1499,10 @@ WToUpper_B1_opSub1a::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opAdd8::
+WToUpper_B1_caseAdd8::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1514,10 +1514,10 @@ WToUpper_B1_opAdd8::
     ld hl, sp+$06
     ld [hl+], a
     ld [hl], d
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub50::
+WToUpper_B1_caseSub80::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1531,10 +1531,10 @@ WToUpper_B1_opSub50::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_opSub1c60::
+WToUpper_B1_caseSub1c60::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1548,14 +1548,14 @@ WToUpper_B1_opSub1c60::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp WToUpper_B1_rewriteLo16
+    jp WToUpper_B1_storeResult
 
 
-WToUpper_B1_afterOp::
+WToUpper_B1_skipTable::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, WToUpper_B1_walkTable
+    jp nz, WToUpper_B1_nextBlock
 
     inc hl
     ld c, [hl]
@@ -1573,10 +1573,10 @@ WToUpper_B1_afterOp::
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], d
-    jp WToUpper_B1_walkTable
+    jp WToUpper_B1_nextBlock
 
 
-WToUpper_B1_rewriteLo16::
+WToUpper_B1_storeResult::
     ld hl, sp+$06
     ld a, [hl]
     ld hl, sp+$10
@@ -1589,7 +1589,7 @@ WToUpper_B1_rewriteLo16::
     inc hl
     ld [hl], $00
 
-WToUpper_B1_retDeHl::
+WToUpper_B1_ret::
     ld hl, sp+$10
     ld e, [hl]
     inc hl
@@ -1909,7 +1909,7 @@ IsLeapYear_retFlag::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; DateToSecondsSince1970(date*): returns seconds since 1970-01-01 (HL:DE), less eight hours: the RTC holds UTC+8. Feeds RtcToDayCount.
+; DateToSecondsSince1970(date*): returns seconds since 1970-01-01 (HL:DE), less eight hours: the RTC holds UTC+8. Feeds RtcToSeconds.
 ; DateToSecondsSince1970_yearLoop: years from $07b2/1970; IsLeapYear → +$016e else DateToSecondsSince1970_nonLeapYear +$016d; DateToSecondsSince1970_incYear ++y (DateToSecondsSince1970_yearCont) → DateToSecondsSince1970_yearLoop; done DateToSecondsSince1970_afterYears.
 ; DateToSecondsSince1970_monthLoop: months via IsLeapYear → wDaysInMonthLeap else DateToSecondsSince1970_nonLeapMonths wDaysInMonth; DateToSecondsSince1970_incMonth ++m (DateToSecondsSince1970_monthCont) → DateToSecondsSince1970_monthLoop.
 ; DateToSecondsSince1970_addHms: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE.
@@ -2617,9 +2617,9 @@ DateToSecondsSince1970_addHms::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToDayCount's
+; RtcDebugDump: 0918 only, no callers (RTC test screen left in the build). Opens with RtcToSeconds's
 ; first 370 bytes (page $06, BCD-decode $A008..$A00E to the stack, page $03), then DrawU32Decimal of
-; 12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToDayCount follows.
+; 12345678 and of year/month/day/hour/minute/second, WaitJoypadSelect, ret. RtcToSeconds follows.
 
 RtcDebugDump::
     add sp, -$11
@@ -3072,10 +3072,10 @@ RtcDebugDump::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
-; (year+=$07d0/2000), then DateToSecondsSince1970. Returns HL:DE day count.
+; RtcToSeconds: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
+; (year+=$07d0/2000), then DateToSecondsSince1970. Returns the seconds in HL:DE.
 
-RtcToDayCount::
+RtcToSeconds::
     add sp, -$11
     ld a, $06
     push af
@@ -3370,14 +3370,21 @@ RtcToDayCount::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; RtcWriteTimeFromDayDelta(delta@sp+$18): RtcToDayCount − delta; if delta==0 or result<0 → RtcWriteTimeFromDayDelta_zeroHms zero HMS.
-; RtcWriteTimeFromDayDelta_seedC0a0: seed from $c0a0..$c0b0; overflow → RtcWriteTimeFromDayDelta_overflowZero zero then RtcWriteTimeFromDayDelta_div60a else fall RtcWriteTimeFromDayDelta_div60a.
-; Cascade: RtcWriteTimeFromDayDelta_div60a S32Mod/60; RtcWriteTimeFromDayDelta_modSec S32Div/60 (sec) + Div/60; RtcWriteTimeFromDayDelta_modMin S32Div/60 (min) + Div/24;
-; RtcWriteTimeFromDayDelta_modHr/RtcWriteTimeFromDayDelta_modHr: S32Div/24 (hr); RtcWriteTimeFromDayDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).
+; RtcWriteTimeFromDelta(base): delta = RtcToSeconds() - base, the seconds the game's clock has to catch up.
+; base == 0 or delta < 0 -> RtcWriteTimeFromDelta_zeroHms zeroes the clock.
+; RtcWriteTimeFromDelta_seedC0a0: sec, min, hour, days and control from wSaveBuf ($c0a0, one per 4 bytes); out of
+; range -> RtcWriteTimeFromDelta_overflowZero zeroes them.
+; RtcWriteTimeFromDelta_addSec: sec += delta % 60 (S32Mod), carrying into min.
+; RtcWriteTimeFromDelta_addMin: delta /= 60 (S32Div); min += delta % 60, carrying into hour.
+; RtcWriteTimeFromDelta_addHour: delta /= 60; hour += delta % 24, carrying into days.
+; RtcWriteTimeFromDelta_addDays: delta /= 24; days += delta. Past $ff sets the day's bit 8 in the control byte,
+; past $1ff the day carry.
+; RtcWriteTimeFromDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).
+; Returns the time now.
 
-RtcWriteTimeFromDayDelta::
+RtcWriteTimeFromDelta::
     add sp, -$16
-    call RtcToDayCount
+    call RtcToSeconds
     push hl
     ld hl, sp+$14
     ld [hl], e
@@ -3425,14 +3432,14 @@ RtcWriteTimeFromDayDelta::
     or [hl]
     inc hl
     or [hl]
-    jp z, RtcWriteTimeFromDayDelta_zeroHms
+    jp z, RtcWriteTimeFromDelta_zeroHms
 
     ld hl, sp+$11
     ld a, [hl]
     bit 7, a
-    jp z, RtcWriteTimeFromDayDelta_seedC0a0
+    jp z, RtcWriteTimeFromDelta_seedC0a0
 
-RtcWriteTimeFromDayDelta_zeroHms::
+RtcWriteTimeFromDelta_zeroHms::
     ld hl, sp+$08
     ld [hl], $00
     dec hl
@@ -3447,10 +3454,10 @@ RtcWriteTimeFromDayDelta_zeroHms::
     ld [hl], a
     ld hl, sp+$09
     ld [hl], $00
-    jp RtcWriteTimeFromDayDelta_writeFpga
+    jp RtcWriteTimeFromDelta_writeFpga
 
 
-RtcWriteTimeFromDayDelta_seedC0a0::
+RtcWriteTimeFromDelta_seedC0a0::
     ld de, $c0a0
     ld a, [de]
     ld c, a
@@ -3485,19 +3492,19 @@ RtcWriteTimeFromDayDelta_seedC0a0::
     ld a, $3b
     dec hl
     sub [hl]
-    jp c, RtcWriteTimeFromDayDelta_overflowZero
+    jp c, RtcWriteTimeFromDelta_overflowZero
 
     ld a, $3b
     dec hl
     sub [hl]
-    jp c, RtcWriteTimeFromDayDelta_overflowZero
+    jp c, RtcWriteTimeFromDelta_overflowZero
 
     ld a, $17
     dec hl
     sub [hl]
-    jp nc, RtcWriteTimeFromDayDelta_div60a
+    jp nc, RtcWriteTimeFromDelta_addSec
 
-RtcWriteTimeFromDayDelta_overflowZero::
+RtcWriteTimeFromDelta_overflowZero::
     ld hl, sp+$08
     ld [hl], $00
     dec hl
@@ -3513,7 +3520,7 @@ RtcWriteTimeFromDayDelta_overflowZero::
     ld hl, sp+$09
     ld [hl], $00
 
-RtcWriteTimeFromDayDelta_div60a::
+RtcWriteTimeFromDelta_addSec::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3548,14 +3555,14 @@ RtcWriteTimeFromDayDelta_div60a::
     ld [hl], a
     ld a, $3b
     sub [hl]
-    jp nc, RtcWriteTimeFromDayDelta_modSec
+    jp nc, RtcWriteTimeFromDelta_addMin
 
     ld a, [hl]
     add $c4
     ld [hl-], a
     inc [hl]
 
-RtcWriteTimeFromDayDelta_modSec::
+RtcWriteTimeFromDelta_addMin::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3631,14 +3638,14 @@ RtcWriteTimeFromDayDelta_modSec::
     ld [hl], a
     ld a, $3b
     sub [hl]
-    jp nc, RtcWriteTimeFromDayDelta_modMin
+    jp nc, RtcWriteTimeFromDelta_addHour
 
     ld a, [hl]
     add $c4
     ld [hl-], a
     inc [hl]
 
-RtcWriteTimeFromDayDelta_modMin::
+RtcWriteTimeFromDelta_addHour::
     ld hl, $0000
     push hl
     ld hl, $003c
@@ -3714,27 +3721,27 @@ RtcWriteTimeFromDayDelta_modMin::
     ld [hl], a
     ld a, $17
     sub [hl]
-    jp nc, RtcWriteTimeFromDayDelta_modHr
+    jp nc, RtcWriteTimeFromDelta_addDays
 
     ld a, [hl]
     add $e8
     ld [hl], a
     ld hl, sp+$0a
     inc [hl]
-    jr nz, RtcWriteTimeFromDayDelta_modHr
+    jr nz, RtcWriteTimeFromDelta_addDays
 
     inc hl
     inc [hl]
-    jr nz, RtcWriteTimeFromDayDelta_modHr
+    jr nz, RtcWriteTimeFromDelta_addDays
 
     inc hl
     inc [hl]
-    jr nz, RtcWriteTimeFromDayDelta_modHr
+    jr nz, RtcWriteTimeFromDelta_addDays
 
     inc hl
     inc [hl]
 
-RtcWriteTimeFromDayDelta_modHr::
+RtcWriteTimeFromDelta_addDays::
     ld hl, $0000
     push hl
     ld hl, $0018
@@ -3820,7 +3827,7 @@ RtcWriteTimeFromDayDelta_modHr::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, RtcWriteTimeFromDayDelta_writeFpga
+    jp nc, RtcWriteTimeFromDelta_writeFpga
 
     ld hl, sp+$09
     ld a, [hl]
@@ -3840,7 +3847,7 @@ RtcWriteTimeFromDayDelta_modHr::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, RtcWriteTimeFromDayDelta_writeFpga
+    jp nc, RtcWriteTimeFromDelta_writeFpga
 
     dec hl
     dec hl
@@ -3857,7 +3864,7 @@ RtcWriteTimeFromDayDelta_modHr::
     and $c0
     ld [hl], a
 
-RtcWriteTimeFromDayDelta_writeFpga::
+RtcWriteTimeFromDelta_writeFpga::
     ld a, $06
     push af
     inc sp
@@ -3936,13 +3943,13 @@ RtcWriteTimeFromDayDelta_writeFpga::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; RtcReadDaysClearRegs: RtcToDayCount → HL:DE; then zero $A018–$A01C (FPGA page $06)
+; RtcReadDaysClearRegs: RtcToSeconds → HL:DE; then zero $A018–$A01C (FPGA page $06)
 ; and $A220–$A224 (page $03, $4000=$11 window). Callers stash days before launch/PSRAM.
 
 RtcReadDaysClearRegs::
     push af
     push af
-    call RtcToDayCount
+    call RtcToSeconds
     push hl
     ld hl, sp+$02
     ld [hl], e
@@ -4021,7 +4028,7 @@ RtcReadDaysClearRegs::
 ; BackupOpenSaverPath: build $c3a5="/SAVER/"+name; BackupOpenSaverPath_forceSavExt force ".sav"; Open_B6 FarCall_06_7309 → $ca0f.
 ; Size from $d3ed: BackupOpenSaverPath_sizeFromD3eb ($d3eb==2 → BackupOpenSaverPath_sizeSkip2k/BackupOpenSaverPath_size2kRtc $2000 else BackupOpenSaverPath_size0 0); 1/2 BackupOpenSaverPath_size2k $2000; 4 BackupOpenSaverPath_size20000 $20000; 5 BackupOpenSaverPath_size10000 $10000; else BackupOpenSaverPath_size8000 $8000.
 ; BackupOpenSaverPath_openOk: open ok else BackupOpenSaverPath_failMemsetFf; and $30==$30 → BackupOpenSaverPath_rtcFlagSkip/BackupOpenSaverPath_rtcFlagSet RTC flag else BackupOpenSaverPath_afterRtcFlag; BackupOpenSaverPath_readInit/BackupOpenSaverPath_readLoop read+$200 VramCopyStack loop.
-; BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_sizeFromD3eb RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → BackupOpenSaverPath_stamp.
+; BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_rtcReadDaysClear RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → BackupOpenSaverPath_stamp.
 ; BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; BackupOpenSaverPath_failRtcPreLaunch RtcReadDaysClearRegs → BackupOpenSaverPath_stamp.
 
 BackupOpenSaverPath::
@@ -4587,7 +4594,7 @@ BackupOpenSaverPath_rtcMetaRestore::
     ld h, [hl]
     ld l, a
     push hl
-    call RtcWriteTimeFromDayDelta
+    call RtcWriteTimeFromDelta
     add sp, $04
     push hl
     ld hl, sp+$0e
@@ -4837,7 +4844,7 @@ BackupOpenSaverPath_failRtcPreLaunch::
 ; BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
 ; $A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.
 ; BackupOpenSaverPath_stamp_copyBasename: copy basename until len@sp+$0b (BackupOpenSaverPath_stamp_copyCont ++idx); done → BackupOpenSaverPath_stamp_checkRtc.
-; BackupOpenSaverPath_stamp_checkRtc: if $d3f0 → $A202=$77 + ROM size@$A210–13 else BackupOpenSaverPath_stamp_clearRtcFlag $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup.
+; BackupOpenSaverPath_stamp_checkRtc: if $d3f0 → $A202=$77 + the time now@$A210–13 else BackupOpenSaverPath_stamp_clearRtcFlag $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup.
 
 BackupOpenSaverPath_stamp::
     ld a, $0d
@@ -5401,8 +5408,8 @@ SortEntries_B1_epilogue::
 ; Source: kernel/stock/src/bank1.c
 ; LaunchSetup(path): Open_B6 → FIL@sp+$20; fail DE:HL=$ffffffff LaunchSetup_epilogueRet. After BackupOpenSaverPath; see docs/boot-and-launch.md.
 ; LaunchSetup_fatTypeCheck: $c7a9==2 → LaunchSetup_skipFat12/LaunchSetup_fat12Limit FAT12 limit $0000ffff else LaunchSetup_fatOtherLimit $0ffffff7; join LaunchSetup_seedClust2Sect seed FarCall_05_4279 @$c0a0.
-; LaunchSetup_walkClusters: walk clusters FarCall_05_4378 (LaunchSetup_walkCont); EOF → LaunchSetup else LaunchSetup_appendCluster U32Mul*$c7ab + 4279 append.
-; LaunchSetup: if sum<limit → LaunchSetup_walkClusters else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → LaunchSetup_epilogueRet ret 0.
+; LaunchSetup_walkClusters: walk clusters FarCall_05_4378 (LaunchSetup_walkCont); EOF → LaunchSetup_eofCheck else LaunchSetup_appendCluster U32Mul*$c7ab + 4279 append.
+; LaunchSetup_eofCheck: if sum<limit → LaunchSetup_walkClusters else close 768f + stamp footer @$c0a0+$1f0/+1f4/+1f8 → LaunchSetup_epilogueRet ret 0.
 
 LaunchSetup::
     ld hl, $fdbc
@@ -7569,7 +7576,7 @@ BootMenuLoadingStr::
 ; Source: kernel/stock/src/bank1.c
 ; BackupSaveDump: open SAVER FarCall_06_7309 mode $12 → $ca0f; fail Jump_001_699a ret.
 ; BackupSaveDump_writeLoop: while offset < size@sp+$0f: bank PSRAM, VramCopyStack $200, FarCall_07_7739 write.
-; Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BootRomInfoMenu reset0; BackupSaveDump_spinnerDot "."; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots ".."; BackupSaveDump_spinnerEllipsis "..."; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.
+; Spinner ++sp+$04: BackupSaveDump_spinnerSkipReset; ==3 BackupSaveDump_spinnerReset0 reset0; BackupSaveDump_spinnerDot "."; BackupSaveDump_afterDot → BackupSaveDump_spinnerSkipDots/BackupSaveDump_spinnerDots ".."; BackupSaveDump_spinnerEllipsis "..."; BackupSaveDump_advance200 +=$200 → BackupSaveDump_writeLoop.
 ; BackupSaveDump_checkRtcMagic: $d3f6==$77 → BackupSaveDump_rtcPackWrite Memset+$A220 pack+write else BackupSaveDump_skipRtcPack → BackupSaveDump_close close 768f; Jump_001_699a fail (jr_001_69a1/jr_001_69a5 strs).
 
 BackupSaveDump::

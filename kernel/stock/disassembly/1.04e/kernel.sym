@@ -980,21 +980,21 @@
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- WToUpper_B1 ---
-01:45e7 WToUpper_B1_pickFmtHi
-01:45ec WToUpper_B1_pickFmtLo
-01:45f1 WToUpper_B1_walkTable
-01:4691 WToUpper_B1_opScaleSubA
-01:46bd WToUpper_B1_opScaleSubB
-01:46e2 WToUpper_B1_opSub10
-01:46f6 WToUpper_B1_opSub20
-01:470a WToUpper_B1_opSub30
-01:471e WToUpper_B1_opSub1a
-01:4732 WToUpper_B1_opAdd8
-01:4744 WToUpper_B1_opSub50
-01:4758 WToUpper_B1_opSub1c60
-01:476c WToUpper_B1_afterOp
-01:478a WToUpper_B1_rewriteLo16
-01:479b WToUpper_B1_retDeHl
+01:45e7 WToUpper_B1_pickCvt2
+01:45ec WToUpper_B1_pickCvt1
+01:45f1 WToUpper_B1_nextBlock
+01:4691 WToUpper_B1_caseTable
+01:46bd WToUpper_B1_casePairs
+01:46e2 WToUpper_B1_caseSub16
+01:46f6 WToUpper_B1_caseSub32
+01:470a WToUpper_B1_caseSub48
+01:471e WToUpper_B1_caseSub26
+01:4732 WToUpper_B1_caseAdd8
+01:4744 WToUpper_B1_caseSub80
+01:4758 WToUpper_B1_caseSub1c60
+01:476c WToUpper_B1_skipTable
+01:478a WToUpper_B1_storeResult
+01:479b WToUpper_B1_ret
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupSaveDump ---
@@ -1109,7 +1109,7 @@
 ; --- DateToSecondsSince1970 ---
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- RtcWriteTimeFromDayDelta ---
+; --- RtcWriteTimeFromDelta ---
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- SetFpga7FC4_B4 ---

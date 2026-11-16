@@ -56,6 +56,22 @@ RENAMES = {
     "PreLaunchSaveStamp": "BackupOpenSaverPath_stamp",   # a tail, not a function
     "DateToDaysSince1970": "DateToSecondsSince1970",
     "DiskRead_B2": "SdRead", "DiskWrite_B2": "SdWrite",
+    # both count seconds, not days
+    "RtcToDayCount": "RtcToSeconds", "RtcWriteTimeFromDayDelta": "RtcWriteTimeFromDelta",
+    # named for the operation the wrong way round: each adds one field
+    "RtcWriteTimeFromDayDelta_div60a": "RtcWriteTimeFromDelta_addSec",
+    "RtcWriteTimeFromDayDelta_modSec": "RtcWriteTimeFromDelta_addMin",
+    "RtcWriteTimeFromDayDelta_modMin": "RtcWriteTimeFromDelta_addHour",
+    "RtcWriteTimeFromDayDelta_modHr": "RtcWriteTimeFromDelta_addDays",
+    # ff_wtoupper's parts, named when it was taken for a size formatter
+    "FormatFileSize_pickFmtHi": "WToUpper_B1_pickCvt2", "FormatFileSize_pickFmtLo": "WToUpper_B1_pickCvt1",
+    "FormatFileSize_walkTable": "WToUpper_B1_nextBlock",
+    "FormatFileSize_opScaleSubA": "WToUpper_B1_caseTable", "FormatFileSize_opScaleSubB": "WToUpper_B1_casePairs",
+    "FormatFileSize_opSub10": "WToUpper_B1_caseSub16", "FormatFileSize_opSub20": "WToUpper_B1_caseSub32",
+    "FormatFileSize_opSub30": "WToUpper_B1_caseSub48", "FormatFileSize_opSub1a": "WToUpper_B1_caseSub26",
+    "FormatFileSize_opAdd8": "WToUpper_B1_caseAdd8", "FormatFileSize_opSub50": "WToUpper_B1_caseSub80",
+    "FormatFileSize_opSub1c60": "WToUpper_B1_caseSub1c60", "FormatFileSize_afterOp": "WToUpper_B1_skipTable",
+    "FormatFileSize_rewriteLo16": "WToUpper_B1_storeResult", "FormatFileSize_retDeHl": "WToUpper_B1_ret",
 }
 RENAME_RE = re.compile(r"\b(" + "|".join(sorted(RENAMES, key=len, reverse=True)) + r")(?![A-Za-z0-9])")
 
@@ -87,9 +103,47 @@ NOTE_FIXES = {
     "wWToUpperCvt2": ["wWToUpperCvt2: WToUpper_B1's compressed conversion table for U+1000 to U+FFFF."],
     "SortEntries_B1": ["SortEntries_B1: bubble-sorts the browser's entries by name, swapping two through wSaveBuf."],
     "Mkdir_B9": [("Mkdir_B9(fp, path, mode): FatFs f_open.", "Mkdir_B9(path): FatFs f_mkdir.")],
-    "BackupOpenSaverPath_stamp": [("BackupOpenSaverPath_stamp: page", "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page")],
     "DateToSecondsSince1970": [("(HL:DE), despite name.", "(HL:DE), less eight hours: the RTC holds UTC+8.")],
+    "RtcToSeconds": [("Returns HL:DE day count.", "Returns the seconds in HL:DE.")],
+    "RtcWriteTimeFromDelta": [
+        "RtcWriteTimeFromDelta(base): delta = RtcToSeconds() - base, the seconds the game's clock has to catch up.",
+        "base == 0 or delta < 0 -> RtcWriteTimeFromDelta_zeroHms zeroes the clock.",
+        "RtcWriteTimeFromDelta_seedC0a0: sec, min, hour, days and control from wSaveBuf ($c0a0, one per 4 bytes); out of",
+        "range -> RtcWriteTimeFromDelta_overflowZero zeroes them.",
+        "RtcWriteTimeFromDelta_addSec: sec += delta % 60 (S32Mod), carrying into min.",
+        "RtcWriteTimeFromDelta_addMin: delta /= 60 (S32Div); min += delta % 60, carrying into hour.",
+        "RtcWriteTimeFromDelta_addHour: delta /= 60; hour += delta % 24, carrying into days.",
+        "RtcWriteTimeFromDelta_addDays: delta /= 24; days += delta. Past $ff sets the day's bit 8 in the control byte,",
+        "past $1ff the day carry.",
+        "RtcWriteTimeFromDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).",
+        "Returns the time now."],
+    "BackupOpenSaverPath_stamp": [
+        ("BackupOpenSaverPath_stamp: page", "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page"),
+        ("ROM size@$A210\u201313", "the time now@$A210\u201313")],
+    "FindVolume_B5": [("U32Div nonzero \u2192", "cluster count (U32Div by the cluster size) nonzero \u2192")],
+    "Lseek_B3": [("else U32Div cluster align \u2014", "else U32Div by the cluster size:")],
 }
+
+# 1.04e has no game clock, and its notes were carried over from 1.05e with
+# the clock handling still in them. Written again from the K104 source.
+NOTE_FIXES_VER = {"1.04e": {
+    "BackupOpenSaverPath": [
+        "BackupOpenSaverPath(path): build wTmp = \"/SAVER/\" + name with the extension forced to .sav, and open it.",
+        "Save size from the cart type ($d3ed): 0 -> $2000 if $d3eb == 2 else 0; 1 and 2 -> $2000; 4 -> $20000;",
+        "5 -> $10000; else $8000.",
+        "Opened: the size is the file's, and it is read into the save pSRAM 512 bytes at a time through wSaveBuf.",
+        "Not there: the save pSRAM is filled with $FF for that size.",
+        "Then BackupOpenSaverPath_stamp. 1.05e's clock handling is not in 1.04e."],
+    "BackupOpenSaverPath_stamp": [
+        "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 of the save pSRAM",
+        "gets the per-launch stamp: $A000=$AA backup pending, $A001=save size in 8 KB banks, $A00F=path length,",
+        "$A010+=the save's path. 1.04e writes no clock stamp ($A202, $A210)."],
+    "BackupSaveDump": [
+        "BackupSaveDump(path, size): write the save pSRAM to wTmp (the .sav path); path is not used.",
+        "Opens it for writing, creating it if needed, and returns if that fails.",
+        "BackupSaveDump_writeLoop: 512 bytes at a time from the pSRAM through wSaveBuf, drawing one to three dots",
+        "as it goes. Then closes the file. 1.05e's 48-byte clock footer is not in 1.04e."],
+}}
 
 
 def offset(bank, addr):
@@ -201,9 +255,6 @@ def main():
             names.setdefault((bank, addr), f[1])
             addr_of.setdefault(f[1], addr)
 
-    def auto(m):
-        return names.get((int(m.group(1), 16), int(m.group(2), 16)), m.group(0))
-
     def at(m):
         a = addr_of.get(m.group(1))
         return m.group(0) if a is None else f"{m.group(1)} (${a:04x})"
@@ -213,7 +264,8 @@ def main():
         b["lines"] = [renamed(line) for line in b["lines"]]
         if "name" in b:
             b["name"] = renamed(b["name"])
-        fix = NOTE_FIXES.get(names.get((b["bank"], int(b["addr"], 16))))
+        here = names.get((b["bank"], int(b["addr"], 16)))
+        fix = NOTE_FIXES_VER.get(ver, {}).get(here) or NOTE_FIXES.get(here)
         if fix and b.get("at") != "section":
             if isinstance(fix[0], tuple):
                 text = "\n".join(b["lines"])
@@ -226,9 +278,7 @@ def main():
                 b["lines"] = list(fix)
             fixed += 1
     for b in blocks:
-        b["lines"] = [re.sub(r"\b([A-Z]\w+) \(\$[0-9a-fA-F]{4}\)", at,
-                             re.sub(r"\b(?:Jump|jr|Call)_([0-9a-f]{3})_([0-9a-f]{4})\b", auto, line))
-                      for line in b["lines"]]
+        b["lines"] = [re.sub(r"\b([A-Z]\w+) \(\$[0-9a-fA-F]{4}\)", at, line) for line in b["lines"]]
 
     # where the source build defines each routine
     by_addr = {}
@@ -300,8 +350,6 @@ def main():
 
     def carried(m):
         nonlocal stale
-        if m.group(0) in defs:
-            return m.group(0)
         bank, addr = int(m.group(2), 16), int(m.group(3), 16)
         below = [x for x in ref.get(bank, []) if x[0] <= addr]
         if below:
@@ -309,6 +357,9 @@ def main():
             new = names.get((bank, here), f"{m.group(1)}_{bank:03x}_{here:04x}")
             if new in defs:
                 return new
+        native = names.get((bank, addr), m.group(0))
+        if native in defs:
+            return native
         stale += 1
         return m.group(0)
 

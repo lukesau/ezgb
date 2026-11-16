@@ -56,9 +56,9 @@ source with `K0918` defined for the C (`make K=0918`, against
 ([kernel-diffs.md](../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
 
 - `RtcDebugDump` (`01:4c5e`-`4ec9`), an RTC test screen: it reads the clock
-  like `RtcToDayCount`, prints `12345678`, the date and the time with
+  like `RtcToSeconds`, prints `12345678`, the date and the time with
   `DrawU32Decimal`, and waits for SELECT.
-- `RtcWriteTimeFromDayDelta` calls `SetFpgaPage_B1(0)` once at the end, not
+- `RtcWriteTimeFromDelta` calls `SetFpgaPage_B1(0)` once at the end, not
   twice.
 
 Everything after `RtcDebugDump` in bank 1 is `$262` higher, `_GSINIT`

@@ -86,7 +86,7 @@ launch, backup and TIME SET hooks do not touch the card for the clock.
 
 ### An RTC game's clock going backwards
 
-At launch, 1.05e's `RtcWriteTimeFromDayDelta` adds the time since the
+At launch, 1.05e's `RtcWriteTimeFromDelta` adds the time since the
 save's launch stamp to the game's saved clock. In stock, a negative
 difference zeroes the game's clock. `RtcNegClampHook` (`01:7620`) replaces
 the sign test (`01:4e33`): a negative difference is taken as 0 and the

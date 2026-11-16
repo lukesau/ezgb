@@ -2937,7 +2937,7 @@ EzgbDatStr::
 ; Source: kernel/stock/src/kernel.c
 ; DrawDirEntryLabel(size@sp+$12, ofs@sp+$16, y@sp+$18): frame -$10. size≤$14 → DrawDirEntryLabel_epilogueRet skip.
 ; DrawDirEntryLabel_bankShift: >>5 bank from ofs; attr+$fe==$10 → jr_000_0c88 width $11 else DrawDirEntryLabel_skipDirWidth → Jump_000_0c8f width $14.
-; Jump_000_0c8f: if namelen≥width → DrawDirEntryLabel_epilogueRet; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → DrawDirEntryLabel_epilogueRet.
+; DrawDirEntryLabel_scrollCheck: if namelen≥width → DrawDirEntryLabel_epilogueRet; else U32Shr/Div scroll idx; if $cc31/$cc32 unchanged → DrawDirEntryLabel_epilogueRet.
 ; DrawDirEntryLabel_drawEllipsis: update $cc31/32; Strncpy name+$fe ellipsis into $c4a4; DrawString at y+2; DrawDirEntryLabel_epilogueRet epilogue.
 
 DrawDirEntryLabel::
@@ -6157,9 +6157,9 @@ Cp437UnicodeTable::
 ; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 ; WToUpper(code@sp+$0a): FatFs WCHAR toupper → DE. Frame -$08.
 ; WToUpper_asciiGate: if code≥$80 → WToUpper_initSearch; else if not in 'a'..'z' → WToUpper_retDe; else code-=$20 → WToUpper_retDe.
-; WToUpper_initSearch: init lo/hi/count; WToUpper_midKey: mid key from wWToUpperKeys; eq → DrawLine_xMajorErrAdd; else WToUpper_cmpKey.
-; WToUpper_cmpKey: key<code → raise lo else DrawLine_xMajor lower hi; WToUpper_decCount --count; NZ → WToUpper_midKey else fall DrawLine_xMajorErrAdd.
-; DrawLine_xMajorErrAdd: if count==0 miss → WToUpper_retDe; else replace from wWToUpperVals; WToUpper_retDe: DE=code ret.
+; WToUpper_initSearch: init lo/hi/count; WToUpper_midKey: mid key from wWToUpperKeys; eq → WToUpper_hitOrMiss; else WToUpper_cmpKey.
+; WToUpper_cmpKey: key<code → raise lo else WToUpper_lowerHi lower hi; WToUpper_decCount --count; NZ → WToUpper_midKey else fall WToUpper_hitOrMiss.
+; WToUpper_hitOrMiss: if count==0 miss → WToUpper_retDe; else replace from wWToUpperVals; WToUpper_retDe: DE=code ret.
 
 WToUpper::
     push af
@@ -6410,7 +6410,7 @@ RleUnpack_retPastStream::
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (DrawLine_xMajorByteAdv).
+; ApplyBasename(dest@sp+$02, src@sp+$04): strcpy incl. NUL (ApplyBasename_copyLoop).
 ; DirList uses this to copy entry names into the browser table.
 
 ApplyBasename::
@@ -6815,7 +6815,7 @@ CirclePlot8::
 ; [ezgb]
 ; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 ; DrawRectImpl: normalize corners; outline via four DrawLine; optional fill if wDrawRectFill ($d724). Called by DrawRect.
-; DrawRectImpl_afterSwapX: if X1<X0 swap; fall. jr_000_22ec: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.
+; DrawRectImpl_afterSwapX: if X1<X0 swap; fall. DrawRectImpl_drawOutline: if Y1<Y0 swap; then L/R verts + inset top/bot horiz DrawLine.
 ; If fill==0 or empty inset ret; else swap wDrawColor/wDrawColorB; jr_000_1fb4: horiz DrawLine at Y0; if Y0!=Y1 ++Y0 loop.
 ; DrawRectImpl_restoreColors: restore colors (swap again) ret.
 
@@ -6945,10 +6945,10 @@ DrawRectImpl_restoreColors::
 ; [ezgb]
 ; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 ; DrawLine: Bresenham. ABI BC=(x0,y0) DE=(x1,y1). |dy|@$d72a, |dx|@$d729; err wCircleErr/$d72d..$d731.
-; Setup: DrawLine_absDy/SetTextCursor abs dy/dx; |dx|<|dy| → DrawLine_yMajor y-major; else DrawLine_maybeSwapEnds maybe swap ends; DrawLine_swapEndsDone/DrawLine_setYstepErr set $d72b ±ystep + GfxRowTable/err.
+; Setup: DrawLine_absDy/DrawLine_absDx abs dy/dx; |dx|<|dy| → DrawLine_yMajor y-major; else DrawLine_maybeSwapEnds maybe swap ends; DrawLine_swapEndsDone/DrawLine_setYstepErr set $d72b ±ystep + GfxRowTable/err.
 ; X-major DrawLine_xMajor: err≥0 DrawLine_xMajorPlotYstep plot+ystep (DrawLine_xMajorRowWrapA/DrawLine_xMajorRowWrapB row wrap $0130/$fed0); else DrawLine_xMajorErrAdd err+=2dy; DrawLine_xMajorByteAdv/DrawLine_xMajorLoopDec byte advance; --E loop.
 ; Horiz DrawLine_horiz: DrawLine_horizMaskShift/DrawLine_horizMidRun/DrawLine_horizTailPixel/DrawLine_horizDoneCheck/DrawLine_horizMaskInit/DrawLine_horizMaskLoop/DrawLine_horizApplyPixel mask runs.
-; Y-major DrawLine_yMajor: DrawLine_yMajorMaybeSwap/DrawLine_yMajorSwapDone/DrawLine_yMajorSetYstep swap+$d72b; dx==0 → DrawLine_vert; else U16DivMod_setup plot (DrawLine_yMajorAfterPlot), err DrawLine_yMajorErrCheck/DrawLine_yMajorXstep/DrawLine_yMajorErrAdd xstep → S32Sar_shiftLoop.
+; Y-major DrawLine_yMajor: DrawLine_yMajorMaybeSwap/DrawLine_yMajorSwapDone/DrawLine_yMajorSetYstep swap+$d72b; dx==0 → DrawLine_vert; else DrawLine_yMajorPlot plot (DrawLine_yMajorAfterPlot), err DrawLine_yMajorErrCheck/DrawLine_yMajorXstep/DrawLine_yMajorErrAdd xstep → DrawLine_yMajorLoopDec.
 ; Vert DrawLine_vert: DrawLine_vertApplyPixel/DrawLine_vertLoopDec ApplyPixel down. Callers: DrawRect edges + circle chords.
 
 DrawLine::
@@ -7628,7 +7628,7 @@ jr_000_2306:
 ; [ezgb]
 ; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 ; GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).
-; U32ModImpl_runEngine: STAT-wait read 2bpp pair; mask from $10+(x&7).
+; jr_000_232e: STAT-wait read 2bpp pair; mask from $10+(x&7).
 ; GetPixel_testPlane0: if plane0 bit clear skip; set0 B. GetPixel_retColor: plane1 bit → set1 B; E=B ret.
 
 GetPixel::
@@ -8770,7 +8770,7 @@ MemCmp3Down_cmpLoop::
 ; Source: kernel/stock/src/libasm.s
 ; S32Cmp: signed long compare sp+$07 vs sp+$0b (MSB high). ClearNegZero32 both; then sign-dispatch + MemCmp3Down.
 ; a MSB set: if b also neg → MemCmp3Down swapped; else S32Cmp_retALess C-set (a<b) ret.
-; CopyBytes: a pos; if b neg → A=$ff ret; else jr_000_2767 MemCmp3Down a vs b.
+; jr_000_275e: a pos; if b neg → A=$ff ret; else jr_000_2767 MemCmp3Down a vs b.
 ; No external callers in this build (SDCC runtime residue).
 
 S32Cmp::
@@ -9461,7 +9461,7 @@ GetTileCursorX_retX::
 ; [ezgb]
 ; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 ; GetTileCursorY: ensure EnterGfxMode2 if needed; return wTileCursorY in E.
-; jr_000_2d90: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY.
+; GetTileCursorY_retY: if wGfxMode bit1 clear → EnterGfxMode2; then E=wTileCursorY.
 
 GetTileCursorY::
     ld a, [$d6a3]

@@ -418,7 +418,7 @@ void DrawU32Decimal (UINT32 v);
 void WaitJoypadSelect (void);
 
 /* 01:4c5e, 0918 only: an RTC test screen nothing calls. It reads the clock
-   like RtcToDayCount, prints 12345678 and the date and time, and waits for
+   like RtcToSeconds, prints 12345678 and the date and time, and waits for
    SELECT. */
 void RtcDebugDump (void)
 {
@@ -445,7 +445,7 @@ void RtcDebugDump (void)
 
 /* 01:4c5e (0918: 01:4ec9): the cart RTC (page 6, BCD from $A008) as
    DateToSecondsSince1970's seconds */
-UINT32 RtcToDayCount (void)
+UINT32 RtcToSeconds (void)
 {
 	RTCTIME t;
 
@@ -463,14 +463,14 @@ UINT32 RtcToDayCount (void)
 /* 01:4df1: advance the game's MBC3 clock (wSaveBuf) by the seconds since
    base and write it to the cart RTC (page 6, $A018) and to pSRAM page $11
    ($A220); returns the time now */
-UINT32 RtcWriteTimeFromDayDelta (UINT32 base)
+UINT32 RtcWriteTimeFromDelta (UINT32 base)
 {
 	UINT32 now;
 	INT32 delta;
 	UINT32 days;
 	UINT8 ctl, sec, min, hour;
 
-	now = RtcToDayCount();
+	now = RtcToSeconds();
 	delta = now - base;
 	if (base == 0 || delta < 0) {
 		sec = 0;
@@ -546,7 +546,7 @@ UINT32 RtcReadDaysClearRegs (void)
 {
 	UINT32 now;
 
-	now = RtcToDayCount();
+	now = RtcToSeconds();
 	SetFpgaPage_B1(6);
 	*(UINT8 *)0xa018 = 0;
 	*(UINT8 *)0xa019 = 0;
@@ -649,7 +649,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 			fs_read(&wFil, &wD3F2, 4, &br);
 			fs_lseek(&wFil, size);
 			fs_read(&wFil, wSaveBuf, 0x30, &br);
-			now = RtcWriteTimeFromDayDelta(wD3F2);
+			now = RtcWriteTimeFromDelta(wD3F2);
 		} else if (wD3F0)
 			now = RtcReadDaysClearRegs();
 #endif
