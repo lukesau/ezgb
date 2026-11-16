@@ -60,9 +60,10 @@ host setup.
 - **Kernel:** C compiled with SDCC 2.9.0 against GBDK 2.96a and FatFs
   R0.11a, with the edits EZ Flash made to both marked. One tree builds all
   three kernels; 1.05e-0731 is the reference the other two are written
-  against ([kernel/stock](kernel/stock/README.md)). Each build also has a
-  labeled disassembly that reassembles to the original
-  ([differences between them](docs/kernel-diffs.md)).
+  against ([kernel/stock](kernel/stock/README.md)). Each build also has an
+  annotated disassembly that assembles to the stock kernel
+  ([kernel/stock/disassembly](kernel/stock/disassembly/),
+  [differences between the builds](docs/kernel-diffs.md)).
 - **Stage1:** the bootloader that finds `ezgb.dat` on the card and starts
   it, in C for both firmwares ([stage1/decomp](stage1/decomp/README.md)),
   with a disassembly of each ([stage1/stock.md](stage1/stock.md)).
@@ -198,7 +199,8 @@ Each links to a doc with the details.
 
 ```
 kernel/     The menu program
-              stock/                           all three kernels from source
+              stock/                           all three kernels from source, and their
+                                               annotated disassembly
               1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
               mod/                             the mod: C and asm sources, inject tooling
               tools/                           build, port, inject and release scripts

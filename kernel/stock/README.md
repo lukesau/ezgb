@@ -38,6 +38,7 @@ needed: the build compares against the hash in
 
 | Path | What |
 |---|---|
+| `disassembly/` | The annotated disassembly of each stock kernel, one folder per build: mgbdis with this project's names and notes. Not a build input; `kernel/tools/stock-disasm.py <version>` regenerates one from `kernel/<version>/kernel.sym` and `notes.json`, leaving out what describes the mod, and checks that it assembles to the stock kernel. |
 | `asm/` | Was the stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names); every routine has moved to source, so each bank file is its `SECTION` and the `INCLUDE`s of its generated files. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
 | `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank2.c`, `bank4_wram.c` and `bank4.c`, `bank8.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
