@@ -5,6 +5,9 @@
 
 SECTION "ROM Bank $008", ROMX[$4000], BANK[$8]
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs::
     add sp, -$0b
     ld hl, sp+$11
@@ -63,6 +66,9 @@ PlotIconGlyphs::
     ld hl, sp+$0a
     ld [hl], $00
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_loopHead::
     ld hl, sp+$0a
     ld a, [hl]
@@ -91,6 +97,9 @@ PlotIconGlyphs_loopHead::
     jp PlotIconGlyphs_bit1Check
 
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit0::
     push bc
     ld hl, sp+$04
@@ -106,6 +115,9 @@ PlotIconGlyphs_bit0::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit1Check::
     ld a, c
     and $02
@@ -113,6 +125,9 @@ PlotIconGlyphs_bit1Check::
 
     jp PlotIconGlyphs_bit2Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit1::
     push bc
@@ -128,6 +143,9 @@ PlotIconGlyphs_bit1::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit2Check::
     ld a, c
     and $04
@@ -135,6 +153,9 @@ PlotIconGlyphs_bit2Check::
 
     jp PlotIconGlyphs_bit3Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit2::
     push bc
@@ -150,6 +171,9 @@ PlotIconGlyphs_bit2::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit3Check::
     ld a, c
     and $08
@@ -157,6 +181,9 @@ PlotIconGlyphs_bit3Check::
 
     jp PlotIconGlyphs_bit4Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit3::
     push bc
@@ -172,6 +199,9 @@ PlotIconGlyphs_bit3::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit4Check::
     ld a, c
     and $10
@@ -179,6 +209,9 @@ PlotIconGlyphs_bit4Check::
 
     jp PlotIconGlyphs_bit5Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit4::
     push bc
@@ -194,6 +227,9 @@ PlotIconGlyphs_bit4::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit5Check::
     ld a, c
     and $20
@@ -201,6 +237,9 @@ PlotIconGlyphs_bit5Check::
 
     jp PlotIconGlyphs_bit6Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit5::
     push bc
@@ -217,6 +256,9 @@ PlotIconGlyphs_bit5::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit6Check::
     ld a, c
     and $40
@@ -224,6 +266,9 @@ PlotIconGlyphs_bit6Check::
 
     jp PlotIconGlyphs_bit7Check
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit6::
     push bc
@@ -239,6 +284,9 @@ PlotIconGlyphs_bit6::
     add sp, $02
     pop bc
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_bit7Check::
     ld a, c
     and $80
@@ -246,6 +294,9 @@ PlotIconGlyphs_bit7Check::
 
     jp PlotIconGlyphs_next
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit7::
     ld hl, sp+$02
@@ -259,6 +310,9 @@ PlotIconGlyphs_bit7::
     call PlotPixelXY
     add sp, $02
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 PlotIconGlyphs_next::
     ld hl, sp+$02
     inc [hl]
@@ -266,6 +320,9 @@ PlotIconGlyphs_next::
     inc [hl]
     jp PlotIconGlyphs_loopHead
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_epilogueRet::
     add sp, $0b
@@ -468,9 +525,10 @@ Bank8ReservedSpace2::
     db $00
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; Fpga7FD2WaitClear_B8: $7FD2=$01, poll [$A000] until 0, then $7FD2=$00.
 ; Entry is $473f (after nop pad at $473e).
-; Unlock e1/e2/e3 + $7FF0=$e4; Jump_008_475e: spin while [$A000]≠0; clear $7FD2 + commit; E=0 ret.
+; Unlock e1/e2/e3 + $7FF0=$e4; Fpga7FD2WaitClear_B8_pollA000: spin while [$A000]≠0; clear $7FD2 + commit; E=0 ret.
 
 Fpga7FD2WaitClear_B8::
     dec sp
@@ -2302,8 +2360,9 @@ Bank8ReservedSpace::
     db $7f, $0c, $48, $02, $00
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; RomLoad_Build_B8(dst@sp+$06, src@sp+$08, n@sp+$0a): memcpy n bytes src→dst. Twin of RomLoad_Build_B4.
-; Jump_008_6df0: while n--: *src++ (jr_008_6e03 carry) → *dst++ (jr_008_6e0f carry); Jump_008_6e12 add sp,$04 ret.
+; RomLoad_Build_B8_decN: while n--: *src++ (RomLoad_Build_B8_incSrc carry) → *dst++ (RomLoad_Build_B8_storeCont carry); RomLoad_Build_B8_epilogueRet add sp,$04 ret.
 ; Used by RomLoad_BuildAndRunPeek_B8 / 7FD2Wait to plant $D000 trampolines.
 
 RomLoad_Build_B8::
@@ -2368,6 +2427,7 @@ RomLoad_Build_B8_epilogueRet::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; SdWindowPeek_B8: ld a,[$a000] → E. Bank-8 sibling of SdWindowPeek; used after
 ; FPGA page switches (ready poll). Was briefly mislabeled SetFpga7FD2_B8.
 
@@ -2380,6 +2440,7 @@ SdWindowPeek_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; SetFpga7FD2On_B8: unlock $7F00/10/20, write $01 to $7FD2, commit $7FF0.
 
 SetFpga7FD2On_B8::
@@ -2402,6 +2463,7 @@ SetFpga7FD2On_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; SetFpga7FD2Off_B8: unlock $7F00/10/20, write $00 to $7FD2, commit $7FF0.
 
 SetFpga7FD2Off_B8::
@@ -2424,6 +2486,7 @@ SetFpga7FD2Off_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; SetRomLoadCtrl_B8: bank-8 copy of SetRomLoadCtrl_B4 — unlock, $7F36=stack u8,
 ; commit. SetFpgaPage_B8 ($6e7a) is the $7FC0 sibling beside it.
 
@@ -2448,6 +2511,7 @@ SetRomLoadCtrl_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; SetFpgaPage_B8: bank-8 copy of SetFpgaPage (unlock, $7FC0=page, commit).
 
 SetFpgaPage_B8::
@@ -2471,6 +2535,7 @@ SetFpgaPage_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; RomLoad_WriteCmdWindow_B8(buf): page=$02, $7F36=$01, copy $0200 bytes
 ; from buf to $A000 (load cmd window), then ctrl/page off.
 
@@ -2510,6 +2575,7 @@ RomLoad_WriteCmdWindow_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; RomLoad_BuildAndRunPeek_B8: build SdWindowPeek_B8 trampoline at $D000
 ; (arg $ff) via RomLoad_Build_B8, then call $D000.
 
@@ -2528,6 +2594,7 @@ RomLoad_BuildAndRunPeek_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; RomLoad_BuildAndRun7FD2Wait_B8: build Fpga7FD2WaitClear_B8 trampoline at
 ; $D000 (arg $ff), then call it. Caller wraps with DiNest/EiNest.
 
@@ -2546,10 +2613,11 @@ RomLoad_BuildAndRun7FD2Wait_B8::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; RomLoad_ClearCartWindow_B8: SetFpga7FD2Off; then clear cart cmd window before DrawFwVersionScreen.
-; Jump_008_6f0a: fill $C0A0..+$200 with idx.lo (jr_008_6f3a); Jump_008_6f3d reset counter.
-; Jump_008_6f44: 0x2000× pack addr=$40000+i → $C0A0, RomLoad_WriteCmdWindow, page $05 BuildAndRun wait, page0.
-; Jump_008_6fcd: ret. Orphan before DrawFwVersionScreen.
+; RomLoad_ClearCartWindow_B8_fillBuf: fill $C0A0..+$200 with idx.lo (RomLoad_ClearCartWindow_B8_fillCont); RomLoad_ClearCartWindow_B8_resetCounter reset counter.
+; RomLoad_ClearCartWindow_B8_cmdLoop: 0x2000× pack addr=$40000+i → $C0A0, RomLoad_WriteCmdWindow, page $05 BuildAndRun wait, page0.
+; RomLoad_ClearCartWindow_B8_epilogueRet: ret. Orphan before DrawFwVersionScreen.
 
 RomLoad_ClearCartWindow_B8::
     push af
@@ -2723,8 +2791,9 @@ RomLoad_ClearCartWindow_B8_epilogueRet::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; DrawFwVersionScreen: -$34 frame; "FW…" + SdWindowPeek_B8 page $04; U32ToAscii_B0 radix $0a.
-; Jump_008_70e1: DrawRect/DrawString chrome; Jump_008_7141 WaitVBlank+ReadJoypad until SELECT ($40); jr_008_7152 add sp,$34 ret.
+; Jump_008_70e1: DrawRect/DrawString chrome; DrawFwVersionScreen_waitSelect WaitVBlank+ReadJoypad until SELECT ($40); DrawFwVersionScreen_epilogueRet add sp,$34 ret.
 ; Post-ret orphans (no new ::): tab chrome by sp+$06. Jump_008_7203/Jump_008_720d/jr_008_7210 tab0; Jump_008_727e/Jump_008_7288/jr_008_728b tab1;
 ; Jump_008_72f9/Jump_008_7303/jr_008_7306 tab2/3; Jump_008_7331 ret. Before MenuTabSdStr.
 
@@ -2988,6 +3057,9 @@ Jump_008_70e1:
     call DrawString
     add sp, $05
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 DrawFwVersionScreen_waitSelect::
     call WaitVBlankFlag
     call ReadJoypad
@@ -2999,6 +3071,9 @@ DrawFwVersionScreen_waitSelect::
 
     jp DrawFwVersionScreen_waitSelect
 
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 DrawFwVersionScreen_epilogueRet::
     add sp, $34
@@ -3303,6 +3378,9 @@ MenuTabSetStr::
 MenuTabHelpStr::
     db " HELP ", $00
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 DrawReadingBox::
     ld hl, $0002
     push hl
@@ -3336,6 +3414,7 @@ ReadingBoxStr::
     db "Reading...", $00
 
 ; [ezgb]
+; Source: kernel/stock/src/bank8.c
 ; Status-box draw family (bank 8), each reached via FarCallTrampoline:
 ; DrawReadingBox + ReadingBoxStr, DrawLoadingBox + LoadingBoxStr,
 ; DrawErrorFileBox + ErrorFileBoxStr, DrawLastRomButtons + LastRomReturnStr/StartStr.
@@ -3373,6 +3452,9 @@ DrawLoadingBox::
 LoadingBoxStr::
     db "Loading...", $00
 
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
+
 DrawErrorFileBox::
     ld hl, $0002
     push hl
@@ -3404,6 +3486,9 @@ DrawErrorFileBox::
 
 ErrorFileBoxStr::
     db "Error file", $00
+
+; [ezgb]
+; Source: kernel/stock/src/bank8.c
 
 DrawLastRomButtons::
     ld hl, $0000

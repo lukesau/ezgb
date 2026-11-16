@@ -6,7 +6,15 @@
 kernel/<ver>/kernel.sym and notes.json describe the modded kernel. This
 keeps what describes stock, runs mgbdis over the stock kernel built by
 kernel/stock, adds the notes, and assembles the result, which must be the
-kernel stock.sha1 lists. Output: kernel/stock/disassembly/<ver>/.
+kernel stock.sha1 lists. Output: kernel/stock/disassembly/<ver>/, with the
+names (kernel.sym) and notes (notes.json) it was made from. kernel/stock's
+build takes its names from that kernel.sym, so the source and the
+disassembly name every address alike.
+
+The notes are also brought in line with the listing:
+  - a note on a routine the source build defines starts with its source file
+  - mgbdis's names for addresses that have since been named (Jump_009_6995)
+    become those names, and "Name ($addr)" gets this kernel's address
 
 What is dropped, by comparing the stock and modded images:
   - names and blocks past the end of the stock image (the mod's banks)
@@ -131,6 +139,65 @@ def main():
         if re.search(r"\b(mod|modded|hook\w*|inject\w*|shim\w*|patched|ezgb\.cfg)\b", " ".join(b["lines"]), re.I):
             modnotes.append(b)
 
+    nkept = len(blocks)
+    names = {}                                   # (bank, addr) -> name
+    addr_of = {}
+    for raw in keep:
+        f = raw.split(";", 1)[0].split()
+        if len(f) >= 2 and ":" in f[0] and not f[1].startswith("."):
+            bank, addr = (int(x, 16) for x in f[0].split(":"))
+            names.setdefault((bank, addr), f[1])
+            addr_of.setdefault(f[1], addr)
+
+    def auto(m):
+        return names.get((int(m.group(1), 16), int(m.group(2), 16)), m.group(0))
+
+    def at(m):
+        a = addr_of.get(m.group(1))
+        return m.group(0) if a is None else f"{m.group(1)} (${a:04x})"
+
+    for b in blocks:
+        b["lines"] = [re.sub(r"\b([A-Z]\w+) \(\$[0-9a-fA-F]{4}\)", at,
+                             re.sub(r"\b(?:Jump|jr|Call)_([0-9a-f]{3})_([0-9a-f]{4})\b", auto, line))
+                      for line in b["lines"]]
+
+    # where the source build defines each routine
+    by_addr = {}
+    for b in blocks:
+        if b.get("at") != "section":
+            by_addr.setdefault((b["bank"], int(b["addr"], 16)), b)
+    sourced = 0
+    for inc in sorted((ROOT / "kernel/stock" / BUILD[ver]).glob("*.inc")):
+        m = re.match(r"(?:ff_)?b(\d)_|crt0_", inc.name)
+        if not m:
+            continue
+        bank = int(m.group(1) or 0)
+        text = inc.read_text().splitlines()
+        srcs = [re.sub(r"^build-\w+/font\.s$", "gbdk/font.ms", x)
+                for x in re.match(r"; Generated from (.*) by ", text[0]).group(1).split()]
+        addr = int(re.match(r"; \$([0-9a-f]+)-", text[1]).group(1), 16)
+        for line in text[2:]:
+            if line.startswith("    db "):
+                addr += line.count("$")
+                continue
+            label = line.rstrip(":")
+            if names.get((bank, addr)) != label:
+                continue
+            found = srcs
+            if len(srcs) > 1:
+                hit = [x for x in srcs if re.search(rf"\b_?{re.escape(label)}\b",
+                                                    (ROOT / "kernel/stock" / x).read_text(errors="replace"))]
+                found = hit if len(hit) == 1 else srcs
+            where = "Source: " + ", ".join(f"kernel/stock/{x}" for x in found)
+            b = by_addr.get((bank, addr))
+            if b is None:
+                b = {"bank": bank, "addr": f"{addr:04x}", "lines": []}
+                by_addr[(bank, addr)] = b
+                blocks.append(b)
+            if where not in b["lines"]:
+                b["lines"].insert(0, where)
+                sourced += 1
+
     work = ROOT / "local/stock-disasm" / ver
     if work.exists():
         shutil.rmtree(work)
@@ -146,9 +213,41 @@ def main():
         return r
 
     run([sys.executable, "-u", ROOT / "tools/mgbdis/mgbdis.py", "kernel.gb", "--overwrite"], cwd=work)
+    # The notes were written against 1.05e-0731 and carried to the other
+    # kernels, so a reference mgbdis does not define here is a 0731 address:
+    # find it there as a name plus an offset and bring that across.
+    dis = work / "disassembly"
+    defs = set(re.findall(r"^([A-Za-z_]\w*)::?\s*$", "".join(f.read_text() for f in dis.glob("bank_*.asm")), re.M))
+    ref = {}
+    for raw in (ROOT / "kernel/1.05e-0731/kernel.sym").read_text(encoding="utf-8").splitlines():
+        f = raw.split(";", 1)[0].split()
+        if len(f) >= 2 and ":" in f[0] and not f[1].startswith("."):
+            bank, addr = (int(x, 16) for x in f[0].split(":"))
+            if addr < 0x8000 and f[1] in addr_of:
+                ref.setdefault(bank, []).append((addr, f[1]))
+    for v in ref.values():
+        v.sort()
+    stale = 0
+
+    def carried(m):
+        nonlocal stale
+        if m.group(0) in defs:
+            return m.group(0)
+        bank, addr = int(m.group(2), 16), int(m.group(3), 16)
+        below = [x for x in ref.get(bank, []) if x[0] <= addr]
+        if below:
+            here = addr_of[below[-1][1]] + addr - below[-1][0]
+            new = names.get((bank, here), f"{m.group(1)}_{bank:03x}_{here:04x}")
+            if new in defs:
+                return new
+        stale += 1
+        return m.group(0)
+
+    for b in blocks:
+        b["lines"] = [re.sub(r"\b(Jump|jr|Call)_([0-9a-f]{3})_([0-9a-f]{4})\b", carried, line) for line in b["lines"]]
+    (work / "notes.json").write_text(json.dumps({"blocks": blocks}, indent=1, ensure_ascii=False) + "\n")
     r = run([sys.executable, ROOT / "kernel/tools/annotate-disasm.py", str(work.relative_to(ROOT))], ok=(0, 1))
     orphans = [l for l in (r.stdout + r.stderr).splitlines() if "orphan" in l.lower() or "not found" in l.lower()]
-    dis = work / "disassembly"
     mk = dis / "Makefile"
     mk.write_text(mk.read_text().replace("game.gbc", "game.gb"))
     run(["make", "-C", dis])
@@ -173,12 +272,15 @@ def main():
         for f in sorted(dis.iterdir()):
             if f.suffix in (".asm", ".inc") or f.name == "Makefile":
                 shutil.copy(f, out / f.name)
+        shutil.copy(work / "kernel.sym", out / "kernel.sym")
+        shutil.copy(work / "notes.json", out / "notes.json")
     lines = sum(len(f.read_text().splitlines()) for f in dis.glob("bank_*.asm"))
     print(f"{ver}: {len(keep)} sym lines kept, {len(dropped)} dropped; "
-          f"{len(blocks)} of {len(notes['blocks'])} notes kept; {lines} lines; "
+          f"{nkept} of {len(notes['blocks'])} notes kept; {lines} lines; "
           f"{'assembles to stock' if same else 'DOES NOT assemble to stock'}")
     print(f"  {len(patched)} names or blocks on stock code the mod changed, "
-          f"{len(modnotes)} notes mention the mod, {len(orphans)} notes not placed")
+          f"{len(modnotes)} notes mention the mod, {len(orphans)} notes not placed, "
+          f"{sourced} routines given their source file, {stale} references to labels not in the listing")
     if report:
         for kind, raw in patched:
             print(f"  {kind}: {raw.strip()}")

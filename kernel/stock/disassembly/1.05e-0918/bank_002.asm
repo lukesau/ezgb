@@ -6,6 +6,7 @@
 SECTION "ROM Bank $002", ROMX[$4000], BANK[$2]
 
 ; [ezgb]
+; Source: kernel/stock/src/bank2.c
 ; SetFpga7F30_B2: unlock $7F00/10/20, write stack u8 to $7F30, commit $7FF0.
 ; Same shape as SetFpgaPage but targets $7F30. SD read/write prologue uses
 ; $01 then $03. Sibling SdWindowPeek ($4020) reads $A000 (wait-for-ready).
@@ -31,6 +32,7 @@ SetFpga7F30_B2::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank2.c
 ; SdWindowPeek: ld a,[$a000] → E. SD paths poll until E==$e1 after SetFpga7F30.
 
 SdWindowPeek::
@@ -42,11 +44,12 @@ SdWindowPeek::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank2.c
 ; DiskRead_B2: SD sector read (FarCallDiskRead). Prologue SetFpga7F30_B2 $01; sibling DiskWrite_B2.
-; Jump_002_4036: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 Jump_002_4071 else Jump_002_4065 rem then Jump_002_4071.
-; Jump_002_4071: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.
-; Jump_002_418d: SdWindowPeek until !=$e1; Jump_002_419d: mode $01 + VramCopyStack $A000→buf, idx+=4 → Jump_002_4036.
-; Jump_002_41c7: mode $00; E=0; add sp,$13 ret.
+; DiskRead_B2_chunkLoop: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 DiskRead_B2_issueLba else DiskRead_B2_remChunk rem then DiskRead_B2_issueLba.
+; DiskRead_B2_issueLba: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.
+; DiskRead_B2_waitPeek: SdWindowPeek until !=$e1; DiskRead_B2_copyWindow: mode $01 + VramCopyStack $A000→buf, idx+=4 → DiskRead_B2_chunkLoop.
+; DiskRead_B2_epilogueRet: mode $00; E=0; add sp,$13 ret.
 
 DiskRead_B2::
     add sp, -$13
@@ -355,11 +358,12 @@ DiskRead_B2_epilogueRet::
 
 
 ; [ezgb]
+; Source: kernel/stock/src/bank2.c
 ; DiskWrite_B2: SD sector write (FarCallDiskWrite). Prologue SetFpga7F30_B2 $01 then $03; sibling DiskRead_B2.
-; Jump_002_41ed: chunk loop vs count@sp+$1a; rem>4 → clamp Jump_002_4223 else Jump_002_421c rem then Jump_002_4223.
-; Jump_002_4223: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.
-; Jump_002_4350: SdWindowPeek until !=$e1; Jump_002_4360: idx+=4 → Jump_002_41ed.
-; Jump_002_4369: Delay+$000a; mode $00; E=0 ret.
+; DiskWrite_B2_chunkLoop: chunk loop vs count@sp+$1a; rem>4 → clamp DiskWrite_B2_issueLba else DiskWrite_B2_remChunk rem then DiskWrite_B2_issueLba.
+; DiskWrite_B2_issueLba: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.
+; DiskWrite_B2_waitPeek: SdWindowPeek until !=$e1; DiskWrite_B2_advanceIdx: idx+=4 → DiskWrite_B2_chunkLoop.
+; DiskWrite_B2_epilogueRet: Delay+$000a; mode $00; E=0 ret.
 
 DiskWrite_B2::
     add sp, -$10
@@ -2171,6 +2175,9 @@ DiskWrite_B2_epilogueRet::
     rst RST_38
     rst RST_38
     rst RST_38
+
+; [ezgb]
+; Source: kernel/stock/src/bank2.c
 
 ThemeRamps::
     rst RST_38
