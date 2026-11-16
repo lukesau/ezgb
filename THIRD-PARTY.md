@@ -27,7 +27,8 @@ same words. It is here for study and repair of the hardware, and the AGPLv3
 does not relicense it.
 
 EZ Flash's binaries themselves are not in the repository: no kernel, no
-updater, no bitstream. The builds check against md5s, and the tools that
+updater, no bitstream. The builds check against the hashes in
+[stock.sha1](stock.sha1), and the tools that
 need a stock file read it from the ignored `tools/` and `fpga/` folders.
 
 The GBDK, SDCC and FatFs code is in EZ Flash's binaries too, under the
