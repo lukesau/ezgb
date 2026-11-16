@@ -154,7 +154,9 @@ the blocks and the top level prove against FW5 as it is
 
 - The bitstream is not stock's. Reproducing stock exactly needs its LUT
   contents and routing too (layer 3 in [../README.md](../README.md)).
-- Not run on hardware yet.
+- FW5-0918's build has not run on hardware. FW4's has (2026-11-16): flashed
+  with the from-source updater, the cart boots and runs the kernel built
+  from source.
 
 ## Files
 
