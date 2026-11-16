@@ -1,6 +1,6 @@
 // FW5-0918's Game Boy data bus output: the FW4 module (stage0/fw4/rtl/
 // gb_data_out.v, which says what each read returns) with these differences,
-// read from the design and proved:
+// read from the design and proven:
 //
 //   - the game's MBC3 clock reads come from latched copies: with rtc_sel
 //     $08-$0C a read returns the latched S, M, H, DL or DH (lat_*, five

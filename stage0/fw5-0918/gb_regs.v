@@ -1,13 +1,13 @@
 // FW5-0918's Game Boy registers: the FW4 module (stage0/fw4/rtl/gb_regs.v, which
 // says what each register does) with these differences, read from the
-// design and proved:
+// design and proven:
 //
 //   - one write strobe: FW5 clocks every register from /WR and puts A15
 //     low in the $7Fxx enables, where FW4 has a second /WR | A15 clock
 //   - no /RESET-level reset: FW4 resets the mode registers and blocks
 //     writes for the cycle after /RESET falls (rst); FW5's /WR registers
 //     are reset by the /RESET edge only, which fw5-noedge.py takes out of
-//     the design this is proved against
+//     the design this is proven against
 //   - the $7Fxx key is the unlock block's last register alone (FW5's
 //     unlock has one register per key), with A15 low
 //   - the RAM bank: MBC3 takes banks $00-$07 (three bits; FW4 $00-$03),

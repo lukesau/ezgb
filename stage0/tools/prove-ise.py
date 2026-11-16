@@ -170,7 +170,7 @@ for k in bad:
 # ---- the readable modules' reachable-state invariants, bound to stock's
 # register nets. equiv.sh proves them true of stock (its third pass); here
 # they let the signals that depend on them (a register file indexed by a
-# counter that never leaves its range) be proved by temporal induction.
+# counter that never leaves its range) be proven by temporal induction.
 # Only modules whose invariants read nothing but their own registers.
 inv_v, inv_inst = [], []
 KW = {"always", "begin", "end", "if", "else", "assume", "assert", "case", "endcase", "default", "signed"}

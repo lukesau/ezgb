@@ -16,13 +16,13 @@
 #   make check-slotb BUILD_HOST=<host>  the stock stage1, built from source, in
 #                                       stock slot B: must give stock's bitstream
 #   make stage0 BUILD_HOST=<host>       slot B built from the readable Verilog
-#                                       with ISE, proved equivalent to stock,
+#                                       with ISE, proven equivalent to stock,
 #                                       with stage1 in it: Update-fw4-ise.gb and
 #                                       Update-fw5-0918-ise.gb (stage0/ise/README.md;
 #                                       FW5 needs stage0/tools/fw5-prove.sh run first)
 #   make stage0-stock BUILD_HOST=<host> the stock firmware from source: both
 #                                       slot B images with the stock stage1 and
-#                                       PicoBlaze programs, proved equivalent to
+#                                       PicoBlaze programs, proven equivalent to
 #                                       stock (fpga/ise/<fw>-stock-nopatch/proj/top.raw).
 #                                       PROVE=0 skips the proof and needs no
 #                                       file of EZ Flash's

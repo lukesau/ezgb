@@ -22,7 +22,7 @@ the updater, the PicoBlaze's two programs, the FPGA design, and the library
 math no published source has (`kernel/stock/src/libasm.s`,
 `stage1/decomp/asm/`). EZ Flash published no source for any of it. What is
 here was written from their binaries: C that compiles to the same bytes,
-Verilog proved equivalent to their bitstream, listings that assemble to the
+Verilog proven equivalent to their bitstream, listings that assemble to the
 same words. It is here for study and repair of the hardware, and the AGPLv3
 does not relicense it.
 

@@ -7,7 +7,7 @@ Writes two modules (fw4_ by default, --prefix fw5 for FW5). fw4_logic instantiat
 the nets that cross between the slice logic and everything else (pads,
 block RAMs, clock buffers, the DCM, the DNA port, the ICAP): the same
 ports carve.py gives a block of every live slice bel, so the two can be
-proved equivalent. fw4_top wraps it with those primitives, copied from
+proven equivalent. fw4_top wraps it with those primitives, copied from
 DESIGN.v as they are wired there, under the pads as ports.
 
 Blocks connect to each other and to the primitives by the design's net

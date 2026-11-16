@@ -2,7 +2,7 @@
 
 The readable designs of FW4 (`stage0/fw4/rtl`) and FW5-0918
 (`stage0/fw5-0918`) build with ISE 14.7 into a slot B bitstream with
-stage1 in its block RAMs, and each result is proved equivalent to that
+stage1 in its block RAMs, and each result is proven equivalent to that
 firmware's stock bitstream. It is not identical to stock: ISE maps and routes
 the logic itself. Every register sits in its stock cell, though, so the
 design packs and meets timing the way stock does.
@@ -37,7 +37,7 @@ anything of EZ Flash's, and `PROVE=0` skips it.
    stage1 and the PicoBlaze's programs must decode back out of the block
    RAMs.
 4. **The proof.** Slot B from the official updater is exported
-   (`export-netlist.sh`) to `fpga/<fw>`, and the result is proved
+   (`export-netlist.sh`) to `fpga/<fw>`, and the result is proven
    equivalent to it (`tools/prove-ise.py`); every register's and LUT RAM's
    power-up value must be stock's. FW5's block files are `fw5-prove.sh`'s
    (`fpga/fw5-nx/edge/blk`), so that runs first.
@@ -114,7 +114,7 @@ The block RAMs, IO tiles, DCMs, DNA port and ICAP are cut out, so the logic
 around them is compared pin for pin; their attributes are compared as
 text. yosys proves the matched signals structurally. What is left (the SD
 command response buffer, SD pins, on FW5 the memory data pins) holds only
-in the states the hardware reaches, so it is proved by temporal induction
+in the states the hardware reaches, so it is proven by temporal induction
 under the readable modules' invariants, bound to stock's nets, with the pins
 and the registers as two groups. `equiv.sh` proves those invariants hold on
 stock. An assumption on a net stock's netlist doesn't name (a LUT output
@@ -142,7 +142,7 @@ latches are transparent while the bit is 0. `p51_latch.v` and
 
 ## FW5's console `/RESET` edge
 
-FW5's readable design used to be proved against FW5 with its `/RESET`
+FW5's readable design used to be proven against FW5 with its `/RESET`
 edge logic removed. Built that way it would not reset the SD controller,
 restart the PicoBlaze or clear the `/WR` registers when the console resets,
 which is how the kernel starts a game. The edge is now in the readable

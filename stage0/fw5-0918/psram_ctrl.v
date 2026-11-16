@@ -1,6 +1,6 @@
 // FW5-0918's pSRAM controller: the FW4 module (stage0/fw4/rtl/psram_ctrl.v,
 // which says what each part does) with these differences, read from the
-// design and proved:
+// design and proven:
 //
 //   - one more way to reach U4: a $A000-$BFFF access with bank register
 //     bit 7 set, when the game-mode bank is all ones with the RAM enabled

@@ -1,6 +1,6 @@
 // FW5-0918's unlock of the $7Fxx registers, against FW4's (stage0/fw4/rtl/unlock.v)
 // the same three keys and lock, a different state machine, read from the
-// design and proved:
+// design and proven:
 //
 //     ld [$7F00], $E1 ; ld [$7F10], $E2 ; ld [$7F20], $E3     unlock
 //     ld [$7FF0], $E4                                         lock
@@ -20,7 +20,7 @@
 // unlocks on the $E3 (FW4 on the $E2, with the $E3 only keeping it), and
 // its register list adds $7FD3 and $7FD4. There is no console reset here:
 // FW5 resets these on the /RESET edge, which fw5-noedge.py takes out of the
-// design this is proved against.
+// design this is proven against.
 //
 // Block: built by stage0/tools/simblk.py from stage0/fw4/blocks/unlock.blk
 // (stage0/fw5-0918/unlock.sim has its arguments), with the names in

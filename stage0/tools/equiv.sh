@@ -10,12 +10,12 @@
 #
 # The check matches the two designs by name: ports, and every register the
 # block file names. With the registers matched, each next-state and output
-# function is proved equal by SAT (equiv_simple), and what that leaves is
+# function is proven equal by SAT (equiv_simple), and what that leaves is
 # tried by induction (equiv_induct). equiv_status -assert fails the run if
 # anything stays unproven.
 #
 # A module that states reachable-state invariants (assume() under `ifdef
-# FORMAL) is proved instead by temporal induction with them in force, in
+# FORMAL) is proven instead by temporal induction with them in force, in
 # three passes: list the matched pairs, prove them all together under the
 # assumptions, then prove the assumptions themselves on the reference (from
 # its reset state, by induction). Assumptions labeled env_* are about inputs
@@ -46,7 +46,7 @@ hide='rename -hide w:*.*'
 grep -q 'select -set keep' "${ref%.v}.ys" && hide='rename -hide w:*.* @keep %d'
 # A readable module may state reachable-state invariants with assume() under
 # `ifdef FORMAL (a one-hot state, a bounded counter). Then every matched
-# pair is proved by temporal induction with those assumptions in force: the
+# pair is proven by temporal induction with those assumptions in force: the
 # two designs are equivalent on every state the invariants allow. The
 # invariants are not proven here; they must be true of the hardware, and
 # the module says why. Without assumptions the structural passes

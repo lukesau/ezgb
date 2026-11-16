@@ -20,14 +20,14 @@ Every edit is exact for FW5 without its console /RESET edge, and checked:
   - a carry mux whose select is the constant 1 never reads DI: DI becomes
     CONST_0, so the BX/BY pin it names is no input of its block
 
-The design proved against is therefore FW5 minus the /RESET edge; the edge
+The design proven against is therefore FW5 minus the /RESET edge; the edge
 is FW5's addition on its own (docs in stage0/docs/firmware-diff.md).
 
     fw5-noedge.py --keep-edge FW5/design.v OUT/design.v
 
 keeps the edge and makes only the other two edits (the shared constant 0,
 the unused carry inputs), so the block files apply to FW5 as it is: the
-design the ISE build is proved against."""
+design the ISE build is proven against."""
 import re, sys
 keep = '--keep-edge' in sys.argv
 if keep:

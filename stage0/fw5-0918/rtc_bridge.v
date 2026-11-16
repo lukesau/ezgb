@@ -1,6 +1,6 @@
 // FW5-0918's RTC bridge: the FW4 module (stage0/fw4/rtl/rtc_bridge.v, which says
 // what the two directions are) on the PicoBlaze's clock instead of the 2x
-// clock, read from the design and proved:
+// clock, read from the design and proven:
 //
 //   - the readings (port ED index, port EE value) load on the PicoBlaze
 //     clock's falling edge and keep only the bits each BCD value uses:

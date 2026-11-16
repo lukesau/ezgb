@@ -14,7 +14,7 @@
 #   3. build-ise.sh: synthesis, place and route, bitgen on the build host,
 #      and its block RAMs decoded back to the stage1 and programs that went in
 #   4. the proof: stock slot B exported (fpga/<fw>, from the official
-#      updater) and the result proved equivalent to it (prove-ise.py); FW5's
+#      updater) and the result proven equivalent to it (prove-ise.py); FW5's
 #      block files come from fw5-prove.sh (fpga/fw5-nx/edge/blk)
 #   5. the updater, when LABEL and OUT.gb are given: its program built from
 #      source (stage0/updater) with the new slot B after it
@@ -93,7 +93,7 @@ done
 echo "round trip: stage1 and the PicoBlaze programs match"
 
 if [ "$prove" = 0 ]; then
-    echo "built, not proved (PROVE=0): $w/proj/top.raw"
+    echo "built, not proven (PROVE=0): $w/proj/top.raw"
 else
 # 4. the proof against stock
 exp=$repo/fpga/$fw

@@ -7,18 +7,18 @@
 #   stage0/tools/prove-top.sh rtl    [EXPORTDIR]
 #
 # wiring: a block of every live slice bel, carved flat from design.v, is
-# proved equivalent to fw4_logic (stage0/tools/mktop.py) instantiating the
+# proven equivalent to fw4_logic (stage0/tools/mktop.py) instantiating the
 # blocks as carved references under their design net names. Every cell is
 # the same on both sides; what this checks is that the top wires the
 # blocks to each other and to the primitives exactly as design.v does.
 #
 # rtl: fw4_logic over the named carved references (the modules equiv.sh
-# proves each readable module against) is proved equivalent to fw4_logic
+# proves each readable module against) is proven equivalent to fw4_logic
 # over the readable modules. The two share the hierarchy, so every
 # register matches under its u_<block>.<name> path; LUT RAM contents are
 # matched by renaming. Readable modules that state invariants (assume()
-# under `ifdef FORMAL) are proved by temporal induction with them in
-# force, as in equiv.sh, and then the invariants themselves are proved on
+# under `ifdef FORMAL) are proven by temporal induction with them in
+# force, as in equiv.sh, and then the invariants themselves are proven on
 # the reference side, including the env_* ones, which are facts about
 # other blocks here.
 #

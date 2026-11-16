@@ -6,7 +6,7 @@ published no source for it, unlike its GBA sibling the
 (the "kernel"), the bootloader and the FPGA design ship only as binaries.
 
 This repository rebuilds all of it from source. The Game Boy programs
-compile to the stock bytes, and the FPGA design is readable Verilog proved
+compile to the stock bytes, and the FPGA design is readable Verilog proven
 equivalent to the stock bitstream. No file of EZ Flash's is in the
 repository, and none is needed to build.
 
@@ -15,11 +15,11 @@ repository, and none is needed to build.
 | Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | identical to stock |
 | Stage1, FW4 and FW5-0918 | the bootloader, stored in the FPGA's block RAM | [stage1/decomp](stage1/decomp/README.md): C, GBDK | identical to stock |
 | The updater's program, FW4 and FW5-0918 | the first 32 KB of an updater, the Game Boy program that writes the flash | [stage0/updater](stage0/updater/README.md): C | identical to stock |
-| Slot B, FW4 and FW5-0918 | the rest of an updater, the FPGA configuration it writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to the stock netlist |
+| Slot B, FW4 and FW5-0918 | the rest of an updater, the FPGA configuration it writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proven equivalent to the stock netlist |
 
 The first three come out as the same bytes EZ Flash shipped, checked by
 hash. Slot B does not: ISE places and routes the logic its own way, so the
-bitstream built here has different bits from the stock one and is proved to
+bitstream built here has different bits from the stock one and is proven to
 be the same circuit instead. An updater is its program followed
 by slot B, so an updater built entirely from source does not have the
 official file's hash. Its program does, and with the stock bitstream after
@@ -45,8 +45,8 @@ The FPGA side needs Xilinx ISE 14.7 on a Linux machine and, for the proof,
 yosys and the official updater to prove against:
 
 ```sh
-make stage0-stock BUILD_HOST=<build host>            # both firmwares, proved
-PROVE=0 make stage0-stock BUILD_HOST=<build host>    # built, not proved
+make stage0-stock BUILD_HOST=<build host>            # both firmwares, proven
+PROVE=0 make stage0-stock BUILD_HOST=<build host>    # built, not proven
 ```
 
 [INSTALL.md](INSTALL.md) has the tools, the versions checked and the build
@@ -66,10 +66,10 @@ host setup.
 - **FPGA:** the bitstream is decoded to a netlist
   ([index](docs/fpga.md),
   [floorplan viewer](https://lukesau.github.io/ezgb/floorplan/)) and
-  rewritten as readable Verilog, proved equivalent block by block and then
+  rewritten as readable Verilog, proven equivalent block by block and then
   as a whole ([stage0](stage0/README.md),
   [design](stage0/docs/design.md), [blocks](stage0/docs/blocks.md)). ISE
-  builds a slot B image from that Verilog, which is proved against stock
+  builds a slot B image from that Verilog, which is proven against stock
   again ([stage0/ise](stage0/ise/README.md)).
 - **PicoBlaze:** the soft CPU inside the FPGA that runs the SD card, the
   loader, the clock and the flash. Its two programs are annotated listings

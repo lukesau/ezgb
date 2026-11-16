@@ -2,7 +2,7 @@
 // (stage0/fw4/rtl/sd_mem_path.v, which says what each part does) with the Game
 // Boy side of the address pins built here, in the pin LUTs, where FW4
 // takes it ready-made from gb_bus, pb_periph and psram_ctrl (mem_a_gb).
-// The differences, read from the design and proved:
+// The differences, read from the design and proven:
 //
 //   - the MBC3 clock: on the access psram_ctrl sends to U4 page $08 for a
 //     clock register, the address pins carry the register number
