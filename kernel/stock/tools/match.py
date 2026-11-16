@@ -203,7 +203,7 @@ def main():
     p.add_argument("-v", action="store_true")
     p.add_argument("-f", action="append", help="only this function, repeatable")
     p.add_argument("--rom", default=str(HERE / "build-0731" / "kernel.gb"))
-    p.add_argument("--sym", default=str(HERE.parent / "1.05e-0731" / "kernel.sym"), help="kernel.sym (default %(default)s)")
+    p.add_argument("--sym", default=str(HERE / "disassembly" / "1.05e-0731" / "kernel.sym"), help="kernel.sym (default %(default)s)")
     p.add_argument("--sym-pins", action="store_true",
                    help="look pinned functions up in --sym, not at their comment's address (another kernel)")
     a = p.parse_args()

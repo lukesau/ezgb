@@ -38,8 +38,8 @@ needed: the build compares against the hash in
 
 | Path | What |
 |---|---|
-| `disassembly/` | The annotated disassembly of each stock kernel, one folder per build: mgbdis with this project's names and notes. Not a build input; `kernel/tools/stock-disasm.py <version>` regenerates one from `kernel/<version>/kernel.sym` and `notes.json`, leaving out what describes the mod, and checks that it assembles to the stock kernel. |
-| `asm/` | Was the stock disassembly (mgbdis + `kernel/1.05e-0731/kernel.sym` names); every routine has moved to source, so each bank file is its `SECTION` and the `INCLUDE`s of its generated files. |
+| `disassembly/` | The annotated disassembly of each stock kernel, one folder per build: mgbdis with this project's names (`kernel.sym`) and notes (`notes.json`), each routine's note starting with the source file that builds it. The build takes its names for addresses from the same `kernel.sym`, so the source and the listing agree; the `.asm` files are not a build input. `kernel/tools/stock-disasm.py <version>` regenerates a folder from the mod's `kernel/<version>/kernel.sym` and `notes.json`, leaving out what describes the mod, and checks that it assembles to the stock kernel. |
+| `asm/` | Was the stock disassembly (mgbdis + kernel.sym names); every routine has moved to source, so each bank file is its `SECTION` and the `INCLUDE`s of its generated files. |
 | `gbdk/` | GBDK library code the kernel links, as EZ Flash modified it, and GBDK 2.96a's headers (`gbdk/include`) for the kernel C. GPLv2 with linking exception, not this repo's AGPLv3: see `gbdk/README.md`. |
 | `src/` | C: FatFs R0.11a (`ff.c`, `option/ccsbcs.c` and headers) as EZ Flash edited it, every edit marked `ezflash:`, `dbg.c`, and the kernel's C (`kernel.c`, `fsglue.c`, `diskio.c` in bank 0, `bank1.c`, `bank2.c`, `bank4_wram.c` and `bank4.c`, `bank8.c`). Also `libasm.s`, bank 0's asm runtime (math, `strcpy`, `memset`, `memcpy`) rebuilt from the stock bytes. FatFs is ChaN's license (in the file headers), not this repo's AGPLv3. |
 | `tools/sdinc.py` | Assembles or compiles sources with SDCC (`--sdcc29` for 2.9.0), links their areas at the stock addresses, and writes each address range as an rgbds include (`db` bytes plus `Name::` labels for the source's global symbols, and with `--bank` the bank's kernel.sym entry names). External symbols come from `kernel.sym`, under another name with `-a`. |
@@ -52,7 +52,7 @@ needed: the build compares against the hash in
 
 0918 is 0731 plus one routine nothing calls, so it builds from the same
 source with `K0918` defined for the C (`make K=0918`, against
-`kernel/1.05e-0918/kernel.sym`). Only banks 0 and 1 differ
+`disassembly/1.05e-0918/kernel.sym`). Only banks 0 and 1 differ
 ([kernel-diffs.md](../../docs/kernel-diffs.md#105e-0731-to-105e-0918)):
 
 - `RtcDebugDump` (`01:4c5e`-`4ec9`), an RTC test screen: it reads the clock
@@ -70,7 +70,7 @@ with `rgbfix` for every kernel (`crt0.s` has 0731's).
 
 1.04e is 1.05e without the real-time clock, so it builds from the same
 source with `K104` defined for the C (`make K=104`, against
-`kernel/1.04e/kernel.sym`). Banks 2, 5 and 7 are the same C; the rest
+`disassembly/1.04e/kernel.sym`). Banks 2, 5 and 7 are the same C; the rest
 differ only where 1.05e added the clock
 ([kernel-diffs.md](../../docs/kernel-diffs.md#104e-to-105e-0731)):
 

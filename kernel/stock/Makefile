@@ -23,7 +23,7 @@ SDINC := python3 tools/sdinc.py
 # $D6A7, where 1.05e's day-count tables are, $27 lower. lib and wram map a
 # 1.05e address to this kernel's.
 ifeq ($(K),104)
-SYM       := ../1.04e/kernel.sym
+SYM       := disassembly/1.04e/kernel.sym
 B         := build-104
 KDEFS     := -DK104
 LSHIFT    := 3b9
@@ -35,7 +35,7 @@ G3 := 6467
 G4 := 6729
 D1 := d3f2
 else ifeq ($(K),0918)
-SYM       := ../1.05e-0918/kernel.sym
+SYM       := disassembly/1.05e-0918/kernel.sym
 B         := build-0918
 KDEFS     := -DK0918
 G1 := 6b18
@@ -44,7 +44,7 @@ G3 := 72f8
 G4 := 75f2
 B0K := 1926
 else ifeq ($(K),0731)
-SYM       := ../1.05e-0731/kernel.sym
+SYM       := disassembly/1.05e-0731/kernel.sym
 B         := build-0731
 KDEFS     :=
 G1 := 68b6
@@ -72,11 +72,15 @@ CRT0_DEFS := -g .STACK=0xe000 -g .refresh_OAM=0xff80 -g .OAM=0xc000 \
 FF_BANKS   := 3 5 6 7 9
 FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a _disk_read=FarCallDiskRead -a _disk_write=FarCallDiskWrite \
-              -a _disk_ioctl=ReturnZero -a _get_fattime=RtcReadPage \
+              -a _disk_ioctl=ReturnZero \
               -a _ff_convert=MapCp437 -a _ff_wtoupper=WToUpper \
               -a banked_call=FarCallTrampoline -a __mullong_rrx_s=U32Mul \
               -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
+# 1.04e has no clock: its FatFs stamps a fixed date and never calls this
+ifneq ($(K),104)
+FF_ALIASES += -a _get_fattime=RtcReadPage
+endif
 
 INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kernel_init.inc $(B)/b1_code.inc $(B)/b1_init.inc $(FF_BANKS:%=$(B)/ff_b%.inc) $(B)/b0_fatfs.inc $(B)/b1_ccsbcs_init.inc $(B)/b0_kernel.inc \
         $(B)/b0_strrchr.inc $(B)/b0_strncpy.inc $(B)/b0_strlen.inc $(B)/b0_sdccasm.inc $(B)/b0_rle.inc \
