@@ -150,13 +150,16 @@ design (`stage0/fw5-0918/reset_edge.v` and the modules it reaches), and
 the blocks and the top level prove against FW5 as it is
 (`stage0/docs/firmware-diff.md`).
 
+## On hardware
+
+Both builds run on carts (2026-11-16). Each was flashed with the updater
+built from source, and the cart boots and runs the kernel built from
+source: 1.04e on FW4, 1.05e-0918 on FW5.
+
 ## Not yet
 
 - The bitstream is not stock's. Reproducing stock exactly needs its LUT
   contents and routing too (layer 3 in [../README.md](../README.md)).
-- FW5-0918's build has not run on hardware. FW4's has (2026-11-16): flashed
-  with the from-source updater, the cart boots and runs the kernel built
-  from source.
 
 ## Files
 

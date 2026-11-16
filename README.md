@@ -25,6 +25,9 @@ by slot B, so an updater built entirely from source does not have the
 official file's hash. Its program does, and with the stock bitstream after
 it the whole file does.
 
+Both from-source firmwares have been flashed to carts with the updater
+built from source, and run the kernels built from source.
+
 FW4 and FW5 are the two firmware generations; a cart runs one or the other
 ([which is which](docs/kernel-versions.md)). 1.04e is the kernel for FW4,
 and both 1.05e builds are for FW5.
