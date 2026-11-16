@@ -14,8 +14,16 @@ repository, and none is needed to build.
 |---|---|---|---|
 | Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | identical to stock |
 | Stage1, FW4 and FW5-0918 | the bootloader, stored in the FPGA's block RAM | [stage1/decomp](stage1/decomp/README.md): C, GBDK | identical to stock |
-| The updater's program, FW4 and FW5-0918 | the ROM that flashes a firmware | [stage0/updater](stage0/updater/README.md): C | identical to stock |
-| Slot B, FW4 and FW5-0918 | the FPGA configuration an update writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to the stock netlist |
+| The updater's program, FW4 and FW5-0918 | the first 32 KB of an updater, the Game Boy program that writes the flash | [stage0/updater](stage0/updater/README.md): C | identical to stock |
+| Slot B, FW4 and FW5-0918 | the rest of an updater, the FPGA configuration it writes | [stage0](stage0/README.md): Verilog, the PicoBlaze's two programs, stage1 | proved equivalent to the stock netlist |
+
+The first three come out as the same bytes EZ Flash shipped, checked by
+hash. Slot B does not: ISE places and routes the logic its own way, so the
+bitstream built here has different bits from the stock one and is proved to
+be the same circuit instead. An updater is its program followed
+by slot B, so an updater built entirely from source does not have the
+official file's hash. Its program does, and with the stock bitstream after
+it the whole file does.
 
 FW4 and FW5 are the two firmware generations; a cart runs one or the other
 ([which is which](docs/kernel-versions.md)). 1.04e is the kernel for FW4,
