@@ -66,9 +66,6 @@ PlotIconGlyphs::
     ld hl, sp+$0a
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_loopHead::
     ld hl, sp+$0a
     ld a, [hl]
@@ -97,9 +94,6 @@ PlotIconGlyphs_loopHead::
     jp PlotIconGlyphs_bit1Check
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit0::
     push bc
     ld hl, sp+$04
@@ -115,9 +109,6 @@ PlotIconGlyphs_bit0::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit1Check::
     ld a, c
     and $02
@@ -125,9 +116,6 @@ PlotIconGlyphs_bit1Check::
 
     jp PlotIconGlyphs_bit2Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit1::
     push bc
@@ -143,9 +131,6 @@ PlotIconGlyphs_bit1::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit2Check::
     ld a, c
     and $04
@@ -153,9 +138,6 @@ PlotIconGlyphs_bit2Check::
 
     jp PlotIconGlyphs_bit3Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit2::
     push bc
@@ -171,9 +153,6 @@ PlotIconGlyphs_bit2::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit3Check::
     ld a, c
     and $08
@@ -181,9 +160,6 @@ PlotIconGlyphs_bit3Check::
 
     jp PlotIconGlyphs_bit4Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit3::
     push bc
@@ -199,9 +175,6 @@ PlotIconGlyphs_bit3::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit4Check::
     ld a, c
     and $10
@@ -209,9 +182,6 @@ PlotIconGlyphs_bit4Check::
 
     jp PlotIconGlyphs_bit5Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit4::
     push bc
@@ -227,9 +197,6 @@ PlotIconGlyphs_bit4::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit5Check::
     ld a, c
     and $20
@@ -237,9 +204,6 @@ PlotIconGlyphs_bit5Check::
 
     jp PlotIconGlyphs_bit6Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit5::
     push bc
@@ -256,9 +220,6 @@ PlotIconGlyphs_bit5::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit6Check::
     ld a, c
     and $40
@@ -266,9 +227,6 @@ PlotIconGlyphs_bit6Check::
 
     jp PlotIconGlyphs_bit7Check
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit6::
     push bc
@@ -284,9 +242,6 @@ PlotIconGlyphs_bit6::
     add sp, $02
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_bit7Check::
     ld a, c
     and $80
@@ -294,9 +249,6 @@ PlotIconGlyphs_bit7Check::
 
     jp PlotIconGlyphs_next
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_bit7::
     ld hl, sp+$02
@@ -310,9 +262,6 @@ PlotIconGlyphs_bit7::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 PlotIconGlyphs_next::
     ld hl, sp+$02
     inc [hl]
@@ -320,9 +269,6 @@ PlotIconGlyphs_next::
     inc [hl]
     jp PlotIconGlyphs_loopHead
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 PlotIconGlyphs_epilogueRet::
     add sp, $0b
@@ -3057,9 +3003,6 @@ Jump_008_70e1:
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
-
 DrawFwVersionScreen_waitSelect::
     call WaitVBlankFlag
     call ReadJoypad
@@ -3071,9 +3014,6 @@ DrawFwVersionScreen_waitSelect::
 
     jp DrawFwVersionScreen_waitSelect
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank8.c
 
 DrawFwVersionScreen_epilogueRet::
     add sp, $34

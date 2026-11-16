@@ -450,7 +450,7 @@ MemChr_B5_epilogue::
 ; [ezgb]
 ; MoveWindow_B5(fs, sector): FatFs move_window without SyncWindow (bank 5 has no
 ; dirty-window path). If sector!=winsect(+0x2e), disk_read into win(+0x32) via
-; DiskRead_B2; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9.
+; SdRead; on failure winsect=0xFFFFFFFF. Same role as MoveWindow_B3/B6/B7/B9.
 
 MoveWindow_B5::
     push af
@@ -7969,7 +7969,7 @@ CheckFs_B5_epilogue::
 ; FindVolume_B5_checkFsResult: CheckFs result; nonzero→next PTE FindVolume_B5_nextPte→FindVolume_B5_tryPartitions; else FindVolume_B5_fmtDispatch: fmt==3 FindVolume_B5_noFilesystem E=$01; FindVolume_B5_fmtNotDiskErr/FindVolume_B5_fmtNonzero fmt!=0 E=$0d else FindVolume_B5_parseBpb.
 ; FindVolume_B5_parseBpb BPB: BytsPerSec==512 (FindVolume_B5_badBytsPerSec fail E=$0d / FindVolume_B5_readFatSz); FATSz16 else FATSz32 → FindVolume_B5_checkNumFats; NumFATs 1|2 else E=$0d FindVolume_B5_mulFatSize.
 ; FindVolume_B5_mulFatSize: U32Mul fat size; SecPerClus power-of-2 (FindVolume_B5_badSecPerClus fail / FindVolume_B5_checkRootEnt); RootEntCnt&$0f FindVolume_B5_badRootEnt E=$0d else FindVolume_B5_readTotSec TotSec16 else TotSec32 → FindVolume_B5_checkRsvd.
-; FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; U32Mod nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.
+; FindVolume_B5_checkRsvd: RsvdSecCnt nonzero else E=$0d; FindVolume_B5_calcBases fatbase/data bounds (FindVolume_B5_csizeShift SecPerClus shift); vol size check FindVolume_B5_volSizeCheck else E=$0d; U32Div nonzero → FindVolume_B5_fsTypeFat12 else E=$0d.
 ; FindVolume_B5_fsTypeFat12/FindVolume_B5_fsTypeFat16/FindVolume_B5_fillFsFields: classify fs_type 1/2/3 from vol size; fill volbase/fatbase/dirbase/database/csize fields.
 ; fmt==3 FindVolume_B5_toFat32Root→FindVolume_B5_fat32Path (FAT32 RootClus FindVolume_B5_readRootClus; fmt==2 FindVolume_B5_fat16U32Shl U32Shl else FindVolume_B5_toClusterCalc→FindVolume_B5_u32MulShr U32Mul/U32Shr) else FindVolume_B5_toFat12_16Root→FindVolume_B5_fat12_16Root FAT12/16 root (U32Shl→FindVolume_B5_afterRootCalc); merge FindVolume_B5_mergeBases/FindVolume_B5_afterRootCalc.
 ; U32Shr cluster sanity → FindVolume_B5_storeFsType: store fs_type, bump mount ctr @$C5A7 (FindVolume_B5_bumpMountCtr), clear win; E=0 → FindVolume_B5_epilogue (add sp,$4f / ret).
@@ -9132,7 +9132,7 @@ FindVolume_B5_volSizeCheck::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$3a

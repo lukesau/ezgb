@@ -12,8 +12,9 @@
 	;; own area here (_LIB0 to _LIB5) and the Makefile places them. The
 	;; helpers take a byte count in B; most work on 4-byte little-endian values.
 	;;
-	;; kernel.sym's S32DivImpl/U32DivImpl/S32ModImpl/U32ModImpl have division
-	;; and modulo the wrong way round: $29E6 and $2A77 return the remainder.
+	;; The mod's kernel.sym has S32DivImpl/U32DivImpl/S32ModImpl/U32ModImpl the
+	;; wrong way round. Here $29E6 and $2A77, which return the remainder, are
+	;; S32ModImpl and U32ModImpl.
 
 	.globl	__mullong, __modslong, __modulong, __divslong, __divulong
 	.globl	__mulschar_rrx_s, __muluchar_rrx_s, __mulint_rrx_s

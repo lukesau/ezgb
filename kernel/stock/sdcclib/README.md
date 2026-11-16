@@ -17,7 +17,7 @@ It also links SDCC 2.9.0's gbz80 asm library (`device/lib/gbz80`):
 | File | Address | kernel.sym |
 |---|---|---|
 | `crt0_rle.s` | `00:20bb` | `RleUnpack` |
-| `stubs.s` | `00:2826` | `U32Mul` to `U32Mod`, then the `_rrf_s` stubs |
+| `stubs.s` | `00:2826` | `U32Mul` to `U32Div`, then the `_rrf_s` stubs |
 | `div.s` | `00:288f` | `S8Div` to `U16DivMod` |
 | `shift.s` | `00:298f` | `U32Shr`, `S32Sar`, `U32Shl` |
 

@@ -1,7 +1,7 @@
 /* The kernel's C in bank 2, $4000-$4380: SD sector reads and writes through
    the FPGA's SD window. src/diskio.c calls SdRead and SdWrite.
-   Function names are kernel.sym's (SdRead is DiskRead_B2, SdWrite
-   DiskWrite_B2); built like src/kernel.c. */
+   Function names are kernel.sym's (the mod's has SdRead as DiskRead_B2 and
+   SdWrite as DiskWrite_B2); built like src/kernel.c. */
 
 #include <gb/gb.h>
 #include "integer.h"

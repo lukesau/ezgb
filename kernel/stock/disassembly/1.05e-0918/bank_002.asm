@@ -45,13 +45,13 @@ SdWindowPeek::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank2.c
-; DiskRead_B2: SD sector read (FarCallDiskRead). Prologue SetFpga7F30_B2 $01; sibling DiskWrite_B2.
-; DiskRead_B2_chunkLoop: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 DiskRead_B2_issueLba else DiskRead_B2_remChunk rem then DiskRead_B2_issueLba.
-; DiskRead_B2_issueLba: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.
-; DiskRead_B2_waitPeek: SdWindowPeek until !=$e1; DiskRead_B2_copyWindow: mode $01 + VramCopyStack $A000→buf, idx+=4 → DiskRead_B2_chunkLoop.
-; DiskRead_B2_epilogueRet: mode $00; E=0; add sp,$13 ret.
+; SdRead: SD sector read (FarCallDiskRead). Prologue SetFpga7F30_B2 $01; sibling SdWrite.
+; SdRead_chunkLoop: chunk loop vs count@sp+$1d; rem>4 → clamp BC=4 SdRead_issueLba else SdRead_remChunk rem then SdRead_issueLba.
+; SdRead_issueLba: unlock $7F00/10/20=$e1/e2/e3; LBA+idx → $7FB0–B4; $7FF0=$e4; mode $03.
+; SdRead_waitPeek: SdWindowPeek until !=$e1; SdRead_copyWindow: mode $01 + VramCopyStack $A000→buf, idx+=4 → SdRead_chunkLoop.
+; SdRead_epilogueRet: mode $00; E=0; add sp,$13 ret.
 
-DiskRead_B2::
+SdRead::
     add sp, -$13
     ld a, $01
     push af
@@ -61,12 +61,12 @@ DiskRead_B2::
     ld hl, sp+$12
     ld [hl], $00
 
-DiskRead_B2_chunkLoop::
+SdRead_chunkLoop::
     ld hl, sp+$12
     ld a, [hl]
     ld hl, sp+$1d
     sub [hl]
-    jp nc, DiskRead_B2_epilogueRet
+    jp nc, SdRead_epilogueRet
 
     ld a, [hl]
     ld hl, sp+$0f
@@ -91,13 +91,13 @@ DiskRead_B2_chunkLoop::
     sub c
     ld a, $00
     sbc b
-    jp nc, DiskRead_B2_remChunk
+    jp nc, SdRead_remChunk
 
     ld bc, $0004
-    jp DiskRead_B2_issueLba
+    jp SdRead_issueLba
 
 
-DiskRead_B2_remChunk::
+SdRead_remChunk::
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$12
@@ -107,7 +107,7 @@ DiskRead_B2_remChunk::
     ld c, a
     ld b, $00
 
-DiskRead_B2_issueLba::
+SdRead_issueLba::
     ld hl, sp+$11
     ld [hl], c
     ld bc, $7f00
@@ -305,18 +305,18 @@ DiskRead_B2_issueLba::
     call SetFpga7F30_B2
     add sp, $01
 
-DiskRead_B2_waitPeek::
+SdRead_waitPeek::
     call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
     sub $e1
-    jp nz, DiskRead_B2_copyWindow
+    jp nz, SdRead_copyWindow
 
     or b
-    jp z, DiskRead_B2_waitPeek
+    jp z, SdRead_waitPeek
 
-DiskRead_B2_copyWindow::
+SdRead_copyWindow::
     ld a, $01
     push af
     inc sp
@@ -343,10 +343,10 @@ DiskRead_B2_copyWindow::
     inc [hl]
     inc [hl]
     inc [hl]
-    jp DiskRead_B2_chunkLoop
+    jp SdRead_chunkLoop
 
 
-DiskRead_B2_epilogueRet::
+SdRead_epilogueRet::
     ld a, $00
     push af
     inc sp
@@ -359,13 +359,13 @@ DiskRead_B2_epilogueRet::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank2.c
-; DiskWrite_B2: SD sector write (FarCallDiskWrite). Prologue SetFpga7F30_B2 $01 then $03; sibling DiskRead_B2.
-; DiskWrite_B2_chunkLoop: chunk loop vs count@sp+$1a; rem>4 → clamp DiskWrite_B2_issueLba else DiskWrite_B2_remChunk rem then DiskWrite_B2_issueLba.
-; DiskWrite_B2_issueLba: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.
-; DiskWrite_B2_waitPeek: SdWindowPeek until !=$e1; DiskWrite_B2_advanceIdx: idx+=4 → DiskWrite_B2_chunkLoop.
-; DiskWrite_B2_epilogueRet: Delay+$000a; mode $00; E=0 ret.
+; SdWrite: SD sector write (FarCallDiskWrite). Prologue SetFpga7F30_B2 $01 then $03; sibling SdRead.
+; SdWrite_chunkLoop: chunk loop vs count@sp+$1a; rem>4 → clamp SdWrite_issueLba else SdWrite_remChunk rem then SdWrite_issueLba.
+; SdWrite_issueLba: VramCopyStack buf→$A000; unlock e1/e2/e3; LBA→$7FB0–B3; $7FB4=chunk|$80; $7FF0=$e4.
+; SdWrite_waitPeek: SdWindowPeek until !=$e1; SdWrite_advanceIdx: idx+=4 → SdWrite_chunkLoop.
+; SdWrite_epilogueRet: Delay+$000a; mode $00; E=0 ret.
 
-DiskWrite_B2::
+SdWrite::
     add sp, -$10
     ld a, $01
     push af
@@ -380,12 +380,12 @@ DiskWrite_B2::
     ld hl, sp+$0f
     ld [hl], $00
 
-DiskWrite_B2_chunkLoop::
+SdWrite_chunkLoop::
     ld hl, sp+$0f
     ld a, [hl]
     ld hl, sp+$1a
     sub [hl]
-    jp nc, DiskWrite_B2_epilogueRet
+    jp nc, SdWrite_epilogueRet
 
     ld a, [hl]
     ld hl, sp+$0c
@@ -411,20 +411,20 @@ DiskWrite_B2_chunkLoop::
     ld a, $00
     sbc b
     rlca
-    jp nc, DiskWrite_B2_remChunk
+    jp nc, SdWrite_remChunk
 
     ld c, $04
-    jp DiskWrite_B2_issueLba
+    jp SdWrite_issueLba
 
 
-DiskWrite_B2_remChunk::
+SdWrite_remChunk::
     ld hl, sp+$1a
     ld a, [hl]
     ld hl, sp+$0f
     sub [hl]
     ld c, a
 
-DiskWrite_B2_issueLba::
+SdWrite_issueLba::
     ld hl, sp+$0e
     ld [hl], c
     dec hl
@@ -636,27 +636,27 @@ DiskWrite_B2_issueLba::
     ld a, $e4
     ld [bc], a
 
-DiskWrite_B2_waitPeek::
+SdWrite_waitPeek::
     call SdWindowPeek
     ld c, e
     ld b, $00
     ld a, c
     sub $e1
-    jp nz, DiskWrite_B2_advanceIdx
+    jp nz, SdWrite_advanceIdx
 
     or b
-    jp z, DiskWrite_B2_waitPeek
+    jp z, SdWrite_waitPeek
 
-DiskWrite_B2_advanceIdx::
+SdWrite_advanceIdx::
     ld hl, sp+$0f
     inc [hl]
     inc [hl]
     inc [hl]
     inc [hl]
-    jp DiskWrite_B2_chunkLoop
+    jp SdWrite_chunkLoop
 
 
-DiskWrite_B2_epilogueRet::
+SdWrite_epilogueRet::
     ld hl, $000a
     push hl
     call Delay

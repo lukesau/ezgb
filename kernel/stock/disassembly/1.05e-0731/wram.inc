@@ -5,8 +5,8 @@ DEF wDebugTextRow EQU $CC2F
 DEF wDebugTextCol EQU $CC30
 DEF wWToUpperKeys EQU $CC33
 DEF wWToUpperVals EQU $D00F
-DEF wFileSizeFmtLo EQU $D3F9
-DEF wFileSizeFmtHi EQU $D5EB
+DEF wWToUpperCvt1 EQU $D3F9
+DEF wWToUpperCvt2 EQU $D5EB
 DEF wDaysInMonth EQU $D6A7
 DEF wDaysInMonthLeap EQU $D6B3
 DEF wDaysInYearTab EQU $D6BF

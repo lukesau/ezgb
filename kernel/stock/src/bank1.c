@@ -165,8 +165,8 @@ void DrawBrowserDetail (UINT16 top, UINT16 row, UINT8 code) __banked
 }
 
 /* 01:45b3: FatFs's ff_wtoupper as ffunicode.c has it from R0.12 on (this is
-   R0.15's, tables included), banked. Nothing calls it. kernel.sym has it as
-   FormatFileSize. FatFs code, (C) ChaN, under the FatFs license (src/ff.h). */
+   R0.15's, tables included), banked. Nothing calls it. The mod's kernel.sym has
+   it as FormatFileSize. FatFs code, (C) ChaN, under the FatFs license (src/ff.h). */
 DWORD WToUpper_B1 (DWORD uni) __banked
 {
 	const WORD* p;
@@ -381,8 +381,8 @@ UINT8 IsLeapYear (UINT16 year)
 }
 
 /* 01:4917: seconds from 1970 to t, less eight hours (t is UTC+8).
-   kernel.sym's name says days. */
-UINT32 DateToDaysSince1970 (RTCTIME *t)
+   The mod's kernel.sym calls it DateToDaysSince1970. */
+UINT32 DateToSecondsSince1970 (RTCTIME *t)
 {
 	UINT32 days = 0;
 	UINT32 secs;
@@ -444,7 +444,7 @@ void RtcDebugDump (void)
 #endif
 
 /* 01:4c5e (0918: 01:4ec9): the cart RTC (page 6, BCD from $A008) as
-   DateToDaysSince1970's seconds */
+   DateToSecondsSince1970's seconds */
 UINT32 RtcToDayCount (void)
 {
 	RTCTIME t;
@@ -457,7 +457,7 @@ UINT32 RtcToDayCount (void)
 	t.min = (*(volatile UINT8 *)0xa009 & 0x0f) + (*(volatile UINT8 *)0xa009 >> 4) * 10;
 	t.sec = (*(volatile UINT8 *)0xa008 & 0x0f) + (*(volatile UINT8 *)0xa008 >> 4) * 10;
 	SetFpgaPage_B1(3);
-	return DateToDaysSince1970(&t);
+	return DateToSecondsSince1970(&t);
 }
 
 /* 01:4df1: advance the game's MBC3 clock (wSaveBuf) by the seconds since
@@ -569,7 +569,7 @@ UINT32 RtcReadDaysClearRegs (void)
 /* 01:5163: load /SAVER/<name>.sav into the save pSRAM (or $FF when there is
    none), restore the game clock from a 48-byte RTC footer, and stamp page
    $11 with the save size, the name and the time. kernel.sym's
-   PreLaunchSaveStamp ($55C2) is the common tail. The caller's second
+   BackupOpenSaverPath_stamp ($55C2) is the common tail. The caller's second
    argument is not used. */
 void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 {
@@ -690,7 +690,7 @@ void BackupOpenSaverPath (char *path, UINT32 unused) __banked
 }
 
 /* 01:5736: bubble-sort the first n entries by name (page 1 of the table,
-   swapping through wSaveBuf). kernel.sym has it as BuildSaverBackupPath. */
+   swapping through wSaveBuf). The mod's kernel.sym has it as BuildSaverBackupPath. */
 void SortEntries_B1 (UINT16 n) __banked
 {
 	UINT16 i, j, last, end;

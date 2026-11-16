@@ -41,6 +41,56 @@ FILL = (0x00, 0xFF)
 # the mod's names for code it wrote over stock code
 MOD_NAMES = {"ApplyPixelSafe", "ReadJoypadLatched", "FolderIconGlyphs"}
 
+# Names the mod's kernel.sym has wrong, as writing the source showed
+# (kernel/stock/README.md). Local names (Old_part) follow. The long
+# division and modulo were swapped, stubs and bodies.
+RENAMES = {
+    "S32Div": "S32Mod", "S32Mod": "S32Div", "U32Div": "U32Mod", "U32Mod": "U32Div",
+    "S32DivImpl": "S32ModImpl", "S32ModImpl": "S32DivImpl",
+    "U32DivImpl": "U32ModImpl", "U32ModImpl": "U32DivImpl",
+    "S32DivImpl_loadQuot": "S32ModImpl_loadRem", "S32ModImpl_loadRem": "S32DivImpl_loadQuot",
+    "Open_B9": "Mkdir_B9",                       # bank 9's one API call is f_mkdir
+    "FormatFileSize": "WToUpper_B1",             # FatFs's ff_wtoupper
+    "wFileSizeFmtLo": "wWToUpperCvt1", "wFileSizeFmtHi": "wWToUpperCvt2",
+    "BuildSaverBackupPath": "SortEntries_B1",
+    "PreLaunchSaveStamp": "BackupOpenSaverPath_stamp",   # a tail, not a function
+    "DateToDaysSince1970": "DateToSecondsSince1970",
+    "DiskRead_B2": "SdRead", "DiskWrite_B2": "SdWrite",
+}
+RENAME_RE = re.compile(r"\b(" + "|".join(sorted(RENAMES, key=len, reverse=True)) + r")(?![A-Za-z0-9])")
+
+
+def renamed(text):
+    return RENAME_RE.sub(lambda m: RENAMES[m.group(1)], text)
+
+
+# Notes written under the wrong name, by the corrected name: the whole note,
+# or (old, new) pairs to change in it.
+NOTE_FIXES = {
+    "S32Mod": ["S32Mod: SDCC's __modslong_rrx_s stub, jp S32ModImpl. Signed long remainder."],
+    "U32Mod": ["U32Mod: SDCC's __modulong_rrx_s stub, jp U32ModImpl. Unsigned long remainder."],
+    "S32Div": ["S32Div: SDCC's __divslong_rrx_s stub, jp S32DivImpl. Signed long quotient."],
+    "U32Div": ["U32Div: SDCC's __divulong_rrx_s stub, jp U32DivImpl. Unsigned long quotient; U32ToAscii's digit loop."],
+    "S32ModImpl": ["S32ModImpl: __modslong, the signed long remainder. A zero dividend gives 0, a zero divisor",
+                   "$7fffffff; else it negates negative operands, runs U32DivEngine and gives the remainder",
+                   "the dividend's sign."],
+    "U32ModImpl": ["U32ModImpl: __modulong, the unsigned long remainder. A zero dividend gives 0, a zero",
+                   "divisor $7fffffff; else U32DivEngine."],
+    "S32DivImpl": ["S32DivImpl: __divslong, the signed long quotient. A zero dividend gives 0, a zero divisor",
+                   "$7fffffff; else it negates negative operands, runs U32DivEngine and negates the quotient",
+                   "when the signs differ."],
+    "U32DivImpl": ["U32DivImpl: __divulong, the unsigned long quotient. A zero dividend gives 0, a zero",
+                   "divisor $7fffffff; else U32DivEngine."],
+    "WToUpper_B1": ["WToUpper_B1(uni): FatFs's ff_wtoupper as ffunicode.c has it from R0.12 on, banked.",
+                    "Nothing calls it. Walks a compressed table: wWToUpperCvt1 below U+1000, else wWToUpperCvt2."],
+    "wWToUpperCvt1": ["wWToUpperCvt1: WToUpper_B1's compressed conversion table for U+0000 to U+0FFF."],
+    "wWToUpperCvt2": ["wWToUpperCvt2: WToUpper_B1's compressed conversion table for U+1000 to U+FFFF."],
+    "SortEntries_B1": ["SortEntries_B1: bubble-sorts the browser's entries by name, swapping two through wSaveBuf."],
+    "Mkdir_B9": [("Mkdir_B9(fp, path, mode): FatFs f_open.", "Mkdir_B9(path): FatFs f_mkdir.")],
+    "BackupOpenSaverPath_stamp": [("BackupOpenSaverPath_stamp: page", "BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page")],
+    "DateToSecondsSince1970": [("(HL:DE), despite name.", "(HL:DE), less eight hours: the RTC holds UTC+8.")],
+}
+
 
 def offset(bank, addr):
     if addr < 0x4000:
@@ -124,6 +174,8 @@ def main():
             patched.append(("name kept", raw))
         keep.append(raw)
 
+    keep = [renamed(raw) for raw in keep]
+
     notes = json.loads((src / "notes.json").read_text())
     blocks, modnotes = [], []
     for b in notes["blocks"]:
@@ -156,6 +208,23 @@ def main():
         a = addr_of.get(m.group(1))
         return m.group(0) if a is None else f"{m.group(1)} (${a:04x})"
 
+    fixed = 0
+    for b in blocks:
+        b["lines"] = [renamed(line) for line in b["lines"]]
+        if "name" in b:
+            b["name"] = renamed(b["name"])
+        fix = NOTE_FIXES.get(names.get((b["bank"], int(b["addr"], 16))))
+        if fix and b.get("at") != "section":
+            if isinstance(fix[0], tuple):
+                text = "\n".join(b["lines"])
+                for old, new in fix:
+                    if old not in text:
+                        sys.exit(f"note fix does not apply: {old}")
+                    text = text.replace(old, new)
+                b["lines"] = text.split("\n")
+            else:
+                b["lines"] = list(fix)
+            fixed += 1
     for b in blocks:
         b["lines"] = [re.sub(r"\b([A-Z]\w+) \(\$[0-9a-fA-F]{4}\)", at,
                              re.sub(r"\b(?:Jump|jr|Call)_([0-9a-f]{3})_([0-9a-f]{4})\b", auto, line))
@@ -181,8 +250,8 @@ def main():
                 addr += line.count("$")
                 continue
             label = line.rstrip(":")
-            if names.get((bank, addr)) != label:
-                continue
+            if names.get((bank, addr)) != label or re.search(r"_[a-z]", label):
+                continue                         # routines, not the names inside them
             found = srcs
             if len(srcs) > 1:
                 hit = [x for x in srcs if re.search(rf"\b_?{re.escape(label)}\b",
@@ -223,8 +292,8 @@ def main():
         f = raw.split(";", 1)[0].split()
         if len(f) >= 2 and ":" in f[0] and not f[1].startswith("."):
             bank, addr = (int(x, 16) for x in f[0].split(":"))
-            if addr < 0x8000 and f[1] in addr_of:
-                ref.setdefault(bank, []).append((addr, f[1]))
+            if addr < 0x8000 and renamed(f[1]) in addr_of:
+                ref.setdefault(bank, []).append((addr, renamed(f[1])))
     for v in ref.values():
         v.sort()
     stale = 0
@@ -280,7 +349,7 @@ def main():
           f"{'assembles to stock' if same else 'DOES NOT assemble to stock'}")
     print(f"  {len(patched)} names or blocks on stock code the mod changed, "
           f"{len(modnotes)} notes mention the mod, {len(orphans)} notes not placed, "
-          f"{sourced} routines given their source file, {stale} references to labels not in the listing")
+          f"{sourced} routines given their source file, {fixed} notes corrected, {stale} references to labels not in the listing")
     if report:
         for kind, raw in patched:
             print(f"  {kind}: {raw.strip()}")

@@ -101,10 +101,10 @@
 00:27f6 PlotPixelXY
 00:280a PlotPixelEx
 00:2826 U32Mul
-00:2829 S32Div
-00:282c U32Div
-00:282f S32Mod
-00:2832 U32Mod
+00:2829 S32Mod
+00:282c U32Mod
+00:282f S32Div
+00:2832 U32Div
 00:288f S8Div
 00:289d S8Mod
 00:28a9 S16Div
@@ -126,11 +126,11 @@
 00:298f U32Shr
 00:29ac S32Sar
 00:29c9 U32Shl
-00:2a77 U32DivImpl
-00:29e6 S32DivImpl
+00:2a77 U32ModImpl
+00:29e6 S32ModImpl
 00:2abd MemIsZero
-00:2b28 S32ModImpl
-00:2bfc U32ModImpl
+00:2b28 S32DivImpl
+00:2bfc U32DivImpl
 00:2c42 Strrchr
 00:2ca5 Memset
 00:2cba Memcpy
@@ -207,8 +207,8 @@
 00:cc30 wDebugTextCol
 00:cc33 wWToUpperKeys
 00:d00f wWToUpperVals
-00:d3f9 wFileSizeFmtLo
-00:d5eb wFileSizeFmtHi
+00:d3f9 wWToUpperCvt1
+00:d5eb wWToUpperCvt2
 00:d6a7 wDaysInMonth
 00:d6b3 wDaysInMonthLeap
 00:d6bf wDaysInYearTab
@@ -230,14 +230,14 @@
 01:402e CStrCat_B1_incSrc
 01:403a CStrCat_B1_afterStore
 01:403d CStrCat_B1_writeNul
-01:5998 BuildSaverBackupPath
-01:59c3 BuildSaverBackupPath_outerLoop
-01:59fd BuildSaverBackupPath_innerLoop
-01:5aec BuildSaverBackupPath_innerNext
-01:5b02 BuildSaverBackupPath_innerContinue
-01:5b05 BuildSaverBackupPath_outerNext
-01:5b0c BuildSaverBackupPath_outerContinue
-01:5b0f BuildSaverBackupPath_epilogue
+01:5998 SortEntries_B1
+01:59c3 SortEntries_B1_outerLoop
+01:59fd SortEntries_B1_innerLoop
+01:5aec SortEntries_B1_innerNext
+01:5b02 SortEntries_B1_innerContinue
+01:5b05 SortEntries_B1_outerNext
+01:5b0c SortEntries_B1_outerContinue
+01:5b0f SortEntries_B1_epilogue
 01:4048 CStrCmp
 01:40a3 CStrChr
 01:40e3 DrawBrowserEntries
@@ -246,14 +246,14 @@
 01:42ba DrawBrowserDetail
 01:45af BrowserDirStr2
 01:45af .text:4
-01:45b3 FormatFileSize
+01:45b3 WToUpper_B1
 01:47a7 SetFpgaPage_B1
 01:47c7 SetFpga7F34_35_B1
 01:482b LoaderPrepPath
 01:4856 LastRomPersist
 01:487d LastRomPersistLoop
 01:48b2 LastRomPersistDone
-01:5824 PreLaunchSaveStamp
+01:5824 BackupOpenSaverPath_stamp
 01:5b12 LaunchSetup
 01:6076 RomLoaderMain
 01:69a9 BackupSavePrompt
@@ -278,8 +278,8 @@
 
 02:4000 SetFpga7F30_B2
 02:4020 SdWindowPeek
-02:4027 DiskRead_B2
-02:41d5 DiskWrite_B2
+02:4027 SdRead
+02:41d5 SdWrite
 
 ; FatFs-shaped helpers, linked per bank (GB near-call only within mapped bank).
 ; Every copy is suffixed _BN (including bank 9). Banks 3 and 7 are byte-identical
@@ -491,7 +491,7 @@
 
 ; Calendar / RTC day-count (bank 1)
 01:48c6 IsLeapYear
-01:4917 DateToDaysSince1970
+01:4917 DateToSecondsSince1970
 01:4c5e RtcDebugDump
 01:4ec9 RtcToDayCount
 01:5346 RtcReadDaysClearRegs
@@ -560,7 +560,7 @@
 07:6700 DirRegister_B7
 07:64f6 DirRead_B7
 09:66a6 DirRead_B9
-09:77ff Open_B9
+09:77ff Mkdir_B9
 03:4f88 RemoveChain_B3
 03:7395 FindVolume_B3
 03:76cc Lseek_B3
@@ -1005,22 +1005,22 @@
 01:6683 BootRomInfoMenu_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- FormatFileSize ---
-01:45e7 FormatFileSize_pickFmtHi
-01:45ec FormatFileSize_pickFmtLo
-01:45f1 FormatFileSize_walkTable
-01:4691 FormatFileSize_opScaleSubA
-01:46bd FormatFileSize_opScaleSubB
-01:46e2 FormatFileSize_opSub10
-01:46f6 FormatFileSize_opSub20
-01:470a FormatFileSize_opSub30
-01:471e FormatFileSize_opSub1a
-01:4732 FormatFileSize_opAdd8
-01:4744 FormatFileSize_opSub50
-01:4758 FormatFileSize_opSub1c60
-01:476c FormatFileSize_afterOp
-01:478a FormatFileSize_rewriteLo16
-01:479b FormatFileSize_retDeHl
+; --- WToUpper_B1 ---
+01:45e7 WToUpper_B1_pickFmtHi
+01:45ec WToUpper_B1_pickFmtLo
+01:45f1 WToUpper_B1_walkTable
+01:4691 WToUpper_B1_opScaleSubA
+01:46bd WToUpper_B1_opScaleSubB
+01:46e2 WToUpper_B1_opSub10
+01:46f6 WToUpper_B1_opSub20
+01:470a WToUpper_B1_opSub30
+01:471e WToUpper_B1_opSub1a
+01:4732 WToUpper_B1_opAdd8
+01:4744 WToUpper_B1_opSub50
+01:4758 WToUpper_B1_opSub1c60
+01:476c WToUpper_B1_afterOp
+01:478a WToUpper_B1_rewriteLo16
+01:479b WToUpper_B1_retDeHl
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- BackupSaveDump ---
@@ -1135,17 +1135,17 @@
 00:2ca2 Strrchr_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- DateToDaysSince1970 ---
-01:492f DateToDaysSince1970_yearLoop
-01:4974 DateToDaysSince1970_nonLeapYear
-01:4992 DateToDaysSince1970_incYear
-01:4999 DateToDaysSince1970_yearCont
-01:499c DateToDaysSince1970_afterYears
-01:49b2 DateToDaysSince1970_monthLoop
-01:4a1c DateToDaysSince1970_nonLeapMonths
-01:4a59 DateToDaysSince1970_incMonth
-01:4a60 DateToDaysSince1970_monthCont
-01:4a63 DateToDaysSince1970_addHms
+; --- DateToSecondsSince1970 ---
+01:492f DateToSecondsSince1970_yearLoop
+01:4974 DateToSecondsSince1970_nonLeapYear
+01:4992 DateToSecondsSince1970_incYear
+01:4999 DateToSecondsSince1970_yearCont
+01:499c DateToSecondsSince1970_afterYears
+01:49b2 DateToSecondsSince1970_monthLoop
+01:4a1c DateToSecondsSince1970_nonLeapMonths
+01:4a59 DateToSecondsSince1970_incMonth
+01:4a60 DateToSecondsSince1970_monthCont
+01:4a63 DateToSecondsSince1970_addHms
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RtcWriteTimeFromDayDelta ---
@@ -1283,40 +1283,40 @@
 01:40e0 CStrChr_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- S32DivImpl ---
-00:29f9 S32DivImpl_checkDivisor
-00:2a0f S32DivImpl_clearSign
-00:2a23 S32DivImpl_checkDividendSign
-00:2a35 S32DivImpl_u32DivEngine
-00:2a53 S32DivImpl_loadQuot
-00:2a5c S32DivImpl_epilogueRet
-
-; Interior labels (scripts/interior-packet.py --apply)
 ; --- S32ModImpl ---
-00:2b3b S32ModImpl_checkDivisor
-00:2b51 S32ModImpl_clearSign
-00:2b65 S32ModImpl_checkDividendSign
-00:2b77 S32ModImpl_u32DivEngine
-00:2b96 S32ModImpl_loadRem
-00:2b9f S32ModImpl_epilogueRet
+00:29f9 S32ModImpl_checkDivisor
+00:2a0f S32ModImpl_clearSign
+00:2a23 S32ModImpl_checkDividendSign
+00:2a35 S32ModImpl_u32DivEngine
+00:2a53 S32ModImpl_loadRem
+00:2a5c S32ModImpl_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- DiskRead_B2 ---
-02:4036 DiskRead_B2_chunkLoop
-02:4065 DiskRead_B2_remChunk
-02:4071 DiskRead_B2_issueLba
-02:418d DiskRead_B2_waitPeek
-02:419d DiskRead_B2_copyWindow
-02:41c7 DiskRead_B2_epilogueRet
+; --- S32DivImpl ---
+00:2b3b S32DivImpl_checkDivisor
+00:2b51 S32DivImpl_clearSign
+00:2b65 S32DivImpl_checkDividendSign
+00:2b77 S32DivImpl_u32DivEngine
+00:2b96 S32DivImpl_loadQuot
+00:2b9f S32DivImpl_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- DiskWrite_B2 ---
-02:41ed DiskWrite_B2_chunkLoop
-02:421c DiskWrite_B2_remChunk
-02:4223 DiskWrite_B2_issueLba
-02:4350 DiskWrite_B2_waitPeek
-02:4360 DiskWrite_B2_advanceIdx
-02:4369 DiskWrite_B2_epilogueRet
+; --- SdRead ---
+02:4036 SdRead_chunkLoop
+02:4065 SdRead_remChunk
+02:4071 SdRead_issueLba
+02:418d SdRead_waitPeek
+02:419d SdRead_copyWindow
+02:41c7 SdRead_epilogueRet
+
+; Interior labels (scripts/interior-packet.py --apply)
+; --- SdWrite ---
+02:41ed SdWrite_chunkLoop
+02:421c SdWrite_remChunk
+02:4223 SdWrite_issueLba
+02:4350 SdWrite_waitPeek
+02:4360 SdWrite_advanceIdx
+02:4369 SdWrite_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- DrawGlyph ---
@@ -1331,12 +1331,12 @@
 04:44ec CStrCat_writeNul
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- PreLaunchSaveStamp ---
-01:587f PreLaunchSaveStamp_copyBasename
-01:58b6 PreLaunchSaveStamp_copyCont
-01:58b9 PreLaunchSaveStamp_checkRtc
-01:5978 PreLaunchSaveStamp_clearRtcFlag
-01:597e PreLaunchSaveStamp_epilogue
+; --- BackupOpenSaverPath_stamp ---
+01:587f BackupOpenSaverPath_stamp_copyBasename
+01:58b6 BackupOpenSaverPath_stamp_copyCont
+01:58b9 BackupOpenSaverPath_stamp_checkRtc
+01:5978 BackupOpenSaverPath_stamp_clearRtcFlag
+01:597e BackupOpenSaverPath_stamp_epilogue
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RomLoad_ClearCartWindow_B8 ---
@@ -1454,16 +1454,16 @@
 00:2176 DrawCircle_errGe0
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- U32DivImpl ---
-00:2a8a U32DivImpl_checkDivisor
-00:2aa0 U32DivImpl_runEngine
-00:2aba U32DivImpl_epilogueRet
+; --- U32ModImpl ---
+00:2a8a U32ModImpl_checkDivisor
+00:2aa0 U32ModImpl_runEngine
+00:2aba U32ModImpl_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- U32ModImpl ---
-00:2c0f U32ModImpl_checkDivisor
-00:2c25 U32ModImpl_runEngine
-00:2c3f U32ModImpl_epilogueRet
+; --- U32DivImpl ---
+00:2c0f U32DivImpl_checkDivisor
+00:2c25 U32DivImpl_runEngine
+00:2c3f U32DivImpl_epilogueRet
 
 ; Interior labels (scripts/interior-packet.py --apply)
 ; --- RegisterFont ---
@@ -2393,33 +2393,33 @@
 07:58ca DirNext_B7_clearDirBuf
 
 ; Interior labels (scripts/interior-packet.py --apply)
-; --- Open_B9 ---
-09:7882 Open_B9_afterFollow
-09:788c Open_B9_notNoFile
-09:788f Open_B9_noFileCheckDir
-09:78af Open_B9_deniedIsDir
-09:78b3 Open_B9_checkCreate
-09:78bd Open_B9_openFail
-09:78c0 Open_B9_createChain
-09:7915 Open_B9_afterCreateChain
-09:7931 Open_B9_newClustOk
-09:7934 Open_B9_diskErr
-09:7938 Open_B9_checkClustWrap
-09:7953 Open_B9_clustWrapOk
-09:7956 Open_B9_intErr
-09:795a Open_B9_syncWindow
-09:7976 Open_B9_afterSync
-09:7a84 Open_B9_attrNotTrunc
-09:7a87 Open_B9_truncAttr
-09:7acd Open_B9_sizeMismatch
-09:7ad0 Open_B9_zeroFsize
-09:7ad7 Open_B9_stClustStore
-09:7b17 Open_B9_lfnOrdLoop
-09:7b54 Open_B9_lfnOrdCont
-09:7ba0 Open_B9_dirRegister
-09:7bb5 Open_B9_regFailCleanup
-09:7c07 Open_B9_okPath
-09:7cb1 Open_B9_epilogue
+; --- Mkdir_B9 ---
+09:7882 Mkdir_B9_afterFollow
+09:788c Mkdir_B9_notNoFile
+09:788f Mkdir_B9_noFileCheckDir
+09:78af Mkdir_B9_deniedIsDir
+09:78b3 Mkdir_B9_checkCreate
+09:78bd Mkdir_B9_openFail
+09:78c0 Mkdir_B9_createChain
+09:7915 Mkdir_B9_afterCreateChain
+09:7931 Mkdir_B9_newClustOk
+09:7934 Mkdir_B9_diskErr
+09:7938 Mkdir_B9_checkClustWrap
+09:7953 Mkdir_B9_clustWrapOk
+09:7956 Mkdir_B9_intErr
+09:795a Mkdir_B9_syncWindow
+09:7976 Mkdir_B9_afterSync
+09:7a84 Mkdir_B9_attrNotTrunc
+09:7a87 Mkdir_B9_truncAttr
+09:7acd Mkdir_B9_sizeMismatch
+09:7ad0 Mkdir_B9_zeroFsize
+09:7ad7 Mkdir_B9_stClustStore
+09:7b17 Mkdir_B9_lfnOrdLoop
+09:7b54 Mkdir_B9_lfnOrdCont
+09:7ba0 Mkdir_B9_dirRegister
+09:7bb5 Mkdir_B9_regFailCleanup
+09:7c07 Mkdir_B9_okPath
+09:7cb1 Mkdir_B9_epilogue
 
 ; Propagated interior labels (scripts/propagate-interior-clones.py)
 06:7442 Open_B6_checkClustWrap

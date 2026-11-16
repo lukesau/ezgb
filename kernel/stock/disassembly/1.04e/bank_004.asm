@@ -936,9 +936,6 @@ CStrCat::
     inc hl
     ld b, [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 CStrCat_findNul::
     ld a, [bc]
     or a
@@ -947,9 +944,6 @@ CStrCat_findNul::
     inc bc
     jp CStrCat_findNul
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 CStrCat_stashPtrs::
     ld hl, sp+$08
@@ -962,9 +956,6 @@ CStrCat_stashPtrs::
     ld [hl], c
     inc hl
     ld [hl], b
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 CStrCat_copyLoop::
     ld hl, sp+$00
@@ -984,9 +975,6 @@ CStrCat_copyLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 CStrCat_incSrc::
     ld hl, sp+$02
     ld e, [hl]
@@ -1000,15 +988,9 @@ CStrCat_incSrc::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 CStrCat_afterStore::
     jp CStrCat_copyLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 CStrCat_writeNul::
     ld hl, sp+$02
@@ -1025,7 +1007,7 @@ CStrCat_writeNul::
 ; Source: kernel/stock/src/bank4.c
 ; U32ToAscii(val@sp+$36, buf@sp+$3a, radix@sp+$3c): frame -$34; digit scratch@sp+$13. Bank0 twin U32ToAscii_B0.
 ; U32ToAscii_digitLoop: if val!=0 → U32ToAscii_emitDigit; elif scratch advanced → U32ToAscii_skipEmit → U32ToAscii_setupReverse; else U32ToAscii_emitDigit fall into emit.
-; U32ToAscii_emitDigit/U32ToAscii_emitDigit: U32Div+U32Mod by radix; rem<$0a → '0'+n (U32ToAscii_digit0to9) else U32ToAscii_digitAtoF +$57 (U32ToAscii_afterAlpha) → U32ToAscii_digitLoop.
+; U32ToAscii_emitDigit/U32ToAscii_emitDigit: U32Mod+U32Div by radix; rem<$0a → '0'+n (U32ToAscii_digit0to9) else U32ToAscii_digitAtoF +$57 (U32ToAscii_afterAlpha) → U32ToAscii_digitLoop.
 ; U32ToAscii_setupReverse: setup reverse; U32ToAscii_copyLoop: copy scratch→buf (U32ToAscii_copyCont) until done → U32ToAscii_writeNul NUL; empty → plant "0"; U32ToAscii_epilogueRet epilogue.
 
 U32ToAscii::
@@ -1060,9 +1042,6 @@ U32ToAscii::
     ld a, [de]
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 U32ToAscii_digitLoop::
     ld hl, sp+$07
     ld a, [hl+]
@@ -1087,15 +1066,9 @@ U32ToAscii_digitLoop::
 
     jr U32ToAscii_emitDigit
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 U32ToAscii_skipEmit::
     jp U32ToAscii_setupReverse
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_emitDigit::
     ld hl, sp+$3c
@@ -1127,7 +1100,7 @@ U32ToAscii_emitDigit::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Div
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$11
@@ -1159,7 +1132,7 @@ U32ToAscii_emitDigit::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -1216,15 +1189,9 @@ U32ToAscii_emitDigit::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 U32ToAscii_digit0to9::
     jp U32ToAscii_digitLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_digitAtoF::
     ld hl, sp+$0f
@@ -1243,15 +1210,9 @@ U32ToAscii_digitAtoF::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 U32ToAscii_afterAlpha::
     jp U32ToAscii_digitLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_setupReverse::
     ld hl, sp+$3a
@@ -1276,9 +1237,6 @@ U32ToAscii_setupReverse::
     ld hl, sp+$04
     ld [hl+], a
     ld [hl], e
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_copyLoop::
     ld a, c
@@ -1316,15 +1274,9 @@ U32ToAscii_copyLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 U32ToAscii_copyCont::
     jp U32ToAscii_copyLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_writeNul::
     ld hl, sp+$04
@@ -1378,9 +1330,6 @@ U32ToAscii_writeNul::
     inc bc
     ld a, $00
     ld [bc], a
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 U32ToAscii_epilogueRet::
     add sp, $34
@@ -1623,15 +1572,9 @@ DrawTimeAutosaveScreen::
 
     jr DrawTimeAutosaveScreen_setupDoDrawRect
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_setupSkipDrawRect::
     jp Jump_004_47ef
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_setupDoDrawRect::
     ld hl, $0002
@@ -1847,9 +1790,6 @@ Jump_004_47ef:
     ld [hl+], a
     ld [hl], d
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_redraw::
     call WaitVBlankFlag
     ld hl, sp+$3e
@@ -1859,15 +1799,9 @@ DrawTimeAutosaveScreen_redraw::
 
     jr DrawTimeAutosaveScreen_hilitePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_hiliteGate::
     jp Jump_004_49ea
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_hilitePath::
     xor a
@@ -1885,9 +1819,6 @@ DrawTimeAutosaveScreen_hilitePath::
     jp DrawTimeAutosaveScreen_hiliteStoreDrawParamsB
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_hiliteStoreDrawParamsA::
     ld hl, $0000
     push hl
@@ -1896,9 +1827,6 @@ DrawTimeAutosaveScreen_hiliteStoreDrawParamsA::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
     ld hl, $0121
@@ -1927,9 +1855,6 @@ DrawTimeAutosaveScreen_hiliteStoreDrawParamsB::
     jp DrawTimeAutosaveScreen_setStringB
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_setStringA::
     ld hl, $0310
     push hl
@@ -1940,9 +1865,6 @@ DrawTimeAutosaveScreen_setStringA::
     push hl
     call DrawString
     add sp, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_setStringB::
     ld hl, $0000
@@ -1968,15 +1890,9 @@ DrawTimeAutosaveScreen_setStringB::
 
     jr DrawTimeAutosaveScreen_setStringCPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_setStringC::
     jp DrawTimeAutosaveScreen_setStringD
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_setStringCPath::
     ld hl, $0002
@@ -1989,9 +1905,6 @@ DrawTimeAutosaveScreen_setStringCPath::
     jp DrawTimeAutosaveScreen_setStringE
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_setStringD::
     ld hl, $0000
     push hl
@@ -2000,9 +1913,6 @@ DrawTimeAutosaveScreen_setStringD::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_setStringE::
     ld hl, $0040
@@ -2021,15 +1931,9 @@ DrawTimeAutosaveScreen_setStringE::
 
     jr DrawTimeAutosaveScreen_setStringsDonePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_setStringsDone::
     jp Jump_004_49ea
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_setStringsDonePath::
     ld hl, $0002
@@ -2054,9 +1958,6 @@ Jump_004_49ea:
     ld hl, sp+$40
     or [hl]
     jp nz, DrawTimeAutosaveScreen_savRedraw
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fpgaPage6::
     ld a, $06
@@ -2190,24 +2091,15 @@ DrawTimeAutosaveScreen_fpgaPage6::
 
     jr DrawTimeAutosaveScreen_fpgaSlotGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fpgaSlotGate::
     jp DrawTimeAutosaveScreen_field0Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fpgaSlotGatePath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_field0LoadVal
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field0Clone::
     ld hl, sp+$41
@@ -2306,9 +2198,6 @@ DrawTimeAutosaveScreen_field0Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0LoadVal::
     ld hl, sp+$0e
     ld e, [hl]
@@ -2328,24 +2217,15 @@ DrawTimeAutosaveScreen_field0LoadVal::
 
     jr DrawTimeAutosaveScreen_field0NextPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0Next::
     jp DrawTimeAutosaveScreen_field1Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field0NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_field1LoadVal
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1Clone::
     ld hl, sp+$41
@@ -2441,9 +2321,6 @@ DrawTimeAutosaveScreen_field1Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1LoadVal::
     ld hl, sp+$10
     ld e, [hl]
@@ -2463,24 +2340,15 @@ DrawTimeAutosaveScreen_field1LoadVal::
 
     jr DrawTimeAutosaveScreen_field1NextPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1Next::
     jp DrawTimeAutosaveScreen_field2Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_field2LoadVal
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2Clone::
     ld hl, sp+$41
@@ -2567,9 +2435,6 @@ DrawTimeAutosaveScreen_field2Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2LoadVal::
     ld hl, sp+$12
     ld e, [hl]
@@ -2589,24 +2454,15 @@ DrawTimeAutosaveScreen_field2LoadVal::
 
     jr DrawTimeAutosaveScreen_field2NextPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2Next::
     jp DrawTimeAutosaveScreen_field3Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_field3LoadVal
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3Clone::
     ld hl, sp+$41
@@ -2702,9 +2558,6 @@ DrawTimeAutosaveScreen_field3Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3LoadVal::
     ld hl, sp+$14
     ld e, [hl]
@@ -2724,24 +2577,15 @@ DrawTimeAutosaveScreen_field3LoadVal::
 
     jr DrawTimeAutosaveScreen_field3NextPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3Next::
     jp DrawTimeAutosaveScreen_field4Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_field4LoadVal
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4Clone::
     ld hl, sp+$41
@@ -2837,9 +2681,6 @@ DrawTimeAutosaveScreen_field4Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4LoadVal::
     ld hl, sp+$18
     ld e, [hl]
@@ -2859,24 +2700,15 @@ DrawTimeAutosaveScreen_field4LoadVal::
 
     jr DrawTimeAutosaveScreen_field4NextPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4Next::
     jp DrawTimeAutosaveScreen_field5Clone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4NextPath::
     xor a
     ld hl, sp+$3e
     or [hl]
     jp z, DrawTimeAutosaveScreen_clearDirtyMemcpy
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field5Clone::
     ld hl, sp+$41
@@ -2963,9 +2795,6 @@ DrawTimeAutosaveScreen_field5Clone::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_clearDirtyMemcpy::
     ld hl, sp+$3e
     ld [hl], $00
@@ -2985,9 +2814,6 @@ DrawTimeAutosaveScreen_clearDirtyMemcpy::
     add sp, $06
     jp DrawTimeAutosaveScreen_inputLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savRedraw::
     xor a
@@ -3063,9 +2889,6 @@ DrawTimeAutosaveScreen_savRedraw::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savYearClone::
     ld hl, sp+$41
@@ -3143,15 +2966,9 @@ DrawTimeAutosaveScreen_savYearClone::
 
     jr DrawTimeAutosaveScreen_savMonGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_savMonGate::
     jp DrawTimeAutosaveScreen_savMonClone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savMonGatePath::
     ld hl, $0002
@@ -3161,9 +2978,6 @@ DrawTimeAutosaveScreen_savMonGatePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savMonClone::
     ld hl, sp+$41
@@ -3241,15 +3055,9 @@ DrawTimeAutosaveScreen_savMonClone::
 
     jr DrawTimeAutosaveScreen_savDayGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_savDayGate::
     jp DrawTimeAutosaveScreen_savDayClone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savDayGatePath::
     ld hl, $0002
@@ -3259,9 +3067,6 @@ DrawTimeAutosaveScreen_savDayGatePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savDayClone::
     ld hl, sp+$41
@@ -3330,15 +3135,9 @@ DrawTimeAutosaveScreen_savDayClone::
 
     jr DrawTimeAutosaveScreen_savHrGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_savHrGate::
     jp DrawTimeAutosaveScreen_savHrClone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savHrGatePath::
     ld hl, $0002
@@ -3348,9 +3147,6 @@ DrawTimeAutosaveScreen_savHrGatePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savHrClone::
     ld hl, sp+$41
@@ -3428,15 +3224,9 @@ DrawTimeAutosaveScreen_savHrClone::
 
     jr DrawTimeAutosaveScreen_savMinGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_savMinGate::
     jp DrawTimeAutosaveScreen_savMinClone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savMinGatePath::
     ld hl, $0002
@@ -3446,9 +3236,6 @@ DrawTimeAutosaveScreen_savMinGatePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savMinClone::
     ld hl, sp+$41
@@ -3526,15 +3313,9 @@ DrawTimeAutosaveScreen_savMinClone::
 
     jr DrawTimeAutosaveScreen_savSecGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_savSecGate::
     jp DrawTimeAutosaveScreen_savSecClone
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savSecGatePath::
     ld hl, $0002
@@ -3544,9 +3325,6 @@ DrawTimeAutosaveScreen_savSecGatePath::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_savSecClone::
     ld hl, sp+$41
@@ -3570,9 +3348,6 @@ DrawTimeAutosaveScreen_savSecClone::
     ld hl, sp+$3e
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_inputLoop::
     call ReadJoypad
     ld c, e
@@ -3583,9 +3358,6 @@ DrawTimeAutosaveScreen_inputLoop::
 
     jp DrawTimeAutosaveScreen_fieldDecWrap
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_inputLoopFieldDec::
     xor a
@@ -3608,9 +3380,6 @@ DrawTimeAutosaveScreen_inputLoopFieldDec::
     jp DrawTimeAutosaveScreen_fieldDecDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldDecCheck::
     xor a
     ld hl, sp+$3f
@@ -3619,17 +3388,11 @@ DrawTimeAutosaveScreen_fieldDecCheck::
 
     ld [hl], $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldDecDirty::
     ld hl, sp+$3e
     ld [hl], $02
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldDecWrap::
     ld a, c
@@ -3638,9 +3401,6 @@ DrawTimeAutosaveScreen_fieldDecWrap::
 
     jp DrawTimeAutosaveScreen_fieldIncWrap
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldDecWrapFieldInc::
     xor a
@@ -3662,31 +3422,19 @@ DrawTimeAutosaveScreen_fieldDecWrapFieldInc::
 
     jr DrawTimeAutosaveScreen_fieldIncGateWrap0
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldIncGate::
     jp DrawTimeAutosaveScreen_fieldIncDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldIncGateWrap0::
     ld hl, sp+$3f
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldIncDirty::
     ld hl, sp+$3e
     ld [hl], $03
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldIncWrap::
     ld a, c
@@ -3695,9 +3443,6 @@ DrawTimeAutosaveScreen_fieldIncWrap::
 
     jp DrawTimeAutosaveScreen_fieldDecBtn
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldIncWrapBump::
     xor a
@@ -3727,15 +3472,9 @@ DrawTimeAutosaveScreen_fieldIncWrapBump::
 
     jr DrawTimeAutosaveScreen_field0YrGateZero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0YrGate::
     jp DrawTimeAutosaveScreen_field0YrWrap
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field0YrGateZero::
     ld hl, sp+$2e
@@ -3746,9 +3485,6 @@ DrawTimeAutosaveScreen_field0YrGateZero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field0YrWrap::
     ld hl, sp+$2e
@@ -3766,9 +3502,6 @@ DrawTimeAutosaveScreen_field0YrWrap::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1MonCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -3777,15 +3510,9 @@ DrawTimeAutosaveScreen_field1MonCheck::
 
     jr DrawTimeAutosaveScreen_field1MonGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1MonGate::
     jp DrawTimeAutosaveScreen_field2DayCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1MonGatePath::
     ld hl, sp+$2c
@@ -3799,15 +3526,9 @@ DrawTimeAutosaveScreen_field1MonGatePath::
 
     jr DrawTimeAutosaveScreen_field1MonPathZero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1MonPath::
     jp DrawTimeAutosaveScreen_field1MonLoad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1MonPathZero::
     ld hl, sp+$2c
@@ -3818,9 +3539,6 @@ DrawTimeAutosaveScreen_field1MonPathZero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1MonLoad::
     ld hl, sp+$2c
@@ -3838,9 +3556,6 @@ DrawTimeAutosaveScreen_field1MonLoad::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -3849,15 +3564,9 @@ DrawTimeAutosaveScreen_field2DayCheck::
 
     jr DrawTimeAutosaveScreen_field2DayGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayGate::
     jp DrawTimeAutosaveScreen_field3HrCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayGatePath::
     ld hl, sp+$2c
@@ -3921,9 +3630,6 @@ DrawTimeAutosaveScreen_field2DayGatePath::
     jp DrawTimeAutosaveScreen_field2DayLoadA
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayLoadA::
     ld hl, sp+$2a
     ld e, [hl]
@@ -3936,15 +3642,9 @@ DrawTimeAutosaveScreen_field2DayLoadA::
 
     jr DrawTimeAutosaveScreen_field2DayPathZero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayPath::
     jp DrawTimeAutosaveScreen_field2DayLoadB
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayPathZero::
     ld hl, sp+$2a
@@ -3955,9 +3655,6 @@ DrawTimeAutosaveScreen_field2DayPathZero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayLoadB::
     ld hl, sp+$2a
@@ -3975,9 +3672,6 @@ DrawTimeAutosaveScreen_field2DayLoadB::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayLoadC::
     ld hl, sp+$2a
     ld e, [hl]
@@ -3990,15 +3684,9 @@ DrawTimeAutosaveScreen_field2DayLoadC::
 
     jr DrawTimeAutosaveScreen_field2DayPath2Zero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayPath2::
     jp DrawTimeAutosaveScreen_field2DayLoadD
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayPath2Zero::
     ld hl, sp+$2a
@@ -4009,9 +3697,6 @@ DrawTimeAutosaveScreen_field2DayPath2Zero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayLoadD::
     ld hl, sp+$2a
@@ -4028,9 +3713,6 @@ DrawTimeAutosaveScreen_field2DayLoadD::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayU8Mod::
     ld hl, sp+$2e
@@ -4061,9 +3743,6 @@ DrawTimeAutosaveScreen_field2DayU8Mod::
     sub $1d
     jp z, DrawTimeAutosaveScreen_field2DayModPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayModCheck::
     ld a, $00
     sub c
@@ -4081,15 +3760,9 @@ DrawTimeAutosaveScreen_field2DayModCheck::
 
     jr DrawTimeAutosaveScreen_field2DayModPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayModGate::
     jp DrawTimeAutosaveScreen_field2DayModLoad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayModPath::
     ld hl, sp+$2a
@@ -4100,9 +3773,6 @@ DrawTimeAutosaveScreen_field2DayModPath::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayModLoad::
     ld hl, sp+$2a
@@ -4120,9 +3790,6 @@ DrawTimeAutosaveScreen_field2DayModLoad::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4131,15 +3798,9 @@ DrawTimeAutosaveScreen_field3HrCheck::
 
     jr DrawTimeAutosaveScreen_field3HrGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrGate::
     jp DrawTimeAutosaveScreen_field4MinCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3HrGatePath::
     ld hl, sp+$28
@@ -4153,15 +3814,9 @@ DrawTimeAutosaveScreen_field3HrGatePath::
 
     jr DrawTimeAutosaveScreen_field3HrPathZero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrPath::
     jp DrawTimeAutosaveScreen_field3HrLoad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3HrPathZero::
     ld hl, sp+$28
@@ -4172,9 +3827,6 @@ DrawTimeAutosaveScreen_field3HrPathZero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3HrLoad::
     ld hl, sp+$28
@@ -4192,9 +3844,6 @@ DrawTimeAutosaveScreen_field3HrLoad::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4203,15 +3852,9 @@ DrawTimeAutosaveScreen_field4MinCheck::
 
     jr DrawTimeAutosaveScreen_field4MinGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinGate::
     jp DrawTimeAutosaveScreen_field5SecCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4MinGatePath::
     ld hl, sp+$26
@@ -4225,15 +3868,9 @@ DrawTimeAutosaveScreen_field4MinGatePath::
 
     jr DrawTimeAutosaveScreen_field4MinPathZero
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinPath::
     jp DrawTimeAutosaveScreen_field4MinLoad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4MinPathZero::
     ld hl, sp+$26
@@ -4244,9 +3881,6 @@ DrawTimeAutosaveScreen_field4MinPathZero::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4MinLoad::
     ld hl, sp+$26
@@ -4264,9 +3898,6 @@ DrawTimeAutosaveScreen_field4MinLoad::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4275,15 +3906,9 @@ DrawTimeAutosaveScreen_field5SecCheck::
 
     jr DrawTimeAutosaveScreen_field5SecGatePath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecGate::
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field5SecGatePath::
     ld hl, sp+$30
@@ -4297,15 +3922,9 @@ DrawTimeAutosaveScreen_field5SecGatePath::
 
     jr DrawTimeAutosaveScreen_field5SecJr
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecPath::
     jp DrawTimeAutosaveScreen_field5SecLoad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field5SecJr::
     ld hl, sp+$30
@@ -4316,9 +3935,6 @@ DrawTimeAutosaveScreen_field5SecJr::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldBumpDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field5SecLoad::
     ld hl, sp+$30
@@ -4334,17 +3950,11 @@ DrawTimeAutosaveScreen_field5SecLoad::
     ld d, [hl]
     ld [de], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldBumpDirty::
     ld hl, sp+$3e
     ld [hl], $01
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_hiliteDec::
     xor a
@@ -4358,9 +3968,6 @@ DrawTimeAutosaveScreen_hiliteDec::
     jp DrawTimeAutosaveScreen_redraw
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldDecBtn::
     ld a, c
     and $08
@@ -4368,9 +3975,6 @@ DrawTimeAutosaveScreen_fieldDecBtn::
 
     jp DrawTimeAutosaveScreen_exitCheck40
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_fieldDecBtnJr::
     xor a
@@ -4406,9 +4010,6 @@ DrawTimeAutosaveScreen_fieldDecBtnJr::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0YrDecLoad::
     ld hl, sp+$2e
     ld e, [hl]
@@ -4425,9 +4026,6 @@ DrawTimeAutosaveScreen_field0YrDecLoad::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0YrDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4436,15 +4034,9 @@ DrawTimeAutosaveScreen_field0YrDecCheck::
 
     jr DrawTimeAutosaveScreen_field0YrDecJr
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0YrDecSkip::
     jp DrawTimeAutosaveScreen_field1MonDecCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field0YrDecJr::
     ld hl, sp+$2c
@@ -4472,9 +4064,6 @@ jr_004_544b:
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field0YrDecPath::
     ld hl, sp+$2c
     ld e, [hl]
@@ -4491,9 +4080,6 @@ DrawTimeAutosaveScreen_field0YrDecPath::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1MonDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4502,15 +4088,9 @@ DrawTimeAutosaveScreen_field1MonDecCheck::
 
     jr DrawTimeAutosaveScreen_field1MonDecSkipPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field1MonDecSkip::
     jp DrawTimeAutosaveScreen_field3HrDecCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field1MonDecSkipPath::
     ld hl, sp+$2c
@@ -4574,9 +4154,6 @@ DrawTimeAutosaveScreen_field1MonDecSkipPath::
     jp DrawTimeAutosaveScreen_field2DayDecLoadA
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecLoadA::
     ld hl, sp+$2a
     ld e, [hl]
@@ -4603,9 +4180,6 @@ jr_004_54c7:
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecLoadB::
     ld hl, sp+$2a
     ld e, [hl]
@@ -4621,9 +4195,6 @@ DrawTimeAutosaveScreen_field2DayDecLoadB::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayDecLoadC::
     ld hl, sp+$2a
@@ -4651,9 +4222,6 @@ jr_004_54f3:
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecLoadD::
     ld hl, sp+$2a
     ld e, [hl]
@@ -4670,9 +4238,6 @@ DrawTimeAutosaveScreen_field2DayDecLoadD::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecLoadE::
     ld hl, sp+$2a
     ld e, [hl]
@@ -4685,15 +4250,9 @@ DrawTimeAutosaveScreen_field2DayDecLoadE::
 
     jr DrawTimeAutosaveScreen_field2DayDecSkipPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecSkip::
     jp DrawTimeAutosaveScreen_field2DayDecLoadG
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayDecSkipPath::
     ld hl, sp+$2e
@@ -4724,9 +4283,6 @@ DrawTimeAutosaveScreen_field2DayDecSkipPath::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field2DayDecLoadF::
     ld hl, sp+$2a
     ld e, [hl]
@@ -4736,9 +4292,6 @@ DrawTimeAutosaveScreen_field2DayDecLoadF::
     ld [de], a
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field2DayDecLoadG::
     ld hl, sp+$2a
@@ -4756,9 +4309,6 @@ DrawTimeAutosaveScreen_field2DayDecLoadG::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4767,15 +4317,9 @@ DrawTimeAutosaveScreen_field3HrDecCheck::
 
     jr DrawTimeAutosaveScreen_field3HrDecSkipPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrDecSkip::
     jp DrawTimeAutosaveScreen_field4MinDecCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field3HrDecSkipPath::
     ld hl, sp+$28
@@ -4795,9 +4339,6 @@ DrawTimeAutosaveScreen_field3HrDecSkipPath::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field3HrDecLoad::
     ld hl, sp+$28
     ld e, [hl]
@@ -4814,9 +4355,6 @@ DrawTimeAutosaveScreen_field3HrDecLoad::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4825,15 +4363,9 @@ DrawTimeAutosaveScreen_field4MinDecCheck::
 
     jr DrawTimeAutosaveScreen_field4MinDecSkipPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinDecSkip::
     jp DrawTimeAutosaveScreen_field5SecDecCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field4MinDecSkipPath::
     ld hl, sp+$26
@@ -4853,9 +4385,6 @@ DrawTimeAutosaveScreen_field4MinDecSkipPath::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field4MinDecLoad::
     ld hl, sp+$26
     ld e, [hl]
@@ -4872,9 +4401,6 @@ DrawTimeAutosaveScreen_field4MinDecLoad::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecDecCheck::
     ld hl, sp+$3f
     ld a, [hl]
@@ -4883,15 +4409,9 @@ DrawTimeAutosaveScreen_field5SecDecCheck::
 
     jr DrawTimeAutosaveScreen_field5SecDecSkipPath
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecDecSkip::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_field5SecDecSkipPath::
     ld hl, sp+$30
@@ -4911,9 +4431,6 @@ DrawTimeAutosaveScreen_field5SecDecSkipPath::
     jp DrawTimeAutosaveScreen_fieldDecJoinDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_field5SecDecLoad::
     ld hl, sp+$30
     ld e, [hl]
@@ -4928,17 +4445,11 @@ DrawTimeAutosaveScreen_field5SecDecLoad::
     ld d, [hl]
     ld [de], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_fieldDecJoinDirty::
     ld hl, sp+$3e
     ld [hl], $01
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_hiliteInc::
     ld hl, sp+$3d
@@ -4957,9 +4468,6 @@ FlSetHiliteClamp::
     jp DrawTimeAutosaveScreen_redraw
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_exitCheck40::
     ld a, c
     and $40
@@ -4968,15 +4476,9 @@ DrawTimeAutosaveScreen_exitCheck40::
     jp DrawTimeAutosaveScreen_exitCheck20
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_exitCheck40Epilogue::
     jp Jump_004_5903
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_exitCheck20::
     ld a, c
@@ -4986,15 +4488,9 @@ DrawTimeAutosaveScreen_exitCheck20::
     jp DrawTimeAutosaveScreen_exitCheck10
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_exitCheck20Redraw::
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_exitCheck10::
     ld a, c
@@ -5003,9 +4499,6 @@ DrawTimeAutosaveScreen_exitCheck10::
 
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_exitCheck10Confirm::
     xor a
@@ -5217,9 +4710,6 @@ FlSetAHookSite::
     ld [de], a
     jp DrawTimeAutosaveScreen_redraw
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_confirmBcdWrite::
     ld hl, sp+$40
@@ -5524,9 +5014,6 @@ DrawTimeAutosaveScreen_confirmBcdWrite::
     jp DrawTimeAutosaveScreen_redraw
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_toggleA200Check::
     xor a
     ld hl, sp+$3c
@@ -5537,15 +5024,9 @@ DrawTimeAutosaveScreen_toggleA200Check::
     jp DrawTimeAutosaveScreen_toggleA200Apply
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
-
 DrawTimeAutosaveScreen_toggleA200Clear::
     ld hl, sp+$3c
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank4.c
 
 DrawTimeAutosaveScreen_toggleA200Apply::
     ld hl, sp+$3e

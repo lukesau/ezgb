@@ -11953,7 +11953,7 @@ Close_B3_epilogue::
 ; Target of FarCall_03_76cc; orphan after Close_B3_epilogue.
 ; Validate_B3 fail → Lseek_B3_epilogue; else Lseek_B3_afterValidate: fp->err nonzero → Lseek_B3_epilogue else Lseek_B3_checkOfsVsFsize.
 ; Lseek_B3_checkOfsVsFsize: if ofs > fsize and not FA_WRITE (Lseek_B3_ofsInRange/Lseek_B3_clampOfs clamp ofs=fsize); join Lseek_B3_clearFptr clear fptr.
-; Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Mod cluster align — same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.
+; Lseek_B3_clearFptr: ofs==0 → Lseek_B3_fillWindow; else U32Shl csize; if fptr==0 Lseek_B3_fromSclust (from sclust) else U32Div cluster align — same-cluster Lseek_B3_sameCluster else Lseek_B3_fromSclust restart from sclust.
 ; Lseek_B3_fromSclust: start from sclust; empty → CreateChain_B3 (clust==1 Lseek_B3_afterCreateChain/Lseek_B3_createChainDiskErr E=$02; else Lseek_B3_checkChainClust: clust==-1 Lseek_B3_chainAborted E=$01; Lseek_B3_chainOk/Lseek_B3_writeSclust write sclust); join Lseek_B3_setClust set clust.
 ; Lseek_B3_sameCluster: clust==0 → Lseek_B3_fillWindow; else Lseek_B3_followLoop: while bc < ofs — FA_WRITE Lseek_B3_extendChain CreateChain_B3 else Lseek_B3_getFatNext GetFat_B3; fail Lseek_B3_getFatDiskErr E=$01 / Lseek_B3_getFatIntErr E=$02; ok Lseek_B3_afterGetFat/Lseek_B3_getFatOk/Lseek_B3_checkFatClust; past EOF Lseek_B3_pastEof → Lseek_B3_followLoop else Lseek_B3_setFptr.
 ; Lseek_B3_setFptr: set fptr; zero ofs→Lseek_B3_fillWindow else Lseek_B3_clust2Sect Clust2Sect_B3; sect ok Lseek_B3_sectOffset U32Shr sector offset else E=$02 → Lseek_B3_epilogue.
@@ -12250,7 +12250,7 @@ Lseek_B3_clearFptr::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$0a
@@ -12308,7 +12308,7 @@ Lseek_B3_clearFptr::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02

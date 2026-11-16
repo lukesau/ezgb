@@ -104,9 +104,6 @@ CStrCmp::
     ld [hl+], a
     ld [hl], e
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrCmp_loop::
     ld a, [bc]
     ld hl, sp+$01
@@ -124,15 +121,9 @@ CStrCmp_loop::
 
     jr CStrCmp_matchGate
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrCmp_mismatch::
     jp CStrCmp_sexSub
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrCmp_matchGate::
     xor a
@@ -144,9 +135,6 @@ CStrCmp_matchGate::
     jp CStrCmp_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrCmp_advance::
     inc bc
     ld hl, sp+$02
@@ -156,15 +144,9 @@ CStrCmp_advance::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrCmp_advanceCont::
     jp CStrCmp_loop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrCmp_sexSub::
     ld hl, sp+$01
@@ -194,9 +176,6 @@ CStrCmp_sexSub::
     sbc b
     ld d, a
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrCmp_epilogueRet::
     add sp, $04
     ret
@@ -225,17 +204,11 @@ CStrChr::
     jp CStrChr_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrChr_initBc::
     ld hl, sp+$09
     ld c, [hl]
     inc hl
     ld b, [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrChr_loop::
     ld a, [bc]
@@ -251,15 +224,9 @@ CStrChr_loop::
 
     jr CStrChr_storeMatch
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrChr_skipStore::
     jp CStrChr_advance
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrChr_storeMatch::
     ld hl, sp+$01
@@ -267,25 +234,16 @@ CStrChr_storeMatch::
     inc hl
     ld [hl], b
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 CStrChr_advance::
     inc bc
     jp CStrChr_loop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrChr_loadSaved::
     ld hl, sp+$01
     ld e, [hl]
     inc hl
     ld d, [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 CStrChr_epilogueRet::
     add sp, $03
@@ -321,9 +279,6 @@ DrawBrowserEntries::
     jp DrawBrowserEntries_clearInk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_clampRows::
     ld hl, $c2a2
     ld hl, $c2a2
@@ -358,9 +313,6 @@ DrawBrowserEntries_clampRows::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_clearInk::
     ld hl, $0000
     push hl
@@ -371,9 +323,6 @@ DrawBrowserEntries_clearInk::
     add sp, $03
     ld hl, sp+$1d
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_rowLoop::
     ld hl, sp+$1d
@@ -399,15 +348,9 @@ DrawBrowserEntries_rowLoop::
 
     jr DrawBrowserEntries_hilite
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_skipHilite::
     jp DrawBrowserEntries_rowBank
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_hilite::
     ld hl, $0002
@@ -417,9 +360,6 @@ DrawBrowserEntries_hilite::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_rowBank::
     ld hl, sp+$1d
@@ -440,9 +380,6 @@ DrawBrowserEntries_rowBank::
     inc hl
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_bankShift::
     srl b
@@ -511,15 +448,9 @@ DrawBrowserEntries_bankShift::
 
     jr DrawBrowserEntries_dirEntry
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_skipDir::
     jp DrawBrowserEntries_fileEntry
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_dirEntry::
     ld hl, sp+$1d
@@ -568,9 +499,6 @@ DrawBrowserEntries_dirEntry::
     jp DrawBrowserEntries_resetInk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_fileEntry::
     ld hl, sp+$1d
     ld a, [hl]
@@ -599,9 +527,6 @@ DrawBrowserEntries_fileEntry::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserEntries_resetInk::
     ld hl, $0000
     push hl
@@ -614,9 +539,6 @@ DrawBrowserEntries_resetInk::
     inc [hl]
     jp DrawBrowserEntries_rowLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserEntries_drawSelSize::
     ld hl, sp+$07
@@ -701,14 +623,8 @@ DrawBrowserDetail::
     ld a, $01
     jr DrawBrowserDetail_mode2Rows
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_mode2Prep::
     xor a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_mode2Rows::
     ld hl, sp+$07
@@ -749,9 +665,6 @@ DrawBrowserDetail_mode2Rows::
     jp DrawBrowserDetail_row0Bank
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_modeNormalRows::
     ld hl, sp+$2c
     ld c, [hl]
@@ -785,9 +698,6 @@ DrawBrowserDetail_modeNormalRows::
     ld [hl+], a
     ld [hl], d
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_row0Bank::
     ld hl, sp+$09
     ld c, [hl]
@@ -807,9 +717,6 @@ DrawBrowserDetail_row0Bank::
     inc hl
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_row0BankShift::
     srl b
@@ -839,14 +746,8 @@ DrawBrowserDetail_row0BankShift::
     ld a, $01
     jr DrawBrowserDetail_mode3Hilite
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_mode3Prep::
     xor a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_mode3Hilite::
     ld hl, sp+$09
@@ -864,9 +765,6 @@ DrawBrowserDetail_mode3Hilite::
     jp DrawBrowserDetail_entry0
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_afterHilite::
     xor a
     ld hl, sp+$07
@@ -880,9 +778,6 @@ DrawBrowserDetail_afterHilite::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_entry0::
     ld hl, sp+$1f
@@ -932,15 +827,9 @@ DrawBrowserDetail_entry0::
 
     jr DrawBrowserDetail_entry0Dir
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_entry0SkipDir::
     jp DrawBrowserDetail_entry0File
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_entry0Dir::
     ld hl, sp+$22
@@ -988,9 +877,6 @@ DrawBrowserDetail_entry0Dir::
     jp DrawBrowserDetail_focusInk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_entry0File::
     ld hl, sp+$22
     ld a, [hl]
@@ -1018,9 +904,6 @@ DrawBrowserDetail_entry0File::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_focusInk::
     xor a
     ld hl, sp+$09
@@ -1037,9 +920,6 @@ DrawBrowserDetail_focusInk::
     jp DrawBrowserDetail_row1Bank
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_afterFocusInk::
     xor a
     ld hl, sp+$07
@@ -1053,9 +933,6 @@ DrawBrowserDetail_afterFocusInk::
     inc sp
     call StoreDrawParams
     add sp, $03
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_row1Bank::
     ld hl, sp+$08
@@ -1076,9 +953,6 @@ DrawBrowserDetail_row1Bank::
     inc hl
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_row1BankShift::
     srl b
@@ -1147,15 +1021,9 @@ DrawBrowserDetail_row1BankShift::
 
     jr DrawBrowserDetail_entry1Dir
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_entry1SkipDir::
     jp DrawBrowserDetail_entry1File
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_entry1Dir::
     ld hl, sp+$20
@@ -1203,9 +1071,6 @@ DrawBrowserDetail_entry1Dir::
     jp DrawBrowserDetail_drawSize
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawBrowserDetail_entry1File::
     ld hl, sp+$20
     ld a, [hl]
@@ -1232,9 +1097,6 @@ DrawBrowserDetail_entry1File::
     push bc
     call DrawString
     add sp, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawBrowserDetail_drawSize::
     ld hl, $0000
@@ -1311,12 +1173,10 @@ BrowserDirStr2::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; FormatFileSize(u32@sp+$10): if size≥$10000 FormatFileSize_retDeHl passthrough; else FormatFileSize_pickFmtHi pick fmt table.
-; FormatFileSize_pickFmtHi: size≥$1000 → wFileSizeFmtHi else FormatFileSize_pickFmtLo wFileSizeFmtLo; FormatFileSize_walkTable walks {thr,op} pairs via $4676 jp-table.
-; Ops: FormatFileSize_opScaleSubA/FormatFileSize_opScaleSubB scale-sub thr; FormatFileSize_opSub10 -$10; FormatFileSize_opSub20 -$20; FormatFileSize_opSub30 -$30; FormatFileSize_opSub1a -$1a; FormatFileSize_opAdd8 +8; FormatFileSize_opSub50 -$50; FormatFileSize_opSub1c60 -$1c60 → FormatFileSize_afterOp.
-; FormatFileSize_afterOp: more entries → FormatFileSize_walkTable else advance; FormatFileSize_rewriteLo16 rewrite lo16@sp+$10; FormatFileSize_retDeHl ret DE:HL.
+; WToUpper_B1(uni): FatFs's ff_wtoupper as ffunicode.c has it from R0.12 on, banked.
+; Nothing calls it. Walks a compressed table: wWToUpperCvt1 below U+1000, else wWToUpperCvt2.
 
-FormatFileSize::
+WToUpper_B1::
     add sp, -$0a
     ld hl, sp+$10
     ld a, [hl]
@@ -1330,7 +1190,7 @@ FormatFileSize::
     inc hl
     ld a, [hl]
     sbc $00
-    jp nc, FormatFileSize_retDeHl
+    jp nc, WToUpper_B1_retDeHl
 
     ld hl, sp+$10
     ld a, [hl]
@@ -1345,35 +1205,26 @@ FormatFileSize::
     inc hl
     ld a, [hl]
     sbc $10
-    jp nc, FormatFileSize_pickFmtHi
+    jp nc, WToUpper_B1_pickFmtHi
 
-    ld de, wFileSizeFmtLo
+    ld de, wWToUpperCvt1
     ld c, e
     ld b, d
-    jp FormatFileSize_pickFmtLo
+    jp WToUpper_B1_pickFmtLo
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_pickFmtHi::
-    ld de, wFileSizeFmtHi
+WToUpper_B1_pickFmtHi::
+    ld de, wWToUpperCvt2
     ld c, e
     ld b, d
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_pickFmtLo::
+WToUpper_B1_pickFmtLo::
     ld hl, sp+$08
     ld [hl], c
     inc hl
     ld [hl], b
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_walkTable::
+WToUpper_B1_walkTable::
     ld hl, sp+$08
     ld e, [hl]
     inc hl
@@ -1401,7 +1252,7 @@ FormatFileSize_walkTable::
     dec hl
     ld a, [hl+]
     or [hl]
-    jp z, FormatFileSize_rewriteLo16
+    jp z, WToUpper_B1_rewriteLo16
 
     inc hl
     ld d, h
@@ -1414,7 +1265,7 @@ FormatFileSize_walkTable::
     inc de
     ld a, [de]
     sbc [hl]
-    jp c, FormatFileSize_rewriteLo16
+    jp c, WToUpper_B1_rewriteLo16
 
     ld hl, sp+$08
     ld e, [hl]
@@ -1464,7 +1315,7 @@ FormatFileSize_walkTable::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, FormatFileSize_afterOp
+    jp nc, WToUpper_B1_afterOp
 
     ld a, $08
     ld hl, sp+$00
@@ -1472,7 +1323,7 @@ FormatFileSize_walkTable::
     ld a, $00
     inc hl
     sbc [hl]
-    jp c, FormatFileSize_rewriteLo16
+    jp c, WToUpper_B1_rewriteLo16
 
     dec hl
     ld e, [hl]
@@ -1484,37 +1335,34 @@ FormatFileSize_walkTable::
     jp hl
 
 
-    jp FormatFileSize_opScaleSubA
+    jp WToUpper_B1_opScaleSubA
 
 
-    jp FormatFileSize_opScaleSubB
+    jp WToUpper_B1_opScaleSubB
 
 
-    jp FormatFileSize_opSub10
+    jp WToUpper_B1_opSub10
 
 
-    jp FormatFileSize_opSub20
+    jp WToUpper_B1_opSub20
 
 
-    jp FormatFileSize_opSub30
+    jp WToUpper_B1_opSub30
 
 
-    jp FormatFileSize_opSub1a
+    jp WToUpper_B1_opSub1a
 
 
-    jp FormatFileSize_opAdd8
+    jp WToUpper_B1_opAdd8
 
 
-    jp FormatFileSize_opSub50
+    jp WToUpper_B1_opSub50
 
 
-    jp FormatFileSize_opSub1c60
+    jp WToUpper_B1_opSub1c60
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opScaleSubA::
+WToUpper_B1_opScaleSubA::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1550,13 +1398,10 @@ FormatFileSize_opScaleSubA::
     ld [hl], c
     inc hl
     ld [hl], b
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opScaleSubB::
+WToUpper_B1_opScaleSubB::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1586,13 +1431,10 @@ FormatFileSize_opScaleSubB::
     sbc b
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub10::
+WToUpper_B1_opSub10::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1606,13 +1448,10 @@ FormatFileSize_opSub10::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub20::
+WToUpper_B1_opSub20::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1626,13 +1465,10 @@ FormatFileSize_opSub20::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub30::
+WToUpper_B1_opSub30::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1646,13 +1482,10 @@ FormatFileSize_opSub30::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub1a::
+WToUpper_B1_opSub1a::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1666,13 +1499,10 @@ FormatFileSize_opSub1a::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opAdd8::
+WToUpper_B1_opAdd8::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1684,13 +1514,10 @@ FormatFileSize_opAdd8::
     ld hl, sp+$06
     ld [hl+], a
     ld [hl], d
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub50::
+WToUpper_B1_opSub50::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1704,13 +1531,10 @@ FormatFileSize_opSub50::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_opSub1c60::
+WToUpper_B1_opSub1c60::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -1724,17 +1548,14 @@ FormatFileSize_opSub1c60::
     ld hl, sp+$07
     ld [hl-], a
     ld [hl], e
-    jp FormatFileSize_rewriteLo16
+    jp WToUpper_B1_rewriteLo16
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_afterOp::
+WToUpper_B1_afterOp::
     ld hl, sp+$00
     ld a, [hl+]
     or [hl]
-    jp nz, FormatFileSize_walkTable
+    jp nz, WToUpper_B1_walkTable
 
     inc hl
     ld c, [hl]
@@ -1752,13 +1573,10 @@ FormatFileSize_afterOp::
     ld hl, sp+$08
     ld [hl+], a
     ld [hl], d
-    jp FormatFileSize_walkTable
+    jp WToUpper_B1_walkTable
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_rewriteLo16::
+WToUpper_B1_rewriteLo16::
     ld hl, sp+$06
     ld a, [hl]
     ld hl, sp+$10
@@ -1771,10 +1589,7 @@ FormatFileSize_rewriteLo16::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-FormatFileSize_retDeHl::
+WToUpper_B1_retDeHl::
     ld hl, sp+$10
     ld e, [hl]
     inc hl
@@ -1997,9 +1812,6 @@ LastRomPersistLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LastRomPersistLoop_copyCont::
     jp LastRomPersistLoop
 
@@ -2041,15 +1853,9 @@ IsLeapYear::
     jp IsLeapYear_mod100
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 IsLeapYear_notDiv4::
     jp IsLeapYear_retFlag
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 IsLeapYear_mod100::
     ld hl, $0064
@@ -2092,14 +1898,8 @@ IsLeapYear_mod100::
     jp IsLeapYear_retFlag
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 IsLeapYear_setLeap::
     ld c, $01
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 IsLeapYear_retFlag::
     ld e, c
@@ -2109,12 +1909,12 @@ IsLeapYear_retFlag::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; DateToDaysSince1970(date*): returns seconds since 1970-01-01 (HL:DE), despite name. Feeds RtcToDayCount.
-; DateToDaysSince1970_yearLoop: years from $07b2/1970; IsLeapYear → +$016e else DateToDaysSince1970_nonLeapYear +$016d; DateToDaysSince1970_incYear ++y (DateToDaysSince1970_yearCont) → DateToDaysSince1970_yearLoop; done DateToDaysSince1970_afterYears.
-; DateToDaysSince1970_monthLoop: months via IsLeapYear → wDaysInMonthLeap else DateToDaysSince1970_nonLeapMonths wDaysInMonth; DateToDaysSince1970_incMonth ++m (DateToDaysSince1970_monthCont) → DateToDaysSince1970_monthLoop.
-; DateToDaysSince1970_addHms: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE.
+; DateToSecondsSince1970(date*): returns seconds since 1970-01-01 (HL:DE), less eight hours: the RTC holds UTC+8. Feeds RtcToDayCount.
+; DateToSecondsSince1970_yearLoop: years from $07b2/1970; IsLeapYear → +$016e else DateToSecondsSince1970_nonLeapYear +$016d; DateToSecondsSince1970_incYear ++y (DateToSecondsSince1970_yearCont) → DateToSecondsSince1970_yearLoop; done DateToSecondsSince1970_afterYears.
+; DateToSecondsSince1970_monthLoop: months via IsLeapYear → wDaysInMonthLeap else DateToSecondsSince1970_nonLeapMonths wDaysInMonth; DateToSecondsSince1970_incMonth ++m (DateToSecondsSince1970_monthCont) → DateToSecondsSince1970_monthLoop.
+; DateToSecondsSince1970_addHms: +day-1; *24*60*60; add h/m/s from struct +5/+6/+7; subtract $7080 → HL:DE.
 
-DateToDaysSince1970::
+DateToSecondsSince1970::
     add sp, -$18
     xor a
     ld hl, sp+$14
@@ -2133,10 +1933,7 @@ DateToDaysSince1970::
     inc hl
     ld [hl], $07
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_yearLoop::
+DateToSecondsSince1970_yearLoop::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -2152,7 +1949,7 @@ DateToDaysSince1970_yearLoop::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, DateToDaysSince1970_afterYears
+    jp nc, DateToSecondsSince1970_afterYears
 
     dec hl
     ld a, [hl+]
@@ -2164,7 +1961,7 @@ DateToDaysSince1970_yearLoop::
     ld c, e
     xor a
     or c
-    jp z, DateToDaysSince1970_nonLeapYear
+    jp z, DateToSecondsSince1970_nonLeapYear
 
     ld hl, sp+$14
     ld e, [hl]
@@ -2191,13 +1988,10 @@ DateToDaysSince1970_yearLoop::
     adc $00
     ld [hl-], a
     ld [hl], e
-    jp DateToDaysSince1970_incYear
+    jp DateToSecondsSince1970_incYear
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_nonLeapYear::
+DateToSecondsSince1970_nonLeapYear::
     ld hl, sp+$14
     ld e, [hl]
     inc hl
@@ -2224,28 +2018,19 @@ DateToDaysSince1970_nonLeapYear::
     ld [hl-], a
     ld [hl], e
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_incYear::
+DateToSecondsSince1970_incYear::
     ld hl, sp+$0e
     inc [hl]
-    jr nz, DateToDaysSince1970_yearCont
+    jr nz, DateToSecondsSince1970_yearCont
 
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_yearCont::
-    jp DateToDaysSince1970_yearLoop
+DateToSecondsSince1970_yearCont::
+    jp DateToSecondsSince1970_yearLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_afterYears::
+DateToSecondsSince1970_afterYears::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -2262,10 +2047,7 @@ DateToDaysSince1970_afterYears::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_monthLoop::
+DateToSecondsSince1970_monthLoop::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -2280,7 +2062,7 @@ DateToDaysSince1970_monthLoop::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, DateToDaysSince1970_addHms
+    jp nc, DateToSecondsSince1970_addHms
 
     ld hl, sp+$06
     ld e, [hl]
@@ -2297,7 +2079,7 @@ DateToDaysSince1970_monthLoop::
     ld c, e
     xor a
     or c
-    jp z, DateToDaysSince1970_nonLeapMonths
+    jp z, DateToSecondsSince1970_nonLeapMonths
 
     ld de, wDaysInMonthLeap
     ld hl, sp+$0c
@@ -2348,13 +2130,10 @@ DateToDaysSince1970_monthLoop::
     ld hl, sp+$17
     ld [hl-], a
     ld [hl], e
-    jp DateToDaysSince1970_incMonth
+    jp DateToSecondsSince1970_incMonth
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_nonLeapMonths::
+DateToSecondsSince1970_nonLeapMonths::
     ld de, wDaysInMonth
     ld hl, sp+$0c
     ld a, [hl+]
@@ -2405,28 +2184,19 @@ DateToDaysSince1970_nonLeapMonths::
     ld [hl-], a
     ld [hl], e
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_incMonth::
+DateToSecondsSince1970_incMonth::
     ld hl, sp+$0c
     inc [hl]
-    jr nz, DateToDaysSince1970_monthCont
+    jr nz, DateToSecondsSince1970_monthCont
 
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_monthCont::
-    jp DateToDaysSince1970_monthLoop
+DateToSecondsSince1970_monthCont::
+    jp DateToSecondsSince1970_monthLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-DateToDaysSince1970_addHms::
+DateToSecondsSince1970_addHms::
     ld hl, sp+$06
     ld e, [hl]
     inc hl
@@ -2848,7 +2618,7 @@ DateToDaysSince1970_addHms::
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
 ; RtcToDayCount: SetFpgaPage_B1 $06, BCD-decode RTC bytes at $A00E/$A00D/$A00B…
-; (year+=$07d0/2000), then DateToDaysSince1970. Returns HL:DE day count.
+; (year+=$07d0/2000), then DateToSecondsSince1970. Returns HL:DE day count.
 
 RtcToDayCount::
     add sp, -$11
@@ -3119,7 +2889,7 @@ RtcToDayCount::
     ld c, l
     ld b, h
     push bc
-    call DateToDaysSince1970
+    call DateToSecondsSince1970
     add sp, $02
     push hl
     ld hl, sp+$02
@@ -3147,8 +2917,8 @@ RtcToDayCount::
 ; Source: kernel/stock/src/bank1.c
 ; RtcWriteTimeFromDayDelta(delta@sp+$18): RtcToDayCount − delta; if delta==0 or result<0 → RtcWriteTimeFromDayDelta_zeroHms zero HMS.
 ; RtcWriteTimeFromDayDelta_seedC0a0: seed from $c0a0..$c0b0; overflow → RtcWriteTimeFromDayDelta_overflowZero zero then RtcWriteTimeFromDayDelta_div60a else fall RtcWriteTimeFromDayDelta_div60a.
-; Cascade: RtcWriteTimeFromDayDelta_div60a S32Div/60; RtcWriteTimeFromDayDelta_modSec S32Mod/60 (sec) + Div/60; RtcWriteTimeFromDayDelta_modMin S32Mod/60 (min) + Div/24;
-; RtcWriteTimeFromDayDelta_modHr/RtcWriteTimeFromDayDelta_modHr: S32Mod/24 (hr); RtcWriteTimeFromDayDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).
+; Cascade: RtcWriteTimeFromDayDelta_div60a S32Mod/60; RtcWriteTimeFromDayDelta_modSec S32Div/60 (sec) + Div/60; RtcWriteTimeFromDayDelta_modMin S32Div/60 (min) + Div/24;
+; RtcWriteTimeFromDayDelta_modHr/RtcWriteTimeFromDayDelta_modHr: S32Div/24 (hr); RtcWriteTimeFromDayDelta_writeFpga: write HMS/day $A018..$A01C (page $06) + mirror $A220..$A224 (page $03/$11).
 
 RtcWriteTimeFromDayDelta::
     add sp, -$16
@@ -3207,9 +2977,6 @@ RtcWriteTimeFromDayDelta::
     bit 7, a
     jp z, RtcWriteTimeFromDayDelta_seedC0a0
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_zeroHms::
     ld hl, sp+$08
     ld [hl], $00
@@ -3227,9 +2994,6 @@ RtcWriteTimeFromDayDelta_zeroHms::
     ld [hl], $00
     jp RtcWriteTimeFromDayDelta_writeFpga
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RtcWriteTimeFromDayDelta_seedC0a0::
     ld de, $c0a0
@@ -3278,9 +3042,6 @@ RtcWriteTimeFromDayDelta_seedC0a0::
     sub [hl]
     jp nc, RtcWriteTimeFromDayDelta_div60a
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_overflowZero::
     ld hl, sp+$08
     ld [hl], $00
@@ -3297,9 +3058,6 @@ RtcWriteTimeFromDayDelta_overflowZero::
     ld hl, sp+$09
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_div60a::
     ld hl, $0000
     push hl
@@ -3315,7 +3073,7 @@ RtcWriteTimeFromDayDelta_div60a::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Div
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3342,9 +3100,6 @@ RtcWriteTimeFromDayDelta_div60a::
     ld [hl-], a
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_modSec::
     ld hl, $0000
     push hl
@@ -3360,7 +3115,7 @@ RtcWriteTimeFromDayDelta_modSec::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Mod
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3401,7 +3156,7 @@ RtcWriteTimeFromDayDelta_modSec::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Div
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3428,9 +3183,6 @@ RtcWriteTimeFromDayDelta_modSec::
     ld [hl-], a
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_modMin::
     ld hl, $0000
     push hl
@@ -3446,7 +3198,7 @@ RtcWriteTimeFromDayDelta_modMin::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Mod
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3487,7 +3239,7 @@ RtcWriteTimeFromDayDelta_modMin::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Div
+    call S32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3527,9 +3279,6 @@ RtcWriteTimeFromDayDelta_modMin::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RtcWriteTimeFromDayDelta_modHr::
     ld hl, $0000
     push hl
@@ -3545,7 +3294,7 @@ RtcWriteTimeFromDayDelta_modHr::
     ld h, [hl]
     ld l, a
     push hl
-    call S32Mod
+    call S32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3652,9 +3401,6 @@ RtcWriteTimeFromDayDelta_modHr::
     ld [hl], a
     and $c0
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RtcWriteTimeFromDayDelta_writeFpga::
     ld a, $06
@@ -3825,8 +3571,8 @@ RtcReadDaysClearRegs::
 ; BackupOpenSaverPath: build $c3a5="/SAVER/"+name; BackupOpenSaverPath_forceSavExt force ".sav"; Open_B6 FarCall_06_7309 → $ca0f.
 ; Size from $d3ed: BackupOpenSaverPath_sizeFromD3eb ($d3eb==2 → BackupOpenSaverPath_sizeSkip2k/BackupOpenSaverPath_size2kRtc $2000 else BackupOpenSaverPath_size0 0); 1/2 BackupOpenSaverPath_size2k $2000; 4 BackupOpenSaverPath_size20000 $20000; 5 BackupOpenSaverPath_size10000 $10000; else BackupOpenSaverPath_size8000 $8000.
 ; BackupOpenSaverPath_openOk: open ok else BackupOpenSaverPath_failMemsetFf; and $30==$30 → BackupOpenSaverPath_rtcFlagSkip/BackupOpenSaverPath_rtcFlagSet RTC flag else BackupOpenSaverPath_afterRtcFlag; BackupOpenSaverPath_readInit/BackupOpenSaverPath_readLoop read+$200 VramCopyStack loop.
-; BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_rtcReadDaysClear RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → PreLaunchSaveStamp.
-; BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; BackupOpenSaverPath_failRtcPreLaunch RtcReadDaysClearRegs → PreLaunchSaveStamp.
+; BackupOpenSaverPath_rtcMetaRestore RTC/meta restore else BackupOpenSaverPath_rtcReadDaysClear RtcReadDaysClearRegs; BackupOpenSaverPath_closePreLaunch close → BackupOpenSaverPath_stamp.
+; BackupOpenSaverPath_failMemsetFf Memset $FF; BackupOpenSaverPath_failBlankWrite blank write twin; BackupOpenSaverPath_failRtcPreLaunch RtcReadDaysClearRegs → BackupOpenSaverPath_stamp.
 
 BackupOpenSaverPath::
     add sp, -$1e
@@ -3877,9 +3623,6 @@ BackupOpenSaverPath::
 
     ld hl, sp+$0b
     inc [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_forceSavExt::
     ld hl, sp+$0b
@@ -3961,9 +3704,6 @@ BackupOpenSaverPath_forceSavExt::
     jp BackupOpenSaverPath_size8000
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_sizeFromD3eb::
     ld hl, $d3eb
     ld a, [hl]
@@ -3972,15 +3712,9 @@ BackupOpenSaverPath_sizeFromD3eb::
 
     jr BackupOpenSaverPath_size2kRtc
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_sizeSkip2k::
     jp BackupOpenSaverPath_size0
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_size2kRtc::
     ld hl, sp+$14
@@ -3994,9 +3728,6 @@ BackupOpenSaverPath_size2kRtc::
     jp BackupOpenSaverPath_openOk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_size0::
     xor a
     ld hl, sp+$14
@@ -4006,9 +3737,6 @@ BackupOpenSaverPath_size0::
     ld [hl], a
     jp BackupOpenSaverPath_openOk
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_size2k::
     ld hl, sp+$14
@@ -4022,9 +3750,6 @@ BackupOpenSaverPath_size2k::
     jp BackupOpenSaverPath_openOk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_size20000::
     ld hl, sp+$14
     ld [hl], $00
@@ -4036,9 +3761,6 @@ BackupOpenSaverPath_size20000::
     ld [hl], $00
     jp BackupOpenSaverPath_openOk
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_size10000::
     ld hl, sp+$14
@@ -4052,9 +3774,6 @@ BackupOpenSaverPath_size10000::
     jp BackupOpenSaverPath_openOk
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_size8000::
     ld hl, sp+$14
     ld [hl], $00
@@ -4064,9 +3783,6 @@ BackupOpenSaverPath_size8000::
     ld [hl], $00
     inc hl
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_openOk::
     xor a
@@ -4152,15 +3868,9 @@ BackupOpenSaverPath_openOk::
 
     jr BackupOpenSaverPath_rtcFlagSet
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_rtcFlagSkip::
     jp BackupOpenSaverPath_afterRtcFlag
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_rtcFlagSet::
     ld hl, sp+$08
@@ -4170,15 +3880,9 @@ BackupOpenSaverPath_rtcFlagSet::
     jp BackupOpenSaverPath_readInit
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_afterRtcFlag::
     ld hl, sp+$08
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_readInit::
     xor a
@@ -4187,9 +3891,6 @@ BackupOpenSaverPath_readInit::
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_readLoop::
     ld hl, sp+$1a
@@ -4338,9 +4039,6 @@ BackupOpenSaverPath_readLoop::
     jp BackupOpenSaverPath_readLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_rtcMetaRestore::
     xor a
     ld hl, sp+$08
@@ -4454,9 +4152,6 @@ BackupOpenSaverPath_rtcMetaRestore::
     jp BackupOpenSaverPath_closePreLaunch
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_rtcReadDaysClear::
     xor a
     ld hl, $d3f0
@@ -4490,9 +4185,6 @@ BackupOpenSaverPath_rtcReadDaysClear::
     ld a, [de]
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_closePreLaunch::
     ld a, $00
     push af
@@ -4503,11 +4195,8 @@ BackupOpenSaverPath_closePreLaunch::
     push hl
     call FarCall_03_768f
     add sp, $02
-    jp PreLaunchSaveStamp
+    jp BackupOpenSaverPath_stamp
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_failMemsetFf::
     ld hl, $0200
@@ -4525,9 +4214,6 @@ BackupOpenSaverPath_failMemsetFf::
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupOpenSaverPath_failBlankWrite::
     ld hl, sp+$1a
@@ -4664,9 +4350,6 @@ BackupOpenSaverPath_failBlankWrite::
     jp BackupOpenSaverPath_failBlankWrite
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupOpenSaverPath_failRtcPreLaunch::
     call RtcReadDaysClearRegs
     push hl
@@ -4701,13 +4384,12 @@ BackupOpenSaverPath_failRtcPreLaunch::
     add sp, $01
 
 ; [ezgb]
-; Source: kernel/stock/src/bank1.c
-; PreLaunchSaveStamp: page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
+; BackupOpenSaverPath_stamp: the shared tail of BackupOpenSaverPath, not a function. Page $11 (SetFpgaPage_B1 $03) per-launch save stamp for SAVER/*.SAV.
 ; $A000=$AA backup-pending, $A001=save size in banks, $A00F=path length, $A010+=save path (ASCII) from $c3a5.
-; PreLaunchSaveStamp_copyBasename: copy basename until len@sp+$0b (PreLaunchSaveStamp_copyCont ++idx); done → PreLaunchSaveStamp_checkRtc.
-; PreLaunchSaveStamp_checkRtc: if $d3f0 → $A202=$77 + ROM size@$A210–13 else PreLaunchSaveStamp_clearRtcFlag $A202=0; PreLaunchSaveStamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup.
+; BackupOpenSaverPath_stamp_copyBasename: copy basename until len@sp+$0b (BackupOpenSaverPath_stamp_copyCont ++idx); done → BackupOpenSaverPath_stamp_checkRtc.
+; BackupOpenSaverPath_stamp_checkRtc: if $d3f0 → $A202=$77 + ROM size@$A210–13 else BackupOpenSaverPath_stamp_clearRtcFlag $A202=0; BackupOpenSaverPath_stamp_epilogue: $4000=0, page $00 ret. Next LaunchSetup.
 
-PreLaunchSaveStamp::
+BackupOpenSaverPath_stamp::
     ld a, $0d
     push af
     inc sp
@@ -4773,10 +4455,7 @@ PreLaunchSaveStamp::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-PreLaunchSaveStamp_copyBasename::
+BackupOpenSaverPath_stamp_copyBasename::
     ld hl, sp+$0b
     ld c, [hl]
     ld b, $00
@@ -4787,7 +4466,7 @@ PreLaunchSaveStamp_copyBasename::
     inc hl
     ld a, [hl]
     sbc b
-    jp nc, PreLaunchSaveStamp_checkRtc
+    jp nc, BackupOpenSaverPath_stamp_checkRtc
 
     dec hl
     ld e, [hl]
@@ -4817,26 +4496,20 @@ PreLaunchSaveStamp_copyBasename::
     ld [de], a
     ld hl, sp+$09
     inc [hl]
-    jr nz, PreLaunchSaveStamp_copyCont
+    jr nz, BackupOpenSaverPath_stamp_copyCont
 
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-PreLaunchSaveStamp_copyCont::
-    jp PreLaunchSaveStamp_copyBasename
+BackupOpenSaverPath_stamp_copyCont::
+    jp BackupOpenSaverPath_stamp_copyBasename
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-PreLaunchSaveStamp_checkRtc::
+BackupOpenSaverPath_stamp_checkRtc::
     xor a
     ld hl, $d3f0
     or [hl]
-    jp z, PreLaunchSaveStamp_clearRtcFlag
+    jp z, BackupOpenSaverPath_stamp_clearRtcFlag
 
     ld bc, $a202
     ld a, $77
@@ -4965,21 +4638,15 @@ PreLaunchSaveStamp_checkRtc::
     ld hl, sp+$04
     ld a, [hl]
     ld [bc], a
-    jp PreLaunchSaveStamp_epilogue
+    jp BackupOpenSaverPath_stamp_epilogue
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-PreLaunchSaveStamp_clearRtcFlag::
+BackupOpenSaverPath_stamp_clearRtcFlag::
     ld bc, $a202
     ld a, $00
     ld [bc], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-PreLaunchSaveStamp_epilogue::
+BackupOpenSaverPath_stamp_epilogue::
     ld bc, CStrCat_B1
     ld a, $00
     ld [bc], a
@@ -4997,14 +4664,9 @@ SaverDirSlashStr::
 
 ; [ezgb]
 ; Source: kernel/stock/src/bank1.c
-; BuildSaverBackupPath: sits between BackupOpenSaverPath and LaunchSetup in bank 1 (right
-; after SaverDirSlashStr). Double loop (outer/inner) walking a table via WRAM pointer
-; $c2a0/$c2a1, FarCallTrampoline + Memcpy($ff bytes) into $c0a0, size-limited against
-; $e800. Reasonable inference from control flow and the Memcpy/FarCallTrampoline calls;
-; exact role and caller not independently confirmed — named from shape + neighboring
-; context, not a traced call site.
+; SortEntries_B1: bubble-sorts the browser's entries by name, swapping two through wSaveBuf.
 
-BuildSaverBackupPath::
+SortEntries_B1::
     add sp, -$0e
     ld a, $01
     ld hl, sp+$14
@@ -5012,7 +4674,7 @@ BuildSaverBackupPath::
     ld a, $00
     inc hl
     sbc [hl]
-    jp nc, BuildSaverBackupPath_epilogue
+    jp nc, SortEntries_B1_epilogue
 
     ld bc, CStrCat_B1
     ld a, $01
@@ -5035,10 +4697,7 @@ BuildSaverBackupPath::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_outerLoop::
+SortEntries_B1_outerLoop::
     ld hl, sp+$0c
     ld d, h
     ld e, l
@@ -5049,7 +4708,7 @@ BuildSaverBackupPath_outerLoop::
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, BuildSaverBackupPath_epilogue
+    jp nc, SortEntries_B1_epilogue
 
     ld hl, sp+$14
     ld e, [hl]
@@ -5084,10 +4743,7 @@ BuildSaverBackupPath_outerLoop::
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_innerLoop::
+SortEntries_B1_innerLoop::
     ld hl, sp+$0a
     ld d, h
     ld e, l
@@ -5098,7 +4754,7 @@ BuildSaverBackupPath_innerLoop::
     inc de
     ld a, [de]
     sbc [hl]
-    jp nc, BuildSaverBackupPath_outerNext
+    jp nc, SortEntries_B1_outerNext
 
     ld hl, sp+$0a
     ld c, [hl]
@@ -5173,7 +4829,7 @@ BuildSaverBackupPath_innerLoop::
     ld a, $00
     sbc b
     rlca
-    jp nc, BuildSaverBackupPath_innerNext
+    jp nc, SortEntries_B1_innerNext
 
     ld hl, $c2a0
     ld hl, $c2a0
@@ -5251,10 +4907,7 @@ BuildSaverBackupPath_innerLoop::
     call Memcpy
     add sp, $06
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_innerNext::
+SortEntries_B1_innerNext::
     ld hl, sp+$04
     ld e, [hl]
     inc hl
@@ -5268,40 +4921,28 @@ BuildSaverBackupPath_innerNext::
     ld [hl], d
     ld hl, sp+$0a
     inc [hl]
-    jr nz, BuildSaverBackupPath_innerContinue
+    jr nz, SortEntries_B1_innerContinue
 
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_innerContinue::
-    jp BuildSaverBackupPath_innerLoop
+SortEntries_B1_innerContinue::
+    jp SortEntries_B1_innerLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_outerNext::
+SortEntries_B1_outerNext::
     ld hl, sp+$0c
     inc [hl]
-    jr nz, BuildSaverBackupPath_outerContinue
+    jr nz, SortEntries_B1_outerContinue
 
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_outerContinue::
-    jp BuildSaverBackupPath_outerLoop
+SortEntries_B1_outerContinue::
+    jp SortEntries_B1_outerLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
-BuildSaverBackupPath_epilogue::
+SortEntries_B1_epilogue::
     add sp, $0e
     ret
 
@@ -5362,9 +5003,6 @@ LaunchSetup::
     jp LaunchSetup_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_fatTypeCheck::
     ld de, $c7a9
     ld a, [de]
@@ -5374,15 +5012,9 @@ LaunchSetup_fatTypeCheck::
 
     jr LaunchSetup_fat12Limit
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_skipFat12::
     jp LaunchSetup_fatOtherLimit
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 LaunchSetup_fat12Limit::
     ld hl, sp+$0e
@@ -5396,9 +5028,6 @@ LaunchSetup_fat12Limit::
     jp LaunchSetup_seedClust2Sect
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_fatOtherLimit::
     ld hl, sp+$0e
     ld [hl], $f7
@@ -5408,9 +5037,6 @@ LaunchSetup_fatOtherLimit::
     ld [hl], $ff
     inc hl
     ld [hl], $0f
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 LaunchSetup_seedClust2Sect::
     ld hl, sp+$20
@@ -5569,9 +5195,6 @@ LaunchSetup_seedClust2Sect::
     ld [hl+], a
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_walkClusters::
     ld hl, sp+$20
     ld c, l
@@ -5636,9 +5259,6 @@ LaunchSetup_walkClusters::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_walkCont::
     ld hl, sp+$16
     ld e, [hl]
@@ -5689,9 +5309,6 @@ LaunchSetup_walkCont::
     ld hl, sp+$07
     sub [hl]
     jp z, LaunchSetup_eofCheck
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 LaunchSetup_appendCluster::
     ld bc, $c7ab
@@ -5821,9 +5438,6 @@ LaunchSetup_appendCluster::
     ld hl, sp+$1e
     ld [hl+], a
     ld [hl], d
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 LaunchSetup_eofCheck::
     ld hl, sp+$1a
@@ -6015,9 +5629,6 @@ LaunchSetup_eofCheck::
     ld de, $0000
     ld hl, $0000
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 LaunchSetup_epilogueRet::
     ld hl, $0244
     add hl, sp
@@ -6202,17 +5813,11 @@ MapCartTypeToUi::
     jp MapCartTypeToUi_bucket6b
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_bucket0::
     ld hl, $d3eb
     ld [hl], $00
     jp MapCartTypeToUi_batteryCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_bucket1::
     ld hl, $d3eb
@@ -6220,17 +5825,11 @@ MapCartTypeToUi_bucket1::
     jp MapCartTypeToUi_batteryCheck
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_bucket2::
     ld hl, $d3eb
     ld [hl], $02
     jp MapCartTypeToUi_batteryCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_bucket3::
     ld hl, $d3eb
@@ -6238,17 +5837,11 @@ MapCartTypeToUi_bucket3::
     jp MapCartTypeToUi_batteryCheck
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_bucket4::
     ld hl, $d3eb
     ld [hl], $04
     jp MapCartTypeToUi_batteryCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_bucket6a::
     ld hl, $d3eb
@@ -6256,15 +5849,9 @@ MapCartTypeToUi_bucket6a::
     jp MapCartTypeToUi_batteryCheck
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_bucket6b::
     ld hl, $d3eb
     ld [hl], $06
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_batteryCheck::
     ld hl, sp+$02
@@ -6334,15 +5921,9 @@ MapCartTypeToUi_batteryCheck::
 
     jr MapCartTypeToUi_batterySet
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_batterySkip::
     jp MapCartTypeToUi_batteryClear
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_batterySet::
     ld hl, $d3ef
@@ -6350,15 +5931,9 @@ MapCartTypeToUi_batterySet::
     jp MapCartTypeToUi_timerCheck
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_batteryClear::
     ld hl, $d3ef
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_timerCheck::
     ld hl, sp+$02
@@ -6373,15 +5948,9 @@ MapCartTypeToUi_timerCheck::
 
     jr MapCartTypeToUi_timerSet
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_timerSkip::
     jp MapCartTypeToUi_timerClear
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_timerSet::
     ld hl, $d3f0
@@ -6389,15 +5958,9 @@ MapCartTypeToUi_timerSet::
     jp MapCartTypeToUi_rumbleCheck
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_timerClear::
     ld hl, $d3f0
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_rumbleCheck::
     ld hl, sp+$02
@@ -6430,24 +5993,15 @@ MapCartTypeToUi_rumbleCheck::
     jp MapCartTypeToUi_rumbleSet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_rumbleSet::
     ld hl, $d3f1
     ld [hl], $01
     jp MapCartTypeToUi_ret
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 MapCartTypeToUi_rumbleClear::
     ld hl, $d3f1
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 MapCartTypeToUi_ret::
     ret
@@ -6506,9 +6060,6 @@ RomLoaderMain::
     ld e, $ff
     jp RomLoaderMain_failRetFf
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_readHdr::
     ld bc, $ca19
@@ -6586,9 +6137,6 @@ RomLoaderMain_readHdr::
     inc hl
     ld [hl], $01
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_checksumLoop::
     ld a, $4c
     ld hl, sp+$0d
@@ -6622,15 +6170,9 @@ RomLoaderMain_checksumLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_checksumCont::
     jp RomLoaderMain_checksumLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_mapCartType::
     ld bc, $c1e7
@@ -6663,15 +6205,9 @@ RomLoaderMain_mapCartType::
 
     jr RomLoaderMain_sizeGate
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_skipSizeGate::
     jp RomLoaderMain_closeRet
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_sizeGate::
     ld a, $20
@@ -6706,9 +6242,6 @@ RomLoaderMain_sizeGate::
     ld [hl], $04
     inc hl
     ld [hl], $01
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_xorFold::
     ld a, $33
@@ -6805,15 +6338,9 @@ RomLoaderMain_xorFold::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_xorFoldCont::
     jp RomLoaderMain_xorFold
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_cmpMagic::
     ld hl, sp+$08
@@ -6838,22 +6365,13 @@ RomLoaderMain_cmpMagic::
 
     jr RomLoaderMain_setMbc1m
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_skipMbc1m::
     jp RomLoaderMain_closeRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 RomLoaderMain_setMbc1m::
     ld hl, $d3eb
     ld [hl], $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_closeRet::
     ld hl, $ca0f
@@ -6862,9 +6380,6 @@ RomLoaderMain_closeRet::
     add sp, $02
     ld hl, sp+$11
     ld e, [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 RomLoaderMain_failRetFf::
     add sp, $15
@@ -6933,9 +6448,6 @@ DrawCardTypeScreen::
     jp DrawCardTypeScreen_mbcNot
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_mbcNone::
     ld hl, sp+$0a
     ld c, l
@@ -6947,9 +6459,6 @@ DrawCardTypeScreen_mbcNone::
     add sp, $04
     jp DrawCardTypeScreen_afterMbc
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_mbc1::
     ld hl, sp+$0a
@@ -6963,9 +6472,6 @@ DrawCardTypeScreen_mbc1::
     jp DrawCardTypeScreen_afterMbc
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_mbc2::
     ld hl, sp+$0a
     ld c, l
@@ -6977,9 +6483,6 @@ DrawCardTypeScreen_mbc2::
     add sp, $04
     jp DrawCardTypeScreen_afterMbc
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_mbc3::
     ld hl, sp+$0a
@@ -6993,9 +6496,6 @@ DrawCardTypeScreen_mbc3::
     jp DrawCardTypeScreen_afterMbc
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_mbc5::
     ld hl, sp+$0a
     ld c, l
@@ -7007,9 +6507,6 @@ DrawCardTypeScreen_mbc5::
     add sp, $04
     jp DrawCardTypeScreen_afterMbc
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_mbc1m::
     ld hl, sp+$0a
@@ -7023,9 +6520,6 @@ DrawCardTypeScreen_mbc1m::
     jp DrawCardTypeScreen_afterMbc
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_mbcNot::
     ld hl, sp+$0a
     ld c, l
@@ -7036,14 +6530,11 @@ DrawCardTypeScreen_mbcNot::
     call ApplyBasename
     add sp, $04
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_afterMbc::
     ld hl, sp+$0a
     ld c, l
     ld b, h
-    ld hl, S32DivImpl_epilogueRet
+    ld hl, S32ModImpl_epilogueRet
     push hl
     ld a, $00
     push af
@@ -7074,15 +6565,9 @@ DrawCardTypeScreen_afterMbc::
     pop af
     jr DrawCardTypeScreen_romShiftDone
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_romShiftLoop::
     sla c
     rl b
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_romShiftDone::
     dec a
@@ -7172,38 +6657,23 @@ DrawCardTypeScreen_romShiftDone::
     jp DrawCardTypeScreen_ram20
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_ram0::
     ld c, $00
     jp DrawCardTypeScreen_afterRam
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_ram8::
     ld c, $08
     jp DrawCardTypeScreen_afterRam
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_ram80::
     ld c, $80
     jp DrawCardTypeScreen_afterRam
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_ram20::
     ld c, $20
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_afterRam::
     ld hl, sp+$0a
@@ -7288,9 +6758,6 @@ DrawCardTypeScreen_afterRam::
     jp DrawCardTypeScreen_waitJoypad
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_batteryNo::
     ld hl, $4e5c
     push hl
@@ -7301,9 +6768,6 @@ DrawCardTypeScreen_batteryNo::
     push hl
     call DrawString
     add sp, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_waitJoypad::
     call ReadJoypad
@@ -7316,15 +6780,9 @@ DrawCardTypeScreen_waitJoypad::
     jp DrawCardTypeScreen_waitB
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 DrawCardTypeScreen_waitA::
     jp DrawCardTypeScreen_epilogueRet
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_waitB::
     ld a, c
@@ -7333,9 +6791,6 @@ DrawCardTypeScreen_waitB::
 
     jp DrawCardTypeScreen_waitJoypad
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 DrawCardTypeScreen_epilogueRet::
     add sp, $1e
@@ -7424,14 +6879,8 @@ BootRomInfoMenu::
     dec hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_drawPanel::
     call DrawInfoPanelRect
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_hiliteBoot::
     xor a
@@ -7479,9 +6928,6 @@ BootRomInfoMenu_hiliteBoot::
     jp BootRomInfoMenu_inputLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_romInfoInk::
     ld hl, $0000
     push hl
@@ -7516,9 +6962,6 @@ BootRomInfoMenu_romInfoInk::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_inputLoop::
     ld hl, sp+$03
     ld [hl], $00
@@ -7536,9 +6979,6 @@ BootRomInfoMenu_inputLoop::
     jp BootRomInfoMenu_afterSelDec
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_selDec::
     xor a
     ld hl, sp+$02
@@ -7549,9 +6989,6 @@ BootRomInfoMenu_selDec::
     inc hl
     ld [hl], $01
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_afterSelDec::
     ld hl, sp+$00
     ld a, [hl]
@@ -7560,9 +6997,6 @@ BootRomInfoMenu_afterSelDec::
 
     jp BootRomInfoMenu_afterSelInc
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_selInc::
     ld hl, sp+$02
@@ -7579,9 +7013,6 @@ BootRomInfoMenu_selInc::
     inc hl
     ld [hl], $01
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_afterSelInc::
     ld hl, sp+$00
     ld a, [hl]
@@ -7591,9 +7022,6 @@ BootRomInfoMenu_afterSelInc::
     jp BootRomInfoMenu_checkB
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_confirmA::
     ld hl, sp+$02
     ld a, [hl]
@@ -7602,15 +7030,9 @@ BootRomInfoMenu_confirmA::
 
     jr BootRomInfoMenu_romInfoScreen
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_bootLoading::
     jp BootRomInfoMenu_loadingStr
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_romInfoScreen::
     call DrawCardTypeScreen
@@ -7621,9 +7043,6 @@ BootRomInfoMenu_romInfoScreen::
     jp BootRomInfoMenu_drawPanel
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_checkB::
     ld hl, sp+$00
     ld a, [hl]
@@ -7633,16 +7052,10 @@ BootRomInfoMenu_checkB::
     jp BootRomInfoMenu_delayRedraw
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BootRomInfoMenu_cancelRetFf::
     ld e, $ff
     jp BootRomInfoMenu_epilogueRet
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_delayRedraw::
     ld hl, $0064
@@ -7651,9 +7064,6 @@ BootRomInfoMenu_delayRedraw::
     add sp, $02
     jp BootRomInfoMenu_hiliteBoot
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_loadingStr::
     ld hl, $0000
@@ -7690,9 +7100,6 @@ BootRomInfoMenu_loadingStr::
     add sp, $05
     ld hl, sp+$02
     ld e, [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BootRomInfoMenu_epilogueRet::
     add sp, $04
@@ -7753,9 +7160,6 @@ BackupSaveDump::
     ld [hl+], a
     ld [hl+], a
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSaveDump_writeLoop::
     ld hl, sp+$07
@@ -7886,22 +7290,13 @@ BackupSaveDump_writeLoop::
 
     jr BackupSaveDump_spinnerReset0
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_spinnerSkipReset::
     jp BackupSaveDump_spinnerDot
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_spinnerReset0::
     ld hl, sp+$04
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSaveDump_spinnerDot::
     xor a
@@ -7921,9 +7316,6 @@ BackupSaveDump_spinnerDot::
     jp BackupSaveDump_advance200
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_afterDot::
     ld hl, sp+$04
     ld a, [hl]
@@ -7932,15 +7324,9 @@ BackupSaveDump_afterDot::
 
     jr BackupSaveDump_spinnerDots
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_spinnerSkipDots::
     jp BackupSaveDump_spinnerEllipsis
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSaveDump_spinnerDots::
     ld hl, $0a0b
@@ -7955,9 +7341,6 @@ BackupSaveDump_spinnerDots::
     jp BackupSaveDump_advance200
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_spinnerEllipsis::
     ld hl, $0a0b
     push hl
@@ -7968,9 +7351,6 @@ BackupSaveDump_spinnerEllipsis::
     push hl
     call DrawString
     add sp, $05
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSaveDump_advance200::
     ld hl, sp+$07
@@ -7999,9 +7379,6 @@ BackupSaveDump_advance200::
     jp BackupSaveDump_writeLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_checkRtcMagic::
     ld hl, $d3f6
     ld a, [hl]
@@ -8010,15 +7387,9 @@ BackupSaveDump_checkRtcMagic::
 
     jr BackupSaveDump_rtcPackWrite
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_skipRtcPack::
     jp BackupSaveDump_close
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSaveDump_rtcPackWrite::
     ld hl, $0030
@@ -8272,9 +7643,6 @@ BackupSaveDump_rtcPackWrite::
     call FarCall_07_7739
     add sp, $08
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSaveDump_close::
     ld hl, $ca0f
     push hl
@@ -8341,15 +7709,9 @@ BackupSavePrompt::
 
     jr BackupSavePrompt_autoDump
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSavePrompt_skipAuto::
     jp Jump_001_67d0
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSavePrompt_autoDump::
     ld hl, $0a05
@@ -8448,9 +7810,6 @@ Jump_001_67d0:
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSavePrompt_joyLoop::
     call ReadJoypad
     ld c, e
@@ -8461,9 +7820,6 @@ BackupSavePrompt_joyLoop::
 
     jp BackupSavePrompt_checkB
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSavePrompt_confirmDump::
     ld hl, $0a05
@@ -8532,9 +7888,6 @@ BackupSavePrompt_confirmDump::
     jp BackupSavePrompt_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
-
 BackupSavePrompt_checkB::
     ld a, c
     and $20
@@ -8542,9 +7895,6 @@ BackupSavePrompt_checkB::
 
     jp BackupSavePrompt_joyLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/bank1.c
 
 BackupSavePrompt_epilogueRet::
     add sp, $08
@@ -8693,7 +8043,7 @@ BootUnpackWramTables::
     db $31, $ff, $32, $ff, $33, $ff, $34, $ff, $35, $ff, $36, $ff, $37, $ff, $38, $ff
     db $39, $ff, $3a, $ff, $00
 
-    ld hl, wFileSizeFmtLo
+    ld hl, wWToUpperCvt1
     call RleUnpack
 
     db $7f, $61, $00, $1a, $03, $e0, $00, $17, $03, $f8, $00, $07, $03, $ff, $00, $01
@@ -8729,7 +8079,7 @@ BootUnpackWramTables::
     db $36, $01, $c1, $04, $0e, $01, $cf, $04, $01, $00, $c0, $04, $d0, $04, $44, $01
     db $61, $05, $26, $04, $00, $00, $00
 
-    ld hl, wFileSizeFmtHi
+    ld hl, wWToUpperCvt2
     call RleUnpack
 
     db $7f, $7d, $1d, $01, $00, $63, $2c, $00, $1e, $96, $01, $a0, $1e, $5a, $01, $00

@@ -64,9 +64,8 @@ def load_syms(path):
 ALIASES = {"mem_cpy": "MemCpy16", "mem_set": ("MemSet8", "MemSet16"), "chk_chr": "MemChr",
            "fit_lfn": "PutLfn", "f_sync": "Fsync", "f_open": "Open",
            "dbg_out": "RetStub"}
-# kernel.sym names the wrong function: bank 9 has f_mkdir (Open_B9), no
-# f_open, and FsUnlink at 09:7cc0 is a mod label on stock $FF fill
-BANK_ALIASES = {(9, "f_mkdir"): "Open", (9, "f_open"): None, (9, "f_unlink"): None}
+# bank 9 has f_mkdir and neither f_open nor f_unlink
+BANK_ALIASES = {(9, "f_open"): None, (9, "f_unlink"): None}
 
 
 def sym_addr(syms, bank, cname):

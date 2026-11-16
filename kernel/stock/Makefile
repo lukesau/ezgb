@@ -75,7 +75,7 @@ FF_ALIASES := -a _disk_initialize=DiskInitialize -a _disk_status=DiskStatus \
               -a _disk_ioctl=ReturnZero \
               -a _ff_convert=MapCp437 -a _ff_wtoupper=WToUpper \
               -a banked_call=FarCallTrampoline -a __mullong_rrx_s=U32Mul \
-              -a __divulong_rrx_s=U32Mod -a __divuint_rrx_s=U16Div \
+              -a __divulong_rrx_s=U32Div -a __divuint_rrx_s=U16Div \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr
 # 1.04e has no clock: its FatFs stamps a fixed date and never calls this
 ifneq ($(K),104)
@@ -119,9 +119,9 @@ $(B)/ff_b%.inc: src/dbg.c src/ff.c src/ff.h src/ffconf.h src/integer.h src/diski
 # _GSINIT code that fills them is in bank 1, where EZ Flash linked that area.
 B0_FATFS_SRCS := src/fsglue.c src/diskio.c src/option/ccsbcs.c
 B0_FATFS_ALIASES := -a _f_open=Open_B6 -a _f_read=Read_B6 -a _f_write=Write_B7 \
-              -a _f_lseek=Lseek_B3 -a _f_close=Close_B3 -a _f_mkdir=Open_B9 \
+              -a _f_lseek=Lseek_B3 -a _f_close=Close_B3 -a _f_mkdir=Mkdir_B9 \
               -a _clust2sect=Clust2Sect_B5 -a _get_fat=GetFat_B5 \
-              -a _SdRead=DiskRead_B2 -a _SdWrite=DiskWrite_B2 -a banked_call=FarCallTrampoline \
+              -a _SdRead=SdRead -a _SdWrite=SdWrite -a banked_call=FarCallTrampoline \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr -a __initrleblock=RleUnpack
 
 $(B)/b0_fatfs.inc $(B)/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
@@ -141,7 +141,7 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wDirEnd=0xc5a4 \
               -g _wFno=0xc9db -g _wDir=0xc9f5 -a _SetFpgaPageAlt_B4=SetFpgaPageAlt_B4 \
               -a _strncpy=Strncpy -a _CStrCat_B1=CStrCat_B1 -a __rrulong_rrx_s=U32Shr \
-              -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod -g _wLabelBuf=0xc4a4 \
+              -a __modulong_rrx_s=U32Mod -a __divulong_rrx_s=U32Div -g _wLabelBuf=0xc4a4 \
               -a _box=DrawRect -a _memset=Memset -a _memcpy=Memcpy -a _strrchr=Strrchr \
               -a _wait_vbl_done=WaitVBlankFlag -a _display_off=LcdOff -a _disable_interrupts=DiNest \
               -a _f_mount=Mount_B5 -a _f_chdir=Chdir_B5 -a _f_opendir=Opendir_B5 -a _fs_mkdir=FarCall_09_77ff \
@@ -172,7 +172,7 @@ BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _c
               -a banked_call=FarCallTrampoline -a __initrleblock=RleUnpack -a _memset=Memset \
               -a _memcpy=Memcpy -a _strlen=CStrLen -a _set_data=VramCopyStack \
               -a _fs_open=FarCall_06_7309 -a _fs_read=FarCall_06_779a -a _fs_lseek=FarCall_03_76cc \
-              -a _fs_close=FarCall_03_768f -a __modslong_rrx_s=S32Div -a __divslong_rrx_s=S32Mod \
+              -a _fs_close=FarCall_03_768f -a __modslong_rrx_s=S32Mod -a __divslong_rrx_s=S32Div \
               -a __mullong_rrx_s=U32Mul -a __rrulong_rrx_s=U32Shr -a __moduint_rrx_s=U16Mod \
               -g _wEntries=0xc2a0 -g _wEntryCount=0xc2a2 -g _wPath=0xc2a6 -g _wLabelBuf=0xc4a4 \
               -g _wSaveBuf=0xc0a0 -g _wTmp=0xc3a5 -g _wFil=0xca0f -g _wD3EB=0xd3eb -g _wD3ED=0xd3ed \
@@ -255,7 +255,7 @@ $(B)/b2_code.inc: src/bank2.c src/diskio.h src/integer.h tools/sdinc.py $(SYM)
 BANK4_SRCS := src/bank4.c
 BANK4_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=DrawRect \
               -a _joypad=ReadJoypad -a _memset=Memset -a _memcpy=Memcpy -a _set_data=VramCopyStack \
-              -a __modulong_rrx_s=U32Div -a __divulong_rrx_s=U32Mod \
+              -a __modulong_rrx_s=U32Mod -a __divulong_rrx_s=U32Div \
               -a __moduchar_rrx_s=U8Mod -a __divuchar_rrx_s=U8Div -a __modschar_rrx_s=S8Mod \
               -a __divschar_rrx_s=S8Div -a banked_call=FarCallTrampoline \
               -a __moduschar_rrx_s=U8Mod -a __divuschar_rrx_s=U8Div \

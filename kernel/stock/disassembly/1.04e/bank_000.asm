@@ -2046,15 +2046,9 @@ WaitJoypadSelect::
 
     jr WaitJoypadSelect_delayRet
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 WaitJoypadSelect_retry::
     jp WaitJoypadSelect
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 WaitJoypadSelect_delayRet::
     ld hl, $00c8
@@ -2080,9 +2074,6 @@ PlotBitRowXY::
     jp PlotBitRowXY_bit0Skip
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit0Plot::
     ld hl, sp+$03
     ld a, [hl]
@@ -2098,9 +2089,6 @@ PlotBitRowXY_bit0Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit0Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2109,9 +2097,6 @@ PlotBitRowXY_bit0Skip::
 
     jp PlotBitRowXY_bit1Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit1Plot::
     ld hl, sp+$03
@@ -2128,9 +2113,6 @@ PlotBitRowXY_bit1Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit1Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2139,9 +2121,6 @@ PlotBitRowXY_bit1Skip::
 
     jp PlotBitRowXY_bit2Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit2Plot::
     ld hl, sp+$03
@@ -2158,9 +2137,6 @@ PlotBitRowXY_bit2Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit2Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2169,9 +2145,6 @@ PlotBitRowXY_bit2Skip::
 
     jp PlotBitRowXY_bit3Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit3Plot::
     ld hl, sp+$03
@@ -2190,9 +2163,6 @@ PlotBitRowXY_bit3Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit3Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2201,9 +2171,6 @@ PlotBitRowXY_bit3Skip::
 
     jp PlotBitRowXY_bit4Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit4Plot::
     ld hl, sp+$03
@@ -2221,9 +2188,6 @@ PlotBitRowXY_bit4Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit4Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2232,9 +2196,6 @@ PlotBitRowXY_bit4Skip::
 
     jp PlotBitRowXY_bit5Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit5Plot::
     ld hl, sp+$03
@@ -2251,9 +2212,6 @@ PlotBitRowXY_bit5Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit5Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2262,9 +2220,6 @@ PlotBitRowXY_bit5Skip::
 
     jp PlotBitRowXY_bit6Skip
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit6Plot::
     ld hl, sp+$03
@@ -2280,9 +2235,6 @@ PlotBitRowXY_bit6Plot::
     call PlotPixelXY
     add sp, $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 PlotBitRowXY_bit6Skip::
     ld hl, sp+$02
     ld a, [hl]
@@ -2291,9 +2243,6 @@ PlotBitRowXY_bit6Skip::
 
     jp PlotBitRowXY_ret
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_bit7Plot::
     ld hl, sp+$04
@@ -2306,9 +2255,6 @@ PlotBitRowXY_bit7Plot::
     inc sp
     call PlotPixelXY
     add sp, $02
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 PlotBitRowXY_ret::
     ret
@@ -2347,17 +2293,11 @@ DrawString::
     jp DrawString_stashPtr
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawString_copyLen::
     ld hl, sp+$07
     ld a, [hl]
     ld hl, sp+$02
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawString_stashPtr::
     ld hl, sp+$05
@@ -2367,9 +2307,6 @@ DrawString_stashPtr::
     ld [hl+], a
     ld [hl], e
     ld c, $00
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawString_glyphLoop::
     ld a, c
@@ -2394,9 +2331,6 @@ DrawString_glyphLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawString_drawChar::
     push bc
     push bc
@@ -2406,9 +2340,6 @@ DrawString_drawChar::
     pop bc
     jp DrawString_incC
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawString_drawSpace::
     push bc
@@ -2428,16 +2359,10 @@ DrawString_drawSpace::
     add sp, $01
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawString_incC::
     inc c
     jp DrawString_glyphLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawString_epilogueRet::
     add sp, $03
@@ -2514,9 +2439,6 @@ DrawU32Decimal::
     ld hl, wDebugTextRow
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawU32Decimal_epilogueRet::
     add sp, $15
     ret
@@ -2539,9 +2461,6 @@ FileSystemErrorHang::
     push hl
     call DrawString
     add sp, $05
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileSystemErrorHang_loop::
     jp FileSystemErrorHang_loop
@@ -2724,9 +2643,6 @@ DirList::
     ld [hl+], a
     ld [hl], d
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_readdir::
     ld a, $00
     push af
@@ -2758,17 +2674,11 @@ DirList_readdir::
     or a
     jp nz, DirList_skipDot
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_failEmpty::
     ld hl, $c5a4
     ld [hl], $01
     jp DirList_epilogueRet
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_skipDot::
     ld a, c
@@ -2789,9 +2699,6 @@ DirList_skipDot::
 
     ld bc, $c9e4
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_bankSlot::
     ld hl, sp+$07
     ld [hl], c
@@ -2811,9 +2718,6 @@ DirList_bankSlot::
     ld hl, $c2a3
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_bankShift::
     srl b
@@ -2846,15 +2750,9 @@ DirList_bankShift::
 
     jr DirList_dirAttr
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_notDir::
     jp DirList_needAmArc
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_dirAttr::
     ld hl, sp+$06
@@ -2917,15 +2815,9 @@ DirList_dirAttr::
     ld hl, $c2a3
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_afterDirStore::
     jp DirList_countCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_needAmArc::
     ld a, c
@@ -2936,15 +2828,9 @@ DirList_needAmArc::
 
     jr DirList_memcmpEzgbDat
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_skipNoArc::
     jp DirList_countCheck
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_memcmpEzgbDat::
     ld a, $08
@@ -3027,9 +2913,6 @@ DirList_memcmpEzgbDat::
     ld hl, $c2a3
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_countCheck::
     ld hl, sp+$04
     ld a, [hl]
@@ -3038,15 +2921,9 @@ DirList_countCheck::
 
     jr DirList_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DirList_moreEntries::
     jp DirList_readdir
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DirList_epilogueRet::
     add sp, $09
@@ -3105,9 +2982,6 @@ DrawDirEntryLabel::
     inc hl
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawDirEntryLabel_bankShift::
     srl b
@@ -3195,9 +3069,6 @@ DrawDirEntryLabel_bankShift::
 
     jr jr_000_0c88
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawDirEntryLabel_skipDirWidth::
     jp Jump_000_0c8f
 
@@ -3211,9 +3082,6 @@ jr_000_0c88:
 Jump_000_0c8f:
     ld hl, sp+$0f
     ld [hl], $14
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$0f
@@ -3301,7 +3169,7 @@ DrawDirEntryLabel_scrollCheck::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Div
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -3332,9 +3200,6 @@ DrawDirEntryLabel_scrollCheck::
     ld hl, sp+$0b
     sub [hl]
     jp z, DrawDirEntryLabel_epilogueRet
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 DrawDirEntryLabel_drawEllipsis::
     ld hl, sp+$0a
@@ -3451,9 +3316,6 @@ DrawDirEntryLabel_drawEllipsis::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 DrawDirEntryLabel_epilogueRet::
     add sp, $10
     ret
@@ -3488,9 +3350,6 @@ SdMenuMain::
     ld l, [hl]
     dec b
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 SdMenuMain_afterMount::
     nop
     add sp, $05
@@ -3512,15 +3371,9 @@ SdMenuMain_afterMount::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 SdMenuMain_initErrorHang::
     jp SdMenuMain_initErrorHang
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 SdMenuMain_mountOk::
     ld hl, wDebugTextRow
@@ -3589,7 +3442,7 @@ GotoFileBrowser::
 ; Source: kernel/stock/src/kernel.c
 ; BackupBranchEntry: save stamp → SAVER basename, then fall into FileBrowserEntry.
 ; C=$A200 auto-save flag, $A202→$d3f6, $A001 save size in banks, clear $A000, B=$A00F path length.
-; BackupBranchEntry_copyBasename: copy $A010.. → $c3a5 (BackupBranchEntry_copyCont carry); BackupBranchEntry_openSaverDir: NUL-term + Open_B9 SaverDirStr + farcalls.
+; BackupBranchEntry_copyBasename: copy $A010.. → $c3a5 (BackupBranchEntry_copyCont carry); BackupBranchEntry_openSaverDir: NUL-term + Mkdir_B9 SaverDirStr + farcalls.
 ; BackupBranchEntry_seedSlashPath: $4000=0, memset $c2a6, seed '/'; fallthrough FileBrowserEntry (00:0f8d).
 
 BackupBranchEntry::
@@ -3640,9 +3493,6 @@ BackupBranchEntry::
     ld [hl], $00
     inc hl
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 BackupBranchEntry_copyBasename::
     ld hl, sp+$06
@@ -3697,15 +3547,9 @@ BackupBranchEntry_copyBasename::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 BackupBranchEntry_copyCont::
     jp BackupBranchEntry_copyBasename
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 BackupBranchEntry_openSaverDir::
     ld de, $c3a5
@@ -3767,9 +3611,6 @@ BackupBranchEntry_openSaverDir::
 
     ld bc, $e800
     dec b
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 BackupBranchEntry_seedSlashPath::
     ld hl, sp+$00
@@ -3853,9 +3694,6 @@ jr_000_0fa6:
 
     call FileSystemErrorHang
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_clearPageIdx::
     ld hl, $c2a2
     ld [hl], $00
@@ -3879,9 +3717,6 @@ FileBrowserEntry_clearPageIdx::
     jp z, FileBrowserEntry_memsetWireDirList
 
     call FileSystemErrorHang
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_memsetWireDirList::
     ld hl, $00ff
@@ -3965,9 +3800,6 @@ FileBrowserEntry_memsetWireDirList::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_redraw::
     xor a
     ld hl, sp+$12
@@ -3987,15 +3819,9 @@ FileBrowserEntry_redraw::
 
     jr FileBrowserEntry_redrawCode3Farcall
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_redrawSkipCode3::
     jp FileBrowserEntry_redrawCodeGe2
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_redrawCode3Farcall::
     ld a, $03
@@ -4024,9 +3850,6 @@ FileBrowserEntry_redrawCode3Farcall::
     inc b
     jp FileBrowserEntry_drawDirEntryLabel
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_redrawCodeGe2::
     ld a, $01
@@ -4062,9 +3885,6 @@ FileBrowserEntry_redrawCodeGe2::
     ld bc, $e800
     dec b
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_drawDirEntryLabel::
     ld hl, $c2a2
     ld a, [hl]
@@ -4095,9 +3915,6 @@ FileBrowserEntry_drawDirEntryLabel::
     call DrawDirEntryLabel
     add sp, $08
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_inputLoop::
     ld hl, sp+$12
     ld [hl], $00
@@ -4119,9 +3936,6 @@ FileBrowserEntry_inputLoop::
 
     jp FileBrowserEntry_afterPageDec
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_pageDec::
     ld hl, sp+$13
@@ -4153,26 +3967,17 @@ FileBrowserEntry_pageDec::
     jp FileBrowserEntry_pageDecDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_pageDecZero::
     ld hl, sp+$13
     ld [hl], $00
     inc hl
     ld [hl], $00
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_pageDecDirty::
     ld hl, sp+$12
     ld [hl], $01
     jp MenuDispatchAB_waitVBlankLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_pageDecGate::
     xor a
@@ -4186,9 +3991,6 @@ FileBrowserEntry_pageDecGate::
     jp MenuDispatchAB_waitVBlankLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_afterPageDec::
     ld hl, sp+$00
     ld a, [hl]
@@ -4198,9 +4000,6 @@ FileBrowserEntry_afterPageDec::
     jp FileBrowserEntry_afterPageInc
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_dirListBtn::
     xor a
     ld hl, $c5a4
@@ -4208,9 +4007,6 @@ FileBrowserEntry_dirListBtn::
     jp nz, FileBrowserEntry_pageInc
 
     call DirList
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_pageInc::
     ld hl, sp+$13
@@ -4259,9 +4055,6 @@ FileBrowserEntry_pageInc::
     jp FileBrowserEntry_pageIncDirty
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_pageIncClamp::
     ld hl, $c2a2
     ld hl, $c2a2
@@ -4278,17 +4071,11 @@ FileBrowserEntry_pageIncClamp::
     ld [hl-], a
     ld [hl], e
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_pageIncDirty::
     ld hl, sp+$12
     ld [hl], $01
     jp MenuDispatchAB_waitVBlankLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_afterPageInc::
     ld hl, sp+$00
@@ -4310,9 +4097,6 @@ jr_000_11db:
     ld [hl], $03
     jp MenuDispatchAB_waitVBlankLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_afterRowDec::
     ld hl, sp+$00
@@ -4347,9 +4131,6 @@ jr_000_11f4:
     jp MenuDispatchAB_waitVBlankLoop
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_afterRow::
     ld hl, sp+$00
     ld a, [hl]
@@ -4358,9 +4139,6 @@ FileBrowserEntry_afterRow::
 
     jp MenuKeyDispatch
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_modeBtn::
     ld hl, sp+$0e
@@ -4371,24 +4149,15 @@ FileBrowserEntry_modeBtn::
 
     jr FileBrowserEntry_modeWrapZero
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_modeSkipWrap::
     jp FileBrowserEntry_modeCheck1
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_modeWrapZero::
     ld hl, sp+$0e
     ld [hl], $00
     jp FileBrowserEntry_modeCheck2
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_modeCheck1::
     ld hl, sp+$0e
@@ -4398,15 +4167,9 @@ FileBrowserEntry_modeCheck1::
 
     jr FileBrowserEntry_modeFarcall1
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_modeSkipFarcall1::
     jp FileBrowserEntry_modeCheck2
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_modeFarcall1::
     ld a, $01
@@ -4425,9 +4188,6 @@ FileBrowserEntry_modeFarcall1::
     ld hl, sp+$0e
     ld [hl], $02
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_modeCheck2::
     ld hl, sp+$0e
     ld a, [hl]
@@ -4436,15 +4196,9 @@ FileBrowserEntry_modeCheck2::
 
     jr FileBrowserEntry_modeFarcall2
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 FileBrowserEntry_modeSkipFarcall2::
     jp MenuDispatchAB_waitVBlankLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 FileBrowserEntry_modeFarcall2::
     ld a, $02
@@ -4553,9 +4307,6 @@ LastRomLoadRecord::
 
     inc hl
     inc [hl]
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 LastRomLoadRecord_copyCont::
     jp LastRomLoadRecord
@@ -4708,9 +4459,6 @@ MenuDispatchAB::
     jp MenuDispatchAB_checkB
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_bankEntry::
     ld hl, sp+$15
     ld c, [hl]
@@ -4731,9 +4479,6 @@ MenuDispatchAB_bankEntry::
     inc hl
     ld b, [hl]
     ld a, $05
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_bankShift::
     srl b
@@ -4804,9 +4549,6 @@ MenuDispatchAB_bankShift::
 
     jr jr_000_1403
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_fileSkipDir::
     jp MenuDispatchAB_fileOpen
 
@@ -4839,9 +4581,6 @@ jr_000_1403:
     ld bc, $e800
     inc b
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_dirToBrowser::
     ld hl, $c2a0
     ld hl, $c2a0
@@ -4865,9 +4604,6 @@ MenuDispatchAB_dirToBrowser::
     inc b
     jp FileBrowserEntry
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_fileOpen::
     call FarCallTrampoline
@@ -4944,9 +4680,6 @@ MenuDispatchAB_fileOpen::
     ld d, [hl]
     ld [de], a
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_toupperExtA::
     ld de, $c3a5
     ld hl, $0002
@@ -4976,9 +4709,6 @@ MenuDispatchAB_toupperExtA::
     ld d, [hl]
     ld [de], a
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_toupperExtB::
     ld de, $c3a5
     ld hl, $0003
@@ -5007,9 +4737,6 @@ MenuDispatchAB_toupperExtB::
     inc hl
     ld d, [hl]
     ld [de], a
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_memcmpExt::
     ld a, $05
@@ -5057,9 +4784,6 @@ MenuDispatchAB_memcmpExt::
     jp $154b
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_extMatch::
     jp FileBrowserEntry
 
@@ -5086,23 +4810,14 @@ Jump_000_155d:
 
     jr MenuDispatchAB_failWaitSelect
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_failSkipWait::
     jp MenuDispatchAB_failHang
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_failWaitSelect::
     call WaitJoypadSelect
     jp FileBrowserEntry
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_failHang::
     xor a
@@ -5196,15 +4911,9 @@ MenuDispatchAB_failHang::
     nop
     add sp, $03
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_failHangLoop::
     jp MenuDispatchAB_failHangLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_checkB::
     ld hl, sp+$00
@@ -5214,9 +4923,6 @@ MenuDispatchAB_checkB::
 
     jp MenuDispatchAB_waitVBlankLoop
 
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 MenuDispatchAB_parentDir::
     ld hl, PathSlashStr
@@ -5291,9 +4997,6 @@ FlPickCancelSite::
     jp FileBrowserEntry
 
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 MenuDispatchAB_waitVBlankLoop::
     call WaitVBlankFlag
     jp $1056
@@ -5317,7 +5020,7 @@ MicroSdInitOkStr::
 
 ; [ezgb]
 ; Source: kernel/stock/src/kernel.c
-; SaverDirStr: NUL-term "/SAVER"; BackupBranchEntry Open_B9 path.
+; SaverDirStr: NUL-term "/SAVER"; BackupBranchEntry Mkdir_B9 path.
 
 SaverDirStr::
     db "/SAVER", $00
@@ -5347,7 +5050,7 @@ ExtGbStr::
 ; Source: kernel/stock/src/kernel.c
 ; U32ToAscii_B0: bank0 twin of U32ToAscii (04:44f7); same ABI val/buf/radix. Used from bank0/1/8 UI chrome.
 ; U32ToAscii_B0_digitLoop: if val!=0 → U32ToAscii_B0_emitDigit; elif digits → U32ToAscii_B0_skipEmit → U32ToAscii_B0_setupReverse; else U32ToAscii_B0_emitDigit fall emit.
-; U32ToAscii_B0_emitDigit/U32ToAscii_B0_emitDigit: U32Div+U32Mod; rem<$0a → '0'+n (U32ToAscii_B0_digit0to9) else U32ToAscii_B0_digitAtoF +$57 (U32ToAscii_B0_afterAlpha) → U32ToAscii_B0_digitLoop.
+; U32ToAscii_B0_emitDigit/U32ToAscii_B0_emitDigit: U32Mod+U32Div; rem<$0a → '0'+n (U32ToAscii_B0_digit0to9) else U32ToAscii_B0_digitAtoF +$57 (U32ToAscii_B0_afterAlpha) → U32ToAscii_B0_digitLoop.
 ; U32ToAscii_B0_setupReverse: setup reverse; U32ToAscii_B0_copyLoop copy (U32ToAscii_B0_copyCont) → U32ToAscii_B0_writeNul NUL / plant "0".
 
 U32ToAscii_B0::
@@ -5440,7 +5143,7 @@ U32ToAscii_B0_emitDigit::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Div
+    call U32Mod
     add sp, $08
     push hl
     ld hl, sp+$10
@@ -5472,7 +5175,7 @@ U32ToAscii_B0_emitDigit::
     ld h, [hl]
     ld l, a
     push hl
-    call U32Mod
+    call U32Div
     add sp, $08
     push hl
     ld hl, sp+$02
@@ -5725,9 +5428,6 @@ BatteryCheck::
     call DrawString
     add sp, $05
 
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
-
 BatteryCheck_waitA::
     call ReadJoypad
     ld c, e
@@ -5743,9 +5443,6 @@ jr_000_18cc:
     ld bc, $a201
     ld a, $88
     ld [bc], a
-
-; [ezgb]
-; Source: kernel/stock/src/kernel.c
 
 BatteryCheck_enterSdMenu::
     ld hl, $0000
@@ -6080,7 +5777,7 @@ DiskInitialize::
 
 ; [ezgb]
 ; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-; FarCall stub: repack stack args, FarCallTrampoline to DiskRead_B2 (SD sector
+; FarCall stub: repack stack args, FarCallTrampoline to SdRead (SD sector
 ; read), return E. Sibling FarCallDiskWrite ($1a3a) is the write path.
 
 FarCallDiskRead::
@@ -6117,7 +5814,7 @@ FarCallDiskRead::
 
 ; [ezgb]
 ; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-; FarCall stub: repack stack args, FarCallTrampoline to DiskWrite_B2 (SD sector
+; FarCall stub: repack stack args, FarCallTrampoline to SdWrite (SD sector
 ; write), return E. Sibling FarCallDiskRead ($1a16) is the read path.
 
 FarCallDiskWrite::
@@ -6186,9 +5883,6 @@ MapCp437::
     jp MapCp437_retDe
 
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_dirEncode::
     ld hl, sp+$09
     ld a, [hl+]
@@ -6220,9 +5914,6 @@ MapCp437_dirEncode::
     jp MapCp437_afterEncode
 
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_tableLookup::
     ld hl, sp+$07
     ld c, [hl]
@@ -6245,9 +5936,6 @@ MapCp437_tableLookup::
     ld a, [de]
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_afterEncode::
     ld hl, sp+$03
     ld c, [hl]
@@ -6256,17 +5944,11 @@ MapCp437_afterEncode::
     jp MapCp437_retDe
 
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_dirDecode::
     ld hl, sp+$03
     ld [hl], $00
     inc hl
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 MapCp437_decodeScan::
     ld hl, sp+$03
@@ -6295,9 +5977,6 @@ MapCp437_decodeScan::
     ld a, [de]
     ld b, a
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_decodeCmp::
     ld hl, sp+$07
     ld a, [hl]
@@ -6309,9 +5988,6 @@ MapCp437_decodeCmp::
     sub b
     jp z, MapCp437_decodeHit
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_decodeMiss::
     ld hl, sp+$03
     inc [hl]
@@ -6320,15 +5996,9 @@ MapCp437_decodeMiss::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 MapCp437_decodeCont::
     jp MapCp437_decodeScan
 
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 MapCp437_decodeHit::
     ld hl, sp+$03
@@ -6345,9 +6015,6 @@ MapCp437_decodeHit::
     dec hl
     ld c, [hl]
     ld b, $00
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 MapCp437_retDe::
     ld e, c
@@ -6506,9 +6173,6 @@ WToUpper::
     ld a, [hl]
     sbc $00
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 WToUpper_asciiGate::
     jp nc, WToUpper_initSearch
 
@@ -6544,9 +6208,6 @@ WToUpper_asciiGate::
     jp WToUpper_retDe
 
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 WToUpper_initSearch::
     ld hl, sp+$00
     ld [hl], $00
@@ -6560,9 +6221,6 @@ WToUpper_initSearch::
     ld [hl], $0c
     inc hl
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 WToUpper_midKey::
     ld hl, sp+$02
@@ -6620,9 +6278,6 @@ WToUpper_midKey::
     sub b
     jp z, WToUpper_hitOrMiss
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 WToUpper_cmpKey::
     ld a, c
     ld hl, sp+$0a
@@ -6641,9 +6296,6 @@ WToUpper_cmpKey::
     jp WToUpper_decCount
 
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 WToUpper_lowerHi::
     ld hl, sp+$06
     ld a, [hl+]
@@ -6651,9 +6303,6 @@ WToUpper_lowerHi::
     ld hl, sp+$02
     ld [hl+], a
     ld [hl], e
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 WToUpper_decCount::
     ld hl, sp+$04
@@ -6669,9 +6318,6 @@ WToUpper_decCount::
     ld a, [hl+]
     or [hl]
     jp nz, WToUpper_midKey
-
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
 
 WToUpper_hitOrMiss::
     ld hl, sp+$04
@@ -6701,9 +6347,6 @@ WToUpper_hitOrMiss::
     inc hl
     ld [hl], b
 
-; [ezgb]
-; Source: kernel/stock/src/fsglue.c, kernel/stock/src/diskio.c, kernel/stock/src/option/ccsbcs.c
-
 WToUpper_retDe::
     ld hl, sp+$0a
     ld e, [hl]
@@ -6726,9 +6369,6 @@ RleUnpack::
     ld b, h
     pop hl
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/crt0_rle.s
-
 RleUnpack_fetchLen::
     ld e, [hl]
     inc hl
@@ -6737,9 +6377,6 @@ RleUnpack_fetchLen::
 
     ld a, [hl]
     inc hl
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/crt0_rle.s
 
 RleUnpack_runStore::
     ld [bc], a
@@ -6750,16 +6387,10 @@ RleUnpack_runStore::
     jp RleUnpack_fetchLen
 
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/crt0_rle.s
-
 RleUnpack_literalOrDone::
     xor a
     or e
     jp z, RleUnpack_retPastStream
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/crt0_rle.s
 
 RleUnpack_copyLiteral::
     ld a, [hl]
@@ -6771,9 +6402,6 @@ RleUnpack_copyLiteral::
 
     jp RleUnpack_fetchLen
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/crt0_rle.s
 
 RleUnpack_retPastStream::
     push hl
@@ -6794,9 +6422,6 @@ ApplyBasename::
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 ApplyBasename_copyLoop::
     ld a, [de]
@@ -6824,9 +6449,6 @@ AdvanceTextCursor::
     inc [hl]
     jr AdvanceTextCursor_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 AdvanceTextCursor_wrapX::
     ld [hl], $00
     ld hl, wTextCursorY
@@ -6837,14 +6459,8 @@ AdvanceTextCursor_wrapX::
     inc [hl]
     jr AdvanceTextCursor_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 AdvanceTextCursor_wrapY::
     ld [hl], $00
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 AdvanceTextCursor_epilogueRet::
     pop hl
@@ -6877,9 +6493,6 @@ DrawCircle::
     ld [$d706], a
     ld a, h
     ld [wCircleErr], a
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawCircle_midpointLoop::
     ld a, [wDrawX1]
@@ -6918,9 +6531,6 @@ DrawCircle_midpointLoop::
     ld a, l
     ld [$d706], a
     jr DrawCircle_midpointLoop
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawCircle_errGe0::
     ld a, [wDrawRectFill]
@@ -7222,9 +6832,6 @@ DrawRectImpl::
     ld a, b
     ld [wDrawX1], a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawRectImpl_afterSwapX::
     ld a, [wDrawY0]
     ld b, a
@@ -7237,9 +6844,6 @@ DrawRectImpl_afterSwapX::
     ld [wDrawY0], a
     ld a, b
     ld [wDrawY1], a
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawRectImpl_drawOutline::
     ld a, [wDrawX0]
@@ -7328,9 +6932,6 @@ jr_000_1fb4:
     ld [wDrawY0], a
     jr jr_000_1fb4
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawRectImpl_restoreColors::
     ld a, [wDrawColor]
     ld c, a
@@ -7358,9 +6959,6 @@ DrawLine::
     cpl
     inc a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_absDy::
     ld [$d703], a
     ld h, a
@@ -7370,9 +6968,6 @@ DrawLine_absDy::
 
     cpl
     inc a
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_absDx::
     ld [$d702], a
@@ -7393,9 +6988,6 @@ DrawLine_absDx::
     ld a, $ff
     jr DrawLine_setYstepErr
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_maybeSwapEnds::
     ld a, e
     sub c
@@ -7406,15 +6998,9 @@ DrawLine_maybeSwapEnds::
 
     ld a, $ff
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_swapEndsDone::
     ld b, d
     ld c, e
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_setYstepErr::
     ld [$d704], a
@@ -7481,9 +7067,6 @@ DrawLine_setYstepErr::
     ld b, a
     ld c, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_xMajor::
     rrc c
     ld a, [wCircleErr]
@@ -7502,9 +7085,6 @@ DrawLine_xMajor::
     ld c, $80
     ld b, c
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_xMajorErrAdd::
     ld a, [$d706]
     ld d, a
@@ -7518,9 +7098,6 @@ DrawLine_xMajorErrAdd::
     ld [wCircleErr], a
     pop de
     jr DrawLine_xMajorByteAdv
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_xMajorPlotYstep::
     push de
@@ -7542,9 +7119,6 @@ DrawLine_xMajorPlotYstep::
     add hl, de
     jr DrawLine_xMajorRowWrapB
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_xMajorRowWrapA::
     dec hl
     dec hl
@@ -7556,9 +7130,6 @@ DrawLine_xMajorRowWrapA::
 
     ld de, $fed0
     add hl, de
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_xMajorRowWrapB::
     ld a, [$d706]
@@ -7575,9 +7146,6 @@ DrawLine_xMajorRowWrapB::
     ld b, c
     pop de
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_xMajorByteAdv::
     bit 7, c
     jr z, DrawLine_xMajorLoopDec
@@ -7587,9 +7155,6 @@ DrawLine_xMajorByteAdv::
     add hl, de
     pop de
     ld b, c
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_xMajorLoopDec::
     ld a, b
@@ -7603,9 +7168,6 @@ DrawLine_xMajorLoopDec::
     ld c, a
     jp ApplyPixel
 
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_horiz::
     ld a, [$d702]
@@ -7623,9 +7185,6 @@ DrawLine_horiz::
     pop hl
     xor a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_horizMaskShift::
     rrca
     or c
@@ -7637,9 +7196,6 @@ DrawLine_horizMaskShift::
 
     jr DrawLine_horizTailPixel
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_horizMidRun::
     ld a, e
     dec a
@@ -7647,9 +7203,6 @@ DrawLine_horizMidRun::
     jr z, DrawLine_horizMaskInit
 
     jr DrawLine_horizDoneCheck
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_horizTailPixel::
     ld b, a
@@ -7660,9 +7213,6 @@ DrawLine_horizTailPixel::
     ld de, $000f
     add hl, de
     pop de
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_horizDoneCheck::
     ld a, e
@@ -7688,14 +7238,8 @@ DrawLine_horizDoneCheck::
     ld e, a
     jr DrawLine_horizDoneCheck
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_horizMaskInit::
     ld a, $80
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_horizMaskLoop::
     dec e
@@ -7704,18 +7248,12 @@ DrawLine_horizMaskLoop::
     sra a
     jr DrawLine_horizMaskLoop
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_horizApplyPixel::
     ld b, a
     cpl
     ld c, a
     jp ApplyPixel
 
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_yMajor::
     ld a, c
@@ -7732,9 +7270,6 @@ DrawLine_yMajor::
     ld a, $ff
     jr DrawLine_yMajorSetYstep
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorMaybeSwap::
     ld a, c
     sub e
@@ -7745,15 +7280,9 @@ DrawLine_yMajorMaybeSwap::
 
     ld a, $ff
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorSwapDone::
     ld b, d
     ld c, e
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_yMajorSetYstep::
     ld [$d704], a
@@ -7823,9 +7352,6 @@ DrawLine_yMajorSetYstep::
     ld b, a
     ld c, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorPlot::
     push de
     push bc
@@ -7840,9 +7366,6 @@ DrawLine_yMajorPlot::
 
     ld de, $0130
     add hl, de
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_yMajorAfterPlot::
     pop bc
@@ -7862,9 +7385,6 @@ DrawLine_yMajorAfterPlot::
     ld [wCircleErr], a
     jr DrawLine_yMajorLoopDec
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorErrCheck::
     ld a, [$d704]
     or a
@@ -7878,9 +7398,6 @@ DrawLine_yMajorErrCheck::
     add hl, de
     jr DrawLine_yMajorErrAdd
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorXstep::
     rrc b
     bit 7, b
@@ -7888,9 +7405,6 @@ DrawLine_yMajorXstep::
 
     ld de, $0010
     add hl, de
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_yMajorErrAdd::
     ld a, [$d706]
@@ -7904,9 +7418,6 @@ DrawLine_yMajorErrAdd::
     adc d
     ld [wCircleErr], a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_yMajorLoopDec::
     pop de
     dec e
@@ -7917,9 +7428,6 @@ DrawLine_yMajorLoopDec::
     ld c, a
     jp ApplyPixel
 
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_vert::
     ld a, b
@@ -7934,9 +7442,6 @@ DrawLine_vert::
     cpl
     ld c, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DrawLine_vertApplyPixel::
     push de
     call ApplyPixel
@@ -7947,9 +7452,6 @@ DrawLine_vertApplyPixel::
 
     ld de, $0130
     add hl, de
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DrawLine_vertLoopDec::
     pop de
@@ -8014,9 +7516,6 @@ ApplyPixel::
 
     push bc
     ld b, $00
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 ApplyPixel_checkPlane1::
     bit 1, d
@@ -8129,7 +7628,7 @@ jr_000_2306:
 ; [ezgb]
 ; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 ; GetPixel(B=x, C=y): same address math as PlotPixel; returns plane bits in E (0-3).
-; U32DivImpl_runEngine: STAT-wait read 2bpp pair; mask from $10+(x&7).
+; U32ModImpl_runEngine: STAT-wait read 2bpp pair; mask from $10+(x&7).
 ; GetPixel_testPlane0: if plane0 bit clear skip; set0 B. GetPixel_retColor: plane1 bit → set1 B; E=B ret.
 
 GetPixel::
@@ -8170,18 +7669,12 @@ jr_000_232e:
 
     set 0, b
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 GetPixel_testPlane0::
     ld a, e
     and c
     jr z, GetPixel_retColor
 
     set 1, b
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 GetPixel_retColor::
     ld e, b
@@ -8476,7 +7969,7 @@ PlotPixelEx::
 ; U32Mul: SDCC runtime __mullong. Stub jp U32MulImpl ($2a08); multiplies two stack u32s,
 ; returns product in HL:DE. Body zeros a 4-byte acc then U32MulEngine (B=4)
 ; which uses MulU8xU8 (8x8->16 shift-add mul) per byte. Callers e.g. bank1
-; scale time fields by 24/60. Sibling stubs: S32Div/U32Div/S32Mod/U32Mod.
+; scale time fields by 24/60. Sibling stubs: S32Mod/U32Mod/S32Div/U32Div.
 
 U32Mul::
     jp U32MulImpl
@@ -8484,25 +7977,7 @@ U32Mul::
 
 ; [ezgb]
 ; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-; S32Div: SDCC __divslong stub jp S32DivImpl ($262d). Signed long ÷; quotient in HL:DE.
-; Zero/overflow via MemIsZero; uses signed negate helpers then unsigned engine.
-
-S32Div::
-    jp S32DivImpl
-
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-; U32Div: SDCC __divulong stub jp U32DivImpl ($26be). Unsigned long ÷ via U32DivEngine;
-; returns quotient from scratch. U32ToAscii uses this with radix.
-
-U32Div::
-    jp U32DivImpl
-
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-; S32Mod: SDCC __modslong stub jp S32ModImpl ($276f). Signed long %; remainder in HL:DE.
+; S32Mod: SDCC's __modslong_rrx_s stub, jp S32ModImpl. Signed long remainder.
 
 S32Mod::
     jp S32ModImpl
@@ -8510,10 +7985,26 @@ S32Mod::
 
 ; [ezgb]
 ; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-; U32Mod: SDCC __modulong stub jp U32ModImpl ($2843). Unsigned long %; U32ToAscii digit path.
+; U32Mod: SDCC's __modulong_rrx_s stub, jp U32ModImpl. Unsigned long remainder.
 
 U32Mod::
     jp U32ModImpl
+
+
+; [ezgb]
+; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
+; S32Div: SDCC's __divslong_rrx_s stub, jp S32DivImpl. Signed long quotient.
+
+S32Div::
+    jp S32DivImpl
+
+
+; [ezgb]
+; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
+; U32Div: SDCC's __divulong_rrx_s stub, jp U32DivImpl. Unsigned long quotient; U32ToAscii's digit loop.
+
+U32Div::
+    jp U32DivImpl
 
 
     ld a, $05
@@ -8776,9 +8267,6 @@ S16DivMod::
     sub d
     ld d, a
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 S16DivMod_absDividend::
     bit 7, b
     jr z, S16DivMod_u16Div
@@ -8789,9 +8277,6 @@ S16DivMod_absDividend::
     sbc a
     sub b
     ld b, a
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 S16DivMod_u16Div::
     call U16DivMod
@@ -8807,9 +8292,6 @@ S16DivMod_u16Div::
     sbc a
     sub b
     ld b, a
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 S16DivMod_restoreSigns::
     pop af
@@ -8850,18 +8332,12 @@ U16DivMod::
     ret
 
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 U16DivMod_setup::
     ld l, c
     ld h, b
     ld bc, $0000
     or a
     ld a, $10
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 U16DivMod_shiftLoop::
     push af
@@ -8882,15 +8358,9 @@ U16DivMod_shiftLoop::
     pop bc
     jr U16DivMod_checkBit
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 U16DivMod_restoreBorrow::
     inc sp
     inc sp
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 U16DivMod_checkBit::
     jr c, U16DivMod_lastBit
@@ -8902,17 +8372,11 @@ U16DivMod_checkBit::
 
     jr U16DivMod_finish
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 U16DivMod_lastBit::
     pop af
     dec a
     scf
     jr nz, U16DivMod_shiftLoop
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 U16DivMod_finish::
     ld d, b
@@ -8947,9 +8411,6 @@ U32Shr::
     ld l, c
     ld h, b
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 U32Shr_shiftLoop::
     or a
     ret z
@@ -8981,9 +8442,6 @@ S32Sar::
     ld a, [hl]
     ld l, c
     ld h, b
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
 
 S32Sar_shiftLoop::
     or a
@@ -9017,9 +8475,6 @@ U32Shl::
     ld l, c
     ld h, b
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/stubs.s, kernel/stock/sdcclib/div.s, kernel/stock/sdcclib/shift.s
-
 U32Shl_shiftLoop::
     or a
     ret z
@@ -9034,35 +8489,29 @@ U32Shl_shiftLoop::
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; S32DivImpl: body of S32Div stub. Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL quotient.
-; div0: MemIsZero dividend → DEHL=0 S32DivImpl_epilogueRet; else CStrLen_retLen.
-; CStrLen_retLen: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff S32DivImpl_epilogueRet; else S32DivImpl_clearSign.
-; S32DivImpl_clearSign: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall S32DivImpl_checkDividendSign.
-; S32DivImpl_checkDividendSign: if dividend MSB set NegateBytes dividend + xor sign; fall S32DivImpl_u32DivEngine.
-; S32DivImpl_u32DivEngine: U32DivEngine → quot@sp+$01; rr sign → if set NegateBytes quot; S32DivImpl_loadQuot load DEHL; S32DivImpl_epilogueRet epilogue.
+; S32ModImpl: __modslong, the signed long remainder. A zero dividend gives 0, a zero divisor
+; $7fffffff; else it negates negative operands, runs U32DivEngine and gives the remainder
+; the dividend's sign.
 
-S32DivImpl::
+S32ModImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
     call MemIsZero
-    jr nz, S32DivImpl_checkDivisor
+    jr nz, S32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp S32DivImpl_epilogueRet
+    jp S32ModImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_checkDivisor::
+S32ModImpl_checkDivisor::
     ld hl, sp+$0f
     call MemIsZero
-    jr nz, S32DivImpl_clearSign
+    jr nz, S32ModImpl_clearSign
 
     ld a, $21
     ld [$d6a0], a
@@ -9071,34 +8520,28 @@ S32DivImpl_checkDivisor::
     ld d, a
     ld l, a
     ld h, $7f
-    jp S32DivImpl_epilogueRet
+    jp S32ModImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_clearSign::
+S32ModImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, S32DivImpl_checkDividendSign
+    jr z, S32ModImpl_checkDividendSign
 
     ld hl, sp+$0f
     call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_checkDividendSign::
+S32ModImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, S32DivImpl_u32DivEngine
+    jr z, S32ModImpl_u32DivEngine
 
     ld hl, sp+$0b
     call NegateBytes
@@ -9107,10 +8550,7 @@ S32DivImpl_checkDividendSign::
     xor [hl]
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_u32DivEngine::
+S32ModImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -9123,16 +8563,13 @@ S32DivImpl_u32DivEngine::
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, S32DivImpl_loadQuot
+    jr nc, S32ModImpl_loadRem
 
     ld b, $04
     ld hl, sp+$01
     call NegateBytes
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_loadQuot::
+S32ModImpl_loadRem::
     ld hl, sp+$01
     ld a, [hl+]
     ld e, a
@@ -9142,10 +8579,7 @@ S32DivImpl_loadQuot::
     ld h, [hl]
     ld l, a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32DivImpl_epilogueRet::
+S32ModImpl_epilogueRet::
     add sp, $09
     ret
 
@@ -9182,33 +8616,28 @@ LycCb_Bg8800::
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; U32DivImpl: body of U32Div stub. Frame -$08; dividend@sp+$0a, divisor@sp+$0e → DEHL quotient.
-; MemIsZero dividend → DEHL=0 U32DivImpl_epilogueRet; else U32DivImpl_checkDivisor.
-; U32DivImpl_checkDivisor: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff U32DivImpl_epilogueRet; else U32DivImpl_runEngine.
-; U32DivImpl_runEngine: U32DivEngine → load quot@sp+$00 into DEHL; U32DivImpl_epilogueRet epilogue. Unsigned twin of S32DivImpl.
+; U32ModImpl: __modulong, the unsigned long remainder. A zero dividend gives 0, a zero
+; divisor $7fffffff; else U32DivEngine.
 
-U32DivImpl::
+U32ModImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
     call MemIsZero
-    jr nz, U32DivImpl_checkDivisor
+    jr nz, U32ModImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp U32DivImpl_epilogueRet
+    jp U32ModImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32DivImpl_checkDivisor::
+U32ModImpl_checkDivisor::
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, U32DivImpl_runEngine
+    jr nz, U32ModImpl_runEngine
 
     ld a, $21
     ld [$d6a0], a
@@ -9217,13 +8646,10 @@ U32DivImpl_checkDivisor::
     ld d, a
     ld l, a
     ld h, $7f
-    jp U32DivImpl_epilogueRet
+    jp U32ModImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32DivImpl_runEngine::
+U32ModImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -9243,10 +8669,7 @@ U32DivImpl_runEngine::
     ld h, [hl]
     ld l, a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32DivImpl_epilogueRet::
+U32ModImpl_epilogueRet::
     add sp, $08
     ret
 
@@ -9260,9 +8683,6 @@ U32DivImpl_epilogueRet::
 MemIsZero::
     xor a
     ld c, b
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MemIsZero_scanLoop::
     cp [hl]
@@ -9301,9 +8721,6 @@ ClearNegZero32::
 
     ld a, $80
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 ClearNegZero32_matchMsb::
     cp [hl]
     ret nz
@@ -9336,9 +8753,6 @@ ClearNegZero32_matchMsb::
 
 MemCmp3Down::
     ld c, $03
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MemCmp3Down_cmpLoop::
     ld a, [de]
@@ -9378,9 +8792,6 @@ S32Cmp::
     ld hl, sp+$07
     jr MemCmp3Down
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 S32Cmp_retALess::
     xor a
     ccf
@@ -9406,35 +8817,29 @@ jr_000_2767:
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; S32ModImpl: body of S32Mod stub (twin of S32DivImpl). Frame -$09; dividend@sp+$0b, divisor@sp+$0f → DEHL rem.
-; div0: MemIsZero dividend → DEHL=0 S32ModImpl_epilogueRet; else EnterGfxMode1_vramFill.
-; EnterGfxMode1_vramFill: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff S32ModImpl_epilogueRet; else S32ModImpl_clearSign.
-; S32ModImpl_clearSign: clear sign@sp+$00; if divisor MSB set NegateBytes divisor + sign=1; fall S32ModImpl_checkDividendSign.
-; S32ModImpl_checkDividendSign: if dividend MSB set NegateBytes dividend + xor sign; fall S32ModImpl_u32DivEngine.
-; S32ModImpl_u32DivEngine: U32DivEngine → rem@sp+$05; rr sign → if set NegateBytes rem; S32ModImpl_loadRem load DEHL; S32ModImpl_epilogueRet epilogue.
+; S32DivImpl: __divslong, the signed long quotient. A zero dividend gives 0, a zero divisor
+; $7fffffff; else it negates negative operands, runs U32DivEngine and negates the quotient
+; when the signs differ.
 
-S32ModImpl::
+S32DivImpl::
     add sp, -$09
     ld b, $04
     ld hl, sp+$0b
     call MemIsZero
-    jr nz, S32ModImpl_checkDivisor
+    jr nz, S32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp S32ModImpl_epilogueRet
+    jp S32DivImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_checkDivisor::
+S32DivImpl_checkDivisor::
     ld hl, sp+$0f
     call MemIsZero
-    jr nz, S32ModImpl_clearSign
+    jr nz, S32DivImpl_clearSign
 
     ld a, $21
     ld [$d6a0], a
@@ -9443,34 +8848,28 @@ S32ModImpl_checkDivisor::
     ld d, a
     ld l, a
     ld h, $7f
-    jp S32ModImpl_epilogueRet
+    jp S32DivImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_clearSign::
+S32DivImpl_clearSign::
     ld hl, sp+$00
     xor a
     ld [hl], a
     ld hl, sp+$12
     ld a, [hl]
     bit 7, a
-    jr z, S32ModImpl_checkDividendSign
+    jr z, S32DivImpl_checkDividendSign
 
     ld hl, sp+$0f
     call NegateBytes
     ld hl, sp+$00
     ld [hl], $01
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_checkDividendSign::
+S32DivImpl_checkDividendSign::
     ld hl, sp+$0e
     ld a, [hl]
     bit 7, a
-    jr z, S32ModImpl_u32DivEngine
+    jr z, S32DivImpl_u32DivEngine
 
     ld hl, sp+$0b
     call NegateBytes
@@ -9479,10 +8878,7 @@ S32ModImpl_checkDividendSign::
     xor [hl]
     ld [hl], a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_u32DivEngine::
+S32DivImpl_u32DivEngine::
     ld hl, sp+$0f
     push hl
     ld hl, sp+$0d
@@ -9495,17 +8891,14 @@ S32ModImpl_u32DivEngine::
     add sp, $08
     ld hl, sp+$00
     rr [hl]
-    jr nc, S32ModImpl_loadRem
+    jr nc, S32DivImpl_loadQuot
 
     ld b, $04
     xor a
     ld hl, sp+$05
     call NegateBytes
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_loadRem::
+S32DivImpl_loadQuot::
     ld hl, sp+$05
     ld a, [hl+]
     ld e, a
@@ -9515,10 +8908,7 @@ S32ModImpl_loadRem::
     ld h, [hl]
     ld l, a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-S32ModImpl_epilogueRet::
+S32DivImpl_epilogueRet::
     add sp, $09
     ret
 
@@ -9563,9 +8953,6 @@ MulU8xU8::
     ld l, a
     ld d, a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 MulU8xU8_rrC::
     xor a
     rr c
@@ -9573,18 +8960,12 @@ MulU8xU8_rrC::
 
     add hl, de
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 MulU8xU8_shiftE::
     sla e
     jr z, MulU8xU8_finish
 
     rl d
     jr MulU8xU8_rrC
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MulU8xU8_finish::
     rl d
@@ -9612,14 +8993,8 @@ U16Mul::
     inc hl
     ld b, [hl]
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U16Mul_initHl0::
     ld hl, $0000
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U16Mul_loop::
     sra b
@@ -9630,25 +9005,16 @@ U16Mul_loop::
 
     add hl, de
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U16Mul_afterAddLo::
     jr z, U16Mul_retDe
 
     jr U16Mul_slaE
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U16Mul_rrCPath::
     rr c
     jr nc, U16Mul_slaE
 
     add hl, de
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U16Mul_slaE::
     sla e
@@ -9657,15 +9023,9 @@ U16Mul_slaE::
     rl d
     jr U16Mul_loop
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U16Mul_rlDOnly::
     rl d
     jr nz, U16Mul_loop
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U16Mul_retDe::
     ld e, l
@@ -9675,33 +9035,28 @@ U16Mul_retDe::
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; U32ModImpl: body of U32Mod stub. Twin of U32DivImpl; frame -$08; rem@sp+$04 → DEHL.
-; MemIsZero dividend → DEHL=0 U32ModImpl_epilogueRet; else U32ModImpl_checkDivisor.
-; U32ModImpl_checkDivisor: MemIsZero divisor → $d6c7=$21 + DEHL=$7fffffff U32ModImpl_epilogueRet; else U32ModImpl_runEngine.
-; U32ModImpl_runEngine: U32DivEngine → load rem@sp+$04 into DEHL; U32ModImpl_epilogueRet epilogue.
+; U32DivImpl: __divulong, the unsigned long quotient. A zero dividend gives 0, a zero
+; divisor $7fffffff; else U32DivEngine.
 
-U32ModImpl::
+U32DivImpl::
     add sp, -$08
     ld b, $04
     ld hl, sp+$0a
     call MemIsZero
-    jr nz, U32ModImpl_checkDivisor
+    jr nz, U32DivImpl_checkDivisor
 
     xor a
     ld e, a
     ld d, a
     ld l, a
     ld h, a
-    jp U32ModImpl_epilogueRet
+    jp U32DivImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32ModImpl_checkDivisor::
+U32DivImpl_checkDivisor::
     ld hl, sp+$0e
     call MemIsZero
-    jr nz, U32ModImpl_runEngine
+    jr nz, U32DivImpl_runEngine
 
     ld a, $21
     ld [$d6a0], a
@@ -9710,13 +9065,10 @@ U32ModImpl_checkDivisor::
     ld d, a
     ld l, a
     ld h, $7f
-    jp U32ModImpl_epilogueRet
+    jp U32DivImpl_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32ModImpl_runEngine::
+U32DivImpl_runEngine::
     ld hl, sp+$0e
     push hl
     ld hl, sp+$0c
@@ -9736,10 +9088,7 @@ U32ModImpl_runEngine::
     ld h, [hl]
     ld l, a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
-U32ModImpl_epilogueRet::
+U32DivImpl_epilogueRet::
     add sp, $08
     ret
 
@@ -9765,9 +9114,6 @@ Strrchr::
     inc hl
     ld b, [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
-
 Strrchr_scanToNul::
     ld a, [bc]
     inc bc
@@ -9778,9 +9124,6 @@ Strrchr_scanToNul::
     ld [hl], c
     inc hl
     ld [hl], b
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
 
 Strrchr_walkBack::
     ld hl, sp+$00
@@ -9804,9 +9147,6 @@ Strrchr_walkBack::
     sub [hl]
     jp z, Strrchr_recheckMatch
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
-
 Strrchr_cmpChar::
     ld hl, sp+$00
     ld e, [hl]
@@ -9820,15 +9160,9 @@ Strrchr_cmpChar::
 
     jr Strrchr_recheckMatch
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
-
 Strrchr_mismatch::
     jp Strrchr_walkBack
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
 
 Strrchr_recheckMatch::
     ld hl, sp+$00
@@ -9843,15 +9177,9 @@ Strrchr_recheckMatch::
 
     jr Strrchr_hitPtr
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
-
 Strrchr_missSkip::
     jp Strrchr_missZero
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
 
 Strrchr_hitPtr::
     ld hl, sp+$00
@@ -9861,14 +9189,8 @@ Strrchr_hitPtr::
     jp Strrchr_epilogueRet
 
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
-
 Strrchr_missZero::
     ld de, $0000
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strrchr.c
 
 Strrchr_epilogueRet::
     add sp, $04
@@ -9891,9 +9213,6 @@ Memset::
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 Memset_fillLoop::
     ld a, b
@@ -9923,9 +9242,6 @@ Memcpy::
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 Memcpy_copyLoop::
     ld a, b
@@ -9971,9 +9287,6 @@ Strncpy::
     ld [hl+], a
     ld [hl], e
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
-
 Strncpy_copyLoop::
     ld a, c
     or b
@@ -9998,9 +9311,6 @@ Strncpy_copyLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
-
 Strncpy_incSrc::
     ld hl, sp+$01
     ld e, [hl]
@@ -10014,24 +9324,15 @@ Strncpy_incSrc::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
-
 Strncpy_afterStore::
     jp Strncpy_copyLoop
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
 
 Strncpy_stashRem::
     ld hl, sp+$03
     ld [hl], c
     inc hl
     ld [hl], b
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
 
 Strncpy_padLoop::
     ld hl, sp+$03
@@ -10064,15 +9365,9 @@ Strncpy_padLoop::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
-
 Strncpy_padCont::
     jp Strncpy_padLoop
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strncpy.c
 
 Strncpy_retDest::
     ld hl, sp+$05
@@ -10086,16 +9381,13 @@ Strncpy_retDest::
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
 ; NegateBytes: two's-complement negate of B bytes at HL (0-sbc loop).
-; S32Div/S32Mod use this to abs signed long operands.
+; S32Mod/S32Div use this to abs signed long operands.
 ; NegateBytes_sbcLoop: D=0; for C=B: *HL++ = D-sbc-*HL (borrow chain); ret.
 
 NegateBytes::
     ld c, b
     xor a
     ld d, a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 NegateBytes_sbcLoop::
     ld a, d
@@ -10160,9 +9452,6 @@ GetTileCursorX::
     call EnterGfxMode2
     pop bc
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 GetTileCursorX_retX::
     ld a, [wTileCursorX]
     ld e, a
@@ -10182,9 +9471,6 @@ GetTileCursorY::
     push bc
     call EnterGfxMode2
     pop bc
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 GetTileCursorY_retY::
     ld a, [wTileCursorY]
@@ -10208,9 +9494,6 @@ CStrLen::
     inc hl
     ld b, [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strlen.c
-
 CStrLen_scan::
     ld a, [bc]
     inc bc
@@ -10224,15 +9507,9 @@ CStrLen_scan::
     inc hl
     inc [hl]
 
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strlen.c
-
 CStrLen_incCont::
     jp CStrLen_scan
 
-
-; [ezgb]
-; Source: kernel/stock/sdcclib/_strlen.c
 
 CStrLen_retLen::
     ld hl, sp+$00
@@ -10251,9 +9528,6 @@ CStrLen_retLen::
 MemZero::
     ld c, b
     xor a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MemZero_fillLoop::
     ld [hl+], a
@@ -10295,7 +9569,7 @@ U32MulImpl::
 
 ; [ezgb]
 ; Source: kernel/stock/src/libasm.s
-; U32DivEngine: multi-byte restoring divide used by U32Div/U32Mod. Helpers:
+; U32DivEngine: multi-byte restoring divide used by U32Mod/U32Div. Helpers:
 ; MemZero, MemRol ($2b29), MemSubCmp ($2b1f), MemSub ($2a77), IncWord ($2b12).
 ; B=digit width; C=B*8 bit count. Zero quot+rem scratch; U32DivEngine_bitLoop: rol rem←dividend,
 ; MemSubCmp divisor; NC → MemSub; U32DivEngine_rolQuot: rol quot bit; --C loop. Orphan before MemSub.
@@ -10317,9 +9591,6 @@ U32DivEngine::
     ld h, [hl]
     ld l, a
     call MemZero
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U32DivEngine_bitLoop::
     ld hl, sp+$08
@@ -10350,9 +9621,6 @@ U32DivEngine_bitLoop::
 
     call MemSub
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U32DivEngine_rolQuot::
     ccf
     push af
@@ -10377,9 +9645,6 @@ U32DivEngine_rolQuot::
 MemSub::
     ld c, b
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 MemSub_sbcLoop::
     ld a, [de]
     sbc [hl]
@@ -10399,9 +9664,6 @@ MemSub_sbcLoop::
 
 MemFill::
     ld c, b
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MemFill_fillLoop::
     ld [hl+], a
@@ -10442,17 +9704,11 @@ U32MulEngine::
     ld hl, sp+$04
     ld [hl], b
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U32MulEngine_outerSetup::
     ld hl, sp+$04
     ld a, [hl]
     ld hl, sp+$05
     ld [hl], a
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U32MulEngine_innerDigit::
     ld hl, sp+$0c
@@ -10492,9 +9748,6 @@ U32MulEngine_innerDigit::
     call IncWord
     jr U32MulEngine_innerDigit
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 U32MulEngine_nextOuter::
     ld hl, sp+$04
     dec [hl]
@@ -10519,9 +9772,6 @@ U32MulEngine_nextOuter::
     pop bc
     jp U32MulEngine_outerSetup
 
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 U32MulEngine_epilogueRet::
     add sp, $06
@@ -10562,9 +9812,6 @@ IncWord::
 CopyBytes::
     ld c, b
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 CopyBytes_copyLoop::
     ld a, [de]
     inc de
@@ -10584,9 +9831,6 @@ MemSubCmp::
     ld c, b
     xor a
 
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
-
 MemSubCmp_sbcLoop::
     ld a, [de]
     sbc [hl]
@@ -10605,9 +9849,6 @@ MemSubCmp_sbcLoop::
 
 MemRol::
     ld c, b
-
-; [ezgb]
-; Source: kernel/stock/src/libasm.s
 
 MemRol_rlLoop::
     rl [hl]
@@ -10633,9 +9874,6 @@ EnterGfxMode1::
 
     call LcdOff
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 EnterGfxMode1_vramFill::
     ld hl, $8100
     ld de, $1680
@@ -10657,14 +9895,8 @@ EnterGfxMode1_vramFill::
     ld bc, $000c
     ld e, $12
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 EnterGfxMode1_rowSetup::
     ld d, $14
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 EnterGfxMode1_fillRow::
     ld [hl+], a
@@ -10743,9 +9975,6 @@ BlitTile::
 
     ld de, $0010
     call VramCopy
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 BlitTile_copyPlane2::
     pop hl
@@ -13383,9 +12612,6 @@ ReadJoypadRaw::
     cpl
     and $0f
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 ReadJoypadRaw_readFace::
     swap a
     ld b, a
@@ -13457,38 +12683,20 @@ DelayDE::
     call DelayInner
     ld b, $32
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayDE_padLoop::
     jr DelayDE_padA
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayDE_padA::
     jr DelayDE_padB
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayDE_padB::
     jr DelayDE_padC
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayDE_padC::
     jr DelayDE_padD
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayDE_padD::
     jr DelayDE_padDecB
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayDE_padDecB::
     dec b
@@ -13498,20 +12706,11 @@ DelayDE_padDecB::
     pop bc
     jr DelayDE_trailA
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayDE_trailA::
     jr DelayDE_trailB
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayDE_trailB::
     jr DelayDE_ret
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayDE_ret::
     ret
@@ -13531,38 +12730,20 @@ DelayInner::
 
     ld b, $33
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayInner_padLoop::
     jr DelayInner_padA
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayInner_padA::
     jr DelayInner_padB
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayInner_padB::
     jr DelayInner_padC
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayInner_padC::
     jr DelayInner_padD
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayInner_padD::
     jr DelayInner_padDecB
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayInner_padDecB::
     dec b
@@ -13571,20 +12752,11 @@ DelayInner_padDecB::
     nop
     jr DelayInner_trailA
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayInner_trailA::
     jr DelayInner_trailB
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 DelayInner_trailB::
     jr DelayInner_outerLoop
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 DelayInner_outerLoop::
     jr DelayInner
@@ -13621,18 +12793,12 @@ CopyTilesVram::
     sub $10
     ld h, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 CopyTilesVram_checkE::
     xor a
     cp e
     jr nz, CopyTilesVram_waitStatLo
 
     dec d
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesVram_waitStatLo::
     ldh a, [rSTAT]
@@ -13642,9 +12808,6 @@ CopyTilesVram_waitStatLo::
     ld a, [bc]
     ld [hl+], a
     inc bc
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesVram_waitStatHi::
     ldh a, [rSTAT]
@@ -13663,9 +12826,6 @@ CopyTilesVram_waitStatHi::
     jr nz, CopyTilesVram_decCount
 
     ld h, $88
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesVram_decCount::
     dec e
@@ -13697,9 +12857,6 @@ CopyTilesColor::
     sub $10
     ld h, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 CopyTilesColor_loop::
     push de
     ld a, [bc]
@@ -13713,17 +12870,11 @@ CopyTilesColor_loop::
 
     ld b, $ff
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 CopyTilesColor_afterColorB0::
     bit 1, a
     jr z, CopyTilesColor_xorMask
 
     ld c, $ff
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesColor_xorMask::
     ld d, a
@@ -13737,9 +12888,6 @@ CopyTilesColor_xorMask::
     xor b
     ld b, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 CopyTilesColor_afterBit0::
     bit 1, d
     jr z, CopyTilesColor_statWaitB
@@ -13748,9 +12896,6 @@ CopyTilesColor_afterBit0::
     xor c
     ld c, a
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 CopyTilesColor_statWaitB::
     ldh a, [rSTAT]
     bit 1, a
@@ -13758,9 +12903,6 @@ CopyTilesColor_statWaitB::
 
     ld [hl], b
     inc hl
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesColor_statWaitC::
     ldh a, [rSTAT]
@@ -13774,9 +12916,6 @@ CopyTilesColor_statWaitC::
     jr nz, CopyTilesColor_decCount
 
     ld h, $88
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 CopyTilesColor_decCount::
     pop bc
@@ -13803,9 +12942,6 @@ RegisterFont::
     ld hl, $d714
     ld b, $06
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 RegisterFont_scanSlots::
     ld a, [hl]
     inc hl
@@ -13821,9 +12957,6 @@ RegisterFont_scanSlots::
     pop hl
     ld hl, $0000
     jr RegisterFont_lcdOn
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 RegisterFont_storeSlot::
     pop de
@@ -13847,9 +12980,6 @@ RegisterFont_storeSlot::
     add [hl]
     ld [wFontNextTile], a
     pop hl
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 RegisterFont_lcdOn::
     ldh a, [rLCDC]
@@ -13892,9 +13022,6 @@ UploadFontTiles::
     jr z, UploadFontTiles_blitGlyphs
 
     ld bc, $0100
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 UploadFontTiles_blitGlyphs::
     inc hl
@@ -13952,14 +13079,8 @@ PrintChar::
     ret
 
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 PrintChar_skipNewline::
     pop af
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 PrintChar_putChar::
     call PutBgTile
@@ -13998,14 +13119,8 @@ PutBgTile::
     dec l
     nop
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 PutBgTile_afterFarCall::
     nop
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 PutBgTile_mapGlyph::
     pop af
@@ -14027,9 +13142,6 @@ PutBgTile_mapGlyph::
     add hl, de
     ld e, [hl]
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 PutBgTile_addBaseTile::
     ld a, [wFontBaseTile]
     add e
@@ -14048,9 +13160,6 @@ PutBgTile_addBaseTile::
     add hl, bc
     ld bc, $9800
     add hl, bc
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 PutBgTile_waitStatStore::
     ldh a, [rSTAT]
@@ -14114,9 +13223,6 @@ ResetTileText::
     ld hl, wFontSlots
     ld b, $12
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 ResetTileText_clearSlots::
     ld [hl+], a
     dec b
@@ -14142,14 +13248,8 @@ ClearBgMap::
     ld hl, $9800
     ld e, $20
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 ClearBgMap_rowSetup::
     ld d, $20
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 ClearBgMap_waitStatWrite::
     ldh a, [rSTAT]
@@ -14184,9 +13284,6 @@ RetreatTileCursor::
     dec [hl]
     jr RetreatTileCursor_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 RetreatTileCursor_wrapX::
     ld [hl], $13
     ld hl, wTileCursorY
@@ -14195,9 +13292,6 @@ RetreatTileCursor_wrapX::
     jr z, RetreatTileCursor_epilogueRet
 
     dec [hl]
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 RetreatTileCursor_epilogueRet::
     pop hl
@@ -14221,14 +13315,8 @@ TileNewline::
     inc [hl]
     jr TileNewline_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 TileNewline_scrollBg::
     call ScrollBgUp
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 TileNewline_epilogueRet::
     pop hl
@@ -14251,9 +13339,6 @@ AdvanceTileCursor::
     inc [hl]
     jr AdvanceTileCursor_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 AdvanceTileCursor_wrapX::
     ld [hl], $00
     ld hl, wTileCursorY
@@ -14263,9 +13348,6 @@ AdvanceTileCursor_wrapX::
 
     inc [hl]
     jr AdvanceTileCursor_epilogueRet
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 AdvanceTileCursor_checkGfxMode::
     ld a, [$d6a3]
@@ -14277,14 +13359,8 @@ AdvanceTileCursor_checkGfxMode::
     ld [wTileCursorX], a
     jr AdvanceTileCursor_epilogueRet
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 AdvanceTileCursor_scrollBg::
     call ScrollBgUp
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 AdvanceTileCursor_epilogueRet::
     pop hl
@@ -14305,14 +13381,8 @@ ScrollBgUp::
     ld bc, $9820
     ld e, $1f
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 ScrollBgUp_rowSetup::
     ld d, $20
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 ScrollBgUp_copyTile::
     ldh a, [rSTAT]
@@ -14329,9 +13399,6 @@ ScrollBgUp_copyTile::
     jr nz, ScrollBgUp_rowSetup
 
     ld d, $20
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 ScrollBgUp_clearBottom::
     ldh a, [rSTAT]
@@ -14368,9 +13435,6 @@ EnterGfxMode2::
     ld bc, LycCb_Bg8800
     ld hl, wLcdCallbacks
     call RemoveCallbackSlot
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 EnterGfxMode2_initAndEnableLcd::
     call InitGfxMode2
@@ -14429,9 +13493,6 @@ VramFillActiveWinMap::
     ld hl, $9800
     jr VramFillActiveBgMap_doFill
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 VramFillActiveWinMap_map9C00::
     ld hl, $9c00
     jr VramFillActiveBgMap_doFill
@@ -14450,14 +13511,8 @@ VramFillActiveBgMap::
     ld hl, $9800
     jr VramFillActiveBgMap_doFill
 
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
-
 VramFillActiveBgMap_use9c00::
     ld hl, $9c00
-
-; [ezgb]
-; Source: kernel/stock/gbdk/drawing.s, kernel/stock/gbdk/cpy_data.s, kernel/stock/gbdk/ibmfixed.s, kernel/stock/gbdk/pad.s, kernel/stock/gbdk/delay.s, kernel/stock/gbdk/font.ms, kernel/stock/gbdk/init_tt.s
 
 VramFillActiveBgMap_doFill::
     ld de, $0400

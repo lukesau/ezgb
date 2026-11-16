@@ -12284,20 +12284,20 @@ Validate_B9_epilogue::
 
 
 ; [ezgb]
-; Open_B9(fp, path, mode): FatFs f_open. Frame -$47; RtcReadPage stash; sp+$46 holds E.
-; FindVolume_B9(mode=1); err → Open_B9_epilogue. Init fp/dp; stamp $A9C5; FollowPath_B9.
-; Follow err → Open_B9_afterFollow; found → E=$08 (exist) → Open_B9_afterFollow.
-; Open_B9_afterFollow: E==$04 (NO_FILE) → Open_B9_noFileCheckDir else Open_B9_notNoFile→Open_B9_checkCreate.
-; Open_B9_noFileCheckDir: ATTR_DIR → Open_B9_openFail E=$06 else Open_B9_checkCreate; Open_B9_checkCreate: E==$04 → Open_B9_createChain create else Open_B9_openFail→Open_B9_epilogue.
-; Open_B9_createChain: CreateChain_B9; cluster zero → Open_B9_afterCreateChain E=$07; cluster−1 zero → Open_B9_diskErr E=$02 else Open_B9_newClustOk→Open_B9_checkClustWrap.
-; Open_B9_checkClustWrap: cluster+1 wrap → Open_B9_intErr E=$01 else Open_B9_clustWrapOk→Open_B9_syncWindow; ok SyncWindow_B9 Open_B9_afterSync.
-; Open_B9_afterSync: err → Open_B9_dirRegister else Clust2Sect + MemSet16 dir buf + StClust + timestamp/attr copy.
-; Attr==$03 → Open_B9_truncAttr else Open_B9_attrNotTrunc→Open_B9_stClustStore; size match → Open_B9_zeroFsize zero fsize else Open_B9_sizeMismatch→Open_B9_stClustStore.
-; Open_B9_stClustStore: StClust + store cluster; Open_B9_lfnOrdLoop: LFN ord loop (Open_B9_lfnOrdCont) SyncWindow → Open_B9_dirRegister.
-; Open_B9_dirRegister: E=0 DirRegister_B9; Open_B9_regFailCleanup RetStub; err RemoveChain_B9 → Open_B9_epilogue.
-; Open_B9_okPath: ok path FA|$10, StClust, SyncFs_B9, RetStub → Open_B9_epilogue add sp,$47 ret E.
+; Mkdir_B9(path): FatFs f_mkdir. Frame -$47; RtcReadPage stash; sp+$46 holds E.
+; FindVolume_B9(mode=1); err → Mkdir_B9_epilogue. Init fp/dp; stamp $A9C5; FollowPath_B9.
+; Follow err → Mkdir_B9_afterFollow; found → E=$08 (exist) → Mkdir_B9_afterFollow.
+; Mkdir_B9_afterFollow: E==$04 (NO_FILE) → Mkdir_B9_noFileCheckDir else Mkdir_B9_notNoFile→Mkdir_B9_checkCreate.
+; Mkdir_B9_noFileCheckDir: ATTR_DIR → Mkdir_B9_openFail E=$06 else Mkdir_B9_checkCreate; Mkdir_B9_checkCreate: E==$04 → Mkdir_B9_createChain create else Mkdir_B9_openFail→Mkdir_B9_epilogue.
+; Mkdir_B9_createChain: CreateChain_B9; cluster zero → Mkdir_B9_afterCreateChain E=$07; cluster−1 zero → Mkdir_B9_diskErr E=$02 else Mkdir_B9_newClustOk→Mkdir_B9_checkClustWrap.
+; Mkdir_B9_checkClustWrap: cluster+1 wrap → Mkdir_B9_intErr E=$01 else Mkdir_B9_clustWrapOk→Mkdir_B9_syncWindow; ok SyncWindow_B9 Mkdir_B9_afterSync.
+; Mkdir_B9_afterSync: err → Mkdir_B9_dirRegister else Clust2Sect + MemSet16 dir buf + StClust + timestamp/attr copy.
+; Attr==$03 → Mkdir_B9_truncAttr else Mkdir_B9_attrNotTrunc→Mkdir_B9_stClustStore; size match → Mkdir_B9_zeroFsize zero fsize else Mkdir_B9_sizeMismatch→Mkdir_B9_stClustStore.
+; Mkdir_B9_stClustStore: StClust + store cluster; Mkdir_B9_lfnOrdLoop: LFN ord loop (Mkdir_B9_lfnOrdCont) SyncWindow → Mkdir_B9_dirRegister.
+; Mkdir_B9_dirRegister: E=0 DirRegister_B9; Mkdir_B9_regFailCleanup RetStub; err RemoveChain_B9 → Mkdir_B9_epilogue.
+; Mkdir_B9_okPath: ok path FA|$10, StClust, SyncFs_B9, RetStub → Mkdir_B9_epilogue add sp,$47 ret E.
 
-Open_B9::
+Mkdir_B9::
     add sp, -$43
     ld hl, sp+$49
     ld a, l
@@ -12324,7 +12324,7 @@ Open_B9::
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Open_B9_epilogue
+    jp nz, Mkdir_B9_epilogue
 
     ld hl, sp+$28
     ld c, l
@@ -12382,23 +12382,23 @@ Open_B9::
     ld [hl], b
     xor a
     or [hl]
-    jp nz, Open_B9_afterFollow
+    jp nz, Mkdir_B9_afterFollow
 
     ld [hl], $08
 
-Open_B9_afterFollow::
+Mkdir_B9_afterFollow::
     ld hl, sp+$42
     ld a, [hl]
     sub $04
-    jp nz, Open_B9_notNoFile
+    jp nz, Mkdir_B9_notNoFile
 
-    jr Open_B9_noFileCheckDir
+    jr Mkdir_B9_noFileCheckDir
 
-Open_B9_notNoFile::
-    jp Open_B9_checkCreate
+Mkdir_B9_notNoFile::
+    jp Mkdir_B9_checkCreate
 
 
-Open_B9_noFileCheckDir::
+Mkdir_B9_noFileCheckDir::
     ld hl, sp+$28
     ld c, l
     ld b, h
@@ -12420,28 +12420,28 @@ Open_B9_noFileCheckDir::
     ld a, [bc]
     ld c, a
     and $20
-    jr nz, Open_B9_deniedIsDir
+    jr nz, Mkdir_B9_deniedIsDir
 
-    jp Open_B9_checkCreate
+    jp Mkdir_B9_checkCreate
 
 
-Open_B9_deniedIsDir::
+Mkdir_B9_deniedIsDir::
     ld hl, sp+$42
     ld [hl], $06
 
-Open_B9_checkCreate::
+Mkdir_B9_checkCreate::
     ld hl, sp+$42
     ld a, [hl]
     sub $04
-    jp nz, Open_B9_openFail
+    jp nz, Mkdir_B9_openFail
 
-    jr Open_B9_createChain
+    jr Mkdir_B9_createChain
 
-Open_B9_openFail::
-    jp Open_B9_epilogue
+Mkdir_B9_openFail::
+    jp Mkdir_B9_epilogue
 
 
-Open_B9_createChain::
+Mkdir_B9_createChain::
     ld hl, sp+$28
     ld c, l
     ld b, h
@@ -12496,78 +12496,78 @@ Open_B9_createChain::
     or [hl]
     inc hl
     or [hl]
-    jp nz, Open_B9_afterCreateChain
+    jp nz, Mkdir_B9_afterCreateChain
 
     ld hl, sp+$42
     ld [hl], $07
 
-Open_B9_afterCreateChain::
+Mkdir_B9_afterCreateChain::
     ld hl, sp+$1e
     ld a, [hl]
     sub $01
-    jp nz, Open_B9_newClustOk
+    jp nz, Mkdir_B9_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Open_B9_newClustOk
+    jp nz, Mkdir_B9_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Open_B9_newClustOk
+    jp nz, Mkdir_B9_newClustOk
 
     inc hl
     ld a, [hl]
     or a
-    jp nz, Open_B9_newClustOk
+    jp nz, Mkdir_B9_newClustOk
 
-    jr Open_B9_diskErr
+    jr Mkdir_B9_diskErr
 
-Open_B9_newClustOk::
-    jp Open_B9_checkClustWrap
+Mkdir_B9_newClustOk::
+    jp Mkdir_B9_checkClustWrap
 
 
-Open_B9_diskErr::
+Mkdir_B9_diskErr::
     ld hl, sp+$42
     ld [hl], $02
 
-Open_B9_checkClustWrap::
+Mkdir_B9_checkClustWrap::
     ld hl, sp+$1e
     ld a, [hl]
     inc a
-    jp nz, Open_B9_clustWrapOk
+    jp nz, Mkdir_B9_clustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Open_B9_clustWrapOk
+    jp nz, Mkdir_B9_clustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Open_B9_clustWrapOk
+    jp nz, Mkdir_B9_clustWrapOk
 
     inc hl
     ld a, [hl]
     inc a
-    jp nz, Open_B9_clustWrapOk
+    jp nz, Mkdir_B9_clustWrapOk
 
-    jr Open_B9_intErr
+    jr Mkdir_B9_intErr
 
-Open_B9_clustWrapOk::
-    jp Open_B9_syncWindow
+Mkdir_B9_clustWrapOk::
+    jp Mkdir_B9_syncWindow
 
 
-Open_B9_intErr::
+Mkdir_B9_intErr::
     ld hl, sp+$42
     ld [hl], $01
 
-Open_B9_syncWindow::
+Mkdir_B9_syncWindow::
     xor a
     ld hl, sp+$42
     or [hl]
-    jp nz, Open_B9_afterSync
+    jp nz, Mkdir_B9_afterSync
 
     ld hl, sp+$28
     ld c, l
@@ -12586,11 +12586,11 @@ Open_B9_syncWindow::
     ld hl, sp+$42
     ld [hl], c
 
-Open_B9_afterSync::
+Mkdir_B9_afterSync::
     xor a
     ld hl, sp+$42
     or [hl]
-    jp nz, Open_B9_dirRegister
+    jp nz, Mkdir_B9_dirRegister
 
     ld hl, sp+$28
     ld c, l
@@ -12787,15 +12787,15 @@ Open_B9_afterSync::
     ld a, [bc]
     ld c, a
     sub $03
-    jp nz, Open_B9_attrNotTrunc
+    jp nz, Mkdir_B9_attrNotTrunc
 
-    jr Open_B9_truncAttr
+    jr Mkdir_B9_truncAttr
 
-Open_B9_attrNotTrunc::
-    jp Open_B9_stClustStore
+Mkdir_B9_attrNotTrunc::
+    jp Mkdir_B9_stClustStore
 
 
-Open_B9_truncAttr::
+Mkdir_B9_truncAttr::
     ld hl, sp+$28
     ld c, l
     ld b, h
@@ -12828,33 +12828,33 @@ Open_B9_truncAttr::
     ld a, [hl]
     ld hl, sp+$04
     sub [hl]
-    jp nz, Open_B9_sizeMismatch
+    jp nz, Mkdir_B9_sizeMismatch
 
     ld hl, sp+$1b
     ld a, [hl]
     ld hl, sp+$05
     sub [hl]
-    jp nz, Open_B9_sizeMismatch
+    jp nz, Mkdir_B9_sizeMismatch
 
     ld hl, sp+$1c
     ld a, [hl]
     ld hl, sp+$06
     sub [hl]
-    jp nz, Open_B9_sizeMismatch
+    jp nz, Mkdir_B9_sizeMismatch
 
     ld hl, sp+$1d
     ld a, [hl]
     ld hl, sp+$07
     sub [hl]
-    jp nz, Open_B9_sizeMismatch
+    jp nz, Mkdir_B9_sizeMismatch
 
-    jr Open_B9_zeroFsize
+    jr Mkdir_B9_zeroFsize
 
-Open_B9_sizeMismatch::
-    jp Open_B9_stClustStore
+Mkdir_B9_sizeMismatch::
+    jp Mkdir_B9_stClustStore
 
 
-Open_B9_zeroFsize::
+Mkdir_B9_zeroFsize::
     xor a
     ld hl, sp+$1a
     ld [hl+], a
@@ -12862,7 +12862,7 @@ Open_B9_zeroFsize::
     ld [hl+], a
     ld [hl], a
 
-Open_B9_stClustStore::
+Mkdir_B9_stClustStore::
     ld hl, sp+$26
     ld e, [hl]
     inc hl
@@ -12916,11 +12916,11 @@ Open_B9_stClustStore::
     ld hl, sp+$08
     ld [hl], c
 
-Open_B9_lfnOrdLoop::
+Mkdir_B9_lfnOrdLoop::
     xor a
     ld hl, sp+$08
     or [hl]
-    jp z, Open_B9_dirRegister
+    jp z, Mkdir_B9_dirRegister
 
     ld hl, sp+$28
     ld c, l
@@ -12957,20 +12957,20 @@ Open_B9_lfnOrdLoop::
     ld [hl], a
     ld hl, sp+$04
     inc [hl]
-    jr nz, Open_B9_lfnOrdCont
+    jr nz, Mkdir_B9_lfnOrdCont
 
     inc hl
     inc [hl]
-    jr nz, Open_B9_lfnOrdCont
+    jr nz, Mkdir_B9_lfnOrdCont
 
     inc hl
     inc [hl]
-    jr nz, Open_B9_lfnOrdCont
+    jr nz, Mkdir_B9_lfnOrdCont
 
     inc hl
     inc [hl]
 
-Open_B9_lfnOrdCont::
+Mkdir_B9_lfnOrdCont::
     ld e, c
     ld d, b
     ld hl, sp+$00
@@ -13010,7 +13010,7 @@ Open_B9_lfnOrdCont::
     ld [hl], c
     xor a
     or [hl]
-    jp nz, Open_B9_dirRegister
+    jp nz, Mkdir_B9_dirRegister
 
     ld hl, $0200
     push hl
@@ -13025,14 +13025,14 @@ Open_B9_lfnOrdCont::
     add sp, $06
     ld hl, sp+$08
     dec [hl]
-    jp Open_B9_lfnOrdLoop
+    jp Mkdir_B9_lfnOrdLoop
 
 
-Open_B9_dirRegister::
+Mkdir_B9_dirRegister::
     xor a
     ld hl, sp+$42
     or [hl]
-    jp nz, Open_B9_regFailCleanup
+    jp nz, Mkdir_B9_regFailCleanup
 
     ld hl, sp+$28
     ld c, l
@@ -13044,7 +13044,7 @@ Open_B9_dirRegister::
     ld hl, sp+$42
     ld [hl], c
 
-Open_B9_regFailCleanup::
+Mkdir_B9_regFailCleanup::
     ld hl, $0000
     push hl
     ld hl, $3333
@@ -13075,7 +13075,7 @@ Open_B9_regFailCleanup::
     xor a
     ld hl, sp+$42
     or [hl]
-    jp z, Open_B9_okPath
+    jp z, Mkdir_B9_okPath
 
     ld hl, sp+$28
     ld c, l
@@ -13100,10 +13100,10 @@ Open_B9_regFailCleanup::
     push bc
     call RemoveChain_B9
     add sp, $06
-    jp Open_B9_epilogue
+    jp Mkdir_B9_epilogue
 
 
-Open_B9_okPath::
+Mkdir_B9_okPath::
     ld hl, sp+$28
     ld c, l
     ld b, h
@@ -13228,7 +13228,7 @@ Open_B9_okPath::
     call RetStub_B9
     add sp, $04
 
-Open_B9_epilogue::
+Mkdir_B9_epilogue::
     ld hl, sp+$42
     ld e, [hl]
     add sp, $43

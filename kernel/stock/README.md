@@ -166,9 +166,10 @@ No bank has `dir_remove`, `f_stat`, `f_getfree`, `f_truncate`, `f_unlink`,
   `0x3333`/`res`, `0x2222`/`res` in bank 9's `f_mkdir`.
 - Bank 9's `sync_fs` assigns the `disk_ioctl` result to `res`.
 
-kernel.sym names some of this wrong: `Open_B9` is `f_mkdir`, `FsUnlink`
-(`09:7cc0`) is a mod label on `$FF` fill, and `U32Mod` (`00:2832`) is what
-2.9.0 calls `_divulong_rrx_s`, a division.
+The mod's kernel.sym names some of this wrong: its `Open_B9` is `f_mkdir`,
+its `FsUnlink` (`09:7cc0`) is a mod label on `$FF` fill, and its `U32Mod`
+(`00:2832`) is what 2.9.0 calls `_divulong_rrx_s`, a division. The names
+here ([disassembly/](disassembly/)) are corrected: `Mkdir_B9`, `U32Div`.
 
 ## Bank 0 C
 
@@ -240,11 +241,12 @@ What fitting it showed:
   `Delay` `delay`, `PlotPixelXY` `plot_point`, `SetTextCursor` `gotogxy`,
   `DrawGlyphAdvance` `wrtchr`, `StoreDrawParams` `color`, `DrawRect`
   `box`, `ApplyBasename` `strcpy`, `WaitVBlankFlag` `wait_vbl_done`,
-  `LcdOff` `display_off`, `DiNest` `disable_interrupts`. kernel.sym has
-  SDCC's `_modulong` and `_divulong` swapped: `U32Div` (`$282c`) is the
-  modulo, `U32Mod` (`$2832`) the division. The same goes for the bodies:
-  `S32DivImpl` (`$29e6`) and `U32DivImpl` (`$2a77`) return the remainder,
-  `S32ModImpl` and `U32ModImpl` the quotient.
+  `LcdOff` `display_off`, `DiNest` `disable_interrupts`. The mod's
+  kernel.sym has SDCC's long modulo and division swapped, stubs and bodies.
+  Corrected here: `S32Mod` (`$2829`), `U32Mod` (`$282c`), `S32Div`
+  (`$282f`), `U32Div` (`$2832`); `S32ModImpl` (`$29e6`) and `U32ModImpl`
+  (`$2a77`) return the remainder, `S32DivImpl` and `U32DivImpl` the
+  quotient.
 
 ## Bank 1 C
 
@@ -253,17 +255,18 @@ What fitting it showed:
 `WToUpper_B1`'s tables) lands in WRAM from `$D3F9`, filled by its `_GSINIT`
 code at `$7096`.
 
-- kernel.sym gets several bank 1 names wrong:
+- The mod's kernel.sym gets several bank 1 names wrong. Corrected here:
   - `FormatFileSize` (`$45b3`) is FatFs's `ff_wtoupper` as `ffunicode.c`
     has it from R0.12 on (R0.15's copy matches, tables included). It is
-    banked and nothing calls it; here it is `WToUpper_B1`.
+    banked and nothing calls it: `WToUpper_B1`.
   - `BuildSaverBackupPath` (`$5736`) bubble-sorts the browser's entries by
-    name (`SortEntries_B1`).
+    name: `SortEntries_B1`.
   - `PreLaunchSaveStamp` (`$55c2`) is the shared tail of
-    `BackupOpenSaverPath`, not a function.
+    `BackupOpenSaverPath`, not a function: `BackupOpenSaverPath_stamp`.
   - `DateToDaysSince1970` returns seconds since 1970, less eight hours
-    (the RTC holds UTC+8).
-  - `wFileSizeFmtLo`/`Hi` (`$D3F9`, `$D5EB`) are `WToUpper_B1`'s tables.
+    (the RTC holds UTC+8): `DateToSecondsSince1970`.
+  - `wFileSizeFmtLo`/`Hi` (`$D3F9`, `$D5EB`) are `WToUpper_B1`'s tables:
+    `wWToUpperCvt1`, `wWToUpperCvt2`.
 - `$C0A0` is a 512-byte sector buffer (`wSaveBuf`). A `.sav`'s 48-byte RTC
   footer is read into it, so the game's MBC3 clock registers sit there one
   per 4 bytes.
@@ -281,7 +284,7 @@ code at `$7096`.
 ## Bank 2 C
 
 `src/bank2.c` is all of bank 2 (896 bytes, then `$FF`): `SdRead` and
-`SdWrite` (kernel.sym's `DiskRead_B2`, `DiskWrite_B2`), which `diskio.c`
+`SdWrite` (`DiskRead_B2` and `DiskWrite_B2` in the mod's kernel.sym), which `diskio.c`
 calls, and their two helpers. Each sends at most four sectors a command:
 the LBA to `$7FB0`-`$7FB3`, the count to `$7FB4` (`+$80` to write), then
 waits while `$A000` reads `$E1`. Both copy `count * 512` bytes through the
@@ -434,7 +437,7 @@ holds its own copy of `ff.c`, cut to the API that bank uses:
 | 3 | `f_sync`, `f_lseek`, `f_close` |
 
 > **Correction (2026-11-14).** Banks 9 and 6 are wrong above, and so is
-> kernel.sym's `Open_B9`: bank 9's one API function is `f_mkdir`, bank 6 has
+> the mod's kernel.sym's `Open_B9`: bank 9's one API function is `f_mkdir`, bank 6 has
 > `f_open` as well as `f_read`, and no bank has `f_unlink`. See
 > [FatFs](#fatfs).
 
