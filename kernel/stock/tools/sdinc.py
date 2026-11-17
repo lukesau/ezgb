@@ -142,9 +142,12 @@ def compile_one(a, src, rel, d):
         if not prefix:
             sys.exit("error: set SDCC29 to an SDCC 2.9.0 install prefix")
         asm = rel[:-4] + ".asm"
+        a.own_defs = set()
         run([os.path.join(prefix, "bin", "sdcc"), "-S", "-mgbz80", "--no-std-crt0",
              *a.cflags.split(), src, "-o", asm], d)
         text = open(asm).read()
+        a.own_defs = set(re.findall(r"^\s*\.globl\s+(\w+)", text, flags=re.M)) & \
+            set(re.findall(r"^(\w+)::?\s*$", text, flags=re.M))
 
         def bank_word(m):
             # the callee's bank: kernel.sym's for an external, else the source's
@@ -156,6 +159,8 @@ def compile_one(a, src, rel, d):
                 return f"{m[1]}.dw {a.def_banks[m[2]]}{m[3]}"
             if a.auto_alias and m[2][1:] in a.sym_banks:
                 return f"{m[1]}.dw {a.sym_banks[m[2][1:]]}{m[3]}"
+            if m[2] in a.sym_banks and m[2] not in a.own_defs:
+                return f"{m[1]}.dw {a.sym_banks[m[2]]}{m[3]}"
             if a.bank is None:
                 sys.exit(f"error: banked call to {m[2]} needs --bank")
             return f"{m[1]}.dw {a.bank}{m[3]}"
@@ -186,6 +191,10 @@ def main():
     p.add_argument("--area-at", action="append", default=[], help="SRC:AREA=ADDR (see above)")
     p.add_argument("--defs", action="append", default=[], help="kernel.sym-style file of more definitions")
     p.add_argument("--syms-out", help="write the link's global symbols here")
+    p.add_argument("--undef-ok", action="store_true",
+                   help="link an unresolved symbol as 0: for a link that only measures")
+    p.add_argument("--no-spill", action="store_true",
+                   help="fail when linked bytes run past the end of a region")
     p.add_argument("--auto-alias", action="store_true",
                    help="resolve an undefined _NAME as kernel.sym NAME")
     a = p.parse_args()
@@ -264,6 +273,8 @@ def main():
                 link.append(f"-g{sym}=0x{kernel[sym]:04x}")
             elif a.auto_alias and sym[1:] in kernel:
                 link.append(f"-g{sym}=0x{kernel[sym[1:]]:04x}")
+            elif a.undef_ok:
+                link.append(f"-g{sym}=0x0000")
             else:
                 missing.append(sym)
         if missing:
@@ -288,10 +299,19 @@ def main():
             for name, addr in sorted(labels.items(), key=lambda x: (x[1], x[0])):
                 if name in defs and not name.startswith(("l__", "s__")):
                     f.write(f"{bank:02x}:{addr:04x} {name}\n")
+            # each area's start and length, for a build that moves them (modlink.py)
+            for name, size in sorted(labels.items()):
+                if name.startswith("l_") and "s_" + name[2:] in labels:
+                    f.write(f"; area {name[2:]} {labels['s_' + name[2:]]:04x} {size:04x}\n")
 
     rel_src = " ".join(os.path.relpath(x, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
                        for x in srcs)
     bank_labels = load_bank_labels(a.sym, a.bank) if a.bank is not None else {}
+    ends = {int(spec.split(":")[1], 16) for spec in a.region}
+    starts = {int(spec.split(":")[0], 16) for spec in a.region}
+    for end in sorted(ends - starts):
+        if a.no_spill and end in data and end % 0x4000 and end - 1 in data:
+            sys.exit(f"error: {rel_src}: code runs past ${end:04x}")
     for spec in a.region:
         s, e, out = spec.split(":", 2)
         write_inc(out, rel_src, int(s, 16), int(e, 16), data, labels, bank_labels)

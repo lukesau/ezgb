@@ -106,32 +106,40 @@ at `G1`-`G4`.
 4. `make`. A wrong byte fails the hash check; a label the rest of the asm still
    needs fails the rgbds link.
 
-## Extra banks
+## Mod build
 
-`make MOD=1` builds the same kernels with banks 10 to 15 added, 16 banks
-(256 KB) like the modded kernel ([kernel-size.md](../../docs/kernel-size.md)),
-in `build-<K>-mod/`. There is no stock check: the ten stock banks are the
-stock bytes and only the global checksum differs.
+`make MOD=1` builds the mod: the same source compiled with `MOD` defined,
+plus banks 10 to 15, 16 banks (256 KB,
+[kernel-size.md](../../docs/kernel-size.md)), in `build-<K>-mod/`. It builds
+the stock kernel first and checks that; the mod itself has no check. With
+nothing under `#ifdef MOD` the ten stock banks come out as stock's.
 
 ```sh
 make -C kernel/stock MOD=1          # all three
 make -C kernel/stock 0918 MOD=1     # only 0918
 ```
 
-A bank is `$FF` unless `kernel/mod/banks/bank<N>.c` exists (`MODSRC` names
-another folder). That file is compiled like the kernel's C and linked at
-`$4000`:
+**Changing stock code.** A change goes in the stock C under `#ifdef MOD`.
+The code after it moves, so the mod is linked three times
+(`tools/modlink.py`): at the stock addresses for the new sizes (`size/`),
+at the layout those give for the new addresses (`pre/`), then for real
+against `kernel.in.sym`, the stock `kernel.sym` with every name at its new
+address. A link fails when a piece outgrows its bank. Bank 0 has 628 bytes
+after its last routine, so what the mod adds belongs in the new banks, with
+a call to it from stock.
+
+**New banks.** A bank is `$FF` unless `kernel/mod/banks/bank<N>.c` exists
+(`MODSRC` names another folder). That file is compiled like the kernel's C
+and linked at `$4000`:
 
 - A stock routine is called by its `kernel.sym` name. Library routines the
   kernel names differently (`joypad`, `delay`, `strlen`) are in the
   Makefile's `MOD_ALIASES`.
-- `__banked` functions call across banks as stock's do, so a new bank needs
-  no far stub. A bank can call the new banks below it.
+- `__banked` functions call across banks as stock's do, so nothing needs a
+  far stub. Stock C calls a new routine by declaring it `__banked`
+  (`ModVersion` in `src/bank8.c`).
 - Nothing places `_DATA`: a file with globals needs a `-b _DATA=` at free
-  WRAM first.
-
-Stock code cannot call the new banks yet. Each stock range is linked at its
-stock address and size, so a call added to it moves everything after it.
+  WRAM first, and stock's WRAM does not move yet.
 
 ## Status
 

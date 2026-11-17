@@ -12,6 +12,9 @@
 extern UINT8 wSaveBuf[512];		/* $C0A0 */
 
 void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y);
+#ifdef MOD
+void ModVersion (void) __banked;	/* kernel/mod/banks/bank10.c */
+#endif
 void U32ToAscii_B0 (UINT32 v, char *buf, UINT8 radix);
 
 /* 08:413e: the 8x12 font PlotIconGlyphs draws, 12 rows per glyph, bit 7 the
@@ -409,6 +412,9 @@ void DrawFwVersionScreen (void) __banked
 	DrawString(buf, 11, 5, 3);
 	DrawString("ver:", 4, 0, 3);
 	DrawString("www.ezflash.cn", 14, 0, 5);
+#ifdef MOD
+	ModVersion();
+#endif
 	for (;;) {
 		wait_vbl_done();
 		if (joypad() & J_SELECT)
