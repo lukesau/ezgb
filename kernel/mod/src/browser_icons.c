@@ -41,7 +41,7 @@ extern u16 FarCallTagLen(const u8 *s);
 
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 
-void DrawNameWithIcon(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
+void DrawNameWithIconImpl(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
     static const u8 text_ext[] = "TXT" "INI" "MD";
     u8 i, dot, n, e, c1, c2, c3, ic, lim;
 

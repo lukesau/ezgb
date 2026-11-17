@@ -35,7 +35,7 @@
 
 extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
-extern u8 SmSaveOp(u16 opidx);                                      /* 0B:4000 -> SaveOp 01:7670 */
+extern u8 SmSaveOpB11(u16 opidx);                                      /* 0B:4000 -> SaveOp 01:7670 */
 
 #define NAME_BUF  ((const u8 *)0xC4A4)      /* the ROM's file name */
 #define LABEL     ((const u8 *)0xD750)      /* SO_LABEL's text */
@@ -66,7 +66,7 @@ static void frame(void);
 
 /* The entry point stays the first function in the file. Reached through the
  * `call`ed stub at 04:6d11: three pad parameters. */
-void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
+void ManageSavesImpl(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
     static const u8 saves_str[6]  = {'S','a','v','e','s',0};
     static const u8 rest_str[19]  = {'R','e','s','t','o','r','e',' ','t','h','i','s',' ','s','a','v','e','?',0};
     static const u8 del_str[18]   = {'D','e','l','e','t','e',' ','t','h','i','s',' ','s','a','v','e','?',0};
@@ -78,7 +78,7 @@ void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
     (void)far_pad_thunk;
     (void)far_pad_af;
     (void)far_pad_ret;
-    SmSaveOp(SO_SCAN << 8);
+    SmSaveOpB11(SO_SCAN << 8);
     draw_box();
     title(saves_str);
     buttons(0);
@@ -118,8 +118,8 @@ void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
             }
         }
         title(work_str);
-        ok = SmSaveOp((act << 8) | (u8)(sel - 1));
-        SmSaveOp(SO_SCAN << 8);
+        ok = SmSaveOpB11((act << 8) | (u8)(sel - 1));
+        SmSaveOpB11(SO_SCAN << 8);
         title(ok ? done_str : err_str);
         sel = 0;
         top = 0;
@@ -130,7 +130,7 @@ void ManageSaves(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 page) {
     StoreDrawParams(0, 0, 0);
     DrawRect(0, 32, 159, 143, 1);
     StoreDrawParams(3, 0, 0);
-    SmSaveOp((SO_DONE << 8) | page);
+    SmSaveOpB11((SO_DONE << 8) | page);
 }
 
 /* After the next VBlank: the buttons newly down since *prev (the poll runs
@@ -161,7 +161,7 @@ static u8 wait_ab(void) {
 static u8 choose(u8 idx) {
     u8 f, prev = 0xFF, sel = 0;
 
-    SmSaveOp((SO_LABEL << 8) | idx);
+    SmSaveOpB11((SO_LABEL << 8) | idx);
     title(LABEL);
     draw_list(1, sel, 0);
     for (;;) {
@@ -211,7 +211,7 @@ static void draw_list(u8 mode, u8 sel, u8 top) {
         } else if (i == 0) {
             e = LIVE[0] ? bk_str : none_str;
         } else if (i <= COUNT) {
-            SmSaveOp((SO_LABEL << 8) | (u8)(i - 1));
+            SmSaveOpB11((SO_LABEL << 8) | (u8)(i - 1));
             e = LABEL;
         }
         y = hUiMode ? 72 + r * 12 : 72 + r * 8;

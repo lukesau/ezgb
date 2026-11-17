@@ -105,6 +105,8 @@ static void cell_or7(const u8 *g, u8 *buf) __naked;
 static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper, const u8 *m);
 static u8 glyph_index(u8 c);
 
+extern u8 Fit12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs);    /* layout12.c */
+
 void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 row) {
     u8 i, x, y, n, ink, paper, xm, x0, t0, nt, kf, kl, xe, cnt, fast, blue, c;
     /* one spare column: a glyph ending in tile 19 still ORs its (zero) low
@@ -181,7 +183,7 @@ void DrawString12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8
             return;
         }
     }
-    cnt = Fit12(0, 0, s, len, col, xs);
+    cnt = Fit12Impl(0, 0, s, len, col, xs);
     for (i = 0; i < cnt; i++) {
         x = xs[i];
         c = glyph_index(s[i]);

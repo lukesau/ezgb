@@ -25,7 +25,7 @@
 #include "types.h"
 #include "draw.h"
 
-extern const u8 GuardSig[];                                 /* BuildSaverBackupPath, 01:5736 in 0731 */
+extern const u8 SortEntries_B1[];                                 /* SortEntries_B1, 01:5736 in 0731 */
 
 void patch_guard(void) {
     static const u8 sig[8] = {0xe8, 0xf2, 0x3e, 0x01, 0xf8, 0x14, 0x96, 0x3e};
@@ -44,7 +44,7 @@ void patch_guard(void) {
     u8 i, n;
 
     for (i = 0; i < 8; i++)
-        if (GuardSig[i] != sig[i]) break;
+        if (SortEntries_B1[i] != sig[i]) break;
     if (i == 8) return;
 
     StoreDrawParams(0, 0, 0);

@@ -52,14 +52,14 @@
  *           8 BG:   10 TEXT:   12 ACCENT:   the color picker
  *           16 [< PREV] 3/3 [NEXT >]                                (themepage.c)
  * The pages go round: PREV on page 1 is page 3, NEXT on page 3 page 1.
- * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0x3d] = cursor row:
+ * `frame` is DrawTimeAutosaveScreen's stack frame (frame[0] = cursor row:
  * 0 TIME SET, 1 RTC, 2 AUTO SAVE, 3 FAST LAUNCH, 4 PICK ROM, 5 PREV, 6 NEXT;
  * 7 TAGS, 8 SORT, 9 SGB BOOT, 10 SKIP BOOT ROM, 11 DAILY BACKUP, 12 PREV,
  * 13 NEXT; 14 THEME, 15 UI, 16 BG, 17 TEXT, 18 ACCENT, 19 PREV, 20 NEXT:
  * a page's last two rows are its PREV and NEXT). The stock clamp lets
  * the cursor run 0..20; op ROWS keeps it on the page. Pages 2 and 3 are drawn
  * over the stock screen, which keeps running: SetText drops its text there
- * (SET_PAGE, vars.h) and op ROWS clears its dirty flag (frame[0x3e]) so it
+ * (SET_PAGE, vars.h) and op ROWS clears its dirty flag (frame[1]) so it
  * draws no boxes.
  *
  * SGB BOOT is not in EZGB.CFG: the boot stub (kernel/mod/asm/sgb_boot.asm) runs
@@ -142,7 +142,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
          * the row that did it (NEXT lands on PREV and back), so A switches
          * straight back */
         if (SET_RE) {
-            frame[0x3d] = SET_RE - 1;
+            frame[0] = SET_RE - 1;
             SET_RE = 0;
             /* the stock entry code has drawn its boxes, TIME's SET
              * highlighted for the cursor on row 0: pages 2 and 3 clear
@@ -153,12 +153,12 @@ static u8 flcfg_op(u8 *frame, u8 op) {
             cfg_load();
         }
         draw_static();
-        draw_rows(frame[0x3d]);
+        draw_rows(frame[0]);
         SetFpgaPage_B4(0);
         return 0;
     }
     if (op == 1) {
-        u8 cur = frame[0x3d], lo = first[PAGE], hi = last[PAGE];
+        u8 cur = frame[0], lo = first[PAGE], hi = last[PAGE];
         /* LEFT and RIGHT (FlSetJumpTop / FlSetJumpBottom store $FE and $FF)
          * put the cursor on the page's PREV or NEXT button from any row.
          * UP on the page's first row and DOWN on its last wrap: the stock
@@ -168,16 +168,16 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         if (cur >= 0xFE) cur = hi - (u8)(0xFF - cur);
         else if (cur < lo) cur = (u8)(cur + 1) == lo ? hi : lo;
         else if (cur > hi) cur = cur == (u8)(hi + 1) ? lo : hi;
-        if (PAGE) frame[0x3e] = 0;      /* no stock redraw: its boxes are page 1's */
+        if (PAGE) frame[1] = 0;      /* no stock redraw: its boxes are page 1's */
         /* page 3: past the rows the theme or the console has locked */
         if (PAGE == 2) cur = FarCallThemePage(6, cur);
         else if (PAGE) cur = SetPage(7, cur);   /* page 2: SKIP BOOT ROM, when this console can't jump */
-        frame[0x3d] = cur;
+        frame[0] = cur;
         draw_rows(cur);
         return 0;
     }
     if (op == 2) {
-        u8 row = frame[0x3d];
+        u8 row = frame[0];
         if ((u8)(row + 1) >= last[PAGE]) {
             /* PREV or NEXT: write what changed, then enter the screen again
              * on that page, over a clear pane */

@@ -18,6 +18,8 @@
  *   python3 tools/patch_bytes.py $V 0 279b 7eea23d7c9 c3e43f0000 --apply
  */
 
+#pragma codeseg MOD0C	/* a free run of bank 0's header (kernel/stock/Makefile MOD0) */
+
 #include "types.h"
 
 extern volatile u8 wDrawOp;        /* $d723 */

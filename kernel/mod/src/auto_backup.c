@@ -152,7 +152,7 @@ static u8 SmSaveOp(u16 opidx) __naked {
 	ld	l, a
 	push	hl
 	call	_FarCallTrampoline
-	.dw	0x7670
+	.dw	_SaveOp
 	.db	1, 0
 	add	sp, #2
 	ret

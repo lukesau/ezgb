@@ -54,7 +54,7 @@ extern const u8 Font12DvMetrics[]; /* 0A:6680, the DV theme's glyph set */
 static u8 glyph_index(u8 c);
 static u8 kern(const u8 *M, u8 a, u8 b);
 
-u8 Fit12(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs) {
+u8 Fit12Impl(u16 far_pad_thunk, u16 far_pad_af, const u8 *s, u8 len, u8 col, u8 *xs) {
     u8 i, x, g, prev, c, lim;
     /* the glyph set's metrics: DV's with the DV theme or UI=SLIM (draw12.c
      * picks the bitmaps the same way) */

@@ -31,9 +31,16 @@ RST_00::
 	.org	0x40		; VBL
 VBlankInterrupt::
 .int_VBL:
+	.ifdef	MOD
+	;; mod: the same list, then a step of the SGB packet sender
+	;; (kernel/mod/asm/SgbVblList.s, SgbVblTail.s)
+	CALL	SgbVblList
+	JP	SgbVblTail
+	.else
 	PUSH	HL
 	LD	HL,#.int_0x40
 	JP	.int
+	.endif
 
 	.org	0x48		; LCD
 LCDCInterrupt::
@@ -112,7 +119,11 @@ CallHL::
 Boot::
 .header:
 	NOP
+	.ifdef	MOD
+	JP	SgbStub		; mod: SGB BOOT first (kernel/mod/asm/SgbStub.s)
+	.else
 	JP	0x150
+	.endif
 	.byte	0xCE,0xED,0x66,0x66
 	.byte	0xCC,0x0D,0x00,0x0B
 	.byte	0x03,0x73,0x00,0x83
@@ -130,10 +141,18 @@ Boot::
 	;; ezflash: "EZGB", padded with zeros to 0x144
 	.org	0x134
 	.ascii	"EZGB"
+	.ifdef	MOD
+	;; mod: a CGB program ($0143) with SGB functions ($0146)
+	.byte	0,0,0,0,0,0,0,0,0,0,0,0x80
+
+	.org	0x144
+	.byte	0,0,3
+	.else
 	.byte	0,0,0,0,0,0,0,0,0,0,0,0
 
 	.org	0x144
 	.byte	0,0,0
+	.endif
 
 	;; ezflash: cartridge type 0x01 (MBC1)
 	.org	0x147
@@ -150,7 +169,11 @@ Boot::
 	;; ezflash: maker ID 0x00,0x00 and version 0x01 are unchanged; the
 	;; complement and global checksums are as shipped
 	.org	0x14A
+	.ifdef	MOD
+	.byte	0x00,0x33	; mod: the SGB wants old licensee $33
+	.else
 	.byte	0x00,0x00
+	.endif
 
 	;; Version number
 	.org	0x14C
@@ -158,7 +181,11 @@ Boot::
 
 	;; Complement check
 	.org	0x14D
+	.ifdef	MOD
+	.byte	0x07		; (the Makefile has rgbfix set it)
+	.else
 	.byte	0xBD
+	.endif
 
 	;; Checksum: 0731's; the Makefile sets the global checksum with rgbfix, which
 	;; gives 0918's ($F8B5) there
@@ -251,6 +278,11 @@ KernelEntry::
 	LDH	(.OBP1),A
 
 	;; Turn the screen on
+	.ifdef	MOD
+	;; mod: notes an SGB BOOT in progress, clears VRAM bank 1, sets the
+	;; theme's palettes, then this (kernel/mod/asm/SgbBootHook.s, bank 1)
+	CALL	SgbBootHook
+	.else
 	LD	A,#0b11000000	; LCD		= On
 				; WindowBank	= 0x9C00
 				; Window	= Off
@@ -260,6 +292,7 @@ KernelEntry::
 				; OBJ		= Off
 				; BG		= Off
 	LDH	(.LCDC),A
+	.endif
 	XOR	A
 	LDH	(.IF),A
 	LD	A,#0b00001001	; Pin P10-P13	=   Off

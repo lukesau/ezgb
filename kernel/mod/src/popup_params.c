@@ -10,6 +10,8 @@
  * than the background itself. Light keeps the stock colors. Erasing a popup
  * back to the screen goes through StoreDrawParams as before. */
 
+#pragma codeseg MOD0C	/* a free run of bank 0's header (kernel/stock/Makefile MOD0) */
+
 #include "types.h"
 #include "draw.h"
 #include "vars.h"

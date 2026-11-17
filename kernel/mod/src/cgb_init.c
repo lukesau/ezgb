@@ -30,6 +30,8 @@
  * this is just the stock LCD-on.
  */
 
+#pragma codeseg MOD0B	/* a free run of bank 0's header (kernel/stock/Makefile MOD0) */
+
 #define rLCDC (*(volatile unsigned char *)0xff40)
 #define rVBK  (*(volatile unsigned char *)0xff4f)
 
@@ -39,7 +41,8 @@
  * mark (docs/themes.md). A literal address, not a pin: the port map
  * would read a bank-0 pin above $4000 as bank-1 code, and injected
  * addresses are the same in every kernel. */
-#define THEME_FN ((void (*)(void))0x43d0)
+extern void theme(void);
+#define THEME_FN theme
 #define rROMB (*(volatile unsigned char *)0x2000)
 
 void cgb_init_and_lcd_on(void) {

@@ -137,7 +137,7 @@ def write_inc(path, src, start, end, data, labels, extra_labels):
 
 
 def compile_one(a, src, rel, d):
-    if src.endswith(".c") and a.sdcc29:
+    if src.endswith(".c") and a.sdcc29 and "/mod/" not in src:
         prefix = os.environ.get("SDCC29")
         if not prefix:
             sys.exit("error: set SDCC29 to an SDCC 2.9.0 install prefix")
@@ -168,10 +168,28 @@ def compile_one(a, src, rel, d):
         open(asm, "w").write(text)
         run(["sdasgb", "-plosgff", rel, asm], d)
     elif src.endswith(".c"):
-        run(["sdcc", "-c", "-msm83", "--sdcccall", "0", "--no-std-crt0",
-             *a.cflags.split(), src, "-o", rel], d)
+        # the mod's C (a path with /mod/): a current SDCC, with its own flags
+        flags = a.modflags if "/mod/" in src else a.cflags
+        r = run(["sdcc", "-c", "-msm83", "--sdcccall", "0", "--no-std-crt0",
+                 *flags.split(), src, "-o", rel], d)
+        for w in r.stderr.splitlines():
+            if "warning" in w and "warning 296" not in w:
+                print(f"  (sdcc) {w}")
+        if "/mod/" in src:
+            # linked beside SDCC 2.9.0's objects: drop the compiler-options
+            # record, and keep this compiler's empty areas apart from 2.9.0's
+            # of the same name, whose flags differ
+            text = open(rel).read()
+            text = re.sub(r"^O .*\n", "", text, flags=re.M)
+            text = re.sub(r"^A (\S+) size 0 flags", r"A \1_m size 0 flags", text, flags=re.M)
+            open(rel, "w").write(text)
     else:
         incs = ["-I" + os.path.dirname(src)] + ["-I" + os.path.abspath(x) for x in a.I]
+        if a.asmdef:
+            # sdas has no -D: assemble a file that sets the names and includes the source
+            wrap = rel[:-4] + "_def.s"
+            open(wrap, "w").write("".join(f"{n} = 1\n" for n in a.asmdef) + f'\t.include "{src}"\n')
+            src = wrap
         run(["sdasgb", "-plosgff", *incs, rel, src], d)
 
 
@@ -185,6 +203,10 @@ def main():
     p.add_argument("--region", action="append", required=True, help="START:END:OUT.inc")
     p.add_argument("-a", action="append", default=[], help="SYM=NAME: resolve SYM as kernel.sym NAME")
     p.add_argument("--cflags", default="", help="extra sdcc flags for .c sources")
+    p.add_argument("--modflags", default="", help="sdcc flags for the mod's .c sources")
+    p.add_argument("--area-max", action="append", default=[],
+                   help="AREA=ADDR: fail when the area runs past ADDR")
+    p.add_argument("--asmdef", action="append", default=[], help="NAME: defined (= 1) in .s sources")
     p.add_argument("--sdcc29", action="store_true", help="compile C with SDCC 2.9.0 ($SDCC29)")
     p.add_argument("--bank", type=lambda v: int(v, 0), help="bank of the source (see above)")
     p.add_argument("-I", action="append", default=[], help="include directory for .s sources")
@@ -261,7 +283,12 @@ def main():
             if v not in kernel:
                 sys.exit(f"error: -a {spec}: {v} is not in {a.sym}")
             extra[n] = kernel[v]
-        missing = []
+        # sdld stops on a -b for an area no object has
+        present = set()
+        for rel in rels:
+            present |= set(re.findall(r"^A (\S+) size", open(os.path.join(d, rel)).read(), flags=re.M))
+        a.b = [spec for spec in a.b if spec.split("=")[0] in present]
+        missing, xbank = [], []
         link = ["-mjwx", "-i", "out.ihx"]
         for spec in a.b:
             n, v = spec.split("=")
@@ -271,12 +298,17 @@ def main():
                 link.append(f"-g{sym}=0x{extra[sym]:04x}")
             elif sym in kernel:
                 link.append(f"-g{sym}=0x{kernel[sym]:04x}")
+                if (a.bank is not None and 0x4000 <= kernel[sym] < 0x8000
+                        and a.sym_banks.get(sym, a.bank) not in (0, a.bank)):
+                    xbank.append(f"{sym} ({a.sym_banks[sym]:02x})")
             elif a.auto_alias and sym[1:] in kernel:
                 link.append(f"-g{sym}=0x{kernel[sym[1:]]:04x}")
             elif a.undef_ok:
                 link.append(f"-g{sym}=0x0000")
             else:
                 missing.append(sym)
+        if xbank:   # right as a far call's target, wrong as a plain call
+            print(f"  note: bank {a.bank} names code in other banks: {' '.join(xbank)}")
         if missing:
             sys.exit("error: unresolved symbols (add them to kernel.sym or -g): "
                      + " ".join(missing))
@@ -293,6 +325,11 @@ def main():
         data = parse_ihx(os.path.join(d, "out.ihx"))
         labels = parse_map(os.path.join(d, "out.map"))
 
+    for spec in a.area_max:
+        n, v = spec.split("=")
+        end = labels.get("s_" + n, 0) + labels.get("l_" + n, 0)
+        if end > int(v, 0):
+            sys.exit(f"error: area {n} ends at ${end:04x}, past ${int(v, 0):04x} by {end - int(v, 0)} bytes")
     if a.syms_out:
         bank = a.bank or 0
         with open(a.syms_out, "w") as f:
@@ -314,7 +351,8 @@ def main():
             sys.exit(f"error: {rel_src}: code runs past ${end:04x}")
     for spec in a.region:
         s, e, out = spec.split(":", 2)
-        write_inc(out, rel_src, int(s, 16), int(e, 16), data, labels, bank_labels)
+        write_inc(out, rel_src, int(s, 16), int(e, 16), data,
+                  {n: v for n, v in labels.items() if n in defs}, bank_labels)
 
 
 if __name__ == "__main__":

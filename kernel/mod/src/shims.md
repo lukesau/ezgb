@@ -1,5 +1,14 @@
 # Hand-assembled blocks
 
+> **Correction (2026-11-17).** This file describes the patched kernels
+> (`kernel/1.05e-0731` and its ports). The from-source build
+> (`make -C kernel/stock MOD=1`) has no hooks into stock code: every change
+> listed below as a hook or a patched site is `#ifdef MOD` in
+> `kernel/stock/src` or `.ifdef MOD` in `kernel/stock/gbdk`, and the stubs
+> that remain are `kernel/mod/asm/*.s`. The addresses and the hook names
+> here (and in the header comments of `kernel/mod/src/*.c`) are the patched
+> kernels', not that build's.
+
 Not everything in the mod is C. Hooks that replace a few stock instructions,
 far-call stubs, and entry stubs that must not disturb the stack are written
 as bytes with `kernel/mod/tools/inject_bytes.py`. They have no source file:

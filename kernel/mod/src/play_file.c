@@ -164,7 +164,7 @@ static void star_toggle(u8 *slot) __naked {
     (void)slot;
     __asm
 	call	_FarCallTrampoline
-	.dw	0x7db8
+	.dw	_StarToggle
 	.db	5, 0
 	ret
     __endasm;

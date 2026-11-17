@@ -1,31 +1,18 @@
 /* File dates for the 1.04e kernel (docs/kernel-versions.md).
  *
- * 1.04e's FatFs stamps every file 2015-01-01 00:00: five sites, in banks 3, 6
- * and 9, store the constant bytes through de. 1.05e added RtcReadPage for this.
- * Here the five sites call FatStamp, and the mod's code that asks for the date
- * (auto_backup.c) gets RtcReadPage from the table below. The clock chip and the
- * FPGA's copy of it are on FW4 too, as the SET tab's TIME shows; only the game
- * clock is not, and nothing here touches that.
+ * 1.04e's FatFs stamps every file 2015-01-01 00:00 (_FS_NORTC in
+ * kernel/stock/src/ffconf.h); 1.05e added RtcReadPage for this. The mod
+ * builds 1.04e's FatFs with timestamps too, and this is the get_fattime it
+ * calls and the RtcReadPage auto_backup.c asks the date from. The clock chip
+ * and the FPGA's copy of it are on FW4 too, as the SET tab's TIME shows;
+ * only the game clock is not, and nothing here touches that.
  *
- * 1.04e only: bank 0, 00:3db0, in the room browser_nav.c left. Not in REGISTRY:
- * port-mod.py builds it into the 1.04e port (TARGET_BLOCKS, TARGET_SITES), since
- * 0731, the development base, has the real thing. A jump table first, so the
- * five sites and the RtcReadPage pin keep their targets:
- *
- *   00:3db0  RtcReadPage   u32 get_fattime, date in the high word
- *   00:3db3  FatStamp      de = where the four bytes go; all registers free
+ * 1.04e only (kernel/mod/mod.mk), bank 0.
  */
 
 #include "types.h"
 
 #define RTC_WIN ((volatile u8 *)0xA008)     /* page $06: s, m, h, day, weekday, month, year, BCD */
-
-void FatDate(void) __naked {
-    __asm
-	jp	_RtcRead
-	jp	_FatStamp
-    __endasm;
-}
 
 static void fpga_page(u8 page) {
     *(volatile u8 *)0x7f00 = 0xe1;
@@ -40,7 +27,7 @@ static u8 bcd(u8 v) {
     return (u8)((u8)(t << 3) + (u8)(t << 1) + (u8)(v & 0x0F));
 }
 
-u32 RtcRead(void) {
+u32 RtcReadPage(void) {
     u8 s, m, h, d, mon, y;
     u32 v;
     u8 *b = (u8 *)&v;
@@ -67,22 +54,9 @@ u32 RtcRead(void) {
     return v;
 }
 
-void FatStamp(void) __naked {
+/* FatFs's name for it */
+void get_fattime(void) __naked {
     __asm
-	push	de
-	call	_RtcRead
-	pop	bc
-	ld	a, e
-	ld	(bc), a
-	inc	bc
-	ld	a, d
-	ld	(bc), a
-	inc	bc
-	ld	a, l
-	ld	(bc), a
-	inc	bc
-	ld	a, h
-	ld	(bc), a
-	ret
+	jp	_RtcReadPage
     __endasm;
 }

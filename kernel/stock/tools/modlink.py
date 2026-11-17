@@ -15,11 +15,12 @@ symbol files sdinc.py writes for each link (--syms-out):
       STOCKDIR is the stock build and MODDIR a link of the changed source at
       the new layout. A kernel.sym name is the name of whatever source
       symbol is at its address in the stock build; OUT.sym gives each name
-      that symbol's address in MODDIR. Names in RAM keep their address.
-      ROM names with no source symbol (labels inside a routine) are left
-      out. Every source symbol only one link defines is also written under
-      its own name, bank included, which is how stock C finds a routine the
-      mod adds.
+      that symbol's address in MODDIR. Names in RAM keep their address. A
+      ROM name with no source symbol (a label inside a routine) keeps its
+      distance from the source symbol before it, and is left out when that
+      routine's size has changed. Every source symbol only one
+      link defines is also written under its own name, bank included, which
+      is how stock C finds a routine the mod adds.
 """
 import glob
 import os
@@ -78,7 +79,13 @@ def relsym(stock_sym, stock_dir, mod_dir, out):
     for group, (syms, _) in stock.items():
         for name, loc in syms.items():
             at.setdefault(loc, []).append((group, name))
-    lines, dropped = [], 0
+    before = {}                 # bank -> sorted [(addr, group, symbol)]
+    for (bank, addr), owners_ in at.items():
+        if addr < 0x8000:
+            before.setdefault(bank, []).append((addr, owners_[0][0], owners_[0][1]))
+    for v in before.values():
+        v.sort()
+    lines, dropped, stale = [], 0, set()
     for line in open(stock_sym):
         m = SYM.match(line)
         if not m:
@@ -93,7 +100,23 @@ def relsym(stock_sym, stock_dir, mod_dir, out):
                 lines.append(f"{b:02x}:{a:04x} {name}")
                 break
         else:
-            if addr == 0x4000:  # the start of a bank does not move
+            lst = before.get(bank, [])
+            i = max(len([x for x in lst if x[0] <= addr]) - 1, 0)
+            near = lst[i:i + 1]
+            if near and near[-1][2] in mod.get(near[-1][1], ({},))[0]:
+                base, group, csym = near[-1]
+                b, a = mod[group][0][csym]
+                # the next source symbol tells whether this stretch changed
+                # size; a label inside one that did is not carried over, so
+                # a reference to it fails the link
+                if i + 1 < len(lst):
+                    nbase, ngroup, nsym = lst[i + 1]
+                    nloc = mod.get(ngroup, ({},))[0].get(nsym)
+                    if nloc is None or nloc[1] - a != nbase - base:
+                        stale.add(csym)
+                        continue
+                lines.append(f"{b:02x}:{a + addr - base:04x} {name}")
+            elif addr == 0x4000:  # the start of a bank does not move
                 lines.append(f"{bank:02x}:{addr:04x} {name}")
             dropped += 1
     owners = {}
@@ -107,7 +130,9 @@ def relsym(stock_sym, stock_dir, mod_dir, out):
     text = "\n".join(lines) + "\n"
     if not os.path.exists(out) or open(out).read() != text:
         open(out, "w").write(text)      # untouched when nothing moved: make's rebuild test
-    print(f"{out}: {len(lines)} symbols, {dropped} stock labels inside routines left out")
+    print(f"{out}: {len(lines)} symbols, {dropped} of them stock labels inside routines")
+    if stale:
+        print(f"  labels inside changed code left out: {' '.join(sorted(stale))}")
 
 
 if __name__ == "__main__":

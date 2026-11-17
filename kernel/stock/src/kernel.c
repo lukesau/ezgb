@@ -6,6 +6,7 @@
 #include <gb/drawing.h>
 #include <string.h>
 #include "ff.h"
+#include "mod.h"
 
 /* the browser's entry table: 255-byte entries in pSRAM, 32 to a page */
 typedef struct {
@@ -67,7 +68,7 @@ void SdMenuMain (void);
 /* 00:07bc */
 void WaitJoypadSelect (void)
 {
-	while (joypad() != J_SELECT)
+	while (menu_joypad() != J_SELECT)
 		;
 	delay(200);
 }
@@ -104,7 +105,9 @@ void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y)
 		if (*s) {
 			wrtchr(*s++);
 		} else {
+#ifndef MOD	/* the mod pads in the colors of the text: a whole highlighted row */
 			color(3, 0, 0);
+#endif
 			wrtchr(' ');
 		}
 	}
@@ -182,6 +185,10 @@ void DirList (void)
 		if (wFno.fname[0] == '.')
 			continue;
 		name = *wFno.lfname ? wFno.lfname : wFno.fname;
+#ifdef MOD
+		if (browser_hide_name(name))
+			continue;
+#endif
 		SetFpgaPageAlt_B4(3);
 		page = wEntryCount >> 5;
 		slot = wEntryCount & 0x1F;
@@ -213,10 +220,35 @@ void DrawDirEntryLabel (UINT32 tick, UINT16 top, UINT16 row)
 
 	if (tick <= 20)
 		return;
-	color(3, 2, 0);
+	color(HI_INK, HI_PAPER, 0);
 	page = (top + row) / 32;
 	slot = (top + row) % 32;
 	*(UINT8 *)0x4000 = page + 0x12;
+#ifdef MOD
+	/* the name as the row draws it: tags cut, after the icon, and in the
+	   12px browser as many glyphs as fit (width 255 = all of it does) */
+	len = FarCallTagLen(wEntries[slot].name);
+	if (hUiMode) {
+		if (Fit12(wEntries[slot].name, 0, 1, wLabelBuf) >= len)
+			width = 255;
+		else
+			width = 0;
+	} else
+		width = 19;
+	if (width >= len)
+		return;
+	pos = ((tick - 20) >> (hUiMode + 1)) % len;
+	if (wMarqueePos != pos) {
+		wMarqueePos = pos;
+		strncpy(wLabelBuf, wEntries[slot].name + pos, 254);
+		TagCat(wLabelBuf, "   ");
+		strncpy(wLabelBuf + strlen(wLabelBuf), wEntries[slot].name, 128 - strlen(wLabelBuf));
+		if (hUiMode)
+			FarCallDrawString12(wLabelBuf, width, 1, row + 2);
+		else
+			DrawString(wLabelBuf, width, 1, row + 2);
+	}
+#else
 	len = strlen(wEntries[slot].name);
 	if (wEntries[slot].attr == AM_DIR)
 		width = 17;
@@ -232,14 +264,39 @@ void DrawDirEntryLabel (UINT32 tick, UINT16 top, UINT16 row)
 		strncpy(wLabelBuf + strlen(wLabelBuf), wEntries[slot].name, 128 - strlen(wLabelBuf));
 		DrawString(wLabelBuf, width, 0, row + 2);
 	}
+#endif
 }
+
+#ifdef MOD
+/* The mod's browser code is handed &wBrowser.ofs or &wBrowser.dirty and
+   reaches the rest from there (kernel/mod/src/rom_menu.c, browser_nav.c):
+   the layout is that of stock's stack frame. */
+struct browser {
+	UINT16 ofs;		/* the selected entry's offset in its page */
+	UINT8 pad[12];
+	UINT8 dirty;		/* redraw */
+	UINT16 base;		/* top */
+	UINT8 sel;		/* row */
+};
+extern struct browser wBrowser;	/* $DC20 */
+#define LASTROM_JOYPAD LastRomTickStub	/* and scrolls the name */
+#else
+#define LASTROM_JOYPAD joypad
+#endif
 
 /* 00:0de4: mount the card, offer the save backup, then the file browser */
 void SdMenuMain (void)
 {
+#ifdef MOD
+#define redraw	wBrowser.dirty
+#define top	wBrowser.base
+#define row	wBrowser.sel
+	UINT8 res, save;
+#else
 	UINT8 res, row;
 	UINT16 top;
 	UINT8 redraw, save;
+#endif
 	UINT16 i;
 	UINT8 mode;
 	UINT32 tick;
@@ -256,6 +313,10 @@ void SdMenuMain (void)
 			;
 	}
 	DrawString("Micro SD initial OK!", 20, 0, wDebugTextRow);
+#ifdef MOD
+	wEzOp = 3;	/* EZGB.CFG, and the clock from its backup */
+	ezcfg();
+#endif
 		*(volatile UINT8 *)0x4000 = 0x11;
 	SetFpgaPageAlt_B4(3);
 		if (*(volatile UINT8 *)0xA000 == 0xAAU) {
@@ -269,9 +330,20 @@ void SdMenuMain (void)
 		for (i = 0; i < len; i++)
 			wTmp[i] = *(UINT8 *)(0xA010 + i);
 		wTmp[len] = 0;
+#ifdef MOD
+		wEzOp = 8;	/* is the save the stamp names still there? */
+		ezcfg();
+		if (wEzRes) {
+			AutoBackup();
+			SetFpgaPageAlt_B4(0);
+			fs_mkdir("/SAVER");
+			BackupSavePrompt(save, flag);
+		}
+#else
 		SetFpgaPageAlt_B4(0);
 		fs_mkdir("/SAVER");
 		BackupSavePrompt(save, flag);
+#endif
 	}
 		*(volatile UINT8 *)0x4000 = 0;
 	SetFpgaPageAlt_B4(0);
@@ -296,7 +368,24 @@ browse:
 	memset((void *)(UINT16)&wFno, 0, sizeof(FILINFO));
 	wFno.lfname = wLabelBuf;
 	wFno.lfsize = 254;
+#ifdef MOD
+	browser_sort_all();	/* the whole directory, sorted */
+	if (!wFlBooted) {
+		/* once a boot: a fast launch, before the list is drawn */
+		wFlBooted = 1;
+		fastlaunch_scan();
+		if (wLabelBuf[0]) {
+			SetFpgaPageAlt_B4(0);
+			memset(wPath, 0, 128);
+			wPath[0] = '/';
+			name = strrchr(wLabelBuf, '/') + 1;
+			goto relaunch;
+		}
+	}
+	hPadHeld |= joypad();	/* what is still down needs a new press */
+#else
 	DirList();
+#endif
 	row = 0;
 	top = 0;
 	redraw = 1;
@@ -318,6 +407,27 @@ browse:
 		if (wEntryCount)
 			DrawDirEntryLabel(tick, top, row);
 		redraw = 0;
+#ifdef MOD
+		keys = BrowserPoll();
+		if (keys & (J_UP | J_DOWN))
+			tick = 0;	/* no wait while one is held: the marquee stays put */
+		if (keys & (J_LEFT | J_RIGHT | J_UP | J_DOWN)) {
+			BrowserMove(keys);	/* by the rows on screen, with key repeat */
+		} else if (keys & J_SELECT) {
+			mode++;
+			if (mode == 2) {
+				mode = 0;
+			} else if (mode == 1) {
+settab:
+				DrawMenuTabs(1);
+				DrawTimeAutosaveScreen();
+				/* START left the SET tab, or its PICK ROM wants a
+				   file: the browser, not HELP */
+				if (wFlPick | wSetBack)
+					goto browse;
+				mode = 2;
+			}
+#else
 		delay(45);
 		keys = joypad();
 		if (keys & J_LEFT) {
@@ -360,6 +470,7 @@ browse:
 				DrawTimeAutosaveScreen();
 				mode = 2;
 			}
+#endif
 			if (mode == 2) {
 				DrawMenuTabs(2);
 				DrawFwVersionScreen();
@@ -367,22 +478,43 @@ browse:
 				goto browse;
 			}
 		} else if (keys & J_START) {
+#ifdef MOD
+			LastRomBox();
+#else
 			DrawLastRomButtons();
+#endif
 			*(UINT8 *)0x4000 = 0x11;
 			SetFpgaPageAlt_B4(3);
 			for (i = 0; i < 255; i++)
 				wLabelBuf[i] = *(UINT8 *)(0xA300 + i);
+#ifdef MOD
+			wEzOp = 5;	/* is that a path? else LASTROM= */
+			ezcfg();
+			if (!wEzRes)
+				goto browse;
+#endif
 			*(UINT8 *)0x4000 = 0;
 			SetFpgaPageAlt_B4(0);
 			name = strrchr(wLabelBuf, '/') + 1;
+#ifdef MOD
+			LastRomNameStub(name);
+#else
 			DrawString(name, 20, 0, 15);
+#endif
 			for (;;) {
-				keys = joypad();
+				keys = LASTROM_JOYPAD();
 				if (keys & J_A) {
+#ifdef MOD
+relaunch:
+#endif
 					memcpy(wPath, wLabelBuf, name - wLabelBuf - 1);
 					f_chdir(wPath);
 					strcpy(wLabelBuf, name);
 					DrawLoadingBox();
+#ifdef MOD
+					wEzOp = 7;	/* back up the RTC */
+					ezcfg();
+#endif
 					goto launch;
 				}
 				if (keys & J_B)
@@ -392,14 +524,29 @@ browse:
 			page = (top + row) / 32;
 			slot = (top + row) % 32;
 			*(UINT8 *)0x4000 = page + 0x12;
+#ifdef MOD
+			len = BrowserPick(slot);	/* wBrowser.ofs, and 0 = too deep */
+#endif
 			if (wEntries[slot].attr == AM_DIR) {
 				res = CStrCmp(wPath, "/");
-				if (res)
+				if (res) {
+#ifdef MOD	/* a path too long for wPath: stay here */
+					if (!len)
+						goto browse;
+#endif
 					CStrCat_B1(wPath, "/");
+				}
 				CStrCat_B1(wPath, wEntries[slot].name);
 				goto browse;
 			}
+#ifdef MOD
+			/* a text file's viewer, or A held on a ROM: its menu. 0 =
+			   open the file, and "Loading" is up */
+			if (RomMenu((UINT8 *)&wBrowser.ofs))
+				goto idle;
+#else
 			DrawLoadingBox();
+#endif
 			MemSet8_B0(wLabelBuf, 0, 255);
 			strcpy(wLabelBuf, wEntries[slot].name);
 			ext = strrchr(wLabelBuf, '.');
@@ -413,12 +560,19 @@ browse:
 			if (MemCmp_B0(wTmp, ".GBC", 5) && MemCmp_B0(wTmp, ".GB", 4)) {
 				DrawErrorFileBox();
 				for (;;) {
-					keys = joypad();
+					keys = menu_joypad();
 					if (keys & J_B)
 						goto browse;
 				}
 			}
 			{
+#ifdef MOD
+				if (wFlPick) {
+					/* the SET tab's PICK ROM takes this file */
+					FlPickCommitFar();
+					goto settab;
+				}
+#endif
 				LoaderPrepPath();
 launch:
 				res = RomLoaderMain(wLabelBuf);
@@ -432,7 +586,11 @@ launch:
 				SetFpgaPageAlt_B4(2);
 				SetFpga7F37_B4((wD3F0 << 7) | (char)wD3EB);
 #ifndef K104
+#ifdef MOD
+				SetFpga7FD4_B1(0x11);	/* FW5: no loader delay */
+#else
 				SetFpga7FD4_B1(0);
+#endif
 #endif
 				SetFpga7FC4_B4(wD3ED);
 				SetFpgaRomSize_B4(wD3EC);
@@ -453,9 +611,21 @@ launch:
 					wPath[0] = '/';
 				goto browse;
 			}
+#ifdef MOD
+			else if (wFlPick)
+				goto settab;	/* B at the root gives up the pick */
+#endif
 		}
+#ifdef MOD
+idle:
+#endif
 		wait_vbl_done();
 	}
+#ifdef MOD
+#undef redraw
+#undef top
+#undef row
+#endif
 }
 
 /* 00:16f4: v in radix (2 to 16, lower-case digits) into buf */
@@ -491,6 +661,14 @@ void BatteryCheck (void)
 	SetFpgaPageAlt_B4(3);
 	if (*(volatile UINT8 *)0xA201 != 0x88) {
 		DrawString(" ", 1, 5, 8);
+#ifdef MOD
+		MsgBox(0, 3);
+		while (!(PadWait() & J_A))
+			;
+		wBatteryDry = 1;	/* ezcfg puts AUTOSAVE= back */
+		*(UINT8 *)0xA201 = 0x88;
+		MsgBox(0, 4);
+#else
 		color(3, 2, 0);
 		box(35, 37, 125, 108, M_FILL);
 		DrawString("BATTERY", 7, 5, 7);
@@ -501,6 +679,7 @@ void BatteryCheck (void)
 		while (!(joypad() & J_A))
 			;
 		*(UINT8 *)0xA201 = 0x88;
+#endif
 	}
 	color(3, 0, 0);
 	*(UINT8 *)0x4000 = 0;

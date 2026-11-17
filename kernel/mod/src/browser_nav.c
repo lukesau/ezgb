@@ -61,7 +61,7 @@ extern const u16 GfxRowTable[];     /* 00:2fbb pixel row -> VRAM address of tile
 extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);      /* 00:3ec8 */
 extern volatile u8 wIntNest;        /* $d6d0 DiNest depth */
 extern volatile u8 wDrawOp;         /* $d723, StoreDrawParams' op, ink and paper */
-extern volatile u8 wDrawColorA;     /* $d734 */
+extern volatile u8 wDrawColor;     /* $d734 */
 extern volatile u8 wDrawColorB;     /* $d735 */
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
@@ -159,10 +159,10 @@ static void draw_counter(u16 n) {
         }
         while (x < 5) buf[x++] = ' ';
         {
-            u8 ink = wDrawColorA, paper = wDrawColorB, op = wDrawOp;
+            u8 ink = wDrawColor, paper = wDrawColorB, op = wDrawOp;
             StoreDrawParams(3, 0, 0);
             DrawString(buf, 5, COUNTER_X, 0);
-            wDrawColorA = ink;
+            wDrawColor = ink;
             wDrawColorB = paper;
             wDrawOp = op;
         }
@@ -188,10 +188,10 @@ static void draw_counter(u16 n) {
      * draw left (a move leaves the bar's paper, the accent); the caller's
      * ink, paper and op go back after */
     {
-        u8 ink = wDrawColorA, paper = wDrawColorB, op = wDrawOp;
+        u8 ink = wDrawColor, paper = wDrawColorB, op = wDrawOp;
         StoreDrawParams(3, 0, 0);
         FarCallDrawString12(buf, 0, x, 0);
-        wDrawColorA = ink;
+        wDrawColor = ink;
         wDrawColorB = paper;
         wDrawOp = op;
     }
@@ -419,6 +419,72 @@ void NavUp(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st) {
         MQ_LAST = MQ_CLEAN;
         if (r == 2) HOLD_T = HFRAME;
     }
+}
+
+/* The browser loop's state (kernel/stock/src/kernel.c, struct browser at
+ * $DC20): the selected record's offset in its page, and from +14 the
+ * redraw code, the top entry and the cursor row. */
+#define BROWSER_OFS (*(volatile u16 *)0xDC20)
+#define BROWSER_ST  ((struct BrowserScrollState *)0xDC2E)
+#define END_OF_DIR  (*(volatile u8 *)0xC5A4)
+#define REC_BASE    (*(volatile u16 *)0xC2A0)
+#define PAD_RIGHT 0x01
+#define PAD_LEFT  0x02
+extern void DirList(void);
+
+/* A direction key in the browser, from the loop: the inline trampoline's
+ * two pad words. LEFT and RIGHT page by the rows on screen (stock paged by
+ * 16 whatever was shown); LEFT on the first page puts the cursor on its
+ * first row, as stock does, and RIGHT on the last on its last row. */
+void BrowserMove(u16 pad_thunk, u16 pad_af, u8 keys) {
+    struct BrowserScrollState *st = BROWSER_ST;
+    u8 rows = list_rows();
+    u16 count, left;
+
+    (void)pad_thunk; (void)pad_af;
+    if (keys & PAD_LEFT) {
+        if (st->base) {
+            st->base = st->base > rows ? st->base - rows : 0;
+            st->dirty = 1;
+        } else if (st->sel) {
+            st->sel = 0;
+            st->dirty = 1;
+        }
+    } else if (keys & PAD_RIGHT) {
+        if (!END_OF_DIR) DirList();
+        count = ENTRY_COUNT;
+        if (st->base + rows < count) {
+            left = count - st->base;
+            st->base = left >= (u8)(rows + rows) ? st->base + rows : count - rows;
+            st->dirty = 1;
+        } else if (count) {
+            rows = (u8)(count - st->base) - 1;
+            if (st->sel != rows) {
+                st->sel = rows;
+                st->dirty = 1;
+            }
+        }
+    } else if (keys & PAD_UP) {
+        NavUp(0, 0, 0, st);
+    } else if (keys & PAD_DOWN) {
+        NavDown(0, 0, 0, st);
+    }
+}
+
+/* A on the entry in slot of the mapped record page: notes its offset for
+ * the ROM menu, and returns 0 when its name added to the path would not
+ * fit wPath (a directory that deep is not entered). */
+u8 BrowserPick(u16 pad_thunk, u16 pad_af, u8 slot) {
+    const u8 *p;
+    u8 n = 0;
+
+    (void)pad_thunk; (void)pad_af;
+    BROWSER_OFS = (u16)((u16)slot << 8) - slot;
+    for (p = (const u8 *)(REC_BASE + BROWSER_OFS); *p; p++) n++;
+    for (p = (const u8 *)0xC2A6; *p; p++) {
+        if (++n == 0) return 0;
+    }
+    return n < 0xFE;
 }
 
 /* plain <-> bar, outside DV: both planes inverted. */

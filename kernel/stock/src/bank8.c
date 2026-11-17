@@ -7,14 +7,12 @@
 
 #include <gb/gb.h>
 #include <gb/drawing.h>
+#include "mod.h"
 #include <string.h>
 
 extern UINT8 wSaveBuf[512];		/* $C0A0 */
 
 void DrawString (char *s, UINT8 len, UINT8 x, UINT8 y);
-#ifdef MOD
-void ModVersion (void) __banked;	/* kernel/mod/banks/bank10.c */
-#endif
 void U32ToAscii_B0 (UINT32 v, char *buf, UINT8 radix);
 
 /* 08:413e: the 8x12 font PlotIconGlyphs draws, 12 rows per glyph, bit 7 the
@@ -387,6 +385,29 @@ void RomLoad_ClearCartWindow_B8 (void)
 	}
 }
 
+#ifdef MOD
+/* the HELP tab's lines; kernel/mod/src/help12.c draws them in the 12px UI */
+#define STR_(x) #x
+#define STR(x) STR_(x)
+#if defined(K104)
+const char HelpKStr[12] = "K1.04e";
+#elif defined(K0918)
+const char HelpKStr[12] = "K1.05e-0918";
+#else
+const char HelpKStr[12] = "K1.05e-0731";
+#endif
+const char HelpModStr[11] = "MOD " STR(MOD_MAJOR) "." STR(MOD_MINOR);
+const char HelpGitStr[] = "github.com/lukesau/ezgb";
+const char HelpUrlStr[] = "www.ezflash.cn";
+void Help12 (char *fw);			/* bank 8, kernel/mod/src/help12.c */
+void HelpSd (UINT8 big);
+void flpick_banner (void);
+void TabStrip12 (UINT8 tab) __banked;
+#define TAB_TOP 0x0a			/* the strip is lower in the mod */
+#else
+#define TAB_TOP 0x0f
+#endif
+
 /* 08:6fd0: the cart's FW version (page 4, $A000) and the kernel's, until
    SELECT */
 void DrawFwVersionScreen (void) __banked
@@ -406,56 +427,89 @@ void DrawFwVersionScreen (void) __banked
 	buf[2] = ver[0];
 	if (ver[1])
 		buf[3] = ver[1];
+#ifdef MOD
+	if (hUiMode)
+		Help12(buf);
+	else {
+		color(0, 0, 0);
+		box(0x78, 0x00, 0x9f, 0x07, M_FILL);
+		color(3, 0, 0);
+		DrawString(buf, 11, 5, 3);
+		DrawString("ver:", 4, 0, 3);
+		DrawString("www.ezflash.cn", 14, 0, 5);
+		DrawString(HelpKStr, 11, 9, 3);		/* the kernel, with its date */
+		DrawString(HelpModStr, 10, 0, 7);
+		DrawString(HelpGitStr, 19, 0, 9);
+		DrawString(HelpGitStr + 19, 4, 0, 10);
+		HelpSd(0);
+	}
+	for (;;) {
+		wait_vbl_done();
+		if (joypad() & (J_SELECT | J_START))
+			break;
+	}
+#else
 	color(0, 0, 0);
 	box(0x78, 0x00, 0x9f, 0x07, M_FILL);
 	color(3, 0, 0);
 	DrawString(buf, 11, 5, 3);
 	DrawString("ver:", 4, 0, 3);
 	DrawString("www.ezflash.cn", 14, 0, 5);
-#ifdef MOD
-	ModVersion();
-#endif
 	for (;;) {
 		wait_vbl_done();
 		if (joypad() & J_SELECT)
 			break;
 	}
+#endif
 }
 
 /* 08:7169: the SD / SET / HELP tab strip with tab highlighted; tab 3
    only clears the screen below it (name ours) */
 void DrawMenuTabs (UINT8 tab) __banked
 {
+#ifdef MOD
+	if (hUiMode) {
+		TabStrip12(tab);
+		if (tab == 0)
+			flpick_banner();
+		return;
+	}
+	color(3, 3, 0);		/* the rule, in the accent */
+#else
 	color(3, 0, 0);
+#endif
 	line(0, 9, 0x9f, 9);
 	line(0, 8, 0x9f, 8);
 	if (tab == 0) {
 		color(0, 0, 0);
 		box(0x00, 0x00, 0x9f, 0x0e, M_FILL);
-		color(3, 2, 0);
+		color(HI_INK, HI_PAPER, 0);
 		DrawString(" SD ", 4, 0, 0);
 		color(3, 0, 0);
 		DrawString(" SET ", 5, 4, 0);
 		DrawString(" HELP ", 6, 9, 0);
+#ifdef MOD
+		flpick_banner();	/* PICK A ROM over the strip when the SET tab asked */
+#endif
 	} else if (tab == 1) {
 		color(0, 0, 0);
-		box(0x00, 0x0f, 0x9f, 0x8f, M_FILL);
-		color(3, 2, 0);
+		box(0x00, TAB_TOP, 0x9f, 0x8f, M_FILL);
+		color(HI_INK, HI_PAPER, 0);
 		DrawString(" SET ", 5, 4, 0);
 		color(3, 0, 0);
 		DrawString(" SD ", 4, 0, 0);
 		DrawString(" HELP ", 6, 9, 0);
 	} else if (tab == 2) {
 		color(0, 0, 0);
-		box(0x00, 0x0f, 0x9f, 0x8f, M_FILL);
-		color(3, 2, 0);
+		box(0x00, TAB_TOP, 0x9f, 0x8f, M_FILL);
+		color(HI_INK, HI_PAPER, 0);
 		DrawString(" HELP ", 6, 9, 0);
 		color(3, 0, 0);
 		DrawString(" SD ", 4, 0, 0);
 		DrawString(" SET ", 5, 4, 0);
 	} else if (tab == 3) {
 		color(0, 0, 0);
-		box(0x00, 0x0f, 0x9f, 0x8f, M_FILL);
+		box(0x00, TAB_TOP, 0x9f, 0x8f, M_FILL);
 		color(3, 0, 0);
 	}
 }
@@ -463,25 +517,37 @@ void DrawMenuTabs (UINT8 tab) __banked
 /* 08:7344 */
 void DrawReadingBox (void) __banked
 {
+#ifdef MOD
+	MsgBox(0, 0);
+#else
 	color(3, 2, 0);
 	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
 	DrawString("Reading...", 10, 5, 8);
+#endif
 }
 
 /* 08:737f */
 void DrawLoadingBox (void) __banked
 {
+#ifdef MOD
+	MsgBox(0, 1);
+#else
 	color(3, 2, 0);
 	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
 	DrawString("Loading...", 10, 5, 8);
+#endif
 }
 
 /* 08:73ba */
 void DrawErrorFileBox (void) __banked
 {
+#ifdef MOD
+	MsgBox(0, 2);
+#else
 	color(3, 2, 0);
 	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
 	DrawString("Error file", 10, 5, 8);
+#endif
 }
 
 /* 08:73f5 */

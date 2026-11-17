@@ -492,7 +492,7 @@ static void text(const u8 *s, u8 col, u8 row, u8 x12, u8 end12) {
 static void FarTheme(void) __naked {
     __asm
 	call	_FarCallTrampoline
-	.dw	0x43d0
+	.dw	_theme
 	.db	2, 0
 	ret
     __endasm;

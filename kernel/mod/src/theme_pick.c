@@ -28,7 +28,7 @@ u8 *FarCallColors(u8 op, u8 *p, u8 len) __naked {
     (void)op; (void)p; (void)len;
     __asm
 	call	_FarCallTrampoline
-	.dw	0x7b50
+	.dw	_colors
 	.db	5, 0
 	ret
     __endasm;

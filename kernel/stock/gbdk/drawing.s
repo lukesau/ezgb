@@ -8,6 +8,20 @@
 	;; BANKED: checked
 	.include        "global.s"
 
+
+	;; mod: a write to VRAM in two bytes is not interrupted between its
+	;; wait for the LCD and the second byte (the VBlank handler takes
+	;; long enough for the mode to change)
+	.macro	VRAM_DI
+	.ifdef	MOD
+	DI
+	.endif
+	.endm
+	.macro	VRAM_EI
+	.ifdef	MOD
+	EI
+	.endif
+	.endm
 	.globl  .init_vram
 	.globl  .copy_vram
 
@@ -203,6 +217,11 @@
 	;; own places them there
 	.area	_VBLLCD
 .vbl::
+	.ifdef	MOD
+	;; mod: this, the joypad latch and the frame count
+	;; (kernel/mod/asm/VBlankPadLatch.s)
+	JP	VBlankPadLatch
+	.else
 	LDH	A,(.LCDC)
 	OR	#0b00010000	; Set BG Chr to 0x8000
 	LDH	(.LCDC),A
@@ -211,6 +230,7 @@
 	LDH	(.LYC),A
 
 	RET
+	.endif
 
 	;; Is the STAT check required, as we are already in the HBL?
 .lcd::
@@ -680,6 +700,12 @@ dbox$:
 	LD	A,C
 	LD	(.bg_colour),A
 	.endif 
+	.ifdef	MOD
+	;; mod: the fill by bytes, not a line a row (kernel/mod/asm/FillRect.s)
+	CALL	FarCallTrampoline
+	.dw	FillRect
+	.dw	2
+	.else
 filllp$:
 	LD	A,(.x_s)
 	LD	B,A
@@ -697,6 +723,7 @@ filllp$:
 	INC	A
 	LD	(.y_s),A
 	JR	filllp$
+	.endif
 swap$:	
 	.if	0
 	LD	A,(.mod_col)	;Swap fore + back colours.
@@ -1312,6 +1339,7 @@ nchgy$:
 	.endif
 	JR	NZ,3$
 	LD	E,#0x00
+	VRAM_DI
 3$:
 	LDH	A,(.STAT)
 	BIT	1,A
@@ -1325,6 +1353,7 @@ nchgy$:
 	LD	A,(HL)
 	AND	C
 	OR	E
+	VRAM_EI
 	LD	(HL),A
 	LD	A,B
 	OR	A
@@ -1350,6 +1379,7 @@ nchgy$:
 	.endif
 	JR      NZ,12$
 	LD      C,#0x00
+	VRAM_DI
 12$:
 	LDH     A,(.STAT)
 	BIT     1,A
@@ -1361,6 +1391,7 @@ nchgy$:
 
 	LD      A,(HL)
 	OR      C
+	VRAM_EI
 	LD      (HL),A
 	RET
 
@@ -1382,6 +1413,7 @@ nchgy$:
 	.endif
 	JR      NZ,22$
 	LD      C,#0x00
+	VRAM_DI
 22$:
 	LDH     A,(.STAT)
 	BIT     1,A
@@ -1393,6 +1425,7 @@ nchgy$:
 
 	LD      A,(HL)
 	XOR     C
+	VRAM_EI
 	LD      (HL),A
 	RET
 
@@ -1414,6 +1447,7 @@ nchgy$:
 	.endif
 	JR      Z,32$
 	LD      C,#0xFF
+	VRAM_DI
 32$:
 	LDH     A,(.STAT)
 	BIT     1,A
@@ -1425,6 +1459,7 @@ nchgy$:
 
 	LD      A,(HL)
 	AND     C
+	VRAM_EI
 	LD      (HL),A
 	RET
 
@@ -1454,6 +1489,7 @@ nchgy$:
 	LD      A,(BC)
 	LD      C,A
 
+	VRAM_DI
 gp$:
 	LDH	A,(.STAT)
 	BIT	1,A
@@ -1461,6 +1497,7 @@ gp$:
 
 	LD	A,(HL+)
 	LD	D,A
+	VRAM_EI
 	LD	A,(HL+)
 	LD	E,A
 	LD	B,#0
@@ -1581,6 +1618,7 @@ b1$:
 	.if	1
 	POP	HL
 	.endif
+	VRAM_DI
 chrwait$:
 	LDH	A,(.STAT)
 	BIT	1,A
@@ -1590,6 +1628,7 @@ chrwait$:
 	LD	(HL+),A
 	LD	A,E
 	LD	(HL+),A
+	VRAM_EI
 	POP	DE
 	LD	A,L
 	AND	#0x0F
@@ -1643,9 +1682,15 @@ _color::			; Banked
 	LD	(.fg_colour),a
 	LD	A,(HL+)
 	LD	(.bg_colour),a
+	.ifdef	MOD
+	;; mod: the draw mode, then white paper becomes the theme's accent
+	;; (kernel/mod/src/dv_params.c)
+	JP	_DvParams
+	.else
 	LD	A,(HL)
 	LD	(.draw_mode),a
 	RET
+	.endif
 
 _circle::			; Banked
 	PUSH    BC
