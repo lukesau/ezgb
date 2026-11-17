@@ -15,6 +15,9 @@ disassembly. -a C_NAME=KERNEL_NAME resolves one under its kernel.sym name,
 every global the link defines (GBDK's dot names too) as kernel.sym lines,
 and --defs FILE reads such a file back, so one module can link against the
 symbols of another built on its own (GBDK's library modules against crt0.s).
+A banked call to a --defs symbol gets the bank the file gives it.
+--auto-alias resolves an undefined _NAME as kernel.sym's NAME, so new C
+needs -a only where the names differ.
 
 --sdcc29 compiles C with SDCC 2.9.0 (`$SDCC29/bin/sdcc -mgbz80`), the
 compiler EZ Flash used; its output is assembled with the SDCC 4.x sdasgb.
@@ -149,6 +152,10 @@ def compile_one(a, src, rel, d):
                 return f"{m[1]}.dw {a.sym_banks[a.aliases[m[2]]]}{m[3]}"
             if m[2] in a.g_banks:
                 return f"{m[1]}.dw {a.g_banks[m[2]]}{m[3]}"
+            if m[2] in a.def_banks:
+                return f"{m[1]}.dw {a.def_banks[m[2]]}{m[3]}"
+            if a.auto_alias and m[2][1:] in a.sym_banks:
+                return f"{m[1]}.dw {a.sym_banks[m[2][1:]]}{m[3]}"
             if a.bank is None:
                 sys.exit(f"error: banked call to {m[2]} needs --bank")
             return f"{m[1]}.dw {a.bank}{m[3]}"
@@ -179,6 +186,8 @@ def main():
     p.add_argument("--area-at", action="append", default=[], help="SRC:AREA=ADDR (see above)")
     p.add_argument("--defs", action="append", default=[], help="kernel.sym-style file of more definitions")
     p.add_argument("--syms-out", help="write the link's global symbols here")
+    p.add_argument("--auto-alias", action="store_true",
+                   help="resolve an undefined _NAME as kernel.sym NAME")
     a = p.parse_args()
 
     srcs = [os.path.abspath(x) for x in a.src]
@@ -189,6 +198,12 @@ def main():
         m = re.match(r"\s*([0-9a-fA-F]{2}):([0-9a-fA-F]{4})\s+(\S+)", line)
         if m:
             a.sym_banks.setdefault(m.group(3), int(m.group(1), 16))
+    a.def_banks = {}
+    for path in a.defs:
+        for line in open(path):
+            m = re.match(r"\s*([0-9a-fA-F]{2}):[0-9a-fA-F]{4}\s+(\S+)", line)
+            if m:
+                a.def_banks.setdefault(m.group(2), int(m.group(1), 16))
     with tempfile.TemporaryDirectory() as d:
         rels = []
         for i, src in enumerate(srcs):
@@ -247,6 +262,8 @@ def main():
                 link.append(f"-g{sym}=0x{extra[sym]:04x}")
             elif sym in kernel:
                 link.append(f"-g{sym}=0x{kernel[sym]:04x}")
+            elif a.auto_alias and sym[1:] in kernel:
+                link.append(f"-g{sym}=0x{kernel[sym[1:]]:04x}")
             else:
                 missing.append(sym)
         if missing:

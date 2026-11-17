@@ -9,6 +9,8 @@
 #   make            build all three (build-0918/, build-104/, build-0731/kernel.gb),
 #                   each checked against ../../stock.sha1
 #   make 0918       only 0918 (make 1.04e, make 0731)
+#   make MOD=1      the same kernels with banks 10-15 added (build-<K>-mod/,
+#                   no stock check): README.md, Extra banks
 #   make clean
 
 K ?= 0918
@@ -55,6 +57,15 @@ B0K := 1926
 else
 $(error K=$(K): want 0918, 104 or 0731)
 endif
+# MOD=1: 16 banks. Banks 10-15 are $$FF, or $(MODSRC)/bank<N>.c where there
+# is one. The ten stock banks are the stock bytes.
+ifdef MOD
+B := $(B)-mod
+MODSRC ?= ../mod/banks
+MOD_BANKS := 10 11 12 13 14 15
+MOD_INCS := $(MOD_BANKS:%=$(B)/mod_b%.inc)
+endif
+
 RTC_ALIASES := $(if $(filter 104,$(K)),,-a _SetFpga7FD4_B1=SetFpga7FD4_B1)
 D1 ?= d3f9
 LSHIFT ?= 0
@@ -94,9 +105,9 @@ all: $(B)/kernel.gb
 endif
 
 0918 0731:
-	$(MAKE) K=$@
+	$(MAKE) K=$@ $(if $(MOD),MOD=1)
 1.04e:
-	$(MAKE) K=104
+	$(MAKE) K=104 $(if $(MOD),MOD=1)
 
 $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
@@ -302,17 +313,45 @@ $(B)/b0_rle.inc: sdcclib/crt0_rle.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
 	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,20bb) --region $(call lib,20bb):$(call lib,20e2):$@
 
-$(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
-	rgbasm -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
-	rgblink -n $(B)/kernel.sym -m $(B)/kernel.map -o $@ $(B)/game.o
+# a bank of the mod's C, built like the kernel's. It links against stock
+# under kernel.sym's names (-a where the C name differs) and against the
+# banks below it. $$FF with no source: rgblink fills the section.
+MOD_ALIASES := -a banked_call=FarCallTrampoline -a _color=StoreDrawParams -a _box=DrawRect \
+              -a _line=DrawLineXY -a _plot_point=PlotPixelXY -a _set_data=VramCopyStack \
+              -a _joypad=ReadJoypad -a _delay=Delay -a _wait_vbl_done=WaitVBlankFlag \
+              -a _disable_interrupts=DiNest -a _enable_interrupts=EiNest \
+              -a _strlen=CStrLen -a _strcpy=ApplyBasename
+
+define mod_bank
+$(B)/mod_b$(1).inc: $(wildcard $(MODSRC)/bank$(1).c) $(2:%=$(B)/mod_b%.inc) tools/sdinc.py $(SYM)
+	@mkdir -p $(B)
+ifneq ($(wildcard $(MODSRC)/bank$(1).c),)
+	$(SDINC) $(MODSRC)/bank$(1).c --sdcc29 --bank $(1) --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		--auto-alias $(MOD_ALIASES) $(2:%=--defs $(B)/mod_b%.sym) -b _CODE=0x4000 \
+		--region 4000:8000:$$@ --syms-out $(B)/mod_b$(1).sym
+else
+	: > $(B)/mod_b$(1).sym
+	echo '; bank $(1): no source' > $$@
+endif
+endef
+MOD_PREV :=
+$(foreach n,$(MOD_BANKS),$(eval $(call mod_bank,$(n),$(MOD_PREV)))$(eval MOD_PREV += $(n)))
+
+$(B)/kernel.gb: asm/game.asm asm/mod.asm asm/bank_*.asm asm/*.inc $(INCS) $(MOD_INCS)
+	rgbasm $(if $(MOD),-D MOD) -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
+	rgblink $(if $(MOD),-p 0xff) -n $(B)/kernel.sym -m $(B)/kernel.map -o $@ $(B)/game.o
 	rgbfix -Wno-overwrite -f g $@
+ifdef MOD
+	@echo "$@: $$(($$(wc -c < $@) / 16384)) banks"
+else
 	@want=$$(awk '$$2 == "*kernel/stock/$@" { print $$1 }' ../../stock.sha1); \
 	got=$$( (shasum $@ 2>/dev/null || sha1sum $@) | cut -d' ' -f1); \
 	if [ -n "$$want" ] && [ "$$got" = "$$want" ]; then echo "$@: matches stock ($$got)"; \
 	else echo "$@: MISMATCH ($$got, want $$want)"; exit 1; fi
+endif
 
 clean:
-	rm -rf build-0918 build-104 build-0731
+	rm -rf build-0918 build-104 build-0731 build-0918-mod build-104-mod build-0731-mod
 
 .PHONY: all clean 0918 1.04e 0731
 

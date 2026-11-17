@@ -106,6 +106,33 @@ at `G1`-`G4`.
 4. `make`. A wrong byte fails the hash check; a label the rest of the asm still
    needs fails the rgbds link.
 
+## Extra banks
+
+`make MOD=1` builds the same kernels with banks 10 to 15 added, 16 banks
+(256 KB) like the modded kernel ([kernel-size.md](../../docs/kernel-size.md)),
+in `build-<K>-mod/`. There is no stock check: the ten stock banks are the
+stock bytes and only the global checksum differs.
+
+```sh
+make -C kernel/stock MOD=1          # all three
+make -C kernel/stock 0918 MOD=1     # only 0918
+```
+
+A bank is `$FF` unless `kernel/mod/banks/bank<N>.c` exists (`MODSRC` names
+another folder). That file is compiled like the kernel's C and linked at
+`$4000`:
+
+- A stock routine is called by its `kernel.sym` name. Library routines the
+  kernel names differently (`joypad`, `delay`, `strlen`) are in the
+  Makefile's `MOD_ALIASES`.
+- `__banked` functions call across banks as stock's do, so a new bank needs
+  no far stub. A bank can call the new banks below it.
+- Nothing places `_DATA`: a file with globals needs a `-b _DATA=` at free
+  WRAM first.
+
+Stock code cannot call the new banks yet. Each stock range is linked at its
+stock address and size, so a call added to it moves everything after it.
+
 ## Status
 
 | Range | Source | What |
