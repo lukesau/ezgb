@@ -46,14 +46,11 @@ static void sd(void);
 
 /* The entry point stays the first function in the file. Reached through the
  * `call`ed stub at 08:7b80: three pad parameters. */
-void HideLoad(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret) {
+void HideLoad(void) __banked {
     static const u8 name[11] = {'/','.','e','z','g','b','h','i','d','e',0};
     u16 br, i, o, s;
     u8 c, n, f;
 
-    (void)far_pad_thunk;
-    (void)far_pad_af;
-    (void)far_pad_ret;
     TAB[0] = 0;
     for (n = 0; n < 11; n++) PATH[n] = name[n];
     sd();

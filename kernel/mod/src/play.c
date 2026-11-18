@@ -51,7 +51,6 @@
 
 #include "types.h"
 
-extern void BrowserSortAllStub(void);     /* 00:03d4 -> BrowserSortAll (08:746b) */
 
 void Bump(void) __naked {
     __asm
@@ -238,7 +237,7 @@ _StarQuery::
 	ld	e, a
 1$:
 	push	de
-	ldhl	sp, #14			; slot
+	ldhl	sp, #12			; slot
 	call	Back
 	pop	de
 	add	sp, #4
@@ -279,7 +278,9 @@ _StarToggle::
 	ld	a, (0xDBFA)		; LIST_CUT: the listing stays as it is
 	or	a
 	jr	nz, 9$
-	call	_BrowserSortAllStub
+	ld	e, #b_browser_sort_all
+	ld	hl, #_browser_sort_all
+	call	___sdcc_bcall_ehl
 	ld	bc, #0
 3$:
 	ld	hl, #0xC2A2

@@ -40,7 +40,7 @@ static void copy(u8 *dst, const u8 *src);
 
 /* The entry point stays the first function in the file: the far stub
  * jumps to the block's first byte. */
-void Marquee(void) {
+void Marquee(void) __banked {
     u8 len, f, d, op = MQ_OPS;
     u8 xs[BUF];
 
@@ -54,7 +54,7 @@ void Marquee(void) {
         C.attr |= MQ_SCROLLS;
         if (hUiMode) {
             hClip12 = (u8)(C.x1 + 1);
-            if (Fit12(0, 0, C.s, 0, C.x0, xs) >= len) C.attr &= ~MQ_SCROLLS;
+            if (Fit12(C.s, 0, C.x0, xs) >= len) C.attr &= ~MQ_SCROLLS;
             hClip12 = 0;
         } else if (len <= (u8)((u8)(C.x1 + 1 - C.x0) >> 3)) {
             C.attr &= ~MQ_SCROLLS;
@@ -96,7 +96,7 @@ static void draw(void) {
     params(C.attr & 3, (C.attr >> 2) & 3);
     if (hUiMode) {
         hClip12 = (u8)(C.x1 + 1);
-        DrawString12(0, 0, 0, buf, 0, C.x0, C.y);
+        DrawString12(buf, 0, C.x0, C.y);
         hClip12 = 0;
     } else {
         DrawString(buf, (u8)((u8)(C.x1 + 1 - C.x0) >> 3), C.x0 >> 3, C.y >> 3);

@@ -27,7 +27,7 @@
 
 extern const u8 SortEntries_B1[];                                 /* SortEntries_B1, 01:5736 in 0731 */
 
-void patch_guard(void) {
+void patch_guard(void) __banked {
     static const u8 sig[8] = {0xe8, 0xf2, 0x3e, 0x01, 0xf8, 0x14, 0x96, 0x3e};
     static const char *const msg[] = {
         "WRONG PATCH",

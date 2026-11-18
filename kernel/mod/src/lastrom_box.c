@@ -59,8 +59,8 @@ void LastRomBox(u16 far_pad_thunk, u16 far_pad_af) {
     }
     PopupDrawParams(3, 0);
     DrawRect(0, 92, 159, 143, 1);
-    DrawString12(0, 0, 0, title_str, 0, 1, 96);
-    DrawString12(0, 0, 0, btn_str, 0, 1, 128);
+    DrawString12(title_str, 0, 1, 96);
+    DrawString12(btn_str, 0, 1, 128);
     DrawRect(0, 92, 159, 143, 0);
     PopupDrawParams(3, 3);
     DrawRect(0, 109, 159, 125, 1);

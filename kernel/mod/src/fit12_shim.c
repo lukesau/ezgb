@@ -21,8 +21,8 @@
 extern void FarCallTrampoline(void);      /* 00:078d */
 extern void Fit12Impl(void);              /* 0A:4A00, layout12.c */
 
-u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs) __naked {
-    (void)pad_thunk; (void)pad_af; (void)s; (void)len; (void)col; (void)xs;
+u8 Fit12(const u8 *s, u8 len, u8 col, u8 *xs) __banked __naked {
+    (void)s; (void)len; (void)col; (void)xs;
     __asm
 	add	sp, #-42		; the copy, 41 bytes and a spare
 	ldhl	sp, #48

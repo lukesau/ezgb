@@ -90,9 +90,8 @@ static void button(u8 hi, u8 x0, u8 y0, u8 x1, u8 y1);
 static void text(const u8 *s, u8 col, u8 row, u8 x12, u8 end12);
 static void FarTheme(void);
 
-u8 ThemePage(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 op, u8 arg) {
+u8 ThemePage(u8 op, u8 arg) __banked {
     u8 r = 0;
-    (void)pad_thunk; (void)pad_af; (void)pad_ret;
     if (op == 0) labels();
     else if (op == 1) rows(arg);
     else if (op == 3) r = press(arg);
@@ -484,7 +483,7 @@ static void text(const u8 *s, u8 col, u8 row, u8 x12, u8 end12) {
     while (*s == ' ') s++;
     for (n = 0; (buf[n] = s[n]) != 0; n++) {}
     hClip12 = end12;
-    FarCallDrawString12(buf, 0, x12, (u8)((u8)(row << 3) + 2));
+    DrawString12(buf, 0, x12, (u8)((u8)(row << 3) + 2));
     hClip12 = 0;
 }
 

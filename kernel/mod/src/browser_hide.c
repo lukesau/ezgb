@@ -174,5 +174,5 @@ static void notice_line(const u8 *s, u8 row8, u8 y12) {
     }
     for (i = 0; i < 19 && s[i]; i++) buf[i] = s[i];
     buf[i] = 0;
-    FarCallDrawString12(buf, 0, 1, y12);
+    DrawString12(buf, 0, 1, y12);
 }

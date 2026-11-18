@@ -58,7 +58,7 @@ struct BrowserScrollState {
 };
 
 extern const u16 GfxRowTable[];     /* 00:2fbb pixel row -> VRAM address of tile column 0 */
-extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y);      /* 00:3ec8 */
+extern void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y) __banked;   /* browser_icons.c */
 extern volatile u8 wIntNest;        /* $d6d0 DiNest depth */
 extern volatile u8 wDrawOp;         /* $d723, StoreDrawParams' op, ink and paper */
 extern volatile u8 wDrawColor;     /* $d734 */
@@ -93,7 +93,6 @@ extern volatile u8 wDrawColorB;     /* $d735 */
 
 void NavDown(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st);
 void NavUp(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st);
-void TabNumFar(u16 p0, u16 p1, u16 p2, const u8 *s, u8 len, u8 x, u8 y);
 
 static void InvertRow(u8 py, u8 groups) __naked;
 static void HighlightRow(u8 py, u8 groups) __naked;
@@ -101,14 +100,6 @@ static void UnhighlightRow(u8 py, u8 groups) __naked;
 static void ShiftRows(u8 dst_y, u8 src_y, u8 batches, signed char step) __naked;
 static void VramSync(void) __naked;
 static void RowAddr(void) __naked;
-
-void BrowserNav(void) __naked {
-    __asm
-	jp	_NavDown
-	jp	_NavUp
-	jp	_TabNumFar
-    __endasm;
-}
 
 static u8 list_rows(void) {
     return hUiMode ? 10 : 16;
@@ -190,7 +181,7 @@ static void draw_counter(u16 n) {
     {
         u8 ink = wDrawColor, paper = wDrawColorB, op = wDrawOp;
         StoreDrawParams(3, 0, 0);
-        FarCallDrawString12(buf, 0, x, 0);
+        DrawString12(buf, 0, x, 0);
         wDrawColor = ink;
         wDrawColorB = paper;
         wDrawOp = op;
@@ -198,11 +189,11 @@ static void draw_counter(u16 n) {
 }
 
 /* 12px's TabNum12, with DrawString's frame: s holds the stock digits. */
-void TabNumFar(u16 p0, u16 p1, u16 p2, const u8 *s, u8 len, u8 x, u8 y) {
+void TabNum12(const u8 *s, u8 len, u8 x, u8 y) __banked {
     u16 v = 0;
     u8 i, c;
 
-    (void)p0; (void)p1; (void)p2; (void)len; (void)x; (void)y;
+    (void)len; (void)x; (void)y;
     for (i = 0; i < 4; i++) {
         c = s[i];
         if (c < '0' || c > '9') continue;
@@ -421,7 +412,7 @@ void NavUp(u16 p0, u16 p1, u16 p2, struct BrowserScrollState *st) {
     }
 }
 
-/* The browser loop's state (kernel/stock/src/kernel.c, struct browser at
+/* The browser loop's state (base/src/kernel.c, struct browser at
  * $DC20): the selected record's offset in its page, and from +14 the
  * redraw code, the top entry and the cursor row. */
 #define BROWSER_OFS (*(volatile u16 *)0xDC20)

@@ -71,15 +71,12 @@ static u8 sector_byte(u8 s, u16 k);
 static void put_byte(u8 s, u16 k, u8 v);
 static void star_toggle(u8 *slot);
 static void fpga(u8 page);
-void PlaySync(u16 pad_thunk, u16 pad_af, u16 pad_ret);
+void PlaySync(void) __banked;
 
-void PlayLoad(u16 pad_thunk, u16 pad_af, u16 pad_ret) {
+void PlayLoad(void) __banked {
     u16 br, k;
     u8 s;
 
-    (void)pad_thunk;
-    (void)pad_af;
-    (void)pad_ret;
     open_path();
     sd();
     if (FarCall_06_7309(FIL_OBJ, PATH, FA_READ)) return;
@@ -97,13 +94,10 @@ void PlayLoad(u16 pad_thunk, u16 pad_af, u16 pad_ret) {
     FarCall_03_768f(FIL_OBJ);
 }
 
-void PlaySync(u16 pad_thunk, u16 pad_af, u16 pad_ret) {
+void PlaySync(void) __banked {
     u16 br, k;
     u8 s, same;
 
-    (void)pad_thunk;
-    (void)pad_af;
-    (void)pad_ret;
     open_path();
     sd();
     if (FarCall_06_7309(FIL_OBJ, PATH, FA_RW)) {
@@ -149,12 +143,9 @@ void PlaySync(u16 pad_thunk, u16 pad_af, u16 pad_ret) {
 
 /* The cursor's record page again after the sync, as StarToggle left it: base
  * word at slot+$0f plus the row at slot+$11, page $12 + entry / 32. */
-void StarToggleSync(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 *slot) {
-    (void)pad_thunk;
-    (void)pad_af;
-    (void)pad_ret;
+void StarToggleSync(u8 *slot) __banked {
     star_toggle(slot);
-    PlaySync(0, 0, 0);
+    PlaySync();
     fpga(3);
     RAM_BANK = (u8)(0x12 + (u8)((u16)(*(u16 *)(slot + 0x0f) + slot[0x11]) >> 5));
 }

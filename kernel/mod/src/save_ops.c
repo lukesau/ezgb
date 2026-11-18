@@ -59,10 +59,10 @@ extern u8 FarCall_06_7309(u8 *fp, const u8 *path, u8 mode);         /* f_open  0
 extern u8 FarCall_06_779a(u8 *fp, u8 *buf, u16 btr, u16 *br);       /* f_read  00:1941 */
 extern u8 FarCall_07_7739(u8 *fp, const u8 *buf, u16 btw, u16 *bw); /* f_write 00:1963 */
 extern u8 FarCall_03_768f(u8 *fp);                                  /* f_close 00:19a1 */
-extern u8 SoOpendir(u8 *dp, const u8 *path);                        /* 01:7630 -> Opendir_B5 */
-extern u8 SoReaddir(u8 *dp, u8 *fno);                               /* 01:7646 -> Readdir_B5 */
-extern u8 SoUnlink(const u8 *path);                                 /* 01:765c -> FsUnlink 09:7cc0 */
-extern u8 SoMatch(const u8 *name, u8 *e);                           /* 01:7d50 -> SaveNameMatch 04:73a0, save_name.c */
+extern u8 Opendir_B5(u8 *dp, const u8 *path) __banked;              /* f_opendir */
+extern u8 Readdir_B5(u8 *dp, u8 *fno) __banked;                     /* f_readdir */
+extern u8 FsUnlink(const u8 *path) __banked;                        /* fs_unlink.c */
+extern u8 SaveNameMatch(const u8 *name, u8 *e) __banked;            /* save_name.c */
 
 #define NAME_BUF  ((const u8 *)0xC4A4)      /* the ROM's file name */
 #define FIL_A     ((u8 *)0xCA0F)            /* kernel FIL, idle in the browser */
@@ -113,12 +113,10 @@ static u8 restore(const u8 *b);
 
 /* The entry point stays the first function in the file. Far target: two
  * pad parameters. */
-u8 SaveOp(u16 far_pad_af, u16 far_pad_ret, u16 opidx) {
+u8 SaveOp(u16 opidx) __banked {
     u8 b[ENT];
     u8 op = opidx >> 8, idx = (u8)opidx, i;
 
-    (void)far_pad_af;
-    (void)far_pad_ret;
     if (op == SO_DONE) {
         fpga_page(3);
         *(volatile u8 *)0x4000 = idx;
@@ -142,7 +140,7 @@ u8 SaveOp(u16 far_pad_af, u16 far_pad_ret, u16 opidx) {
     if (op == SO_RESTORE) return restore(b);
     make_path(b);
     sd_prep();
-    return SoUnlink(PATH) == 0;
+    return FsUnlink(PATH) == 0;
 }
 
 /* ---- SD ---- */
@@ -171,7 +169,7 @@ static void scan(void) {
     LIVE[0] = 0;
     for (i = 0; i < 7; i++) PATH[i] = dir_str[i];
     sd_prep();
-    if (SoOpendir(DIRO, PATH)) return;
+    if (Opendir_B5(DIRO, PATH)) return;
     FNO[FNO_LFNP] = (u8)((u16)LFN & 0xFF);
     FNO[FNO_LFNP + 1] = (u8)((u16)LFN >> 8);
     FNO[FNO_LFNS] = LFN_SIZE;
@@ -179,11 +177,11 @@ static void scan(void) {
     for (;;) {
         LFN[0] = 0;
         sd_prep();
-        if (SoReaddir(DIRO, FNO) || FNO[FNO_SFN] == 0) break;
+        if (Readdir_B5(DIRO, FNO) || FNO[FNO_SFN] == 0) break;
         if (FNO[FNO_ATTR] & AM_DIR) continue;
         if (FNO[1] & 1) continue;             /* tail of 256..511 bytes: not copyable */
         name = LFN[0] ? LFN : FNO + FNO_SFN;
-        k = SoMatch(name, e);
+        k = SaveNameMatch(name, e);
         if (k == 1) {
             i = FNO[FNO_DATE];
             k = FNO[FNO_DATE + 1];

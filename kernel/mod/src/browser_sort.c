@@ -72,7 +72,7 @@ extern void PlayKeysFar(u16 n);
 extern void PlayMark(void);
 /* hide_list.c, bank 14, through the stub at 08:7b80: the card's list of
  * names to hide, packed for browser_hide.c */
-extern void HideLoadFar(void);
+extern void HideLoad(void) __banked;
 
 #define ENTRY_COUNT (*(volatile u16 *)0xc2a2)
 #define END_OF_DIR (*(volatile u8 *)0xc5a4)
@@ -101,13 +101,13 @@ static void rec_copy(u16 dst, u16 src);
 static void apply_perm(u16 n);
 static void fpga_sram_page(void);
 
-void browser_sort_all(void) {
+void browser_sort_all(void) __banked {
     u16 n;
     u16 i;
     u16 end;
 
     LIST_CUT = 0;
-    HideLoadFar();
+    HideLoad();
     while (!END_OF_DIR) {
         DirList();
     }

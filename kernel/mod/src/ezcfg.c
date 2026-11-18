@@ -158,14 +158,14 @@ static volatile u8 *meta_map(void);
 static u8 as_take(void);
 static void autosave_boot(void);
 
-extern void FarCallPatchGuard(void);                        /* 02:43c0 -> 01:7d70 patch_guard.c: halts on a cross-patched kernel */
+extern void patch_guard(void) __banked;                     /* patch_guard.c: halts on a cross-patched kernel */
 extern void theme(void);                                    /* 02:43d0 theme.c: palettes + pSRAM mark from THEME */
 extern u8 *FarCallColors(u8 op, u8 *p, u8 len);             /* 02:4990 -> 05:7b50 theme_colors.c: COLORS=, THEME= */
 extern u8 ReadJoypad(void);                                 /* 00:3a4a, E = key byte, B = $20 */
-extern void FarCallPlayLoad(void);                          /* 02:78b0 -> 0B:4700 play_file.c: stars and plays from the card */
-extern void LastRomName(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 x, u8 y);   /* 02:7800, lastrom_name.c */
+extern void PlayLoad(void) __banked;                        /* play_file.c: stars and plays from the card */
+extern void LastRomName(const u8 *s) __banked;             /* lastrom_name.c */
 
-void ezcfg(void) {
+void ezcfg(void) __banked {
     u8 op = EZ_OP;
     if (op == OP_LOAD) { cfg_load(); return; }
     if (op == OP_SAVE) { cfg_save(); return; }
@@ -461,13 +461,13 @@ static void autosave_boot(void) {
 
 static void cfg_restore(void) {
     u8 why;
-    FarCallPatchGuard();                 /* first: a kernel patched for another build must write nothing */
+    patch_guard();                 /* first: a kernel patched for another build must write nothing */
     PAD_HELD |= ReadJoypad();            /* held since power-on: never a press in a prompt */
     stage1_skip_mark();
     cfg_load();
     theme();                             /* THEME= wins over the mark the boot screen used */
     autosave_boot();
-    FarCallPlayLoad();                   /* /.ezgbplays over pSRAM (docs/stars.md) */
+    PlayLoad();                   /* /.ezgbplays over pSRAM (docs/stars.md) */
     if (RTC_OFF || !RTC_VALID) return;   /* NO SD: never read the clock or ask */
     rtc_read();
     why = rtc_suspect();
@@ -605,7 +605,7 @@ static void put_time(u8 *t, const u8 *r) {
 /* One piece of prompt text: n characters at (col, row) of the 8x8 grid, or
  * the 12px row at y12 from x12 (1 = the text margin, x 12; else a pixel x). */
 static void prow(const u8 *s, u8 n, u8 col, u8 row, u8 x12, u8 y12) {
-    if (hUiMode) DrawString12(0, 0, 0, s, n, x12, y12);
+    if (hUiMode) DrawString12(s, n, x12, y12);
     else DrawString(s, n, col, row);
 }
 
@@ -642,8 +642,8 @@ static u8 restore_prompt(u8 why) {
     put_date(l, RTC_BK);  prow(l, 8, 6, 8, 60, 68);
     put_time(l, RTC_BK);  prow(l, 8, 6, 9, 60, 80);
     if (m) {
-        DrawString12(0, 0, 0, btn, 7, 1, 100);
-        DrawString12(0, 0, 0, btn + 10, 0, 88, 100);   /* right of the rule at x 79 */
+        DrawString12(btn, 7, 1, 100);
+        DrawString12(btn + 10, 0, 88, 100);   /* right of the rule at x 79 */
         /* a 12px row runs to x 159, over the box's right side */
         DrawRect(0, 20, 159, 115, 0);
         PopupDrawParams(3, 3);
@@ -1117,7 +1117,7 @@ static void lastrom_load(void) {
         EZ_RES = 1;
         return;
     }
-    LastRomName(0, 0, 0, none_str, 0x12, 1, 0x0f);  /* the overlay's name line, in the UI mode's font */
+    LastRomName(none_str);  /* the overlay's name line, in the UI mode's font */
     for (;;) {
         WaitVBlankFlag();
         if (ReadJoypad() & 0x20) break;   /* B */

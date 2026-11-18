@@ -45,13 +45,10 @@ static void swap(void);
 
 /* The entry point stays the first function in the file: the far stub
  * jumps to the block's first byte. */
-void LastRomName(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s) {
+void LastRomName(const u8 *s) __banked {
     /* tile row by LR_GEO; the 12px row is at 8x that y */
     static const u8 row8[3] = {14, 7, 9};
 
-    (void)far_pad_thunk;
-    (void)far_pad_af;
-    (void)far_pad_ret;
     if (s == 0) {
         MQ_RUN(Marquee, MQ_A, MQ_STEP);
         if (B.s) MQ_RUN(Marquee, MQ_B, MQ_STEP);

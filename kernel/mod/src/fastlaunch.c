@@ -41,14 +41,14 @@
 #include "vars.h"
 #include "ezcfg.h"
 
-extern unsigned char FarCallOpendir_B5(unsigned char *dp, const unsigned char *path);
-extern unsigned char FarCallReaddir_B5(unsigned char *dp, unsigned char *fno);
-extern void FarCallSetPage(unsigned char page);   /* SetFpgaPage: $7FC0 = page */
+extern unsigned char Opendir_B5(unsigned char *dp, const unsigned char *path) __banked;
+extern unsigned char Readdir_B5(unsigned char *dp, unsigned char *fno) __banked;
+extern void SetFpgaPageAlt_B4(unsigned char page) __banked;   /* SetFpgaPage: $7FC0 = page */
 extern unsigned char FarCall_06_7309(unsigned char *fp, const unsigned char *path, unsigned char mode);   /* f_open  00:1926 */
 extern unsigned char FarCall_03_768f(unsigned char *fp);                                                  /* f_close 00:19a1 */
 
 /* Shared settings module (same bank, plain call; no stack args, op in WRAM). */
-extern void ezcfg(void);                          /* 02:4a00 */
+extern void ezcfg(void) __banked;                          /* 02:4a00 */
 extern unsigned char ReadJoypad(void);           /* 00:3a4a, E = key byte, START = $80 */
 
 /* FPGA personality selected via $7FC0. SD sector reads (DiskRead_B2) require
@@ -96,7 +96,7 @@ static unsigned char scan_config(void);
  * invisible in the emulator, whose stub ignores $7FC0. */
 void fastlaunch_scan(void) {
     scan_root();
-    FarCallSetPage(PSRAM_PAGE);
+    SetFpgaPageAlt_B4(PSRAM_PAGE);
 }
 
 static void scan_root(void) {
@@ -128,11 +128,11 @@ static void scan_root(void) {
     /* --- Classify the root --- */
     realcount = 0;
 
-    FarCallSetPage(SD_PAGE);
-    if (FarCallOpendir_B5(DIRO, root) != 0) return;
+    SetFpgaPageAlt_B4(SD_PAGE);
+    if (Opendir_B5(DIRO, root) != 0) return;
     for (;;) {
         readdir_prep();
-        if (FarCallReaddir_B5(DIRO, FNO) != 0) {
+        if (Readdir_B5(DIRO, FNO) != 0) {
             result_path[0] = 0;
             return;
         }
@@ -185,7 +185,7 @@ static unsigned char scan_config(void) {
      * swapped) is no trigger: the launch path does not come back from a
      * missing file, it hangs on "Loading...". Stage1 makes the same test and
      * boots the kernel, so this is where such a card ends up. */
-    FarCallSetPage(SD_PAGE);
+    SetFpgaPageAlt_B4(SD_PAGE);
     if (FarCall_06_7309(FIL_OBJ, FL_PATH, 0x01)) return 2;
     FarCall_03_768f(FIL_OBJ);         /* opened for reading: closing touches no sector */
     for (i = 0; i < FL_PLEN; i++) r[i] = FL_PATH[i];
@@ -226,7 +226,7 @@ static unsigned char is_end(void) {
 }
 
 static void readdir_prep(void) {
-    FarCallSetPage(SD_PAGE);   /* re-assert SD personality before every read (as DirList does) */
+    SetFpgaPageAlt_B4(SD_PAGE);   /* re-assert SD personality before every read (as DirList does) */
     FNO[FNO_SFN] = 0;
     LFN[0] = 0;
 }

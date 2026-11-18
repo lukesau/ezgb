@@ -20,7 +20,6 @@ extern void WaitVBlankFlag(void);                                   /* 00:0688 *
 
 /* 12px text (draw12.c). The far entry takes three pad words; callers in
  * other banks use FarCallDrawString12, which takes the plain arguments. */
-extern void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row); /* 02:7500 */
-extern void FarCallDrawString12(const u8 *s, u8 len, u8 col, u8 row);   /* 00:05c0 -> 02:7500 */
+extern void DrawString12(const u8 *s, u8 len, u8 col, u8 row) __banked;   /* draw12_shim.c, bank 2 */
 /* Glyphs of s that fit the row from col, pen x of each in xs (layout12.c). */
-extern u8 Fit12(u16 pad_thunk, u16 pad_af, const u8 *s, u8 len, u8 col, u8 *xs);   /* 02:7100 */
+extern u8 Fit12(const u8 *s, u8 len, u8 col, u8 *xs) __banked;   /* fit12_shim.c, bank 2 */

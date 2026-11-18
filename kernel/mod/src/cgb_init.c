@@ -30,7 +30,7 @@
  * this is just the stock LCD-on.
  */
 
-#pragma codeseg MOD0B	/* a free run of bank 0's header (kernel/stock/Makefile MOD0) */
+#pragma codeseg MOD0B	/* a free run of bank 0's header (tools/build.py places it) */
 
 #define rLCDC (*(volatile unsigned char *)0xff40)
 #define rVBK  (*(volatile unsigned char *)0xff4f)

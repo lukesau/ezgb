@@ -35,5 +35,5 @@ void TagExample(void) {
     MQ_A->x1 = 159;
     MQ_A->y = 4 * 8;
     MQ_A->attr = 3;
-    MQ_RUN(FarCallMarquee, MQ_A, MQ_START);
+    MQ_RUN(Marquee, MQ_A, MQ_START);
 }

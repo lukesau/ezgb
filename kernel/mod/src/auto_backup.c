@@ -38,8 +38,8 @@
 #include "draw.h"
 #include "vars.h"
 
-extern u32 RtcReadPage(void);                       /* 00:1a9a (fat_date.c on 1.04e): get_fattime, date in the high word */
-extern void LastRomNameStub(const u8 *s);           /* 00:0368 -> LastRomName */
+extern u32 RtcReadPage(void);                       /* 00:1a9a: get_fattime, date in the high word */
+extern void LastRomName(const u8 *s) __banked;                       /* lastrom_name.c */
 extern void FarCallTrampoline(void);                /* 00:078d */
 
 #define SAVE_PATH ((const u8 *)0xC3A5)      /* "/SAVER/<base>.sav" from the stamp */
@@ -57,7 +57,7 @@ extern void FarCallTrampoline(void);                /* 00:078d */
 #define NAME_MAX  80                        /* SaveOp skips a <base> over 60 anyway */
 #define META_PAGE 0x11                      /* $4000 as the boot branch left it */
 
-static u8 SmSaveOp(u16 opidx) __naked;
+extern u8 SaveOp(u16 opidx) __banked;               /* save_ops.c */
 static u8 written_today(void);
 static void draw_box(void);
 static void text(const u8 *s, u8 row8, u8 y12);
@@ -71,19 +71,19 @@ void AutoBackup(void) {
     if (!BK_DAILY) return;
     for (i = 0; s[i] && i < NAME_MAX; i++) NAME_BUF[i] = s[i];
     NAME_BUF[i] = 0;
-    SmSaveOp(SO_SCAN << 8);
+    SaveOp(SO_SCAN << 8);
     if (LIVE[0] && !written_today()) {
         draw_box();
         /* the new backup is named after the newest save, so it lists first */
-        if (SmSaveOp(SO_BACKUP << 8)) {
+        if (SaveOp(SO_BACKUP << 8)) {
             for (i = 0; i < 64; i++) {
-                SmSaveOp(SO_SCAN << 8);
+                SaveOp(SO_SCAN << 8);
                 if (COUNT <= 1) break;
-                SmSaveOp((SO_DELETE << 8) | (u8)(COUNT - 1));
+                SaveOp((SO_DELETE << 8) | (u8)(COUNT - 1));
             }
         }
     }
-    SmSaveOp((SO_DONE << 8) | META_PAGE);
+    SaveOp((SO_DONE << 8) | META_PAGE);
 }
 
 /* Title, the game's name on a band, why, and how long: BkPrompt's geometry,
@@ -98,7 +98,7 @@ static void draw_box(void) {
     u8 i, n, secs;
 
     /* about 1.75 s per 8 KB bank, from the stamp on page $11 */
-    SmSaveOp((SO_DONE << 8) | META_PAGE);
+    SaveOp((SO_DONE << 8) | META_PAGE);
     n = SAVE_SIZE;
     secs = n ? (u8)((((n << 3) - n) + 2) >> 2) : 2;   /* (7n + 2) / 4, no helper calls */
 
@@ -115,7 +115,7 @@ static void draw_box(void) {
     StoreDrawParams(3, 3, 0);
     if (hUiMode) DrawRect(0, 53, 159, 69, 1); else DrawRect(0, 51, 159, 67, 1);
     LR_GEO = 1;
-    LastRomNameStub(SAVE_PATH + 7);
+    LastRomName(SAVE_PATH + 7);
     /* last: 12px rows and the name run over the outline's right edge */
     StoreDrawParams(3, 0, 0);
     if (hUiMode) DrawRect(0, 36, 159, 103, 0); else DrawRect(0, 35, 159, 99, 0);
@@ -129,7 +129,7 @@ static void text(const u8 *s, u8 row8, u8 y12) {
 
     for (i = 0; i < 23 && s[i]; i++) buf[i] = s[i];
     buf[i] = 0;
-    if (hUiMode) FarCallDrawString12(buf, 0, 1, y12);
+    if (hUiMode) DrawString12(buf, 0, 1, y12);
     else DrawString(buf, i, 1, row8);
 }
 
@@ -143,18 +143,3 @@ static u8 written_today(void) {
 }
 
 /* SaveOp, 01:7670, through a `call`ed stub, as save_mgr.c's SmSaveOpB11. */
-static u8 SmSaveOp(u16 opidx) __naked {
-    (void)opidx;
-    __asm
-	ldhl	sp, #2
-	ld	a, (hl+)
-	ld	h, (hl)
-	ld	l, a
-	push	hl
-	call	_FarCallTrampoline
-	.dw	_SaveOp
-	.db	1, 0
-	add	sp, #2
-	ret
-    __endasm;
-}

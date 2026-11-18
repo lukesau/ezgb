@@ -47,12 +47,9 @@ void TagCat(u16 far_pad_thunk, u16 far_pad_af, u8 *buf, const u8 *gap) {
     while ((buf[i++] = *gap++) != 0) {}
 }
 
-u16 TagLen(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s) {
+u16 TagLen(const u8 *s) __banked {
     u8 n;
 
-    (void)far_pad_thunk;
-    (void)far_pad_af;
-    (void)far_pad_ret;
     TAG_CUT = 0;
     if (TAGS_HIDE && s[ATTR_OFS] != ATTR_DIR) {
         n = cut_at(s);

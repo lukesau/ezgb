@@ -35,13 +35,11 @@ static const u8 f_lo[5]  = {0, 1, 1, 0, 0};
 static const u8 f_hi[5]  = {127, 12, 31, 23, 59};
 
 /* The entry point stays the first function in the file. */
-u8 SaveNameMatch(u16 far_pad_af, u16 far_pad_ret, const u8 *name, u8 *e) {
+u8 SaveNameMatch(const u8 *name, u8 *e) __banked {
     u16 v;
     u8 i, n;
     const u8 *p;
 
-    (void)far_pad_af;
-    (void)far_pad_ret;
     for (i = 0; i < BLEN; i++) if (lower(name[i]) != lower(NAME_BUF[i])) return 0;
     p = name + BLEN;
     if (p[0] != '.') {

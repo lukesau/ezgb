@@ -73,7 +73,7 @@ extern u8 SyncFs_B9(u8 *fs);
 static u8 dir_remove(u8 *dp);
 
 /* The entry point stays the first function in the file. */
-u8 FsUnlink(u16 far_pad_af, u16 far_pad_ret, const u8 *path) {
+u8 FsUnlink(const u8 *path) __banked {
     u8 dj[26];
     u8 sfn[12];
     const u8 *p = path;
@@ -81,8 +81,6 @@ u8 FsUnlink(u16 far_pad_af, u16 far_pad_ret, const u8 *path) {
     u32 dclst;
     u8 res;
 
-    (void)far_pad_af;
-    (void)far_pad_ret;
     res = FindVolume_B9((u8 **)dj, &p, 1);
     if (res) return res;
     D_FN(dj) = sfn;

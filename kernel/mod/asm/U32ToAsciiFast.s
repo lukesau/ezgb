@@ -147,4 +147,4 @@ L7cb3$:
 	ld	(de),a
 	ret
 L7cbb$:
-	jp	_U32ToAsciiSlow		; the C (kernel/stock/src/bank4.c)
+	jp	_U32ToAsciiSlow		; the C (base/src/bank4.c)

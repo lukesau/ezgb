@@ -114,14 +114,11 @@ static void clear(void);
  * `call`ed stub at 04:59a8: three pad parameters. slot is the browser
  * frame's record-offset slot, as RomMenu gets it. Returns 0 when the file
  * is not a text file (RomMenu goes on with the stock open), 1 when done. */
-u8 TextView(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, u8 *slot) {
+u8 TextView(u8 *slot) __banked {
     static const u8 text_ext[] = "txt" "ini" "md";
     const u8 *rec;
     u8 i, n, f, pad, prev, hold, k, page;
 
-    (void)far_pad_thunk;
-    (void)far_pad_af;
-    (void)far_pad_ret;
     /* the record is in the pSRAM window: the name goes to WRAM first */
     rec = (const u8 *)(*(u16 *)slot + REC_BASE);
     k = 0xFF;

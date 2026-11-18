@@ -37,17 +37,14 @@
 /* 00:0408 -> TagLen (tagtrim.c, bank 5). The called stub and the trampoline
  * put three words between the argument and the callee, which TagLen's
  * three pads account for: pass only the name. */
-extern u16 FarCallTagLen(const u8 *s);
+extern u16 TagLen(const u8 *s) __banked;
 
 #define UP(c) ((u8)((c) & 0xDF))   /* case-fold letters (enough for ext compares) */
 
-void DrawNameWithIconImpl(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, const u8 *s, u8 len, u8 x, u8 y) {
+void DrawNameWithIcon(const u8 *s, u8 len, u8 x, u8 y) __banked {
     static const u8 text_ext[] = "TXT" "INI" "MD";
     u8 i, dot, n, e, c1, c2, c3, ic, lim;
 
-    (void)far_pad_thunk;
-    (void)far_pad_af;
-    (void)far_pad_ret;
     u8 buf[41];
 
     (void)x;
@@ -56,7 +53,7 @@ void DrawNameWithIconImpl(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, co
         ic = 0xC0;                       /* folder */
         len = 19;
     } else {
-        n = (u8)FarCallTagLen(s);        /* the name's length as drawn */
+        n = (u8)TagLen(s);        /* the name's length as drawn */
         if (n < lim) lim = n;
         dot = 0xFF;
         for (i = 0; i < 254 && s[i]; i++) if (s[i] == '.') dot = i;
@@ -100,5 +97,5 @@ void DrawNameWithIconImpl(u16 far_pad_thunk, u16 far_pad_af, u16 far_pad_ret, co
         return;
     }
     (void)len;
-    DrawString12(0, 0, 0, buf, 0, 0, y);
+    DrawString12(buf, 0, 0, y);
 }

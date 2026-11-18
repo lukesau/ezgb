@@ -87,6 +87,6 @@ void SetText(const u8 *s, u8 len, u8 col, u8 row) {
     hClip12 = end;
     /* row * 8 + 2: DrawString12 takes a row >= 18 as a pixel y and rounds
      * it down to a multiple of 4, which is how y 16 (row 2) is reachable */
-    FarCallDrawString12(buf, 0, x, (u8)((u8)(row << 3) + 2));
+    DrawString12(buf, 0, x, (u8)((u8)(row << 3) + 2));
     hClip12 = 0;
 }

@@ -2,9 +2,9 @@
 
 > **Correction (2026-11-17).** This file describes the patched kernels
 > (`kernel/1.05e-0731` and its ports). The from-source build
-> (`make -C kernel/stock MOD=1`) has no hooks into stock code: every change
-> listed below as a hook or a patched site is `#ifdef MOD` in
-> `kernel/stock/src` or `.ifdef MOD` in `kernel/stock/gbdk`, and the stubs
+> (`make -C kernel/mod`) has no hooks into stock code: every change
+> listed below as a hook or a patched site is written into
+> `kernel/mod/base/src` or `kernel/mod/base/gbdk`, and the stubs
 > that remain are `kernel/mod/asm/*.s`. The addresses and the hook names
 > here (and in the header comments of `kernel/mod/src/*.c`) are the patched
 > kernels', not that build's.

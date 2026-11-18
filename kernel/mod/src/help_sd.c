@@ -36,7 +36,7 @@ void HelpSd(u8 big) {
         /* the 12px renderer runs in bank 2: copy the text to the stack */
         for (i = 0; i < 14; i++) buf[i] = half[i];
         buf[14] = 0;
-        FarCallDrawString12(buf, 0, 4, 116);
+        DrawString12(buf, 0, 4, 116);
     } else {
         DrawString(half, 14, 0, 12);
     }

@@ -60,16 +60,16 @@ void TabStrip12(u16 far_pad_thunk, u16 far_pad_af, u8 tab) {
          * end of its text: the extra blank is there for Fit12 to say where
          * that is. The rest of the strip stays the screen's color. */
         StoreDrawParams(0, 3, 0);
-        Fit12(0, 0, banner, 0, 0, xs);
+        Fit12(banner, 0, 0, xs);
         hClip12 = xs[12];
-        DrawString12(0, 0, 0, banner, 12, 0, 0);
+        DrawString12(banner, 12, 0, 0);
         hClip12 = 0;
     } else if (tab != 3) {
-        Fit12(0, 0, text, 0, 0, xs);
+        Fit12(text, 0, 0, xs);
         for (i = 0; i < 4; i++) {
             k = start[i];
             if (i == tab) StoreDrawParams(0, 3, 0); else StoreDrawParams(3, 0, 0);
-            DrawString12(0, 0, 0, text + k, i == 3 ? 1 : (u8)(start[i + 1] - k), i ? xs[k] : 0, 0);
+            DrawString12(text + k, i == 3 ? 1 : (u8)(start[i + 1] - k), i ? xs[k] : 0, 0);
         }
     }
     StoreDrawParams(3, 3, 0);

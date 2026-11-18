@@ -52,13 +52,13 @@
 #include "draw.h"
 #include "vars.h"
 
-extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
+extern void LastRomName(const u8 *s) __banked;                       /* lastrom_name.c */
 extern u8 LastRomTickStub(void);                                    /* 00:0370: marquee tick, then ReadJoypad */
-extern void FarCallDrawLoadingBox(void);                            /* 00:0483 -> 08:737f */
-extern void ManageSaves(u8 page);                                   /* 04:6d11, save_mgr.c */
-extern u8 StarQueryFar(u8 *slot);                                   /* 04:5998 -> StarQuery (play.c, bank 5) */
-extern void StarToggleFar(u8 *slot);                                /* 04:59a0 -> StarToggle */
-extern u8 TextViewFar(u8 *slot);                                    /* 04:59a8 -> TextView (textview.c, bank 14): 1 = it was a text file */
+extern void DrawLoadingBox(void) __banked;                           /* stock, bank 8 */
+extern void ManageSaves(u8 page) __banked;                          /* save_mgr.c */
+extern u8 StarQuery(u8 *slot) __banked;                             /* play.c */
+extern void StarToggleSync(u8 *slot) __banked;                      /* play_file.c */
+extern u8 TextView(u8 *slot) __banked;                              /* textview.c: 1 = it was a text file */
 
 #define REC_BASE  (*(volatile u16 *)0xC2A0) /* the open page's records in the $A000 window */
 #define NAME_BUF  ((u8 *)0xC4A4)            /* 255 bytes, refilled by the open path */
@@ -93,7 +93,7 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
     rec = (const u8 *)(*(u16 *)slot + REC_BASE);
     if (!is_rom(rec)) {
         /* a text file opens in the viewer (textview.c), then the page again */
-        if (TextViewFar(slot)) goto closed;
+        if (TextView(slot)) goto closed;
         goto open;
     }
     if (PAD_PREV & PAD_A) {
@@ -109,7 +109,7 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
 
     for (i = 0; i < 254 && rec[i]; i++) NAME_BUF[i] = rec[i];
     NAME_BUF[i] = 0;
-    starred = StarQueryFar(slot);
+    starred = StarQuery(slot);
     box();
     sel = 0;
     options(sel, starred);
@@ -129,7 +129,7 @@ u8 RomMenu(u16 far_pad_thunk, u16 far_pad_af, u8 *slot) {
         } else if (f & PAD_A) {
             if (sel == 0) goto open;
             if (sel == 2) {
-                StarToggleFar(slot);
+                StarToggleSync(slot);
                 break;
             }
             /* the record page MenuDispatchAB_bankEntry mapped: entry index
@@ -151,7 +151,7 @@ closed:
 
 open:
     PAD_CUR = 0;
-    FarCallDrawLoadingBox();
+    DrawLoadingBox();
     return 0;
 }
 
@@ -188,7 +188,7 @@ static void box(void) {
     if (hUiMode) {
         text(back_str, 15, 120);
         for (i = 0; i < 6; i++) buf[i] = ok_str[i];
-        FarCallDrawString12(buf, 0, 86, 120);
+        DrawString12(buf, 0, 86, 120);
     } else {
         DrawString(back_str, 7, 1, 15);
         DrawString(ok_str, 5, 11, 15);
@@ -197,7 +197,7 @@ static void box(void) {
     PopupDrawParams(3, 3);
     DrawRect(0, 51 + (t << 1), 159, 67 + (t << 1), 1);
     LR_GEO = 1;
-    LastRomNameStub(NAME_BUF);
+    LastRomName(NAME_BUF);
 }
 
 /* The three option rows, a '>' on the selected one; the third says Star,
@@ -237,7 +237,7 @@ static void text(const u8 *s, u8 row8, u8 y12) {
     }
     for (i = 0; i < 23 && s[i]; i++) buf[i] = s[i];
     buf[i] = 0;
-    FarCallDrawString12(buf, 0, 1, y12);
+    DrawString12(buf, 0, 1, y12);
 }
 
 /* What a text row repaints: the box outline (a 12px row runs to x 159), the

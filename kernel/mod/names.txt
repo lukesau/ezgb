@@ -1,0 +1,108 @@
+# Names the sources use that no source defines (tools/build.py).
+#   NAME = other name     another name for a symbol
+#   NAME = 0xADDR         a fixed address
+
+# --- what crt0.s expects of a GBDK program that this kernel does not have
+.OAM            = 0xc000
+.STACK          = 0xe000
+.refresh_OAM    = 0xff80
+.init           = 0
+.reset          = 0
+_main           = 0
+
+# --- the stock disassembly's names for library routines, which the mod's
+# sources still use
+BatteryCheck        = _BatteryCheck
+DrawLine            = .line
+GfxRowTable         = .y_table
+_GfxRowTable        = .y_table
+ReadJoypad          = _joypad
+_ReadJoypad         = _joypad
+ReadJoypadRaw       = .jpad
+_Delay              = _delay
+_DiNest             = _disable_interrupts
+_EiNest             = _enable_interrupts
+_DrawRect           = _box
+_StoreDrawParams    = _color
+_WaitVBlankFlag     = _wait_vbl_done
+_FarCallTrampoline  = banked_call
+_FarCall_03_768f    = _fs_close
+_FarCall_03_76cc    = _fs_lseek
+_FarCall_06_7309    = _fs_open
+_FarCall_06_779a    = _fs_read
+_FarCall_07_7739    = _fs_write
+_Opendir_B5         = _f_opendir
+_Readdir_B5         = _f_readdir
+_RtcReadPage        = _get_fattime
+wRomBank            = __current_bank
+_wIntNest           = __int_nest
+wVBlankCallbacks    = .int_0x40
+wDrawColor          = .fg_colour
+_wDrawColor         = .fg_colour
+_wDrawColorB        = .bg_colour
+
+# bank 9's FatFs helpers, for src/fs_unlink.c
+_FindVolume_B9      = _find_volume
+_FollowPath_B9      = _follow_path
+_DirSdi_B9          = _dir_sdi
+_DirNext_B9         = _dir_next
+_MoveWindow_B9      = _move_window
+_LdClust_B9         = _ld_clust
+_RemoveChain_B9     = _remove_chain
+_SyncFs_B9          = _sync_fs
+
+# SDCC 2.9.0 calls these for a char by a constant and its library has
+# neither: the unsigned ones, as in stock
+__moduschar_rrx_s   = __moduchar_rrx_s
+__divuschar_rrx_s   = __divuchar_rrx_s
+
+# --- GBDK's drawing variables, which have no global name there
+wDrawOp             = 0xd723
+_wDrawOp            = 0xd723
+wDrawX0             = 0xd725
+wDrawX1             = 0xd726
+wDrawY0             = 0xd727
+wDrawY1             = 0xd728
+
+# --- RAM at fixed addresses
+_errno              = 0xd6c7
+_wDebugTextRow      = 0xcc2f
+_wDebugTextCol      = 0xcc30
+_wSaveBuf           = 0xc0a0
+_wEntries           = 0xc2a0
+_wEntryCount        = 0xc2a2
+_wRomBanks          = 0xc2a4
+_wPath              = 0xc2a6
+_wTmp               = 0xc3a5
+_wLabelBuf          = 0xc4a4
+_wHdrSum            = 0xc5a3
+_wDirEnd            = 0xc5a4
+_wFatFs             = 0xc7a9
+_wFno               = 0xc9db
+_wDir               = 0xc9f5
+_wFil               = 0xca0f
+_wD3EB              = 0xd3eb
+_wD3EC              = 0xd3ec
+_wD3ED              = 0xd3ed
+_wD3EE              = 0xd3ee
+_wD3EF              = 0xd3ef
+_wD3F0              = 0xd3f0
+_wD3F1              = 0xd3f1
+_wD3F2              = 0xd3f2
+_wD3F6              = 0xd3f6
+
+# --- the mod's RAM (src/vars.h, src/ezcfg.h)
+_wSetPage           = 0xdbee
+_wEzRes             = 0xdbfb
+_wEzOp              = 0xdbfc
+_wBatteryDry        = 0xdbfd
+_wFlPick            = 0xdbfe
+_wFlBooted          = 0xdbff
+_wSetBack           = 0xdc1c
+_wBrowser           = 0xdc20
+_wSetRow            = 0xdc32
+_wSetDirty          = 0xdc33
+_hPadPrev           = 0xfff5
+_hPad               = 0xfff6
+_hPadHeld           = 0xfff7
+_hUiMode            = 0xfffb

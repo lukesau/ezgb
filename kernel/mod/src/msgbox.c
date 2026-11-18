@@ -41,7 +41,7 @@
 
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
 
-void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
+void MsgBox(u8 which) __banked {
     static const u8 text[3][11] = {
         {'R','e','a','d','i','n','g','.','.','.',0},
         {'L','o','a','d','i','n','g','.','.','.',0},
@@ -58,9 +58,6 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
     u8 buf[15];
     u8 i, j, x0, x1, y0, y1;
 
-    (void)pad_thunk;
-    (void)pad_af;
-    (void)pad_ret;
     x0 = 32;
     x1 = 127;
     y0 = hUiMode ? 52 : 54;
@@ -100,7 +97,7 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
                 DrawString(buf, fl_len[j], fl_col[j], fl_row[j]);
             } else {
                 hClip12 = 143 - 4;
-                FarCallDrawString12(buf, 0, fl_x[j], fl_y[j]);
+                DrawString12(buf, 0, fl_x[j], fl_y[j]);
             }
         }
         hClip12 = 0;
@@ -114,7 +111,7 @@ void MsgBox(u16 pad_thunk, u16 pad_af, u16 pad_ret, u8 which) {
             DrawString(buf, 10, 5, 8);
         } else {
             hClip12 = 127 - 4;
-            FarCallDrawString12(buf, 0, 44, 66);     /* row >= 18: pixel y, rounded down to 64 */
+            DrawString12(buf, 0, 44, 66);     /* row >= 18: pixel y, rounded down to 64 */
             hClip12 = 0;
         }
     }

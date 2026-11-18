@@ -44,7 +44,7 @@
 #include "vars.h"
 #include "ezcfg.h"
 
-extern void LastRomNameStub(const u8 *s);                           /* 00:0368 -> LastRomName */
+extern void LastRomName(const u8 *s) __banked;                       /* lastrom_name.c */
 
 #define SAVE_PATH ((const u8 *)0xC3A5)      /* kernel: "/SAVER/<name>.sav", from the page-$11 stamp */
 #define PLAYED    ((u8 *)0xDB10)            /* the "Played" line: FL_DISP, idle off the SET tab */
@@ -84,7 +84,7 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
         name = SAVE_PATH;
         for (p = SAVE_PATH; *p; p++) if (*p == '/') name = p + 1;
         LR_GEO = 1;
-        LastRomNameStub(name);
+        LastRomName(name);
         /* "Played Oct 23 14:05": the RTC= backup (ezcfg.c), refreshed at
          * every launch, so at this prompt it is when the game was started.
          * Left out when there is no backup. */
@@ -100,7 +100,7 @@ void BkPrompt(u16 far_pad_thunk, u16 far_pad_af, u8 op, u8 size) {
                 PLAYED[i + 1] = (u8)('0' + (*p & 0x0F));
             }
             LR_GEO = 2;
-            LastRomNameStub(PLAYED);
+            LastRomName(PLAYED);
         }
         return;
     }
@@ -152,7 +152,7 @@ static void text(const u8 *s, u8 row8, u8 y12) {
     }
     for (i = 0; i < 23 && s[i]; i++) buf[i] = s[i];
     buf[i] = 0;
-    FarCallDrawString12(buf, 0, 1, y12);
+    DrawString12(buf, 0, 1, y12);
 }
 
 /* What a text row repaints: the box outline (a 12px row runs to x 159) and

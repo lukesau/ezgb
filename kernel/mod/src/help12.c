@@ -54,7 +54,7 @@ void Help12(const u8 *fw) {
     buf[k++] = ' ';
     for (i = 0; i < 11; i++) buf[k++] = HelpKStr[i];
     buf[k] = 0;
-    FarCallDrawString12(buf, 0, X0, 24);
+    DrawString12(buf, 0, X0, 24);
     line(HelpUrlStr, 14, 44);
     line(HelpModStr, 10, 64);
     line(HelpGitStr, 19, 84);          /* "github.com/lukesau/" */
@@ -68,5 +68,5 @@ static void line(const u8 *s, u8 n, u8 y) {
 
     for (i = 0; i < n; i++) buf[i] = s[i];
     buf[n] = 0;
-    FarCallDrawString12(buf, 0, X0, y);
+    DrawString12(buf, 0, X0, y);
 }

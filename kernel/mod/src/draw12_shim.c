@@ -21,11 +21,11 @@
 extern void FarCallTrampoline(void);      /* 00:078d */
 extern void DrawString12Impl(void);       /* 0A:4000, draw12.c */
 
-void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u8 col, u8 row) __naked {
-    (void)pad_thunk; (void)pad_af; (void)pad_ret; (void)s; (void)len; (void)col; (void)row;
+void DrawString12(const u8 *s, u8 len, u8 col, u8 row) __banked __naked {
+    (void)s; (void)len; (void)col; (void)row;
     __asm
 	add	sp, #-42		; the copy, 41 bytes and a spare
-	ldhl	sp, #50
+	ldhl	sp, #48
 	ld	a, (hl+)
 	ld	e, a
 	ld	a, (hl+)
@@ -50,7 +50,7 @@ void DrawString12(u16 pad_thunk, u16 pad_af, u16 pad_ret, const u8 *s, u8 len, u
 	jr	nz, 3$
 	ld	(hl), c			; c = 0: the NUL after a capped copy
 4$:
-	ldhl	sp, #54
+	ldhl	sp, #52
 	ld	a, (hl-)
 	ld	b, a			; row
 	ld	a, (hl-)

@@ -79,14 +79,15 @@
 #include "vars.h"
 #include "ezcfg.h"
 
-extern void FarCallEzCfg(void);                                     /* 04:5f00 -> ezcfg (02:4a00) */
+extern void ezcfg(void) __banked;                                   /* ezcfg.c */
+extern void PlaySync(void) __banked;                                /* play_file.c */
 extern void SetFpgaPage_B4(u8 page);                                /* 04:466e: $7FC0 = page */
 extern void SetBox(u8 x, u8 y, u8 on, u8 hi);                       /* 04:77a0, setbox.c: a checkbox */
-extern void FarCallMenuTabs(u8 tab);                                /* 04:5f70 -> DrawMenuTabs (08:7169) */
+extern void DrawMenuTabs(u8 tab) __banked;                          /* stock, bank 8 */
 extern void SetText(const u8 *s, u8 len, u8 col, u8 row);           /* 04:6400, settext.c: DrawString, or the 12px pane's fields */
 extern u8 ReadJoypad(void);                                         /* 00:3a4a, post-swap byte, A = $10 */
-extern u8 FarCallThemePage(u8 op, u8 arg);                          /* 04:5990 -> ThemePage (0D:4000, themepage.c): page 3 */
-extern void FarCallMsgBox_B4(u8 which);                             /* 04:59b0 -> MsgBox (0B:4B00, msgbox.c) */
+extern u8 ThemePage(u8 op, u8 arg) __banked;                        /* themepage.c: page 3 */
+extern void MsgBox(u8 which) __banked;                              /* msgbox.c */
 extern u8 SetPage(u8 op, u8 cur);                                   /* 04:6610, setpage.c: page 2, the page rows */
 
 #define FL_DISP  ((u8 *)0xDB10)     /* 40 bytes: marquee text the marquee can read (bank 4 ROM it cannot) */
@@ -170,7 +171,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         else if (cur > hi) cur = cur == (u8)(hi + 1) ? lo : hi;
         if (PAGE) frame[1] = 0;      /* no stock redraw: its boxes are page 1's */
         /* page 3: past the rows the theme or the console has locked */
-        if (PAGE == 2) cur = FarCallThemePage(6, cur);
+        if (PAGE == 2) cur = ThemePage(6, cur);
         else if (PAGE) cur = SetPage(7, cur);   /* page 2: SKIP BOOT ROM, when this console can't jump */
         frame[0] = cur;
         draw_rows(cur);
@@ -191,10 +192,10 @@ static u8 flcfg_op(u8 *frame, u8 op) {
              * laid out again, for the new font, glyph set or accent: redraw
              * the strip, which also clears the pane, and return 2 so
              * FlSetADispatch re-enters the SET screen from the top. */
-            u8 r = FarCallThemePage(3, row);
+            u8 r = ThemePage(3, row);
             if (r) {
                 SET_DIRTY = 1;
-                FarCallMenuTabs(1);
+                DrawMenuTabs(1);
                 SET_RE = row + 1;       /* op 0 of the re-entry: put the cursor back here */
             }
             wait_a_release();
@@ -208,7 +209,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
                 if (FL_EN) {
                     /* just ticked: say how to get past it at boot, wait for
                      * A, then lay the page out again under the box */
-                    FarCallMsgBox_B4(5);
+                    MsgBox(5);
                     SetPage(4, 0);
                     SET_RE = ROW_CHECK + 1;
                     SetFpgaPage_B4(0);
@@ -250,7 +251,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         /* the name on screen: page 1's, or page 2's tag example; page 3
          * has none, and only keeps the frame count the key repeat goes by */
         if (PAGE == 2) MQ_A->fr = HFRAME;
-        else MQ_RUN(FarCallMarquee, MQ_A, MQ_STEP);
+        else MQ_RUN(Marquee, MQ_A, MQ_STEP);
         /* The loop's pad read, with a key repeat on the D-pad. ReadJoypad
          * reports a held direction on every pass, and a pass is a fraction
          * of a frame, so a tap moved the cursor or a time field two or three
@@ -273,7 +274,7 @@ static u8 flcfg_op(u8 *frame, u8 op) {
         }
         /* page 3: B on THEME steps back, and while a color is being set
          * its picker takes the keys */
-        if (PAGE == 2) pad = FarCallThemePage(5, pad);
+        if (PAGE == 2) pad = ThemePage(5, pad);
         /* START returns to the SD tab: the loop leaves as it does on SELECT, and
          * FlSetExitHook enters the browser instead of HELP */
         SET_BACK = 0;
@@ -290,14 +291,14 @@ static u8 flcfg_op(u8 *frame, u8 op) {
 /* /EZGB.CFG -> FL_EN / FL_PLEN / FL_PATH (and the RTC copy, unused here). */
 static void cfg_load(void) {
     EZ_OP = OP_LOAD;
-    FarCallEzCfg();
+    ezcfg();
 }
 
 /* FL_* (+ the RTC copy loaded alongside) -> /EZGB.CFG. Only a pick writes
  * from here; the SET rows set SET_DIRTY and SetCommit (04:5fc0) saves. */
 static void cfg_save(void) {
     EZ_OP = OP_SAVE;
-    FarCallEzCfg();
+    ezcfg();
 }
 
 /* Browser A-on-ROM in pick mode: CWD + '/' + SELNAME becomes the new path.
@@ -337,7 +338,7 @@ static void draw_static(void) {
     static const u8 nosd_label[6] = {'N','O',' ','S','D',0};
     static const u8 fl_label[13] = {'F','A','S','T',' ','L','A','U','N','C','H',':',0};
     if (PAGE) {
-        if (PAGE == 1) SetPage(0, 0); else FarCallThemePage(0, 0);
+        if (PAGE == 1) SetPage(0, 0); else ThemePage(0, 0);
         return;
     }
     StoreDrawParams(3, 0, 0);
@@ -369,7 +370,7 @@ static void draw_name(void) {
     MQ_A->x1 = NAME_X1;
     MQ_A->y = 12 * 8;
     MQ_A->attr = 3;
-    MQ_RUN(FarCallMarquee, MQ_A, MQ_START);
+    MQ_RUN(Marquee, MQ_A, MQ_START);
 }
 
 /* A button's box, given in 8px coordinates, in the ink its text then uses:
@@ -398,7 +399,7 @@ static void draw_rows(u8 cur) {
         return;
     }
     if (PAGE) {
-        FarCallThemePage(1, cur);
+        ThemePage(1, cur);
         SetPage(5, cur);
         return;
     }
@@ -413,4 +414,21 @@ static void draw_rows(u8 cur) {
     button(cur == ROW_PICK, 0x53, 0x5d, 0x9b, 0x69);
     SetText(pick_str, 8, 11, 12);
     SetPage(5, cur);
+}
+
+/* What the SET tab changed, to EZGB.CFG and the play file: on NEXT, on PREV
+ * and when the screen is left (base/src/bank4.c). */
+void SetCommit(void) {
+    if (!SET_DIRTY) return;
+    SET_DIRTY = 0;
+    EZ_OP = OP_SAVE;
+    ezcfg();
+    PlaySync();
+    SetFpgaPage_B4(0);
+}
+
+/* A in the browser with PICK ROM armed, from the browser loop
+ * (base/src/kernel.c). */
+void FlPickCommit(void) __banked {
+    flcfg(0, 3);
 }

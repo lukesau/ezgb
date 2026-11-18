@@ -46,8 +46,7 @@ typedef struct {
 #define MQ_RATE  20    /* frames per step (3 chars/s) */
 #define MQ_HOLD  60    /* ...at the start of the text (1 s) */
 
-extern void Marquee(void);              /* 02:7260 */
-extern void FarCallMarquee(void);       /* 00:0410 -> 02:7260 */
+extern void Marquee(void) __banked;     /* marquee.c, bank 2 */
 
-/* Bank 2: MQ_RUN(Marquee, m, op); elsewhere MQ_RUN(FarCallMarquee, m, op). */
+/* MQ_RUN(Marquee, m, op) */
 #define MQ_RUN(fn, m, op) do { MQ_ARG = (m); MQ_OPS = (op); fn(); } while (0)

@@ -67,6 +67,6 @@ dist/
 kernel/stock/build-0731/
 kernel/stock/build-0918/
 kernel/stock/build-104/
-kernel/stock/build-*-mod/
+kernel/mod/build/
 stage1/decomp/build/
 stage0/updater/build/
