@@ -9,6 +9,22 @@ This page says what actually differs between the three supported builds, read
 from the binaries, and which one to put on your card. The byte-level accounting
 behind it is in [kernel-diffs.md](kernel-diffs.md).
 
+> **Correction (2026-11-17):** the mod no longer supports 1.04e. Since it
+> builds from source (`make -C kernel/mod`), it is built on
+> 1.05e-0918 only (0731 is dropped too), and what this page says about the modded 1.04e (the
+> file dates it supplied, the advice to use it on an FW4 cart) describes mod
+> 7.2 and earlier. The stock comparison below stands. Anyone running the mod
+> on an FW4 cart now needs a 1.05e kernel there, which the table below still
+> lists as untested.
+>
+> Read from the FW4 Verilog (2026-11-17), not yet run on a cart: the 1.05e
+> kernel's FW5-only writes do nothing on FW4. `$A018`-`$A01C` is outside the
+> RTC set decode (`$A008`-`$A00F`, `stage0/fw4/rtl/gb_regs.v`) and the
+> register window never selects the save memory, and a `$7FD3` write is not a
+> register address, so it locks the `$7Fxx` registers again and the `$7FD4`
+> write after it is dropped (`stage0/fw4/rtl/unlock.v`). A game on FW4 still
+> reads the wall clock, not an MBC3 clock.
+
 ## Short answer
 
 - **Use the 1.05e kernel on an FW5 cart and the 1.04e kernel on an FW4 cart.**
