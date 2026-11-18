@@ -106,61 +106,6 @@ at `G1`-`G4`.
 4. `make`. A wrong byte fails the hash check; a label the rest of the asm still
    needs fails the rgbds link.
 
-## Mod build
-
-`make MOD=1` builds the mod from the same source: the C compiled with `MOD`
-defined, the GBDK assembly assembled with it defined, the mod's sources
-([kernel/mod](../mod)) linked into every bank after stock's, and banks 10
-to 15 added: 16 banks (256 KB, [kernel-size.md](../../docs/kernel-size.md)),
-in `build-<K>-mod/`. It builds the stock kernel first and checks that; the
-mod itself has no check, and nothing is patched into it after the link.
-
-```sh
-make -C kernel/stock 0731 MOD=1     # or 0918, 1.04e
-```
-
-**Changes to stock code** are in the stock source, each under `MOD`:
-
-- `#ifdef MOD` in `src/*.c`. [src/mod.h](src/mod.h) declares what those
-  lines use of the mod (its routines, its RAM) and has the values that
-  differ by one constant (`HI_INK`, `menu_joypad`), which without `MOD` are
-  stock's, so such a line still compiles to stock's bytes.
-- `.ifdef MOD` in `gbdk/*.s`: the header, the VBlank vector, the joypad
-  read, the VRAM writers, the font's star and icons. `sdinc.py --asmdef`
-  defines the name, which sdas has no option for.
-
-Where the mod replaces how a routine works, not a line of it, the stock C
-calls the mod's routine: the browser's direction keys
-(`BrowserMove`, kernel/mod/src/browser_nav.c), the SET tab's rows (`flcfg`),
-the message boxes (`MsgBox`).
-
-**What is linked.** `kernel/mod/mod.mk` lists the mod's sources by bank,
-and the addresses of the mod's RAM that the stock C names (`MOD_G`):
-
-- `kernel/mod/src/*.c`, the mod's C. It is built with a current SDCC
-  (`sdinc.py` does that for a path with `/mod/`), stock's C with 2.9.0; the
-  two share the stack calling convention. A function the stock C reaches
-  with a `__banked` call has two pad parameters, where the trampoline's
-  words are.
-- `kernel/mod/asm/*.s`: far-call stubs and small routines in assembly.
-
-Bank 0's go in the free runs of its header (`_MOD0A` to `_MOD0C`, picked
-with `#pragma codeseg` in C) and after its last routine; the link fails
-when one overflows, or when bank 0 does. Bank 0 has little room: 452
-bytes are free at its end in the 0731 and 0918 mod kernels, so what the
-mod adds to `kernel.c` is kept to calls.
-Nothing has a fixed address: a name is resolved in its own link, else as a
-stock `kernel.sym` name, else as a symbol some other bank's link defines.
-
-**Moved code.** Stock code after a change moves, and mod code sits after
-stock's in each bank, so the mod is linked three times
-(`tools/modlink.py`): at the stock addresses for the new sizes (`size/`),
-at the layout those give for the new addresses (`pre/`), then for real
-against `kernel.in.sym`, the stock `kernel.sym` with every name at its new
-address. A label inside a stock routine keeps its distance from the
-routine's start, and is left out when the routine's size changed, so
-nothing can link against a stale one.
-
 ## Status
 
 | Range | Source | What |

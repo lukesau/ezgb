@@ -200,7 +200,7 @@
 /  data transfer. */
 
 
-#if defined(K104) && !defined(MOD)	/* the mod reads the clock there too: kernel/mod/src/fat_date.c */
+#ifdef K104
 #define _FS_NORTC	1	/* ezflash: 1.04e has no RTC, stamps 2015-01-01 */
 #else
 #define _FS_NORTC	0

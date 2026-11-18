@@ -9,15 +9,12 @@
 #   make            build all three (build-0918/, build-104/, build-0731/kernel.gb),
 #                   each checked against ../../stock.sha1
 #   make 0918       only 0918 (make 1.04e, make 0731)
-#   make MOD=1      the mod: the same source with MOD defined, ../mod's
-#                   sources in every bank and banks 10-15 (build-<K>-mod/,
-#                   no check): README.md, Mod build
 #   make clean
 
 K ?= 0918
 SDCC29 ?= $(abspath ../../tools/sdcc-2.9.0)
 export SDCC29
-SDINC := python3 tools/sdinc.py $(if $(filter 2 3,$(MODPASS)),--no-spill) $(if $(filter 1 2,$(MODPASS)),--undef-ok) $(if $(MODPASS),--asmdef MOD)
+SDINC := python3 tools/sdinc.py
 
 # 0918 is 0731 with RtcDebugDump added to bank 1, so bank 1 from $4C5E on
 # is $262 higher: G1-G4 are where its _GSINIT pieces and _GSINITTAIL start
@@ -29,7 +26,7 @@ ifeq ($(K),104)
 SYM       := disassembly/1.04e/kernel.sym
 B         := build-104
 KDEFS     := -DK104
-LSHIFT    := 0x3b9
+LSHIFT    := 3b9
 WSHIFT    := 27
 B0K := 190d
 G1 := 5c87
@@ -58,29 +55,11 @@ B0K := 1926
 else
 $(error K=$(K): want 0918, 104 or 0731)
 endif
-# The mod's links: 16 banks, and in every bank the mod's sources after
-# stock's: ../mod/mod.mk lists them by bank. Its C is built with a current
-# SDCC (sdinc.py does that for a path with /mod/), stock's with 2.9.0.
-ifdef MODPASS
-MODVER := $(subst ., ,$(shell cat ../../patches/kernel/VERSION))
-KDEFS += -DMOD -DMOD_MAJOR=$(word 1,$(MODVER)) -DMOD_MINOR=$(word 2,$(MODVER))
-include ../mod/mod.mk
-MOD_BANKS := 10 11 12 13 14 15
-MOD_INCS := $(MOD_BANKS:%=$(B)/mod_b%.inc)
-MOD_HDRS := $(wildcard ../mod/src/*.h)
-MODLINK := --auto-alias
-# bank 0's go in the free runs of its header and after its last routine
-MOD0 = -b _MOD0A=0x01e3 -b _MOD0B=0x03cc -b _MOD0C=0x05b9 -b _MOD0T=0x$(call lib,3d8c) \
-       --area-max _MOD0A=0x03c9 --area-max _MOD0B=0x05b6 --area-max _MOD0C=0x0600 --area-max _MOD0T=0x4000 \
-       --modflags "--codeseg MOD0T"
-endif
-modsrc = $(addprefix ../mod/,$(MOD_B$(1)))
-
 RTC_ALIASES := $(if $(filter 104,$(K)),,-a _SetFpga7FD4_B1=SetFpga7FD4_B1)
 D1 ?= d3f9
 LSHIFT ?= 0
 WSHIFT ?= 0
-lib  = $(shell printf %04x $$((0x$(1) - $(LSHIFT))))
+lib  = $(shell printf %04x $$((0x$(1) - 0x$(LSHIFT))))
 wram = $(shell printf %04x $$((0x$(1) - 0x$(WSHIFT))))
 
 # Symbols crt0.s needs that are not in kernel.sym: GBDK's linker-defined
@@ -110,37 +89,18 @@ INCS := $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/b1_kern
 
 ifeq ($(origin K),file)
 all: 0918 1.04e 0731
-else ifdef MOD
-all: mod
 else
 all: $(B)/kernel.gb
 endif
-
-# MOD=1: the C is compiled with MOD defined, so what follows a change moves.
-# The stock build gives each kernel.sym name its source symbol; a link at
-# the stock addresses gives the new sizes (size/), one at the layout those
-# give the new addresses (pre/), and the last link uses them (tools/modlink.py).
-MB := $(B)-mod
-MODMAKE = $(MAKE) K=$(K) MOD=
-mod:
-	$(MODMAKE)
-	$(MODMAKE) MODPASS=1 B=$(MB)/size incs
-	python3 tools/modlink.py layout $(MB)/size > $(MB)/layout.new
-	cmp -s $(MB)/layout.new $(MB)/layout || cp $(MB)/layout.new $(MB)/layout
-	$(MODMAKE) MODPASS=2 B=$(MB)/pre LAYOUT=$(MB)/layout $$(cat $(MB)/layout) incs
-	python3 tools/modlink.py relsym $(SYM) $(B) $(MB)/pre $(MB)/kernel.in.sym
-	$(MODMAKE) MODPASS=3 B=$(MB) LAYOUT=$(MB)/layout SYM=$(MB)/kernel.in.sym $$(cat $(MB)/layout)
-
-incs: $(INCS) $(MOD_INCS)
 
 0918 0731:
 	$(MAKE) K=$@
 1.04e:
 	$(MAKE) K=104
 
-$(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbdk/crt0.s gbdk/global.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) gbdk/crt0.s $(MODLINK) --sym $(SYM) -b _HOME=0x0600 -b _BSS=0x$(call wram,d6c9) $(CRT0_DEFS) \
+	$(SDINC) gbdk/crt0.s --sym $(SYM) -b _HOME=0x0600 -b _BSS=0x$(call wram,d6c9) $(CRT0_DEFS) \
 		-b _GSINIT=0x$(G1) -b _GSINITTAIL=0x$(G4) \
 		--region 0000:01e3:$(B)/crt0_low.inc --region 0600:07bc:$(B)/crt0_home.inc \
 		--region $(G4):8000:$(B)/b1_gsinittail.inc --syms-out $(B)/crt0.sym
@@ -149,11 +109,10 @@ $(B)/crt0_low.inc $(B)/crt0_home.inc $(B)/b1_gsinittail.inc $(B)/crt0.sym &: gbd
 # banks 5, 6 and 9 link src/dbg.c first
 ff_srcs = $(if $(filter 5 6 9,$(1)),src/dbg.c) src/ff.c
 
-.SECONDEXPANSION:
-$(B)/ff_b%.inc: $$(call modsrc,$$*) $(MOD_HDRS) src/dbg.c src/ff.c src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/ff_b%.inc: src/dbg.c src/ff.c src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(call ff_srcs,$*) $(call modsrc,$*) $(MODLINK) --sdcc29 --bank $* --cflags "--opt-code-size -DBANK=$* $(KDEFS)" --sym $(SYM) \
-		-b _CODE=0x4000 -b _DATA=0xc5a5 $(FF_ALIASES) --region 4000:8000:$@ --syms-out $(B)/ff_b$*.sym
+	$(SDINC) $(call ff_srcs,$*) --sdcc29 --bank $* --cflags "--opt-code-size -DBANK=$* $(KDEFS)" --sym $(SYM) \
+		-b _CODE=0x4000 -b _DATA=0xc5a5 $(FF_ALIASES) --region 4000:8000:$@
 
 # bank 0's FatFs glue: the f_ entry points, the disk layer and the RTC clock,
 # and the CP437 conversion. ff_wtoupper's tables are WRAM ($CC33): the
@@ -165,11 +124,11 @@ B0_FATFS_ALIASES := -a _f_open=Open_B6 -a _f_read=Read_B6 -a _f_write=Write_B7 \
               -a _SdRead=SdRead -a _SdWrite=SdWrite -a banked_call=FarCallTrampoline \
               -a __rlulong_rrx_s=U32Shl -a __rrulong_rrx_s=U32Shr -a __initrleblock=RleUnpack
 
-$(B)/b0_fatfs.inc $(B)/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_fatfs.inc $(B)/b1_ccsbcs_init.inc &: $(B0_FATFS_SRCS) src/ff.h src/ffconf.h src/integer.h src/diskio.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
 	$(SDINC) $(B0_FATFS_SRCS) --sdcc29 --bank 0 --cflags="--opt-code-size $(KDEFS)" --sym $(SYM) \
 		-b _CODE=0x$(B0K) -b _DATA=0xcc33 -b _GSINIT=0x$(G2) $(B0_FATFS_ALIASES) \
-		--region $(B0K):$(call lib,20bb):$(B)/b0_fatfs.inc --region $(G2):$(G3):$(B)/b1_ccsbcs_init.inc --syms-out $(B)/b0_fatfs.sym
+		--region $(B0K):$(call lib,20bb):$(B)/b0_fatfs.inc --region $(G2):$(G3):$(B)/b1_ccsbcs_init.inc
 
 # the kernel's own C in bank 0, $07BC-$1926, against GBDK 2.96a's headers
 KERNEL_CFLAGS := --opt-code-size -I$(CURDIR)/gbdk/include -DBYTE_IS_UNSIGNED=1 $(KDEFS)
@@ -195,16 +154,16 @@ KERNEL_ALIASES := -a _joypad=ReadJoypad -a _delay=Delay -a _plot_point=PlotPixel
               -a _LaunchSetup=LaunchSetup -a _SetFpga7F37_B4=SetFpga7F37_B4 $(RTC_ALIASES) \
               -a _SetFpga7FC4_B4=SetFpga7FC4_B4 -a _SetFpgaRomSize_B4=SetFpgaRomSize_B4 \
               -a _SetFpga7FC3_B4=SetFpga7FC3_B4 -a _RomLoad_CopyCmdWindowPoll_B4=RomLoad_CopyCmdWindowPoll_B4 \
-              $(if $(filter 3,$(MODPASS)),,-g _DrawMenuTabs=08:7169) -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
+              -g _DrawMenuTabs=08:7169 -g _wFatFs=0xc7a9 -g _wPath=0xc2a6 -g _wTmp=0xc3a5 \
               -g _wD3EB=0xd3eb -g _wD3EC=0xd3ec -g _wD3ED=0xd3ed -g _wD3EF=0xd3ef -g _wD3F0=0xd3f0 \
               -g _wD3F6=0xd3f6
 
 # its one initialized global, wMarqueePos, starts _GSINIT ($68B6, bank 1)
-$(B)/b0_kernel.inc $(B)/b1_kernel_init.inc &: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_kernel.inc $(B)/b1_kernel_init.inc &: $(KERNEL_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(KERNEL_SRCS) $(MOD_G) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+	$(SDINC) $(KERNEL_SRCS) --sdcc29 --bank 0 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x07bc -b _DATA=0xcc31 -b _GSINIT=0x$(G1) $(KERNEL_ALIASES) \
-		--region 07bc:$(B0K):$(B)/b0_kernel.inc --region $(G1):$(G2):$(B)/b1_kernel_init.inc --syms-out $(B)/b0_kernel.sym
+		--region 07bc:$(B0K):$(B)/b0_kernel.inc --region $(G1):$(G2):$(B)/b1_kernel_init.inc
 
 # the kernel's C in bank 1, $4000-$68B6 ($6B18 in 0918); its initialized
 # data's _GSINIT code follows ccsbcs.c's at $7096 ($72F8)
@@ -224,28 +183,28 @@ BANK1_ALIASES := -a _DrawString=DrawString -a _U32ToAscii_B0=U32ToAscii_B0 -a _c
               -a _strcpy=ApplyBasename -a __rlulong_rrx_s=U32Shl \
               -a _DrawU32Decimal=DrawU32Decimal -a _WaitJoypadSelect=WaitJoypadSelect
 
-$(B)/b1_code.inc $(B)/b1_init.inc &: $(BANK1_SRCS) $(call modsrc,1) $(MOD_HDRS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b1_code.inc $(B)/b1_init.inc &: $(BANK1_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(BANK1_SRCS) $(call modsrc,1) $(MOD_G) $(MODLINK) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+	$(SDINC) $(BANK1_SRCS) --sdcc29 --bank 1 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x4000 -b _DATA=0x$(D1) -b _GSINIT=0x$(G3) $(BANK1_ALIASES) \
-		--region 4000:$(G1):$(B)/b1_code.inc --region $(G3):$(G4):$(B)/b1_init.inc --syms-out $(B)/b1_code.sym
+		--region 4000:$(G1):$(B)/b1_code.inc --region $(G3):$(G4):$(B)/b1_init.inc
 
 
 # SDCC 2.9.0's library C among bank 0's library modules, built as SDCC
 # builds its device lib: no options
 SDCCLIB_INCS := $(B)/b0_strrchr.inc $(B)/b0_strncpy.inc $(B)/b0_strlen.inc
 
-$(B)/b0_strrchr.inc: sdcclib/_strrchr.c tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_strrchr.inc: sdcclib/_strrchr.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2c42) --region $(call lib,2c42):$(call lib,2ca5):$@ --syms-out $(B)/b0_strrchr.sym
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2c42) --region $(call lib,2c42):$(call lib,2ca5):$@
 
-$(B)/b0_strncpy.inc: sdcclib/_strncpy.c tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_strncpy.inc: sdcclib/_strncpy.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2cd3) --region $(call lib,2cd3):$(call lib,2d4c):$@ --syms-out $(B)/b0_strncpy.sym
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2cd3) --region $(call lib,2cd3):$(call lib,2d4c):$@
 
-$(B)/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_strlen.inc: sdcclib/_strlen.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2d95) --region $(call lib,2d95):$(call lib,2dba):$@ --syms-out $(B)/b0_strlen.sym
+	$(SDINC) $< --sdcc29 --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2d95) --region $(call lib,2d95):$(call lib,2dba):$@
 
 # GBDK's gb library: the drawing, font and joypad code and the IBM font.
 # _BASE is one run in link order; drawing's _CODE comes first in _CODE,
@@ -261,33 +220,33 @@ $(B)/font.s: gbdk/font.ms gbdk/wait_hbl.mh tools/maccer.py
 	@mkdir -p $(B)
 	python3 tools/maccer.py $< $@
 
-$(GBDK_INCS) &: $(GBDK_SRCS) $(call modsrc,0) $(MOD_HDRS) gbdk/global.s $(B)/crt0.sym tools/sdinc.py $(SYM) $(LAYOUT)
-	$(SDINC) $(GBDK_SRCS) $(call modsrc,0) -I gbdk --bank 0 --sym $(SYM) --defs $(B)/crt0.sym $(CRT0_DEFS) $(MODLINK) $(MOD0) \
+$(GBDK_INCS) &: $(GBDK_SRCS) gbdk/global.s $(B)/crt0.sym tools/sdinc.py $(SYM)
+	$(SDINC) $(GBDK_SRCS) -I gbdk --bank 0 --sym $(SYM) --defs $(B)/crt0.sym $(CRT0_DEFS) \
 		-b _CODE=0x$(call lib,20f4) -b _BASE=0x$(call lib,2eea) -b _VBLLCD=0x$(call lib,2a5f) -b _BSS=0x$(call wram,d723) --area-at font.s:_CODE=0x$(call lib,2d56) \
 		--area-at drawing.s:_HEADER=0x01e3 --area-at font.s:_HEADER=0x03cc \
 		--region 01e3:0600:$(B)/b0_gbdk_header.inc \
 		--region $(call lib,20f4):$(call lib,2826):$(B)/b0_gbdk_code.inc --region $(call lib,2a5f):$(call lib,2a77):$(B)/b0_gbdk_vbl.inc \
-		--region $(call lib,2d56):$(call lib,2d95):$(B)/b0_gbdk_font.inc --area-max _BASE=0x4000 --region $(call lib,2eea):4000:$(B)/b0_gbdk_base.inc --syms-out $(B)/b0_gbdk.sym
+		--region $(call lib,2d56):$(call lib,2d95):$(B)/b0_gbdk_font.inc --region $(call lib,2eea):4000:$(B)/b0_gbdk_base.inc
 
 # bank 0's asm runtime that is neither SDCC's nor GBDK's, rebuilt from stock
 # (origin unknown, see src/libasm.s), in six pieces between other library code
 LIBASM_INCS := $(B)/b0_lib0.inc $(B)/b0_lib1.inc $(B)/b0_lib2.inc $(B)/b0_lib3.inc $(B)/b0_lib4.inc $(B)/b0_lib5.inc
 
-$(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM) $(LAYOUT)
+$(LIBASM_INCS) &: src/libasm.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
 	$(SDINC) $< --bank 0 --sym $(SYM) -g _errno=0x$(call wram,d6c7) -b _LIB0=0x$(call lib,20e2) \
 		-b _LIB1=0x$(call lib,29e6) -b _LIB2=0x$(call lib,2a77) -b _LIB3=0x$(call lib,2ca5) -b _LIB4=0x$(call lib,2d4c) -b _LIB5=0x$(call lib,2dba) \
 		--region $(call lib,20e2):$(call lib,20f4):$(B)/b0_lib0.inc \
 		--region $(call lib,29e6):$(call lib,2a5f):$(B)/b0_lib1.inc --region $(call lib,2a77):$(call lib,2c42):$(B)/b0_lib2.inc \
 		--region $(call lib,2ca5):$(call lib,2cd3):$(B)/b0_lib3.inc --region $(call lib,2d4c):$(call lib,2d56):$(B)/b0_lib4.inc \
-		--region $(call lib,2dba):$(call lib,2eea):$(B)/b0_lib5.inc --syms-out $(B)/b0_lib.sym
+		--region $(call lib,2dba):$(call lib,2eea):$(B)/b0_lib5.inc
 
 # the kernel's C in bank 2, all of it: the SD sector reads and writes
-$(B)/b2_code.inc: src/bank2.c $(call modsrc,2) $(MOD_HDRS) src/diskio.h src/integer.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b2_code.inc: src/bank2.c src/diskio.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< $(call modsrc,2) $(MODLINK) --sdcc29 --bank 2 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+	$(SDINC) $< --sdcc29 --bank 2 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
 		-b _CODE=0x4000 -a _set_data=VramCopyStack -a _delay=Delay -a __rrulong_rrx_s=U32Shr \
-		--region 4000:8000:$@ --syms-out $(B)/b2_code.sym
+		--region 4000:8000:$@
 
 # the kernel's C in bank 4: RomLoad_InitiatePoll ($4000), linked for $D100
 # where RomLoad_BuildAndRunPoll copies it, then the rest from $40AB. SDCC
@@ -303,15 +262,15 @@ BANK4_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=Dra
               -a _wait_vbl_done=WaitVBlankFlag \
               -a _RomLoad_InitiatePoll=RomLoad_InitiatePoll -g _wRomBanks=0xc2a4 -g _wHdrSum=0xc5a3 -g _wD3EB=0xd3eb
 
-$(B)/b4_wram.inc: src/bank4_wram.c tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b4_wram.inc: src/bank4_wram.c tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
 	$(SDINC) $< --sdcc29 --bank 4 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0xd100 --region d100:d1ab:$@ --syms-out $(B)/b4_wram.sym
+		-b _CODE=0xd100 --region d100:d1ab:$@
 
-$(B)/b4_code.inc: $(BANK4_SRCS) $(call modsrc,4) $(MOD_HDRS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b4_code.inc: $(BANK4_SRCS) src/ff.h src/ffconf.h src/integer.h tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(BANK4_SRCS) $(call modsrc,4) $(MOD_G) $(MODLINK) --sdcc29 --bank 4 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x40ab $(BANK4_ALIASES) --region 40ab:8000:$@ --syms-out $(B)/b4_code.sym
+	$(SDINC) $(BANK4_SRCS) --sdcc29 --bank 4 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x40ab $(BANK4_ALIASES) --region 40ab:8000:$@
 
 # the kernel's C in bank 8, all of it
 BANK8_SRCS := src/bank8.c
@@ -321,10 +280,10 @@ BANK8_ALIASES := -a _DrawString=DrawString -a _color=StoreDrawParams -a _box=Dra
               -a _joypad=ReadJoypad -a _U32ToAscii_B0=U32ToAscii_B0 -a banked_call=FarCallTrampoline \
               -g _wSaveBuf=0xc0a0
 
-$(B)/b8_code.inc: $(BANK8_SRCS) $(call modsrc,8) $(MOD_HDRS) tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b8_code.inc: $(BANK8_SRCS) tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(BANK8_SRCS) $(call modsrc,8) $(MOD_G) $(MODLINK) --sdcc29 --bank 8 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
-		-b _CODE=0x4000 $(BANK8_ALIASES) --region 4000:8000:$@ --syms-out $(B)/b8_code.sym
+	$(SDINC) $(BANK8_SRCS) --sdcc29 --bank 8 --cflags="$(KERNEL_CFLAGS)" --sym $(SYM) \
+		-b _CODE=0x4000 $(BANK8_ALIASES) --region 4000:8000:$@
 
 # SDCC 2.9.0's gbz80 asm library: stubs.s, div.s and shift.s, linked in
 # that order. stubs.s jumps to the math in src/libasm.s; div.s has edits
@@ -334,46 +293,28 @@ SDCCASM_DEFS := -g __mullong=0x$(call lib,2dc1) -g __modslong=0x$(call lib,29e6)
               -g __divslong=0x$(call lib,2b28) -g __divulong=0x$(call lib,2bfc) -g __mulschar_rrx_s=0x$(call lib,2ba2) \
               -g __muluchar_rrx_s=0x$(call lib,2bb1) -g __mulint_rrx_s=0x$(call lib,2bcf)
 
-$(B)/b0_sdccasm.inc: $(SDCCASM_SRCS) tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_sdccasm.inc: $(SDCCASM_SRCS) tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $(SDCCASM_SRCS) --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2826) $(SDCCASM_DEFS) --region $(call lib,2826):$(call lib,29e6):$@ --syms-out $(B)/b0_sdccasm.sym
+	$(SDINC) $(SDCCASM_SRCS) --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,2826) $(SDCCASM_DEFS) --region $(call lib,2826):$(call lib,29e6):$@
 
 # SDCC 2.9.0's crt0_rle.s: __initrleblock, which the C files' _GSINIT code calls
-$(B)/b0_rle.inc: sdcclib/crt0_rle.s tools/sdinc.py $(SYM) $(LAYOUT)
+$(B)/b0_rle.inc: sdcclib/crt0_rle.s tools/sdinc.py $(SYM)
 	@mkdir -p $(B)
-	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,20bb) --region $(call lib,20bb):$(call lib,20e2):$@ --syms-out $(B)/b0_rle.sym
+	$(SDINC) $< --bank 0 --sym $(SYM) -b _CODE=0x$(call lib,20bb) --region $(call lib,20bb):$(call lib,20e2):$@
 
-# a new bank: the mod's sources for it, $$FF with none (rgblink fills the section)
-define mod_bank
-$(B)/mod_b$(1).inc: $(call modsrc,$(1)) $(MOD_HDRS) tools/sdinc.py $(SYM) $(LAYOUT)
-	@mkdir -p $(B)
-ifneq ($(MOD_B$(1)),)
-	$(SDINC) $(call modsrc,$(1)) --bank $(1) --sym $(SYM) $(MODLINK) -b _CODE=0x4000 \
-		--region 4000:8000:$$@ --syms-out $(B)/mod_b$(1).sym
-else
-	: > $(B)/mod_b$(1).sym
-	echo '; bank $(1): no source' > $$@
-endif
-endef
-$(foreach n,$(MOD_BANKS),$(eval $(call mod_bank,$(n))))
-
-$(B)/kernel.gb: asm/game.asm asm/mod.asm asm/bank_*.asm asm/*.inc $(INCS) $(MOD_INCS)
-	rgbasm $(if $(MODPASS),-D MOD) -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
-	rgblink $(if $(MODPASS),-p 0xff) -n $(B)/kernel.sym -m $(B)/kernel.map -o $@ $(B)/game.o
-	rgbfix -Wno-overwrite -f $(if $(MODPASS),hg,g) $@
-ifdef MODPASS
-	@echo "$@: $$(($$(wc -c < $@) / 16384)) banks"
-else
+$(B)/kernel.gb: asm/game.asm asm/bank_*.asm asm/*.inc $(INCS)
+	rgbasm -I asm/ -I $(B)/ -o $(B)/game.o asm/game.asm
+	rgblink -n $(B)/kernel.sym -m $(B)/kernel.map -o $@ $(B)/game.o
+	rgbfix -Wno-overwrite -f g $@
 	@want=$$(awk '$$2 == "*kernel/stock/$@" { print $$1 }' ../../stock.sha1); \
 	got=$$( (shasum $@ 2>/dev/null || sha1sum $@) | cut -d' ' -f1); \
 	if [ -n "$$want" ] && [ "$$got" = "$$want" ]; then echo "$@: matches stock ($$got)"; \
 	else echo "$@: MISMATCH ($$got, want $$want)"; exit 1; fi
-endif
 
 clean:
-	rm -rf build-0918 build-104 build-0731 build-0918-mod build-104-mod build-0731-mod
+	rm -rf build-0918 build-104 build-0731
 
-.PHONY: all clean 0918 1.04e 0731 mod incs
+.PHONY: all clean 0918 1.04e 0731
 
 # a kernel that fails the hash check must not count as up to date
 .DELETE_ON_ERROR:

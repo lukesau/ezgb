@@ -5,7 +5,6 @@
 #include <gb/drawing.h>
 #include <string.h>
 #include "ff.h"
-#include "mod.h"
 
 /* the browser's entry table: 255-byte entries in pSRAM, 32 to a page */
 typedef struct {
@@ -80,12 +79,6 @@ char *CStrChr (char *s, char c) __banked
 	return last;
 }
 
-#ifdef MOD
-#define DRAW_POS TabNum12	/* the position, in the tab strip's font */
-#else
-#define DRAW_POS DrawString
-#endif
-
 /* 01:40e3: up to 16 rows of entries from top, row highlighted, and the
    1-based position of the selected one */
 void DrawBrowserEntries (UINT16 top, UINT16 row) __banked
@@ -98,38 +91,26 @@ void DrawBrowserEntries (UINT16 top, UINT16 row) __banked
 		n = 0;
 	else {
 		n = wEntryCount - top;
-#ifdef MOD
-		if (n > UI_ROWS)
-			n = UI_ROWS;
-#else
 		if (n > 16)
 			n = 16;
-#endif
 	}
 	color(3, 0, 0);
 	for (i = 0; i < n; i++) {
 		if (i == row)
-			color(HI_INK, HI_PAPER, 0);
+			color(3, 2, 0);
 		page = (top + i) / 32;
 		slot = (top + i) % 32;
 		*(UINT8 *)0x4000 = page + 0x12;
-#ifdef MOD	/* an icon before the name, not "DIR" after it; len 0 = a directory */
-		if (wEntries[slot].attr == AM_DIR)
-			DrawNameWithIcon(wEntries[slot].name, 0, 0, i + 2);
-		else
-			DrawNameWithIcon(wEntries[slot].name, 20, 0, i + 2);
-#else
 		if (wEntries[slot].attr == AM_DIR) {
 			DrawString(wEntries[slot].name, 0, 0, i + 2);
 			color(0, 3, 0);
 			DrawString("DIR", 3, 17, i + 2);
 		} else
 			DrawString(wEntries[slot].name, 20, 0, i + 2);
-#endif
 		color(3, 0, 0);
 	}
 	U32ToAscii_B0(top + row + 1, buf, 10);
-	DRAW_POS(buf, 4, 16, 0);
+	DrawString(buf, 4, 16, 0);
 }
 
 /* 01:42ba: redraw rows row-1 and row (code 2, moved up) or row and row+1
@@ -156,45 +137,31 @@ void DrawBrowserDetail (UINT16 top, UINT16 row, UINT8 code) __banked
 	slot = (top + r0) % 32;
 	*(UINT8 *)0x4000 = page + 0x12;
 	if (code == 3)
-		color(HI_INK, HI_PAPER, 0);
+		color(3, 2, 0);
 	else if (code == 2)
 		color(3, 0, 0);
-#ifdef MOD
-	if (wEntries[slot].attr == AM_DIR)
-		DrawNameWithIcon(wEntries[slot].name, 0, 0, y0);
-	else
-		DrawNameWithIcon(wEntries[slot].name, 20, 0, y0);
-#else
 	if (wEntries[slot].attr == AM_DIR) {
 		DrawString(wEntries[slot].name, 0, 0, y0);
 		color(0, 3, 0);
 		DrawString("DIR", 3, 17, y0);
 	} else
 		DrawString(wEntries[slot].name, 20, 0, y0);
-#endif
 	if (code == 3)
 		color(3, 0, 0);
 	else if (code == 2)
-		color(HI_INK, HI_PAPER, 0);
+		color(3, 2, 0);
 	page = (top + r1) / 32;
 	slot = (top + r1) % 32;
 	*(UINT8 *)0x4000 = page + 0x12;
-#ifdef MOD
-	if (wEntries[slot].attr == AM_DIR)
-		DrawNameWithIcon(wEntries[slot].name, 0, 0, y1);
-	else
-		DrawNameWithIcon(wEntries[slot].name, 20, 0, y1);
-#else
 	if (wEntries[slot].attr == AM_DIR) {
 		DrawString(wEntries[slot].name, 0, 0, y1);
 		color(0, 3, 0);
 		DrawString("DIR", 3, 17, y1);
 	} else
 		DrawString(wEntries[slot].name, 20, 0, y1);
-#endif
 	color(3, 0, 0);
 	U32ToAscii_B0(top + row + 1, buf, 10);
-	DRAW_POS(buf, 4, 16, 0);
+	DrawString(buf, 4, 16, 0);
 }
 
 /* 01:45b3: FatFs's ff_wtoupper as ffunicode.c has it from R0.12 on (this is
@@ -361,9 +328,6 @@ void SetFpga7FD4_B1 (UINT8 v) __banked
 	*(UINT8 *)0x7f00 = 0xe1;
 	*(UINT8 *)0x7f10 = 0xe2;
 	*(UINT8 *)0x7f20 = 0xe3;
-#ifdef MOD	/* FW5 skips the loader's delay when $7FD3 + $7FD4 is $11 */
-	*(UINT8 *)0x7fd3 = 0;
-#endif
 	*(UINT8 *)0x7fd4 = v;
 	*(UINT8 *)0x7ff0 = 0xe4;
 }
@@ -389,12 +353,6 @@ void LoaderPrepPath (void) __banked
 	}
 	*(UINT8 *)0x4000 = 0;
 	SetFpgaPage_B1(0);
-#ifdef MOD
-	Bump();
-	PlaySync();
-	wEzOp = 4;	/* LASTROM= and the RTC backup */
-	ezcfg();
-#endif
 }
 
 #ifndef K104
@@ -514,13 +472,7 @@ UINT32 RtcWriteTimeFromDelta (UINT32 base)
 
 	now = RtcToSeconds();
 	delta = now - base;
-#ifdef MOD	/* a clock set back: the game's clock stands still, it is not cleared */
-	if (delta < 0)
-		delta = 0;
-	if (base == 0) {
-#else
 	if (base == 0 || delta < 0) {
-#endif
 		sec = 0;
 		min = 0;
 		hour = 0;
@@ -993,7 +945,7 @@ void DrawCardTypeScreen (void)
 	else
 		DrawString("No", 0, 0x5c, 0x4e);
 	for (;;) {
-		keys = menu_joypad();
+		keys = joypad();
 		if (keys & J_A)
 			break;
 		if (keys & J_B)
@@ -1004,15 +956,9 @@ void DrawCardTypeScreen (void)
 /* 01:62b1 */
 void DrawInfoPanelRect (void)
 {
-	color(HI_INK, HI_PAPER, 0);
+	color(3, 2, 0);
 	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
 }
-
-#ifdef MOD
-#define SEL_INK 0
-#else
-#define SEL_INK 1
-#endif
 
 /* 01:62d0: BOOT / ROM info menu; returns the choice, or $FF for B.
    volatile on the locals reproduces stock's allocation (all three on the
@@ -1028,19 +974,19 @@ panel:
 	for (;;) {
 		if (redraw) {
 			if (sel == 0) {
-				color(SEL_INK, HI_PAPER, 0);
+				color(1, 2, 0);
 				DrawString("BOOT", 0, 0x25, 0x2a);
 				color(3, 0, 0);
 				DrawString("ROM info", 0, 0x25, 0x3a);
 			} else {
 				color(3, 0, 0);
 				DrawString("BOOT", 0, 0x25, 0x2a);
-				color(SEL_INK, HI_PAPER, 0);
+				color(1, 2, 0);
 				DrawString("ROM info", 0, 0x25, 0x3a);
 			}
 		}
 		redraw = 0;
-		keys = menu_joypad();
+		keys = joypad();
 		if (keys & J_UP) {
 			if (sel) {
 				sel--;
@@ -1086,11 +1032,7 @@ void BackupSaveDump (char *path, UINT32 size)
 	SetFpgaPage_B1(0);
 	res = fs_open(&wFil, wTmp, FA_WRITE | FA_OPEN_ALWAYS);
 	if (res)
-#ifdef MOD
-		goto done;
-#else
 		return;
-#endif
 	fs_lseek(&wFil, 0);
 	spin = 0;
 	for (ofs = 0; ofs < size; ofs += 512) {
@@ -1105,16 +1047,12 @@ void BackupSaveDump (char *path, UINT32 size)
 #ifdef K104
 		color(2, 2, 0);
 #endif
-#ifdef MOD
-		BkPrompt(3, 0);
-#else
 		if (spin == 0)
 			DrawString(".  ", 3, 11, 10);
 		else if (spin == 1)
 			DrawString(".. ", 3, 11, 10);
 		else
 			DrawString("...", 3, 11, 10);
-#endif
 	}
 #ifndef K104
 	if (wD3F6 == 0x77) {
@@ -1142,11 +1080,6 @@ void BackupSaveDump (char *path, UINT32 size)
 	}
 #endif
 	fs_close(&wFil);
-#ifdef MOD
-done:
-	wEzOp = 2;	/* back up the RTC */
-	ezcfg();
-#endif
 }
 
 /* 01:6747: the BACKUPSAVE box; flag 1 saves without asking. save is the
@@ -1156,27 +1089,6 @@ void BackupSavePrompt (UINT32 save, UINT8 flag) __banked
 	UINT32 size;
 	UINT16 keys;
 
-#ifdef MOD	/* the box is the mod's (kernel/mod/src/bkprompt.c) */
-	BkPrompt(0, 0);
-	if (flag == 1) {
-		BkPrompt(2, 0);
-		size = save << 13;
-		BackupSaveDump("", size);
-		return;
-	}
-	BkPrompt(1, 0);
-	for (;;) {
-		keys = LastRomTickStub();	/* joypad(), and scrolls the name */
-		if (keys & J_A) {
-			BkPrompt(2, 0);
-			size = save << 13;
-			BackupSaveDump("", size);
-			return;
-		}
-		if (keys & J_B)
-			return;
-	}
-#else
 	color(3, 2, 0);
 	box(0x23, 0x25, 0x7d, 0x6c, M_FILL);
 	DrawString("BACKUPSAVE", 10, 5, 5);
@@ -1202,5 +1114,4 @@ void BackupSavePrompt (UINT32 save, UINT8 flag) __banked
 		if (keys & J_B)
 			return;
 	}
-#endif
 }

@@ -6,7 +6,6 @@
 #include <gb/drawing.h>
 #include <string.h>
 #include "ff.h"
-#include "mod.h"
 
 extern UINT16 wRomBanks;		/* $C2A4: the ROM's size in 16 KB banks */
 extern UINT8 wHdrSum;			/* $C5A3: the header checksum, worked out */
@@ -40,11 +39,7 @@ void RomLoad_Build_B4 (UINT8 *dst, char *src, UINT8 n)
 void RomLoad_BuildAndRunPoll (void)
 {
 	RomLoad_Build_B4((UINT8 *)0xd100, (char *)RomLoad_InitiatePoll, 0xff);
-#ifdef MOD
-	SkipBootPrep();		/* runs it, and may add the jump past the boot ROM */
-#else
 	((void (*)(void))0xd100)();
-#endif
 }
 
 /* 04:40fc: v's low byte to $7F34, high byte to $7F35 */
@@ -211,9 +206,6 @@ void SetFpga7FC3_B4 (void) __banked
 /* 04:448f: hand the loader its 512-byte command block */
 void RomLoad_CopyCmdWindowPoll_B4 (UINT8 *cmd, UINT8 res) __banked
 {
-#ifdef MOD
-	SgbLaunchPrep();	/* an SGB packet still going out finishes first */
-#endif
 	SetRomLoadCtrl_B4(1);
 	set_data((unsigned char *)0xa000, cmd, 512);
 	RomLoad_BuildAndRunPoll();
@@ -230,13 +222,6 @@ void CStrCat (char *dst, const char *src)
 		*d++ = *src++;
 	*d = 0;
 }
-
-#ifdef MOD
-/* the mod's U32ToAscii does a 16-bit decimal itself, far faster, and comes
-   here for the rest (kernel/mod/asm/U32ToAsciiFast.s) */
-void U32ToAscii (UINT32 v, char *buf, UINT8 radix);
-#define U32ToAscii U32ToAsciiSlow
-#endif
 
 /* 04:44f7: v in radix into buf, at least two digits */
 void U32ToAscii (UINT32 v, char *buf, UINT8 radix)
@@ -268,9 +253,6 @@ void U32ToAscii (UINT32 v, char *buf, UINT8 radix)
 		buf[2] = 0;
 	}
 }
-#ifdef MOD
-#undef U32ToAscii
-#endif
 
 /* 04:466e */
 void SetFpgaPage_B4 (UINT8 page)
@@ -307,34 +289,6 @@ void InitTimeAutosaveFpga_B4 (void)
 	SetFpgaPage_B4(0);
 }
 
-/* The mod's SET tab is three pages of rows (kernel/mod/src/flcfg.c); this
-   routine keeps page 1's TIME and AUTO SAVE rows, a tile row higher and
-   lower, and hands the rest to flcfg: its cursor row and redraw flag are
-   wSetRow and wSetDirty. */
-#ifdef MOD
-#define SET_TEXT	SetText		/* DrawString, or the 12px font by the row */
-#define Y_TIME		2
-#define Y_DATE		4
-#define Y_AUTO		8
-#define BTN_Y1		(hUiMode ? 0x0f : 0x0d)	/* the SET button */
-#define BTN_Y2		(hUiMode ? 0x1c : 0x19)
-#define CHK_Y		0x40		/* the AUTO SAVE checkbox */
-#define ROW_AUTO	2
-#define TICK_INK	3
-#define CUR_INK		1
-#else
-#define SET_TEXT	DrawString
-#define Y_TIME		3
-#define Y_DATE		5
-#define Y_AUTO		7
-#define BTN_Y1		0x15
-#define BTN_Y2		0x21
-#define CHK_Y		0x38
-#define ROW_AUTO	1
-#define TICK_INK	2
-#define CUR_INK		2
-#endif
-
 /* 04:46f4: the TIME and AUTO SAVE screen. A on TIME starts setting the
    clock (the cart RTC, BCD on page 6) and A again writes it; A on AUTO
    SAVE toggles pSRAM $A200; SELECT leaves. */
@@ -344,20 +298,11 @@ void DrawTimeAutosaveScreen (void) __banked
 	char shown[7];		/* rtc as last drawn */
 	char edit[7];		/* the time being set, binary */
 	char buf[20];
-#ifdef MOD
-	UINT8 mode, field, autosave;
-#define row	wSetRow
-#define dirty	wSetDirty
-#else
 	UINT8 mode, field, dirty, row, autosave;
-#endif
 	UINT8 *p;
 	UINT16 keys;
 	char r;
 
-#ifdef MOD
-again:
-#endif
 	row = 0;
 	mode = 0;
 	field = 0;
@@ -370,20 +315,17 @@ again:
 	color(0, 0, 0);
 	box(0x78, 0x00, 0x9f, 0x07, M_FILL);
 	color(3, 0, 0);
-	SET_TEXT("TIME:", 5, 0, Y_TIME);
-	color(HI_INK, HI_PAPER, 0);
-	box(0x7b, BTN_Y1, 0x9b, BTN_Y2, M_FILL);
-	SET_TEXT("SET", 3, 16, Y_TIME);
+	DrawString("TIME:", 5, 0, 3);
+	color(3, 2, 0);
+	box(0x7b, 0x15, 0x9b, 0x21, M_FILL);
+	DrawString("SET", 3, 16, 3);
 	color(3, 0, 0);
-	SET_TEXT("AUTO SAVE:", 10, 0, Y_AUTO);
-	box(0x82, CHK_Y, 0x8a, CHK_Y + 8, M_NOFILL);
+	DrawString("AUTO SAVE:", 10, 0, 7);
+	box(0x82, 0x38, 0x8a, 0x40, M_NOFILL);
 	if (autosave == 1) {
-		color(TICK_INK, TICK_INK, 0);
-		box(0x84, CHK_Y + 2, 0x88, CHK_Y + 6, M_FILL);
+		color(2, 2, 0);
+		box(0x84, 0x3a, 0x88, 0x3e, M_FILL);
 	}
-#ifdef MOD
-	flcfg(&wSetRow, 0);	/* the mod's rows */
-#endif
 	memset(shown, 0xff, 7);
 	for (;;) {
 #ifdef K104
@@ -393,24 +335,24 @@ again:
 #endif
 			if (dirty == 1) {
 				if (row == 0)
-					color(HI_INK, HI_PAPER, 0);
+					color(3, 2, 0);
 				else
 					color(3, 0, 0);
-				box(0x7b, BTN_Y1, 0x9b, BTN_Y2, M_FILL);
+				box(0x7b, 0x15, 0x9b, 0x21, M_FILL);
 				if (mode == 0)
-					SET_TEXT("SET", 3, 16, Y_TIME);
+					DrawString("SET", 3, 16, 3);
 				else
-					SET_TEXT("SAV", 3, 16, Y_TIME);
+					DrawString("SAV", 3, 16, 3);
 				color(0, 0, 0);
-				box(0x82, CHK_Y, 0x8a, CHK_Y + 8, M_FILL);
-				if (row == ROW_AUTO)
-					color(CUR_INK, CUR_INK, 0);
+				box(0x82, 0x38, 0x8a, 0x40, M_FILL);
+				if (row == 1)
+					color(2, 2, 0);
 				else
 					color(3, 0, 0);
-				box(0x82, CHK_Y, 0x8a, CHK_Y + 8, M_NOFILL);
+				box(0x82, 0x38, 0x8a, 0x40, M_NOFILL);
 				if (autosave == 1) {
-					color(TICK_INK, TICK_INK, 0);
-					box(0x84, CHK_Y + 2, 0x88, CHK_Y + 6, M_FILL);
+					color(2, 2, 0);
+					box(0x84, 0x3a, 0x88, 0x3e, M_FILL);
 				}
 			}
 #ifdef K104
@@ -429,80 +371,76 @@ again:
 			if (rtc[6] != shown[6] || dirty) {
 				U32ToAscii((rtc[6] & 0x0f) + (rtc[6] >> 4) * 10 + 2000, buf, 10);
 				CStrCat(buf, "/");
-				SET_TEXT(buf, 5, 0, Y_DATE);
+				DrawString(buf, 5, 0, 5);
 			}
 			if (rtc[5] != shown[5] || dirty) {
 				U32ToAscii((rtc[5] & 0x0f) + ((rtc[5] & 0x1f) >> 4) * 10, buf, 10);
-				SET_TEXT(buf, 2, 5, Y_DATE);
-				SET_TEXT("/", 1, 7, Y_DATE);
+				DrawString(buf, 2, 5, 5);
+				DrawString("/", 1, 7, 5);
 			}
 			if (rtc[3] != shown[3] || dirty) {
 				U32ToAscii((rtc[3] & 0x0f) + ((rtc[3] & 0x3f) >> 4) * 10, buf, 10);
-				SET_TEXT(buf, 2, 8, Y_DATE);
+				DrawString(buf, 2, 8, 5);
 			}
 			if (rtc[2] != shown[2] || dirty) {
 				U32ToAscii((rtc[2] & 0x0f) + ((rtc[2] & 0x3f) >> 4) * 10, buf, 10);
-				SET_TEXT(buf, 2, 11, Y_DATE);
-				SET_TEXT(":", 1, 13, Y_DATE);
+				DrawString(buf, 2, 11, 5);
+				DrawString(":", 1, 13, 5);
 			}
 			if (rtc[1] != shown[1] || dirty) {
 				U32ToAscii((rtc[1] & 0x0f) + ((rtc[1] & 0x7f) >> 4) * 10, buf, 10);
-				SET_TEXT(buf, 2, 14, Y_DATE);
-				SET_TEXT(":", 1, 16, Y_DATE);
+				DrawString(buf, 2, 14, 5);
+				DrawString(":", 1, 16, 5);
 			}
 			if (rtc[0] != shown[0] || dirty) {
 				U32ToAscii((rtc[0] & 0x0f) + ((rtc[0] & 0x7f) >> 4) * 10, buf, 10);
-				SET_TEXT(buf, 2, 17, Y_DATE);
+				DrawString(buf, 2, 17, 5);
 			}
 			dirty = 0;
 			memcpy(shown, rtc, 7);
 		} else if (dirty) {
 #ifndef K104
-			color(HI_INK, HI_PAPER, 0);
-			SET_TEXT("SAV", 3, 16, Y_TIME);
+			color(3, 2, 0);
+			DrawString("SAV", 3, 16, 3);
 #endif
 			color(3, 0, 0);
 			U32ToAscii(edit[6] + 2000, buf, 10);
 			if (field == 0)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 4, 0, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 4, 0, 5);
 			color(3, 0, 0);
-			SET_TEXT("/", 1, 4, Y_DATE);
+			DrawString("/", 1, 4, 5);
 			U32ToAscii(edit[5] & 0x1f, buf, 10);
 			if (field == 1)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 2, 5, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 2, 5, 5);
 			color(3, 0, 0);
-			SET_TEXT("/", 1, 7, Y_DATE);
+			DrawString("/", 1, 7, 5);
 			U32ToAscii(edit[3] & 0x3f, buf, 10);
 			if (field == 2)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 2, 8, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 2, 8, 5);
 			color(3, 0, 0);
 			U32ToAscii(edit[2] & 0x3f, buf, 10);
 			if (field == 3)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 2, 11, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 2, 11, 5);
 			color(3, 0, 0);
-			SET_TEXT(":", 1, 13, Y_DATE);
+			DrawString(":", 1, 13, 5);
 			U32ToAscii(edit[1] & 0x7f, buf, 10);
 			if (field == 4)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 2, 14, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 2, 14, 5);
 			color(3, 0, 0);
-			SET_TEXT(":", 1, 16, Y_DATE);
+			DrawString(":", 1, 16, 5);
 			U32ToAscii(edit[0] & 0x7f, buf, 10);
 			if (field == 5)
-				color(HI_INK, HI_PAPER, 0);
-			SET_TEXT(buf, 2, 17, Y_DATE);
+				color(3, 2, 0);
+			DrawString(buf, 2, 17, 5);
 			color(3, 0, 0);
 			dirty = 0;
 		}
-#ifdef MOD
-		keys = flcfg(0, 5);	/* joypad() with a key repeat, a frame a pass */
-#else
 		keys = joypad();
-#endif
 		if (keys & J_LEFT) {
 			if (mode && row == 0) {
 				if (field)
@@ -511,13 +449,6 @@ again:
 					field = 5;
 				dirty = 2;
 			}
-#ifdef MOD
-			else if (!mode) {
-				row = 0xfe;	/* the page's PREV */
-				dirty = 1;
-				flcfg(&wSetRow, 1);
-			}
-#endif
 		} else if (keys & J_RIGHT) {
 			if (mode && row == 0) {
 				field++;
@@ -525,13 +456,6 @@ again:
 					field = 0;
 				dirty = 3;
 			}
-#ifdef MOD
-			else if (!mode) {
-				row = 0xff;	/* the page's NEXT */
-				dirty = 1;
-				flcfg(&wSetRow, 1);
-			}
-#endif
 		} else if (keys & J_UP) {
 			if (mode) {
 				if (row == 0) {
@@ -586,19 +510,10 @@ again:
 				dirty = 1;
 				}
 			} else {
-#ifdef MOD
-				if (row)
-					row--;
-				else
-					row = 6;	/* flcfg wraps it to the page's last row */
-				dirty = 1;
-				flcfg(&wSetRow, 1);
-#else
 				if (row) {
 					row--;
 					dirty = 1;
 				}
-#endif
 			}
 		} else if (keys & J_DOWN) {
 			if (mode) {
@@ -668,42 +583,18 @@ again:
 				dirty = 1;
 				}
 			} else {
-#ifdef MOD
-				if (row < 20)
-					row++;
-				else
-					row = 8;	/* and to its first */
-				dirty = 1;
-				flcfg(&wSetRow, 1);
-#else
 				if (row < 1) {
 					row++;
 					dirty = 1;
 				}
-#endif
 			}
 		} else if (keys & J_SELECT) {
-#ifdef MOD
-			goto leave;
-#else
 			return;
-#endif
 		} else if (keys & J_B) {
 		} else if (keys & J_A) {
-#ifdef MOD
-			if (row != 0 && row != ROW_AUTO) {
-				/* a row of the mod's. 1: PICK ROM, to the browser;
-				   2: lay the screen out again */
-				r = flcfg(&wSetRow, 2);
-				if (r == 1)
-					goto leave;
-				if (r == 2)
-					goto again;
-			} else
-#endif
 			if (row == 0) {
-				color(HI_INK, HI_PAPER, 0);
-				box(0x7b, BTN_Y1, 0x9b, BTN_Y2, M_FILL);
+				color(3, 2, 0);
+				box(0x7b, 0x15, 0x9b, 0x21, M_FILL);
 				color(3, 0, 0);
 				if (mode == 0) {
 					mode = 1;
@@ -736,10 +627,6 @@ again:
 					*p = ((edit[6] / 10) << 4) + edit[6] % 10;
 					SetFpga7FD0_B4(1);
 					SetFpgaPage_B4(0);
-#ifdef MOD
-					wEzOp = 6;	/* the new time is RTC= */
-					ezcfg();
-#endif
 				}
 			} else {
 				if (autosave == 0)
@@ -752,18 +639,7 @@ again:
 				*(UINT8 *)0xa200 = autosave;
 				*(UINT8 *)0x4000 = 0;
 				SetFpgaPage_B4(0);
-#ifdef MOD
-				wEzOp = 9;	/* AUTOSAVE= */
-				ezcfg();
-#endif
 			}
 		}
 	}
-#ifdef MOD
-leave:
-	SetCommit();		/* what changed, to EZGB.CFG */
-	wSetPage = 0;
-#undef row
-#undef dirty
-#endif
 }

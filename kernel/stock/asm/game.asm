@@ -15,8 +15,3 @@ INCLUDE "bank_006.asm"
 INCLUDE "bank_007.asm"
 INCLUDE "bank_008.asm"
 INCLUDE "bank_009.asm"
-
-; banks 10-15, in a MOD=1 build
-IF DEF(MOD)
-INCLUDE "mod.asm"
-ENDC

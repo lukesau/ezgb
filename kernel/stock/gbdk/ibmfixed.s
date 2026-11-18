@@ -1325,16 +1325,6 @@ _font_ibm_fixed_tiles::
 	.db	0b00000000	;         
 
 ; Character: ? (7F)
-	.ifdef	MOD	; mod: a star
-	.db	0b00010000	;    o     
-	.db	0b00111000	;   ooo    
-	.db	0b11111110	; ooooooo  
-	.db	0b01111100	;  ooooo   
-	.db	0b00111000	;   ooo    
-	.db	0b01101100	;  oo oo   
-	.db	0b01000100	;  o   o   
-	.db	0b00000000	;          
-	.else
 	.db	0b00010000	;    o    
 	.db	0b00010000	;    o    
 	.db	0b00101000	;   o o   
@@ -1343,7 +1333,6 @@ _font_ibm_fixed_tiles::
 	.db	0b01000100	;  o   o  
 	.db	0b10000010	; o     o 
 	.db	0b11111110	; ooooooo 
-	.endif
 
 ; Character: ? (80)
 	.db	0b00111100	;   oooo  
@@ -1986,16 +1975,6 @@ _font_ibm_fixed_tiles::
 	.db	0b00000000	;         
 
 ; Character: ? (C0)
-	.ifdef	MOD	; mod: a folder
-	.db	0b11110000	; oooo     
-	.db	0b10010000	; o  o     
-	.db	0b11111111	; oooooooo 
-	.db	0b10000001	; o      o 
-	.db	0b10000001	; o      o 
-	.db	0b10000001	; o      o 
-	.db	0b11111111	; oooooooo 
-	.db	0b00000000	;          
-	.else
 	.db	0b01100110	;  oo  oo 
 	.db	0b00000000	;         
 	.db	0b11100110	; ooo  oo 
@@ -2004,19 +1983,8 @@ _font_ibm_fixed_tiles::
 	.db	0b11110110	; oooo oo 
 	.db	0b00000110	;      oo 
 	.db	0b00011100	;    ooo  
-	.endif
 
 ; Character: ? (C1)
-	.ifdef	MOD	; mod: a .gb cart
-	.db	0b01111110	;  oooooo  
-	.db	0b10000001	; o      o 
-	.db	0b10110101	; o oo o o 
-	.db	0b10110101	; o oo o o 
-	.db	0b10000001	; o      o 
-	.db	0b10000001	; o      o 
-	.db	0b01111110	;  oooooo  
-	.db	0b00000000	;          
-	.else
 	.db	0b11110110	; oooo oo 
 	.db	0b01100110	;  oo  oo 
 	.db	0b01100110	;  oo  oo 
@@ -2025,19 +1993,8 @@ _font_ibm_fixed_tiles::
 	.db	0b11110110	; oooo oo 
 	.db	0b00000110	;      oo 
 	.db	0b00011100	;    ooo  
-	.endif
 
 ; Character: ? (C2)
-	.ifdef	MOD	; mod: a .gbc cart
-	.db	0b01111110	;  oooooo  
-	.db	0b10000001	; o      o 
-	.db	0b10101001	; o o o  o 
-	.db	0b10010101	; o  o o o 
-	.db	0b10101001	; o o o  o 
-	.db	0b10000001	; o      o 
-	.db	0b01111110	;  oooooo  
-	.db	0b00000000	;          
-	.else
 	.db	0b00000000	;         
 	.db	0b01100110	;  oo  oo 
 	.db	0b01110110	;  ooo oo 
@@ -2046,19 +2003,8 @@ _font_ibm_fixed_tiles::
 	.db	0b01100110	;  oo  oo 
 	.db	0b00000000	;         
 	.db	0b00000000	;         
-	.endif
 
 ; Character: ? (C3)
-	.ifdef	MOD	; mod: another file
-	.db	0b01111110	;  oooooo  
-	.db	0b10011001	; o  oo  o 
-	.db	0b10100101	; o o  o o 
-	.db	0b10001001	; o   o  o 
-	.db	0b10000001	; o      o 
-	.db	0b10001001	; o   o  o 
-	.db	0b01111110	;  oooooo  
-	.db	0b00000000	;          
-	.else
 	.db	0b00000000	;         
 	.db	0b01111100	;  ooooo  
 	.db	0b00001100	;     oo  
@@ -2067,19 +2013,8 @@ _font_ibm_fixed_tiles::
 	.db	0b01111110	;  oooooo 
 	.db	0b00000000	;         
 	.db	0b00000000	;         
-	.endif
 
 ; Character: ? (C4)
-	.ifdef	MOD	; mod: a text file
-	.db	0b11111000	; ooooo    
-	.db	0b10001100	; o   oo   
-	.db	0b10001110	; o   ooo  
-	.db	0b10000001	; o      o 
-	.db	0b10000001	; o      o 
-	.db	0b10000001	; o      o 
-	.db	0b11111111	; oooooooo 
-	.db	0b00000000	;          
-	.else
 	.db	0b00000000	;         
 	.db	0b00011110	;    oooo 
 	.db	0b00000110	;      oo 
@@ -2088,7 +2023,6 @@ _font_ibm_fixed_tiles::
 	.db	0b00110110	;   oo oo 
 	.db	0b00000000	;         
 	.db	0b00000000	;         
-	.endif
 
 ; Character: ? (C5)
 	.db	0b00000000	;         
