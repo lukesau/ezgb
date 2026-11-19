@@ -122,7 +122,7 @@ was taken after the boot cycle:
   stage1 to the kernel, and when entering a folder.
 - Below about 2.95 V the cell supplies less with the console on than off, so
   the second feed carries the whole backup domain there.
-- Not measured above 3.00 V, where a fresh cell sits.
+- The meter averages pulses here. The scope captures below show the shape.
 
 The supply setting matters more than the meter here. Around 3.0 V the
 current changes by 3.6 times for 100 mV.
@@ -143,11 +143,63 @@ meter both differed.
 Lowering the supply to just under 2.9 or 2.8 V cut the current sharply on
 that day too, so the crossover is the same in both sets.
 
+### Scope captures
+
+2026-11-18, an Analog Discovery 3 with one channel on each side of the
+shunt, both read against the supply's negative terminal, and the difference
+taken. With both leads on one node the difference read zero.
+
+How to connect it: with the BNC adapter each channel is single-ended and
+the black clip is ground, so one cable across a shunt in the positive lead
+shorts the cart side to ground. The AC position of the adapter's jumper
+hides that and does not fix it. Use two channels as above, or put the shunt
+in the negative lead. Each channel is 1 MΩ to ground, so the one on the
+cart side adds about 3 µA through the shunt.
+
+**At 3.0 V, 966 Ω.** Console off the drop was 13 to 14 mV. With Crystal
+running it was 2 to 4 mV, less than with the console off. Moving through
+folders and settings gave bursts to 70 or 80 mV.
+
+**At 3.3 V, 966 Ω.** The shunt limits the current: in every active phase
+the cart side was pulled down to about 3.0 V, with drops of 0.25 to 0.33 V
+(260 to 340 µA). So the cart takes whatever brings the cell side down to
+the crossover, and these figures are a lower bound.
+
+**At 3.3 V, 46.8 Ω**, one session of 55 s sampled at 10.24 kHz. Readings
+are good to about ±4 µA.
+
+| Phase | Length | Average | Peak | Charge |
+|---|---|---|---|---|
+| Console off | | about 10 µA | | |
+| Boot | 8 s | 157 µA | 1.0 mA | 1.26 mC |
+| Picking a ROM in the file browser | 16 s | 128 µA, 26 µA when idle | 2.1 mA | 2.04 mC |
+| Waiting for the game to load | 12 s | 4 µA | | 0.05 mC |
+| Soft reset and the Game Boy splash | 4.6 s | 261 µA | 0.8 mA | 1.20 mC |
+| Crystal running | 10 s | 28 µA when quiet, 41 µA overall | 1.6 mA | 0.42 mC |
+
+- The whole session cost about 5 mC, which is 0.0014 mAh.
+- The current is pulses. They repeat at 41.8 Hz while a game loads, at
+  59.7 Hz (once a frame) with Crystal running, and at about 21 Hz in an
+  idle file browser.
+- While a game loads the cell supplies less than it does with the console
+  off.
+- Power-off gives a spike of up to 2.5 mA that is over in well under a
+  second.
+
 ### What it means
 
-- The cell supplies the backup domain while the console is on, until it has
-  fallen to about 2.9 V. That fits a cell that weakens within weeks of play
-  and then lasts a long time.
+- Above about 3.0 V the cell supplies the backup domain while the console
+  is on, with pulses of milliamps in the file browser. Below about 2.9 V the
+  second feed carries it.
+- The charge involved is small. A boot and a game launch cost about 2.5 mC,
+  and Crystal running draws about 28 µA at 3.3 V. Two hours of that a day
+  adds about 2 µA to the daily average. The console-off draw of about
+  13 µA, all day, is the main drain.
+- A new cell falling quickly to about 3.0 V fits this: the first few tenths
+  of a volt hold little charge, and the pulses pull the cell down to the
+  crossover.
+- Not tested: a game that uses the save RAM as working memory, which could
+  draw at the file browser's active level the whole time it runs.
 - The SRAM swap lowers the standby current. It does not stop the cell
   supplying current while the console is on.
 - A larger drop on the cell side (a silicon diode in place of D4) would move
@@ -162,9 +214,10 @@ that day too, so the crossover is the same in both sets.
   file browser, on the help page and while scrolling.
 - Whether D4's left side reaches C11, C16 and the clock chip's supply pin.
 - What else connects to D2's left side.
-- The console-on sweep from 3.0 V up to 3.3 V.
+- Console-on captures at 3.1 V and 3.2 V.
 - The voltage at U4's supply in the menu and during a load.
-- In-game current, with and without a save.
+- A game that uses the save RAM as working memory, and a save in Crystal.
+- What sets the 41.8 Hz pulses during a load.
 - The same readings on a second cart.
 
 ## The power-on chain
@@ -245,5 +298,5 @@ several voltages.
 - Never run a firmware updater on a weak or missing cell.
 - The SRAM swap ([battery-sram-swap.md](battery-sram-swap.md)) keeps a cell
   healthy for years, which should also fix the stability if H1 holds. The
-  years assume the cell only supplies standby current, and the measurements
-  above show it also supplies current while the console is on.
+  cell also supplies current while the console is on, but the measurements
+  above put that well below the standby drain for a game like Crystal.

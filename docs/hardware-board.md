@@ -45,8 +45,8 @@ sits on the board unused.
 standby current than the SRAM or FRAM of an original cart, so a cell lasts
 one to eight months, not ten years. Swapping U4 for a pin-identical part
 with a true SRAM die fixes that ([battery-sram-swap.md](battery-sram-swap.md)).
-The cell also supplies current while the console is on, which the swap does
-not change ([power-design.md](power-design.md#backup-domain-measurements)).
+The cell also supplies some current while the console is on, which the swap
+does not change ([power-design.md](power-design.md#backup-domain-measurements)).
 
 ## The config flash
 
