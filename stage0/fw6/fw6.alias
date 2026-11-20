@@ -1,0 +1,7 @@
+# FW5 registers that FW6 has under another block or name: FW5's block.name, FW6's block.name
+picoblaze_ports.load_busy gb_bus.load_busy_2x   # one register in FW6
+mbc3_clock.wrote_s  mbc3_clock.tog_s            # pb_periph crosses the toggles where FW5 crossed the flags
+mbc3_clock.wrote_m  mbc3_clock.tog_m
+mbc3_clock.wrote_h  mbc3_clock.tog_h
+mbc3_clock.wrote_dl mbc3_clock.tog_dl
+mbc3_clock.wrote_dh mbc3_clock.tog_dh

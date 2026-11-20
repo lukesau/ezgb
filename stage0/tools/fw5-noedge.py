@@ -27,11 +27,20 @@ is FW5's addition on its own (docs in stage0/docs/firmware-diff.md).
 
 keeps the edge and makes only the other two edits (the shared constant 0,
 the unused carry inputs), so the block files apply to FW5 as it is: the
-design the ISE build is proven against."""
+design the ISE build is proven against.
+
+    fw5-noedge.py --keep-edge --other-build FW6/design.v OUT/design.v
+
+makes those two edits to a build with another placement (FW6): the shared
+constant 0 is then the first constant-0 LUT by name."""
 import re, sys
 keep = '--keep-edge' in sys.argv
 if keep:
     sys.argv.remove('--keep-edge')
+other = '--other-build' in sys.argv     # not FW5-0918's placement: the first constant-0 LUT is the shared one
+if other:
+    sys.argv.remove('--other-build')
+    assert keep, '--other-build makes only the --keep-edge edits'
 PREV, CUR = 'n_X11Y16_S3_YQ', 'n_X25Y15_IOI0_IQ1'
 EXPECT = {('i_X7Y25_S1', 'G'): 0x0000, ('i_X10Y16_S1', 'F'): 0x0FFF,
           ('i_X23Y25_S3', 'G'): 0xFF00, ('i_X23Y26_S3', 'G'): 0xFFAA}
@@ -89,8 +98,11 @@ for m in re.finditer(r"s3_slice #\(([^;]*?)\) (i_X\d+Y\d+_S\d) \(([^;]*?)\);", s
         if not ram and re.search(r'\.' + lut + r"\(16'h0000\)", P) and (mux is None or mux.group(1) == lut):
             o = re.search(r'\.' + out + r'\(([^()]*)\)', body).group(1)
             if o: zero.add(o)
+if other:
+    CANON = sorted(zero)[0]
+else:
+    assert CANON in {re.search(r'\.X\(([^()]*)\)', m.group(3)).group(1) for m in re.finditer(r"s3_slice #\(([^;]*?)\) (i_X24Y18_S3) \(([^;]*?)\);", sr)}
 zero.discard(CANON)
-assert CANON in {re.search(r'\.X\(([^()]*)\)', m.group(3)).group(1) for m in re.finditer(r"s3_slice #\(([^;]*?)\) (i_X24Y18_S3) \(([^;]*?)\);", sr)}
 OUTP = ('X', 'Y', 'XQ', 'YQ', 'XB', 'YB', 'COUT', 'F5', 'FX', 'SHIFTOUT', 'DIG', 'O')
 cnt = 0
 def sub(m):

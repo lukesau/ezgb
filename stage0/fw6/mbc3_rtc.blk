@@ -1,0 +1,386 @@
+# FW6's MBC3 clock: the one-second divider and the seconds, minutes, hours and day registers, on the falling edge of the PicoBlaze clock (FW6 only, fw5blk.py)
+[cells]
+X10Y22_S0.F
+X10Y22_S0.F5
+X10Y22_S0.FFX
+X10Y22_S0.G
+X10Y22_S1.F
+X10Y22_S1.FFX
+X10Y22_S1.G
+X10Y22_S2.F
+X10Y22_S2.G
+X10Y22_S3.F
+X10Y22_S3.FFX
+X10Y22_S3.G
+X11Y15_S2.F
+X11Y15_S2.F5
+X11Y15_S2.G
+X11Y21_S0.G
+X11Y21_S3.F
+X11Y21_S3.G
+X11Y24_S1.G
+X11Y24_S2.F
+X11Y27_S2.FFY
+X12Y22_S2.FFY
+X12Y23_S2.FFY
+X12Y23_S3.G
+X12Y25_S0.F
+X14Y21_S2.G
+X15Y13_S3.F
+X15Y13_S3.FFX
+X15Y14_S3.G
+X15Y25_S0.G
+X15Y25_S2.F
+X15Y25_S2.G
+X16Y22_S3.F
+X16Y22_S3.G
+X16Y23_S3.F
+X16Y23_S3.G
+X17Y20_S1.F
+X17Y24_S0.F
+X17Y24_S0.G
+X17Y25_S2.F
+X17Y25_S2.FFX
+X17Y25_S2.G
+X17Y26_S0.FFY
+X17Y26_S0.G
+X17Y26_S2.FFY
+X17Y27_S2.FFY
+X18Y24_S1.F
+X18Y24_S1.F5
+X18Y24_S1.FFX
+X18Y24_S1.G
+X18Y25_S0.F
+X18Y25_S0.G
+X18Y25_S1.F
+X18Y25_S1.G
+X18Y25_S2.F
+X18Y25_S2.FFX
+X18Y25_S2.FFY
+X18Y25_S2.G
+X18Y25_S3.F
+X18Y25_S3.FFX
+X18Y25_S3.G
+X18Y30_S1.FFY
+X1Y20_S2.FFY
+X23Y25_S1.F
+X24Y21_S3.CYF
+X24Y21_S3.CYG
+X24Y21_S3.F
+X24Y21_S3.FFX
+X24Y21_S3.FFY
+X24Y21_S3.G
+X24Y21_S3.XORF
+X24Y21_S3.XORG
+X24Y22_S1.CYF
+X24Y22_S1.CYG
+X24Y22_S1.F
+X24Y22_S1.FFX
+X24Y22_S1.FFY
+X24Y22_S1.G
+X24Y22_S1.XORF
+X24Y22_S1.XORG
+X24Y22_S3.CYF
+X24Y22_S3.CYG
+X24Y22_S3.F
+X24Y22_S3.FFX
+X24Y22_S3.FFY
+X24Y22_S3.G
+X24Y22_S3.XORF
+X24Y22_S3.XORG
+X24Y23_S1.CYF
+X24Y23_S1.CYG
+X24Y23_S1.F
+X24Y23_S1.FFX
+X24Y23_S1.FFY
+X24Y23_S1.G
+X24Y23_S1.XORF
+X24Y23_S1.XORG
+X24Y23_S2.CYF
+X24Y23_S2.CYG
+X24Y23_S2.F
+X24Y23_S2.G
+X24Y23_S3.CYF
+X24Y23_S3.CYG
+X24Y23_S3.F
+X24Y23_S3.FFX
+X24Y23_S3.FFY
+X24Y23_S3.G
+X24Y23_S3.XORF
+X24Y23_S3.XORG
+X24Y24_S0.CYF
+X24Y24_S0.CYG
+X24Y24_S0.F
+X24Y24_S0.G
+X24Y24_S1.CYF
+X24Y24_S1.CYG
+X24Y24_S1.F
+X24Y24_S1.FFX
+X24Y24_S1.FFY
+X24Y24_S1.G
+X24Y24_S1.XORF
+X24Y24_S1.XORG
+X24Y24_S2.CYF
+X24Y24_S2.CYG
+X24Y24_S2.F
+X24Y24_S2.G
+X24Y24_S3.CYF
+X24Y24_S3.CYG
+X24Y24_S3.F
+X24Y24_S3.FFX
+X24Y24_S3.FFY
+X24Y24_S3.G
+X24Y24_S3.XORF
+X24Y24_S3.XORG
+X24Y25_S0.CYF
+X24Y25_S0.CYG
+X24Y25_S0.F
+X24Y25_S0.G
+X24Y25_S1.CYF
+X24Y25_S1.CYG
+X24Y25_S1.F
+X24Y25_S1.FFX
+X24Y25_S1.FFY
+X24Y25_S1.G
+X24Y25_S1.XORF
+X24Y25_S1.XORG
+X24Y25_S2.CYF
+X24Y25_S2.CYG
+X24Y25_S2.F
+X24Y25_S2.G
+X24Y25_S3.CYF
+X24Y25_S3.CYG
+X24Y25_S3.F
+X24Y25_S3.FFX
+X24Y25_S3.FFY
+X24Y25_S3.G
+X24Y25_S3.XORF
+X24Y25_S3.XORG
+X24Y26_S0.CYF
+X24Y26_S0.CYG
+X24Y26_S0.F
+X24Y26_S0.G
+X24Y26_S1.CYF
+X24Y26_S1.CYG
+X24Y26_S1.F
+X24Y26_S1.FFX
+X24Y26_S1.FFY
+X24Y26_S1.G
+X24Y26_S1.XORF
+X24Y26_S1.XORG
+X24Y26_S2.CYF
+X24Y26_S2.CYG
+X24Y26_S2.F
+X24Y26_S2.G
+X24Y26_S3.CYF
+X24Y26_S3.CYG
+X24Y26_S3.F
+X24Y26_S3.FFX
+X24Y26_S3.FFY
+X24Y26_S3.G
+X24Y26_S3.XORF
+X24Y26_S3.XORG
+X24Y27_S0.CYF
+X24Y27_S0.F
+X24Y27_S1.CYF
+X24Y27_S1.CYG
+X24Y27_S1.F
+X24Y27_S1.FFX
+X24Y27_S1.FFY
+X24Y27_S1.G
+X24Y27_S1.XORF
+X24Y27_S1.XORG
+X24Y27_S3.CYF
+X24Y27_S3.F
+X24Y27_S3.FFX
+X24Y27_S3.FFY
+X24Y27_S3.G
+X24Y27_S3.XORF
+X24Y27_S3.XORG
+X2Y16_S2.F
+X2Y16_S2.FFX
+X2Y16_S2.G
+X2Y16_S3.F
+X2Y16_S3.FFX
+X2Y16_S3.G
+X2Y17_S2.F
+X2Y17_S2.F5
+X2Y17_S2.G
+X2Y19_S0.F
+X2Y19_S0.FFX
+X2Y19_S0.G
+X2Y19_S2.F
+X2Y19_S2.FFX
+X2Y19_S2.G
+X2Y20_S0.F
+X2Y20_S0.FFX
+X2Y20_S0.G
+X2Y20_S1.CYF
+X2Y20_S1.CYG
+X2Y20_S1.F
+X2Y20_S1.G
+X2Y20_S1.XORF
+X2Y20_S1.XORG
+X2Y20_S2.F
+X2Y20_S2.FFX
+X2Y20_S2.G
+X2Y20_S3.CYF
+X2Y20_S3.CYG
+X2Y20_S3.F
+X2Y20_S3.G
+X2Y20_S3.XORF
+X2Y20_S3.XORG
+X2Y21_S0.F
+X2Y21_S0.FFX
+X2Y21_S0.G
+X2Y21_S1.CYF
+X2Y21_S1.CYG
+X2Y21_S1.F
+X2Y21_S1.G
+X2Y21_S1.XORF
+X2Y21_S1.XORG
+X2Y21_S3.CYF
+X2Y21_S3.CYG
+X2Y21_S3.F
+X2Y21_S3.G
+X2Y21_S3.XORF
+X2Y21_S3.XORG
+X2Y22_S1.F
+X2Y22_S1.XORF
+X7Y17_S3.F
+X7Y17_S3.FFX
+X7Y17_S3.G
+X7Y19_S1.FFY
+X7Y20_S0.F
+X7Y20_S0.FFX
+X7Y20_S0.G
+X7Y20_S2.G
+X7Y24_S2.FFY
+X8Y17_S2.FFY
+X8Y19_S0.FFY
+X9Y14_S1.F
+X9Y14_S1.F5
+X9Y14_S1.FFX
+X9Y14_S1.G
+X9Y16_S2.F
+X9Y16_S2.FFX
+X9Y16_S2.G
+X9Y21_S0.F
+X9Y21_S0.FFX
+X9Y21_S0.G
+X9Y21_S1.F
+X9Y21_S1.FFX
+X9Y21_S1.G
+X9Y22_S0.F
+X9Y22_S0.F5
+X9Y22_S0.FFX
+X9Y22_S0.G
+X9Y22_S1.F
+X9Y22_S1.FFX
+X9Y22_S1.G
+X9Y22_S3.F
+X9Y22_S3.F5
+X9Y22_S3.FFX
+X9Y22_S3.G
+X9Y24_S1.F
+X9Y24_S1.FFX
+[names]
+n_X11Y18_S1_YQ             tog_s
+n_X17Y27_S2_YQ             tog_s_s1
+n_X17Y26_S2_YQ             tog_s_s2
+n_X8Y20_S3_YQ              tog_dh
+n_X8Y17_S2_YQ              tog_dh_s1
+n_X18Y30_S1_YQ             tog_dh_s2
+n_X9Y19_S2_YQ              tog_dl
+n_X8Y19_S0_YQ              tog_dl_s1
+n_X1Y20_S2_YQ              tog_dl_s2
+n_X9Y21_S2_YQ              tog_m
+n_X11Y27_S2_YQ             tog_m_s1
+n_X12Y22_S2_YQ             tog_m_s2
+n_X9Y21_S3_YQ              tog_h
+n_X12Y23_S2_YQ             tog_h_s1
+n_X7Y24_S2_YQ              tog_h_s2
+n_X17Y26_S0_YQ             sec[0]
+n_X18Y25_S2_XQ             sec[1]
+n_X18Y25_S2_YQ             sec[2]
+n_X17Y25_S2_XQ             sec[3]
+n_X18Y24_S1_XQ             sec[4]
+n_X18Y25_S3_XQ             sec[5]
+n_X10Y22_S1_XQ             min[0]
+n_X10Y22_S3_XQ             min[1]
+n_X10Y22_S0_XQ             min[2]
+n_X9Y22_S0_XQ              min[3]
+n_X9Y22_S3_XQ              min[4]
+n_X9Y22_S1_XQ              min[5]
+n_X9Y24_S1_XQ              hour[0]
+n_X9Y21_S1_XQ              hour[1]
+n_X9Y14_S1_XQ              hour[2]
+n_X9Y21_S0_XQ              hour[3]
+n_X9Y16_S2_XQ              hour[4]
+n_X2Y20_S2_XQ              day[0]
+n_X2Y19_S2_XQ              day[1]
+n_X2Y20_S0_XQ              day[2]
+n_X7Y20_S0_XQ              day[3]
+n_X2Y21_S0_XQ              day[4]
+n_X7Y17_S3_XQ              day[5]
+n_X2Y16_S2_XQ              day[6]
+n_X2Y16_S3_XQ              day[7]
+n_X2Y19_S0_XQ              day[8]
+n_X7Y19_S1_YQ              halt
+n_X15Y13_S3_XQ             day_carry
+n_X24Y21_S3_XQ             sub[0]
+n_X24Y21_S3_YQ             sub[1]
+n_X24Y22_S1_XQ             sub[2]
+n_X24Y22_S1_YQ             sub[3]
+n_X24Y22_S3_XQ             sub[4]
+n_X24Y22_S3_YQ             sub[5]
+n_X24Y23_S1_XQ             sub[6]
+n_X24Y23_S1_YQ             sub[7]
+n_X24Y23_S3_XQ             sub[8]
+n_X24Y23_S3_YQ             sub[9]
+n_X24Y24_S1_XQ             sub[10]
+n_X24Y24_S1_YQ             sub[11]
+n_X24Y24_S3_XQ             sub[12]
+n_X24Y24_S3_YQ             sub[13]
+n_X24Y25_S1_XQ             sub[14]
+n_X24Y25_S1_YQ             sub[15]
+n_X24Y25_S3_XQ             sub[16]
+n_X24Y25_S3_YQ             sub[17]
+n_X24Y26_S1_XQ             sub[18]
+n_X24Y26_S1_YQ             sub[19]
+n_X24Y26_S3_XQ             sub[20]
+n_X24Y26_S3_YQ             sub[21]
+n_X24Y27_S1_XQ             sub[22]
+n_X24Y27_S1_YQ             sub[23]
+n_X24Y27_S3_XQ             sub[24]
+n_X24Y27_S3_YQ             sub[25]
+n_X11Y24_S1_Y              gnd
+n_X10Y15_S1_YQ             mbc3_wr_h[4]
+n_X10Y15_S3_YQ             mbc3_wr_dh[7]
+n_X10Y20_S0_YQ             mbc3_wr_m[5]
+n_X10Y21_S1_XQ             mbc3_wr_m[1]
+n_X10Y21_S1_YQ             mbc3_wr_m[2]
+n_X10Y22_S2_YQ             mbc3_wr_m[0]
+n_X10Y24_S3_YQ             mbc3_wr_h[0]
+n_X11Y18_S0_XQ             mbc3_wr_s[3]
+n_X11Y18_S0_YQ             mbc3_wr_s[5]
+n_X11Y20_S0_YQ             mbc3_wr_s[0]
+n_X11Y20_S2_XQ             mbc3_wr_s[1]
+n_X11Y20_S2_YQ             mbc3_wr_s[2]
+n_X11Y20_S3_YQ             mbc3_wr_s[4]
+n_X13Y33c_BUFGMUX3_O       clk_pb
+n_X1Y17_S0_YQ              mbc3_wr_dl[7]
+n_X1Y21_S0_XQ              mbc3_wr_dl[2]
+n_X1Y21_S0_YQ              mbc3_wr_dl[4]
+n_X1Y23_S0_YQ              mbc3_wr_dl[1]
+n_X2Y17_S2_YQ              mbc3_wr_dl[6]
+n_X7Y17_S0_YQ              mbc3_wr_dh[6]
+n_X7Y19_S0_YQ              mbc3_wr_dl[5]
+n_X8Y20_S1_YQ              mbc3_wr_dl[3]
+n_X8Y20_S2_YQ              mbc3_wr_dl[0]
+n_X9Y15_S2_YQ              mbc3_wr_h[2]
+n_X9Y16_S1_XQ              mbc3_wr_h[3]
+n_X9Y16_S3_YQ              mbc3_wr_h[1]
+n_X9Y17_S1_YQ              mbc3_wr_dh[0]
+n_X9Y22_S2_XQ              mbc3_wr_m[3]
+n_X9Y22_S2_YQ              mbc3_wr_m[4]
