@@ -106,7 +106,7 @@ void Update (void)
 	char buf[20];
 
 	SetFpga7FD2Off();
-#if FW == 5
+#if FW >= 5
 	gotoxy(0, 9);
 	puts("Do not touch any key when updating!!!");
 	disable_interrupts();
@@ -114,7 +114,7 @@ void Update (void)
 	for (i = 0; i < 0x2480c; i += 0x100) {
 		U32ToAscii_B0(i * 100 / 0x2480c + 1, buf, 10);
 		CStrCat(buf, "%");
-#if FW == 5
+#if FW >= 5
 		gotoxy(0, 12);
 #else
 		gotoxy(0, 9);
@@ -128,7 +128,7 @@ void Update (void)
 		set_data(wBlock + 4, (UINT8 *)off, 0x110);
 		StageBlock(wBlock);
 		SetFpga7FC0(5);
-#if FW == 5
+#if FW >= 5
 		RunFlashPoll();
 #else
 		disable_interrupts();
@@ -137,7 +137,7 @@ void Update (void)
 #endif
 		SetFpga7FC0(0);
 	}
-#if FW == 5
+#if FW >= 5
 	enable_interrupts();
 #endif
 }

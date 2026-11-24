@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the firmware updater's program from source, identical to stock.
 
-    tools/link.py fw4|fw5-0918 [--label TEXT] [--payload SLOTB.bin [--payload SECOND.bin]] [-o OUT.gb]
+    tools/link.py fw4|fw5-0918|fw6 [--label TEXT] [--payload SLOTB.bin [--payload SECOND.bin]] [-o OUT.gb]
 
 The updater is a 32 KB program (banks 0 and 1) followed by the bitstream
 it writes. This builds the program: build/<fw>/updater-code.gb. With
@@ -46,7 +46,8 @@ SDCC = Path(os.environ.get("SDCC29", REPO / "tools" / "sdcc-2.9.0")) / "bin"
 # per firmware: -DFW, the stock label, how much longer Update() is than
 # FW4's (everything after it in bank 0 moves up)
 FWS = {"fw4": ("4", "Update to ver:4 ", 0x00),
-       "fw5-0918": ("5", "Update to ver:5 ", 0x38)}
+       "fw5-0918": ("5", "Update to ver:5 ", 0x38),
+       "fw6": ("6", "Update to ver:6 ", 0x38)}        # FW5's program with the other label
 PAYLOAD = 149516
 
 KCFLAGS = ["--opt-code-size", "-DBYTE_IS_UNSIGNED=1", f"-I{KERNEL / 'gbdk' / 'include'}"]

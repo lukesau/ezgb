@@ -1,0 +1,4 @@
+-t 2
+# the placer's cost table: FW6's default placement leaves three PicoBlaze-to-
+# register-file hold paths 0.2-0.6 ns short (the two gated clocks come from
+# buffers on different sides); tables 2, 4 and 5 meet every constraint

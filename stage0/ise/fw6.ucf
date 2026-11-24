@@ -1,0 +1,43 @@
+# FW6 constraints written by hand, appended to the generated top.ucf.
+# The IOBs and the configuration options are FW4's bit for bit.
+
+# Every pad is LVCMOS33, 4 mA, slow. LVTTL at 4 or 6 mA sets the same bits;
+# found by building each standard and drive and comparing the IOB bits.
+NET "P*" IOSTANDARD = LVCMOS33 | DRIVE = 4 | SLEW = SLOW;
+
+# pull-ups: the SD card lines and the clock chip's I2C
+NET "P25" PULLUP;
+NET "P28" PULLUP;
+NET "P29" PULLUP;
+NET "P30" PULLUP;
+NET "P31" PULLUP;
+NET "P32" PULLUP;
+NET "P34" PULLUP;
+
+# the 24.545 MHz oscillator; the DCM's clocks follow from it
+NET "P43" TNM_NET = "osc";
+TIMESPEC "TS_osc" = PERIOD "osc" 40.74 ns HIGH 50%;
+
+# The Game Boy's write clock, /WR (P84). Asynchronous to the oscillator:
+# crossings into and out of it go through synchronizers, so it gets its own
+# unrelated period. 400 ns is under half a double-speed CGB cycle.
+NET "P84" TNM_NET = "gb_wr";
+TIMESPEC "TS_gb_wr" = PERIOD "gb_wr" 400 ns HIGH 50%;
+
+# the clock chip's I2C lines drive at 2 mA (their bits match LVCMOS33 2 mA)
+NET "P31" DRIVE = 2;
+NET "P32" DRIVE = 2;
+
+# The memory page (psram_ctrl page_d, then page_q) samples the loader's
+# address and busy flag, on the 2x clock, on every fx clock, and acts on a
+# value only once two samples agree (page_d == page_q): the crossing is
+# built to absorb a late bit, so the 2x-to-fx paths into both registers
+# (page_q through its load enable) are not timed.
+INST "u_logic/u_psram_ctrl/page_d_*" TNM = "psram_page";
+INST "u_logic/u_psram_ctrl/page_q_*" TNM = "psram_page";
+TIMESPEC "TS_page_cdc" = FROM "n_X13Y1_DCM_CLK2X" TO "psram_page" TIG;
+
+# The fx clock's gate (clock buffer X25Y17 [0]) switches on the loader's busy
+# flag from the 2x clock. A BUFGMUX changes inputs without a glitch whenever
+# its select changes, so the path into the select is not timed.
+PIN "i_X25Y17c_BUFGMUX0/b.S" TIG;

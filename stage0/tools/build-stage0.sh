@@ -2,7 +2,7 @@
 # Build stage0 from the readable Verilog with stage1 in it, prove it, and
 # wrap it in an updater: one step.
 #
-#   BUILD_HOST=<host> stage0/tools/build-stage0.sh fw4|fw5-0918 [LABEL OUT.gb]
+#   BUILD_HOST=<host> stage0/tools/build-stage0.sh fw4|fw5-0918|fw6 [LABEL OUT.gb]
 #
 # STAGE1=ours (default) or stock picks stage1 as build-stage1-updater.sh
 # does; PATCHES=0 leaves the PicoBlaze programs stock. Steps:
@@ -22,18 +22,26 @@
 # without the official updater.
 # Work in fpga/ise/<fw>-<stage1>[-nopatch]/ (ignored).
 set -e
-fw=${1:?usage: build-stage0.sh fw4|fw5-0918 [LABEL OUT.gb]}; label=$2; out=$3
+fw=${1:?usage: build-stage0.sh fw4|fw5-0918|fw6 [LABEL OUT.gb]}; label=$2; out=$3
 host=${BUILD_HOST:?set BUILD_HOST to the build host}
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 stage1=${STAGE1:-ours}; patches=${PATCHES:-1}; prove=${PROVE:-1}
 case $fw in
 fw4)      stock_updater=$repo/tools/ezflashjr/official/2020-03-10_FW4_K1.04e/Update_FW4.gb
-          layout=; decomp=fw4; blocks=
+          layout=; decomp=fw4; blocks=; bank2_psm=fw4/picoblaze/X3Y25.psm; bank2_def=
           bank2=D0X3Y25; bank1=D0X3Y29; bank1_psm=fw4/picoblaze/X3Y29.psm; bank1_patch= ;;
 fw5-0918) stock_updater=$repo/tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Update_FW5_2021-9-18.gb
           layout="--layout fw5-0918"; decomp=fw5
-          blocks="--blocks $repo/fpga/fw5-nx/edge/blk"
+          blocks="--blocks $repo/fpga/fw5-nx/edge/blk"; bank2_psm=fw4/picoblaze/X3Y25.psm; bank2_def=
           bank2=D0X3Y5; bank1=D0X3Y1; bank1_psm=fw5-0918/picoblaze/bank1.psm
+          bank1_patch=$repo/stage0/sd-recover-fw5-0918.psm
+          bank1_allow="--allow 12B --allow 19F --allow 1A0 --allow 1A5 --allow 224 --allow 23A --allow 326 --allow 370 --allow 377" ;;
+# FW6: stage1 is FW5-0918's stored as bytes, bank 2 has its own listing
+# (one instruction fewer), and the read patch's two routines sit a word lower
+fw6)      stock_updater=$repo/tools/ezflashjr/official/2026-11-24_FW6_K1.06e/Update_FW6_20261124.gb
+          layout="--layout fw6"; decomp=fw5; blocks=
+          bank2=D0X19Y25; bank2_psm=fw6/picoblaze/bank2.psm; bank2_def="--define TBL_READ=226 --define FLASH_UPDATE=22E"
+          bank1=D0X19Y29; bank1_psm=fw6/picoblaze/bank1.psm
           bank1_patch=$repo/stage0/sd-recover-fw5-0918.psm
           bank1_allow="--allow 12B --allow 19F --allow 1A0 --allow 1A5 --allow 224 --allow 23A --allow 326 --allow 370 --allow 377" ;;
 *)        echo "unknown firmware: $fw" >&2; exit 2 ;;
@@ -42,7 +50,7 @@ db=${S3DB:-$repo/fpga/db/spartan3.zstd}
 export S3DB=$db
 
 if [ "$prove" != 0 ]; then
-    [ -f "$stock_updater" ] || { echo "no official updater ($stock_updater): PROVE=0 builds without the proof" >&2; exit 1; }
+    [ -f "$repo/fpga/$fw/design.v" ] || [ -f "$stock_updater" ] || { echo "no stock export (fpga/$fw) or official updater ($stock_updater): PROVE=0 builds without the proof" >&2; exit 1; }
     [ -z "$blocks" ] || [ -f "$repo/fpga/fw5-nx/edge/blk/picoblaze.blk" ] || { echo "run stage0/tools/fw5-prove.sh first (fpga/fw5-nx)" >&2; exit 1; }
 fi
 
@@ -58,15 +66,15 @@ esac
 cp "$s1" "$w/stage1.gb"
 "$repo/stage1/tools/stage1-to-bram.py" "$w/stage1.gb" "$w/blobs" $layout > /dev/null
 # the PicoBlaze's programs from their listings; bank 2 (the flash, the
-# license check, the hand-over) is the same program in every firmware
+# license check, the hand-over) is the same program on FW4 and FW5
 mkdir -p "$w/pb"
 pbdis=$repo/stage0/tools/picoblaze-dis.py
-python3 "$pbdis" --assemble "$repo/stage0/fw4/picoblaze/X3Y25.psm" "$w/pb/$bank2.BEL.BRAM"
+python3 "$pbdis" --assemble "$repo/stage0/$bank2_psm" "$w/pb/$bank2.BEL.BRAM"
 python3 "$pbdis" --assemble "$repo/stage0/$bank1_psm" "$w/pb/$bank1.BEL.BRAM"
 patched=
 if [ "$patches" != 0 ]; then
     "$repo/stage0/tools/picoblaze-patch.py" "$w/pb/$bank2.BEL.BRAM" \
-        "$repo/stage0/flash-read.psm" "$w/blobs" --tile $bank2 --allow 1B7 > /dev/null
+        "$repo/stage0/flash-read.psm" "$w/blobs" --tile $bank2 --allow 1B7 $bank2_def > /dev/null
     patched=$bank2
     if [ -n "$bank1_patch" ]; then
         "$repo/stage0/tools/picoblaze-patch.py" "$w/pb/$bank1.BEL.BRAM" \

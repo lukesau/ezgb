@@ -10,7 +10,9 @@ module of its own in FW6DIR (stage0/fw6/<block>.v) is wired by port name
 instead: to its registers (FW6DIR/fw6.names), to what FW5's instance of
 that block had on the port, to another FW6 register of that name, or to
 what any FW5 instance had on a port of that name. FW6DIR/fw6.alias names
-FW5 registers that FW6 has under another block or name.
+FW5 registers that FW6 has under another block or name, and
+FW6DIR/fw6.ports the nets FW5 has nothing for: a block RAM output a block
+reads, a net to a primitive that a block's output drives, a constant 0.
 
 A net between blocks that is no register takes its driver's name,
 <block>_<port>. FW6RAMS is a block file of FW6's PicoBlaze with the LUT
@@ -128,6 +130,19 @@ if os.path.exists(f6):
         if l:
             alias[reg5[tuple(l[0].split('.', 1))]] = byname[tuple(l[1].split('.', 1))]
 
+# nets of FW6 that no FW5 net stands for: FW6DIR/fw6.ports gives a block's
+# port bit its net (an input's source, or the net to a primitive that an
+# output drives), or 0 for a net to a primitive that is the constant 0
+portmap, zeros = {}, []
+f6 = os.path.join(fw6dir, 'fw6.ports')
+if os.path.exists(f6):
+    for l in open(f6):
+        l = l.split('#')[0].split()
+        if len(l) == 2 and l[1] == '0':
+            zeros.append(l[0])
+        elif len(l) == 2:
+            portmap[tuple(l[1].split('.', 1))] = l[0]
+
 # ---- module ports
 def ports_of(path):
     text = re.sub(r'//[^\n]*', '', open(path).read())
@@ -217,7 +232,7 @@ for blk in order + [m for m in mods6 if m not in order]:
         bl = []
         for k in keys:
             nm = p if k[1] is None else f'{p}[{k[1]}]'
-            e = byname.get((blk, nm)) or b5.get(k) or (newreg.get(k) if d == 'input' else None)
+            e = byname.get((blk, nm)) or portmap.get((blk, nm)) or b5.get(k) or (newreg.get(k) if d == 'input' else None)
             if e is not None and e.startswith("1'b") and d == 'input' and not glob.get(k, e).startswith("1'b"):
                 e = None        # FW5's block took the bit through a decode
             if e is None and d == 'input' and k in glob:
@@ -251,6 +266,8 @@ for nb, (na, inv) in drv.items():
         s = 'w5_' + na if not (p and STATE(A.d.cells[p])) else netmap[na][0]
         assigns[nb] = ('~' if inv else '') + s
         used.add(s)
+for n in zeros:
+    assigns[n] = "1'b0"
 undriven = [n for n in ext_out if n not in assigns and n not in used]
 print(f'{len(lines)} instances, {len(flat)} registers named, {len(assigns)} outputs assigned, {len(undriven)} outputs with no source')
 for n in undriven[:40]:

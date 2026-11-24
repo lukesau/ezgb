@@ -124,6 +124,23 @@ result is exactly stock's slot B. It passes for FW4 and FW5-0918
 It runs `host-check.sh` first, which stops only when the build host's CPU
 is fully busy.
 
+FW6 builds the same way, and on this machine alone when the bitstream
+tools are built here (`stage0/tools/s3decode`) with the database in
+`fpga/db` and FW6's stock slot B image in `fpga/cart/fw6.bin`:
+
+```bash
+BUILD_HOST=local stage0/tools/build-stage1-updater.sh fw6 "FW6 MOD 0.1" out-fw6.gb
+STAGE1=stock PATCHES=0 BUILD_HOST=local stage0/tools/build-stage1-updater.sh fw6    # the check: exactly stock's slot B
+```
+
+The check passes for FW6 as released (2026-11-24). FW6's stock stage1 is
+FW5-0918's, stored as bytes (`stage1-to-bram.py --layout fw6`),
+its updater program is built from source ([stage0/updater](../updater/README.md)),
+and the two PicoBlaze patches are FW5-0918's: bank 1 as it is, bank 2
+with the two routines the read patch calls a word lower
+([fw6.md](fw6.md#the-picoblazes-programs)). No FW6 updater built here has
+been run on a cart.
+
 It expects, on the build host, `~/fpga/cart/fw4-updater.bin` and
 `~/fpga/cart/fw5/0918.bin` (the stock slot B images), and locally
 `fpga/fw4-decode/bram` and `fpga/fw5-decode/bram-0918` (their decoded

@@ -3,7 +3,7 @@
 //
 //   A5-A9  the game's writes to the MBC3 clock registers $08-$0C (seconds,
 //          minutes, hours, DL, DH), registers in the Game Boy write domain
-//          the kernel can also write at $A010-$A014
+//          the kernel can also write at $A018-$A01C
 //   BB     $7FD3 + $7FD4
 //   B5     eight command bits (FW4 five, bits 7:3), on the PicoBlaze clock:
 //          FW4's five, then the game's seconds, minutes and hours writes

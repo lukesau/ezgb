@@ -1,11 +1,13 @@
 // FW6's PicoBlaze: FW4's (stage0/fw4/rtl/picoblaze.v, below, which FW5
-// also uses) with one term of the carry flag different. On TEST, FW4 and
-// FW5 load the carry with the result's parity. FW6 sets it on odd parity
-// and otherwise takes what an arithmetic instruction would, arith_carry.
-// That register is cleared every cycle the instruction is not
-// arithmetic, so on TEST it holds 0 and the carry comes out the same: no
-// program can tell the two apart. The select LUT of the carry chain is
-// 16'hFF7F here and 16'hFF3F in FW4 and FW5.
+// also uses) with one term of the carry flag different. In FW4 and FW5 an
+// arithmetic instruction loads the carry with arith_carry. FW6 sets the
+// carry when arith_carry is set, and otherwise goes on to the terms
+// below it: for ADD, ADDCY, SUB and SUBCY that is 0, the same result, but
+// for COMPARE it is shift_carry, bit 7 of the first operand (bit 0 if
+// bit 3 of the instruction is set). So COMPARE sets the carry when the
+// first operand is below the second, as it should, and also when that
+// operand bit is 1. The select LUT of the carry chain reads arith_carry
+// (16'hF7FF over ir[16], arith_carry, ir[17]); FW4's does not.
 //
 // Proven in the whole-design proof (stage0/tools/fw6-prove.sh); the
 // block the description below names is FW4's.
@@ -119,8 +121,8 @@ module picoblaze (
 
     // ---- flags
     wire parity = ^logical;
-    wire carry_next = (ir[16] & !ir[15] & ir[13] & parity) ? 1'b1  // TEST with odd parity
-                    : (ir[16] & !ir[17])          ? arith_carry
+    wire carry_next = (ir[16] & !ir[15] & ir[13])       ? parity   // TEST
+                    : (ir[16] & !ir[17] & arith_carry) ? 1'b1
                     : !ir[15]                     ? shift_carry
                     : ir[17]                      ? saved_carry    // RETURNI
                     :                               1'b0;          // AND OR XOR

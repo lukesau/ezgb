@@ -1,14 +1,14 @@
 # The firmware updater from source
 
-EZ Flash's updaters (`Update_FW4.gb`, `Update_FW5_2021-9-18.gb`) are a
+EZ Flash's updaters (`Update_FW4.gb`, `Update_FW5_2021-9-18.gb`, `Update_FW6_20261124.gb`) are a
 32 KB Game Boy program followed by the bitstream it writes to the config
 flash ([../docs/updater.md](../docs/updater.md)). This is that program in
-C, for both firmwares from one source. `make` builds it identical to stock:
+C, for all three firmwares from one source. `make` builds it identical to stock:
 with the stock bitstreams after it, the result is the official file.
 
 ```bash
 stage1/decomp/tools/build-sdcc29.sh     # once: SDCC 2.9.0 into tools/sdcc-2.9.0
-make -C stage0/updater                  # build/fw4/updater-code.gb, build/fw5-0918/updater-code.gb
+make -C stage0/updater                  # build/<fw4|fw5-0918|fw6>/updater-code.gb
 make -C stage0/updater match            # per function, against the official updaters
 stage0/updater/tools/link.py fw4 --label "My build" --payload slotB.bin -o Update.gb
 ```
@@ -54,6 +54,11 @@ One source, `#if FW == 5`:
 
 That makes `Update` `$38` bytes longer, and everything after it in bank 0
 `$38` higher. Bank 1 is the same.
+
+FW6's program (`-DFW=6`) is FW5's with `ver:6` on the version line: two
+bytes differ, the digit and the checksum. With FW6's bitstream after it,
+the build is `Update_FW6_20261124.gb` byte for byte (the test build of
+11-17 had the same program).
 
 The FW5 file carries a second bitstream after the first. The program's
 loop stops at 149,516 bytes, so it is never written; `link.py` leaves it

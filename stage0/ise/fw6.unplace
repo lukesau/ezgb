@@ -1,0 +1,9 @@
+# Flip-flops mkise.py --place leaves for ISE to place: XST gives each a
+# set/reset that differs from its stock slice-mate's, so the two can't share
+# a slice as they do in the bitstream.
+u_logic/u_picoblaze/output_store
+u_logic/u_picoblaze/reg_write
+u_logic/u_picoblaze/port_id_5
+u_logic/u_picoblaze_ports/reset_s1
+u_logic/u_picoblaze_ports/rd_q
+u_logic/u_picoblaze/carry

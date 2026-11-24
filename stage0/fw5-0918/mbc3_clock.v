@@ -6,7 +6,7 @@
 //     enabled, the bank register all ones and rtc_sel $08-$0C. Bits the
 //     MBC3 doesn't have read back as 0 (seconds and minutes keep 6 bits,
 //     hours 5, DH bits 0, 6 and 7). The kernel writes all eight bits at
-//     $A010-$A014 in its register window. The PicoBlaze reads them at
+//     $A018-$A01C in its register window. The PicoBlaze reads them at
 //     INPUT A5-A9
 //   - wrote_*: set by the game's write to that clock register, cleared
 //     by any write to $6000-$7FFF; a seconds write also clears wrote_dh.
@@ -67,7 +67,7 @@ module mbc3_clock (
     wire clk_wr = mbc3_rd & clk_win;
     wire [4:0] sel = {rtc_sel[2:0] == 3'd4, rtc_sel[2:0] == 3'd3, rtc_sel[2:0] == 3'd2,
                       rtc_sel[2:0] == 3'd1, rtc_sel[2:0] == 3'd0};
-    // the kernel's, at $A010-$A014
+    // the kernel's, at $A018-$A01C
     wire k_wr = rtc_set_wr & a4;
     wire [4:0] k_sel = {a == 3'd4, a == 3'd3, a == 3'd2, a == 3'd1, a == 3'd0};
     wire [7:0] kd = kernel_mode ? 8'hff : 8'h00;  // the bits only the kernel writes

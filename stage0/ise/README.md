@@ -46,6 +46,20 @@ anything of EZ Flash's, and `PROVE=0` skips it.
    `UPDATER=stock` swaps the payload inside the official updater instead
    (`make-updater.py`).
 
+FW6 ([../fw6](../fw6/README.md)) builds the same way:
+
+```bash
+make stage0-fw6 BUILD_HOST=<build host>   # Update-fw6-ise.gb, labeled FW6 MOD 0.1
+```
+
+Its top is `stage0/fw6/fw6_top.v`, its 2,378 flip-flops sit in FW6's stock
+cells (two are left to ISE, as on FW5), and the proof is against the export
+in `fpga/fw6`, with the invariants `fw6-prove.sh` proves. The two
+PicoBlaze programs are assembled from `stage0/fw6/picoblaze/`: bank 1 is
+FW5's with three words changed, bank 2 FW5's less one instruction. Its constraints and map options are FW5-0918's, and timing is
+met with them. The FW6 mod has a version of its own,
+`stage1/VERSION.fw6`.
+
 ## What it takes
 
 **Register placement.** Without it the design does not fit: stock FW4
@@ -166,8 +180,8 @@ source: 1.04e on FW4, 1.05e-0918 on FW5.
 | File | What |
 |---|---|
 | `s3prims_ise.v` | the primitives over UNISIM, for XST |
-| `fw4.ucf`, `fw5-0918.ucf` | the hand-written constraints |
-| `fw4.place`, `fw5-0918.place` | each flip-flop's and LUT RAM's stock cell (`mkise.py --derive-place`) |
-| `fw4.unplace`, `fw5-0918.unplace` | flip-flops left to ISE |
-| `fw5-0918.map` | map options FW5 needs (the placer cost table) |
+| `fw4.ucf`, `fw5-0918.ucf`, `fw6.ucf` | the hand-written constraints |
+| `fw4.place`, `fw5-0918.place`, `fw6.place` | each flip-flop's and LUT RAM's stock cell (`mkise.py --derive-place`) |
+| `fw4.unplace`, `fw5-0918.unplace`, `fw6.unplace` | flip-flops left to ISE |
+| `fw5-0918.map`, `fw6.map` | map options FW5 and FW6 need (the placer cost table) |
 | `xc3s200a-slices.txt` | every slice site per CLB tile (`xdl -report`), for the placement |

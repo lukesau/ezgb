@@ -25,7 +25,7 @@ import sys
 PAYLOAD = 0x8000
 LENGTH = 149516
 LABEL_AT = 0x11D2
-STOCK_LABELS = (b"Update to ver:4 ", b"Update to ver:5 ")
+STOCK_LABELS = (b"Update to ver:4 ", b"Update to ver:5 ", b"Update to ver:6 ")
 
 
 def main():

@@ -3,6 +3,8 @@
 
 Inverse of stage1-from-bram.py. $0000-$3FFF become eight 16K x 1 bit
 planes, $4000-$47FF the x9 byte BRAM; $4800-$7FFF must be zero (not stored).
+FW6 stores bytes instead: nine x9 BRAMs of 2 KB each, in address order,
+with $FF after the image's last byte, as its stock stage1 has.
 
     stage1-to-bram.py stage1.gb OUT_DIR [--layout fw4]
 
@@ -21,22 +23,35 @@ LAYOUTS = {
     "fw5-0918": (["D0X19Y29", "D0X19Y5", "D0X3Y25", "D0X19Y9",
                   "D0X3Y29", "D0X19Y25", "D0X3Y21", "D0X3Y9"], "D0X3Y17"),
 }
+# FW6 (Update_FW6_20261124.gb): $0000-$47FF as bytes, 2 KB to a BRAM
+BYTES = {
+    "fw6": ["D0X3Y17", "D0X3Y1", "D0X3Y25", "D0X3Y9", "D0X3Y21",
+            "D0X3Y13", "D0X3Y29", "D0X3Y5", "D0X19Y17"],
+}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("stage1", type=pathlib.Path)
     ap.add_argument("out", type=pathlib.Path)
-    ap.add_argument("--layout", default="fw4", choices=sorted(LAYOUTS))
+    ap.add_argument("--layout", default="fw4", choices=sorted(list(LAYOUTS) + list(BYTES)))
     args = ap.parse_args()
     img = args.stage1.read_bytes()
     if len(img) != 0x8000:
         sys.exit("stage1 must be 32 KB")
     if any(img[0x4800:]):
         sys.exit("$4800-$7FFF must be zero: that range is not stored in BRAM")
-    planes, byte_bram = LAYOUTS[args.layout]
     args.out.mkdir(parents=True, exist_ok=True)
     sets = []
+    if args.layout in BYTES:
+        end = max((a for a in range(0x4800) if img[a]), default=-1) + 1
+        data = img[:end] + b"\xff" * (0x4800 - end)
+        for k, tile in enumerate(BYTES[args.layout]):
+            (args.out / f"{tile}.DATA.bin").write_bytes(data[k * 0x800:(k + 1) * 0x800])
+            sets.append(f"--set {tile}.BEL:BRAM:DATA={args.out / f'{tile}.DATA.bin'}")
+        print(" ".join(sets))
+        return
+    planes, byte_bram = LAYOUTS[args.layout]
     for bit, tile in enumerate(planes):
         out = bytearray(2048)
         for a in range(0x4000):

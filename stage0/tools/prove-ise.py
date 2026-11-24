@@ -46,13 +46,14 @@ fwf = args.proj / "fw"
 if fwf.exists():
     args.fw = fwf.read_text().strip()
 FW = {"fw4": ("stage0/fw4/rtl/fw4_top.v", ["stage0/fw4/rtl"], "stage0/fw4/blocks"),
-      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk")}
+      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk"),
+      "fw6": ("stage0/fw6/fw6_top.v", ["stage0/fw6", "stage0/fw5-0918", "stage0/fw4/rtl"], "stage0/fw6")}
 top_rel, rtl_dirs, blk_dir = FW[args.fw]
 blk_dir = args.blocks or repo / blk_dir
 top_src = (repo / top_rel).read_text()
 # inputs the stitched top ties to a constant and leaves unconnected (fw5-top.sh's TIES)
 ties = {}
-if args.fw == "fw5-0918":
+if args.fw in ("fw5-0918", "fw6"):
     m = re.search(r'TIES="([^"]*)"', (repo / "stage0" / "tools" / "fw5-top.sh").read_text())
     for t in (m[1].split() if m else []):
         mod, pv = t.split(":")
@@ -93,7 +94,10 @@ for name, cell in stock_cell.items():
 
 # LUT RAM: stock names from the picoblaze block file, ISE names from the XDL
 stock_ram = {}
-for l in open(blk_dir / "picoblaze.blk"):
+ram_blk = blk_dir / "picoblaze.blk"
+if not ram_blk.exists():
+    ram_blk = blk_dir / f"{args.fw}_logic.blk"       # FW6: one block file for the whole design
+for l in open(ram_blk):
     m = re.match(r"(X\d+Y\d+_S\d_[FG])\.m\s+(\S+)", l)
     if m:
         stock_ram[m[2]] = m[1]

@@ -22,6 +22,7 @@ mode the console is in.
 |---|---|---|
 | [fw4/](fw4/) | FW4 | disassembled and annotated; rebuilds exactly |
 | [fw5-0918/](fw5-0918/) | FW5, the 0918 update | FW4's names and notes, ported; rebuilds exactly |
+| | FW6 | the same bytes as FW5-0918's, stored as bytes in nine block RAMs with `$FF` after the last (`stage1-to-bram.py --layout fw6`) |
 
 Each holds `kernel.sym` (names and data ranges) and the generated
 `disassembly/`, and `notes.json`. The binary, `kernel.gb`, is

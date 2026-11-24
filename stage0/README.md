@@ -25,7 +25,7 @@ Slots A and B are both stage0: two configurations of the same chip.
 | `fw4/`, `fw5-0918/` | one folder per firmware: its decoded bitstream (`decode.txt`), pin and register maps (`pins.txt`, `regs.txt`, `regmap.txt`), and the PicoBlaze's programs disassembled (`picoblaze/`) |
 | `fw4/rtl/`, `fw4/blocks/` | the readable Verilog of FW4 and the block files that tie it to the bitstream |
 | `fw5-0918/` | the modules and block files where FW5-0918 differs from FW4 |
-| `fw6/` | the modules where FW6, a test build, differs from FW5-0918, its stitched top and the names its whole-design proof matches by ([README](fw6/README.md)) |
+| `fw6/` | the modules where FW6 differs from FW5-0918, its stitched top and the names its whole-design proof matches by ([README](fw6/README.md)) |
 | `updater/` | the firmware updater's program in C, FW4's and FW5-0918's, identical to stock ([README](updater/README.md)) |
 | `flash-read.psm`, `sd-recover-fw5-0918.psm` | our patches to the PicoBlaze's programs |
 | `sim/` | the whole design as simulatable Verilog, with models of the flash, the SD card and the Game Boy bus |

@@ -224,7 +224,7 @@ void main (void)
 			break;
 	}
 	Update();
-#if FW == 5
+#if FW >= 5
 	gotoxy(0, 14);
 #else
 	gotoxy(0, 11);

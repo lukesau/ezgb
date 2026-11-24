@@ -28,7 +28,10 @@ python3 "$repo/stage1/tools/mkwordmark.py" "$here/art/ezflash.txt" "$here/art/jr
 
 # stage1/VERSION: line 1 the firmware number (what the version register
 # reads), line 2 the mod version; shown as FW5-MOD 2.1
-fw=$(sed -n 1p "$here/VERSION"); mod=$(sed -n 2p "$here/VERSION")
+# VERSION_FILE picks another file of the same two lines (stage1/VERSION.fw6:
+# the FW6 mod counts its versions on its own)
+vf=${VERSION_FILE:-$here/VERSION}
+fw=$(sed -n 1p "$vf"); mod=$(sed -n 2p "$vf")
 # STAGE1_CFLAGS=-DFORCE_DMG: test build for acting as a DMG on a color console.
 # No CGB flag, so the boot ROM picks compatibility mode, and a DMG's registers
 # in the record (docs/skip-boot-rom.md)

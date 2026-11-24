@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Write an ISE project for the readable design: Verilog, UCF, XST script.
 
-    stage0/tools/mkise.py OUTDIR --bram DIR [--bram DIR ...] [--fw fw4|fw5-0918]
+    stage0/tools/mkise.py OUTDIR --bram DIR [--bram DIR ...] [--fw fw4|fw5-0918|fw6]
 
 The design is the firmware's stitched top (fw4: stage0/fw4/rtl/fw4_top.v;
-fw5-0918: stage0/fw5-0918/fw5_top.v), the primitives as the bitstream has
+fw5-0918: stage0/fw5-0918/fw5_top.v; fw6: stage0/fw6/fw6_top.v), the primitives as the bitstream has
 them over the readable <prefix>_logic, and the blocks its header lists,
 each from the first module directory that has it (FW5: stage0/fw5-0918,
 then FW4's). The top is copied to OUTDIR/top.v with the unused DCMs and
@@ -49,7 +49,9 @@ ap.add_argument("--blocks", type=pathlib.Path, help="the block files, for --deri
 args = ap.parse_args()
 
 FW = {"fw4": ("stage0/fw4/rtl/fw4_top.v", ["stage0/fw4/rtl"], "stage0/fw4/blocks"),
-      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk")}
+      "fw5-0918": ("stage0/fw5-0918/fw5_top.v", ["stage0/fw5-0918", "stage0/fw4/rtl"], "fpga/fw5-nx/edge/blk"),
+      # FW6 has one block file for the whole design, each register named u_<block>__<name>
+      "fw6": ("stage0/fw6/fw6_top.v", ["stage0/fw6", "stage0/fw5-0918", "stage0/fw4/rtl"], "stage0/fw6")}
 top_rel, rtl_dirs, blk_dir = FW[args.fw]
 top_v = repo / top_rel
 rtl_dirs = [repo / d for d in rtl_dirs]
@@ -175,9 +177,15 @@ if args.derive_place:
     sys.path.insert(0, str(repo / "stage0" / "tools"))
     import carve
     d = carve.Design(str(args.derive_place))
+    whole = blk_dir / f"{top_name[:-4]}_logic.blk"      # FW6: one block file
+    if whole.exists():
+        _, _, wcells, wnames = carve.read_block(str(whole), d)
     for name in block_names:
-        blk = blk_dir / f"{name}.blk"
-        name, _, cells, names = carve.read_block(str(blk), d)
+        if whole.exists():
+            cells = wcells
+            names = {n: v[len(f"u_{name}__"):] for n, v in wnames.items() if v.startswith(f"u_{name}__")}
+        else:
+            name, _, cells, names = carve.read_block(str(blk_dir / f"{name}.blk"), d)
         cells = set(cells)
         # a block file may name an output port where the register behind it
         # is "assign port = reg": place the register
@@ -199,7 +207,7 @@ if args.derive_place:
     # (X7Y26_S0_G.m regs0.sx); a RAM64X1S takes two slices and is placed by
     # its lower one
     rams = {}
-    for l in open(blk_dir / "picoblaze.blk"):
+    for l in open(whole if whole.exists() else blk_dir / "picoblaze.blk"):
         m = re.match(r"X(\d+)Y(\d+)_S(\d)_[FG]\.m\s+(\w+)\.", l)
         if m:
             x, y, k = int(m[1]), int(m[2]), int(m[3])

@@ -6,7 +6,10 @@ assembler; CONSTANTs and labels allowed). Only the words it assembles are
 changed. A patched word that was not zero (unused) in the original must be
 listed with --allow, so a patch can't overwrite live code by accident.
 
-    picoblaze-patch.py BRAM_PREFIX PATCH.psm OUT_DIR --tile D0X3Y25 [--allow 1B7]
+    picoblaze-patch.py BRAM_PREFIX PATCH.psm OUT_DIR --tile D0X3Y25 [--allow 1B7] [--define NAME=HEX]
+
+--define gives a CONSTANT of the patch another value, for a build whose
+program has the routine at another address.
 
 BRAM_PREFIX is the s3decode --blob-dir pair (PREFIX.DATA.bin +
 PREFIX.DATAP.bin). Writes OUT_DIR/<tile>.DATA.bin and .DATAP.bin and prints
@@ -49,9 +52,16 @@ def main():
     ap.add_argument("out", type=pathlib.Path)
     ap.add_argument("--tile", required=True, help="BRAM tile for the --set args, e.g. D0X3Y25")
     ap.add_argument("--allow", action="append", default=[], help="hex address of a live word the patch may replace")
+    ap.add_argument("--define", action="append", default=[], metavar="NAME=HEX",
+                    help="another value for a CONSTANT of the patch")
     args = ap.parse_args()
 
     text = args.patch.read_text()
+    for d in args.define:
+        name, val = d.split("=")
+        text, n = re.subn(rf"(?m)^(CONSTANT {name},\s*)[0-9A-Fa-f]+", rf"\g<1>{val}", text)
+        if n != 1:
+            sys.exit(f"--define {name}: the patch has no such CONSTANT")
     words = pbdis.load_words(args.bram)
     new = pbdis.assemble(text)
     allow = {int(a, 16) for a in args.allow}

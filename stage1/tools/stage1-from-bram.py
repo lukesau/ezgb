@@ -39,6 +39,8 @@ def discover(brams, ref):
     for bit in range(8):
         want = plane_of(ref, bit)
         hit = [n for n, b in brams.items() if b == want]
+        if not hit and bit == 0:
+            return None, discover_bytes(brams, ref)
         if not hit:
             sys.exit(f"no BRAM holds bit {bit} of $0000-$3FFF")
         planes.append(hit[0])
@@ -48,8 +50,27 @@ def discover(brams, ref):
     return planes, hit[0]
 
 
-def rebuild(brams, planes, byte_bram):
+def discover_bytes(brams, ref):
+    """FW6: $0000-$47FF as bytes, 2 KB to a BRAM, $FF after the last byte"""
+    end = max((a for a in range(0x4800) if ref[a]), default=-1) + 1
+    data = ref[:end] + b"\xff" * (0x4800 - end)
+    tiles = []
+    for k in range(9):
+        hit = [n for n, b in brams.items() if b == data[k * 0x800:(k + 1) * 0x800]]
+        if not hit:
+            sys.exit(f"no BRAM holds bit 0 of $0000-$3FFF, nor the bytes ${k * 0x800:04X}-${k * 0x800 + 0x7FF:04X}")
+        tiles.append(hit[0])
+    return tiles
+
+
+def rebuild(brams, planes, byte_bram, ref=None):
     out = bytearray(0x8000)
+    if planes is None:          # bytes: the fill after the image is not part of it
+        data = b"".join(brams[t] for t in byte_bram)
+        # the image's end: the reference's last byte, or where the $FF starts
+        end = max((a for a in range(0x4800) if ref[a]), default=-1) + 1 if ref else len(data.rstrip(b"\xff"))
+        out[:end] = data[:end]
+        return bytes(out)
     for bit, name in enumerate(planes):
         b = brams[name]
         for a in range(0x4000):
@@ -73,11 +94,14 @@ def main():
         if ref is None:
             sys.exit("--discover needs --ref")
         planes, byte_bram = discover(brams, ref)
-        print("planes (bit 0..7):", " ".join(planes))
-        print("bytes $4000-$47FF:", byte_bram)
+        if planes is None:
+            print("bytes, 2 KB each from $0000:", " ".join(byte_bram))
+        else:
+            print("planes (bit 0..7):", " ".join(planes))
+            print("bytes $4000-$47FF:", byte_bram)
     else:
         planes, byte_bram = FW4_PLANES, FW4_BYTES
-    img = rebuild(brams, planes, byte_bram)
+    img = rebuild(brams, planes, byte_bram, ref)
     if args.out:
         args.out.write_bytes(img)
     if ref is not None:

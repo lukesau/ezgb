@@ -1,4 +1,4 @@
-; D0X3Y29.BEL.BRAM
+; D0X19Y29.BEL.BRAM
 ; KCPSM3 (PicoBlaze for Spartan-3), 1K x 18
 ; 910 reachable instructions, 75 subroutines
 ;
@@ -145,7 +145,7 @@ idle:
     INPUT s1, RTC_GAME_LIVE         ; 032 041B9  1 while a game with a clock runs (FW4: the kernel asks for a refresh)
     COMPARE s1, 01                  ; 033 14101
     JUMP NZ, L_036                  ; 034 35436
-    JUMP game_clock                 ; 035 3403C
+    JUMP idle                       ; 035 34032  FW5 jumps to game_clock here; FW6 keeps the game's clock in the FPGA, and the routine below is never run
 L_036:
     LOAD sB, 02                     ; 036 00B02
     DISABLE INTERRUPT               ; 037 3C000
@@ -1289,7 +1289,7 @@ rtc_init:
     CALL rtc_write_zero             ; 336 302F9
     LOAD sB, 02                     ; 337 00B02
     CALL rtc_read                   ; 338 3031D  seconds, bit 7 = VL (clock integrity lost)
-    AND sD, 80                      ; 339 0AD80
+    LOAD s0, 00                     ; 339 00000  FW5: AND sD, 80. FW6 compares the whole seconds register, so the clock is reset only when it reads exactly $80
     COMPARE sD, 80                  ; 33A 14D80
     RETURN NZ                       ; 33B 2B400
     LOAD sB, 00                     ; 33C 00B00
