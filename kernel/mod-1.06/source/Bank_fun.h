@@ -61,11 +61,11 @@ extern FRESULT f_lseek_bank (FIL* fp,		DWORD ofs		);
 extern FRESULT f_close_bank (FIL *fp		);
 extern FRESULT f_mkdir_bank (TCHAR* path);
 
-/* ---- recently played: /SAVER/Recently play.txt ----
+/* ---- recently played: /SAVER/RecentlyPlay_gb.txt ----
       Load borrows the list area (bank 18+) for the records, so the directory list
       is destroyed: re-read the directory when returning (goto refind_file). */
 extern UINT8 Recently_Load(void)__banked;
-/* Called before booting: append this path to /SAVER/Recently play.txt (append only) */
+/* Called before booting: append this path to /SAVER/RecentlyPlay_gb.txt (append only) */
 extern void  Recently_Add(TCHAR *fullpath)__banked;
 /* Called once at boot: write the record that failed last time */
 extern void  Recently_Commit(void)__banked;

@@ -29,6 +29,8 @@
 #include "banks.h"
 
 #include "RTC.h"
+#include "ezcfg.h"		/* mod: the settings file */
+#include "UI.h"			/* mod: DrawGB, to clear between the SET pages */
 
 
 
@@ -160,6 +162,7 @@ void Set_window(void)__banked
 	update=0;
 
 
+page1:		/* mod: the second page comes back here to draw the first again */
 	HW_BANK = SAVE_info_sram_bank;
 	hw_set_page(A000Address_SRAM);
 	autosave = *((volatile UINT8 *)(FlashBase_SRAM+0x200));
@@ -554,6 +557,14 @@ void Set_window(void)__banked
 						select++;		
 						update=1;
 					}
+					else {
+						/* mod: DOWN from AUTO SAVE is the second page (ezcfg.c) */
+						DrawGB(1);
+						if(set_page2()) return;
+						DrawGB(1);
+						update=1;
+						goto page1;
+					}
 			}
     }
 		else if(keysrepeat &  J_SELECT){
@@ -609,6 +620,7 @@ void Set_window(void)__banked
 					
 					Set_RTCplus(01);	
 					hw_set_page(A000Address_TF);	
+					cfg_timeset((const UINT8 *)edit_datetime);	/* mod: the new time to /EZGB.CFG */
 				}
 			}
 			else/* if(select==1)*/ {//select==1
@@ -627,6 +639,7 @@ void Set_window(void)__banked
 		
 				HW_BANK = 0;
 				hw_set_page(A000Address_TF);
+				cfg_autosave_set(autosave);		/* mod: a copy in /EZGB.CFG */
 			
 			}
 			/*else {//select==2

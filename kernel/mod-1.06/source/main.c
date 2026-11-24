@@ -16,6 +16,7 @@
 #include "Bank_fun.h"
 
 #include "RTC.h"
+#include "ezcfg.h"		/* mod: the settings file */
 
 #ifdef LANG_ZH
 #include "ui_zh.h"		/* Chinese list renderer (list_zh.c) */
@@ -28,6 +29,8 @@
    delay, so the cursor speed equals the loop rate. 2 = every other frame
    (~33ms per step, half of the current speed); use 3 for ~50ms. */
 #define KEY_DIR_DIV  2
+/* Frames up or down is held before it repeats (0.3 s) */
+#define KEY_HOLD_DELAY  19U
 
 UINT8 SD_buffer[0x200];
 
@@ -197,106 +200,7 @@ void mem_set (void* dst, int val, BYTE cnt) {
         so Show_filename / Refresh_filename need no changes at all.
    ------------------------------------------------------------------ */
 
-/* The list area starts at bank 18, 32 entries per 8KB bank.
-   The bank latched at 0x4000 is an 8-bit register, but the SRAM behind it is
-   finite: banks 0..15 hold the biggest save this kernel supports (128KB), bank 17
-   the save info, so only banks 18..31 are certainly there. Going past that would
-   wrap the bank number and write the list straight into the save area, so the
-   bound is 14 banks = 448 entries (32 x 14). The old 255-bank assumption
-   (7616 entries) was an index limit, not a memory limit. */
-#define FOLDER_LIST_MAX  ((UINT16)Num_perBank * (UINT16)(32U - Folder_sram_bank))
-
-void Read_all_DIR(void)
-{
-	char  *fn;
-	UINT8  res;
-	UINT8  pass;
-	UINT8  is_dir;
-	UINT8  slot;
-	UINT8  want_bank;
-	UINT8  cur_bank = 0xFF;
-	UINT8 *name;
-
-	game_folder_total = 0;
-	Read_file_end = 1;			/* both passes done: everything read, scrolling never touches the card */
-	readdir_fail = 0;
-
-	for(pass = 0U; pass < 2U; pass++)
-	{
-		hw_set_page(A000Address_TF);
-		res = f_opendir(&dir, currentpath);	/* every pass starts at the directory head */
-		if(res != FR_OK)
-		{
-			Read_file_end = 1;
-			readdir_fail = res;
-			readdir_stage = 9U;				/* f_opendir inside the scan */
-			return;
-		}
-
-		while(1)
-		{
-			hw_set_page(A000Address_TF);
-			res = f_readdir(&dir, &fileinfo);
-			if(res != FR_OK)
-			{
-				/* Not "end of directory": the card stopped answering. */
-				readdir_fail = res;
-				readdir_stage = (UINT8)(pass + 3U);
-				break;
-			}
-			if(fileinfo.fname[0] == 0)
-				break;				/* directory exhausted */
-			if(fileinfo.fname[0] == '.')
-				continue;			/* skip . and .. */
-
-			fn = *fileinfo.lfname ? fileinfo.lfname : fileinfo.fname;
-
-			/* Same rules as before: must be a directory and not hidden/system, otherwise
-			   Windows' System Volume Information (0x12) at the card root would show up */
-			is_dir = ((fileinfo.fattrib & AM_DIR) &&
-			          !(fileinfo.fattrib & (AM_HID|AM_SYS))) ? 1U : 0U;
-
-			if(pass == 0U)
-			{
-				if(!is_dir) continue;		/* pass 1: directories only */
-			}
-			else
-			{
-				if(is_dir) continue;		/* pass 2: files only */
-				if(fileinfo.fattrib & (AM_VOL|AM_HID|AM_SYS)) continue;
-				if(mem_cmp(fn,"ezgb.dat",8)==0) continue;
-			}
-
-			if(game_folder_total >= FOLDER_LIST_MAX)
-			{
-				Read_file_end = 1;
-				return;				/* list area exhausted (never in practice) */
-			}
-
-			hw_set_page(A000Address_SRAM);
-			want_bank = Folder_sram_bank + (UINT8)(game_folder_total / Num_perBank);
-			if(want_bank != cur_bank)		/* no need to re-select the same page */
-			{
-				HW_BANK  = want_bank;
-				cur_bank = want_bank;
-			}
-
-			slot = (UINT8)(game_folder_total % Num_perBank);
-			name = pFilename_buffer[slot].filename;
-
-			pFilename_buffer[slot].fattrib = is_dir ? AM_DIR : 0x20;
-#ifdef LANG_ZH
-			pFilename_buffer[slot].fsize = fileinfo.fsize;	/* size column shown by the zh list */
-#endif
-			strncpy((char*)name, fn, MAX_filename_len-1);
-			name[MAX_filename_len-1] = 0;
-
-			game_folder_total++;
-		}
-	}
-
-	hw_set_page(A000Address_TF);
-}
+/* mod: Read_all_DIR is in browser.c, where it also sorts and hides */
 // --------------------------------------------------------------------
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select)
 {
@@ -385,6 +289,7 @@ void Show_SD_list(void)
 	BYTE updata;
 	BYTE keysrepeat;
 	BYTE keydiv = 0;
+	UINT8 keyhold = 0;
 	/* There used to be a local `BYTE FR_OK=0;` shadowing FatFs' FR_OK enum (0): the
 	   comparison below tested that variable and only looked right because it was 0,
 	   the same value as the enum. Removed so it refers to the real enum. */
@@ -424,6 +329,7 @@ void Show_SD_list(void)
 	{
 		Draw_Text(UI_OK_SD_INIT, UI_LEN(UI_OK_SD_INIT), 0, g_y);
 	}
+	cfg_boot();		/* mod: read /EZGB.CFG, before the pending save is backed up */
 	
 	//check save info
 	{	
@@ -469,11 +375,19 @@ void Show_SD_list(void)
 	memset(currentpath,00,MAX_path_len);
 	currentpath[0] = '/';
 
-	/* Append the last launched game to /SAVER/Recently play.txt.
+	/* Append the last launched game to /SAVER/RecentlyPlay_gb.txt.
 	   Done here (at boot, before reading the directory) instead of just before
 	   launching: that point is followed by LoadSAVE2SRAM / Check_game_save_FAT /
 	   Send_FATbuffer, and rewriting a file there corrupts the directory entry. */
 	Recently_Commit();
+
+	/* mod: FLAUNCH= in /EZGB.CFG starts a game before the first listing */
+	if(cfg_fastlaunch())
+	{
+		Save_filename();
+		Show_loading();
+		goto BOOT;
+	}
 
 refind_file:
 	g_y = 0;
@@ -586,7 +500,7 @@ re_showfile:
 		updata=0;
 		wait_vbl_done();		/* 16.7ms per loop instead of a fixed delay(45) */
 		keysrepeat = joypad();
-		/* joypad() has no repeat delay: sampling the direction keys only on
+		/* joypad() has no repeat delay: sampling left and right only on
 		   every KEY_DIR_DIV-th frame halves the cursor speed. */
 		if(++keydiv >= KEY_DIR_DIV)
 		{
@@ -594,7 +508,21 @@ re_showfile:
 		}
 		else
 		{
-			keysrepeat &= (UINT8)~(J_LEFT | J_RIGHT | J_UP | J_DOWN);
+			keysrepeat &= (UINT8)~(J_LEFT | J_RIGHT);
+		}
+		/* mod: up and down repeat the way the released 1.06e does. The first
+		   frame of a press moves the cursor, then nothing until the key has
+		   been held KEY_HOLD_DELAY frames, then every fourth frame. */
+		if(keysrepeat & (J_UP | J_DOWN))
+		{
+			keyhold++;
+			if((keyhold != 1U) &&
+			   ((keyhold <= KEY_HOLD_DELAY) || ((keyhold - KEY_HOLD_DELAY) & 3U)))
+				keysrepeat &= (UINT8)~(J_UP | J_DOWN);
+		}
+		else
+		{
+			keyhold = 0;
 		}
 
 		if(keysrepeat & J_LEFT){
@@ -678,7 +606,7 @@ re_showfile:
 			}
     }
     else if(keysrepeat & J_START){
-				/* Recently played: read /SAVER/Recently play.txt, up/down to select, A to boot,
+				/* Recently played: read /SAVER/RecentlyPlay_gb.txt, up/down to select, A to boot,
 				   B to go back. Recently_Load borrows the list area (bank 18+) for the records,
 				   so B must goto refind_file to re-read the directory. */
 				rn = Recently_Load();
@@ -861,6 +789,7 @@ re_showfile:
 							Save_filename();
 								
 							BOOT:
+							cfg_launch();		/* mod: the clock and AUTO SAVE to /EZGB.CFG */
 							res = GatherMetadata(lfname_temp/*pFilename_buffer[show_offset+file_select-folder_total].filename*/);
 							if(res == 0xFF){
 								/* The ROM could not be opened. Two causes: unreadable/corrupt,
@@ -958,6 +887,7 @@ void main() {
 	UINT8 xx;
 
 	g_y = 0;
+	console_init();		/* mod: the palettes when the kernel runs in CGB mode */
 	{
 		UINT8 battery_flag;	
 		BYTE keysrepeat;
@@ -967,6 +897,7 @@ void main() {
 		battery_flag = *((volatile UINT8 *)(FlashBase_SRAM+0x201));
 		if(battery_flag != 0x88)
 		{
+			cfg_dry = 1;		/* mod: cfg_boot puts AUTO SAVE back from the card */
 			Draw_Text(" ", 1, 5, 8);	
 			color(BLACK,DKGREY,SOLID);
 	

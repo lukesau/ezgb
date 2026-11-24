@@ -21,7 +21,7 @@ running it. It does not need `kernel/stock`.
 Only 0918 is a base. The mod on 1.04e and on 1.05e-0731 ended with mod 7.2:
 1.04e is 1.05e without the clock, and 0731 differs from 0918 by one unused
 routine, so neither has anything 0918 lacks. Kernel 1.06 is a separate tree,
-[kernel/mod-1.06](../mod-1.06/README.md), with one change and none of the
+[kernel/mod-1.06](../mod-1.06/README.md), with fixes and the first of the
 mod's features.
 
 ## Layout

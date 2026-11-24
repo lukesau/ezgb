@@ -75,6 +75,8 @@ void Help_window(void)__banked
 	Draw_Text(s, UI_LEN(UI_HELP_FWVER), 5, 3);	/* the length comes from the macro, no hand-written 11 */
 	
 	Draw_Text(UI_HELP_VER, UI_LEN(UI_HELP_VER), 0, 3);
+	/* mod: the mod's version, from the VERSION file (build/mod_version.h) */
+	Draw_Text(UI_HELP_MOD, UI_LEN(UI_HELP_MOD), 0, 4);
 
 	
 	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, 5);

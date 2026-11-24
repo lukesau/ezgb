@@ -85,6 +85,7 @@ typedef struct FM_FILE_SECT{
 
 
 void Draw_Text(UINT8 *str, UINT8 len, UINT8 x, UINT8 y);
+void Read_all_DIR(void) __banked;	/* mod: browser.c */
 void Draw_SRAM_Text(UINT8 num_num, UINT8 isFolder, UINT8 x, UINT8 y);
 void wait_select(void);				/* waits for SELECT (not B); see the note in main.c */
 

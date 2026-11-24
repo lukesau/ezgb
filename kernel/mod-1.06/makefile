@@ -56,6 +56,9 @@ endif
 # modules - order is link order, do not reorder
 SRCS := main ezgb_hw diskio ff ff_1 ff_2 ff_3 ff_4 ffunicode \
         SD_operate GBcard_OP RTC Help UI Bank_fun
+# mod: drawing is the library module with the VRAM race fixed, linked ahead of
+# the library; vram_put is the fill's tile writer
+SRCS += drawing vram_put browser ezcfg launch sgb
 SRCS += $(LANG_SRCS)
 
 OBJS   := $(addprefix $(BUILD)/,$(addsuffix .o,$(SRCS)))
@@ -69,15 +72,17 @@ RELDAT := $(RELDIR)/ezgb.dat
 #  -Wf--include=port_types.h  force BYTE back to unsigned (GBDK-2020 defines
 #                             it as signed char, which breaks FatFs' DDEM
 #                             (0xE5) directory-entry checks)
-CFLAGS := -Isource -Wf--include=port_types.h $(LANGDEF) $(EXTRA_DEFS)
+CFLAGS := -Isource -I$(BUILD) -Wf--include=port_types.h $(LANGDEF) $(EXTRA_DEFS)
 
 #  Link flags:
 #  $(ROMBANKS)      en: 10 banks => 163840 bytes
 #                   zh: 26 banks => 425984 bytes
 #  -Wm-yt0x01      MBC1 cartridge
+#  -Wm-ys          mod: the SGB flag ($0146 = $03); without it the SGB BIOS
+#                  ignores the header packets SGB BOOT sends
 #  -Wm-yn"EZGB"    cartridge title
 #  -Wl-b_CODE=0x600  keep 0x0200-0x05FF reserved, same as the original ROM
-LDFLAGS := $(ROMBANKS) -Wm-yt0x01 -Wm-yn"EZGB" -Wl-b_CODE=0x600
+LDFLAGS := $(ROMBANKS) -Wm-yt0x01 -Wm-ys -Wm-yn"EZGB" -Wl-b_CODE=0x600
 
 all: checktext $(RELDAT)
 
@@ -110,7 +115,11 @@ $(REL):
 #  in ui_zh.h decide the generated coordinates, so editing a header without
 #  recompiling leaves a ROM with stale values that looks like a rendering bug.
 #  (Seen: changing the row count only relinked, md5 stayed the same.)
-HEADERS := $(wildcard source/*.h)
+HEADERS := $(wildcard source/*.h) $(BUILD)/mod_version.h
+
+#  mod: the version the HELP tab shows comes from the VERSION file
+$(BUILD)/mod_version.h: VERSION | $(BUILD)
+	printf '#define MOD_VERSION "%s"\n' "$$(head -1 VERSION)" > $@
 
 $(BUILD)/%.o : source/%.c $(HEADERS) | $(BUILD)
 	-@rm -f $@

@@ -15,14 +15,7 @@ extern UINT16 ROMBankCount_real;
 extern  UINT8 Header_Checksum;
 extern void DrawHEX(unsigned long uc);
 extern enum CartridgeTypes m_Type;
-/* FW6 keeps the game's MBC3 clock in a counter that only a game's write
-   loads: the page 6 writes at 0xA018-0xA01C (Send_different_time) no
-   longer reach it. Send_different_time leaves the clock here, and the
-   launch stub writes it the way a game does once the cart is in game
-   mode. game_rtc_load is set only for an MBC3 clock cart on firmware 6
-   or later. */
-UINT8 game_rtc[5];
-UINT8 game_rtc_load;
+void launch_run(void) __banked;		/* mod: launch.s */
 // --------------------------------------------------------------------
 void ramfun_DMA_Response(/*UINT8 bootmode*/)
 {
@@ -59,20 +52,6 @@ void ramfun_DMA_Response(/*UINT8 bootmode*/)
 	
   *(volatile UINT8 *)0x2000 = 0x01U;
   *(volatile UINT8 *)0x3000 = 0x00U;
-
-	/* game mode now: RAM enable, then each clock register through the
-	   register select (which also sets the RAM bank the decode wants) */
-	if(game_rtc_load)
-	{
-		*(volatile UINT8 *)0x0000 = 0x0AU;
-		*(volatile UINT8 *)0x4000 = 0x08U; *(volatile UINT8 *)0xA000 = game_rtc[0];
-		*(volatile UINT8 *)0x4000 = 0x09U; *(volatile UINT8 *)0xA000 = game_rtc[1];
-		*(volatile UINT8 *)0x4000 = 0x0AU; *(volatile UINT8 *)0xA000 = game_rtc[2];
-		*(volatile UINT8 *)0x4000 = 0x0BU; *(volatile UINT8 *)0xA000 = game_rtc[3];
-		*(volatile UINT8 *)0x4000 = 0x0CU; *(volatile UINT8 *)0xA000 = game_rtc[4];
-		*(volatile UINT8 *)0x4000 = 0x00U;
-		*(volatile UINT8 *)0x0000 = 0x00U;
-	}
   
 	
 		HW_BEGIN();
@@ -264,6 +243,6 @@ void Send_FATbuffer(UINT8*buffer)__banked
 
 	
 	set_data(Base_FATbuffer,buffer,0x200);
-	DMA_Response(/*bootmode*/);
+	launch_run();		/* mod: launch.s, DMA_Response with the jump past the boot ROM */
 }
 // --------------------------------------------------------------------

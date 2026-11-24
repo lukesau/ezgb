@@ -414,14 +414,14 @@ void Save_filename(void)__banked
 		*((volatile UINT8 *)(FlashBase_SRAM+0x300+count)) = currentpath[count] ;
 	}
 	/* Set the "pending write" flag; on the next boot Recently_Commit() appends
-	   it to /SAVER/Recently play.txt. Do NOT touch the card here: rewriting a file
+	   it to /SAVER/RecentlyPlay_gb.txt. Do NOT touch the card here: rewriting a file
 	   under /SAVER before launching corrupts the directory entry (0x2FF is the
 	   free byte right before the 0x300 path area). */
 	*((volatile UINT8 *)(FlashBase_SRAM+0x2FF)) = 0xA5;
 	HW_BANK = 0;
 	hw_set_page(A000Address_TF);
 
-	/* Append this path to /SAVER/Recently play.txt now (append, never rewrite).
+	/* Append this path to /SAVER/RecentlyPlay_gb.txt now (append, never rewrite).
 	   currentpath still holds "dir/name" here, which is exactly what we need.
 	   If the write fails the 0x2FF flag stays set and Recently_Commit() retries. */
 	Recently_Add(currentpath);
@@ -430,7 +430,7 @@ void Save_filename(void)__banked
 }
 
 /* ==========================================================================
-   Recently played games: /SAVER/Recently play.txt
+   Recently played games: /SAVER/RecentlyPlay_gb.txt
    --------------------------------------------------------------------------
    Format: one full path per line, newest first, at most RECENT_MAX lines. A game
    that starts again moves to line 1 instead of being duplicated.
@@ -462,9 +462,9 @@ void Save_filename(void)__banked
    A subtle bug lived here: recent_path was 24 bytes while the file name is
    exactly 24 characters, so 25 bytes were needed. The extra '\0' landed in the
    neighbouring recent_dir[0], which the later "/SAVER" copy overwrote with '/',
-   producing "/SAVER/Recently play.txt/SAVER". FatFs returned FR_NO_PATH and
+   producing "/SAVER/RecentlyPlay_gb.txt/SAVER". FatFs returned FR_NO_PATH and
    f_open only creates on FR_NO_FILE: no file was created and no error shown. */
-#define RECENT_FILE_NAME "/SAVER/Recently play.txt"
+#define RECENT_FILE_NAME "/SAVER/RecentlyPlay_gb.txt"
 #define RECENT_DIR_NAME  "/SAVER"
 
 static TCHAR recent_path[sizeof(RECENT_FILE_NAME)];
@@ -1002,22 +1002,6 @@ UINT32 Get_now_time(void)
 	return covBeijing2UnixTimeStp(&testTime);
 }
 //---------------------------------------------------------------------------------
-extern UINT8 game_rtc[5];
-extern UINT8 game_rtc_load;
-/* The clock for the launch stub (GBcard_OP.c). Called with the RTC page in
-   the window; leaves it there. */
-static void Set_game_rtc(UINT8 s,UINT8 m,UINT8 h,UINT8 dl,UINT8 dh)
-{
-	game_rtc[0]=s;
-	game_rtc[1]=m;
-	game_rtc[2]=h;
-	game_rtc[3]=dl;
-	game_rtc[4]=dh;
-	hw_set_page(A000Address_read_FPGA_ver);
-	game_rtc_load = (m_bRTCPresent && HW_WINDOW_REG >= 6U) ? 1U : 0U;
-	hw_set_page(A000Address_RTC);
-}
-//---------------------------------------------------------------------------------
 UINT32 Send_different_time(UINT32 lasttime)
 {
 	UINT32 now;
@@ -1034,77 +1018,76 @@ UINT32 Send_different_time(UINT32 lasttime)
 	/* There used to be four DrawHEX debug dumps (12345678 / now / lasttime /
 	   difference) that painted over the load dialog. Removed. */
 				
-	if((lasttime==0) || (lasttime==0xFFFFFFFF) || (difference<0))
+	/* mod: as the released 1.06e does, the saved clock is kept when it is a
+	   valid time and the time the cart was off is added to it. The 11-18
+	   source zeroed it. A clock moved back counts as no time passed. Two
+	   things are the mod's: a halted clock (DH bit 6) stays where it was, as
+	   an MBC3's does, and DH bit 0 is always day bit 8. */
+	if((lasttime==0) || (lasttime==0xFFFFFFFF))
 	{
 		Seconds_re=0;
 		Minutes_re=0;
 		Hours_re=0;
 		Days=0;
 		Control=0;
-		
 	}
-	else 
+	else
 	{
-		
-	  
 		Seconds_re = SD_buffer[0x0];
 		Minutes_re = SD_buffer[0x4];
-		Hours_re = SD_buffer[0x8];	
-		Days = SD_buffer[0xC];
+		Hours_re = SD_buffer[0x8];
 		Control = SD_buffer[0x10];
-	
+		Days = SD_buffer[0xC];
+		if(Control & 0x01) Days += 256;
+
+		if((Seconds_re > 59) || (Minutes_re > 59) || (Hours_re > 23))
 		{
 			Seconds_re=0;
 			Minutes_re=0;
 			Hours_re=0;
 			Days=0;
-			Control=0;						
-		}		
-		
+			Control=0;
+		}
+		if((difference<0) || (Control & 0x40))
+			difference = 0;
 
-  	Seconds_re += (difference % 60);
-      if (Seconds_re > 59)
-      {
-          Seconds_re -= 60;
-          Minutes_re++;
-      }
-  	difference /= 60;
-  	Minutes_re += difference%60;
-        if (Minutes_re > 59)
-        {
-            Minutes_re -= 60;
-            Hours_re++;
-        }
+		Seconds_re += (difference % 60);
+		if (Seconds_re > 59)
+		{
+			Seconds_re -= 60;
+			Minutes_re++;
+		}
+		difference /= 60;
+		Minutes_re += difference%60;
+		if (Minutes_re > 59)
+		{
+			Minutes_re -= 60;
+			Hours_re++;
+		}
 		difference /= 60;
 		Hours_re += difference%24;
-        if (Hours_re > 23)
-        {
-            Hours_re -= 24;
-            Days++;
-        }
+		if (Hours_re > 23)
+		{
+			Hours_re -= 24;
+			Days++;
+		}
 		difference /= 24;
 		Days += difference;
-	  if (Days > 0xFF)
-	  {
-	      Control = (Control & 0xC1) | 0x01;
-
-	      if (Days > 511)
-	      {
-	          Days %= 512;
-	          Control |= 0x80;
-	          Control &= 0xC0;
-	      }
-	  }
+		if (Days > 511)
+		{
+			Days %= 512;
+			Control |= 0x80;		/* day counter carry */
+		}
+		Control &= 0xC0;
+		if (Days > 0xFF) Control |= 0x01;
 	}
-		
-			
+
  	hw_set_page(A000Address_RTC);
 	*((volatile UINT8 *)(Base_RTCbuffer+0x18))=Seconds_re;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x19))=Minutes_re;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1A))=Hours_re;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1B))=Days;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1C))=Control;		
-	Set_game_rtc(Seconds_re,Minutes_re,Hours_re,(UINT8)Days,Control);
 			
 			
 	HW_BANK = SAVE_info_sram_bank;
@@ -1148,7 +1131,6 @@ UINT32 Send_different_time_0(void)
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1A))=Hours_re;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1B))=Days;
 	*((volatile UINT8 *)(Base_RTCbuffer+0x1C))=Control;		
-	Set_game_rtc(Seconds_re,Minutes_re,Hours_re,(UINT8)Days,Control);
 			
 			
 	HW_BANK = SAVE_info_sram_bank;

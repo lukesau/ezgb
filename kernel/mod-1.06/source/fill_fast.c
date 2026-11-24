@@ -18,7 +18,7 @@
    pixels use plot_point so the colour index is exact (**no VRAM read-modify-write**
    - the zh build tried masked RMW and got stripes on hardware).
 
-   Each write waits for STAT to leave mode 2/3 (like the library's WAIT_STAT).
+   Each write waits for STAT to leave mode 2/3 with interrupts off (vram_put2).
 
    bg: 0 = white, 1 = light grey, 2 = dark grey, 3 = black.
    ========================================================================== */
@@ -28,7 +28,11 @@
 
 #pragma bank 1
 
-#define FILL_STAT	(*(volatile UINT8 *)0xFF41)
+/* mod: vram_put.s. Waits for STAT to leave modes 2 and 3 with interrupts off
+   and writes plane 0 (low byte) to dst and plane 1 (high byte) to dst + 1.
+   The source as received did the wait and the two writes in C with
+   interrupts on, and an interrupt between them let the writes land in mode 3. */
+void vram_put2(UINT8 *dst, UINT16 planes);
 
 void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked
 {
@@ -36,6 +40,7 @@ void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked
 	UINT8  a, b, y, t, x, n;
 	UINT8 *q;
 	UINT16 base;
+	UINT16 planes;
 
 	if (x0 > x1 || y0 > y1) return;
 
@@ -47,6 +52,8 @@ void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked
 		case 2U:  p0 = 0x00U; p1 = 0xFFU; break;	/* dark grey */
 		default:  p0 = 0xFFU; p1 = 0xFFU; break;	/* black */
 	}
+
+	planes = ((UINT16)p1 << 8) | p0;
 
 	plot_point(x0, y0);		/* fallback .gmode trigger; the fill covers this pixel */
 
@@ -64,9 +71,7 @@ void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked
 			q = (UINT8 *)(UINT16)(base + ((UINT16)a << 1));
 			for (t = 0U; t < n; t++)
 			{
-				while (FILL_STAT & 0x02U) ;	/* mode 2/3: VRAM not writable */
-				q[0] = p0;
-				q[1] = p1;
+				vram_put2(q, planes);	/* mod: waits for STAT with interrupts off */
 				q += 16;
 			}
 		}

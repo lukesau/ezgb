@@ -36,7 +36,7 @@
 # tools/gbdk-2020-4.5.0 (or GBDK2020=<its gbdk folder>):
 #
 #   make stock-1.06                     kernel/stock-1.06 as received
-#   make mod-1.06                       kernel/mod-1.06, with the FW6 clock load
+#   make mod-1.06                       kernel/mod-1.06, with this project's fixes
 #
 # STAGE1=stock builds the updaters with the stock stage1 from source instead of
 # ours; PATCHES=0 leaves the PicoBlaze programs stock.

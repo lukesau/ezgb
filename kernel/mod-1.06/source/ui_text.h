@@ -82,6 +82,10 @@
 #define UI_HELP_FWVER           "FWx  K1.06e"
 #endif
 
+/* mod: the line under the kernel version */
+#include "mod_version.h"
+#define UI_HELP_MOD             "MOD " MOD_VERSION
+
 /* ---------- time settings (RTC.c) ---------- */
 #define UI_RTC_TIME             "TIME:"
 #define UI_RTC_SET              "SET"
