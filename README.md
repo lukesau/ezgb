@@ -203,6 +203,8 @@ kernel/     The menu program
                                                annotated disassembly
               1.04e/ 1.05e-0731/ 1.05e-0918/   disassembly, symbols and notes per build
               mod/                             the mod: C and asm sources, inject tooling
+              stock-1.06/ mod-1.06/            EZ Flash's 1.06 source as received, and
+                                               with the FW6 clock load
               tools/                           build, port, inject and release scripts
 stage1/     The bootloader
               decomp/                          EZ Flash's stage1 from source

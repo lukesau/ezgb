@@ -52,6 +52,9 @@ kernel/*/kernel.log
 /stage0/floorplan/*.jsonl
 
 *.bin
+# the 1.06 kernel source has its Chinese font and code page tables as .bin
+!kernel/stock-1.06/source/font/*.bin
+!kernel/mod-1.06/source/font/*.bin
 
 # Local microSD for the SameBoy EZ Jr FPGA stub: a local dev directory,
 # nothing in it is tracked (card images, ROMs, saves, psram.bin, ORDER).
@@ -68,5 +71,9 @@ kernel/stock/build-0731/
 kernel/stock/build-0918/
 kernel/stock/build-104/
 kernel/mod/build/
+kernel/stock-1.06/build/
+kernel/stock-1.06/release/
+kernel/mod-1.06/build/
+kernel/mod-1.06/release/
 stage1/decomp/build/
 stage0/updater/build/

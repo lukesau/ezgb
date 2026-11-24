@@ -13,6 +13,7 @@ it from source means having that code here. Each piece keeps its license.
 | The SD card controller | `stage0/fw4/rtl/sd_*.v`, `stage0/fw5-0918/sd_*.v` | Marek Czerski's [SD card controller](https://github.com/mczerski/SD-card-controller) (2013), after Adam Edvardsson's (2009); the FIFO is Rudolf Usselmann's generic FIFO (2000-2002). Rewritten here from the bitstream with the source beside it | GNU LGPL 2.1 or later ([LICENSE-LGPL-2.1](LICENSE-LGPL-2.1)); the FIFO under its BSD-style notice (each module's header) |
 | The PicoBlaze | `stage0/fw4/rtl/picoblaze.v` | Xilinx's KCPSM3, by Ken Chapman. Written here from the bitstream, keeping KCPSM3's structure register for register; none of Xilinx's source is in the repository | Xilinx's KCPSM3 terms allow its use in Xilinx devices |
 | `hardware.inc` | `kernel/*/disassembly/`, `stage1/*/disassembly/` | the gbdev hardware definitions, as mgbdis writes them | public domain (CC0) |
+| Kernel 1.06 | `kernel/stock-1.06/`, `kernel/mod-1.06/` | EZ Flash's source for 1.06e and 1.06c, received from the EZ Flash team 2026-11-18. `stock-1.06` is unchanged, `mod-1.06` has this project's changes | Apache License 2.0 ([LICENSE-APACHE-2.0](LICENSE-APACHE-2.0)), by the author's statement; its FatFs is ChaN's |
 | The Tamzen font | `kernel/mod/font12/` | Tamzen, after Tamsyn | `kernel/mod/font12/LICENSE-Tamzen` |
 
 ## EZ Flash's code
@@ -20,8 +21,9 @@ it from source means having that code here. Each piece keeps its license.
 The rest of the stock software is EZ Flash's: the kernel's and stage1's C,
 the updater, the PicoBlaze's two programs, the FPGA design, and the library
 math no published source has (`kernel/stock/src/libasm.s`,
-`stage1/decomp/asm/`). EZ Flash published no source for any of it. What is
-here was written from their binaries: C that compiles to the same bytes,
+`stage1/decomp/asm/`). EZ Flash published no source for any of it; the
+1.06 kernel above is the exception, and came later. What is here was
+written from their binaries: C that compiles to the same bytes,
 Verilog proven equivalent to their bitstream, listings that assemble to the
 same words. It is here for study and repair of the hardware, and the AGPLv3
 does not relicense it.

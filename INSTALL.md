@@ -34,6 +34,7 @@ already fails on a mismatch. One kernel: `make -C kernel/stock 0918`
 | a current [SDCC](https://sdcc.sourceforge.net/) | 4.6.0 | `sdasgb`, `sdldgb` and `sdcpp`: 2.9.0's assembler, linker and preprocessor no longer build |
 | [RGBDS](https://rgbds.gbdev.io) | 1.0.1 | laying out the kernel's banks, the header checksums |
 | GNU make | 3.81 (warns about `&:` rules, builds correctly), 4.3 or newer is quiet | |
+| [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020/releases) | 4.5.0, unpacked as `tools/gbdk-2020-4.5.0/gbdk` | only the 1.06 kernel (`make stock-1.06`, `make mod-1.06`) |
 | Python 3, a C compiler | | the link scripts, building SDCC 2.9.0 |
 
 `build-sdcc29.sh` fetches SDCC's source release from SourceForge, or takes

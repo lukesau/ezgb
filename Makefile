@@ -27,10 +27,22 @@
 #                                       PROVE=0 skips the proof and needs no
 #                                       file of EZ Flash's
 #
+#   make stage0-fw6 BUILD_HOST=<host>   the same for FW6:
+#                                       Update-fw6-ise.gb, versioned by
+#                                       stage1/VERSION.fw6. The proof needs its
+#                                       export in fpga/fw6 (stage0/fw6/README.md)
+#
+# The 1.06 kernel, from EZ Flash's source, with GBDK-2020 4.5.0 in
+# tools/gbdk-2020-4.5.0 (or GBDK2020=<its gbdk folder>):
+#
+#   make stock-1.06                     kernel/stock-1.06 as received
+#   make mod-1.06                       kernel/mod-1.06, with the FW6 clock load
+#
 # STAGE1=stock builds the updaters with the stock stage1 from source instead of
 # ours; PATCHES=0 leaves the PicoBlaze programs stock.
 
 MOD := $(shell sed -n 2p stage1/VERSION)
+MOD6 := $(shell sed -n 2p stage1/VERSION.fw6)
 OUT := fpga/stage1
 export STAGE1 PATCHES PROVE UPDATER BUILD_HOST
 
@@ -65,6 +77,19 @@ $(OUT)/Update-fw4-ise.gb: FORCE
 $(OUT)/Update-fw5-0918-ise.gb: FORCE
 	stage0/tools/build-stage0.sh fw5-0918 "FW5 ISE MOD $(MOD)" $@
 
+stage0-fw6: $(OUT)/Update-fw6-ise.gb
+
+$(OUT)/Update-fw6-ise.gb: FORCE
+	VERSION_FILE=$(CURDIR)/stage1/VERSION.fw6 stage0/tools/build-stage0.sh fw6 "FW6 MOD $(MOD6)" $@
+
+GBDK2020 ?= $(CURDIR)/tools/gbdk-2020-4.5.0/gbdk
+
+stock-1.06:
+	$(MAKE) -C kernel/stock-1.06 GBDK=$(GBDK2020) LCC=$(GBDK2020)/bin/lcc both
+
+mod-1.06:
+	$(MAKE) -C kernel/mod-1.06 GBDK=$(GBDK2020) both
+
 stage0-stock:
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage0.sh fw4
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage0.sh fw5-0918
@@ -74,4 +99,4 @@ check-slotb:
 	STAGE1=stock PATCHES=0 stage0/tools/build-stage1-updater.sh fw5-0918
 
 FORCE:
-.PHONY: stock compare check clean updaters check-slotb stage0 stage0-stock FORCE
+.PHONY: stock-1.06 mod-1.06 stock compare check clean updaters check-slotb stage0 stage0-fw6 stage0-stock FORCE
