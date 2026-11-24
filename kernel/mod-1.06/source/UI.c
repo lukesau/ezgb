@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "main.h"
+#include "list12.h"		/* mod: the 12px tab strip */
 
 #ifdef LANG_ZH
 #include "ui_zh.h"
@@ -47,6 +48,11 @@ void DrawGB(UINT8 page)__banked
 	if (page == 1U || page == 2U)
 		zh_tabbar(page);
 #else
+	if(ui_font)		/* mod: the 12px tab strip, list12.c */
+	{
+		tabs12(page);
+		return;
+	}
 	color(BLACK,WHITE,SOLID);
 	line(0,9,159,9);
 	line(0,8,159,8);

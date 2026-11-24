@@ -36,6 +36,8 @@ under the kernel's version.
 | Fast launch: `FLAUNCH=` starts a game at power-on | `source/ezcfg.c`, `source/main.c` |
 | SGB BOOT: the header packets a Super Game Boy needs | `source/sgb.s`, `source/ezcfg.c`, `makefile` |
 | A second SET page for the mod's settings | `source/ezcfg.c`, `source/RTC.c` |
+| Themes: light, dark and four colors | `source/ezcfg.c` |
+| The 12px proportional font: file list and tab strip (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -253,6 +255,8 @@ and writes `/EZGB.CFG`.
 | `FAST LAUNCH:` | on and off, by the `#` in front of the `FLAUNCH=` path. With no game set, turning it on takes the last game launched |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
+| `THEME:` | the next theme |
+| `FONT:` | `8PX` or `12PX` |
 | `FAST LAUNCH GAME` | shows the game by name; A makes it the last game launched |
 
 So this kernel now writes `BOOTROM`, `FLAUNCH`, `RTCSD` and `SGB` as well
@@ -273,6 +277,67 @@ pending save backup, or freeze the pad. `console_init` now sets them all,
 first thing in `main()`. After the fix a save backup at boot writes the
 same 32 KB file as the source as received does (checked in SameBoy on a
 fresh card image).
+
+### Themes
+
+`THEME=` in `/EZGB.CFG`, and a `THEME:` row on the second SET page that
+steps through them ([docs/themes.md](../../docs/themes.md)): 0 light, 1
+dark, 2 red, 3 green, 4 purple, 5 blue. A theme is what the four color
+indices draw as: the background, a shade of it, the highlight and the ink.
+
+In CGB mode (a color console under our stage1) the colors go to every BG
+and OBJ palette. A DMG, and a color console in DMG compatibility mode,
+have only `BGP`: light is the stock `$E4`, every other theme is the
+inverted `$1B`, and the row offers light and dark.
+
+Two differences from the 0918 mod:
+
+- **The accents are deeper.** This kernel draws a highlight as the ink on
+  index 2; the 0918 mod draws the background color on its accent. White
+  text does not read on the 0918 accents (gold, apricot), so the color
+  themes here have a darker color of the same hue at index 2: sky
+  `#1A6FD0`, rose `#C2407F`, gold `#9A7A00`, apricot `#C85A1A`. These are
+  my picks and have only been seen in the emulator.
+- **No custom colors and no DV.** `THEME=6` and `7` from the 0918 mod show
+  as dark, and the file keeps its number until the row is used.
+
+The theme is applied once the card is read, so the first second of a boot
+is light. On a DMG the dark theme's selected row is white on light gray,
+the mirror of stock's black on dark gray, and as hard to read.
+
+Checked in SameBoy: green and purple on the CGB model with the kernel's
+header given the CGB flag, the row stepping through the themes and writing
+the key, and dark on the DMG model.
+
+### The 12px font
+
+The 0918 mod's proportional, kerned 12px font
+([docs/font12.md](../../docs/font12.md)), first stage: the file list and
+the tab strip. `UI=12` in `/EZGB.CFG`, or the `FONT:` row on the second
+SET page, switches it at once; with no key the kernel is 8px as before.
+English build only: the Chinese build has EZ Flash's 12px text.
+
+- `source/font12.c` is the 0918 mod's renderer and layout (`draw12.c`,
+  `layout12.c`) for this kernel, with one glyph set. The glyph tables are
+  packed by the makefile from the same sheet, `kernel/mod/font12/font12.txt`.
+- `source/list12.c` is the list: ten rows of 12 pixels from y 20, each an
+  icon and the name. Folders show by their icon with no `DIR` tag, and a
+  `.gb` or `.gbc` shows without its ending. The selected row is inverted,
+  ink 0 on paper 3, which reads on an original Game Boy. A name that does
+  not fit scrolls a character at a time.
+- The tab strip is 12 pixels with the active tab inverted and a rule under
+  it, and the position in the folder is at its right.
+- The row count is a variable now (`LIST_ROWS` is `list_rows`: 16 or 10),
+  so paging follows the font.
+
+Checked in SameBoy: the list with its icons, the cursor, a long name
+scrolling, the three tabs, the `FONT:` row switching both ways, and no hit
+on the VRAM watchpoint. Not checked: a folder longer than a page in 12px,
+and the recent list while the font is 12px. Nothing on a cart.
+
+Still 8px in this stage: the SET and HELP pages, the recent list, the
+dialogs and the boot messages. Not carried over: the star, tag trimming,
+`UI=SLIM` (read as 12px) and the DV glyph set.
 
 ### The FW6 clock load, removed
 

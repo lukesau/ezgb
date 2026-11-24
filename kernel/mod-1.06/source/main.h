@@ -44,7 +44,9 @@ typedef INT8 BOOL;
 #ifdef LANG_ZH
 #define LIST_ROWS   9
 #else
-#define LIST_ROWS   16
+/* mod: 16 rows in the 8px font and 10 in the 12px one (ezcfg.c sets it) */
+extern UINT8 list_rows;
+#define LIST_ROWS   list_rows
 #endif
 /*  in PSRAM
 #define A000Address_TF 		0x0U

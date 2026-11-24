@@ -12,6 +12,12 @@
      SGB=1                     SGB BOOT: turns the record in save RAM on (0: off)
                                at the next boot. Written only when the file
                                already has the key
+     THEME=1                   the colors: 0 light, 1 dark, 2 red, 3 green,
+                               4 purple, 5 blue (docs/themes.md)
+     UI=12                     the font: 8 (or no key) the 8px console font, 12
+                               the proportional 12px one. SLIM, the 0918
+                               mod's third, is 12 here and stays SLIM in
+                               the file
      FLAUNCH=/Pokemon/Red.gb   the game to start at power-on, off when the
                                value starts with #
 
@@ -49,6 +55,10 @@ static UINT8 cfg_rtcsd;			/* 0: the clock backup is off */
 static UINT8 cfg_autosave;
 static UINT8 cfg_rtc[6];		/* year (two digits), month, day, hour, minute, second */
 static UINT8 cfg_bootrom;		/* BOOTROM=1 */
+static UINT8 cfg_theme;			/* THEME=, as the file has it */
+static UINT8 cfg_ui;			/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM */
+UINT8 ui_font;				/* 1: the 12px font (list12.c) */
+UINT8 list_rows;			/* rows of the file list: 16, or 10 in 12px */
 #define FLAUNCH_MAX	122U
 static char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
 static UINT8 s1_cancel;			/* our stage1 left its "S1" mark: fast launch is not ours to do */
@@ -197,7 +207,7 @@ static UINT8 key_tail(const char *s, const char *t)
 }
 
 /* 0 for a line this kernel does not know, else 1 RTC, 2 AUTOSAVE, 3 RTCSD,
-   4 BOOTROM, 5 FLAUNCH, 6 SGB.
+   4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI.
    *skip gets the length of the key and '='. */
 static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 {
@@ -207,6 +217,8 @@ static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 	if((*skip = key_is(p, "BOOTROM")) != 0U) return 4U;
 	if((*skip = key_is(p, "FLAUNCH")) != 0U) return 5U;
 	if((*skip = key_is(p, "SGB")) != 0U) return 6U;
+	if((*skip = key_is(p, "THEME")) != 0U) return 7U;
+	if((*skip = key_is(p, "UI")) != 0U) return 8U;
 	return 0U;
 }
 
@@ -292,6 +304,14 @@ static UINT16 file_read(UINT8 keep)
 			else if(k == 3U) cfg_rtcsd = (c == '0') ? 0U : 1U;
 			else if(k == 4U) cfg_bootrom = (c == '1') ? 1U : 0U;
 			else if(k == 6U) cfg_sgb = (c == '1') ? 1U : 0U;
+			else if(k == 7U)
+			{
+				if((c >= '0') && (c <= '9')) cfg_theme = (UINT8)(c - '0');
+			}
+			else if(k == 8U)
+			{
+				cfg_ui = (c == '1') ? 1U : (((c == 'S') || (c == 's')) ? 2U : 0U);
+			}
 			else
 			{
 				UINT8 n = 0U;
@@ -339,7 +359,7 @@ static void file_write(void)
 	UINT8 k;
 
 	at = file_read(1U);
-	for(k = 1U; k <= 6U; k++)
+	for(k = 1U; k <= 8U; k++)
 	{
 		p = line;
 		if(k == 1U)
@@ -382,12 +402,26 @@ static void file_write(void)
 			memcpy(p, cfg_flaunch, n);
 			p += n;
 		}
-		else
+		else if(k == 6U)
 		{
 			if(cfg_sgb > 1U) continue;		/* the file never had the key */
 			memcpy(p, "SGB=", 4U);
 			p += 4;
 			*p++ = (UINT8)('0' + cfg_sgb);
+		}
+		else if(k == 7U)
+		{
+			if(!cfg_theme) continue;
+			memcpy(p, "THEME=", 6U);
+			p += 6;
+			*p++ = (UINT8)('0' + cfg_theme);
+		}
+		else
+		{
+			if(!cfg_ui) continue;
+			if(cfg_ui == 1U) memcpy(p, "UI=12", 5U);
+			else memcpy(p, "UI=SLIM", 7U);
+			p += (cfg_ui == 1U) ? 5 : 7;
 		}
 		*p++ = '\r';
 		*p++ = '\n';
@@ -528,6 +562,72 @@ static void clock_check(void)
    mode decides. */
 static UINT8 cgb_mode;			/* console_init: the kernel runs in CGB mode */
 
+/* ---- the font ---- */
+
+static void font_set(void)
+{
+#ifdef LANG_ZH
+	ui_font = 0U;			/* the Chinese build has its own 12px text, ui_zh.c */
+#else
+	ui_font = cfg_ui ? 1U : 0U;
+#endif
+	list_rows = ui_font ? 10U : 16U;
+}
+
+/* ---- themes ---- */
+
+#define THEMES	6U
+
+/* The theme in use. The 0918 mod has two more, custom (6) and DV (7): here
+   they show as dark, and the file keeps its number until the row is used. */
+static UINT8 theme_now(void)
+{
+	return (cfg_theme < THEMES) ? cfg_theme : 1U;
+}
+
+/* What color index 0 to 3 draws as (docs/themes.md), BGR555 low byte
+   first: the background, a shade of it, the highlight, the ink. This
+   kernel draws a highlight as the ink on index 2, where the 0918 mod draws
+   the background color on its accent, so the color themes have a deeper
+   accent here, one white text reads on.
+
+   In CGB mode the colors go to every BG and OBJ palette. A DMG, and a
+   color console in DMG compatibility mode, have only BGP: light is the
+   stock $E4 and every other theme is the inverted $1B. */
+static void theme_apply(void)
+{
+	static const UINT8 ramps[THEMES][8] = {
+		{0xFFU, 0x7FU, 0xB5U, 0x56U, 0x4AU, 0x29U, 0x00U, 0x00U},	/* light, stock */
+		{0x00U, 0x00U, 0xC6U, 0x18U, 0x31U, 0x46U, 0xFFU, 0x7FU},	/* dark */
+		{0x28U, 0x04U, 0xEDU, 0x1CU, 0xA3U, 0x69U, 0xFFU, 0x7FU},	/* red, sky #1A6FD0 */
+		{0x22U, 0x0DU, 0xA8U, 0x25U, 0x18U, 0x3DU, 0xFFU, 0x7FU},	/* green, rose #C2407F */
+		{0x48U, 0x30U, 0x0DU, 0x41U, 0xF3U, 0x01U, 0xFFU, 0x7FU},	/* purple, gold #9A7A00 */
+		{0xA2U, 0x30U, 0x48U, 0x41U, 0x79U, 0x0DU, 0xFFU, 0x7FU},	/* blue, apricot #C85A1A */
+	};
+	const UINT8 *r = ramps[theme_now()];
+	UINT8 pal;
+	UINT8 i;
+
+	if(!cgb_mode)
+	{
+		BGP_REG = theme_now() ? 0x1BU : 0xE4U;
+		return;
+	}
+	/* palette RAM does not take a write in mode 3: one palette of each
+	   kind a frame, at the start of VBlank */
+	for(pal = 0U; pal < 8U; pal++)
+	{
+		wait_vbl_done();
+		BCPS_REG = (UINT8)(0x80U | (pal << 3));
+		OCPS_REG = (UINT8)(0x80U | (pal << 3));
+		for(i = 0U; i < 8U; i++)
+		{
+			BCPD_REG = r[i];
+			OCPD_REG = r[i];
+		}
+	}
+}
+
 /* ---- SGB BOOT ---- */
 
 /* The setting is a record in save RAM, bank 17 at $A400: 'S' 'G' $01 $FE.
@@ -644,6 +744,8 @@ void console_init(void) __banked
 
 	/* nothing here counts on WRAM being cleared at startup */
 	cfg_dry = 0U;
+	ui_font = 0U;
+	list_rows = 16U;
 	sgb_step = 0U;
 	sgb_wait = 0U;
 	sgb_busy = 0U;
@@ -686,7 +788,11 @@ void cfg_boot(void) __banked
 	cfg_bootrom = 0U;
 	cfg_flaunch[0] = 0;
 	cfg_sgb = 2U;
+	cfg_theme = 0U;
+	cfg_ui = 0U;
 	file_read(0U);
+	theme_apply();
+	font_set();
 	sgb_apply();
 	console_detect();
 
@@ -800,12 +906,14 @@ void cfg_autosave_set(UINT8 v) __banked
 
 /* ---- the SET tab's second page ---- */
 
-#define ROWS2		5U
+#define ROWS2		7U
 #define ROW_SKIP	0U
 #define ROW_FAST	1U
 #define ROW_SGB		2U
 #define ROW_RTCSD	3U
-#define ROW_GAME	4U
+#define ROW_THEME	4U
+#define ROW_FONT	5U
+#define ROW_GAME	6U
 
 static UINT8 row_on(UINT8 row)
 {
@@ -871,6 +979,18 @@ static void row_act(UINT8 row)
 		if(cfg_sgb > 1U) return;		/* nothing of it in the file */
 	}
 	else if(row == ROW_RTCSD) cfg_rtcsd ^= 1U;
+	else if(row == ROW_THEME)
+	{
+		/* the next theme; where only BGP can be set there are two */
+		cfg_theme = (UINT8)(theme_now() + 1U);
+		if(cfg_theme >= (cgb_mode ? THEMES : 2U)) cfg_theme = 0U;
+		theme_apply();
+	}
+	else if(row == ROW_FONT)
+	{
+		cfg_ui = cfg_ui ? 0U : 1U;
+		font_set();
+	}
 	else if(!flaunch_take_last()) return;
 	file_write();
 }
@@ -897,7 +1017,27 @@ static void row_draw(UINT8 row, UINT8 sel)
 		else memcpy(s + 2, "NO GAME SET", 11U);
 		s[0] = sel ? '>' : ' ';
 		color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 20U, 0U, 13U);
+		Draw_Text(s, 20U, 0U, 15U);
+		return;
+	}
+	if(row == ROW_FONT)
+	{
+		memcpy(s, ui_font ? "12PX" : "8PX ", 5U);
+		if(sel) color(BLACK, DKGREY, SOLID);
+		else color(BLACK, WHITE, SOLID);
+		Draw_Text(s, 4U, 14U, 12U);
+		color(BLACK, WHITE, SOLID);
+		return;
+	}
+	if(row == ROW_THEME)
+	{
+		static const char names[THEMES][7] = {"LIGHT ", "DARK  ", "RED   ", "GREEN ", "PURPLE", "BLUE  "};
+
+		memcpy(s, names[theme_now()], 7U);
+		if(sel) color(BLACK, DKGREY, SOLID);
+		else color(BLACK, WHITE, SOLID);
+		Draw_Text(s, 6U, 14U, 11U);
+		color(BLACK, WHITE, SOLID);
 		return;
 	}
 	y = (UINT8)(24U + row * 16U);
@@ -934,8 +1074,12 @@ UINT8 set_page2(void) __banked
 	Draw_Text(s, 9U, 0U, 7U);
 	memcpy(s, "RTC SD BACKUP:", 15U);
 	Draw_Text(s, 14U, 0U, 9U);
+	memcpy(s, "THEME:", 7U);
+	Draw_Text(s, 6U, 0U, 11U);
+	memcpy(s, "FONT:", 6U);
+	Draw_Text(s, 5U, 0U, 12U);
 	memcpy(s, "FAST LAUNCH GAME", 17U);
-	Draw_Text(s, 16U, 0U, 12U);
+	Draw_Text(s, 16U, 0U, 14U);
 	for(i = 0U; i < ROWS2; i++) row_draw(i, (i == row) ? 1U : 0U);
 
 	/* the DOWN that opened the page is not a press on it */

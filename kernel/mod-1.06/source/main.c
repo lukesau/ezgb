@@ -17,6 +17,7 @@
 
 #include "RTC.h"
 #include "ezcfg.h"		/* mod: the settings file */
+#include "list12.h"		/* mod: the 12px list */
 
 #ifdef LANG_ZH
 #include "ui_zh.h"		/* Chinese list renderer (list_zh.c) */
@@ -207,6 +208,13 @@ void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select)
 #if defined(LANG_ZH) && !defined(ZH_LIST_OFF)
 	list_zh_loop(shift, show_offset, file_select);
 	return;
+#endif
+#ifndef LANG_ZH
+	if(ui_font)		/* mod: the 12px list, list12.c */
+	{
+		list12_loop(shift, show_offset, file_select);
+		return;
+	}
 #endif
 	UINT8 Max_char;	
 	UINT8 namelen;

@@ -7,6 +7,7 @@
 #include "Bank_fun.h"
 #include "main.h"
 #include "RTC.h"
+#include "list12.h"		/* mod: the 12px list */
 #include "UI.h"		/* Show_Error_file() - reported when the ROM's FAT chain is unusable */
 #include "SD_operate.h"	/* sd_err_lba: sector that the read retry gave up on */
 
@@ -202,6 +203,13 @@ void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 	list_zh_show(show_offset, file_select);
 	return;
 #endif
+#ifndef LANG_ZH
+	if(ui_font)		/* mod: the 12px list, list12.c */
+	{
+		list12_show(show_offset, file_select);
+		return;
+	}
+#endif
 	
 	UINT16 need_show;
 	
@@ -278,6 +286,13 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 #if defined(LANG_ZH) && !defined(ZH_LIST_OFF)
 	list_zh_refresh(show_offset, file_select, updown);
 	return;
+#endif
+#ifndef LANG_ZH
+	if(ui_font)		/* mod: the 12px list, list12.c */
+	{
+		list12_refresh(show_offset, file_select, updown);
+		return;
+	}
 #endif
 
 	UINT8 x_offset= 0;

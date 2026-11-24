@@ -51,6 +51,8 @@ else
   LANGDEF  :=
   # en only: fast rectangle fill (bank 1) replacing per-pixel box(M_FILL)
   LANG_SRCS := fill_fast
+  # mod: the 12px proportional font and its file list (English build only)
+  LANG_SRCS += font12 font12_data list12
 endif
 
 # modules - order is link order, do not reorder
@@ -118,6 +120,13 @@ $(REL):
 HEADERS := $(wildcard source/*.h) $(BUILD)/mod_version.h
 
 #  mod: the version the HELP tab shows comes from the VERSION file
+#  mod: the 12px glyph set, packed from the 0918 mod's sheet
+FONT12 := build/font12.bin build/font12-metrics.bin
+build/font12.bin: ../mod/font12/font12.txt ../tools/font12-pack.py | $(BUILD)
+	python3 ../tools/font12-pack.py -i ../mod/font12/font12.txt -o build/font12.bin -m build/font12-metrics.bin
+build/font12-metrics.bin: build/font12.bin
+$(BUILD)/font12_data.o: $(FONT12)
+
 $(BUILD)/mod_version.h: VERSION | $(BUILD)
 	printf '#define MOD_VERSION "%s"\n' "$$(head -1 VERSION)" > $@
 
