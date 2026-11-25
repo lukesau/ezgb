@@ -1,5 +1,5 @@
 /* ============================================================================
-   list12.c  -  mod: the file list in the 12px font (bank 8)
+   list12.c  -  mod: the file list in the 12px font (bank 13)
    ----------------------------------------------------------------------------
    What Show_filename, Refresh_filename and Filename_loop do when the font
    is 12px (ui_font): ten rows of 12 pixels from y 20, under the tab strip,
@@ -22,7 +22,7 @@
 
 extern void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
 
-#pragma bank 8
+#pragma bank 13
 
 extern FM_FILE_FS *pFilename_buffer;
 extern UINT16 game_folder_total;

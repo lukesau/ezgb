@@ -99,6 +99,9 @@ under the kernel's version.
 | Hold A on a game for its options | `source/rommenu.c`, `source/main.c`, `source/sgb.s` |
 | Manage saves: back up, restore and delete a game's saves | `source/savemgr.c`, `source/ff_5.c`, `source/rommenu.c`, `makefile` |
 | Stars and play counts | `source/plays.c`, `source/browser.c`, `source/list12.c`, `source/rommenu.c`, `source/setpage.c`, `source/ezcfg.c` |
+| A text viewer for `.txt`, `.ini`, `.md` and `.cfg` | `source/textview.c`, `source/rommenu.c` |
+| The daily save backup | `source/savemgr.c`, `source/sdlist.c`, `source/ezcfg.c` |
+| Custom and DV themes, the SLIM font, and the rest of the settings file | `source/ezcfg.c`, `source/font12.c`, `source/font12_data.s`, `source/setpage.c` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -341,10 +344,11 @@ cursor and writes `/EZGB.CFG`.
 | `GAME:` | the fast launch game by name; A makes it the last game launched |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
-| `FONT:` | `8PX`, `12PX` or `EZF` |
+| `FONT:` | `8PX`, `12PX`, `SLIM` or `EZF` |
 | `CLEAN NAMES:` | unticked writes `TAGS=1` |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 | `SORT BY PLAYS:` | most played files first; kept with the stars, not in `/EZGB.CFG` |
+| `DAILY BACKUP:` | ticked writes `DAILYBACKUP=1` |
 
 Checked in SameBoy: each row toggles and reaches the file or the record;
 turning FAST LAUNCH on with no game set took Pokemon Red, and the next
@@ -568,6 +572,43 @@ a name collision counter, and what a host makes of the card after a
 delete (mtools reads it). Nothing on a cart.
 
 Not carried over: the daily backup (`DAILYBACKUP=1`).
+
+### Sprint of 2026-11-25
+
+Brought over quickly, built, and looked at once each in SameBoy, for a
+test on a cart: none of these has had the checking the sections above
+describe.
+
+**Text viewer** (`source/textview.c`,
+[docs/text-viewer.md](../../docs/text-viewer.md)). A on a `.txt`, `.ini`,
+`.md` or `.cfg` file opens it read-only, in the font the list is in. UP
+and LEFT go a page back, DOWN, RIGHT and A a page on, B back to the list.
+Lines wrap at the last space that fits. The first 65,024 bytes are shown.
+Unlike the 0918 mod's it has no line scroll and no font of its own.
+
+**Daily backup** (`save_daily` in `source/savemgr.c`,
+[docs/save-manager.md](../../docs/save-manager.md)). `DAILY BACKUP:` on the
+SET tab's third page, `DAILYBACKUP=1` in the file, off by default. At
+boot, when a save is waiting to be written and the save on the card was
+last written before today by the cart's clock, that file is copied to a
+backup first and the game's other backups are deleted. Written here from
+the description, not from the 0918 mod's code, which is davidesqalv's.
+
+**Themes.** `THEME=6` is the custom theme, from a `COLORS=RRGGBB,RRGGBB`
+line (background and text, and a third color for the highlight; without
+one the highlight is halfway between them). `THEME=7` is DV: black, with a
+blue highlight. The `THEME:` row offers custom only when the file has the
+line. There is no color picker.
+
+**SLIM**, a fourth choice of the `FONT:` row and `UI=SLIM`: the 0918
+mod's slim set, a fixed 6 pixels, packed from
+`kernel/mod/font12/font12_dv.txt`. The fonts and the 12px list moved to
+bank 13 to make room for a third glyph set.
+
+**The settings file.** `LASTROM=` is written at each launch, for the 0918
+mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives
+the fast launch game. `SGB BOOT:` shows `AUTO` when our stage1 handles the
+Super Game Boy.
 
 ### The FW6 clock load, removed
 

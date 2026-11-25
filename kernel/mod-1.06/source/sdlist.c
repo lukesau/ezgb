@@ -33,6 +33,7 @@
 #include "ezcfg.h"		/* mod: the settings file */
 #include "list12.h"		/* mod: the 12px list */
 #include "rommenu.h"		/* mod: the hold-A menu */
+#include "savemgr.h"		/* mod: the daily backup */
 
 #ifdef LANG_ZH
 #include "ui_zh.h"		/* Chinese list renderer (list_zh.c) */
@@ -180,6 +181,7 @@ void Show_SD_list(void) __banked
 				res = f_mkdir_bank(s_saver);
 
 
+				save_daily(currentpath_temp);		/* mod: DAILY BACKUP, before the save is written (savemgr.c) */
 				Show_SAVE_info(save_size,is_autosave);				
 				cfg_backup();		/* mod: the clock to /EZGB.CFG, as at a launch */
 		}

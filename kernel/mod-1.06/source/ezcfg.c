@@ -13,9 +13,14 @@
                                at the next boot. Written only when the file
                                already has the key
      THEME=1                   the colors: 0 light, 1 dark, 2 red, 3 green,
-                               4 purple, 5 blue (docs/themes.md)
+                               4 purple, 5 blue, 6 custom, 7 DV (docs/themes.md)
      TAGS=1                    full names in the list; 0 or no key cuts them
                                at their tags (CLEAN NAMES)
+     DAILYBACKUP=1             keep a dated copy of a save on the day's first
+                               backup (savemgr.c)
+     LASTROM=/Pokemon/Red.gb   the last game launched, for the 0918 mod
+     COLORS=1E2A44,F2D7A0      the custom theme (6): background, text and,
+                               as a third, the highlight (read, never written)
      UI=12                     the font: 8 (or no key) the 8px console font, 12
                                the proportional 12px one, EZF EZ Flash's
                                6x12 one in the same layout. SLIM, the 0918
@@ -62,7 +67,13 @@ UINT8 cfg_bootrom;			/* BOOTROM=1 */
 UINT8 cfg_theme;				/* THEME=, as the file has it */
 UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM, 3 is EZF */
 UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
-UINT8 ui_font;				/* 1: the mod's 12px font (list12.c), 2: EZ Flash's 6x12 in the same layout */
+UINT8 cfg_daily;			/* DAILYBACKUP=1 (savemgr.c) */
+UINT8 sgb_auto;				/* our stage1 handles the SGB: SGB BOOT shows AUTO */
+UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
+static UINT8 custom_ramp[8];
+static char cfg_lastrom[FLAUNCH_MAX + 1U];	/* LASTROM=, the last game launched */
+static UINT8 cfg_found;			/* /EZGB.CFG opened */
+UINT8 ui_font;				/* 1: the mod's 12px font (list12.c), 2: EZ Flash's 6x12 and 3: the slim set, in the same layout */
 UINT8 ui_font_cfg;			/* what the settings ask for; ui_font is 0 on a screen that is 8px only */
 UINT8 list_rows;			/* rows of the file list: 16, or 10 in 12px */
 char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
@@ -88,7 +99,7 @@ extern TCHAR lfname_temp[];
 UINT8 launch_mode;			/* 0 reset, 1 the DMG family jumps, 2 a CGB game jumps */
 UINT8 boot_regs[8];			/* F A C B E D L H, what the game gets on a jump */
 
-static char cfg_path[10];
+static char cfg_path[13];
 static UINT8 now[6];			/* the chip's reading, same order */
 static UINT8 now_flags;			/* NOW_ bits */
 
@@ -214,7 +225,8 @@ static UINT8 key_tail(const char *s, const char *t)
 }
 
 /* 0 for a line this kernel does not know, else 1 RTC, 2 AUTOSAVE, 3 RTCSD,
-   4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI, 9 TAGS.
+   4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI, 9 TAGS, 10 DAILYBACKUP,
+   11 LASTROM, 12 COLORS.
    *skip gets the length of the key and '='. */
 static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 {
@@ -227,6 +239,9 @@ static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 	if((*skip = key_is(p, "THEME")) != 0U) return 7U;
 	if((*skip = key_is(p, "UI")) != 0U) return 8U;
 	if((*skip = key_is(p, "TAGS")) != 0U) return 9U;
+	if((*skip = key_is(p, "DAILYBACKUP")) != 0U) return 10U;
+	if((*skip = key_is(p, "LASTROM")) != 0U) return 11U;
+	if((*skip = key_is(p, "COLORS")) != 0U) return 12U;	/* read, and kept as it is */
 	return 0U;
 }
 
@@ -264,6 +279,70 @@ static void parse_rtc(const UINT8 *p, const UINT8 *end)
 	cfg_have_rtc = 1U;
 }
 
+static UINT8 hexv(UINT8 c)
+{
+	if((c >= '0') && (c <= '9')) return (UINT8)(c - '0');
+	c = up(c);
+	if((c >= 'A') && (c <= 'F')) return (UINT8)(c - 'A' + 10U);
+	return 0xFFU;
+}
+
+/* COLORS=RRGGBB,RRGGBB or with a third: the custom theme's background, its
+   text and its highlight (docs/themes.md "Custom colors"). The value is
+   read as its first 12 hex digits, or 18, whatever is between them. Each
+   channel keeps its top 5 bits. Index 1 is the background moved 3/16 of
+   the way to the text; with no third color the highlight is halfway. */
+static void parse_colors(const UINT8 *p, const UINT8 *end)
+{
+	UINT8 ch[9];
+	UINT8 n = 0U;
+	UINT8 hi = 0xFFU;
+	UINT8 v;
+	UINT8 i;
+	UINT8 a;
+	UINT8 b;
+	UINT16 w;
+
+	while((p < end) && (n < 9U))
+	{
+		v = hexv(*p++);
+		if(v == 0xFFU) continue;
+		if(hi == 0xFFU) hi = v;
+		else
+		{
+			ch[n++] = (UINT8)(((hi << 4) | v) >> 3);
+			hi = 0xFFU;
+		}
+	}
+	if(n < 6U) return;
+	for(i = 0U; i < 3U; i++)
+	{
+		a = ch[i];
+		b = ch[3U + i];
+		if(n < 9U) ch[6U + i] = (UINT8)((a + b) >> 1);
+		/* index 1, kept in the high bits of nothing: computed below */
+	}
+	for(i = 0U; i < 4U; i++)
+	{
+		UINT8 c3[3];
+		UINT8 j;
+
+		for(j = 0U; j < 3U; j++)
+		{
+			a = ch[j];
+			b = ch[3U + j];
+			if(i == 0U) c3[j] = a;
+			else if(i == 1U) c3[j] = (b >= a) ? (UINT8)(a + (((b - a) * 3U) >> 4)) : (UINT8)(a - (((a - b) * 3U) >> 4));
+			else if(i == 2U) c3[j] = ch[6U + j];
+			else c3[j] = b;
+		}
+		w = ((UINT16)c3[2] << 10) | ((UINT16)c3[1] << 5) | c3[0];
+		custom_ramp[i * 2U] = (UINT8)w;
+		custom_ramp[i * 2U + 1U] = (UINT8)(w >> 8);
+	}
+	custom_ok = 1U;
+}
+
 /* The file's first sector into SD_buffer, spaces after its end. The first
    line with a key wins. With keep 0 the settings are taken from it; with
    keep 1 they are left alone and the lines this kernel manages are cut
@@ -284,6 +363,7 @@ static UINT16 file_read(UINT8 keep)
 	hw_set_page(A000Address_TF);
 	if(f_open_bank(&gfil, cfg_path, FA_READ) == FR_OK)
 	{
+		cfg_found = 1U;
 		if(f_read_bank(&gfil, SD_buffer, CFG_SIZE, &got) != FR_OK) got = 0U;
 		f_close_bank(&gfil);
 	}
@@ -324,6 +404,8 @@ static UINT16 file_read(UINT8 keep)
 				else cfg_ui = 0U;
 			}
 			else if(k == 9U) tags_hide = (c == '0') ? 1U : 0U;
+			else if(k == 10U) cfg_daily = (c == '1') ? 1U : 0U;
+			else if(k == 12U) parse_colors(SD_buffer + rd + skip, SD_buffer + eol);
 			else
 			{
 				UINT8 n = 0U;
@@ -335,7 +417,7 @@ static UINT16 file_read(UINT8 keep)
 				cfg_flaunch[n] = 0;
 			}
 		}
-		if(k && keep)
+		if(k && (k != 12U) && keep)
 		{
 			rd = eol;				/* cut */
 			continue;
@@ -371,7 +453,7 @@ static void file_write(void)
 	UINT8 k;
 
 	at = file_read(1U);
-	for(k = 1U; k <= 9U; k++)
+	for(k = 1U; k <= 11U; k++)
 	{
 		p = line;
 		if(k == 1U)
@@ -436,11 +518,26 @@ static void file_write(void)
 			else memcpy(p, "UI=EZF", 6U);
 			p += (cfg_ui == 1U) ? 5 : ((cfg_ui == 2U) ? 7 : 6);
 		}
-		else
+		else if(k == 9U)
 		{
 			if(tags_hide) continue;
 			memcpy(p, "TAGS=1", 6U);
 			p += 6;
+		}
+		else if(k == 10U)
+		{
+			if(!cfg_daily) continue;
+			memcpy(p, "DAILYBACKUP=1", 13U);
+			p += 13;
+		}
+		else
+		{
+			if(!cfg_lastrom[0]) continue;
+			memcpy(p, "LASTROM=", 8U);
+			p += 8;
+			n = (UINT16)strlen(cfg_lastrom);
+			memcpy(p, cfg_lastrom, n);
+			p += n;
 		}
 		*p++ = '\r';
 		*p++ = '\n';
@@ -458,6 +555,31 @@ static void file_write(void)
 		f_close_bank(&gfil);
 	}
 	hw_set_page(A000Address_TF);
+}
+
+/* With no /EZGB.CFG, the one-line /FLAUNCH.CFG of old versions of the mod
+   gives the fast launch game; the next save writes /EZGB.CFG. */
+static void flaunch_legacy(void)
+{
+	UINT16 got = 0U;
+	UINT8 n = 0U;
+
+	memcpy(cfg_path, "/FLAUNCH.CFG", 13U);
+	hw_set_page(A000Address_TF);
+	if(f_open_bank(&gfil, cfg_path, FA_READ) == FR_OK)
+	{
+		if(f_read_bank(&gfil, SD_buffer, FLAUNCH_MAX, &got) != FR_OK) got = 0U;
+		f_close_bank(&gfil);
+	}
+	while((n < got) && (SD_buffer[n] != '\r') && (SD_buffer[n] != '\n') && SD_buffer[n])
+	{
+		cfg_flaunch[n] = (char)SD_buffer[n];
+		n++;
+	}
+	while(n && (cfg_flaunch[n - 1U] == ' ')) n--;
+	cfg_flaunch[n] = 0;
+	if((cfg_flaunch[0] != '/') && (cfg_flaunch[0] != '#')) cfg_flaunch[0] = 0;
+	memcpy(cfg_path, "/EZGB.CFG", 10U);
 }
 
 /* ---- the save info page ---- */
@@ -588,7 +710,7 @@ static void font_set(void)
 #ifdef LANG_ZH
 	ui_font = 0U;			/* the Chinese build has its own 12px text, ui_zh.c */
 #else
-	ui_font = (cfg_ui == 3U) ? 2U : (cfg_ui ? 1U : 0U);
+	ui_font = (cfg_ui == 3U) ? 2U : ((cfg_ui == 2U) ? 3U : cfg_ui);
 #endif
 	ui_font_cfg = ui_font;
 	list_rows = ui_font ? 10U : 16U;
@@ -597,11 +719,12 @@ static void font_set(void)
 /* ---- themes ---- */
 
 
-/* The theme in use. The 0918 mod has two more, custom (6) and DV (7): here
-   they show as dark, and the file keeps its number until the row is used. */
+/* The theme in use. Custom (6) without a COLORS= line shows as dark, and
+   the file keeps its number until the row is used. */
 UINT8 theme_now(void) __banked
 {
-	return (cfg_theme < THEMES) ? cfg_theme : 1U;
+	if((cfg_theme >= THEMES) || ((cfg_theme == 6U) && !custom_ok)) return 1U;
+	return cfg_theme;
 }
 
 /* What color index 0 to 3 draws as (docs/themes.md), BGR555 low byte
@@ -622,8 +745,10 @@ static void theme_apply(void)
 		{0x22U, 0x0DU, 0xA8U, 0x25U, 0x18U, 0x3DU, 0xFFU, 0x7FU},	/* green, rose #C2407F */
 		{0x48U, 0x30U, 0x0DU, 0x41U, 0xF3U, 0x01U, 0xFFU, 0x7FU},	/* purple, gold #9A7A00 */
 		{0xA2U, 0x30U, 0x48U, 0x41U, 0x79U, 0x0DU, 0xFFU, 0x7FU},	/* blue, apricot #C85A1A */
+		{0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U},	/* custom: custom_ramp */
+		{0x00U, 0x00U, 0xEFU, 0x1BU, 0x80U, 0x61U, 0xFFU, 0x7FU},	/* DV: lime #7BFF31, blue #0063C5 */
 	};
-	const UINT8 *r = ramps[theme_now()];
+	const UINT8 *r = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
 	UINT8 pal;
 	UINT8 i;
 
@@ -663,8 +788,13 @@ static void sgb_start(void)
 	UINT8 m;
 
 	sgb_on = 0U;
+	sgb_auto = 0U;
 	m = info_get(0x413U);
-	if((info_get(0x412U) == 'S') && ((m == 'B') || (m == 'N'))) return;
+	if((info_get(0x412U) == 'S') && ((m == 'B') || (m == 'N')))
+	{
+		sgb_auto = 1U;
+		return;
+	}
 	if(!sgb_record()) return;
 	sgb_on = 1U;
 	sgb_set1();			/* the first set, 0.4 s */
@@ -766,6 +896,7 @@ void console_init(void) __banked
 	ui_font = 0U;
 	ui_font_cfg = 0U;
 	tags_hide = 1U;
+	cfg_daily = 0U;
 	list_rows = 16U;
 	sgb_step = 0U;
 	sgb_wait = 0U;
@@ -813,7 +944,12 @@ void cfg_boot(void) __banked
 	cfg_theme = 0U;
 	cfg_ui = 0U;
 	tags_hide = 1U;
+	cfg_daily = 0U;
+	custom_ok = 0U;
+	cfg_lastrom[0] = 0;
+	cfg_found = 0U;
 	file_read(0U);
+	if(!cfg_found) flaunch_legacy();
 	theme_apply();
 	font_set();
 	plays_load();		/* stars and play counts, from /.ezgbplays (plays.c) */
@@ -892,6 +1028,14 @@ void cfg_launch(void) __banked
 
 	sgb_finish();			/* what is left of the SGB packets goes before the game */
 	plays_bump((const UINT8 *)lfname_temp);		/* one more launch of this game (plays.c) */
+	/* LASTROM=, which the 0918 mod's START overlay falls back to */
+	if((UINT16)strlen(currentpath) + (UINT16)strlen(lfname_temp) + 1U <= FLAUNCH_MAX)
+	{
+		strcpy(cfg_lastrom, currentpath);
+		if(currentpath[1]) strcat(cfg_lastrom, "/");
+		strcat(cfg_lastrom, lfname_temp);
+		dirty = 1U;
+	}
 	v = info_get(0x200U);
 	if((v <= 1U) && (!cfg_have_autosave || (v != cfg_autosave)))
 	{

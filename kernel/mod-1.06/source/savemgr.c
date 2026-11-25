@@ -38,6 +38,7 @@
 #include "ff.h"
 #include "Bank_fun.h"
 #include "savemgr.h"
+#include "ezcfg.h"
 #include "list12.h"
 
 #include "modbank.h"
@@ -479,5 +480,42 @@ void save_manager(const char *name) __banked
 		}
 	}
 	while(joypad()) wait_vbl_done();
+	color(BLACK, WHITE, SOLID);
+}
+
+/* ---- the daily backup ---- */
+
+/* DAILY BACKUP (docs/save-manager.md): at boot, when a save is waiting to
+   be written to savepath ("/SAVER/<base>.sav") and that file was last
+   written before today by the cart's clock, it is copied to a backup first
+   and the game's other backups are deleted, so the game has one backup, of
+   the save as it was before today's play. Later boots the same day find
+   the file written today and leave the backup alone. The test is only as
+   good as the clock. A 32 KB copy takes several seconds, at most once a
+   day a game. */
+void save_daily(const char *savepath) __banked
+{
+	DWORD t;
+	UINT8 n;
+	UINT8 i;
+
+	if(!cfg_daily) return;
+	n = (UINT8)strlen(savepath);
+	if((n < 12U) || (n - 11U > BASE_MAX) || memcmp(savepath, "/SAVER/", 7U)) return;
+	blen = (UINT8)(n - 11U);			/* less "/SAVER/" and ".sav" */
+	memcpy(base, savepath + 7, blen);
+	base[blen] = 0;
+
+	scan();
+	if(!have_live) return;
+	t = get_fattime() >> 16;
+	if((live.y == (UINT8)(t >> 9)) && (live.mo == (UINT8)((t >> 5) & 15U)) && (live.d == (UINT8)(t & 31U))) return;
+
+	color(BLACK, DKGREY, SOLID);
+	box(11, 37, 149, 76, M_FILL);
+	text("Daily backup...", 2U, 5U, 16U);
+	text("a few seconds", 2U, 7U, 16U);
+	for(i = 0U; i < count; i++) del_backup(i);
+	backup();
 	color(BLACK, WHITE, SOLID);
 }

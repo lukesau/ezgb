@@ -34,6 +34,7 @@
 #include "rommenu.h"
 #include "savemgr.h"
 #include "plays.h"
+#include "textview.h"
 #include "list12.h"
 
 #pragma bank 4
@@ -148,8 +149,18 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 
 	HW_BANK = Folder_sram_bank + (UINT8)(n / Num_perBank);
 	strcpy(name, (const char *)pFilename_buffer[n % Num_perBank].filename);
-	if(!is_rom((const UINT8 *)name)) return 0U;
 	if(pad_prev & J_A) return 1U;			/* held from before: not this row's press */
+	if(!is_rom((const UINT8 *)name))
+	{
+		/* a text file opens in the viewer (textview.c); any other file
+		   takes the path it did */
+		if(!text_view(name)) return 0U;
+		color(BLACK, WHITE, SOLID);
+		DrawGB(3);
+		hw_set_page(A000Address_SRAM);
+		Show_filename(show_offset, file_select);
+		return 1U;
+	}
 
 	for(t = 0U; t < HOLD_FRAMES; t++)
 	{

@@ -1,5 +1,5 @@
 /* ============================================================================
-   font12.c  -  mod: the 12px proportional font (bank 8)
+   font12.c  -  mod: the 12px proportional font (bank 13)
    ----------------------------------------------------------------------------
    The 0918 mod's renderer and layout (kernel/mod/src/draw12.c and
    layout12.c, docs/font12.md), for this kernel: no DV, and
@@ -26,7 +26,7 @@
 
 #include "font12.h"
 
-#pragma bank 8
+#pragma bank 13
 
 typedef UINT8 u8;
 typedef UINT16 u16;
@@ -35,11 +35,13 @@ extern const u8 Font12[];		/* 101 glyphs x 24 bytes */
 extern const u8 Font12Metrics[];
 extern const u8 Font12Ezf[];		/* EZ Flash's 6x12 font in the same shape (tools/ezf-pack.py) */
 extern const u8 Font12EzfMetrics[];
-extern UINT8 ui_font;			/* 2: the EZF set */
+extern const u8 Font12Slim[];		/* the 0918 mod's slim set, 6 px a letter (font12_dv.txt) */
+extern const u8 Font12SlimMetrics[];
+extern UINT8 ui_font;			/* 2: the EZF set, 3: the slim one */
 
 /* the glyph set in use and its metrics */
-#define FONT	((ui_font == 2U) ? Font12Ezf : Font12)
-#define METRICS	((ui_font == 2U) ? Font12EzfMetrics : Font12Metrics)
+#define FONT	((ui_font == 2U) ? Font12Ezf : ((ui_font == 3U) ? Font12Slim : Font12))
+#define METRICS	((ui_font == 2U) ? Font12EzfMetrics : ((ui_font == 3U) ? Font12SlimMetrics : Font12Metrics))
 
 #define M_ADV   0			/* u8[101] advance */
 #define M_W     101			/* u8[101] ink width */

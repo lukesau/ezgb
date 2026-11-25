@@ -62,7 +62,7 @@ SRCS := main ezgb_hw diskio ff ff_1 ff_2 ff_3 ff_4 ffunicode \
         SD_operate GBcard_OP RTC Help UI Bank_fun
 # mod: drawing is the library module with the VRAM race fixed, linked ahead of
 # the library; vram_put is the fill's tile writer
-SRCS += drawing vram_put browser ezcfg launch sgb list8 setpage rommenu modmisc sdlist savemgr ff_5 plays
+SRCS += drawing vram_put browser ezcfg launch sgb list8 setpage rommenu modmisc sdlist savemgr ff_5 plays textview
 SRCS += $(LANG_SRCS)
 
 OBJS   := $(addprefix $(BUILD)/,$(addsuffix .o,$(SRCS)))
@@ -137,6 +137,11 @@ FONT12 += build/font12_ezf.bin build/font12_ezf-metrics.bin
 build/font12_ezf.bin: source/asc12x6.c tools/ezf-pack.py build/font12.bin
 	python3 tools/ezf-pack.py source/asc12x6.c build/font12.bin build/font12-metrics.bin build/font12_ezf.bin build/font12_ezf-metrics.bin
 build/font12_ezf-metrics.bin: build/font12_ezf.bin
+#  mod: the 0918 mod's slim set, a fixed 6 px (SLIM)
+FONT12 += build/font12_slim.bin build/font12_slim-metrics.bin
+build/font12_slim.bin: ../mod/font12/font12_dv.txt ../tools/font12-pack.py | $(BUILD)
+	python3 ../tools/font12-pack.py -i ../mod/font12/font12_dv.txt -o build/font12_slim.bin -m build/font12_slim-metrics.bin --mono 6
+build/font12_slim-metrics.bin: build/font12_slim.bin
 $(BUILD)/font12_data.o: $(FONT12)
 
 $(BUILD)/mod_version.h: VERSION | $(BUILD)

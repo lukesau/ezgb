@@ -36,7 +36,8 @@
 #define ROW_TAGS	6U
 #define ROW_RTCSD	7U
 #define ROW_PLAYS	8U	/* page 3 */
-#define ROWS		9U
+#define ROW_DAILY	9U
+#define ROWS		10U
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -46,6 +47,7 @@ static UINT8 row_on(UINT8 row)
 	if(row == ROW_SGB) return sgb_record();
 	if(row == ROW_TAGS) return tags_hide;
 	if(row == ROW_PLAYS) return plays_sort_on();
+	if(row == ROW_DAILY) return cfg_daily;
 	return cfg_rtcsd;
 }
 
@@ -75,21 +77,27 @@ static void row_act(UINT8 row)
 	{
 		if(!cfg_flaunch_last()) return;		/* the last game launched */
 	}
-	else if(row == ROW_SGB) what = CFG_SGB;
+	else if(row == ROW_SGB)
+	{
+		if(sgb_auto) return;
+		what = CFG_SGB;
+	}
 	else if(row == ROW_THEME)
 	{
 		/* the next theme; where only BGP can be set there are two */
 		cfg_theme = (UINT8)(theme_now() + 1U);
+		if((cfg_theme == 6U) && !custom_ok) cfg_theme = 7U;	/* custom needs a COLORS= line */
 		if(cfg_theme >= (cgb_mode ? THEMES : 2U)) cfg_theme = 0U;
 		what = CFG_THEME;
 	}
 	else if(row == ROW_FONT)
 	{
-		/* 8PX, 12PX, EZF and round again */
-		cfg_ui = (cfg_ui == 0U) ? 1U : ((cfg_ui == 3U) ? 0U : 3U);
+		/* 8PX, 12PX, SLIM, EZF and round again */
+		cfg_ui = (cfg_ui >= 3U) ? 0U : (UINT8)(cfg_ui + 1U);
 		what = CFG_FONT;
 	}
 	else if(row == ROW_TAGS) tags_hide ^= 1U;
+	else if(row == ROW_DAILY) cfg_daily ^= 1U;
 	else if(row == ROW_PLAYS)
 	{
 		plays_sort_set(plays_sort_on() ? 0U : 1U);	/* its record and /.ezgbplays, not the settings file */
@@ -101,7 +109,7 @@ static void row_act(UINT8 row)
 
 static void row_draw(UINT8 row, UINT8 sel)
 {
-	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE"};
+	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
 	UINT8 s[21];
 	UINT8 trow = (UINT8)(3U + (row % PER_PAGE) * 2U);
 	UINT8 y = (UINT8)(trow << 3);
@@ -109,7 +117,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 	UINT8 i;
 	const char *v;
 
-	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT))
+	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto))
 	{
 		/* a value, from column 6 for the game and 13 for the others */
 		memset(s, ' ', 20U);
@@ -122,10 +130,11 @@ static void row_draw(UINT8 row, UINT8 sel)
 			if(!*v) v = "NOT SET";
 		}
 		else if(row == ROW_THEME) v = names[theme_now()];
+		else if(row == ROW_SGB) v = "AUTO";		/* our stage1 sends the packets itself */
 #ifdef LANG_ZH
 		else v = "12PX";			/* the Chinese build's text is always 12px */
 #else
-		else v = (ui_font_cfg == 2U) ? "EZF" : (ui_font_cfg ? "12PX" : "8PX");
+		else v = (ui_font_cfg == 2U) ? "EZF" : ((ui_font_cfg == 3U) ? "SLIM" : (ui_font_cfg ? "12PX" : "8PX"));
 #endif
 		n = (UINT8)strlen(v);
 		if(n > 14U) n = 14U;
@@ -156,7 +165,7 @@ static void page_draw(UINT8 row)
 	static const char labels[ROWS][15] = {
 		"SKIP BOOT ROM:", "FAST LAUNCH:", "GAME:", "SGB BOOT:",
 		"THEME:", "FONT:", "CLEAN NAMES:", "RTC SD BACKUP:",
-		"SORT BY PLAYS:",
+		"SORT BY PLAYS:", "DAILY BACKUP:",
 	};
 	UINT8 s[16];
 	UINT8 first = (UINT8)(row - (row % PER_PAGE));

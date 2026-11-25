@@ -2,7 +2,7 @@
 ;; the renderer's bank (font12.c). The makefile packs them from
 ;; kernel/mod/font12/font12.txt with kernel/tools/font12-pack.py.
 
-        .area   _CODE_8
+        .area   _CODE_13
 
 _Font12::
         .incbin "build/font12.bin"
@@ -17,3 +17,11 @@ _Font12Ezf::
 
 _Font12EzfMetrics::
         .incbin "build/font12_ezf-metrics.bin"
+
+;; the 0918 mod's slim set (kernel/mod/font12/font12_dv.txt packed with
+;; --mono 6): the SET tab's SLIM
+_Font12Slim::
+        .incbin "build/font12_slim.bin"
+
+_Font12SlimMetrics::
+        .incbin "build/font12_slim-metrics.bin"

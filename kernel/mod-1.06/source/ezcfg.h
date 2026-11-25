@@ -15,9 +15,9 @@ void cfg_backup(void) __banked;			/* a save backup was written at boot */
 
 /* the settings, for setpage.c */
 #define FLAUNCH_MAX	122U
-extern UINT8 cfg_rtcsd, cfg_bootrom, cfg_theme, cfg_ui, cfg_sgb, cgb_mode, tags_hide;
+extern UINT8 cfg_rtcsd, cfg_bootrom, cfg_theme, cfg_ui, cfg_sgb, cgb_mode, tags_hide, cfg_daily, sgb_auto, custom_ok;
 extern char cfg_flaunch[FLAUNCH_MAX + 1U];
-#define THEMES		6U
+#define THEMES		8U
 #define CFG_BOOTROM	0U
 #define CFG_THEME	1U
 #define CFG_FONT	2U
