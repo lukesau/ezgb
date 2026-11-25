@@ -2,7 +2,9 @@
 
 The repository is AGPLv3 ([LICENSE](LICENSE)). That covers what this
 project wrote: the notes, the tooling, the mod, our stage1, the readable
-Verilog. The stock software also links other people's code, and building
+Verilog. Two parts of it, the boot splash of our stage1 and the changes
+to kernel 1.06, are also offered under the Apache License 2.0 (the
+README's License section). The stock software also links other people's code, and building
 it from source means having that code here. Each piece keeps its license.
 
 | Piece | Where | From | License |
@@ -14,7 +16,7 @@ it from source means having that code here. Each piece keeps its license.
 | The SD card controller | `stage0/fw4/rtl/sd_*.v`, `stage0/fw5-0918/sd_*.v` | Marek Czerski's [SD card controller](https://github.com/mczerski/SD-card-controller) (2013), after Adam Edvardsson's (2009); the FIFO is Rudolf Usselmann's generic FIFO (2000-2002). Rewritten here from the bitstream with the source beside it | GNU LGPL 2.1 or later ([LICENSE-LGPL-2.1](LICENSE-LGPL-2.1)); the FIFO under its BSD-style notice (each module's header) |
 | The PicoBlaze | `stage0/fw4/rtl/picoblaze.v` | Xilinx's KCPSM3, by Ken Chapman. Written here from the bitstream, keeping KCPSM3's structure register for register; none of Xilinx's source is in the repository | Xilinx's KCPSM3 terms allow its use in Xilinx devices |
 | `hardware.inc` | `kernel/*/disassembly/`, `stage1/*/disassembly/` | the gbdev hardware definitions, as mgbdis writes them | public domain (CC0) |
-| Kernel 1.06 | `kernel/stock-1.06/`, `kernel/mod-1.06/` | EZ Flash's source for 1.06e and 1.06c, received from the EZ Flash team 2026-11-18. `stock-1.06` is unchanged, `mod-1.06` has this project's changes | Apache License 2.0 ([LICENSE-APACHE-2.0](LICENSE-APACHE-2.0)), by the author's statement; its FatFs is ChaN's |
+| Kernel 1.06 | `kernel/stock-1.06/`, `kernel/mod-1.06/` | EZ Flash's source for 1.06e and 1.06c, received from the EZ Flash team 2026-11-18. `stock-1.06` is unchanged, `mod-1.06` has this project's changes, which are offered under Apache 2.0 as well as the AGPLv3 (README, License) | Apache License 2.0 ([LICENSE-APACHE-2.0](LICENSE-APACHE-2.0)), by the author's statement; its FatFs is ChaN's |
 | The Tamzen font | `kernel/mod/font12/` | Tamzen, after Tamsyn | `kernel/mod/font12/LICENSE-Tamzen` |
 
 ## EZ Flash's code

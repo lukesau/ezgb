@@ -268,3 +268,24 @@ binaries, the kernel 1.06 source is theirs under the
 [Apache License 2.0](LICENSE-APACHE-2.0), and their binaries are not in the
 repository. Other people's code keeps its
 license; [THIRD-PARTY.md](THIRD-PARTY.md) lists it.
+
+### Also under the Apache License 2.0
+
+Two parts of this project's work are dual licensed: you may take them
+under the AGPLv3 above or under the
+[Apache License 2.0](LICENSE-APACHE-2.0), at your choice. They are the
+parts EZ Flash could use in the software it ships, which the AGPLv3 would
+not let it do.
+
+- **The boot splash of our stage1**: `stage1/src/video.c`,
+  `stage1/src/video.h`, `stage1/src/main.c`, `stage1/tools/mkwordmark.py`,
+  `stage1/tools/mkicon.py`, `stage1/art/ezflash.txt` and
+  `stage1/art/jr.txt`. The icon and the EZ-FLASH name it draws are EZ
+  Flash's marks, and neither license gives anyone else a right to them.
+- **This project's changes to kernel 1.06**, in `kernel/mod-1.06`: every
+  file there this project wrote, and its changes to EZ Flash's files,
+  which are Apache already. [Its README](kernel/mod-1.06/README.md#license)
+  names the three things in that folder that are someone else's and keep
+  their license.
+
+The rest of the repository is AGPLv3 only.

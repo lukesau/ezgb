@@ -3,8 +3,24 @@
 [kernel/stock-1.06](../stock-1.06/README.md) with this project's changes:
 fixes, and the 0918 mod's features as they are brought over.
 The pristine source stays there; this folder is a full copy, so it builds
-without it. Apache License 2.0, as the source it comes from
-([LICENSE-APACHE-2.0](../../LICENSE-APACHE-2.0)).
+without it.
+
+## License
+
+EZ Flash's source is under the Apache License 2.0
+([LICENSE-APACHE-2.0](../../LICENSE-APACHE-2.0)). This project's work in
+this folder, the files it added and its changes to EZ Flash's files, is
+dual licensed: the Apache License 2.0 or the repository's AGPLv3
+([LICENSE](../../LICENSE)), at your choice. So the folder as a whole can be
+taken under Apache 2.0, and EZ Flash can use any of it.
+
+Three things here are someone else's and keep their license:
+
+| What | License |
+|---|---|
+| `source/drawing.s`: GBDK-2020's drawing library, with this project's fix | GPLv2 with a linking exception, as GBDK's library is; the fix is offered under that too |
+| FatFs (`ff*.c`, `ff.h`, `ffconf.h`, `diskio.h`, `integer.h`, `ccsbcs.c`, `cc936_zh.c`), `ff_5.c` among them | ChaN's, in the files' headers |
+| The 12px glyph tables | not in this folder: the build packs them from `kernel/mod/font12/font12.txt`, which is drawn from the Tamzen font (`kernel/mod/font12/LICENSE-Tamzen`) |
 
 This is not the mod kernel. The mod with its features is
 [kernel/mod](../mod/README.md), on the 1.05e-0918 base.

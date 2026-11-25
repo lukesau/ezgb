@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* Boot screen: the EZ Flash icon, a line of title text, a status line.
  * Tiles $20-$5A are the font (tile number = ASCII), tiles $80+ the icon,
  * then the EZ-FLASH Jr. wordmark (stage1/tools/mkwordmark.py), map $9800

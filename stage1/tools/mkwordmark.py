@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+# Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+# Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+# License section of the README).
 """Compose the boot-screen wordmark: EZ-FLASH with the brush "Jr." over it.
 
     mkwordmark.py ezflash.txt jr.txt OUT.c [--jr-at 98,2] [--rotate 15] [--pivot 8,0]

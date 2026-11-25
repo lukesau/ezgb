@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* stage1: show the boot screen, find the kernel (EZGB.DAT) on the SD card,
  * have the FPGA load it, enter it at $0100. Same steps as the stock
  * bootstrap (stage1/docs/design.md), written from scratch. With fast launch
