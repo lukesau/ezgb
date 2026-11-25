@@ -18,6 +18,7 @@
 #include "RTC.h"
 #include "ezcfg.h"		/* mod: the settings file */
 #include "list12.h"		/* mod: the 12px list */
+#include "rommenu.h"		/* mod: the hold-A menu */
 
 #ifdef LANG_ZH
 #include "ui_zh.h"		/* Chinese list renderer (list_zh.c) */
@@ -689,6 +690,9 @@ re_showfile:
 						}
 			      
 						else{   //  file
+							/* mod: a hold of A is the game's menu, and an A still held
+							   from opening the folder is no press (rommenu.c) */
+							if(rom_menu(show_offset, file_select)) continue;
 							Show_loading();
 	
 							mem_set(lfname_temp,0x00,MAX_path_len);

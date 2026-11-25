@@ -71,6 +71,7 @@ UINT8 sgb_step;
 UINT8 sgb_wait;
 UINT8 sgb_busy;
 UINT8 pad_last;
+UINT8 pad_prev;
 static UINT8 sgb_on;			/* this boot sends the header packets */
 UINT8 cfg_sgb;				/* SGB=: 0 off, 1 on, 2 the file does not say */
 void sgb_set1(void);
@@ -764,6 +765,7 @@ void console_init(void) __banked
 	sgb_wait = 0U;
 	sgb_busy = 0U;
 	pad_last = 0U;
+	pad_prev = 0U;
 	sgb_start();
 	cgb_mode = 0U;
 	VBK_REG = 0U;

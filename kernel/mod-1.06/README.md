@@ -38,6 +38,7 @@ under the kernel's version.
 | Two more SET pages for the mod's settings | `source/setpage.c`, `source/ezcfg.c`, `source/RTC.c` |
 | Themes: light, dark and four colors | `source/ezcfg.c` |
 | The 12px proportional font (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
+| Hold A on a game for its options | `source/rommenu.c`, `source/main.c`, `source/sgb.s` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -378,6 +379,45 @@ Nothing on a cart.
 
 Not carried over: the star, a 12px recent list, `UI=SLIM` (read as 12px)
 and the DV glyph set.
+
+### Hold A on a game
+
+As in the 0918 mod ([docs/rom-menu.md](../../docs/rom-menu.md)). A tap of
+A on a `.gb` or `.gbc` starts it when A comes up. A held for half a second
+opens a menu for that game:
+
+```
+Options
+<the whole name>          on an inverted band; scrolls when too long
+> Start
+  Fast launch: NO
+[B]back          [A]ok
+```
+
+- **Start** starts the game, as a tap does.
+- **Fast launch** makes this the game power-on starts (`FLAUNCH=` and its
+  whole path), and turns it off again when it already is. This is how a
+  game other than the last one launched is picked.
+- **B** closes the menu and draws the list as it was, the cursor where it
+  was.
+
+The band shows the name in full, tags and ending included, which is where
+to read it when CLEAN NAMES has cut it in the list.
+
+Two things about A in the list change with it. A tap is delayed by its own
+length, since until A comes up a tap and a hold look the same. And an A
+that was already down at the list's poll before is no press: holding A
+used to go on into whatever the opened folder's first entry was. Folders
+still open on the press, and a file that is not a game takes the path it
+did.
+
+Checked in SameBoy, in both fonts: a hold opens the menu, a hold on a
+folder opens it and leaves its first game alone, Fast launch writes the
+path and shows `YES`, B puts the list back, and Start and a tap both start
+the game.
+
+Not carried over: `Manage saves` and `Star`, which wait for those
+features, and the text viewer for a file that is not a game.
 
 ### The FW6 clock load, removed
 

@@ -19,10 +19,11 @@
 ;;   sgb_wait   frames until that step is due
 ;;   sgb_busy   frames of pad freeze left
 ;;   pad_last   what joypad last read
+;;   pad_prev   what it read the time before
 
         .include        "global.s"
 
-        .globl  _sgb_step, _sgb_wait, _sgb_busy, _pad_last
+        .globl  _sgb_step, _sgb_wait, _sgb_busy, _pad_last, _pad_prev
 
         .area   _HOME
 
@@ -56,6 +57,8 @@ _joypad::
         ld      b, a
         ld      a, #0x30
         ldh     (.P1), a
+        ld      a, (_pad_last)          ; the read before this one, for rommenu.c
+        ld      (_pad_prev), a
         ld      a, b
         ld      (_pad_last), a
         ret
