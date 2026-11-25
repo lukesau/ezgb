@@ -91,13 +91,28 @@ static void row_draw(UINT16 n, UINT8 line, UINT8 selected, UINT8 from)
 	font12_draw(s, 0U, (UINT8)(LIST_Y + line * ROW_PITCH), selected ? F12_INVERSE : F12_NORMAL);
 }
 
-/* The position in the folder, at the right of the tab strip */
+/* The position in the folder, at the right of the tab strip: n/total when
+   that fits right of HELP, else n alone */
 static void counter(UINT16 n)
 {
-	UINT8 s[8];
+	UINT8 s[12];
+	UINT8 len;
+	UINT8 w;
 
 	_ultoa((unsigned long)n + 1UL, (char *)s, 10u);
-	font12_draw(s, 128U, 0U, F12_NORMAL);
+	len = (UINT8)strlen((char *)s);
+	s[len] = '/';
+	_ultoa((unsigned long)game_folder_total, (char *)s + len + 1U, 10u);
+	w = font12_end(s, 0U);
+	if(w > 44U)
+	{
+		s[len] = 0U;			/* the number alone */
+		w = font12_end(s, 0U);
+	}
+	s[11] = 0U;
+	/* clear the field, then the text against the right edge */
+	font12_draw((const UINT8 *)"", 116U, 0U, F12_NORMAL);
+	font12_draw(s, (UINT8)(160U - w), 0U, F12_NORMAL);
 }
 
 /* DrawGB for the 12px font. The strip is the 12 pixel rows from y 0 with a

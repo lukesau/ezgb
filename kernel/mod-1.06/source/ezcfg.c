@@ -781,6 +781,15 @@ static void theme_apply(void)
 	UINT8 pal;
 	UINT8 i;
 
+	/* The mark the next boot, and our stage1's boot screen, take the theme
+	   from before the card is read: save RAM bank 17 at $A414, 'T', 'H',
+	   the theme, its complement, then the four colors. */
+	info_put(0x414U, 'T');
+	info_put(0x415U, 'H');
+	info_put(0x416U, theme_now());
+	info_put(0x417U, (UINT8)~theme_now());
+	for(i = 0U; i < 8U; i++) info_put((UINT16)(0x418U + i), r[i]);
+
 	if(!cgb_mode)
 	{
 		BGP_REG = theme_now() ? 0x1BU : 0xE4U;
@@ -934,8 +943,25 @@ void console_init(void) __banked
 	pad_prev = 0U;
 	sgb_start();
 	cgb_mode = 0U;
+	cfg_theme = 0U;
+	custom_ok = 0U;
+	/* the theme of the last boot, from its mark, until the card says */
+	i = info_get(0x416U);
+	if((info_get(0x414U) == 'T') && (info_get(0x415U) == 'H') && (i < THEMES) && (info_get(0x417U) == (UINT8)~i))
+	{
+		cfg_theme = i;
+		if(i == 6U)
+		{
+			for(i = 0U; i < 8U; i++) custom_ramp[i] = info_get((UINT16)(0x418U + i));
+			custom_ok = 1U;
+		}
+	}
 	VBK_REG = 0U;
-	if(VBK_REG & 1U) return;		/* the DMG family */
+	if(VBK_REG & 1U)			/* the DMG family: BGP is all there is */
+	{
+		theme_apply();
+		return;
+	}
 
 	display_off();				/* palette RAM and VRAM take writes at any time */
 	BCPS_REG = 0U;
@@ -959,6 +985,7 @@ void console_init(void) __banked
 		}
 	}
 	LCDC_REG |= 0x80U;
+	theme_apply();				/* the marked theme, in either mode */
 }
 
 /* Boot, once the card is mounted and before the pending save is backed up */

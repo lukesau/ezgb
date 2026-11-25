@@ -389,8 +389,7 @@ Two differences from the 0918 mod:
 - **No custom colors and no DV.** `THEME=6` and `7` from the 0918 mod show
   as dark, and the file keeps its number until the row is used.
 
-The theme is applied once the card is read, so the first second of a boot
-is light. On a DMG the dark theme's selected row is white on light gray,
+On a DMG the dark theme's selected row is white on light gray,
 the mirror of stock's black on dark gray, and as hard to read.
 
 Checked in SameBoy: green and purple on the CGB model with the kernel's
@@ -502,7 +501,7 @@ kernels.
 - **Star**, in a game's hold-A menu, moves it to the top of its folder's
   files, under the folders, with a star for its icon in the 12px fonts.
   **Unstar** puts it back. The folder is listed again after either, with
-  the cursor at the top.
+  the cursor on the game.
 - **Every launch** adds one to the game's count.
 - **`SORT BY PLAYS:`**, on the SET tab's third page, lists files most
   played first, the unplayed by name after them. Starred files stay on top.
@@ -527,8 +526,8 @@ record. Not checked: Unstar, a full table, and a file written by the 0918
 mod. Nothing on a cart.
 
 Differences from the 0918 mod: the whole file is written on a change, four
-sectors, where it writes only the sectors that differ; the cursor does not
-follow a starred game; and the 8px list has no star, only the order.
+sectors, where it writes only the sectors that differ; and the 8px list has
+no star, only the order.
 
 ### Manage saves
 
@@ -620,6 +619,22 @@ inverted. A name too long for a row is cut, not scrolled.
 **The 8px list's selected row** is white on black, where it was black on
 dark gray, which an original Game Boy cannot tell apart. So the list has
 the same bar in every font.
+
+**Moving in the list** (`source/sdlist.c`; docs/browser.md "Moving
+around" has the 0918 mod's, which is davidesqalv's code: this is written
+here from what it does). The list wraps at both ends. RIGHT on the last
+page goes to its bottom row. In the 12px fonts the entry number reads
+`n/total` when that fits right of HELP. Not carried over: its recoloring
+of rows in VRAM and its accelerating key repeat.
+
+**The cursor follows a star**: after Star or Unstar the list comes back
+with the cursor on the game, where it now sorts (`list_follow` in
+`source/browser.c`).
+
+**The theme from power-on.** Applying a theme leaves a mark in save RAM
+(bank 17, `$A414`: `T`, `H`, the theme, its complement, the four colors),
+and the next boot takes the theme from it before the card is read. It is
+the 0918 mod's mark, which our stage1 reads for its boot screen.
 
 **The settings file.** `LASTROM=` is written at each launch, for the 0918
 mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives

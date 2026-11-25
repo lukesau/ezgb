@@ -223,6 +223,7 @@ redraw:
 				/* star or unstar: the folder is listed again, since the
 				   game moves in it */
 				star_toggle((const UINT8 *)name);
+				follow_set((const UINT8 *)name);		/* the cursor goes with the game */
 				while(joypad()) wait_vbl_done();
 				color(BLACK, WHITE, SOLID);
 				return 2U;

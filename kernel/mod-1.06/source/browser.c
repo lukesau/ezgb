@@ -536,3 +536,34 @@ UINT8 name_shown(const FM_FILE_FS *e) __banked
 	for(i = 0U; (i < 0xFEU) && s[i]; i++) {}
 	return i;
 }
+
+/* ---- the cursor after a star ---- */
+
+/* After a game was starred the folder is listed again and the game has
+   moved: the cursor goes to it, on the last row when it is past the first
+   page. plays.c keeps which game. */
+void list_follow(UINT16 *show_offset, UINT8 *file_select) __banked
+{
+	UINT16 i;
+	UINT8 m;
+	UINT8 rows = LIST_ROWS;
+
+	for(i = 0U; i < game_folder_total; i++)
+	{
+		hw_set_page(A000Address_SRAM);
+		HW_BANK = Folder_sram_bank + (UINT8)(i / Num_perBank);
+		m = follow_match(pFilename_buffer[i % Num_perBank].filename);
+		if(m == 0U) return;
+		if(m == 2U)
+		{
+			if(i < rows) *file_select = (UINT8)i;
+			else
+			{
+				*show_offset = (UINT16)(i - (rows - 1U));
+				*file_select = (UINT8)(rows - 1U);
+			}
+			break;
+		}
+	}
+	follow_clear();
+}

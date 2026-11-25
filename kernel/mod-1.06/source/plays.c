@@ -347,3 +347,30 @@ UINT8 plays_active(void) __banked
 	unmap();
 	return (UINT8)(any | (plays_sort_on() << 1));
 }
+
+/* ---- the cursor after a star ---- */
+
+static UINT8 follow_key[4];
+static UINT8 follow_on;
+
+/* The folder is about to be listed again because this game was starred or
+   unstarred: the list puts the cursor back on it (list_follow, browser.c) */
+void follow_set(const UINT8 *name) __banked
+{
+	hash(name);
+	memcpy(follow_key, key, 4U);
+	follow_on = 1U;
+}
+
+/* 0: nothing to follow. 1: name is not the game. 2: it is. */
+UINT8 follow_match(const UINT8 *name) __banked
+{
+	if(!follow_on) return 0U;
+	hash(name);
+	return memcmp(follow_key, key, 4U) ? 1U : 2U;
+}
+
+void follow_clear(void) __banked
+{
+	follow_on = 0U;
+}

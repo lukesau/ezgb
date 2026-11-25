@@ -89,6 +89,7 @@ typedef struct FM_FILE_SECT{
 void Draw_Text(UINT8 *str, UINT8 len, UINT8 x, UINT8 y);
 void Read_all_DIR(void) __banked;	/* mod: browser.c */
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked;	/* mod: list8.c */
+void list_follow(UINT16 *show_offset, UINT8 *file_select) __banked;	/* mod: browser.c */
 UINT8 name_shown(const FM_FILE_FS *e) __banked;	/* mod: browser.c, a name's length as the list draws it */
 extern UINT8 tags_hide;		/* mod: CLEAN NAMES, ezcfg.c */
 void Draw_SRAM_Text(UINT8 num_num, UINT8 isFolder, UINT8 x, UINT8 y);

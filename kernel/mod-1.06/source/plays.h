@@ -13,4 +13,8 @@ void plays_sort_set(UINT8 on) __banked;
 UINT8 plays_active(void) __banked;			/* bit 0: something is starred, bit 1: SORT BY PLAYS */
 UINT8 plays_lookup(const UINT8 *name, UINT8 *launches) __banked;	/* bit 0: starred */
 
+void follow_set(const UINT8 *name) __banked;
+UINT8 follow_match(const UINT8 *name) __banked;
+void follow_clear(void) __banked;
+
 #endif

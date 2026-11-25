@@ -279,6 +279,7 @@ refind_file:
 	
 	file_select = 0;
 	show_offset = 0;
+	list_follow(&show_offset, &file_select);	/* mod: back on the game that was just starred (browser.c) */
 	updata = 1;
 	shift = 0;
 
@@ -372,6 +373,13 @@ re_showfile:
 
 				updata=1;
       }
+			/* mod: on the last page RIGHT goes to its bottom row, as LEFT on
+			   the first goes to the top one */
+			else if(game_folder_total && ((UINT16)(show_offset + file_select + 1) < game_folder_total))
+			{
+				file_select = (BYTE)(game_folder_total - show_offset - 1);
+				updata=1;
+			}
 		}
 		else if(keysrepeat &  J_UP){
 			if (file_select) {
@@ -380,6 +388,15 @@ re_showfile:
 			}
 			else if (show_offset) {
 				show_offset--;		/* at the first row: scroll the window up by one */
+				updata=1;
+			}
+			/* mod: the list wraps. UP on the first entry is the last one. */
+			else if (game_folder_total > 1) {
+				if (game_folder_total > LIST_ROWS) {
+					show_offset = game_folder_total - LIST_ROWS;
+					file_select = LIST_ROWS - 1;
+				}
+				else file_select = (BYTE)(game_folder_total - 1);
 				updata=1;
 			}
     }
@@ -398,6 +415,14 @@ re_showfile:
 			else if ((UINT16)(show_offset + LIST_ROWS) < game_folder_total)
 			{
 				show_offset++;
+				updata=1;
+			}
+			/* mod: the list wraps. DOWN on the last entry is the first one. */
+			if (!updata && (game_folder_total > 1) &&
+			    ((UINT16)(show_offset + file_select + 1) >= game_folder_total))
+			{
+				show_offset = 0;
+				file_select = 0;
 				updata=1;
 			}
     }
