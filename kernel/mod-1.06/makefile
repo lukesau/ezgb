@@ -35,7 +35,8 @@ ifeq ($(LANG),zh)
   BUILD    := build/zh
   PROG     := ezgb_zh
   RELDIR   := $(REL)/zh
-  ROMBANKS := -Wm-yo30
+  # mod: 32 banks, not the 30 the source as received fills (see ROMBANKS below)
+  ROMBANKS := -Wm-yo32
   LANGDEF  := -DLANG_ZH
   # extra objects for the zh build: pixel font engine + GB2312 font + cp936 tables
   # ui_zh_fast.s: bank 2 assembly glyph writer (zh only)
@@ -47,7 +48,8 @@ else
   BUILD    := build
   PROG     := ezgb
   RELDIR   := $(REL)/en
-  ROMBANKS := -Wm-yo10
+  # mod: 16 banks, not the 10 the source as received fills (see ROMBANKS below)
+  ROMBANKS := -Wm-yo16
   LANGDEF  :=
   # en only: fast rectangle fill (bank 1) replacing per-pixel box(M_FILL)
   LANG_SRCS := fill_fast
@@ -77,8 +79,13 @@ RELDAT := $(RELDIR)/ezgb.dat
 CFLAGS := -Isource -I$(BUILD) -Wf--include=port_types.h $(LANGDEF) $(EXTRA_DEFS)
 
 #  Link flags:
-#  $(ROMBANKS)      en: 10 banks => 163840 bytes
-#                   zh: 26 banks => 425984 bytes
+#  $(ROMBANKS)      mod: the kernel is not held to the stock bank count. Stage1
+#                   loads the whole file by its size and the bank register is
+#                   a plain 8-bit latch, so up to 256 banks work; the count is
+#                   kept to what the code needs, since every boot loads all
+#                   of it. A power of two, as makebin wants.
+#                   en: 16 banks => 262144 bytes (stock: 10)
+#                   zh: 32 banks => 524288 bytes (stock: 30)
 #  -Wm-yt0x01      MBC1 cartridge
 #  -Wm-ys          mod: the SGB flag ($0146 = $03); without it the SGB BIOS
 #                  ignores the header packets SGB BOOT sends
@@ -144,7 +151,8 @@ $(BUILD)/%.o : source/%.s | $(BUILD)
 	$(LCC) -c -o $@ $<
 	@test -f $@ -a $@ -nt $< || { echo "[ERROR] assemble failed: $<"; exit 1; }
 
-$(TARGET): $(OBJS) | $(BUILD)
+#  mod: the makefile too, so a change of the link flags (the bank count) relinks
+$(TARGET): $(OBJS) makefile | $(BUILD)
 	$(LCC) -o $@ $(OBJS) $(LDFLAGS)
 
 # publish: .dat only (the name the flasher expects)

@@ -17,6 +17,26 @@ make -C kernel/mod-1.06            # English only
 Needs GBDK-2020 4.5.0 in `tools/gbdk-2020-4.5.0`, or `GBDK=<its gbdk folder>`
 ([INSTALL.md](../../INSTALL.md)).
 
+## Size
+
+The mod is not held to the stock kernel's bank count. The English kernel is
+16 banks (256 KB) where stock is 10, and the Chinese one 32 (512 KB) where
+stock is 30: `ROMBANKS` in the makefile. Stage1 loads the whole of
+`ezgb.dat` by its size, and in kernel mode the bank register is a plain
+8-bit latch, so up to 256 banks work
+([docs/kernel-size.md](../../docs/kernel-size.md)); the count is kept to
+what the code needs, since every boot loads all of it, and is a power of
+two, as the ROM tool wants. Banks 10 to 15 (30 and 31 in the Chinese
+build) are empty for now: new features go there.
+
+Bank 0 is the one that cannot grow: everything every bank calls is in it,
+and the English build has about 750 bytes of it left. A feature's code
+goes in a banked file, with only its call in bank 0.
+
+Both sizes boot and start a game in SameBoy. The 0918 mod runs at 16 banks
+on FW4 and FW5 carts with our stage1; stock stage1 with a kernel this
+size has not been tried, here or there.
+
 ## Changes
 
 `diff -r --strip-trailing-cr kernel/stock-1.06 kernel/mod-1.06` shows all of
