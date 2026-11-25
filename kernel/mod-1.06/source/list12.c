@@ -225,27 +225,54 @@ void text12(const UINT8 *s, UINT8 len, UINT8 x, UINT8 y) __banked
 	if(x >= 20U) return;
 	xe = ((UINT8)(x + w) >= 20U) ? 160U : (UINT8)((x + w) << 3);
 	py = (UINT8)(y << 3);
-	/* The dialogs put their lines on rows 10, 11 and 12 of column 5, 8
-	   pixels apart: here the first two move up to make room, 12 apart. */
-	if(x == 5U)
-	{
-		if(y == 10U) py = 72U;
-		else if(y == 11U) py = 84U;
-	}
 	if(py > 132U) py = 132U;		/* the last row would run off the screen */
 	font12_field(s, (UINT8)(x << 3), py, draw_colors(), xe);
 }
 
-/* The SET tab's date and time as one line, at row 5: 2026/11/24 16:04:59.
-   t is indexed as RTC.h's _SEC to _YEAR, BCD when bcd is set. hot is the
-   field being set (0 the year to 5 the seconds), drawn inverted, or $FF. */
+/* The SET tab's date and time, at row 5: 2026/11/24 16:04:59. t is indexed
+   as RTC.h's _SEC to _YEAR, BCD when bcd is set. hot is the field being
+   set (0 the year to 5 the seconds), drawn inverted, or $FF.
+
+   Each field has its place and only a field whose number or highlight
+   changed is drawn, so the line does not blink as the seconds go by:
+   clock12_reset draws the separators and marks every field to be drawn.
+
+   The places are set by hand for the proportional font, whose digits are a
+   fixed 7 pixels in 9 and whose slash leans across 6: the slashes and
+   colons sit a pixel from the digits each side. The 6 pixel fonts are a
+   grid. */
+static const UINT8 clk_x12[6] = {0U, 42U, 66U, 90U, 111U, 132U};
+static const UINT8 clk_sep12[4] = {35U, 59U, 107U, 128U};
+static const UINT8 clk_x6[6] = {0U, 30U, 48U, 66U, 84U, 102U};
+static const UINT8 clk_sep6[4] = {24U, 42U, 78U, 96U};
+static UINT8 clk_old[6];
+static UINT8 clk_hot;
+
+void clock12_reset(void) __banked
+{
+	const UINT8 *sx = (ui_font == 1U) ? clk_sep12 : clk_sep6;
+	UINT8 s[2];
+	UINT8 i;
+
+	s[1] = 0U;
+	s[0] = 0U;
+	font12_draw(s, 0U, 40U, F12_NORMAL);		/* the line, cleared */
+	for(i = 0U; i < 4U; i++)
+	{
+		s[0] = (i < 2U) ? '/' : ':';
+		font12_field(s, sx[i], 40U, F12_NORMAL, (UINT8)(sx[i] + 6U));
+	}
+	for(i = 0U; i < 6U; i++) clk_old[i] = 0xFFU;
+	clk_hot = 0xFFU;
+}
+
 void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked
 {
 	static const UINT8 idx[6] = {6U, 5U, 3U, 2U, 1U, 0U};
 	static const UINT8 mask[6] = {0xFFU, 0x1FU, 0x3FU, 0x3FU, 0x7FU, 0x7FU};
-	static const UINT8 sep[6] = {'/', '/', ' ', ':', ':', 0U};
-	UINT8 s[6];
-	UINT8 x = 0U;
+	const UINT8 *fx = (ui_font == 1U) ? clk_x12 : clk_x6;
+	UINT8 dw = (ui_font == 1U) ? 9U : 6U;		/* a digit's advance */
+	UINT8 s[5];
 	UINT8 i;
 	UINT8 v;
 	UINT8 n;
@@ -258,6 +285,8 @@ void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked
 			v &= mask[i];
 			v = (UINT8)((v & 0x0FU) + (v >> 4) * 10U);
 		}
+		if((v == clk_old[i]) && ((i == hot) == (i == clk_hot))) continue;
+		clk_old[i] = v;
 		n = 0U;
 		if(i == 0U)
 		{
@@ -267,13 +296,11 @@ void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked
 		s[n++] = (UINT8)('0' + v / 10U);
 		s[n++] = (UINT8)('0' + v % 10U);
 		s[n] = 0U;
-		font12_field(s, x, 40U, (i == hot) ? F12_INVERSE : F12_NORMAL, 160U);
-		x = font12_end(s, x);
-		s[0] = sep[i];
-		s[1] = 0U;
-		font12_field(s, x, 40U, F12_NORMAL, 160U);	/* and the row is cleared from here on */
-		x = font12_end(s, x);
+		/* the field ends where its last digit's ink does */
+		font12_field(s, fx[i], 40U, (i == hot) ? F12_INVERSE : F12_NORMAL,
+		             (UINT8)(fx[i] + n * dw - ((ui_font == 1U) ? 2U : 0U)));
 	}
+	clk_hot = hot;
 }
 
 /* The recent list in the 12px fonts: Show_recent_list's rows, nine of 12

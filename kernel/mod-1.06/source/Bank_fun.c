@@ -195,6 +195,21 @@ char *my_strrchr(const char *s, char c)__banked
 }
 
 //---------------------------------------------------------------------------------
+/* mod: where the save dialog's messages go. In the English build the dialog
+   is the mod's band (Show_SAVE_info), with a message row and room under it. */
+#ifdef LANG_ZH
+#define SAVE_MSG_COL	5
+#define SAVE_MSG_ROW	10
+#define SAVE_MSG_ROW2	11
+#define SAVE_MSG_ROW3	12
+#else
+#define SAVE_MSG_COL	1
+#define SAVE_MSG_ROW	9
+#define SAVE_MSG_ROW2	11
+#define SAVE_MSG_ROW3	13
+#endif
+#define SAVE_DOT_COL	11
+
 /* mod: a file's row in the 8px list. Draw_Text with a length of 20 pads a
    shorter name with blanks; here the name may be cut (name_shown), so its
    part is drawn and then the blanks. */
@@ -1791,15 +1806,15 @@ UINT8 Save_new_SAVE(TCHAR *pfilename,UINT32 filesize)
 				if(mode==3)mode=0;
 				if(mode==0)
 				{
-					Draw_Text(".  ", 3, 11, 10);	
+					Draw_Text(".  ", 3, SAVE_DOT_COL, SAVE_MSG_ROW);	
 				}
 				else if(mode==1)
 				{
-					Draw_Text(".. ", 3, 11, 10);	
+					Draw_Text(".. ", 3, SAVE_DOT_COL, SAVE_MSG_ROW);	
 				}
 				else 
 				{
-					Draw_Text("...", 3, 11, 10);	
+					Draw_Text("...", 3, SAVE_DOT_COL, SAVE_MSG_ROW);	
 				}
 			}			
 						
@@ -1852,15 +1867,15 @@ UINT8 Save_new_SAVE(TCHAR *pfilename,UINT32 filesize)
    that the save went through; waits for B so it cannot be missed. */
 static void Show_SAVE_error(void)
 {
-	Draw_Text(UI_SAVE_FAIL, UI_LEN(UI_SAVE_FAIL), 5, 10);	/* 10 chars max, same width as the dialog */
-	Draw_Text(UI_SAVE_FAIL_SD, UI_LEN(UI_SAVE_FAIL_SD), 5, 11);
-	Draw_Text(UI_SAVE_PRESS_B, UI_LEN(UI_SAVE_PRESS_B), 5, 12);
+	Draw_Text(UI_SAVE_FAIL, UI_LEN(UI_SAVE_FAIL), SAVE_MSG_COL, SAVE_MSG_ROW);	/* 10 chars max, same width as the dialog */
+	Draw_Text(UI_SAVE_FAIL_SD, UI_LEN(UI_SAVE_FAIL_SD), SAVE_MSG_COL, SAVE_MSG_ROW2);
+	Draw_Text(UI_SAVE_PRESS_B, UI_LEN(UI_SAVE_PRESS_B), SAVE_MSG_COL, SAVE_MSG_ROW3);
 	while(joypad() != J_B) delay(50);
 	/* Clear with an equally long run of spaces: Draw_Text switches the palette to
 	   white as soon as it meets '\0', turning the dialog into a white bar. */
-	Draw_Text("          ", 10, 5, 10);
-	Draw_Text("        ", 8, 5, 11);
-	Draw_Text("       ", 7, 5, 12);
+	Draw_Text("          ", 10, SAVE_MSG_COL, SAVE_MSG_ROW);
+	Draw_Text("        ", 8, SAVE_MSG_COL, SAVE_MSG_ROW2);
+	Draw_Text("       ", 7, SAVE_MSG_COL, SAVE_MSG_ROW3);
 }
 //---------------------------------------------------------------------------------
 /* Save confirmation: there used to be no feedback at all, so the user could not
@@ -1869,33 +1884,34 @@ static void Show_SAVE_error(void)
 static void Show_SAVE_ok(void)
 {
 	color(BLACK,DKGREY,SOLID);			/* keep the dialog background */
-	Draw_Text(UI_SAVE_OK, UI_LEN(UI_SAVE_OK), 5, 10);	/* pad to 9 cells so the white-fill path is not triggered */
+	Draw_Text(UI_SAVE_OK, UI_LEN(UI_SAVE_OK), SAVE_MSG_COL, SAVE_MSG_ROW);	/* pad to 9 cells so the white-fill path is not triggered */
 	delay(600);
-	Draw_Text("         ", 9, 5, 10);	/* clear with spaces; the caller redraws the list afterwards */
+	Draw_Text("         ", 9, SAVE_MSG_COL, SAVE_MSG_ROW);	/* clear with spaces; the caller redraws the list afterwards */
 }
 //---------------------------------------------------------------------------------
 /* Load progress. Loading moves 32KB from SD to PSRAM and the screen does not
    change at all, so it looks frozen. phase: 0 = starting, 1 = done, 2 = no save */
 void Show_LOAD_info(UINT8 phase)__banked
 {
+	/* mod: the small framed box (msgbox.c) for each message, where this
+	   drew a titled block of dark gray */
+	UINT8 t[12];
+
 	if(phase == 0)
 	{
-		color(BLACK,DKGREY,SOLID);
-		box(35,37,125,108,M_FILL);
-		Draw_Text(UI_LOAD_TITLE, UI_LEN(UI_LOAD_TITLE), 5, 5);
-		Draw_Text(UI_LOAD_BUSY, UI_LEN(UI_LOAD_BUSY), 5, 10);
+		strcpy((char *)t, UI_LOAD_BUSY);
+		msg_box(t);
 	}
 	else if(phase == 1)
 	{
-		color(BLACK,DKGREY,SOLID);
-		Draw_Text(UI_LOAD_OK, UI_LEN(UI_LOAD_OK), 5, 10);	/* two spaces cover "g." without triggering the white fill */
+		strcpy((char *)t, UI_LOAD_OK);
+		msg_box(t);
 		delay(400);
 	}
 	else
 	{
-		color(BLACK,DKGREY,SOLID);
-		Draw_Text(UI_LOAD_NONE, UI_LEN(UI_LOAD_NONE), 5, 10);	/* 3 spaces cover the leftover "Loading..." */
-		Draw_Text(UI_LOAD_NEW, UI_LEN(UI_LOAD_NEW), 5, 11);
+		strcpy((char *)t, UI_LOAD_NEW);	/* no save on the card: a new one */
+		msg_box(t);
 		delay(600);
 	}
 }
@@ -1916,6 +1932,53 @@ void Show_LOAD_info(UINT8 phase)__banked
 
 void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 {
+#ifndef LANG_ZH
+	/* mod: the 0918 mod's prompt (docs/prompts.md "BACKUPSAVE"), a band across
+	   the screen with the save's name in it:
+	       Back up save?
+	       <the save's name>
+	       Saving...              while it is written
+	       [B]skip      [A]save
+	   The Chinese build keeps the block the source as received draws, below. */
+	UINT8 t[19];
+	UINT8 n;
+	UINT8 k;
+	BYTE keys;
+
+	color(BLACK,DKGREY,SOLID);
+	box(0,35,159,ui_font ? 103 : 99,M_FILL);	/* 12px text is four pixels taller */
+	memcpy(t, "Back up save?", 14);
+	Draw_Text(t, 13, 1, 5);
+	/* the name: currentpath_temp is "/SAVER/<name>.sav" */
+	memset(t, ' ', 18);
+	t[18] = 0;
+	n = (UINT8)strlen(currentpath_temp);
+	k = (n > 7) ? 7 : 0;
+	if((n > (UINT8)(k + 4)) && (currentpath_temp[n - 4] == '.')) n -= 4;
+	n -= k;
+	if(n > 18) n = 18;
+	memcpy(t, currentpath_temp + k, n);
+	color(WHITE,BLACK,SOLID);
+	Draw_Text(t, 18, 1, 7);
+	color(BLACK,DKGREY,SOLID);
+	if(autosave != 1)
+	{
+		memcpy(t, "[B]skip    [A]save", 19);
+		Draw_Text(t, 18, 1, 11);
+		while(1)
+		{
+			keys = joypad();
+			if(keys & J_A) break;
+			if(keys & J_B) return;
+		}
+		memset(t, ' ', 18);
+		t[18] = 0;
+		Draw_Text(t, 18, 1, 11);
+	}
+	Draw_Text(UI_SAVE_BUSY, UI_LEN(UI_SAVE_BUSY), SAVE_MSG_COL, SAVE_MSG_ROW);
+	if(Save_new_SAVE("", (UINT32)(readdata<<13)) != 0) Show_SAVE_error();
+	else Show_SAVE_ok();
+#else
 	BYTE keysrepeat;
 	UINT32 filesize;
 
@@ -1978,4 +2041,5 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	    }
 		}
 	}
+#endif
 }

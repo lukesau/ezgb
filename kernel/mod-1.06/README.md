@@ -652,6 +652,48 @@ mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives
 the fast launch game. `SGB BOOT:` shows `AUTO` when our stage1 handles the
 Super Game Boy.
 
+### After the first run on a cart (2026-11-25)
+
+The kernel ran on an FW5 cart, and what its user asked for next:
+
+**The SET tab is three pages**, as the 0918 mod's is, six rows to a page
+and two text rows apart, with the page's number at the foot:
+
+| Page | Rows |
+|---|---|
+| 1 | `TIME:` and `SET`, the date and time, `AUTO SAVE:` (EZ Flash's), then `RTC SD BACKUP:`, `FAST LAUNCH:`, `GAME:` |
+| 2 | `CLEAN NAMES:`, `SORT BY PLAYS:`, `SGB BOOT:`, `SKIP BOOT ROM:`, `DAILY BACKUP:` |
+| 3 | `THEME:`, `FONT:`, and the picker's `BG:`, `TEXT:`, `ACCENT:` |
+
+The cursor still runs down through all of them: DOWN from a page's last
+row is the next page. EZ Flash's three rows keep their own loop, and
+`Set_window` hands the cursor to `set_page2` (`source/setpage.c`) when it
+leaves AUTO SAVE downward and takes it back when it comes up. This
+replaces the pages of four rows the sections above describe.
+
+**The clock does not blink.** In the 12px fonts each of its six numbers has
+a fixed place, and only a number that changed is drawn (`clock12` in
+`source/list12.c`); it used to draw the whole line every second. The
+places are set by hand for the proportional font, whose digits are 7
+pixels in 9 and whose slash leans across 6, so the slashes and colons sit
+a pixel from the digits. The clock also keeps time while the cursor is in
+the mod's rows of page 1.
+
+**The status boxes are the 0918 mod's**
+([docs/prompts.md](../../docs/prompts.md)): `Reading...`, `Loading...`,
+`Error file` and the save load's messages are a box 96 pixels wide and
+only as tall as its line of text, in a frame of a 2 pixel line, a gap and
+a 1 pixel line (`source/msgbox.c`), where the kernel as received draws a
+91 by 72 block of dark gray. The save prompt at boot is its band across
+the screen: `Back up save?`, the save's name, and `[B]skip` / `[A]save`.
+The rule in `text12` that moved the old dialogs' lines apart is gone with
+them. Not carried over: the `Played` line of that prompt.
+
+Seen in SameBoy in the 12px font: the three pages and the walk through
+them and back, the clock, the `Loading...` box, the save prompt and its
+`Saving...`. Not seen: the 8px versions of the boxes, and the error
+messages.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
@@ -659,8 +701,8 @@ Super Game Boy.
   them; the 12px fonts have them.
 - **The START overlay for the last game.** This kernel has its recent list
   on START.
-- **The restyled prompts.** This kernel's dialogs follow the font as they
-  are.
+- **The `Played` line of the save prompt**, and the BATTERY DRY and clock
+  prompts' restyling.
 - **Moving the cursor by recoloring rows in VRAM.**
 - **A line scroll and a font of its own in the text viewer.**
 

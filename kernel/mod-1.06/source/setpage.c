@@ -1,15 +1,24 @@
 /* ============================================================================
-   setpage.c  -  mod: the SET tab's pages for the mod's settings (bank 4)
+   setpage.c  -  mod: the SET tab's rows for the mod's settings (bank 4)
    ----------------------------------------------------------------------------
-   DOWN from AUTO SAVE on the tab's first page comes here. Each page has up
-   to four rows, on text rows 3, 5, 7 and 9: DOWN from a page's last row is
-   the next page, UP from its first the one before, and UP from the very
-   first row goes back to the tab's first page. SELECT leaves the tab. A
-   acts on the row under the cursor, and the setting is written to
-   /EZGB.CFG at once (cfg_changed, ezcfg.c).
+   The tab is three pages, as the 0918 mod's is (docs/set-tab.md), six rows
+   to a page, two text rows apart:
 
-   A row is a label and either a checkbox or a value: the value is drawn as
-   text, in the highlight colors when the cursor is on it.
+     page 1   TIME / SET, the date and time, AUTO SAVE     (Set_window, RTC.c)
+              RTC SD BACKUP, FAST LAUNCH, GAME             (here)
+     page 2   CLEAN NAMES, SORT BY PLAYS, SGB BOOT, SKIP BOOT ROM, DAILY BACKUP
+     page 3   THEME, FONT, and the color picker's BG, TEXT, ACCENT
+
+   The cursor runs down through all of them: DOWN from a page's last row is
+   the next page, UP from its first the one before. The first three rows
+   are EZ Flash's screen, which keeps its own loop; the rest are a list
+   here, and Set_window hands the cursor over when it leaves AUTO SAVE
+   downward (set_page2) and takes it back when it comes up again. SELECT
+   leaves the tab from anywhere. A acts on the row under the cursor, and the
+   setting is written to /EZGB.CFG at once (cfg_changed, ezcfg.c).
+
+   A row is a label and either a checkbox or a value, the value drawn as
+   text in the highlight colors when the cursor is on it.
    ========================================================================== */
 
 #include <gb/gb.h>
@@ -25,25 +34,26 @@
 
 #pragma bank 4
 
-#define PER_PAGE	4U
-
-#define ROW_SKIP	0U	/* page 1: launching */
+#define ROW_RTCSD	0U	/* page 1, under EZ Flash's rows */
 #define ROW_FAST	1U
 #define ROW_GAME	2U
-#define ROW_SGB		3U
-#define ROW_THEME	4U	/* page 2: the look */
-#define ROW_FONT	5U
-#define ROW_TAGS	6U
-#define ROW_RTCSD	7U
-#define ROW_PLAYS	8U	/* page 3 */
-#define ROW_DAILY	9U
-#define ROW_BG		12U	/* page 4: the color picker, where the palettes can be set */
-#define ROW_TEXT	13U
-#define ROW_ACCENT	14U
-#define ROWS		15U	/* rows 10 and 11 are not rows: they end page 3 */
+#define ROW_TAGS	3U	/* page 2 */
+#define ROW_PLAYS	4U
+#define ROW_SGB		5U
+#define ROW_SKIP	6U
+#define ROW_DAILY	7U
+#define ROW_THEME	8U	/* page 3 */
+#define ROW_FONT	9U
+#define ROW_BG		10U	/* the color picker, where the palettes can be set */
+#define ROW_TEXT	11U
+#define ROW_ACCENT	12U
+#define ROWS		13U
 
 /* how many rows this console has: the picker needs CGB palettes */
-#define ROWS_NOW	(cgb_mode ? ROWS : 10U)
+#define ROWS_NOW	(cgb_mode ? ROWS : ROW_BG)
+
+static const UINT8 row_page[ROWS] = {0U, 0U, 0U, 1U, 1U, 1U, 1U, 1U, 2U, 2U, 2U, 2U, 2U};
+static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 5U, 7U, 9U, 11U, 3U, 5U, 7U, 9U, 11U};	/* the text row */
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -114,15 +124,12 @@ static void row_act(UINT8 row)
 	cfg_changed(what);
 }
 
-/* A color row: its three channels, 0 to 31, at columns 8, 11 and 14. hot
-   is the channel being set (inverted), 3 for the row under the cursor, 4
-   for neither. */
 static UINT8 shown[9];			/* the colors on screen, as cfg_colors_seed gives them */
 
 static void color_draw(UINT8 row, UINT8 hot)
 {
 	UINT8 s[3];
-	UINT8 trow = (UINT8)(3U + (row % PER_PAGE) * 2U);
+	UINT8 trow = row_at[row];
 	UINT8 c;
 	UINT8 v;
 
@@ -188,7 +195,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 {
 	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
 	UINT8 s[21];
-	UINT8 trow = (UINT8)(3U + (row % PER_PAGE) * 2U);
+	UINT8 trow = row_at[row];
 	UINT8 y = (UINT8)(trow << 3);
 	UINT8 n;
 	UINT8 i;
@@ -243,47 +250,85 @@ static void row_draw(UINT8 row, UINT8 sel)
 	color(BLACK, WHITE, SOLID);
 }
 
-/* Clears the page and draws the labels and rows of the page row is on */
-static void page_draw(UINT8 row)
+/* The labels and rows of a page, none under the cursor, and its number at
+   the foot. Page 0's are drawn under EZ Flash's rows, which are on screen. */
+static void rows_draw(UINT8 page)
 {
 	static const char labels[ROWS][15] = {
-		"SKIP BOOT ROM:", "FAST LAUNCH:", "GAME:", "SGB BOOT:",
-		"THEME:", "FONT:", "CLEAN NAMES:", "RTC SD BACKUP:",
-		"SORT BY PLAYS:", "DAILY BACKUP:", "", "",
-		"BG:", "TEXT:", "ACCENT:",
+		"RTC SD BACKUP:", "FAST LAUNCH:", "GAME:",
+		"CLEAN NAMES:", "SORT BY PLAYS:", "SGB BOOT:", "SKIP BOOT ROM:", "DAILY BACKUP:",
+		"THEME:", "FONT:", "BG:", "TEXT:", "ACCENT:",
 	};
 	UINT8 s[16];
-	UINT8 first = (UINT8)(row - (row % PER_PAGE));
 	UINT8 i;
 
-	DrawGB(1);
 	color(BLACK, WHITE, SOLID);
-	if(first >= ROW_BG) cfg_colors_seed(shown);
-	for(i = first; (i < (UINT8)(first + PER_PAGE)) && (i < ROWS_NOW); i++)
+	if(page == 2U) cfg_colors_seed(shown);
+	for(i = 0U; i < ROWS_NOW; i++)
 	{
-		if((i == 10U) || (i == 11U)) continue;
+		if(row_page[i] != page) continue;
 		strcpy((char *)s, labels[i]);
-		Draw_Text(s, (UINT8)strlen((char *)s), 0U, (UINT8)(3U + (i % PER_PAGE) * 2U));
-		row_draw(i, (i == row) ? 1U : 0U);
+		Draw_Text(s, (UINT8)strlen((char *)s), 0U, row_at[i]);
+		row_draw(i, 0U);
 	}
+	s[0] = (UINT8)('1' + page);
+	s[1] = '/';
+	s[2] = '3';
+	s[3] = 0U;
+	Draw_Text(s, 3U, 8U, 16U);
 }
 
-/* Returns 0 to go back to the tab's first page and 1 when SELECT was
-   pressed, which leaves the tab. */
-UINT8 set_page2(void) __banked
+/* Page 2 or 3, on a cleared screen */
+static void page_draw(UINT8 page)
 {
-	UINT8 row = 0U;
+	DrawGB(1);
+	rows_draw(page);
+}
+
+/* Set_window calls this when it has drawn its page: the mod's rows of page 1 */
+void set_page1_rows(void) __banked
+{
+	rows_draw(0U);
+}
+
+#ifndef LANG_ZH
+/* The clock keeps time while the cursor is in the mod's rows of page 1 */
+static void clock_tick(void)
+{
+	UINT8 t[7];
+	UINT8 i;
+
+	if(!ui_font) return;		/* the 8px clock is Set_window's, and waits for it */
+	hw_set_page(A000Address_RTC);
+	for(i = 0U; i < 7U; i++) t[i] = *((volatile UINT8 *)(Base_RTCbuffer + 8U + i));
+	hw_set_page(A000Address_TF);
+	clock12(t, 1U, 0xFFU);
+}
+#endif
+
+/* The cursor is in the mod's rows, on row start: 0 when Set_window sends it
+   down from AUTO SAVE, with page 1 on screen. Returns
+     0  UP left the first row: back to AUTO SAVE, page 1 still on screen
+     1  SELECT: leave the tab
+     2  UP left page 2: Set_window draws page 1 and calls again with start
+        SET_RESUME, its last row */
+UINT8 set_page2(UINT8 start) __banked
+{
+	UINT8 row = start;
 	UINT8 keys;
 	UINT8 last;
 	UINT8 to;
 
-	page_draw(row);
-	/* the DOWN that opened the page is not a press on it */
+	row_draw(row, 1U);
+	/* the key that brought the cursor here is not a press on it */
 	while(joypad()) wait_vbl_done();
 	last = 0U;
 	while(1)
 	{
 		wait_vbl_done();
+#ifndef LANG_ZH
+		if(row_page[row] == 0U) clock_tick();
+#endif
 		keys = joypad();
 		if(keys == last) continue;
 		last = keys;
@@ -293,7 +338,8 @@ UINT8 set_page2(void) __banked
 		{
 			if(row == 0U)
 			{
-				while(joypad()) wait_vbl_done();	/* nor is this UP one on the first page */
+				row_draw(row, 0U);
+				while(joypad()) wait_vbl_done();	/* nor is this UP one for AUTO SAVE */
 				return 0U;
 			}
 			to = (UINT8)(row - 1U);
@@ -302,12 +348,11 @@ UINT8 set_page2(void) __banked
 		{
 			if(row + 1U < ROWS_NOW) to = (UINT8)(row + 1U);
 		}
-		/* rows 10 and 11 are the empty end of page 3 */
-		if((to == 10U) || (to == 11U)) to = (keys & J_UP) ? ROW_DAILY : ((ROWS_NOW > 10U) ? ROW_BG : row);
 		else if((keys & J_A) && (row >= ROW_BG))
 		{
 			color_edit(row);
-			page_draw(row);			/* the whole page is in the new colors */
+			page_draw(2U);			/* the whole page is in the new colors */
+			row_draw(row, 1U);
 		}
 		else if(keys & J_A)
 		{
@@ -315,27 +360,28 @@ UINT8 set_page2(void) __banked
 			/* the font and the theme change the whole page; FAST LAUNCH and
 			   the game change each other */
 			if(row == ROW_FONT) DrawGB(4);		/* the tab strip is another height */
-			if((row == ROW_FONT) || (row == ROW_THEME)) page_draw(row);
-			else
+			if((row == ROW_FONT) || (row == ROW_THEME))
 			{
-				if((row == ROW_FAST) || (row == ROW_GAME))
-				{
-					row_draw(ROW_FAST, (row == ROW_FAST) ? 1U : 0U);
-					row_draw(ROW_GAME, (row == ROW_GAME) ? 1U : 0U);
-				}
-				else row_draw(row, 1U);
+				page_draw(2U);
+				row_draw(row, 1U);
 			}
+			else if((row == ROW_FAST) || (row == ROW_GAME))
+			{
+				row_draw(ROW_FAST, (row == ROW_FAST) ? 1U : 0U);
+				row_draw(ROW_GAME, (row == ROW_GAME) ? 1U : 0U);
+			}
+			else row_draw(row, 1U);
 		}
-		if((to >= ROWS_NOW) || (to == 10U) || (to == 11U)) to = row;
 		if(to != row)
 		{
-			if((to / PER_PAGE) != (row / PER_PAGE)) page_draw(to);
-			else
+			if(row_page[to] != row_page[row])
 			{
-				row_draw(row, 0U);
-				row_draw(to, 1U);
+				if(row_page[to] == 0U) return 2U;	/* page 1 is Set_window's to draw */
+				page_draw(row_page[to]);
 			}
+			else row_draw(row, 0U);
 			row = to;
+			row_draw(row, 1U);
 		}
 	}
 }

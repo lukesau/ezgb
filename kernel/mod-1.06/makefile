@@ -62,7 +62,7 @@ SRCS := main ezgb_hw diskio ff ff_1 ff_2 ff_3 ff_4 ffunicode \
         SD_operate GBcard_OP RTC Help UI Bank_fun
 # mod: drawing is the library module with the VRAM race fixed, linked ahead of
 # the library; vram_put is the fill's tile writer
-SRCS += drawing vram_put browser ezcfg launch sgb list8 setpage rommenu modmisc sdlist savemgr ff_5 plays textview
+SRCS += drawing vram_put browser ezcfg launch sgb list8 setpage rommenu modmisc sdlist savemgr ff_5 plays textview msgbox
 SRCS += $(LANG_SRCS)
 
 OBJS   := $(addprefix $(BUILD)/,$(addsuffix .o,$(SRCS)))

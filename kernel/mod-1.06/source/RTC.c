@@ -156,6 +156,9 @@ void Set_window(void)__banked
 	BYTE update;
 	BYTE select=0;	
 	BYTE autosave;
+	UINT8 resume = 0;	/* mod: page 1 was drawn to go back into the mod's rows */
+	UINT8 start2 = 0;
+	UINT8 r2;
 
 	
 	XX = 5;
@@ -211,6 +214,8 @@ page1:		/* mod: the second page comes back here to draw the first again */
 
 
 	memset(datetime_old,0xFF,7);
+	set_page1_rows();		/* mod: RTC SD BACKUP, FAST LAUNCH, GAME under them (setpage.c) */
+	update = 1;			/* mod: and the 12px clock starts from a cleared line */
 			
 	while(1)
 	{
@@ -306,7 +311,8 @@ page1:		/* mod: the second page comes back here to draw the first again */
 #ifndef LANG_ZH
 			if(ui_font)		/* mod: one line in the 12px font, list12.c */
 			{
-				if(update || memcmp(datetime, datetime_old, 7)) clock12((const UINT8 *)datetime, 1U, 0xFFU);
+				if(update) clock12_reset();	/* the page was drawn again */
+				clock12((const UINT8 *)datetime, 1U, 0xFFU);	/* draws the fields that changed */
 			}
 			else
 #endif
@@ -349,6 +355,12 @@ page1:		/* mod: the second page comes back here to draw the first again */
 			}
 			update=0;
 			memcpy(datetime_old,datetime,7);
+			if(resume)		/* mod: this page was drawn for the cursor to go back to its last row */
+			{
+				resume = 0;
+				start2 = SET_RESUME;
+				goto enter2;
+			}
 		}
 		else {//edit mode
 
@@ -578,12 +590,30 @@ page1:		/* mod: the second page comes back here to draw the first again */
 						update=1;
 					}
 					else {
-						/* mod: DOWN from AUTO SAVE is the second page (ezcfg.c) */
-						DrawGB(1);
-						if(set_page2()) return;
-						DrawGB(1);
+						/* mod: DOWN from AUTO SAVE is the mod's rows (setpage.c) */
+						start2 = 0;
+enter2:
+						/* AUTO SAVE without the cursor, while it is below */
+						color(WHITE,WHITE,SOLID);
+						box(130,56,130+8,56+8,M_FILL);
+						color(BLACK,WHITE,SOLID);
+						box(130,56,130+8,56+8,M_NOFILL);
+						if(autosave==1){
+							color(DKGREY,DKGREY,SOLID);
+							box(130+2,56+2,130+6,56+6,M_FILL);
+						}
+						color(BLACK,WHITE,SOLID);
+						r2 = set_page2(start2);
+						if(r2 == 1) return;
+						if(r2 == 2)
+						{
+							/* back from page 2: this page again, then its last row */
+							DrawGB(1);
+							resume = 1;
+							select = 1;
+							goto page1;
+						}
 						update=1;
-						goto page1;
 					}
 			}
     }

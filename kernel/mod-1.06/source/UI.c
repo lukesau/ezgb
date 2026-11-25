@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "main.h"
+#include <string.h>
+void msg_box(const UINT8 *text) __banked;	/* mod: msgbox.c */
+#include <string.h>
+void msg_box(const UINT8 *text) __banked;	/* mod: msgbox.c */
 #include "list12.h"		/* mod: the 12px tab strip */
 
 #ifdef LANG_ZH
@@ -109,37 +113,32 @@ void DrawGB(UINT8 page)__banked
 //---------------------------------------------------------------------------------
 void Show_reading(void)__banked
 {
-	/* Dialogs still use the library box(M_FILL): the fast fill's "plot the edges"
-	   step never worked on hardware and left a white band on the left edge.
-	   fill_fast_rect is safe for screen clears: 0..159 full width, no edge pixels. */
-	color(BLACK,DKGREY,SOLID);
-	box(35,37,125,108,M_FILL);
-	//color(BLACK,WHITE,SOLID);
-	
+	/* mod: the small framed box (msgbox.c), where this drew a 91 by 72
+	   block of dark gray with the text in it */
+	UINT8 t[12];
 
-	Draw_Text(UI_READING, UI_LEN(UI_READING), 5, 8);	
+	strcpy((char *)t, UI_READING);
+	msg_box(t);
 }
 //---------------------------------------------------------------------------------
 void Show_loading(void)__banked
 {
-	/* Dialogs still use the library box(M_FILL): the fast fill's "plot the edges"
-	   step never worked on hardware and left a white band on the left edge.
-	   fill_fast_rect is safe for screen clears: 0..159 full width, no edge pixels. */
-	color(BLACK,DKGREY,SOLID);
-	box(35,37,125,108,M_FILL);
-	//color(BLACK,WHITE,SOLID);
-	Draw_Text(UI_LOAD_BUSY, UI_LEN(UI_LOAD_BUSY), 5, 8);	
+	/* mod: the small framed box (msgbox.c), where this drew a 91 by 72
+	   block of dark gray with the text in it */
+	UINT8 t[12];
+
+	strcpy((char *)t, UI_LOAD_BUSY);
+	msg_box(t);
 }
 //---------------------------------------------------------------------------------
 void Show_Error_file(void)__banked
 {
-	/* Dialogs still use the library box(M_FILL): the fast fill's "plot the edges"
-	   step never worked on hardware and left a white band on the left edge.
-	   fill_fast_rect is safe for screen clears: 0..159 full width, no edge pixels. */
-	color(BLACK,DKGREY,SOLID);
-	box(35,37,125,108,M_FILL);
-	//color(BLACK,WHITE,SOLID);
-	Draw_Text(UI_ERROR_FILE, UI_LEN(UI_ERROR_FILE), 5, 8);	
+	/* mod: the small framed box (msgbox.c), where this drew a 91 by 72
+	   block of dark gray with the text in it */
+	UINT8 t[12];
+
+	strcpy((char *)t, UI_ERROR_FILE);
+	msg_box(t);
 }
 //---------------------------------------------------------------------------------
 #ifndef LANG_ZH	/* zh draws its own bottom bar in list_zh.c */
