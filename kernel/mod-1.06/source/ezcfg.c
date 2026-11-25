@@ -14,6 +14,8 @@
                                already has the key
      THEME=1                   the colors: 0 light, 1 dark, 2 red, 3 green,
                                4 purple, 5 blue (docs/themes.md)
+     TAGS=1                    full names in the list; 0 or no key cuts them
+                               at their tags (CLEAN NAMES)
      UI=12                     the font: 8 (or no key) the 8px console font, 12
                                the proportional 12px one. SLIM, the 0918
                                mod's third, is 12 here and stays SLIM in
@@ -51,17 +53,17 @@ extern FIL gfil;
 UINT8 cfg_dry;				/* main() saw BATTERY DRY on this boot */
 static UINT8 cfg_have_rtc;
 static UINT8 cfg_have_autosave;
-static UINT8 cfg_rtcsd;			/* 0: the clock backup is off */
+UINT8 cfg_rtcsd;				/* 0: the clock backup is off */
 static UINT8 cfg_autosave;
 static UINT8 cfg_rtc[6];		/* year (two digits), month, day, hour, minute, second */
-static UINT8 cfg_bootrom;		/* BOOTROM=1 */
-static UINT8 cfg_theme;			/* THEME=, as the file has it */
-static UINT8 cfg_ui;			/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM */
+UINT8 cfg_bootrom;			/* BOOTROM=1 */
+UINT8 cfg_theme;				/* THEME=, as the file has it */
+UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM */
+UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
 UINT8 ui_font;				/* 1: the 12px font (list12.c) */
 UINT8 ui_font_cfg;			/* what the settings ask for; ui_font is 0 on a screen that is 8px only */
 UINT8 list_rows;			/* rows of the file list: 16, or 10 in 12px */
-#define FLAUNCH_MAX	122U
-static char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
+char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
 static UINT8 s1_cancel;			/* our stage1 left its "S1" mark: fast launch is not ours to do */
 
 /* SGB BOOT (sgb.s) */
@@ -70,12 +72,13 @@ UINT8 sgb_wait;
 UINT8 sgb_busy;
 UINT8 pad_last;
 static UINT8 sgb_on;			/* this boot sends the header packets */
-static UINT8 cfg_sgb;			/* SGB=: 0 off, 1 on, 2 the file does not say */
+UINT8 cfg_sgb;				/* SGB=: 0 off, 1 on, 2 the file does not say */
 void sgb_set1(void);
 void sgb_vbl(void);
 void sgb_finish(void) __banked;
 
 extern TCHAR currentpath[];
+UINT8 browser_lone_rom(void) __banked;	/* browser.c */
 extern TCHAR lfname_temp[];
 
 /* for the launch stub (launch.s) */
@@ -208,7 +211,7 @@ static UINT8 key_tail(const char *s, const char *t)
 }
 
 /* 0 for a line this kernel does not know, else 1 RTC, 2 AUTOSAVE, 3 RTCSD,
-   4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI.
+   4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI, 9 TAGS.
    *skip gets the length of the key and '='. */
 static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 {
@@ -220,6 +223,7 @@ static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 	if((*skip = key_is(p, "SGB")) != 0U) return 6U;
 	if((*skip = key_is(p, "THEME")) != 0U) return 7U;
 	if((*skip = key_is(p, "UI")) != 0U) return 8U;
+	if((*skip = key_is(p, "TAGS")) != 0U) return 9U;
 	return 0U;
 }
 
@@ -313,6 +317,7 @@ static UINT16 file_read(UINT8 keep)
 			{
 				cfg_ui = (c == '1') ? 1U : (((c == 'S') || (c == 's')) ? 2U : 0U);
 			}
+			else if(k == 9U) tags_hide = (c == '0') ? 1U : 0U;
 			else
 			{
 				UINT8 n = 0U;
@@ -360,7 +365,7 @@ static void file_write(void)
 	UINT8 k;
 
 	at = file_read(1U);
-	for(k = 1U; k <= 8U; k++)
+	for(k = 1U; k <= 9U; k++)
 	{
 		p = line;
 		if(k == 1U)
@@ -417,12 +422,18 @@ static void file_write(void)
 			p += 6;
 			*p++ = (UINT8)('0' + cfg_theme);
 		}
-		else
+		else if(k == 8U)
 		{
 			if(!cfg_ui) continue;
 			if(cfg_ui == 1U) memcpy(p, "UI=12", 5U);
 			else memcpy(p, "UI=SLIM", 7U);
 			p += (cfg_ui == 1U) ? 5 : 7;
+		}
+		else
+		{
+			if(tags_hide) continue;
+			memcpy(p, "TAGS=1", 6U);
+			p += 6;
 		}
 		*p++ = '\r';
 		*p++ = '\n';
@@ -561,7 +572,7 @@ static void clock_check(void)
    leaves the boot ROM's registers in save RAM bank 17 at $A428, behind the
    mark "SB" or "SN" at $A412. Stock stage1 leaves nothing, and then the
    mode decides. */
-static UINT8 cgb_mode;			/* console_init: the kernel runs in CGB mode */
+UINT8 cgb_mode;				/* console_init: the kernel runs in CGB mode */
 
 /* ---- the font ---- */
 
@@ -578,11 +589,10 @@ static void font_set(void)
 
 /* ---- themes ---- */
 
-#define THEMES	6U
 
 /* The theme in use. The 0918 mod has two more, custom (6) and DV (7): here
    they show as dark, and the file keeps its number until the row is used. */
-static UINT8 theme_now(void)
+UINT8 theme_now(void) __banked
 {
 	return (cfg_theme < THEMES) ? cfg_theme : 1U;
 }
@@ -635,7 +645,7 @@ static void theme_apply(void)
 /* The setting is a record in save RAM, bank 17 at $A400: 'S' 'G' $01 $FE.
    It cannot be in the file, since the packets go out before the card is
    up. Our stage1 sends them itself and says so with "SB" or "SN" at $A412. */
-static UINT8 sgb_record(void)
+UINT8 sgb_record(void) __banked
 {
 	return ((info_get(0x400U) == 'S') && (info_get(0x401U) == 'G') &&
 	        (info_get(0x402U) == 0x01U) && (info_get(0x403U) == 0xFEU)) ? 1U : 0U;
@@ -748,6 +758,7 @@ void console_init(void) __banked
 	cfg_dry = 0U;
 	ui_font = 0U;
 	ui_font_cfg = 0U;
+	tags_hide = 1U;
 	list_rows = 16U;
 	sgb_step = 0U;
 	sgb_wait = 0U;
@@ -793,6 +804,7 @@ void cfg_boot(void) __banked
 	cfg_sgb = 2U;
 	cfg_theme = 0U;
 	cfg_ui = 0U;
+	tags_hide = 1U;
 	file_read(0U);
 	theme_apply();
 	font_set();
@@ -822,7 +834,14 @@ UINT8 cfg_fastlaunch(void) __banked
 	const char *e;
 
 	if(s1_cancel) return 0U;
-	if(cfg_flaunch[0] != '/') return 0U;		/* empty, or off with a # */
+	if(cfg_flaunch[0] == '#') return 0U;		/* off */
+	if(cfg_flaunch[0] != '/')
+	{
+		/* no game set: a card whose root has one game and no other file
+		   starts it (browser.c). currentpath is the root already. */
+		if(joypad() & J_START) return 0U;
+		return browser_lone_rom();
+	}
 	if(joypad() & J_START)
 	{
 		/* START is also the browser's key for the recent list: say what
@@ -907,28 +926,34 @@ void cfg_autosave_set(UINT8 v) __banked
 	file_write();
 }
 
-/* ---- the SET tab's second page ---- */
+/* ---- for the SET tab's pages (setpage.c) ---- */
 
-#define ROWS2		7U
-#define ROW_SKIP	0U
-#define ROW_FAST	1U
-#define ROW_SGB		2U
-#define ROW_RTCSD	3U
-#define ROW_THEME	4U
-#define ROW_FONT	5U
-#define ROW_GAME	6U
-
-static UINT8 row_on(UINT8 row)
+/* A setting changed: put it to work and write the file. what is CFG_*. */
+void cfg_changed(UINT8 what) __banked
 {
-	if(row == ROW_SKIP) return cfg_bootrom ? 0U : 1U;
-	if(row == ROW_FAST) return (cfg_flaunch[0] == '/') ? 1U : 0U;
-	if(row == ROW_SGB) return sgb_record();
-	return cfg_rtcsd;
+	if(what == CFG_BOOTROM) launch_mode_set();
+	else if(what == CFG_THEME) theme_apply();
+	else if(what == CFG_FONT) font_set();
+	else if(what == CFG_SGB)
+	{
+		/* the record in save RAM, for the boots after this one */
+		if(sgb_record()) info_put(0x400U, 0U);
+		else
+		{
+			info_put(0x400U, 'S');
+			info_put(0x401U, 'G');
+			info_put(0x402U, 0x01U);
+			info_put(0x403U, 0xFEU);
+		}
+		if(cfg_sgb > 1U) return;		/* nothing of it in the file */
+		cfg_sgb = sgb_record();
+	}
+	file_write();
 }
 
 /* The last game launched, from the save info page ($A300 of bank 17), into
    cfg_flaunch. 0 when it is not a path that fits. */
-static UINT8 flaunch_take_last(void)
+UINT8 cfg_flaunch_last(void) __banked
 {
 	UINT8 i;
 	UINT8 c;
@@ -946,184 +971,14 @@ static UINT8 flaunch_take_last(void)
 	return 1U;
 }
 
-static void row_act(UINT8 row)
+/* After a save backup at boot: the clock goes to the file, as at a launch */
+void cfg_backup(void) __banked
 {
-	UINT8 n;
-
-	if(row == ROW_SKIP)
-	{
-		cfg_bootrom ^= 1U;
-		launch_mode_set();
-	}
-	else if(row == ROW_FAST)
-	{
-		n = (UINT8)strlen(cfg_flaunch);
-		if(cfg_flaunch[0] == '/')
-		{
-			if(n >= FLAUNCH_MAX) return;
-			memmove(cfg_flaunch + 1, cfg_flaunch, n + 1U);	/* off: a # keeps the path */
-			cfg_flaunch[0] = '#';
-		}
-		else if(cfg_flaunch[0] == '#') memmove(cfg_flaunch, cfg_flaunch + 1, n);
-		else if(!flaunch_take_last()) return;
-	}
-	else if(row == ROW_SGB)
-	{
-		/* for the boots after this one: the packets go out at power-on */
-		cfg_sgb = (cfg_sgb > 1U) ? 2U : (sgb_record() ? 0U : 1U);
-		if(sgb_record()) info_put(0x400U, 0U);
-		else
-		{
-			info_put(0x400U, 'S');
-			info_put(0x401U, 'G');
-			info_put(0x402U, 0x01U);
-			info_put(0x403U, 0xFEU);
-		}
-		if(cfg_sgb > 1U) return;		/* nothing of it in the file */
-	}
-	else if(row == ROW_RTCSD) cfg_rtcsd ^= 1U;
-	else if(row == ROW_THEME)
-	{
-		/* the next theme; where only BGP can be set there are two */
-		cfg_theme = (UINT8)(theme_now() + 1U);
-		if(cfg_theme >= (cgb_mode ? THEMES : 2U)) cfg_theme = 0U;
-		theme_apply();
-	}
-	else if(row == ROW_FONT)
-	{
-		cfg_ui = cfg_ui ? 0U : 1U;
-		font_set();
-	}
-	else if(!flaunch_take_last()) return;
+	if(!cfg_rtcsd) return;
+	clock_read();
+	if(now_flags || !now[0]) return;
+	if(cfg_have_rtc && !later(now, cfg_rtc)) return;
+	memcpy(cfg_rtc, now, 6U);
+	cfg_have_rtc = 1U;
 	file_write();
-}
-
-static void row_draw(UINT8 row, UINT8 sel)
-{
-	UINT8 s[21];
-	UINT8 y;
-	UINT8 n;
-	UINT8 i;
-	const char *name;
-
-	if(row == ROW_GAME)
-	{
-		/* the game fast launch starts, by name; A makes it the last one played */
-		memset(s, ' ', 20U);
-		s[20] = 0U;
-		name = cfg_flaunch;
-		n = (UINT8)strlen(name);
-		for(i = 0U; i < n; i++) if(cfg_flaunch[i] == '/') name = cfg_flaunch + i + 1U;
-		n = (UINT8)strlen(name);
-		if(n > 14U) n = 14U;
-		if(n) memcpy(s + 6, name, n);
-		else memcpy(s + 6, "NOT SET", 7U);
-		memcpy(s, "GAME:", 5U);
-		if(sel) color(BLACK, DKGREY, SOLID);
-		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s + 6, 14U, 6U, 15U);
-		color(BLACK, WHITE, SOLID);
-		s[5] = 0U;
-		Draw_Text(s, 5U, 0U, 15U);
-		return;
-	}
-	if(row == ROW_FONT)
-	{
-		memcpy(s, ui_font ? "12PX" : "8PX ", 5U);
-		if(sel) color(BLACK, DKGREY, SOLID);
-		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 7U, 13U, 13U);
-		color(BLACK, WHITE, SOLID);
-		return;
-	}
-	if(row == ROW_THEME)
-	{
-		static const char names[THEMES][7] = {"LIGHT ", "DARK  ", "RED   ", "GREEN ", "PURPLE", "BLUE  "};
-
-		memcpy(s, names[theme_now()], 7U);
-		if(sel) color(BLACK, DKGREY, SOLID);
-		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 7U, 13U, 11U);
-		color(BLACK, WHITE, SOLID);
-		return;
-	}
-	y = (UINT8)(24U + row * 16U);
-	color(WHITE, WHITE, SOLID);
-	box(130, y, 138, (UINT8)(y + 8U), M_FILL);
-	if(sel) color(DKGREY, DKGREY, SOLID);
-	else color(BLACK, WHITE, SOLID);
-	box(130, y, 138, (UINT8)(y + 8U), M_NOFILL);
-	if(row_on(row))
-	{
-		color(DKGREY, DKGREY, SOLID);
-		box(132, (UINT8)(y + 2U), 136, (UINT8)(y + 6U), M_FILL);
-	}
-	color(BLACK, WHITE, SOLID);
-}
-
-/* The page under the SET tab's first: DOWN from AUTO SAVE comes here, UP
-   from the first row goes back. Returns 0 to go back to the first page and
-   1 when SELECT was pressed, which leaves the tab. */
-UINT8 set_page2(void) __banked
-{
-	UINT8 s[16];
-	UINT8 row = 0U;
-	UINT8 keys;
-	UINT8 last;
-	UINT8 i;
-
-	color(BLACK, WHITE, SOLID);
-	memcpy(s, "SKIP BOOT ROM:", 15U);
-	Draw_Text(s, 14U, 0U, 3U);
-	memcpy(s, "FAST LAUNCH:", 13U);
-	Draw_Text(s, 12U, 0U, 5U);
-	memcpy(s, "SGB BOOT:", 10U);
-	Draw_Text(s, 9U, 0U, 7U);
-	memcpy(s, "RTC SD BACKUP:", 15U);
-	Draw_Text(s, 14U, 0U, 9U);
-	memcpy(s, "THEME:", 7U);
-	Draw_Text(s, 6U, 0U, 11U);
-	memcpy(s, "FONT:", 6U);
-	Draw_Text(s, 5U, 0U, 13U);
-	for(i = 0U; i < ROWS2; i++) row_draw(i, (i == row) ? 1U : 0U);
-
-	/* the DOWN that opened the page is not a press on it */
-	while(joypad()) wait_vbl_done();
-	last = 0U;
-	while(1)
-	{
-		wait_vbl_done();
-		keys = joypad();
-		if(keys == last) continue;
-		last = keys;
-		if(keys & J_SELECT) return 1U;
-		if(keys & J_UP)
-		{
-			if(row == 0U)
-			{
-				while(joypad()) wait_vbl_done();	/* nor is this UP one on the first page */
-				return 0U;
-			}
-			row_draw(row, 0U);
-			row--;
-			row_draw(row, 1U);
-		}
-		else if(keys & J_DOWN)
-		{
-			if(row + 1U < ROWS2)
-			{
-				row_draw(row, 0U);
-				row++;
-				row_draw(row, 1U);
-			}
-		}
-		else if(keys & J_A)
-		{
-			row_act(row);
-			/* FAST LAUNCH and the game row change each other */
-			row_draw(ROW_FAST, (row == ROW_FAST) ? 1U : 0U);
-			row_draw(ROW_GAME, (row == ROW_GAME) ? 1U : 0U);
-			if((row != ROW_FAST) && (row != ROW_GAME)) row_draw(row, 1U);
-		}
-	}
 }

@@ -6,7 +6,7 @@
    each an icon and the name. The selected row is drawn inverted, ink 0 on
    paper 3, which the renderer flushes with plain writes and which reads on
    an original Game Boy. A folder shows by its icon, with no DIR tag, and a
-   .gb or .gbc shows without its ending.
+   name is as long as CLEAN NAMES makes it (name_shown, browser.c).
    ========================================================================== */
 
 #include <gb/gb.h>
@@ -44,26 +44,18 @@ static FM_FILE_FS *entry(UINT16 n)
 	return &pFilename_buffer[n % Num_perBank];
 }
 
-/* The icon for a record, and in *shown the length of the name without a
-   .gb or .gbc ending */
+/* The icon for a record, and in *shown the length of its name as drawn
+   (name_shown, browser.c) */
 static UINT8 icon_of(const FM_FILE_FS *e, UINT8 *shown)
 {
 	const UINT8 *nm = e->filename;
 	UINT8 n = (UINT8)strlen((const char *)nm);
 
-	*shown = n;
+	*shown = name_shown(e);
 	if(e->fattrib == AM_DIR) return F12_FOLDER;
-	if((n > 3U) && (nm[n - 3U] == '.') && (up(nm[n - 2U]) == 'G') && (up(nm[n - 1U]) == 'B'))
-	{
-		*shown = (UINT8)(n - 3U);
-		return F12_GB;
-	}
+	if((n > 3U) && (nm[n - 3U] == '.') && (up(nm[n - 2U]) == 'G') && (up(nm[n - 1U]) == 'B')) return F12_GB;
 	if((n > 4U) && (nm[n - 4U] == '.') && (up(nm[n - 3U]) == 'G') && (up(nm[n - 2U]) == 'B') &&
-	   (up(nm[n - 1U]) == 'C'))
-	{
-		*shown = (UINT8)(n - 4U);
-		return F12_GBC;
-	}
+	   (up(nm[n - 1U]) == 'C')) return F12_GBC;
 	if((n > 4U) && (nm[n - 4U] == '.') && (up(nm[n - 3U]) == 'S') && (up(nm[n - 2U]) == 'A') &&
 	   (up(nm[n - 1U]) == 'V')) return F12_SAV;
 	return F12_FILE;

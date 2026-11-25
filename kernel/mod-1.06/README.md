@@ -35,7 +35,7 @@ under the kernel's version.
 | A launch jumps past the boot ROM when the console allows it; the kernel sets the palettes in CGB mode | `source/launch.s`, `source/ezcfg.c`, `source/GBcard_OP.c`, `source/main.c`, `makefile` |
 | Fast launch: `FLAUNCH=` starts a game at power-on | `source/ezcfg.c`, `source/main.c` |
 | SGB BOOT: the header packets a Super Game Boy needs | `source/sgb.s`, `source/ezcfg.c`, `makefile` |
-| A second SET page for the mod's settings | `source/ezcfg.c`, `source/RTC.c` |
+| Two more SET pages for the mod's settings | `source/setpage.c`, `source/ezcfg.c`, `source/RTC.c` |
 | Themes: light, dark and four colors | `source/ezcfg.c` |
 | The 12px proportional font (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
@@ -94,7 +94,8 @@ the released kernel does. Left and right keep the every other frame rate.
 The first of the 0918 mod's features here
 ([docs/browser.md](../../docs/browser.md) describes the original).
 `Read_all_DIR` moved from `main.c` to `source/browser.c` in bank 8, because
-bank 0 has under 100 bytes left.
+bank 0 has no room: for the same reason `Filename_loop`, the 8px list's
+name scroll, is in `source/list8.c` (bank 4).
 
 Folders come first, then files, each by name without regard to case. No
 record is moved: the folder is read once to make a 16-byte key per entry in
@@ -106,15 +107,31 @@ Not listed, file or folder: a name that starts with `.` or `_`; one that
 ends in `.gba`, `.nds`, `.sav`, `.esv` or `.dat`; `EZGB.CFG`, `FLAUNCH.CFG`
 and the `SAVER` folder; and, as before, anything hidden or system.
 
+**The card's list.** `/.ezgbhide` in the card's root names more to leave
+out, one name a line, any case: a plain name hides a file or folder with
+exactly that name in any folder, `*` and an ending hides every name with
+that ending, and `#` starts a comment. Its first 510 bytes are read, for
+every listing.
+
+**Clean names.** With `CLEAN NAMES` ticked on the SET tab, the default, a
+file's name is drawn up to its first ` (` or ` [`, or else its last `.`:
+`Tetris (World) (Rev 1).gb` and `Tetris.gb` both show as `Tetris`. Only
+the drawing is shorter: sorting, launching and the save's name use the
+whole name. `TAGS=1` in `/EZGB.CFG` shows full names. Both lists and their
+name scroll use it (`name_shown` in `source/browser.c`).
+
 The keys take the last bank of the list area, so a folder holds 416 entries
 where the kernel as received held 448. A folder with more is cut at 416 and
 left in card order.
 
-Seen in SameBoy on the test card: the root lists as Pokemon, Zelda,
-Kirby.gbc, readme.txt, Tetris.gb, Wario Land.gb. Not yet run on a cart, and
-not with a folder near the cap. Not carried over yet: the card's own hide
-list (`/.ezgbhide`), stars and the sort by play count, icons, and the
-notice when a folder is cut.
+A folder with more than 416 entries shows `Too many files. Showing first
+416` for two seconds.
+
+Seen in SameBoy on the test card: the root lists as Pokemon, Zelda, then
+the files by name; a hide list with a name, an ending, a comment and a
+blank line hides what it should; names show cut and, with the box
+unticked, in full. Not checked: a folder near the cap and its notice.
+Nothing on a cart. Not carried over yet: stars and the sort by play count.
 
 ### The settings file
 
@@ -152,9 +169,9 @@ launch corrupted a directory entry on hardware. This write is at that
 point, on a file whose size does not change, and showed no problem in the
 emulator: it needs a cart to settle.
 
-Not carried over yet: the clock stored after a save backup, the fallback
-to an old `FLAUNCH.CFG`, and the keys of features this kernel does not have
-(`FLAUNCH`, `LASTROM`, `UI`, `THEME`, `COLORS`, `TAGS`, `BOOTROM`,
+The clock is also stored after a save backup at boot (not checked in the
+emulator). Not carried over yet: the fallback to an old `FLAUNCH.CFG`, and
+the keys of features this kernel does not have (`LASTROM`, `COLORS`,
 `DAILYBACKUP`).
 
 ### The jump past the boot ROM
@@ -208,7 +225,12 @@ list.
 Checked in SameBoy: power-on goes straight into Pokemon Red, and with START
 held the browser comes up, after a `FAST LAUNCH CANCELED` line that stays
 until START is let go (START is also this kernel's key for the recent
-list). Not carried over: the launch of a card's lone ROM.
+list).
+
+**A lone ROM.** With no `FLAUNCH=` at all, a card whose root lists exactly
+one file, a `.gb` or `.gbc`, starts it at power-on, whatever folders it
+has; what the list hides is not counted. START held gives the browser.
+Seen in SameBoy both ways.
 
 ### SGB BOOT
 
@@ -243,24 +265,24 @@ comes up with its border on the SGB model). SameBoy shows a picture on its
 SGB model with or without the packets, so whether a real SNES takes them
 is not checked: that needs a Super Game Boy.
 
-### The second SET page
+### The SET tab's other pages
 
-DOWN from AUTO SAVE opens it, UP from its first row goes back, and SELECT
-leaves the tab as on the first page. A toggles the row under the cursor
-and writes `/EZGB.CFG`.
+`source/setpage.c` (bank 4). DOWN from AUTO SAVE opens the first of them.
+Each has four rows: DOWN from a page's last row is the next page, UP from
+its first the one before, and UP from the very first goes back to the
+tab's first page. SELECT leaves the tab. A acts on the row under the
+cursor and writes `/EZGB.CFG`.
 
 | Row | Does |
 |---|---|
 | `SKIP BOOT ROM:` | ticked is the jump; unticked writes `BOOTROM=1` |
 | `FAST LAUNCH:` | on and off, by the `#` in front of the `FLAUNCH=` path. With no game set, turning it on takes the last game launched |
+| `GAME:` | the fast launch game by name; A makes it the last game launched |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
-| `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 | `THEME:` | the next theme |
 | `FONT:` | `8PX` or `12PX` |
-| `GAME:` | the fast launch game by name; A makes it the last game launched |
-
-So this kernel now writes `BOOTROM`, `FLAUNCH`, `RTCSD` and `SGB` as well
-as reading them.
+| `CLEAN NAMES:` | unticked writes `TAGS=1` |
+| `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 
 Checked in SameBoy: each row toggles and reaches the file or the record;
 turning FAST LAUNCH on with no game set took Pokemon Red, and the next
@@ -340,7 +362,7 @@ font:
 | Screen | In 12px |
 |---|---|
 | SET, first page | the date and time are one line (`clock12`), the field being set inverted; the `SET` button's box is three rows taller |
-| SET, second page | its rows are two apart in both fonts, and the fast launch game is one row, `GAME:` and the name |
+| SET, the mod's pages | their rows are two apart in both fonts |
 | HELP | its lines are on rows 3, 5 and 7 |
 | Dialogs | lines on rows 10 and 11 of column 5 draw 12 pixels apart, at y 72 and 84 |
 | The clock prompt | its two times are on rows 7 and 9 |
@@ -354,8 +376,8 @@ both ways, the same screens in 8px, and no hit on the VRAM watchpoint. Not
 checked: a folder longer than a page in 12px, and the error dialogs.
 Nothing on a cart.
 
-Not carried over: the star, tag trimming, a 12px recent list, `UI=SLIM`
-(read as 12px) and the DV glyph set.
+Not carried over: the star, a 12px recent list, `UI=SLIM` (read as 12px)
+and the DV glyph set.
 
 ### The FW6 clock load, removed
 

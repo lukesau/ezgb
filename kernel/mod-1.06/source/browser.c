@@ -27,6 +27,7 @@
 
 #include <gb/gb.h>
 #include <string.h>
+#include <gb/drawing.h>
 
 #include "ezgb_hw.h"
 #include "main.h"
@@ -93,6 +94,120 @@ static UINT8 hidden_ending(const char *fn)
 	return 0U;
 }
 
+/* ---- the card's hide list ---- */
+
+extern UINT8 SD_buffer[0x200];
+extern FIL gfil;
+extern FRESULT f_open_bank(FIL *fp, const TCHAR *path, BYTE mode);
+extern FRESULT f_read_bank(FIL *fp, void *buff, UINT btr, UINT *br);
+extern FRESULT f_close_bank(FIL *fp);
+
+static UINT8 hide_ok;			/* SD_buffer holds the packed list */
+static char hide_path[11];
+
+/* /.ezgbhide in the card's root names files and folders the list leaves
+   out, on top of the ones built in (docs/browser.md). One name a line, any
+   case:
+
+     RTS            a file or folder with exactly this name, in any folder
+     *.bak          any name with this ending
+     # a comment    (blank lines are skipped too)
+
+   Its first 510 bytes are read into SD_buffer and packed there in place,
+   which nothing else uses while a folder is read: for each name a length
+   byte (bit 7: the whole name must match) and the name in lower case, and
+   a zero length at the end. A packed line is never longer than the line.
+   It is read again for every listing. */
+static void hide_load(void)
+{
+	UINT16 br = 0U;
+	UINT16 i = 1U;
+	UINT16 o = 0U;
+	UINT16 at;
+	UINT8 c;
+	UINT8 n;
+	UINT8 f;
+
+	hide_ok = 0U;
+	memcpy(hide_path, "/.ezgbhide", 11U);
+	hw_set_page(A000Address_TF);
+	if(f_open_bank(&gfil, hide_path, FA_READ) != FR_OK) return;
+	/* read one byte in: a packed name has its length in front, so the
+	   packing would otherwise write a byte it has not read yet */
+	if(f_read_bank(&gfil, SD_buffer + 1, 0x1FEU, &br) != FR_OK) br = 0U;
+	f_close_bank(&gfil);
+	if(br > 0x1FEU) br = 0x1FEU;
+	br++;				/* the end of what was read, as an index */
+
+	while(i < br)
+	{
+		while((i < br) && ((SD_buffer[i] == ' ') || (SD_buffer[i] == '\t'))) i++;
+		f = 0x80U;
+		if((i < br) && (SD_buffer[i] == '*'))
+		{
+			f = 0U;
+			i++;
+		}
+		if((i < br) && (SD_buffer[i] == '#')) f = 0xFFU;	/* a comment: nothing of it is kept */
+		at = o++;			/* the length byte; the line had at least this one byte, or ends the file */
+		n = 0U;
+		for(; i < br; i++)
+		{
+			c = SD_buffer[i];
+			if(c == '\n')
+			{
+				i++;
+				break;
+			}
+			if((c == '\r') || (f == 0xFFU) || (n == 127U)) continue;
+			if((c >= 'A') && (c <= 'Z')) c += 32U;
+			SD_buffer[o++] = c;
+			n++;
+		}
+		while(n && ((SD_buffer[o - 1U] == ' ') || (SD_buffer[o - 1U] == '\t')))
+		{
+			o--;
+			n--;
+		}
+		if((n == 0U) || (f == 0xFFU)) o = at;	/* nothing on the line */
+		else SD_buffer[at] = (UINT8)(f | n);
+	}
+	SD_buffer[o] = 0U;
+	hide_ok = 1U;
+}
+
+static UINT8 low(UINT8 c)
+{
+	if((c >= 'A') && (c <= 'Z')) return (UINT8)(c + 32U);
+	return c;
+}
+
+/* 1 when the card's list has this name */
+static UINT8 hide_listed(const char *fn)
+{
+	const UINT8 *t;
+	const UINT8 *p;
+	UINT8 len;
+	UINT8 n;
+	UINT8 i;
+
+	if(!hide_ok) return 0U;
+	len = (UINT8)strlen(fn);
+	t = SD_buffer;
+	while(*t)
+	{
+		n = (UINT8)(*t & 0x7FU);
+		if((n <= len) && (!(*t & 0x80U) || (n == len)))
+		{
+			p = (const UINT8 *)fn + (len - n);	/* the ending, or the whole name */
+			for(i = 0U; i < n; i++) if(low(p[i]) != t[1U + i]) break;
+			if(i == n) return 1U;
+		}
+		t += 1U + n;
+	}
+	return 0U;
+}
+
 /* 0 when the entry in fileinfo is not listed, 1 for a file, 2 for a folder */
 static UINT8 entry_class(void)
 {
@@ -109,6 +224,7 @@ static UINT8 entry_class(void)
 	if(same_name(fn, "EZGB.CFG")) return 0U;
 	if(same_name(fn, "FLAUNCH.CFG")) return 0U;
 	if(is_dir && same_name(fn, "SAVER")) return 0U;	/* the kernel's save folder */
+	if(hide_listed(fn)) return 0U;			/* the card's own list */
 	return is_dir ? 2U : 1U;
 }
 
@@ -256,6 +372,21 @@ static UINT8 next_entry(UINT8 stage)
 	}
 }
 
+/* A folder with more entries than the list holds: say so for two seconds */
+static void cut_notice(void)
+{
+	UINT8 s[20];
+
+	color(BLACK, DKGREY, SOLID);
+	box(11, 37, 149, 76, M_FILL);
+	memcpy(s, "Too many files.", 16U);
+	Draw_Text(s, 15U, 2U, 5U);
+	memcpy(s, "Showing first 416", 18U);
+	Draw_Text(s, 17U, 2U, 7U);
+	color(BLACK, WHITE, SOLID);
+	delay(2000);
+}
+
 void Read_all_DIR(void) __banked
 {
 	UINT8 cls;
@@ -269,6 +400,8 @@ void Read_all_DIR(void) __banked
 	game_folder_total = 0;
 	Read_file_end = 1;			/* everything is read here: scrolling never touches the card */
 	readdir_fail = 0;
+
+	hide_load();
 
 	/* the keys */
 	if(!open_dir()) return;
@@ -312,4 +445,73 @@ void Read_all_DIR(void) __banked
 	game_folder_total = n;
 
 	hw_set_page(A000Address_TF);
+	if(cut) cut_notice();
+}
+
+/* ---- a card with one game ---- */
+
+/* 1 when the card's root lists exactly one file, a .gb or .gbc, whatever
+   folders it has: its name is then in lfname_temp (docs/fast-launch.md,
+   "A lone ROM"). What the list hides is not counted. */
+UINT8 browser_lone_rom(void) __banked
+{
+	extern TCHAR lfname_temp[];
+	extern TCHAR currentpath_temp[];
+	UINT8 cls;
+	UINT8 files = 0U;
+	UINT8 n;
+	const char *fn;
+
+	memset(&fileinfo, 0, sizeof(fileinfo));
+	fileinfo.lfname = lfname_temp;
+	fileinfo.lfsize = MAX_filename_len;
+	readdir_fail = 0;
+	hide_load();
+	if(!open_dir()) return 0U;
+	while((cls = next_entry(3U)) != 0U)
+	{
+		if(cls == 2U) continue;
+		if(++files > 1U) return 0U;
+		fn = entry_name();
+		n = (UINT8)strlen(fn);
+		if(!(((n > 3U) && same_name(fn + n - 3U, ".GB")) ||
+		     ((n > 4U) && same_name(fn + n - 4U, ".GBC")))) return 0U;
+		/* kept aside: the entries read after it go through lfname_temp */
+		strcpy(currentpath_temp, fn);
+	}
+	if(files != 1U) return 0U;
+	strcpy(lfname_temp, currentpath_temp);
+	return 1U;
+}
+
+/* ---- clean names ---- */
+
+/* A name's length as the list draws it (docs/browser.md "Clean names").
+   With CLEAN NAMES on a file's name is cut at the first " (" or " [", else
+   at its last '.', with blanks before the cut dropped: "Tetris (World)
+   (Rev 1).gb" and "Tetris.gb" both show as "Tetris". A name that starts
+   with a tag or a dot is left alone, and a folder is never cut. The record
+   keeps the whole name: only the drawing is shorter. */
+UINT8 name_shown(const FM_FILE_FS *e) __banked
+{
+	const UINT8 *s = e->filename;
+	UINT8 i;
+	UINT8 cut = 0xFFU;
+
+	if(tags_hide && (e->fattrib != AM_DIR))
+	{
+		for(i = 0U; (i < 0xFEU) && s[i]; i++)
+		{
+			if((i >= 2U) && (s[i - 1U] == ' ') && ((s[i] == '(') || (s[i] == '[')))
+			{
+				cut = (UINT8)(i - 1U);
+				break;
+			}
+			if((i >= 1U) && (s[i] == '.')) cut = i;
+		}
+		while((cut != 0xFFU) && (cut > 1U) && (s[cut - 1U] == ' ')) cut--;
+		if(cut != 0xFFU) return cut;
+	}
+	for(i = 0U; (i < 0xFEU) && s[i]; i++) {}
+	return i;
 }

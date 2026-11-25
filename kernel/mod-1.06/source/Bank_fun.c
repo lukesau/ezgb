@@ -195,6 +195,18 @@ char *my_strrchr(const char *s, char c)__banked
 }
 
 //---------------------------------------------------------------------------------
+/* mod: a file's row in the 8px list. Draw_Text with a length of 20 pads a
+   shorter name with blanks; here the name may be cut (name_shown), so its
+   part is drawn and then the blanks. */
+static void list8_name(const FM_FILE_FS *e, UINT8 y)
+{
+	UINT8 n = name_shown(e);
+
+	if(n > 20U) n = 20U;
+	Draw_Text((UINT8 *)e->filename, n, 0, y);
+	if(n < 20U) Draw_Text((UINT8 *)"", (UINT8)(20U - n), n, y);
+}
+
 void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 {
 #if defined(LANG_ZH) && !defined(ZH_LIST_OFF)
@@ -265,7 +277,7 @@ void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 		}
 		else 
 		{
-			Draw_Text(pFilename_buffer[BANK_index].filename, 20, x_offset, y_offset + line);
+			list8_name(&pFilename_buffer[BANK_index], y_offset + line);	/* mod: the name as CLEAN NAMES has it */
 		}
 		
 		color(BLACK,WHITE,SOLID);
@@ -346,7 +358,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	}
 	else 
 	{
-		Draw_Text(pFilename_buffer[BANK_index].filename, 20, x_offset, showy1);
+		list8_name(&pFilename_buffer[BANK_index], showy1);	/* mod: the name as CLEAN NAMES has it */
 	}
 	
 	if(updown==3)//up
@@ -375,7 +387,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	}
 	else 
 	{
-		Draw_Text(pFilename_buffer[BANK_index].filename, 20, x_offset, showy2);
+		list8_name(&pFilename_buffer[BANK_index], showy2);	/* mod: the name as CLEAN NAMES has it */
 	}
 	
 	color(BLACK,WHITE,SOLID);
