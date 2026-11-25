@@ -464,6 +464,12 @@ re_showfile:
 				DrawGB(1);
 				Set_window();
 				page_num	=2;	
+				if(tab_to_sd)		/* mod: START on the SET tab is the SD tab, not HELP */
+				{
+					tab_to_sd = 0;
+					updata=1;
+					goto refind_file;
+				}
 				
 				/*updata=1;
 				delay(200);

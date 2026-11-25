@@ -617,6 +617,11 @@ enter2:
 						color(BLACK,WHITE,SOLID);
 						r2 = set_page2(start2);
 						if(r2 == 1) return;
+						if(r2 == 4)		/* START in the mod's rows: back to the SD tab */
+						{
+							tab_to_sd = 1;
+							return;
+						}
 						if(r2 == 2)
 						{
 							/* back from page 2: this page again, then its last row */
@@ -637,6 +642,13 @@ enter2:
 			}
     }
 		else if(keysrepeat &  J_SELECT){
+			return;
+		}
+		/* mod: START goes back to the SD tab, where SELECT goes on to HELP.
+		   It is let go first: on the SD tab START is the recent list. */
+		else if((keysrepeat & J_START) && !edit_mode){
+			while(joypad() & J_START) wait_vbl_done();
+			tab_to_sd = 1;
 			return;
 		}
 		else if(keysrepeat &  J_B){

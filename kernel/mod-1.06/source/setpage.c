@@ -314,7 +314,8 @@ static void clock_tick(void)
      2  UP left page 2: Set_window draws page 1 and calls again with start
         SET_RESUME, its last row
      3  LEFT or RIGHT came round to page 1: Set_window draws it, the cursor
-        on its first row */
+        on its first row
+     4  START: back to the SD tab */
 UINT8 set_page2(UINT8 start) __banked
 {
 	UINT8 row = start;
@@ -337,6 +338,11 @@ UINT8 set_page2(UINT8 start) __banked
 		if(keys == last) continue;
 		last = keys;
 		if(keys & J_SELECT) return 1U;
+		if(keys & J_START)
+		{
+			while(joypad() & J_START) wait_vbl_done();
+			return 4U;
+		}
 		to = row;
 		if(keys & J_UP)
 		{

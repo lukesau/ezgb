@@ -2,6 +2,7 @@
 #ifndef EZCFG_H
 #define EZCFG_H
 
+extern UINT8 tab_to_sd;		/* START left the SET tab: sdlist.c goes to the SD tab */
 extern UINT8 cfg_dry;		/* main() sets it when the boot showed BATTERY DRY */
 
 void console_init(void) __banked;		/* first thing in main() */

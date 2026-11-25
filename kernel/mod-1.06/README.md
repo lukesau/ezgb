@@ -668,7 +668,8 @@ and two text rows apart, with the page's number at the foot:
 The cursor still runs down through all of them: DOWN from a page's last
 row is the next page. LEFT and RIGHT change the page from any row, to its
 first row, and the pages go round; while the time is being set they step
-through its fields, as before. EZ Flash's three rows keep their own loop, and
+through its fields, as before. START on the SET tab or the HELP tab goes back
+to the SD tab, as in the 0918 mod, where SELECT steps on to the next tab. EZ Flash's three rows keep their own loop, and
 `Set_window` hands the cursor to `set_page2` (`source/setpage.c`) when it
 leaves AUTO SAVE downward and takes it back when it comes up. This
 replaces the pages of four rows the sections above describe.

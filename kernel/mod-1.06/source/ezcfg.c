@@ -75,6 +75,7 @@ UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM, 3 is EZF */
 UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
 UINT8 cfg_daily;			/* DAILYBACKUP=1 (savemgr.c) */
 UINT8 sgb_auto;				/* our stage1 handles the SGB: SGB BOOT shows AUTO */
+UINT8 tab_to_sd;				/* START on the SET tab: the SD tab is next, not HELP */
 UINT8 cfg_can_jump;			/* this console can start a game without the boot ROM */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
 static UINT8 custom_ramp[8];
@@ -933,6 +934,7 @@ void console_init(void) __banked
 
 	/* nothing here counts on WRAM being cleared at startup */
 	cfg_dry = 0U;
+	tab_to_sd = 0U;
 	ui_font = 0U;
 	ui_font_cfg = 0U;
 	tags_hide = 1U;

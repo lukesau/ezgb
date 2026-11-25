@@ -109,5 +109,12 @@ void Help_window(void)__banked
 		if(keysrepeat &  J_SELECT){
 			return;
 		}
+		/* mod: START leaves too, as on the SET tab. Both go to the SD tab
+		   from here; START is let go first, since there it is the recent
+		   list. */
+		if(keysrepeat & J_START){
+			while(joypad() & J_START) wait_vbl_done();
+			return;
+		}
 	}
 }
