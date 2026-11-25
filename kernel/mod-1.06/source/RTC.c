@@ -22,7 +22,8 @@
 #ifdef LANG_ZH
 #define SET_BTN_Y1	34
 #else
-#define SET_BTN_Y1	33
+/* mod: the 12px font's SET is three rows taller than the 8px one */
+#define SET_BTN_Y1	(ui_font ? 36 : 33)
 #endif
 
 #define RTC_BANK
@@ -30,6 +31,7 @@
 
 #include "RTC.h"
 #include "ezcfg.h"		/* mod: the settings file */
+#include "list12.h"		/* mod: the 12px font */
 #include "UI.h"			/* mod: DrawGB, to clear between the SET pages */
 
 
@@ -301,6 +303,14 @@ page1:		/* mod: the second page comes back here to draw the first again */
 			if(update) zh_fill_flat(0, (UINT8)(XX << 3), 159, (UINT8)((XX << 3) + 11U));
 #endif
 			
+#ifndef LANG_ZH
+			if(ui_font)		/* mod: one line in the 12px font, list12.c */
+			{
+				if(update || memcmp(datetime, datetime_old, 7)) clock12((const UINT8 *)datetime, 1U, 0xFFU);
+			}
+			else
+#endif
+			{
 			if((datetime[_YEAR] != datetime_old[_YEAR]) || update)
 			{			
 				_ultoa_0(UNBCD(datetime[_YEAR])+2000,msg,10u);//Years_re
@@ -336,6 +346,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 				Draw_Text(msg, 2, 17, XX);	
 			}
 			
+			}
 			update=0;
 			memcpy(datetime_old,datetime,7);
 		}
@@ -354,6 +365,14 @@ page1:		/* mod: the second page comes back here to draw the first again */
 			
 				color(BLACK,WHITE,SOLID);// text colour	
 			
+#ifndef LANG_ZH
+				if(ui_font)		/* mod: one line in the 12px font, the field being set inverted */
+				{
+					clock12((const UINT8 *)edit_datetime, 0U, pos);
+				}
+				else
+#endif
+				{
 				_ultoa_0((edit_datetime[_YEAR])+2000,msg,10u);//Years_re
 #ifdef LANG_ZH
 				if(pos==0)
@@ -445,6 +464,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 #endif
 				color(BLACK,WHITE,SOLID);
 				
+				}
 				update=0;
 			}
 		}	

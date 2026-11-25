@@ -39,6 +39,15 @@ UINT8 ramfun_Get_FPGA_ver(void)
 
 
 // --------------------------------------------------------------------
+/* mod: the three lines are on rows 3, 4 and 5; in the 12px font, which is
+   taller than a row, on 3, 5 and 7 */
+#ifdef LANG_ZH
+#define HELP_ROW(r)	(r)
+#else
+#include "list12.h"
+#define HELP_ROW(r)	(ui_font ? (UINT8)(2U * (r) - 3U) : (r))
+#endif
+
 void Help_window(void)__banked
 {
 	UINT8 i,j;
@@ -76,10 +85,10 @@ void Help_window(void)__banked
 	
 	Draw_Text(UI_HELP_VER, UI_LEN(UI_HELP_VER), 0, 3);
 	/* mod: the mod's version, from the VERSION file (build/mod_version.h) */
-	Draw_Text(UI_HELP_MOD, UI_LEN(UI_HELP_MOD), 0, 4);
+	Draw_Text(UI_HELP_MOD, UI_LEN(UI_HELP_MOD), 0, HELP_ROW(4));
 
 	
-	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, 5);
+	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, HELP_ROW(5));
 	
 	
 	while(1)

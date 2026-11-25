@@ -82,7 +82,15 @@ static u8 kern(u8 a, u8 b)
 /* Runs the pen over s from pixel x: each glyph's x goes to xs[], and the
    count of glyphs that fit before the right edge comes back. len caps the
    characters, 0 meaning up to the NUL. */
+static u8 fit_to(const u8 *s, u8 len, u8 x, u8 *xs, u8 lim);
+
 static u8 fit(const u8 *s, u8 len, u8 x, u8 *xs)
+{
+	return fit_to(s, len, x, xs, ROW_W);
+}
+
+/* The same, with the right edge at pixel lim */
+static u8 fit_to(const u8 *s, u8 len, u8 x, u8 *xs, u8 lim)
 {
 	const u8 *M = Font12Metrics;
 	u8 i, g, prev, c;
@@ -94,7 +102,7 @@ static u8 fit(const u8 *s, u8 len, u8 x, u8 *xs)
 		if (c == 0) break;
 		g = glyph_index(c);
 		if (prev != 0xFF) x -= kern(prev, g);
-		if (x >= ROW_W || (u8)(x + M[M_W + g]) > ROW_W) break;
+		if (x >= lim || (u8)(x + M[M_W + g]) > lim) break;
 		xs[i] = x;
 		x += M[M_ADV + g];
 		prev = g;
@@ -115,7 +123,24 @@ UINT8 font12_fit(const UINT8 *s, UINT8 x) __banked
    multiple of 4. colors is ink * 4 + paper. */
 void font12_draw(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors) __banked
 {
-	u8 i, x, n, ink, paper, xm, t0, nt, kf, cnt, c;
+	font12_field(s, x0, y, colors, ROW_W);
+}
+
+/* Where the pen is after s drawn from pixel x: the x for what follows it */
+UINT8 font12_end(const UINT8 *s, UINT8 x) __banked
+{
+	u8 xs[MAX_GLYPHS];
+	u8 n = fit(s, 0, x, xs);
+
+	if (n == 0) return x;
+	return (u8)(xs[n - 1] + Font12Metrics[M_ADV + glyph_index(s[n - 1])]);
+}
+
+/* The same for a field that ends at pixel xe: nothing is drawn or painted
+   from xe on, so what is to the right of the field stays. */
+void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __banked
+{
+	u8 i, x, n, ink, paper, xm, t0, nt, kf, kl, cnt, c;
 	/* one spare column: a glyph ending in tile 19 still ORs its (zero) low
 	   byte into "tile 20" */
 	u8 buf[(MAX_TILES + 1) * ROW_H];
@@ -125,20 +150,23 @@ void font12_draw(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors) __banked
 	u8 *p;
 
 	y &= 0xFC;
-	if (y >= SCREEN_H || x0 >= ROW_W) return;
+	if (xe > ROW_W) xe = ROW_W;
+	if (y >= SCREEN_H || x0 >= xe) return;
 	n = ROW_H;
 	if ((u8)(SCREEN_H - y) < ROW_H) n = (u8)((SCREEN_H - y) & 0xFC);
 	if (n == 0) return;
 	ink = (u8)(colors >> 2);
 	paper = (u8)(colors & 3);
 	t0 = (u8)(x0 >> 3);
-	nt = (u8)(MAX_TILES - t0);
+	nt = (u8)((u8)((u8)(xe + 7) >> 3) - t0);
+	/* the last tile keeps the pixels from xe on */
+	kl = (xe & 7) ? (u8)(0xFF >> (xe & 7)) : 0;
 	/* the first tile keeps the pixels left of x0 */
 	kf = (x0 & 7) ? (u8)(0xFF << (8 - (x0 & 7))) : 0;
 	addr = (u16)(0x8100U + (u16)(y >> 3) * 0x140U + (u16)((y & 7) << 1) + ((u16)t0 << 4));
 	xm = paper ? 0xFF : 0;
 	fill0(buf, (u8)((nt + 1) * 3));
-	cnt = fit(s, 0, x0, xs);
+	cnt = fit_to(s, 0, x0, xs, xe);
 	for (i = 0; i < cnt; i++) {
 		x = xs[i];
 		c = glyph_index(s[i]);
@@ -156,12 +184,14 @@ void font12_draw(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors) __banked
 		}
 	}
 	if (colors != 0x0C && colors != 0x03) {
-		flush_rmw(buf, addr, n, nt, kf, 0, ink, paper);
+		flush_rmw(buf, addr, n, nt, kf, kl, ink, paper);
 		return;
 	}
+	/* a tile the field only partly covers goes through the masked write */
 	p = buf;
 	for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
-		if (i == 0 && kf) flush_rmw(p, addr, n, 1, kf, 0, ink, paper);
+		x = (u8)((i ? 0 : kf) | (i == (u8)(nt - 1) ? kl : 0));
+		if (x) flush_rmw(p, addr, n, 1, x, 0, ink, paper);
 		else blit_col1(p, addr, n, xm);
 	}
 }

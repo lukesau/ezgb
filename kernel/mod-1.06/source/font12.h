@@ -16,6 +16,8 @@
 #define F12_FILE	0xC3U
 #define F12_SAV		0xC4U
 
+void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __banked;
+UINT8 font12_end(const UINT8 *s, UINT8 x) __banked;
 void font12_draw(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors) __banked;
 UINT8 font12_fit(const UINT8 *s, UINT8 x) __banked;
 

@@ -123,6 +123,19 @@ void Draw_Text(UINT8 *str, UINT8 len, UINT8 x, UINT8 y)
 		zh_text_row(y, x, zhbuf, zraw);
 	}
 #else
+	if(ui_font)
+	{
+		/* mod: the 12px font draws it (text12 in list12.c, bank 8). The
+		   string may be a literal of the caller's bank, so it goes over
+		   on the stack. */
+		UINT8 b12[21];
+
+		tt = (len == 0U || len > 20U) ? 20U : len;
+		for(l = 0U; l < tt && str[l] != 0U; l++) b12[l] = str[l];
+		b12[l] = 0U;
+		text12(b12, len, x, y);
+		return;
+	}
 	gotogxy(x,y);
 	
 	if(len==0)
@@ -398,6 +411,7 @@ void Show_SD_list(void)
 	}
 
 refind_file:
+	ui_font = ui_font_cfg;		/* mod: back from the recent list */
 	g_y = 0;
 	g_x = 0;
 	page_num = 0;
@@ -632,6 +646,7 @@ re_showfile:
 				rdiv = 0;
 				rshift = 0;
 
+				ui_font = 0;			/* mod: the recent list is laid out for 8px rows */
 				DrawGB(4);				/* clear the whole screen: no tab bar */
 #ifdef LANG_ZH
 				/* zh build: the recent list is also 12px APA, so Chinese names render.

@@ -196,3 +196,71 @@ void list12_loop(UINT32 shift, UINT16 show_offset, UINT16 file_select) __banked
 	   before the scroll began */
 	row_draw((UINT16)(show_offset + file_select), (UINT8)file_select, 1U, from);
 }
+
+/* GBDK's foreground and background color, as ink * 4 + paper (vram_put.s) */
+UINT8 draw_colors(void);
+
+/* Draw_Text in the 12px font. The callers lay their text out in 8 pixel
+   cells: column x and row y are that cell, and the field is len cells
+   wide (17 when len is 0, as Draw_Text pads). The text is 12 pixels tall
+   from the top of the row, in the colors color() last set, and what is
+   right of the field stays. */
+void text12(const UINT8 *s, UINT8 len, UINT8 x, UINT8 y) __banked
+{
+	UINT8 w = len ? len : 17U;
+	UINT8 xe;
+	UINT8 py;
+
+	if(x >= 20U) return;
+	xe = ((UINT8)(x + w) >= 20U) ? 160U : (UINT8)((x + w) << 3);
+	py = (UINT8)(y << 3);
+	/* The dialogs put their lines on rows 10, 11 and 12 of column 5, 8
+	   pixels apart: here the first two move up to make room, 12 apart. */
+	if(x == 5U)
+	{
+		if(y == 10U) py = 72U;
+		else if(y == 11U) py = 84U;
+	}
+	if(py > 132U) py = 132U;		/* the last row would run off the screen */
+	font12_field(s, (UINT8)(x << 3), py, draw_colors(), xe);
+}
+
+/* The SET tab's date and time as one line, at row 5: 2026/11/24 16:04:59.
+   t is indexed as RTC.h's _SEC to _YEAR, BCD when bcd is set. hot is the
+   field being set (0 the year to 5 the seconds), drawn inverted, or $FF. */
+void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked
+{
+	static const UINT8 idx[6] = {6U, 5U, 3U, 2U, 1U, 0U};
+	static const UINT8 mask[6] = {0xFFU, 0x1FU, 0x3FU, 0x3FU, 0x7FU, 0x7FU};
+	static const UINT8 sep[6] = {'/', '/', ' ', ':', ':', 0U};
+	UINT8 s[6];
+	UINT8 x = 0U;
+	UINT8 i;
+	UINT8 v;
+	UINT8 n;
+
+	for(i = 0U; i < 6U; i++)
+	{
+		v = t[idx[i]];
+		if(bcd)
+		{
+			v &= mask[i];
+			v = (UINT8)((v & 0x0FU) + (v >> 4) * 10U);
+		}
+		n = 0U;
+		if(i == 0U)
+		{
+			s[n++] = '2';
+			s[n++] = '0';
+		}
+		s[n++] = (UINT8)('0' + v / 10U);
+		s[n++] = (UINT8)('0' + v % 10U);
+		s[n] = 0U;
+		font12_field(s, x, 40U, (i == hot) ? F12_INVERSE : F12_NORMAL, 160U);
+		x = font12_end(s, x);
+		s[0] = sep[i];
+		s[1] = 0U;
+		font12_field(s, x, 40U, F12_NORMAL, 160U);	/* and the row is cleared from here on */
+		x = font12_end(s, x);
+	}
+}

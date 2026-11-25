@@ -58,6 +58,7 @@ static UINT8 cfg_bootrom;		/* BOOTROM=1 */
 static UINT8 cfg_theme;			/* THEME=, as the file has it */
 static UINT8 cfg_ui;			/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM */
 UINT8 ui_font;				/* 1: the 12px font (list12.c) */
+UINT8 ui_font_cfg;			/* what the settings ask for; ui_font is 0 on a screen that is 8px only */
 UINT8 list_rows;			/* rows of the file list: 16, or 10 in 12px */
 #define FLAUNCH_MAX	122U
 static char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
@@ -466,7 +467,7 @@ static void info_put(UINT16 at, UINT8 v)
 
 /* ---- the clock prompt ---- */
 
-/* "YY-MM-DD HH:MM" at text column 5 of a row */
+/* "YY-MM-DD HH:MM" at text column 6 of a row */
 static void draw_time(const UINT8 *t, UINT8 row)
 {
 	UINT8 s[15];
@@ -478,7 +479,7 @@ static void draw_time(const UINT8 *t, UINT8 row)
 	p = put2(p, t[3], ':');
 	p = put2(p, t[4], 0U);
 	*p = 0U;
-	Draw_Text(s, 14U, 5U, row);
+	Draw_Text(s, 14U, 6U, row);
 }
 
 /* Shows the chip's time and the stored one. 1 when A (restore) was chosen. */
@@ -496,11 +497,11 @@ static UINT8 clock_prompt(UINT8 why)
 	Draw_Text(s, (UINT8)strlen((char *)s), 1U, 5U);
 
 	memcpy(s, "NOW", 4U);
-	Draw_Text(s, 3U, 1U, 7U);
+	Draw_Text(s, 4U, 1U, 7U);
 	if(why != 1U) draw_time(now, 7U);
 	memcpy(s, "SD ", 4U);
-	Draw_Text(s, 3U, 1U, 8U);
-	draw_time(cfg_rtc, 8U);
+	Draw_Text(s, 4U, 1U, 9U);
+	draw_time(cfg_rtc, 9U);
 
 	memcpy(s, "[A]RESTORE", 11U);
 	Draw_Text(s, 10U, 1U, 11U);
@@ -571,6 +572,7 @@ static void font_set(void)
 #else
 	ui_font = cfg_ui ? 1U : 0U;
 #endif
+	ui_font_cfg = ui_font;
 	list_rows = ui_font ? 10U : 16U;
 }
 
@@ -745,6 +747,7 @@ void console_init(void) __banked
 	/* nothing here counts on WRAM being cleared at startup */
 	cfg_dry = 0U;
 	ui_font = 0U;
+	ui_font_cfg = 0U;
 	list_rows = 16U;
 	sgb_step = 0U;
 	sgb_wait = 0U;
@@ -1012,12 +1015,16 @@ static void row_draw(UINT8 row, UINT8 sel)
 		n = (UINT8)strlen(name);
 		for(i = 0U; i < n; i++) if(cfg_flaunch[i] == '/') name = cfg_flaunch + i + 1U;
 		n = (UINT8)strlen(name);
-		if(n > 18U) n = 18U;
-		if(n) memcpy(s + 2, name, n);
-		else memcpy(s + 2, "NO GAME SET", 11U);
-		s[0] = sel ? '>' : ' ';
+		if(n > 14U) n = 14U;
+		if(n) memcpy(s + 6, name, n);
+		else memcpy(s + 6, "NOT SET", 7U);
+		memcpy(s, "GAME:", 5U);
+		if(sel) color(BLACK, DKGREY, SOLID);
+		else color(BLACK, WHITE, SOLID);
+		Draw_Text(s + 6, 14U, 6U, 15U);
 		color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 20U, 0U, 15U);
+		s[5] = 0U;
+		Draw_Text(s, 5U, 0U, 15U);
 		return;
 	}
 	if(row == ROW_FONT)
@@ -1025,7 +1032,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		memcpy(s, ui_font ? "12PX" : "8PX ", 5U);
 		if(sel) color(BLACK, DKGREY, SOLID);
 		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 4U, 14U, 12U);
+		Draw_Text(s, 7U, 13U, 13U);
 		color(BLACK, WHITE, SOLID);
 		return;
 	}
@@ -1036,7 +1043,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		memcpy(s, names[theme_now()], 7U);
 		if(sel) color(BLACK, DKGREY, SOLID);
 		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 6U, 14U, 11U);
+		Draw_Text(s, 7U, 13U, 11U);
 		color(BLACK, WHITE, SOLID);
 		return;
 	}
@@ -1077,9 +1084,7 @@ UINT8 set_page2(void) __banked
 	memcpy(s, "THEME:", 7U);
 	Draw_Text(s, 6U, 0U, 11U);
 	memcpy(s, "FONT:", 6U);
-	Draw_Text(s, 5U, 0U, 12U);
-	memcpy(s, "FAST LAUNCH GAME", 17U);
-	Draw_Text(s, 16U, 0U, 14U);
+	Draw_Text(s, 5U, 0U, 13U);
 	for(i = 0U; i < ROWS2; i++) row_draw(i, (i == row) ? 1U : 0U);
 
 	/* the DOWN that opened the page is not a press on it */

@@ -25,3 +25,18 @@ _vram_put2::
         LD      (HL),B
         EI
         RET
+
+;; UINT8 draw_colors(void): the library's foreground and background color,
+;; foreground * 4 + background. They are the library's variables and have
+;; no C name.
+        .globl  .fg_colour, .bg_colour
+_draw_colors::
+        LD      A,(.fg_colour)
+        AND     #0x03
+        ADD     A
+        ADD     A
+        LD      B,A
+        LD      A,(.bg_colour)
+        AND     #0x03
+        OR      B
+        RET

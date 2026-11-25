@@ -37,7 +37,7 @@ under the kernel's version.
 | SGB BOOT: the header packets a Super Game Boy needs | `source/sgb.s`, `source/ezcfg.c`, `makefile` |
 | A second SET page for the mod's settings | `source/ezcfg.c`, `source/RTC.c` |
 | Themes: light, dark and four colors | `source/ezcfg.c` |
-| The 12px proportional font: file list and tab strip (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
+| The 12px proportional font (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -257,7 +257,7 @@ and writes `/EZGB.CFG`.
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 | `THEME:` | the next theme |
 | `FONT:` | `8PX` or `12PX` |
-| `FAST LAUNCH GAME` | shows the game by name; A makes it the last game launched |
+| `GAME:` | the fast launch game by name; A makes it the last game launched |
 
 So this kernel now writes `BOOTROM`, `FLAUNCH`, `RTCSD` and `SGB` as well
 as reading them.
@@ -312,8 +312,7 @@ the key, and dark on the DMG model.
 ### The 12px font
 
 The 0918 mod's proportional, kerned 12px font
-([docs/font12.md](../../docs/font12.md)), first stage: the file list and
-the tab strip. `UI=12` in `/EZGB.CFG`, or the `FONT:` row on the second
+([docs/font12.md](../../docs/font12.md)). `UI=12` in `/EZGB.CFG`, or the `FONT:` row on the second
 SET page, switches it at once; with no key the kernel is 8px as before.
 English build only: the Chinese build has EZ Flash's 12px text.
 
@@ -330,14 +329,33 @@ English build only: the Chinese build has EZ Flash's 12px text.
 - The row count is a variable now (`LIST_ROWS` is `list_rows`: 16 or 10),
   so paging follows the font.
 
-Checked in SameBoy: the list with its icons, the cursor, a long name
-scrolling, the three tabs, the `FONT:` row switching both ways, and no hit
-on the VRAM watchpoint. Not checked: a folder longer than a page in 12px,
-and the recent list while the font is 12px. Nothing on a cart.
+**Everything else that draws text** goes through `Draw_Text`, which hands
+the string to `text12` (`source/list12.c`) when the font is 12px. The
+callers lay their text out in 8 pixel cells: the column and row are kept,
+the field is as wide as its cells, and the text is 12 pixels tall from the
+top of its row, in the colors `color()` last set. What is right of a field
+stays. Where two lines were on adjacent rows the layout changes with the
+font:
 
-Still 8px in this stage: the SET and HELP pages, the recent list, the
-dialogs and the boot messages. Not carried over: the star, tag trimming,
-`UI=SLIM` (read as 12px) and the DV glyph set.
+| Screen | In 12px |
+|---|---|
+| SET, first page | the date and time are one line (`clock12`), the field being set inverted; the `SET` button's box is three rows taller |
+| SET, second page | its rows are two apart in both fonts, and the fast launch game is one row, `GAME:` and the name |
+| HELP | its lines are on rows 3, 5 and 7 |
+| Dialogs | lines on rows 10 and 11 of column 5 draw 12 pixels apart, at y 72 and 84 |
+| The clock prompt | its two times are on rows 7 and 9 |
+| The recent list | stays 8px: its rows are laid out 8 pixels apart, up to 14 of them |
+| The boot messages and `BATTERY DRY` | 8px, since they come before the settings are read |
+
+Checked in SameBoy: the list with its icons, the cursor, a long name
+scrolling, the three tabs, both SET pages, setting the time, HELP, the
+load and save dialogs, the recent list and back, the `FONT:` row switching
+both ways, the same screens in 8px, and no hit on the VRAM watchpoint. Not
+checked: a folder longer than a page in 12px, and the error dialogs.
+Nothing on a cart.
+
+Not carried over: the star, tag trimming, a 12px recent list, `UI=SLIM`
+(read as 12px) and the DV glyph set.
 
 ### The FW6 clock load, removed
 
