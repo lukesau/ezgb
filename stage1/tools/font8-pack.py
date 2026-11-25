@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+# Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+# Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+# License section of the README).
 """Pack stage1/font/font8.txt into a C array, 8 bytes (1 bpp) per glyph,
 for ASCII $20-$5A. Characters the sheet leaves out stay blank.
 

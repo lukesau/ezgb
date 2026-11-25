@@ -1,3 +1,7 @@
+; SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+; Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+; Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+; License section of the README).
 ; Game hand-off, copied to WRAM and run from there: the kernel's stub
 ; (RomLoad_InitiatePoll 04:4000 copied to $D100) after a game launch.
 ; $7FE0=$80 resets the console into the loaded game, or with SKIP_BOOT set

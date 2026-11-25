@@ -277,11 +277,23 @@ under the AGPLv3 above or under the
 parts EZ Flash could use in the software it ships, which the AGPLv3 would
 not let it do.
 
-- **The boot splash of our stage1**: `stage1/src/video.c`,
-  `stage1/src/video.h`, `stage1/src/main.c`, `stage1/tools/mkwordmark.py`,
-  `stage1/tools/mkicon.py`, `stage1/art/ezflash.txt` and
-  `stage1/art/jr.txt`. The icon and the EZ-FLASH name it draws are EZ
-  Flash's marks, and neither license gives anyone else a right to them.
+- **The firmware mod**, which is everything this project runs in the
+  FPGA's place of EZ Flash's:
+  - our stage1, all of it: `stage1/src/`, the art in `stage1/art/`, the
+    tools that build it (`stage1/tools/mkwordmark.py`, `mkicon.py`,
+    `font8-pack.py`, `packbits.py`) and `stage1/build.sh`. That is the
+    boot splash, fast launch from stage1, the save backup and the creation
+    of a missing save, the clock restore, the Super Game Boy packets and
+    the jump past the boot ROM
+    ([stage1/docs/design.md](stage1/docs/design.md))
+  - the two PicoBlaze patches: `stage0/sd-recover-fw5-0918.psm` (SD error
+    recovery) and `stage0/flash-read.psm` (reading the flash and the
+    Device DNA)
+
+  Not part of it: `stage1/font/font8.txt`, which is GBDK's 8px font and
+  keeps GBDK's license; and the icon and the EZ-FLASH name the splash
+  draws, which are EZ Flash's marks, to which neither license gives anyone
+  else a right.
 - **This project's changes to kernel 1.06**, in `kernel/mod-1.06`: every
   file there this project wrote, and its changes to EZ Flash's files,
   which are Apache already. [Its README](kernel/mod-1.06/README.md#license)

@@ -2,8 +2,9 @@
 
 The repository is AGPLv3 ([LICENSE](LICENSE)). That covers what this
 project wrote: the notes, the tooling, the mod, our stage1, the readable
-Verilog. Two parts of it, the boot splash of our stage1 and the changes
-to kernel 1.06, are also offered under the Apache License 2.0 (the
+Verilog. Two parts of it, the firmware mod (our stage1 and the PicoBlaze
+patches) and the changes to kernel 1.06, are also offered under the Apache
+License 2.0 (the
 README's License section). The stock software also links other people's code, and building
 it from source means having that code here. Each piece keeps its license.
 

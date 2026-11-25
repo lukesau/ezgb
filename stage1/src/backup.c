@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* Save backup from stage1, the kernel's BackupSaveDump (01:643a) done in
  * place: pSRAM pages 0.. are written over the existing /SAVER file along
  * its own clusters, then for a clock game ($A202 = $77) the 48-byte footer

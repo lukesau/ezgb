@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* Fast launch: start a game straight from stage1, doing what the kernel's
  * launch does (MenuDispatchAB_launchFarcalls 00:1569, RomLoaderMain
  * 01:5e14, BackupOpenSaverPath 01:5163, LaunchSetup 01:58b0; see

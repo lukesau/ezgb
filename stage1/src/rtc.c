@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* The game clock for MBC3 games with a timer, set the way the kernel sets
  * it at launch (1.05e-0918: RtcToDayCount 01:4ec9, RtcWriteTimeFromDayDelta
  * 01:505c, RtcReadDaysClearRegs 01:5346, PreLaunchSaveStamp 01:5824).

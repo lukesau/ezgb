@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* Super Game Boy unlock. The Jr's FPGA drives the cart /RESET line high
  * through 330 ohms, harder than the SGB's 10k can pull it low, so the SNES
  * can't hold the Game Boy CPU in reset while it starts up. The boot ROM sends

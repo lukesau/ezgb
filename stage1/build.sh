@@ -1,4 +1,8 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+# Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+# Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+# License section of the README).
 # Build stage1 from source: stage1.gb, 32 KB, for the slot B BRAMs.
 # Needs SDCC (sm83), rgbfix, and the icon tiles from the splash build
 # (fpga/bootsplash/build/icon.2bpp, stage1/fw4/patches/bootsplash/build.sh).

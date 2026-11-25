@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: AGPL-3.0-only OR Apache-2.0
+ * Copyright (C) Luke Esau. Dual licensed: the repository's AGPLv3 or the
+ * Apache License 2.0, at your choice (LICENSE, LICENSE-APACHE-2.0, and the
+ * License section of the README). */
 /* Minimal FAT16/FAT32: mount, find a file by path, turn its cluster chain
  * into the FPGA load command, write a file in place, and create one (for a
  * save backup). One cached sector, so walking a chain costs one SD read per
