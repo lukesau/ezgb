@@ -569,7 +569,11 @@ re_showfile:
 						else{   //  file
 							/* mod: a hold of A is the game's menu, and an A still held
 							   from opening the folder is no press (rommenu.c) */
-							if(rom_menu(show_offset, file_select)) continue;
+							{
+								UINT8 rm = rom_menu(show_offset, file_select);
+								if(rm == 2U) goto refind_file;
+								if(rm) continue;
+							}
 							Show_loading();
 	
 							mem_set(lfname_temp,0x00,MAX_path_len);

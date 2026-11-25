@@ -5,10 +5,10 @@
    it, as before, when A comes up. A held for half a second opens a menu
    for that game instead:
 
-     Options
      <the whole name>          on an inverted band; scrolls when too long
      > Start
        Manage saves            savemgr.c
+       Star                    Unstar for a starred game (plays.c)
        Fast launch: NO         YES when this is the game power-on starts
      [B]back          [A]ok
 
@@ -33,6 +33,7 @@
 #include "ezcfg.h"
 #include "rommenu.h"
 #include "savemgr.h"
+#include "plays.h"
 #include "list12.h"
 
 #pragma bank 4
@@ -43,7 +44,7 @@ extern UINT8 pad_prev;			/* sgb.s: the joypad read before the last one */
 
 #define HOLD_FRAMES	30U
 #define NAME_COLS	18U
-#define ITEMS		3U
+#define ITEMS		4U
 
 static UINT8 up(UINT8 c)
 {
@@ -93,13 +94,14 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	s[0] = sel ? '>' : ' ';
 	if(i == 0U) memcpy(s + 2, "Start", 5U);
 	else if(i == 1U) memcpy(s + 2, "Manage saves", 12U);
+	else if(i == 2U) memcpy(s + 2, star_query((const UINT8 *)name) ? "Unstar" : "Star  ", 6U);
 	else
 	{
 		memcpy(s + 2, "Fast launch: ", 13U);
 		memcpy(s + 15, is_flaunch(name) ? "YES" : "NO ", 3U);
 	}
 	color(BLACK, DKGREY, SOLID);
-	Draw_Text(s, 18U, 1U, (UINT8)(9U + i * 2U));
+	Draw_Text(s, 18U, 1U, (UINT8)(7U + i * 2U));
 }
 
 /* The name on its band, from character `from`, wrapping with a gap */
@@ -122,13 +124,14 @@ static void name_draw(const char *name, UINT8 len, UINT8 from)
 	}
 	s[NAME_COLS] = 0U;
 	color(WHITE, BLACK, SOLID);
-	Draw_Text(s, NAME_COLS, 1U, 7U);
+	Draw_Text(s, NAME_COLS, 1U, 5U);
 	color(BLACK, DKGREY, SOLID);
 }
 
 /* Called for A on a file, before it is started. 0: go on and start it (a
    tap, a file that is not a game, or Start in the menu). 1: do not; the
-   list is as it was, redrawn if the menu was up. */
+   list is as it was, redrawn if the menu was up. 2: do not, and list the
+   folder again (a star changed where the game sorts). */
 UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 {
 	char name[MAX_filename_len];
@@ -163,8 +166,6 @@ redraw:
 #else
 	box(0, 32, 159, ui_font ? 139 : 135, M_FILL);
 #endif
-	memcpy(s, "Options", 8U);
-	Draw_Text(s, 7U, 1U, 5U);
 	name_draw(name, len, 0U);
 	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
 	memcpy(s, "[B]back", 8U);
@@ -206,6 +207,15 @@ redraw:
 				HW_BANK = Folder_sram_bank + (UINT8)(n / Num_perBank);	/* the caller reads the record next */
 				return 0U;
 			}
+			if(sel == 2U)
+			{
+				/* star or unstar: the folder is listed again, since the
+				   game moves in it */
+				star_toggle((const UINT8 *)name);
+				while(joypad()) wait_vbl_done();
+				color(BLACK, WHITE, SOLID);
+				return 2U;
+			}
 			if(sel == 1U)
 			{
 				save_manager(name);		/* savemgr.c; it leaves its box up */
@@ -221,7 +231,7 @@ redraw:
 			{
 				strcpy(cfg_flaunch, p);
 				cfg_changed(CFG_OTHER);
-				item_draw(2U, 1U, name);
+				item_draw(3U, 1U, name);
 			}
 		}
 	}

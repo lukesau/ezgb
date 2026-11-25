@@ -21,6 +21,7 @@
 #include "UI.h"
 #include "ezcfg.h"
 #include "list12.h"
+#include "plays.h"
 
 #pragma bank 4
 
@@ -34,7 +35,8 @@
 #define ROW_FONT	5U
 #define ROW_TAGS	6U
 #define ROW_RTCSD	7U
-#define ROWS		8U
+#define ROW_PLAYS	8U	/* page 3 */
+#define ROWS		9U
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -43,6 +45,7 @@ static UINT8 row_on(UINT8 row)
 	if(row == ROW_FAST) return (cfg_flaunch[0] == '/') ? 1U : 0U;
 	if(row == ROW_SGB) return sgb_record();
 	if(row == ROW_TAGS) return tags_hide;
+	if(row == ROW_PLAYS) return plays_sort_on();
 	return cfg_rtcsd;
 }
 
@@ -87,6 +90,11 @@ static void row_act(UINT8 row)
 		what = CFG_FONT;
 	}
 	else if(row == ROW_TAGS) tags_hide ^= 1U;
+	else if(row == ROW_PLAYS)
+	{
+		plays_sort_set(plays_sort_on() ? 0U : 1U);	/* its record and /.ezgbplays, not the settings file */
+		return;
+	}
 	else cfg_rtcsd ^= 1U;
 	cfg_changed(what);
 }
@@ -148,6 +156,7 @@ static void page_draw(UINT8 row)
 	static const char labels[ROWS][15] = {
 		"SKIP BOOT ROM:", "FAST LAUNCH:", "GAME:", "SGB BOOT:",
 		"THEME:", "FONT:", "CLEAN NAMES:", "RTC SD BACKUP:",
+		"SORT BY PLAYS:",
 	};
 	UINT8 s[16];
 	UINT8 first = (UINT8)(row - (row % PER_PAGE));

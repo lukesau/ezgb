@@ -98,6 +98,7 @@ under the kernel's version.
 | The 12px proportional font (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
 | Hold A on a game for its options | `source/rommenu.c`, `source/main.c`, `source/sgb.s` |
 | Manage saves: back up, restore and delete a game's saves | `source/savemgr.c`, `source/ff_5.c`, `source/rommenu.c`, `makefile` |
+| Stars and play counts | `source/plays.c`, `source/browser.c`, `source/list12.c`, `source/rommenu.c`, `source/setpage.c`, `source/ezcfg.c` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -328,7 +329,7 @@ is not checked: that needs a Super Game Boy.
 ### The SET tab's other pages
 
 `source/setpage.c` (bank 4). DOWN from AUTO SAVE opens the first of them.
-Each has four rows: DOWN from a page's last row is the next page, UP from
+Each has up to four rows: DOWN from a page's last row is the next page, UP from
 its first the one before, and UP from the very first goes back to the
 tab's first page. SELECT leaves the tab. A acts on the row under the
 cursor and writes `/EZGB.CFG`.
@@ -343,6 +344,7 @@ cursor and writes `/EZGB.CFG`.
 | `FONT:` | `8PX`, `12PX` or `EZF` |
 | `CLEAN NAMES:` | unticked writes `TAGS=1` |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
+| `SORT BY PLAYS:` | most played files first; kept with the stars, not in `/EZGB.CFG` |
 
 Checked in SameBoy: each row toggles and reaches the file or the record;
 turning FAST LAUNCH on with no game set took Pokemon Red, and the next
@@ -483,9 +485,46 @@ folder opens it and leaves its first game alone, Fast launch writes the
 path and shows `YES`, B puts the list back, and Start and a tap both start
 the game.
 
-`Manage saves`, between the two, opens the save manager, below. Not
-carried over: `Star`, which waits for that feature, and the text viewer
-for a file that is not a game.
+`Manage saves` opens the save manager and `Star` stars the game, both
+below. The menu has no title line: with four rows there is no room for
+it. Not carried over: the text viewer for a file that is not a game.
+
+### Stars and play counts
+
+As in the 0918 mod ([docs/stars.md](../../docs/stars.md)), with its table
+and its file, so a card's stars and counts are the same under both
+kernels.
+
+- **Star**, in a game's hold-A menu, moves it to the top of its folder's
+  files, under the folders, with a star for its icon in the 12px fonts.
+  **Unstar** puts it back. The folder is listed again after either, with
+  the cursor at the top.
+- **Every launch** adds one to the game's count.
+- **`SORT BY PLAYS:`**, on the SET tab's third page, lists files most
+  played first, the unplayed by name after them. Starred files stay on top.
+
+The table is in save RAM (bank 17, `$B7F8`), keyed by a hash of the file
+name alone, so a game keeps its count when it moves to another folder. It
+is mirrored to `/.ezgbplays` in the card's root, 2048 bytes: at boot a file
+with the header replaces the table, and a launch, a star or a change of the
+setting writes it. A full table (254 games) replaces its least launched
+unstarred entry.
+
+`source/plays.c` is new C to the 0918 mod's formats, in a second new bank
+(`source/modbank2.h`: 12, or 8 in the Chinese build). The sort
+(`source/browser.c`) asks it for each file only when something is starred
+or the setting is on.
+
+Checked in SameBoy: starring a game from the menu moved it under the
+folders with its star and wrote the file (one entry, one star); a launch
+added a second entry with a count of 1; with `SORT BY PLAYS:` on, the
+played game listed ahead of the others and the file had the setting's
+record. Not checked: Unstar, a full table, and a file written by the 0918
+mod. Nothing on a cart.
+
+Differences from the 0918 mod: the whole file is written on a change, four
+sectors, where it writes only the sectors that differ; the cursor does not
+follow a starred game; and the 8px list has no star, only the order.
 
 ### Manage saves
 

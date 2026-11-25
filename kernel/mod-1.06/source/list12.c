@@ -18,6 +18,7 @@
 #include "ff.h"
 #include "font12.h"
 #include "list12.h"
+#include "plays.h"
 
 extern void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
 
@@ -53,6 +54,7 @@ static UINT8 icon_of(const FM_FILE_FS *e, UINT8 *shown)
 
 	*shown = name_shown(e);
 	if(e->fattrib == AM_DIR) return F12_FOLDER;
+	if(e->fattrib == FATTR_STARRED) return F12_STAR;	/* a star in place of the cart (plays.c) */
 	if((n > 3U) && (nm[n - 3U] == '.') && (up(nm[n - 2U]) == 'G') && (up(nm[n - 1U]) == 'B')) return F12_GB;
 	if((n > 4U) && (nm[n - 4U] == '.') && (up(nm[n - 3U]) == 'G') && (up(nm[n - 2U]) == 'B') &&
 	   (up(nm[n - 1U]) == 'C')) return F12_GBC;

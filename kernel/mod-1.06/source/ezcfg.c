@@ -42,6 +42,7 @@
 #include "ff.h"
 #include "Bank_fun.h"
 #include "ezcfg.h"
+#include "plays.h"
 
 #pragma bank 2
 
@@ -815,6 +816,7 @@ void cfg_boot(void) __banked
 	file_read(0U);
 	theme_apply();
 	font_set();
+	plays_load();		/* stars and play counts, from /.ezgbplays (plays.c) */
 	sgb_apply();
 	console_detect();
 
@@ -889,6 +891,7 @@ void cfg_launch(void) __banked
 	UINT8 dirty = 0U;
 
 	sgb_finish();			/* what is left of the SGB packets goes before the game */
+	plays_bump((const UINT8 *)lfname_temp);		/* one more launch of this game (plays.c) */
 	v = info_get(0x200U);
 	if((v <= 1U) && (!cfg_have_autosave || (v != cfg_autosave)))
 	{

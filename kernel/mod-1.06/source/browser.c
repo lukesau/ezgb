@@ -32,6 +32,7 @@
 #include "ezgb_hw.h"
 #include "main.h"
 #include "ff.h"
+#include "plays.h"
 
 #pragma bank 8
 
@@ -236,16 +237,32 @@ static void keys_page(void)
 	HW_BANK = KEY_BANK;
 }
 
+static UINT8 plays_mode;		/* plays_active() for this listing */
+
+/* The class byte is 0 for a folder, 1 for a starred file and 2 for any
+   other file, so stars come right after the folders. With SORT BY PLAYS
+   the next byte is 255 less the launches, most played first, and the name
+   starts a byte later (docs/stars.md). */
 static void key_store(UINT16 n, UINT8 cls)
 {
-	UINT8 i;
+	UINT8 i = 1U;
 	UINT8 c;
 	UINT8 *k;
+	UINT8 launches;
 	const char *fn;
 
 	fn = entry_name();
-	key_a[0] = (cls == 2U) ? 0U : 1U;
-	for(i = 1U; i < 14U; i++)
+	key_a[0] = (cls == 2U) ? 0U : 2U;
+	if((cls != 2U) && plays_mode)
+	{
+		if(plays_lookup((const UINT8 *)fn, &launches) & 1U) key_a[0] = 1U;
+		if(plays_mode & 2U)
+		{
+			key_a[1] = (UINT8)(255U - launches);
+			i = 2U;
+		}
+	}
+	for(; i < 14U; i++)
 	{
 		c = (UINT8)*fn;
 		if(c) fn++;
@@ -322,7 +339,7 @@ static void ranks_build(UINT16 n, UINT8 sorted)
 		if(sorted)
 		{
 			ord = ((UINT16)k[14] << 8) | k[15];
-			RANKS[ord] = i;
+			RANKS[ord] = (k[0] == 1U) ? (UINT16)(i | 0x8000U) : i;	/* bit 15: starred */
 			k += KEY_LEN;
 		}
 		else
@@ -391,6 +408,7 @@ void Read_all_DIR(void) __banked
 {
 	UINT8 cls;
 	UINT8 cut = 0U;
+	UINT8 star;
 	UINT8 *name;
 	UINT16 n = 0U;
 	UINT16 k;
@@ -402,6 +420,7 @@ void Read_all_DIR(void) __banked
 	readdir_fail = 0;
 
 	hide_load();
+	plays_mode = plays_active();
 
 	/* the keys */
 	if(!open_dir()) return;
@@ -429,11 +448,13 @@ void Read_all_DIR(void) __banked
 
 		keys_page();
 		row = RANKS[k];
+		star = (row & 0x8000U) ? 1U : 0U;
+		row &= 0x7FFFU;
 		HW_BANK = Folder_sram_bank + (UINT8)(row / Num_perBank);
 		slot = (UINT8)(row % Num_perBank);
 		name = pFilename_buffer[slot].filename;
 
-		pFilename_buffer[slot].fattrib = (cls == 2U) ? AM_DIR : 0x20;
+		pFilename_buffer[slot].fattrib = (cls == 2U) ? AM_DIR : (star ? FATTR_STARRED : 0x20);
 #ifdef LANG_ZH
 		pFilename_buffer[slot].fsize = fileinfo.fsize;	/* size column shown by the zh list */
 #endif
