@@ -105,7 +105,9 @@ static void counter(UINT16 n)
    clears everything and draws the rule alone. */
 void tabs12(UINT8 page) __banked
 {
-	static const UINT8 at[3] = {2U, 30U, 68U};
+	/* the first label starts at the screen's edge: from x 2 it left two
+	   columns of an inverted SD tab unpainted */
+	static const UINT8 at[3] = {0U, 30U, 68U};
 	UINT8 s[6];
 	UINT8 i;
 
