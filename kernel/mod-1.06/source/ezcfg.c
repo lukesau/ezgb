@@ -17,7 +17,8 @@
      TAGS=1                    full names in the list; 0 or no key cuts them
                                at their tags (CLEAN NAMES)
      UI=12                     the font: 8 (or no key) the 8px console font, 12
-                               the proportional 12px one. SLIM, the 0918
+                               the proportional 12px one, EZF EZ Flash's
+                               6x12 one in the same layout. SLIM, the 0918
                                mod's third, is 12 here and stays SLIM in
                                the file
      FLAUNCH=/Pokemon/Red.gb   the game to start at power-on, off when the
@@ -58,9 +59,9 @@ static UINT8 cfg_autosave;
 static UINT8 cfg_rtc[6];		/* year (two digits), month, day, hour, minute, second */
 UINT8 cfg_bootrom;			/* BOOTROM=1 */
 UINT8 cfg_theme;				/* THEME=, as the file has it */
-UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM */
+UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM, 3 is EZF */
 UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
-UINT8 ui_font;				/* 1: the 12px font (list12.c) */
+UINT8 ui_font;				/* 1: the mod's 12px font (list12.c), 2: EZ Flash's 6x12 in the same layout */
 UINT8 ui_font_cfg;			/* what the settings ask for; ui_font is 0 on a screen that is 8px only */
 UINT8 list_rows;			/* rows of the file list: 16, or 10 in 12px */
 char cfg_flaunch[FLAUNCH_MAX + 1U];	/* FLAUNCH= */
@@ -316,7 +317,10 @@ static UINT16 file_read(UINT8 keep)
 			}
 			else if(k == 8U)
 			{
-				cfg_ui = (c == '1') ? 1U : (((c == 'S') || (c == 's')) ? 2U : 0U);
+				if(c == '1') cfg_ui = 1U;
+				else if((c == 'S') || (c == 's')) cfg_ui = 2U;
+				else if((c == 'E') || (c == 'e')) cfg_ui = 3U;
+				else cfg_ui = 0U;
 			}
 			else if(k == 9U) tags_hide = (c == '0') ? 1U : 0U;
 			else
@@ -427,8 +431,9 @@ static void file_write(void)
 		{
 			if(!cfg_ui) continue;
 			if(cfg_ui == 1U) memcpy(p, "UI=12", 5U);
-			else memcpy(p, "UI=SLIM", 7U);
-			p += (cfg_ui == 1U) ? 5 : 7;
+			else if(cfg_ui == 2U) memcpy(p, "UI=SLIM", 7U);
+			else memcpy(p, "UI=EZF", 6U);
+			p += (cfg_ui == 1U) ? 5 : ((cfg_ui == 2U) ? 7 : 6);
 		}
 		else
 		{
@@ -582,7 +587,7 @@ static void font_set(void)
 #ifdef LANG_ZH
 	ui_font = 0U;			/* the Chinese build has its own 12px text, ui_zh.c */
 #else
-	ui_font = cfg_ui ? 1U : 0U;
+	ui_font = (cfg_ui == 3U) ? 2U : (cfg_ui ? 1U : 0U);
 #endif
 	ui_font_cfg = ui_font;
 	list_rows = ui_font ? 10U : 16U;

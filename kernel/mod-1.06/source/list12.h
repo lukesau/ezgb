@@ -4,7 +4,7 @@
 
 #define LIST12_ROWS	10U
 
-extern UINT8 ui_font;		/* 0: the 8px console font, 1: 12px (ezcfg.c, UI= in /EZGB.CFG) */
+extern UINT8 ui_font;		/* 0: the 8px console font, 1: the mod's 12px, 2: EZF (ezcfg.c, UI= in /EZGB.CFG) */
 
 void tabs12(UINT8 page) __banked;		/* DrawGB in the 12px font */
 /* Draw_Text in the 12px font: s is in WRAM, the rest are Draw_Text's */

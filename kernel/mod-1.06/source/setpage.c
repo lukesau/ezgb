@@ -82,7 +82,8 @@ static void row_act(UINT8 row)
 	}
 	else if(row == ROW_FONT)
 	{
-		cfg_ui = cfg_ui ? 0U : 1U;
+		/* 8PX, 12PX, EZF and round again */
+		cfg_ui = (cfg_ui == 0U) ? 1U : ((cfg_ui == 3U) ? 0U : 3U);
 		what = CFG_FONT;
 	}
 	else if(row == ROW_TAGS) tags_hide ^= 1U;
@@ -116,7 +117,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 #ifdef LANG_ZH
 		else v = "12PX";			/* the Chinese build's text is always 12px */
 #else
-		else v = ui_font_cfg ? "12PX" : "8PX";
+		else v = (ui_font_cfg == 2U) ? "EZF" : (ui_font_cfg ? "12PX" : "8PX");
 #endif
 		n = (UINT8)strlen(v);
 		if(n > 14U) n = 14U;

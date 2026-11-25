@@ -132,6 +132,11 @@ FONT12 := build/font12.bin build/font12-metrics.bin
 build/font12.bin: ../mod/font12/font12.txt ../tools/font12-pack.py | $(BUILD)
 	python3 ../tools/font12-pack.py -i ../mod/font12/font12.txt -o build/font12.bin -m build/font12-metrics.bin
 build/font12-metrics.bin: build/font12.bin
+#  mod: EZ Flash's 6x12 font as a second set for the same renderer (EZF)
+FONT12 += build/font12_ezf.bin build/font12_ezf-metrics.bin
+build/font12_ezf.bin: source/asc12x6.c tools/ezf-pack.py build/font12.bin
+	python3 tools/ezf-pack.py source/asc12x6.c build/font12.bin build/font12-metrics.bin build/font12_ezf.bin build/font12_ezf-metrics.bin
+build/font12_ezf-metrics.bin: build/font12_ezf.bin
 $(BUILD)/font12_data.o: $(FONT12)
 
 $(BUILD)/mod_version.h: VERSION | $(BUILD)

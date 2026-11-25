@@ -301,7 +301,7 @@ cursor and writes `/EZGB.CFG`.
 | `GAME:` | the fast launch game by name; A makes it the last game launched |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
-| `FONT:` | `8PX` or `12PX` |
+| `FONT:` | `8PX`, `12PX` or `EZF` |
 | `CLEAN NAMES:` | unticked writes `TAGS=1` |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 
@@ -371,6 +371,14 @@ English build only: the Chinese build has EZ Flash's 12px text.
   it, and the position in the folder is at its right.
 - The row count is a variable now (`LIST_ROWS` is `list_rows`: 16 or 10),
   so paging follows the font.
+
+**EZF.** A third choice of the `FONT:` row, `UI=EZF` in the file: EZ
+Flash's 6x12 font, the one the Chinese build draws ASCII in
+(`source/asc12x6.c`), in this layout. `tools/ezf-pack.py` packs it as a
+second glyph set for the same renderer: its letters as they are, each in a
+fixed 6 pixel cell with no kerning, and the mod font's star and icons,
+since it has none. A row holds about 24 characters of a name where the
+mod's font holds about 18. Seen in SameBoy on the list and the SET tab.
 
 **Everything else that draws text** goes through `Draw_Text`, which hands
 the string to `text12` (`source/list12.c`) when the font is 12px. The

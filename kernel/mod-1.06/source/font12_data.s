@@ -9,3 +9,11 @@ _Font12::
 
 _Font12Metrics::
         .incbin "build/font12-metrics.bin"
+
+;; EZ Flash's 6x12 ASCII font as a second set (tools/ezf-pack.py, from
+;; source/asc12x6.c): the SET tab's EZF
+_Font12Ezf::
+        .incbin "build/font12_ezf.bin"
+
+_Font12EzfMetrics::
+        .incbin "build/font12_ezf-metrics.bin"

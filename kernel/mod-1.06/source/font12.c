@@ -2,11 +2,12 @@
    font12.c  -  mod: the 12px proportional font (bank 8)
    ----------------------------------------------------------------------------
    The 0918 mod's renderer and layout (kernel/mod/src/draw12.c and
-   layout12.c, docs/font12.md), for this kernel: one glyph set, no DV, and
+   layout12.c, docs/font12.md), for this kernel: no DV, and
    the ink and paper are arguments, since GBDK's draw state is not readable
    from C. The glyph tables are packed from kernel/mod/font12/font12.txt by
    kernel/tools/font12-pack.py (the makefile does it) and sit in this bank,
-   font12_data.s.
+   font12_data.s. A second set is EZ Flash's 6x12 font, the one the Chinese
+   build draws ASCII in (tools/ezf-pack.py): the SET tab's EZF.
 
    The screen is GBDK's graphics canvas, a framebuffer: pixel row y of tile
    column t is at $8100 + (y / 8) * $140 + (y % 8) * 2 + t * 16, plane 0
@@ -32,6 +33,13 @@ typedef UINT16 u16;
 
 extern const u8 Font12[];		/* 101 glyphs x 24 bytes */
 extern const u8 Font12Metrics[];
+extern const u8 Font12Ezf[];		/* EZ Flash's 6x12 font in the same shape (tools/ezf-pack.py) */
+extern const u8 Font12EzfMetrics[];
+extern UINT8 ui_font;			/* 2: the EZF set */
+
+/* the glyph set in use and its metrics */
+#define FONT	((ui_font == 2U) ? Font12Ezf : Font12)
+#define METRICS	((ui_font == 2U) ? Font12EzfMetrics : Font12Metrics)
 
 #define M_ADV   0			/* u8[101] advance */
 #define M_W     101			/* u8[101] ink width */
@@ -70,7 +78,7 @@ static u8 glyph_index(u8 c)
    (a's right class row, b's left class column). Class 0 never kerns. */
 static u8 kern(u8 a, u8 b)
 {
-	const u8 *M = Font12Metrics;
+	const u8 *M = METRICS;
 	u8 l = M[M_LCOL + b];
 	u16 r;
 
@@ -92,7 +100,7 @@ static u8 fit(const u8 *s, u8 len, u8 x, u8 *xs)
 /* The same, with the right edge at pixel lim */
 static u8 fit_to(const u8 *s, u8 len, u8 x, u8 *xs, u8 lim)
 {
-	const u8 *M = Font12Metrics;
+	const u8 *M = METRICS;
 	u8 i, g, prev, c;
 
 	if (len == 0 || len > MAX_GLYPHS) len = MAX_GLYPHS;
@@ -133,7 +141,7 @@ UINT8 font12_end(const UINT8 *s, UINT8 x) __banked
 	u8 n = fit(s, 0, x, xs);
 
 	if (n == 0) return x;
-	return (u8)(xs[n - 1] + Font12Metrics[M_ADV + glyph_index(s[n - 1])]);
+	return (u8)(xs[n - 1] + METRICS[M_ADV + glyph_index(s[n - 1])]);
 }
 
 /* The same for a field that ends at pixel xe: nothing is drawn or painted
@@ -170,7 +178,7 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 	for (i = 0; i < cnt; i++) {
 		x = xs[i];
 		c = glyph_index(s[i]);
-		g = Font12 + (u16)c * GLYPH;
+		g = FONT + (u16)c * GLYPH;
 		p = buf + (u8)((u8)((x >> 3) - t0) * ROW_H);
 		switch (x & 7) {
 		case 0:  cell_or0(g, p); break;
