@@ -443,7 +443,6 @@ re_showfile:
 				rdiv = 0;
 				rshift = 0;
 
-				ui_font = 0;			/* mod: the recent list is laid out for 8px rows */
 				DrawGB(4);				/* clear the whole screen: no tab bar */
 #ifdef LANG_ZH
 				/* zh build: the recent list is also 12px APA, so Chinese names render.

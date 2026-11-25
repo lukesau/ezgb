@@ -52,7 +52,7 @@ void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked
 	
 	if(shift > timeout)
 	{
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID);	/* mod: the selected row is white on black (Bank_fun.c, Show_filename) */
 		BANK_num = (show_offset+file_select)/Num_perBank;
 		BANK_index = (show_offset+file_select)%Num_perBank;	
 		HW_BANK = Folder_sram_bank+BANK_num;

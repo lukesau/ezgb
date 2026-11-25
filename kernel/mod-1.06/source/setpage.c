@@ -37,7 +37,13 @@
 #define ROW_RTCSD	7U
 #define ROW_PLAYS	8U	/* page 3 */
 #define ROW_DAILY	9U
-#define ROWS		10U
+#define ROW_BG		12U	/* page 4: the color picker, where the palettes can be set */
+#define ROW_TEXT	13U
+#define ROW_ACCENT	14U
+#define ROWS		15U	/* rows 10 and 11 are not rows: they end page 3 */
+
+/* how many rows this console has: the picker needs CGB palettes */
+#define ROWS_NOW	(cgb_mode ? ROWS : 10U)
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -107,6 +113,76 @@ static void row_act(UINT8 row)
 	cfg_changed(what);
 }
 
+/* A color row: its three channels, 0 to 31, at columns 8, 11 and 14. hot
+   is the channel being set (inverted), 3 for the row under the cursor, 4
+   for neither. */
+static UINT8 shown[9];			/* the colors on screen, as cfg_colors_seed gives them */
+
+static void color_draw(UINT8 row, UINT8 hot)
+{
+	UINT8 s[3];
+	UINT8 trow = (UINT8)(3U + (row % PER_PAGE) * 2U);
+	UINT8 c;
+	UINT8 v;
+
+	for(c = 0U; c < 3U; c++)
+	{
+		v = shown[(row - ROW_BG) * 3U + c];
+		s[0] = (UINT8)('0' + v / 10U);
+		s[1] = (UINT8)('0' + v % 10U);
+		s[2] = 0U;
+		if(hot == c) color(WHITE, BLACK, SOLID);
+		else if(hot == 3U) color(BLACK, DKGREY, SOLID);
+		else color(BLACK, WHITE, SOLID);
+		Draw_Text(s, 2U, (UINT8)(8U + c * 3U), trow);
+	}
+	color(BLACK, WHITE, SOLID);
+}
+
+/* A on a color row (docs/themes.md "The picker"): LEFT and RIGHT pick the
+   channel, UP and DOWN change it, A or B ends. Every step applies, so the
+   screen is the preview. The first change made in another theme starts
+   from that theme's colors and turns the custom theme on. */
+static void color_edit(UINT8 row)
+{
+	UINT8 c = 0U;
+	UINT8 keys;
+	UINT8 last = 0xFFU;
+	UINT8 held = 0U;
+	UINT8 *v;
+
+	if(theme_now() != 6U) cfg_colors_seed(custom_ch);
+	while(joypad()) wait_vbl_done();
+	color_draw(row, c);
+	while(1)
+	{
+		wait_vbl_done();
+		keys = joypad();
+		if(keys == last)
+		{
+			/* a held UP or DOWN repeats, six frames apart */
+			if(!(keys & (J_UP | J_DOWN)) || (++held < 6U)) continue;
+		}
+		held = 0U;
+		last = keys;
+		if(keys & (J_A | J_B)) break;
+		if(keys & J_LEFT) c = c ? (UINT8)(c - 1U) : 2U;
+		else if(keys & J_RIGHT) c = (c < 2U) ? (UINT8)(c + 1U) : 0U;
+		else if(keys & (J_UP | J_DOWN))
+		{
+			v = &custom_ch[(row - ROW_BG) * 3U + c];
+			if(keys & J_UP) *v = (*v < 31U) ? (UINT8)(*v + 1U) : 0U;
+			else *v = *v ? (UINT8)(*v - 1U) : 31U;
+			cfg_colors_changed();
+			cfg_colors_seed(shown);
+		}
+		else continue;
+		color_draw(row, c);
+	}
+	while(joypad()) wait_vbl_done();
+	cfg_changed(CFG_OTHER);			/* COLORS= and THEME=6 to the file */
+}
+
 static void row_draw(UINT8 row, UINT8 sel)
 {
 	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
@@ -117,6 +193,11 @@ static void row_draw(UINT8 row, UINT8 sel)
 	UINT8 i;
 	const char *v;
 
+	if(row >= ROW_BG)
+	{
+		color_draw(row, sel ? 3U : 4U);
+		return;
+	}
 	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto))
 	{
 		/* a value, from column 6 for the game and 13 for the others */
@@ -165,7 +246,8 @@ static void page_draw(UINT8 row)
 	static const char labels[ROWS][15] = {
 		"SKIP BOOT ROM:", "FAST LAUNCH:", "GAME:", "SGB BOOT:",
 		"THEME:", "FONT:", "CLEAN NAMES:", "RTC SD BACKUP:",
-		"SORT BY PLAYS:", "DAILY BACKUP:",
+		"SORT BY PLAYS:", "DAILY BACKUP:", "", "",
+		"BG:", "TEXT:", "ACCENT:",
 	};
 	UINT8 s[16];
 	UINT8 first = (UINT8)(row - (row % PER_PAGE));
@@ -173,8 +255,10 @@ static void page_draw(UINT8 row)
 
 	DrawGB(1);
 	color(BLACK, WHITE, SOLID);
-	for(i = first; (i < (UINT8)(first + PER_PAGE)) && (i < ROWS); i++)
+	if(first >= ROW_BG) cfg_colors_seed(shown);
+	for(i = first; (i < (UINT8)(first + PER_PAGE)) && (i < ROWS_NOW); i++)
 	{
+		if((i == 10U) || (i == 11U)) continue;
 		strcpy((char *)s, labels[i]);
 		Draw_Text(s, (UINT8)strlen((char *)s), 0U, (UINT8)(3U + (i % PER_PAGE) * 2U));
 		row_draw(i, (i == row) ? 1U : 0U);
@@ -213,7 +297,14 @@ UINT8 set_page2(void) __banked
 		}
 		else if(keys & J_DOWN)
 		{
-			if(row + 1U < ROWS) to = (UINT8)(row + 1U);
+			if(row + 1U < ROWS_NOW) to = (UINT8)(row + 1U);
+		}
+		/* rows 10 and 11 are the empty end of page 3 */
+		if((to == 10U) || (to == 11U)) to = (keys & J_UP) ? ROW_DAILY : ((ROWS_NOW > 10U) ? ROW_BG : row);
+		else if((keys & J_A) && (row >= ROW_BG))
+		{
+			color_edit(row);
+			page_draw(row);			/* the whole page is in the new colors */
 		}
 		else if(keys & J_A)
 		{
@@ -232,6 +323,7 @@ UINT8 set_page2(void) __banked
 				else row_draw(row, 1U);
 			}
 		}
+		if((to >= ROWS_NOW) || (to == 10U) || (to == 11U)) to = row;
 		if(to != row)
 		{
 			if((to / PER_PAGE) != (row / PER_PAGE)) page_draw(to);

@@ -256,7 +256,7 @@ void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 			/*color(BLACK,WHITE,SOLID);// selected frame colour
 			box(0,y_offset+ file_select*14-2,159,y_offset+ file_select*14+12,M_NOFILL);
 			color(BLACK,WHITE,SOLID);	// text colour */
-			color(BLACK,DKGREY,SOLID);
+			color(WHITE,BLACK,SOLID);	/* mod: the selected row is white on black, which an original Game Boy can read (was black on dark gray) */
 		}			
 		
 		BANK_num = (show_offset+line)/Num_perBank;
@@ -343,7 +343,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	
 	if(updown==3)//up
 	{
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID);	/* mod: as in Show_filename */
 	}
 	else if(updown==2)
 	{
@@ -367,7 +367,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	}		
 	else if(updown==2)
 	{
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID);	/* mod: as in Show_filename */
 	}	
 	
 	BANK_num = (show_offset+xx2)/Num_perBank;
@@ -847,6 +847,13 @@ void Show_recent_list(UINT8 count, UINT8 sel)__banked
 	TCHAR *name;
 	UINT8  line[RECENT_NAME_COLS + 1];
 
+#ifndef LANG_ZH
+	if(ui_font)		/* mod: the 12px recent list, list12.c */
+	{
+		recent12_show(count, sel);
+		return;
+	}
+#endif
 	HW_BANK = Folder_sram_bank;
 	/* The records live in the A000 window, so the window must be mapped to SRAM.
 	   Recently_Load leaves it on the TF page (needed for card access); setting only
@@ -877,6 +884,9 @@ void Show_recent_list(UINT8 count, UINT8 sel)__banked
    shift increments once per frame (the loop is synced by wait_vbl_done, ~16.7ms). */
 void Show_recent_scroll(UINT8 count, UINT8 sel, UINT16 shift)__banked
 {
+#ifndef LANG_ZH
+	if(ui_font) return;		/* mod: the 12px recent list does not scroll a name */
+#endif
 	static UINT16 last = 0xFFFF;
 	UINT8  j, len;
 	TCHAR *name;

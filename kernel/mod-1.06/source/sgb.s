@@ -130,7 +130,9 @@ sgb_step_now:
         ld      (_sgb_wait), a
         ret
 
-;; void sgb_set1(void): the six packets, 4 frames after each
+;; void sgb_set1(void) __banked: the six packets, 4 frames after each
+        b_sgb_set1 = 2
+        .globl  b_sgb_set1
 _sgb_set1::
         xor     a
 1$:

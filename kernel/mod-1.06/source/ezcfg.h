@@ -27,5 +27,8 @@ void cfg_changed(UINT8 what) __banked;
 UINT8 cfg_flaunch_last(void) __banked;
 UINT8 sgb_record(void) __banked;
 UINT8 theme_now(void) __banked;
+extern UINT8 custom_ch[9];
+void cfg_colors_changed(void) __banked;
+void cfg_colors_seed(UINT8 *dst) __banked;
 
 #endif

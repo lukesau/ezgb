@@ -11,6 +11,7 @@ void tabs12(UINT8 page) __banked;		/* DrawGB in the 12px font */
 void text12(const UINT8 *s, UINT8 len, UINT8 x, UINT8 y) __banked;
 void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked;	/* the SET tab's date and time */
 extern UINT8 ui_font_cfg;	/* the font the settings ask for: ui_font goes back to it */
+void recent12_show(UINT8 count, UINT8 sel) __banked;	/* Show_recent_list in the 12px fonts */
 void list12_show(UINT16 show_offset, UINT16 file_select) __banked;
 void list12_refresh(UINT16 show_offset, UINT16 file_select, UINT8 updown) __banked;
 void list12_loop(UINT32 shift, UINT16 show_offset, UINT16 file_select) __banked;

@@ -20,7 +20,7 @@
                                backup (savemgr.c)
      LASTROM=/Pokemon/Red.gb   the last game launched, for the 0918 mod
      COLORS=1E2A44,F2D7A0      the custom theme (6): background, text and,
-                               as a third, the highlight (read, never written)
+                               as a third, the highlight
      UI=12                     the font: 8 (or no key) the 8px console font, 12
                                the proportional 12px one, EZF EZ Flash's
                                6x12 one in the same layout. SLIM, the 0918
@@ -49,7 +49,13 @@
 #include "ezcfg.h"
 #include "plays.h"
 
+/* bank 2, or bank 8 in the Chinese build, whose bank 2 is full of its own
+   text code */
+#ifdef LANG_ZH
+#pragma bank 8
+#else
 #pragma bank 2
+#endif
 
 extern UINT8 SD_buffer[0x200];
 extern FIL gfil;
@@ -71,6 +77,7 @@ UINT8 cfg_daily;			/* DAILYBACKUP=1 (savemgr.c) */
 UINT8 sgb_auto;				/* our stage1 handles the SGB: SGB BOOT shows AUTO */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
 static UINT8 custom_ramp[8];
+UINT8 custom_ch[9];			/* the custom theme: background, text, highlight, each red, green, blue, 0 to 31 */
 static char cfg_lastrom[FLAUNCH_MAX + 1U];	/* LASTROM=, the last game launched */
 static UINT8 cfg_found;			/* /EZGB.CFG opened */
 UINT8 ui_font;				/* 1: the mod's 12px font (list12.c), 2: EZ Flash's 6x12 and 3: the slim set, in the same layout */
@@ -87,7 +94,7 @@ UINT8 pad_last;
 UINT8 pad_prev;
 static UINT8 sgb_on;			/* this boot sends the header packets */
 UINT8 cfg_sgb;				/* SGB=: 0 off, 1 on, 2 the file does not say */
-void sgb_set1(void);
+void sgb_set1(void) __banked;
 void sgb_vbl(void);
 void sgb_finish(void) __banked;
 
@@ -241,7 +248,7 @@ static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 	if((*skip = key_is(p, "TAGS")) != 0U) return 9U;
 	if((*skip = key_is(p, "DAILYBACKUP")) != 0U) return 10U;
 	if((*skip = key_is(p, "LASTROM")) != 0U) return 11U;
-	if((*skip = key_is(p, "COLORS")) != 0U) return 12U;	/* read, and kept as it is */
+	if((*skip = key_is(p, "COLORS")) != 0U) return 12U;
 	return 0U;
 }
 
@@ -279,6 +286,34 @@ static void parse_rtc(const UINT8 *p, const UINT8 *end)
 	cfg_have_rtc = 1U;
 }
 
+/* custom_ramp from custom_ch: index 0 the background, 1 the background
+   moved 3/16 of the way to the text, 2 the highlight, 3 the text */
+static void custom_build(void)
+{
+	UINT8 c3[3];
+	UINT8 i;
+	UINT8 j;
+	UINT8 a;
+	UINT8 b;
+	UINT16 w;
+
+	for(i = 0U; i < 4U; i++)
+	{
+		for(j = 0U; j < 3U; j++)
+		{
+			a = custom_ch[j];
+			b = custom_ch[3U + j];
+			if(i == 0U) c3[j] = a;
+			else if(i == 1U) c3[j] = (b >= a) ? (UINT8)(a + (((b - a) * 3U) >> 4)) : (UINT8)(a - (((a - b) * 3U) >> 4));
+			else if(i == 2U) c3[j] = custom_ch[6U + j];
+			else c3[j] = b;
+		}
+		w = ((UINT16)c3[2] << 10) | ((UINT16)c3[1] << 5) | c3[0];
+		custom_ramp[i * 2U] = (UINT8)w;
+		custom_ramp[i * 2U + 1U] = (UINT8)(w >> 8);
+	}
+}
+
 static UINT8 hexv(UINT8 c)
 {
 	if((c >= '0') && (c <= '9')) return (UINT8)(c - '0');
@@ -294,14 +329,11 @@ static UINT8 hexv(UINT8 c)
    the way to the text; with no third color the highlight is halfway. */
 static void parse_colors(const UINT8 *p, const UINT8 *end)
 {
-	UINT8 ch[9];
 	UINT8 n = 0U;
 	UINT8 hi = 0xFFU;
 	UINT8 v;
 	UINT8 i;
-	UINT8 a;
-	UINT8 b;
-	UINT16 w;
+	UINT8 ch[9];
 
 	while((p < end) && (n < 9U))
 	{
@@ -315,31 +347,9 @@ static void parse_colors(const UINT8 *p, const UINT8 *end)
 		}
 	}
 	if(n < 6U) return;
-	for(i = 0U; i < 3U; i++)
-	{
-		a = ch[i];
-		b = ch[3U + i];
-		if(n < 9U) ch[6U + i] = (UINT8)((a + b) >> 1);
-		/* index 1, kept in the high bits of nothing: computed below */
-	}
-	for(i = 0U; i < 4U; i++)
-	{
-		UINT8 c3[3];
-		UINT8 j;
-
-		for(j = 0U; j < 3U; j++)
-		{
-			a = ch[j];
-			b = ch[3U + j];
-			if(i == 0U) c3[j] = a;
-			else if(i == 1U) c3[j] = (b >= a) ? (UINT8)(a + (((b - a) * 3U) >> 4)) : (UINT8)(a - (((a - b) * 3U) >> 4));
-			else if(i == 2U) c3[j] = ch[6U + j];
-			else c3[j] = b;
-		}
-		w = ((UINT16)c3[2] << 10) | ((UINT16)c3[1] << 5) | c3[0];
-		custom_ramp[i * 2U] = (UINT8)w;
-		custom_ramp[i * 2U + 1U] = (UINT8)(w >> 8);
-	}
+	if(n < 9U) for(i = 0U; i < 3U; i++) ch[6U + i] = (UINT8)((ch[i] + ch[3U + i]) >> 1);
+	memcpy(custom_ch, ch, 9U);
+	custom_build();
 	custom_ok = 1U;
 }
 
@@ -417,7 +427,7 @@ static UINT16 file_read(UINT8 keep)
 				cfg_flaunch[n] = 0;
 			}
 		}
-		if(k && (k != 12U) && keep)
+		if(k && keep)
 		{
 			rd = eol;				/* cut */
 			continue;
@@ -453,7 +463,7 @@ static void file_write(void)
 	UINT8 k;
 
 	at = file_read(1U);
-	for(k = 1U; k <= 11U; k++)
+	for(k = 1U; k <= 12U; k++)
 	{
 		p = line;
 		if(k == 1U)
@@ -530,7 +540,7 @@ static void file_write(void)
 			memcpy(p, "DAILYBACKUP=1", 13U);
 			p += 13;
 		}
-		else
+		else if(k == 11U)
 		{
 			if(!cfg_lastrom[0]) continue;
 			memcpy(p, "LASTROM=", 8U);
@@ -538,6 +548,24 @@ static void file_write(void)
 			n = (UINT16)strlen(cfg_lastrom);
 			memcpy(p, cfg_lastrom, n);
 			p += n;
+		}
+		else
+		{
+			/* each 5-bit channel widened to 8: RRGGBB,RRGGBB,RRGGBB */
+			static const char hexd[17] = "0123456789ABCDEF";
+			UINT8 i;
+			UINT8 v;
+
+			if(!custom_ok) continue;
+			memcpy(p, "COLORS=", 7U);
+			p += 7;
+			for(i = 0U; i < 9U; i++)
+			{
+				v = (UINT8)((custom_ch[i] << 3) | (custom_ch[i] >> 2));
+				*p++ = (UINT8)hexd[v >> 4];
+				*p++ = (UINT8)hexd[v & 15U];
+				if((i == 2U) || (i == 5U)) *p++ = ',';
+			}
 		}
 		*p++ = '\r';
 		*p++ = '\n';
@@ -727,6 +755,17 @@ UINT8 theme_now(void) __banked
 	return cfg_theme;
 }
 
+static const UINT8 ramps[THEMES][8] = {
+	{0xFFU, 0x7FU, 0xB5U, 0x56U, 0x4AU, 0x29U, 0x00U, 0x00U},	/* light, stock */
+	{0x00U, 0x00U, 0xC6U, 0x18U, 0x31U, 0x46U, 0xFFU, 0x7FU},	/* dark */
+	{0x28U, 0x04U, 0xEDU, 0x1CU, 0xA3U, 0x69U, 0xFFU, 0x7FU},	/* red, sky #1A6FD0 */
+	{0x22U, 0x0DU, 0xA8U, 0x25U, 0x18U, 0x3DU, 0xFFU, 0x7FU},	/* green, rose #C2407F */
+	{0x48U, 0x30U, 0x0DU, 0x41U, 0xF3U, 0x01U, 0xFFU, 0x7FU},	/* purple, gold #9A7A00 */
+	{0xA2U, 0x30U, 0x48U, 0x41U, 0x79U, 0x0DU, 0xFFU, 0x7FU},	/* blue, apricot #C85A1A */
+	{0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U},	/* custom: custom_ramp */
+	{0x00U, 0x00U, 0xEFU, 0x1BU, 0x80U, 0x61U, 0xFFU, 0x7FU},	/* DV: lime #7BFF31, blue #0063C5 */
+};
+
 /* What color index 0 to 3 draws as (docs/themes.md), BGR555 low byte
    first: the background, a shade of it, the highlight, the ink. This
    kernel draws a highlight as the ink on index 2, where the 0918 mod draws
@@ -738,16 +777,6 @@ UINT8 theme_now(void) __banked
    stock $E4 and every other theme is the inverted $1B. */
 static void theme_apply(void)
 {
-	static const UINT8 ramps[THEMES][8] = {
-		{0xFFU, 0x7FU, 0xB5U, 0x56U, 0x4AU, 0x29U, 0x00U, 0x00U},	/* light, stock */
-		{0x00U, 0x00U, 0xC6U, 0x18U, 0x31U, 0x46U, 0xFFU, 0x7FU},	/* dark */
-		{0x28U, 0x04U, 0xEDU, 0x1CU, 0xA3U, 0x69U, 0xFFU, 0x7FU},	/* red, sky #1A6FD0 */
-		{0x22U, 0x0DU, 0xA8U, 0x25U, 0x18U, 0x3DU, 0xFFU, 0x7FU},	/* green, rose #C2407F */
-		{0x48U, 0x30U, 0x0DU, 0x41U, 0xF3U, 0x01U, 0xFFU, 0x7FU},	/* purple, gold #9A7A00 */
-		{0xA2U, 0x30U, 0x48U, 0x41U, 0x79U, 0x0DU, 0xFFU, 0x7FU},	/* blue, apricot #C85A1A */
-		{0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U},	/* custom: custom_ramp */
-		{0x00U, 0x00U, 0xEFU, 0x1BU, 0x80U, 0x61U, 0xFFU, 0x7FU},	/* DV: lime #7BFF31, blue #0063C5 */
-	};
 	const UINT8 *r = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
 	UINT8 pal;
 	UINT8 i;
@@ -1135,4 +1164,33 @@ void cfg_backup(void) __banked
 	memcpy(cfg_rtc, now, 6U);
 	cfg_have_rtc = 1U;
 	file_write();
+}
+
+/* The color picker (setpage.c) changed custom_ch: the custom theme is on,
+   with those colors, at once. Nothing is written: cfg_changed does that
+   when the picker ends. */
+void cfg_colors_changed(void) __banked
+{
+	custom_build();
+	custom_ok = 1U;
+	cfg_theme = 6U;
+	theme_apply();
+}
+
+/* The theme in use, as the picker shows and starts from it: its
+   background, text and highlight into dst, nine channels */
+void cfg_colors_seed(UINT8 *dst) __banked
+{
+	const UINT8 *rp = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
+	static const UINT8 from[3] = {0U, 3U, 2U};
+	UINT16 w;
+	UINT8 i;
+
+	for(i = 0U; i < 3U; i++)
+	{
+		w = ((UINT16)rp[from[i] * 2U + 1U] << 8) | rp[from[i] * 2U];
+		dst[i * 3U] = (UINT8)(w & 31U);
+		dst[i * 3U + 1U] = (UINT8)((w >> 5) & 31U);
+		dst[i * 3U + 2U] = (UINT8)((w >> 10) & 31U);
+	}
 }

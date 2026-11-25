@@ -440,7 +440,7 @@ font:
 | HELP | its lines are on rows 3, 5 and 7 |
 | Dialogs | lines on rows 10 and 11 of column 5 draw 12 pixels apart, at y 72 and 84 |
 | The clock prompt | its two times are on rows 7 and 9 |
-| The recent list | stays 8px: its rows are laid out 8 pixels apart, up to 14 of them |
+| The recent list | nine rows of 12 pixels (`recent12_show`) |
 | The boot messages and `BATTERY DRY` | 8px, since they come before the settings are read |
 
 Checked in SameBoy: the list with its icons, the cursor, a long name
@@ -598,12 +598,28 @@ the description, not from the 0918 mod's code, which is davidesqalv's.
 line (background and text, and a third color for the highlight; without
 one the highlight is halfway between them). `THEME=7` is DV: black, with a
 blue highlight. The `THEME:` row offers custom only when the file has the
-line. There is no color picker.
+line or the picker, below, has set a color.
 
 **SLIM**, a fourth choice of the `FONT:` row and `UI=SLIM`: the 0918
 mod's slim set, a fixed 6 pixels, packed from
 `kernel/mod/font12/font12_dv.txt`. The fonts and the 12px list moved to
 bank 13 to make room for a third glyph set.
+
+**The color picker**, a fourth SET page on a console whose palettes can
+be set (`source/setpage.c`, docs/themes.md "The picker"): `BG:`, `TEXT:`
+and `ACCENT:`, each red, green and blue from 0 to 31. A on a row starts
+setting it: LEFT and RIGHT pick the channel, UP and DOWN change it, A or
+B ends. Every step applies. The first change made in another theme starts
+from that theme's colors and turns the custom theme on. It is saved as
+`COLORS=RRGGBB,RRGGBB,RRGGBB`, which this kernel now writes.
+
+**The recent list in the 12px fonts** (`recent12_show` in
+`source/list12.c`): nine rows that follow the cursor, the selected one
+inverted. A name too long for a row is cut, not scrolled.
+
+**The 8px list's selected row** is white on black, where it was black on
+dark gray, which an original Game Boy cannot tell apart. So the list has
+the same bar in every font.
 
 **The settings file.** `LASTROM=` is written at each launch, for the 0918
 mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives

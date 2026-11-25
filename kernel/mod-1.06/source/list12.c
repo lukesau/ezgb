@@ -260,3 +260,38 @@ void clock12(const UINT8 *t, UINT8 bcd, UINT8 hot) __banked
 		x = font12_end(s, x);
 	}
 }
+
+/* The recent list in the 12px fonts: Show_recent_list's rows, nine of 12
+   pixels from y 20, the selected one inverted. The list holds up to 14, so
+   the nine are a window that follows the cursor. The records are full
+   paths in the list area's first bank; the name alone is shown. */
+void recent12_show(UINT8 count, UINT8 sel) __banked
+{
+	static UINT8 top;
+	UINT8 s[FONT12_MAX + 1U];
+	const UINT8 *p;
+	const UINT8 *nm;
+	UINT8 r;
+	UINT8 i;
+
+	if(sel < top) top = sel;
+	if(sel >= (UINT8)(top + 9U)) top = (UINT8)(sel - 8U);
+	if(top >= count) top = 0U;
+	HW_BANK = Folder_sram_bank;
+	hw_set_page(A000Address_SRAM);
+	for(r = 0U; r < 9U; r++)
+	{
+		i = (UINT8)(top + r);
+		s[0] = 0U;
+		if(i < count)
+		{
+			p = pFilename_buffer[i].filename;
+			nm = p;
+			while(*p) if(*p++ == '/') nm = p;
+			for(i = 0U; (i < (FONT12_MAX - 1U)) && nm[i]; i++) s[i] = nm[i];
+			s[i] = 0U;
+			i = (UINT8)(top + r);
+		}
+		font12_draw(s, 0U, (UINT8)(LIST_Y + r * ROW_PITCH), (i == sel) ? F12_INVERSE : F12_NORMAL);
+	}
+}

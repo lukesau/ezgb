@@ -11,6 +11,13 @@ source for kernel 1.06, which is here under the Apache License 2.0
 ([kernel/stock-1.06](kernel/stock-1.06/README.md)), and released 1.06e with
 FW6 on 2026-11-24. The rebuilds below don't use it.
 
+**License in short.** The repository is AGPLv3. Two parts are also under
+the Apache License 2.0, so that EZ Flash, or anyone, can use them in
+software they ship: the whole firmware mod (our stage1 and the PicoBlaze
+patches, on FW4, FW5 and FW6) and the whole of this project's mod of
+kernel 1.06 ([kernel/mod-1.06](kernel/mod-1.06/README.md)). Not only the
+boot splash: every feature in either. [License](#license) has the list.
+
 | Piece | What it is | Source | Result |
 |---|---|---|---|
 | Kernel 1.04e, 1.05e-0731, 1.05e-0918 | the menu, loaded from the SD card as `ezgb.dat` | [kernel/stock](kernel/stock/README.md): C, GBDK, FatFs | identical to stock |
@@ -277,8 +284,8 @@ under the AGPLv3 above or under the
 parts EZ Flash could use in the software it ships, which the AGPLv3 would
 not let it do.
 
-- **The firmware mod**, which is everything this project runs in the
-  FPGA's place of EZ Flash's:
+- **The firmware mod, all of it** (the FW4, FW5 and FW6 mod firmware):
+  everything this project runs in the FPGA's place of EZ Flash's.
   - our stage1, all of it: `stage1/src/`, the art in `stage1/art/`, the
     tools that build it (`stage1/tools/mkwordmark.py`, `mkicon.py`,
     `font8-pack.py`, `packbits.py`) and `stage1/build.sh`. That is the
@@ -294,7 +301,7 @@ not let it do.
   keeps GBDK's license; and the icon and the EZ-FLASH name the splash
   draws, which are EZ Flash's marks, to which neither license gives anyone
   else a right.
-- **This project's changes to kernel 1.06**, in `kernel/mod-1.06`: every
+- **The kernel 1.06 mod, all of it**, in `kernel/mod-1.06`: every
   file there this project wrote, and its changes to EZ Flash's files,
   which are Apache already. [Its README](kernel/mod-1.06/README.md#license)
   names the three things in that folder that are someone else's and keep
