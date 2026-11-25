@@ -1,14 +1,15 @@
 # EZ Flash Jr from source
 
-The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. EZ Flash
-published no source for it, unlike its GBA sibling the
-[EZ Flash Omega](https://github.com/ezflash-team/omega-de-kernel): the menu
-(the "kernel"), the bootloader and the FPGA design ship only as binaries.
+The EZ Flash Jr is a Game Boy / Game Boy Color flash cartridge. This
+repository rebuilds its FW4 and FW5 software from source: the menu (the
+"kernel"), the bootloader and the FPGA design. The Game Boy programs compile
+to the stock bytes, and the FPGA design is readable Verilog proven equivalent
+to the stock bitstream.
 
-This repository rebuilds all of it from source. The Game Boy programs
-compile to the stock bytes, and the FPGA design is readable Verilog proven
-equivalent to the stock bitstream. No file of EZ Flash's is in the
-repository, and none is needed to build.
+That work was done from the released binaries. EZ Flash has since shared the
+source for kernel 1.06, which is here under the Apache License 2.0
+([kernel/stock-1.06](kernel/stock-1.06/README.md)), and released 1.06e with
+FW6 on 2026-11-24. The rebuilds below don't use it.
 
 | Piece | What it is | Source | Result |
 |---|---|---|---|
@@ -229,6 +230,8 @@ proofs read a dump the checkout supplies
 
 ## Credits
 
+- **[EZ Flash](https://www.ezflash.cn/)**: made the cart, and shared the
+  kernel 1.06 source with this project.
 - **[daid/ezflashjr](https://github.com/daid/ezflashjr)** by Daid, with
   contributions from nitro2k01: the cart's register protocol
   (`doc/Protocol.md`), stage1 dumps, board survey, and archived official
@@ -260,6 +263,8 @@ proofs read a dump the checkout supplies
 
 AGPLv3, see [LICENSE](LICENSE). It covers this project's work: the notes,
 the tooling, the mod, the readable Verilog. It does not relicense EZ
-Flash's code, which is here as source written from their binaries, and
-their binaries are not in the repository. Other people's code keeps its
+Flash's code: the FW4 and FW5 code is here as source written from their
+binaries, the kernel 1.06 source is theirs under the
+[Apache License 2.0](LICENSE-APACHE-2.0), and their binaries are not in the
+repository. Other people's code keeps its
 license; [THIRD-PARTY.md](THIRD-PARTY.md) lists it.
