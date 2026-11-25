@@ -81,6 +81,7 @@ under the kernel's version.
 | Themes: light, dark and four colors | `source/ezcfg.c` |
 | The 12px proportional font (English build) | `source/font12.c`, `source/font12_data.s`, `source/list12.c`, `source/ezcfg.c`, hooks in `source/Bank_fun.c`, `source/main.c`, `source/UI.c`, `makefile` |
 | Hold A on a game for its options | `source/rommenu.c`, `source/main.c`, `source/sgb.s` |
+| Manage saves: back up, restore and delete a game's saves | `source/savemgr.c`, `source/ff_5.c`, `source/rommenu.c`, `makefile` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
@@ -466,8 +467,52 @@ folder opens it and leaves its first game alone, Fast launch writes the
 path and shows `YES`, B puts the list back, and Start and a tap both start
 the game.
 
-Not carried over: `Manage saves` and `Star`, which wait for those
-features, and the text viewer for a file that is not a game.
+`Manage saves`, between the two, opens the save manager, below. Not
+carried over: `Star`, which waits for that feature, and the text viewer
+for a file that is not a game.
+
+### Manage saves
+
+As in the 0918 mod ([docs/save-manager.md](../../docs/save-manager.md)),
+from a game's hold-A menu:
+
+```
+Saves                     "Working...", then "Done" or "Error"
+<the game's name>
+> Back up save            "No save yet" when the game has none
+  26-11-25 08:57          its backups, newest first
+  26-11-25 08:55
+[B]back          [A]ok
+```
+
+- **Back up save** copies `/SAVER/<base>.sav` to
+  `/SAVER/<base> YYYY-MM-DD HH-MM.sav`, the time being the save's
+  last-modified time, with ` (2)`, ` (3)` and so on when that name is taken.
+- **A on a backup** offers Restore and Delete, and asks before either.
+  Restore backs the current save up first, then copies the backup over
+  `<base>.sav`; the next launch loads it. Delete removes that backup. The
+  live save is never deleted.
+
+The names are the 0918 mod's and are parsed as strictly, so a card's
+backups show under both kernels and `Tetris DX.sav` is not taken for a
+backup of `Tetris.gb`. The newest 24 are listed, four on screen at a time.
+
+**Delete** needed a routine this FatFs is built without. `source/ff_5.c`
+is the kernel's `ff_4.c`, the cut of FatFs with the write internals, with
+R0.11a's `f_unlink` where `f_mkdir` was, for files only, in a bank of its
+own. Before it syncs it sets the free cluster count to unknown, for the
+reason the 0918 mod does (docs/save-manager.md, "FSInfo").
+
+Checked in SameBoy on a card image, reading the files back out with
+mtools: a backup has the save's bytes; a restore over a changed save puts
+the backup's bytes in the live save and leaves the replaced save in a
+backup of its own; a delete removes that one file and leaves the others'
+bytes as they were. Both fonts. The emulator's card writes are slow: a
+32 KB copy takes most of a minute there. Not checked: a full list of 24,
+a name collision counter, and what a host makes of the card after a
+delete (mtools reads it). Nothing on a cart.
+
+Not carried over: the daily backup (`DAILYBACKUP=1`).
 
 ### The FW6 clock load, removed
 

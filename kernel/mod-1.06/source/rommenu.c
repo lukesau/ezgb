@@ -8,6 +8,7 @@
      Options
      <the whole name>          on an inverted band; scrolls when too long
      > Start
+       Manage saves            savemgr.c
        Fast launch: NO         YES when this is the game power-on starts
      [B]back          [A]ok
 
@@ -31,6 +32,7 @@
 #include "Bank_fun.h"
 #include "ezcfg.h"
 #include "rommenu.h"
+#include "savemgr.h"
 #include "list12.h"
 
 #pragma bank 4
@@ -41,7 +43,7 @@ extern UINT8 pad_prev;			/* sgb.s: the joypad read before the last one */
 
 #define HOLD_FRAMES	30U
 #define NAME_COLS	18U
-#define ITEMS		2U
+#define ITEMS		3U
 
 static UINT8 up(UINT8 c)
 {
@@ -90,6 +92,7 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	s[19] = 0U;
 	s[0] = sel ? '>' : ' ';
 	if(i == 0U) memcpy(s + 2, "Start", 5U);
+	else if(i == 1U) memcpy(s + 2, "Manage saves", 12U);
 	else
 	{
 		memcpy(s + 2, "Fast launch: ", 13U);
@@ -152,6 +155,7 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 	}
 
 	len = (UINT8)strlen(name);
+redraw:
 	color(BLACK, DKGREY, SOLID);
 	/* from the top of a list row to the bottom of one, in either font */
 #ifdef LANG_ZH
@@ -162,12 +166,11 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 	memcpy(s, "Options", 8U);
 	Draw_Text(s, 7U, 1U, 5U);
 	name_draw(name, len, 0U);
-	item_draw(0U, 1U, name);
-	item_draw(1U, 0U, name);
+	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
 	memcpy(s, "[B]back", 8U);
-	Draw_Text(s, 7U, 1U, 14U);
+	Draw_Text(s, 7U, 1U, 15U);
 	memcpy(s, "[A]ok", 6U);
-	Draw_Text(s, 5U, 13U, 14U);
+	Draw_Text(s, 5U, 13U, 15U);
 
 	while(joypad()) wait_vbl_done();		/* the hold that opened it is not a press */
 	last = 0U;
@@ -187,7 +190,8 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 		if(keys & (J_UP | J_DOWN))
 		{
 			item_draw(sel, 0U, name);
-			sel ^= 1U;				/* two items: both keys wrap */
+			if(keys & J_UP) sel = sel ? (UINT8)(sel - 1U) : (UINT8)(ITEMS - 1U);	/* both wrap */
+			else sel = ((UINT8)(sel + 1U) < ITEMS) ? (UINT8)(sel + 1U) : 0U;
 			item_draw(sel, 1U, name);
 		}
 		else if(keys & J_A)
@@ -202,12 +206,22 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 				HW_BANK = Folder_sram_bank + (UINT8)(n / Num_perBank);	/* the caller reads the record next */
 				return 0U;
 			}
+			if(sel == 1U)
+			{
+				save_manager(name);		/* savemgr.c; it leaves its box up */
+				color(BLACK, WHITE, SOLID);
+				DrawGB(3);			/* its box is taller than this one: the list again first */
+				hw_set_page(A000Address_SRAM);
+				Show_filename(show_offset, file_select);
+				from = 0U;
+				goto redraw;
+			}
 			/* fast launch: this game on, or off when it is the one */
 			if(path_of(name, p, is_flaunch(name)))
 			{
 				strcpy(cfg_flaunch, p);
 				cfg_changed(CFG_OTHER);
-				item_draw(1U, 1U, name);
+				item_draw(2U, 1U, name);
 			}
 		}
 	}
