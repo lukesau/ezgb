@@ -25,7 +25,7 @@ extern void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __b
 
 extern FM_FILE_FS *pFilename_buffer;
 extern UINT16 game_folder_total;
-extern void _ultoa(unsigned long value, char *string, unsigned char radix);
+extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
 
 #define LIST_Y		20U
 #define ROW_PITCH	12U

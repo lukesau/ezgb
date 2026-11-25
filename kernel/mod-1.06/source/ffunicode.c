@@ -1,3 +1,8 @@
+/* mod: the single byte tables and ff_wtoupper go to a bank of their own in
+   the English build: 2.3 KB that bank 0 has no room for */
+#ifndef LANG_ZH
+#include "modbank.h"
+#endif
 #include "ff.h"
 
 #if _USE_LFN != 0

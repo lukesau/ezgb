@@ -40,7 +40,7 @@ extern int mystrcmp(const char *str1,const char *str2)__banked;
 extern char *my_strrchr(const char *s, char c)__banked;
 
 
-extern void _ultoa(unsigned long value, char *string, unsigned char radix);
+extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
 extern void DrawHEX(unsigned long uc);
 
 

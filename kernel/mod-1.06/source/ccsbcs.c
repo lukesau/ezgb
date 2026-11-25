@@ -275,7 +275,7 @@ const WCHAR Tbl[] = {	/*  CP869(0x80-0xFF) to Unicode conversion table */
 WCHAR ff_convert (	/* Converted character, Returns zero on error */
 	WCHAR	chr,	/* Character code to be converted */
 	UINT	dir		/* 0: Unicode to OEM code, 1: OEM code to Unicode */
-)
+) FF_UNI_BANKED
 {
 	WCHAR c;
 
@@ -303,7 +303,7 @@ WCHAR ff_convert (	/* Converted character, Returns zero on error */
 
 WCHAR ff_wtoupper (	/* Returns upper converted character */
 	WCHAR chr		/* Unicode character to be upper converted */
-)
+) FF_UNI_BANKED
 {
 	static const WCHAR lower[] = {	/* Lower case characters to be converted */
 	/* Latin Supplement */			0xE0,0xE1,0xE2,0xE3,0xE4,0xE5,0xE6,0xE7,0xE8,0xE9,0xEA,0xEB,0xEC,0xED,0xEE,0xEF,0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF,

@@ -12,7 +12,7 @@
 #include "Help.h"
 
 
-extern void _ultoa(unsigned long value, char *string, unsigned char radix);
+extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
 extern UINT8 SD_buffer[0x200];
 
 // --------------------------------------------------------------------

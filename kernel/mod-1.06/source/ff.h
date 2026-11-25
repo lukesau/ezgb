@@ -268,13 +268,20 @@ extern TCHAR* f_gets (TCHAR* buff, int len, FIL* fp)__banked;						/* Get a stri
 
 /* RTC function */
 #if !_FS_READONLY && !_FS_NORTC
-DWORD get_fattime (void);
+DWORD get_fattime (void) __banked;	/* mod: banked, modmisc.c */
 #endif
 
 /* Unicode support functions */
 #if _USE_LFN							/* Unicode - OEM code conversion */
-WCHAR ff_convert (WCHAR chr, UINT dir);	/* OEM-Unicode bidirectional conversion */
-WCHAR ff_wtoupper (WCHAR chr);			/* Unicode upper-case conversion */
+/* mod: in the English build the tables are in a bank of their own, not
+   bank 0 (ffunicode.c) */
+#ifdef LANG_ZH
+#define FF_UNI_BANKED
+#else
+#define FF_UNI_BANKED __banked
+#endif
+WCHAR ff_convert (WCHAR chr, UINT dir) FF_UNI_BANKED;	/* OEM-Unicode bidirectional conversion */
+WCHAR ff_wtoupper (WCHAR chr) FF_UNI_BANKED;			/* Unicode upper-case conversion */
 #if _USE_LFN == 3						/* Memory functions */
 void* ff_memalloc (UINT msize);			/* Allocate memory block */
 void ff_memfree (void* mblock);			/* Free memory block */

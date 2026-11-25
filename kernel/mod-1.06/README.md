@@ -29,9 +29,31 @@ what the code needs, since every boot loads all of it, and is a power of
 two, as the ROM tool wants. Banks 10 to 15 (30 and 31 in the Chinese
 build) are empty for now: new features go there.
 
-Bank 0 is the one that cannot grow: everything every bank calls is in it,
-and the English build has about 750 bytes of it left. A feature's code
-goes in a banked file, with only its call in bank 0.
+Bank 0 is the one that cannot grow: everything every bank calls is in it.
+A feature's code goes in a banked file, with only its call in bank 0.
+
+The source as received had bank 0 nearly full, so what did not have to be
+there was moved out, to the first new bank (`source/modbank.h`: bank 10,
+or 30 in the Chinese build). The English build now has 7.3 KB of bank 0
+free where it had 750 bytes:
+
+| What | Was | Now | Size |
+|---|---|---|---|
+| `Show_SD_list`, the SD tab's main loop | `main.c` | `source/sdlist.c` | 2.9 KB |
+| FatFs's upper-case and code page tables, English build | bank 0 | their own bank (`ffunicode.c`); `ff_wtoupper` and `ff_convert` are banked calls | 2.3 KB |
+| `get_fattime`, `_ultoa` | `diskio.c`, `main.c` | `source/modmisc.c` | 0.6 KB |
+| The library's circle drawing | `drawing.s` | gone: nothing draws a circle | 0.3 KB |
+| `Filename_loop`, the SET pages, `Read_all_DIR` (earlier) | `main.c`, `ezcfg.c` | `list8.c`, `setpage.c`, `browser.c` | |
+
+A function that moves to a bank takes its string literals with it, and a
+function in another bank cannot read them. `Show_SD_list` passed six to
+banked functions (the mount point, `/SAVER`, and `/` four times): they are
+arrays in RAM now. This is the thing to check when their release source
+arrives and these moves are made again.
+
+What stays in bank 0: the startup code and vectors, the bank call
+trampoline, the long arithmetic and memory routines, the drawing library,
+`Draw_Text`, `joypad`, the disk I/O and the `f_*_bank` wrappers.
 
 Both sizes boot and start a game in SameBoy. The 0918 mod runs at 16 banks
 on FW4 and FW5 carts with our stage1; stock stage1 with a kernel this

@@ -16,7 +16,7 @@
 /* this firmware covers 2000-2099, the century bit stays 0 */
 
 extern void DrawHEX(unsigned long uc);
-extern void _ultoa(unsigned long value, char *string, unsigned char radix);
+extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
 
 
 extern void Read_RTC(void)__banked;
