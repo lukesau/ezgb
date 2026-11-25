@@ -10,7 +10,8 @@
      page 3   THEME, FONT, and the color picker's BG, TEXT, ACCENT
 
    The cursor runs down through all of them: DOWN from a page's last row is
-   the next page, UP from its first the one before. The first three rows
+   the next page, UP from its first the one before. LEFT and RIGHT change
+   the page from any row, and the pages go round. The first three rows
    are EZ Flash's screen, which keeps its own loop; the rest are a list
    here, and Set_window hands the cursor over when it leaves AUTO SAVE
    downward (set_page2) and takes it back when it comes up again. SELECT
@@ -311,7 +312,9 @@ static void clock_tick(void)
      0  UP left the first row: back to AUTO SAVE, page 1 still on screen
      1  SELECT: leave the tab
      2  UP left page 2: Set_window draws page 1 and calls again with start
-        SET_RESUME, its last row */
+        SET_RESUME, its last row
+     3  LEFT or RIGHT came round to page 1: Set_window draws it, the cursor
+        on its first row */
 UINT8 set_page2(UINT8 start) __banked
 {
 	UINT8 row = start;
@@ -319,6 +322,7 @@ UINT8 set_page2(UINT8 start) __banked
 	UINT8 last;
 	UINT8 to;
 
+	if(row_page[row]) page_draw(row_page[row]);	/* LEFT or RIGHT on page 1 came straight here */
 	row_draw(row, 1U);
 	/* the key that brought the cursor here is not a press on it */
 	while(joypad()) wait_vbl_done();
@@ -347,6 +351,18 @@ UINT8 set_page2(UINT8 start) __banked
 		else if(keys & J_DOWN)
 		{
 			if(row + 1U < ROWS_NOW) to = (UINT8)(row + 1U);
+		}
+		else if(keys & (J_LEFT | J_RIGHT))
+		{
+			/* the page before or the next one, round and round: its first
+			   row, which on page 1 is Set_window's TIME SET */
+			to = (UINT8)((row_page[row] + ((keys & J_RIGHT) ? 1U : 2U)) % 3U);
+			if(to == 0U)
+			{
+				while(joypad()) wait_vbl_done();
+				return 3U;
+			}
+			to = (to == 1U) ? SET_PAGE2 : SET_PAGE3;
 		}
 		else if((keys & J_A) && (row >= ROW_BG))
 		{

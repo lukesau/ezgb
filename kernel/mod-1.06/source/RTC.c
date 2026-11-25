@@ -502,6 +502,12 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					update=2;
 				}
 			}	
+			else
+			{
+				/* mod: LEFT is the page before, and the pages go round */
+				start2 = SET_PAGE3;
+				goto enter2;
+			}
     }
 		else if(keysrepeat &  J_RIGHT){
 			if(edit_mode)
@@ -511,6 +517,12 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					if(pos==6)pos=0;
 					update=3;
 				}
+			}
+			else
+			{
+				/* mod: RIGHT is the next page */
+				start2 = SET_PAGE2;
+				goto enter2;
 			}
 		}
 		else if(keysrepeat &  J_UP){	
@@ -611,6 +623,13 @@ enter2:
 							DrawGB(1);
 							resume = 1;
 							select = 1;
+							goto page1;
+						}
+						if(r2 == 3)
+						{
+							/* LEFT or RIGHT came round to this page: its first row */
+							DrawGB(1);
+							select = 0;
 							goto page1;
 						}
 						update=1;

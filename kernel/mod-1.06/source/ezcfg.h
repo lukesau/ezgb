@@ -11,6 +11,8 @@ void cfg_launch(void) __banked;			/* a game is about to be loaded */
 void cfg_timeset(const UINT8 *t) __banked;	/* TIME SET confirmed */
 void cfg_autosave_set(UINT8 v) __banked;	/* the AUTO SAVE box changed */
 #define SET_RESUME	2U				/* set_page2's start for the last row of page 1 */
+#define SET_PAGE2	3U				/* and for the first rows of pages 2 and 3 */
+#define SET_PAGE3	8U
 UINT8 set_page2(UINT8 start) __banked;		/* setpage.c: the cursor in the mod's SET rows */
 void set_page1_rows(void) __banked;		/* setpage.c: the mod's rows of page 1 */
 void cfg_backup(void) __banked;			/* a save backup was written at boot */
