@@ -75,6 +75,7 @@ UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM, 3 is EZF */
 UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
 UINT8 cfg_daily;			/* DAILYBACKUP=1 (savemgr.c) */
 UINT8 sgb_auto;				/* our stage1 handles the SGB: SGB BOOT shows AUTO */
+UINT8 cfg_can_jump;			/* this console can start a game without the boot ROM */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
 static UINT8 custom_ramp[8];
 UINT8 custom_ch[9];			/* the custom theme: background, text, highlight, each red, green, blue, 0 to 31 */
@@ -911,6 +912,7 @@ static void console_detect(void)
 
 	con_dmg = dmg_fam;
 	con_nodmg = no_dmg;
+	cfg_can_jump = dmg_fam ? (no_dmg ? 0U : 1U) : cgb_mode;
 	launch_mode_set();
 }
 

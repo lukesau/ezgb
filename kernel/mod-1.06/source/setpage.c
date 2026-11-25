@@ -64,6 +64,7 @@ static void row_act(UINT8 row)
 
 	if(row == ROW_SKIP)
 	{
+		if(!cfg_can_jump) return;	/* nothing to choose: the setting keeps its value */
 		cfg_bootrom ^= 1U;
 		what = CFG_BOOTROM;
 	}
@@ -198,7 +199,8 @@ static void row_draw(UINT8 row, UINT8 sel)
 		color_draw(row, sel ? 3U : 4U);
 		return;
 	}
-	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto))
+	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto) ||
+	   ((row == ROW_SKIP) && !cfg_can_jump))
 	{
 		/* a value, from column 6 for the game and 13 for the others */
 		memset(s, ' ', 20U);
@@ -212,6 +214,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		}
 		else if(row == ROW_THEME) v = names[theme_now()];
 		else if(row == ROW_SGB) v = "AUTO";		/* our stage1 sends the packets itself */
+		else if(row == ROW_SKIP) v = "N/A";		/* this console resets into every game */
 #ifdef LANG_ZH
 		else v = "12PX";			/* the Chinese build's text is always 12px */
 #else

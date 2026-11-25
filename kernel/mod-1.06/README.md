@@ -624,8 +624,10 @@ the same bar in every font.
 around" has the 0918 mod's, which is davidesqalv's code: this is written
 here from what it does). The list wraps at both ends. RIGHT on the last
 page goes to its bottom row. In the 12px fonts the entry number reads
-`n/total` when that fits right of HELP. Not carried over: its recoloring
-of rows in VRAM and its accelerating key repeat.
+`n/total` when that fits right of HELP. A held UP or DOWN speeds up:
+after the delay it repeats 6, 6, 5, 5, 4, 4 and then every 3 frames, and
+while the list scrolls it moves 1, 1, 2, 2, 3, 3 and then 4 rows a step.
+Not carried over: its recoloring of rows in VRAM, which saves a redraw.
 
 **The cursor follows a star**: after Star or Unstar the list comes back
 with the cursor on the game, where it now sorts (`list_follow` in
@@ -636,10 +638,31 @@ with the cursor on the game, where it now sorts (`list_follow` in
 and the next boot takes the theme from it before the card is read. It is
 the 0918 mod's mark, which our stage1 reads for its boot screen.
 
+**`SKIP BOOT ROM:` reads `N/A`** on a console that resets into every
+game (a color console under stock stage1, an SGB under ours), and A does
+nothing there; `BOOTROM=` keeps its value.
+
+**`SD SPEED: HALF` on the HELP tab**, when the firmware mod's SD recovery
+has dropped the card clock to half speed
+([stage0/docs/sd-recovery.md](../../stage0/docs/sd-recovery.md)). On stock
+firmware and at full speed the tab is as it was.
+
 **The settings file.** `LASTROM=` is written at each launch, for the 0918
 mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives
 the fast launch game. `SGB BOOT:` shows `AUTO` when our stage1 handles the
 Super Game Boy.
+
+### What of the 0918 mod is not here
+
+- **The debug page and the flash dump**, which are a debug build's there.
+- **Icons in the 8px list.** The 8px font is GBDK's and has no glyphs for
+  them; the 12px fonts have them.
+- **The START overlay for the last game.** This kernel has its recent list
+  on START.
+- **The restyled prompts.** This kernel's dialogs follow the font as they
+  are.
+- **Moving the cursor by recoloring rows in VRAM.**
+- **A line scroll and a font of its own in the text viewer.**
 
 ### The FW6 clock load, removed
 

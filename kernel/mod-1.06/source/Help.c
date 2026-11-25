@@ -89,6 +89,15 @@ void Help_window(void)__banked
 
 	
 	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, HELP_ROW(5));
+
+	/* mod: once the firmware mod's SD recovery has dropped the card clock
+	   to half speed it reports weekday 7 in the RTC window, a value the
+	   clock chip never holds (stage0/docs/sd-recovery.md). On stock
+	   firmware, and at full speed, nothing is shown. */
+	hw_set_page(A000Address_RTC);
+	i = *((volatile UINT8 *)(Base_RTCbuffer + 0xC)) & 0x07U;
+	hw_set_page(A000Address_TF);
+	if(i == 7U) Draw_Text("SD SPEED: HALF", 14, 0, HELP_ROW(6));
 	
 	
 	while(1)

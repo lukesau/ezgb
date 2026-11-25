@@ -106,6 +106,9 @@ void Show_SD_list(void) __banked
 	BYTE keysrepeat;
 	BYTE keydiv = 0;
 	UINT8 keyhold = 0;
+	UINT8 keynext = 0;		/* mod: the frame of the hold the key next repeats on */
+	UINT8 keystage = 0;		/* mod: how far the repeat has sped up */
+	UINT8 navstep = 1;		/* mod: rows a scroll moves this poll */
 	/* There used to be a local `BYTE FR_OK=0;` shadowing FatFs' FR_OK enum (0): the
 	   comparison below tested that variable and only looked right because it was 0,
 	   the same value as the enum. Removed so it refers to the real enum. */
@@ -333,12 +336,34 @@ re_showfile:
 		/* mod: up and down repeat the way the released 1.06e does. The first
 		   frame of a press moves the cursor, then nothing until the key has
 		   been held KEY_HOLD_DELAY frames, then every fourth frame. */
+		/* A held key speeds up (docs/browser.md "Moving around"): after the
+		   delay it repeats 6, 6, 5, 5, 4, 4 and then every 3 frames, and
+		   while the list scrolls it moves 1, 1, 2, 2, 3, 3 and then 4 rows
+		   a step. */
+		navstep = 1U;
 		if(keysrepeat & (J_UP | J_DOWN))
 		{
+			static const UINT8 gap[7] = {6U, 6U, 5U, 5U, 4U, 4U, 3U};
+			static const UINT8 rows[7] = {1U, 1U, 2U, 2U, 3U, 3U, 4U};
+
 			keyhold++;
-			if((keyhold != 1U) &&
-			   ((keyhold <= KEY_HOLD_DELAY) || ((keyhold - KEY_HOLD_DELAY) & 3U)))
-				keysrepeat &= (UINT8)~(J_UP | J_DOWN);
+			if(keyhold == 1U)
+			{
+				keystage = 0U;
+				keynext = KEY_HOLD_DELAY;
+			}
+			else if(keyhold >= keynext)
+			{
+				navstep = rows[keystage];
+				keynext = (UINT8)(keyhold + gap[keystage]);
+				if(keystage < 6U) keystage++;
+				if(keyhold > 200U)		/* keep the counter from wrapping */
+				{
+					keyhold -= 100U;
+					keynext -= 100U;
+				}
+			}
+			else keysrepeat &= (UINT8)~(J_UP | J_DOWN);
 		}
 		else
 		{
@@ -387,7 +412,8 @@ re_showfile:
 				updata=3;
 			}
 			else if (show_offset) {
-				show_offset--;		/* at the first row: scroll the window up by one */
+				/* at the first row: scroll the window up (mod: by navstep) */
+				show_offset = (show_offset > navstep) ? (UINT16)(show_offset - navstep) : 0;
 				updata=1;
 			}
 			/* mod: the list wraps. UP on the first entry is the last one. */
@@ -414,7 +440,10 @@ re_showfile:
 			}
 			else if ((UINT16)(show_offset + LIST_ROWS) < game_folder_total)
 			{
-				show_offset++;
+				/* mod: by navstep, and not past the end */
+				show_offset += navstep;
+				if((UINT16)(show_offset + LIST_ROWS) > game_folder_total)
+					show_offset = game_folder_total - LIST_ROWS;
 				updata=1;
 			}
 			/* mod: the list wraps. DOWN on the last entry is the first one. */
