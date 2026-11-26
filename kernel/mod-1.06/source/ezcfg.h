@@ -55,6 +55,7 @@ extern char cfg_flaunch[FLAUNCH_MAX + 1U];
 #define CFG_SGB		3U
 #define CFG_OTHER	4U
 void cfg_changed(UINT8 what) __banked;
+void cfg_flush(void) __banked;		/* the SET tab's changes to the file */
 UINT8 cfg_flaunch_pick(const char *name) __banked;
 UINT8 cfg_skip_ok(void) __banked;
 extern UINT8 pick_rom;

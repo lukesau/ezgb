@@ -150,10 +150,12 @@ redraw:
 	color(BLACK, DKGREY, SOLID);
 	/* from the top of a list row to the bottom of one, in either font */
 #ifdef LANG_ZH
-	box(0, 32, 159, 135, M_FILL);
+	box(0, 16, 159, 135, M_FILL);
 #else
-	box(0, 32, 159, ui_font ? 139 : 135, M_FILL);
+	box(0, 16, 159, ui_font ? 139 : 135, M_FILL);
 #endif
+	memcpy(s, "Options", 8U);
+	Draw_Text(s, 7U, 1U, 3U);
 	mq_start((const UINT8 *)name, 1U, 5U, NAME_COLS, WHITE, BLACK);	/* the name on its band (modmisc.c) */
 	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
 	memcpy(s, "[B]back      [A]ok", 19U);
@@ -164,8 +166,7 @@ redraw:
 	popup_rules(15U, ui_font ? 139U : 135U, 84U);
 #endif
 
-	while(joypad()) wait_vbl_done();		/* the hold that opened it is not a press */
-	last = 0U;
+	last = joypad();		/* the hold that opened it is not a press, and the menu does not wait for it to end */
 	while(1)
 	{
 		wait_vbl_done();
@@ -219,12 +220,14 @@ redraw:
 			{
 				cfg_flaunch[(cfg_flaunch[0] == '#') ? 1U : 0U] = 0;
 				cfg_changed(CFG_OTHER);
+				cfg_flush();		/* at once: this is not the SET tab */
 				item_draw(3U, 1U, name);
 			}
 			else if(path_of(name, p, (cfg_flaunch[0] == '#') ? 1U : 0U))
 			{
 				strcpy(cfg_flaunch, p);
 				cfg_changed(CFG_OTHER);
+				cfg_flush();		/* at once: this is not the SET tab */
 				item_draw(3U, 1U, name);
 			}
 		}

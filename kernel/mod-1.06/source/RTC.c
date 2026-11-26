@@ -649,6 +649,7 @@ enter2:
 			}
     }
 		else if(keysrepeat &  J_SELECT){
+			cfg_flush();		/* mod: the tab's changes to /EZGB.CFG */
 			return;
 		}
 		/* mod: START goes back to the SD tab, where SELECT goes on to HELP.
@@ -656,6 +657,7 @@ enter2:
 		else if((keysrepeat & J_START) && !edit_mode){
 			while(joypad() & J_START) wait_vbl_done();
 			tab_to_sd = 1;
+			cfg_flush();		/* mod: the tab's changes to /EZGB.CFG */
 			return;
 		}
 		else if(keysrepeat &  J_B){

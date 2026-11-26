@@ -47,6 +47,7 @@
 #include "Bank_fun.h"
 #include "ezcfg.h"
 #include "plays.h"
+#include "font12.h"
 
 /* bank 2, or bank 8 in the Chinese build, whose bank 2 is full of its own
    text code */
@@ -140,6 +141,8 @@ static UINT8 is_bcd(UINT8 v)
 	return (((v & 0x0FU) < 10U) && (v < 0xA0U)) ? 1U : 0U;
 }
 
+static UINT8 now_raw[6];		/* the chip's bytes as read, for the clock prompt */
+
 /* The PCF8563's registers at $A008-$A00E of page 6: seconds, minutes, hours,
    day, weekday, month, year */
 static void clock_read(void)
@@ -156,6 +159,7 @@ static void clock_read(void)
 	for(i = 0U; i < 6U; i++)
 	{
 		v = *((volatile UINT8 *)(Base_RTCbuffer + reg[i])) & mask[i];
+		now_raw[i] = v;
 		if(!is_bcd(v)) now_flags |= NOW_BAD;
 		v = unbcd(v);
 		if(v > top[i]) now_flags |= NOW_BAD;
@@ -480,6 +484,8 @@ static UINT8 *put2(UINT8 *p, UINT8 v, UINT8 sep)
 }
 
 /* Rewrites the file: what it has of other keys, then this kernel's lines */
+static UINT8 cfg_pending;		/* a setting changed on the SET tab and is not in the file yet */
+
 static void file_write(void)
 {
 	/* Not on the stack. SDCC 4.5 compiles n = p - line, with line a stack
@@ -494,6 +500,8 @@ static void file_write(void)
 	UINT16 at;
 	UINT16 n;
 	UINT8 k;
+
+	cfg_pending = 0U;		/* the file is about to have everything */
 
 	at = file_read(1U);
 	for(k = 1U; k <= 12U; k++)
@@ -662,53 +670,114 @@ static void info_put(UINT16 at, UINT8 v)
 
 /* ---- the clock prompt ---- */
 
-/* "YY-MM-DD HH:MM" at text column 5 of a row */
-static void draw_time(const UINT8 *t, UINT8 row)
-{
-	UINT8 s[15];
-	UINT8 *p = s;
+UINT8 draw_colors(void);	/* vram_put.s */
 
-	p = put2(p, t[0], '-');
-	p = put2(p, t[1], '-');
-	p = put2(p, t[2], ' ');
-	p = put2(p, t[3], ':');
-	p = put2(p, t[4], 0U);
-	*p = 0U;
-	Draw_Text(s, 15U, 5U, row);		/* from column 5: the 12px font needs the width */
+/* A piece of the prompt: at cell (col, row) in the 8px font, or from pixel
+   (x12, y12) in a 12px one, whose rows are taller than a cell */
+static void ptext(const UINT8 *t, UINT8 col, UINT8 row, UINT8 x12, UINT8 y12)
+{
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		font12_field(t, x12, y12, draw_colors(), 152U);
+		return;
+	}
+#endif
+	Draw_Text((UINT8 *)t, (UINT8)strlen((const char *)t), col, row);
+}
+
+static UINT8 hex1(UINT8 v)
+{
+	return (UINT8)((v < 10U) ? ('0' + v) : ('A' - 10U + v));
+}
+
+/* A clock on two lines, "YY-MM-DD" and under it "HH:MM:SS". hex: t is the
+   chip's bytes, shown as they are, so a bad one can be seen. */
+static void draw_clock(const UINT8 *t, UINT8 hex, UINT8 row, UINT8 y12)
+{
+	UINT8 s[9];
+	UINT8 i;
+	UINT8 k;
+	UINT8 v;
+
+	for(k = 0U; k < 2U; k++)
+	{
+		for(i = 0U; i < 3U; i++)
+		{
+			v = t[k * 3U + i];
+			if(hex)
+			{
+				s[i * 3U] = hex1((UINT8)(v >> 4));
+				s[i * 3U + 1U] = hex1((UINT8)(v & 0x0FU));
+			}
+			else
+			{
+				s[i * 3U] = (UINT8)('0' + v / 10U);
+				s[i * 3U + 1U] = (UINT8)('0' + v % 10U);
+			}
+			s[i * 3U + 2U] = k ? ':' : '-';
+		}
+		s[8] = 0U;
+		ptext(s, 6U, (UINT8)(row + k), 60U, (UINT8)(y12 + k * 12U));
+	}
 }
 
 /* Shows the chip's time and the stored one (docs/prompts.md "RTC restore"),
-   in the band the save prompt has:
+   as the 0918 mod does, each on two lines:
        RTC BEHIND?
-       NOW  26-09-30 20:44
-       SD   26-09-30 20:43
-       [B]keep    [A]use SD
+       CHIP 26-09-30
+            20:44:10
+       SD   26-09-30
+            20:43:55
+       [B]keep  [A]use SD
    1 when A was chosen. */
 static UINT8 clock_prompt(UINT8 why)
 {
 	UINT8 s[20];
 	UINT8 keys;
+	UINT8 y0 = 27U;
+	UINT8 y1 = 99U;
+	UINT8 yt = 43U;			/* the rule under the title */
+	UINT8 yb = 83U;			/* and the one over the buttons */
+	UINT8 xv = 75U;
 
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		y0 = 20U;
+		y1 = 115U;
+		yt = 38U;
+		yb = 95U;
+		xv = 79U;
+	}
+#endif
 	color(BLACK, DKGREY, SOLID);
-	box(0, 35, 159, ui_font ? 103 : 99, M_FILL);
+	box(0, y0, 159, y1, M_FILL);
 	if(why == 0U) memcpy(s, "RTC RESET?", 11U);
 	else if(why == 1U) memcpy(s, "RTC BAD?", 9U);
 	else if(why == 2U) memcpy(s, "RTC LOW V?", 11U);
 	else memcpy(s, "RTC BEHIND?", 12U);
-	color(WHITE, BLACK, SOLID);
-	Draw_Text(s, 18U, 1U, 5U);
-	color(BLACK, DKGREY, SOLID);
+	ptext(s, 1U, 4U, 8U, 24U);
 
-	memcpy(s, "NOW", 4U);
-	Draw_Text(s, 4U, 1U, 7U);
-	if(why != 1U) draw_time(now, 7U);
+	memcpy(s, "CHIP", 5U);
+	ptext(s, 1U, 6U, 8U, 44U);
+	draw_clock(now_raw, 1U, 6U, 44U);
 	memcpy(s, "SD", 3U);
-	Draw_Text(s, 4U, 1U, 9U);
-	draw_time(cfg_rtc, 9U);
+	ptext(s, 1U, 8U, 8U, 68U);
+	draw_clock(cfg_rtc, 0U, 8U, 68U);
 
-	memcpy(s, "[B]keep  [A]use SD", 19U);
-	Draw_Text(s, 18U, 1U, 11U);
-	popup_rules(11U, ui_font ? 103U : 99U, 72U);
+	memcpy(s, "[B]keep", 8U);
+	ptext(s, 1U, 11U, 8U, 100U);
+	memcpy(s, "[A]use SD", 10U);
+#ifndef LANG_ZH
+	if(ui_font) ptext(s, 10U, 11U, (UINT8)(152U - font12_end(s, 0U)), 100U);
+	else
+#endif
+	ptext(s, 10U, 11U, 0U, 0U);
+	color(BLACK, WHITE, SOLID);
+	line(1, yt, 158, yt);
+	line(1, yb, 158, yb);
+	line(xv, yb, xv, (UINT8)(y1 - 1U));
 
 	while(joypad() & (J_A | J_B)) wait_vbl_done();
 	while(1)
@@ -718,6 +787,9 @@ static UINT8 clock_prompt(UINT8 why)
 		if(keys & (J_A | J_B)) break;
 	}
 	while(joypad() & (J_A | J_B)) wait_vbl_done();
+	/* off again: the save prompt that may follow is a shorter box */
+	color(WHITE, WHITE, SOLID);
+	box(0, y0, 159, y1, M_FILL);
 	color(BLACK, WHITE, SOLID);
 	return (keys & J_A) ? 1U : 0U;
 }
@@ -1230,7 +1302,7 @@ void cfg_autosave_set(UINT8 v) __banked
 {
 	cfg_autosave = v ? 1U : 0U;
 	cfg_have_autosave = 1U;
-	file_write();
+	cfg_pending = 1U;		/* to the file when the tab is left (cfg_flush) */
 }
 
 /* ---- for the SET tab's pages (setpage.c) ---- */
@@ -1259,7 +1331,16 @@ void cfg_changed(UINT8 what) __banked
 		if(cfg_sgb > 1U) return;		/* nothing of it in the file */
 		cfg_sgb = sgb_record();
 	}
-	file_write();
+	cfg_pending = 1U;
+}
+
+/* The SET tab's changes to /EZGB.CFG, when there are any: on a change of
+   page and on leaving the tab, as the 0918 mod writes them, where each
+   press of A used to write the file. The settings themselves, and the
+   records in save RAM, change at once. */
+void cfg_flush(void) __banked
+{
+	if(cfg_pending) file_write();
 }
 
 /* GAME: on the SET tab sent the list up to pick a game (pick_rom), and A

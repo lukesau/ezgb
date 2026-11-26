@@ -36,6 +36,8 @@
 #include "font12.h"
 #include "textview.h"
 
+#include "ezcfg.h"
+
 #include "modbank3.h"
 
 extern UINT8 SD_buffer[0x200];
@@ -172,26 +174,72 @@ static UINT8 rows_now(void)
 #endif
 }
 
+/* Row r of the page, the text from pos, the whole row painted. Returns
+   where the next row starts. Past the end of the text the row is blank. */
+static UINT16 draw_row(UINT8 r, UINT16 pos)
+{
+	UINT8 s[COLS_MAX + 1U];
+	UINT8 n;
+
+	s[0] = 0U;
+	if(pos < size) pos = row(pos, s);
+	color(BLACK, WHITE, SOLID);
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		font12_draw(s, 0U, (UINT8)(16U + r * 12U), F12_NORMAL);
+		return pos;
+	}
+#endif
+	n = (UINT8)strlen((char *)s);
+	if(n > 20U) n = 20U;
+	memset(s + n, ' ', (UINT8)(20U - n));
+	s[20] = 0U;
+	Draw_Text(s, 20U, 0U, (UINT8)(2U + r));
+	return pos;
+}
+
 /* Draws the page that starts at pos. Returns where the next one starts. */
 static UINT16 page(UINT16 pos)
 {
-	UINT8 s[COLS_MAX + 1U];
 	UINT8 r;
 	UINT8 rows = rows_now();
 
 	color(BLACK, WHITE, SOLID);
 	DrawGB(3);
-	for(r = 0U; (r < rows) && (pos < size); r++)
-	{
-		pos = row(pos, s);
-#ifndef LANG_ZH
-		if(ui_font) font12_draw(s, 0U, (UINT8)(16U + r * 12U), F12_NORMAL);
-		else
-#endif
-		if(s[0]) Draw_Text(s, 20U, 0U, (UINT8)(2U + r));
-	}
-	color(BLACK, WHITE, SOLID);
+	for(r = 0U; (r < rows) && (pos < size); r++) pos = draw_row(r, pos);
 	return pos;
+}
+
+void vram_copy_line(UINT8 *dst, UINT8 *src);	/* vram_put.s */
+
+static UINT8 *line_at(UINT8 y)
+{
+	return (UINT8 *)(UINT16)(0x8100U + (UINT16)(y >> 3) * 0x140U + (UINT16)((y & 7U) << 1));
+}
+
+/* A line scroll: the rows that stay are moved in VRAM, up a row when up is
+   set and down a row otherwise, so only the row that comes in is read from
+   the card and drawn (the list does the same, list12.c) */
+static void rows_move(UINT8 up)
+{
+	UINT8 h = 8U;
+	UINT8 y0 = 16U;
+	UINT8 y;
+	UINT8 end;
+
+#ifndef LANG_ZH
+	if(ui_font) h = 12U;
+#endif
+	end = (UINT8)(y0 + rows_now() * h);
+	if(up)
+	{
+		for(y = y0; y < (UINT8)(end - h); y++) vram_copy_line(line_at(y), line_at((UINT8)(y + h)));
+	}
+	else
+	{
+		for(y = (UINT8)(end - 1U); y >= (UINT8)(y0 + h); y--) vram_copy_line(line_at(y), line_at((UINT8)(y - h)));
+	}
 }
 
 /* name is the file's, in the list's folder. 0 when it is not a text file
@@ -224,6 +272,7 @@ UINT8 text_view(const char *name) __banked
 #endif
 
 	while(joypad()) wait_vbl_done();
+	pad_take();			/* the A that opened the file is not one for it */
 	marks[0] = 0U;
 	marked = 0U;
 	next = 0U;
@@ -234,27 +283,38 @@ UINT8 text_view(const char *name) __banked
 			next = page(row_pos(top));
 			was = top;
 		}
-		while(1)
+		/* UP and DOWN a row, again after a hold and then on and on
+		   (pad_menu); LEFT a page back, RIGHT or A a page on, each a row
+		   short of a page so the last row read is the first of the next */
+		do
 		{
 			wait_vbl_done();
-			keys = joypad();
-			if(keys & (J_A | J_B | J_UP | J_DOWN | J_LEFT | J_RIGHT)) break;
-		}
+			keys = pad_menu();
+		} while(!(keys & (J_A | J_B | J_UP | J_DOWN | J_LEFT | J_RIGHT)));
 		if(keys & J_B) break;
 		if(keys & J_UP)
 		{
-			if(top) top--;			/* held: the next line as soon as this one is drawn */
+			if(top)
+			{
+				top--;
+				was = top;
+				rows_move(0U);
+				draw_row(0U, row_pos(top));
+				next = row_pos((UINT16)(top + rows));
+			}
 		}
 		else if(keys & J_DOWN)
 		{
-			if((next < size) && (top + rows < 2040U)) top++;
+			if((next < size) && (top + rows < 2040U))
+			{
+				top++;
+				was = top;
+				rows_move(1U);
+				next = draw_row((UINT8)(rows - 1U), next);
+			}
 		}
-		else
-		{
-			if(keys & J_LEFT) top = (top > rows) ? (UINT16)(top - rows) : 0U;
-			else if((next < size) && (top + rows + rows < 2040U)) top += rows;
-			while(joypad()) wait_vbl_done();
-		}
+		else if(keys & J_LEFT) top = (top > (UINT16)(rows - 1U)) ? (UINT16)(top - (rows - 1U)) : 0U;
+		else if((next < size) && (top + rows + rows < 2040U)) top += (UINT16)(rows - 1U);
 	}
 	while(joypad()) wait_vbl_done();
 	ui_font = font;

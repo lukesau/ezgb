@@ -99,6 +99,9 @@ void Help_window(void)__banked
 	i = *((volatile UINT8 *)(Base_RTCbuffer + 0xC)) & 0x07U;
 	hw_set_page(A000Address_TF);
 	if(i == 7U) Draw_Text("SD SPEED: HALF", 14, 0, HELP_ROW(6));
+	/* mod: where the mod is from, as the 0918 mod's HELP tab has it */
+	Draw_Text("github.com/lukesau/", 19, 0, HELP_ROW(7));
+	Draw_Text("ezgb", 4, 0, HELP_ROW(8));
 	
 	
 	while(1)

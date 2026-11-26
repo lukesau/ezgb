@@ -1085,13 +1085,45 @@ step could cut a two-byte character.
 **The Chinese build's bank 8** was full with the sort's new code: the text
 viewer is in bank 30 there (`modbank3.h`).
 
+**The text viewer**
+
+- UP and DOWN move a row: the rows that stay are moved in VRAM and only
+  the row that comes in is read and drawn (`rows_move`, as the list does).
+  The page was cleared and drawn again for each line.
+- A held UP or DOWN waits before it repeats (`pad_menu`).
+- LEFT and RIGHT move a page less a row, so the last row read is the first
+  of the next page. A pages on like RIGHT.
+
+**The clock prompt** is the 0918 mod's: `CHIP` and `SD`, each a date and
+under it a time with seconds, a rule under the title and over the buttons.
+The chip's bytes are shown as read, in hex, so a bad one can be seen; the
+line was left out for `RTC BAD?`. The box is cleared when it is answered.
+
+**The hold-A menu** has the title `Options` and its box starts under the
+tab strip. It comes up while A is still down.
+
+**The HELP tab** has `github.com/lukesau/` and `ezgb` under the site.
+
+**Settings and the file.** A setting changed on the SET tab takes effect
+at once, and so do the records in save RAM, but `/EZGB.CFG` is written on a
+change of page and on leaving the tab (`cfg_flush`), not at each A. AUTO
+SAVE is the same. TIME SET, a picked game and the hold-A menu's
+`Fast launch:` still write at once. Power off with the tab up and the
+change is not in the file.
+
+The save's `Saving.`, `..`, `...` was already here: `Save_new_SAVE` steps
+it a sector at a time, too fast to see on a small save.
+
 Seen in SameBoy: the tie order and the star's new place with no card read
 in 12px; both counters, with two and three digit totals; the page icon;
 the notice; the save manager in both fonts and on the DMG model; the SET
 tab's name and the menu's scrolling; the save prompt's name; a card with
 one game beside a save opening the list, and without the save starting
-the game. Not seen: a play counted, the stamp check with a bad path, the
-Chinese build.
+the game; a launch from the list counted in `/.ezgbplays` and a fast
+launch not; a stamp with a bad path giving no prompt; the viewer's line
+scroll and pages, the clock prompt, the menu and the HELP tab in both
+fonts; the file unchanged with the SET tab still up, and written on
+leaving it and on a change of page. Not seen: the Chinese build.
 
 ### What of the 0918 mod is not here
 
@@ -1103,16 +1135,6 @@ Chinese build.
 - **The text viewer's 10 pixel rows and its slim font in the 8px UI.** Here
   it is in the slim font when the list is in a 12px one, 12 pixels a row,
   and in the 8px font otherwise.
-- **The text viewer's paging** by a page less a row, its hold before a
-  line scroll repeats, and drawing only the new row.
-- **`Saving.` `..` `...`** stepping while a save is written. `Saving...`
-  is drawn once.
-- **The clock prompt's two lines a clock**, with seconds and the chip's
-  bytes.
-- **The hold-A menu's `Options` title**, and opening it while A is still
-  down. Here it has a fourth item, `Fast launch:`.
-- **Settings written on leaving a page.** Here each A writes the file.
-- **The HELP tab's link lines.**
 
 ### The FW6 clock load, removed
 

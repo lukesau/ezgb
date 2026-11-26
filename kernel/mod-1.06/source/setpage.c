@@ -16,7 +16,8 @@
    here, and Set_window hands the cursor over when it leaves AUTO SAVE
    downward (set_page2) and takes it back when it comes up again. SELECT
    leaves the tab from anywhere. A acts on the row under the cursor, and the
-   setting is written to /EZGB.CFG at once (cfg_changed, ezcfg.c).
+   setting takes effect at once and is written to /EZGB.CFG on a change of
+   page or on leaving the tab (cfg_changed and cfg_flush, ezcfg.c).
 
    A row is a label and either a checkbox or a value, the value drawn as
    text in the highlight colors when the cursor is on it.
@@ -474,7 +475,7 @@ static void clock_tick(void)
      5  A on GAME: pick_rom is set, and the list comes up to pick from
      6  FAST LAUNCH was ticked and its notice shown: Set_window draws
         page 1 and calls again with start 1, that row */
-UINT8 set_page2(UINT8 start) __banked
+static UINT8 page2_loop(UINT8 start)
 {
 	UINT8 row = start;
 	UINT8 keys;
@@ -591,6 +592,7 @@ UINT8 set_page2(UINT8 start) __banked
 			if(row_page[to] != row_page[row])
 			{
 				if(row_page[to] == 0U) return 2U;	/* page 1 is Set_window's to draw */
+				cfg_flush();		/* a change of page: the settings to the file */
 				page_draw(row_page[to]);
 			}
 			else row_draw(row, 0U);
@@ -598,4 +600,14 @@ UINT8 set_page2(UINT8 start) __banked
 			row_draw(row, 1U);
 		}
 	}
+}
+
+/* The settings go to the file when the cursor leaves the mod's rows, for
+   another tab, the list or EZ Flash's rows (cfg_flush, ezcfg.c) */
+UINT8 set_page2(UINT8 start) __banked
+{
+	UINT8 r = page2_loop(start);
+
+	cfg_flush();
+	return r;
 }
