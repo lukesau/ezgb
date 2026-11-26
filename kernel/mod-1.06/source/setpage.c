@@ -89,7 +89,12 @@ static void row_act(UINT8 row)
 			cfg_flaunch[0] = '#';
 		}
 		else if(cfg_flaunch[0] == '#') memmove(cfg_flaunch, cfg_flaunch + 1, n);
-		else if(!cfg_flaunch_last()) return;
+		else
+		{
+			/* no game set: the newest of the recent list, and on */
+			if(!cfg_flaunch_next()) return;
+			memmove(cfg_flaunch, cfg_flaunch + 1, strlen(cfg_flaunch));
+		}
 	}
 	else if(row == ROW_GAME)
 	{

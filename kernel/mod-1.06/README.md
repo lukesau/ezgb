@@ -340,7 +340,7 @@ cursor and writes `/EZGB.CFG`.
 | Row | Does |
 |---|---|
 | `SKIP BOOT ROM:` | ticked is the jump; unticked writes `BOOTROM=1` |
-| `FAST LAUNCH:` | on and off, by the `#` in front of the `FLAUNCH=` path. With no game set, turning it on takes the last game launched |
+| `FAST LAUNCH:` | on and off, by the `#` in front of the `FLAUNCH=` path. With no game set, turning it on takes the newest game of the recent list |
 | `GAME:` | the fast launch game by name; A makes it the next game of the recent list, and leaves fast launch on or off as it was |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
@@ -674,8 +674,8 @@ has dropped the card clock to half speed
 ([stage0/docs/sd-recovery.md](../../stage0/docs/sd-recovery.md)). On stock
 firmware and at full speed the tab is as it was.
 
-**The settings file.** `LASTROM=` is written at each launch, for the 0918
-mod's START overlay. With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives
+**The settings file.** (`LASTROM=` was written at each launch until later
+the same day: see the second run.) With no `/EZGB.CFG`, a one-line `/FLAUNCH.CFG` gives
 the fast launch game. `SGB BOOT:` shows `AUTO` when our stage1 handles the
 Super Game Boy.
 
@@ -740,8 +740,8 @@ game launched and wrote its path without the `#`, so on a card whose game
 was that one already A did nothing but tick the box. A now steps through
 the recent list (`/SAVER/RecentlyPlay_gb.txt`, newest first, `cfg_flaunch_next`
 in `source/ezcfg.c`), and both it and the menu's Fast launch item keep the
-`#` unless fast launch is on. Ticking FAST LAUNCH with no game set still
-takes the last game launched. Seen in SameBoy: two presses on `GAME:`
+`#` unless fast launch is on. Ticking FAST LAUNCH with no game set takes
+the newest of that list. Seen in SameBoy: two presses on `GAME:`
 giving the newest and the next game with the box unticked, and the menu
 item reading `OFF` and writing `FLAUNCH=#/Kirby.gbc`.
 
@@ -750,6 +750,21 @@ hold-A menu, the SET pages), blue in 8px (the same), purple's SET cursor
 on a checkbox, and a card with only `LASTROM=` booting to the list with
 FAST LAUNCH off. Light on the DMG model. Not seen: dark, green, custom,
 the save manager and the prompts in a color theme.
+
+**No last game.** The 0918 mod kept the last game launched for its START
+overlay as `LASTROM=`, and read its path from `$A300` of save RAM bank 17.
+This kernel has EZ Flash's recent list in `/SAVER/RecentlyPlay_gb.txt`, so
+the mod no longer writes or reads `LASTROM=` (a line already in the file
+stays, untouched) and no longer reads `$A300`: FAST LAUNCH and `GAME:`
+both take their game from the recent list. Seen in SameBoy: ticking FAST
+LAUNCH with no game set took the newest of the list, and a `LASTROM=` line
+in the file was left as it was.
+
+EZ Flash's kernel still writes `$A300` at every launch (`Save_filename`,
+`source/Bank_fun.c`), with a flag at `$A2FF`. Its only reader is
+`Recently_Commit` at the next boot, which appends that path to the text
+file when the append at launch did not go through. So save RAM holds a
+copy of the last path for one boot, and the text file is the list.
 
 ### What of the 0918 mod is not here
 

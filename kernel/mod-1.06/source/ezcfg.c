@@ -18,7 +18,6 @@
                                at their tags (CLEAN NAMES)
      DAILYBACKUP=1             keep a dated copy of a save on the day's first
                                backup (savemgr.c)
-     LASTROM=/Pokemon/Red.gb   the last game launched, for the 0918 mod
      COLORS=1E2A44,F2D7A0      the custom theme (6): background, text and,
                                as a third, the highlight
      UI=12                     the font: 8 (or no key) the 8px console font, 12
@@ -83,7 +82,6 @@ UINT8 acc_idx;			/* theme_apply sets these three */
 UINT8 pop_idx;
 UINT8 f12_inverse;
 UINT8 custom_ch[9];			/* the custom theme: background, text, highlight, each red, green, blue, 0 to 31 */
-static char cfg_lastrom[FLAUNCH_MAX + 1U];	/* LASTROM=, the last game launched */
 static UINT8 cfg_found;			/* /EZGB.CFG opened */
 UINT8 ui_font;				/* 1: the mod's 12px font (list12.c), 2: EZ Flash's 6x12 and 3: the slim set, in the same layout */
 UINT8 ui_font_cfg;			/* what the settings ask for; ui_font is 0 on a screen that is 8px only */
@@ -238,7 +236,9 @@ static UINT8 key_tail(const char *s, const char *t)
 
 /* 0 for a line this kernel does not know, else 1 RTC, 2 AUTOSAVE, 3 RTCSD,
    4 BOOTROM, 5 FLAUNCH, 6 SGB, 7 THEME, 8 UI, 9 TAGS, 10 DAILYBACKUP,
-   11 LASTROM, 12 COLORS.
+   12 COLORS. LASTROM= of the 0918 mod (it was 11 until 2026-11-25) is a
+   line this kernel does not know: it is neither read nor written, and
+   stays in the file as it is.
    *skip gets the length of the key and '='. */
 static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 {
@@ -252,7 +252,6 @@ static UINT8 line_key(const UINT8 *p, UINT8 *skip)
 	if((*skip = key_is(p, "UI")) != 0U) return 8U;
 	if((*skip = key_is(p, "TAGS")) != 0U) return 9U;
 	if((*skip = key_is(p, "DAILYBACKUP")) != 0U) return 10U;
-	if((*skip = key_is(p, "LASTROM")) != 0U) return 11U;
 	if((*skip = key_is(p, "COLORS")) != 0U) return 12U;
 	return 0U;
 }
@@ -423,10 +422,8 @@ static UINT16 file_read(UINT8 keep)
 			else if(k == 12U) parse_colors(SD_buffer + rd + skip, SD_buffer + eol);
 			else
 			{
-				/* FLAUNCH= or LASTROM=. Until 2026-11-25 both went to
-				   cfg_flaunch, so the last game launched became the fast
-				   launch game at the next boot. */
-				char *d = (k == 5U) ? cfg_flaunch : cfg_lastrom;
+				/* FLAUNCH= */
+				char *d = cfg_flaunch;
 				UINT8 n = 0U;
 				const UINT8 *v = SD_buffer + rd + skip;
 
@@ -549,15 +546,7 @@ static void file_write(void)
 			memcpy(p, "DAILYBACKUP=1", 13U);
 			p += 13;
 		}
-		else if(k == 11U)
-		{
-			if(!cfg_lastrom[0]) continue;
-			memcpy(p, "LASTROM=", 8U);
-			p += 8;
-			n = (UINT16)strlen(cfg_lastrom);
-			memcpy(p, cfg_lastrom, n);
-			p += n;
-		}
+		else if(k == 11U) continue;		/* was LASTROM= */
 		else
 		{
 			/* each 5-bit channel widened to 8: RRGGBB,RRGGBB,RRGGBB */
@@ -1029,7 +1018,6 @@ void cfg_boot(void) __banked
 	tags_hide = 1U;
 	cfg_daily = 0U;
 	custom_ok = 0U;
-	cfg_lastrom[0] = 0;
 	cfg_found = 0U;
 	file_read(0U);
 	if(!cfg_found) flaunch_legacy();
@@ -1111,14 +1099,6 @@ void cfg_launch(void) __banked
 
 	sgb_finish();			/* what is left of the SGB packets goes before the game */
 	plays_bump((const UINT8 *)lfname_temp);		/* one more launch of this game (plays.c) */
-	/* LASTROM=, which the 0918 mod's START overlay falls back to */
-	if((UINT16)strlen(currentpath) + (UINT16)strlen(lfname_temp) + 1U <= FLAUNCH_MAX)
-	{
-		strcpy(cfg_lastrom, currentpath);
-		if(currentpath[1]) strcat(cfg_lastrom, "/");
-		strcat(cfg_lastrom, lfname_temp);
-		dirty = 1U;
-	}
 	v = info_get(0x200U);
 	if((v <= 1U) && (!cfg_have_autosave || (v != cfg_autosave)))
 	{
@@ -1188,32 +1168,15 @@ void cfg_changed(UINT8 what) __banked
 	file_write();
 }
 
-/* The last game launched, from the save info page ($A300 of bank 17), into
-   cfg_flaunch. 0 when it is not a path that fits. */
-UINT8 cfg_flaunch_last(void) __banked
-{
-	UINT8 i;
-	UINT8 c;
-
-	if(info_get(0x300U) != '/') return 0U;
-	for(i = 0U; i <= FLAUNCH_MAX; i++)
-	{
-		c = info_get((UINT16)(0x300U + i));
-		if(c == 0U) break;
-		if(c < 0x20U) return 0U;
-	}
-	if((i < 2U) || (i > FLAUNCH_MAX)) return 0U;
-	for(c = 0U; c < i; c++) cfg_flaunch[c] = (char)info_get((UINT16)(0x300U + c));
-	cfg_flaunch[i] = 0;
-	return 1U;
-}
-
 /* The GAME: row. The fast launch game becomes the next of the recent list
    (/SAVER/RecentlyPlay_gb.txt, newest first) after the one it is, and the
    newest when it is not in the list or the list ends. Choosing a game does
    not turn fast launch on: the path keeps its # unless it is on already.
    Recently_Load borrows the file list's save RAM, which the SD tab reads
-   again when the SET tab is left. 0 when there is nothing to choose. */
+   again when the SET tab is left. 0 when there is nothing to choose.
+
+   Ticking FAST LAUNCH with no game set calls this too, and takes the # off:
+   the game is then the newest of the list. */
 UINT8 cfg_flaunch_next(void) __banked
 {
 	extern FM_FILE_FS *pFilename_buffer;
