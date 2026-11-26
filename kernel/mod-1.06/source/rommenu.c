@@ -36,6 +36,7 @@
 #include "plays.h"
 #include "textview.h"
 #include "list12.h"
+#include "font12.h"
 
 #pragma bank 4
 
@@ -44,7 +45,8 @@ extern TCHAR currentpath[];
 extern UINT8 pad_prev;			/* sgb.s: the joypad read before the last one */
 
 #define HOLD_FRAMES	30U
-#define NAME_COLS	18U
+#define NAME_COLS	18U		/* the band, in 8 pixel cells */
+#define NAME_MAX12	26U		/* characters a 12px font can put in it */
 #define ITEMS		4U
 
 static UINT8 up(UINT8 c)
@@ -107,17 +109,20 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	Draw_Text(s, 18U, 1U, (UINT8)(7U + i * 2U));
 }
 
+static UINT8 name_scrolls;		/* the name does not fit its band */
+
 /* The name on its band, from character `from`, wrapping with a gap */
 static void name_draw(const char *name, UINT8 len, UINT8 from)
 {
-	UINT8 s[NAME_COLS + 1U];
+	UINT8 s[NAME_MAX12 + 1U];
+	UINT8 cols = ui_font ? NAME_MAX12 : NAME_COLS;
 	UINT8 i;
 	UINT8 pos = from;
 
-	for(i = 0U; i < NAME_COLS; i++)
+	for(i = 0U; i < cols; i++)
 	{
 		if(pos < len) s[i] = (UINT8)name[pos];
-		else if((len <= NAME_COLS) || (pos < (UINT8)(len + 3U))) s[i] = ' ';
+		else if(!name_scrolls || (pos < (UINT8)(len + 3U))) s[i] = ' ';
 		else
 		{
 			pos = 0U;
@@ -125,8 +130,12 @@ static void name_draw(const char *name, UINT8 len, UINT8 from)
 		}
 		pos++;
 	}
-	s[NAME_COLS] = 0U;
+	s[cols] = 0U;
 	color(WHITE, BLACK, SOLID);
+#ifndef LANG_ZH
+	if(ui_font) text12(s, NAME_COLS, 1U, 5U);	/* Draw_Text would cut the name to its cells */
+	else
+#endif
 	Draw_Text(s, NAME_COLS, 1U, 5U);
 	color(BLACK, DKGREY, SOLID);
 }
@@ -171,6 +180,11 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 	}
 
 	len = (UINT8)strlen(name);
+	name_scrolls = (len > NAME_COLS) ? 1U : 0U;
+#ifndef LANG_ZH
+	/* a 12px font: by what it can place in the band's 144 pixels */
+	if(ui_font) name_scrolls = (font12_fit((const UINT8 *)name, 8U) < len) ? 1U : 0U;
+#endif
 redraw:
 	color(BLACK, DKGREY, SOLID);
 	/* from the top of a list row to the bottom of one, in either font */
@@ -181,17 +195,15 @@ redraw:
 #endif
 	name_draw(name, len, 0U);
 	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
-	memcpy(s, "[B]back", 8U);
-	Draw_Text(s, 7U, 1U, 15U);
-	memcpy(s, "[A]ok", 6U);
-	Draw_Text(s, 5U, 13U, 15U);
+	memcpy(s, "[B]back      [A]ok", 19U);
+	Draw_Text(s, 18U, 1U, 15U);
 
 	while(joypad()) wait_vbl_done();		/* the hold that opened it is not a press */
 	last = 0U;
 	while(1)
 	{
 		wait_vbl_done();
-		if((len > NAME_COLS) && (++tick >= 12U))
+		if(name_scrolls && (++tick >= 12U))
 		{
 			tick = 0U;
 			if(++from >= (UINT8)(len + 3U)) from = 0U;

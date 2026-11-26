@@ -826,6 +826,28 @@ from `THEME:` to `ACCENT:`, the accent changed with DV still on and
 `UI=` coming up in SLIM, and 8PX again after leaving DV. Not seen: DV with
 an accent across a power cycle, the Chinese build's page.
 
+### 12px text laid out by pixels (2026-11-25)
+
+The mod's pages were laid out in 8 pixel cells and `Draw_Text` drew them
+in a 12px font from each cell's x, cut to the cell count. So the page
+number sat left of center and a name stopped after as many characters as
+the 8px font fits, with room left. In a 12px font now (`source/list12.c`):
+
+- **A row of two buttons** (`[B]back      [A]ok`, a string that begins
+  with `[` and has a second `[` after two spaces): the first at the left
+  of its field, the second against its right edge. `text12` does it, so
+  every such row has it.
+- **`<  1/3  >`** at the foot of the SET pages is centered by its width
+  (`text12_center`).
+- **Names** take what fits their field's pixels: `GAME:`, the name band of
+  the hold-A menu (which scrolls when `font12_fit` cannot place all of the
+  name), the save prompt's, and the save manager's lines. Those go to
+  `text12` directly, since `Draw_Text` cuts a string to its cells first.
+
+Seen in SameBoy in 12PX and SLIM: the SET page's foot and `GAME:` with a
+long name, the menu and the save prompt. Not seen: EZF, the save manager,
+a name long enough to scroll in the menu.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.

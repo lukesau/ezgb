@@ -1942,7 +1942,7 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	       Saving...              while it is written
 	       [B]skip      [A]save
 	   The Chinese build keeps the block the source as received draws, below. */
-	UINT8 t[21];
+	UINT8 t[27];
 	UINT8 n;
 	UINT8 k;
 	BYTE keys;
@@ -1952,16 +1952,17 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	memcpy(t, "Back up save?", 14);
 	Draw_Text(t, 13, 1, 5);
 	/* the name: currentpath_temp is "/SAVER/<name>.sav" */
-	memset(t, ' ', 18);
-	t[18] = 0;
+	memset(t, ' ', 26);
+	t[ui_font ? 26 : 18] = 0;	/* a 12px font fits more of the name in the band */
 	n = (UINT8)strlen(currentpath_temp);
 	k = (n > 7) ? 7 : 0;
 	if((n > (UINT8)(k + 4)) && (currentpath_temp[n - 4] == '.')) n -= 4;
 	n -= k;
-	if(n > 18) n = 18;
+	if(n > (ui_font ? 26 : 18)) n = ui_font ? 26 : 18;
 	memcpy(t, currentpath_temp + k, n);
 	color(WHITE,BLACK,SOLID);
-	Draw_Text(t, 18, 1, 7);
+	if(ui_font) text12(t, 18, 1, 7);	/* Draw_Text would cut the name to 18 */
+	else Draw_Text(t, 18, 1, 7);
 	color(BLACK,DKGREY,SOLID);
 	/* when the game was started: the clock the last launch stored (ezcfg.c) */
 	if(cfg_played(t)) Draw_Text(t, 19, 1, 9);

@@ -212,6 +212,18 @@ void list12_loop(UINT32 shift, UINT16 show_offset, UINT16 file_select) __banked
 /* GBDK's foreground and background color, as ink * 4 + paper (vram_put.s) */
 UINT8 draw_colors(void);
 
+/* How wide s is: the pen's advance can be less than the last glyph needs,
+   so it is widened until every glyph is placed */
+static UINT8 width12(const UINT8 *s)
+{
+	UINT8 n = (UINT8)strlen((const char *)s);
+	UINT8 w = font12_end(s, 0U);
+
+	if(n > FONT12_MAX) n = FONT12_MAX;
+	while((w < 160U) && (font12_fit(s, (UINT8)(160U - w)) < n)) w++;
+	return w;
+}
+
 /* Draw_Text in the 12px font. The callers lay their text out in 8 pixel
    cells: column x and row y are that cell, and the field is len cells
    wide (17 when len is 0, as Draw_Text pads). The text is 12 pixels tall
@@ -222,12 +234,46 @@ void text12(const UINT8 *s, UINT8 len, UINT8 x, UINT8 y) __banked
 	UINT8 w = len ? len : 17U;
 	UINT8 xe;
 	UINT8 py;
+	UINT8 i;
+	UINT8 j;
+	UINT8 left[21];
 
 	if(x >= 20U) return;
 	xe = ((UINT8)(x + w) >= 20U) ? 160U : (UINT8)((x + w) << 3);
 	py = (UINT8)(y << 3);
 	if(py > 132U) py = 132U;		/* the last row would run off the screen */
+	/* A row of two buttons, "[B]back      [A]ok": the callers space them
+	   apart for 8 pixel cells. Here the first is at the left of the field
+	   and the second against its right edge, whatever the font's widths. */
+	if(s[0] == '[')
+	{
+		for(i = 1U; (i < 20U) && s[i] && !((s[i] == ' ') && (s[i + 1U] == ' ')); i++) ;
+		if((i < 20U) && s[i])
+		{
+			for(j = i; s[j] == ' '; j++) ;
+			if(s[j] == '[')
+			{
+				memcpy(left, s, i);
+				left[i] = 0U;
+				font12_field(left, (UINT8)(x << 3), py, draw_colors(), xe);
+				w = width12(s + j);
+				if(w < (UINT8)(xe - (x << 3))) font12_field(s + j, (UINT8)(xe - w), py, draw_colors(), xe);
+				return;
+			}
+		}
+	}
 	font12_field(s, (UINT8)(x << 3), py, draw_colors(), xe);
+}
+
+/* s centered on the screen at pixel row y, the whole row painted */
+void text12_center(const UINT8 *s, UINT8 y) __banked
+{
+	UINT8 e[1];
+	UINT8 w = width12(s);
+
+	e[0] = 0U;
+	font12_draw(e, 0U, y, draw_colors());
+	font12_draw(s, (UINT8)(80U - (w >> 1)), y, draw_colors());
 }
 
 /* The SET tab's date and time, at row 5: 2026/11/24 16:04:59. t is indexed

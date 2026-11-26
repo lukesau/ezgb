@@ -32,6 +32,7 @@
 #include "ezcfg.h"
 #include "font12.h"
 #include "list12.h"
+#include "list12.h"
 #include "plays.h"
 
 #pragma bank 4
@@ -270,7 +271,7 @@ static void color_edit(UINT8 row)
 static void row_draw(UINT8 row, UINT8 sel)
 {
 	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
-	UINT8 s[21];
+	UINT8 s[41];
 	UINT8 trow = row_at[row];
 	UINT8 y = (UINT8)(trow << 3);
 	UINT8 n;
@@ -286,8 +287,8 @@ static void row_draw(UINT8 row, UINT8 sel)
 	   ((row == ROW_SKIP) && !cfg_can_jump))
 	{
 		/* a value, from column 6 for the game and 13 for the others */
-		memset(s, ' ', 20U);
-		s[20] = 0U;
+		memset(s, ' ', 40U);
+		s[40] = 0U;
 		if(row == ROW_GAME)
 		{
 			v = cfg_flaunch;
@@ -305,7 +306,9 @@ static void row_draw(UINT8 row, UINT8 sel)
 		else v = (ui_font_cfg == 2U) ? "EZF" : ((ui_font_cfg == 3U) ? "SLIM" : (ui_font_cfg ? "12PX" : "8PX"));
 #endif
 		n = (UINT8)strlen(v);
-		if(n > 14U) n = 14U;
+		/* 14 cells of the 8px font; a 12px font takes what fits the same
+		   pixels, which is more of the name */
+		if(n > (ui_font ? 26U : 14U)) n = ui_font ? 26U : 14U;
 		memcpy(s, v, n);
 		if((row == ROW_THEME) || (row == ROW_FONT))
 		{
@@ -315,6 +318,10 @@ static void row_draw(UINT8 row, UINT8 sel)
 		}
 		if(sel) color(SEL_INK, SEL_PAPER, SOLID);
 		else color(BLACK, WHITE, SOLID);
+#ifndef LANG_ZH
+		if((row == ROW_GAME) && ui_font) text12(s, 14U, 6U, trow);	/* Draw_Text would cut the name to 14 */
+		else
+#endif
 		if(row == ROW_GAME) Draw_Text(s, 14U, 6U, trow);
 		else Draw_Text(s, 7U, 13U, trow);
 		color(BLACK, WHITE, SOLID);
@@ -370,6 +377,10 @@ static void rows_draw(UINT8 page)
 	   buttons: the cursor never goes there. */
 	memcpy(s, "<  1/3  >", 10U);
 	s[3] = (UINT8)('1' + page);
+#ifndef LANG_ZH
+	if(ui_font) text12_center(s, 128U);	/* by its width, not by cells */
+	else
+#endif
 	Draw_Text(s, 9U, 5U, 16U);
 }
 

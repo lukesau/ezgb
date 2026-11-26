@@ -316,13 +316,19 @@ static UINT8 del_backup(UINT8 i)
 
 static void text(const char *s, UINT8 x, UINT8 row, UINT8 width)
 {
-	UINT8 b[21];
+	UINT8 b[27];
 	UINT8 n = (UINT8)strlen(s);
 
-	memset(b, ' ', 20U);
-	b[20] = 0U;
-	if(n > width) n = width;
+	memset(b, ' ', 26U);
+	b[26] = 0U;
+	/* a 12px font takes what fits the field's pixels, which is more
+	   characters than its cells */
+	if(n > (ui_font ? 26U : width)) n = ui_font ? 26U : width;
 	memcpy(b, s, n);
+#ifndef LANG_ZH
+	if(ui_font) text12(b, width, x, row);	/* Draw_Text would cut the string to its cells */
+	else
+#endif
 	Draw_Text(b, width, x, row);
 }
 
