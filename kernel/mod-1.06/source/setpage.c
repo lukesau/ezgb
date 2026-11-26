@@ -30,6 +30,7 @@
 #include "main.h"
 #include "UI.h"
 #include "ezcfg.h"
+#include "font12.h"
 #include "list12.h"
 #include "plays.h"
 
@@ -54,7 +55,7 @@
 #define ROWS_NOW	(cgb_mode ? ROWS : ROW_BG)
 
 static const UINT8 row_page[ROWS] = {0U, 0U, 0U, 1U, 1U, 1U, 1U, 1U, 2U, 2U, 2U, 2U, 2U};
-static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 5U, 7U, 9U, 11U, 3U, 5U, 7U, 9U, 11U};	/* the text row */
+static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 5U, 7U, 9U, 11U, 3U, 5U, 9U, 11U, 13U};	/* the text row; the picker's heading is row 7 */
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -132,6 +133,67 @@ static void row_act(UINT8 row)
 
 static UINT8 shown[9];			/* the colors on screen, as cfg_colors_seed gives them */
 
+UINT8 draw_colors(void);		/* vram_put.s */
+
+/* DV is black, white and the slim font: its FONT:, BG: and TEXT: rows show
+   what it has, in its blue, and the cursor passes over them */
+static UINT8 locked(UINT8 row)
+{
+	if(theme_now() != 7U) return 0U;
+	return ((row == ROW_FONT) || (row == ROW_BG) || (row == ROW_TEXT)) ? 1U : 0U;
+}
+
+/* A value in its box: s right-justified in the cells cells from text
+   column col of row trow, in a frame a pixel or two outside them. how is 0
+   plain, 1 under the cursor (the highlight), 2 locked. just 0 puts the
+   text at the left instead. */
+static void boxed(const UINT8 *s, UINT8 col, UINT8 cells, UINT8 trow, UINT8 how, UINT8 just)
+{
+	UINT8 t[9];
+	UINT8 x0 = (UINT8)(col << 3);
+	UINT8 xe = (UINT8)((col + cells) << 3);
+	UINT8 y = (UINT8)(trow << 3);
+	UINT8 n = (UINT8)strlen((const char *)s);
+	UINT8 w;
+
+	if(how == 2U) color(DKGREY, WHITE, SOLID);
+	else color(BLACK, WHITE, SOLID);
+#ifndef LANG_ZH
+	if(ui_font) box((UINT8)(x0 - 2U), (UINT8)(y - 1U), (UINT8)(xe + 1U), (UINT8)(y + 12U), M_NOFILL);
+	else
+#endif
+	box((UINT8)(x0 - 2U), (UINT8)(y - 2U), (UINT8)(xe + 1U), (UINT8)(y + 9U), M_NOFILL);
+	if(how == 1U) color(SEL_INK, SEL_PAPER, SOLID);
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		/* the field cleared, then the text against its right edge */
+		t[0] = 0U;
+		font12_field(t, x0, y, draw_colors(), xe);
+		w = (UINT8)(xe - x0 - 2U);
+		if(just)
+		{
+			/* its width: the pen's advance can be less than the last
+			   glyph needs, so widen until every glyph is placed */
+			w = font12_end(s, 0U);
+			while((w < (UINT8)(xe - x0)) && (font12_fit(s, (UINT8)(160U - w)) < n)) w++;
+			if(w < (UINT8)(xe - x0)) w++;		/* a pixel off the frame */
+		}
+		font12_field(s, (UINT8)(xe - w), y, draw_colors(), xe);
+		color(BLACK, WHITE, SOLID);
+		return;
+	}
+#endif
+	if(n > cells) n = cells;
+	memset(t, ' ', cells);
+	t[cells] = 0U;
+	memcpy(just ? t + (cells - n) : t, s, n);
+	Draw_Text(t, cells, col, trow);
+	color(BLACK, WHITE, SOLID);
+}
+
+/* A row of the picker: three boxes, at text columns 8, 12 and 16. hot is
+   the channel being set, 3 for the row under the cursor, 4 for neither. */
 static void color_draw(UINT8 row, UINT8 hot)
 {
 	UINT8 s[3];
@@ -145,12 +207,13 @@ static void color_draw(UINT8 row, UINT8 hot)
 		s[0] = (UINT8)('0' + v / 10U);
 		s[1] = (UINT8)('0' + v % 10U);
 		s[2] = 0U;
-		if(hot == c) color(WHITE, BLACK, SOLID);
-		else if(hot == 3U) color(SEL_INK, SEL_PAPER, SOLID);
-		else color(BLACK, WHITE, SOLID);
-		Draw_Text(s, 2U, (UINT8)(8U + c * 3U), trow);
+		if(s[0] == '0')
+		{
+			s[0] = s[1];
+			s[1] = 0U;
+		}
+		boxed(s, (UINT8)(8U + c * 4U), 3U, trow, locked(row) ? 2U : (((hot == c) || (hot == 3U)) ? 1U : 0U), 1U);
 	}
-	color(BLACK, WHITE, SOLID);
 }
 
 /* A on a color row (docs/themes.md "The picker"): LEFT and RIGHT pick the
@@ -165,7 +228,14 @@ static void color_edit(UINT8 row)
 	UINT8 held = 0U;
 	UINT8 *v;
 
-	if(theme_now() != 6U) cfg_colors_seed(custom_ch);
+	if(theme_now() == 7U)
+	{
+		/* DV: the accent starts from the one on screen, and the custom
+		   theme's other two colors are DV's when it has none */
+		if(!custom_ok) memcpy(custom_ch, shown, 6U);
+		memcpy(custom_ch + 6, shown + 6, 3U);
+	}
+	else if(theme_now() != 6U) cfg_colors_seed(custom_ch);
 	while(joypad()) wait_vbl_done();
 	color_draw(row, c);
 	while(1)
@@ -237,6 +307,12 @@ static void row_draw(UINT8 row, UINT8 sel)
 		n = (UINT8)strlen(v);
 		if(n > 14U) n = 14U;
 		memcpy(s, v, n);
+		if((row == ROW_THEME) || (row == ROW_FONT))
+		{
+			s[n] = 0U;
+			boxed(s, 12U, 7U, trow, locked(row) ? 2U : sel, 0U);
+			return;
+		}
 		if(sel) color(SEL_INK, SEL_PAPER, SOLID);
 		else color(BLACK, WHITE, SOLID);
 		if(row == ROW_GAME) Draw_Text(s, 14U, 6U, trow);
@@ -277,6 +353,18 @@ static void rows_draw(UINT8 page)
 		strcpy((char *)s, labels[i]);
 		Draw_Text(s, (UINT8)strlen((char *)s), 0U, row_at[i]);
 		row_draw(i, 0U);
+	}
+	if((page == 2U) && cgb_mode)
+	{
+		/* the picker's heading, a letter over each column of boxes */
+		memcpy(s, "COLORS:", 8U);
+		Draw_Text(s, 7U, 0U, 7U);
+		s[1] = 0U;
+		for(i = 0U; i < 3U; i++)
+		{
+			s[0] = (UINT8)"RGB"[i];
+			Draw_Text(s, 1U, (UINT8)(9U + i * 4U), 7U);
+		}
 	}
 	s[0] = (UINT8)('1' + page);
 	s[1] = '/';
@@ -359,10 +447,13 @@ UINT8 set_page2(UINT8 start) __banked
 				return 0U;
 			}
 			to = (UINT8)(row - 1U);
+			while(locked(to)) to--;		/* THEME: is never locked */
 		}
 		else if(keys & J_DOWN)
 		{
 			if(row + 1U < ROWS_NOW) to = (UINT8)(row + 1U);
+			while(locked(to) && (to + 1U < ROWS_NOW)) to++;
+			if(locked(to)) to = row;
 		}
 		else if(keys & (J_LEFT | J_RIGHT))
 		{
@@ -387,7 +478,7 @@ UINT8 set_page2(UINT8 start) __banked
 			row_act(row);
 			/* the font and the theme change the whole page; FAST LAUNCH and
 			   the game change each other */
-			if(row == ROW_FONT) DrawGB(4);		/* the tab strip is another height */
+			if((row == ROW_FONT) || (row == ROW_THEME)) DrawGB(4);	/* the tab strip is another height, and DV has its font */
 			if((row == ROW_FONT) || (row == ROW_THEME))
 			{
 				page_draw(2U);

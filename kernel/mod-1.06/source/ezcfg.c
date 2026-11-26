@@ -78,6 +78,8 @@ UINT8 tab_to_sd;				/* START on the SET tab: the SD tab is next, not HELP */
 UINT8 cfg_can_jump;			/* this console can start a game without the boot ROM */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
 static UINT8 custom_ramp[8];
+static UINT8 live_ramp[8];		/* the colors on screen (theme_apply) */
+static UINT8 custom_acc;		/* the custom accent was chosen: a third color in COLORS=, or the picker. DV then has it for its lime */
 UINT8 acc_idx;			/* theme_apply sets these three */
 UINT8 pop_idx;
 UINT8 f12_inverse;
@@ -352,6 +354,7 @@ static void parse_colors(const UINT8 *p, const UINT8 *end)
 	}
 	if(n < 6U) return;
 	if(n < 9U) for(i = 0U; i < 3U; i++) ch[6U + i] = (UINT8)((ch[i] + ch[3U + i]) >> 1);
+	else custom_acc = 1U;
 	memcpy(custom_ch, ch, 9U);
 	custom_build();
 	custom_ok = 1U;
@@ -557,12 +560,14 @@ static void file_write(void)
 			if(!custom_ok) continue;
 			memcpy(p, "COLORS=", 7U);
 			p += 7;
-			for(i = 0U; i < 9U; i++)
+			/* an accent nobody chose stays out: it is worked out from the
+			   other two, and a third color would be DV's highlight */
+			for(i = 0U; i < (custom_acc ? 9U : 6U); i++)
 			{
 				v = (UINT8)((custom_ch[i] << 3) | (custom_ch[i] >> 2));
 				*p++ = (UINT8)hexd[v >> 4];
 				*p++ = (UINT8)hexd[v & 15U];
-				if((i == 2U) || (i == 5U)) *p++ = ',';
+				if((i == 2U) || ((i == 5U) && custom_acc)) *p++ = ',';
 			}
 		}
 		*p++ = '\r';
@@ -758,12 +763,15 @@ UINT8 cgb_mode;				/* console_init: the kernel runs in CGB mode */
 
 /* ---- the font ---- */
 
+UINT8 theme_now(void) __banked;
+
 static void font_set(void)
 {
 #ifdef LANG_ZH
 	ui_font = 0U;			/* the Chinese build has its own 12px text, ui_zh.c */
 #else
 	ui_font = (cfg_ui == 3U) ? 2U : ((cfg_ui == 2U) ? 3U : cfg_ui);
+	if(theme_now() == 7U) ui_font = 3U;	/* DV is black, white and the slim font; UI= keeps its value */
 #endif
 	ui_font_cfg = ui_font;
 	list_rows = ui_font ? 10U : 16U;
@@ -809,11 +817,18 @@ static const UINT8 ramps[THEMES][8] = {
    stock $E4 and every other theme is the inverted $1B. */
 static void theme_apply(void)
 {
-	const UINT8 *r = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
+	const UINT8 *r = live_ramp;
 	UINT8 pal;
 	UINT8 i;
 
 	i = theme_now();
+	memcpy(live_ramp, (i == 6U) ? custom_ramp : ramps[i], 8U);
+	if((i == 7U) && custom_acc)
+	{
+		/* DV's highlight is the custom theme's accent once one was chosen */
+		live_ramp[2] = custom_ramp[4];
+		live_ramp[3] = custom_ramp[5];
+	}
 	pop_idx = i ? ((i == 7U) ? 0U : 1U) : 2U;
 	acc_idx = 0U;
 	if(cgb_mode && (i >= 2U)) acc_idx = (i == 7U) ? 1U : 2U;
@@ -988,6 +1003,7 @@ void console_init(void) __banked
 	cgb_mode = 0U;
 	cfg_theme = 0U;
 	custom_ok = 0U;
+	custom_acc = 0U;
 	/* the theme of the last boot, from its mark, until the card says */
 	i = info_get(0x416U);
 	if((info_get(0x414U) == 'T') && (info_get(0x415U) == 'H') && (i < THEMES) && (info_get(0x417U) == (UINT8)~i))
@@ -997,6 +1013,13 @@ void console_init(void) __banked
 		{
 			for(i = 0U; i < 8U; i++) custom_ramp[i] = info_get((UINT16)(0x418U + i));
 			custom_ok = 1U;
+		}
+		else if(i == 7U)
+		{
+			/* DV's highlight, when it is not its lime */
+			custom_ramp[4] = info_get(0x41AU);
+			custom_ramp[5] = info_get(0x41BU);
+			if((custom_ramp[4] != ramps[7][2]) || (custom_ramp[5] != ramps[7][3])) custom_acc = 1U;
 		}
 	}
 	VBK_REG = 0U;
@@ -1045,6 +1068,7 @@ void cfg_boot(void) __banked
 	tags_hide = 1U;
 	cfg_daily = 0U;
 	custom_ok = 0U;
+	custom_acc = 0U;
 	cfg_found = 0U;
 	file_read(0U);
 	if(!cfg_found) flaunch_legacy();
@@ -1176,7 +1200,11 @@ void cfg_autosave_set(UINT8 v) __banked
 void cfg_changed(UINT8 what) __banked
 {
 	if(what == CFG_BOOTROM) launch_mode_set();
-	else if(what == CFG_THEME) theme_apply();
+	else if(what == CFG_THEME)
+	{
+		theme_apply();
+		font_set();		/* DV has its font, and leaving DV gives the chosen one back */
+	}
 	else if(what == CFG_FONT) font_set();
 	else if(what == CFG_SGB)
 	{
@@ -1254,14 +1282,17 @@ void cfg_backup(void) __banked
 	file_write();
 }
 
-/* The color picker (setpage.c) changed custom_ch: the custom theme is on,
-   with those colors, at once. Nothing is written: cfg_changed does that
-   when the picker ends. */
+/* The color picker (setpage.c) changed custom_ch, at once and for the
+   screen only: cfg_changed writes the file when the picker ends. In DV
+   only the accent can be set, and DV stays on with it as its highlight.
+   Anywhere else the custom theme is now on, with the colors the picker
+   started from. */
 void cfg_colors_changed(void) __banked
 {
 	custom_build();
 	custom_ok = 1U;
-	cfg_theme = 6U;
+	custom_acc = 1U;
+	if(theme_now() != 7U) cfg_theme = 6U;
 	theme_apply();
 }
 
@@ -1269,7 +1300,7 @@ void cfg_colors_changed(void) __banked
    background, text and highlight into dst, nine channels */
 void cfg_colors_seed(UINT8 *dst) __banked
 {
-	const UINT8 *rp = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
+	const UINT8 *rp = live_ramp;
 	UINT8 from[3];
 	UINT16 w;
 	UINT8 i;

@@ -793,6 +793,36 @@ line file scrolled a line down and up, paged, and scrolled with DOWN held.
 Not seen: the clock prompt's other three questions, the 8px font, a file
 past 2,040 rows.
 
+### DV's locks and the boxed picker (2026-11-25)
+
+After a look at the third SET page next to mod 7.2's
+([docs/themes.md](../../docs/themes.md) "DV", "The picker"):
+
+- **DV is black, white and the slim font.** With DV on the font is SLIM
+  whatever `UI=` says (`font_set`, `source/ezcfg.c`), and `UI=` keeps its
+  value for the other themes. `FONT:`, `BG:` and `TEXT:` show what DV has
+  in its blue, and the cursor passes over them.
+- **DV's accent** is its lime until an accent is chosen: a third color in
+  `COLORS=`, or the picker. Then DV's highlight is the custom theme's
+  accent. Setting `ACCENT:` in DV changes that color and leaves DV on. The
+  boot mark carries it, so it is there from power-on.
+- **Any other theme**: the first change in the picker turns the custom
+  theme on, starting from the colors of the theme it was made in.
+- **`COLORS=` keeps two colors** when no accent was chosen. It was always
+  written with three, and the third, worked out from the other two, would
+  have become DV's highlight at the next boot.
+- **The picker** has a `COLORS:  R G B` heading and each value right
+  justified in a box (`boxed`, `source/setpage.c`); `THEME:` and `FONT:`
+  have their values boxed too. The box under the cursor is filled with the
+  highlight, and a locked one is drawn in index 2.
+
+Seen in SameBoy: DV in 12px with its three locked rows, the cursor going
+from `THEME:` to `ACCENT:`, the accent changed with DV still on and
+`COLORS=000000,FFFFFF,6BF731` written; red's `BG:` changed, giving
+`THEME=6` and red's colors as the start; a card with `THEME=7` and no
+`UI=` coming up in SLIM, and 8PX again after leaving DV. Not seen: DV with
+an accent across a power cycle, the Chinese build's page.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
