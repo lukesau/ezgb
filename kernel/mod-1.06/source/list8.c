@@ -15,6 +15,7 @@
 #include "ff.h"
 #include "Bank_fun.h"
 #include "list12.h"
+#include "plays.h"
 
 #ifdef LANG_ZH
 #include "ui_zh.h"
@@ -23,6 +24,82 @@
 #pragma bank 4
 
 extern TCHAR lfname_temp[];
+
+void vram_put2(UINT8 *dst, UINT16 planes);	/* vram_put.s */
+UINT8 draw_colors(void);
+
+static UINT8 up8(UINT8 c)
+{
+	if((c >= 'a') && (c <= 'z')) return (UINT8)(c - 0x20U);
+	return c;
+}
+
+/* The icons of the 8px list, 7 by 7 in an 8 by 8 cell, a byte a row with
+   the left pixel in bit 7: folder, .gb cartridge, .gbc cartridge, any
+   other file, a text file, a starred game. The 12px fonts have theirs
+   (font12.c). */
+static const UINT8 icons8[6][8] = {
+	{0x70U, 0xFEU, 0x82U, 0x82U, 0x82U, 0x82U, 0xFEU, 0x00U},
+	{0xFCU, 0x86U, 0xBAU, 0xBAU, 0x82U, 0x82U, 0xFEU, 0x00U},
+	{0xFCU, 0x86U, 0xBAU, 0xBAU, 0xFEU, 0xFEU, 0xFEU, 0x00U},
+	{0xFEU, 0xBAU, 0x8AU, 0x92U, 0x82U, 0x92U, 0xFEU, 0x00U},
+	{0xFEU, 0x82U, 0xBAU, 0x82U, 0xBAU, 0x82U, 0xFEU, 0x00U},
+	{0x10U, 0x10U, 0xFEU, 0x7CU, 0x38U, 0x6CU, 0xC6U, 0x00U},
+};
+
+static UINT8 icon8_of(const FM_FILE_FS *e)
+{
+	const UINT8 *nm = e->filename;
+	UINT8 n = (UINT8)strlen((const char *)nm);
+
+	if(e->fattrib == AM_DIR) return 0U;
+	if(e->fattrib == FATTR_STARRED) return 5U;
+	if((n > 3U) && (nm[n - 3U] == '.') && (up8(nm[n - 2U]) == 'G') && (up8(nm[n - 1U]) == 'B')) return 1U;
+	if(n > 4U)
+	{
+		nm += n - 4U;
+		if(nm[0] == '.')
+		{
+			if((up8(nm[1]) == 'G') && (up8(nm[2]) == 'B') && (up8(nm[3]) == 'C')) return 2U;
+			if((up8(nm[1]) == 'T') && (up8(nm[2]) == 'X') && (up8(nm[3]) == 'T')) return 4U;
+			if((up8(nm[1]) == 'I') && (up8(nm[2]) == 'N') && (up8(nm[3]) == 'I')) return 4U;
+			if((up8(nm[1]) == 'C') && (up8(nm[2]) == 'F') && (up8(nm[3]) == 'G')) return 4U;
+		}
+	}
+	if((n > 3U) && (e->filename[n - 3U] == '.') && (up8(e->filename[n - 2U]) == 'M') && (up8(e->filename[n - 1U]) == 'D')) return 4U;
+	return 3U;
+}
+
+/* mod: a row of the 8px list (docs/browser.md "Icons and the selection
+   bar"): its icon in column 0, in the colors color() last set, so it
+   inverts with the selected row, and the name in columns 1 to 19, for
+   folders and files alike. The kernel as received gave a folder 17
+   columns and a DIR tag. e's bank of save RAM is mapped. */
+void list8_row(const FM_FILE_FS *e, UINT8 y) __banked
+{
+	const UINT8 *g = icons8[icon8_of(e)];
+	UINT8 *dst = (UINT8 *)(UINT16)(0x8100U + (UINT16)y * 0x140U);
+	UINT8 c = draw_colors();
+	UINT8 a0 = (((c >> 2) ^ c) & 1U) ? 0xFFU : 0U;
+	UINT8 x0 = (c & 1U) ? 0xFFU : 0U;
+	UINT8 a1 = (((c >> 2) ^ c) & 2U) ? 0xFFU : 0U;
+	UINT8 x1 = (c & 2U) ? 0xFFU : 0U;
+	UINT8 e0[20];
+	UINT8 n;
+	UINT8 r;
+
+	/* the name and blanks to the row's end, in one string: the selected
+	   row is a bar across the screen */
+	n = name_shown(e);
+	if(n > 19U) n = 19U;
+	memset(e0, ' ', 19U);
+	e0[19] = 0U;
+	memcpy(e0, e->filename, n);
+	Draw_Text(e0, 19, 1, y);
+	/* the icon last: Draw_Text is what puts the screen in graphics mode */
+	for(r = 0U; r < 8U; r++, dst += 2)
+		vram_put2(dst, (UINT16)(((UINT16)(UINT8)((g[r] & a1) ^ x1) << 8) | (UINT8)((g[r] & a0) ^ x0)));
+}
 
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked
 {
@@ -42,7 +119,7 @@ void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked
 	/* Dwell before scrolling, in main-loop iterations. The loop is now frame
 	   synced (~16.7ms), so 30 iterations ~= 0.5s. */
 	UINT32 timeout = 30;	// dwell before scrolling (in main-loop iterations)
-	UINT8 x_offset= 0;	
+	UINT8 x_offset= 1;	/* mod: column 0 is the row's icon */
 	UINT8 y_offset= 2;		
 	UINT8 BANK_index;
 	UINT8 BANK_num;
@@ -58,14 +135,7 @@ void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked
 		HW_BANK = Folder_sram_bank+BANK_num;
 
 		namelen = name_shown(&pFilename_buffer[BANK_index]);	/* mod: the name as drawn (CLEAN NAMES) */
-		if(pFilename_buffer[BANK_index].fattrib == AM_DIR)
-		{
-			Max_char = 17;
-		}
-		else
-		{
-			Max_char = 20;
-		}
+		Max_char = 19;	/* mod: every row has 19 columns beside its icon */
 		
 		if(namelen > Max_char) 
 		{

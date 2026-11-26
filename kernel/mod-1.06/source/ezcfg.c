@@ -332,7 +332,7 @@ static UINT8 hexv(UINT8 c)
    text and its highlight (docs/themes.md "Custom colors"). The value is
    read as its first 12 hex digits, or 18, whatever is between them. Each
    channel keeps its top 5 bits. Index 1 is the background moved 3/16 of
-   the way to the text; with no third color the highlight is halfway. */
+   the way to the text; with no third color the highlight is the background's complement. */
 static void parse_colors(const UINT8 *p, const UINT8 *end)
 {
 	UINT8 n = 0U;
@@ -353,7 +353,19 @@ static void parse_colors(const UINT8 *p, const UINT8 *end)
 		}
 	}
 	if(n < 6U) return;
-	if(n < 9U) for(i = 0U; i < 3U; i++) ch[6U + i] = (UINT8)((ch[i] + ch[3U + i]) >> 1);
+	if(n < 9U)
+	{
+		/* no accent given: the background's complement at full brightness,
+		   or the text color when the background is a gray */
+		v = 0U;
+		for(i = 0U; i < 3U; i++)
+		{
+			ch[6U + i] = (UINT8)(31U - ch[i]);
+			if(ch[6U + i] > v) v = ch[6U + i];
+		}
+		if((ch[0] == ch[1]) && (ch[1] == ch[2])) memcpy(ch + 6, ch + 3, 3U);
+		else for(i = 0U; i < 3U; i++) ch[6U + i] = (UINT8)(((UINT16)ch[6U + i] * 31U) / v);
+	}
 	else custom_acc = 1U;
 	memcpy(custom_ch, ch, 9U);
 	custom_build();
@@ -845,7 +857,9 @@ static void theme_apply(void)
 
 	if(!cgb_mode)
 	{
-		BGP_REG = theme_now() ? 0x1BU : 0xE4U;
+		/* DV's $27 is black, a gray for index 1, white for index 2 and for
+		   the ink: a color console's boot ROM colors that nearly as DV */
+		BGP_REG = theme_now() ? ((theme_now() == 7U) ? 0x27U : 0x1BU) : 0xE4U;
 		return;
 	}
 	/* palette RAM does not take a write in mode 3: one palette of each

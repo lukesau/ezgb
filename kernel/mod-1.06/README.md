@@ -622,7 +622,8 @@ the description, not from the 0918 mod's code, which is davidesqalv's.
 
 **Themes.** `THEME=6` is the custom theme, from a `COLORS=RRGGBB,RRGGBB`
 line (background and text, and a third color for the highlight; without
-one the highlight is halfway between them). `THEME=7` is DV: black, with a
+one the highlight was halfway between them until later the same day: see
+"Icons in the 8px list" below). `THEME=7` is DV: black, with a
 blue highlight. The `THEME:` row offers custom only when the file has the
 line or the picker, below, has set a color.
 
@@ -848,11 +849,30 @@ Seen in SameBoy in 12PX and SLIM: the SET page's foot and `GAME:` with a
 long name, the menu and the save prompt. Not seen: EZF, the save manager,
 a name long enough to scroll in the menu.
 
+### Icons in the 8px list, and two theme details (2026-11-25)
+
+- **Every row of the 8px list has an icon** in column 0 and its name in
+  columns 1 to 19, folders and files alike ([docs/browser.md](../../docs/browser.md)
+  "Icons and the selection bar"). The kernel as received gave a folder 17
+  columns and a `DIR` tag, which is gone. The icons are six 7 by 7 bitmaps
+  in `source/list8.c` (folder, `.gb`, `.gbc`, text file, other file, star),
+  drawn for this kernel, and written to the tile with `vram_put2` in the
+  row's colors, so an icon inverts with the selected row. The row is one
+  string padded to 19, so the selection is a bar across the screen.
+- **DV where only `BGP` can be set** is `$27`, as in the 0918 mod, where
+  every theme past light was `$1B`.
+- **A custom theme with no accent given** has the background's complement
+  at full brightness, or the text color on a gray background, as the 0918
+  mod. It was halfway between the two colors.
+
+Seen in SameBoy: the 8px list on the DMG model with the bar on a folder, a
+`.gbc` and a text file; DV on the DMG model; `COLORS=1E2A44,F2D7A0` with a
+cream highlight. Not seen: a starred game in the 8px list, a name scrolling
+beside its icon.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
-- **Icons in the 8px list.** The 8px font is GBDK's and has no glyphs for
-  them; the 12px fonts have them.
 - **The START overlay for the last game.** This kernel has its recent list
   on START.
 - **Moving the cursor by recoloring rows in VRAM.**

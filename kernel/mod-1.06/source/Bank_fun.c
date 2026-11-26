@@ -211,17 +211,7 @@ char *my_strrchr(const char *s, char c)__banked
 #endif
 #define SAVE_DOT_COL	11
 
-/* mod: a file's row in the 8px list. Draw_Text with a length of 20 pads a
-   shorter name with blanks; here the name may be cut (name_shown), so its
-   part is drawn and then the blanks. */
-static void list8_name(const FM_FILE_FS *e, UINT8 y)
-{
-	UINT8 n = name_shown(e);
-
-	if(n > 20U) n = 20U;
-	Draw_Text((UINT8 *)e->filename, n, 0, y);
-	if(n < 20U) Draw_Text((UINT8 *)"", (UINT8)(20U - n), n, y);
-}
+void list8_row(const FM_FILE_FS *e, UINT8 y) __banked;	/* mod: list8.c, a row's icon and name */
 
 void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 {
@@ -284,17 +274,7 @@ void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 			cur_page = Folder_sram_bank+BANK_num;
 		}
 		
-		if(pFilename_buffer[BANK_index].fattrib == AM_DIR)
-		{
-			Draw_Text(pFilename_buffer[BANK_index].filename, 0, x_offset, y_offset + line);
-
-			color(WHITE,BLACK,SOLID);
-			Draw_Text(UI_LIST_DIR, UI_LEN(UI_LIST_DIR), 17, y_offset + line);		
-		}
-		else 
-		{
-			list8_name(&pFilename_buffer[BANK_index], y_offset + line);	/* mod: the name as CLEAN NAMES has it */
-		}
+		list8_row(&pFilename_buffer[BANK_index], (UINT8)(y_offset + line));	/* mod: icon and name; folders had a DIR tag */
 		
 		color(BLACK,WHITE,SOLID);
 	
@@ -365,17 +345,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	{
 		color(BLACK,WHITE,SOLID);
 	}	
-	if(pFilename_buffer[BANK_index].fattrib == AM_DIR)
-	{
-		Draw_Text(pFilename_buffer[BANK_index].filename, 0, x_offset, showy1);
-
-		color(WHITE,BLACK,SOLID);
-		Draw_Text(UI_LIST_DIR, UI_LEN(UI_LIST_DIR), 17, showy1);		
-	}
-	else 
-	{
-		list8_name(&pFilename_buffer[BANK_index], showy1);	/* mod: the name as CLEAN NAMES has it */
-	}
+	list8_row(&pFilename_buffer[BANK_index], (UINT8)(showy1));	/* mod: icon and name; folders had a DIR tag */
 	
 	if(updown==3)//up
 	{
@@ -394,17 +364,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 		cur_page = Folder_sram_bank+BANK_num;
 	}
 
-	if(pFilename_buffer[BANK_index].fattrib == AM_DIR)
-	{
-		Draw_Text(pFilename_buffer[BANK_index].filename, 0, x_offset, showy2);
-
-		color(WHITE,BLACK,SOLID);
-		Draw_Text(UI_LIST_DIR, UI_LEN(UI_LIST_DIR), 17, showy2);		
-	}
-	else 
-	{
-		list8_name(&pFilename_buffer[BANK_index], showy2);	/* mod: the name as CLEAN NAMES has it */
-	}
+	list8_row(&pFilename_buffer[BANK_index], (UINT8)(showy2));	/* mod: icon and name; folders had a DIR tag */
 	
 	color(BLACK,WHITE,SOLID);
 
