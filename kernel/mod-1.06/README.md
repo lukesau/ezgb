@@ -891,12 +891,13 @@ watch does not exist.
 
 ### The checkbox under the cursor (2026-11-25)
 
-A checkbox under the cursor has a second outline a pixel clear of its box,
-as the 0918 mod's 7.2 (`set_check_ring`, `source/setpage.c`; Set_window
-calls it for AUTO SAVE). It is in the theme's accent, and in the ink where
-there is none: the frame alone turning dark gray is not something an
-original Game Boy shows. Seen in SameBoy in red on the CGB model and in
-light on the DMG model.
+A checkbox under the cursor has a second outline right outside its box, in
+the text's color, and the box's frame is in the highlight color, as the
+0918 mod's `SetBox` ([kernel/mod/src/setbox.c](../mod/src/setbox.c)).
+`set_check_ring` in `source/setpage.c` draws it, and Set_window calls it
+for AUTO SAVE. The first build of this had a pixel between the two and the
+outline in the accent, from a guess; the source settled it. Seen in SameBoy
+in red on the CGB model and in light on the DMG model.
 
 ### What of the 0918 mod is not here
 
