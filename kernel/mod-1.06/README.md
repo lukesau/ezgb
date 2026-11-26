@@ -899,6 +899,30 @@ for AUTO SAVE. The first build of this had a pixel between the two and the
 outline in the accent, from a guess; the source settled it. Seen in SameBoy
 in red on the CGB model and in light on the DMG model.
 
+### Scrolling the list (2026-11-25)
+
+Three changes to how the list moves, after docs/browser.md "Moving
+around". The 0918 mod's `browser_nav.c` is davidesqalv's and none of it is
+here: this is written from what it does.
+
+- **The row under the cursor is drawn first** whenever a page is drawn,
+  then the rest (`list12_show`).
+- **A scroll moves the rows that stay.** When the cursor leaves the top or
+  bottom of a full page, the rows still on it are copied in VRAM
+  (`vram_copy_line`, `source/vram_put.s`: a pixel row of 20 tiles a call,
+  three tiles a batch at the start of mode 0), and only the row under the
+  cursor, the row it was on and the rows uncovered are drawn
+  (`list12_scroll`, `list8_scroll`). It drew the page from the top.
+- **A held UP or DOWN is timed in frames**, from `sys_time`: 18 frames,
+  then 6, 6, 5, 5, 4, 4 and 3 for good. It was counted in passes of the
+  list's loop, each a frame or two and whatever it drew, so it ran at less
+  than half that. A press's 18 frames start when its move is drawn.
+
+Measured in SameBoy at real speed, DOWN held for six seconds in a folder
+of 80: the 12px list in red went from entry 18 to entry 42, the 8px list
+on the DMG model from 24 to 60. With the mode 3 watch on, a run down and
+back up left the page right and had no hit. Not run on a cart.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.

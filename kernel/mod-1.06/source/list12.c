@@ -161,9 +161,65 @@ void list12_show(UINT16 show_offset, UINT16 file_select) __banked
 
 	need = (show_offset >= game_folder_total) ? 0U : (UINT16)(game_folder_total - show_offset);
 	if(need > LIST12_ROWS) need = LIST12_ROWS;
-	for(line = 0U; line < (UINT8)need; line++)
-		row_draw((UINT16)(show_offset + line), line, (line == (UINT8)file_select) ? 1U : 0U, 0U);
+	/* the row under the cursor first: it is what is being looked for, and
+	   the rest of the page takes a while */
+	if((UINT8)file_select < (UINT8)need) row_draw((UINT16)(show_offset + file_select), (UINT8)file_select, 1U, 0U);
 	counter((UINT16)(show_offset + file_select));
+	for(line = 0U; line < (UINT8)need; line++)
+		if(line != (UINT8)file_select) row_draw((UINT16)(show_offset + line), line, 0U, 0U);
+}
+
+void vram_copy_line(UINT8 *dst, UINT8 *src);	/* vram_put.s */
+
+static UINT8 *line_at(UINT8 y)
+{
+	return (UINT8 *)(UINT16)(0x8100U + (UINT16)(y >> 3) * 0x140U + (UINT16)((y & 7U) << 1));
+}
+
+/* The list scrolled from old_offset to show_offset with the cursor on its
+   row (the top one going up, the bottom one going down), a full page on
+   screen. The rows that stay are moved in VRAM, which is a fifth of the
+   time drawing them takes; then the row under the cursor is drawn, the
+   row the cursor was on (it moved with the rest, still highlighted), and
+   the other rows the move uncovered. */
+void list12_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __banked
+{
+	UINT8 sel = (UINT8)file_select;
+	UINT8 d;
+	UINT8 n;
+	UINT8 y;
+	UINT8 r;
+
+	if(show_offset > old_offset)
+	{
+		d = (UINT8)(show_offset - old_offset);
+		if((d >= LIST12_ROWS) || (sel != LIST12_ROWS - 1U))
+		{
+			list12_show(show_offset, file_select);
+			return;
+		}
+		n = (UINT8)((LIST12_ROWS - d) * ROW_PITCH);
+		for(y = LIST_Y; n; n--, y++) vram_copy_line(line_at(y), line_at((UINT8)(y + d * ROW_PITCH)));
+		row_draw((UINT16)(show_offset + sel), sel, 1U, 0U);
+		counter((UINT16)(show_offset + sel));
+		r = (UINT8)(sel - d);
+		row_draw((UINT16)(show_offset + r), r, 0U, 0U);
+		for(r++; r < sel; r++) row_draw((UINT16)(show_offset + r), r, 0U, 0U);
+		return;
+	}
+	d = (UINT8)(old_offset - show_offset);
+	if((d == 0U) || (d >= LIST12_ROWS) || (sel != 0U))
+	{
+		list12_show(show_offset, file_select);
+		return;
+	}
+	n = (UINT8)((LIST12_ROWS - d) * ROW_PITCH);
+	for(y = (UINT8)(LIST_Y + LIST12_ROWS * ROW_PITCH - 1U); n; n--, y--)
+		vram_copy_line(line_at(y), line_at((UINT8)(y - d * ROW_PITCH)));
+	row_draw(show_offset, 0U, 1U, 0U);
+	counter(show_offset);
+	row_draw((UINT16)(show_offset + d), d, 0U, 0U);
+	for(r = 1U; r < d; r++) row_draw((UINT16)(show_offset + r), r, 0U, 0U);
 }
 
 /* The cursor moved one row: updown 2 is down, 3 is up */

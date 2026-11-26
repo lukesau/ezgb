@@ -119,3 +119,114 @@ _draw_colors::
         AND     #0x03
         OR      B
         RET
+
+;; void vram_copy_line(UINT8 *dst, UINT8 *src): one pixel row of the
+;; screen, the 20 tiles across it, both planes, copied from src to dst
+;; (the address of the row's first plane byte in the first tile; tiles are
+;; 16 bytes apart). For scrolling the file list by moving the rows that
+;; stay (list12.c, list8.c).
+;;
+;; Seven batches of three tiles, the last one a tile back so it ends on
+;; tile 20: reads and writes both need VRAM, so each batch starts at the
+;; beginning of mode 0 with interrupts off, as font12.c's blit_col1 does
+;; (its comment has why a batch from line 143 on waits for lines 145 to
+;; 150 with interrupts on). A batch is 52 cycles; mode 0 and the mode 2
+;; after it are 71, and the sync is up to 8 late.
+_vram_copy_line::
+        LD      H,B
+        LD      L,C             ; HL = src, DE = dst
+        LD      B,#7
+1$:
+        PUSH    BC
+        LD      BC,#15
+2$:
+        DI
+        LDH     A,(.STAT)
+        AND     #3
+        CP      #1
+        JR      NZ,3$
+        LDH     A,(.LY)
+        CP      #144
+        JR      C,3$
+        CP      #152
+        JR      NC,3$
+        JR      7$
+3$:
+        LDH     A,(.LY)
+        CP      #143
+        JR      C,5$
+        EI
+4$:
+        LDH     A,(.LY)
+        CP      #143
+        JR      C,2$
+        CP      #145
+        JR      C,4$
+        CP      #151
+        JR      C,2$
+        JR      4$
+5$:
+        LDH     A,(.STAT)
+        AND     #3
+        CP      #3
+        JR      NZ,5$
+6$:
+        LDH     A,(.STAT)
+        AND     #3
+        JR      NZ,6$
+7$:
+        LD      A,(HL+)
+        LD      (DE),A
+        INC     E
+        LD      A,(HL)
+        LD      (DE),A
+        ADD     HL,BC
+        LD      A,E
+        ADD     #15
+        LD      E,A
+        JR      NC,11$
+        INC     D
+11$:
+        LD      A,(HL+)
+        LD      (DE),A
+        INC     E
+        LD      A,(HL)
+        LD      (DE),A
+        ADD     HL,BC
+        LD      A,E
+        ADD     #15
+        LD      E,A
+        JR      NC,12$
+        INC     D
+12$:
+        LD      A,(HL+)
+        LD      (DE),A
+        INC     E
+        LD      A,(HL)
+        LD      (DE),A
+        EI
+        ;; on to the next tile, or back one before the last batch
+        POP     BC
+        DEC     B
+        RET     Z
+        LD      A,B
+        DEC     A
+        JR      Z,9$
+        LD      A,L
+        ADD     #15
+        LD      L,A
+        JR      NC,8$
+        INC     H
+8$:
+        LD      A,E
+        ADD     #15
+        LD      E,A
+        JR      NC,1$
+        INC     D
+        JR      1$
+9$:
+        ;; HL and DE are on the second byte of tile 3n + 2: the last batch
+        ;; starts at tile 17, which is that tile again
+        DEC     HL
+        DEC     DE
+        JR      1$

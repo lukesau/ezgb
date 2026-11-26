@@ -15,6 +15,7 @@ void clock12_reset(void) __banked;	/* its line cleared, every field to be drawn 
 extern UINT8 ui_font_cfg;	/* the font the settings ask for: ui_font goes back to it */
 void recent12_show(UINT8 count, UINT8 sel) __banked;	/* Show_recent_list in the 12px fonts */
 void list12_show(UINT16 show_offset, UINT16 file_select) __banked;
+void list12_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __banked;	/* a scroll: the rows that stay are moved */
 void list12_refresh(UINT16 show_offset, UINT16 file_select, UINT8 updown) __banked;
 void list12_loop(UINT32 shift, UINT16 show_offset, UINT16 file_select) __banked;
 

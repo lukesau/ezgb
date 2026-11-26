@@ -32,6 +32,7 @@
 #include "RTC.h"
 #include "ezcfg.h"		/* mod: the settings file */
 #include "list12.h"		/* mod: the 12px list */
+UINT8 list8_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __banked;	/* mod: list8.c */
 #include "rommenu.h"		/* mod: the hold-A menu */
 #include "savemgr.h"		/* mod: the daily backup */
 
@@ -109,6 +110,9 @@ void Show_SD_list(void) __banked
 	UINT8 keynext = 0;		/* mod: the frame of the hold the key next repeats on */
 	UINT8 keystage = 0;		/* mod: how far the repeat has sped up */
 	UINT8 navstep = 1;		/* mod: rows a scroll moves this poll */
+	UINT8 key_t = 0;		/* mod: the frame the held key last acted on */
+	UINT8 keymark = 0;		/* mod: a press was just acted on: key_t is taken once it is drawn */
+	UINT16 scroll_from = 0;		/* mod: where the list was before a scroll (updata 4) */
 	/* There used to be a local `BYTE FR_OK=0;` shadowing FatFs' FR_OK enum (0): the
 	   comparison below tested that variable and only looked right because it was 0,
 	   the same value as the enum. Removed so it refers to the real enum. */
@@ -305,15 +309,32 @@ re_showfile:
 		if(updata)
 		{
 			shift = 0;
+#ifndef LANG_ZH
+			/* mod: a scroll by a few rows moves the rows that stay (list12.c,
+			   list8.c) where a page draw takes most of half a second */
+			if(updata==4){
+				hw_set_page(A000Address_SRAM);
+				if(ui_font) list12_scroll(scroll_from, show_offset, file_select);
+				else if(!list8_scroll(scroll_from, show_offset, file_select)) Show_filename(show_offset,file_select);
+			}
+			else
+#else
+			if(updata==4) updata=1;
+#endif
 			if(updata==1){
 				
 				hw_set_page(A000Address_SRAM);
 				Show_filename(show_offset,file_select);
 			}
-			else if(updata>1){
+			else if((updata>1) && (updata<4)){
 				hw_set_page(A000Address_SRAM);
 				Refresh_filename(show_offset,file_select,updata);
 			}
+		}
+		if(keymark)		/* mod: the press is drawn: its hold delay starts here */
+		{
+			keymark = 0;
+			key_t = (UINT8)sys_time;
 		}
 		if(game_folder_total){
 			Filename_loop(shift,show_offset,file_select);
@@ -340,28 +361,27 @@ re_showfile:
 		   delay it repeats 6, 6, 5, 5, 4, 4 and then every 3 frames, and
 		   while the list scrolls it moves 1, 1, 2, 2, 3, 3 and then 4 rows
 		   a step. */
+		/* It is timed in frames (sys_time, which the VBlank handler counts),
+		   not in passes of this loop: a pass is a frame or two and whatever
+		   it drew, which made a held key half as fast as the 0918 mod's.
+		   A press moves at once, and its 18 frames run from the end of
+		   that move's drawing, so a slow draw is not a second move. */
 		navstep = 1U;
 		if(keysrepeat & (J_UP | J_DOWN))
 		{
-			static const UINT8 gap[7] = {6U, 6U, 5U, 5U, 4U, 4U, 3U};
-			static const UINT8 rows[7] = {1U, 1U, 2U, 2U, 3U, 3U, 4U};
-
-			keyhold++;
-			if(keyhold == 1U)
+			if(!keyhold)
 			{
+				keyhold = 1U;
 				keystage = 0U;
-				keynext = KEY_HOLD_DELAY;
+				keynext = 18U;
+				keymark = 1U;
 			}
-			else if(keyhold >= keynext)
+			else if((UINT8)((UINT8)sys_time - key_t) >= keynext)
 			{
-				navstep = rows[keystage];
-				keynext = (UINT8)(keyhold + gap[keystage]);
+				keynext = (keystage < 6U) ? (UINT8)(6U - (keystage >> 1)) : 3U;
 				if(keystage < 6U) keystage++;
-				if(keyhold > 200U)		/* keep the counter from wrapping */
-				{
-					keyhold -= 100U;
-					keynext -= 100U;
-				}
+				navstep = (UINT8)((keystage >> 1) + 1U);
+				key_t = (UINT8)sys_time;
 			}
 			else keysrepeat &= (UINT8)~(J_UP | J_DOWN);
 		}
@@ -413,8 +433,9 @@ re_showfile:
 			}
 			else if (show_offset) {
 				/* at the first row: scroll the window up (mod: by navstep) */
+				scroll_from = show_offset;
 				show_offset = (show_offset > navstep) ? (UINT16)(show_offset - navstep) : 0;
-				updata=1;
+				updata=4;
 			}
 			/* mod: the list wraps. UP on the first entry is the last one. */
 			else if (game_folder_total > 1) {
@@ -441,10 +462,11 @@ re_showfile:
 			else if ((UINT16)(show_offset + LIST_ROWS) < game_folder_total)
 			{
 				/* mod: by navstep, and not past the end */
+				scroll_from = show_offset;
 				show_offset += navstep;
 				if((UINT16)(show_offset + LIST_ROWS) > game_folder_total)
 					show_offset = game_folder_total - LIST_ROWS;
-				updata=1;
+				updata=4;
 			}
 			/* mod: the list wraps. DOWN on the last entry is the first one. */
 			if (!updata && (game_folder_total > 1) &&
@@ -737,7 +759,7 @@ re_showfile:
 				    }
     }
     
-		wait_vbl_done();
+		if(!keyhold) wait_vbl_done();	/* mod: a held UP or DOWN polls every frame */
 	}
 }
 // --------------------------------------------------------------------

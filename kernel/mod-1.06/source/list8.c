@@ -103,6 +103,78 @@ void list8_row(const FM_FILE_FS *e, UINT8 y) __banked
 		vram_put2(dst, (UINT16)(((UINT16)(UINT8)((g[r] & a1) ^ x1) << 8) | (UINT8)((g[r] & a0) ^ x0)));
 }
 
+void vram_copy_line(UINT8 *dst, UINT8 *src);	/* vram_put.s */
+
+/* mod: the 8px list scrolled from old_offset to show_offset with the
+   cursor on its row, a full page of 16 on screen: the rows that stay are
+   moved in VRAM, then the row under the cursor is drawn, the one the
+   cursor was on, and the others the move uncovered (list12.c has the
+   12px list's). 0 when it is not such a scroll: the caller draws the page. */
+UINT8 list8_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __banked
+{
+	UINT8 sel = (UINT8)file_select;
+	UINT8 d;
+	UINT8 n;
+	UINT8 y;
+	UINT8 r;
+	UINT8 row;
+	UINT8 pass;
+	UINT16 idx;
+	char s[6];
+
+	if(show_offset > old_offset)
+	{
+		d = (UINT8)(show_offset - old_offset);
+		if((d >= 16U) || (sel != 15U)) return 0U;
+		n = (UINT8)((16U - d) << 3);
+		for(y = 16U; n; n--, y++)
+			vram_copy_line((UINT8 *)(UINT16)(0x8100U + (UINT16)(y >> 3) * 0x140U + (UINT16)((y & 7U) << 1)),
+			               (UINT8 *)(UINT16)(0x8100U + (UINT16)((UINT8)(y + (d << 3)) >> 3) * 0x140U + (UINT16)((y & 7U) << 1)));
+	}
+	else
+	{
+		d = (UINT8)(old_offset - show_offset);
+		if((d == 0U) || (d >= 16U) || (sel != 0U)) return 0U;
+		n = (UINT8)((16U - d) << 3);
+		for(y = 143U; n; n--, y--)
+			vram_copy_line((UINT8 *)(UINT16)(0x8100U + (UINT16)(y >> 3) * 0x140U + (UINT16)((y & 7U) << 1)),
+			               (UINT8 *)(UINT16)(0x8100U + (UINT16)((UINT8)(y - (d << 3)) >> 3) * 0x140U + (UINT16)((y & 7U) << 1)));
+	}
+	/* pass 0: the row under the cursor. 1: the row the cursor was on, which
+	   moved with the rest. 2: the other rows the move uncovered. */
+	for(pass = 0U; pass < 3U; pass++)
+	{
+		for(r = 0U; r < 16U; r++)
+		{
+			if(sel)
+			{
+				/* down: the cursor's row was 15 and is now 15 - d */
+				if(pass == 0U) row = 15U;
+				else if(pass == 1U) row = (UINT8)(15U - d);
+				else row = (UINT8)(16U - d + r);
+				if((pass == 2U) && (row >= 15U)) break;
+			}
+			else
+			{
+				if(pass == 0U) row = 0U;
+				else if(pass == 1U) row = d;
+				else row = (UINT8)(1U + r);
+				if((pass == 2U) && (row >= d)) break;
+			}
+			idx = (UINT16)(show_offset + row);
+			HW_BANK = Folder_sram_bank + (UINT8)(idx / Num_perBank);
+			if(pass == 0U) color(WHITE, BLACK, SOLID);
+			else color(BLACK, WHITE, SOLID);
+			list8_row(&pFilename_buffer[idx % Num_perBank], (UINT8)(2U + row));
+			if(pass < 2U) break;
+		}
+	}
+	color(BLACK, WHITE, SOLID);
+	_ultoa((unsigned long)show_offset + file_select + 1UL, s, 10u);
+	Draw_Text(s, 4, 16, 0);
+	return 1U;
+}
+
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked
 {
 #if defined(LANG_ZH) && !defined(ZH_LIST_OFF)
