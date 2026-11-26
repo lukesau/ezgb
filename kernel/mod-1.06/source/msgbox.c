@@ -78,3 +78,53 @@ void battery_box(UINT8 erase) __banked
 	memcpy(s, "[A] ok", 7U);
 	Draw_Text(s, 6U, 7U, 9U);
 }
+
+/* The rules of a popup with two buttons (docs/prompts.md): one across it
+   above the button row, and one down between the buttons to the box's
+   bottom edge at pixel row y1. row is the buttons' text row; xv is where
+   the second goes in the 8px font, whose callers space the buttons by
+   cells (a 12px font has them at the two ends: list12.c, text12). Called
+   after the buttons are drawn, since their row paints over it. */
+void popup_rules(UINT8 row, UINT8 y1, UINT8 xv) __banked
+{
+	UINT8 yr = (UINT8)(row << 3);
+
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		yr -= 3U;
+		xv = 79U;
+	}
+	else
+#endif
+	yr -= 5U;
+	color(BLACK, WHITE, SOLID);
+	line(1, yr, 158, yr);
+	line(xv, yr, xv, (UINT8)(y1 - 1U));
+	color(BLACK, DKGREY, SOLID);
+}
+
+UINT8 pad_take(void);		/* sgb.s */
+
+/* FAST LAUNCH was just ticked (docs/fast-launch.md): how to get the list
+   back at power-on. Three lines in the status box's frame, and it waits
+   for a press of A. The caller draws its page again. */
+void flaunch_box(void) __banked
+{
+	UINT8 s[15];
+
+	color(WHITE, WHITE, SOLID);
+	box(17, 40, 142, 103, M_FILL);
+	color(BLACK, WHITE, SOLID);
+	box(17, 40, 142, 103, M_NOFILL);
+	box(18, 41, 141, 102, M_NOFILL);
+	box(20, 43, 139, 100, M_NOFILL);
+	memcpy(s, "Hold START at", 14U);
+	Draw_Text(s, 13U, 3U, 6U);
+	memcpy(s, "boot to cancel", 15U);
+	Draw_Text(s, 14U, 3U, 8U);
+	memcpy(s, "[A] ok", 7U);
+	Draw_Text(s, 6U, 7U, 10U);
+	pad_take();
+	while(!(pad_take() & J_A)) wait_vbl_done();
+}

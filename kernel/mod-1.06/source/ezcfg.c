@@ -74,6 +74,7 @@ UINT8 cfg_ui;				/* UI=: 0 is 8 or no key, 1 is 12, 2 is SLIM, 3 is EZF */
 UINT8 tags_hide;			/* CLEAN NAMES: 0 with TAGS= set to anything but 0 */
 UINT8 cfg_daily;			/* DAILYBACKUP=1 (savemgr.c) */
 UINT8 sgb_auto;				/* our stage1 handles the SGB: SGB BOOT shows AUTO */
+UINT8 pick_rom;				/* the list is up for GAME: to take a game from (sdlist.c) */
 UINT8 tab_to_sd;				/* START on the SET tab: the SD tab is next, not HELP */
 UINT8 cfg_can_jump;			/* this console can start a game without the boot ROM */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
@@ -481,7 +482,14 @@ static UINT8 *put2(UINT8 *p, UINT8 v, UINT8 sep)
 /* Rewrites the file: what it has of other keys, then this kernel's lines */
 static void file_write(void)
 {
-	UINT8 line[FLAUNCH_MAX + 12U];
+	/* Not on the stack. SDCC 4.5 compiles n = p - line, with line a stack
+	   array, as sub a, l / ld hl, #2 / add hl, sp / sbc a, h: the add
+	   clears the borrow, so n came out 256 too big whenever the line
+	   crossed a 256 byte boundary of the stack, and that many bytes of
+	   stack went into the file after it. Whether it did depended on how
+	   deep the call was: found 2026-11-25 when a change to the SET tab
+	   moved the stack, there since the file was first written. */
+	static UINT8 line[FLAUNCH_MAX + 12U];
 	UINT8 *p;
 	UINT16 at;
 	UINT16 n;
@@ -700,6 +708,7 @@ static UINT8 clock_prompt(UINT8 why)
 
 	memcpy(s, "[B]keep  [A]use SD", 19U);
 	Draw_Text(s, 18U, 1U, 11U);
+	popup_rules(11U, ui_font ? 103U : 99U, 72U);
 
 	while(joypad() & (J_A | J_B)) wait_vbl_done();
 	while(1)
@@ -801,6 +810,8 @@ static void font_set(void)
 UINT8 theme_now(void) __banked
 {
 	if((cfg_theme >= THEMES) || ((cfg_theme == 6U) && !custom_ok)) return 1U;
+	/* where only BGP can be set a color theme is dark, and reads DARK */
+	if(!cgb_mode && (cfg_theme >= 2U) && (cfg_theme <= 6U)) return 1U;
 	return cfg_theme;
 }
 
@@ -824,8 +835,10 @@ static const UINT8 ramps[THEMES][8] = {
      acc_idx   what a paper of 3 becomes, and the ink of a solid fill of 3:
                2 in a color theme, 1 in DV, 0 for no change (light, dark,
                and wherever only BGP can be set)
-     pop_idx   what a paper of 2, the dialogs' gray, becomes: 1 past light,
-               the background's shade, and 0 in DV, whose dialogs are black
+     pop_idx   what a paper of 2, the dialogs' gray, becomes: the
+               background in light and in DV, where a dialog is its outline
+               (the kernel as received has them dark gray), and index 1,
+               the background's shade, in the other themes
    f12_inverse is F12_INVERSE, the 12px font's selected row.
 
    In CGB mode the colors go to every BG and OBJ palette. A DMG, and a
@@ -845,7 +858,7 @@ static void theme_apply(void)
 		live_ramp[2] = custom_ramp[4];
 		live_ramp[3] = custom_ramp[5];
 	}
-	pop_idx = i ? ((i == 7U) ? 0U : 1U) : 2U;
+	pop_idx = (i && (i != 7U)) ? 1U : 0U;
 	acc_idx = 0U;
 	if(cgb_mode && (i >= 2U)) acc_idx = (i == 7U) ? 1U : 2U;
 	f12_inverse = acc_idx ? acc_idx : 3U;
@@ -1003,8 +1016,9 @@ void console_init(void) __banked
 
 	/* nothing here counts on WRAM being cleared at startup */
 	cfg_dry = 0U;
+	pick_rom = 0U;
 	acc_idx = 0U;
-	pop_idx = 2U;
+	pop_idx = 0U;
 	f12_inverse = 3U;
 	tab_to_sd = 0U;
 	ui_font = 0U;
@@ -1246,50 +1260,35 @@ void cfg_changed(UINT8 what) __banked
 	file_write();
 }
 
-/* The GAME: row. The fast launch game becomes the next of the recent list
-   (/SAVER/RecentlyPlay_gb.txt, newest first) after the one it is, and the
-   newest when it is not in the list or the list ends. Choosing a game does
-   not turn fast launch on: the path keeps its # unless it is on already.
-   Recently_Load borrows the file list's save RAM, which the SD tab reads
-   again when the SET tab is left. 0 when there is nothing to choose.
-
-   Ticking FAST LAUNCH with no game set calls this too, and takes the # off:
-   the game is then the newest of the list. */
-UINT8 cfg_flaunch_next(void) __banked
+/* GAME: on the SET tab sent the list up to pick a game (pick_rom), and A
+   was pressed on name, a .gb or .gbc in the list's folder: it is the fast
+   launch game. Fast launch stays on or off as it was: the path keeps its #
+   when it has one. 0 when the path is too long to keep. */
+UINT8 cfg_flaunch_pick(const char *name) __banked
 {
-	extern FM_FILE_FS *pFilename_buffer;
-	char tmp[FLAUNCH_MAX + 1U];
-	const char *cur = cfg_flaunch + ((cfg_flaunch[0] == '#') ? 1U : 0U);
-	UINT8 lead = (cfg_flaunch[0] == '/') ? 0U : 1U;
-	UINT8 n = Recently_Load();
-	UINT8 pick = 0U;
-	UINT8 i;
-	UINT8 j;
-	const UINT8 *e;
+	UINT8 lead = (cfg_flaunch[0] == '#') ? 1U : 0U;
 
-	if(!n) return 0U;
-	HW_BANK = Folder_sram_bank;
-	hw_set_page(A000Address_SRAM);
-	for(i = 0U; i < n; i++)
-	{
-		e = pFilename_buffer[i].filename;
-		for(j = 0U; cur[j] && (e[j] == (UINT8)cur[j]); j++) ;
-		if(!cur[j] && !e[j])
-		{
-			pick = (UINT8)(i + 1U);
-			if(pick >= n) pick = 0U;
-			break;
-		}
-	}
-	e = pFilename_buffer[pick].filename;
-	for(j = 0U; (j < FLAUNCH_MAX - 1U) && e[j]; j++) tmp[j] = (char)e[j];
-	i = e[j];
-	tmp[j] = 0;
-	HW_BANK = 0;
-	hw_set_page(A000Address_TF);
-	if(i || (tmp[0] != '/')) return 0U;		/* a path too long to keep */
+	if((UINT16)strlen(currentpath) + (UINT16)strlen(name) + 1U + lead > FLAUNCH_MAX) return 0U;
 	cfg_flaunch[0] = '#';
-	strcpy(cfg_flaunch + lead, tmp);
+	strcpy(cfg_flaunch + lead, currentpath);
+	if(currentpath[1]) strcat(cfg_flaunch, "/");
+	strcat(cfg_flaunch, name);
+	/* the list has one of its banks of save RAM selected, and the card is
+	   read wrong through that: the file came back as garbage and was
+	   written so */
+	HW_BANK = 0;
+	file_write();
+	hw_set_page(A000Address_TF);
+	return 1U;
+}
+
+/* 1 when SKIP BOOT ROM is this console's to choose. It is not on one that
+   cannot start a game without its boot ROM, nor on the DMG family with SGB
+   BOOT on, when the console may be a Super Game Boy, which needs the reset. */
+UINT8 cfg_skip_ok(void) __banked
+{
+	if(!cfg_can_jump) return 0U;
+	if(con_dmg && sgb_record()) return 0U;
 	return 1U;
 }
 

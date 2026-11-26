@@ -56,19 +56,21 @@
 #define ROWS_NOW	(cgb_mode ? ROWS : ROW_BG)
 
 static const UINT8 row_page[ROWS] = {0U, 0U, 0U, 1U, 1U, 1U, 1U, 1U, 2U, 2U, 2U, 2U, 2U};
-static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 5U, 7U, 9U, 11U, 3U, 5U, 9U, 11U, 13U};	/* the text row; the picker's heading is row 7 */
+static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 7U, 9U, 11U, 13U, 3U, 5U, 9U, 11U, 13U};	/* the text row; CLEAN NAMES' example is page 2's row 5 and the picker's heading page 3's row 7 */
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
 {
 	if(row == ROW_SKIP) return cfg_bootrom ? 0U : 1U;
-	if(row == ROW_FAST) return (cfg_flaunch[0] == '/') ? 1U : 0U;
+	if(row == ROW_FAST) return (cfg_flaunch[0] != '#') ? 1U : 0U;	/* no game set is on too: a card with one game starts it */
 	if(row == ROW_SGB) return sgb_record();
 	if(row == ROW_TAGS) return tags_hide;
 	if(row == ROW_PLAYS) return plays_sort_on();
 	if(row == ROW_DAILY) return cfg_daily;
 	return cfg_rtcsd;
 }
+
+static UINT8 theme_back;		/* row_act steps THEME: the other way (B) */
 
 static void row_act(UINT8 row)
 {
@@ -77,30 +79,22 @@ static void row_act(UINT8 row)
 
 	if(row == ROW_SKIP)
 	{
-		if(!cfg_can_jump) return;	/* nothing to choose: the setting keeps its value */
+		if(!cfg_skip_ok()) return;	/* nothing to choose: the setting keeps its value */
 		cfg_bootrom ^= 1U;
 		what = CFG_BOOTROM;
 	}
 	else if(row == ROW_FAST)
 	{
+		/* on and off is the # in front of FLAUNCH='s value, whatever is
+		   after it: a game, or nothing, which is the card's one game */
 		n = (UINT8)strlen(cfg_flaunch);
-		if(cfg_flaunch[0] == '/')
-		{
-			if(n >= FLAUNCH_MAX) return;
-			memmove(cfg_flaunch + 1, cfg_flaunch, n + 1U);	/* off: a # keeps the path */
-			cfg_flaunch[0] = '#';
-		}
-		else if(cfg_flaunch[0] == '#') memmove(cfg_flaunch, cfg_flaunch + 1, n);
+		if(cfg_flaunch[0] == '#') memmove(cfg_flaunch, cfg_flaunch + 1, n);
 		else
 		{
-			/* no game set: the newest of the recent list, and on */
-			if(!cfg_flaunch_next()) return;
-			memmove(cfg_flaunch, cfg_flaunch + 1, strlen(cfg_flaunch));
+			if(n >= FLAUNCH_MAX) return;
+			memmove(cfg_flaunch + 1, cfg_flaunch, n + 1U);
+			cfg_flaunch[0] = '#';
 		}
-	}
-	else if(row == ROW_GAME)
-	{
-		if(!cfg_flaunch_next()) return;		/* the next of the recent list; on or off stays as it is */
 	}
 	else if(row == ROW_SGB)
 	{
@@ -109,10 +103,22 @@ static void row_act(UINT8 row)
 	}
 	else if(row == ROW_THEME)
 	{
-		/* the next theme; where only BGP can be set there are two */
-		cfg_theme = (UINT8)(theme_now() + 1U);
-		if((cfg_theme == 6U) && !custom_ok) cfg_theme = 7U;	/* custom needs a COLORS= line */
-		if(cfg_theme >= (cgb_mode ? THEMES : 2U)) cfg_theme = 0U;
+		/* the next theme, or with back the one before: light, dark, DV,
+		   red, green, purple, blue, custom. Where only BGP can be set there
+		   are the first three. Custom needs its colors. */
+		static const UINT8 order[THEMES] = {0U, 1U, 7U, 2U, 3U, 4U, 5U, 6U};
+		UINT8 count = cgb_mode ? THEMES : 3U;
+		UINT8 i;
+
+		for(i = 0U; (i < THEMES) && (order[i] != theme_now()); i++) ;
+		if(i >= count) i = 0U;
+		do
+		{
+			if(theme_back) i = i ? (UINT8)(i - 1U) : (UINT8)(count - 1U);
+			else i = (i + 1U < count) ? (UINT8)(i + 1U) : 0U;
+		}
+		while((order[i] == 6U) && !custom_ok);
+		cfg_theme = order[i];
 		what = CFG_THEME;
 	}
 	else if(row == ROW_FONT)
@@ -136,10 +142,12 @@ static UINT8 shown[9];			/* the colors on screen, as cfg_colors_seed gives them 
 
 UINT8 draw_colors(void);		/* vram_put.s */
 
-/* DV is black, white and the slim font: its FONT:, BG: and TEXT: rows show
-   what it has, in its blue, and the cursor passes over them */
+/* A row that cannot be set is drawn in index 2 and the cursor passes over
+   it. DV is black, white and the slim font: its FONT:, BG: and TEXT: rows
+   show what it has. SKIP BOOT ROM is one where the console has no choice. */
 static UINT8 locked(UINT8 row)
 {
+	if(row == ROW_SKIP) return cfg_skip_ok() ? 0U : 1U;	/* a console with nothing to choose */
 	if(theme_now() != 7U) return 0U;
 	return ((row == ROW_FONT) || (row == ROW_BG) || (row == ROW_TEXT)) ? 1U : 0U;
 }
@@ -225,8 +233,6 @@ static void color_edit(UINT8 row)
 {
 	UINT8 c = 0U;
 	UINT8 keys;
-	UINT8 last = 0xFFU;
-	UINT8 held = 0U;
 	UINT8 *v;
 
 	if(theme_now() == 7U)
@@ -237,34 +243,35 @@ static void color_edit(UINT8 row)
 		memcpy(custom_ch + 6, shown + 6, 3U);
 	}
 	else if(theme_now() != 6U) cfg_colors_seed(custom_ch);
-	while(joypad()) wait_vbl_done();
 	color_draw(row, c);
 	while(1)
 	{
 		wait_vbl_done();
-		keys = joypad();
-		if(keys == last)
-		{
-			/* a held UP or DOWN repeats, six frames apart */
-			if(!(keys & (J_UP | J_DOWN)) || (++held < 6U)) continue;
-		}
-		held = 0U;
-		last = keys;
+		keys = pad_menu();		/* a held direction repeats after 24 frames, then every 6 */
+		if(!keys) continue;
 		if(keys & (J_A | J_B)) break;
 		if(keys & J_LEFT) c = c ? (UINT8)(c - 1U) : 2U;
 		else if(keys & J_RIGHT) c = (c < 2U) ? (UINT8)(c + 1U) : 0U;
 		else if(keys & (J_UP | J_DOWN))
 		{
+			/* a channel stops at 0 and at 31 */
 			v = &custom_ch[(row - ROW_BG) * 3U + c];
-			if(keys & J_UP) *v = (*v < 31U) ? (UINT8)(*v + 1U) : 0U;
-			else *v = *v ? (UINT8)(*v - 1U) : 31U;
+			if(keys & J_UP)
+			{
+				if(*v >= 31U) continue;
+				(*v)++;
+			}
+			else
+			{
+				if(*v == 0U) continue;
+				(*v)--;
+			}
 			cfg_colors_changed();
 			cfg_colors_seed(shown);
 		}
 		else continue;
 		color_draw(row, c);
 	}
-	while(joypad()) wait_vbl_done();
 	cfg_changed(CFG_OTHER);			/* COLORS= and THEME=6 to the file */
 }
 
@@ -297,8 +304,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		color_draw(row, sel ? 3U : 4U);
 		return;
 	}
-	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto) ||
-	   ((row == ROW_SKIP) && !cfg_can_jump))
+	if((row == ROW_GAME) || (row == ROW_THEME) || (row == ROW_FONT) || ((row == ROW_SGB) && sgb_auto))
 	{
 		/* a value, from column 6 for the game and 13 for the others */
 		memset(s, ' ', 40U);
@@ -309,11 +315,11 @@ static void row_draw(UINT8 row, UINT8 sel)
 			n = (UINT8)strlen(v);
 			for(i = 0U; i < n; i++) if(cfg_flaunch[i] == '/') v = cfg_flaunch + i + 1U;
 			if(*v == '#') v++;		/* off with no game: "#" alone */
-			if(!*v) v = "NOT SET";
+			/* no game: on, it is the card's one game, if it has just one */
+			if(!*v) v = (cfg_flaunch[0] == '#') ? "NOT SET" : "(AUTO)";
 		}
 		else if(row == ROW_THEME) v = names[theme_now()];
 		else if(row == ROW_SGB) v = "AUTO";		/* our stage1 sends the packets itself */
-		else if(row == ROW_SKIP) v = "N/A";		/* this console resets into every game */
 #ifdef LANG_ZH
 		else v = "12PX";			/* the Chinese build's text is always 12px */
 #else
@@ -344,6 +350,14 @@ static void row_draw(UINT8 row, UINT8 sel)
 	set_check_ring(y, sel);
 	color(WHITE, WHITE, SOLID);
 	box(130, y, 138, (UINT8)(y + 8U), M_FILL);
+	if(locked(row))
+	{
+		/* an empty box in index 2, as its label is */
+		color(DKGREY, WHITE, SOLID);
+		box(130, y, 138, (UINT8)(y + 8U), M_NOFILL);
+		color(BLACK, WHITE, SOLID);
+		return;
+	}
 	if(sel) color(DKGREY, DKGREY, SOLID);
 	else color(BLACK, WHITE, SOLID);
 	box(130, y, 138, (UINT8)(y + 8U), M_NOFILL);
@@ -353,6 +367,24 @@ static void row_draw(UINT8 row, UINT8 sel)
 		box(132, (UINT8)(y + 2U), 136, (UINT8)(y + 6U), M_FILL);
 	}
 	color(BLACK, WHITE, SOLID);
+}
+
+/* Under CLEAN NAMES, what it does to a name: the one with its tags, or
+   without. In the 8px font it is cut to the row. */
+static void example_draw(void)
+{
+	UINT8 s[32];
+
+	memset(s, ' ', 31U);
+	s[31] = 0U;
+	if(tags_hide) memcpy(s, "Game Title", 10U);
+	else memcpy(s, "Game Title (USA) (Rev 1) [!].gb", 31U);
+	color(BLACK, WHITE, SOLID);
+#ifndef LANG_ZH
+	if(ui_font) text12(s, 19U, 1U, 5U);
+	else
+#endif
+	Draw_Text(s, 19U, 1U, 5U);
 }
 
 /* The labels and rows of a page, none under the cursor, and its number at
@@ -373,9 +405,12 @@ static void rows_draw(UINT8 page)
 	{
 		if(row_page[i] != page) continue;
 		strcpy((char *)s, labels[i]);
+		if((i == ROW_SKIP) && locked(i)) color(DKGREY, WHITE, SOLID);
 		Draw_Text(s, (UINT8)strlen((char *)s), 0U, row_at[i]);
+		color(BLACK, WHITE, SOLID);
 		row_draw(i, 0U);
 	}
+	if(page == 1U) example_draw();
 	if((page == 2U) && cgb_mode)
 	{
 		/* the picker's heading, a letter over each column of boxes */
@@ -435,7 +470,10 @@ static void clock_tick(void)
         SET_RESUME, its last row
      3  LEFT or RIGHT came round to page 1: Set_window draws it, the cursor
         on its first row
-     4  START: back to the SD tab */
+     4  START: back to the SD tab
+     5  A on GAME: pick_rom is set, and the list comes up to pick from
+     6  FAST LAUNCH was ticked and its notice shown: Set_window draws
+        page 1 and calls again with start 1, that row */
 UINT8 set_page2(UINT8 start) __banked
 {
 	UINT8 row = start;
@@ -490,6 +528,20 @@ UINT8 set_page2(UINT8 start) __banked
 			}
 			to = (to == 1U) ? SET_PAGE2 : SET_PAGE3;
 		}
+		else if((keys & J_A) && (row == ROW_GAME))
+		{
+			pick_rom = 1U;			/* the list comes up to take a game from (sdlist.c) */
+			return 5U;
+		}
+		else if((keys & J_B) && (row == ROW_THEME))
+		{
+			theme_back = 1U;
+			row_act(row);
+			theme_back = 0U;
+			DrawGB(4);
+			page_draw(2U);
+			row_draw(row, 1U);
+		}
 		else if((keys & J_A) && (row >= ROW_BG))
 		{
 			color_edit(row);
@@ -506,6 +558,24 @@ UINT8 set_page2(UINT8 start) __banked
 			if((row == ROW_FONT) || (row == ROW_THEME))
 			{
 				page_draw(2U);
+				row_draw(row, 1U);
+			}
+			else if((row == ROW_FAST) && row_on(ROW_FAST))
+			{
+				/* just ticked: how to get the list back at power-on, and
+				   then page 1 again with the cursor here */
+				flaunch_box();
+				return 6U;
+			}
+			else if(row == ROW_TAGS)
+			{
+				row_draw(row, 1U);
+				example_draw();
+			}
+			else if(row == ROW_SGB)
+			{
+				/* SKIP BOOT ROM may have become, or stopped being, a choice */
+				page_draw(1U);
 				row_draw(row, 1U);
 			}
 			else if((row == ROW_FAST) || (row == ROW_GAME))

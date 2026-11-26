@@ -385,6 +385,11 @@ static void frame(const char *title, const char *keys)
 	text(base, 1U, 5U, 18U);
 	color(BLACK, DKGREY, SOLID);
 	text(keys, 1U, 15U, 18U);
+#ifdef LANG_ZH
+	popup_rules(15U, 135U, 84U);
+#else
+	popup_rules(15U, ui_font ? 139U : 135U, 84U);
+#endif
 }
 
 static UINT8 key(void)
@@ -423,6 +428,11 @@ static const char *act(UINT8 i)
 	}
 	text(sel ? "Delete this save?" : "Restore this save?", 1U, 12U, 18U);
 	text("[B]no       [A]yes", 1U, 15U, 18U);
+#ifdef LANG_ZH
+	popup_rules(15U, 135U, 84U);
+#else
+	popup_rules(15U, ui_font ? 139U : 135U, 84U);
+#endif
 	do k = key(); while(!(k & (J_A | J_B)));
 	if(k & J_B) return 0;
 	text("Working...", 1U, 3U, 18U);
@@ -494,14 +504,15 @@ void save_manager(const char *name) __banked
 /* DAILY BACKUP (docs/save-manager.md): at boot, when a save is waiting to
    be written to savepath ("/SAVER/<base>.sav") and that file was last
    written before today by the cart's clock, it is copied to a backup first
-   and the game's other backups are deleted, so the game has one backup, of
+   and then the game's other backups are deleted, so the game has one backup, of
    the save as it was before today's play. Later boots the same day find
    the file written today and leave the backup alone. The test is only as
    good as the clock. A 32 KB copy takes several seconds, at most once a
    day a game. */
-void save_daily(const char *savepath) __banked
+void save_daily(const char *savepath, UINT8 banks) __banked
 {
 	DWORD t;
+	char s[20];
 	UINT8 n;
 	UINT8 i;
 
@@ -517,11 +528,39 @@ void save_daily(const char *savepath) __banked
 	t = get_fattime() >> 16;
 	if((live.y == (UINT8)(t >> 9)) && (live.mo == (UINT8)((t >> 5) & 15U)) && (live.d == (UINT8)(t & 31U))) return;
 
+	/* the save prompt's band: what this is, the game, why, and how long.
+	   About 1.75 s an 8 KB bank. */
 	color(BLACK, DKGREY, SOLID);
-	box(11, 37, 149, 76, M_FILL);
-	text("Daily backup...", 2U, 5U, 16U);
-	text("a few seconds", 2U, 7U, 16U);
-	for(i = 0U; i < count; i++) del_backup(i);
-	backup();
+#ifdef LANG_ZH
+	box(0, 35, 159, 99, M_FILL);
+#else
+	box(0, 35, 159, ui_font ? 103 : 99, M_FILL);
+#endif
+	text("Daily save backup", 1U, 5U, 18U);
+	color(WHITE, BLACK, SOLID);
+	text(base, 1U, 7U, 18U);
+	color(BLACK, DKGREY, SOLID);
+	text("Copy of older save", 1U, 9U, 18U);
+	n = banks ? (UINT8)((((banks << 3) - banks) + 2U) >> 2) : 2U;
+	memcpy(s, "About ", 6U);
+	i = 6U;
+	if(n >= 10U) s[i++] = (char)('0' + n / 10U);
+	s[i++] = (char)('0' + n % 10U);
+	memcpy(s + i, " seconds...", 12U);
+	text(s, 1U, 11U, 18U);
+
+	/* The new backup first, and the older ones go only when it is on the
+	   card: a copy that fails leaves what there was. Until 2026-11-25 the
+	   old ones were deleted first. The list is newest first and the new
+	   backup has the save's time, so it is the one that stays. */
+	if(backup() == 0U)
+	{
+		for(i = 0U; i < 64U; i++)
+		{
+			scan();
+			if(count <= 1U) break;
+			if(del_backup((UINT8)(count - 1U))) break;
+		}
+	}
 	color(BLACK, WHITE, SOLID);
 }

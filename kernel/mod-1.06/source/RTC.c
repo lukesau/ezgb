@@ -156,7 +156,7 @@ void Set_window(void)__banked
 	BYTE update;
 	BYTE select=0;	
 	BYTE autosave;
-	UINT8 resume = 0;	/* mod: page 1 was drawn to go back into the mod's rows */
+	UINT8 resume = 0;	/* mod: page 1 was drawn to go back into the mod's rows: the row to go to, and one */
 	UINT8 start2 = 0;
 	UINT8 r2;
 
@@ -358,8 +358,8 @@ page1:		/* mod: the second page comes back here to draw the first again */
 			memcpy(datetime_old,datetime,7);
 			if(resume)		/* mod: this page was drawn for the cursor to go back to its last row */
 			{
+				start2 = (UINT8)(resume - 1U);	/* resume is the row and one */
 				resume = 0;
-				start2 = SET_RESUME;
 				goto enter2;
 			}
 		}
@@ -619,11 +619,20 @@ enter2:
 							tab_to_sd = 1;
 							return;
 						}
+						if(r2 == 5) return;		/* GAME: the list comes up to pick a game (pick_rom) */
+						if(r2 == 6)
+						{
+							/* FAST LAUNCH's notice was up: this page again, the cursor on that row */
+							DrawGB(1);
+							resume = 2;
+							select = 1;
+							goto page1;
+						}
 						if(r2 == 2)
 						{
 							/* back from page 2: this page again, then its last row */
 							DrawGB(1);
-							resume = 1;
+							resume = SET_RESUME + 1;
 							select = 1;
 							goto page1;
 						}

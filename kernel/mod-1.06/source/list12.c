@@ -23,7 +23,7 @@
 
 extern void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
 
-#pragma bank 13
+#pragma bank 14	/* font12.c and its three glyph sets fill bank 13 */
 
 extern FM_FILE_FS *pFilename_buffer;
 extern UINT16 game_folder_total;
@@ -112,7 +112,14 @@ static void counter(UINT16 n)
 	}
 	s[11] = 0U;
 	/* clear the field, then the text against the right edge */
-	font12_draw((const UINT8 *)"", 116U, 0U, F12_NORMAL);
+	{
+		/* not a literal: font12.c is in another bank and would read its own
+		   bytes at this one's address */
+		UINT8 none[1];
+
+		none[0] = 0U;
+		font12_draw(none, 116U, 0U, F12_NORMAL);
+	}
 	font12_draw(s, (UINT8)(160U - w), 0U, F12_NORMAL);
 }
 
@@ -126,7 +133,7 @@ void tabs12(UINT8 page) __banked
 	/* the first label starts at the screen's edge: from x 2 it left two
 	   columns of an inverted SD tab unpainted */
 	static const UINT8 at[3] = {0U, 30U, 68U};
-	UINT8 s[6];
+	UINT8 s[13];
 	UINT8 i;
 
 	color(BLACK, WHITE, SOLID);
@@ -140,6 +147,17 @@ void tabs12(UINT8 page) __banked
 	fill_fast_rect(0U, 12U, 159U, 13U, acc_idx ? acc_idx : 3U);	/* the rule, in the theme's accent */
 	if(page == 4U) return;
 
+	if(pick_rom && (page == 0U))
+	{
+		/* the list is up to pick the fast launch game: no tabs to go to */
+		memcpy(s, " PICK A ROM ", 13U);
+		font12_draw(s, 0U, 0U, F12_INVERSE);
+		i = font12_end(s, 0U);
+		s[0] = ' ';
+		s[1] = 0U;
+		font12_draw(s, i, 0U, F12_NORMAL);
+		return;
+	}
 	/* each label paints its row to the right edge, so they go left to
 	   right, and a blank after the last ends an inverted HELP */
 	for(i = 0U; i < 3U; i++)
@@ -312,8 +330,12 @@ void text12(const UINT8 *s, UINT8 len, UINT8 x, UINT8 y) __banked
 				memcpy(left, s, i);
 				left[i] = 0U;
 				font12_field(left, (UINT8)(x << 3), py, draw_colors(), xe);
-				w = width12(s + j);
-				if(w < (UINT8)(xe - (x << 3))) font12_field(s + j, (UINT8)(xe - w), py, draw_colors(), xe);
+				/* the second without the blanks a caller padded it with */
+				for(i = 0U; (i < 20U) && s[j + i]; i++) left[i] = s[j + i];
+				while(i && (left[i - 1U] == ' ')) i--;
+				left[i] = 0U;
+				w = width12(left);
+				if(w < (UINT8)(xe - (x << 3))) font12_field(left, (UINT8)(xe - w), py, draw_colors(), xe);
 				return;
 			}
 		}

@@ -103,7 +103,7 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	{
 		memcpy(s + 2, "Fast launch: ", 13U);
 		/* the game it is, with FAST LAUNCH off on the SET tab, reads OFF */
-		memcpy(s + 15, is_flaunch(name) ? ((cfg_flaunch[0] == '/') ? "YES" : "OFF") : "NO ", 3U);
+		memcpy(s + 15, is_flaunch(name) ? ((cfg_flaunch[0] != '#') ? "YES" : "OFF") : "NO ", 3U);
 	}
 	color(BLACK, DKGREY, SOLID);
 	Draw_Text(s, 18U, 1U, (UINT8)(7U + i * 2U));
@@ -198,6 +198,11 @@ redraw:
 	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
 	memcpy(s, "[B]back      [A]ok", 19U);
 	Draw_Text(s, 18U, 1U, 15U);
+#ifdef LANG_ZH
+	popup_rules(15U, 135U, 84U);
+#else
+	popup_rules(15U, ui_font ? 139U : 135U, 84U);
+#endif
 
 	while(joypad()) wait_vbl_done();		/* the hold that opened it is not a press */
 	last = 0U;
@@ -262,7 +267,7 @@ redraw:
 				cfg_changed(CFG_OTHER);
 				item_draw(3U, 1U, name);
 			}
-			else if(path_of(name, p, (cfg_flaunch[0] == '/') ? 0U : 1U))
+			else if(path_of(name, p, (cfg_flaunch[0] == '#') ? 1U : 0U))
 			{
 				strcpy(cfg_flaunch, p);
 				cfg_changed(CFG_OTHER);

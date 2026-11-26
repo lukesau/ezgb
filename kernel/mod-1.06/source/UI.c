@@ -18,6 +18,7 @@ void msg_box(const UINT8 *text) __banked;	/* mod: msgbox.c */
 /* Fast rectangle fill (fill_fast.c, bank 1): writes both VRAM bit planes
    per tile, replacing large box(...,M_FILL) fills (23,000 .plot calls). */
 void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
+extern UINT8 pick_rom;	/* mod: ezcfg.c */
 #endif
 
 #define UI_BANK
@@ -65,12 +66,21 @@ void DrawGB(UINT8 page)__banked
 	{
 		fill_fast_rect(0U, 0U, 159U, 14U, 0U);
 
-		color(WHITE,BLACK,SOLID)	/* mod: was black on dark gray */;
-		Draw_Text(UI_TAB_SD, UI_LEN(UI_TAB_SD), 0, 0);
+		if(pick_rom)		/* mod: the list is up to pick the fast launch game */
+		{
+			color(WHITE,BLACK,SOLID);
+			Draw_Text(" PICK A ROM ", 12, 0, 0);
+			color(BLACK,WHITE,SOLID);
+		}
+		else
+		{
+			color(WHITE,BLACK,SOLID)	/* mod: was black on dark gray */;
+			Draw_Text(UI_TAB_SD, UI_LEN(UI_TAB_SD), 0, 0);
 
-		color(BLACK,WHITE,SOLID);
-		Draw_Text(UI_TAB_SET, UI_LEN(UI_TAB_SET), 4, 0);
-		Draw_Text(UI_TAB_HELP, UI_LEN(UI_TAB_HELP), 9, 0);
+			color(BLACK,WHITE,SOLID);
+			Draw_Text(UI_TAB_SET, UI_LEN(UI_TAB_SET), 4, 0);
+			Draw_Text(UI_TAB_HELP, UI_LEN(UI_TAB_HELP), 9, 0);
+		}
 	}
 	else if(page==1)
 	{

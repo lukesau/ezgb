@@ -954,6 +954,63 @@ changing it once; the save prompt waiting through a held A and saving on
 the next press. Not seen: a tap during `Reading...`, and the Super Game
 Boy, where the handler stands off for four frames after a packet.
 
+### Daily backup, popups and the SET tab (2026-11-25)
+
+From a read of the 0918 mod's source against this one.
+
+**Two bugs found on the way, both in every build before this one.**
+
+- **The settings file could be written with 256 bytes of stack in it.**
+  SDCC 4.5 compiles `n = p - line`, with `line` an array on the stack, as
+  `sub a, l` / `ld hl, #2` / `add hl, sp` / `sbc a, h`, and the `add`
+  clears the borrow. So a line's length came out 256 too big whenever the
+  line crossed a 256 byte boundary of the stack, which depends on how deep
+  the call is: a change to the SET tab moved the stack and FAST LAUNCH
+  began writing a corrupt `/EZGB.CFG` every time. `line` is static now
+  (`file_write`, `source/ezcfg.c`), and no other place in either build
+  compiles to that sequence (searched in the `.asm` listings).
+- **Bank 13 was 17 bytes too big** from the scroll change of the same day:
+  the linker only warns, and what ran off the end was the 12px list's
+  code. `list12.c` is in bank 14 now, the one literal it passed to
+  `font12.c` is on the stack, and the makefile fails the link on that
+  warning.
+
+**Daily backup** makes the new backup first and deletes the older ones
+only when it is on the card; it deleted them first, so a copy that failed
+left none. Its box is the save prompt's band: `Daily save backup`, the
+game, `Copy of older save`, `About N seconds...` from the save's size.
+
+**Popups** are the background color in an outline in light and in DV, and
+the background's shade in the other themes; in light they were the dark
+gray the kernel as received has. A popup with two buttons has a rule above
+them and one between them (`popup_rules`, `source/msgbox.c`).
+
+**The SET tab.**
+
+- `GAME:` sends the list up with ` PICK A ROM ` for its tab strip: A on a
+  game takes it, SELECT or B in the root gives up, and both come back to
+  the SET tab. It stepped through the recent list.
+- FAST LAUNCH with no game set is on, as the file means it: `GAME:` reads
+  `(AUTO)`, the card's one game. Unticking writes `FLAUNCH=#`, which turns
+  that off too. Ticking shows `Hold START at boot to cancel`.
+- `THEME:` steps with A and back with B through light, dark, DV, red,
+  green, purple, blue, custom; where only `BGP` can be set it is light,
+  dark, DV, and a color theme from the file is dark and reads `DARK`.
+- SKIP BOOT ROM is drawn in index 2 with an empty box, and passed over,
+  on a console with nothing to choose: one that cannot start a game
+  without its boot ROM, or the DMG family with SGB BOOT on.
+- CLEAN NAMES has an example under it, `Game Title (USA) (Rev 1) [!].gb`
+  or `Game Title`.
+- A channel of the color picker stops at 0 and 31, and a held direction
+  there repeats as on the rest of the tab.
+
+Seen in SameBoy: the daily backup making its copy and then deleting an
+older one; the menu, the save manager and the save prompt in light in both
+fonts; the notice, a pick and a canceled pick; B on `THEME:`; the example;
+`/EZGB.CFG` written right from FAST LAUNCH with three different files. Not
+seen: SKIP BOOT ROM grayed, DV where only `BGP` can be set through the
+row, the Chinese build.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.

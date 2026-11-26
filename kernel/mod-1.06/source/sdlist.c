@@ -112,6 +112,7 @@ void Show_SD_list(void) __banked
 	UINT8 navstep = 1;		/* mod: rows a scroll moves this poll */
 	UINT8 key_t = 0;		/* mod: the frame the held key last acted on */
 	UINT8 keymark = 0;		/* mod: a press was just acted on: key_t is taken once it is drawn */
+	UINT8 to_set = 0;		/* mod: a game was picked: the SET tab is next */
 	UINT16 scroll_from = 0;		/* mod: where the list was before a scroll (updata 4) */
 	/* There used to be a local `BYTE FR_OK=0;` shadowing FatFs' FR_OK enum (0): the
 	   comparison below tested that variable and only looked right because it was 0,
@@ -188,7 +189,7 @@ void Show_SD_list(void) __banked
 				res = f_mkdir_bank(s_saver);
 
 
-				save_daily(currentpath_temp);		/* mod: DAILY BACKUP, before the save is written (savemgr.c) */
+				save_daily(currentpath_temp, (UINT8)save_size);		/* mod: DAILY BACKUP, before the save is written (savemgr.c) */
 				Show_SAVE_info(save_size,is_autosave);				
 				cfg_backup();		/* mod: the clock to /EZGB.CFG, as at a launch */
 		}
@@ -393,6 +394,22 @@ re_showfile:
 			keyhold = 0;
 		}
 
+		/* mod: the list is up to pick the fast launch game (docs/set-tab.md,
+		   PICK ROM): A on a game takes it, SELECT or B in the root gives
+		   up, and both go back to the SET tab, by way of the SELECT branch
+		   below. START does nothing. */
+		if(pick_rom || to_set)
+		{
+			keysrepeat &= (UINT8)~J_START;
+			if(to_set || (keysrepeat & J_SELECT) || ((keysrepeat & J_B) && (currentpath[1] == 0)))
+			{
+				pick_rom = 0;
+				to_set = 0;
+				page_num = 0;
+				keysrepeat = J_SELECT;
+			}
+		}
+
 		if(keysrepeat & J_LEFT){
 	    if ( show_offset )
 	    {
@@ -489,6 +506,11 @@ re_showfile:
 				DrawGB(1);
 				Set_window();
 				page_num	=2;	
+				if(pick_rom)		/* mod: GAME: on the SET tab wants a game picked from the list */
+				{
+					updata=1;
+					goto refind_file;
+				}
 				if(tab_to_sd)		/* mod: START on the SET tab is the SD tab, not HELP */
 				{
 					tab_to_sd = 0;
@@ -653,6 +675,22 @@ re_showfile:
 						}
 			      
 						else{   //  file
+							if(pick_rom)
+							{
+								/* mod: this game is the fast launch game. The name
+								   goes to WRAM first: the card is written. */
+								const UINT8 *nm = pFilename_buffer[BANK_index].filename;
+								UINT8 n = (UINT8)strlen((const char *)nm);
+
+								if(!(((n > 3U) && (nm[n - 3U] == '.') && ((nm[n - 2U] | 0x20U) == 'g') && ((nm[n - 1U] | 0x20U) == 'b')) ||
+								     ((n > 4U) && (nm[n - 4U] == '.') && ((nm[n - 3U] | 0x20U) == 'g') && ((nm[n - 2U] | 0x20U) == 'b') &&
+								      ((nm[n - 1U] | 0x20U) == 'c'))))
+									continue;			/* not a game */
+								strcpy(lfname_temp, (const char *)nm);
+								cfg_flaunch_pick(lfname_temp);
+								to_set = 1;
+								continue;
+							}
 							/* mod: a hold of A is the game's menu, and an A still held
 							   from opening the folder is no press (rommenu.c) */
 							{

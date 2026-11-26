@@ -163,7 +163,10 @@ $(BUILD)/%.o : source/%.s | $(BUILD)
 
 #  mod: the makefile too, so a change of the link flags (the bank count) relinks
 $(TARGET): $(OBJS) makefile | $(BUILD)
-	$(LCC) -o $@ $(OBJS) $(LDFLAGS)
+	@# mod: a bank that outgrows its 16 KB only gets a warning from the linker, and the
+	@# kernel then crashes where the code ran off its end. It is an error here.
+	$(LCC) -o $@ $(OBJS) $(LDFLAGS) 2>&1 | tee $(BUILD)/link.log
+	@if grep -q 'spans into the next' $(BUILD)/link.log; then echo 'ERROR: a bank is full (see above)'; rm -f $@; exit 1; fi
 
 # publish: .dat only (the name the flasher expects)
 $(RELDAT): $(TARGET) | $(REL)

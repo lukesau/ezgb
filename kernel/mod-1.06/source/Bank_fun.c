@@ -1926,11 +1926,16 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	else Draw_Text(t, 18, 1, 7);
 	color(BLACK,DKGREY,SOLID);
 	/* when the game was started: the clock the last launch stored (ezcfg.c) */
-	if(cfg_played(t)) Draw_Text(t, 19, 1, 9);
+	if(cfg_played(t))
+	{
+		Draw_Text(t, 19, 1, 9);
+		box(0,35,159,ui_font ? 103 : 99,M_NOFILL);	/* the line runs to the screen's edge, over the outline */
+	}
 	if(autosave != 1)
 	{
 		memcpy(t, "[B]skip    [A]save", 19);
 		Draw_Text(t, 18, 1, 11);
+		popup_rules(11, ui_font ? 103 : 99, 80);
 		/* a press made now, not a button held since before the prompt */
 		pad_take();
 		while(1)
