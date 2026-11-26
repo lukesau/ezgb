@@ -366,11 +366,11 @@ static void rows_draw(UINT8 page)
 			Draw_Text(s, 1U, (UINT8)(9U + i * 4U), 7U);
 		}
 	}
-	s[0] = (UINT8)('1' + page);
-	s[1] = '/';
-	s[2] = '3';
-	s[3] = 0U;
-	Draw_Text(s, 3U, 8U, 16U);
+	/* the page, between arrows for what LEFT and RIGHT do. They are not
+	   buttons: the cursor never goes there. */
+	memcpy(s, "<  1/3  >", 10U);
+	s[3] = (UINT8)('1' + page);
+	Draw_Text(s, 9U, 5U, 16U);
 }
 
 /* Page 2 or 3, on a cleared screen */

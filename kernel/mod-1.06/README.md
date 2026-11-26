@@ -816,6 +816,9 @@ After a look at the third SET page next to mod 7.2's
   have their values boxed too. The box under the cursor is filled with the
   highlight, and a locked one is drawn in index 2.
 
+The foot of each SET page is `<  3/3  >`: the arrows say that LEFT and
+RIGHT change the page, and are not buttons.
+
 Seen in SameBoy: DV in 12px with its three locked rows, the cursor going
 from `THEME:` to `ACCENT:`, the accent changed with DV still on and
 `COLORS=000000,FFFFFF,6BF731` written; red's `BG:` changed, giving
