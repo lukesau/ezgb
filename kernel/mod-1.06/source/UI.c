@@ -65,7 +65,7 @@ void DrawGB(UINT8 page)__banked
 	{
 		fill_fast_rect(0U, 0U, 159U, 14U, 0U);
 
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID)	/* mod: was black on dark gray */;
 		Draw_Text(UI_TAB_SD, UI_LEN(UI_TAB_SD), 0, 0);
 
 		color(BLACK,WHITE,SOLID);
@@ -76,7 +76,7 @@ void DrawGB(UINT8 page)__banked
 	{
 		fill_fast_rect(0U, 15U, 159U, 143U, 0U);
 
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID)	/* mod: was black on dark gray */;
 		Draw_Text(UI_TAB_SET, UI_LEN(UI_TAB_SET), 4, 0);
 
 		color(BLACK,WHITE,SOLID);
@@ -87,7 +87,7 @@ void DrawGB(UINT8 page)__banked
 	{
 		fill_fast_rect(0U, 15U, 159U, 143U, 0U);
 
-		color(BLACK,DKGREY,SOLID);
+		color(WHITE,BLACK,SOLID)	/* mod: was black on dark gray */;
 		Draw_Text(UI_TAB_HELP, UI_LEN(UI_TAB_HELP), 9, 0);
 
 		color(BLACK,WHITE,SOLID);

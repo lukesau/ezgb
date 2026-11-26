@@ -6,7 +6,8 @@
 
 /* ink * 4 + paper */
 #define F12_NORMAL	0x0CU		/* ink 3 on paper 0 */
-#define F12_INVERSE	0x03U		/* ink 0 on paper 3: the selected row */
+#define F12_INVERSE	f12_inverse	/* the selected row: ink 0 on paper 3, or on the theme's accent (ezcfg.c) */
+extern UINT8 f12_inverse;
 
 /* the icons, as characters */
 #define F12_STAR	0x7FU

@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "font12.h"
+#include "ezcfg.h"
 
 #pragma bank 13
 
@@ -67,7 +68,7 @@ static void cell_or4(const u8 *g, u8 *buf) __naked __sdcccall(0);
 static void cell_or5(const u8 *g, u8 *buf) __naked __sdcccall(0);
 static void cell_or6(const u8 *g, u8 *buf) __naked __sdcccall(0);
 static void cell_or7(const u8 *g, u8 *buf) __naked __sdcccall(0);
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper);
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper, const u8 *m);
 
 static u8 glyph_index(u8 c)
 {
@@ -150,11 +151,13 @@ UINT8 font12_end(const UINT8 *s, UINT8 x) __banked
    from xe on, so what is to the right of the field stays. */
 void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __banked
 {
-	u8 i, x, n, ink, paper, xm, t0, nt, kf, kl, cnt, c;
+	u8 i, x, n, ink, paper, xm, t0, nt, kf, kl, cnt, c, blue;
 	/* one spare column: a glyph ending in tile 19 still ORs its (zero) low
 	   byte into "tile 20" */
 	u8 buf[(MAX_TILES + 1) * ROW_H];
 	u8 xs[MAX_GLYPHS];
+	/* DV's blue icons: the leading icon's pixels, its two tile columns */
+	u8 ib[2 * ROW_H];
 	u16 addr;
 	const u8 *g;
 	u8 *p;
@@ -176,6 +179,13 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 	addr = (u16)(0x8100U + (u16)(y >> 3) * 0x140U + (u16)((y & 7) << 1) + ((u16)t0 << 4));
 	xm = paper ? 0xFF : 0;
 	fill0(buf, (u8)((nt + 1) * 3));
+	/* DV (its accent is index 1) draws a row's leading icon in index 2, its
+	   blue, on a normal row: the icon's pixels also go into ib, and the
+	   flush clears plane 0 under them. A selected row keeps its icon in the
+	   background color, as its name is. */
+	c = s[0];
+	blue = (u8)(acc_idx == 1 && colors == 0x0C && x0 == 0 && nt >= 2 && (c == 0x7F || (c >= 0xC0 && c <= 0xC4)));
+	fill0(ib, 6);
 	cnt = fit_to(s, 0, x0, xs, xe);
 	for (i = 0; i < cnt; i++) {
 		x = xs[i];
@@ -192,16 +202,17 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 		case 6:  cell_or6(g, p); break;
 		default: cell_or7(g, p); break;
 		}
+		if (blue && i == 0) cell_or0(g, ib);	/* the icon is at x 0 */
 	}
 	if (colors != 0x0C && colors != 0x03) {
-		flush_rmw(buf, addr, n, nt, kf, kl, ink, paper);
+		flush_rmw(buf, addr, n, nt, kf, kl, ink, paper, 0);
 		return;
 	}
 	/* a tile the field only partly covers goes through the masked write */
 	p = buf;
 	for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
 		x = (u8)((i ? 0 : kf) | (i == (u8)(nt - 1) ? kl : 0));
-		if (x) flush_rmw(p, addr, n, 1, x, 0, ink, paper);
+		if (x || (blue && i < 2)) flush_rmw(p, addr, n, 1, x, 0, ink, paper, (blue && i < 2) ? ib + (u8)(i * ROW_H) : 0);
 		else blit_col1(p, addr, n, xm);
 	}
 }
@@ -209,12 +220,14 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 /* Generic flush: any ink/paper pair. Each plane byte is (bits & a) ^ x,
    where a selects the plane bits that differ between ink and paper and x
    is paper's bit; the first tile column keeps its pixels outside the field
-   (kf). Row addresses step by 2 within a tile and by $130 + 2 across a
+   (kf). m, when given, masks plane 0 of the first two tile columns: ink 3
+   there becomes index 2 (DV's blue icons). Row addresses step by 2 within a tile and by $130 + 2 across a
    tile boundary, where the low nibble wraps to 0. */
-static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper)
+static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink, u8 paper, const u8 *m)
 {
 	u8 a0, x0, a1, x1, i, r, keep, v;
 	u16 a;
+	const u8 *mt;
 
 	a0 = ((ink ^ paper) & 1) ? 0xFF : 0;
 	x0 = (paper & 1) ? 0xFF : 0;
@@ -224,9 +237,10 @@ static void flush_rmw(const u8 *buf, u16 addr, u8 n, u8 nt, u8 kf, u8 kl, u8 ink
 		keep = i ? 0 : kf;
 		if (i == (u8)(nt - 1)) keep |= kl;
 		a = addr;
+		mt = (m && i < 2) ? m + (u8)(i * ROW_H) : 0;
 		for (r = 0; r < n; r++) {
 			v = buf[r];
-			vram_rmw2(a, keep, (u8)(((v & a0) ^ x0) & ~keep), (u8)(((v & a1) ^ x1) & ~keep));
+			vram_rmw2(a, keep, (u8)((((mt ? v & ~mt[r] : v) & a0) ^ x0) & ~keep), (u8)(((v & a1) ^ x1) & ~keep));
 			a += 2;
 			if ((a & 0x0F) == 0) a += 0x130;
 		}

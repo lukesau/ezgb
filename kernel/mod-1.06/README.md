@@ -378,19 +378,44 @@ and OBJ palette. A DMG, and a color console in DMG compatibility mode,
 have only `BGP`: light is the stock `$E4`, every other theme is the
 inverted `$1B`, and the row offers light and dark.
 
-Two differences from the 0918 mod:
+> **Correction (2026-11-25).** Until this date the section said the color
+> themes had deeper accents than the 0918 mod's, drawn under white text,
+> and that a DMG's dark theme had a selected row of white on light gray.
+> Neither was what the kernel did by then: the selected row had become the
+> background color on the ink, so in every theme it was black and white and
+> the accent showed only in the SET tab. The accents are now the 0918
+> mod's, drawn as below. The same day's sections further down that call
+> DV's highlight blue are wrong the same way: it is lime, and the blue is
+> its icons'.
 
-- **The accents are deeper.** This kernel draws a highlight as the ink on
-  index 2; the 0918 mod draws the background color on its accent. White
-  text does not read on the 0918 accents (gold, apricot), so the color
-  themes here have a darker color of the same hue at index 2: sky
-  `#1A6FD0`, rose `#C2407F`, gold `#9A7A00`, apricot `#C85A1A`. These are
-  my picks and have only been seen in the emulator.
-- **No custom colors and no DV.** `THEME=6` and `7` from the 0918 mod show
-  as dark, and the file keeps its number until the row is used.
+**The accent.** A highlight is drawn as `color(WHITE, BLACK)`, the
+background color on the ink: the selected row, the active tab, the name
+band of the menus and prompts, and the SET tab's cursor (as received those
+last two were black on dark gray, which an original Game Boy cannot read).
+`color()` is replaced (`source/vram_put.s`) and is where a theme changes
+that, with two numbers `theme_apply` sets (`source/ezcfg.c`):
 
-On a DMG the dark theme's selected row is white on light gray,
-the mirror of stock's black on dark gray, and as hard to read.
+| | Light | Dark | Red, green, purple, blue, custom | DV |
+|---|---|---|---|---|
+| A paper of 3, and the ink of a solid fill of 3 | 3 | 3 | 2, the accent | 1, its lime |
+| A paper of 2, the dialogs' dark gray | 2 | 1 | 1 | 0 |
+
+So a color theme's highlight is its background color on sky `#42A5FF`,
+rose `#FF94C5`, gold `#EFD63A` or apricot `#FFA56B`, and its dialogs are
+the background's lighter shade. DV's highlight is lime and its dialogs are
+black in a white frame. Check marks and the frame of a checkbox under the
+cursor are in the accent. The 12px renderer takes the selected row's
+colors from the same number, and the rule under its tab strip.
+
+DV draws a row's icon in its blue, index 2, on a row that is not selected:
+`font12_field` keeps the leading icon's pixels and the flush clears plane 0
+under them (`source/font12.c`, as the 0918 mod's `draw12.c`).
+
+Where only `BGP` can be set there is no accent: a highlight is the
+background shade on the ink, and a dialog past light is index 1.
+
+The library has `color()` in one module with its three variables, so that
+module is in `vram_put.s` whole and the linker never takes the library's.
 
 Checked in SameBoy: green and purple on the CGB model with the kernel's
 header given the CGB flag, the row stepping through the themes and writing
@@ -696,6 +721,23 @@ Seen in SameBoy in the 12px font: the three pages and the walk through
 them and back, the clock, the `Loading...` box, the save prompt and its
 `Saving...`. Not seen: the 8px versions of the boxes, and the error
 messages.
+
+### Second run on a cart (2026-11-25)
+
+**The last game became the fast launch game.** `file_read` took the value
+of `LASTROM=` into the fast launch setting: one branch handled both keys.
+A launch writes `LASTROM=`, so the next boot started that game, and the
+next write of the file made it `FLAUNCH=`. Each key now has its variable.
+A card that went through it has a `FLAUNCH=` line it was never given:
+turn FAST LAUNCH off on the SET tab, or delete the line.
+
+**The accent, and DV's blue icons**: [Themes](#themes) above.
+
+Seen in SameBoy on the CGB model: red and DV in 12px (list, tab strip, the
+hold-A menu, the SET pages), blue in 8px (the same), purple's SET cursor
+on a checkbox, and a card with only `LASTROM=` booting to the list with
+FAST LAUNCH off. Light on the DMG model. Not seen: dark, green, custom,
+the save manager and the prompts in a color theme.
 
 ### What of the 0918 mod is not here
 

@@ -182,7 +182,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 	color(BLACK,WHITE,SOLID);
 	Draw_Text(UI_RTC_TIME, UI_LEN(UI_RTC_TIME), 0, 3);	
 
-	color(BLACK,DKGREY,SOLID);
+	color(SEL_INK, SEL_PAPER, SOLID);
 	box(123,21,155,SET_BTN_Y1,M_FILL);
 	//color(BLACK,WHITE,SOLID);// text colour	
 	Draw_Text(UI_RTC_SET, UI_LEN(UI_RTC_SET), 16, 3);	
@@ -229,7 +229,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 				//color(BLACK,WHITE,SOLID);// selected frame colour
 			//color(BLACK,WHITE,SOLID);// text colour
 			if(select==0){
-				color(BLACK,DKGREY,SOLID);
+				color(SEL_INK, SEL_PAPER, SOLID);
 			}
 			else {
 				color(BLACK,WHITE,SOLID);
@@ -372,7 +372,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 				zh_fill_flat(0, (UINT8)(XX << 3), 159, (UINT8)((XX << 3) + 11U));
 #endif
 				
-				color(BLACK,DKGREY,SOLID);
+				color(SEL_INK, SEL_PAPER, SOLID);
 				Draw_Text(UI_RTC_SAV, UI_LEN(UI_RTC_SAV), 16, 3);
 			
 				color(BLACK,WHITE,SOLID);// text colour	
@@ -393,7 +393,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 4, 0, XX);
 #else
 				if(pos==0){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 4, 0, XX);
 #endif
@@ -408,7 +408,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 2, 5, XX);
 #else
 				if(pos==1){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 2, 5, XX);
 #endif
@@ -425,7 +425,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 2, 8, XX);
 #else
 				if(pos==2){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 2, 8, XX);
 #endif
@@ -439,7 +439,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 2, 11, XX);
 #else
 				if(pos==3){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 2, 11, XX);
 #endif
@@ -455,7 +455,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 2, 14, XX);
 #else
 				if(pos==4){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 2, 14, XX);
 #endif
@@ -470,7 +470,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 					Draw_Text(msg, 2, 17, XX);
 #else
 				if(pos==5){
-					color(BLACK,DKGREY,SOLID);
+					color(SEL_INK, SEL_PAPER, SOLID);
 				}
 				Draw_Text(msg, 2, 17, XX);
 #endif
@@ -656,7 +656,7 @@ enter2:
 		
 		else if(keysrepeat &  J_A){
 			if(select==0){
-				color(BLACK,DKGREY,SOLID);
+				color(SEL_INK, SEL_PAPER, SOLID);
 				box(123,21,155,SET_BTN_Y1,M_FILL);	// 
 				color(BLACK,WHITE,SOLID);// text colour	
 				if(edit_mode == 0){

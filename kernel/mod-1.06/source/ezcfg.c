@@ -79,6 +79,9 @@ UINT8 tab_to_sd;				/* START on the SET tab: the SD tab is next, not HELP */
 UINT8 cfg_can_jump;			/* this console can start a game without the boot ROM */
 UINT8 custom_ok;			/* COLORS= gave the custom theme its colors */
 static UINT8 custom_ramp[8];
+UINT8 acc_idx;			/* theme_apply sets these three */
+UINT8 pop_idx;
+UINT8 f12_inverse;
 UINT8 custom_ch[9];			/* the custom theme: background, text, highlight, each red, green, blue, 0 to 31 */
 static char cfg_lastrom[FLAUNCH_MAX + 1U];	/* LASTROM=, the last game launched */
 static UINT8 cfg_found;			/* /EZGB.CFG opened */
@@ -365,7 +368,7 @@ static UINT16 file_read(UINT8 keep)
 	UINT16 rd = 0U;
 	UINT16 wr = 0U;
 	UINT16 eol;
-	UINT8 seen = 0U;
+	UINT16 seen = 0U;
 	UINT8 skip;
 	UINT8 k;
 	UINT8 c;
@@ -388,9 +391,9 @@ static UINT16 file_read(UINT8 keep)
 		if(eol < got) eol++;			/* the line with its LF */
 
 		k = line_key(SD_buffer + rd, &skip);
-		if(k && !keep && !(seen & (UINT8)(1U << k)))
+		if(k && !keep && !(seen & (UINT16)(1U << k)))
 		{
-			seen |= (UINT8)(1U << k);
+			seen |= (UINT16)(1U << k);
 			c = SD_buffer[rd + skip];
 			if(k == 1U) parse_rtc(SD_buffer + rd + skip, SD_buffer + eol);
 			else if(k == 2U)
@@ -420,13 +423,17 @@ static UINT16 file_read(UINT8 keep)
 			else if(k == 12U) parse_colors(SD_buffer + rd + skip, SD_buffer + eol);
 			else
 			{
+				/* FLAUNCH= or LASTROM=. Until 2026-11-25 both went to
+				   cfg_flaunch, so the last game launched became the fast
+				   launch game at the next boot. */
+				char *d = (k == 5U) ? cfg_flaunch : cfg_lastrom;
 				UINT8 n = 0U;
 				const UINT8 *v = SD_buffer + rd + skip;
 
 				while((v < SD_buffer + eol) && (*v != '\r') && (*v != '\n') && (n < FLAUNCH_MAX))
-					cfg_flaunch[n++] = (char)*v++;
-				while(n && (cfg_flaunch[n - 1U] == ' ')) n--;
-				cfg_flaunch[n] = 0;
+					d[n++] = (char)*v++;
+				while(n && (d[n - 1U] == ' ')) n--;
+				d[n] = 0;
 			}
 		}
 		if(k && keep)
@@ -760,19 +767,26 @@ UINT8 theme_now(void) __banked
 static const UINT8 ramps[THEMES][8] = {
 	{0xFFU, 0x7FU, 0xB5U, 0x56U, 0x4AU, 0x29U, 0x00U, 0x00U},	/* light, stock */
 	{0x00U, 0x00U, 0xC6U, 0x18U, 0x31U, 0x46U, 0xFFU, 0x7FU},	/* dark */
-	{0x28U, 0x04U, 0xEDU, 0x1CU, 0xA3U, 0x69U, 0xFFU, 0x7FU},	/* red, sky #1A6FD0 */
-	{0x22U, 0x0DU, 0xA8U, 0x25U, 0x18U, 0x3DU, 0xFFU, 0x7FU},	/* green, rose #C2407F */
-	{0x48U, 0x30U, 0x0DU, 0x41U, 0xF3U, 0x01U, 0xFFU, 0x7FU},	/* purple, gold #9A7A00 */
-	{0xA2U, 0x30U, 0x48U, 0x41U, 0x79U, 0x0DU, 0xFFU, 0x7FU},	/* blue, apricot #C85A1A */
+	{0x28U, 0x04U, 0xEDU, 0x1CU, 0x88U, 0x7EU, 0xFFU, 0x7FU},	/* red, sky #42A5FF */
+	{0x22U, 0x0DU, 0xA8U, 0x25U, 0x5FU, 0x62U, 0xFFU, 0x7FU},	/* green, rose #FF94C5 */
+	{0x48U, 0x30U, 0x0DU, 0x41U, 0x5DU, 0x1FU, 0xFFU, 0x7FU},	/* purple, gold #EFD63A */
+	{0xA2U, 0x30U, 0x48U, 0x41U, 0x9FU, 0x36U, 0xFFU, 0x7FU},	/* blue, apricot #FFA56B */
 	{0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U},	/* custom: custom_ramp */
 	{0x00U, 0x00U, 0xEFU, 0x1BU, 0x80U, 0x61U, 0xFFU, 0x7FU},	/* DV: lime #7BFF31, blue #0063C5 */
 };
 
 /* What color index 0 to 3 draws as (docs/themes.md), BGR555 low byte
-   first: the background, a shade of it, the highlight, the ink. This
-   kernel draws a highlight as the ink on index 2, where the 0918 mod draws
-   the background color on its accent, so the color themes have a deeper
-   accent here, one white text reads on.
+   first: the background, a shade of it, the accent, the ink. DV has its
+   lime accent at index 1 and the blue of its icons at index 2.
+
+   The kernel draws a highlight as color(WHITE, BLACK): the background
+   color on the ink. color() (vram_put.s) is where a theme changes that:
+     acc_idx   what a paper of 3 becomes, and the ink of a solid fill of 3:
+               2 in a color theme, 1 in DV, 0 for no change (light, dark,
+               and wherever only BGP can be set)
+     pop_idx   what a paper of 2, the dialogs' gray, becomes: 1 past light,
+               the background's shade, and 0 in DV, whose dialogs are black
+   f12_inverse is F12_INVERSE, the 12px font's selected row.
 
    In CGB mode the colors go to every BG and OBJ palette. A DMG, and a
    color console in DMG compatibility mode, have only BGP: light is the
@@ -782,6 +796,12 @@ static void theme_apply(void)
 	const UINT8 *r = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
 	UINT8 pal;
 	UINT8 i;
+
+	i = theme_now();
+	pop_idx = i ? ((i == 7U) ? 0U : 1U) : 2U;
+	acc_idx = 0U;
+	if(cgb_mode && (i >= 2U)) acc_idx = (i == 7U) ? 1U : 2U;
+	f12_inverse = acc_idx ? acc_idx : 3U;
 
 	/* The mark the next boot, and our stage1's boot screen, take the theme
 	   from before the card is read: save RAM bank 17 at $A414, 'T', 'H',
@@ -934,6 +954,9 @@ void console_init(void) __banked
 
 	/* nothing here counts on WRAM being cleared at startup */
 	cfg_dry = 0U;
+	acc_idx = 0U;
+	pop_idx = 2U;
+	f12_inverse = 3U;
 	tab_to_sd = 0U;
 	ui_font = 0U;
 	ui_font_cfg = 0U;
@@ -1213,10 +1236,13 @@ void cfg_colors_changed(void) __banked
 void cfg_colors_seed(UINT8 *dst) __banked
 {
 	const UINT8 *rp = (theme_now() == 6U) ? custom_ramp : ramps[theme_now()];
-	static const UINT8 from[3] = {0U, 3U, 2U};
+	UINT8 from[3];
 	UINT16 w;
 	UINT8 i;
 
+	from[0] = 0U;
+	from[1] = 3U;
+	from[2] = (theme_now() == 7U) ? 1U : 2U;	/* DV's accent is its index 1 */
 	for(i = 0U; i < 3U; i++)
 	{
 		w = ((UINT16)rp[from[i] * 2U + 1U] << 8) | rp[from[i] * 2U];

@@ -17,6 +17,7 @@
 #include "main.h"
 #include "ff.h"
 #include "font12.h"
+#include "ezcfg.h"
 #include "list12.h"
 #include "plays.h"
 
@@ -136,7 +137,7 @@ void tabs12(UINT8 page) __banked
 	}
 	if(page == 4U) fill_fast_rect(0U, 0U, 159U, 143U, 0U);
 	else if(page) fill_fast_rect(0U, 16U, 159U, 143U, 0U);
-	fill_fast_rect(0U, 12U, 159U, 13U, 3U);
+	fill_fast_rect(0U, 12U, 159U, 13U, acc_idx ? acc_idx : 3U);	/* the rule, in the theme's accent */
 	if(page == 4U) return;
 
 	/* each label paints its row to the right edge, so they go left to

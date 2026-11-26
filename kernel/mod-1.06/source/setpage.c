@@ -141,7 +141,7 @@ static void color_draw(UINT8 row, UINT8 hot)
 		s[1] = (UINT8)('0' + v % 10U);
 		s[2] = 0U;
 		if(hot == c) color(WHITE, BLACK, SOLID);
-		else if(hot == 3U) color(BLACK, DKGREY, SOLID);
+		else if(hot == 3U) color(SEL_INK, SEL_PAPER, SOLID);
 		else color(BLACK, WHITE, SOLID);
 		Draw_Text(s, 2U, (UINT8)(8U + c * 3U), trow);
 	}
@@ -231,7 +231,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		n = (UINT8)strlen(v);
 		if(n > 14U) n = 14U;
 		memcpy(s, v, n);
-		if(sel) color(BLACK, DKGREY, SOLID);
+		if(sel) color(SEL_INK, SEL_PAPER, SOLID);
 		else color(BLACK, WHITE, SOLID);
 		if(row == ROW_GAME) Draw_Text(s, 14U, 6U, trow);
 		else Draw_Text(s, 7U, 13U, trow);

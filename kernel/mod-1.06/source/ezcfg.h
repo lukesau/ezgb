@@ -20,6 +20,22 @@ void cfg_backup(void) __banked;			/* a save backup was written at boot */
 
 /* the settings, for setpage.c */
 #define FLAUNCH_MAX	122U
+
+/* What a theme does to color() (ezcfg.c, theme_apply) */
+extern UINT8 acc_idx;
+extern UINT8 pop_idx;
+
+/* The cursor of the SET tab and the active tab of the 8px strip: the
+   background color on the ink, which a theme turns into its accent. As
+   received they were black on dark gray, which the Chinese build keeps:
+   its text is drawn by its own code. */
+#ifdef LANG_ZH
+#define SEL_INK	BLACK
+#define SEL_PAPER	DKGREY
+#else
+#define SEL_INK	WHITE
+#define SEL_PAPER	BLACK
+#endif
 extern UINT8 cfg_rtcsd, cfg_bootrom, cfg_theme, cfg_ui, cfg_sgb, cgb_mode, tags_hide, cfg_daily, sgb_auto, custom_ok, cfg_can_jump;
 extern char cfg_flaunch[FLAUNCH_MAX + 1U];
 #define THEMES		8U
