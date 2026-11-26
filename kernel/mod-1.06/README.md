@@ -854,9 +854,11 @@ a name long enough to scroll in the menu.
 - **Every row of the 8px list has an icon** in column 0 and its name in
   columns 1 to 19, folders and files alike ([docs/browser.md](../../docs/browser.md)
   "Icons and the selection bar"). The kernel as received gave a folder 17
-  columns and a `DIR` tag, which is gone. The icons are six 7 by 7 bitmaps
-  in `source/list8.c` (folder, `.gb`, `.gbc`, text file, other file, star),
-  drawn for this kernel, and written to the tile with `vram_put2` in the
+  columns and a `DIR` tag, which is gone. The icons are the 0918 mod's six
+  (folder, `.gb`, `.gbc`, other file, text file, star), which it keeps in
+  the kernel's 1bpp glyph sheet; their bytes were read out of its build
+  into `source/list8.c` (the first build of this had six drawn for it,
+  replaced the same day). They are written to the tile with `vram_put2` in the
   row's colors, so an icon inverts with the selected row. The row is one
   string padded to 19, so the selection is a bar across the screen.
 - **DV where only `BGP` can be set** is `$27`, as in the 0918 mod, where
