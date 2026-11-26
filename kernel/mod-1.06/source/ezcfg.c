@@ -1208,6 +1208,50 @@ UINT8 cfg_flaunch_last(void) __banked
 	return 1U;
 }
 
+/* The GAME: row. The fast launch game becomes the next of the recent list
+   (/SAVER/RecentlyPlay_gb.txt, newest first) after the one it is, and the
+   newest when it is not in the list or the list ends. Choosing a game does
+   not turn fast launch on: the path keeps its # unless it is on already.
+   Recently_Load borrows the file list's save RAM, which the SD tab reads
+   again when the SET tab is left. 0 when there is nothing to choose. */
+UINT8 cfg_flaunch_next(void) __banked
+{
+	extern FM_FILE_FS *pFilename_buffer;
+	char tmp[FLAUNCH_MAX + 1U];
+	const char *cur = cfg_flaunch + ((cfg_flaunch[0] == '#') ? 1U : 0U);
+	UINT8 lead = (cfg_flaunch[0] == '/') ? 0U : 1U;
+	UINT8 n = Recently_Load();
+	UINT8 pick = 0U;
+	UINT8 i;
+	UINT8 j;
+	const UINT8 *e;
+
+	if(!n) return 0U;
+	HW_BANK = Folder_sram_bank;
+	hw_set_page(A000Address_SRAM);
+	for(i = 0U; i < n; i++)
+	{
+		e = pFilename_buffer[i].filename;
+		for(j = 0U; cur[j] && (e[j] == (UINT8)cur[j]); j++) ;
+		if(!cur[j] && !e[j])
+		{
+			pick = (UINT8)(i + 1U);
+			if(pick >= n) pick = 0U;
+			break;
+		}
+	}
+	e = pFilename_buffer[pick].filename;
+	for(j = 0U; (j < FLAUNCH_MAX - 1U) && e[j]; j++) tmp[j] = (char)e[j];
+	i = e[j];
+	tmp[j] = 0;
+	HW_BANK = 0;
+	hw_set_page(A000Address_TF);
+	if(i || (tmp[0] != '/')) return 0U;		/* a path too long to keep */
+	cfg_flaunch[0] = '#';
+	strcpy(cfg_flaunch + lead, tmp);
+	return 1U;
+}
+
 /* After a save backup at boot: the clock goes to the file, as at a launch */
 void cfg_backup(void) __banked
 {

@@ -93,7 +93,7 @@ static void row_act(UINT8 row)
 	}
 	else if(row == ROW_GAME)
 	{
-		if(!cfg_flaunch_last()) return;		/* the last game launched */
+		if(!cfg_flaunch_next()) return;		/* the next of the recent list; on or off stays as it is */
 	}
 	else if(row == ROW_SGB)
 	{
@@ -218,6 +218,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 			v = cfg_flaunch;
 			n = (UINT8)strlen(v);
 			for(i = 0U; i < n; i++) if(cfg_flaunch[i] == '/') v = cfg_flaunch + i + 1U;
+			if(*v == '#') v++;		/* off with no game: "#" alone */
 			if(!*v) v = "NOT SET";
 		}
 		else if(row == ROW_THEME) v = names[theme_now()];

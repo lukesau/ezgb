@@ -77,13 +77,14 @@ static UINT8 path_of(const char *name, char *dst, UINT8 lead)
 	return 1U;
 }
 
-/* 1 when name is the game fast launch starts */
+/* 1 when name is the fast launch game, whether fast launch is on or off
+   (a # in front of the path) */
 static UINT8 is_flaunch(const char *name)
 {
 	char p[FLAUNCH_MAX + 1U];
 
 	if(!path_of(name, p, 0U)) return 0U;
-	return strcmp(p, cfg_flaunch) ? 0U : 1U;
+	return strcmp(p, cfg_flaunch + ((cfg_flaunch[0] == '#') ? 1U : 0U)) ? 0U : 1U;
 }
 
 static void item_draw(UINT8 i, UINT8 sel, const char *name)
@@ -99,7 +100,8 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	else
 	{
 		memcpy(s + 2, "Fast launch: ", 13U);
-		memcpy(s + 15, is_flaunch(name) ? "YES" : "NO ", 3U);
+		/* the game it is, with FAST LAUNCH off on the SET tab, reads OFF */
+		memcpy(s + 15, is_flaunch(name) ? ((cfg_flaunch[0] == '/') ? "YES" : "OFF") : "NO ", 3U);
 	}
 	color(BLACK, DKGREY, SOLID);
 	Draw_Text(s, 18U, 1U, (UINT8)(7U + i * 2U));
@@ -238,8 +240,16 @@ redraw:
 				from = 0U;
 				goto redraw;
 			}
-			/* fast launch: this game on, or off when it is the one */
-			if(path_of(name, p, is_flaunch(name)))
+			/* this game becomes the fast launch game, or stops being it.
+			   Neither turns fast launch on or off: that is the SET tab's
+			   FAST LAUNCH box, and the # in front of the path. */
+			if(is_flaunch(name))
+			{
+				cfg_flaunch[(cfg_flaunch[0] == '#') ? 1U : 0U] = 0;
+				cfg_changed(CFG_OTHER);
+				item_draw(3U, 1U, name);
+			}
+			else if(path_of(name, p, (cfg_flaunch[0] == '/') ? 0U : 1U))
 			{
 				strcpy(cfg_flaunch, p);
 				cfg_changed(CFG_OTHER);

@@ -46,6 +46,7 @@ extern char cfg_flaunch[FLAUNCH_MAX + 1U];
 #define CFG_OTHER	4U
 void cfg_changed(UINT8 what) __banked;
 UINT8 cfg_flaunch_last(void) __banked;
+UINT8 cfg_flaunch_next(void) __banked;
 UINT8 sgb_record(void) __banked;
 UINT8 theme_now(void) __banked;
 extern UINT8 custom_ch[9];

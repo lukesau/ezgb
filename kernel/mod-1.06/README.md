@@ -341,7 +341,7 @@ cursor and writes `/EZGB.CFG`.
 |---|---|
 | `SKIP BOOT ROM:` | ticked is the jump; unticked writes `BOOTROM=1` |
 | `FAST LAUNCH:` | on and off, by the `#` in front of the `FLAUNCH=` path. With no game set, turning it on takes the last game launched |
-| `GAME:` | the fast launch game by name; A makes it the last game launched |
+| `GAME:` | the fast launch game by name; A makes it the next game of the recent list, and leaves fast launch on or off as it was |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
 | `FONT:` | `8PX`, `12PX`, `SLIM` or `EZF` |
@@ -492,9 +492,11 @@ Options
 ```
 
 - **Start** starts the game, as a tap does.
-- **Fast launch** makes this the game power-on starts (`FLAUNCH=` and its
-  whole path), and turns it off again when it already is. This is how a
-  game other than the last one launched is picked.
+- **Fast launch** makes this the fast launch game (`FLAUNCH=` and its
+  whole path), and A on the game that already is clears it. It does not
+  turn fast launch on or off, which is the SET tab's box: the item reads
+  `YES` for the game when fast launch is on, `OFF` for the game when it is
+  off, and `NO` for any other.
 - **B** closes the menu and draws the list as it was, the cursor where it
   was.
 
@@ -732,6 +734,16 @@ A card that went through it has a `FLAUNCH=` line it was never given:
 turn FAST LAUNCH off on the SET tab, or delete the line.
 
 **The accent, and DV's blue icons**: [Themes](#themes) above.
+
+**Choosing the game does not turn fast launch on.** `GAME:` took the last
+game launched and wrote its path without the `#`, so on a card whose game
+was that one already A did nothing but tick the box. A now steps through
+the recent list (`/SAVER/RecentlyPlay_gb.txt`, newest first, `cfg_flaunch_next`
+in `source/ezcfg.c`), and both it and the menu's Fast launch item keep the
+`#` unless fast launch is on. Ticking FAST LAUNCH with no game set still
+takes the last game launched. Seen in SameBoy: two presses on `GAME:`
+giving the newest and the next game with the box unticked, and the menu
+item reading `OFF` and writing `FLAUNCH=#/Kirby.gbc`.
 
 Seen in SameBoy on the CGB model: red and DV in 12px (list, tab strip, the
 hold-A menu, the SET pages), blue in 8px (the same), purple's SET cursor
