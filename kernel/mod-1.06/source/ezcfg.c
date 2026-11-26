@@ -633,7 +633,7 @@ static void info_put(UINT16 at, UINT8 v)
 
 /* ---- the clock prompt ---- */
 
-/* "YY-MM-DD HH:MM" at text column 6 of a row */
+/* "YY-MM-DD HH:MM" at text column 5 of a row */
 static void draw_time(const UINT8 *t, UINT8 row)
 {
 	UINT8 s[15];
@@ -645,34 +645,40 @@ static void draw_time(const UINT8 *t, UINT8 row)
 	p = put2(p, t[3], ':');
 	p = put2(p, t[4], 0U);
 	*p = 0U;
-	Draw_Text(s, 14U, 6U, row);
+	Draw_Text(s, 15U, 5U, row);		/* from column 5: the 12px font needs the width */
 }
 
-/* Shows the chip's time and the stored one. 1 when A (restore) was chosen. */
+/* Shows the chip's time and the stored one (docs/prompts.md "RTC restore"),
+   in the band the save prompt has:
+       RTC BEHIND?
+       NOW  26-09-30 20:44
+       SD   26-09-30 20:43
+       [B]keep    [A]use SD
+   1 when A was chosen. */
 static UINT8 clock_prompt(UINT8 why)
 {
-	UINT8 s[12];
+	UINT8 s[20];
 	UINT8 keys;
 
 	color(BLACK, DKGREY, SOLID);
-	box(2, 37, 157, 108, M_FILL);
+	box(0, 35, 159, ui_font ? 103 : 99, M_FILL);
 	if(why == 0U) memcpy(s, "RTC RESET?", 11U);
 	else if(why == 1U) memcpy(s, "RTC BAD?", 9U);
 	else if(why == 2U) memcpy(s, "RTC LOW V?", 11U);
 	else memcpy(s, "RTC BEHIND?", 12U);
-	Draw_Text(s, (UINT8)strlen((char *)s), 1U, 5U);
+	color(WHITE, BLACK, SOLID);
+	Draw_Text(s, 18U, 1U, 5U);
+	color(BLACK, DKGREY, SOLID);
 
 	memcpy(s, "NOW", 4U);
 	Draw_Text(s, 4U, 1U, 7U);
 	if(why != 1U) draw_time(now, 7U);
-	memcpy(s, "SD ", 4U);
+	memcpy(s, "SD", 3U);
 	Draw_Text(s, 4U, 1U, 9U);
 	draw_time(cfg_rtc, 9U);
 
-	memcpy(s, "[A]RESTORE", 11U);
-	Draw_Text(s, 10U, 1U, 11U);
-	memcpy(s, "[B]KEEP", 8U);
-	Draw_Text(s, 7U, 12U, 11U);
+	memcpy(s, "[B]keep  [A]use SD", 19U);
+	Draw_Text(s, 18U, 1U, 11U);
 
 	while(joypad() & (J_A | J_B)) wait_vbl_done();
 	while(1)
@@ -684,6 +690,27 @@ static UINT8 clock_prompt(UINT8 why)
 	while(joypad() & (J_A | J_B)) wait_vbl_done();
 	color(BLACK, WHITE, SOLID);
 	return (keys & J_A) ? 1U : 0U;
+}
+
+/* The save prompt's line (Bank_fun.c, Show_SAVE_info): the stored clock is
+   written at every launch, so at that prompt it is when the game whose
+   save is waiting was started. */
+UINT8 cfg_played(UINT8 *dst) __banked
+{
+	static const char mon[37] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+	UINT8 *p = dst;
+
+	if(!cfg_have_rtc || (cfg_rtc[1] < 1U) || (cfg_rtc[1] > 12U)) return 0U;
+	memcpy(p, "Played ", 7U);
+	p += 7;
+	memcpy(p, mon + (cfg_rtc[1] - 1U) * 3U, 3U);
+	p += 3;
+	*p++ = ' ';
+	p = put2(p, cfg_rtc[2], ' ');
+	p = put2(p, cfg_rtc[3], ':');
+	p = put2(p, cfg_rtc[4], 0U);
+	*p = 0U;
+	return 1U;
 }
 
 static void clock_check(void)

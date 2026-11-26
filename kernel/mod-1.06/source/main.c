@@ -233,6 +233,9 @@ void main() {
 		{
 			cfg_dry = 1;		/* mod: cfg_boot puts AUTO SAVE back from the card */
 			Draw_Text(" ", 1, 5, 8);	
+#ifndef LANG_ZH
+			battery_box(0);		/* mod: the small box, msgbox.c */
+#else
 			color(BLACK,DKGREY,SOLID);
 	
 			box(35,37,125,108,M_FILL);
@@ -241,12 +244,9 @@ void main() {
 			
 			color(BLACK,DKGREY,SOLID);
 			box(78,93,123,106,M_FILL);  //A btn
-#ifdef LANG_ZH
 			/* same as the save dialog: 12px glyphs at y94, no background fill,
 			   so they stay inside the box and its border survives */
 			zh_text_at(94, 83, (const UINT8 *)UI_BTN_OK, 160);	/* 80 + 3px, same as the save dialog */
-#else
-			Draw_Text(UI_BTN_OK, UI_LEN(UI_BTN_OK), 10, 12);
 #endif
 			while(1)//3
 			{
@@ -259,6 +259,9 @@ void main() {
 					break;
 		    }
 			}		
+#ifndef LANG_ZH
+			battery_box(1);		/* mod: gone before the first Reading... box, which is smaller */
+#endif
 		}
 		color(BLACK,WHITE,SOLID);
 		HW_BANK = 0;

@@ -766,6 +766,33 @@ EZ Flash's kernel still writes `$A300` at every launch (`Save_filename`,
 file when the append at launch did not go through. So save RAM holds a
 copy of the last path for one boot, and the text file is the list.
 
+### The prompts and the viewer's line scroll (2026-11-25)
+
+Four leftovers of the 0918 mod ([docs/prompts.md](../../docs/prompts.md),
+[docs/text-viewer.md](../../docs/text-viewer.md)), in the English build:
+
+- **`Played Oct 23 14:05`** in the save prompt, under the save's name: the
+  clock the settings file has, which every launch stores, so it is when the
+  game whose save is waiting was started (`cfg_played`, `source/ezcfg.c`).
+  Left out when the file has no `RTC=`.
+- **The clock prompt** is the save prompt's band: its question in the name
+  band, `NOW` and `SD` with their date and time, `[B]keep  [A]use SD`. It
+  was a box with `[A]RESTORE` on the left.
+- **BATTERY DRY** is the small framed box, `Battery dry!` over `[A] ok`
+  (`battery_box`, `source/msgbox.c`), and is taken off the screen once A is
+  pressed. It comes before the settings are read, so it is always 8px.
+- **The text viewer** scrolls a line on UP and DOWN, again and again while
+  held, and pages on LEFT, RIGHT and A. A row's start depends on the
+  wrapping of every row before it, so the start of every eighth row is kept
+  and a row is found from the mark before it. The first 2,040 rows of a
+  file are shown, where it was 127 pages.
+
+Seen in SameBoy in the 12px font: the save prompt with its `Played` line,
+the clock prompt for a clock behind the file, the battery box, and a 60
+line file scrolled a line down and up, paged, and scrolled with DOWN held.
+Not seen: the clock prompt's other three questions, the 8px font, a file
+past 2,040 rows.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
@@ -773,10 +800,8 @@ copy of the last path for one boot, and the text file is the list.
   them; the 12px fonts have them.
 - **The START overlay for the last game.** This kernel has its recent list
   on START.
-- **The `Played` line of the save prompt**, and the BATTERY DRY and clock
-  prompts' restyling.
 - **Moving the cursor by recoloring rows in VRAM.**
-- **A line scroll and a font of its own in the text viewer.**
+- **A font of its own in the text viewer**, which is in the list's font here.
 
 ### The FW6 clock load, removed
 

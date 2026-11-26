@@ -58,3 +58,23 @@ void msg_box(const UINT8 *text) __banked
 	/* 8 pixel cells: an odd length leans half a cell left */
 	Draw_Text(s, n, (UINT8)((20U - n) >> 1), 8U);
 }
+
+/* BATTERY DRY (docs/prompts.md): the same frame, 112 pixels wide, round two
+   lines. It comes up before the settings are read, so it is always in the
+   8px font and the light theme's indices. erase takes it off again. */
+void battery_box(UINT8 erase) __banked
+{
+	UINT8 s[13];
+
+	color(WHITE, WHITE, SOLID);
+	box(25, 46, 134, 89, M_FILL);
+	color(BLACK, WHITE, SOLID);
+	if(erase) return;
+	box(25, 46, 134, 89, M_NOFILL);
+	box(26, 47, 133, 88, M_NOFILL);
+	box(28, 49, 131, 86, M_NOFILL);
+	memcpy(s, "Battery dry!", 13U);
+	Draw_Text(s, 12U, 4U, 7U);
+	memcpy(s, "[A] ok", 7U);
+	Draw_Text(s, 6U, 7U, 9U);
+}

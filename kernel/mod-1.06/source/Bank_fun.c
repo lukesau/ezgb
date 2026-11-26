@@ -6,6 +6,7 @@
 #include <gbdk/console.h>
 #include "Bank_fun.h"
 #include "main.h"
+UINT8 cfg_played(UINT8 *dst) __banked;	/* mod: ezcfg.c */
 #include "RTC.h"
 #include "list12.h"		/* mod: the 12px list */
 #include "UI.h"		/* Show_Error_file() - reported when the ROM's FAT chain is unusable */
@@ -1937,10 +1938,11 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	   the screen with the save's name in it:
 	       Back up save?
 	       <the save's name>
+	       Played Oct 23 14:05    when the settings file has the clock
 	       Saving...              while it is written
 	       [B]skip      [A]save
 	   The Chinese build keeps the block the source as received draws, below. */
-	UINT8 t[19];
+	UINT8 t[21];
 	UINT8 n;
 	UINT8 k;
 	BYTE keys;
@@ -1961,6 +1963,8 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	color(WHITE,BLACK,SOLID);
 	Draw_Text(t, 18, 1, 7);
 	color(BLACK,DKGREY,SOLID);
+	/* when the game was started: the clock the last launch stored (ezcfg.c) */
+	if(cfg_played(t)) Draw_Text(t, 19, 1, 9);
 	if(autosave != 1)
 	{
 		memcpy(t, "[B]skip    [A]save", 19);

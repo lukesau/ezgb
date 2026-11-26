@@ -16,6 +16,7 @@ void cfg_autosave_set(UINT8 v) __banked;	/* the AUTO SAVE box changed */
 #define SET_PAGE3	8U
 UINT8 set_page2(UINT8 start) __banked;		/* setpage.c: the cursor in the mod's SET rows */
 void set_page1_rows(void) __banked;		/* setpage.c: the mod's rows of page 1 */
+UINT8 cfg_played(UINT8 *dst) __banked;		/* "Played Oct 23 14:05" into dst (20 bytes); 0 with no stored clock */
 void cfg_backup(void) __banked;			/* a save backup was written at boot */
 
 /* the settings, for setpage.c */

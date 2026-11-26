@@ -4,15 +4,19 @@
    docs/text-viewer.md has the 0918 mod's. A on a .txt, .ini, .md or .cfg
    file in the list opens it:
 
-     UP, LEFT            a page back
-     DOWN, RIGHT, A      a page on
+     UP, DOWN            a line, again and again while held
+     LEFT                a page back
+     RIGHT, A            a page on
      B                   back to the list
 
    The text is in the font the list is in. Lines wrap at the last space
    that fits, or mid-word when a word is longer than a row. CR is dropped,
    TAB is a space, and any other byte outside ASCII shows as '?'. The first
-   65,024 bytes of a file are shown, and it pages back through at most 127
-   pages.
+   65,024 bytes of a file are shown, and its first 2,040 rows.
+
+   Where a row starts depends on the wrapping of every row before it, so
+   the start of every eighth row is kept (marks) and a row is found by
+   laying out at most seven from the mark before it.
 
    The file stays open on the kernel's FIL and is read a sector at a time
    into SD_buffer, the sector that holds the byte wanted.
@@ -39,12 +43,13 @@ extern TCHAR currentpath[];
 extern TCHAR currentpath_temp[];
 
 #define SIZE_MAX_TV	65024U
-#define PAGES_MAX	127U
+#define MARKS_MAX	255U			/* rows 0 to 2,047 */
 #define COLS_MAX	40U
 
 static UINT16 size;
 static UINT16 loaded;			/* the offset of the sector in SD_buffer, $FFFF for none */
-static UINT16 pages[PAGES_MAX + 1U];
+static UINT16 marks[MARKS_MAX + 1U];	/* where row 8 * n starts */
+static UINT8 marked;			/* how many of them are known, less one */
 
 static UINT8 up(UINT8 c)
 {
@@ -137,20 +142,44 @@ static UINT16 row(UINT16 pos, UINT8 *s)
 	return p;
 }
 
+/* Where row n starts. Rows are only ever asked for in reach of the text. */
+static UINT16 row_pos(UINT16 n)
+{
+	UINT8 s[COLS_MAX + 1U];
+	UINT8 m = (UINT8)(n >> 3);
+	UINT8 i;
+	UINT16 pos;
+
+	while(marked < m)
+	{
+		pos = marks[marked];
+		for(i = 0U; i < 8U; i++) pos = row(pos, s);
+		marked++;
+		marks[marked] = pos;
+	}
+	pos = marks[m];
+	for(i = (UINT8)(n & 7U); i; i--) pos = row(pos, s);
+	return pos;
+}
+
+static UINT8 rows_now(void)
+{
+#ifndef LANG_ZH
+	return ui_font ? 9U : 15U;
+#else
+	return 15U;
+#endif
+}
+
 /* Draws the page that starts at pos. Returns where the next one starts. */
 static UINT16 page(UINT16 pos)
 {
 	UINT8 s[COLS_MAX + 1U];
 	UINT8 r;
-	UINT8 rows;
+	UINT8 rows = rows_now();
 
 	color(BLACK, WHITE, SOLID);
 	DrawGB(3);
-#ifndef LANG_ZH
-	rows = ui_font ? 9U : 15U;
-#else
-	rows = 15U;
-#endif
 	for(r = 0U; (r < rows) && (pos < size); r++)
 	{
 		pos = row(pos, s);
@@ -169,7 +198,9 @@ static UINT16 page(UINT16 pos)
    shown, and the caller draws the list again. */
 UINT8 text_view(const char *name) __banked
 {
-	UINT8 pg = 0U;
+	UINT16 top = 0U;			/* the row at the top of the page */
+	UINT16 was = 0xFFFFU;
+	UINT8 rows = rows_now();
 	UINT8 keys;
 	UINT16 next;
 	UINT16 n;
@@ -186,28 +217,39 @@ UINT8 text_view(const char *name) __banked
 	loaded = 0xFFFFU;
 
 	while(joypad()) wait_vbl_done();
-	pages[0] = 0U;
+	marks[0] = 0U;
+	marked = 0U;
+	next = 0U;
 	while(1)
 	{
-		next = page(pages[pg]);
+		if(top != was)
+		{
+			next = page(row_pos(top));
+			was = top;
+		}
 		while(1)
 		{
 			wait_vbl_done();
 			keys = joypad();
 			if(keys & (J_A | J_B | J_UP | J_DOWN | J_LEFT | J_RIGHT)) break;
 		}
-		while(joypad()) wait_vbl_done();
 		if(keys & J_B) break;
-		if(keys & (J_UP | J_LEFT))
+		if(keys & J_UP)
 		{
-			if(pg) pg--;
+			if(top) top--;			/* held: the next line as soon as this one is drawn */
 		}
-		else if((next < size) && (pg < PAGES_MAX))
+		else if(keys & J_DOWN)
 		{
-			pg++;
-			pages[pg] = next;
+			if((next < size) && (top + rows < 2040U)) top++;
+		}
+		else
+		{
+			if(keys & J_LEFT) top = (top > rows) ? (UINT16)(top - rows) : 0U;
+			else if((next < size) && (top + rows + rows < 2040U)) top += rows;
+			while(joypad()) wait_vbl_done();
 		}
 	}
+	while(joypad()) wait_vbl_done();
 	hw_set_page(A000Address_TF);
 	f_close_bank(&gfil);
 	return 1U;
