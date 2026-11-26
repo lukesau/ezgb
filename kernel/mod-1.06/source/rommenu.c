@@ -160,7 +160,8 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 
 	HW_BANK = Folder_sram_bank + (UINT8)(n / Num_perBank);
 	strcpy(name, (const char *)pFilename_buffer[n % Num_perBank].filename);
-	if(pad_prev & J_A) return 1U;			/* held from before: not this row's press */
+	/* the list calls this once a press (pad_take), so an A held from opening
+	   the folder never gets here */
 	if(!is_rom((const UINT8 *)name))
 	{
 		/* a text file opens in the viewer (textview.c); any other file

@@ -97,6 +97,10 @@ UINT8 sgb_wait;
 UINT8 sgb_busy;
 UINT8 pad_last;
 UINT8 pad_prev;
+UINT8 pad_now;				/* sgb.s: the pad, read once a frame */
+UINT8 pad_new;
+UINT8 pad_on;
+void pad_vbl(void);
 static UINT8 sgb_on;			/* this boot sends the header packets */
 UINT8 cfg_sgb;				/* SGB=: 0 off, 1 on, 2 the file does not say */
 void sgb_set1(void) __banked;
@@ -1013,7 +1017,12 @@ void console_init(void) __banked
 	sgb_busy = 0U;
 	pad_last = 0U;
 	pad_prev = 0U;
+	pad_now = 0U;
+	pad_new = 0U;
+	pad_on = 0U;
 	sgb_start();
+	add_VBL(pad_vbl);		/* the pad is read in VBlank from here on (sgb.s) */
+	pad_on = 1U;
 	cgb_mode = 0U;
 	cfg_theme = 0U;
 	custom_ok = 0U;

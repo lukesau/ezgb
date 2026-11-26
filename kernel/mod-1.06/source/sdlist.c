@@ -215,6 +215,7 @@ void Show_SD_list(void) __banked
 	}
 
 refind_file:
+	pad_take();		/* mod: presses another screen acted on are not this list's */
 	ui_font = ui_font_cfg;		/* mod: back from the recent list */
 	g_y = 0;
 	g_x = 0;
@@ -303,6 +304,7 @@ refind_file:
 #endif
 	
 re_showfile:
+	pad_take();		/* mod: presses another screen acted on are not this list's */
 	while(1)
 	{
 		shift++;		
@@ -343,7 +345,8 @@ re_showfile:
 		
 		updata=0;
 		wait_vbl_done();		/* 16.7ms per loop instead of a fixed delay(45) */
-		keysrepeat = joypad();
+		/* mod: the directions as held, the buttons once a press (sgb.s) */
+		keysrepeat = (UINT8)((joypad() & 0x0FU) | (pad_take() & 0xF0U));
 		/* joypad() has no repeat delay: sampling left and right only on
 		   every KEY_DIR_DIV-th frame halves the cursor speed. */
 		if(++keydiv >= KEY_DIR_DIV)
@@ -655,7 +658,11 @@ re_showfile:
 							{
 								UINT8 rm = rom_menu(show_offset, file_select);
 								if(rm == 2U) goto refind_file;
-								if(rm) continue;
+								if(rm)
+								{
+									pad_take();	/* the menu's presses are not the list's */
+									continue;
+								}
 							}
 							Show_loading();
 	

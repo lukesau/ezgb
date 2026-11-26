@@ -27,14 +27,20 @@
 
         .area   _HOME
 
-;; UINT8 joypad(void): start, select, B, A, down, up, left, right in bits 7-0
-_joypad::
-        ld      a, (_sgb_busy)
-        or      a
-        jr      z, 1$
-        ld      a, (_pad_last)
-        ret
-1$:
+;; The pad is read once a frame, in VBlank (docs/input.md has the 0918
+;; mod's): pad_vbl keeps the reading in pad_now and adds every button that
+;; went down to pad_new, so a tap made while the kernel was drawing or
+;; reading the card is not lost, and a loop that takes its buttons from
+;; pad_take sees each press once however long it is held.
+;;
+;;   pad_now   the last frame's reading
+;;   pad_new   buttons that went down since pad_take last cleared it
+;;   pad_on    pad_vbl is installed (console_init)
+
+        .globl  _pad_now, _pad_new, _pad_on
+
+;; reads the pad into B and leaves P1 at $30
+pad_read:
         ld      a, #0x20                ; the direction keys
         ldh     (.P1), a
         ldh     a, (.P1)
@@ -57,13 +63,65 @@ _joypad::
         ld      b, a
         ld      a, #0x30
         ldh     (.P1), a
-        ld      a, (_pad_last)          ; the read before this one, for rommenu.c
+        ret
+
+;; The VBlank handler (add_VBL). Not in the frames after an SGB packet,
+;; when P1 is the SNES's.
+_pad_vbl::
+        ld      a, (_sgb_busy)
+        or      a
+        ret     nz
+        call    pad_read
+        ld      a, (_pad_now)
+        cpl
+        and     b                       ; went down this frame
+        ld      c, a
+        ld      a, (_pad_new)
+        or      c
+        ld      (_pad_new), a
+        ld      a, b
+        ld      (_pad_now), a
+        ret
+
+;; UINT8 pad_take(void): the buttons that went down since the last call
+_pad_take::
+        di
+        ld      hl, #_pad_new
+        ld      a, (hl)
+        ld      (hl), #0
+        ei
+        ret
+
+;; UINT8 joypad(void): start, select, B, A, down, up, left, right in bits 7-0.
+;; The frame's reading, so P1 is only ever driven from VBlank; read here
+;; when there is no VBlank to do it: before pad_vbl is installed, and with
+;; the LCD off.
+_joypad::
+        ld      a, (_sgb_busy)
+        or      a
+        jr      z, 1$
+        ld      a, (_pad_last)
+        ret
+1$:
+        ld      a, (_pad_on)
+        or      a
+        jr      z, 2$
+        ldh     a, (.LCDC)
+        rlca
+        jr      nc, 2$
+        ld      a, (_pad_now)
+        ld      b, a
+        jr      3$
+2$:
+        call    pad_read
+3$:
+        ld      a, (_pad_last)          ; the read before this one
         ld      (_pad_prev), a
         ld      a, b
         ld      (_pad_last), a
         ret
 
-;; The VBlank handler (add_VBL). Nothing to do is the usual case.
+;; The SGB packets' VBlank handler (add_VBL). Nothing to do is the usual case.
 _sgb_vbl::
         ld      a, (_sgb_step)
         or      a

@@ -68,3 +68,36 @@ void _ultoa(unsigned long value, char *string, unsigned char radix) __banked
 	*sp = 0;
 
 }
+
+UINT8 pad_take(void);		/* sgb.s */
+
+/* A menu's keys (ezcfg.h): the directions held, with a repeat timed in
+   frames, and the buttons pressed since the last call. */
+UINT8 pad_menu(void) __banked
+{
+	static UINT8 dir;
+	static UINT8 t;
+	static UINT8 wait;
+	UINT8 d = joypad() & 0x0FU;
+	UINT8 out = pad_take() & 0xF0U;
+
+	if(!d)
+	{
+		dir = 0U;
+		return out;
+	}
+	if(d != dir)
+	{
+		dir = d;
+		t = (UINT8)sys_time;
+		wait = 24U;
+		return (UINT8)(out | d);
+	}
+	if((UINT8)((UINT8)sys_time - t) >= wait)
+	{
+		t = (UINT8)sys_time;
+		wait = 6U;
+		return (UINT8)(out | d);
+	}
+	return out;
+}

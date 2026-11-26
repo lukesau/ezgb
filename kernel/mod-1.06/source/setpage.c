@@ -440,23 +440,20 @@ UINT8 set_page2(UINT8 start) __banked
 {
 	UINT8 row = start;
 	UINT8 keys;
-	UINT8 last;
 	UINT8 to;
 
 	if(row_page[row]) page_draw(row_page[row]);	/* LEFT or RIGHT on page 1 came straight here */
 	row_draw(row, 1U);
-	/* the key that brought the cursor here is not a press on it */
-	while(joypad()) wait_vbl_done();
-	last = 0U;
+	/* the DOWN that brought the cursor here goes on repeating if it is
+	   held (pad_menu); a button is only ever one press */
 	while(1)
 	{
 		wait_vbl_done();
 #ifndef LANG_ZH
 		if(row_page[row] == 0U) clock_tick();
 #endif
-		keys = joypad();
-		if(keys == last) continue;
-		last = keys;
+		keys = pad_menu();		/* a held direction repeats; a button is one press */
+		if(!keys) continue;
 		if(keys & J_SELECT) return 1U;
 		if(keys & J_START)
 		{
@@ -496,6 +493,7 @@ UINT8 set_page2(UINT8 start) __banked
 		else if((keys & J_A) && (row >= ROW_BG))
 		{
 			color_edit(row);
+			pad_take();			/* the picker's presses are not this page's */
 			page_draw(2U);			/* the whole page is in the new colors */
 			row_draw(row, 1U);
 		}

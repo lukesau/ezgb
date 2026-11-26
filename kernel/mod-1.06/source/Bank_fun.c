@@ -6,6 +6,7 @@
 #include <gbdk/console.h>
 #include "Bank_fun.h"
 #include "main.h"
+UINT8 pad_take(void);	/* mod: sgb.s */
 UINT8 cfg_played(UINT8 *dst) __banked;	/* mod: ezcfg.c */
 #include "RTC.h"
 #include "list12.h"		/* mod: the 12px list */
@@ -1930,9 +1931,12 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	{
 		memcpy(t, "[B]skip    [A]save", 19);
 		Draw_Text(t, 18, 1, 11);
+		/* a press made now, not a button held since before the prompt */
+		pad_take();
 		while(1)
 		{
-			keys = joypad();
+			wait_vbl_done();
+			keys = pad_take();
 			if(keys & J_A) break;
 			if(keys & J_B) return;
 		}

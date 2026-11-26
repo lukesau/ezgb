@@ -24,6 +24,13 @@ void cfg_backup(void) __banked;			/* a save backup was written at boot */
 
 void set_check_ring(UINT8 y, UINT8 sel) __banked;	/* setpage.c */
 
+/* The pad (sgb.s, modmisc.c). joypad() is what is held; pad_take() is the
+   buttons that went down since it was last called, each press once.
+   pad_menu() is for a menu's loop: the directions with a repeat (at once,
+   after 24 frames, then every 6) and A, B, SELECT and START once a press. */
+UINT8 pad_take(void);
+UINT8 pad_menu(void) __banked;
+
 /* What a theme does to color() (ezcfg.c, theme_apply) */
 extern UINT8 acc_idx;
 extern UINT8 pop_idx;

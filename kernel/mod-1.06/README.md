@@ -923,6 +923,37 @@ of 80: the 12px list in red went from entry 18 to entry 42, the 8px list
 on the DMG model from 24 to 60. With the mode 3 watch on, a run down and
 back up left the page right and had no hit. Not run on a cart.
 
+### The pad, read once a frame (2026-11-25)
+
+After [docs/input.md](../../docs/input.md). `joypad()` read the pad
+whenever it was called, so a button held across a screen change acted
+again on the next screen, and a tap made while the kernel was drawing or
+reading the card was never seen.
+
+- **`pad_vbl`** (`source/sgb.s`, a VBlank handler `console_init` installs)
+  reads the pad every frame into `pad_now` and adds each button that went
+  down to `pad_new`. `joypad()` returns `pad_now`, so P1 is only driven
+  from VBlank; it reads the pad itself with the LCD off and before the
+  handler is there. `pad_take()` returns `pad_new` and clears it.
+- **The list** takes its directions as held and A, B, SELECT and START
+  from `pad_take()`: one action a press. An A held after opening a folder
+  does not open the next, a held B climbs one level, and a tap made during
+  `Reading...` is acted on when the list is up.
+- **The SET and HELP tabs** use `pad_menu()` (`source/modmisc.c`): a
+  direction acts at once, again after 24 frames and then every 6, and a
+  button once a press. A held SELECT stops at the next tab. EZ Flash's
+  rows took every key every fourth frame, a held A included; the mod's
+  rows had no repeat.
+- **The save prompt** takes a press made while it is up, not an A or B
+  held since before it.
+
+Seen in SameBoy: SELECT held for three seconds from the list stopping on
+SET, and from HELP stopping on SD; A held on a folder opening that one
+only; DOWN held on SET walking the rows onto page 2; A held on a checkbox
+changing it once; the save prompt waiting through a held A and saving on
+the next press. Not seen: a tap during `Reading...`, and the Super Game
+Boy, where the handler stands off for four frames after a packet.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.

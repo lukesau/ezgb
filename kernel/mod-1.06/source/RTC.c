@@ -484,15 +484,10 @@ page1:		/* mod: the second page comes back here to draw the first again */
 		
 	
 		/* Sample the keys every KEY_EDIT_DIV frames; other frames count as no input */
-		if(++key_div >= KEY_EDIT_DIV)
-		{
-			key_div = 0;
-			keysrepeat = joypad();
-		}
-		else
-		{
-			keysrepeat = 0;
-		}
+		/* mod: a direction acts at once, again after 24 frames and then every 6;
+		   A, SELECT and START once a press (pad_menu, modmisc.c). It was every
+		   key every fourth frame, a held A or SELECT included. */
+		keysrepeat = pad_menu();
 
 		if(keysrepeat & J_LEFT){
 			if(edit_mode)

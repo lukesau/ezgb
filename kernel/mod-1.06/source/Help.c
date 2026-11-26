@@ -10,6 +10,7 @@
 #include "banks.h"
 
 #include "Help.h"
+UINT8 pad_take(void);	/* mod: sgb.s */
 
 
 extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
@@ -103,7 +104,7 @@ void Help_window(void)__banked
 	while(1)
 	{
 		wait_vbl_done();
-		keysrepeat = joypad();
+		keysrepeat = pad_take();	/* mod: once a press, so a held SELECT does not go on round the tabs */
 		/* Firmware update used to hook in here on A; that path (and
 		   Check_FW_update) was never finished, so only SELECT leaves this page. */
 		if(keysrepeat &  J_SELECT){
