@@ -268,6 +268,19 @@ static void color_edit(UINT8 row)
 	cfg_changed(CFG_OTHER);			/* COLORS= and THEME=6 to the file */
 }
 
+/* The second outline of a checkbox under the cursor (as the 0918 mod's
+   7.2): a pixel clear of the box whose top is at pixel row y, in the
+   theme's accent, or in the ink where there is none, so an original Game
+   Boy shows it. sel 0 takes it off. Set_window calls this for AUTO SAVE. */
+void set_check_ring(UINT8 y, UINT8 sel) __banked
+{
+	if(!sel) color(WHITE, WHITE, SOLID);
+	else if(acc_idx) color(DKGREY, DKGREY, SOLID);
+	else color(BLACK, WHITE, SOLID);
+	box(128, (UINT8)(y - 2U), 140, (UINT8)(y + 10U), M_NOFILL);
+	color(BLACK, WHITE, SOLID);
+}
+
 static void row_draw(UINT8 row, UINT8 sel)
 {
 	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
@@ -327,6 +340,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		color(BLACK, WHITE, SOLID);
 		return;
 	}
+	set_check_ring(y, sel);
 	color(WHITE, WHITE, SOLID);
 	box(130, y, 138, (UINT8)(y + 8U), M_FILL);
 	if(sel) color(DKGREY, DKGREY, SOLID);

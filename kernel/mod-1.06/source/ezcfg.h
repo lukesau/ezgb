@@ -22,6 +22,8 @@ void cfg_backup(void) __banked;			/* a save backup was written at boot */
 /* the settings, for setpage.c */
 #define FLAUNCH_MAX	122U
 
+void set_check_ring(UINT8 y, UINT8 sel) __banked;	/* setpage.c */
+
 /* What a theme does to color() (ezcfg.c, theme_apply) */
 extern UINT8 acc_idx;
 extern UINT8 pop_idx;

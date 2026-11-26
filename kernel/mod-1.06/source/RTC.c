@@ -249,6 +249,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 			zh_frame(130, 56, 138, 64);
 			if (autosave == 1) zh_fill_black(132, 58, 136, 62);
 #else
+			set_check_ring(56, (select==1) ? 1 : 0);	/* mod: the second outline under the cursor */
 			color(WHITE,WHITE,SOLID);
 			box(130,56,130+8,56+8,M_FILL);
 
@@ -606,6 +607,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 						start2 = 0;
 enter2:
 						/* AUTO SAVE without the cursor, while it is below */
+						set_check_ring(56, 0);
 						color(WHITE,WHITE,SOLID);
 						box(130,56,130+8,56+8,M_FILL);
 						color(BLACK,WHITE,SOLID);

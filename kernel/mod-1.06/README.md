@@ -889,6 +889,15 @@ through the 12px list in red and in DV, and a text file opened in 12PX.
 Not timed against the old path, and not run on a cart, where the mode 3
 watch does not exist.
 
+### The checkbox under the cursor (2026-11-25)
+
+A checkbox under the cursor has a second outline a pixel clear of its box,
+as the 0918 mod's 7.2 (`set_check_ring`, `source/setpage.c`; Set_window
+calls it for AUTO SAVE). It is in the theme's accent, and in the ink where
+there is none: the frame alone turning dark gray is not something an
+original Game Boy shows. Seen in SameBoy in red on the CGB model and in
+light on the DMG model.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
