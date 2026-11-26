@@ -872,13 +872,33 @@ Seen in SameBoy: the 8px list on the DMG model with the bar on a folder, a
 cream highlight. Not seen: a starred game in the 8px list, a name scrolling
 beside its icon.
 
+### The selected row's fast copy, and the viewer's font (2026-11-25)
+
+- **A selected row in a color theme or DV is drawn as fast as any other.**
+  The 12px renderer had its fast copy only for ink 3 on paper 0 and ink 0
+  on paper 3; with the accent the selected row is ink 0 on paper 2, or 1 in
+  DV, and went through the flush that reads and writes VRAM a byte at a
+  time. `blit_colA` and `blit_colB` (`source/font12.c`) are the fast copy
+  for those two: the same sync, one plane written 0 and the other the
+  row's bits.
+- **The text viewer is in the slim font** whenever the list is in a 12px
+  one: 26 characters a row where the 12PX font has about 18.
+
+Seen in SameBoy, with no VRAM write landing in mode 3: the cursor moved
+through the 12px list in red and in DV, and a text file opened in 12PX.
+Not timed against the old path, and not run on a cart, where the mode 3
+watch does not exist.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
 - **The START overlay for the last game.** This kernel has its recent list
   on START.
-- **Moving the cursor by recoloring rows in VRAM.**
-- **A font of its own in the text viewer**, which is in the list's font here.
+- **Moving the cursor by recoloring rows in VRAM.** A row is drawn again
+  instead, with the fast copy in every theme.
+- **The text viewer's 10 pixel rows and its slim font in the 8px UI.** Here
+  it is in the slim font when the list is in a 12px one, 12 pixels a row,
+  and in the 8px font otherwise.
 
 ### The FW6 clock load, removed
 

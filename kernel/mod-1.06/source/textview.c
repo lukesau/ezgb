@@ -9,7 +9,8 @@
      RIGHT, A            a page on
      B                   back to the list
 
-   The text is in the font the list is in. Lines wrap at the last space
+   The text is in the slim font when the list is in a 12px one, and in the
+   8px font when it is in that. Lines wrap at the last space
    that fits, or mid-word when a word is longer than a row. CR is dropped,
    TAB is a space, and any other byte outside ASCII shows as '?'. The first
    65,024 bytes of a file are shown, and its first 2,040 rows.
@@ -204,6 +205,7 @@ UINT8 text_view(const char *name) __banked
 	UINT8 keys;
 	UINT16 next;
 	UINT16 n;
+	UINT8 font = ui_font;
 
 	if(!is_text(name)) return 0U;
 	n = (UINT16)strlen(currentpath) + (UINT16)strlen(name) + 2U;
@@ -215,6 +217,11 @@ UINT8 text_view(const char *name) __banked
 	if(f_open_bank(&gfil, currentpath_temp, FA_READ) != FR_OK) return 0U;
 	size = (f_size(&gfil) > (DWORD)SIZE_MAX_TV) ? SIZE_MAX_TV : (UINT16)f_size(&gfil);
 	loaded = 0xFFFFU;
+#ifndef LANG_ZH
+	/* in a 12px font the text is in the slim one, 26 characters a row,
+	   whichever of them the list is in */
+	if(ui_font) ui_font = 3U;
+#endif
 
 	while(joypad()) wait_vbl_done();
 	marks[0] = 0U;
@@ -250,6 +257,7 @@ UINT8 text_view(const char *name) __banked
 		}
 	}
 	while(joypad()) wait_vbl_done();
+	ui_font = font;
 	hw_set_page(A000Address_TF);
 	f_close_bank(&gfil);
 	return 1U;

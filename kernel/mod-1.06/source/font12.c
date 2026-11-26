@@ -58,6 +58,8 @@ extern UINT8 ui_font;			/* 2: the EZF set, 3: the slim one */
 #define MAX_GLYPHS FONT12_MAX
 
 static void blit_col1(const u8 *src, u16 addr, u8 n, u8 xm) __naked __sdcccall(0);
+static void blit_colA(const u8 *src, u16 addr, u8 n, u8 xm) __naked __sdcccall(0);
+static void blit_colB(const u8 *src, u16 addr, u8 n, u8 xm) __naked __sdcccall(0);
 static void fill0(u8 *p, u8 n4) __naked __sdcccall(0);
 static void vram_rmw2(u16 addr, u8 keep, u8 v0, u8 v1) __naked __sdcccall(0);
 static void cell_or0(const u8 *g, u8 *buf) __naked __sdcccall(0);
@@ -204,7 +206,8 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 		}
 		if (blue && i == 0) cell_or0(g, ib);	/* the icon is at x 0 */
 	}
-	if (colors != 0x0C && colors != 0x03) {
+	/* the fast copies: ink 3 on paper 0, and ink 0 on any other paper */
+	if (colors != 0x0C && (colors == 0 || colors > 0x03)) {
 		flush_rmw(buf, addr, n, nt, kf, kl, ink, paper, 0);
 		return;
 	}
@@ -213,6 +216,8 @@ void font12_field(const UINT8 *s, UINT8 x0, UINT8 y, UINT8 colors, UINT8 xe) __b
 	for (i = 0; i < nt; i++, p += ROW_H, addr += 16) {
 		x = (u8)((i ? 0 : kf) | (i == (u8)(nt - 1) ? kl : 0));
 		if (x || (blue && i < 2)) flush_rmw(p, addr, n, 1, x, 0, ink, paper, (blue && i < 2) ? ib + (u8)(i * ROW_H) : 0);
+		else if (colors == 0x02) blit_colA(p, addr, n, xm);
+		else if (colors == 0x01) blit_colB(p, addr, n, xm);
 		else blit_col1(p, addr, n, xm);
 	}
 }
@@ -543,6 +548,210 @@ blit_col1_go:
 blit_col1_next:
 	dec	b
 	jr	nz, blit_col1_batch
+	ret
+    __endasm;
+}
+
+/* blit_col1 for a highlight in a theme's accent, ink 0 on paper 2 (A) or
+   on paper 1 (B): the same sync and batches, but one plane is written 0
+   and the other the row's bits through xm. A batch is four rows of 11
+   cycles where blit_col1's are 10, well inside the window. Until
+   2026-11-25 a selected row in a color theme or DV went through the
+   read-modify-write flush, a byte at a time. */
+static void blit_colA(const u8 *src, u16 addr, u8 n, u8 xm) __naked __sdcccall(0) {
+    (void)src; (void)addr; (void)n; (void)xm;
+    __asm
+	ldhl	sp, #7
+	ld	c, (hl)
+	ldhl	sp, #6
+	ld	a, (hl)
+	srl	a
+	srl	a
+	ld	b, a
+	ldhl	sp, #4
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ldhl	sp, #2
+	ld	a, (hl+)
+	ld	h, (hl)
+	ld	l, a
+blit_colA_batch:
+	di
+	ldh	a, (#0xff41)
+	and	#3
+	cp	#1
+	jr	nz, blit_colA_sync
+	ldh	a, (#0xff44)
+	cp	#144
+	jr	c, blit_colA_sync
+	cp	#152
+	jr	nc, blit_colA_sync
+	jr	blit_colA_go
+blit_colA_sync:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_colA_m3
+	ei
+blit_colA_vb:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_colA_batch
+	cp	#145
+	jr	c, blit_colA_vb
+	cp	#151
+	jr	c, blit_colA_batch
+	jr	blit_colA_vb
+blit_colA_m3:
+	ldh	a, (#0xff41)
+	and	#3
+	cp	#3
+	jr	nz, blit_colA_m3
+blit_colA_w0:
+	ldh	a, (#0xff41)
+	and	#3
+	jr	nz, blit_colA_w0
+blit_colA_go:
+	xor	a
+	ld	(de), a
+	inc	e
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	de
+	xor	a
+	ld	(de), a
+	inc	e
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	de
+	xor	a
+	ld	(de), a
+	inc	e
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	de
+	xor	a
+	ld	(de), a
+	inc	e
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	de
+	ei
+	ld	a, e
+	and	#0x0F
+	jr	nz, blit_colA_next
+	ld	a, e
+	add	#0x30
+	ld	e, a
+	ld	a, d
+	adc	#1
+	ld	d, a
+blit_colA_next:
+	dec	b
+	jr	nz, blit_colA_batch
+	ret
+    __endasm;
+}
+
+static void blit_colB(const u8 *src, u16 addr, u8 n, u8 xm) __naked __sdcccall(0) {
+    (void)src; (void)addr; (void)n; (void)xm;
+    __asm
+	ldhl	sp, #7
+	ld	c, (hl)
+	ldhl	sp, #6
+	ld	a, (hl)
+	srl	a
+	srl	a
+	ld	b, a
+	ldhl	sp, #4
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ldhl	sp, #2
+	ld	a, (hl+)
+	ld	h, (hl)
+	ld	l, a
+blit_colB_batch:
+	di
+	ldh	a, (#0xff41)
+	and	#3
+	cp	#1
+	jr	nz, blit_colB_sync
+	ldh	a, (#0xff44)
+	cp	#144
+	jr	c, blit_colB_sync
+	cp	#152
+	jr	nc, blit_colB_sync
+	jr	blit_colB_go
+blit_colB_sync:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_colB_m3
+	ei
+blit_colB_vb:
+	ldh	a, (#0xff44)
+	cp	#143
+	jr	c, blit_colB_batch
+	cp	#145
+	jr	c, blit_colB_vb
+	cp	#151
+	jr	c, blit_colB_batch
+	jr	blit_colB_vb
+blit_colB_m3:
+	ldh	a, (#0xff41)
+	and	#3
+	cp	#3
+	jr	nz, blit_colB_m3
+blit_colB_w0:
+	ldh	a, (#0xff41)
+	and	#3
+	jr	nz, blit_colB_w0
+blit_colB_go:
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	e
+	xor	a
+	ld	(de), a
+	inc	de
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	e
+	xor	a
+	ld	(de), a
+	inc	de
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	e
+	xor	a
+	ld	(de), a
+	inc	de
+	ld	a, (hl+)
+	xor	c
+	ld	(de), a
+	inc	e
+	xor	a
+	ld	(de), a
+	inc	de
+	ei
+	ld	a, e
+	and	#0x0F
+	jr	nz, blit_colB_next
+	ld	a, e
+	add	#0x30
+	ld	e, a
+	ld	a, d
+	adc	#1
+	ld	d, a
+blit_colB_next:
+	dec	b
+	jr	nz, blit_colB_batch
 	ret
     __endasm;
 }
