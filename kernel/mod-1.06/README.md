@@ -344,7 +344,7 @@ cursor and writes `/EZGB.CFG`.
 | `GAME:` | the fast launch game by name; A makes it the next game of the recent list, and leaves fast launch on or off as it was |
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
-| `FONT:` | `8PX`, `12PX`, `SLIM` or `EZF` |
+| `FONT:` | `8PX`, `12PX`, `SLIM` or `EZ-FLASH` (`UI=EZF` in the file; the row read `EZF` until 2026-11-25) |
 | `CLEAN NAMES:` | unticked writes `TAGS=1` |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 | `SORT BY PLAYS:` | most played files first; kept with the stars, not in `/EZGB.CFG` |

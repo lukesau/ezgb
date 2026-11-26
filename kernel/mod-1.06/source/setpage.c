@@ -317,7 +317,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 #ifdef LANG_ZH
 		else v = "12PX";			/* the Chinese build's text is always 12px */
 #else
-		else v = (ui_font_cfg == 2U) ? "EZF" : ((ui_font_cfg == 3U) ? "SLIM" : (ui_font_cfg ? "12PX" : "8PX"));
+		else v = (ui_font_cfg == 2U) ? "EZ-FLASH" : ((ui_font_cfg == 3U) ? "SLIM" : (ui_font_cfg ? "12PX" : "8PX"));
 #endif
 		n = (UINT8)strlen(v);
 		/* 14 cells of the 8px font; a 12px font takes what fits the same
