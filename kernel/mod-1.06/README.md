@@ -164,12 +164,13 @@ name scroll, is in `source/list8.c` (bank 4).
 Folders come first, then files, each by name without regard to case. No
 record is moved: the folder is read once to make a 16-byte key per entry in
 save RAM bank 31, the keys are heapsorted, and a second read writes each
-record straight to its row. Two names with the same first 13 characters
-stay in card order.
+record straight to its row. Names with the same first 13 characters are
+then put in order by their whole names
+([2026-11-26](#the-list-the-saves-and-names-that-scroll-2026-11-26)).
 
 Not listed, file or folder: a name that starts with `.` or `_`; one that
 ends in `.gba`, `.nds`, `.sav`, `.esv` or `.dat`; `EZGB.CFG`, `FLAUNCH.CFG`
-and the `SAVER` folder; and, as before, anything hidden or system.
+and anything named `SAVER`; and, as before, anything hidden or system.
 
 **The card's list.** `/.ezgbhide` in the card's root names more to leave
 out, one name a line, any case: a plain name hides a file or folder with
@@ -1011,6 +1012,87 @@ fonts; the notice, a pick and a canceled pick; B on `THEME:`; the example;
 seen: SKIP BOOT ROM grayed, DV where only `BGP` can be set through the
 row, the Chinese build.
 
+### The list, the saves and names that scroll (2026-11-26)
+
+More of the audit against the 0918 mod.
+
+**The list**
+
+- **Sort.** The keys hold 13 characters of a name (12 with SORT BY PLAYS),
+  so `Legend of Zelda, The - Oracle of Ages` and `... Oracle of Seasons`
+  had the same key and stayed in card order. After the records are
+  written, each run of rows with the same key is put in order by the whole
+  names, case aside, an insertion sort that swaps records through
+  `SD_buffer` (`ties_fix`, `browser.c`). Runs are short and their rows are
+  next to each other, so few records move.
+- **After Star or Unstar** nothing is read from the card and there is no
+  `Reading...`. The keys are made again from the records in save RAM and
+  sorted, and each record goes straight to its row (`list_resort`). The
+  cursor stays with the game, on the screen row it was on when the list
+  reaches that far. A folder that was cut at 416 stays in card order and
+  only its marks change.
+- **The position.** 8px: `n/total` in the five columns right of `HELP`
+  while the total has under three digits, else `n` alone, from a column
+  that holds for the folder (`list8_counter`). 12px: `n/total` when
+  `total/total` fits right of `HELP`, else `n` alone, decided once for the
+  folder and drawn from one x, so the total no longer comes and goes as
+  the number grows.
+- **Text files** (`.txt`, `.ini`, `.cfg`, `.md`) have the page icon in the
+  12px list too. They had the `?` there.
+- **`Too many files.`** is in the status boxes' frame, in the list's font.
+- A file named `SAVER` is hidden like the folder.
+
+**Plays and the pending save**
+
+- **A play** is a launch picked in the list. Fast launch and the recent
+  list no longer count (`cfg_launch(count)`).
+- **A lone ROM** is counted as the 0918 mod counts it: every file in the
+  root but `*.dat`, the settings files, and names that start with `.` or
+  `_`. A save, a text file or a hidden name beside the game means the list
+  comes up. It was counted by what the list shows.
+- **The boot stamp.** The prompt and the daily backup only come up when
+  the stamp's path is `/SAVER/` and a save's name (`save_stamp_ok`). The
+  write already refused anything else; the prompt showed the garbage first.
+
+**Names that scroll**
+
+`mq_start`, `mq_step` and `mq_stop` in `modmisc.c`: one name at a time, in
+a field of 8 pixel cells, held 60 frames and then moved a character every
+20, starting again after three blanks ([docs/marquee.md](../../docs/marquee.md)
+has the 0918 mod's). In a 12px font the field is the same pixels. The text
+is read from RAM, so a caller in another bank copies a literal first. The
+Chinese build draws the start of the name and does not scroll, since a
+step could cut a two-byte character.
+
+- the hold-A menu's name band, which stepped every 12 frames with no hold
+- the save manager's band, now the game's whole file name
+- the save prompt's band, now the save's file name with `.sav`
+- the SET tab's `GAME:` name
+- the CLEAN NAMES example
+
+**Manage saves**
+
+- A row a backup, a text row apart: seven rows in 8px and five in the 12px
+  fonts. It was four, two rows apart. The Chinese build keeps four.
+- The selected row is a band in the selection's colors. It had a `>`.
+- UP and DOWN stop at the ends, and repeat when held (`pad_menu`).
+- The newest 37 backups are listed. It was 24.
+- The box is drawn once. A move draws the rows, so the name goes on
+  scrolling. The Restore or Delete question is in the title's place.
+- A game whose name is too long for the paths opens the screen with
+  `No save yet`. It did not open.
+
+**The Chinese build's bank 8** was full with the sort's new code: the text
+viewer is in bank 30 there (`modbank3.h`).
+
+Seen in SameBoy: the tie order and the star's new place with no card read
+in 12px; both counters, with two and three digit totals; the page icon;
+the notice; the save manager in both fonts and on the DMG model; the SET
+tab's name and the menu's scrolling; the save prompt's name; a card with
+one game beside a save opening the list, and without the save starting
+the game. Not seen: a play counted, the stamp check with a bad path, the
+Chinese build.
+
 ### What of the 0918 mod is not here
 
 - **The debug page and the flash dump**, which are a debug build's there.
@@ -1021,6 +1103,16 @@ row, the Chinese build.
 - **The text viewer's 10 pixel rows and its slim font in the 8px UI.** Here
   it is in the slim font when the list is in a 12px one, 12 pixels a row,
   and in the 8px font otherwise.
+- **The text viewer's paging** by a page less a row, its hold before a
+  line scroll repeats, and drawing only the new row.
+- **`Saving.` `..` `...`** stepping while a save is written. `Saving...`
+  is drawn once.
+- **The clock prompt's two lines a clock**, with seconds and the chip's
+  bytes.
+- **The hold-A menu's `Options` title**, and opening it while A is still
+  down. Here it has a fourth item, `Fast launch:`.
+- **Settings written on leaving a page.** Here each A writes the file.
+- **The HELP tab's link lines.**
 
 ### The FW6 clock load, removed
 

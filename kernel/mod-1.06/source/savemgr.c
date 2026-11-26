@@ -40,6 +40,7 @@
 #include "savemgr.h"
 #include "ezcfg.h"
 #include "list12.h"
+#include "font12.h"
 
 #include "modbank.h"
 
@@ -49,10 +50,18 @@ extern FILINFO fileinfo;
 extern DIR dir;
 extern TCHAR lfname_temp[];
 
-#define LIST_MAX	24U		/* backups listed, the newest */
-#define BASE_MAX	60U		/* a longer name has no save manager */
+#define LIST_MAX	37U		/* backups listed, the newest */
+#define BASE_MAX	60U		/* a longer name's saves are not looked for */
 #define PATH_MAX	100U
-#define ROWS		4U		/* list rows on screen */
+/* list rows on screen: a text row each, where the Chinese build's taller
+   text has every other row */
+#ifdef LANG_ZH
+#define ROWS		4U
+#else
+#define ROWS		(ui_font ? 5U : 7U)
+#endif
+
+UINT8 draw_colors(void);	/* vram_put.s */
 
 typedef struct {
 	UINT8 y, mo, d, h, mi;		/* year - 1980 */
@@ -358,17 +367,51 @@ static void label(char *dst, const stamp_t *s)
 	*p = 0;
 }
 
-/* Item i of the list screen (0 is Back up save), on screen row r */
+/* A row of the list, t or blank, on screen row r: the selected one is a
+   band in the selection's colors */
+static void row_text(const char *t, UINT8 r, UINT8 sel)
+{
+	char s[20];
+	UINT8 n = (UINT8)strlen(t);
+
+	memset(s, ' ', 19U);
+	s[19] = 0;
+	if(n > 17U) n = 17U;
+	memcpy(s + 1, t, n);
+	if(sel) color(SEL_INK, SEL_PAPER, SOLID);
+	else color(BLACK, DKGREY, SOLID);
+#ifdef LANG_ZH
+	Draw_Text(s, 18U, 1U, (UINT8)(7U + r * 2U));
+#else
+	if(ui_font) font12_field((const UINT8 *)s, 8U, (UINT8)(56U + r * 12U), draw_colors(), 152U);
+	else Draw_Text(s, 18U, 1U, (UINT8)(7U + r));
+#endif
+	color(BLACK, DKGREY, SOLID);
+}
+
+/* Item i of the list screen (0 is Back up save), on screen row r; a blank
+   row past the last */
 static void item(UINT8 i, UINT8 r, UINT8 sel)
 {
 	char s[20];
 
-	s[0] = sel ? '>' : ' ';
-	s[1] = ' ';
-	if(i == 0U) strcpy(s + 2, have_live ? "Back up save" : "No save yet");
-	else label(s + 2, &list[i - 1U]);
+	s[0] = 0;
+	if(i == 0U) strcpy(s, have_live ? "Back up save" : "No save yet");
+	else if(i <= count) label(s, &list[i - 1U]);
+	row_text(s, r, sel);
+}
+
+static const char *rom;			/* the game's file name, for the band */
+
+static void buttons(const char *keys)
+{
 	color(BLACK, DKGREY, SOLID);
-	text(s, 1U, (UINT8)(7U + r * 2U), 18U);
+	text(keys, 1U, 15U, 18U);
+#ifdef LANG_ZH
+	popup_rules(15U, 135U, 84U);
+#else
+	popup_rules(15U, ui_font ? 139U : 135U, 84U);
+#endif
 }
 
 static void frame(const char *title, const char *keys)
@@ -381,26 +424,20 @@ static void frame(const char *title, const char *keys)
 	box(0, 16, 159, ui_font ? 139 : 135, M_FILL);
 #endif
 	text(title, 1U, 3U, 18U);
-	color(WHITE, BLACK, SOLID);
-	text(base, 1U, 5U, 18U);
-	color(BLACK, DKGREY, SOLID);
-	text(keys, 1U, 15U, 18U);
-#ifdef LANG_ZH
-	popup_rules(15U, 135U, 84U);
-#else
-	popup_rules(15U, ui_font ? 139U : 135U, 84U);
-#endif
+	mq_start((const UINT8 *)rom, 1U, 5U, 18U, WHITE, BLACK);	/* the whole name, scrolling (modmisc.c) */
+	buttons(keys);
 }
 
+/* A press of A or B, or UP or DOWN with its repeat (pad_menu) */
 static UINT8 key(void)
 {
 	UINT8 k;
 
-	while(joypad()) wait_vbl_done();
 	while(1)
 	{
 		wait_vbl_done();
-		k = joypad();
+		mq_step();
+		k = pad_menu();
 		if(k & (J_A | J_B | J_UP | J_DOWN)) return k;
 	}
 }
@@ -412,28 +449,26 @@ static const char *act(UINT8 i)
 	char s[20];
 	UINT8 sel = 0U;
 	UINT8 k;
+	UINT8 r;
 	UINT8 bad;
 
 	label(s, &list[i]);
-	frame(s, "[B]back      [A]ok");
+	color(BLACK, DKGREY, SOLID);
+	text(s, 1U, 3U, 18U);
+	for(r = 2U; r < ROWS; r++) row_text("", r, 0U);
 	while(1)
 	{
-		color(BLACK, DKGREY, SOLID);
-		text(sel ? "  Restore" : "> Restore", 1U, 7U, 18U);
-		text(sel ? "> Delete" : "  Delete", 1U, 9U, 18U);
+		row_text("Restore", 0U, (UINT8)!sel);
+		row_text("Delete", 1U, sel);
 		k = key();
 		if(k & J_B) return 0;
 		if(k & (J_UP | J_DOWN)) sel ^= 1U;
 		else if(k & J_A) break;
 	}
-	text(sel ? "Delete this save?" : "Restore this save?", 1U, 12U, 18U);
-	text("[B]no       [A]yes", 1U, 15U, 18U);
-#ifdef LANG_ZH
-	popup_rules(15U, 135U, 84U);
-#else
-	popup_rules(15U, ui_font ? 139U : 135U, 84U);
-#endif
+	text(sel ? "Delete this save?" : "Restore this save?", 1U, 3U, 18U);
+	buttons("[B]no       [A]yes");
 	do k = key(); while(!(k & (J_A | J_B)));
+	buttons("[B]back      [A]ok");
 	if(k & J_B) return 0;
 	text("Working...", 1U, 3U, 18U);
 	bad = sel ? del_backup(i) : restore(i);
@@ -447,33 +482,56 @@ void save_manager(const char *name) __banked
 	const char *title = "Saves";
 	UINT8 sel = 0U;
 	UINT8 top = 0U;
+	UINT8 full = 1U;
 	UINT8 n;
 	UINT8 r;
 	UINT8 k;
 
+	rom = name;
 	n = (UINT8)strlen(name);
 	while(n && (name[n - 1U] != '.')) n--;
-	if((n < 2U) || (n - 1U > BASE_MAX)) return;	/* a name too long for the paths */
-	blen = (UINT8)(n - 1U);
-	memcpy(base, name, blen);
-	base[blen] = 0;
-
-	scan();
+	if(n < 2U) return;
+	count = 0U;
+	have_live = 0U;
+	if((UINT8)(n - 1U) <= BASE_MAX)
+	{
+		blen = (UINT8)(n - 1U);
+		memcpy(base, name, blen);
+		base[blen] = 0;
+		scan();
+	}
+	/* else a name too long for the paths: the screen opens with no save */
+	pad_take();			/* the press that opened it is not one for the list */
 	while(1)
 	{
 		n = (UINT8)(count + 1U);
 		if(sel >= n) sel = (UINT8)(n - 1U);
 		if(sel < top) top = sel;
 		if(sel >= (UINT8)(top + ROWS)) top = (UINT8)(sel - (ROWS - 1U));
-		frame(title, "[B]back      [A]ok");
-		for(r = 0U; (r < ROWS) && ((UINT8)(top + r) < n); r++)
+		/* the box and the name once; after that only what changes, so the
+		   name goes on scrolling */
+		if(full) frame(title, "[B]back      [A]ok");
+		else
+		{
+			color(BLACK, DKGREY, SOLID);
+			text(title, 1U, 3U, 18U);
+		}
+		full = 0U;
+		for(r = 0U; r < ROWS; r++)
 			item((UINT8)(top + r), r, ((UINT8)(top + r) == sel) ? 1U : 0U);
 		title = "Saves";
 
 		k = key();
 		if(k & J_B) break;
-		if(k & J_UP) sel = sel ? (UINT8)(sel - 1U) : (UINT8)(n - 1U);
-		else if(k & J_DOWN) sel = ((UINT8)(sel + 1U) < n) ? (UINT8)(sel + 1U) : 0U;
+		/* UP and DOWN stop at the ends */
+		if(k & J_UP)
+		{
+			if(sel) sel--;
+		}
+		else if(k & J_DOWN)
+		{
+			if((UINT8)(sel + 1U) < n) sel++;
+		}
 		else if(k & J_A)
 		{
 			if(sel == 0U)
@@ -493,6 +551,8 @@ void save_manager(const char *name) __banked
 				}
 			}
 			scan();
+			sel = 0U;
+			top = 0U;
 		}
 	}
 	while(joypad()) wait_vbl_done();

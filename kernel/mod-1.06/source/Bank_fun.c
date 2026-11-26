@@ -8,6 +8,8 @@
 #include "main.h"
 UINT8 pad_take(void);	/* mod: sgb.s */
 UINT8 cfg_played(UINT8 *dst) __banked;	/* mod: ezcfg.c */
+void mq_start(const UINT8 *s, UINT8 x, UINT8 row, UINT8 cells, UINT8 ink, UINT8 paper) __banked;	/* mod: modmisc.c, a name that scrolls */
+void mq_step(void) __banked;
 #include "RTC.h"
 #include "list12.h"		/* mod: the 12px list */
 #include "UI.h"		/* Show_Error_file() - reported when the ROM's FAT chain is unusable */
@@ -212,6 +214,7 @@ char *my_strrchr(const char *s, char c)__banked
 #endif
 #define SAVE_DOT_COL	11
 
+void list8_counter(UINT16 n) __banked;	/* mod: list8.c, the position in the folder */
 void list8_row(const FM_FILE_FS *e, UINT8 y) __banked;	/* mod: list8.c, a row's icon and name */
 
 void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
@@ -281,11 +284,7 @@ void Show_filename(UINT16 show_offset,UINT16 file_select)__banked
 	
 	}
 
-	{
-	char s[20];	
-		_ultoa(show_offset+file_select+1,s,10u);
-		Draw_Text(s, 4, 16, 0);
-	}
+	list8_counter((UINT16)(show_offset + file_select));	/* mod: n/total */
 		
 }
 
@@ -369,11 +368,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 	
 	color(BLACK,WHITE,SOLID);
 
-	{
-		char s[20];		
-		_ultoa(show_offset+file_select+1,s,10u);		
-		Draw_Text(s, 4, 16, 0);
-	}
+	list8_counter((UINT16)(show_offset + file_select));	/* mod: n/total */
 }
 
 // --------------------------------------------------------------------
@@ -1217,6 +1212,12 @@ static UINT8 save_name_is_sane(const TCHAR *p)
 	return 1;
 }
 
+/* mod: 1 when currentpath_temp, the path of the boot stamp, is a save's */
+UINT8 save_stamp_ok(void) __banked
+{
+	return save_name_is_sane(currentpath_temp);
+}
+
 //---------------------------------------------------------------------------------
 /* Load save: 0 = existing save read, 1 = no save file (blank one prepared), 2 = bad path */
 UINT8 LoadSAVE2SRAM(TCHAR *pfilename,UINT32 filesize)__banked
@@ -1912,18 +1913,11 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	box(0,35,159,ui_font ? 103 : 99,M_FILL);	/* 12px text is four pixels taller */
 	memcpy(t, "Back up save?", 14);
 	Draw_Text(t, 13, 1, 5);
-	/* the name: currentpath_temp is "/SAVER/<name>.sav" */
-	memset(t, ' ', 26);
-	t[ui_font ? 26 : 18] = 0;	/* a 12px font fits more of the name in the band */
+	/* the save's file name on its band, scrolling when it is longer
+	   (modmisc.c): currentpath_temp is "/SAVER/<name>.sav" */
 	n = (UINT8)strlen(currentpath_temp);
 	k = (n > 7) ? 7 : 0;
-	if((n > (UINT8)(k + 4)) && (currentpath_temp[n - 4] == '.')) n -= 4;
-	n -= k;
-	if(n > (ui_font ? 26 : 18)) n = ui_font ? 26 : 18;
-	memcpy(t, currentpath_temp + k, n);
-	color(WHITE,BLACK,SOLID);
-	if(ui_font) text12(t, 18, 1, 7);	/* Draw_Text would cut the name to 18 */
-	else Draw_Text(t, 18, 1, 7);
+	mq_start((const UINT8 *)currentpath_temp + k, 1, 7, 18, WHITE, BLACK);
 	color(BLACK,DKGREY,SOLID);
 	/* when the game was started: the clock the last launch stored (ezcfg.c) */
 	if(cfg_played(t))
@@ -1941,10 +1935,12 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 		while(1)
 		{
 			wait_vbl_done();
+			mq_step();
 			keys = pad_take();
 			if(keys & J_A) break;
 			if(keys & J_B) return;
 		}
+		color(BLACK,DKGREY,SOLID);
 		memset(t, ' ', 18);
 		t[18] = 0;
 		Draw_Text(t, 18, 1, 11);

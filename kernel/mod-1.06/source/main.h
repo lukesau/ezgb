@@ -89,11 +89,13 @@ typedef struct FM_FILE_SECT{
 void Draw_Text(UINT8 *str, UINT8 len, UINT8 x, UINT8 y);
 void Read_all_DIR(void) __banked;	/* mod: browser.c */
 void battery_box(UINT8 erase) __banked;	/* mod: msgbox.c, BATTERY DRY */
+void cut_box(void) __banked;	/* mod: msgbox.c, Too many files */
 void flaunch_box(void) __banked;	/* mod: msgbox.c, FAST LAUNCH was ticked */
 void popup_rules(UINT8 row, UINT8 y1, UINT8 xv) __banked;	/* mod: msgbox.c, the rules of a two-button popup */
 void msg_box(const UINT8 *text) __banked;	/* mod: msgbox.c, the small status box */
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked;	/* mod: list8.c */
-void list_follow(UINT16 *show_offset, UINT8 *file_select) __banked;	/* mod: browser.c */
+void list_resort(UINT16 *show_offset, UINT8 *file_select) __banked;	/* mod: browser.c, the list again after a star */
+UINT8 save_stamp_ok(void) __banked;	/* mod: Bank_fun.c, the boot stamp names a save */
 UINT8 name_shown(const FM_FILE_FS *e) __banked;	/* mod: browser.c, a name's length as the list draws it */
 extern UINT8 tags_hide;		/* mod: CLEAN NAMES, ezcfg.c */
 void Draw_SRAM_Text(UINT8 num_num, UINT8 isFolder, UINT8 x, UINT8 y);

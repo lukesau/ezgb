@@ -36,7 +36,7 @@
 #include "font12.h"
 #include "textview.h"
 
-#include "modbank2.h"
+#include "modbank3.h"
 
 extern UINT8 SD_buffer[0x200];
 extern FIL gfil;

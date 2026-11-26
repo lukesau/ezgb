@@ -24,6 +24,8 @@
 #pragma bank 4
 
 extern TCHAR lfname_temp[];
+extern UINT16 game_folder_total;
+extern void _ultoa(unsigned long value, char *string, unsigned char radix) __banked;
 
 void vram_put2(UINT8 *dst, UINT16 planes);	/* vram_put.s */
 UINT8 draw_colors(void);
@@ -70,6 +72,35 @@ static UINT8 icon8_of(const FM_FILE_FS *e)
 	}
 	if((n > 3U) && (e->filename[n - 3U] == '.') && (up8(e->filename[n - 2U]) == 'M') && (up8(e->filename[n - 1U]) == 'D')) return 4U;
 	return 3U;
+}
+
+/* mod: the position in the folder, in the five columns right of HELP:
+   n/total from a column that holds for the folder while the total has
+   under three digits, else n alone from column 16. All five columns are
+   written, so a shorter number leaves nothing of a longer one. */
+void list8_counter(UINT16 n) __banked
+{
+	UINT8 s[12];
+	UINT8 t[6];
+	UINT8 tn;
+	UINT8 x;
+	UINT8 i;
+
+	_ultoa((unsigned long)game_folder_total, (char *)t, 10u);
+	tn = (UINT8)strlen((char *)t);
+	x = (tn < 3U) ? (UINT8)(4U - tn - tn) : 1U;
+	for(i = 0U; i < x; i++) s[i] = ' ';
+	_ultoa((unsigned long)n + 1UL, (char *)s + x, 10u);
+	x = (UINT8)strlen((char *)s);
+	if(tn < 3U)
+	{
+		s[x++] = '/';
+		for(i = 0U; i < tn; i++) s[x++] = t[i];
+	}
+	while(x < 5U) s[x++] = ' ';
+	s[5] = 0U;
+	color(BLACK, WHITE, SOLID);
+	Draw_Text(s, 5, 15, 0);
 }
 
 /* mod: a row of the 8px list (docs/browser.md "Icons and the selection
@@ -120,7 +151,6 @@ UINT8 list8_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __
 	UINT8 row;
 	UINT8 pass;
 	UINT16 idx;
-	char s[6];
 
 	if(show_offset > old_offset)
 	{
@@ -170,8 +200,7 @@ UINT8 list8_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __
 		}
 	}
 	color(BLACK, WHITE, SOLID);
-	_ultoa((unsigned long)show_offset + file_select + 1UL, s, 10u);
-	Draw_Text(s, 4, 16, 0);
+	list8_counter((UINT16)(show_offset + file_select));
 	return 1U;
 }
 

@@ -1180,13 +1180,15 @@ UINT8 cfg_fastlaunch(void) __banked
 }
 
 /* A launch, before the ROM is read: the clock and AUTO SAVE go to the file */
-void cfg_launch(void) __banked
+void cfg_launch(UINT8 count) __banked
 {
 	UINT8 v;
 	UINT8 dirty = 0U;
 
 	sgb_finish();			/* what is left of the SGB packets goes before the game */
-	plays_bump((const UINT8 *)lfname_temp);		/* one more launch of this game (plays.c) */
+	/* one more launch of this game (plays.c), when it was picked in the
+	   list: fast launch and the recent list start what was already counted */
+	if(count) plays_bump((const UINT8 *)lfname_temp);
 	v = info_get(0x200U);
 	if((v <= 1U) && (!cfg_have_autosave || (v != cfg_autosave)))
 	{

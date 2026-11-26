@@ -17,7 +17,14 @@
      4. the folder is read again and each record is written straight to
         its row
 
-   Two names with the same first 13 characters stay in card order.
+   Names with the same first 13 characters (12 with SORT BY PLAYS) are
+   then put in order by their whole names, case aside, by swapping their
+   records (ties_fix): there are few of them and they are next to each
+   other.
+
+   After a star or an unstar nothing is read from the card: the keys are
+   made again from the records, sorted, and each record that has a new row
+   is moved to it (list_resort).
 
    The list is banks Folder_sram_bank to KEY_BANK - 1 of save RAM, 32 records
    a bank, so it holds 416 entries where the kernel as received held 448.
@@ -210,10 +217,13 @@ static UINT8 hide_listed(const char *fn)
 }
 
 /* 0 when the entry in fileinfo is not listed, 1 for a file, 2 for a folder */
+static UINT8 lone_scan;		/* entry_class is asked for browser_lone_rom */
+
 static UINT8 entry_class(void)
 {
 	char *fn;
 	UINT8 is_dir;
+	UINT8 n;
 
 	if(fileinfo.fname[0] == '.') return 0U;		/* . and .., and dot files with no long name */
 	fn = entry_name();
@@ -221,10 +231,20 @@ static UINT8 entry_class(void)
 	if(fileinfo.fattrib & (AM_VOL | AM_HID | AM_SYS)) return 0U;
 
 	is_dir = (fileinfo.fattrib & AM_DIR) ? 1U : 0U;
+	if(lone_scan)
+	{
+		/* a card with one game (browser_lone_rom): every file counts but
+		   the kernels and the settings, shown in the list or not */
+		if(is_dir) return 2U;
+		n = (UINT8)strlen(fn);
+		if((n >= 4U) && same_name(fn + n - 4U, ".DAT")) return 0U;
+		if(same_name(fn, "EZGB.CFG") || same_name(fn, "FLAUNCH.CFG")) return 0U;
+		return 1U;
+	}
 	if(hidden_ending(fn)) return 0U;
 	if(same_name(fn, "EZGB.CFG")) return 0U;
 	if(same_name(fn, "FLAUNCH.CFG")) return 0U;
-	if(is_dir && same_name(fn, "SAVER")) return 0U;	/* the kernel's save folder */
+	if(same_name(fn, "SAVER")) return 0U;		/* the kernel's save folder, or a file in its way */
 	if(hide_listed(fn)) return 0U;			/* the card's own list */
 	return is_dir ? 2U : 1U;
 }
@@ -243,15 +263,13 @@ static UINT8 plays_mode;		/* plays_active() for this listing */
    other file, so stars come right after the folders. With SORT BY PLAYS
    the next byte is 255 less the launches, most played first, and the name
    starts a byte later (docs/stars.md). */
-static void key_store(UINT16 n, UINT8 cls)
+static void key_store(UINT16 n, UINT8 cls, const char *fn)
 {
 	UINT8 i = 1U;
 	UINT8 c;
 	UINT8 *k;
 	UINT8 launches;
-	const char *fn;
 
-	fn = entry_name();
 	key_a[0] = (cls == 2U) ? 0U : 2U;
 	if((cls != 2U) && plays_mode)
 	{
@@ -349,6 +367,85 @@ static void ranks_build(UINT16 n, UINT8 sorted)
 	}
 }
 
+/* ---- records ---- */
+
+static UINT8 list_cut;			/* the folder had more than the list holds: card order */
+
+#define BUF_A	(SD_buffer)
+#define BUF_B	(SD_buffer + 0x100U)
+
+static UINT8 *rec_at(UINT16 row)
+{
+	hw_set_page(A000Address_SRAM);
+	HW_BANK = Folder_sram_bank + (UINT8)(row / Num_perBank);
+	return (UINT8 *)&pFilename_buffer[row % Num_perBank];
+}
+
+/* Records a and b change places, through SD_buffer, which a listing only
+   uses for the hide list while it reads the card. In pieces, as the zh
+   record is longer than half of it. */
+static void rec_swap(UINT16 a, UINT16 b)
+{
+	UINT16 off;
+	UINT16 len;
+
+	for(off = 0U; off < sizeof(FM_FILE_FS); off += 0x100U)
+	{
+		len = sizeof(FM_FILE_FS) - off;
+		if(len > 0x100U) len = 0x100U;
+		memcpy(BUF_A, rec_at(a) + off, len);
+		memcpy(BUF_B, rec_at(b) + off, len);
+		memcpy(rec_at(b) + off, BUF_A, len);
+		memcpy(rec_at(a) + off, BUF_B, len);
+	}
+}
+
+/* Row a is the row before b and their keys are the same: 1 when b's name
+   comes first, case aside, and they have changed places */
+static UINT8 rec_order(UINT16 a, UINT16 b)
+{
+	const UINT8 *p = BUF_A;
+	const UINT8 *q = BUF_B;
+	UINT8 ca;
+	UINT8 cb;
+
+	memcpy(BUF_A, rec_at(a), MAX_filename_len);
+	memcpy(BUF_B, rec_at(b), MAX_filename_len);
+	while(1)
+	{
+		ca = up(*p++);
+		cb = up(*q++);
+		if(ca != cb) break;
+		if(!ca) return 0U;
+	}
+	if(ca < cb) return 0U;
+	rec_swap(a, b);
+	return 1U;
+}
+
+/* The sorted keys only hold the start of a name. Rows whose keys are the
+   same but for the entry's number are next to each other: each such run is
+   put in order by the whole names, an insertion sort on the records. */
+static void ties_fix(UINT16 n)
+{
+	UINT16 i;
+	UINT16 j;
+	UINT16 start = 0U;
+	UINT8 *k;
+
+	for(i = 1U; i < n; i++)
+	{
+		keys_page();
+		k = KEYS + i * KEY_LEN;
+		if(memcmp(k - KEY_LEN, k, KEY_LEN - 2U))
+		{
+			start = i;
+			continue;
+		}
+		for(j = i; j > start; j--) if(!rec_order((UINT16)(j - 1U), j)) break;
+	}
+}
+
 /* Opens the folder. 0 when it could not be opened. */
 static UINT8 open_dir(void)
 {
@@ -389,21 +486,6 @@ static UINT8 next_entry(UINT8 stage)
 	}
 }
 
-/* A folder with more entries than the list holds: say so for two seconds */
-static void cut_notice(void)
-{
-	UINT8 s[20];
-
-	color(BLACK, DKGREY, SOLID);
-	box(11, 37, 149, 76, M_FILL);
-	memcpy(s, "Too many files.", 16U);
-	Draw_Text(s, 15U, 2U, 5U);
-	memcpy(s, "Showing first 416", 18U);
-	Draw_Text(s, 17U, 2U, 7U);
-	color(BLACK, WHITE, SOLID);
-	delay(2000);
-}
-
 void Read_all_DIR(void) __banked
 {
 	UINT8 cls;
@@ -431,7 +513,7 @@ void Read_all_DIR(void) __banked
 			cut = 1U;
 			break;
 		}
-		key_store(n, cls);
+		key_store(n, cls, entry_name());
 		n++;
 	}
 	if(readdir_fail) return;
@@ -464,16 +546,20 @@ void Read_all_DIR(void) __banked
 	/* a short second read (the card stopped answering) leaves rows unwritten,
 	   and readdir_fail set: the caller reports it and shows no list */
 	game_folder_total = n;
+	list_cut = cut;
+	if(!cut && !readdir_fail && (k == n)) ties_fix(n);
 
 	hw_set_page(A000Address_TF);
-	if(cut) cut_notice();
+	if(cut) cut_box();		/* msgbox.c */
 }
 
 /* ---- a card with one game ---- */
 
-/* 1 when the card's root lists exactly one file, a .gb or .gbc, whatever
+/* 1 when the card's root has exactly one file, a .gb or .gbc, whatever
    folders it has: its name is then in lfname_temp (docs/fast-launch.md,
-   "A lone ROM"). What the list hides is not counted. */
+   "A lone ROM"). Kernels (*.dat), the settings file and dot files are not
+   counted; a save, a text file or a hidden name beside the game is, as in
+   the 0918 mod, so such a card opens the list. */
 UINT8 browser_lone_rom(void) __banked
 {
 	extern TCHAR lfname_temp[];
@@ -487,19 +573,24 @@ UINT8 browser_lone_rom(void) __banked
 	fileinfo.lfname = lfname_temp;
 	fileinfo.lfsize = MAX_filename_len;
 	readdir_fail = 0;
-	hide_load();
 	if(!open_dir()) return 0U;
+	lone_scan = 1U;
 	while((cls = next_entry(3U)) != 0U)
 	{
 		if(cls == 2U) continue;
-		if(++files > 1U) return 0U;
+		if(++files > 1U) break;
 		fn = entry_name();
 		n = (UINT8)strlen(fn);
 		if(!(((n > 3U) && same_name(fn + n - 3U, ".GB")) ||
-		     ((n > 4U) && same_name(fn + n - 4U, ".GBC")))) return 0U;
+		     ((n > 4U) && same_name(fn + n - 4U, ".GBC"))))
+		{
+			files = 2U;
+			break;
+		}
 		/* kept aside: the entries read after it go through lfname_temp */
 		strcpy(currentpath_temp, fn);
 	}
+	lone_scan = 0U;
 	if(files != 1U) return 0U;
 	strcpy(lfname_temp, currentpath_temp);
 	return 1U;
@@ -537,33 +628,92 @@ UINT8 name_shown(const FM_FILE_FS *e) __banked
 	return i;
 }
 
-/* ---- the cursor after a star ---- */
+/* ---- after a star ---- */
 
-/* After a game was starred the folder is listed again and the game has
-   moved: the cursor goes to it, on the last row when it is past the first
-   page. plays.c keeps which game. */
-void list_follow(UINT16 *show_offset, UINT8 *file_select) __banked
+/* The cursor goes with the game that was starred (plays.c keeps which): on
+   the screen row it was on when the list reaches that far, else as near. */
+static void follow(UINT16 *show_offset, UINT8 *file_select)
 {
 	UINT16 i;
+	UINT16 off;
+	UINT16 max;
 	UINT8 m;
-	UINT8 rows = LIST_ROWS;
 
 	for(i = 0U; i < game_folder_total; i++)
 	{
-		hw_set_page(A000Address_SRAM);
-		HW_BANK = Folder_sram_bank + (UINT8)(i / Num_perBank);
-		m = follow_match(pFilename_buffer[i % Num_perBank].filename);
+		m = follow_match(((FM_FILE_FS *)rec_at(i))->filename);
 		if(m == 0U) return;
 		if(m == 2U)
 		{
-			if(i < rows) *file_select = (UINT8)i;
-			else
-			{
-				*show_offset = (UINT16)(i - (rows - 1U));
-				*file_select = (UINT8)(rows - 1U);
-			}
+			max = (game_folder_total > LIST_ROWS) ? (UINT16)(game_folder_total - LIST_ROWS) : 0U;
+			off = (i >= *file_select) ? (UINT16)(i - *file_select) : 0U;
+			if(off > max) off = max;
+			*show_offset = off;
+			*file_select = (UINT8)(i - off);
 			break;
 		}
 	}
 	follow_clear();
+}
+
+/* A game was starred or unstarred, so it has a new place in the list. The
+   records are all in save RAM: the keys are made again from them and
+   sorted, and the records are moved to their rows, each straight to where
+   it goes. Nothing is read from the card. A folder that was cut is in
+   card order, and there only the marks change. */
+void list_resort(UINT16 *show_offset, UINT8 *file_select) __banked
+{
+	extern TCHAR lfname_temp[];
+	FM_FILE_FS *e;
+	UINT16 n = game_folder_total;
+	UINT16 i;
+	UINT16 r;
+	UINT16 t;
+	UINT8 launches;
+	UINT8 dir_e;
+
+	plays_mode = plays_active();
+	if(list_cut)
+	{
+		for(i = 0U; i < n; i++)
+		{
+			e = (FM_FILE_FS *)rec_at(i);
+			if(e->fattrib == AM_DIR) continue;
+			strcpy(lfname_temp, (const char *)e->filename);
+			r = plays_lookup((const UINT8 *)lfname_temp, &launches);
+			((FM_FILE_FS *)rec_at(i))->fattrib = (r & 1U) ? FATTR_STARRED : 0x20;
+		}
+	}
+	else
+	{
+		for(i = 0U; i < n; i++)
+		{
+			e = (FM_FILE_FS *)rec_at(i);
+			dir_e = (e->fattrib == AM_DIR) ? 2U : 1U;
+			/* a copy: looking the name up maps the table over the record */
+			strcpy(lfname_temp, (const char *)e->filename);
+			key_store(i, dir_e, lfname_temp);
+		}
+		keys_sort(n);
+		ranks_build(n, 1U);
+		for(i = 0U; i < n; i++)
+		{
+			while(1)
+			{
+				keys_page();
+				r = RANKS[i];
+				t = r & 0x7FFFU;
+				if(t == i) break;
+				rec_swap(i, t);			/* the record of row i goes home, to row t */
+				keys_page();
+				RANKS[i] = RANKS[t];
+				RANKS[t] = r;
+			}
+			e = (FM_FILE_FS *)rec_at(i);
+			if(e->fattrib != AM_DIR) e->fattrib = (r & 0x8000U) ? FATTR_STARRED : 0x20;
+		}
+		ties_fix(n);
+	}
+	follow(show_offset, file_select);
+	hw_set_page(A000Address_TF);
 }

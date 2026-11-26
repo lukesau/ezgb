@@ -289,6 +289,10 @@ void set_check_ring(UINT8 y, UINT8 sel) __banked
 	color(BLACK, WHITE, SOLID);
 }
 
+/* text for mq_start, which reads it from RAM: a literal here is in this
+   bank, not its */
+static UINT8 mq_text[32];
+
 static void row_draw(UINT8 row, UINT8 sel)
 {
 	static const char names[THEMES][7] = {"LIGHT", "DARK", "RED", "GREEN", "PURPLE", "BLUE", "CUSTOM", "DV"};
@@ -316,7 +320,16 @@ static void row_draw(UINT8 row, UINT8 sel)
 			for(i = 0U; i < n; i++) if(cfg_flaunch[i] == '/') v = cfg_flaunch + i + 1U;
 			if(*v == '#') v++;		/* off with no game: "#" alone */
 			/* no game: on, it is the card's one game, if it has just one */
-			if(!*v) v = (cfg_flaunch[0] == '#') ? "NOT SET" : "(AUTO)";
+			if(!*v)
+			{
+				strcpy((char *)mq_text, (cfg_flaunch[0] == '#') ? "NOT SET" : "(AUTO)");
+				v = (const char *)mq_text;
+			}
+			/* 14 cells from column 6, scrolling when the name is longer
+			   (modmisc.c, which reads it from RAM) */
+			mq_start((const UINT8 *)v, 6U, trow, 14U, sel ? SEL_INK : BLACK, sel ? SEL_PAPER : WHITE);
+			color(BLACK, WHITE, SOLID);
+			return;
 		}
 		else if(row == ROW_THEME) v = names[theme_now()];
 		else if(row == ROW_SGB) v = "AUTO";		/* our stage1 sends the packets itself */
@@ -338,12 +351,7 @@ static void row_draw(UINT8 row, UINT8 sel)
 		}
 		if(sel) color(SEL_INK, SEL_PAPER, SOLID);
 		else color(BLACK, WHITE, SOLID);
-#ifndef LANG_ZH
-		if((row == ROW_GAME) && ui_font) text12(s, 14U, 6U, trow);	/* Draw_Text would cut the name to 14 */
-		else
-#endif
-		if(row == ROW_GAME) Draw_Text(s, 14U, 6U, trow);
-		else Draw_Text(s, 7U, 13U, trow);
+		Draw_Text(s, 7U, 13U, trow);
 		color(BLACK, WHITE, SOLID);
 		return;
 	}
@@ -373,18 +381,9 @@ static void row_draw(UINT8 row, UINT8 sel)
    without. In the 8px font it is cut to the row. */
 static void example_draw(void)
 {
-	UINT8 s[32];
-
-	memset(s, ' ', 31U);
-	s[31] = 0U;
-	if(tags_hide) memcpy(s, "Game Title", 10U);
-	else memcpy(s, "Game Title (USA) (Rev 1) [!].gb", 31U);
+	strcpy((char *)mq_text, tags_hide ? "Game Title" : "Game Title (USA) (Rev 1) [!].gb");
+	mq_start(mq_text, 1U, 5U, 19U, BLACK, WHITE);	/* the long one scrolls (modmisc.c) */
 	color(BLACK, WHITE, SOLID);
-#ifndef LANG_ZH
-	if(ui_font) text12(s, 19U, 1U, 5U);
-	else
-#endif
-	Draw_Text(s, 19U, 1U, 5U);
 }
 
 /* The labels and rows of a page, none under the cursor, and its number at
@@ -399,6 +398,7 @@ static void rows_draw(UINT8 page)
 	UINT8 s[16];
 	UINT8 i;
 
+	mq_stop();		/* the page before's name */
 	color(BLACK, WHITE, SOLID);
 	if(page == 2U) cfg_colors_seed(shown);
 	for(i = 0U; i < ROWS_NOW; i++)
@@ -487,6 +487,7 @@ UINT8 set_page2(UINT8 start) __banked
 	while(1)
 	{
 		wait_vbl_done();
+		mq_step();		/* the game's name, or the example */
 #ifndef LANG_ZH
 		if(row_page[row] == 0U) clock_tick();
 #endif

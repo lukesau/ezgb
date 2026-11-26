@@ -59,8 +59,17 @@ static UINT8 icon_of(const FM_FILE_FS *e, UINT8 *shown)
 	if((n > 3U) && (nm[n - 3U] == '.') && (up(nm[n - 2U]) == 'G') && (up(nm[n - 1U]) == 'B')) return F12_GB;
 	if((n > 4U) && (nm[n - 4U] == '.') && (up(nm[n - 3U]) == 'G') && (up(nm[n - 2U]) == 'B') &&
 	   (up(nm[n - 1U]) == 'C')) return F12_GBC;
-	if((n > 4U) && (nm[n - 4U] == '.') && (up(nm[n - 3U]) == 'S') && (up(nm[n - 2U]) == 'A') &&
-	   (up(nm[n - 1U]) == 'V')) return F12_SAV;
+	/* text the viewer opens (textview.c) gets the page */
+	if((n > 3U) && (nm[n - 3U] == '.') && (up(nm[n - 2U]) == 'M') && (up(nm[n - 1U]) == 'D')) return F12_SAV;
+	if((n > 4U) && (nm[n - 4U] == '.'))
+	{
+		UINT8 a = up(nm[n - 3U]);
+		UINT8 b = up(nm[n - 2U]);
+		UINT8 c = up(nm[n - 1U]);
+
+		if(((a == 'T') && (b == 'X') && (c == 'T')) || ((a == 'I') && (b == 'N') && (c == 'I')) ||
+		   ((a == 'C') && (b == 'F') && (c == 'G'))) return F12_SAV;
+	}
 	return F12_FILE;
 }
 
@@ -93,25 +102,35 @@ static void row_draw(UINT16 n, UINT8 line, UINT8 selected, UINT8 from)
 }
 
 /* The position in the folder, at the right of the tab strip: n/total when
-   that fits right of HELP, else n alone */
+   total/total fits right of HELP, else n alone. Which it is, and where it
+   starts, hold for the whole folder, so the number does not move and the
+   total does not come and go. */
 static void counter(UINT16 n)
 {
 	UINT8 s[12];
 	UINT8 len;
 	UINT8 w;
+	UINT8 both = 1U;
 
-	_ultoa((unsigned long)n + 1UL, (char *)s, 10u);
+	_ultoa((unsigned long)game_folder_total, (char *)s, 10u);
 	len = (UINT8)strlen((char *)s);
 	s[len] = '/';
 	_ultoa((unsigned long)game_folder_total, (char *)s + len + 1U, 10u);
 	w = font12_end(s, 0U);
 	if(w > 44U)
 	{
-		s[len] = 0U;			/* the number alone */
+		both = 0U;
+		s[len] = 0U;			/* the total alone is as wide as any number */
 		w = font12_end(s, 0U);
 	}
-	s[11] = 0U;
-	/* clear the field, then the text against the right edge */
+	_ultoa((unsigned long)n + 1UL, (char *)s, 10u);
+	if(both)
+	{
+		len = (UINT8)strlen((char *)s);
+		s[len] = '/';
+		_ultoa((unsigned long)game_folder_total, (char *)s + len + 1U, 10u);
+	}
+	/* clear the field, then the text from the folder's x */
 	{
 		/* not a literal: font12.c is in another bank and would read its own
 		   bytes at this one's address */

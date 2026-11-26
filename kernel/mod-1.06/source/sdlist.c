@@ -113,6 +113,7 @@ void Show_SD_list(void) __banked
 	UINT8 key_t = 0;		/* mod: the frame the held key last acted on */
 	UINT8 keymark = 0;		/* mod: a press was just acted on: key_t is taken once it is drawn */
 	UINT8 to_set = 0;		/* mod: a game was picked: the SET tab is next */
+	UINT8 count_play = 0U;	/* mod: this launch is one from the list */
 	UINT16 scroll_from = 0;		/* mod: where the list was before a scroll (updata 4) */
 	/* There used to be a local `BYTE FR_OK=0;` shadowing FatFs' FR_OK enum (0): the
 	   comparison below tested that variable and only looked right because it was 0,
@@ -189,9 +190,15 @@ void Show_SD_list(void) __banked
 				res = f_mkdir_bank(s_saver);
 
 
+				/* mod: the stamp is in save RAM, where a weak cell leaves the flag
+				   and garbage for the path: no prompt for anything but
+				   "/SAVER/" and a save's name (docs/prompts.md) */
+				if(save_stamp_ok())
+				{
 				save_daily(currentpath_temp, (UINT8)save_size);		/* mod: DAILY BACKUP, before the save is written (savemgr.c) */
 				Show_SAVE_info(save_size,is_autosave);				
 				cfg_backup();		/* mod: the clock to /EZGB.CFG, as at a launch */
+				}
 		}
 		HW_BANK = 0;
 		hw_set_page(A000Address_TF);
@@ -212,6 +219,7 @@ void Show_SD_list(void) __banked
 	{
 		Save_filename();
 		Show_loading();
+		count_play = 0U;	/* mod: only a launch from the list is a play */
 		goto BOOT;
 	}
 
@@ -288,7 +296,7 @@ refind_file:
 	
 	file_select = 0;
 	show_offset = 0;
-	list_follow(&show_offset, &file_select);	/* mod: back on the game that was just starred (browser.c) */
+relisted:
 	updata = 1;
 	shift = 0;
 
@@ -640,6 +648,7 @@ re_showfile:
 
 						Save_filename();	/* also updates SRAM 0x300 and the recent-record order */
 						Show_loading();
+						count_play = 0U;	/* mod: only a launch from the list is a play */
 						goto BOOT;
 					}
 					else if(rkey & J_B)
@@ -695,7 +704,13 @@ re_showfile:
 							   from opening the folder is no press (rommenu.c) */
 							{
 								UINT8 rm = rom_menu(show_offset, file_select);
-								if(rm == 2U) goto refind_file;
+								if(rm == 2U)
+								{
+									/* starred or unstarred: its new place, from the
+									   records, with no card read (browser.c) */
+									list_resort(&show_offset, &file_select);
+									goto relisted;
+								}
 								if(rm)
 								{
 									pad_take();	/* the menu's presses are not the list's */
@@ -740,9 +755,10 @@ re_showfile:
 								}							
 							}
 							Save_filename();
+							count_play = 1U;	/* mod: a launch from the list (plays.c) */
 								
 							BOOT:
-							cfg_launch();		/* mod: the clock and AUTO SAVE to /EZGB.CFG */
+							cfg_launch(count_play);		/* mod: the clock and AUTO SAVE to /EZGB.CFG */
 							res = GatherMetadata(lfname_temp/*pFilename_buffer[show_offset+file_select-folder_total].filename*/);
 							if(res == 0xFF){
 								/* The ROM could not be opened. Two causes: unreadable/corrupt,

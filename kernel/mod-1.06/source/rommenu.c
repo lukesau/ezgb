@@ -109,37 +109,6 @@ static void item_draw(UINT8 i, UINT8 sel, const char *name)
 	Draw_Text(s, 18U, 1U, (UINT8)(7U + i * 2U));
 }
 
-static UINT8 name_scrolls;		/* the name does not fit its band */
-
-/* The name on its band, from character `from`, wrapping with a gap */
-static void name_draw(const char *name, UINT8 len, UINT8 from)
-{
-	UINT8 s[NAME_MAX12 + 1U];
-	UINT8 cols = ui_font ? NAME_MAX12 : NAME_COLS;
-	UINT8 i;
-	UINT8 pos = from;
-
-	for(i = 0U; i < cols; i++)
-	{
-		if(pos < len) s[i] = (UINT8)name[pos];
-		else if(!name_scrolls || (pos < (UINT8)(len + 3U))) s[i] = ' ';
-		else
-		{
-			pos = 0U;
-			s[i] = (UINT8)name[0];
-		}
-		pos++;
-	}
-	s[cols] = 0U;
-	color(WHITE, BLACK, SOLID);
-#ifndef LANG_ZH
-	if(ui_font) text12(s, NAME_COLS, 1U, 5U);	/* Draw_Text would cut the name to its cells */
-	else
-#endif
-	Draw_Text(s, NAME_COLS, 1U, 5U);
-	color(BLACK, DKGREY, SOLID);
-}
-
 /* Called for A on a file, before it is started. 0: go on and start it (a
    tap, a file that is not a game, or Start in the menu). 1: do not; the
    list is as it was, redrawn if the menu was up. 2: do not, and list the
@@ -150,13 +119,10 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 	char p[FLAUNCH_MAX + 1U];
 	UINT8 s[20];
 	UINT16 n = (UINT16)(show_offset + file_select);
-	UINT8 len;
 	UINT8 t;
 	UINT8 sel = 0U;
 	UINT8 keys;
 	UINT8 last;
-	UINT8 from = 0U;
-	UINT8 tick = 0U;
 
 	HW_BANK = Folder_sram_bank + (UINT8)(n / Num_perBank);
 	strcpy(name, (const char *)pFilename_buffer[n % Num_perBank].filename);
@@ -180,12 +146,6 @@ UINT8 rom_menu(UINT16 show_offset, UINT16 file_select) __banked
 		if(!(joypad() & J_A)) return 0U;	/* a tap */
 	}
 
-	len = (UINT8)strlen(name);
-	name_scrolls = (len > NAME_COLS) ? 1U : 0U;
-#ifndef LANG_ZH
-	/* a 12px font: by what it can place in the band's 144 pixels */
-	if(ui_font) name_scrolls = (font12_fit((const UINT8 *)name, 8U) < len) ? 1U : 0U;
-#endif
 redraw:
 	color(BLACK, DKGREY, SOLID);
 	/* from the top of a list row to the bottom of one, in either font */
@@ -194,7 +154,7 @@ redraw:
 #else
 	box(0, 32, 159, ui_font ? 139 : 135, M_FILL);
 #endif
-	name_draw(name, len, 0U);
+	mq_start((const UINT8 *)name, 1U, 5U, NAME_COLS, WHITE, BLACK);	/* the name on its band (modmisc.c) */
 	for(t = 0U; t < ITEMS; t++) item_draw(t, (t == sel) ? 1U : 0U, name);
 	memcpy(s, "[B]back      [A]ok", 19U);
 	Draw_Text(s, 18U, 1U, 15U);
@@ -209,12 +169,7 @@ redraw:
 	while(1)
 	{
 		wait_vbl_done();
-		if(name_scrolls && (++tick >= 12U))
-		{
-			tick = 0U;
-			if(++from >= (UINT8)(len + 3U)) from = 0U;
-			name_draw(name, len, from);
-		}
+		mq_step();
 		keys = joypad();
 		if(keys == last) continue;
 		last = keys;
@@ -255,7 +210,6 @@ redraw:
 				DrawGB(3);			/* its box is taller than this one: the list again first */
 				hw_set_page(A000Address_SRAM);
 				Show_filename(show_offset, file_select);
-				from = 0U;
 				goto redraw;
 			}
 			/* this game becomes the fast launch game, or stops being it.

@@ -128,3 +128,34 @@ void flaunch_box(void) __banked
 	pad_take();
 	while(!(pad_take() & J_A)) wait_vbl_done();
 }
+
+/* A folder with more entries than the list holds (browser.c): the same
+   frame, nearly the screen's width, round two lines, for two seconds. */
+void cut_box(void) __banked
+{
+	UINT8 s[18];
+
+	color(WHITE, WHITE, SOLID);
+	box(4, 46, 155, 89, M_FILL);
+	color(BLACK, WHITE, SOLID);
+	box(4, 46, 155, 89, M_NOFILL);
+	box(5, 47, 154, 88, M_NOFILL);
+	box(7, 49, 152, 86, M_NOFILL);
+	memcpy(s, "Too many files.", 16U);
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		/* inside the frame: text12_center would paint the row across it */
+		font12_field(s, (UINT8)(80U - (font12_end(s, 0U) >> 1)), 54U, F12_NORMAL, 150U);
+		memcpy(s, "Showing first 416", 18U);
+		font12_field(s, (UINT8)(80U - (font12_end(s, 0U) >> 1)), 68U, F12_NORMAL, 150U);
+	}
+	else
+#endif
+	{
+		Draw_Text(s, 15U, 2U, 7U);
+		memcpy(s, "Showing first 416", 18U);
+		Draw_Text(s, 17U, 1U, 9U);
+	}
+	delay(2000);
+}

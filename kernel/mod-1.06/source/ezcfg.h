@@ -8,7 +8,7 @@ extern UINT8 cfg_dry;		/* main() sets it when the boot showed BATTERY DRY */
 void console_init(void) __banked;		/* first thing in main() */
 void cfg_boot(void) __banked;			/* the card is mounted */
 UINT8 cfg_fastlaunch(void) __banked;		/* boot: 1 when FLAUNCH= is to be launched */
-void cfg_launch(void) __banked;			/* a game is about to be loaded */
+void cfg_launch(UINT8 count) __banked;			/* a game is about to be loaded */
 void cfg_timeset(const UINT8 *t) __banked;	/* TIME SET confirmed */
 void cfg_autosave_set(UINT8 v) __banked;	/* the AUTO SAVE box changed */
 #define SET_RESUME	2U				/* set_page2's start for the last row of page 1 */
@@ -63,5 +63,10 @@ UINT8 theme_now(void) __banked;
 extern UINT8 custom_ch[9];
 void cfg_colors_changed(void) __banked;
 void cfg_colors_seed(UINT8 *dst) __banked;
+
+/* modmisc.c: a name that scrolls in its field, one at a time */
+void mq_start(const UINT8 *s, UINT8 x, UINT8 row, UINT8 cells, UINT8 ink, UINT8 paper) __banked;
+void mq_step(void) __banked;		/* once a frame */
+void mq_stop(void) __banked;		/* the name is off the screen */
 
 #endif

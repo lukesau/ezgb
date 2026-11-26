@@ -488,6 +488,7 @@ page1:		/* mod: the second page comes back here to draw the first again */
 		   A, SELECT and START once a press (pad_menu, modmisc.c). It was every
 		   key every fourth frame, a held A or SELECT included. */
 		keysrepeat = pad_menu();
+		mq_step();		/* mod: the fast launch game's name scrolls (modmisc.c) */
 
 		if(keysrepeat & J_LEFT){
 			if(edit_mode)
