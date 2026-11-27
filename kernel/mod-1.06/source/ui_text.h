@@ -52,7 +52,7 @@
 #define UI_LIST_DIR             "DIR"
 
 /* ---------- recently played (main.c + Bank_fun.c Show_recent_list) ---------- */
-#define UI_RECENT_TITLE         "Recently play"
+#define UI_RECENT_TITLE         "Recently played"	/* mod: was "Recently play" */
 
 /* ---------- tab bar (UI.c) ---------- */
 #define UI_TAB_SD               " SD "

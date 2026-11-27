@@ -564,7 +564,16 @@ re_showfile:
 				   list_zh_recent draws the title (y0); no bottom bar (font set too small). */
 				list_zh_recent(rn, rsel);
 #else
-				Draw_Text(UI_RECENT_TITLE, UI_LEN(UI_RECENT_TITLE), 3, 0);	/* centred title */
+				if(ui_font)
+				{
+					/* mod: centered by its width, not by cells */
+					UINT8 rt[UI_LEN(UI_RECENT_TITLE) + 1U];
+
+					memcpy(rt, UI_RECENT_TITLE, UI_LEN(UI_RECENT_TITLE) + 1U);
+					text12_center(rt, 0U);
+				}
+				else
+				Draw_Text(UI_RECENT_TITLE, UI_LEN(UI_RECENT_TITLE), 2, 0);	/* centred title */
 				Show_gamelist_BG();		/* bottom [B]return / [A]start */
 				Show_recent_list(rn, rsel);
 #endif
