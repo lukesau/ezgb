@@ -22,6 +22,23 @@
 
 #include "modbank2.h"
 
+/* the box's line: s is n characters, in RAM */
+static void msg_draw(const UINT8 *s, UINT8 n)
+{
+#ifndef LANG_ZH
+	UINT8 w;
+
+	if(ui_font)
+	{
+		w = font12_end(s, 0U);			/* its width */
+		font12_field(s, (UINT8)(80U - (w >> 1)), 64U, F12_NORMAL, 122U);
+		return;
+	}
+#endif
+	/* 8 pixel cells: an odd length leans half a cell left */
+	Draw_Text(s, n, (UINT8)((20U - n) >> 1), 8U);
+}
+
 /* text is in RAM. Blanks at its end are not counted. */
 void msg_box(const UINT8 *text) __banked
 {
@@ -47,16 +64,45 @@ void msg_box(const UINT8 *text) __banked
 	box(33, y0, 126, y1, M_NOFILL);
 	box(34, (UINT8)(y0 + 1U), 125, (UINT8)(y1 - 1U), M_NOFILL);
 	box(36, (UINT8)(y0 + 3U), 123, (UINT8)(y1 - 3U), M_NOFILL);
+	msg_draw(s, n);
+}
+
+/* Another message in the box that is up: its line is cleared and drawn,
+   the frame is left alone, so the box does not blink. */
+void msg_text(const UINT8 *text) __banked
+{
+	UINT8 s[20];
+	UINT8 n = (UINT8)strlen((const char *)text);
+
+	if(n > 19U) n = 19U;
+	while(n && (text[n - 1U] == ' ')) n--;
+	memcpy(s, text, n);
+	s[n] = 0U;
+	color(WHITE, WHITE, SOLID);
 #ifndef LANG_ZH
-	if(ui_font)
-	{
-		y0 = font12_end(s, 0U);			/* its width */
-		font12_field(s, (UINT8)(80U - (y0 >> 1)), 64U, F12_NORMAL, 122U);
-		return;
-	}
+	box(38, 64, 121, ui_font ? 75U : 71U, M_FILL);
+#else
+	box(38, 64, 121, 75, M_FILL);
 #endif
-	/* 8 pixel cells: an odd length leans half a cell left */
-	Draw_Text(s, n, (UINT8)((20U - n) >> 1), 8U);
+	color(BLACK, WHITE, SOLID);
+	msg_draw(s, n);
+}
+
+/* The rules and the buttons of a two-button popup taken off again, when
+   the answer is in and the popup stays up: row and y1 as popup_rules has
+   them. */
+void popup_rules_clear(UINT8 row, UINT8 y1) __banked
+{
+	UINT8 yr = (UINT8)(row << 3);
+
+#ifndef LANG_ZH
+	if(ui_font) yr -= 3U;
+	else
+#endif
+	yr -= 5U;
+	color(WHITE, DKGREY, SOLID);		/* the band's paper, with an outline of the same */
+	box(1, yr, 158, (UINT8)(y1 - 1U), M_FILL);
+	color(BLACK, DKGREY, SOLID);
 }
 
 /* BATTERY DRY (docs/prompts.md): the same frame, 112 pixels wide, round two

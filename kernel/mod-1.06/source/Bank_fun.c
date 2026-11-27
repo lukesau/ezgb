@@ -1883,25 +1883,23 @@ static void Show_SAVE_ok(void)
    change at all, so it looks frozen. phase: 0 = starting, 1 = done, 2 = no save */
 void Show_LOAD_info(UINT8 phase)__banked
 {
-	/* mod: the small framed box (msgbox.c) for each message, where this
-	   drew a titled block of dark gray */
+	/* mod: the small framed box (msgbox.c), where this drew a titled block
+	   of dark gray. The box is up already, with Loading... in it
+	   (Show_loading, before every launch), so phase 0 draws nothing and
+	   the others change the line in place: the box does not blink. */
 	UINT8 t[12];
 
-	if(phase == 0)
-	{
-		strcpy((char *)t, UI_LOAD_BUSY);
-		msg_box(t);
-	}
-	else if(phase == 1)
+	if(phase == 0) return;
+	if(phase == 1)
 	{
 		strcpy((char *)t, UI_LOAD_OK);
-		msg_box(t);
+		msg_text(t);
 		delay(400);
 	}
 	else
 	{
 		strcpy((char *)t, UI_LOAD_NEW);	/* no save on the card: a new one */
-		msg_box(t);
+		msg_text(t);
 		delay(600);
 	}
 }
@@ -1967,10 +1965,9 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 			if(keys & J_A) break;
 			if(keys & J_B) return;
 		}
-		color(BLACK,DKGREY,SOLID);
-		memset(t, ' ', 18);
-		t[18] = 0;
-		Draw_Text(t, 18, 1, 11);
+		/* the buttons and their rules come off: blanking the row alone
+		   cut a gap in the line between them */
+		popup_rules_clear(11, ui_font ? 103 : 99);
 	}
 	Draw_Text(UI_SAVE_BUSY, UI_LEN(UI_SAVE_BUSY), SAVE_MSG_COL, SAVE_MSG_ROW);
 	if(Save_new_SAVE("", (UINT32)(readdata<<13)) != 0) Show_SAVE_error();
