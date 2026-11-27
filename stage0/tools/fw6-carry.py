@@ -12,7 +12,8 @@ that block had on the port, to another FW6 register of that name, or to
 what any FW5 instance had on a port of that name. FW6DIR/fw6.alias names
 FW5 registers that FW6 has under another block or name, and
 FW6DIR/fw6.ports the nets FW5 has nothing for: a block RAM output a block
-reads, a net to a primitive that a block's output drives, a constant 0.
+reads, a net to a primitive that a block's output drives, a constant 0. FW6DIR/fw6.drop
+names the FW5 blocks FW6 does not have.
 
 A net between blocks that is no register takes its driver's name,
 <block>_<port>. FW6RAMS is a block file of FW6's PicoBlaze with the LUT
@@ -182,12 +183,17 @@ def ren(m):
         return netmap[t][0]
     return 'w5_' + t
 inst5, bits5, order = {}, {}, []
+drop5 = set()                           # FW5 blocks FW6 does not have: FW6DIR/fw6.drop
+if os.path.exists(os.path.join(fw6dir, 'fw6.drop')):
+    drop5 = {l.split('#')[0].strip() for l in open(os.path.join(fw6dir, 'fw6.drop'))} - {''}
 glob, gconf = {}, set()                 # (port, bit) -> expression over FW6 names
 for l in body.splitlines():
     m = re.match(r'(\w+) u_(\w+) \((.*)\);\s*$', l)
     if not m:
         continue
     mod, blk, conns = m.groups()
+    if blk in drop5:
+        continue
     order.append(blk)
     cd = collections.OrderedDict()
     for c in carve.CONN.finditer(conns):
@@ -229,7 +235,7 @@ for blk in order + [m for m in mods6 if m not in order]:
             e = inst5[blk][p]
             conns.append(f'.{p}({e})'); used.update(m.group(0) for m in re.finditer(TOK, e))
             continue
-        bl = []
+        bl = []; nosrc = 0
         for k in keys:
             nm = p if k[1] is None else f'{p}[{k[1]}]'
             e = byname.get((blk, nm)) or portmap.get((blk, nm)) or b5.get(k) or (newreg.get(k) if d == 'input' else None)
@@ -243,8 +249,12 @@ for blk in order + [m for m in mods6 if m not in order]:
                 if d == 'input':
                     print(f'{blk}.{nm}: input with no source')
                 loose.append(f'{blk}.{nm}')
+                nosrc += 1
                 e = f'x6_{blk}_{p}' + ('' if k[1] is None else f'_{k[1]}')
             bl.append(e)
+        if d == 'input' and nosrc == len(keys):
+            continue                    # an input FW5's instance leaves open too (a constant the proof ties off)
+        for e in bl:
             used.update(m.group(0) for m in re.finditer(TOK, e))
         conns.append(f'.{p}({bl[0]})' if len(bl) == 1 else f'.{p}({{{", ".join(bl)}}})')
     lines.append(f'{blk} u_{blk} ({", ".join(conns)});')

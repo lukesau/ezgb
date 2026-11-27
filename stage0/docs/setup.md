@@ -133,7 +133,7 @@ BUILD_HOST=local stage0/tools/build-stage1-updater.sh fw6 "FW6 MOD 0.1" out-fw6.
 STAGE1=stock PATCHES=0 BUILD_HOST=local stage0/tools/build-stage1-updater.sh fw6    # the check: exactly stock's slot B
 ```
 
-The check passes for FW6 as released (2026-11-24). FW6's stock stage1 is
+The check passes for FW6 as released (2026-11-27). FW6's stock stage1 is
 FW5-0918's, stored as bytes (`stage1-to-bram.py --layout fw6`),
 its updater program is built from source ([stage0/updater](../updater/README.md)),
 and the two PicoBlaze patches are FW5-0918's: bank 1 as it is, bank 2

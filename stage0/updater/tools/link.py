@@ -44,10 +44,12 @@ S1 = REPO / "stage1" / "decomp"
 SDCC = Path(os.environ.get("SDCC29", REPO / "tools" / "sdcc-2.9.0")) / "bin"
 
 # per firmware: -DFW, the stock label, how much longer Update() is than
-# FW4's (everything after it in bank 0 moves up)
-FWS = {"fw4": ("4", "Update to ver:4 ", 0x00),
-       "fw5-0918": ("5", "Update to ver:5 ", 0x38),
-       "fw6": ("6", "Update to ver:6 ", 0x38)}        # FW5's program with the other label
+# FW4's (everything after it in bank 0 moves up), how much longer
+# FlashPoll() is (bank 1 after it moves up), and what the global checksum
+# has over the sum of the program
+FWS = {"fw4": ("4", "Update to ver:4 ", 0x00, 0x00, 0x7F70),
+       "fw5-0918": ("5", "Update to ver:5 ", 0x38, 0x00, 0x7F70),
+       "fw6": ("6", "Update to ver:6 ", 0x38, 0x10, 0x7EE0)}  # FW5's program with the other label and a longer FlashPoll
 PAYLOAD = 149516
 
 KCFLAGS = ["--opt-code-size", "-DBYTE_IS_UNSIGNED=1", f"-I{KERNEL / 'gbdk' / 'include'}"]
@@ -165,7 +167,8 @@ def rename_areas(text, areas):
 
 
 def build(fw, label=None, payload=None, outpath=None):
-    fwnum, stock_label, shift = FWS[fw]
+    fwnum, stock_label, shift, shift1, cksum = FWS[fw]
+    gsinit = GSINIT + shift1
     label = stock_label if label is None else label
     if len(label.encode("ascii")) > 16:
         sys.exit("error: the label is at most 16 characters")
@@ -212,7 +215,7 @@ def build(fw, label=None, payload=None, outpath=None):
         run(["sdasgb", "-plosgff", f"-I{src.parent}", f"-I{KERNEL / 'gbdk'}", str(rel), str(s)])
         rels.append(rel)
         for new, addr in areas.values():
-            place[new] = DROP if addr == "drop" else addr + (shift if UPDATE < addr < 0x4000 else 0)
+            place[new] = DROP if addr == "drop" else addr + (shift if UPDATE < addr < 0x4000 else shift1 if 0x4000 <= addr < 0x8000 else 0)
 
     refs, defs = set(), set()
     for rel in rels:
@@ -233,7 +236,7 @@ def build(fw, label=None, payload=None, outpath=None):
         sys.exit("error: unresolved: " + " ".join(missing))
 
     bases = dict(place)
-    bases.update({"_HOME": HOME, "_CODE": CODE0, "_GSINIT": GSINIT, "_GSINITTAIL": GSINIT, "_GSFINAL": GSINIT + 1,
+    bases.update({"_HOME": HOME, "_CODE": CODE0, "_GSINIT": gsinit, "_GSINITTAIL": gsinit, "_GSFINAL": gsinit + 1,
                   "_DATA": RAM, "_BSS": BSS, "_BASE": DROP + 0x800, "_LIT": DROP + 0x800, "_OVERLAY": DROP + 0x900,
                   "_LIB0": DROP, "_LIB3": DROP + 0x100})
     lk = ["-mjwx", "-i updater.ihx"] + [f"-b {n}=0x{v:04x}" for n, v in bases.items()]
@@ -256,8 +259,8 @@ def build(fw, label=None, payload=None, outpath=None):
 
     rom0 = ["_CODE"] + [n for n, v in place.items() if isinstance(v, int) and CODE0 <= v < 0x4000]
     end0 = tiles(rom0, CODE0, "bank 0")
-    end1 = tiles(["_CODE_1"], 0x404E, "bank 1")
-    if areas["_POLL"][1] != 0x404E - POLL_ROM or end1 != GSINIT:
+    end1 = tiles(["_CODE_1"], 0x404E + shift1, "bank 1")
+    if areas["_POLL"][1] != 0x404E + shift1 - POLL_ROM or end1 != gsinit:
         sys.exit(f"error: bank 1: FlashPoll is ${areas['_POLL'][1]:x} bytes, the C ends at ${end1:04x}")
     for n in ("_BASE", "_LIT", "_OVERLAY", "_GSINIT", "_GSFINAL", "_HEAP"):
         if areas.get(n, (0, 0))[1]:
@@ -272,15 +275,16 @@ def build(fw, label=None, payload=None, outpath=None):
         sys.exit(f"error: bytes outside the ROM image at ${stray[0]:04x}")
 
     # The header checksum, and the global checksum as EZ Flash's tools left
-    # it: in both stock updaters it is the sum of the 32 KB program plus
-    # $7F70, whatever follows. It is not the sum of the file, and nothing
-    # checks it.
+    # it: in FW4's and FW5's updaters, and FW6's of 2026-11-24, it is the
+    # sum of the 32 KB program plus $7F70, whatever follows; in FW6's of
+    # 2026-11-27 plus $7EE0. It is not the sum of the file, what the
+    # constant stands for is not known, and nothing checks it.
     c = 0
     for v in rom[0x134:0x14D]:
         c = (c - v - 1) & 0xFF
     rom[0x14D] = c
     rom[0x14E:0x150] = b"\0\0"
-    rom[0x14E:0x150] = ((sum(rom) + 0x7F70) & 0xFFFF).to_bytes(2, "big")
+    rom[0x14E:0x150] = ((sum(rom) + cksum) & 0xFFFF).to_bytes(2, "big")
     code = out / "updater-code.gb"
     code.write_bytes(rom)
     with open(out / "updater.sym", "w") as f:

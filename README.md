@@ -9,7 +9,7 @@ to the stock bitstream.
 That work was done from the released binaries. EZ Flash has since shared the
 source for kernel 1.06, which is here under the Apache License 2.0
 ([kernel/stock-1.06](kernel/stock-1.06/README.md)), and released 1.06e with
-FW6 on 2026-11-24. The rebuilds below don't use it.
+FW6 (2026-11-24, replaced on 2026-11-27). The rebuilds below don't use it.
 
 **License in short.** The repository is AGPLv3. Two parts are also under
 the Apache License 2.0, so that EZ Flash, or anyone, can use them in

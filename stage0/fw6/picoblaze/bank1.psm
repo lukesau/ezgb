@@ -696,7 +696,7 @@ save_cid:
     STORE s0, cid0                  ; 1C2 2E013
     RETURN                          ; 1C3 2A000
 
-; Debug byte out (sF). Port A0 bit 2 = transmit busy.
+; Debug byte out (sF). Port A0 bit 2 = transmit busy. FW6 has no timer behind A0: it reads 0, so this never waits.
 
 ; ---- dbg_putc ---- called from 005, 007, 00D, 030, 0E0, 0E3, 1A0, 20D, 20F, 385
 dbg_putc:
@@ -1289,7 +1289,7 @@ rtc_init:
     CALL rtc_write_zero             ; 336 302F9
     LOAD sB, 02                     ; 337 00B02
     CALL rtc_read                   ; 338 3031D  seconds, bit 7 = VL (clock integrity lost)
-    LOAD s0, 00                     ; 339 00000  FW5: AND sD, 80. FW6 compares the whole seconds register, so the clock is reset only when it reads exactly $80
+    AND sD, 80                      ; 339 0AD80
     COMPARE sD, 80                  ; 33A 14D80
     RETURN NZ                       ; 33B 2B400
     LOAD sB, 00                     ; 33C 00B00

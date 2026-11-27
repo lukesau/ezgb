@@ -1,5 +1,5 @@
 // FW6's PicoBlaze ports: FW5-0918's (stage0/fw5-0918/picoblaze_ports.v,
-// which lists what FW5 changed from FW4) with two sets of registers gone:
+// which lists what FW5 changed from FW4) with three sets of registers gone:
 //
 //   A5-A9  OUTPUT to these ports does nothing. FW5 kept the five bytes
 //          for the game's MBC3 latch to copy; FW6's game reads the
@@ -9,6 +9,12 @@
 //   EF     the loader's busy flag is one register, gb_bus's
 //          (load_busy_2x), written through port_ef_we. FW5 kept a second
 //          copy here
+//   A0/A1  FW5's timer (pb_timer) is gone. OUTPUT A1 does nothing and
+//          INPUT A0 reads 0, so the program's dbg_putc, which waits
+//          while A0 bit 2 is set, never waits
+//
+// port_id_1b is a second copy of port_id[1] in the PicoBlaze, which the
+// in_port mux reads.
 //
 // Proven in the whole-design proof (stage0/tools/fw6-prove.sh). FW4's
 // description of the ports follows; the block it names is FW4's.
@@ -65,6 +71,7 @@ module picoblaze_ports (
     input rst_prev,                 // and its last value: low after high restarts the PicoBlaze
     // the core
     input [7:0] port_id,
+    input port_id_1b,               // the PicoBlaze's second copy of port_id[1]
     input [7:0] out_port,
     input read_strobe,
     input write_strobe,
@@ -81,7 +88,6 @@ module picoblaze_ports (
     input [7:0] mbc3_wr_s, mbc3_wr_m, mbc3_wr_h, mbc3_wr_dl, mbc3_wr_dh,
     input [7:0] sum_7fd4,           // $7FD3 + $7FD4
     input [1:0] stat_b8,
-    input [3:0] tmr,                // the A0/A1 timer
     input kernel_mode,
     input [7:0] rtc_set_data_i,
     input [31:0] tbl_q,             // block RAM X3Y21, port B
@@ -109,9 +115,7 @@ module picoblaze_ports (
     output reg [7:0] rtc_reg_value,
     output reg [3:0] rtc_set_index,
     output reg flash_busy,
-    output wr_a1,                   // OUTPUT A1, the timer's start
     output pid_d0_3,                // port_id in D0-D3, for pb_periph's ICAP data write
-    output tmr_full,                // all four timer bits set, which the timer reads back
     output port_ef_we,              // OUTPUT EF, for gb_bus's copy of the busy flag
     output wr_d4,                   // the write to D4, for the SPI flash's clock outside the block
     output wr_ec_ef,                // a write to EC-EF, for the I2C output enable in pb_periph
@@ -139,9 +143,7 @@ module picoblaze_ports (
 
     assign wr_d4 = wr_q & (port_id == 8'hd4);
     assign wr_ec_ef = wr_q & (port_id[7:2] == 6'b111011);
-    assign wr_a1 = wr_q & (port_id == 8'ha1);
     assign pid_d0_3 = port_id[7:2] == 6'b110100;
-    assign tmr_full = &tmr;
     assign port_ef_we = wr_q & (port_id == 8'hef);
 
     // ---- the port registers
@@ -199,14 +201,15 @@ module picoblaze_ports (
     end
 
     // ---- the in_port mux, on the falling edge
+    wire [7:0] pid = {port_id[7:2], port_id_1b, port_id[0]};
     always @(negedge clk_pb)
-        if (port_id == wb_adr_i) in_port <= {6'd0, sd_done, sd_done};
-        else case (port_id)
+        if (pid == wb_adr_i) in_port <= {6'd0, sd_done, sd_done};
+        else case (pid)
             8'h70: in_port <= sd_q[7:0];
             8'h71: in_port <= sd_q[15:8];
             8'h72: in_port <= sd_q[23:16];
             8'h73: in_port <= sd_q[31:24];
-            8'ha0: in_port <= {5'd0, tmr_full, tmr[3], 1'b0};
+            8'ha0: in_port <= 8'h00;
             8'ha5: in_port <= mbc3_wr_s;
             8'ha6: in_port <= mbc3_wr_m;
             8'ha7: in_port <= mbc3_wr_h;
@@ -232,4 +235,8 @@ module picoblaze_ports (
             8'heb: in_port <= {6'd0, i2c_sda_in, i2c_scl_in};
             default: ;
         endcase
+
+`ifdef FORMAL
+    always @* env_pid: assume (port_id_1b == port_id[1]);
+`endif
 endmodule

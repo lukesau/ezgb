@@ -1,6 +1,6 @@
 # The firmware updater from source
 
-EZ Flash's updaters (`Update_FW4.gb`, `Update_FW5_2021-9-18.gb`, `Update_FW6_20261124.gb`) are a
+EZ Flash's updaters (`Update_FW4.gb`, `Update_FW5_2021-9-18.gb`, `Update_FW6_20261127.gb`) are a
 32 KB Game Boy program followed by the bitstream it writes to the config
 flash ([../docs/updater.md](../docs/updater.md)). This is that program in
 C, for all three firmwares from one source. `make` builds it identical to stock:
@@ -31,7 +31,7 @@ the write loop.
 | `00:14FE`-`1559` | `src/fpga.c` | the `$7FC0` write |
 | `00:155A`-`1C98` | `src/font12.c` | the kernel's 8x12 font and its glyph plotter |
 | `00:1C99`-`386B` | libraries | GBDK's console, drawing, font, joypad and delay; SDCC's stubs, divide, shifts, `strlen` and `puts`; the long math |
-| `01:4000`-`404D` | `src/poll.c` | `FlashPoll`, linked to run at `$D000` |
+| `01:4000`-`404D` | `src/poll.c` | `FlashPoll`, linked to run at `$D000` (FW6: to `405D`) |
 | `01:404E`-`4181` | `src/bank1.c` | `RunFlashPoll`, and three of the kernel's string functions nothing calls |
 
 The libraries are not copied here. `tools/link.py` takes them from
@@ -55,10 +55,15 @@ One source, `#if FW == 5`:
 That makes `Update` `$38` bytes longer, and everything after it in bank 0
 `$38` higher. Bank 1 is the same.
 
-FW6's program (`-DFW=6`) is FW5's with `ver:6` on the version line: two
-bytes differ, the digit and the checksum. With FW6's bitstream after it,
-the build is `Update_FW6_20261124.gb` byte for byte (the test build of
-11-17 had the same program).
+FW6's program (`-DFW=6`) is FW5's with `ver:6` on the version line and a
+longer `FlashPoll`: after it starts the flash operation it reads `$A000`
+59 times before the first read it acts on. That is 16 bytes more, so the
+rest of bank 1 sits 16 bytes higher. With FW6's bitstream after it, the
+build is `Update_FW6_20261127.gb` byte for byte. The global checksum in
+its header is the sum of the program plus `$7EE0`, where every earlier
+updater has `$7F70`; what the constant stands for is not known. The
+release of 2026-11-24 and the test build of 11-17 had FW5's `FlashPoll`
+(two bytes from FW5's program: the digit and the checksum).
 
 The FW5 file carries a second bitstream after the first. The program's
 loop stops at 149,516 bytes, so it is never written; `link.py` leaves it

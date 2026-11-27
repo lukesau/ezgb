@@ -38,7 +38,7 @@ fw5-0918) stock_updater=$repo/tools/ezflashjr/official/2021-09-18_FW5_K1.05e/Upd
           bank1_allow="--allow 12B --allow 19F --allow 1A0 --allow 1A5 --allow 224 --allow 23A --allow 326 --allow 370 --allow 377" ;;
 # FW6: stage1 is FW5-0918's stored as bytes, bank 2 has its own listing
 # (one instruction fewer), and the read patch's two routines sit a word lower
-fw6)      stock_updater=$repo/tools/ezflashjr/official/2026-11-24_FW6_K1.06e/Update_FW6_20261124.gb
+fw6)      stock_updater=$repo/tools/ezflashjr/official/2026-11-27_FW6_K1.06e/Update_FW6_20261127.gb
           layout="--layout fw6"; decomp=fw5; blocks=
           bank2=D0X19Y25; bank2_psm=fw6/picoblaze/bank2.psm; bank2_def="--define TBL_READ=226 --define FLASH_UPDATE=22E"
           bank1=D0X19Y29; bank1_psm=fw6/picoblaze/bank1.psm

@@ -23,10 +23,10 @@ LAYOUTS = {
     "fw5-0918": (["D0X19Y29", "D0X19Y5", "D0X3Y25", "D0X19Y9",
                   "D0X3Y29", "D0X19Y25", "D0X3Y21", "D0X3Y9"], "D0X3Y17"),
 }
-# FW6 (Update_FW6_20261124.gb): $0000-$47FF as bytes, 2 KB to a BRAM
+# FW6 (Update_FW6_20261127.gb): $0000-$47FF as bytes, 2 KB to a BRAM
 BYTES = {
-    "fw6": ["D0X3Y17", "D0X3Y1", "D0X3Y25", "D0X3Y9", "D0X3Y21",
-            "D0X3Y13", "D0X3Y29", "D0X3Y5", "D0X19Y17"],
+    "fw6": ["D0X3Y17", "D0X3Y1", "D0X3Y25", "D0X3Y13", "D0X3Y21",
+            "D0X3Y5", "D0X3Y29", "D0X3Y9", "D0X19Y17"],
 }
 
 

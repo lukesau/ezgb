@@ -7,12 +7,23 @@
 UINT8 FlashPoll (void)
 {
 	UINT8 st;
+#if FW == 6
+	UINT8 n;
+#endif
 
 	*(UINT8 *)0x7f00 = 0xe1;
 	*(UINT8 *)0x7f10 = 0xe2;
 	*(UINT8 *)0x7f20 = 0xe3;
 	*(UINT8 *)0x7fd2 = 1;
 	*(UINT8 *)0x7ff0 = 0xe4;
+#if FW == 6
+	/* FW6 of 2026-11-27: 59 reads before the first that counts */
+	n = 59;
+	do {
+		*(volatile UINT8 *)0xa000;
+		n--;
+	} while (n);
+#endif
 	do {
 		st = *(volatile UINT8 *)0xa000;
 	} while (st);

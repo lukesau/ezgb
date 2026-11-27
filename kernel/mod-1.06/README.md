@@ -104,7 +104,8 @@ under the kernel's version.
 | Custom and DV themes, the SLIM font, and the rest of the settings file | `source/ezcfg.c`, `source/font12.c`, `source/font12_data.s`, `source/setpage.c` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
-The last four catch up with the 1.06e EZ Flash released on 2026-11-24, whose
+The last four catch up with the 1.06e EZ Flash released on 2026-11-24 (and
+again, with two more changes this tree does not have, on 2026-11-27), whose
 source is not out yet
 ([what the release changed](../stock-1.06/README.md#the-released-106e)).
 They are written from what the released kernel does, not from its code.

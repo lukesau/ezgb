@@ -56,6 +56,7 @@ module picoblaze (
     output reg [9:0] pc,
     output reg int_ack,
     output reg [7:0] port_id,
+    output reg port_id_1b,          // a second copy of port_id[1]
     output reg [7:0] out_port,
     output reg read_strobe,
     output reg write_strobe,
@@ -135,6 +136,7 @@ module picoblaze (
         output_store <= !active_int & io_op;
         flag_enable  <= !ir[17] & (ir[16] | ir[15]) | is_shift | (ir[17] & ir[16] & ir[15] & !ir[14]);
         port_id      <= sy_kk;
+        port_id_1b   <= sy_kk[1];
         out_port     <= sx;
         int_ack      <= active_int;
         if (active_int) begin

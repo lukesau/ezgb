@@ -163,7 +163,7 @@ note 1A1 reg $3C data event status
 
 sub 1AE sdc_read_response
 sub 1BA save_cid
-block 1C4 Debug byte out (sF). Port A0 bit 2 = transmit busy.
+block 1C4 Debug byte out (sF). Port A0 bit 2 = transmit busy. FW6 has no timer behind A0: it reads 0, so this never waits.
 sub 1C4 dbg_putc
 block 1C9 Controller register access: register number in sE, value in
 block 1C9 sD (low byte; ports 70-73 hold the full word). Polls the register

@@ -6,6 +6,10 @@
 // RAM that A14-A11 pick, taken on the 2x clock while the stage1 read is
 // enabled. The ninth block RAM is $4000-$47FF; above that stage1 reads $FF.
 //
+// load_busy_n is the loader's busy flag half a PicoBlaze clock later. It
+// selects the loader's write clock buffer (X0Y17 [5]), which passes CLK2X
+// while the loader is busy (FW5: clk_fx, selected by the flag itself).
+//
 // Proven in the whole-design proof (stage0/tools/fw6-prove.sh).
 
 module gb_bus (
@@ -35,6 +39,7 @@ module gb_bus (
     output reg [7:0] boot_q,        // the byte stage1 reads
     // the copies
     output reg load_busy_2x,
+    output reg load_busy_n,         // load_busy_2x half a cycle later: the select of the loader's write clock buffer
     output reg int_data_q,
     // the decodes
     output tbl_win,                 // the loader's table window
@@ -72,11 +77,12 @@ module gb_bus (
     // ---- the copies
     initial begin
         boot_q = 8'h00;
-        load_busy_2x = 1'b0; int_data_q = 1'b0;
+        load_busy_2x = 1'b0; load_busy_n = 1'b0; int_data_q = 1'b0;
     end
     always @(posedge clk_2x)
         if (kernel_b3_lo) boot_q <= rom_byte;
     always @(posedge clk_pb) if (port_ef_we) load_busy_2x <= out_port[0];
+    always @(negedge clk_pb) load_busy_n <= load_busy_2x;
     always @(posedge clk_mode) int_data_q <= int_data;
 
 `ifdef FORMAL

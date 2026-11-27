@@ -15,8 +15,10 @@ makes are in [kernel/mod-1.06](../mod-1.06/README.md).
 ## The released 1.06e
 
 EZ Flash released kernel 1.06e with FW6 on 2026-11-24 (`ezgb.dat`, sha1
-`e4b935f24888c5785490d9147e6701a74227deec`). This source is a week older
-and does not build it. EZ Flash has said the kernel's source will be
+`e4b935f24888c5785490d9147e6701a74227deec`), withdrew that release two days
+later and put out another on 2026-11-27 (sha1
+`6f791ae4d34fc29a773e9b2cd308761b9a0d04ce`). This source is older than both
+and builds neither. EZ Flash has said the kernel's source will be
 published; when it is, it goes here.
 
 Compared function by function against the kernel built in the 11-18
@@ -40,6 +42,15 @@ offsets masked. Banks 2, 3, 5, 6, 7 and 9 are identical. What changed:
 
 `Show_recent_list`, `save_name_is_sane` and `Save_new_SAVE` differ only in
 the addresses of moved strings.
+
+The kernel of 2026-11-27 has all of that and two changes more, both to the
+recent play list (compared with the 11-24 kernel the same way; banks 2,
+3, 5, 6, 7 and 9 are identical, banks 0 and 4 differ in addresses only):
+
+| File | Function | Change |
+|---|---|---|
+| `Bank_fun.c` | `recent_append` | when the list file does not open, it makes `/SAVER` and tries once more; the 11-24 kernel returned |
+| `UI.c` | new, `08:439B` | a `Recent...` box, drawn like `Show_reading`'s; `Recently_Commit` shows it before it writes a pending entry at boot, and the list's compaction before it reloads the file |
 
 The library's drawing code (`drawing.s`: `.plot`, `wrtchr`) is byte for
 byte what it was, with no `di`. Thirteen calls to the library's `box`

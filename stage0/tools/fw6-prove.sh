@@ -78,6 +78,7 @@ done
 ties=''
 for t in sd_data_serial:gnd_i=0 sd_clock_divider:gnd_i=0 sd_fifo_filler:gnd1_i=0 sd_fifo_filler:clr_i=0; do
     m=${t%%:*}; t=${t#*:}
+    [ -f "$f6/$m.v" ] && ! grep -q "input ${t%%=*}\b" "$f6/$m.v" && continue     # FW6's module has no such input
     ties="$ties
 cd $m
 delete -port w:${t%%=*}

@@ -22,12 +22,14 @@
 // two is the write, and loads the register here from mbc3_wr_*. A write
 // wins over the count in the same cycle. A DH write loads day[8], halt
 // and day_carry and holds day[7:0], even when a DL write arrives in the
-// same cycle.
+// same cycle. A DL write loads day[7:0] and day[8] too, from the DH
+// value last written (the build of 2026-11-24 left day[8] alone on a DL
+// write).
 //
-// The game reads these registers as they are (gb_data_out): FW6 has no
-// latch. Nothing but a game's write loads them, and nothing reads them
-// but the game: the PicoBlaze and the RTC chip are not connected to this
-// clock, so it starts at zero when the FPGA is configured.
+// The kernel's write to $A018-$A01C loads them the same way, and the
+// $6000 latch copies them (mbc3_clock). The PicoBlaze and the RTC chip
+// are not connected to this clock, so it starts at zero when the FPGA is
+// configured.
 //
 // Block: stage0/fw6/mbc3_rtc.blk (FW6 only), proven with equiv.sh; the
 // whole-design proof (stage0/tools/fw6-prove.sh) covers it too.
@@ -88,7 +90,7 @@ module mbc3_rtc (
         else if (hour_tick) hour <= day_tick ? 5'd0 : hour + 5'd1;
 
         if (wr_dh) day[8] <= mbc3_wr_dh[0];
-        else if (wr_dl) day[7:0] <= mbc3_wr_dl;
+        else if (wr_dl) day <= {mbc3_wr_dh[0], mbc3_wr_dl};
         else if (day_tick) day <= day + 9'd1;
 
         if (wr_dh) halt <= mbc3_wr_dh[6];
