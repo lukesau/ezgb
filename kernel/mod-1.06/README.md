@@ -104,6 +104,7 @@ under the kernel's version.
 | The daily save backup | `source/savemgr.c`, `source/sdlist.c`, `source/ezcfg.c` |
 | Custom and DV themes, the SLIM font, and the rest of the settings file | `source/ezcfg.c`, `source/font12.c`, `source/font12_data.s`, `source/setpage.c` |
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
+| The HELP tab laid out as the 0918 mod's: the versions, the site, the mod, where it is from, a blank row between each; in the 12px fonts from x 4 with no `ver:` label. The Chinese build keeps its rows | `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24 (and
 again on 2026-11-27, with two changes to the recent list that are here

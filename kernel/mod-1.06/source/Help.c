@@ -40,13 +40,35 @@ UINT8 ramfun_Get_FPGA_ver(void)
 
 
 // --------------------------------------------------------------------
-/* mod: the three lines are on rows 3, 4 and 5; in the 12px font, which is
-   taller than a row, on 3, 5 and 7 */
+/* mod: the tab is laid out as the 0918 mod's (kernel/mod/base/src/bank8.c,
+   kernel/mod/src/help12.c). The 8px font: the versions on row 3, the site
+   on 5, the mod on 7, where it is from on 9 and 10, the SD speed on 12.
+   The 12px fonts: the same lines from x 4 at pixel rows 24, 44, 64, 84, 96
+   and 116, with no "ver:" label. The Chinese build keeps its rows. */
 #ifdef LANG_ZH
-#define HELP_ROW(r)	(r)
+#define HELP_MOD	4
+#define HELP_SITE	5
+#define HELP_SD		6
+#define HELP_GIT	7
 #else
 #include "list12.h"
-#define HELP_ROW(r)	(ui_font ? (UINT8)(2U * (r) - 3U) : (r))
+#include "font12.h"
+#define HELP_MOD	7
+#define HELP_SITE	5
+#define HELP_SD		12
+#define HELP_GIT	9
+
+/* a line of the 12px tab; the text may be a literal of this bank, so it
+   goes over on the stack */
+static void help12(const char *t, UINT8 y)
+{
+	UINT8 b[21];
+	UINT8 i;
+
+	for(i = 0U; (i < 20U) && t[i]; i++) b[i] = (UINT8)t[i];
+	b[i] = 0U;
+	font12_draw(b, 4U, y, F12_NORMAL);
+}
 #endif
 
 void Help_window(void)__banked
@@ -82,14 +104,6 @@ void Help_window(void)__banked
 	color(WHITE,WHITE,SOLID);
 	box(15*8,0,159,7,M_FILL);
 	color(BLACK,WHITE,SOLID);
-	Draw_Text(s, UI_LEN(UI_HELP_FWVER), 5, 3);	/* the length comes from the macro, no hand-written 11 */
-	
-	Draw_Text(UI_HELP_VER, UI_LEN(UI_HELP_VER), 0, 3);
-	/* mod: the mod's version, from the VERSION file (build/mod_version.h) */
-	Draw_Text(UI_HELP_MOD, UI_LEN(UI_HELP_MOD), 0, HELP_ROW(4));
-
-	
-	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, HELP_ROW(5));
 
 	/* mod: once the firmware mod's SD recovery has dropped the card clock
 	   to half speed it reports weekday 7 in the RTC window, a value the
@@ -98,12 +112,37 @@ void Help_window(void)__banked
 	hw_set_page(A000Address_RTC);
 	i = *((volatile UINT8 *)(Base_RTCbuffer + 0xC)) & 0x07U;
 	hw_set_page(A000Address_TF);
-	if(i == 7U) Draw_Text("SD SPEED: HALF", 14, 0, HELP_ROW(6));
+
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		/* "FW5 K1.06e": one blank between the two, whatever the digits */
+		j = (s[3] == ' ') ? 3U : 4U;
+		msg[0] = s[0]; msg[1] = s[1]; msg[2] = s[2]; msg[3] = s[3];
+		msg[j] = ' ';
+		for(cc = 5U; s[cc]; cc++) msg[(UINT8)(j + cc - 4U)] = s[cc];
+		msg[(UINT8)(j + cc - 4U)] = 0;
+		help12(msg, 24U);
+		help12(UI_HELP_SITE, 44U);
+		help12(UI_HELP_MOD, 64U);
+		help12("github.com/lukesau/", 84U);
+		help12("ezgb", 96U);		/* nothing under the first row's g */
+		if(i == 7U) help12("SD SPEED: HALF", 116U);
+	}
+	else
+#endif
+	{
+	Draw_Text(s, UI_LEN(UI_HELP_FWVER), 5, 3);	/* the length comes from the macro, no hand-written 11 */
+	Draw_Text(UI_HELP_VER, UI_LEN(UI_HELP_VER), 0, 3);
+	Draw_Text(UI_HELP_SITE, UI_LEN(UI_HELP_SITE), 0, HELP_SITE);
+	/* mod: the mod's version, from the VERSION file (build/mod_version.h) */
+	Draw_Text(UI_HELP_MOD, UI_LEN(UI_HELP_MOD), 0, HELP_MOD);
 	/* mod: where the mod is from, as the 0918 mod's HELP tab has it */
-	Draw_Text("github.com/lukesau/", 19, 0, HELP_ROW(7));
-	Draw_Text("ezgb", 4, 0, HELP_ROW(8));
-	
-	
+	Draw_Text("github.com/lukesau/", 19, 0, HELP_GIT);
+	Draw_Text("ezgb", 4, 0, HELP_GIT + 1);
+	if(i == 7U) Draw_Text("SD SPEED: HALF", 14, 0, HELP_SD);
+	}
+
 	while(1)
 	{
 		wait_vbl_done();
