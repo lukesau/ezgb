@@ -26,8 +26,8 @@
         .globl  _boot_regs, _launch_mode
 
         RUN     = 0xD100
-        .include        "debug.inc"     ; MOD_DEBUG, 1 in a make DEBUG=1 build (makefile)
-        ROM_CHECK = MOD_DEBUG           ; development: the loaded game's checksum (below)
+        .include        "debug.inc"     ; MOD_DEBUG and ROM_CHECK: 1 in a make DEBUG=1 build,
+                                        ; ROMCHECK=0 leaves the check out (makefile)
 
         .area   _CODE_2
 

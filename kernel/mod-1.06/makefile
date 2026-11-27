@@ -75,6 +75,10 @@ else
   DEBUGVAL := 0
   RELNAME  := ezgb.dat
 endif
+#  ROMCHECK: the check of a loaded game's checksum, which holds a launch on a
+#  white screen for about 6 s a megabyte. On in a debug build; DEBUG=1
+#  ROMCHECK=0 is a debug build without it.
+ROMCHECK ?= $(DEBUGVAL)
 
 # modules - order is link order, do not reorder
 SRCS := main ezgb_hw diskio ff ff_1 ff_2 ff_3 ff_4 ffunicode \
@@ -175,8 +179,11 @@ $(BUILD)/%.o : source/%.c $(HEADERS) | $(BUILD)
 #  puts it in its own _CODE_<n> bank.  Nothing else may live in that file,
 #  otherwise the bank does not start at the window base and every glyph
 #  address would be off.
-$(BUILD)/debug.inc: makefile | $(BUILD)
-	printf '        MOD_DEBUG = %s\n' "$(DEBUGVAL)" > $@
+#  written again only when a value changes, so a switch reassembles
+$(BUILD)/debug.inc: FORCE | $(BUILD)
+	@printf '        MOD_DEBUG = %s\n        ROM_CHECK = %s\n' "$(DEBUGVAL)" "$(ROMCHECK)" > $@.new
+	@cmp -s $@.new $@ && rm -f $@.new || mv -f $@.new $@
+FORCE:
 
 $(BUILD)/%.o : source/%.s $(BUILD)/debug.inc | $(BUILD)
 	-@rm -f $@
