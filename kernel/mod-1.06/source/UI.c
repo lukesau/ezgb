@@ -137,9 +137,6 @@ void Show_loading(void)__banked
 	   block of dark gray with the text in it */
 	UINT8 t[12];
 
-#ifdef MOD_DBGLOG
-	dbg_begin();		/* a debug build lists the launch's stages (msgbox.c) */
-#endif
 	strcpy((char *)t, UI_LOAD_BUSY);
 	msg_box(t);
 }
