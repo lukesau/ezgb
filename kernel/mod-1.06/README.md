@@ -79,7 +79,7 @@ size has not been tried, here or there.
 
 `diff -r --strip-trailing-cr kernel/stock-1.06 kernel/mod-1.06` shows all of
 them. The version is in `VERSION` and shows on the HELP tab as `MOD 0.1`,
-under the kernel's version.
+under the site.
 
 | Change | Files |
 |---|---|
