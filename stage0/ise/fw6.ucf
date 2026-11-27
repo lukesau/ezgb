@@ -37,7 +37,7 @@ INST "u_logic/u_psram_ctrl/page_d_*" TNM = "psram_page";
 INST "u_logic/u_psram_ctrl/page_q_*" TNM = "psram_page";
 TIMESPEC "TS_page_cdc" = FROM "n_X13Y1_DCM_CLK2X" TO "psram_page" TIG;
 
-# The fx clock's gate (clock buffer X25Y17 [0]) switches on the loader's busy
-# flag from the 2x clock. A BUFGMUX changes inputs without a glitch whenever
-# its select changes, so the path into the select is not timed.
-PIN "i_X25Y17c_BUFGMUX0/b.S" TIG;
+# The loader's write clock (clock buffer X0Y17 [5]) passes the 2x clock while
+# the loader's busy flag is set. Its select is that flag registered on the
+# 2x clock's falling edge (gb_bus load_busy_n), a path within one clock, so
+# it is timed like any other: FW5's untimed select has no counterpart here.

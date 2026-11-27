@@ -52,12 +52,15 @@ FW6 ([../fw6](../fw6/README.md)) builds the same way:
 make stage0-fw6 BUILD_HOST=<build host>   # Update-fw6-ise.gb, labeled FW6 MOD 0.1
 ```
 
-Its top is `stage0/fw6/fw6_top.v`, its 2,378 flip-flops sit in FW6's stock
-cells (two are left to ISE, as on FW5), and the proof is against the export
+Its top is `stage0/fw6/fw6_top.v`, its 2,306 flip-flops sit in FW6's stock
+cells (nine are left to ISE, `fw6.unplace`), and the proof is against the export
 in `fpga/fw6`, with the invariants `fw6-prove.sh` proves. The two
 PicoBlaze programs are assembled from `stage0/fw6/picoblaze/`: bank 1 is
-FW5's with three words changed, bank 2 FW5's less one instruction. Its constraints and map options are FW5-0918's, and timing is
-met with them. The FW6 mod has a version of its own,
+FW5's with two words changed, bank 2 FW5's less one instruction. Its
+constraints are FW5-0918's without the untimed select of the loader's
+write clock, which FW6 registers; timing is met with them. Built with
+stock stage1 and programs, the result is proven equivalent to the release
+of 2026-11-27. The FW6 mod has a version of its own,
 `stage1/VERSION.fw6`.
 
 ## What it takes
