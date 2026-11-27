@@ -92,6 +92,7 @@ under the kernel's version.
 | `/EZGB.CFG`: the clock and AUTO SAVE backed up on the card | `source/ezcfg.c`, `source/ezcfg.h`, `source/main.c`, `source/RTC.c`, `makefile` |
 | A launch jumps past the boot ROM when the console allows it; the kernel sets the palettes in CGB mode | `source/launch.s`, `source/ezcfg.c`, `source/GBcard_OP.c`, `source/main.c`, `makefile` |
 | Fast launch: `FLAUNCH=` starts a game at power-on | `source/ezcfg.c`, `source/main.c` |
+| The fast-load key on every console: `$7FD3 = 0`, `$7FD4 = $11` before a load, as the 0918 mod writes it, where the source as received writes `$7FD4 = 0` and is fast on a color console only ([firmware-diff.md](../../stage0/docs/firmware-diff.md)). Not timed on a cart | `source/Bank_fun.c`, `source/sdlist.c`, `source/ezgb_hw.h` |
 | SGB BOOT: the header packets a Super Game Boy needs | `source/sgb.s`, `source/ezcfg.c`, `makefile` |
 | Two more SET pages for the mod's settings | `source/setpage.c`, `source/ezcfg.c`, `source/RTC.c` |
 | Themes: light, dark and four colors | `source/ezcfg.c` |

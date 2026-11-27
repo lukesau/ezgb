@@ -61,7 +61,10 @@
 #define HW_SPI_WRITE_EN     HW_REG(0x7FD1)
 /* Pulse that makes the FPGA latch the settings written above. */
 #define HW_UPDATE_PULSE     HW_REG(0x7FD2)
-/* "GB Boy" clone compatibility flag (Set_GBboy). */
+/* FW5 and FW6: the loader skips its pause after each SD run when the sum
+   of the two is 0x11 (Set_GBboy; stage0/docs/firmware-diff.md). The source
+   as received calls 0x7FD4 a "GB Boy" clone flag. FW4 decodes neither. */
+#define HW_FAST_ADD         HW_REG(0x7FD3)
 #define HW_GBBOY_MODE       HW_REG(0x7FD4)
 /* Write 0x80 to reset the cartridge. */
 #define HW_RESET            HW_REG(0x7FE0)

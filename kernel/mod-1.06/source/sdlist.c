@@ -791,7 +791,7 @@ re_showfile:
 								hw_set_page(A000Address_FATbuffer);
 															
 								SetTypesControl((m_bRTCPresent<<7) |m_Type);
-								Set_GBboy(/*is_gbboy*/0);
+								Set_GBboy(/*is_gbboy*/0x11);	/* mod: the fast-load key, on every console */
 
 								SetRAMBankCount(m_iRAMSize);
 								SetROMBankCount(m_iROMSize );

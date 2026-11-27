@@ -375,6 +375,7 @@ void Refresh_filename(UINT16 show_offset,UINT16 file_select,UINT8 updown)__banke
 void Set_GBboy(UINT8 select)__banked
 { 
   HW_BEGIN();
+	HW_FAST_ADD = 0;		/* mod: stage1 leaves the console's boot A here, 0x11 only on a color console */
 	HW_GBBOY_MODE = select;
 	HW_END(); 
 }	
