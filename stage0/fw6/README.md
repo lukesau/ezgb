@@ -64,9 +64,15 @@ PicoBlaze patches into its slot B ([setup.md](../docs/setup.md)).
 
 The SD recovery patch was written for FW5-0918 and sets the command
 timeout to `$FFFF` SD clocks. FW6 keeps eight bits of that register, so
-on FW6 the patch's timeout is 255 clocks, which a command that waits on
-the card's busy line can outlast. That has not been reviewed or tested:
-do not flash a patched FW6 build before it is.
+on FW6 the patch's timeout is 255 clocks. That is enough: the watchdog
+runs from the command's start to the end of the response and not while
+the card holds its busy line, a short response then completes when the
+card answers within 153 clocks and a long one (CMD2, the only one the
+program sends) within 65, and the SD specification's longest wait is 64
+(`stage0/sim/tb_cmd_timeout.v`). The patch's other parts do not depend
+on the narrower registers: its half-speed divider is 1, and the two
+words FW6 changes in the program are not ones it touches. A patched FW6
+build has not been run on a cart.
 
 `make stage0-fw6 BUILD_HOST=<build host>` builds slot B from this
 directory's Verilog with ISE instead, proves it equivalent to stock FW6 and

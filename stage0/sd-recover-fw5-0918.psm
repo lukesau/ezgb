@@ -11,6 +11,8 @@
 ; card never answers (both timeouts 0 = off). Here:
 ;
 ;   - the command timeout is $FFFF SD clocks, so a lost response ends
+;     (FW6 keeps eight bits of the register: 255 clocks, which still
+;     covers the longest response an in-specification card gives)
 ;   - the data wait ends on EI too, or after SPIN_HI * 65536 polls
 ;   - sector reads and writes (ISR $80/$40) are redone up to 4 times,
 ;     the ROM loader's run until it reads clean
