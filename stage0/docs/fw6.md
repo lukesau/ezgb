@@ -182,9 +182,25 @@ is bit 0 of `s4`:
 | bank 1 `$0B3`, bank 2 `$1AE` | clear the scratchpad while `s4 < $3E` | none: `$3E` is even |
 | bank 2 `$09E` | keep the license record's bytes while `s4 < $3F` | one more byte is kept, at scratchpad `$3F` |
 
-Scratchpad `$3F` is where the license check keeps slot B's verdict. This
-follows from the logic and is not tested; whether the byte is overwritten
-before it is read was not traced.
+Scratchpad `$3F` is `license_b`: the first program writes 0 or 1 there
+to tell the second what to do, and the license scan leaves its second
+verdict there (`$F2` for a pass). `flash_read_record` runs once for each
+of the 42 records, so in FW6 each call leaves the record's byte 33 in
+`$3F`. Traced through both programs (2026-11-27), that has no effect on a
+cart whose records are good:
+
+- when every record's checksum is right, the scan ends by storing its
+  verdict in `$3F`, over the stray byte;
+- when one is wrong, the scan publishes nothing and the stray byte of the
+  last record stays. The ROM load also needs `license_a` (`$3E`) to be
+  `$F1`, which only a clean scan stores, so the load is refused as in
+  FW5. It would pass where FW5 refuses only on a cart whose last record
+  has `$F2` at byte 33, after a clean scan and then a failed one without
+  a power cycle between them.
+
+Both carts dumped here have 42 good records, with `$16` and `$5C` in
+that byte. This follows from the logic and the listings and is not
+tested.
 
 ## The other differences
 
