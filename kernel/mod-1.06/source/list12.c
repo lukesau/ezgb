@@ -216,9 +216,9 @@ static UINT8 *line_at(UINT8 y)
 /* The list scrolled from old_offset to show_offset with the cursor on its
    row (the top one going up, the bottom one going down), a full page on
    screen. The rows that stay are moved in VRAM, which is a fifth of the
-   time drawing them takes; then the row under the cursor is drawn, the
-   row the cursor was on (it moved with the rest, still highlighted), and
-   the other rows the move uncovered. */
+   time drawing them takes. The row the cursor was on is drawn plain
+   before the move, so the highlight is never on two rows; then the row
+   under the cursor is drawn and the other rows the move uncovered. */
 void list12_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __banked
 {
 	UINT8 sel = (UINT8)file_select;
@@ -235,13 +235,12 @@ void list12_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __
 			list12_show(show_offset, file_select);
 			return;
 		}
+		row_draw((UINT16)(old_offset + sel), sel, 0U, 0U);
 		n = (UINT8)((LIST12_ROWS - d) * ROW_PITCH);
 		for(y = LIST_Y; n; n--, y++) vram_copy_line(line_at(y), line_at((UINT8)(y + d * ROW_PITCH)));
 		row_draw((UINT16)(show_offset + sel), sel, 1U, 0U);
 		counter((UINT16)(show_offset + sel));
-		r = (UINT8)(sel - d);
-		row_draw((UINT16)(show_offset + r), r, 0U, 0U);
-		for(r++; r < sel; r++) row_draw((UINT16)(show_offset + r), r, 0U, 0U);
+		for(r = (UINT8)(sel - d + 1U); r < sel; r++) row_draw((UINT16)(show_offset + r), r, 0U, 0U);
 		return;
 	}
 	d = (UINT8)(old_offset - show_offset);
@@ -250,12 +249,12 @@ void list12_scroll(UINT16 old_offset, UINT16 show_offset, UINT16 file_select) __
 		list12_show(show_offset, file_select);
 		return;
 	}
+	row_draw(old_offset, 0U, 0U, 0U);
 	n = (UINT8)((LIST12_ROWS - d) * ROW_PITCH);
 	for(y = (UINT8)(LIST_Y + LIST12_ROWS * ROW_PITCH - 1U); n; n--, y--)
 		vram_copy_line(line_at(y), line_at((UINT8)(y - d * ROW_PITCH)));
 	row_draw(show_offset, 0U, 1U, 0U);
 	counter(show_offset);
-	row_draw((UINT16)(show_offset + d), d, 0U, 0U);
 	for(r = 1U; r < d; r++) row_draw((UINT16)(show_offset + r), r, 0U, 0U);
 }
 
