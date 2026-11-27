@@ -435,8 +435,21 @@ static void rows_draw(UINT8 page)
 	Draw_Text(s, 9U, 5U, 16U);
 }
 
-/* Page 2 or 3, on a cleared screen */
+/* Page 2 or 3 on a cleared page. The tab strip is left as it is: drawn
+   again at each change of page it showed. The Chinese build's DrawGB has
+   no call that clears the page alone. */
 static void page_draw(UINT8 page)
+{
+#ifdef LANG_ZH
+	DrawGB(1);
+#else
+	DrawGB(3);
+#endif
+	rows_draw(page);
+}
+
+/* The same with the strip, after a change that cleared it */
+static void page_draw_all(UINT8 page)
 {
 	DrawGB(1);
 	rows_draw(page);
@@ -541,14 +554,14 @@ static UINT8 page2_loop(UINT8 start)
 			row_act(row);
 			theme_back = 0U;
 			DrawGB(4);
-			page_draw(2U);
+			page_draw_all(2U);
 			row_draw(row, 1U);
 		}
 		else if((keys & J_A) && (row >= ROW_BG))
 		{
 			color_edit(row);
 			pad_take();			/* the picker's presses are not this page's */
-			page_draw(2U);			/* the whole page is in the new colors */
+			page_draw_all(2U);		/* the whole page is in the new colors */
 			row_draw(row, 1U);
 		}
 		else if(keys & J_A)
@@ -559,7 +572,7 @@ static UINT8 page2_loop(UINT8 start)
 			if((row == ROW_FONT) || (row == ROW_THEME)) DrawGB(4);	/* the tab strip is another height, and DV has its font */
 			if((row == ROW_FONT) || (row == ROW_THEME))
 			{
-				page_draw(2U);
+				page_draw_all(2U);
 				row_draw(row, 1U);
 			}
 			else if((row == ROW_FAST) && row_on(ROW_FAST))

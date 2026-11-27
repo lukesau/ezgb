@@ -140,6 +140,14 @@ static UINT8 weekday_of(UINT8 year2, UINT8 month, UINT8 day)
 }
 
 // --------------------------------------------------------------------
+/* mod: between the SET pages only the page is cleared, the tab strip stays.
+   The Chinese build's DrawGB has no call for the page alone. */
+#ifdef LANG_ZH
+#define SET_PAGE_CLEAR()	DrawGB(1)
+#else
+#define SET_PAGE_CLEAR()	DrawGB(3)
+#endif
+
 void Set_window(void)__banked
 {
 	char datetime[7];
@@ -159,6 +167,7 @@ void Set_window(void)__banked
 	UINT8 resume = 0;	/* mod: page 1 was drawn to go back into the mod's rows: the row to go to, and one */
 	UINT8 start2 = 0;
 	UINT8 r2;
+	UINT8 strip_done = 0;	/* mod: the tab strip's right end was cleared */
 
 	
 	XX = 5;
@@ -176,8 +185,12 @@ page1:		/* mod: the second page comes back here to draw the first again */
 	hw_set_page(A000Address_TF);
 
 	
-	color(WHITE,WHITE,SOLID);
-	box(15*8,0,159,7,M_FILL);//clean num
+	if(!strip_done)			/* mod: once, not at each change of page */
+	{
+		color(WHITE,WHITE,SOLID);
+		box(15*8,0,159,7,M_FILL);//clean num
+		strip_done = 1;
+	}
 	
 	color(BLACK,WHITE,SOLID);
 	Draw_Text(UI_RTC_TIME, UI_LEN(UI_RTC_TIME), 0, 3);	
@@ -624,7 +637,7 @@ enter2:
 						if(r2 == 6)
 						{
 							/* FAST LAUNCH's notice was up: this page again, the cursor on that row */
-							DrawGB(1);
+							SET_PAGE_CLEAR();
 							resume = 2;
 							select = 1;
 							goto page1;
@@ -632,7 +645,7 @@ enter2:
 						if(r2 == 2)
 						{
 							/* back from page 2: this page again, then its last row */
-							DrawGB(1);
+							SET_PAGE_CLEAR();
 							resume = SET_RESUME + 1;
 							select = 1;
 							goto page1;
@@ -640,7 +653,7 @@ enter2:
 						if(r2 == 3)
 						{
 							/* LEFT or RIGHT came round to this page: its first row */
-							DrawGB(1);
+							SET_PAGE_CLEAR();
 							select = 0;
 							goto page1;
 						}
