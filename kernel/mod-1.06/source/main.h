@@ -95,6 +95,20 @@ void popup_rules(UINT8 row, UINT8 y1, UINT8 xv) __banked;	/* mod: msgbox.c, the 
 void msg_box(const UINT8 *text) __banked;	/* mod: msgbox.c, the small status box */
 void msg_text(const UINT8 *text) __banked;	/* mod: msgbox.c, another message in that box */
 void popup_rules_clear(UINT8 row, UINT8 y1) __banked;	/* mod: msgbox.c */
+/* mod: a make DEBUG=1 build lists a launch's stages down the page, each
+   with the time it took, where the release shows them one at a time in the
+   box (msgbox.c). DBG_STAGE names a stage the box has no message for. */
+/* English build only: the Chinese one has no room for it in its bank. */
+#if defined(MOD_DEBUG) && !defined(LANG_ZH)
+#define MOD_DBGLOG
+void dbg_begin(void) __banked;
+void dbg_end(void) __banked;
+#define DBG_STAGE(s)	do { UINT8 dbg_s[20]; strcpy((char *)dbg_s, s); msg_text(dbg_s); } while(0)
+#define DBG_END()	dbg_end()
+#else
+#define DBG_STAGE(s)
+#define DBG_END()
+#endif
 void Filename_loop(UINT32 shift,UINT16 show_offset,UINT16 file_select) __banked;	/* mod: list8.c */
 void list_resort(UINT16 *show_offset, UINT8 *file_select) __banked;	/* mod: browser.c, the list again after a star */
 UINT8 save_stamp_ok(void) __banked;	/* mod: Bank_fun.c, the boot stamp names a save */

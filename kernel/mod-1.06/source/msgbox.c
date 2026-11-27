@@ -39,6 +39,71 @@ static void msg_draw(const UINT8 *s, UINT8 n)
 	Draw_Text(s, n, (UINT8)((20U - n) >> 1), 8U);
 }
 
+#ifdef MOD_DBGLOG
+/* ---- a make DEBUG=1 build: a launch's stages as a list ----
+   From dbg_begin to dbg_end every message of the box is a line of the
+   page instead, under the one before, and when the next comes the line
+   before gets the time it took, in seconds and tenths by the frame count
+   (sys_time: it stands still while interrupts are off). */
+#include "UI.h"
+
+static UINT8 dbg_on;
+static UINT8 dbg_n;			/* lines so far */
+static UINT16 dbg_t0;			/* when the last line was drawn */
+
+#define DBG_LINES	8U
+
+static void dbg_at(const UINT8 *s, UINT8 n, UINT8 col, UINT8 line)
+{
+	if(ui_font)
+	{
+		font12_draw(s, (UINT8)(col ? 124U : 2U), (UINT8)(16U + (line << 4)), F12_NORMAL);
+		return;
+	}
+	Draw_Text((UINT8 *)s, n, col, (UINT8)(2U + line));
+}
+
+static UINT8 dbg_line(const UINT8 *s, UINT8 n)
+{
+	UINT8 t[6];
+	UINT16 d;
+
+	if(!dbg_on) return 0U;
+	color(BLACK, WHITE, SOLID);
+	if(dbg_n)
+	{
+		/* the stage before: frames to tenths of a second */
+		d = (UINT16)(sys_time - dbg_t0) / 6U;
+		if(d > 999U) d = 999U;
+		t[0] = (d >= 100U) ? (UINT8)('0' + d / 100U) : ' ';
+		t[1] = (UINT8)('0' + (d / 10U) % 10U);
+		t[2] = '.';
+		t[3] = (UINT8)('0' + d % 10U);
+		t[4] = 0U;
+		dbg_at(t, 4U, 15U, (UINT8)(dbg_n - 1U));
+	}
+	if(dbg_n < DBG_LINES)
+	{
+		dbg_at(s, n, 0U, dbg_n);
+		dbg_n++;
+	}
+	dbg_t0 = sys_time;
+	return 1U;
+}
+
+void dbg_begin(void) __banked
+{
+	DrawGB(3);		/* the page, not the tab strip */
+	dbg_on = 1U;
+	dbg_n = 0U;
+}
+
+void dbg_end(void) __banked
+{
+	dbg_on = 0U;
+}
+#endif
+
 /* text is in RAM. Blanks at its end are not counted. */
 void msg_box(const UINT8 *text) __banked
 {
@@ -51,6 +116,9 @@ void msg_box(const UINT8 *text) __banked
 	while(n && (text[n - 1U] == ' ')) n--;
 	memcpy(s, text, n);
 	s[n] = 0U;
+#ifdef MOD_DBGLOG
+	if(dbg_line(s, n)) return;
+#endif
 #ifndef LANG_ZH
 	y0 = ui_font ? 52U : 54U;
 	y1 = ui_font ? 87U : 81U;
@@ -78,6 +146,9 @@ void msg_text(const UINT8 *text) __banked
 	while(n && (text[n - 1U] == ' ')) n--;
 	memcpy(s, text, n);
 	s[n] = 0U;
+#ifdef MOD_DBGLOG
+	if(dbg_line(s, n)) return;
+#endif
 	color(WHITE, WHITE, SOLID);
 #ifndef LANG_ZH
 	box(38, 64, 121, ui_font ? 75U : 71U, M_FILL);

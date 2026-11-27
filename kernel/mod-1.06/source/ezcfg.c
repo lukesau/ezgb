@@ -1262,7 +1262,11 @@ void cfg_launch(UINT8 count) __banked
 	sgb_finish();			/* what is left of the SGB packets goes before the game */
 	/* one more launch of this game (plays.c), when it was picked in the
 	   list: fast launch and the recent list start what was already counted */
-	if(count) plays_bump((const UINT8 *)lfname_temp);
+	if(count)
+	{
+		DBG_STAGE("PLAY COUNT");
+		plays_bump((const UINT8 *)lfname_temp);
+	}
 	v = info_get(0x200U);
 	if((v <= 1U) && (!cfg_have_autosave || (v != cfg_autosave)))
 	{
@@ -1280,7 +1284,11 @@ void cfg_launch(UINT8 count) __banked
 			dirty = 1U;
 		}
 	}
-	if(dirty) file_write();
+	if(dirty)
+	{
+		DBG_STAGE("SETTINGS FILE");
+		file_write();
+	}
 	hw_set_page(A000Address_TF);
 }
 

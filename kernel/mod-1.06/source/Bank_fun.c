@@ -424,6 +424,7 @@ void Save_filename(void)__banked
 	/* Append this path to /SAVER/RecentlyPlay_gb.txt now (append, never rewrite).
 	   currentpath still holds "dir/name" here, which is exactly what we need.
 	   If the write fails the 0x2FF flag stays set and Recently_Commit() retries. */
+	DBG_STAGE("RECENT LIST");
 	Recently_Add(currentpath);
 
 	currentpath[saved_len] = 0;		/* restore the directory path for the caller */

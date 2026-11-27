@@ -217,13 +217,14 @@ void Show_SD_list(void) __banked
 	/* mod: FLAUNCH= in /EZGB.CFG starts a game before the first listing */
 	if(cfg_fastlaunch())
 	{
-		Save_filename();
 		Show_loading();
+		Save_filename();
 		count_play = 0U;	/* mod: only a launch from the list is a play */
 		goto BOOT;
 	}
 
 refind_file:
+	DBG_END();		/* mod: a launch that came back: the box is a box again */
 	pad_take();		/* mod: presses another screen acted on are not this list's */
 	ui_font = ui_font_cfg;		/* mod: back from the recent list */
 	g_y = 0;
@@ -655,8 +656,8 @@ re_showfile:
 						f_chdir(currentpath);
 						memmove(lfname_temp, rext+1, strlen(rext+1)+1);
 
-						Save_filename();	/* also updates SRAM 0x300 and the recent-record order */
 						Show_loading();
+						Save_filename();	/* also updates SRAM 0x300 and the recent-record order */
 						count_play = 0U;	/* mod: only a launch from the list is a play */
 						goto BOOT;
 					}
@@ -768,6 +769,7 @@ re_showfile:
 								
 							BOOT:
 							cfg_launch(count_play);		/* mod: the clock and AUTO SAVE to /EZGB.CFG */
+							DBG_STAGE("ROM HEADER");
 							res = GatherMetadata(lfname_temp/*pFilename_buffer[show_offset+file_select-folder_total].filename*/);
 							if(res == 0xFF){
 								/* The ROM could not be opened. Two causes: unreadable/corrupt,
