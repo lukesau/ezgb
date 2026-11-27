@@ -1776,6 +1776,23 @@ UINT8 Save_new_SAVE(TCHAR *pfilename,UINT32 filesize)
 				
 				mode++;
 				if(mode==3)mode=0;
+#ifndef LANG_ZH
+				/* mod: the dots step inside the band's "Saving..." itself. The
+				   source as received draws them at column 11, which is past
+				   the end of the text here and left a second set beside it. */
+				if(mode==0)
+				{
+					Draw_Text("Saving.  ", 9, SAVE_MSG_COL, SAVE_MSG_ROW);
+				}
+				else if(mode==1)
+				{
+					Draw_Text("Saving.. ", 9, SAVE_MSG_COL, SAVE_MSG_ROW);
+				}
+				else
+				{
+					Draw_Text("Saving...", 9, SAVE_MSG_COL, SAVE_MSG_ROW);
+				}
+#else
 				if(mode==0)
 				{
 					Draw_Text(".  ", 3, SAVE_DOT_COL, SAVE_MSG_ROW);	
@@ -1788,6 +1805,7 @@ UINT8 Save_new_SAVE(TCHAR *pfilename,UINT32 filesize)
 				{
 					Draw_Text("...", 3, SAVE_DOT_COL, SAVE_MSG_ROW);	
 				}
+#endif
 			}			
 						
 			if(is_lasttime == 0x77)
