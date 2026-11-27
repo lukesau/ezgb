@@ -92,6 +92,9 @@ under the site.
 | `/EZGB.CFG`: the clock and AUTO SAVE backed up on the card | `source/ezcfg.c`, `source/ezcfg.h`, `source/main.c`, `source/RTC.c`, `makefile` |
 | A launch jumps past the boot ROM when the console allows it; the kernel sets the palettes in CGB mode | `source/launch.s`, `source/ezcfg.c`, `source/GBcard_OP.c`, `source/main.c`, `makefile` |
 | Fast launch: `FLAUNCH=` starts a game at power-on | `source/ezcfg.c`, `source/main.c` |
+| The load box says what is waited for: `Loading...`, `LOAD SAVE`, `LOAD ROM`, `LOAD OK!`, with no delay after any (the source as received holds `LOAD OK!` for 0.4 s and a new save's line for 0.6 s) | `source/Bank_fun.c`, `source/sdlist.c`, `source/ui_text.h` |
+| The save's reads are checked: one that fails or comes up short is done again, twice, and then `SAVE ERROR` shows and nothing is launched (B goes back to the list). The source as received drops each read's result. Read through; no read error was made to happen | `source/Bank_fun.c`, `source/sdlist.c` |
+| Development only, `ROM_CHECK = 1` in `source/launch.s`, to be 0 before a release: the loaded game is summed and compared with its header's global checksum before the hand-over, up to 4 MB. A sum that differs gives a black screen until A, then the launch goes on. About 6 s a megabyte on a DMG by the cycle count; a ROM whose header is wrong fails it | `source/launch.s` |
 | The fast-load key on every console: `$7FD3 = 0`, `$7FD4 = $11` before a load, as the 0918 mod writes it, where the source as received writes `$7FD4 = 0` and is fast on a color console only ([firmware-diff.md](../../stage0/docs/firmware-diff.md)). Not timed on a cart | `source/Bank_fun.c`, `source/sdlist.c`, `source/ezgb_hw.h` |
 | SGB BOOT: the header packets a Super Game Boy needs | `source/sgb.s`, `source/ezcfg.c`, `makefile` |
 | Two more SET pages for the mod's settings | `source/setpage.c`, `source/ezcfg.c`, `source/RTC.c` |

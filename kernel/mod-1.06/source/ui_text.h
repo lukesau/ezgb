@@ -47,6 +47,8 @@
 #define UI_LOAD_OK              "LOAD OK!  "
 #define UI_LOAD_NONE            "NO sav fil"
 #define UI_LOAD_NEW             "Make new"
+#define UI_LOAD_ERR             "SAVE ERROR"	/* mod: the save file could not be read */
+#define UI_LOAD_ROM             "LOAD ROM"	/* mod: while the game's clusters are listed */
 
 /* ---------- file list (Bank_fun.c Show_filename / Refresh_filename) ---------- */
 #define UI_LIST_DIR             "DIR"

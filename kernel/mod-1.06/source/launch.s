@@ -26,6 +26,7 @@
         .globl  _boot_regs, _launch_mode
 
         RUN     = 0xD100
+        ROM_CHECK = 1                   ; development: the loaded game's checksum (below). 0 before a release
 
         .area   _CODE_2
 
@@ -65,6 +66,103 @@ stub:
         xor     a
         ld      (0x7F36), a
         call    RUN + (commit - stub)
+        .if     ROM_CHECK
+        ;; The game is in the game store and the cart still in kernel mode,
+        ;; where the bank register is a plain latch: every byte is summed and
+        ;; the sum compared with the header's global checksum ($014E, high
+        ;; byte first, which is not part of the sum). Up to 4 MB; a size code
+        ;; past that is not checked. A sum that differs gives a black screen
+        ;; until A is pressed, and then the launch goes on. For development:
+        ;; it takes about 6 s a megabyte on a DMG, and a ROM whose header has
+        ;; the wrong checksum, as hacks often do, fails it.
+        ld      a, (0x0148)
+        cp      #8
+        jr      nc, 29$
+        ld      b, a
+        inc     b
+        ld      a, #1
+20$:
+        add     a
+        dec     b
+        jr      nz, 20$
+        ld      c, a                    ; banks, 0 for 256
+        ld      de, #0x0001             ; d the sum's high byte, e the next bank
+        ld      hl, #0x0000
+        xor     a                       ; the sum's low byte
+21$:
+        ld      b, #0x40
+22$:
+        add     (hl)
+        jr      nc, 23$
+        inc     d
+23$:
+        inc     l
+        add     (hl)
+        jr      nc, 24$
+        inc     d
+24$:
+        inc     l
+        add     (hl)
+        jr      nc, 25$
+        inc     d
+25$:
+        inc     l
+        add     (hl)
+        jr      nc, 26$
+        inc     d
+26$:
+        inc     l
+        jr      nz, 22$
+        inc     h
+        dec     b
+        jr      nz, 22$
+        dec     c
+        jr      z, 27$
+        ld      b, a
+        ld      a, e
+        ld      (0x2000), a
+        inc     e
+        ld      a, b
+        ld      hl, #0x4000
+        jr      21$
+27$:
+        ld      hl, #0x014E
+        sub     (hl)
+        jr      nc, 28$
+        dec     d
+28$:
+        inc     l
+        sub     (hl)
+        jr      nc, 30$
+        dec     d
+30$:
+        cp      (hl)
+        jr      nz, 31$
+        dec     l
+        ld      a, d
+        cp      (hl)
+        jr      z, 29$
+31$:
+        ld      a, #0xFF                ; black, on a DMG and in CGB mode
+        ldh     (0x47), a
+        ld      a, #0x80
+        ldh     (0x68), a
+        ld      b, #64
+        xor     a
+32$:
+        ldh     (0x69), a
+        dec     b
+        jr      nz, 32$
+        ld      a, #0x81
+        ldh     (0x40), a
+        ld      a, #0x10                ; the buttons
+        ldh     (0x00), a
+33$:
+        ldh     a, (0x00)
+        rra
+        jr      c, 33$
+29$:
+        .endif
         ;; game mode
         call    RUN + (unlock - stub)
         xor     a

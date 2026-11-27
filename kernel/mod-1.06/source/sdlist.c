@@ -785,10 +785,14 @@ re_showfile:
 							{// 0 1
 								if(m_bBattery){	// save exists
 									Show_LOAD_info(0);							/* loading: show a hint so it does not look frozen */
-									if(LoadSAVE2SRAM(lfname_temp,0x2000) == 0)
-										Show_LOAD_info(1);					/* existing save read */
-									else
-										Show_LOAD_info(2);					/* no save file: blank save created */
+									if(LoadSAVE2SRAM(lfname_temp,0x2000) == 3)
+									{
+										/* mod: the save file is there and could not be read,
+										   after two more tries: no launch with half a save */
+										Show_LOAD_info(5);
+										while(joypad() != J_B) delay(50);
+										goto refind_file;
+									}
 								}	
 
 								//	
@@ -796,6 +800,7 @@ re_showfile:
 								   (broken chain / too fragmented). Booting it would hang the DMA
 								   for ever, so abort to the list instead; Check_game_save_FAT
 								   already showed the message. */
+								Show_LOAD_info(3);						/* mod: LOAD ROM */
 								if(Check_game_save_FAT(lfname_temp) != 0) goto refind_file;
 								hw_set_page(A000Address_FATbuffer);
 															
@@ -805,6 +810,7 @@ re_showfile:
 								SetRAMBankCount(m_iRAMSize);
 								SetROMBankCount(m_iROMSize );
 								SetROMHeader_Checksum();
+								Show_LOAD_info(4);						/* mod: LOAD OK!, as the screen goes off */
 
 								DISPLAY_OFF;									//
 								disable_interrupts();	

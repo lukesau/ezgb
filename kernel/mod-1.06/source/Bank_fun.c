@@ -1325,8 +1325,28 @@ UINT8 LoadSAVE2SRAM(TCHAR *pfilename,UINT32 filesize)__banked
 			
 			for(address=0x0000;address<savesize;address+=0x200)
 			{		
-				hw_set_page(A000Address_TF);			
-				f_read_bank(&gfil, SD_buffer, 0x200, &ret);				
+				/* mod: each read is checked, where its result was dropped and
+				   a failed read copied what the buffer had left in it. A read
+				   that fails or comes up short is done again from its place,
+				   twice, and then the load gives up (3): nothing is launched
+				   and no pending save is marked, so the file is not written
+				   over with half a save at the next boot. */
+				UINT8 tries = 0;
+				UINT16 need = ((savesize - address) >= 0x200UL) ? 0x200U : (UINT16)(savesize - address);
+
+				for(;;)
+				{
+					hw_set_page(A000Address_TF);
+					ret = 0;
+					res = f_read_bank(&gfil, SD_buffer, 0x200, &ret);
+					if((res == FR_OK) && (ret >= need)) break;
+					if(++tries > 2U)
+					{
+						f_close_bank(&gfil);
+						return 3;
+					}
+					f_lseek_bank(&gfil, address);
+				}
 				HW_BANK = address>>13;
 				hw_set_page(A000Address_SRAM);
 
@@ -1880,29 +1900,26 @@ static void Show_SAVE_ok(void)
 	Draw_Text("         ", 9, SAVE_MSG_COL, SAVE_MSG_ROW);	/* clear with spaces; the caller redraws the list afterwards */
 }
 //---------------------------------------------------------------------------------
-/* Load progress. Loading moves 32KB from SD to PSRAM and the screen does not
-   change at all, so it looks frozen. phase: 0 = starting, 1 = done, 2 = no save */
+/* Load progress, in the box that is up with Loading... in it (Show_loading,
+   before every launch): each phase changes its line in place, so the box
+   does not blink. mod: a message for each thing waited for and none held
+   up by a delay, where LOAD OK! stood for 0.4 s and then through the walk
+   of the game's clusters.
+     0  the save is about to be read            LOAD SAVE
+     1, 2  it was read, or a blank one made     nothing: the next is at once
+     3  the game's clusters are about to be listed   LOAD ROM
+     4  all is ready, the screen goes off next  LOAD OK!
+     5  the save could not be read              SAVE ERROR */
 void Show_LOAD_info(UINT8 phase)__banked
 {
-	/* mod: the small framed box (msgbox.c), where this drew a titled block
-	   of dark gray. The box is up already, with Loading... in it
-	   (Show_loading, before every launch), so phase 0 draws nothing and
-	   the others change the line in place: the box does not blink. */
 	UINT8 t[12];
 
-	if(phase == 0) return;
-	if(phase == 1)
-	{
-		strcpy((char *)t, UI_LOAD_OK);
-		msg_text(t);
-		delay(400);
-	}
-	else
-	{
-		strcpy((char *)t, UI_LOAD_NEW);	/* no save on the card: a new one */
-		msg_text(t);
-		delay(600);
-	}
+	if(phase == 0) strcpy((char *)t, UI_LOAD_TITLE);
+	else if(phase == 3) strcpy((char *)t, UI_LOAD_ROM);
+	else if(phase == 4) strcpy((char *)t, UI_LOAD_OK);
+	else if(phase == 5) strcpy((char *)t, UI_LOAD_ERR);
+	else return;
+	msg_text(t);
 }
 //---------------------------------------------------------------------------------
 /* ---- Save-dialog button coordinates ---------------------------------------
