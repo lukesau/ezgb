@@ -141,6 +141,15 @@ void Show_loading(void)__banked
 	msg_box(t);
 }
 //---------------------------------------------------------------------------------
+/* mod: the box the kernel of 2026-11-27 shows while the recent list is written */
+void Show_recent(void)__banked
+{
+	UINT8 t[12];
+
+	strcpy((char *)t, "Recent...");
+	msg_box(t);
+}
+//---------------------------------------------------------------------------------
 void Show_Error_file(void)__banked
 {
 	/* mod: the small framed box (msgbox.c), where this drew a 91 by 72

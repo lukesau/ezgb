@@ -105,7 +105,9 @@ under the kernel's version.
 | `MOD` version line on the HELP tab | `VERSION`, `makefile`, `source/ui_text.h`, `source/Help.c` |
 
 The last four catch up with the 1.06e EZ Flash released on 2026-11-24 (and
-again, with two more changes this tree does not have, on 2026-11-27), whose
+again on 2026-11-27, with two changes to the recent list that are here
+too: `/SAVER` made when the list file does not open, and a `Recent...` box
+while the list is written at boot), whose
 source is not out yet
 ([what the release changed](../stock-1.06/README.md#the-released-106e)).
 They are written from what the released kernel does, not from its code.

@@ -555,7 +555,14 @@ static UINT8 recent_append(const TCHAR *path)
 	recent_set_paths();
 	hw_set_page(A000Address_TF);
 
-	if(f_open_bank(&gfil, recent_path, FA_READ | FA_WRITE | FA_OPEN_ALWAYS) != FR_OK) return 1;
+	if(f_open_bank(&gfil, recent_path, FA_READ | FA_WRITE | FA_OPEN_ALWAYS) != FR_OK)
+	{
+		/* mod: no /SAVER yet: make it and try once more, as the kernel of
+		   2026-11-27 does */
+		f_mkdir_bank(recent_dir);
+		hw_set_page(A000Address_TF);
+		if(f_open_bank(&gfil, recent_path, FA_READ | FA_WRITE | FA_OPEN_ALWAYS) != FR_OK) return 1;
+	}
 
 	/* The file already ends with this exact record (same game twice): do not
 	   append again, or replaying one game would bloat the log. */
@@ -742,6 +749,7 @@ static void recent_compact_if_needed(void)
 	HW_BANK = 0;
 	if(!k) return;
 
+	Show_recent();							/* mod: as the kernel of 2026-11-27 */
 	k = Recently_Load();					/* newest first */
 	if(k == 0) return;
 
@@ -797,6 +805,7 @@ void Recently_Commit(void)__banked
 	for(i = 0; line[i] != 0; i++)
 		if(line[i] < 0x20) { recent_clear_flag(); return; }
 
+	Show_recent();							/* mod: as the kernel of 2026-11-27 */
 	res = (FRESULT)recent_append(line);
 	if(res == FR_OK) recent_clear_flag();
 }
