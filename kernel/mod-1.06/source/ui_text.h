@@ -86,7 +86,11 @@
 
 /* mod: the line under the kernel version */
 #include "mod_version.h"
+#ifdef MOD_DEBUG
+#define UI_HELP_MOD             "MOD " MOD_VERSION " DEBUG"	/* a make DEBUG=1 build */
+#else
 #define UI_HELP_MOD             "MOD " MOD_VERSION
+#endif
 
 /* ---------- time settings (RTC.c) ---------- */
 #define UI_RTC_TIME             "TIME:"

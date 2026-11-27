@@ -57,6 +57,25 @@ else
   LANG_SRCS += font12 font12_data list12
 endif
 
+# ---- debug switch ----------------------------------------------------
+#  mod: make DEBUG=1 turns on what is for development only and never in a
+#  release: MOD_DEBUG is defined for the C sources and set to 1 for the
+#  assembly ones (build/.../debug.inc). Today that is the check of a loaded
+#  game's checksum (source/launch.s), and the HELP tab's version line says
+#  DEBUG. A debug build has its own intermediates (build/debug) and its own
+#  name, ezgb-debug.dat, so it cannot be taken for the release.
+DEBUG ?= 0
+ifneq ($(DEBUG),0)
+  BUILD    := $(patsubst build%,build/debug%,$(BUILD))
+  DEBUGDEF := -DMOD_DEBUG
+  DEBUGVAL := 1
+  RELNAME  := ezgb-debug.dat
+else
+  DEBUGDEF :=
+  DEBUGVAL := 0
+  RELNAME  := ezgb.dat
+endif
+
 # modules - order is link order, do not reorder
 SRCS := main ezgb_hw diskio ff ff_1 ff_2 ff_3 ff_4 ffunicode \
         SD_operate GBcard_OP RTC Help UI Bank_fun
@@ -68,7 +87,7 @@ SRCS += $(LANG_SRCS)
 OBJS   := $(addprefix $(BUILD)/,$(addsuffix .o,$(SRCS)))
 TARGET := $(BUILD)/$(PROG).dat
 #  Deliverables go straight to release/en/ or release/zh/, both named ezgb.dat
-RELDAT := $(RELDIR)/ezgb.dat
+RELDAT := $(RELDIR)/$(RELNAME)
 
 #  EXTRA_DEFS: extra macros for debug builds that never reach the release, e.g.
 #
@@ -76,7 +95,7 @@ RELDAT := $(RELDIR)/ezgb.dat
 #  -Wf--include=port_types.h  force BYTE back to unsigned (GBDK-2020 defines
 #                             it as signed char, which breaks FatFs' DDEM
 #                             (0xE5) directory-entry checks)
-CFLAGS := -Isource -I$(BUILD) -Wf--include=port_types.h $(LANGDEF) $(EXTRA_DEFS)
+CFLAGS := -Isource -I$(BUILD) -Wf--include=port_types.h $(LANGDEF) $(DEBUGDEF) $(EXTRA_DEFS)
 
 #  Link flags:
 #  $(ROMBANKS)      mod: the kernel is not held to the stock bank count. Stage1
@@ -156,9 +175,12 @@ $(BUILD)/%.o : source/%.c $(HEADERS) | $(BUILD)
 #  puts it in its own _CODE_<n> bank.  Nothing else may live in that file,
 #  otherwise the bank does not start at the window base and every glyph
 #  address would be off.
-$(BUILD)/%.o : source/%.s | $(BUILD)
+$(BUILD)/debug.inc: makefile | $(BUILD)
+	printf '        MOD_DEBUG = %s\n' "$(DEBUGVAL)" > $@
+
+$(BUILD)/%.o : source/%.s $(BUILD)/debug.inc | $(BUILD)
 	-@rm -f $@
-	$(LCC) -c -o $@ $<
+	$(LCC) -Wa-I$(BUILD) -c -o $@ $<
 	@test -f $@ -a $@ -nt $< || { echo "[ERROR] assemble failed: $<"; exit 1; }
 
 #  mod: the makefile too, so a change of the link flags (the bank count) relinks

@@ -37,6 +37,7 @@
 #
 #   make stock-1.06                     kernel/stock-1.06 as received
 #   make mod-1.06                       kernel/mod-1.06, with this project's fixes
+#   make mod-1.06 DEBUG=1               the same with the development checks, as ezgb-debug.dat
 #
 # STAGE1=stock builds the updaters with the stock stage1 from source instead of
 # ours; PATCHES=0 leaves the PicoBlaze programs stock.

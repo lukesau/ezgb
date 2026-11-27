@@ -22,8 +22,10 @@
 
    /.ezgbplays in the card's root is the same 2048 bytes (bytes 4 to 7 hold
    the SORT BY PLAYS record), so a cart with no coin cell keeps its stars.
-   At boot a file with the header replaces the table; after a launch, a
-   star or a change of the setting the table is written to it.
+   At boot a file with the header replaces the table; after a star, a
+   change of the setting, or a launch with SORT BY PLAYS on, the table is
+   written to it. With the setting off a launch counts nothing and does
+   not touch the card.
    ========================================================================== */
 
 #include <gb/gb.h>
@@ -230,6 +232,9 @@ void plays_bump(const UINT8 *name) __banked
 	UINT8 *e;
 	UINT8 found;
 
+	/* with SORT BY PLAYS off nothing is counted, and so nothing is written
+	   to the card at a launch */
+	if(!plays_sort_on()) return;
 	hash(name);
 	map();
 	check();
