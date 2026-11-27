@@ -57,7 +57,7 @@
 #define ROWS_NOW	(cgb_mode ? ROWS : ROW_BG)
 
 static const UINT8 row_page[ROWS] = {0U, 0U, 0U, 1U, 1U, 1U, 1U, 1U, 2U, 2U, 2U, 2U, 2U};
-static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 7U, 9U, 11U, 13U, 3U, 5U, 9U, 11U, 13U};	/* the text row; CLEAN NAMES' example is page 2's row 5 and the picker's heading page 3's row 7 */
+static const UINT8 row_at[ROWS] = {9U, 11U, 13U, 3U, 5U, 7U, 9U, 11U, 3U, 5U, 9U, 11U, 13U};	/* the text row; the picker's heading is page 3's row 7 */
 
 /* 0 or 1 for a checkbox row */
 static UINT8 row_on(UINT8 row)
@@ -378,15 +378,6 @@ static void row_draw(UINT8 row, UINT8 sel)
 	color(BLACK, WHITE, SOLID);
 }
 
-/* Under CLEAN NAMES, what it does to a name: the one with its tags, or
-   without. In the 8px font it is cut to the row. */
-static void example_draw(void)
-{
-	strcpy((char *)mq_text, tags_hide ? "Game Title" : "Game Title (USA) (Rev 1) [!].gb");
-	mq_start(mq_text, 1U, 5U, 19U, BLACK, WHITE);	/* the long one scrolls (modmisc.c) */
-	color(BLACK, WHITE, SOLID);
-}
-
 /* The labels and rows of a page, none under the cursor, and its number at
    the foot. Page 0's are drawn under EZ Flash's rows, which are on screen. */
 static void rows_draw(UINT8 page)
@@ -411,7 +402,6 @@ static void rows_draw(UINT8 page)
 		color(BLACK, WHITE, SOLID);
 		row_draw(i, 0U);
 	}
-	if(page == 1U) example_draw();
 	if((page == 2U) && cgb_mode)
 	{
 		/* the picker's heading, a letter over each column of boxes */
@@ -501,7 +491,7 @@ static UINT8 page2_loop(UINT8 start)
 	while(1)
 	{
 		wait_vbl_done();
-		mq_step();		/* the game's name, or the example */
+		mq_step();		/* the game's name */
 #ifndef LANG_ZH
 		if(row_page[row] == 0U) clock_tick();
 #endif
@@ -581,11 +571,6 @@ static UINT8 page2_loop(UINT8 start)
 				   then page 1 again with the cursor here */
 				flaunch_box();
 				return 6U;
-			}
-			else if(row == ROW_TAGS)
-			{
-				row_draw(row, 1U);
-				example_draw();
 			}
 			else if(row == ROW_SGB)
 			{

@@ -351,7 +351,7 @@ cursor and writes `/EZGB.CFG`.
 | `SGB BOOT:` | sets or clears the record in save RAM, for the boots after this one. `SGB=` in the file is updated only when the file already has it |
 | `THEME:` | the next theme |
 | `FONT:` | `8PX`, `12PX`, `SLIM` or `EZ-FLASH` (`UI=EZF` in the file; the row read `EZF` until 2026-11-25) |
-| `CLEAN NAMES:` | unticked writes `TAGS=1` |
+| `CLEAN NAMES:` | unticked writes `TAGS=1`, and the list is the card as it is: full names, and nothing left out but a folder's `.` and `..` and the volume label. Dot files, hidden and system files, `SAVER`, the kernels, the settings file, saves and what `/.ezgbhide` names all show (`entry_class`, `source/browser.c`). The example name the row had under it is gone (2026-11-27) |
 | `RTC SD BACKUP:` | unticked writes `RTCSD=0` |
 | `SORT BY PLAYS:` | most played files first; kept with the stars, not in `/EZGB.CFG` |
 | `DAILY BACKUP:` | ticked writes `DAILYBACKUP=1` |

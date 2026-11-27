@@ -225,6 +225,16 @@ static UINT8 entry_class(void)
 	UINT8 is_dir;
 	UINT8 n;
 
+	if(!tags_hide && !lone_scan)
+	{
+		/* CLEAN NAMES off: the card as it is. Nothing is left out but the
+		   volume label and the folder's . and .. entries, which are not
+		   files. */
+		if(fileinfo.fattrib & AM_VOL) return 0U;
+		if((fileinfo.fname[0] == '.') && ((fileinfo.fname[1] == 0) ||
+		   ((fileinfo.fname[1] == '.') && (fileinfo.fname[2] == 0)))) return 0U;
+		return (fileinfo.fattrib & AM_DIR) ? 2U : 1U;
+	}
 	if(fileinfo.fname[0] == '.') return 0U;		/* . and .., and dot files with no long name */
 	fn = entry_name();
 	if((fn[0] == '.') || (fn[0] == '_')) return 0U;	/* macOS sidecars and the like */

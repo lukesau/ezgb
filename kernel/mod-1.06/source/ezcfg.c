@@ -14,8 +14,10 @@
                                already has the key
      THEME=1                   the colors: 0 light, 1 dark, 2 red, 3 green,
                                4 purple, 5 blue, 6 custom, 7 DV (docs/themes.md)
-     TAGS=1                    full names in the list; 0 or no key cuts them
-                               at their tags (CLEAN NAMES)
+     TAGS=1                    the card as it is: full names, and nothing left
+                               out of the list. 0 or no key cuts names at
+                               their tags and hides what browser.c hides
+                               (CLEAN NAMES)
      DAILYBACKUP=1             keep a dated copy of a save on the day's first
                                backup (savemgr.c)
      COLORS=1E2A44,F2D7A0      the custom theme (6): background, text and,
