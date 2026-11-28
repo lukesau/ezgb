@@ -907,8 +907,7 @@ static const UINT8 ramps[THEMES][8] = {
    The kernel draws a highlight as color(WHITE, BLACK): the background
    color on the ink. color() (vram_put.s) is where a theme changes that:
      acc_idx   what a paper of 3 becomes, and the ink of a solid fill of 3:
-               2 in a color theme, 1 in DV, 0 for no change (light, dark,
-               and wherever only BGP can be set)
+               2 in a color theme, 1 in DV, 0 for no change (light, dark)
      pop_idx   what a paper of 2, the dialogs' gray, becomes: the
                background in light and in DV, where a dialog is its outline
                (the kernel as received has them dark gray), and index 1,
@@ -934,7 +933,9 @@ static void theme_apply(void)
 	}
 	pop_idx = (i && (i != 7U)) ? 1U : 0U;
 	acc_idx = 0U;
-	if(cgb_mode && (i >= 2U)) acc_idx = (i == 7U) ? 1U : 2U;
+	/* without CGB mode theme_now gives 2 to 6 as dark, so this is DV:
+	   its indices are the same in every mode */
+	if(i >= 2U) acc_idx = (i == 7U) ? 1U : 2U;
 	f12_inverse = acc_idx ? acc_idx : 3U;
 
 	/* The mark the next boot, and our stage1's boot screen, take the theme
@@ -948,8 +949,9 @@ static void theme_apply(void)
 
 	if(!cgb_mode)
 	{
-		/* DV's $27 is black, a gray for index 1, white for index 2 and for
-		   the ink: a color console's boot ROM colors that nearly as DV */
+		/* DV's $27 is black, light gray for index 1, dark gray for index 2
+		   and white for the ink: a color console's boot ROM colors the
+		   grays lime and blue, as DV has them in CGB mode */
 		BGP_REG = theme_now() ? ((theme_now() == 7U) ? 0x27U : 0x1BU) : 0xE4U;
 		return;
 	}
