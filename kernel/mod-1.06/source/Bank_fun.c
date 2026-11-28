@@ -207,10 +207,10 @@ char *my_strrchr(const char *s, char c)__banked
 #define SAVE_MSG_ROW2	11
 #define SAVE_MSG_ROW3	12
 #else
+/* the message row is the buttons' row, which is empty by then: row 9 has
+   the Played line */
 #define SAVE_MSG_COL	1
-#define SAVE_MSG_ROW	9
-#define SAVE_MSG_ROW2	11
-#define SAVE_MSG_ROW3	13
+#define SAVE_MSG_ROW	11
 #endif
 #define SAVE_DOT_COL	11
 
@@ -1858,6 +1858,14 @@ UINT8 Save_new_SAVE(TCHAR *pfilename,UINT32 filesize)
    that the save went through; waits for B so it cannot be missed. */
 static void Show_SAVE_error(void)
 {
+#ifndef LANG_ZH
+	/* the band has two rows to give: the Played line's and the buttons' */
+	Draw_Text("SAVE FAIL!        ", 18, SAVE_MSG_COL, 9);
+	Draw_Text("SD ERROR   press B", 18, SAVE_MSG_COL, SAVE_MSG_ROW);
+	while(joypad() != J_B) delay(50);
+	Draw_Text("                  ", 18, SAVE_MSG_COL, 9);
+	Draw_Text("                  ", 18, SAVE_MSG_COL, SAVE_MSG_ROW);
+#else
 	Draw_Text(UI_SAVE_FAIL, UI_LEN(UI_SAVE_FAIL), SAVE_MSG_COL, SAVE_MSG_ROW);	/* 10 chars max, same width as the dialog */
 	Draw_Text(UI_SAVE_FAIL_SD, UI_LEN(UI_SAVE_FAIL_SD), SAVE_MSG_COL, SAVE_MSG_ROW2);
 	Draw_Text(UI_SAVE_PRESS_B, UI_LEN(UI_SAVE_PRESS_B), SAVE_MSG_COL, SAVE_MSG_ROW3);
@@ -1867,6 +1875,7 @@ static void Show_SAVE_error(void)
 	Draw_Text("          ", 10, SAVE_MSG_COL, SAVE_MSG_ROW);
 	Draw_Text("        ", 8, SAVE_MSG_COL, SAVE_MSG_ROW2);
 	Draw_Text("       ", 7, SAVE_MSG_COL, SAVE_MSG_ROW3);
+#endif
 }
 //---------------------------------------------------------------------------------
 /* Save confirmation: there used to be no feedback at all, so the user could not
@@ -1903,6 +1912,11 @@ void Show_LOAD_info(UINT8 phase)__banked
 #define BTN_BOX_Y2		106
 #define BTN_BOX_TXT_Y	12		/* tile -> 96px */
 
+#ifndef LANG_ZH
+UINT8 draw_colors(void);		/* vram_put.s */
+void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
+#endif
+
 void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 {
 #ifndef LANG_ZH
@@ -1927,6 +1941,13 @@ void Show_SAVE_info(UINT32 readdata,UINT8 autosave)__banked
 	   (modmisc.c): currentpath_temp is "/SAVER/<name>.sav" */
 	n = (UINT8)strlen(currentpath_temp);
 	k = (n > 7) ? 7 : 0;
+	/* the band runs from one side of the frame to the other: the name's
+	   field is the 18 cells in the middle (fill_fast_rect leaves the colors
+	   black on white) */
+	color(WHITE,BLACK,SOLID);
+	n = (UINT8)(draw_colors() & 3U);
+	fill_fast_rect(1, 56, 7, ui_font ? 67 : 63, n);
+	fill_fast_rect(152, 56, 158, ui_font ? 67 : 63, n);
 	mq_start((const UINT8 *)currentpath_temp + k, 1, 7, 18, WHITE, BLACK);
 	color(BLACK,DKGREY,SOLID);
 	/* when the game was started: the clock the last launch stored (ezcfg.c) */
