@@ -142,6 +142,9 @@ static void row_act(UINT8 row)
 static UINT8 shown[9];			/* the colors on screen, as cfg_colors_seed gives them */
 
 UINT8 draw_colors(void);		/* vram_put.s */
+#ifndef LANG_ZH
+void fill_fast_rect(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 bg) __banked;
+#endif
 
 /* A row that cannot be set is drawn in index 2 and the cursor passes over
    it. DV is black, white and the slim font: its FONT:, BG: and TEXT: rows
@@ -165,6 +168,7 @@ static void boxed(const UINT8 *s, UINT8 col, UINT8 cells, UINT8 trow, UINT8 how,
 	UINT8 y = (UINT8)(trow << 3);
 	UINT8 n = (UINT8)strlen((const char *)s);
 	UINT8 w;
+	UINT8 cols;
 
 	if(how == 2U) color(DKGREY, WHITE, SOLID);
 	else color(BLACK, WHITE, SOLID);
@@ -174,12 +178,39 @@ static void boxed(const UINT8 *s, UINT8 col, UINT8 cells, UINT8 trow, UINT8 how,
 #endif
 	box((UINT8)(x0 - 2U), (UINT8)(y - 2U), (UINT8)(xe + 1U), (UINT8)(y + 9U), M_NOFILL);
 	if(how == 1U) color(SEL_INK, SEL_PAPER, SOLID);
+	/* the pixels between the frame and the text's cells take the paper too
+	   (fill_fast_rect leaves the colors black on white) */
+	cols = draw_colors();
+	w = (UINT8)(cols & 3U);
+#ifndef LANG_ZH
+	if(ui_font)
+	{
+		fill_fast_rect((UINT8)(x0 - 1U), y, (UINT8)(x0 - 1U), (UINT8)(y + 11U), w);
+		fill_fast_rect(xe, y, xe, (UINT8)(y + 11U), w);
+	}
+	else
+	{
+		fill_fast_rect((UINT8)(x0 - 1U), (UINT8)(y - 1U), xe, (UINT8)(y - 1U), w);
+		fill_fast_rect((UINT8)(x0 - 1U), (UINT8)(y + 8U), xe, (UINT8)(y + 8U), w);
+		fill_fast_rect((UINT8)(x0 - 1U), y, (UINT8)(x0 - 1U), (UINT8)(y + 7U), w);
+		fill_fast_rect(xe, y, xe, (UINT8)(y + 7U), w);
+		if(how == 1U) color(SEL_INK, SEL_PAPER, SOLID);
+		else if(how == 2U) color(DKGREY, WHITE, SOLID);
+	}
+#else
+	/* the Chinese build has no fill_fast_rect: the same ring as an outline */
+	color(w, w, SOLID);
+	box((UINT8)(x0 - 1U), (UINT8)(y - 1U), xe, (UINT8)(y + 8U), M_NOFILL);
+	if(how == 1U) color(SEL_INK, SEL_PAPER, SOLID);
+	else if(how == 2U) color(DKGREY, WHITE, SOLID);
+	else color(BLACK, WHITE, SOLID);
+#endif
 #ifndef LANG_ZH
 	if(ui_font)
 	{
 		/* the field cleared, then the text against its right edge */
 		t[0] = 0U;
-		font12_field(t, x0, y, draw_colors(), xe);
+		font12_field(t, x0, y, cols, xe);
 		w = (UINT8)(xe - x0 - 2U);
 		if(just)
 		{
@@ -189,7 +220,7 @@ static void boxed(const UINT8 *s, UINT8 col, UINT8 cells, UINT8 trow, UINT8 how,
 			while((w < (UINT8)(xe - x0)) && (font12_fit(s, (UINT8)(160U - w)) < n)) w++;
 			if(w < (UINT8)(xe - x0)) w++;		/* a pixel off the frame */
 		}
-		font12_field(s, (UINT8)(xe - w), y, draw_colors(), xe);
+		font12_field(s, (UINT8)(xe - w), y, cols, xe);
 		color(BLACK, WHITE, SOLID);
 		return;
 	}
